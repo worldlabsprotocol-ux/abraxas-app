@@ -27,7 +27,14 @@ function GitHubIcon() {
   );
 }
 
-/** Map NextAuth error codes to a clear message. */
+function XIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
 function describeAuthError(code: string | null): string | null {
   if (!code) return null;
   switch (code) {
@@ -35,13 +42,13 @@ function describeAuthError(code: string | null): string | null {
     case "OAuthCallback":
     case "OAuthCreateAccount":
     case "Callback":
-      return "OAuth provider rejected the request. Verify your callback URL in the provider's dashboard exactly matches /api/auth/callback/<provider>.";
+      return "OAuth provider rejected the request. Check your callback URL matches /api/auth/callback/<provider> exactly.";
     case "OAuthAccountNotLinked":
-      return "This email is already linked to a different provider. Sign in with the original provider you used first.";
+      return "This email is already linked to a different provider. Sign in with the original provider.";
     case "AccessDenied":
       return "Access denied. You may have cancelled the sign-in.";
     case "Configuration":
-      return "Server misconfiguration. Check NEXTAUTH_SECRET, NEXTAUTH_URL (no trailing slash), and provider client IDs in .env.local. Restart the dev server after editing.";
+      return "Server misconfiguration. Check NEXTAUTH_SECRET, NEXTAUTH_URL (no trailing slash), and provider credentials in .env.local.";
     default:
       return `Sign-in error: ${code}`;
   }
@@ -58,109 +65,142 @@ function LoginContent() {
   const errorCode = searchParams?.get("error") ?? null;
   const errorMessage = describeAuthError(errorCode);
 
-  // If a wallet connects, route to dashboard
   useEffect(() => {
-    if (walletConnected) {
-      showToast("Wallet connected.");
-      router.push("/app");
-    }
+    if (walletConnected) { showToast("Wallet connected."); router.push("/app"); }
   }, [walletConnected, router, showToast]);
 
-  // If already signed in via OAuth, forward
   useEffect(() => {
-    if (status === "authenticated" && session?.user && !walletConnected) {
-      router.push("/app");
-    }
+    if (status === "authenticated" && session?.user && !walletConnected) router.push("/app");
   }, [status, session, walletConnected, router]);
 
-  const handleGoogle = async () => {
-    setSubmitting("google");
+  const handle = async (provider: "google" | "github" | "twitter") => {
+    setSubmitting(provider);
     try {
-      await signIn("google", { callbackUrl: "/app" });
-    } catch (err) {
-      console.error("[login] google signIn failed:", err);
+      await signIn(provider, { callbackUrl: "/app" });
+    } catch {
       setSubmitting(null);
-      showToast("Google sign-in failed. Check console + /login error message.");
+      showToast(`${provider} sign-in failed.`);
     }
   };
 
-  const handleGithub = async () => {
-    setSubmitting("github");
-    try {
-      await signIn("github", { callbackUrl: "/app" });
-    } catch (err) {
-      console.error("[login] github signIn failed:", err);
-      setSubmitting(null);
-      showToast("GitHub sign-in failed. Check console + /login error message.");
-    }
-  };
+  const providers = [
+    {
+      key: "twitter" as const,
+      label: "Continue with X",
+      icon: <XIcon />,
+      bg: "#000000",
+      color: "#ffffff",
+      border: "rgba(255,255,255,0.15)",
+      primary: true,
+    },
+    {
+      key: "google" as const,
+      label: "Continue with Google",
+      icon: <GoogleIcon />,
+      bg: "var(--surface)",
+      color: "var(--text)",
+      border: "rgba(255,255,255,0.1)",
+      primary: false,
+    },
+    {
+      key: "github" as const,
+      label: "Continue with GitHub",
+      icon: <GitHubIcon />,
+      bg: "var(--surface)",
+      color: "var(--text)",
+      border: "rgba(255,255,255,0.1)",
+      primary: false,
+    },
+  ];
 
   return (
-    <div className="min-h-[calc(100vh-60px)] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-[400px] bg-bg-2 border border-border rounded-[16px] p-8 md:p-10">
-        <h1 className="font-display font-bold text-[1.4rem] mb-2">
-          Welcome to Abraxas
-        </h1>
-        <p className="text-sm text-abraxas-muted mb-6 leading-relaxed">
-          Sign in to access your dashboard. A wallet is required for asset actions.
-        </p>
+    <div style={{ minHeight: "calc(100vh - 60px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem" }}>
+      <div style={{ width: "100%", maxWidth: "400px" }}>
 
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+          <div style={{
+            width: "48px", height: "48px", borderRadius: "50%",
+            border: "1px solid rgba(200,169,110,0.4)",
+            background: "radial-gradient(circle at 40% 40%, rgba(200,169,110,0.2), transparent 70%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 1.25rem",
+          }}>
+            <div style={{ width: "16px", height: "16px", borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 12px var(--gold)" }} />
+          </div>
+          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.4rem", letterSpacing: "-0.01em", marginBottom: "0.4rem" }}>
+            Enter Abraxas
+          </h1>
+          <p style={{ fontSize: "0.82rem", color: "var(--muted)", lineHeight: 1.6 }}>
+            Sign in to access your dashboard.<br />A wallet is required for asset actions.
+          </p>
+        </div>
+
+        {/* Error */}
         {errorMessage && (
-          <div className="mb-6 px-4 py-3 rounded-md bg-[rgba(248,113,113,0.06)] border border-[rgba(248,113,113,0.25)]">
-            <div className="flex items-start gap-2">
-              <span className="text-abraxas-red text-sm flex-shrink-0">!</span>
-              <div className="flex-1">
-                <p className="text-xs text-abraxas-red font-medium mb-1">
-                  Sign-in failed
-                </p>
-                <p className="text-[0.7rem] text-abraxas-muted leading-relaxed">
-                  {errorMessage}
-                </p>
-              </div>
-            </div>
+          <div style={{ marginBottom: "1.5rem", padding: "0.875rem 1rem", borderRadius: "10px", background: "rgba(242,107,107,0.06)", border: "1px solid rgba(242,107,107,0.2)" }}>
+            <p style={{ fontSize: "0.75rem", color: "#f26b6b", fontWeight: 600, marginBottom: "0.25rem" }}>Sign-in failed</p>
+            <p style={{ fontSize: "0.7rem", color: "var(--muted)", lineHeight: 1.6 }}>{errorMessage}</p>
           </div>
         )}
 
-        <div className="space-y-3 mb-6">
-          <button
-            onClick={handleGoogle}
-            disabled={submitting !== null}
-            className="w-full flex items-center gap-3 bg-bg-3 border border-border-2 hover:border-gold rounded-[9px] px-5 py-3.5 text-sm text-abraxas-text transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
-          >
-            <GoogleIcon />
-            {submitting === "google" ? "Redirecting…" : "Continue with Google"}
-          </button>
-
-          <button
-            onClick={handleGithub}
-            disabled={submitting !== null}
-            className="w-full flex items-center gap-3 bg-bg-3 border border-border-2 hover:border-gold rounded-[9px] px-5 py-3.5 text-sm text-abraxas-text transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
-          >
-            <GitHubIcon />
-            {submitting === "github" ? "Redirecting…" : "Continue with GitHub"}
-          </button>
+        {/* OAuth buttons */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem", marginBottom: "1.5rem" }}>
+          {providers.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => handle(p.key)}
+              disabled={submitting !== null}
+              style={{
+                display: "flex", alignItems: "center", gap: "0.75rem",
+                background: p.bg,
+                color: p.color,
+                border: `1px solid ${p.border}`,
+                borderRadius: "10px",
+                padding: "0.875rem 1.25rem",
+                fontSize: "0.82rem",
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontWeight: p.primary ? 600 : 400,
+                cursor: submitting ? "wait" : "pointer",
+                opacity: submitting && submitting !== p.key ? 0.4 : 1,
+                transition: "opacity 0.2s, border-color 0.2s",
+                width: "100%",
+                textAlign: "left",
+              }}
+            >
+              <span style={{ flexShrink: 0 }}>{p.icon}</span>
+              <span style={{ flex: 1 }}>
+                {submitting === p.key ? "Redirecting…" : p.label}
+              </span>
+              {p.primary && (
+                <span style={{ fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--gold)", marginLeft: "auto" }}>
+                  Recommended
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        <div className="relative text-center text-xs text-abraxas-subtle mb-6">
-          <span className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
+        {/* Divider */}
+        <div style={{ position: "relative", textAlign: "center", marginBottom: "1.5rem" }}>
+          <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center" }}>
+            <span style={{ width: "100%", borderTop: "1px solid rgba(255,255,255,0.06)" }} />
           </span>
-          <span className="relative bg-bg-2 px-3">or</span>
+          <span style={{ position: "relative", background: "var(--void)", padding: "0 0.75rem", fontSize: "0.7rem", color: "var(--subtle)", letterSpacing: "0.06em" }}>
+            or connect wallet
+          </span>
         </div>
 
+        {/* Wallet */}
         <ConnectWalletButton size="lg" className="block w-full" />
 
-        <p className="text-xs text-abraxas-subtle text-center mt-5 leading-relaxed">
-          Wallet connection is required for listing assets,
-          <br />
-          activating value, and using capital.
+        {/* Footer */}
+        <p style={{ fontSize: "0.68rem", color: "var(--subtle)", textAlign: "center", marginTop: "1.5rem", lineHeight: 1.65 }}>
+          Wallet required for deposits, vault access, and asset activation.
         </p>
-
-        <p className="text-[0.7rem] text-abraxas-subtle text-center mt-4">
-          OG ETH holders:{" "}
-          <Link href="/access" className="text-gold hover:underline">
-            verify holdings on /access
-          </Link>
+        <p style={{ fontSize: "0.68rem", color: "var(--subtle)", textAlign: "center", marginTop: "0.75rem" }}>
+          OG ETH holders →{" "}
+          <Link href="/access" style={{ color: "var(--gold)", textDecoration: "none" }}>verify on /access</Link>
         </p>
       </div>
     </div>
@@ -169,13 +209,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[calc(100vh-60px)] flex items-center justify-center">
-          <div className="text-abraxas-subtle text-sm">Loading…</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div style={{ minHeight: "calc(100vh-60px)", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: "var(--subtle)", fontSize: "0.875rem" }}>Loading…</div></div>}>
       <LoginContent />
     </Suspense>
   );

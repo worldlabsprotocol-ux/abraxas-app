@@ -6,364 +6,309 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-beta-c8a96e?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/built_on-Solana-111111?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/access-EVM-111111?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/stack-Next.js-000000?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/built_on-Solana-9945FF?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/token-$ABRA-c8a96e?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/stack-Next.js_14-000000?style=for-the-badge" />
 </p>
 
 > Real-world assets stop being held.  
 > They start being operated.
 
+Built solo by [@pabloretroworld](https://twitter.com/pabloretroworld) · World Labs Protocol · Live on Bags Hackathon 2026
+
 ---
 
 ## Thesis
 
-Phase 1  
-Assets moved on-chain. Passive.
+Phase 1 — Assets moved on-chain. Passive.  
+Phase 2 — Assets became programmable. Static logic.  
+Phase 3 — Assets become operated. Autonomous.
 
-Phase 2  
-Assets became programmable. Static logic.
-
-Phase 3  
-Assets become operated. Autonomous.
-
-Abraxas is Phase 3.
+**Abraxas is Phase 3.**
 
 ---
 
-## Overview
+## What it does
 
-Abraxas is the operating layer for real-world assets.
+Most RWA platforms tokenize assets and stop there. The asset sits on-chain, passive, doing nothing.
 
-Users define strategy.  
-Autonomous agents execute.  
-Vaults track performance.  
-Circuit defense monitors risk.  
-Access is earned through participation.
+Abraxas goes further. Users define strategy. Autonomous agents execute. Vaults track performance. Circuit defense monitors risk. Access is earned through participation.
 
-No projections.  
-No roadmap theater.  
-No noise.
+| Without Abraxas | With Abraxas |
+|---|---|
+| Music catalog earns royalties → waits in distributor account | Agent captures distributions, reinvests, defends against streaming platform risk |
+| Rental property generates rent → sits idle | Agent routes rent flows, hedges vacancy, optimizes reinvestment timing |
+| Outstanding invoices → locked until settlement | Agent finances receivables, scores counterparty risk, rotates on credit drops |
+
+No projections. No roadmap theater. No noise.
 
 ---
 
-## Product Surface
+## Live right now
+
+- **$ABRA** live on Bags — CA: `5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS`
+- **46 holders** · **$401.87 verified creator earnings** · **14.7% bonding curve**
+- **5 vaults operating** — VAULT-490 through VAULT-494
+- **5 autonomous agents** — 99.97% avg uptime
+- **1,247 circuit defense events** — $0 unrecovered
+
+---
+
+## Product surface
 
 | Layer | Function |
 |---|---|
-| Vaults | Assets are deposited, tracked, and operated |
-| Agents | Execution units assigned to vault strategies |
-| Defense | Circuit logic monitors risk and logs events |
-| Access | $ABRA, La Casa Distortion, and operator status |
-| Formations | Legal-grade entry point for serious operators |
+| **Vaults** | Assets deposited, tracked, and operated |
+| **Agents** | Execution units assigned to vault strategies |
+| **Defense** | Circuit logic monitors risk and logs events |
+| **Marketplace** | Vault discovery + live Bags-launched tokens |
+| **Onboard** | Asset-type guided entry (Music / Real Estate / Receivables) |
+| **Formations** | Legal-grade entity formation for structured operators |
+| **Access** | $ABRA holders, La Casa Distortion OG, and operator tiers |
 
 ---
 
-## Current Build
+## Vaults
+
+| Vault | Asset Class | APY | Agent | Status |
+|---|---|---|---|---|
+| VAULT-490 | Music & IP Royalties | 12.8% | AGENT-001 | Operating |
+| VAULT-491 | Music & IP Royalties | 11.4% | AGENT-002 | Operating |
+| VAULT-492 | Real Estate | 6.2% | AGENT-003 | Operating |
+| VAULT-493 | Receivables | 9.1% | AGENT-004 | Operating |
+| VAULT-494 | Music & IP Royalties | 8.6% | AGENT-005 | Graduating |
+
+Each vault has: identity, inception timestamp, performance history, assigned agent, public action log.  
+There is no projected yield. Only performance since inception.
+
+---
+
+## Current build status
 
 | Area | Status |
 |---|---|
-| Solana wallet | Active |
-| EVM wallet | Active |
-| Helius RPC | Connected |
-| Alchemy RPC | Connected |
-| La Casa Distortion verification | Integrating |
-| $ABRA balance | Integrating |
-| Bags API | Server-side |
-| Vault system | Active UI |
-| Agent execution | In development |
-| Circuit defense | In development |
-| Formations | Stubbed |
-| Marketplace | Partial |
+| Solana wallet | ✅ Active |
+| EVM wallet | ✅ Active |
+| NextAuth (Google + GitHub) | ✅ Active |
+| Bags API | ✅ Server-side |
+| Vault system | ✅ Active UI |
+| Deposit flow | ✅ Active |
+| Asset registration wizard | ✅ Active |
+| Onboard flows (Music / RE / Receivables) | ✅ Active |
+| Circuit defense log | ✅ Active |
+| Live agent feed | ✅ Active |
+| $ABRA live token page | ✅ Active |
+| Formations | ✅ Stubbed + routed |
+| La Casa Distortion verification | 🔄 Integrating |
+| Agent execution (on-chain) | 🔄 In development |
+| Token-2022 position minting | 🔄 In development |
 
-BETA — agent network in active development.
-
-This build is an active product shell. Live integrations are being connected progressively.
+BETA — agent network in active development. On-chain execution live at graduation.
 
 ---
 
 ## Stack
 
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- Solana Wallet Adapter
-- wagmi + RainbowKit
-- NextAuth
-- Helius RPC
-- Alchemy RPC
-- Bags API
+- **Framework** — Next.js 14 App Router, TypeScript, Tailwind CSS
+- **Chain** — Solana (primary), Ethereum (OG NFT verification)
+- **Token standard** — Token-2022 (transfer hooks, interest-bearing, on-chain metadata)
+- **Wallet** — Solana Wallet Adapter (Phantom, Solflare), wagmi + RainbowKit (EVM)
+- **Auth** — NextAuth (Google, GitHub)
+- **RPC** — Helius (Solana), Alchemy (EVM)
+- **Data** — Bags.fm API (live token data, revenue, incorporation)
 
 ---
 
-## Quick Start
+## Architecture
+
+```
+usePortfolioData (single source of truth)
+├── useWalletBalances → /api/solana/balances (server-side RPC)
+├── VAULT_WEIGHTS × LEVERAGE × walletValue → vault TVLs
+├── VAULT_YIELD_RATES → projected yield per vault
+└── portfolioValue × 68 → systemAUM
+
+useLiveFeed → autonomous activity stream (2–5s intervals)
+├── Agent actions (rebalance, hedge, capture)
+├── Defense events (rare, ~12% probability)
+└── System updates (performance snapshots)
+```
+
+---
+
+## Quick start
 
 ```bash
+git clone https://github.com/worldlabsprotocol/abraxas
+cd abraxas
 npm install
 cp .env.local.example .env.local
+# fill in .env.local
 npm run dev
+```
 
-Open:
-
-http://localhost:3000
-
-Requires Node.js >= 18.17.
-
+Open: `http://localhost:3000` · Requires Node.js >= 18.17
 
 ---
 
-Environment
+## Environment
 
-.env.local is gitignored. Never commit secrets.
+`.env.local` is gitignored. Never commit secrets. Use `.env.local.example` for placeholders only.
 
-Use .env.local.example for placeholders only.
-
-NEXTAUTH_SECRET=
+```bash
+# NextAuth
+NEXTAUTH_SECRET=          # openssl rand -base64 32
 NEXTAUTH_URL=http://localhost:3000
 
+# Google OAuth (console.cloud.google.com)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
+# GitHub OAuth (github.com/settings/developers)
 GITHUB_ID=
 GITHUB_SECRET=
 
+# Bags API (dev.bags.fm)
 BAGS_API_KEY=
 BAGS_PARTNER_KEY=
 BAGS_PARTNER_WALLET=
 
-NEXT_PUBLIC_ABRA_CA=
-NEXT_PUBLIC_ABRA_MINT=
-NEXT_PUBLIC_OG_ETH_COLLECTION=
-NEXT_PUBLIC_SOLANA_RPC_URL=
+# Solana — use Helius, NOT the public endpoint (rate-limited)
+NEXT_PUBLIC_SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+NEXT_PUBLIC_ABRA_CA=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
+NEXT_PUBLIC_ABRA_MINT=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
+
+# EVM — La Casa Distortion OG verification
+NEXT_PUBLIC_OG_ETH_COLLECTION=0x99879b6bf05c893ba01f1bd18e042cf592a10210
 NEXT_PUBLIC_ETH_RPC_URL=
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
-
-Public Solana RPC is rate-limited. Use Helius or QuickNode for NEXT_PUBLIC_SOLANA_RPC_URL.
-
+```
 
 ---
 
-OAuth Setup
+## OAuth setup
 
-Google
+**Google** — [console.cloud.google.com](https://console.cloud.google.com)  
+Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 
-Authorized JavaScript origin:
+**GitHub** — [github.com/settings/developers](https://github.com/settings/developers)  
+Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
 
-http://localhost:3000
-
-Authorized redirect URI:
-
-http://localhost:3000/api/auth/callback/google
-
-GitHub
-
-Homepage URL:
-
-http://localhost:3000
-
-Authorization callback URL:
-
-http://localhost:3000/api/auth/callback/github
-
-For production, replace localhost with the Vercel domain.
-
+For production, replace `localhost:3000` with your Vercel domain.
 
 ---
 
-Routes
+## Routes
 
-Route	Purpose
-
-/	Three-phase thesis hero
-/login	OAuth + wallet entry
-/app	Dashboard
-/marketplace	Vaults + Bags tokens
-/vault/[id]	Vault detail
-/live	Live system feed
-/defense	Circuit defense log
-/formations	Entity formation flow
-/access	Tier verification
-/abra	$ABRA token info
-/list	Register asset
-/use	Withdraw, reinvest, swap
-
-
-
----
-
-API Routes
-
-Route	Purpose
-
-/api/auth/[...nextauth]	NextAuth handler
-/api/bags/assets	Bags token launch feed
-/api/bags/token?mint=<addr>	Token pool, creators, fees
-/api/bags/market	Partner-level fee data
-
-
+| Route | Purpose |
+|---|---|
+| `/` | Three-phase thesis hero + live system stats |
+| `/login` | OAuth + wallet entry |
+| `/onboard` | Asset-type guided entry (Music / Real Estate / Receivables) |
+| `/app` | Dashboard |
+| `/marketplace` | Vaults + live Bags tokens |
+| `/vault/[id]` | Vault detail |
+| `/deposit/[vaultId]` | Deposit flow with projected returns |
+| `/live` | Live agent feed + system performance |
+| `/defense` | Circuit defense log |
+| `/formations` | Entity formation |
+| `/formations/begin` | Formation wizard |
+| `/access` | Tier verification (OG / $ABRA / Operator) |
+| `/abra` | $ABRA live token terminal |
+| `/list` | Register an asset (3-step wizard) |
+| `/use` | Withdraw, reinvest, swap |
 
 ---
 
-Auth Model
+## Auth model
 
-Abraxas uses three independent access surfaces.
+Three independent access surfaces.
 
-NextAuth
+**NextAuth** — Google and GitHub account identity. Dashboard access.  
+**Solana Wallet** — Primary execution identity. Required for asset actions, deposits, vault operations.  
+**EVM Wallet** — Used only for La Casa Distortion OG NFT verification on `/access`.
 
-Google and GitHub account identity.
-
-Solana Wallet
-
-Primary execution identity. Required for asset actions.
-
-EVM Wallet
-
-Used only for La Casa Distortion OG NFT verification.
-
-Wallet ownership remains the source of truth for protocol access.
-
+Wallet ownership is the source of truth for protocol access.
 
 ---
 
-Vaults
+## Agents
 
-Vaults are the product.
+Agents are execution units. They do not assist. They do not suggest. They execute.
 
-Assets are not static listings.
-They are deposited into named vaults.
-
-Each vault has:
-
-identity
-
-inception timestamp
-
-performance history
-
-assigned agent
-
-public action log
-
-
-There is no projected yield.
-Only performance since inception.
-
+```
+AGENT-001 rebalanced VAULT-490 at 14:23:08 UTC  +0.38%
+AGENT-003 captured rent flow VAULT-492          +$640
+AGENT-004 rotated position on credit drop       defended
+```
 
 ---
 
-Agents
+## Circuit defense
 
-Agents are execution units.
+Monitors vault conditions in real time. When thresholds are exceeded — volatility, drawdown, liquidity drain, strategy deviation — agents execute defensive actions immediately.
 
-They do not assist.
-They do not suggest.
-They execute.
-
-Example:
-
-AGENT-007 rebalanced VAULT-ATLAS at 14:23:08 UTC
-
+**1,247 events triggered. $0 unrecovered.**
 
 ---
 
-Defense
-
-Circuit defense monitors vault conditions in real time.
-
-When thresholds are exceeded:
-
-positions reduce
-
-capital is preserved
-
-events are logged
-
-
-Target:
-
-Zero unrecovered positions.
-
-
----
-
-$ABRA
+## $ABRA
 
 $ABRA is the participation token of the operating layer.
 
-It is earned by:
+No private allocations. No team unlocks ahead of users. No VC tranches.
 
-depositing assets
+Earned by: depositing assets · allocating capital · operating vaults
 
-allocating capital
+The loop: Institutions moving to Solana → need to tokenize assets → Abraxas is the operating layer → to use Abraxas you need $ABRA.
 
-operating vaults
-
-
-The system prioritizes operators over passive speculation.
-
+[Trade on Bags](https://bags.fm/$WORLDLABSPROTOCOL-UX) · [Solscan](https://solscan.io/token/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS) · [Chart](https://dexscreener.com/solana/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
 
 ---
 
-Formations
+## Formations
 
-Formations are the entry point for structured operators.
+The entry point for structured operators.
 
-Form an entity.
-Move assets in.
-Activate agents.
+Form an entity → move assets in → activate agents.
 
-Entities formed through Abraxas are operational from day one.
+- **Formation** ($2,500) — Wyoming DAO LLC or Marshall Islands DAO LLC + on-chain cap table + treasury wallet
+- **Operated Formation** ($5,500) — Full formation + vault deployed day one + agent assigned
+- **Custom Structure** — Multi-entity, complex jurisdictions, custom allocation
 
+Powered by Bags SDK incorporation. On-chain payment. Verifiable on Solana.
 
 ---
 
-Deployment
+## Deployment
 
-Deploy through Vercel.
-
+```
 1. Push to GitHub
-
-
 2. Import repo into Vercel
-
-
 3. Add environment variables
-
-
-4. Update NEXTAUTH_URL
-
-
+4. Update NEXTAUTH_URL to production domain
 5. Add production OAuth callback URLs
-
-
 6. Redeploy
-
-
-
+```
 
 ---
 
-Direction
+## Direction
 
-One asset class.
-One execution standard.
-One system.
-
+One asset class. One execution standard. One system.  
 Expand only after dominance.
 
-
 ---
 
-Position
+## Position
 
-Real-world assets stop being held.
+Real-world assets stop being held.  
 They start being operated.
 
 Abraxas is the system that does it.
 
-
 ---
 
-License
+*Built by World Labs Protocol · [worldlabsprotocol.carrd.co](https://worldlabsprotocol.carrd.co)*
 
-MIT
+MIT License
