@@ -30,7 +30,8 @@ function UseValueContent() {
     }, 1200);
   };
 
-  const txns = portfolio.vaultPositions.slice(0, 3).map((p) => ({
+  const txns: { label: string; amount: number; type: "credit" | "debit" }[] = 
+  portfolio.vaultPositions.slice(0, 3).map((p) => ({
     label: `Yield credited — ${p.vaultName}`,
     amount: Math.round(p.annualYield / 12),
     type: "credit" as const,
