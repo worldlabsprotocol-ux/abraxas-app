@@ -7,7 +7,12 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, sub, subVariant = "positive", valueColor }: StatCardProps) {
-  const subColor = { positive: "var(--green)", neutral: "var(--subtle)", negative: "var(--red)" }[subVariant];
+  const subColor = {
+    positive: "var(--green)",
+    neutral: "var(--subtle)",
+    negative: "var(--red)",
+  }[subVariant];
+
   return (
     <div style={{
       background: "var(--surface)",
@@ -15,14 +20,21 @@ export function StatCard({ label, value, sub, subVariant = "positive", valueColo
       borderRadius: "14px",
       padding: "1.25rem 1.5rem",
     }}>
-      <div style={{ fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.6rem" }}>
+      <div style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>
         {label}
       </div>
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.6rem", letterSpacing: "-0.01em", color: valueColor ?? "var(--text)" }}>
+      <div style={{
+        fontFamily: "'Space Grotesk', sans-serif",
+        fontWeight: 700,
+        fontSize: "1.5rem",
+        letterSpacing: "-0.01em",
+        color: valueColor ?? "var(--text)",
+        transition: "color 0.4s",
+      }}>
         {value}
       </div>
       {sub && (
-        <div style={{ fontSize: "0.72rem", marginTop: "0.25rem", color: subColor }}>
+        <div style={{ fontSize: "0.7rem", marginTop: "0.2rem", color: subColor }}>
           {sub}
         </div>
       )}
