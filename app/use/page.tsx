@@ -8,12 +8,19 @@ import { usePortfolioData } from "@/lib/usePortfolioData";
 import { formatCurrency } from "@/lib/utils";
 
 type AState = "idle" | "confirming" | "confirmed";
+type TxType = "credit" | "debit";
+
+interface Txn {
+  label: string;
+  amount: number;
+  type: TxType;
+}
 
 const ACTIONS = [
-  { icon: "↓", title: "Withdraw", desc: "Transfer capital to your connected wallet.", key: "withdraw" },
-  { icon: "↺", title: "Reinvest", desc: "Compound yield back into active vault positions.", key: "reinvest" },
-  { icon: "⇄", title: "Swap", desc: "Exchange capital for $ABRA or supported tokens.", key: "swap" },
-  { icon: "↗", title: "New Position", desc: "Deploy capital to a vault in the marketplace.", key: "position", href: "/marketplace" },
+  { icon: "↓", title: "Withdraw",     desc: "Transfer capital to your connected wallet.",           key: "withdraw" },
+  { icon: "↺", title: "Reinvest",     desc: "Compound yield back into active vault positions.",     key: "reinvest" },
+  { icon: "⇄", title: "Swap",         desc: "Exchange capital for $ABRA or supported tokens.",      key: "swap" },
+  { icon: "↗", title: "New Position", desc: "Deploy capital to a vault in the marketplace.",        key: "position", href: "/marketplace" },
 ] as const;
 
 function UseValueContent() {
@@ -30,16 +37,18 @@ function UseValueContent() {
     }, 1200);
   };
 
-  const txns: { label: string; amount: number; type: "credit" | "debit" }[] = 
-  portfolio.vaultPositions.slice(0, 3).map((p) => ({
-    label: `Yield credited — ${p.vaultName}`,
-    amount: Math.round(p.annualYield / 12),
-    type: "credit" as const,
-  })).concat([{
-    label: "Withdrawal to wallet",
-    amount: Math.round(portfolio.availableCapital * 0.4),
-    type: "debit" as const,
-  }]);
+  const txns: Txn[] = [
+    ...portfolio.vaultPositions.slice(0, 3).map((p) => ({
+      label: `Yield credited — ${p.vaultName}`,
+      amount: Math.round(p.annualYield / 12),
+      type: "credit" as TxType,
+    })),
+    {
+      label: "Withdrawal to wallet",
+      amount: Math.round(portfolio.availableCapital * 0.4),
+      type: "debit" as TxType,
+    },
+  ];
 
   return (
     <div style={{ maxWidth: "760px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
@@ -85,7 +94,9 @@ function UseValueContent() {
       </div>
 
       <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "14px", padding: "1.5rem" }}>
-        <div style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", marginBottom: "1rem" }}>Recent Transactions</div>
+        <div style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", marginBottom: "1rem" }}>
+          Recent Transactions
+        </div>
         {txns.map((tx, i) => (
           <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.7rem 0", borderBottom: i < txns.length - 1 ? "1px solid var(--line)" : "none", fontSize: "0.82rem" }}>
             <span style={{ color: "var(--muted)" }}>{tx.label}</span>
