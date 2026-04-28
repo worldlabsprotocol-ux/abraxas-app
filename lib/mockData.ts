@@ -96,17 +96,6 @@ export const mockAgents: Agent[] = [
   { id: "005", name: "AGENT-005", status: "online", uptimePct: 99.88, vaultsOperated: 1, actionsExecuted: 612, lastAction: "Position opened" },
 ];
 
-export const mockAgentActions: AgentAction[] = [
-  { id: "a1", timestamp: "14:23:08", agentId: "001", vaultId: "490", action: "Rebalanced position", delta: "+0.42%" },
-  { id: "a2", timestamp: "14:22:54", agentId: "002", vaultId: "491", action: "Distribution claimed", delta: "+$184" },
-  { id: "a3", timestamp: "14:22:31", agentId: "003", vaultId: "492", action: "Reinvested rent flow", delta: "+$1,240" },
-  { id: "a4", timestamp: "14:21:09", agentId: "004", vaultId: "493", action: "Rotated position", delta: "neutral" },
-  { id: "a5", timestamp: "14:20:47", agentId: "001", vaultId: "490", action: "Hedged exposure", delta: "-0.08%" },
-  { id: "a6", timestamp: "14:19:22", agentId: "005", vaultId: "494", action: "Position opened", delta: "$2,400" },
-  { id: "a7", timestamp: "14:18:55", agentId: "002", vaultId: "491", action: "Royalty stream verified", delta: "+$420" },
-  { id: "a8", timestamp: "14:17:13", agentId: "003", vaultId: "492", action: "Vacancy buffer adjusted", delta: "neutral" },
-];
-
 export const mockDefenseEvents: DefenseEvent[] = [
   { id: "d1", timestamp: "2026-04-27 14:22:08 UTC", vaultId: "490", trigger: "Volatility threshold exceeded", action: "Position reduced 18%", capitalPreserved: 42_180 },
   { id: "d2", timestamp: "2026-04-26 22:11:33 UTC", vaultId: "493", trigger: "Counterparty risk delta", action: "Position rotated to lower-risk pool", capitalPreserved: 8_400 },
@@ -115,6 +104,11 @@ export const mockDefenseEvents: DefenseEvent[] = [
   { id: "d5", timestamp: "2026-04-25 11:02:14 UTC", vaultId: "492", trigger: "Liquidity threshold", action: "Reserve buffer increased", capitalPreserved: 6_780 },
 ];
 
+/**
+ * systemStats — fully defined, always safe to read any property.
+ * AUM and totalActions are baseline seeds; live values come from
+ * usePortfolioData on pages that need them.
+ */
 export const systemStats = {
   totalAUM: 643_800,
   totalActions: 18_185,
@@ -125,19 +119,8 @@ export const systemStats = {
   vaultsActive: 5,
 };
 
-export const userStats = {
-  totalDeposited: 90_000,
-  currentValue: 100_615,
-  yieldGenerated: 10_615,
-  availableCapital: 4_280,
-  activePositions: 3,
-};
-
-export const userPositions = [
-  { vaultId: "490", vaultName: "VAULT-490", deposited: 50_000, currentValue: 56_400, yieldGenerated: 6_400, agentId: "001" },
-  { vaultId: "491", vaultName: "VAULT-491", deposited: 25_000, currentValue: 27_850, yieldGenerated: 2_850, agentId: "002" },
-  { vaultId: "493", vaultName: "VAULT-493", deposited: 15_000, currentValue: 16_365, yieldGenerated: 1_365, agentId: "004" },
-];
+/** Alias — same object, both names always resolve. */
+export const systemMeta = systemStats;
 
 export const assetCategories = [
   "Music & IP Royalties",

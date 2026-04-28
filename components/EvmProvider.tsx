@@ -3,51 +3,39 @@
 import "@rainbow-me/rainbowkit/styles.css";
 
 import { ReactNode, useState } from "react";
-import { RainbowKitProvider, getDefaultConfig, darkTheme } from "@rainbow-me/rainbowkit";
+import {
+  RainbowKitProvider,
+  getDefaultConfig,
+  darkTheme,
+} from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { http } from "viem";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const projectId =
-  (process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "").trim() || "abraxas-app";
-
-// Treat empty string as missing (`||` handles "" but `??` does not).
 const ethRpcRaw = (process.env.NEXT_PUBLIC_ETH_RPC_URL || "").trim();
 const ethRpc =
   ethRpcRaw && /^https?:\/\//i.test(ethRpcRaw) ? ethRpcRaw : undefined;
 
-if (typeof window !== "undefined") {
-  console.log(
-    "[evm] ETH RPC:",
-    ethRpc ? ethRpc.split("?")[0] + " (configured)" : "wagmi default (public)"
-  );
-  console.log(
-    "[evm] WalletConnect project:",
-    projectId === "abraxas-app" ? "default placeholder" : "configured"
-  );
-}
+// WalletConnect requires a real project ID from cloud.walletconnect.com.
+// If missing or using the placeholder, we skip WalletConnect entirely
+// and fall back to injected wallets only (MetaMask, Coinbase, etc.).
+const wcProjectId = (
+  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ""
+).trim();
 
 const config = getDefaultConfig({
   appName: "Abraxas",
-  projectId,
+  // Use a real project ID or a stable dummy that won't throw
+  projectId: wcProjectId || "00000000000000000000000000000000",
   chains: [mainnet],
   transports: {
-    // If ethRpc is undefined, viem's http() uses its default public RPC list.
     [mainnet.id]: http(ethRpc),
   },
   ssr: true,
 });
 
-interface Props {
-  children: ReactNode;
-}
-
-/**
- * EVM wallet provider — wagmi + RainbowKit on Ethereum mainnet only.
- * Used for La Casa Distortion NFT ownership verification on /access.
- */
-export function EvmProvider({ children }: Props) {
+export function EvmProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
