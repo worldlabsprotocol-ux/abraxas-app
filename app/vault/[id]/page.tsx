@@ -8,6 +8,7 @@ import { AgentFeed } from "@/components/AgentFeed";
 import { DefenseFeed } from "@/components/DefenseFeed";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/lib/authState";
+import { VaultLifecycle } from "@/components/VaultLifecycle";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 
 function ShareVaultButton({ vaultId, vaultName, yieldRate, tvl }: {
@@ -199,6 +200,9 @@ export default function VaultPage({ params }: { params: { id: string } }) {
         {/* Right — actions */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
 
+          {/* Vault lifecycle — plain language status */}
+          <VaultLifecycle vault={vault} />
+
           {/* Deposit */}
           <button
             onClick={handleDeposit}
@@ -254,6 +258,58 @@ export default function VaultPage({ params }: { params: { id: string } }) {
 
           {/* Share this vault */}
           <ShareVaultButton vaultId={id} vaultName={vault.name} yieldRate={yieldRate} tvl={liveTVL} />
+
+          {/* ── THREE LIVE ACTIONS ── */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "12px", overflow: "hidden" }}>
+            <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid var(--line)", background: "var(--raise)" }}>
+              <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--subtle)" }}>Vault Actions</p>
+            </div>
+            {[
+              {
+                icon: "↓", label: "Deploy Capital",
+                desc: "Add capital to this vault position",
+                action: () => router.push(`/deposit/${id}`),
+                color: "var(--gold)", bg: "rgba(200,169,110,0.06)",
+              },
+              {
+                icon: "⬡", label: "Attract Capital",
+                desc: openToInvestors ? "Open to investors — sharing enabled" : "Open vault to outside investors",
+                action: () => setOpenToInvestors((v) => !v),
+                color: openToInvestors ? "#6b8cff" : "var(--text)",
+                bg: openToInvestors ? "rgba(107,140,255,0.06)" : "transparent",
+                active: openToInvestors,
+              },
+              {
+                icon: "→", label: "Sell Asset Position",
+                desc: "Transfer or exit your vault position",
+                action: () => router.push("/use"),
+                color: "var(--text)", bg: "transparent",
+              },
+            ].map((item, i, arr) => (
+              <div
+                key={item.label}
+                onClick={item.action}
+                style={{
+                  padding: "0.875rem 1rem",
+                  display: "flex", alignItems: "center", gap: "0.875rem",
+                  cursor: "pointer", background: item.bg,
+                  borderBottom: i < arr.length - 1 ? "1px solid var(--line)" : "none",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) => { if (!item.bg) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
+                onMouseLeave={(e) => { if (!item.bg) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                <div style={{ width: "30px", height: "30px", borderRadius: "6px", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", flexShrink: 0, color: item.color }}>
+                  {item.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 600, color: item.color, marginBottom: "0.15rem" }}>{item.label}</div>
+                  <div style={{ fontSize: "0.68rem", color: "var(--subtle)", lineHeight: 1.4 }}>{item.desc}</div>
+                </div>
+                <span style={{ color: "var(--subtle)", fontSize: "0.75rem" }}>→</span>
+              </div>
+            ))}
+          </div>
 
           {/* Yield card — derived */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "10px", padding: "1.25rem" }}>
