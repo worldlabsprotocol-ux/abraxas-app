@@ -10,11 +10,11 @@ function envStr(key: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-const googleId     = envStr("GOOGLE_CLIENT_ID");
-const googleSecret = envStr("GOOGLE_CLIENT_SECRET");
-const githubId     = envStr("GITHUB_ID");
-const githubSecret = envStr("GITHUB_SECRET");
-const twitterId    = envStr("TWITTER_CLIENT_ID");
+const googleId      = envStr("GOOGLE_CLIENT_ID");
+const googleSecret  = envStr("GOOGLE_CLIENT_SECRET");
+const githubId      = envStr("GITHUB_ID");
+const githubSecret  = envStr("GITHUB_SECRET");
+const twitterId     = envStr("TWITTER_CLIENT_ID");
 const twitterSecret = envStr("TWITTER_CLIENT_SECRET");
 const nextAuthSecret = envStr("NEXTAUTH_SECRET");
 const nextAuthUrl    = envStr("NEXTAUTH_URL");
@@ -49,20 +49,28 @@ if (githubId && githubSecret) {
 }
 
 /**
- * X / Twitter OAuth 2.0
+ * X / Twitter — OAuth 1.0a (more reliable with NextAuth v4 than OAuth 2.0)
+ *
  * Setup at: https://developer.twitter.com/en/portal/projects
- * Callback URL: https://abraxas-app.vercel.app/api/auth/callback/twitter
- * Required scopes: tweet.read, users.read, offline.access
- * Add to .env.local:
- *   TWITTER_CLIENT_ID=
- *   TWITTER_CLIENT_SECRET=
+ * Enable "OAuth 1.0a" in your app settings (not just 2.0)
+ * Callback URL: http://localhost:3000/api/auth/callback/twitter
+ *
+ * .env.local:
+ *   TWITTER_CLIENT_ID=     ← API Key (not Client ID)
+ *   TWITTER_CLIENT_SECRET= ← API Secret (not Client Secret)
+ *
+ * IMPORTANT: In the Twitter developer portal:
+ *   App permissions → Read
+ *   Callback URL → http://localhost:3000/api/auth/callback/twitter
+ *   Website URL  → http://localhost:3000
+ *   Do NOT enable "Request email from users" unless you add the email scope
  */
 if (twitterId && twitterSecret) {
   providers.push(
     TwitterProvider({
       clientId: twitterId,
       clientSecret: twitterSecret,
-      version: "2.0",
+      // OAuth 1.0a — omit version field entirely for v4 compatibility
     })
   );
 }
@@ -76,11 +84,10 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, profile }) {
       if (account) {
         token.provider = account.provider;
-        // Persist Twitter username for display
         if (account.provider === "twitter") {
-          const p = profile as { data?: { username?: string; name?: string } };
-          token.twitterUsername = p?.data?.username ?? null;
-          if (!token.name && p?.data?.name) token.name = p.data.name;
+          const p = profile as { screen_name?: string; name?: string } | undefined;
+          token.twitterUsername = p?.screen_name ?? null;
+          if (!token.name && p?.name) token.name = p.name;
         }
       }
       if (profile && !token.name) {

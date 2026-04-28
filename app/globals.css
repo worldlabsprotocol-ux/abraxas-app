@@ -262,3 +262,113 @@ textarea { min-height: 100px; resize: vertical; }
 /* Full-width wallet button */
 .abx-wallet.block .wallet-adapter-button,
 .abx-wallet.w-full .wallet-adapter-button { width: 100%; justify-content: center; }
+
+/* ══════════════════════════════════════════════════════════
+   ABRAXAS DRAGON / RUNE AESTHETIC — Phase 2 Design Layer
+   The logo is a black dragon in a gold rune wheel over Earth.
+   This translates to: depth, fire, ancient precision, cosmos.
+   ══════════════════════════════════════════════════════════ */
+
+/* ── RUNE RING DECORATION ───────────────────────────────── */
+/* Used as a page-level atmospheric element, not cluttering UI */
+.rune-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(200,169,110,0.08);
+  pointer-events: none;
+}
+.rune-ring::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px dashed rgba(200,169,110,0.04);
+  animation: rune-rotate 60s linear infinite;
+}
+@keyframes rune-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── DRAGON FIRE GRADIENT ───────────────────────────────── */
+/* Deep ember glow — subtle heat rising from below */
+.dragon-glow {
+  background: radial-gradient(
+    ellipse 100% 60% at 50% 100%,
+    rgba(200,100,30,0.06) 0%,
+    rgba(200,169,110,0.04) 30%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ── ENHANCED PULSE ANIMATION ───────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.15); }
+}
+
+/* ── GOLD SHIMMER on hover ──────────────────────────────── */
+@keyframes gold-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-gold {
+  background: linear-gradient(
+    90deg,
+    var(--gold) 0%,
+    #f0d98a 40%,
+    var(--gold) 60%,
+    #a07840 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 3s linear infinite;
+}
+
+/* ── COSMOS CARD — deeper card with subtle starfield ──────── */
+.card-cosmos {
+  background: var(--surface);
+  border: 1px solid rgba(200,169,110,0.12);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.card-cosmos::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 60%, rgba(200,169,110,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 85%, rgba(255,255,255,0.08) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── TOP EDGE LIGHT — gold horizon line ─────────────────── */
+.top-edge-gold::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent);
+}
+
+/* ── OPERATOR IDENTITY GLOW ─────────────────────────────── */
+/* The gold ID glow used on /operator page */
+.operator-glow {
+  text-shadow:
+    0 0 20px rgba(200,169,110,0.4),
+    0 0 40px rgba(200,169,110,0.15);
+}
+
+/* ── ABRA STRIP SPACING ─────────────────────────────────── */
+/* Give page content bottom clearance for the AbraStrip */
+main { padding-bottom: 44px; }
+
+/* ── LANGUAGE SELECTOR TRANSITIONS ─────────────────────── */
+.lang-btn { transition: border-color 0.2s, color 0.2s; }
+.lang-btn:hover { color: var(--gold); }
