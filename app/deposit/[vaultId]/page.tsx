@@ -22,7 +22,7 @@ interface MintResult {
 function DepositContent({ params }: { params: { vaultId: string } }) {
   const { vaultId } = params;
   const router = useRouter();
-  const { walletAddress } = useAuth();
+  const { walletAddress, walletAddressFull } = useAuth();
   const portfolio = usePortfolioData();
 
   const vault   = mockVaults.find((v) => v.id === vaultId);
@@ -41,14 +41,14 @@ function DepositContent({ params }: { params: { vaultId: string } }) {
   const monthly  = Math.round(annual / 12);
 
   const confirm = async () => {
-    if (!walletAddress || !vault) return;
+    if (!walletAddressFull || !vault) return;
     setStep("minting");
     setMintError(null);
     try {
       const res  = await fetch("/api/mint/position", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userWallet: walletAddress, vaultId, vaultName: vault.name, yieldRate: rate, depositedUsd: usd }),
+        body: JSON.stringify({ userWallet: walletAddressFull, vaultId, vaultName: vault.name, yieldRate: rate, depositedUsd: usd }),
       });
       const data = await res.json();
       if (!data.ok) { setMintError(data.error ?? "Mint failed"); setStep("preview"); return; }

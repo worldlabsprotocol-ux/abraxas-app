@@ -97,15 +97,15 @@ export function Nav() {
           ))}
         </div>
 
-        {/* Col 3: Right actions — wallet + lang + CTA + hamburger */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", justifyContent: "flex-end" }}>
-          {/* Language selector — desktop only */}
+        {/* Col 3: Right actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", justifyContent: "flex-end", minWidth: 0 }}>
+          {/* Language — desktop only */}
           <div className="hidden md:flex">
             <LanguageSelector />
           </div>
 
-          {/* Wallet — always visible, fixed width so it never pushes hamburger off */}
-          <div style={{ flexShrink: 0 }}>
+          {/* Wallet — constrained width on mobile so it never overflows */}
+          <div style={{ flexShrink: 0, maxWidth: "120px", overflow: "hidden" }} className="md:max-w-none">
             <ConnectWalletButton size="sm" />
           </div>
 
@@ -116,18 +116,18 @@ export function Nav() {
             </div>
           </Link>
 
-          {/* Hamburger — always visible, never hidden by wallet */}
+          {/* Hamburger — always visible, fixed size */}
           <button
             onClick={() => setOpen((v) => !v)}
             aria-label="Menu"
-            style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", width: "32px", height: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", cursor: "pointer", flexShrink: 0 }}
+            style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", width: "30px", height: "30px", minWidth: "30px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3px", cursor: "pointer", flexShrink: 0 }}
           >
             {open
-              ? <span style={{ fontSize: "0.8rem", color: "var(--gold)", lineHeight: 1 }}>✕</span>
+              ? <span style={{ fontSize: "0.75rem", color: "var(--gold)", lineHeight: 1 }}>✕</span>
               : <>
-                  <span style={{ width: "14px", height: "1.5px", background: "var(--muted)", borderRadius: "1px" }} />
-                  <span style={{ width: "14px", height: "1.5px", background: "var(--muted)", borderRadius: "1px" }} />
-                  <span style={{ width: "9px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", alignSelf: "flex-start" }} />
+                  <span style={{ width: "13px", height: "1.5px", background: "var(--muted)", borderRadius: "1px" }} />
+                  <span style={{ width: "13px", height: "1.5px", background: "var(--muted)", borderRadius: "1px" }} />
+                  <span style={{ width: "8px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", alignSelf: "flex-start" }} />
                 </>
             }
           </button>
