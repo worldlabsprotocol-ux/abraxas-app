@@ -1,18 +1,58 @@
-/**
- * POST /api/mint/position
- * Mints a real Token-2022 position token to the user's wallet.
- *
- * Setup — add to .env.local:
- *   VAULT_AUTHORITY_SECRET=[JSON array of secret key bytes]
- *
- * Generate your keypair (run once in terminal):
- *   node -e "const {Keypair}=require('@solana/web3.js');const k=Keypair.generate();console.log(JSON.stringify(Array.from(k.secretKey)));console.log('pubkey:',k.publicKey.toBase58())"
- *
- * Then fund that pubkey with 0.05 SOL on mainnet for fees.
- */
-
 import { NextRequest, NextResponse } from "next/server";
-import { mintPositionToken } from "@/lib/mintPosition";
+
+async function mintPositionToken(params: {
+  userWallet: string;
+  vaultId: string;
+  vaultName: string;
+  yieldRate: number;
+  depositedUsd: number;
+}): Promise<{
+  mintAddress: string;
+  tokenAccount: string;
+  txSignature: string | null;
+  explorerUrl: string | null;
+}> {
+  const authoritySecret = process.env.VAULT_AUTHORITY_SECRET;
+  if (!authoritySecret) {
+    throw new Error("VAULT_AUTHORITY_SECRET not configured");
+  }
+
+  const { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } = await import("@solana/web3.js");
+  const { ExtensionType, TOKEN_2022_PROGRAM_ID, createInitializeMintInstruction, createInitializeInterestBearingMintInstruction, getMintLen, getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, createMintToInstruction, ASSOCIATED_TOKEN_PROGRAM_ID } = await import("@solana/spl-token");
+
+  const rpcUrl = process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+  const secretBytes = Uint8Array.from(JSON.parse(authoritySecret));
+  const authority = Keypair.fromSecretKey(secretBytes);
+  const connection = new Connection(rpcUrl, "confirmed");
+  const userPubkey = new PublicKey(params.userWallet);
+  const mintKeypair = Keypair.generate();
+  const mint = mintKeypair.publicKey;
+
+  const extensions = [ExtensionType.InterestBearingConfig];
+  const mintLen = getMintLen(extensions);
+  const lamports = await connection.getMinimumBalanceForRentExemption(mintLen);
+
+  const userTokenAccount = getAssociatedTokenAddressSync(
+    mint, userPubkey, false, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const tx = new Transaction().add(
+    SystemProgram.createAccount({ fromPubkey: authority.publicKey, newAccountPubkey: mint, space: mintLen, lamports, programId: TOKEN_2022_PROGRAM_ID }),
+    createInitializeInterestBearingMintInstruction(mint, authority.publicKey, params.yieldRate, TOKEN_2022_PROGRAM_ID),
+    createInitializeMintInstruction(mint, 0, authority.publicKey, null, TOKEN_2022_PROGRAM_ID),
+    createAssociatedTokenAccountInstruction(authority.publicKey, userTokenAccount, userPubkey, mint, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID),
+    createMintToInstruction(mint, userTokenAccount, authority.publicKey, 1, [], TOKEN_2022_PROGRAM_ID)
+  );
+
+  const sig = await sendAndConfirmTransaction(connection, tx, [authority, mintKeypair], { commitment: "confirmed" });
+
+  return {
+    mintAddress: mint.toBase58(),
+    tokenAccount: userTokenAccount.toBase58(),
+    txSignature: sig,
+    explorerUrl: `https://solscan.io/tx/${sig}`,
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,13 +60,9 @@ export async function POST(req: NextRequest) {
     const { userWallet, vaultId, vaultName, yieldRate, depositedUsd } = body;
 
     if (!userWallet || !vaultId) {
-      return NextResponse.json(
-        { ok: false, error: "userWallet and vaultId required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "userWallet and vaultId required" }, { status: 400 });
     }
 
-    // If authority not configured, return a demo response
     if (!process.env.VAULT_AUTHORITY_SECRET) {
       return NextResponse.json({
         ok: true,
@@ -35,7 +71,7 @@ export async function POST(req: NextRequest) {
         tokenAccount: userWallet,
         txSignature: null,
         explorerUrl: null,
-        message: "Configure VAULT_AUTHORITY_SECRET to mint real Token-2022 positions."
+        message: "Add VAULT_AUTHORITY_SECRET to Vercel env vars to enable live minting.",
       });
     }
 
