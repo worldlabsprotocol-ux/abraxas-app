@@ -177,33 +177,32 @@ function DepositContent({ params }: { params: { vaultId: string } }) {
 
       {/* DONE */}
       {step === "done" && result && (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "3rem", marginBottom: "1.25rem" }}>◎</div>
-          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+        <div style={{ maxWidth: "460px", margin: "0 auto", textAlign: "center", padding: "1rem 0" }}>
+          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>◎</div>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.4rem", marginBottom: "0.5rem" }}>
             Position activated.
           </h2>
-          <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+          <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.7, marginBottom: "1.25rem" }}>
             {formatCurrency(usd)} into {vault.name}.<br />
-            {agent?.name} is operating your position.
+            {agent?.name} is now operating your position.
           </p>
 
-          {/* Mint receipt */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "12px", padding: "1rem", marginBottom: "1.25rem", textAlign: "left" }}>
+          {/* Mint receipt — full width, no overflow */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "12px", padding: "1rem 1.25rem", marginBottom: "1.25rem", textAlign: "left", width: "100%", overflow: "hidden" }}>
             <p style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.75rem" }}>
               {result.demo ? "Position Token · Demo" : "Position Token · On-Chain"}
             </p>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", color: "var(--gold)", wordBreak: "break-all", marginBottom: "0.5rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "var(--gold)", wordBreak: "break-all", lineHeight: 1.6, marginBottom: "0.625rem" }}>
               {result.mintAddress}
             </div>
-            {result.explorerUrl && (
+            {result.explorerUrl ? (
               <a href={result.explorerUrl} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: "0.72rem", color: "var(--gold)", textDecoration: "none" }}>
+                style={{ fontSize: "0.72rem", color: "var(--gold)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
                 View on Solscan ↗
               </a>
-            )}
-            {result.demo && (
-              <p style={{ fontSize: "0.68rem", color: "var(--subtle)", marginTop: "0.5rem" }}>
-                Live minting enabled once VAULT_AUTHORITY_SECRET is in Vercel.
+            ) : (
+              <p style={{ fontSize: "0.68rem", color: "var(--subtle)" }}>
+                Add VAULT_AUTHORITY_SECRET to Vercel to enable live on-chain minting.
               </p>
             )}
           </div>

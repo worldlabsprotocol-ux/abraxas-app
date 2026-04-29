@@ -116,20 +116,33 @@ function ListWizard() {
 
   if (done) {
     return (
-      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "5rem 1.5rem", textAlign: "center" }}>
-        <div style={{ fontSize: "2.5rem", marginBottom: "1.5rem" }}>◎</div>
-        <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.75rem" }}>
+      <div style={{ maxWidth: "520px", margin: "0 auto", padding: "4rem 1.5rem", textAlign: "center" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: "1.25rem" }}>◎</div>
+        <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.625rem" }}>
           Asset registered.
         </h2>
         <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.7, marginBottom: "0.5rem" }}>
-          <strong style={{ color: "var(--text)" }}>{form.name}</strong> has been submitted for vault assignment.
+          <strong style={{ color: "var(--text)" }}>{form.name}</strong> has been submitted.
         </p>
         <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.7, marginBottom: "2rem" }}>
-          Connect your wallet and deposit to activate your agent and mint your Token-2022 position on Solana.
+          Deposit to activate your agent and mint your Token-2022 position on Solana.
         </p>
+
+        {/* Next step callout */}
+        <div style={{ background: "rgba(200,169,110,0.06)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "10px", padding: "1rem 1.25rem", marginBottom: "1.5rem", textAlign: "left" }}>
+          <p style={{ fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--gold)", marginBottom: "0.4rem" }}>Next step</p>
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.6 }}>
+            Deposit to <strong style={{ color: "var(--text)" }}>VAULT-{form.vaultId}</strong> → Agent activates → Token-2022 minted to your wallet
+          </p>
+        </div>
+
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
-          <Button size="lg" onClick={() => router.push(`/deposit/${form.vaultId}`)}>Deposit to Vault</Button>
-          <Button size="lg" variant="ghost" onClick={() => router.push("/app")}>Dashboard</Button>
+          <Button size="lg" onClick={() => router.push(`/deposit/${form.vaultId}`)}>
+            Deposit to Vault →
+          </Button>
+          <Button size="lg" variant="ghost" onClick={() => router.push("/marketplace")}>
+            Browse All Vaults
+          </Button>
         </div>
       </div>
     );
