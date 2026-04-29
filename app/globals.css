@@ -296,3 +296,60 @@ main { padding-bottom: 48px; }
 .hover\:text-gold:hover { color: var(--gold); }
 .hover\:border-border-2:hover { border-color: var(--line-bright); }
 .hover\:bg-surface:hover { background: var(--surface) !important; }
+
+/* ── WALLET ADAPTER OVERRIDES ── */
+/* Override the default purple WalletMultiButton */
+.wallet-adapter-button {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  color: var(--text) !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  height: auto !important;
+  padding: 0.75rem 1.25rem !important;
+  transition: all 0.2s !important;
+  width: 100% !important;
+  justify-content: center !important;
+}
+.wallet-adapter-button:hover {
+  background: rgba(200,169,110,0.06) !important;
+  border-color: rgba(200,169,110,0.4) !important;
+  color: var(--gold) !important;
+}
+.wallet-adapter-button:not([disabled]):hover {
+  background: rgba(200,169,110,0.06) !important;
+}
+.wallet-adapter-button-trigger {
+  background: var(--gold) !important;
+  color: var(--void) !important;
+  border: none !important;
+}
+.wallet-adapter-button-trigger:hover {
+  background: var(--gold-hot) !important;
+  color: var(--void) !important;
+}
+.wallet-adapter-modal-wrapper {
+  background: var(--mid) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+}
+.wallet-adapter-modal-title {
+  color: var(--text) !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  margin-bottom: 0.5rem !important;
+}
+.abx-wallet-sm .wallet-adapter-button {
+  font-size: 0.75rem !important;
+  padding: 0.4rem 0.875rem !important;
+}
+.abx-wallet-lg .wallet-adapter-button {
+  font-size: 0.9rem !important;
+  padding: 0.875rem 1.5rem !important;
+}

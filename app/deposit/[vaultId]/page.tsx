@@ -7,6 +7,7 @@ import { usePortfolioData, VAULT_YIELD_RATES } from "@/lib/usePortfolioData";
 import { mockVaults, mockAgents } from "@/lib/mockData";
 import { Button } from "@/components/Button";
 import { WalletGate } from "@/components/WalletGate";
+import { VaultExplainer } from "@/components/VaultExplainer";
 import { formatCurrency } from "@/lib/utils";
 
 type Step = "input" | "preview" | "minting" | "done";
@@ -121,6 +122,11 @@ function DepositContent({ params }: { params: { vaultId: string } }) {
           <Button size="lg" fullWidth disabled={usd <= 0} onClick={() => setStep("preview")}>
             Continue
           </Button>
+
+          {/* FAQ — answers "why do I need to deposit after minting?" */}
+          <div style={{ marginTop: "1.5rem" }}>
+            <VaultExplainer />
+          </div>
         </div>
       )}
 

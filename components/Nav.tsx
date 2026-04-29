@@ -104,9 +104,9 @@ export function Nav() {
             <LanguageSelector />
           </div>
 
-          {/* Wallet — constrained width on mobile so it never overflows */}
-          <div style={{ flexShrink: 0, maxWidth: "120px", overflow: "hidden" }} className="md:max-w-none">
-            <ConnectWalletButton size="sm" />
+          {/* Wallet — compact mode, never overflows */}
+          <div style={{ flexShrink: 0 }}>
+            <ConnectWalletButton size="sm" compact />
           </div>
 
           {/* Get Started — desktop only */}
