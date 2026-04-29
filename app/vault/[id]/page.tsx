@@ -167,6 +167,23 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                   <span style={{ fontSize: "0.82rem", fontWeight: 500, color, fontFamily: mono ? "'JetBrains Mono', monospace" : "inherit" }}>{value}</span>
                 </div>
               ))}
+
+              {/* Real vault wallet — verifiable on Solscan */}
+              <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "0.82rem", color: "var(--subtle)" }}>Vault Wallet</span>
+                <a
+                  href={vault.solscanUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: "var(--gold)", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.25rem" }}
+                >
+                  {vault.shortAddress} ↗
+                </a>
+              </div>
+              <div style={{ padding: "0.75rem 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "0.82rem", color: "var(--subtle)" }}>Chain</span>
+                <span style={{ fontSize: "0.82rem", color: "var(--text)" }}>Solana Mainnet</span>
+              </div>
             </div>
           </div>
 

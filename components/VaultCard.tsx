@@ -13,6 +13,7 @@ const statusColors: Record<string, string> = {
 
 interface Props {
   vault: Vault;
+  /** Pass portfolio to derive live TVL. Falls back to vault seed value. */
   portfolio?: PortfolioData;
 }
 
@@ -44,7 +45,6 @@ export function VaultCard({ vault, portfolio }: Props) {
         (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
       }}
     >
-      {/* Top accent line */}
       <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.3), transparent)" }} />
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem" }}>
@@ -73,10 +73,10 @@ export function VaultCard({ vault, portfolio }: Props) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.5rem" }}>
         {[
-          { k: "TVL",      v: formatCurrency(liveTVL) },
+          { k: "TVL", v: formatCurrency(liveTVL) },
           { k: "Yield YTD", v: `${yieldRate}%`, accent: "var(--green)" },
-          { k: "Agent",    v: `AGENT-${vault.agentId}`, mono: true },
-          { k: "Actions",  v: formatNumber(vault.actionsExecuted) },
+          { k: "Agent", v: `AGENT-${vault.agentId}`, mono: true },
+          { k: "Actions", v: formatNumber(vault.actionsExecuted) },
         ].map(({ k, v, accent, mono }) => (
           <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
             <span style={{ color: "var(--subtle)" }}>{k}</span>
@@ -94,7 +94,15 @@ export function VaultCard({ vault, portfolio }: Props) {
 
       <div style={{ borderTop: "1px solid var(--line)", paddingTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: "0.68rem", color: "var(--subtle)" }}>Since {vault.inceptionDate}</span>
-        <span style={{ fontSize: "0.68rem", color: "var(--gold)" }}>{vault.defenseEvents} defense events →</span>
+        <a
+          href={vault.solscanUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", color: "var(--gold)", textDecoration: "none" }}
+        >
+          {vault.shortAddress} ↗
+        </a>
       </div>
     </div>
   );
