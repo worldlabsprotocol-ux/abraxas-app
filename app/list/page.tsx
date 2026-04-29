@@ -30,11 +30,29 @@ const VAULT_OPTIONS = mockVaults.map((v) => ({
   label: `${v.name} — ${v.assetClass} (${VAULT_YIELD_RATES[v.id] ?? v.yieldYTD}% APY)`,
 }));
 
-/** Proof type labels and accepted file types */
+/** Proof type labels — each has strict validation */
 const PROOF_TYPES = [
-  { k: "document", label: "Document", sub: "PDF, DOC", accept: ".pdf,.doc,.docx" },
-  { k: "onchain",  label: "On-chain", sub: "TX hash",  accept: null },
-  { k: "contract", label: "Contract", sub: "PDF, DOC", accept: ".pdf,.doc,.docx" },
+  {
+    k: "document",
+    label: "Document",
+    sub: "PDF only",
+    accept: ".pdf",
+    hint: "Ownership certificate, PRO registration, deed, lease, or distribution agreement",
+  },
+  {
+    k: "onchain",
+    label: "On-chain",
+    sub: "TX hash",
+    accept: null,
+    hint: "Solana transaction hash or token mint address (base58, 32–88 chars, no spaces)",
+  },
+  {
+    k: "contract",
+    label: "Contract",
+    sub: "PDF only",
+    accept: ".pdf",
+    hint: "Signed legal contract — publishing agreement, sync deal, or invoice contract",
+  },
 ];
 
 type Step = 1 | 2 | 3;
@@ -78,6 +96,10 @@ function ListWizard() {
     setForm((f) => ({ ...f, [k]: v }));
 
   const handleFile = (file: File) => {
+    if (file.type !== "application/pdf") {
+      alert("Only PDF files are accepted. Please upload a PDF document.");
+      return;
+    }
     set("proofFile", { name: file.name, size: file.size, type: file.type });
   };
 
@@ -105,9 +127,11 @@ function ListWizard() {
     : 0;
 
   const step1Valid = !!form.name && !!form.category && !!form.value;
+  const isValidTxHash = (h: string) => /^[1-9A-HJ-NP-Za-km-z]{32,88}$/.test(h.trim());
+
   const proofValid = form.proofType === "onchain"
-    ? form.proofHash.length > 10
-    : form.proofFile !== null;
+    ? isValidTxHash(form.proofHash)
+    : form.proofFile !== null && form.proofFile.type === "application/pdf";
 
   const handleSubmit = () => {
     setSubmitting(true);
@@ -226,18 +250,12 @@ function ListWizard() {
             </label>
 
             {/* Type selector */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem", marginBottom: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem", marginBottom: "0.875rem" }}>
               {PROOF_TYPES.map((p) => (
                 <div
                   key={p.k}
                   onClick={() => { set("proofType", p.k); set("proofFile", null); set("proofHash", ""); }}
-                  style={{
-                    border: `1px solid ${form.proofType === p.k ? "var(--gold)" : "var(--line)"}`,
-                    borderRadius: "8px", padding: "0.65rem 0.5rem", textAlign: "center",
-                    cursor: "pointer",
-                    background: form.proofType === p.k ? "rgba(200,169,110,0.06)" : "var(--surface)",
-                    transition: "all 0.2s",
-                  }}
+                  style={{ border: `1px solid ${form.proofType === p.k ? "var(--gold)" : "var(--line)"}`, borderRadius: "8px", padding: "0.65rem 0.5rem", textAlign: "center", cursor: "pointer", background: form.proofType === p.k ? "rgba(200,169,110,0.06)" : "var(--surface)", transition: "all 0.2s" }}
                 >
                   <div style={{ fontSize: "0.78rem", fontWeight: 600, color: form.proofType === p.k ? "var(--gold)" : "var(--text)", marginBottom: "0.15rem" }}>{p.label}</div>
                   <div style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>{p.sub}</div>
@@ -245,14 +263,31 @@ function ListWizard() {
               ))}
             </div>
 
-            {/* On-chain hash input */}
+            {/* Hint text for selected type */}
+            <p style={{ fontSize: "0.68rem", color: "var(--subtle)", lineHeight: 1.5, marginBottom: "0.75rem" }}>
+              {PROOF_TYPES.find((p) => p.k === form.proofType)?.hint}
+            </p>
+
+            {/* On-chain hash input — only accepts base58 characters */}
             {form.proofType === "onchain" && (
-              <input
-                value={form.proofHash}
-                onChange={(e) => set("proofHash", e.target.value)}
-                placeholder="Transaction hash or token address"
-                style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem" }}
-              />
+              <div>
+                <input
+                  value={form.proofHash}
+                  onChange={(e) => {
+                    // Strip any character that isn't valid base58
+                    const clean = e.target.value.replace(/[^1-9A-HJ-NP-Za-km-z]/g, "");
+                    set("proofHash", clean);
+                  }}
+                  placeholder="e.g. 5KJvsngHeMpm884wtkJNzQGaCbA3cMmkKbxHRNM..."
+                  style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem" }}
+                  maxLength={88}
+                />
+                {form.proofHash.length > 0 && (
+                  <p style={{ fontSize: "0.65rem", marginTop: "0.35rem", color: isValidTxHash(form.proofHash) ? "var(--green)" : "var(--red)" }}>
+                    {isValidTxHash(form.proofHash) ? "✓ Valid Solana address or transaction hash" : "Invalid format — must be a valid base58 Solana transaction or token address"}
+                  </p>
+                )}
+              </div>
             )}
 
             {/* File upload drop zone */}

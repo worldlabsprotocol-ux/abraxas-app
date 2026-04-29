@@ -69,7 +69,7 @@ function DepositContent({ params }: { params: { vaultId: string } }) {
   );
 
   return (
-    <div style={{ maxWidth: "520px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "2rem 1rem", width: "100%", boxSizing: "border-box" }}>
       {step !== "done" && (
         <button onClick={() => step === "input" ? router.back() : setStep("input")}
           style={{ fontSize: "0.75rem", color: "var(--subtle)", background: "none", border: "none", cursor: "pointer", marginBottom: "1.5rem" }}>
