@@ -125,7 +125,7 @@ function ListWizard() {
           <strong style={{ color: "var(--text)" }}>{form.name}</strong> has been submitted for vault assignment.
         </p>
         <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.7, marginBottom: "2rem" }}>
-          Your agent activates within 24 hours. A Token-2022 position will be minted to your wallet upon confirmation.
+          Connect your wallet and deposit to activate your agent and mint your Token-2022 position on Solana.
         </p>
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
           <Button size="lg" onClick={() => router.push(`/deposit/${form.vaultId}`)}>Deposit to Vault</Button>
