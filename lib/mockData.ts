@@ -1,7 +1,6 @@
 import { VAULT_WALLETS } from "@/lib/constants";
 
 export type VaultStatus = "operating" | "paused" | "graduating";
-export type AssetStatus = "active" | "pending" | "draft";
 
 export interface Vault {
   id: string;
@@ -17,7 +16,7 @@ export interface Vault {
   defenseEvents: number;
   unrecovered: 0;
   description: string;
-  walletAddress: string;      // real on-chain wallet — verifiable on Solscan
+  walletAddress: string;
   solscanUrl: string;
   shortAddress: string;
 }
@@ -30,15 +29,6 @@ export interface Agent {
   vaultsOperated: number;
   actionsExecuted: number;
   lastAction: string;
-}
-
-export interface AgentAction {
-  id: string;
-  timestamp: string;
-  agentId: string;
-  vaultId: string;
-  action: string;
-  delta?: string;
 }
 
 export interface DefenseEvent {
@@ -101,7 +91,7 @@ export const mockVaults: Vault[] = [
     lifetimePnl: 1_240, yieldYTD: 8.6,
     inceptionDate: "2026-04-02", agentId: "005",
     actionsExecuted: 612, defenseEvents: 1, unrecovered: 0,
-    description: "Indie artist catalog vault. Currently graduating from initial bonding period to full operational mode.",
+    description: "Indie artist catalog vault. Graduating from initial bonding period to full autonomous operation.",
     walletAddress:  VAULT_WALLETS["494"].address,
     solscanUrl:     VAULT_WALLETS["494"].solscan,
     shortAddress:   VAULT_WALLETS["494"].shortAddress,
@@ -117,11 +107,11 @@ export const mockAgents: Agent[] = [
 ];
 
 export const mockDefenseEvents: DefenseEvent[] = [
-  { id: "d1", timestamp: "2026-04-27 14:22:08 UTC", vaultId: "490", trigger: "Volatility threshold exceeded",     action: "Position reduced 18%",                   capitalPreserved: 42_180 },
-  { id: "d2", timestamp: "2026-04-26 22:11:33 UTC", vaultId: "493", trigger: "Counterparty risk delta",           action: "Position rotated to lower-risk pool",     capitalPreserved: 8_400  },
-  { id: "d3", timestamp: "2026-04-26 04:18:01 UTC", vaultId: "491", trigger: "Streaming volume drawdown",         action: "Hedge ratio increased to 0.4",            capitalPreserved: 3_120  },
-  { id: "d4", timestamp: "2026-04-25 19:44:27 UTC", vaultId: "490", trigger: "Strategy parameter deviation",      action: "Position halted, manual review queued",   capitalPreserved: 11_900 },
-  { id: "d5", timestamp: "2026-04-25 11:02:14 UTC", vaultId: "492", trigger: "Liquidity threshold",               action: "Reserve buffer increased",                capitalPreserved: 6_780  },
+  { id: "d1", timestamp: "2026-04-27 14:22:08 UTC", vaultId: "490", trigger: "Volatility threshold exceeded",     action: "Position reduced 18%",               capitalPreserved: 42_180 },
+  { id: "d2", timestamp: "2026-04-26 22:11:33 UTC", vaultId: "493", trigger: "Counterparty risk delta",           action: "Position rotated to lower-risk pool", capitalPreserved: 8_400  },
+  { id: "d3", timestamp: "2026-04-26 04:18:01 UTC", vaultId: "491", trigger: "Streaming volume drawdown",         action: "Hedge ratio increased to 0.4",        capitalPreserved: 3_120  },
+  { id: "d4", timestamp: "2026-04-25 19:44:27 UTC", vaultId: "490", trigger: "Strategy parameter deviation",      action: "Position halted, review queued",      capitalPreserved: 11_900 },
+  { id: "d5", timestamp: "2026-04-25 11:02:14 UTC", vaultId: "492", trigger: "Liquidity threshold",               action: "Reserve buffer increased",            capitalPreserved: 6_780  },
 ];
 
 export const systemStats = {
