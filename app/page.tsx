@@ -7,8 +7,7 @@ import { HomeStatsBar } from "@/components/HomeStatsBar";
 import { AgentFeed } from "@/components/AgentFeed";
 import { MarketFeed } from "@/components/MarketFeed";
 import { ABRA } from "@/lib/constants";
-import { VAULT_YIELD_RATES } from "@/lib/usePortfolioData";
-import { usePortfolioData } from "@/lib/usePortfolioData";
+import { VAULT_YIELD_RATES, usePortfolioData } from "@/lib/usePortfolioData";
 import { formatCurrency } from "@/lib/utils";
 
 const ASSET_CLASSES = [

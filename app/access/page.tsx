@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useOgVerification, OG_COLLECTION_ADDRESS } from "@/lib/useOgVerification";
+import type { OgState } from "@/lib/useOgVerification";
 import { PageHeader } from "@/components/PageHeader";
 import { ABRA } from "@/lib/constants";
 
@@ -134,8 +135,6 @@ export default function AccessPage() {
 }
 
 /* ----------------------------------------------------------------- */
-
-import type { OgState } from "@/lib/useOgVerification";
 
 function VerificationPanel({ og }: { og: OgState }) {
   switch (og.status) {

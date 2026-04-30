@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { Button } from "@/components/Button";
 import { WalletGate } from "@/components/WalletGate";
 import { mockVaults } from "@/lib/mockData";
