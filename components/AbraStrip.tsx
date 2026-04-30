@@ -97,5 +97,5 @@ export function AbraStrip() {
         </button>
       </div>
     </div>
-  );  
+  );
 }
