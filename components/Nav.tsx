@@ -16,6 +16,7 @@ const MENU_GROUPS = [
   {
     label: "Operate",
     links: [
+      { href: "/earn",       label: "Earn Yield"     },
       { href: "/onboard",    label: "Get Started"    },
       { href: "/marketplace",label: "Browse Vaults"  },
       { href: "/list",       label: "Register Asset" },

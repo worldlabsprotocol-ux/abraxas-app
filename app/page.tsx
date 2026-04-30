@@ -103,15 +103,20 @@ export default function HomePage() {
             Autonomous agents turn idle real-world assets into compounding yield — on Solana.
           </p>
 
-          {/* CTAs */}
+          {/* CTAs — two-tier like Maple/Clearpool */}
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "2.5rem" }}>
             <Link href="/onboard">
-              <div style={{ background: "var(--gold)", color: "var(--void)", borderRadius: "8px", padding: "0.75rem 1.75rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", letterSpacing: "0.03em", whiteSpace: "nowrap" }}>
-                Start Operating
+              <div style={{ background: "var(--gold)", color: "var(--void)", borderRadius: "8px", padding: "0.75rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+                Operate an Asset
+              </div>
+            </Link>
+            <Link href="/earn">
+              <div style={{ background: "rgba(61,214,140,0.1)", color: "var(--green)", border: "1px solid rgba(61,214,140,0.3)", borderRadius: "8px", padding: "0.75rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: "0.875rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+                Just Earn Yield →
               </div>
             </Link>
             <Link href="/marketplace">
-              <div style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--line)", borderRadius: "8px", padding: "0.75rem 1.75rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, fontSize: "0.875rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+              <div style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--line)", borderRadius: "8px", padding: "0.75rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, fontSize: "0.875rem", cursor: "pointer", whiteSpace: "nowrap" }}>
                 Browse Vaults
               </div>
             </Link>

@@ -66,6 +66,26 @@ const TRACKS = [
     color: "rgba(61,214,140,0.06)",
     borderColor: "rgba(61,214,140,0.18)",
   },
+  {
+    key: "voice",
+    icon: "◉",
+    title: "Voice & AI IP",
+    tagline: "Your voice earns on ElevenLabs. Abraxas compounds it.",
+    description: "You earn royalties from your cloned voice on ElevenLabs or similar platforms. Those payouts arrive monthly and sit idle between cycles. Abraxas captures each distribution the moment it clears and reinvests automatically. Voice IP is the newest royalty asset class and it's unaddressed by any other protocol.",
+    examples: ["Voice actors with ElevenLabs Voice Library", "Narrators earning from AI audiobooks", "Podcast hosts with licensed voice models", "Artists with AI vocal IP"],
+    vaultId: "490",
+    apy: VAULT_YIELD_RATES["490"],
+    steps: [
+      { n: "01", title: "Register your voice IP", desc: "Submit your ElevenLabs Voice Library ID or proof of voice licensing. AGENT-001 activates." },
+      { n: "02", title: "Payout tracking begins", desc: "Agent monitors Voice Library usage metrics and pending monthly payouts." },
+      { n: "03", title: "Distributions compounded", desc: "Each payout is captured and reinvested. Every cycle logged in real time." },
+      { n: "04", title: "Platform risk defended", desc: "If ElevenLabs changes payout rates, agent reweights to other AI voice licensing income streams." },
+    ],
+    cta: "Register Voice IP",
+    listType: "voice",
+    color: "rgba(200,169,110,0.07)",
+    borderColor: "rgba(200,169,110,0.22)",
+  },
 ];
 
 export default function OnboardPage() {
