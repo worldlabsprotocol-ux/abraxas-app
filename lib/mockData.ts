@@ -99,11 +99,11 @@ export const mockVaults: Vault[] = [
 ];
 
 export const mockAgents: Agent[] = [
-  { id: "001", name: "AGENT-001", status: "online", uptimePct: 99.97, vaultsOperated: 1, actionsExecuted: 8421, lastAction: "Rebalanced position" },
-  { id: "002", name: "AGENT-002", status: "online", uptimePct: 99.94, vaultsOperated: 1, actionsExecuted: 5102, lastAction: "Distribution claimed" },
-  { id: "003", name: "AGENT-003", status: "online", uptimePct: 99.99, vaultsOperated: 1, actionsExecuted: 1840, lastAction: "Reinvestment executed" },
-  { id: "004", name: "AGENT-004", status: "online", uptimePct: 99.92, vaultsOperated: 1, actionsExecuted: 2210, lastAction: "Position rotated" },
-  { id: "005", name: "AGENT-005", status: "online", uptimePct: 99.88, vaultsOperated: 1, actionsExecuted: 612,  lastAction: "Position opened" },
+  { id: "001", name: "AGENT-001 · VAULT-490", status: "online", uptimePct: 99.97, vaultsOperated: 1, actionsExecuted: 8421, lastAction: "Rebalanced position" },
+  { id: "002", name: "AGENT-002 · VAULT-491", status: "online", uptimePct: 99.94, vaultsOperated: 1, actionsExecuted: 5102, lastAction: "Distribution claimed" },
+  { id: "003", name: "AGENT-003 · VAULT-492", status: "online", uptimePct: 99.99, vaultsOperated: 1, actionsExecuted: 1840, lastAction: "Reinvestment executed" },
+  { id: "004", name: "AGENT-004 · VAULT-493", status: "online", uptimePct: 99.92, vaultsOperated: 1, actionsExecuted: 2210, lastAction: "Position rotated" },
+  { id: "005", name: "AGENT-005 · VAULT-494", status: "online", uptimePct: 99.88, vaultsOperated: 1, actionsExecuted: 612,  lastAction: "Position opened" },
 ];
 
 export const mockDefenseEvents: DefenseEvent[] = [

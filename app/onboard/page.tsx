@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
@@ -110,7 +111,26 @@ export default function OnboardPage() {
         </p>
       </div>
 
-      {/* Track selector */}
+      {/* abraSOUND / abraYIELD — earn without tokenizing */}
+      {!selected && (
+        <div style={{ background: "rgba(61,214,140,0.05)", border: "1px solid rgba(61,214,140,0.2)", borderRadius: "12px", padding: "1.25rem 1.5rem", marginBottom: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.25rem" }}>
+              Don't have an asset to tokenize?
+            </p>
+            <p style={{ fontSize: "0.75rem", color: "var(--muted)", maxWidth: "380px" }}>
+              Deposit USDC into <strong style={{ color: "var(--gold)" }}>abraSOUND</strong> (music royalty pool, 12.8% APY) or{" "}
+              <strong style={{ color: "var(--gold)" }}>abraYIELD</strong> (diversified RWA pool, 7.4% APY) and earn immediately — no asset registration required.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/earn")}
+            style={{ background: "rgba(61,214,140,0.15)", border: "1px solid rgba(61,214,140,0.3)", borderRadius: "8px", padding: "0.625rem 1.25rem", color: "var(--green)", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", whiteSpace: "nowrap" }}
+          >
+            Go to Earn →
+          </button>
+        </div>
+      )}
       {!selected && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "3rem" }}>
           {TRACKS.map((t) => (

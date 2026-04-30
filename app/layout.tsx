@@ -4,6 +4,8 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { Toast } from "@/components/Toast";
 import { AbraStrip } from "@/components/AbraStrip";
+import { BottomNav } from "@/components/BottomNav";
+import { TickerStrip } from "@/components/TickerStrip";
 import { Providers } from "@/lib/providers";
 
 export const metadata: Metadata = {
@@ -51,7 +53,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body style={{ background: "var(--void)", color: "var(--text)", fontFamily: "'Space Grotesk', sans-serif" }}>
         <Providers>
           <Nav />
-          <main style={{ paddingTop: "60px", minHeight: "100vh" }}>{children}</main>
+          <TickerStrip />
+          <main style={{ paddingTop: "82px", paddingBottom: "112px", minHeight: "100vh" }}>{children}</main>
+          <BottomNav />
           <AbraStrip />
           <Toast />
         </Providers>

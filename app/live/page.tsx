@@ -5,6 +5,7 @@ import { AgentFeed } from "@/components/AgentFeed";
 import { DefenseFeed } from "@/components/DefenseFeed";
 import { RevenuePanel } from "@/components/RevenuePanel";
 import { MarketFeed } from "@/components/MarketFeed";
+import { NFTMarketFeed } from "@/components/NFTMarketFeed";
 import { Heartbeat } from "@/components/Heartbeat";
 import { usePortfolioData } from "@/lib/usePortfolioData";
 import { systemStats } from "@/lib/mockData";
@@ -66,6 +67,9 @@ export default function LivePage() {
       </div>
 
       <MarketFeed />
+      <div style={{ marginTop: "1.25rem" }}>
+        <NFTMarketFeed />
+      </div>
     </div>
   );
 }

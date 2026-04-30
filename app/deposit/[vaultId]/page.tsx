@@ -155,11 +155,11 @@ function DepositContent({ params }: { params: { vaultId: string } }) {
             </div>
           )}
 
-          {/* Compact checkbox */}
-          <label style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", padding: "0.75rem 1rem", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px solid var(--line)" }}>
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: "0.72rem", color: "var(--muted)", lineHeight: 1.5 }}>
-              Beta · Non-custodial · Token-2022 minted to my wallet · Yields are estimates
+          {/* Compact agreement */}
+          <label style={{ display: "flex", alignItems: "flex-start", gap: "0.625rem", cursor: "pointer", padding: "0.875rem 1rem", background: "rgba(200,169,110,0.04)", borderRadius: "8px", border: "1px solid rgba(200,169,110,0.15)", width: "100%", boxSizing: "border-box" }}>
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} style={{ flexShrink: 0, marginTop: "2px" }} />
+            <span style={{ fontSize: "0.72rem", color: "var(--muted)", lineHeight: 1.6, wordBreak: "break-word" }}>
+              Beta · Non-custodial · Token-2022 minted to my wallet · Yields are estimates · I retain full ownership
             </span>
           </label>
 
