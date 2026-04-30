@@ -1,71 +1,82 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/Button";
 
 const LANDSCAPE = [
   {
-    name: "Story Protocol",
-    role: "IP Registration Layer",
-    what: "Registers intellectual property on-chain. Creates programmable licenses. Enables automated royalty routing between creators.",
-    gap: "Doesn't manage or compound the yield after registration. The IP is on-chain — but idle.",
+    layer: "Layer 1",
+    role: "IP Registration & Licensing",
+    what: "Registers intellectual property on-chain, creates programmable licenses, and enables automated royalty routing between creators. These protocols define who owns what and under what terms.",
+    gap: "Doesn't manage or compound the yield after registration. The IP is on-chain — but idle. No agent is operating the income stream.",
+    icon: "◈",
     color: "rgba(107,140,255,0.08)",
     border: "rgba(107,140,255,0.2)",
   },
   {
-    name: "Goldfinch",
-    role: "Private Credit Protocol",
-    what: "Uncollateralized lending to real-world businesses. Institutional-grade private credit on-chain. 9–12% target returns.",
-    gap: "Lends against assets. Doesn't operate the income stream those assets generate. Capital leaves the creator's hands.",
+    layer: "Layer 2",
+    role: "Private Credit & Lending",
+    what: "Unlocks liquidity from real-world assets through uncollateralized lending pools. Institutional-grade credit on-chain. 9–12% target returns. Assets serve as collateral.",
+    gap: "Lends against your asset — capital leaves your hands. Doesn't operate the income stream the asset generates. The creator becomes a borrower, not an operator.",
+    icon: "◉",
     color: "rgba(200,169,110,0.06)",
     border: "rgba(200,169,110,0.15)",
   },
   {
-    name: "Ondo Finance",
-    role: "Tokenized Treasuries",
-    what: "Wraps US Treasuries and institutional bonds as on-chain tokens. $2.75B TVL. Institutional focus.",
-    gap: "Traditional assets only. No creative IP, no music royalties, no invoice factoring. Requires institutional entry.",
+    layer: "Layer 3",
+    role: "Tokenized Treasuries & Funds",
+    what: "Wraps traditional financial instruments — government bonds, money markets — as on-chain tokens. Institutional entry points, high minimum thresholds, regulated structures.",
+    gap: "Traditional assets only. No creative IP, no music royalties, no invoice factoring. Requires institutional access. Excludes independent creators entirely.",
+    icon: "⬡",
     color: "rgba(61,214,140,0.05)",
     border: "rgba(61,214,140,0.15)",
   },
   {
-    name: "Maple Finance",
-    role: "Institutional Credit Markets",
-    what: "On-chain lending pools for institutional borrowers. Undercollateralized credit for vetted entities.",
-    gap: "Focused on corporate credit. No creator economy, no IP rights, no individual asset operators.",
-    color: "rgba(200,100,30,0.06)",
+    layer: "Layer 4",
+    role: "IP Liquidity & DEX Layer",
+    what: "Decentralized exchanges built for trading tokenized IP assets. Enables instant swaps, liquidity pools, and price discovery for IP tokens after they've been created.",
+    gap: "Provides trading liquidity for IP tokens, but doesn't compound yield or operate the underlying income stream. The asset trades — but still sits idle between distributions.",
+    icon: "⇄",
+    color: "rgba(200,100,30,0.05)",
     border: "rgba(200,100,30,0.15)",
   },
 ];
 
 const FAQS = [
   {
-    q: "Where does Story Protocol end and Abraxas begin?",
-    a: "Story Protocol is the registration and licensing layer. It puts IP rights on-chain and defines who owns what. Abraxas is what happens after — the operating layer that takes those registered rights and actively manages the income they generate. Think of it as: Story is the deed. Abraxas is the property manager. You need both.",
+    q: "Where does each layer end and Abraxas begin?",
+    a: "Layer 1 registers IP and defines ownership. Layer 2 lends against it. Layer 3 tokenizes traditional instruments. Layer 4 provides liquidity for trading. None of them operate the income stream after the asset is on-chain. That's Abraxas — the operating layer. Every royalty distribution, rent flow, and invoice settlement that clears while the asset sits idle in every other layer: Abraxas captures it, compounds it, and defends it. We sit at the intersection of all four layers and do what none of them do.",
   },
   {
-    q: "How is Abraxas different from Goldfinch?",
-    a: "Goldfinch lends against your assets — you give up control of your capital in exchange for liquidity. Abraxas doesn't take your capital. You keep the asset. The agent manages the income stream that asset generates. No loan, no collateral, no counterparty risk. Goldfinch moves money. Abraxas operates it.",
+    q: "How is this different from just holding and waiting for distributions?",
+    a: "Holding means waiting 30–90 days for a distribution to hit your wallet. Abraxas means the agent captures that distribution the moment it clears and deploys it immediately. Over a year, the difference between sitting idle and continuously compounding at 8–12% APY is significant — not because of high-risk leverage, but because of operational efficiency. The money works every day instead of sitting in someone else's account.",
   },
   {
-    q: "Why Solana and not Ethereum?",
-    a: "Token-2022 on Solana is the right standard for this use case — it supports InterestBearingMint (yield rate encoded directly in the token), TransferHooks (programmable actions on every transfer), and on-chain metadata. These extensions make Abraxas's position tokens genuinely different from an ERC-20. Solana's transaction throughput also means agent actions can execute continuously without $50 gas fees making micro-optimizations unprofitable.",
+    q: "How does interest actually accrue?",
+    a: "The vault agent monitors your asset class — streaming velocity for music, rent flows for real estate, invoice settlement for receivables. When distributions clear, the agent captures them and reinvests automatically. The Token-2022 InterestBearingMint extension records your yield rate on-chain so your balance compounds without manual action. Yield comes from the operating income of the underlying asset — not from speculation or leverage.",
   },
   {
-    q: "How does the royalty advance model work?",
-    a: "An artist with a DistroKid catalog earning $2,000/quarter has capital that's idle for 60–90 days before each payout. Abraxas advances 80% of the projected next distribution immediately — the artist gets liquidity now. When the distribution clears, Abraxas captures the 20% spread plus yield generated on the deployed capital during the hold period. The artist gets more money sooner. Abraxas earns on the operational float. No speculation, no leverage — just the spread between when money is earned and when it's paid out.",
+    q: "What stops the system from collapsing if markets turn?",
+    a: "Three layers of defense. First: circuit protection triggers automatically when any vault metric crosses a risk threshold — the agent reduces exposure before losses reach principal. Second: every vault maintains a reserve buffer (15–20% of TVL) held liquid and never deployed, absorbing shocks without touching your position. Third: Abraxas doesn't use leverage on underlying assets. When streaming revenue drops 30%, yield adjusts — but principal doesn't collapse because it was never in a leveraged trade.",
   },
   {
-    q: "What about screenwriters, directors, authors?",
-    a: "The model is identical. WGA residuals, book royalty advances, film licensing backend — all of these are income streams that arrive quarterly and sit idle between payouts. Every one of them is a vault waiting to be activated. The asset class doesn't change the mechanism. The agent tracks the income source, captures distributions, reinvests, and defends against income stream risk. We're starting with music because the data infrastructure is most mature. Film, TV, and publishing follow the same pattern.",
+    q: "What happens if a major streaming platform changes its payout model?",
+    a: "This is exactly what circuit defense was built for. The agent monitors streaming velocity across all platforms in real time. If any platform's per-stream rate drops below threshold, the agent automatically reweights to other income streams — sync licenses, YouTube Content ID, mechanical royalties. If total income drops enough to trigger the circuit, the agent reduces the deployed position and raises the reserve buffer. Every action is logged in the live feed in real time.",
   },
   {
-    q: "How does circuit defense actually prevent collapse?",
-    a: "Three layers, in order. First: the agent monitors income stream velocity in real time. If streaming revenue drops 25% in a 7-day window, the agent reduces the deployed position and raises the reserve buffer — before the drop reaches a principal-threatening level. Second: every vault maintains a reserve buffer (typically 15–20% of TVL) that is never deployed, purely held liquid to absorb shocks. Third: Abraxas doesn't use leverage on the underlying asset. The yield comes from operating income, not from speculative positions. When markets correct, yield adjusts — but principal doesn't collapse because it was never in a leveraged trade.",
+    q: "Is my principal safe? How do I exit?",
+    a: "Abraxas is non-custodial. Your Token-2022 position token lives in your wallet. The vault contract on Solana governs the mechanics. To exit, the position token is burned and capital returns to your wallet. The agent doesn't hold your funds in a custodial account. The rules are in the code, not in a terms of service. That's the design philosophy behind building on Token-2022 — programmatic guarantees, not trusted intermediaries.",
+  },
+  {
+    q: "Who is Abraxas for — whales, degens, or artists?",
+    a: "All three, with different entry points. Artists and creators use the /onboard flow to register their catalog, property, or invoice and operate it through a vault. Degens and yield seekers use the /earn pools — deposit USDC, receive abraSOUND or abraYIELD tokens, earn yield from the vault pool without registering an asset. Whales and institutions can operate directly through vaults with full agent assignment and circuit defense. The two-tier architecture means the protocol works for a first-time DistroKid artist and a $500K capital allocator simultaneously.",
   },
 ];
 
 export default function WhyPage() {
+  const [open, setOpen] = useState<number | null>(null);
+
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "3rem 1.25rem 5rem" }}>
 
@@ -75,31 +86,27 @@ export default function WhyPage() {
           The operating layer
         </p>
         <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(1.75rem, 5vw, 3rem)", letterSpacing: "-0.02em", lineHeight: 1.05, marginBottom: "1.25rem" }}>
-          Where Abraxas sits in<br />
+          Where Abraxas sits<br />
           <span style={{ background: "linear-gradient(135deg, #c8a96e, #f0d98a, #c8a96e)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            the RWA stack.
+            in the RWA stack.
           </span>
         </h1>
         <p style={{ fontSize: "0.9rem", color: "var(--muted)", maxWidth: "560px", lineHeight: 1.7 }}>
-          Story Protocol registers IP. Goldfinch lends against it. Ondo tokenizes Treasuries.
-          Nobody operates the income stream once the asset is on-chain.
-          That's Abraxas.
+          The RWA ecosystem has four distinct layers — IP registration, credit, institutional tokenization, and liquidity. All four layers tokenize assets. None of them operate the income stream once the asset is on-chain. That's the gap Abraxas fills.
         </p>
       </div>
 
-      {/* Landscape comparison */}
+      {/* Landscape */}
       <div style={{ marginBottom: "3rem" }}>
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "1.25rem" }}>
-          The current landscape
+          The current ecosystem — and what each layer misses
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
           {LANDSCAPE.map((p) => (
-            <div key={p.name} style={{ background: p.color, border: `1px solid ${p.border}`, borderRadius: "12px", padding: "1.25rem 1.5rem" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
-                <div>
-                  <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>{p.name}</span>
-                  <span style={{ fontSize: "0.68rem", color: "var(--subtle)", marginLeft: "0.5rem" }}>{p.role}</span>
-                </div>
+            <div key={p.layer} style={{ background: p.color, border: `1px solid ${p.border}`, borderRadius: "12px", padding: "1.25rem 1.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "0.9rem" }}>{p.icon}</span>
+                <span style={{ fontWeight: 700, fontSize: "0.875rem" }}>{p.layer} — {p.role}</span>
               </div>
               <p style={{ fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.6, marginBottom: "0.5rem" }}>{p.what}</p>
               <p style={{ fontSize: "0.72rem", color: "var(--gold)", lineHeight: 1.5 }}>
@@ -117,15 +124,15 @@ export default function WhyPage() {
               <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 10px var(--gold)" }} />
             </div>
             <span style={{ fontWeight: 700, fontSize: "1rem" }}>Abraxas</span>
-            <span style={{ fontSize: "0.68rem", color: "var(--gold)", border: "1px solid rgba(200,169,110,0.3)", padding: "0.15rem 0.5rem", borderRadius: "4px" }}>The Operating Layer</span>
+            <span style={{ fontSize: "0.65rem", color: "var(--gold)", border: "1px solid rgba(200,169,110,0.3)", padding: "0.15rem 0.5rem", borderRadius: "4px" }}>Layer 5 — The Operating Layer</span>
           </div>
-          <p style={{ fontSize: "0.82rem", color: "var(--muted)", lineHeight: 1.7 }}>
+          <p style={{ fontSize: "0.82rem", color: "var(--muted)", lineHeight: 1.7, marginBottom: "0.5rem" }}>
             Autonomous agents manage the income stream generated by on-chain registered assets.
-            Royalties, rent flows, and invoice settlements are captured, reinvested, and defended automatically.
-            The asset stays with its owner. The agent operates on their behalf.
+            Royalties, rent flows, voice IP payouts, and invoice settlements are captured, reinvested,
+            and defended automatically. The asset stays with its owner. The agent operates on their behalf.
           </p>
-          <p style={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: 600, lineHeight: 1.7, marginTop: "0.5rem" }}>
-            This is what happens after Story, Goldfinch, and Ondo do their part.
+          <p style={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: 600, lineHeight: 1.7 }}>
+            This is what happens after every other layer does its part.
           </p>
         </div>
       </div>
@@ -135,43 +142,36 @@ export default function WhyPage() {
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "1.25rem" }}>
           How it actually works
         </p>
-        <FAQ items={FAQS} />
+        <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "14px", overflow: "hidden" }}>
+          {FAQS.map((item, i) => (
+            <div key={i} style={{ borderBottom: i < FAQS.length - 1 ? "1px solid var(--line)" : "none" }}>
+              <button onClick={() => setOpen(open === i ? null : i)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+                <span style={{ fontSize: "0.82rem", fontWeight: 600, color: open === i ? "var(--gold)" : "var(--text)", lineHeight: 1.4, flex: 1 }}>{item.q}</span>
+                <span style={{ color: open === i ? "var(--gold)" : "var(--subtle)", fontSize: "0.8rem", flexShrink: 0, transition: "transform 0.2s", transform: open === i ? "rotate(45deg)" : "none" }}>+</span>
+              </button>
+              {open === i && (
+                <div style={{ padding: "0 1.25rem 1.25rem" }}>
+                  <p style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.75 }}>{item.a}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* CTA */}
       <div style={{ textAlign: "center", padding: "2.5rem", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "14px" }}>
         <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.75rem" }}>
-          Ready to operate?
+          Your asset is already earning. It's just not compounding.
         </h2>
         <p style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
-          Register your catalog. An agent activates. Your income compounds.
+          Register your catalog. An agent activates. The gap closes.
         </p>
-        <Link href="/onboard"><Button size="lg">Get Started →</Button></Link>
+        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/onboard"><Button size="lg">Get Started →</Button></Link>
+          <Link href="/earn"><Button size="lg" variant="ghost">Just Earn Yield</Button></Link>
+        </div>
       </div>
     </div>
   );
 }
-
-function FAQ({ items }: { items: { q: string; a: string }[] }) {
-  const [open, setOpen] = React.useState<number | null>(null);
-  return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "14px", overflow: "hidden" }}>
-      {items.map((item, i) => (
-        <div key={i} style={{ borderBottom: i < items.length - 1 ? "1px solid var(--line)" : "none" }}>
-          <button onClick={() => setOpen(open === i ? null : i)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
-            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: open === i ? "var(--gold)" : "var(--text)", lineHeight: 1.4, flex: 1 }}>{item.q}</span>
-            <span style={{ color: open === i ? "var(--gold)" : "var(--subtle)", fontSize: "0.75rem", flexShrink: 0, transition: "transform 0.2s", transform: open === i ? "rotate(45deg)" : "none" }}>+</span>
-          </button>
-          {open === i && (
-            <div style={{ padding: "0 1.25rem 1.25rem" }}>
-              <p style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.75 }}>{item.a}</p>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Need React for useState in FAQ
-import React from "react";

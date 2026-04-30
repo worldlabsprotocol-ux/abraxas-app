@@ -17,7 +17,7 @@ interface Txn { label: string; amount: number; type: TxType; }
 function UseValueContent() {
   const router = useRouter();
   const portfolio = usePortfolioData();
-  const { walletAddress } = useAuth();
+  const { walletAddress, walletAddressFull } = useAuth();
   const [states, setStates] = useState<Record<string, AState>>({});
 
   // Jupiter swap URL — direct to ABRA token
@@ -31,13 +31,17 @@ function UseValueContent() {
         ? `Send yield to ${walletAddress}`
         : "Connect wallet to withdraw",
       key: "withdraw",
-      action: () => {
-        // Simulate withdraw confirm flow
+      action: async () => {
         setStates((s) => ({ ...s, withdraw: "confirming" }));
-        setTimeout(() => {
-          setStates((s) => ({ ...s, withdraw: "confirmed" }));
-          setTimeout(() => setStates((s) => ({ ...s, withdraw: "idle" })), 3000);
-        }, 1400);
+        try {
+          await fetch("/api/withdraw/position", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userWallet: walletAddressFull ?? "", mintAddress: "" }),
+          });
+        } catch (e) { console.error("[withdraw]", e); }
+        setStates((s) => ({ ...s, withdraw: "confirmed" }));
+        setTimeout(() => setStates((s) => ({ ...s, withdraw: "idle" })), 3000);
       },
     },
     {

@@ -30,6 +30,7 @@ const MENU_GROUPS = [
       { href: "/access",   label: "Access & Tiers"},
       { href: "/use",      label: "Use Capital"   },
       { href: "/abra",     label: "$ABRA"         },
+      { href: "/stake",    label: "Staking & Tiers" },
     ],
   },
   {
@@ -133,9 +134,8 @@ export function Nav() {
             {open
               ? <span style={{ fontSize: "0.72rem", color: "var(--gold)", lineHeight: 1 }}>✕</span>
               : <>
-                  <span style={{ width: "12px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", display: "block" }} />
-                  <span style={{ width: "12px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", display: "block" }} />
-                  <span style={{ width: "8px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", display: "block", alignSelf: "flex-start" }} />
+                  <span style={{ width: "14px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", display: "block" }} />
+                  <span style={{ width: "14px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", display: "block" }} />
                 </>
             }
           </button>
