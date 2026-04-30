@@ -1,8 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useOgVerification, OG_COLLECTION_ADDRESS } from "@/lib/useOgVerification";
-import type { OgState } from "@/lib/useOgVerification";
+import { useOgVerification, OG_COLLECTION_ADDRESS, type OgState } from "@/lib/useOgVerification";
 import { PageHeader } from "@/components/PageHeader";
 import { ABRA } from "@/lib/constants";
 
