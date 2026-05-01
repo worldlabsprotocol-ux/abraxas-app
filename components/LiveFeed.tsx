@@ -35,14 +35,15 @@ export function LiveFeed({ limit = 12, showHeader = true }: Props) {
           return (
             <div key={a.id} style={{
               display: "grid",
-              gridTemplateColumns: "auto 1fr auto",
-              gap: "0.75rem", alignItems: "center",
-              padding: "0.7rem 1.25rem",
+              gridTemplateColumns: "36px 1fr auto",
+              gap: "0.625rem",
+              alignItems: "center",
+              padding: "0.65rem 1.1rem",
               borderBottom: "1px solid rgba(255,255,255,0.04)",
             }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "2px" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
                 <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: s.dot }} />
-                <span style={{ fontSize: "0.55rem", color: "var(--subtle)", letterSpacing: "0.06em", fontFamily: "'JetBrains Mono', monospace" }}>{s.label}</span>
+                <span style={{ fontSize: "0.52rem", color: "var(--subtle)", letterSpacing: "0.04em", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap" }}>{s.label}</span>
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -54,10 +55,15 @@ export function LiveFeed({ limit = 12, showHeader = true }: Props) {
                   {a.amount ? ` · ${fmtUSD(a.amount)}` : ""}
                 </div>
               </div>
-              <span style={{ fontSize: "0.62rem", color: "var(--subtle)", whiteSpace: "nowrap" }}>{timeAgo(a.ts)}</span>
+              <span style={{ fontSize: "0.6rem", color: "var(--subtle)", whiteSpace: "nowrap" }}>{timeAgo(a.ts)}</span>
             </div>
           );
         })}
+        {items.length === 0 && (
+          <div style={{ padding: "2rem", textAlign: "center", color: "var(--subtle)", fontSize: "0.78rem" }}>
+            No activity yet.
+          </div>
+        )}
       </div>
     </div>
   );
