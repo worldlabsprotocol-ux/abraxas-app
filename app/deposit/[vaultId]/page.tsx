@@ -289,19 +289,14 @@ export default function DepositPage({ params }: { params: { vaultId: string } })
             </div>
           )}
 
-          <button disabled={usd <= 0} onClick={() => usd > 0 && setTxState("idle" as TxState) && true && void router.push("")}
-            // actually just move to review
-            style={{ display: "none" }} />
-
-          <button disabled={usd <= 0} onClick={() => {
-            if (usd > 0) {
-              setError(null);
-              setTxState("idle");
-              // use txState idle as "reviewed" sentinel — we show review below when idle + amount set
-              // Actually keep it simple: when amount > 0 and click, go to review
-              document.getElementById("deposit-review")?.scrollIntoView();
-            }
-          }}
+          <button
+            disabled={usd <= 0}
+            onClick={() => {
+              if (usd > 0) {
+                setError(null);
+                document.getElementById("deposit-review")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
             style={{
               width: "100%",
               background: usd > 0 ? "var(--gold)" : "var(--surface)",
@@ -309,9 +304,6 @@ export default function DepositPage({ params }: { params: { vaultId: string } })
               border: "none", borderRadius: "10px", padding: "0.95rem",
               fontWeight: 700, fontSize: "0.9rem",
               cursor: usd > 0 ? "pointer" : "not-allowed",
-            }}
-            onClick={() => {
-              if (usd > 0) { setTxState("idle"); }
             }}
           >
             Review deposit →
