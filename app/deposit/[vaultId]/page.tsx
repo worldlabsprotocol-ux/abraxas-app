@@ -237,9 +237,9 @@ export default function DepositPage({ params }: { params: { vaultId: string } })
         <div style={{ padding: "1.5rem 0" }}>
           <p style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "1.5rem", textAlign: "center" }}>Processing…</p>
           {[
-            { key: "submit",   label: "Submitting transaction",       done: step === "minting" || step === "done", active: step === "submitting" },
-            { key: "mint",     label: "Minting Token-2022 position",  done: step === "done",                       active: step === "minting"    },
-            { key: "activate", label: "Activating agent on vault",    done: step === "done",                       active: false                  },
+            { key: "submit",   label: "Submitting transaction",       done: (step as string) === "minting" || (step as string) === "done", active: (step as string) === "submitting" },
+            { key: "mint",     label: "Minting Token-2022 position",  done: (step as string) === "done", active: (step as string) === "minting" },
+            { key: "activate", label: "Activating agent on vault",    done: (step as string) === "done", active: false },
           ].map((s) => (
             <div key={s.key} style={{
               display: "flex", alignItems: "center", gap: "0.875rem",

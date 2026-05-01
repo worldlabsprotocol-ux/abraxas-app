@@ -353,3 +353,5 @@ main { padding-bottom: 48px; }
   font-size: 0.9rem !important;
   padding: 0.875rem 1.5rem !important;
 }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
