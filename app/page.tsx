@@ -1,199 +1,125 @@
+// FILE: app/page.tsx
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { HomeStatsBar } from "@/components/HomeStatsBar";
-import { AgentFeed } from "@/components/AgentFeed";
-import { MarketFeed } from "@/components/MarketFeed";
-import { ABRA } from "@/lib/constants";
-import { VAULT_YIELD_RATES, usePortfolioData } from "@/lib/usePortfolioData";
-import { formatCurrency } from "@/lib/utils";
-
-const ASSET_CLASSES = [
-  { key: "music",      icon: "♪", label: "Music IP",       apy: VAULT_YIELD_RATES["490"], href: "/list?type=music"       },
-  { key: "realestate", icon: "◻", label: "Real Estate",    apy: VAULT_YIELD_RATES["492"], href: "/list?type=realestate"  },
-  { key: "receivables",icon: "◈", label: "Receivables",    apy: VAULT_YIELD_RATES["493"], href: "/list?type=receivables" },
-  { key: "earn1",      icon: "◎", label: "abraSOUND",      apy: VAULT_YIELD_RATES["490"], href: "/earn"                  },
-  { key: "earn2",      icon: "⬡", label: "abraYIELD",      apy: 7.4,                      href: "/earn"                  },
-];
-
-function useTicker(base: number, interval = 5500) {
-  const [v, setV] = useState(base);
-  useEffect(() => {
-    const t = setInterval(() => setV((n) => n + Math.floor(Math.random() * 2) + 1), interval);
-    return () => clearInterval(t);
-  }, [interval]);
-  return v;
-}
+import { TOTAL_AUM, ACTIVE_VAULTS, AGENTS_ONLINE, ASSET_TYPES, fmtUSD } from "@/lib/appData";
+import { LiveFeed } from "@/components/LiveFeed";
 
 export default function HomePage() {
-  const router = useRouter();
-  const portfolio = usePortfolioData();
-  const actions = useTicker(18185);
-  const [hov, setHov] = useState<string | null>(null);
-
   return (
-    <div style={{ background: "var(--void)" }}>
+    <div style={{ background: "var(--void)", minHeight: "100vh" }}>
 
-      {/* ── AUM TICKER ── */}
-      <div style={{ borderBottom: "1px solid rgba(200,169,110,0.1)", background: "rgba(200,169,110,0.03)", padding: "0.45rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", overflowX: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", whiteSpace: "nowrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-            <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--green)", animation: "pulse 2s ease-in-out infinite" }} />
-            <span style={{ color: "var(--subtle)", letterSpacing: "0.06em", textTransform: "uppercase", fontSize: "0.58rem" }}>Total AUM</span>
-            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: "var(--gold)", fontSize: "0.68rem" }}>
-              {portfolio.loading ? "…" : formatCurrency(portfolio.systemAUM)}
-            </span>
-          </div>
-          <span style={{ color: "var(--line)" }}>|</span>
-          <span style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>
-            <span style={{ color: "var(--text)", fontWeight: 600 }}>{actions.toLocaleString()}</span> agent actions
+      {/* HERO — 5 seconds to understand */}
+      <section style={{ maxWidth: "640px", margin: "0 auto", padding: "5rem 1.25rem 3rem", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", background: "rgba(61,214,140,0.08)", border: "1px solid rgba(61,214,140,0.2)", borderRadius: "100px", padding: "0.3rem 0.75rem", marginBottom: "1.75rem" }}>
+          <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--green)", animation: "pulse 2s ease-in-out infinite" }} />
+          <span style={{ fontSize: "0.62rem", color: "var(--green)", fontWeight: 600 }}>{ACTIVE_VAULTS} vaults operating · Solana</span>
+        </div>
+
+        <h1 style={{
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontWeight: 800,
+          fontSize: "clamp(2rem, 7vw, 4rem)",
+          lineHeight: 1.05,
+          letterSpacing: "-0.02em",
+          marginBottom: "1rem",
+        }}>
+          Operate your real-world<br />
+          <span style={{
+            background: "linear-gradient(135deg, #c8a96e 0%, #f0d98a 50%, #c8a96e 100%)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+          }}>
+            assets on Solana.
           </span>
-          <span style={{ color: "var(--line)" }}>|</span>
-          <span style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>
-            <span style={{ color: "var(--green)", fontWeight: 600 }}>$0</span> unrecovered
-          </span>
-        </div>
-        <a href={ABRA.bags} target="_blank" rel="noopener noreferrer"
-          style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", color: "var(--gold)", textDecoration: "none", whiteSpace: "nowrap" }}>
-          $ABRA {ABRA.caShort} ↗
-        </a>
-      </div>
+        </h1>
 
-      {/* ── HERO ── */}
-      <section style={{ padding: "clamp(3rem, 8vw, 6rem) 1.25rem 3rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(200,169,110,0.07), transparent 55%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", width: "min(600px,100vw)", height: "min(600px,100vw)", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.05)", top: "50%", left: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none" }} />
+        <p style={{ fontSize: "1rem", color: "var(--muted)", maxWidth: "440px", margin: "0 auto 2rem", lineHeight: 1.6 }}>
+          Music royalties, real estate, and receivables — operated by autonomous agents.
+        </p>
 
-        <div style={{ position: "relative", zIndex: 2, maxWidth: "640px", margin: "0 auto" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", background: "rgba(61,214,140,0.08)", border: "1px solid rgba(61,214,140,0.2)", borderRadius: "100px", padding: "0.3rem 0.75rem", marginBottom: "1.75rem" }}>
-            <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--green)", animation: "pulse 2s ease-in-out infinite" }} />
-            <span style={{ fontSize: "0.62rem", color: "var(--green)", fontWeight: 600 }}>5 vaults operating · Solana mainnet</span>
+        <Link href="/onboard" style={{ textDecoration: "none" }}>
+          <div style={{
+            display: "inline-block",
+            background: "var(--gold)", color: "var(--void)",
+            borderRadius: "10px", padding: "1rem 2rem",
+            fontWeight: 700, fontSize: "0.95rem",
+            cursor: "pointer", marginBottom: "0.75rem",
+            boxShadow: "0 4px 24px rgba(200,169,110,0.25)",
+          }}>
+            Start Operating →
           </div>
-
-          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(2.25rem, 8vw, 5rem)", lineHeight: 1.0, letterSpacing: "-0.03em", marginBottom: "1rem" }}>
-            <span style={{ color: "var(--text)" }}>Your assets.</span><br />
-            <span style={{ background: "linear-gradient(135deg, #c8a96e 0%, #f0d98a 45%, #c8a96e 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Operated.</span>
-          </h1>
-
-          <p style={{ fontSize: "clamp(0.875rem, 2.5vw, 1rem)", color: "var(--muted)", lineHeight: 1.65, marginBottom: "2rem", maxWidth: "400px", margin: "0 auto 2rem" }}>
-            Autonomous agents turn idle real-world assets into compounding yield — on Solana.
-          </p>
-
-          <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "3rem" }}>
-            <Link href="/onboard">
-              <div style={{ background: "var(--gold)", color: "var(--void)", borderRadius: "8px", padding: "0.75rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                Operate an Asset
-              </div>
-            </Link>
-            <Link href="/earn">
-              <div style={{ background: "rgba(61,214,140,0.1)", color: "var(--green)", border: "1px solid rgba(61,214,140,0.3)", borderRadius: "8px", padding: "0.75rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: "0.875rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                Just Earn Yield →
-              </div>
-            </Link>
-            <Link href="/demo">
-              <div style={{ background: "transparent", color: "var(--muted)", border: "1px solid var(--line)", borderRadius: "8px", padding: "0.75rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontSize: "0.82rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                View Demo
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STATS ── */}
-      <div style={{ borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", background: "rgba(255,255,255,0.01)", padding: "1.25rem" }}>
-        <HomeStatsBar />
-      </div>
-
-      {/* ── HOW IT WORKS ── */}
-      <section style={{ borderBottom: "1px solid var(--line)", padding: "3rem 1.25rem" }}>
-        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", textAlign: "center", marginBottom: "2rem" }}>
-            How it works
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1px", background: "var(--line)" }} className="sm:grid-cols-4">
-            {[
-              { n: "01", icon: "◈", title: "Register",  desc: "3 minutes. Catalog, deed, or invoice." },
-              { n: "02", icon: "⬡", title: "Agent on",  desc: "Autonomous. Always executing."         },
-              { n: "03", icon: "◎", title: "Compounds", desc: "Yield captured. Reinvested. On-chain."  },
-              { n: "04", icon: "◉", title: "Defended",  desc: "Risk crossed? Defense executes first." },
-            ].map((s) => (
-              <div key={s.n} style={{ background: "var(--void)", padding: "2rem 1.5rem" }}>
-                <div style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: "2rem", color: "rgba(200,169,110,0.18)", lineHeight: 1, marginBottom: "0.75rem" }}>{s.n}</div>
-                <div style={{ fontSize: "0.9rem", marginBottom: "0.4rem" }}>{s.icon}</div>
-                <div style={{ fontWeight: 700, fontSize: "0.875rem", marginBottom: "0.3rem" }}>{s.title}</div>
-                <p style={{ fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.55 }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ASSET CLASSES (moved below How it works) ── */}
-      <section style={{ borderBottom: "1px solid var(--line)", padding: "2.5rem 1.25rem" }}>
-        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "1.25rem", textAlign: "center" }}>
-            What you can operate or earn from
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.5rem" }}>
-            {ASSET_CLASSES.map((t) => (
-              <div
-                key={t.key}
-                onClick={() => router.push(t.href)}
-                onMouseEnter={() => setHov(t.key)}
-                onMouseLeave={() => setHov(null)}
-                style={{
-                  background: hov === t.key ? "rgba(200,169,110,0.08)" : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${hov === t.key ? "rgba(200,169,110,0.3)" : "rgba(255,255,255,0.07)"}`,
-                  borderRadius: "10px", padding: "0.875rem 0.5rem",
-                  cursor: "pointer", transition: "all 0.2s", textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: "1.1rem", marginBottom: "0.3rem" }}>{t.icon}</div>
-                <div style={{ fontSize: "0.65rem", fontWeight: 600, marginBottom: "0.15rem" }}>{t.label}</div>
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: t.label.startsWith("abra") ? "#6b8cff" : "var(--green)" }}>{t.apy}%</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── MARKET INTELLIGENCE ── */}
-      <section style={{ borderBottom: "1px solid var(--line)", padding: "2.5rem 1.25rem" }}>
-        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "1.25rem" }}>
-            Market Intelligence
-          </p>
-          <MarketFeed />
-        </div>
-      </section>
-
-      {/* ── LIVE FEED ── */}
-      <section style={{ borderBottom: "1px solid var(--line)", padding: "2.5rem 1.25rem" }}>
-        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-            <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--green)", animation: "pulse 2s ease-in-out infinite" }} />
-            <span style={{ fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--subtle)" }}>Live — agent activity</span>
-          </div>
-          <AgentFeed compact />
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section style={{ padding: "3.5rem 1.25rem 2rem" }}>
-        <div style={{ maxWidth: "420px", margin: "0 auto", textAlign: "center" }}>
-          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "clamp(1.2rem, 4vw, 1.6rem)", marginBottom: "0.875rem", lineHeight: 1.2 }}>
-            Your catalog has been sleeping.<br />
-            <span style={{ color: "var(--gold)" }}>Time to operate.</span>
-          </p>
-          <Link href="/onboard">
-            <div style={{ display: "inline-block", background: "var(--gold)", color: "var(--void)", borderRadius: "8px", padding: "0.875rem 2.25rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
-              Get Started →
-            </div>
+        </Link>
+        <div>
+          <Link href="/marketplace" style={{ fontSize: "0.78rem", color: "var(--muted)", textDecoration: "none" }}>
+            or browse vaults
           </Link>
         </div>
       </section>
+
+      {/* STATS — same numbers as everywhere else */}
+      <section style={{ borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", background: "rgba(255,255,255,0.01)", padding: "1.5rem 1.25rem" }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", textAlign: "center" }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "1.4rem", color: "var(--text)" }}>{fmtUSD(TOTAL_AUM)}</div>
+            <div style={{ fontSize: "0.62rem", color: "var(--subtle)", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: "4px" }}>Total AUM</div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "1.4rem", color: "var(--text)" }}>{ACTIVE_VAULTS}</div>
+            <div style={{ fontSize: "0.62rem", color: "var(--subtle)", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: "4px" }}>Active Vaults</div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "1.4rem", color: "var(--green)" }}>$0</div>
+            <div style={{ fontSize: "0.62rem", color: "var(--subtle)", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: "4px" }}>Unrecovered</div>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW — one line each */}
+      <section style={{ maxWidth: "900px", margin: "0 auto", padding: "3rem 1.25rem 2rem" }}>
+        <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", textAlign: "center", marginBottom: "1.5rem" }}>How it works</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1px", background: "var(--line)" }}>
+          {[
+            { n: "1", title: "Pick asset",  desc: "Music, real estate, or receivables." },
+            { n: "2", title: "Deposit",     desc: "Token-2022 minted to your wallet."  },
+            { n: "3", title: "Agent runs",  desc: "Captures yield. Defends position."  },
+          ].map((s) => (
+            <div key={s.n} style={{ background: "var(--void)", padding: "1.5rem 1.25rem" }}>
+              <div style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: "1.5rem", color: "rgba(200,169,110,0.4)", marginBottom: "0.5rem" }}>{s.n}</div>
+              <div style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.25rem" }}>{s.title}</div>
+              <p style={{ fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.5 }}>{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ASSETS — quick path to deposit */}
+      <section style={{ maxWidth: "900px", margin: "0 auto", padding: "1rem 1.25rem 2rem" }}>
+        <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", textAlign: "center", marginBottom: "1.5rem" }}>What you can operate</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
+          {ASSET_TYPES.map((a) => (
+            <Link key={a.key} href={`/onboard?type=${a.key}`} style={{ textDecoration: "none" }}>
+              <div style={{
+                background: "var(--surface)", border: "1px solid var(--line)",
+                borderRadius: "12px", padding: "1.25rem",
+                cursor: "pointer", transition: "border 0.2s",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                  <span style={{ fontSize: "1.5rem" }}>{a.icon}</span>
+                  <span style={{ fontWeight: 700, fontSize: "1rem", color: "var(--green)" }}>{a.apy}%</span>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--text)", marginBottom: "0.25rem" }}>{a.name}</div>
+                <p style={{ fontSize: "0.72rem", color: "var(--muted)", lineHeight: 1.5 }}>{a.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* LIVE FEED — proves activity */}
+      <section style={{ maxWidth: "900px", margin: "0 auto", padding: "2rem 1.25rem 4rem" }}>
+        <LiveFeed limit={10} />
+      </section>
     </div>
   );
+}
 }
