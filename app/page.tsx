@@ -92,6 +92,11 @@ export default function HomePage() {
                 Just Earn Yield →
               </div>
             </Link>
+            <Link href="/demo">
+              <div style={{ background: "transparent", color: "var(--muted)", border: "1px solid var(--line)", borderRadius: "8px", padding: "0.75rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontSize: "0.82rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+                View Demo
+              </div>
+            </Link>
           </div>
         </div>
       </section>
