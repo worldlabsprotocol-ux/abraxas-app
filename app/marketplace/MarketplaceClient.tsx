@@ -1,60 +1,95 @@
-// FILE: app/marketplace/page.tsx
 "use client";
 
-import Link from "next/link";
-import { VAULTS, fmtUSD } from "@/lib/appData";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { mockVaults, systemStats } from "@/lib/mockData";
+import { usePortfolioData } from "@/lib/usePortfolioData";
+import { VaultCard } from "@/components/VaultCard";
+import { BagsTokenCard } from "@/components/BagsTokenCard";
+import { formatCurrency, formatNumber } from "@/lib/utils";
+import type { BagsTokenLaunch } from "@/lib/bags";
 
-export default function MarketplacePage() {
+const assetFilters = ["All", "Music & IP Royalties", "Real Estate", "Receivables"];
+const statusFilters = ["All", "operating", "graduating"];
+
+interface Props { bagsTokens: BagsTokenLaunch[]; }
+
+export function MarketplaceClient({ bagsTokens }: Props) {
+  const router = useRouter();
+  const [assetFilter, setAssetFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [showBags, setShowBags] = useState(true);
+  const portfolio = usePortfolioData();
+
+  const filteredVaults = mockVaults.filter((v) => {
+    const assetMatch = assetFilter === "All" || v.assetClass === assetFilter;
+    const statusMatch = statusFilter === "All" || v.status === statusFilter;
+    return assetMatch && statusMatch;
+  });
+
+  const liveBags = bagsTokens.slice(0, 6);
+
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2.5rem 1.25rem 4rem" }}>
-      <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>Marketplace</p>
-      <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(1.75rem, 5vw, 2.5rem)", letterSpacing: "-0.02em", marginBottom: "0.625rem" }}>
-        Active vaults
-      </h1>
-      <p style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "2rem" }}>
-        {VAULTS.length} operating · {fmtUSD(VAULTS.reduce((s, v) => s + v.tvl, 0))} total AUM
-      </p>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-abraxas-subtle mb-2">Vault Marketplace</p>
+        <h1 className="font-display font-bold text-2xl md:text-3xl mb-2">Operating vaults &amp; live tokens.</h1>
+        <p className="text-sm text-abraxas-muted">Abraxas vaults paired with live Bags-launched tokens. Every vault has a named agent and a public action log.</p>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        {VAULTS.map((v) => (
-          <Link key={v.id} href={`/vault/${v.id}`} style={{ textDecoration: "none" }}>
-            <div style={{
-              background: "var(--surface)", border: "1px solid var(--line)",
-              borderRadius: "12px", padding: "1.25rem 1.5rem",
-              cursor: "pointer", transition: "border 0.15s",
-            }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
-                    <span style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text)" }}>{v.name}</span>
-                    <span style={{ fontSize: "0.58rem", padding: "0.1rem 0.45rem", borderRadius: "4px",
-                      background: v.status === "operating" ? "rgba(61,214,140,0.1)" : "rgba(240,217,138,0.1)",
-                      color: v.status === "operating" ? "var(--green)" : "#f0d98a",
-                      border: `1px solid ${v.status === "operating" ? "rgba(61,214,140,0.3)" : "rgba(240,217,138,0.3)"}`,
-                      letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700,
-                    }}>
-                      {v.status}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--subtle)", marginBottom: "0.5rem" }}>
-                    {v.asset} · {v.agent}
-                  </div>
-                  <div style={{ display: "flex", gap: "1.25rem", fontSize: "0.7rem", flexWrap: "wrap" }}>
-                    <span><span style={{ color: "var(--subtle)" }}>TVL: </span><span style={{ color: "var(--text)", fontWeight: 600 }}>{fmtUSD(v.tvl)}</span></span>
-                    <a href={v.solscanUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                      style={{ color: "var(--gold)", textDecoration: "none", fontFamily: "'JetBrains Mono', monospace" }}>
-                      {v.shortAddress} ↗
-                    </a>
-                  </div>
-                </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: "1.4rem", color: "var(--green)" }}>{v.apy}%</div>
-                  <div style={{ fontSize: "0.6rem", color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.08em" }}>APY</div>
-                </div>
-              </div>
-            </div>
-          </Link>
+      <div className="grid grid-cols-3 gap-3 mb-7">
+        {[
+          { label: "Total AUM",      value: portfolio.loading ? "…" : formatCurrency(portfolio.systemAUM) },
+          { label: "Defense Events", value: formatNumber(systemStats.totalDefenseEvents) },
+          { label: "Unrecovered",    value: "$0" },
+        ].map((s) => (
+          <div key={s.label} className="bg-bg-2 border border-border rounded-card p-4 text-center">
+            <div className="font-display font-bold text-lg md:text-xl text-abraxas-text">{s.value}</div>
+            <div className="text-[0.65rem] text-abraxas-subtle uppercase tracking-wider mt-1">{s.label}</div>
+          </div>
         ))}
+      </div>
+
+      <div style={{ background: "linear-gradient(135deg, var(--surface), rgba(200,169,110,0.04))", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "14px", padding: "1.5rem 2rem", marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+        <div>
+          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1rem", marginBottom: "0.3rem" }}>Have an asset to operate?</p>
+          <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Music catalog, real estate, invoices — see how Abraxas puts it to work.</p>
+        </div>
+        <button onClick={() => router.push("/onboard")} style={{ background: "var(--gold)", color: "var(--void)", border: "none", borderRadius: "8px", padding: "0.65rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", whiteSpace: "nowrap" }}>
+          Get Started →
+        </button>
+      </div>
+
+      {liveBags.length > 0 && showBags && (
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-abraxas-green animate-pulse" />
+              <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-abraxas-muted">Live on Bags</h2>
+              <span className="text-[0.65rem] text-abraxas-subtle">· {liveBags.length} token{liveBags.length !== 1 ? "s" : ""}</span>
+            </div>
+            <button onClick={() => setShowBags(false)} className="text-[0.7rem] text-abraxas-subtle hover:text-gold uppercase tracking-wider">Hide</button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {liveBags.map((token) => <BagsTokenCard key={token.tokenMint} token={token} />)}
+          </div>
+        </section>
+      )}
+
+      <div className="flex flex-wrap gap-2 mb-6 items-center">
+        <span className="text-[0.65rem] uppercase tracking-wider text-abraxas-subtle mr-2">Vaults:</span>
+        {assetFilters.map((f) => (
+          <button key={f} onClick={() => setAssetFilter(f)} className={`text-xs border rounded-md px-3.5 py-1.5 cursor-pointer transition-all ${assetFilter === f ? "border-gold text-gold bg-gold-dim" : "border-border text-abraxas-muted hover:border-border-2 bg-bg-3"}`}>{f}</button>
+        ))}
+        <div className="w-px bg-border h-6 mx-1" />
+        {statusFilters.map((f) => (
+          <button key={f} onClick={() => setStatusFilter(f)} className={`text-xs border rounded-md px-3.5 py-1.5 cursor-pointer transition-all capitalize ${statusFilter === f ? "border-gold text-gold bg-gold-dim" : "border-border text-abraxas-muted hover:border-border-2 bg-bg-3"}`}>{f}</button>
+        ))}
+      </div>
+
+      <p className="text-xs text-abraxas-subtle mb-4">{filteredVaults.length} vault{filteredVaults.length !== 1 ? "s" : ""}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredVaults.map((vault) => <VaultCard key={vault.id} vault={vault} portfolio={portfolio} />)}
       </div>
     </div>
   );
