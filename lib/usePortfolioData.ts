@@ -42,6 +42,7 @@ export interface VaultPosition {
 export interface PortfolioData {
   sol:             number;
   abra:            number;
+  abraPrice:       number;
   solValueUSD:     number;
   abraValueUSD:    number;
   walletValueUSD:  number;
@@ -49,8 +50,10 @@ export interface PortfolioData {
   totalVaultTVL:   number;
   portfolioValue:  number;
   availableCapital:number;
+  activePositions: number;
+  yieldGenerated:  number;  // total annual yield across all positions
   systemAUM:       number;
-  systemAUMSource: "live" | "static"; // tells UI whether this is real or static
+  systemAUMSource: "live" | "static";
   loading:         boolean;
   error:           string | null;
   refresh:         () => void;
@@ -104,12 +107,14 @@ export function usePortfolioData(): PortfolioData {
   // No multipliers, no 68x. What you see in marketplace = what you see on homepage.
   const systemAUM = STATIC_SYSTEM_AUM;
 
+  const activePositions = vaultPositions.filter((p) => p.tvl > 0).length;
+  const yieldGenerated  = vaultPositions.reduce((s, p) => s + p.annualYield, 0);
+
   return {
-    sol, abra, solValueUSD, abraValueUSD, walletValueUSD,
+    sol, abra, abraPrice: 0.000054599, solValueUSD, abraValueUSD, walletValueUSD,
     vaultPositions, totalVaultTVL, portfolioValue,
-    availableCapital, systemAUM,
-    systemAUMSource: "static",
-    loading, error, refresh: load,
-    updatedAt,
+    availableCapital, activePositions, yieldGenerated,
+    systemAUM, systemAUMSource: "static",
+    loading, error, refresh: load, updatedAt,
   };
 }
