@@ -44,7 +44,7 @@ function UseInner() {
     const res = await withdrawFromVault({
       userWallet:  walletAddressFull,
       mintAddress: selected.mintAddress,
-      amount:      selected.amount,
+      amount:      selected.principal,
       vaultId:     selected.vaultId,
     });
 
@@ -57,7 +57,7 @@ function UseInner() {
     closePosition(selected.id);
     logActivity({
       type: "withdraw", vaultId: selected.vaultId, vaultName: selected.vaultName,
-      asset: selected.asset, amount: selected.amount,
+      asset: selected.asset, amount: selected.principal,
       message: "Position closed — capital returned",
       txSig: res.txSignature,
     });
@@ -186,7 +186,7 @@ function UseInner() {
             <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "10px", overflow: "hidden", marginBottom: "1rem" }}>
               {[
                 { k: "Position",     v: selected.vaultName },
-                { k: "Amount out",   v: fmtUSD(selected.amount), bold: true },
+                { k: "Amount out",   v: fmtUSD(selected.principal), bold: true },
                 { k: "Token burned", v: "ABRAP · Token-2022" },
                 { k: "Exit type",    v: "Simulated exit (clean)" },
               ].map(({ k, v, bold }, i, arr) => (
