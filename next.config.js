@@ -2,43 +2,36 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Suppress the tempo/wagmi chain definition warning by treating as external
-  // These are optional peer dependencies inside viem that don't affect our build
-  transpilePackages: [],
-
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Stub Node-only modules that leak into browser bundles via Solana/wagmi deps
+      // Stub all Node/React-Native modules that leak into browser bundles
+      // via Solana wallet adapters and wagmi/MetaMask SDK transitive deps
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        stream: false,
-        path: false,
-        os: false,
+        fs: false, net: false, tls: false,
+        crypto: false, stream: false, path: false, os: false,
+        // React Native shims pulled in by @solana-mobile/* and @wagmi/connectors
         "react-native": false,
         "@react-native-async-storage/async-storage": false,
+        "@react-native/virtualized-lists": false,
+      };
+
+      // Alias MetaMask SDK to a no-op module so wagmi connectors build cleanly.
+      // @wagmi/connectors includes a MetaMask connector that imports the SDK.
+      // We don't use MetaMask SDK directly — RainbowKit handles the connector.
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@metamask/sdk": false,
       };
     }
 
-    // Externalize packages that cause build failures when bundled server-side
-    // pino-pretty: wagmi logging dep, not used in production
-    // lokijs: optional storage backend
-    // encoding: node-specific text encoding
+    // Externalize server-side packages that cause bundling issues
     if (!Array.isArray(config.externals)) {
       config.externals = [config.externals].filter(Boolean);
     }
     config.externals.push("pino-pretty", "lokijs", "encoding");
 
     return config;
-  },
-
-  // Silence the specific wagmi/viem tempo chain warning
-  // This is a module resolution warning about optional chain configs, not a build error
-  experimental: {
-    // Keep empty — do not add features that destabilize the build
   },
 };
 

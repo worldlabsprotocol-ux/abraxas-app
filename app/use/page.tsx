@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { usePositions, closePosition, Position } from "@/lib/positionStore";
+import { usePositions, withdrawPosition, Position } from "@/lib/positionStore";
 import { logActivity } from "@/lib/activityStore";
 import { useAuth } from "@/lib/authState";
 import { fmtUSD, ABRA } from "@/lib/appData";
@@ -54,7 +54,7 @@ function UseInner() {
       return;
     }
 
-    closePosition(selected.id);
+    withdrawPosition(selected.id);
     logActivity({
       type: "withdraw", vaultId: selected.vaultId, vaultName: selected.vaultName,
       asset: selected.assetType, amount: selected.principal,

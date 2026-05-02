@@ -31,7 +31,7 @@ function deriveTier(portfolioValue: number): { label: string; color: string; nex
 
 function OperatorContent() {
   const router = useRouter();
-  const { walletAddress, walletConnected, user } = useAuth();
+  const { walletAddress, walletConnected } = useAuth();
   const portfolio = usePortfolioData();
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
