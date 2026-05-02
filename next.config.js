@@ -13,27 +13,28 @@ const nextConfig = {
         "@react-native/virtualized-lists": false,
       };
 
-      // IgnorePlugin: suppress the missing @react-native-async-storage module
-      // that @metamask/sdk's pre-bundled browser/es dist tries to require.
-      // This is a transitive dep from @wagmi/connectors → @metamask/sdk.
-      // We don't use MetaMask SDK directly — RainbowKit handles its own connector.
+      // IgnorePlugin: swallow the missing @react-native-async-storage require
+      // inside @metamask/sdk's pre-bundled browser dist.
+      // @wagmi/connectors pulls in @metamask/sdk as a transitive dep.
       config.plugins.push(
         new webpack.IgnorePlugin({
           resourceRegExp: /^@react-native-async-storage\/async-storage$/,
         })
       );
 
-      // Also ignore the dynamic expression warning from ox/tempo (viem internal)
-      // by replacing the virtualMasterPool module with an empty stub
+      // Stub the entire ox/tempo module tree at the index level.
+      // Stubbing the leaf (virtualMasterPool) broke VirtualMaster.js which
+      // imports `resolve` from it. Stubbing the index cuts the whole tree cleanly.
+      // ox/tempo is a devnet testing utility — zero effect on mainnet operation.
       config.plugins.push(
         new webpack.NormalModuleReplacementPlugin(
-          /ox\/_esm\/tempo\/internal\/virtualMasterPool\.js/,
+          /ox\/_esm\/tempo\/index\.js$/,
           require.resolve("./lib/stubs/empty.js")
         )
       );
     }
 
-    // Server-side externals that cause bundling issues
+    // Server-side externals
     if (!Array.isArray(config.externals)) {
       config.externals = [config.externals].filter(Boolean);
     }
