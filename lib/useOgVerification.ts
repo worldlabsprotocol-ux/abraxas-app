@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import type { Chain } from "viem";
 
-// Mainnet defined inline — same as EvmProvider.tsx.
-// Avoids wagmi/chains and viem/chains barrels which pull in ox/tempo.
+// Mainnet inline — no wagmi/chains or viem/chains barrel import
 const mainnet: Chain = {
   id: 1,
   name: "Ethereum",
@@ -20,11 +19,10 @@ const mainnet: Chain = {
   },
 };
 
-const OG_COLLECTION_RAW = process.env.NEXT_PUBLIC_OG_ETH_COLLECTION;
-
 export const OG_COLLECTION_ADDRESS =
-  OG_COLLECTION_RAW && /^0x[a-fA-F0-9]{40}$/.test(OG_COLLECTION_RAW.trim())
-    ? (OG_COLLECTION_RAW.trim() as `0x${string}`)
+  process.env.NEXT_PUBLIC_OG_ETH_COLLECTION &&
+  /^0x[a-fA-F0-9]{40}$/.test(process.env.NEXT_PUBLIC_OG_ETH_COLLECTION.trim())
+    ? (process.env.NEXT_PUBLIC_OG_ETH_COLLECTION.trim() as `0x${string}`)
     : undefined;
 
 const ERC721_ABI = [
@@ -37,18 +35,16 @@ const ERC721_ABI = [
   },
 ] as const;
 
-export type OgState =
-  | "loading"
-  | "not_connected"
-  | "no_collection"
-  | "checking"
-  | "og"
-  | "not_og"
-  | "error";
+// OgState shape matches what access/page.tsx expects:
+// switch (og.status) with cases: no-collection, disconnected, checking, verified, not-holder, error
+export interface OgState {
+  status:  "no-collection" | "disconnected" | "checking" | "verified" | "not-holder" | "error";
+  balance: number;
+  error:   string | null;
+}
 
 export function useOgVerification(): OgState {
   const { address, isConnected } = useAccount();
-  const [state, setState] = useState<OgState>("loading");
 
   const { data: balance, isLoading, isError } = useReadContract({
     address:      OG_COLLECTION_ADDRESS,
@@ -59,14 +55,23 @@ export function useOgVerification(): OgState {
     query: { enabled: Boolean(isConnected && address && OG_COLLECTION_ADDRESS) },
   });
 
-  useEffect(() => {
-    if (!OG_COLLECTION_ADDRESS) { setState("no_collection"); return; }
-    if (!isConnected)            { setState("not_connected"); return; }
-    if (isLoading)               { setState("checking");      return; }
-    if (isError)                 { setState("error");         return; }
-    if (balance !== undefined)   { setState(balance > 0n ? "og" : "not_og"); return; }
-    setState("loading");
-  }, [isConnected, isLoading, isError, balance]);
-
-  return state;
+  if (!OG_COLLECTION_ADDRESS) {
+    return { status: "no-collection", balance: 0, error: null };
+  }
+  if (!isConnected || !address) {
+    return { status: "disconnected", balance: 0, error: null };
+  }
+  if (isLoading) {
+    return { status: "checking", balance: 0, error: null };
+  }
+  if (isError) {
+    return { status: "error", balance: 0, error: "Contract read failed" };
+  }
+  if (balance !== undefined) {
+    const n = Number(balance);
+    return n > 0
+      ? { status: "verified",    balance: n, error: null }
+      : { status: "not-holder",  balance: 0, error: null };
+  }
+  return { status: "checking", balance: 0, error: null };
 }
