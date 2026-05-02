@@ -1,58 +1,38 @@
+// FILE: components/WalletGate.tsx
+// Guards routes that require a connected Solana wallet.
+// Shows connect prompt if no wallet — never crashes.
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/authState";
-import { Button } from "@/components/Button";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 
-interface WalletGateProps {
-  children: React.ReactNode;
-  /** When true, requires a real Solana wallet (default).
-   *  When false, OAuth login alone is enough to see the page. */
-  requireWallet?: boolean;
-}
+interface Props { children: React.ReactNode }
 
-/**
- * Gates pages by login status.
- *
- * - Always requires `loggedIn` (NextAuth session OR connected wallet).
- * - When `requireWallet` is true (the default), additionally requires a
- *   connected Solana wallet — used for asset actions.
- * - When `requireWallet={false}`, OAuth-only access is allowed — used for
- *   the dashboard so users can see balances/positions without forcing a
- *   wallet connect just to look around.
- */
-export function WalletGate({ children, requireWallet = true }: WalletGateProps) {
-  const { loggedIn, walletConnected } = useAuth();
-  const router = useRouter();
+export function WalletGate({ children }: Props) {
+  const { walletConnected } = useAuth();
 
-  if (!loggedIn) {
+  if (!walletConnected) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-        <div className="text-4xl mb-4">🔒</div>
-        <h2 className="font-display font-bold text-xl mb-2">
-          Sign in to continue
-        </h2>
-        <p className="text-sm text-abraxas-muted mb-6 max-w-xs">
-          You need an account to access this page.
-        </p>
-        <Button onClick={() => router.push("/login")}>Sign In</Button>
-      </div>
-    );
-  }
-
-  if (requireWallet && !walletConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-        <div className="text-4xl mb-4">⬡</div>
-        <h2 className="font-display font-bold text-xl mb-2">
+      <div style={{ maxWidth: "480px", margin: "0 auto", padding: "4rem 1.25rem", textAlign: "center" }}>
+        <div style={{ width: "48px", height: "48px", margin: "0 auto 1.25rem", borderRadius: "50%", background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8">
+            <rect x="1" y="4" width="22" height="16" rx="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
+          </svg>
+        </div>
+        <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.4rem" }}>
           Connect your wallet
         </h2>
-        <p className="text-sm text-abraxas-muted mb-6 max-w-xs">
-          A Solana wallet is required for asset actions, vault deposits, and
-          using capital.
+        <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "1.25rem", lineHeight: 1.6 }}>
+          This page requires a connected Solana wallet.
         </p>
-        <ConnectWalletButton size="lg" />
+        <div style={{ display: "inline-block", marginBottom: "1rem" }}>
+          <ConnectWalletButton size="lg" />
+        </div>
+        <div>
+          <Link href="/" style={{ fontSize: "0.72rem", color: "var(--subtle)", textDecoration: "none" }}>← Back to home</Link>
+        </div>
       </div>
     );
   }

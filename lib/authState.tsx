@@ -1,79 +1,67 @@
+// FILE: lib/authState.tsx
+// Auth state — Solana wallet only.
+// OAuth (Google/GitHub) removed — wallet-native authentication.
+// ETH wallet (wagmi) is isolated to useOgVerification — NOT bridged here.
+//
+// This hook is the ONLY source of wallet state for the UI.
+// Components must use useAuth() — never useWallet() directly.
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useSession, signOut } from "next-auth/react";
 
 interface AuthContextValue {
-  loggedIn: boolean;
-  walletConnected: boolean;
-  loginMethod: string | null;
-  walletAddress: string | null;      // shortened for display: "CQ1U…dJGdf"
-  walletAddressFull: string | null;  // FULL base58 for transactions
-  user: { name?: string | null; email?: string | null; image?: string | null } | null;
-  loginWithProvider: (provider: "google" | "github") => Promise<void>;
-  connectWallet: () => void;
-  logout: () => Promise<void>;
+  walletConnected:    boolean;
+  walletAddress:      string | null;      // short: "CQ1U…dJGdf" — display only
+  walletAddressFull:  string | null;      // full base58 — for transactions
+  connectWallet:      () => void;         // triggers wallet adapter modal
+  disconnect:         () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function shortenAddress(addr: string): string {
-  if (addr.length <= 9) return addr;
-  return `${addr.slice(0, 4)}…${addr.slice(-4)}`;
+  return addr.length <= 9 ? addr : `${addr.slice(0, 4)}…${addr.slice(-4)}`;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { publicKey, connected, disconnect } = useWallet();
-  const { data: session } = useSession();
-  const [walletMethod, setWalletMethod] = useState<string | null>(null);
+  const { publicKey, connected, disconnect: walletDisconnect, select } = useWallet();
 
-  useEffect(() => {
-    if (connected && !walletMethod) setWalletMethod("Wallet");
-    if (!connected) setWalletMethod(null);
-  }, [connected, walletMethod]);
-
-  // SHORT address for display only
   const walletAddress = useMemo(
     () => (publicKey ? shortenAddress(publicKey.toBase58()) : null),
     [publicKey]
   );
 
-  // FULL address for on-chain use — never shortened
   const walletAddressFull = useMemo(
     () => (publicKey ? publicKey.toBase58() : null),
     [publicKey]
   );
 
-  const loggedIn = Boolean(session?.user) || connected;
-  const loginMethod = session?.user ? "Account" : walletMethod ?? null;
-
-  const loginWithProvider = async (provider: "google" | "github") => {
-    const { signIn } = await import("next-auth/react");
-    await signIn(provider, { callbackUrl: "/app" });
+  const connectWallet = () => {
+    // WalletModalProvider handles the modal — this is a no-op hook point
+    // ConnectWalletButton triggers the modal directly via useWalletModal()
   };
 
-  const connectWallet = () => {};
-
-  const logout = async () => {
-    if (connected) await disconnect();
-    if (session) await signOut({ redirect: false });
+  const disconnectWallet = async () => {
+    await walletDisconnect();
   };
 
   return (
     <AuthContext.Provider value={{
-      loggedIn, walletConnected: connected, loginMethod,
-      walletAddress, walletAddressFull,
-      user: session?.user ?? null,
-      loginWithProvider, connectWallet, logout,
+      walletConnected:   connected,
+      walletAddress,
+      walletAddressFull,
+      connectWallet,
+      disconnect:        disconnectWallet,
     }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  if (!ctx) throw new Error("useAuth must be inside AuthProvider");
   return ctx;
 }

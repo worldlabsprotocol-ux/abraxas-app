@@ -1,3 +1,19 @@
+// FILE: lib/providers.tsx
+// Provider stack — minimal and intentional.
+// Every provider here has a documented reason.
+//
+// REMOVED: SessionProvider (next-auth) — OAuth login not in use.
+//           If you re-enable Google/GitHub login, add it back.
+//
+// Stack (outer → inner):
+//   ToastProvider  — UI notifications, no external deps
+//   EvmProvider    — wagmi + RainbowKit, Ethereum mainnet only
+//   SolanaProvider — Solana wallet adapter, Phantom + Solflare
+//   AuthProvider   — bridges Solana wallet state into useAuth()
+//
+// ETH and Solana stacks are fully isolated — neither imports the other.
+// Jupiter (Solana swaps) is an isolated optional module, not wired here.
+
 "use client";
 
 import { ReactNode } from "react";
@@ -5,28 +21,17 @@ import { AuthProvider } from "@/lib/authState";
 import { ToastProvider } from "@/lib/toastState";
 import { SolanaProvider } from "@/components/SolanaProvider";
 import { EvmProvider } from "@/components/EvmProvider";
-import { SessionProvider } from "@/components/SessionProvider";
 
-/**
- * Provider stack (outer → inner):
- *   1. SessionProvider — NextAuth (Google / GitHub)
- *   2. ToastProvider   — UI notifications
- *   3. EvmProvider     — wagmi + RainbowKit (Ethereum)
- *   4. SolanaProvider  — Solana wallet adapter
- *   5. AuthProvider    — bridges wallet state into useAuth()
- *
- * Solana + EVM live in parallel — neither knows about the other.
- */
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider>
-      <ToastProvider>
-        <EvmProvider>
-          <SolanaProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </SolanaProvider>
-        </EvmProvider>
-      </ToastProvider>
-    </SessionProvider>
+    <ToastProvider>
+      <EvmProvider>
+        <SolanaProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </SolanaProvider>
+      </EvmProvider>
+    </ToastProvider>
   );
 }
