@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
-import { mainnet } from "wagmi/chains";
+// Direct import bypasses wagmi/chains barrel → viem/chains/index → ox/tempo chain
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { mainnet } = require("viem/chains/definitions/mainnet") as { mainnet: import("viem").Chain };
 
 /**
  * NEXT_PUBLIC_* env vars are inlined at BUILD TIME by Next.js.
