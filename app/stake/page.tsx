@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { usePortfolioData } from "@/lib/usePortfolioData";
 import { useAuth } from "@/lib/authState";
 import { Button } from "@/components/Button";
-import { WalletGate } from "@/components/WalletGate";
 import { ABRA } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 
@@ -220,9 +219,5 @@ function StakingContent() {
 }
 
 export default function StakePage() {
-  return (
-    <WalletGate requireWallet={false}>
-      <StakingContent />
-    </WalletGate>
-  );
+  return <StakingContent />;
 }
