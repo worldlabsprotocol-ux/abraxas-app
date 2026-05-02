@@ -1,80 +1,89 @@
 // FILE: lib/activityStore.ts
-// In-memory activity log. Deposit + withdraw write here. Live feed reads.
+// Unified event system. All protocol events write here. All feeds read from here.
+// No separate fake feeds.
 "use client";
 
 import { useEffect, useState } from "react";
 
-export type ActivityType = "deposit" | "mint" | "withdraw" | "agent" | "defense";
+export type EventType = "deposit" | "mint" | "withdraw" | "rebalance" | "defense" | "agent";
 
-export interface Activity {
-  id:        string;
-  type:      ActivityType;
-  vaultId:   string;
-  vaultName: string;
-  asset:     string;
-  amount?:   number;
-  message:   string;
-  txSig?:    string | null;
-  ts:        number;
+// Protocol event — every action produces one of these
+export interface ProtocolEvent {
+  id:           string;
+  type:         EventType;
+  // Location
+  userWallet:   string;
+  vaultId:      string;
+  vaultName:    string;
+  assetType:    string;
+  // Values
+  amount?:      number;
+  message:      string;
+  // Verification
+  txSignature:  string | null;  // null = simulated
+  simulated:    boolean;
+  ts:           number;
 }
 
-// Module-level store + listener pattern
-let store: Activity[] = seed();
-const listeners = new Set<() => void>();
+// Legacy alias so LiveFeed component still works
+export type Activity = ProtocolEvent;
+export type ActivityType = EventType;
 
+let store: ProtocolEvent[] = seedEvents();
+const listeners = new Set<() => void>();
 function emit() { listeners.forEach((l) => l()); }
 
-function seed(): Activity[] {
+function seedEvents(): ProtocolEvent[] {
   const now = Date.now();
   return [
-    { id: "a1", type: "agent",    vaultId: "490", vaultName: "VAULT-490", asset: "Music IP",      message: "Streaming velocity confirmed — holding",         ts: now - 1_000 * 60 * 2 },
-    { id: "a2", type: "deposit",  vaultId: "492", vaultName: "VAULT-492", asset: "Real Estate",   message: "Position opened",          amount: 5_000,        ts: now - 1_000 * 60 * 6 },
-    { id: "a3", type: "mint",     vaultId: "492", vaultName: "VAULT-492", asset: "Real Estate",   message: "Token-2022 minted to operator wallet",           ts: now - 1_000 * 60 * 6 },
-    { id: "a4", type: "agent",    vaultId: "491", vaultName: "VAULT-491", asset: "Music IP",      message: "Monthly royalty cycle closed — +2.1%",          ts: now - 1_000 * 60 * 12 },
-    { id: "a5", type: "defense",  vaultId: "490", vaultName: "VAULT-490", asset: "Music IP",      message: "Circuit defense — volatility threshold crossed", ts: now - 1_000 * 60 * 22 },
-    { id: "a6", type: "deposit",  vaultId: "490", vaultName: "VAULT-490", asset: "Music IP",      message: "Position opened",          amount: 2_500,        ts: now - 1_000 * 60 * 31 },
-    { id: "a7", type: "mint",     vaultId: "490", vaultName: "VAULT-490", asset: "Music IP",      message: "Token-2022 minted to operator wallet",           ts: now - 1_000 * 60 * 31 },
-    { id: "a8", type: "agent",    vaultId: "493", vaultName: "VAULT-493", asset: "Receivables",   message: "Counterparty risk scored — A-grade",            ts: now - 1_000 * 60 * 44 },
-    { id: "a9", type: "withdraw", vaultId: "494", vaultName: "VAULT-494", asset: "Music IP",      message: "Position closed — capital returned",  amount: 1_200, ts: now - 1_000 * 60 * 58 },
-    { id: "a10", type: "agent",   vaultId: "492", vaultName: "VAULT-492", asset: "Real Estate",   message: "Rent flow reinvested — +0.20%",                 ts: now - 1_000 * 60 * 71 },
+    { id: "s1", type: "agent",    userWallet: "", vaultId: "490", vaultName: "VAULT-490", assetType: "Music IP",     message: "Streaming velocity confirmed — holding position",          txSignature: null, simulated: true, ts: now - 120_000 },
+    { id: "s2", type: "deposit",  userWallet: "", vaultId: "492", vaultName: "VAULT-492", assetType: "Real Estate",  message: "Position opened", amount: 5_000,                           txSignature: null, simulated: true, ts: now - 360_000 },
+    { id: "s3", type: "mint",     userWallet: "", vaultId: "492", vaultName: "VAULT-492", assetType: "Real Estate",  message: "Token-2022 ABRAP minted to operator wallet",               txSignature: null, simulated: true, ts: now - 360_000 },
+    { id: "s4", type: "rebalance",userWallet: "", vaultId: "491", vaultName: "VAULT-491", assetType: "Music IP",     message: "Monthly royalty cycle closed — +2.1%",                     txSignature: null, simulated: true, ts: now - 720_000 },
+    { id: "s5", type: "defense",  userWallet: "", vaultId: "490", vaultName: "VAULT-490", assetType: "Music IP",     message: "Circuit defense — volatility threshold. Reserve raised.",   txSignature: null, simulated: true, ts: now - 1_320_000 },
+    { id: "s6", type: "deposit",  userWallet: "", vaultId: "490", vaultName: "VAULT-490", assetType: "Music IP",     message: "Position opened", amount: 2_500,                           txSignature: null, simulated: true, ts: now - 1_860_000 },
+    { id: "s7", type: "mint",     userWallet: "", vaultId: "490", vaultName: "VAULT-490", assetType: "Music IP",     message: "Token-2022 ABRAP minted to operator wallet",               txSignature: null, simulated: true, ts: now - 1_860_000 },
+    { id: "s8", type: "agent",    userWallet: "", vaultId: "493", vaultName: "VAULT-493", assetType: "Receivables",  message: "Counterparty risk scored — A-grade. Position maintained.", txSignature: null, simulated: true, ts: now - 2_640_000 },
+    { id: "s9", type: "withdraw", userWallet: "", vaultId: "494", vaultName: "VAULT-494", assetType: "Music IP",     message: "Simulated exit — principal returned",  amount: 1_200,      txSignature: null, simulated: true, ts: now - 3_480_000 },
   ];
 }
 
-export function logActivity(a: Omit<Activity, "id" | "ts"> & { ts?: number }) {
-  const entry: Activity = {
-    id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    ts: a.ts ?? Date.now(),
-    ...a,
+export function logEvent(e: Omit<ProtocolEvent, "id" | "ts"> & { ts?: number }) {
+  const event: ProtocolEvent = {
+    ...e,
+    id: `ev-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+    ts: e.ts ?? Date.now(),
   };
-  store = [entry, ...store].slice(0, 60);
+  store = [event, ...store].slice(0, 100);
   emit();
 }
 
-export function getActivity(): Activity[] {
-  return store;
-}
+// Legacy alias
+export const logActivity = logEvent;
 
-// Periodic agent activity — keeps the feed alive
-const AGENT_LINES = [
-  { vault: "VAULT-490", asset: "Music IP",    msg: "Catalog weight adjusted — +0.19%" },
-  { vault: "VAULT-491", asset: "Music IP",    msg: "Distribution flow captured — +0.24%" },
-  { vault: "VAULT-492", asset: "Real Estate", msg: "Vacancy buffer recalibrated — stable" },
-  { vault: "VAULT-493", asset: "Receivables", msg: "Invoice batch settled — +1.35%" },
-  { vault: "VAULT-494", asset: "Music IP",    msg: "Catalog indexed — +0.12%" },
+export function getEvents(): ProtocolEvent[] { return store; }
+export function getActivity(): ProtocolEvent[] { return store; }
+
+// Periodic agent events — deterministic rules, not black-box
+const AGENT_RULES = [
+  { vault: "490", asset: "Music IP",    rule: "stream_velocity_check",  msg: "Streaming velocity within threshold — holding" },
+  { vault: "491", asset: "Music IP",    rule: "royalty_cycle_check",    msg: "Royalty cycle checked — compound triggered" },
+  { vault: "492", asset: "Real Estate", rule: "rent_flow_check",        msg: "Rent flow captured — reinvested" },
+  { vault: "493", asset: "Receivables", rule: "credit_score_check",     msg: "Counterparty credit score A-grade — maintained" },
+  { vault: "494", asset: "Music IP",    rule: "catalog_index_check",    msg: "Catalog index updated — position stable" },
 ];
+
 let tickerStarted = false;
 function startTicker() {
-  if (tickerStarted) return;
-  if (typeof window === "undefined") return;
+  if (tickerStarted || typeof window === "undefined") return;
   tickerStarted = true;
   setInterval(() => {
-    const pick = AGENT_LINES[Math.floor(Math.random() * AGENT_LINES.length)];
-    const id = pick.vault.split("-")[1];
-    logActivity({ type: "agent", vaultId: id, vaultName: pick.vault, asset: pick.asset, message: pick.msg });
+    const r = AGENT_RULES[Math.floor(Math.random() * AGENT_RULES.length)];
+    logEvent({ type: "agent", userWallet: "", vaultId: r.vault, vaultName: `VAULT-${r.vault}`, assetType: r.asset, message: `[${r.rule}] ${r.msg}`, txSignature: null, simulated: true });
   }, 14_000);
 }
 
-export function useActivity(): Activity[] {
+export function useActivity(): ProtocolEvent[] {
   const [, setTick] = useState(0);
   useEffect(() => {
     startTicker();
