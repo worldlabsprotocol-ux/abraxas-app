@@ -1,86 +1,72 @@
+// FILE: lib/useOgVerification.ts
 "use client";
 
 import { useEffect, useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
-// Direct import bypasses wagmi/chains barrel → viem/chains/index → ox/tempo chain
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { mainnet } = require("viem/chains/definitions/mainnet") as { mainnet: import("viem").Chain };
+import type { Chain } from "viem";
 
-/**
- * NEXT_PUBLIC_* env vars are inlined at BUILD TIME by Next.js.
- * This means:
- *  - You MUST restart `npm run dev` after editing .env.local
- *  - The value is captured here once at module load
- */
+// Mainnet defined inline — same as EvmProvider.tsx.
+// Avoids wagmi/chains and viem/chains barrels which pull in ox/tempo.
+const mainnet: Chain = {
+  id: 1,
+  name: "Ethereum",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://cloudflare-eth.com"] },
+    public:  { http: ["https://cloudflare-eth.com"] },
+  },
+  blockExplorers: {
+    default: { name: "Etherscan", url: "https://etherscan.io" },
+  },
+};
+
 const OG_COLLECTION_RAW = process.env.NEXT_PUBLIC_OG_ETH_COLLECTION;
 
-// Temporary diagnostic — verify env is loaded. Safe to log: this is a
-// public contract address, not a secret. Remove once confirmed working.
-if (typeof window !== "undefined") {
-  console.log(
-    "[og-verification] NEXT_PUBLIC_OG_ETH_COLLECTION =",
-    OG_COLLECTION_RAW || "(MISSING — restart dev server after editing .env.local)"
-  );
-}
-
-const OG_COLLECTION =
+export const OG_COLLECTION_ADDRESS =
   OG_COLLECTION_RAW && /^0x[a-fA-F0-9]{40}$/.test(OG_COLLECTION_RAW.trim())
     ? (OG_COLLECTION_RAW.trim() as `0x${string}`)
     : undefined;
 
 const ERC721_ABI = [
   {
-    constant: true,
-    inputs: [{ name: "owner", type: "address" }],
     name: "balanceOf",
-    outputs: [{ name: "balance", type: "uint256" }],
     type: "function",
     stateMutability: "view",
+    inputs:  [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
 ] as const;
 
 export type OgState =
-  | { status: "disconnected" }
-  | { status: "no-collection" }
-  | { status: "checking" }
-  | { status: "verified"; balance: number }
-  | { status: "not-holder" }
-  | { status: "error"; error: string };
+  | "loading"
+  | "not_connected"
+  | "no_collection"
+  | "checking"
+  | "og"
+  | "not_og"
+  | "error";
 
-/**
- * Reads ERC-721 balanceOf on the OG collection contract for the
- * connected EVM wallet. Returns a discriminated union for clean rendering.
- */
 export function useOgVerification(): OgState {
   const { address, isConnected } = useAccount();
-  const [hydrated, setHydrated] = useState(false);
+  const [state, setState] = useState<OgState>("loading");
 
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
-
-  const enabled =
-    hydrated && isConnected && Boolean(address) && Boolean(OG_COLLECTION);
-
-  const { data, isLoading, error } = useReadContract({
-    abi: ERC721_ABI,
-    address: OG_COLLECTION,
+  const { data: balance, isLoading, isError } = useReadContract({
+    address:      OG_COLLECTION_ADDRESS,
+    abi:          ERC721_ABI,
     functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: mainnet.id,
-    query: { enabled },
+    args:         address ? [address] : undefined,
+    chainId:      mainnet.id,
+    query: { enabled: Boolean(isConnected && address && OG_COLLECTION_ADDRESS) },
   });
 
-  if (!OG_COLLECTION) return { status: "no-collection" };
-  if (!isConnected || !address) return { status: "disconnected" };
-  if (isLoading) return { status: "checking" };
-  if (error) return { status: "error", error: error.message ?? "Failed to verify" };
+  useEffect(() => {
+    if (!OG_COLLECTION_ADDRESS) { setState("no_collection"); return; }
+    if (!isConnected)            { setState("not_connected"); return; }
+    if (isLoading)               { setState("checking");      return; }
+    if (isError)                 { setState("error");         return; }
+    if (balance !== undefined)   { setState(balance > 0n ? "og" : "not_og"); return; }
+    setState("loading");
+  }, [isConnected, isLoading, isError, balance]);
 
-  const balance = typeof data === "bigint" ? Number(data) : 0;
-  return balance > 0
-    ? { status: "verified", balance }
-    : { status: "not-holder" };
+  return state;
 }
-
-/** Exported so the access page can show the configured contract address. */
-export const OG_COLLECTION_ADDRESS = OG_COLLECTION;
