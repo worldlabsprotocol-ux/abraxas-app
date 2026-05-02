@@ -7,8 +7,8 @@ import { Suspense, useState } from "react";
 import { ASSET_TYPES } from "@/lib/appData";
 
 function OnboardInner() {
-  const router = useRouter();
-  const params = useSearchParams();
+  const router  = useRouter();
+  const params  = useSearchParams();
   const initial = params?.get("type") ?? null;
   const [selected, setSelected] = useState<string | null>(initial);
 
@@ -21,7 +21,7 @@ function OnboardInner() {
         Pick an asset.
       </h1>
       <p style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "2rem", lineHeight: 1.6 }}>
-        Each asset class has its own vault and agent.
+        Each asset class has its own vault and agent. Pick what you want to operate.
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -46,7 +46,7 @@ function OnboardInner() {
                 </div>
                 <span style={{ fontWeight: 700, fontSize: "1rem", color: "var(--green)" }}>{a.apy}%</span>
               </div>
-              <p style={{ fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.55 }}>{a.desc}</p>
+              <p style={{ fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.55, margin: 0 }}>{a.howItEarns}</p>
             </button>
           );
         })}
