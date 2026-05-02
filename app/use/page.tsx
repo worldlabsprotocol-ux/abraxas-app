@@ -57,7 +57,7 @@ function UseInner() {
     closePosition(selected.id);
     logActivity({
       type: "withdraw", vaultId: selected.vaultId, vaultName: selected.vaultName,
-      asset: selected.asset, amount: selected.principal,
+      asset: selected.assetType, amount: selected.principal,
       message: "Position closed — capital returned",
       txSig: res.txSignature,
     });
@@ -174,9 +174,9 @@ function UseInner() {
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
                     <span style={{ fontWeight: 700, fontSize: "0.88rem" }}>{p.vaultName}</span>
-                    <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--green)" }}>{fmtUSD(p.amount)}</span>
+                    <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--green)" }}>{fmtUSD(p.principal)}</span>
                   </div>
-                  <div style={{ fontSize: "0.7rem", color: "var(--subtle)" }}>{p.asset} · {p.apy}% APY</div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--subtle)" }}>{p.assetType} · {p.apy}% APY</div>
                 </button>
               );
             })}

@@ -90,7 +90,7 @@ export default function DashboardPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.625rem", flexWrap: "wrap", gap: "0.5rem" }}>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{p.vaultName}</div>
-                      <div style={{ fontSize: "0.7rem", color: "var(--subtle)" }}>{p.asset} · {vault?.agent}</div>
+                      <div style={{ fontSize: "0.7rem", color: "var(--subtle)" }}>{p.assetType} · {vault?.agent}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--green)" }}>{p.apy}%</div>
@@ -114,7 +114,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", alignItems: "center" }}>
-                    <a href={`https://solscan.io/tx/${p.txSig}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--gold)", textDecoration: "none" }}>
+                    <a href={`https://solscan.io/tx/${p.txSignature}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--gold)", textDecoration: "none" }}>
                       View tx ↗
                     </a>
                     <a href={`https://solscan.io/token/${p.mintAddress}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--gold)", textDecoration: "none" }}>
