@@ -1,11 +1,8 @@
 // FILE: components/EvmProvider.tsx
-// EVM wallet provider — wagmi + RainbowKit, Ethereum mainnet ONLY.
+// EVM wallet — wagmi + RainbowKit, Ethereum mainnet only.
 //
-// CRITICAL: import mainnet directly from viem, NOT from "wagmi/chains".
-// "wagmi/chains" re-exports ALL chains via viem/chains/index.js which pulls in
-// viem/chains/definitions/tempo.js → ox/tempo → broken ESM imports at build time.
-// Importing from "viem/chains" (the barrel) has the same problem.
-// Direct path import bypasses the barrel entirely.
+// mainnet is defined inline to avoid importing from wagmi/chains or viem/chains.
+// Both barrels pull in viem/chains/index.js → tempo.js → ox/tempo (broken ESM).
 
 "use client";
 
@@ -15,10 +12,22 @@ import { RainbowKitProvider, getDefaultConfig, darkTheme } from "@rainbow-me/rai
 import { WagmiProvider } from "wagmi";
 import { http } from "viem";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { Chain } from "viem";
 
-// Direct import — avoids wagmi/chains and viem/chains barrels entirely
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { mainnet } = require("viem/chains/definitions/mainnet") as { mainnet: import("viem").Chain };
+// Mainnet defined inline — avoids any chain barrel import.
+// Values are stable constants: https://chainlist.org/chain/1
+const mainnet: Chain = {
+  id: 1,
+  name: "Ethereum",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://cloudflare-eth.com"] },
+    public:  { http: ["https://cloudflare-eth.com"] },
+  },
+  blockExplorers: {
+    default: { name: "Etherscan", url: "https://etherscan.io" },
+  },
+};
 
 const projectId = (process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "").trim() || "abraxas-app";
 const ethRpcRaw  = (process.env.NEXT_PUBLIC_ETH_RPC_URL || "").trim();
