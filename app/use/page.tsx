@@ -56,10 +56,11 @@ function UseInner() {
 
     withdrawPosition(selected.id);
     logActivity({
-      type: "withdraw", vaultId: selected.vaultId, vaultName: selected.vaultName,
-      asset: selected.assetType, amount: selected.principal,
+      type: "withdraw", userWallet: walletAddressFull ?? "",
+      vaultId: selected.vaultId, vaultName: selected.vaultName,
+      assetType: selected.assetType, amount: selected.principal,
       message: "Position closed — capital returned",
-      txSig: res.txSignature,
+      txSignature: res.txSignature, simulated: res.simulated,
     });
     setResult({
       txSignature:    res.txSignature,
