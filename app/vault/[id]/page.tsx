@@ -157,9 +157,9 @@ function CircuitPanel({ vaultId }: { vaultId: string }) {
       <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "4px", height: "5px", overflow: "hidden" }}>
         <div style={{ width: `${score}%`, height: "100%", background: color, borderRadius: "4px", transition: "width 0.6s ease" }} />
       </div>
-      {data?.action && (
+      {!!data?.action && (
         <div style={{ marginTop: "0.625rem", fontSize: "0.7rem", color: "var(--gold)" }}>
-          ⚙ {String((data.action as Record<string,unknown>)?.description ?? "")}
+          ⚙ {String((data?.action as Record<string,unknown>)?.description ?? "")}
         </div>
       )}
     </div>
