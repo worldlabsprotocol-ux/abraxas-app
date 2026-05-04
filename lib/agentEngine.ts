@@ -180,3 +180,45 @@ export function simulateAgentSignals(strategy: AgentStrategy): Record<string, nu
   };
   return base[strategy] ?? {};
 }
+
+// ─── Flight to Safety / triggerSafetyProtocol ─────────────────────────────────
+// Called by Circuit when NFT floor volatility exceeds threshold.
+// Deterministic: if volatility% > threshold → recommend Ondo $USDY rotation.
+// Returns recommended action — never auto-executes without user confirmation.
+
+export interface SafetyAction {
+  trigger:         string;
+  volatilityPct:   number;
+  threshold:       number;
+  recommendation:  string;
+  targetAsset:     string;  // e.g. "$USDY"
+  rotationPct:     number;  // % of vault SOL to rotate
+  urgency:         "LOW" | "MEDIUM" | "HIGH";
+}
+
+export function triggerSafetyProtocol(params: {
+  vaultId:        string;
+  volatilityPct:  number;
+  threshold?:     number;
+  liquidityPref?: "HIGH" | "MEDIUM" | "LOW";
+}): SafetyAction | null {
+  const { vaultId, volatilityPct, threshold = 15, liquidityPref = "MEDIUM" } = params;
+
+  if (volatilityPct <= threshold) return null; // no action needed
+
+  // Rotation size: scales with volatility beyond threshold, capped at 25% of vault
+  const excess       = Math.min(volatilityPct - threshold, 20);
+  const rotationPct  = Math.min(5 + excess, 25);
+  const targetAsset  = liquidityPref === "HIGH" ? "$USDY" : "$OUSG";
+  const urgency      = volatilityPct >= threshold + 15 ? "HIGH" : volatilityPct >= threshold + 5 ? "MEDIUM" : "LOW";
+
+  return {
+    trigger:        `NFT floor volatility ${volatilityPct.toFixed(1)}% exceeds threshold ${threshold}%`,
+    volatilityPct,
+    threshold,
+    recommendation: `Rotate ${rotationPct}% of vault SOL into Ondo ${targetAsset} (${urgency} urgency)`,
+    targetAsset,
+    rotationPct,
+    urgency,
+  };
+}

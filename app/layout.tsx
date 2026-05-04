@@ -4,6 +4,7 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { BottomNav } from "@/components/BottomNav";
 import { SystemStatusBar } from "@/components/SystemStatusBar";
+import { VoiceAgent } from "@/components/VoiceAgent";
 import { Toast } from "@/components/Toast";
 import { Providers } from "@/lib/providers";
 
@@ -21,12 +22,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Nav />
           <SystemStatusBar />
-          {/* paddingTop: 92px clears nav(56) + status bar(36) */}
-          {/* paddingBottom: 128px clears bottom tab bar(72) + safe area */}
           <main style={{ paddingTop: "92px", minHeight: "100vh", paddingBottom: "128px" }}>
             {children}
           </main>
           <BottomNav />
+          {/* Voice agent — bottom-right floating button */}
+          <VoiceAgent />
           <Toast />
         </Providers>
       </body>
