@@ -9,7 +9,7 @@ import { Providers } from "@/lib/providers";
 
 export const metadata: Metadata = {
   title: "Abraxas — Autonomous RWA Guardian Protocol",
-  description: "AI-powered agents protecting tokenized real-world assets on Solana. Circuit-monitored. Always operating.",
+  description: "AI-powered agents protecting tokenized real-world assets on Solana.",
   metadataBase: new URL("https://abraxas-app.vercel.app"),
   icons: { icon: "/icon.png" },
 };
@@ -17,17 +17,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body style={{ background: "var(--void)", color: "var(--text)", margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
+      <body style={{ background: "var(--void)", color: "var(--text)", margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
         <Providers>
-          {/* Fixed top nav — 56px */}
           <Nav />
-          {/* Fixed system status bar — 36px below nav */}
           <SystemStatusBar />
-          {/* Page content — clears nav (56px) + status bar (36px) = 92px */}
-          <main style={{ paddingTop: "92px", minHeight: "100vh", paddingBottom: "80px" }}>
+          {/* paddingTop: 92px clears nav(56) + status bar(36) */}
+          {/* paddingBottom: 128px clears bottom tab bar(72) + safe area */}
+          <main style={{ paddingTop: "92px", minHeight: "100vh", paddingBottom: "128px" }}>
             {children}
           </main>
-          {/* 3-button bottom app nav */}
           <BottomNav />
           <Toast />
         </Providers>

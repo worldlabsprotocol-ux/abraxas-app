@@ -1,176 +1,105 @@
+// FILE: components/BottomNav.tsx
+// Vibrant mobile-first bottom tab bar.
+// Three tabs: Intelligence · Vaults · IP/RWA
+// Glassmorphism + per-tab neon active glow.
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-/**
- * BottomNav — 3 fixed app-style bottom buttons.
- * Account | Operate | System
- * Exactly like Phantom, Jupiter, Uniswap mobile.
- * Each tab expands a tray. Tray closes on link tap or outside tap.
- */
+const TAB_COLORS = {
+  intelligence: { active: "#60A5FA", glow: "rgba(96,165,250,0.25)",  bg: "rgba(96,165,250,0.1)"  },
+  vaults:       { active: "#14F195", glow: "rgba(20,241,149,0.25)",  bg: "rgba(20,241,149,0.08)" },
+  rwa:          { active: "#FBBF24", glow: "rgba(251,191,36,0.25)",  bg: "rgba(251,191,36,0.1)"  },
+};
 
 const TABS = [
   {
-    key: "account",
-    icon: (active: boolean) => (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--gold)" : "var(--subtle)"} strokeWidth="1.8">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    key:    "intelligence",
+    label:  "Intelligence",
+    href:   "/",
+    icon:   (active: boolean, color: string) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.3)"} strokeWidth="1.8">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 6v6l4 2"/>
       </svg>
     ),
-    label: "Account",
-    links: [
-      { href: "/app",      label: "Dashboard"  },
-      { href: "/operator", label: "My Profile" },
-      { href: "/stake",    label: "Staking"    },
-      { href: "/use",      label: "Use Capital"},
-    ],
+    matches: (p: string) => p === "/" || p.startsWith("/circuit") || p.startsWith("/agents"),
   },
   {
-    key: "operate",
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--gold)" : "var(--subtle)"} strokeWidth="1.8">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    key:    "vaults",
+    label:  "Vaults",
+    href:   "/operate",
+    icon:   (active: boolean, color: string) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.3)"} strokeWidth="1.8">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
       </svg>
     ),
-    label: "Operate",
-    primary: true,
-    links: [
-      { href: "/onboard",    label: "Get Started"    },
-      { href: "/earn",       label: "Earn Yield"     },
-      { href: "/marketplace",label: "Browse Vaults"  },
-      { href: "/list",       label: "Register Asset" },
-    ],
+    matches: (p: string) => p.startsWith("/operate") || p.startsWith("/deposit") || p.startsWith("/vault") || p.startsWith("/dashboard"),
   },
   {
-    key: "system",
-    icon: (active: boolean) => (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--gold)" : "var(--subtle)"} strokeWidth="1.8">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+    key:    "rwa",
+    label:  "IP / RWA",
+    href:   "/rwa",
+    icon:   (active: boolean, color: string) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.3)"} strokeWidth="1.8">
+        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
       </svg>
     ),
-    label: "System",
-    links: [
-      { href: "/live",       label: "Live Feed"     },
-      { href: "/abra",       label: "$ABRA"         },
-      { href: "/why",        label: "Why Abraxas"   },
-      { href: "/demo",       label: "Demo Dashboard"},
-    ],
+    matches: (p: string) => p.startsWith("/rwa") || p.startsWith("/marketplace"),
   },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
-  const router   = useRouter();
-  const [open, setOpen] = useState<string | null>(null);
-
-  const toggle = (key: string) => setOpen(open === key ? null : key);
-  const activeKey = TABS.find((t) => t.links.some((l) => l.href === pathname))?.key;
 
   return (
-    <>
-      {/* Backdrop */}
-      {open && (
-        <div
-          onClick={() => setOpen(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 38, background: "rgba(0,0,0,0.45)" }}
-        />
-      )}
-
-      {/* Tray */}
-      {TABS.map((tab) => open === tab.key && (
-        <div key={tab.key} style={{
-          position: "fixed", bottom: "64px",
-          left: "50%", transform: "translateX(-50%)",
-          zIndex: 39,
-          background: "rgba(10,13,26,0.98)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "16px",
-          padding: "0.5rem 0.375rem",
-          minWidth: "210px",
-          backdropFilter: "blur(30px)",
-          boxShadow: "0 -4px 40px rgba(0,0,0,0.6)",
-        }}>
-          {tab.links.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <button
-                key={link.href}
-                onClick={() => { router.push(link.href); setOpen(null); }}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  width: "100%", textAlign: "left",
-                  background: isActive ? "rgba(200,169,110,0.12)" : "none",
-                  border: "none", borderRadius: "10px",
-                  padding: "0.75rem 0.875rem",
-                  cursor: "pointer",
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "0.9rem",
-                  fontWeight: isActive ? 700 : 400,
-                  color: isActive ? "var(--gold)" : "var(--text)",
-                  transition: "background 0.15s",
-                  marginBottom: "2px",
-                }}
-              >
-                {link.label}
-                {isActive && <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--gold)", flexShrink: 0 }} />}
-              </button>
-            );
-          })}
-        </div>
-      ))}
-
-      {/* Bottom bar — fixed, always visible */}
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        zIndex: 40, height: "64px",
-        background: "rgba(2,3,10,0.97)",
-        backdropFilter: "blur(24px)",
-        borderTop: "1px solid rgba(255,255,255,0.07)",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr 1fr",
-        alignItems: "center",
-      }}>
-        {TABS.map((tab) => {
-          const isActive = activeKey === tab.key || open === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => toggle(tab.key)}
-              style={{
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                gap: "3px", height: "100%",
-                background: "none", border: "none",
-                cursor: "pointer", position: "relative",
-              }}
-            >
-              {/* Active top line */}
-              {isActive && (
-                <div style={{
-                  position: "absolute", top: 0,
-                  left: "20%", right: "20%", height: "2px",
-                  background: "var(--gold)",
-                  borderRadius: "0 0 2px 2px",
-                }} />
-              )}
-              {tab.icon(isActive)}
+    <nav style={{
+      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+      height: "72px",
+      display: "flex", alignItems: "stretch",
+      background: "rgba(0,0,0,0.6)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
+      borderTop: "1px solid rgba(255,255,255,0.07)",
+    }}>
+      {TABS.map((tab) => {
+        const active = tab.matches(pathname ?? "");
+        const c      = TAB_COLORS[tab.key as keyof typeof TAB_COLORS];
+        return (
+          <Link key={tab.key} href={tab.href} style={{ flex: 1, textDecoration: "none" }}>
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center",
+              justifyContent: "center", gap: "0.25rem", height: "100%", padding: "0.5rem 0",
+              background:   active ? c.bg : "transparent",
+              boxShadow:    active ? `inset 0 2px 0 ${c.active}` : "none",
+              transition:   "all 0.2s",
+              cursor:       "pointer",
+            }}>
+              {/* Icon with glow when active */}
+              <div style={{
+                transition: "transform 0.15s, filter 0.15s",
+                filter: active ? `drop-shadow(0 0 6px ${c.active})` : "none",
+                transform: active ? "translateY(-1px)" : "translateY(0)",
+              }}>
+                {tab.icon(active, c.active)}
+              </div>
               <span style={{
-                fontSize: "0.56rem",
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: isActive ? 700 : 400,
-                letterSpacing: "0.08em",
+                fontSize:      "0.58rem",
+                fontWeight:    active ? 700 : 400,
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                color: isActive ? "var(--gold)" : "var(--subtle)",
+                color:         active ? c.active : "rgba(255,255,255,0.3)",
+                transition:    "color 0.2s",
               }}>
                 {tab.label}
               </span>
-            </button>
-          );
-        })}
-      </div>
-    </>
+            </div>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

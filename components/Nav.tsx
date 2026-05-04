@@ -1,87 +1,49 @@
 // FILE: components/Nav.tsx
+// Slim sticky header. Logo + status pulse + wallet connect.
+// No sub-menus. All navigation lives in BottomNav.
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
-
-// Max 4 primary nav items
-const LINKS = [
-  { href: "/",          label: "Home"      },
-  { href: "/operate",   label: "Operate"   },
-  { href: "/dashboard", label: "Dashboard" },
-];
-
-const MORE_LINKS = [
-  { href: "/methodology",  label: "Methodology" },
-  { href: "/legal",        label: "Legal"       },
-  { href: "/token",        label: "$ABRA"       },
-  { href: "/why",          label: "Why Abraxas" },
-];
+import { useCircuitState } from "@/lib/protocolStream";
 
 export function Nav() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => { setOpen(false); }, [pathname]);
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
+  const { state } = useCircuitState();
+  const pulseColor = state === "RISK" ? "#f26b6b" : state === "WATCH" ? "#f0d98a" : "#14F195";
 
   return (
-    <>
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, height: "56px", display: "flex", alignItems: "center", padding: "0 1rem", gap: "1rem", background: "rgba(2,3,10,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div style={{ width: "22px", height: "22px", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 8px rgba(200,169,110,0.9)" }} />
-            </div>
-            <span style={{ fontWeight: 700, fontSize: "0.85rem", letterSpacing: "0.14em", color: "var(--gold)", textTransform: "uppercase" }}>Abraxas</span>
-          </div>
-        </Link>
-
-        <div style={{ display: "none", alignItems: "center", gap: "1.75rem", flex: 1, marginLeft: "1rem" }} className="md:flex">
-          {LINKS.map((l) => {
-            const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
-            return (
-              <Link key={l.href} href={l.href} style={{ fontSize: "0.72rem", letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", fontWeight: active ? 700 : 400, color: active ? "var(--gold)" : "var(--muted)", position: "relative" }}>
-                {active && <span style={{ position: "absolute", bottom: "-4px", left: 0, right: 0, height: "1px", background: "var(--gold)" }} />}
-                {l.label}
-              </Link>
-            );
-          })}
+    <nav style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
+      height: "56px",
+      display: "flex", alignItems: "center",
+      padding: "0 1rem",
+      justifyContent: "space-between",
+      background: "rgba(0,0,0,0.4)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      borderBottom: "1px solid rgba(255,255,255,0.05)",
+    }}>
+      {/* Left: logo + status pulse */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+        {/* Glyph */}
+        <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 10px rgba(200,169,110,0.9)" }} />
         </div>
-
-        <div style={{ flex: 1 }} className="md:hidden" />
-
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
-          <ConnectWalletButton size="sm" compact />
-          <button onClick={() => setOpen((v) => !v)} aria-label="Menu" style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "5px", width: "30px", height: "30px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", cursor: "pointer", padding: 0 }}>
-            {open
-              ? <span style={{ fontSize: "0.78rem", color: "var(--gold)", lineHeight: 1 }}>✕</span>
-              : <><span style={{ width: "14px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", display: "block" }} /><span style={{ width: "14px", height: "1.5px", background: "var(--muted)", borderRadius: "1px", display: "block" }} /></>
-            }
-          </button>
+        <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: "0.875rem", letterSpacing: "0.12em", color: "var(--gold)", textTransform: "uppercase" }}>
+          Abraxas
+        </span>
+        {/* System status pulse */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", padding: "0.15rem 0.5rem", borderRadius: "100px", background: `${pulseColor}14`, border: `1px solid ${pulseColor}30` }}>
+          <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: pulseColor, animation: "pulse 1.5s ease-in-out infinite", boxShadow: `0 0 6px ${pulseColor}` }} />
+          <span style={{ fontSize: "0.58rem", fontWeight: 700, color: pulseColor, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            {state === "RISK" ? "Alert" : state === "WATCH" ? "Watch" : "Online"}
+          </span>
         </div>
-      </nav>
+      </div>
 
-      {open && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 49, background: "rgba(2,3,10,0.98)", backdropFilter: "blur(24px)", paddingTop: "56px", overflowY: "auto" }}>
-          <div style={{ padding: "1.5rem 1.25rem 4rem" }}>
-            {[...LINKS, ...MORE_LINKS].map((l) => {
-              const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
-              return (
-                <Link key={l.href} href={l.href} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 0", fontSize: "1.1rem", fontWeight: active ? 700 : 400, textDecoration: "none", color: active ? "var(--gold)" : "var(--text)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  {l.label}
-                  {active && <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--gold)" }} />}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </>
+      {/* Right: wallet connect with neon glow */}
+      <div style={{ boxShadow: "0 0 15px rgba(20,241,149,0.25)", borderRadius: "8px" }}>
+        <ConnectWalletButton size="sm" compact />
+      </div>
+    </nav>
   );
 }
