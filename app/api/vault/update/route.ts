@@ -1,12 +1,7 @@
 // FILE: app/api/vault/update/route.ts
-// Builds vault state update tx (risk event + Sophia response).
-// Returns serialised tx for user to sign, or simulated result.
-
+// Vault state update — self-contained. No @/lib/solana/* imports.
 import { NextRequest, NextResponse } from "next/server";
-import { PublicKey } from "@solana/web3.js";
-import { withFallback } from "@/lib/solana/rpc";
-import { buildUpdateVaultTx, simulateTx, serialiseTx } from "@/lib/solana/txBuilder";
-import { circuitStateFromScore, clampRiskScore, STRATEGY_REDUCTION } from "@/lib/solana/vaultPda";
+import { PublicKey, Transaction, Connection } from "@solana/web3.js";
 
 function isValidPubkey(s: string): boolean {
   try { new PublicKey(s); return true; } catch { return false; }
@@ -15,51 +10,55 @@ function fakeBase58(len = 88): string {
   const ch = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
   let o = ""; for (let i = 0; i < len; i++) o += ch[Math.floor(Math.random() * ch.length)]; return o;
 }
-// Bounded deterministic reduction (no uncontrolled Math.random)
+function clamp(n: number): number { return Math.max(0, Math.min(100, Math.round(n))); }
+function circuitStateFromScore(s: number): number { return s >= 75 ? 3 : s >= 50 ? 2 : s >= 25 ? 1 : 0; }
 function deterministicReduction(strategy: string, seed: number): number {
-  const r = STRATEGY_REDUCTION[strategy] ?? STRATEGY_REDUCTION.balanced;
+  const ranges: Record<string, [number, number]> = {
+    balanced: [20, 30], aggressive: [30, 40], conservative: [10, 20],
+  };
+  const [min, max] = ranges[strategy] ?? ranges.balanced;
   const x = Math.abs(Math.sin(seed * 9301 + 49297)) % 1;
-  return Math.round(r.min + x * (r.max - r.min));
+  return Math.round(min + x * (max - min));
+}
+function getConn(): Connection {
+  const url = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+  return new Connection(url, "confirmed");
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { ownerWallet, pda, riskScorePrev, riskEventDelta, strategy = "balanced", agentAction = "Hedge response" } = await req.json();
-
     if (!isValidPubkey(ownerWallet)) {
-      return NextResponse.json({ ok: false, error: "Invalid owner wallet." }, { status: 400 });
+      return NextResponse.json({ ok:false, error:"Invalid owner wallet." }, { status:400 });
     }
-
-    // Checked arithmetic — bounds enforced server-side
-    const afterEvent   = clampRiskScore(riskScorePrev + riskEventDelta);
+    const afterEvent   = clamp(riskScorePrev + riskEventDelta);
     const reduction    = deterministicReduction(strategy, Date.now());
-    const riskScoreNew = clampRiskScore(afterEvent - reduction);
+    const riskScoreNew = clamp(afterEvent - reduction);
     const circuitState = circuitStateFromScore(riskScoreNew);
 
     if (!process.env.VAULT_AUTHORITY_SECRET) {
-      // Simulation mode — no tx built, instant state
       const fakeSig = fakeBase58();
-      return NextResponse.json({
-        ok: true, simulated: true,
-        riskScorePrev, riskScoreNew, reduction, circuitState,
-        txSignature: fakeSig, explorerUrl: `https://solscan.io/tx/${fakeSig}`,
-        serialisedTx: null,
-        simulation: { ok: true, unitsConsumed: 800, logs: ["Simulation mode"], error: null, feeEstimate: 5000 },
-      });
+      return NextResponse.json({ ok:true, simulated:true, riskScorePrev, riskScoreNew, reduction, circuitState, txSignature:fakeSig, explorerUrl:`https://solscan.io/tx/${fakeSig}`, serialisedTx:null });
     }
 
-    // Live path — build tx for user to sign
-    const owner  = new PublicKey(ownerWallet);
-    const result = await withFallback(async (conn) => {
-      const tx  = await buildUpdateVaultTx({ connection: conn, owner, pda, riskScorePrev, riskScoreNew, circuitState, agentAction, strategy });
-      const sim = await simulateTx(conn, tx);
-      return { ok: true, simulated: false, riskScorePrev, riskScoreNew, reduction, circuitState, serialisedTx: sim.ok ? serialiseTx(tx) : null, simulation: sim };
-    });
+    const owner = new PublicKey(ownerWallet);
+    const conn  = getConn();
+    const MEMO  = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+    const memo  = JSON.stringify({ protocol:"ABRAXAS", action:"UPDATE_VAULT", pda, riskScorePrev, riskScoreNew, circuitState, agentAction, strategy, ts:Date.now() });
+    const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
+    const tx = new Transaction();
+    tx.recentBlockhash = blockhash;
+    tx.lastValidBlockHeight = lastValidBlockHeight;
+    tx.feePayer = owner;
+    tx.add({ keys:[{pubkey:owner,isSigner:true,isWritable:false}], programId:MEMO, data:Buffer.from(memo,"utf-8") });
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ok:true, simulated:false, riskScorePrev, riskScoreNew, reduction, circuitState,
+      serialisedTx: tx.serialize({requireAllSignatures:false,verifySignatures:false}).toString("base64"),
+    });
 
   } catch (err) {
     console.error("[api/vault/update]", err);
-    return NextResponse.json({ ok: false, error: err instanceof Error ? err.message : "Server error" }, { status: 500 });
+    return NextResponse.json({ ok:false, error: err instanceof Error ? err.message : "Server error" }, { status:500 });
   }
 }
