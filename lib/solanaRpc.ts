@@ -1,39 +1,48 @@
-// FILE: lib/solana/rpc.ts
-// RPC abstraction with primary + fallback.
-// Server-side only — do NOT import in client components directly.
-// All client code calls /api/vault/* routes which import this.
+/**
+ * Solana RPC URL — single source of truth used by:
+ *  - SolanaProvider (wallet adapter ConnectionProvider)
+ *  - useWalletBalances (inherits from useConnection)
+ *  - any other module that needs an RPC URL
+ *
+ * Order of preference:
+ *  1. NEXT_PUBLIC_SOLANA_RPC_URL (must be a non-empty, valid http(s) URL)
+ *  2. Public mainnet endpoint (rate-limited — last-resort fallback only)
+ *
+ * NOTE on env quirks:
+ *  - `??` only catches null/undefined. Empty string from a missing
+ *    .env.local entry is "truthy" with `??`, so we explicitly handle it.
+ *  - NEXT_PUBLIC_* vars are inlined at build time. After editing
+ *    .env.local you MUST restart `npm run dev`.
+ */
 
-import { Connection, Commitment } from "@solana/web3.js";
+const PUBLIC_FALLBACK = "https://api.mainnet-beta.solana.com";
 
-const PRIMARY  = process.env.NEXT_PUBLIC_SOLANA_RPC_URL
-              ?? process.env.SOLANA_RPC_URL
-              ?? "https://api.mainnet-beta.solana.com";
+const RAW = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
 
-const FALLBACK = "https://api.mainnet-beta.solana.com";
+// Validate once at module load. Logs to console so we can verify env wiring.
+const TRIMMED = (RAW ?? "").trim();
+const VALID = TRIMMED.length > 0 && /^https?:\/\//i.test(TRIMMED);
 
-// TTL cache — reuse connection within the same Lambda invocation
-let _conn: Connection | null = null;
-let _ts = 0;
-const TTL = 30_000; // 30s
+if (typeof window !== "undefined") {
+  // Client-side log — safe to surface, but never log the secret part of
+  // a URL (api keys are typically in query string, so we strip queries).
+  const display = VALID ? TRIMMED.split("?")[0] + " (configured)" : "PUBLIC FALLBACK (rate-limited)";
+  console.log("[solana-rpc] using:", display);
 
-export function getConnection(commitment: Commitment = "confirmed"): Connection {
-  const now = Date.now();
-  if (!_conn || now - _ts > TTL) {
-    try {
-      _conn = new Connection(PRIMARY, { commitment, disableRetryOnRateLimit: false });
-    } catch {
-      _conn = new Connection(FALLBACK, { commitment });
-    }
-    _ts = now;
+  if (!VALID && RAW) {
+    console.warn(
+      "[solana-rpc] NEXT_PUBLIC_SOLANA_RPC_URL is set but invalid:",
+      "expected http(s) URL"
+    );
   }
-  return _conn;
 }
 
-export async function withFallback<T>(fn: (conn: Connection) => Promise<T>): Promise<T> {
-  try {
-    return await fn(getConnection());
-  } catch (e) {
-    console.warn("[rpc] Primary failed, trying fallback:", e);
-    return fn(new Connection(FALLBACK, { commitment: "confirmed" }));
-  }
+const RPC_URL = VALID ? TRIMMED : PUBLIC_FALLBACK;
+
+export function getSolanaRpcUrl(): string {
+  return RPC_URL;
+}
+
+export function isUsingPublicRpc(): boolean {
+  return RPC_URL === PUBLIC_FALLBACK;
 }
