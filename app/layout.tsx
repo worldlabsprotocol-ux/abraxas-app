@@ -5,12 +5,13 @@ import { Nav } from "@/components/Nav";
 import { BottomNav } from "@/components/BottomNav";
 import { SystemStatusBar } from "@/components/SystemStatusBar";
 import { VoiceAgent } from "@/components/VoiceAgent";
+import { ReasoningDrawer } from "@/components/ReasoningDrawer";
 import { Toast } from "@/components/Toast";
 import { Providers } from "@/lib/providers";
 
 export const metadata: Metadata = {
-  title: "Abraxas — Autonomous RWA Guardian Protocol",
-  description: "AI-powered agents protecting tokenized real-world assets on Solana.",
+  title: "Abraxas — Sovereign Intelligence Protocol",
+  description: "Autonomous AI agents protecting tokenized real-world assets on Solana.",
   metadataBase: new URL("https://abraxas-app.vercel.app"),
   icons: { icon: "/icon.png" },
 };
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <BottomNav />
-          {/* Voice agent — bottom-right floating button */}
+          <ReasoningDrawer />
           <VoiceAgent />
           <Toast />
         </Providers>

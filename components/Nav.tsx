@@ -1,14 +1,13 @@
 // FILE: components/Nav.tsx
-// Slim sticky header. Logo + status pulse + wallet connect.
-// No sub-menus. All navigation lives in BottomNav.
 "use client";
 
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
+import { HealthShield } from "@/components/HealthShield";
 import { useCircuitState } from "@/lib/protocolStream";
 
 export function Nav() {
   const { state } = useCircuitState();
-  const pulseColor = state === "RISK" ? "#f26b6b" : state === "WATCH" ? "#f0d98a" : "#14F195";
+  const pulseColor = state === "RISK" ? "#f26b6b" : state === "WATCH" ? "#FBBF24" : "#14F195";
 
   return (
     <nav style={{
@@ -22,16 +21,14 @@ export function Nav() {
       WebkitBackdropFilter: "blur(12px)",
       borderBottom: "1px solid rgba(255,255,255,0.05)",
     }}>
-      {/* Left: logo + status pulse */}
+      {/* Left: logo + status */}
       <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-        {/* Glyph */}
-        <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 10px rgba(200,169,110,0.9)" }} />
         </div>
         <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: "0.875rem", letterSpacing: "0.12em", color: "var(--gold)", textTransform: "uppercase" }}>
           Abraxas
         </span>
-        {/* System status pulse */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", padding: "0.15rem 0.5rem", borderRadius: "100px", background: `${pulseColor}14`, border: `1px solid ${pulseColor}30` }}>
           <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: pulseColor, animation: "pulse 1.5s ease-in-out infinite", boxShadow: `0 0 6px ${pulseColor}` }} />
           <span style={{ fontSize: "0.58rem", fontWeight: 700, color: pulseColor, letterSpacing: "0.08em", textTransform: "uppercase" }}>
@@ -40,9 +37,12 @@ export function Nav() {
         </div>
       </div>
 
-      {/* Right: wallet connect with neon glow */}
-      <div style={{ boxShadow: "0 0 15px rgba(20,241,149,0.25)", borderRadius: "8px" }}>
-        <ConnectWalletButton size="sm" compact />
+      {/* Right: health shield + wallet */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+        <HealthShield />
+        <div style={{ boxShadow: "0 0 15px rgba(20,241,149,0.25)", borderRadius: "8px" }}>
+          <ConnectWalletButton size="sm" compact />
+        </div>
       </div>
     </nav>
   );
