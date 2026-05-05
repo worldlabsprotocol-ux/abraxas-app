@@ -217,11 +217,11 @@ export function useSystemState() {
   }, []);
   return {
     vaults, events, heliusEvents, heliusUrl, heliusConnected,
-    systemState: vaults.length === 0 ? "NO_VAULTS"
+    systemState: (vaults.length === 0 ? "NO_VAULTS"
       : vaults.some((v) => v.state === "CIRCUIT_TRIGGERED") ? "CIRCUIT_TRIGGERED"
       : vaults.some((v) => v.state === "AT_RISK") ? "AT_RISK"
       : vaults.some((v) => v.state === "PROTECTED") ? "PROTECTED"
-      : "UNPROTECTED",
+      : "UNPROTECTED") as "NO_VAULTS" | "UNPROTECTED" | "PROTECTED" | "AT_RISK" | "CIRCUIT_TRIGGERED",
     createSystemVault, activateProtection, triggerCircuit,
     setHeliusConnection, simulateHeliusEvent, ingestHeliusEvent,
   };
