@@ -1,5 +1,4 @@
-
-}// FILE: components/SophiaAgents.tsx
+// FILE: components/SophiaAgents.tsx
 // Sophia agent cards — first-class UI objects, always visible.
 // Shows each agent's identity, assigned vault, strategy, and live state.
 // Statically driven — no API call needed, uses agentEngine definitions.
