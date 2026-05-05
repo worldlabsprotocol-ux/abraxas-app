@@ -4,8 +4,6 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { BottomNav } from "@/components/BottomNav";
 import { SystemStatusBar } from "@/components/SystemStatusBar";
-import { VoiceAgent } from "@/components/VoiceAgent";
-import { ReasoningDrawer } from "@/components/ReasoningDrawer";
 import { Toast } from "@/components/Toast";
 import { Providers } from "@/lib/providers";
 
@@ -27,8 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <BottomNav />
-          <ReasoningDrawer />
-          <VoiceAgent />
           <Toast />
         </Providers>
       </body>

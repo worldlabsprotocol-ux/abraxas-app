@@ -2,7 +2,6 @@
 "use client";
 
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
-import { HealthShield } from "@/components/HealthShield";
 import { useCircuitState } from "@/lib/protocolStream";
 
 export function Nav() {
@@ -21,7 +20,6 @@ export function Nav() {
       WebkitBackdropFilter: "blur(12px)",
       borderBottom: "1px solid rgba(255,255,255,0.05)",
     }}>
-      {/* Left: logo + status */}
       <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
         <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 10px rgba(200,169,110,0.9)" }} />
@@ -36,13 +34,8 @@ export function Nav() {
           </span>
         </div>
       </div>
-
-      {/* Right: health shield + wallet */}
-      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-        <HealthShield />
-        <div style={{ boxShadow: "0 0 15px rgba(20,241,149,0.25)", borderRadius: "8px" }}>
-          <ConnectWalletButton size="sm" compact />
-        </div>
+      <div style={{ boxShadow: "0 0 15px rgba(20,241,149,0.25)", borderRadius: "8px" }}>
+        <ConnectWalletButton size="sm" compact />
       </div>
     </nav>
   );

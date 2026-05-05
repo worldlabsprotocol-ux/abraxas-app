@@ -4,14 +4,13 @@
 import Link from "next/link";
 import { TOTAL_AUM, ACTIVE_VAULTS, AGENTS_ONLINE, VAULTS, fmtUSD } from "@/lib/appData";
 import { useCircuitState } from "@/lib/protocolStream";
-import { PredictiveFeed } from "@/components/PredictiveFeed";
 import { ProtocolConsole } from "@/components/ProtocolConsole";
 
 function ProtocolHero() {
   const { state } = useCircuitState();
   const SC = {
-    SAFE:  { text: "var(--green)", bg: "rgba(61,214,140,0.1)",  border: "rgba(61,214,140,0.25)"  },
-    WATCH: { text: "#FBBF24",      bg: "rgba(251,191,36,0.08)", border: "rgba(251,191,36,0.2)"   },
+    SAFE:  { text: "var(--green)", bg: "rgba(61,214,140,0.1)",   border: "rgba(61,214,140,0.25)"  },
+    WATCH: { text: "#FBBF24",      bg: "rgba(251,191,36,0.08)",  border: "rgba(251,191,36,0.2)"   },
     RISK:  { text: "#f26b6b",      bg: "rgba(242,107,107,0.1)", border: "rgba(242,107,107,0.3)"  },
   }[state];
 
@@ -19,13 +18,11 @@ function ProtocolHero() {
     <section style={{ maxWidth: "1080px", margin: "0 auto", padding: "1.5rem 1.25rem 1rem" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", marginBottom: "0.875rem", flexWrap: "wrap" }}>
         <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: "clamp(1.3rem,3.5vw,1.875rem)", letterSpacing: "-0.02em", margin: 0 }}>
-          Sovereign Intelligence
+          Abraxas Protocol
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.22rem 0.7rem", background: SC.bg, border: `1px solid ${SC.border}`, borderRadius: "100px" }}>
           <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: SC.text, animation: "pulse 1.4s ease-in-out infinite" }} />
-          <span style={{ fontSize: "0.62rem", fontWeight: 700, color: SC.text, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            Circuit {state}
-          </span>
+          <span style={{ fontSize: "0.62rem", fontWeight: 700, color: SC.text, letterSpacing: "0.1em", textTransform: "uppercase" }}>Circuit {state}</span>
         </div>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
@@ -51,14 +48,9 @@ export default function HomePage() {
   return (
     <div style={{ background: "var(--void)", minHeight: "100vh" }}>
       <ProtocolHero />
-      {/* PRIMARY: Predictive action feed */}
       <section style={{ maxWidth: "1080px", margin: "0 auto", padding: "0 1.25rem 1.25rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,340px),1fr))", gap: "1rem", alignItems: "flex-start" }}>
-          <PredictiveFeed />
-          <ProtocolConsole />
-        </div>
+        <ProtocolConsole />
       </section>
-      {/* SECONDARY: System vault strip */}
       <section style={{ maxWidth: "1080px", margin: "0 auto", padding: "0 1.25rem 2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.625rem" }}>
           <span style={{ fontSize: "0.57rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--subtle)" }}>System Vaults</span>
