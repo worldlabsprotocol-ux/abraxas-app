@@ -5,6 +5,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { SovereignPulse } from "@/components/SovereignPulse";
+import { CircuitShield } from "@/components/CircuitShield";
 import {
   useSystemState, SystemVault, VaultState, CircuitState, AgentRole,
   activateProtection, triggerCircuit, simulateHeliusEvent, createSystemVault,
@@ -101,6 +103,11 @@ function VaultCard({ vault }: { vault: SystemVault }) {
           {vault.lastAction}
         </div>
       )}
+
+      {/* Circuit Shield — defense status */}
+      <div style={{ marginBottom: "0.625rem" }}>
+        <CircuitShield vault={vault} />
+      </div>
 
       {/* No policy warning */}
       {vault.state === "UNPROTECTED" && !showActivate && (
@@ -355,8 +362,8 @@ export default function ProtectPage() {
         </div>
       )}
 
-      {/* Helius event stream */}
-      <HeliusPanel />
+      {/* Sovereign Pulse — real-time blockchain event terminal */}
+      <SovereignPulse />
 
       {/* System event log */}
       {events.length > 0 && (
