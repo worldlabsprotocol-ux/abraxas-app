@@ -7,6 +7,9 @@
 import { useState, useEffect } from "react";
 import { SovereignPulse } from "@/components/SovereignPulse";
 import { CircuitShield } from "@/components/CircuitShield";
+import { GachaVaultDeploy } from "@/components/GachaVaultDeploy";
+import { AgentFuelMeter } from "@/components/AgentFuelMeter";
+import { chargeAgent } from "@/lib/x402/agentFuel";
 import {
   useSystemState, SystemVault, VaultState, CircuitState, AgentRole,
   activateProtection, triggerCircuit, simulateHeliusEvent, createSystemVault,
@@ -267,16 +270,11 @@ function CreateVaultPanel({ onCreated }: { onCreated: () => void }) {
   const [name, setName]       = useState("");
   const [assetIdx, setAssetIdx] = useState(0);
   const [creating, setCreating] = useState(false);
+  const [showGacha, setShowGacha] = useState(false);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
-    setCreating(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const at = ASSET_TYPES[assetIdx];
-    createSystemVault({ name: name.trim(), asset: at.name, assetType: at.key });
-    setCreating(false);
-    setName("");
-    onCreated();
+    setShowGacha(true);
   };
 
   return (
@@ -295,7 +293,21 @@ function CreateVaultPanel({ onCreated }: { onCreated: () => void }) {
           </button>
         ))}
       </div>
-      <button onClick={handleCreate} disabled={!name.trim() || creating} style={{ width: "100%", background: name.trim() ? "#14F195" : "var(--surface)", color: name.trim() ? "var(--void)" : "var(--subtle)", border: "none", borderRadius: "8px", padding: "0.65rem", fontWeight: 700, fontSize: "0.82rem", cursor: name.trim() ? "pointer" : "not-allowed", transition: "all 0.15s" }}>
+      {showGacha && (
+      <GachaVaultDeploy
+        assetName={ASSET_TYPES[assetIdx].name}
+        assetType={ASSET_TYPES[assetIdx].key}
+        vaultName={name.trim()}
+        onComplete={() => {
+          const at = ASSET_TYPES[assetIdx];
+          createSystemVault({ name: name.trim(), asset: at.name, assetType: at.key });
+          chargeAgent("SOPHIA-VAULT", "agent_decision");
+          setShowGacha(false); setCreating(false); setName(""); onCreated();
+        }}
+        onCancel={() => setShowGacha(false)}
+      />
+    )}
+    <button onClick={handleCreate} disabled={!name.trim() || creating} style={{ width: "100%", background: name.trim() ? "#14F195" : "var(--surface)", color: name.trim() ? "var(--void)" : "var(--subtle)", border: "none", borderRadius: "8px", padding: "0.65rem", fontWeight: 700, fontSize: "0.82rem", cursor: name.trim() ? "pointer" : "not-allowed", transition: "all 0.15s" }}>
         {creating ? "Deploying…" : "Deploy Vault →"}
       </button>
     </div>
