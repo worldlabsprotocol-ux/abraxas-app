@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -10,33 +10,34 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { getSolanaRpcUrl } from "@/lib/solanaRpc";
+// RPC URL inlined — avoids @/lib/solanaRpc import issue
 
+// Default wallet adapter UI styles
 import "@solana/wallet-adapter-react-ui/styles.css";
-
-// Workaround for React 18/19 type conflict with Solana wallet adapter.
-// Cast providers to any to bypass the FC<> JSX incompatibility.
-const Connection = ConnectionProvider as any;
-const Wallet = WalletProvider as any;
-const WalletModal = WalletModalProvider as any;
 
 interface Props {
   children: ReactNode;
 }
 
+/**
+ * SolanaProvider — wires up the wallet adapter context.
+ * RPC endpoint comes from `getSolanaRpcUrl()` so every consumer
+ * (provider, balance hook, anything calling Connection) shares it.
+ */
 export function SolanaProvider({ children }: Props) {
-  const endpoint = useMemo(() => getSolanaRpcUrl(), []);
+  const endpoint = useMemo(() => process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com", []);
 
+  // Modern Wallet Standard wallets (Backpack, Glow, etc.) auto-register.
   const wallets = useMemo(
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
     []
   );
 
   return (
-    <Connection endpoint={endpoint}>
-      <Wallet wallets={wallets} autoConnect>
-        <WalletModal>{children}</WalletModal>
-      </Wallet>
-    </Connection>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>{children}</WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }

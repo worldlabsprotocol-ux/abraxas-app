@@ -21,7 +21,7 @@ function streamToChain(events: ReturnType<typeof useProtocolStream>): LogEntry[]
       e.type === "defense"        ? "ASSESS"    :
       e.type === "agent_act"      ? "EXECUTE"   :
       e.type === "vault_update"   ? "CORRELATE" : "MONITOR";
-    return { ts: e.ts, phase, detail: `${e.source} ${e.message}${e.outcome ? ` → ${e.outcome}` : ""}` };
+    return { ts: e.ts, phase, detail: `${e.source} ${e.message}` };
   });
 }
 
