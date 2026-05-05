@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fmtUSD, VAULTS } from "@/lib/appData";
+import { SovereignBriefing } from "@/components/SovereignBriefing";
+import { AgentFuelMeter } from "@/components/AgentFuelMeter";
 
 interface AgentDef {
   id: string; name: string; vaultId: string; strategy: string;
@@ -159,6 +161,10 @@ export default function AgentsPage() {
             </div>
           );
         })}
+      </div>
+      {/* Sovereign Briefing — Orbis-gated, requires vault position */}
+      <div style={{ marginTop: "2rem" }}>
+        <SovereignBriefing />
       </div>
     </div>
   );
