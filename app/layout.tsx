@@ -3,6 +3,7 @@
 // Icon system: Lucide (already installed as lucide-react).
 // No emojis in system UI. No beta vibes.
 import type { Metadata } from "next";
+import "./globals.css";
 import { Inter } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
 import { Nav } from "@/components/Nav";

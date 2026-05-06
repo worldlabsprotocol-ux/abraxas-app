@@ -11,27 +11,27 @@ import { useSystemState } from "@/lib/systemState";
 // ─── Inline SVG icons (lucide-compatible) ────────────────────────────────────
 function Zap({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
   const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width="{s}" height="{s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{...cs}}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
 }
 
 function Shield({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
   const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width="{s}" height="{s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{...cs}}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
 }
 
 function Search({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
   const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width="{s}" height="{s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{...cs}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
 }
 
 function Star({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
   const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width="{s}" height="{s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{...cs}}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
 }
 
 function ArrowUpDown({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
   const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width="{s}" height="{s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{...cs}}><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>;
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>;
 }
 
 
