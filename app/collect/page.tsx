@@ -65,7 +65,7 @@ function drift(base: number, seed: number, range: number): number {
   return Math.round((base + (x - 0.5) * range) * 100) / 100;
 }
 
-const CARDS: CollectibleCard[] = [
+const RAW_CARDS = [
   // Pokemon
   { id: "pk-1", name: "Charizard 1st Edition", category: "pokemon", grade: "PSA 10", gradingCo: "PSA", priceSol: 148, priceUsd: 22200, change24h: 2.4, rarity: "Legendary",  circuitScore: 22, fractional: true,  color: "#FF6B35", icon: "🔥", series: "Base Set (1999)", population: 122 },
   { id: "pk-2", name: "Pikachu Illustrator",    category: "pokemon", grade: "PSA 9",  gradingCo: "PSA", priceSol: 62,  priceUsd: 9300,  change24h: 1.1, rarity: "Legendary",  circuitScore: 18, fractional: true,  color: "#FFD700", icon: "⚡", series: "CoroCoro (1998)", population: 9 },
@@ -85,7 +85,9 @@ const CARDS: CollectibleCard[] = [
   { id: "lx-1", name: "Gulfstream G700 Frac.", category: "luxury", grade: "Tokenized", gradingCo: "Abraxas", priceSol: 4200, priceUsd: 630000, change24h: 0.1, rarity: "Legendary", circuitScore: 15, fractional: true, color: "#C8A96E", icon: "✈️", series: "Aviation RWA Series 1", population: 1 },
   { id: "lx-2", name: "Monaco Penthouse 1/10", category: "luxury", grade: "Tokenized", gradingCo: "Abraxas", priceSol: 8800, priceUsd: 1320000, change24h: 0.3, rarity: "Legendary", circuitScore: 12, fractional: true, color: "#B8860B", icon: "🏢", series: "RE Sovereign Series", population: 10 },
   { id: "lx-3", name: "Sunseeker 95 Yacht 1/4", category: "luxury", grade: "Tokenized", gradingCo: "Abraxas", priceSol: 2100, priceUsd: 315000, change24h: 0.2, rarity: "Ultra Rare", circuitScore: 20, fractional: true, color: "#1565C0", icon: "⛵", series: "Maritime RWA Series 1", population: 4 },
-].map((c) => ({ ...c, priceSol: drift(c.priceSol, Number(c.id.slice(-1)) * 1.3, c.priceSol * 0.03) }));
+] satisfies CollectibleCard[];
+
+const CARDS = RAW_CARDS.map((c) => ({ ...c, priceSol: drift(c.priceSol, Number(c.id.slice(-1)) * 1.3, c.priceSol * 0.03) }));
 
 // ─── Jupiter swap button ───────────────────────────────────────────────────────
 function JupiterButton({ symbol, size = "sm" }: { symbol: string; size?: "sm" | "md" }) {
