@@ -29,8 +29,8 @@ const ONEPIECE = [
 ];
 
 const METALS = [
-  { name: "Gold 1oz",   symbol: "XAU", baseUsd: 3240, seed: 7.1, range: 40  },
-  { name: "Silver 1oz", symbol: "XAG", baseUsd: 32.4, seed: 8.3, range: 1.5 },
+  { name: "Gold 1oz",   symbol: "XAU", baseUsd: 4675, seed: 7.1, range: 30  }, // XAUT real price ~$4660-$4689
+  { name: "Silver 1oz", symbol: "XAG", baseUsd: 67.6, seed: 8.3, range: 0.4 }, // SLVON real price ~$67.40-$67.73
 ];
 
 export async function GET() {

@@ -8,6 +8,7 @@ import { useSystemState } from "@/lib/systemState";
 
 const TAB_COLORS = {
   rwa:     { active: "#FBBF24", glow: "rgba(251,191,36,0.3)",   bg: "rgba(251,191,36,0.1)"  },
+  collect: { active: "#C8A96E", glow: "rgba(200,169,110,0.3)",  bg: "rgba(200,169,110,0.1)" },
   protect: { active: "#14F195", glow: "rgba(20,241,149,0.25)",  bg: "rgba(20,241,149,0.08)" },
   circuit: { active: "#60A5FA", glow: "rgba(96,165,250,0.25)",  bg: "rgba(96,165,250,0.1)"  },
 };
@@ -19,6 +20,15 @@ const TABS = [
     icon: (active: boolean, color: string) => (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.3)"} strokeWidth="1.8">
         <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+      </svg>
+    ),
+  },
+  {
+    key: "collect", label: "Collect", href: "/collect",
+    matches: (p: string) => p.startsWith("/collect"),
+    icon: (active: boolean, color: string) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.3)"} strokeWidth="1.8">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
       </svg>
     ),
   },
