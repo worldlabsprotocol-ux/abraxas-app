@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fmtUSD, VAULTS } from "@/lib/appData";
 import { SovereignBriefing } from "@/components/SovereignBriefing";
-import { AgentFuelMeter } from "@/components/AgentFuelMeter";
 
 interface AgentDef {
   id: string; name: string; vaultId: string; strategy: string;
