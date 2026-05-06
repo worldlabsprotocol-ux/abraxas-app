@@ -62,7 +62,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const rounds = stats.map((stat, i) => {
       const rA = seededRoll(statsA[stat], seed + i * 37);
       const rB = seededRoll(statsB[stat], seed + i * 73);
-      const w  = rA >= rB ? "A" : "B";
+      const w: "A" | "B" = rA >= rB ? "A" : "B";
       if (w === "A") winsA++;
       const winCard = w === "A" ? cardA : cardB;
       const narrs   = NARR[stat];
