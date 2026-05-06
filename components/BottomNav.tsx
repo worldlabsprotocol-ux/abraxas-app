@@ -24,8 +24,8 @@ const TABS = [
     ),
   },
   {
-    key: "collect", label: "Collect", href: "/collect",
-    matches: (p: string) => p.startsWith("/collect"),
+    key: "collect", label: "Arena", href: "/arena",
+    matches: (p: string) => p.startsWith("/arena") || p.startsWith("/collect"),
     icon: (active: boolean, color: string) => (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.3)"} strokeWidth="1.8">
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
