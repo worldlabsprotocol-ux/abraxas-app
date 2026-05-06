@@ -162,7 +162,7 @@ function SovereignMetalCard({ metal }: { metal: MetalData }) {
   );
 }
 
-// ─── DeFiLlama macro panel ────────────────────────────────────────────────────
+// ─── Abraxas macro panel ────────────────────────────────────────────────────
 interface MacroData {
   solana: { tvl: number; tvlFormatted: string; change24h: number };
   stablecoins: Array<{ symbol: string; circulating: number; circulatingFormatted: string; change24h: number }>;
@@ -191,17 +191,17 @@ function MacroPanel() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
           <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#60A5FA", animation: "pulse 2s ease-in-out infinite" }} />
           <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#60A5FA", letterSpacing: "0.12em" }}>
-            SOLANA MACRO · DEFILLAMA FEED
+            SOLANA MACRO · ABRAXAS FEED
           </span>
         </div>
         <span style={{ fontSize: "0.54rem", color: "rgba(96,165,250,0.4)" }}>
-          {macro?.source === "defillama_live" ? "LIVE" : "ORACLE"} · 5min cache
+          {macro?.source === "abraxas_live" ? "LIVE" : "ORACLE"} · 5min cache
         </span>
       </div>
 
       {loading && (
         <div style={{ padding: "1.25rem 1rem", fontSize: "0.6rem", color: "rgba(96,165,250,0.4)" }}>
-          {"[FETCHING] DeFiLlama Solana TVL..."}
+          {"[FETCHING] Abraxas Solana TVL..."}
         </div>
       )}
 
@@ -494,7 +494,7 @@ export default function RWAPage() {
       {/* Stress test */}
       <StressTestPanel stress={stress} />
 
-      {/* Macro telemetry — DeFiLlama */}
+      {/* Macro telemetry — Abraxas */}
       <div style={{ marginBottom: "1.75rem" }}>
         <MacroPanel />
       </div>
