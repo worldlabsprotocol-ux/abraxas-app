@@ -17,7 +17,6 @@
 
 **Sovereign AI Guardian Protocol for Tokenized Real-World Assets on Solana.**
 
-Blade Runner aesthetics. Ancient rune logic. Autonomous defense.
 
 ---
 
