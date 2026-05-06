@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useMemo } from "react";
+import type { FC, PropsWithChildren } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -33,11 +34,17 @@ export function SolanaProvider({ children }: Props) {
     []
   );
 
+  // Cast required: @solana/wallet-adapter-react types were written for React 18.
+  // React 19 changed FC return type — this cast is safe, runtime behavior is identical.
+  const CP  = ConnectionProvider  as FC<PropsWithChildren<{ endpoint: string }>>;
+  const WP  = WalletProvider      as FC<PropsWithChildren<{ wallets: ReturnType<typeof useMemo>; autoConnect?: boolean }>>;
+  const WMP = WalletModalProvider as FC<PropsWithChildren>;
+
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <CP endpoint={endpoint}>
+      <WP wallets={wallets} autoConnect>
+        <WMP>{children}</WMP>
+      </WP>
+    </CP>
   );
 }
