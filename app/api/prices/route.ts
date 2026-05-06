@@ -29,7 +29,8 @@ async function fetchPythPrice(accountKey: string, connection: Connection): Promi
   } catch { return null; }
 }
 
-async function fetchCoinGecko(): Promise<Record<string, number>> {
+type CgPrice = { usd?: number; usd_24h_change?: number };
+async function fetchCoinGecko(): Promise<Record<string, CgPrice>> {
   try {
     const res  = await fetch(
       `https://api.coingecko.com/api/v3/simple/price?ids=${COINGECKO_IDS}&vs_currencies=usd&include_24hr_change=true`,
