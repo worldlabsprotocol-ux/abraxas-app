@@ -64,11 +64,11 @@ export async function GET() {
   // Resolve final prices with fallback chain
   const xautPrice = xauPyth
     ?? cg["tether-gold"]?.usd
-    ?? oraclePrice(4675, 1.1, 30);  // ~$4,660–$4,689 range
+    ?? oraclePrice(6787.69, 1.1, 15); // XAUT May 2026
 
   const slvonPrice = xagPyth
     ?? cg["slvon"]?.usd
-    ?? oraclePrice(67.6, 2.3, 0.4); // ~$67.40–$67.73 range
+    ?? oraclePrice(65.94, 2.3, 0.3); // SLVON May 2026
 
   const usdyApy  = 5.20;  // Ondo $USDY — stable, accrues daily
   const ousgApy  = 5.08;  // Ondo $OUSG
