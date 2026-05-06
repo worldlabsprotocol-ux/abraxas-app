@@ -1,215 +1,224 @@
 // FILE: app/arena/page.tsx
-// Abraxas Collector Arena — sovereign card experience.
-// Modes: Gallery (default) · Duel · Stake · Pack
-// Sophia agents defend staked cards. $ABRA burns on every action.
-// No heavy gameplay. Addictive but institutional.
+// Abraxas Collector Arena — Anchor-aligned interactive duel system.
+// State models derived from on-chain Vault + DuelRecord accounts.
+// Navigation never breaks: all async is guarded, all renders have fallbacks.
+// Image system: resolveImage() handles https/ipfs/ar/undefined.
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { runDuel, stakeCard, unstakeCard, getAccruedYield, useArenaState, runDefenseTick, ArenaCard, DuelResult, CardCategory, DefenseLevel, StakePosition } from "@/lib/arena/arenaEngine";
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  ArenaAsset, DuelBattle, DuelRecord, DuelResolvedEvent,
+  resolveImage, resolveDuelSimulated, SEED_ASSETS,
+} from "@/lib/arena/duelEngine";
 
-// ─── Inline SVG icons (lucide-compatible) ────────────────────────────────────
-function Shield({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
-  const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+// ─── Inline SVG icons ─────────────────────────────────────────────────────────
+type SVGProps = { size?: number; color?: string; style?: React.CSSProperties };
+const I = (d: string) => ({ size = 16, color, style }: SVGProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color ?? "currentColor"} strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <path d={d} />
+  </svg>
+);
+const ShieldIcon = I("M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z");
+const SwordsIcon = ({ size = 16, style }: SVGProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
+    <line x1="13" y1="19" x2="19" y2="13"/>
+    <line x1="16" y1="16" x2="20" y2="20"/>
+    <line x1="19" y1="21" x2="21" y2="19"/>
+    <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/>
+    <line x1="5" y1="14" x2="9" y2="18"/>
+    <line x1="7" y1="11" x2="11" y2="15"/>
+  </svg>
+);
+const ZapIcon   = I("M13 2L3 14h9l-1 8 10-12h-9l1-8z");
+const TrendIcon = ({ size = 16, style }: SVGProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+    <polyline points="17 6 23 6 23 12"/>
+  </svg>
+);
+
+// ─── Vault state labels (matches Vault.state: 0=normal,1=circuit_triggered,2=paused)
+const VAULT_STATE_CONFIG = {
+  0: { label: "NORMAL",   color: "#3dd68c" },
+  1: { label: "TRIGGERED",color: "#f26b6b" },
+  2: { label: "PAUSED",   color: "#FBBF24" },
+} as const;
+
+// ─── Safe image component ──────────────────────────────────────────────────────
+function SafeImage({ src, alt, fallbackIcon, color, height = 160 }: {
+  src?: string; alt: string; fallbackIcon: string; color: string; height?: number;
+}) {
+  const resolved            = resolveImage(src);
+  const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  // Reset when src changes
+  useEffect(() => { setFailed(false); setLoaded(false); }, [resolved]);
+
+  return (
+    <div style={{
+      height, width: "100%", position: "relative", overflow: "hidden",
+      background: `linear-gradient(135deg, ${color}22, ${color}08)`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      {!failed && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={resolved}
+          alt={alt}
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          style={{
+            width: "100%", height: "100%", objectFit: "cover",
+            opacity: loaded ? 1 : 0, transition: "opacity 0.3s",
+            position: "absolute", inset: 0,
+          }}
+        />
+      )}
+      {/* Fallback icon — always rendered underneath, visible when image fails or loading */}
+      <span style={{
+        fontSize: "3rem",
+        filter: `drop-shadow(0 0 12px ${color}88)`,
+        opacity: (failed || !loaded) ? 1 : 0,
+        transition: "opacity 0.3s",
+        position: "absolute",
+        zIndex: 0,
+      }}>
+        {fallbackIcon}
+      </span>
+    </div>
+  );
 }
 
-function Zap({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
-  const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
-}
-
-function TrendingUp({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
-  const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
-}
-
-function Swords({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
-  const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="11" x2="11" y2="15"/></svg>;
-}
-
-function Package({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
-  const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
-}
-
-function Star({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
-  const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
-}
-
-function Flame({ size = 16, color, style }: { size?: number; color?: string; style?: React.CSSProperties }) {
-  const s = size; const cs = color ? { ...style, color } : style;
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={cs || undefined}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
-}
-
-
-
-// ─── Card data ─────────────────────────────────────────────────────────────────
-function drift(base: number, seed: number, range: number): number {
-  const w = Math.floor(Date.now() / 600_000);
-  return Math.round((base + (Math.abs(Math.sin(w * seed * 9301 + 49297)) % 1 - 0.5) * range) * 100) / 100;
-}
-
-type BaseCard = Omit<ArenaCard, "owned" | "stakeStatus" | "accruedYield" | "defenseLevel" | "defenseAgent" | "circuitScore" | "stakedAt" | "txSignature">;
-const BASE_CARDS = [
-  { id:"pk-1", name:"Charizard 1st Ed.",   category:"pokemon",  grade:"PSA 10", rarity:"Legendary",  priceSol:148, priceUsd:22200, change24h:2.4,  series:"Base Set 1999",         population:122, power:98, defense:82, speed:91, color:"#FF6B35", icon:"🔥", stakeYieldPct:18, fractional:true  },
-  { id:"pk-2", name:"Pikachu Illustrator", category:"pokemon",  grade:"PSA 9",  rarity:"Legendary",  priceSol:62,  priceUsd:9300,  change24h:1.1,  series:"CoroCoro 1998",         population:9,   power:95, defense:78, speed:99, color:"#FFD700", icon:"⚡", stakeYieldPct:22, fractional:true  },
-  { id:"pk-3", name:"Blastoise 1st Ed.",   category:"pokemon",  grade:"PSA 10", rarity:"Ultra Rare", priceSol:41,  priceUsd:6150,  change24h:-0.8, series:"Base Set 1999",         population:214, power:85, defense:94, speed:72, color:"#4A90D9", icon:"💧", stakeYieldPct:14, fractional:true  },
-  { id:"pk-4", name:"Venusaur 1st Ed.",    category:"pokemon",  grade:"PSA 10", rarity:"Ultra Rare", priceSol:28,  priceUsd:4200,  change24h:0.5,  series:"Base Set 1999",         population:319, power:82, defense:88, speed:68, color:"#4CAF50", icon:"🌿", stakeYieldPct:12, fractional:false },
-  { id:"pk-5", name:"Ancient Mew Promo",   category:"pokemon",  grade:"PSA 10", rarity:"Rare",       priceSol:12,  priceUsd:1800,  change24h:3.2,  series:"Movie Promo 2000",      population:1240,power:70, defense:75, speed:80, color:"#9C27B0", icon:"🌀", stakeYieldPct:9,  fractional:false },
-  { id:"op-1", name:"Luffy Alt Art",       category:"onepiece", grade:"PSA 10", rarity:"Legendary",  priceSol:38,  priceUsd:5700,  change24h:4.8,  series:"OP-01 Romance Dawn",    population:88,  power:96, defense:80, speed:94, color:"#E53935", icon:"👊", stakeYieldPct:20, fractional:true  },
-  { id:"op-2", name:"Shanks Secret Rare",  category:"onepiece", grade:"PSA 10", rarity:"Legendary",  priceSol:29,  priceUsd:4350,  change24h:2.1,  series:"OP-01 Romance Dawn",    population:64,  power:93, defense:90, speed:88, color:"#CC0000", icon:"⚔️", stakeYieldPct:17, fractional:true  },
-  { id:"op-3", name:"Zoro Alt Art",        category:"onepiece", grade:"PSA 10", rarity:"Ultra Rare", priceSol:22,  priceUsd:3300,  change24h:1.7,  series:"OP-02 Paramount War",   population:112, power:91, defense:86, speed:85, color:"#2E7D32", icon:"🗡️", stakeYieldPct:15, fractional:true  },
-  { id:"op-4", name:"Nami Leader Alt",     category:"onepiece", grade:"PSA 10", rarity:"Ultra Rare", priceSol:18,  priceUsd:2700,  change24h:-1.2, series:"OP-02 Paramount War",   population:203, power:77, defense:84, speed:92, color:"#F57F17", icon:"🍊", stakeYieldPct:12, fractional:false },
-  { id:"op-5", name:"Kaido Secret Rare",   category:"onepiece", grade:"PSA 10", rarity:"Legendary",  priceSol:25,  priceUsd:3750,  change24h:1.4,  series:"OP-06 Wings of Captain",population:79,  power:99, defense:95, speed:70, color:"#1A237E", icon:"🐉", stakeYieldPct:19, fractional:true  },
-  { id:"op-6", name:"Ace Parallel Rare",   category:"onepiece", grade:"PSA 10", rarity:"Ultra Rare", priceSol:20,  priceUsd:3000,  change24h:3.6,  series:"OP-04 Kingdoms",        population:156, power:88, defense:79, speed:90, color:"#FF6D00", icon:"🔥", stakeYieldPct:14, fractional:true  },
-  { id:"op-7", name:"Robin Secret Rare",   category:"onepiece", grade:"PSA 10", rarity:"Rare",       priceSol:16,  priceUsd:2400,  change24h:0.9,  series:"OP-03 Pillars",         population:287, power:75, defense:82, speed:86, color:"#6A1B9A", icon:"🌸", stakeYieldPct:10, fractional:false },
-  { id:"lx-1", name:"Gulfstream G700",     category:"luxury",   grade:"RWA",    rarity:"Legendary",  priceSol:4200,priceUsd:630000,change24h:0.1,  series:"Aviation Series 1",     population:1,   power:100,defense:98, speed:96, color:"#C8A96E", icon:"✈️", stakeYieldPct:7,  fractional:true  },
-  { id:"lx-2", name:"Monaco Penthouse 1/10",category:"luxury",  grade:"RWA",    rarity:"Legendary",  priceSol:8800,priceUsd:1320000,change24h:0.3, series:"RE Sovereign Series",   population:10,  power:97, defense:99, speed:60, color:"#B8860B", icon:"🏢", stakeYieldPct:9,  fractional:true  },
-  { id:"lx-3", name:"Sunseeker 95 Yacht",  category:"luxury",   grade:"RWA",    rarity:"Ultra Rare", priceSol:2100,priceUsd:315000,change24h:0.2,  series:"Maritime Series 1",     population:4,   power:88, defense:92, speed:82, color:"#1565C0", icon:"⛵", stakeYieldPct:6,  fractional:true  },
-] satisfies BaseCard[];
-
-function buildCards(stakes: Record<string, StakePosition>): ArenaCard[] {
-  return BASE_CARDS.map((c) => {
-    const s = stakes[c.id];
-    const isStaked = !!s;
-    return {
-      ...c,
-      priceSol:     drift(c.priceSol, Number(c.id.slice(-1)) * 1.3 + 2, c.priceSol * 0.02),
-      owned:        true, // demo: all owned
-      stakeStatus:  isStaked ? "staked" : "unstaked",
-      accruedYield: isStaked ? getAccruedYield(s) : 0,
-      defenseLevel: isStaked ? "armed" : "inactive",
-      defenseAgent: s?.defenseAgent,
-      circuitScore: Math.round(drift(100 - c.defense, Number(c.id.slice(-1)) * 2.1, 12)),
-      stakedAt:     s?.stakedAt,
-    };
-  });
-}
-
-// ─── Design tokens ──────────────────────────────────────────────────────────
-const RARITY_CONFIG = {
-  Legendary:  { color: "#FFD700", glow: "rgba(255,215,0,0.35)",    bg: "rgba(255,215,0,0.08)"    },
-  "Ultra Rare":{ color: "#C8A96E", glow: "rgba(200,169,110,0.3)",  bg: "rgba(200,169,110,0.08)"  },
-  Rare:        { color: "#60A5FA", glow: "rgba(96,165,250,0.3)",    bg: "rgba(96,165,250,0.08)"   },
-  Common:      { color: "rgba(255,255,255,0.4)", glow:"none",       bg: "transparent"              },
-};
-const DEFENSE_CONFIG: Record<DefenseLevel, { color: string; label: string; pulse: boolean }> = {
-  armed:    { color: "#14F195", label: "ARMED",    pulse: true  },
-  alert:    { color: "#FBBF24", label: "ALERT",    pulse: true  },
-  breached: { color: "#f26b6b", label: "BREACHED", pulse: true  },
-  inactive: { color: "rgba(255,255,255,0.2)", label: "INACTIVE", pulse: false },
-};
-
-// ─── Stat bar ────────────────────────────────────────────────────────────────
+// ─── Stat bar ─────────────────────────────────────────────────────────────────
 function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.54rem", color:"rgba(255,255,255,0.4)", marginBottom:"2px", letterSpacing:"0.06em" }}>
-        <span>{label}</span><span style={{ color, fontWeight:700 }}>{value}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.5rem", color: "rgba(255,255,255,0.35)", marginBottom: "2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <span>{label}</span><span style={{ color, fontWeight: 700 }}>{value}</span>
       </div>
-      <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:"2px", height:"3px" }}>
-        <div style={{ width:`${value}%`, height:"100%", background:`linear-gradient(90deg, ${color}88, ${color})`, borderRadius:"2px", transition:"width 0.5s ease" }} />
+      <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "2px", height: "3px" }}>
+        <div style={{ width: `${value}%`, height: "100%", background: `linear-gradient(90deg, ${color}88, ${color})`, borderRadius: "2px", transition: "width 0.5s" }} />
       </div>
     </div>
   );
 }
 
-// ─── Card tile ───────────────────────────────────────────────────────────────
-type Mode = "gallery" | "duel" | "stake" | "pack";
+// ─── Arena asset card ─────────────────────────────────────────────────────────
+interface AssetCardProps {
+  asset:     ArenaAsset;
+  mode:      "gallery" | "duel" | "stake";
+  selected:  boolean;
+  onSelect:  (id: string) => void;
+  onStake?:  (id: string) => void;
+}
 
-function CardTile({ card, mode, selected, onSelect, onAction }: {
-  card: ArenaCard; mode: Mode; selected: boolean;
-  onSelect: () => void; onAction: (action: "stake" | "unstake" | "duel") => void;
-}) {
-  const rc = RARITY_CONFIG[card.rarity];
-  const dc = DEFENSE_CONFIG[card.defenseLevel];
-  const isStaked = card.stakeStatus === "staked";
-  const positive = card.change24h >= 0;
+function AssetCard({ asset, mode, selected, onSelect, onStake }: AssetCardProps) {
+  const vc     = VAULT_STATE_CONFIG[asset.vaultState] ?? VAULT_STATE_CONFIG[0];
+  const riskC  = asset.riskLevel > 180 ? "#f26b6b" : asset.riskLevel > 90 ? "#FBBF24" : "#3dd68c";
 
   return (
-    <div onClick={onSelect} style={{
-      background: selected ? `linear-gradient(135deg, ${card.color}18, ${card.color}06)` : "rgba(10,10,12,0.95)",
-      border: `1px solid ${selected ? card.color+"88" : card.color+"22"}`,
-      borderRadius:"14px", overflow:"hidden", cursor:"pointer",
-      boxShadow: selected ? `0 0 20px ${card.color}22` : "none",
-      transition:"all 0.2s ease",
-    }}>
-      {/* Art panel */}
-      <div style={{ height:"120px", background:`linear-gradient(135deg, ${card.color}28, ${card.color}08)`, display:"flex", alignItems:"center", justifyContent:"center", position:"relative", borderBottom:`1px solid ${card.color}18` }}>
-        <span style={{ fontSize:"3rem", filter: selected ? `drop-shadow(0 0 12px ${card.color})` : "none", transition:"filter 0.3s" }}>{card.icon}</span>
+    <div
+      onClick={() => onSelect(asset.id)}
+      style={{
+        background: selected
+          ? `linear-gradient(135deg, ${asset.color}20, ${asset.color}08)`
+          : "rgba(10,12,22,0.95)",
+        border: `1px solid ${selected ? asset.color + "80" : asset.color + "25"}`,
+        borderRadius: "14px",
+        overflow: "hidden",
+        cursor: "pointer",
+        boxShadow: selected ? `0 0 24px ${asset.color}22` : "none",
+        transform: selected ? "translateY(-2px)" : "translateY(0)",
+        transition: "all 0.2s ease",
+        position: "relative",
+      }}
+    >
+      {/* Selected overlay */}
+      {selected && mode === "duel" && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none",
+          background: `${asset.color}08`,
+          boxShadow: `inset 0 0 20px ${asset.color}22`,
+        }} />
+      )}
 
-        {/* Top badges */}
-        <div style={{ position:"absolute", top:"0.4rem", left:"0.4rem", display:"flex", flexDirection:"column", gap:"0.2rem" }}>
-          <span style={{ fontSize:"0.5rem", fontWeight:700, padding:"0.1rem 0.35rem", borderRadius:"3px", background:rc.bg, color:rc.color, border:`1px solid ${rc.color}44`, letterSpacing:"0.06em" }}>
-            {card.rarity.toUpperCase()}
+      <SafeImage src={asset.image} alt={asset.name} fallbackIcon={asset.icon} color={asset.color} height={130} />
+
+      {/* State badges */}
+      <div style={{ position: "absolute", top: "0.5rem", left: "0.5rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+        <span style={{ fontSize: "0.46rem", fontWeight: 700, padding: "0.1rem 0.35rem", borderRadius: "3px", background: "rgba(0,0,0,0.72)", color: asset.color, letterSpacing: "0.06em" }}>
+          {asset.rarity.toUpperCase().slice(0, 10)}
+        </span>
+        <span style={{ fontSize: "0.44rem", fontWeight: 700, padding: "0.08rem 0.3rem", borderRadius: "3px", background: "rgba(0,0,0,0.72)", color: vc.color, letterSpacing: "0.04em" }}>
+          {vc.label}
+        </span>
+      </div>
+      <div style={{ position: "absolute", top: "0.5rem", right: "0.5rem" }}>
+        <span style={{ fontSize: "0.48rem", fontWeight: 700, padding: "0.1rem 0.35rem", borderRadius: "3px", background: "rgba(0,0,0,0.72)", color: "#FBBF24" }}>
+          {asset.grade}
+        </span>
+      </div>
+
+      {/* Defense/staked status */}
+      <div style={{ position: "absolute", bottom: "0.5rem", left: "0.5rem", display: "flex", gap: "0.25rem" }}>
+        {asset.protected && (
+          <span style={{ fontSize: "0.44rem", padding: "0.08rem 0.3rem", borderRadius: "3px", background: "rgba(61,214,140,0.2)", color: "#3dd68c", border: "1px solid rgba(61,214,140,0.3)" }}>
+            ARMED
           </span>
-        </div>
-        <div style={{ position:"absolute", top:"0.4rem", right:"0.4rem" }}>
-          <span style={{ fontSize:"0.5rem", fontWeight:700, padding:"0.1rem 0.35rem", borderRadius:"3px", background:"rgba(0,0,0,0.6)", color:"#FBBF24" }}>
-            {card.grade}
+        )}
+        {asset.staked && (
+          <span style={{ fontSize: "0.44rem", padding: "0.08rem 0.3rem", borderRadius: "3px", background: "rgba(107,140,255,0.2)", color: "#6b8cff", border: "1px solid rgba(107,140,255,0.3)" }}>
+            STAKED
           </span>
-        </div>
-
-        {/* Defense indicator */}
-        <div style={{ position:"absolute", bottom:"0.4rem", left:"0.4rem", display:"flex", alignItems:"center", gap:"0.25rem" }}>
-          <span style={{ width:"5px", height:"5px", borderRadius:"50%", background:dc.color, animation:dc.pulse?"pulse 1.5s ease-in-out infinite":"none", boxShadow:dc.pulse?`0 0 4px ${dc.color}`:"none" }} />
-          <span style={{ fontSize:"0.5rem", fontWeight:700, color:dc.color, letterSpacing:"0.06em" }}>{dc.label}</span>
-        </div>
-
-        {/* Staked badge */}
-        {isStaked && (
-          <div style={{ position:"absolute", bottom:"0.4rem", right:"0.4rem" }}>
-            <span style={{ fontSize:"0.5rem", padding:"0.1rem 0.35rem", borderRadius:"3px", background:"rgba(20,241,149,0.15)", color:"#14F195", border:"1px solid rgba(20,241,149,0.3)" }}>
-              STAKED
-            </span>
-          </div>
         )}
       </div>
 
       {/* Info */}
-      <div style={{ padding:"0.625rem" }}>
-        <div style={{ fontWeight:700, fontSize:"0.78rem", marginBottom:"0.1rem", lineHeight:1.3, color:"rgba(255,255,255,0.95)" }}>{card.name}</div>
-        <div style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.3)", marginBottom:"0.5rem" }}>{card.series}</div>
-
-        {/* Price */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"0.4rem" }}>
-          <span style={{ fontWeight:700, fontSize:"0.85rem" }}>{card.priceSol.toFixed(1)} SOL</span>
-          <span style={{ fontSize:"0.6rem", fontWeight:700, color:positive?"#14F195":"#f26b6b" }}>
-            {positive?"+":""}{card.change24h.toFixed(1)}%
-          </span>
+      <div style={{ padding: "0.625rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.375rem" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.78rem", lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#f0f0f0" }}>{asset.name}</div>
+            <div style={{ fontSize: "0.54rem", color: "rgba(255,255,255,0.35)", marginTop: "1px" }}>{asset.series}</div>
+          </div>
+          <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "0.4rem" }}>
+            <div style={{ fontWeight: 800, fontSize: "0.85rem", color: "#fff" }}>{asset.priceSol.toFixed(0)}</div>
+            <div style={{ fontSize: "0.46rem", color: "rgba(255,255,255,0.3)" }}>SOL</div>
+          </div>
         </div>
 
-        {/* Stats */}
-        <div style={{ display:"flex", flexDirection:"column", gap:"0.2rem", marginBottom:"0.5rem" }}>
-          <StatBar label="PWR" value={card.power}   color={card.color} />
-          <StatBar label="DEF" value={card.defense} color="#14F195" />
-          <StatBar label="SPD" value={card.speed}   color="#60A5FA" />
+        {/* Risk level bar — maps to Vault.risk_level (0-255) */}
+        <div style={{ marginBottom: "0.4rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", marginBottom: "2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <span>Risk Level</span>
+            <span style={{ color: riskC, fontWeight: 700 }}>{asset.riskLevel}/255</span>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "2px", height: "3px" }}>
+            <div style={{ width: `${(asset.riskLevel / 255) * 100}%`, height: "100%", background: riskC, borderRadius: "2px", transition: "width 0.5s" }} />
+          </div>
         </div>
 
-        {/* Staking yield */}
-        {isStaked && card.accruedYield > 0 && (
-          <div style={{ padding:"0.3rem 0.4rem", background:"rgba(20,241,149,0.06)", borderRadius:"5px", marginBottom:"0.4rem", display:"flex", justifyContent:"space-between" }}>
-            <span style={{ fontSize:"0.56rem", color:"rgba(20,241,149,0.7)" }}>Accrued</span>
-            <span style={{ fontSize:"0.58rem", fontWeight:700, color:"#14F195", fontFamily:"'JetBrains Mono',monospace" }}>{card.accruedYield.toFixed(6)} ABRA</span>
+        {/* Duel stats */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.18rem", marginBottom: "0.5rem" }}>
+          <StatBar label="PWR" value={asset.power}   color={asset.color} />
+          <StatBar label="DEF" value={asset.defense} color="#3dd68c" />
+          <StatBar label="SPD" value={asset.speed}   color="#6b8cff" />
+        </div>
+
+        {/* Mode-specific action */}
+        {mode === "duel" && (
+          <div style={{ fontSize: "0.6rem", fontWeight: 700, textAlign: "center", padding: "0.25rem", borderRadius: "5px", background: selected ? `${asset.color}18` : "transparent", color: selected ? asset.color : "rgba(255,255,255,0.3)", border: `1px solid ${selected ? asset.color + "40" : "transparent"}`, transition: "all 0.2s" }}>
+            {selected ? "✓ Selected" : "Click to Select"}
           </div>
         )}
-
-        {/* Mode-specific CTA */}
         {mode === "stake" && (
           <button
-            onClick={(e) => { e.stopPropagation(); onAction(isStaked ? "unstake" : "stake"); }}
-            style={{ width:"100%", background:isStaked?"rgba(242,107,107,0.12)":"rgba(20,241,149,0.12)", border:`1px solid ${isStaked?"rgba(242,107,107,0.3)":"rgba(20,241,149,0.3)"}`, borderRadius:"6px", padding:"0.35rem", fontSize:"0.65rem", fontWeight:700, color:isStaked?"#f26b6b":"#14F195", cursor:"pointer" }}>
-            {isStaked ? `Unstake · ${card.stakeYieldPct}% APY` : `Stake · ${card.stakeYieldPct}% APY`}
-          </button>
-        )}
-        {mode === "duel" && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onAction("duel"); }}
-            style={{ width:"100%", background:selected?"rgba(255,107,53,0.15)":"rgba(255,255,255,0.04)", border:`1px solid ${selected?card.color+"44":"rgba(255,255,255,0.08)"}`, borderRadius:"6px", padding:"0.35rem", fontSize:"0.62rem", fontWeight:700, color:selected?card.color:"rgba(255,255,255,0.4)", cursor:"pointer" }}>
-            {selected ? "Selected ✓" : "Select for Duel"}
+            onClick={(e) => { e.stopPropagation(); onStake?.(asset.id); }}
+            style={{ width: "100%", padding: "0.3rem", borderRadius: "6px", fontSize: "0.6rem", fontWeight: 700, background: asset.staked ? "rgba(242,107,107,0.12)" : "rgba(61,214,140,0.1)", border: `1px solid ${asset.staked ? "rgba(242,107,107,0.3)" : "rgba(61,214,140,0.25)"}`, color: asset.staked ? "#f26b6b" : "#3dd68c", cursor: "pointer" }}>
+            {asset.staked ? "Unstake" : "Stake"}
           </button>
         )}
       </div>
@@ -217,292 +226,354 @@ function CardTile({ card, mode, selected, onSelect, onAction }: {
   );
 }
 
-// ─── Duel arena ──────────────────────────────────────────────────────────────
-function DuelArena({ cards, onClose }: { cards: [ArenaCard, ArenaCard]; onClose: () => void }) {
-  const [result, setResult]   = useState<DuelResult | null>(null);
-  const [phase,  setPhase]    = useState<"ready" | "fighting" | "done">("ready");
-  const [roundIdx, setRoundIdx] = useState(0);
+// ─── Duel panel ───────────────────────────────────────────────────────────────
+function DuelPanel({ battle, onClear }: { battle: DuelBattle; onClear: () => void }) {
+  const { assetA, assetB, event, log } = battle;
+  const winner = event?.winner && event.winner !== "draw"
+    ? (event.winner === assetA?.id ? assetA : assetB)
+    : null;
+  const draw   = event?.winner === "draw";
 
-  const fight = async () => {
-    setPhase("fighting");
-    const res = runDuel(cards[0], cards[1]);
-    // Reveal rounds one by one
-    for (let i = 0; i <= res.rounds.length; i++) {
-      await new Promise((r) => setTimeout(r, 700));
-      setRoundIdx(i);
-    }
-    setResult(res);
-    setPhase("done");
-  };
-
-  const STAT_COLOR = { power:"#FF6B35", defense:"#14F195", speed:"#60A5FA" } as const;
-  const winner = result?.winner;
+  const RISK_SIGNAL_LABELS = { 0:"LOW", 1:"MEDIUM", 2:"HIGH", 3:"CRITICAL" };
+  const RISK_SIGNAL_COLORS = { 0:"#3dd68c", 1:"#FBBF24", 2:"#fb923c", 3:"#f26b6b" };
 
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.9)", backdropFilter:"blur(16px)", padding:"1rem" }}>
-      <div style={{ width:"100%", maxWidth:"560px", background:"rgba(8,8,12,0.98)", border:"1px solid rgba(255,107,53,0.25)", borderRadius:"20px", padding:"1.75rem", position:"relative", maxHeight:"90vh", overflowY:"auto" }}>
-
-        {/* Header */}
-        <div style={{ textAlign:"center", marginBottom:"1.25rem" }}>
-          <p style={{ fontSize:"0.58rem", letterSpacing:"0.18em", textTransform:"uppercase", color:"rgba(255,107,53,0.7)", marginBottom:"0.3rem" }}>
-            Abraxas Duel · $ABRA Burn: 0.5
-          </p>
-          <h2 style={{ fontWeight:800, fontSize:"1.25rem", letterSpacing:"-0.02em" }}>
-            {phase === "ready" ? "Challenger vs Defender" : phase === "fighting" ? "Simulating…" : "Result"}
-          </h2>
-        </div>
-
-        {/* Cards matchup */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:"0.75rem", alignItems:"center", marginBottom:"1.25rem" }}>
-          {cards.map((card, i) => (
-            <div key={card.id} style={{ textAlign:i===0?"left":"right" }}>
-              <div style={{ fontSize:"2.5rem", marginBottom:"0.25rem" }}>{card.icon}</div>
-              <div style={{ fontWeight:700, fontSize:"0.8rem", marginBottom:"0.1rem" }}>{card.name}</div>
-              <div style={{ fontSize:"0.58rem", color:"rgba(255,255,255,0.4)" }}>{card.grade}</div>
-              {winner && (
-                <div style={{ marginTop:"0.35rem", fontSize:"0.6rem", fontWeight:700, color: (winner === "challenger" && i === 0) || (winner === "defender" && i === 1) ? "#14F195" : "#f26b6b" }}>
-                  {(winner === "challenger" && i === 0) || (winner === "defender" && i === 1) ? "VICTORY" : "DEFEATED"}
+    <div style={{ background: "rgba(10,12,22,0.97)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: "16px", padding: "1.25rem", marginBottom: "1rem" }}>
+      {/* Matchup header */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "0.75rem", alignItems: "center", marginBottom: "1rem" }}>
+        {[assetA, assetB].map((asset, i) => (
+          <div key={i} style={{ textAlign: i === 0 ? "left" : "right" }}>
+            {asset ? (
+              <>
+                <SafeImage src={asset.image} alt={asset.name} fallbackIcon={asset.icon} color={asset.color} height={80} />
+                <div style={{ fontWeight: 700, fontSize: "0.8rem", marginTop: "0.3rem", color: event ? (winner?.id === asset.id ? "#3dd68c" : draw ? "#FBBF24" : "#f26b6b") : "#f0f0f0" }}>
+                  {asset.name}
                 </div>
-              )}
-            </div>
-          ))}
-          <div style={{ textAlign:"center" }}>
-            <Swords size={24} color="rgba(255,107,53,0.6)" />
-          </div>
-        </div>
-
-        {/* Round results */}
-        {result && (
-          <div style={{ marginBottom:"1rem" }}>
-            {result.rounds.slice(0, roundIdx).map((r) => (
-              <div key={r.round} style={{ display:"grid", gridTemplateColumns:"40px 1fr 40px", gap:"0.5rem", alignItems:"center", padding:"0.4rem 0.5rem", background:"rgba(255,255,255,0.03)", borderRadius:"6px", marginBottom:"0.3rem", border:`1px solid ${STAT_COLOR[r.stat]}22` }}>
-                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:"0.6rem", fontWeight:700, color:STAT_COLOR[r.stat], textAlign:"center" }}>{r.challengerRoll}</span>
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.3)", marginBottom:"1px", letterSpacing:"0.08em" }}>{r.stat.toUpperCase()}</div>
-                  <div style={{ fontSize:"0.62rem", color:`${STAT_COLOR[r.stat]}bb`, fontStyle:"italic" }}>{r.narrative}</div>
-                </div>
-                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:"0.6rem", fontWeight:700, color:STAT_COLOR[r.stat], textAlign:"center" }}>{r.defenderRoll}</span>
+                <div style={{ fontSize: "0.54rem", color: "rgba(255,255,255,0.35)" }}>{asset.grade}</div>
+                {event && (
+                  <div style={{ fontSize: "0.6rem", fontWeight: 700, color: winner?.id === asset.id ? "#3dd68c" : draw ? "#FBBF24" : "#f26b6b", marginTop: "0.2rem" }}>
+                    {winner?.id === asset.id ? "VICTORY" : draw ? "DRAW" : "DEFEATED"}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ height: 80, display: "flex", alignItems: "center", justifyContent: i === 0 ? "flex-start" : "flex-end" }}>
+                <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>Select card</div>
               </div>
-            ))}
+            )}
           </div>
-        )}
-
-        {/* Agent reasoning */}
-        {result && phase === "done" && (
-          <div style={{ background:"rgba(2,3,10,0.95)", border:"1px solid rgba(96,165,250,0.2)", borderRadius:"10px", padding:"0.75rem", marginBottom:"1rem", fontFamily:"'JetBrains Mono',monospace" }}>
-            {result.agentReasoning.split("\n").map((line, i) => (
-              <p key={i} style={{ margin:"0 0 0.2rem", fontSize:"0.58rem", color:i===0?"#60A5FA":`rgba(96,165,250,${0.7-i*0.1})` }}>{line}</p>
-            ))}
-          </div>
-        )}
-
-        {/* Flavor text */}
-        {result && phase === "done" && (
-          <div style={{ textAlign:"center", marginBottom:"1rem", padding:"0.75rem", background:"rgba(255,215,0,0.06)", borderRadius:"8px", border:"1px solid rgba(255,215,0,0.15)" }}>
-            <p style={{ fontSize:"0.75rem", fontStyle:"italic", color:"rgba(255,215,0,0.8)", lineHeight:1.6 }}>"{result.flavorText}"</p>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div style={{ display:"flex", gap:"0.625rem" }}>
-          {phase === "ready" && (
-            <button onClick={fight} style={{ flex:1, background:"#FF6B35", color:"var(--void)", border:"none", borderRadius:"10px", padding:"0.7rem", fontWeight:700, fontSize:"0.85rem", cursor:"pointer" }}>
-              ⚔️ Fight (0.5 $ABRA)
-            </button>
-          )}
-          <button onClick={onClose} style={{ flex: phase === "ready" ? 0 : 1, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"10px", padding:"0.7rem", fontSize:"0.78rem", color:"rgba(255,255,255,0.5)", cursor:"pointer" }}>
-            {phase === "done" ? "Close" : "Cancel"}
-          </button>
+        ))}
+        <div style={{ textAlign: "center" }}>
+          <SwordsIcon size={28} style={{ color: "rgba(255,107,53,0.6)" }} />
         </div>
       </div>
-    </div>
-  );
-}
 
-// ─── Pack reveal ──────────────────────────────────────────────────────────────
-function PackReveal({ onClose }: { onClose: () => void }) {
-  const [phase, setPhase] = useState<"idle" | "opening" | "revealed">("idle");
-  const [revealed, setRevealed] = useState<typeof BASE_CARDS[0] | null>(null);
-
-  const open = async () => {
-    setPhase("opening");
-    await new Promise((r) => setTimeout(r, 1800));
-    const r = BASE_CARDS[Math.floor(Math.random() * BASE_CARDS.length)];
-    setRevealed(r);
-    setPhase("revealed");
-  };
-
-  return (
-    <div style={{ position:"fixed", inset:0, zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.9)", backdropFilter:"blur(16px)", padding:"1rem" }}>
-      <div style={{ width:"100%", maxWidth:"380px", background:"rgba(8,8,12,0.98)", border:"1px solid rgba(200,169,110,0.25)", borderRadius:"20px", padding:"2rem", textAlign:"center" }}>
-        <p style={{ fontSize:"0.58rem", letterSpacing:"0.18em", textTransform:"uppercase", color:"rgba(200,169,110,0.7)", marginBottom:"0.5rem" }}>
-          Abraxas Pack · 1 $ABRA
-        </p>
-        <h2 style={{ fontWeight:800, fontSize:"1.1rem", marginBottom:"1.5rem" }}>Collector Crypt Pack</h2>
-
-        {/* Pack orb */}
-        <div style={{ width:"100px", height:"100px", borderRadius:"50%", margin:"0 auto 1.5rem", background:phase==="opening"?"radial-gradient(circle at 35%, #FFD70088, #C8A96E22)":"radial-gradient(circle at 35%, #C8A96E44, #7A4F0022)", border:`2px solid ${phase==="opening"?"#FFD700":"#C8A96E"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2.5rem", boxShadow:phase==="opening"?"0 0 40px rgba(255,215,0,0.4)":"none", animation:phase==="opening"?"pulse 0.5s ease-in-out infinite":"none", transition:"all 0.4s" }}>
-          {phase==="idle"?"⬡":phase==="opening"?"✦":revealed?.icon}
-        </div>
-
-        {phase === "revealed" && revealed && (
-          <div style={{ marginBottom:"1.25rem" }}>
-            <div style={{ fontWeight:800, fontSize:"1.1rem", marginBottom:"0.25rem" }}>{revealed.name}</div>
-            <div style={{ fontSize:"0.68rem", color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>{revealed.grade} · {revealed.series}</div>
-            <div style={{ fontSize:"0.65rem", fontWeight:700, color:RARITY_CONFIG[revealed.rarity as keyof typeof RARITY_CONFIG]?.color ?? "#fff" }}>
-              {revealed.rarity.toUpperCase()}
+      {/* Event data — maps to DuelResolvedEvent fields */}
+      {event && (
+        <div style={{ marginBottom: "0.75rem", padding: "0.625rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
+            <div>
+              <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Risk Signal</div>
+              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: RISK_SIGNAL_COLORS[event.riskSignal] }}>
+                {RISK_SIGNAL_LABELS[event.riskSignal]}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Vault State</div>
+              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: VAULT_STATE_CONFIG[event.newVaultState]?.color ?? "#fff" }}>
+                {VAULT_STATE_CONFIG[event.newVaultState]?.label ?? "UNKNOWN"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>$ABRA Burn</div>
+              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#f26b6b" }}>0.5</div>
             </div>
           </div>
-        )}
-
-        <div style={{ display:"flex", gap:"0.5rem" }}>
-          {phase === "idle" && (
-            <button onClick={open} style={{ flex:1, background:"var(--gold)", color:"var(--void)", border:"none", borderRadius:"10px", padding:"0.7rem", fontWeight:700, fontSize:"0.85rem", cursor:"pointer" }}>
-              Open Pack (1 $ABRA)
-            </button>
-          )}
-          {phase !== "idle" && (
-            <button onClick={onClose} style={{ flex:1, background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"10px", padding:"0.7rem", fontSize:"0.78rem", color:"rgba(255,255,255,0.5)", cursor:"pointer" }}>
-              {phase==="opening"?"Opening…":"Close"}
-            </button>
-          )}
         </div>
-      </div>
+      )}
+
+      {/* Agent reasoning log */}
+      {log.length > 0 && (
+        <div style={{ background: "rgba(2,3,10,0.97)", border: "1px solid rgba(107,140,255,0.15)", borderRadius: "8px", padding: "0.625rem", maxHeight: "160px", overflowY: "auto", fontFamily: "'JetBrains Mono',monospace", marginBottom: "0.75rem" }}>
+          {log.map((line, i) => (
+            <p key={i} style={{ margin: "0 0 0.2rem", fontSize: "0.58rem", lineHeight: 1.5, color: i === 0 ? "#60A5FA" : `rgba(96,165,250,${Math.max(0.2, 0.85 - i * 0.05)})` }}>
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+
+      <button onClick={onClear} style={{ width: "100%", padding: "0.5rem", borderRadius: "8px", fontSize: "0.72rem", fontWeight: 700, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", cursor: "pointer" }}>
+        New Duel
+      </button>
     </div>
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main Arena page ──────────────────────────────────────────────────────────
+type Mode = "gallery" | "duel" | "stake";
+
 export default function ArenaPage() {
-  const { abraBurned, stakes } = useArenaState();
+  // ── Core state — never undefined, always initialised ──────────────────────
+  const [assets,    setAssets]    = useState<ArenaAsset[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState<string | null>(null);
   const [mode,      setMode]      = useState<Mode>("gallery");
-  const [filter,    setFilter]    = useState<CardCategory | "all">("all");
+  const [filter,    setFilter]    = useState<ArenaAsset["category"] | "all">("all");
   const [selected,  setSelected]  = useState<Set<string>>(new Set());
-  const [duelCards, setDuelCards] = useState<[ArenaCard, ArenaCard] | null>(null);
-  const [showPack,  setShowPack]  = useState(false);
-  const [cards,     setCards]     = useState<ArenaCard[]>([]);
+  const [abraBurned, setAbraBurned] = useState(0);
+  const [battle, setBattle] = useState<DuelBattle>({
+    record: null, assetA: null, assetB: null,
+    status: "idle", event: null, log: [],
+  });
 
+  // Load assets safely — never throws, always sets loading=false
   useEffect(() => {
-    setCards(buildCards(stakes));
-    const iv = setInterval(() => setCards(buildCards(stakes)), 10_000);
-    return () => clearInterval(iv);
-  }, [stakes]);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        // In production: fetch from /api/duel (DuelRecord PDAs) + NFT metadata
+        // For now: use seed data derived from on-chain structure
+        await new Promise(r => setTimeout(r, 300)); // simulate fetch latency
+        if (!cancelled) {
+          setAssets(SEED_ASSETS);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load assets");
+          setAssets(SEED_ASSETS); // always show something
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
-  const filtered = cards.filter((c) => filter === "all" || c.category === filter);
-  const stakedCards = cards.filter((c) => c.stakeStatus === "staked");
-  const totalSol = cards.reduce((s, c) => s + c.priceSol, 0);
-
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => {
+  // ── Selection logic ───────────────────────────────────────────────────────
+  const handleSelect = useCallback((id: string) => {
+    if (mode !== "duel") return;
+    setSelected(prev => {
       const next = new Set(prev);
-      if (next.has(id)) { next.delete(id); } else { if (next.size < 2) next.add(id); }
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < 2) {
+        next.add(id);
+      } else {
+        // Replace the first selected with new selection
+        const [first] = Array.from(next);
+        next.delete(first);
+        next.add(id);
+      }
       return next;
     });
-  };
+    setBattle(prev => ({ ...prev, status: "idle", event: null, log: [] }));
+  }, [mode]);
 
-  const handleCardAction = (card: ArenaCard, action: "stake" | "unstake" | "duel") => {
-    if (action === "stake")   { stakeCard(card);        setCards(buildCards(readStakesShim())); }
-    if (action === "unstake") { unstakeCard(card.id);   setCards(buildCards(readStakesShim())); }
-    if (action === "duel")    { toggleSelect(card.id); }
-  };
+  // ── Start duel ────────────────────────────────────────────────────────────
+  const startDuel = useCallback(() => {
+    const sel = assets.filter(a => selected.has(a.id));
+    if (sel.length !== 2) return;
+    // Check vault state — mirrors Anchor require!(!vault.is_paused, CardsError::VaultPaused)
+    if (sel.some(a => a.vaultState === 2)) {
+      setBattle(prev => ({
+        ...prev,
+        status: "idle",
+        log: ["[ERROR] Duel blocked — vault is paused (VaultState=2). Anchor: CardsError::VaultPaused"],
+      }));
+      return;
+    }
+    setBattle({
+      record: null, assetA: sel[0], assetB: sel[1],
+      status: "ready", event: null, log: [
+        `[READY] ${sel[0].name} vs ${sel[1].name}`,
+        `[CHECK] Vault states: ${sel[0].vaultState} / ${sel[1].vaultState} — OK`,
+        "[READY] Click Resolve to execute duel on-chain",
+      ],
+    });
+  }, [assets, selected]);
 
-  // Read stakes directly for immediate re-render
-  function readStakesShim() {
-    if (typeof window === "undefined") return {};
-    try { return JSON.parse(localStorage.getItem("abraxas_arena_stakes_v1") ?? "{}"); } catch { return {}; }
-  }
+  // ── Resolve duel — calls Anchor-aligned simulation ────────────────────────
+  const resolveDuel = useCallback(async () => {
+    if (!battle.assetA || !battle.assetB || battle.status !== "ready") return;
+    setBattle(prev => ({ ...prev, status: "resolving" }));
 
-  const launchDuel = () => {
-    const sel = cards.filter((c) => selected.has(c.id));
-    if (sel.length === 2) setDuelCards([sel[0], sel[1]]);
-  };
+    await new Promise(r => setTimeout(r, 800)); // simulate on-chain latency
 
-  const MODES: Array<{ key: Mode; label: string; icon: React.ReactNode }> = [
-    { key:"gallery", label:"Gallery",    icon:<Star size={14}/> },
-    { key:"duel",    label:"Duel",       icon:<Swords size={14}/> },
-    { key:"stake",   label:"Stake",      icon:<TrendingUp size={14}/> },
-    { key:"pack",    label:"Open Pack",  icon:<Package size={14}/> },
-  ];
+    const result = resolveDuelSimulated(battle.assetA!, battle.assetB!);
+    setAbraBurned(prev => prev + 0.5);
+
+    // Update asset vault states based on DuelResolvedEvent.newVaultState
+    // In production: refetch Vault PDA after tx confirmation
+    if (result.event.newVaultState === 1) {
+      setAssets(prev => prev.map(a =>
+        selected.has(a.id) ? { ...a, vaultState: 1 as const, protected: false } : a
+      ));
+    }
+
+    setBattle(prev => ({
+      ...prev,
+      record:  result.record,
+      event:   result.event,
+      status:  "resolved",
+      log:     result.log,
+    }));
+  }, [battle, selected]);
+
+  // ── Stake toggle ──────────────────────────────────────────────────────────
+  const handleStake = useCallback((id: string) => {
+    setAssets(prev => prev.map(a =>
+      a.id === id ? { ...a, staked: !a.staked } : a
+    ));
+    setAbraBurned(prev => prev + 0.1);
+  }, []);
+
+  // ── Clear battle ──────────────────────────────────────────────────────────
+  const clearBattle = useCallback(() => {
+    setSelected(new Set());
+    setBattle({ record: null, assetA: null, assetB: null, status: "idle", event: null, log: [] });
+  }, []);
+
+  // ── Derived values ─────────────────────────────────────────────────────────
+  const filtered     = assets.filter(a => filter === "all" || a.category === filter);
+  const selArray     = assets.filter(a => selected.has(a.id));
+  const canStartDuel = mode === "duel" && selected.size === 2 && battle.status === "idle";
+  const canResolve   = battle.status === "ready";
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+  if (loading) return (
+    <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: "0.75rem" }}>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} style={{ borderRadius: "14px", overflow: "hidden", background: "rgba(10,12,22,0.95)", border: "1px solid rgba(255,255,255,0.06)", height: 340, animation: "pulse 1.5s ease-in-out infinite" }}>
+            <div style={{ height: 130, background: "rgba(255,255,255,0.04)" }} />
+            <div style={{ padding: "0.625rem" }}>
+              <div style={{ height: "0.8rem", background: "rgba(255,255,255,0.06)", borderRadius: "4px", marginBottom: "0.4rem" }} />
+              <div style={{ height: "0.6rem", background: "rgba(255,255,255,0.04)", borderRadius: "4px", width: "60%" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth:"1100px", margin:"0 auto", padding:"1.5rem 1.25rem 3rem" }}>
-      {duelCards && <DuelArena cards={duelCards} onClose={() => { setDuelCards(null); setSelected(new Set()); }} />}
-      {showPack  && <PackReveal onClose={() => setShowPack(false)} />}
+    <div style={{ maxWidth: "960px", margin: "0 auto", padding: "1.5rem 1.25rem 3rem" }}>
 
-      {/* Hero */}
-      <div style={{ marginBottom:"1.5rem", padding:"1.25rem 1.5rem", background:"linear-gradient(135deg, rgba(200,169,110,0.1), rgba(0,0,0,0) 60%)", border:"1px solid rgba(200,169,110,0.2)", borderRadius:"16px" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem" }}>
+      {/* Error banner — non-blocking */}
+      {error && (
+        <div style={{ padding: "0.625rem 1rem", background: "rgba(242,107,107,0.08)", border: "1px solid rgba(242,107,107,0.2)", borderRadius: "8px", marginBottom: "1rem", fontSize: "0.7rem", color: "#f26b6b" }}>
+          ⚠ {error} — showing cached data
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ marginBottom: "1.25rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
-            <p style={{ fontSize:"0.56rem", letterSpacing:"0.18em", textTransform:"uppercase", color:"rgba(200,169,110,0.7)", marginBottom:"0.3rem" }}>
-              Abraxas · Collector Crypt · $CARDS Program
+            <p style={{ fontSize: "0.56rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: "0.2rem" }}>
+              Collector Crypt · $CARDS Program
             </p>
-            <h1 style={{ fontWeight:800, fontSize:"clamp(1.4rem,3.5vw,1.9rem)", letterSpacing:"-0.02em", margin:"0 0 0.3rem" }}>
+            <h1 style={{ fontWeight: 800, fontSize: "clamp(1.4rem,3.5vw,1.9rem)", letterSpacing: "-0.02em", margin: 0 }}>
               Collector Arena
             </h1>
-            <p style={{ fontSize:"0.72rem", color:"rgba(255,255,255,0.45)", margin:0 }}>
-              Stake · Duel · Protect with Sophia
-            </p>
           </div>
-          <div style={{ display:"flex", gap:"1.25rem", flexWrap:"wrap" }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontWeight:800, fontSize:"1.1rem", color:"var(--gold)" }}>{totalSol.toFixed(0)} SOL</div>
-              <div style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.08em" }}>Portfolio</div>
-            </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontWeight:800, fontSize:"1.1rem", color:"#14F195" }}>{stakedCards.length}</div>
-              <div style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.08em" }}>Staked</div>
-            </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontWeight:800, fontSize:"1.1rem", color:"#f26b6b", display:"flex", alignItems:"center", gap:"0.3rem" }}>
-                <Flame size={14} />{abraBurned.toFixed(1)}
+          <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--gold,#C8A96E)" }}>
+                {assets.reduce((s, a) => s + a.priceSol, 0).toFixed(0)} SOL
               </div>
-              <div style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.08em" }}>$ABRA Burned</div>
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Portfolio</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#3dd68c" }}>
+                {assets.filter(a => a.staked).length}
+              </div>
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Staked</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#f26b6b", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                <ZapIcon size={14} style={{ color: "#f26b6b" }} />{abraBurned.toFixed(1)}
+              </div>
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>$ABRA Burned</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Mode tabs */}
-      <div style={{ display:"flex", gap:"0.4rem", marginBottom:"1.25rem", flexWrap:"wrap", alignItems:"center" }}>
-        {MODES.map((m) => (
-          <button key={m.key} onClick={() => { setMode(m.key); if (m.key==="pack") setShowPack(true); setSelected(new Set()); }}
-            style={{ display:"flex", alignItems:"center", gap:"0.35rem", background:mode===m.key?"rgba(200,169,110,0.15)":"rgba(255,255,255,0.04)", border:`1px solid ${mode===m.key?"var(--gold)":"rgba(255,255,255,0.08)"}`, borderRadius:"8px", padding:"0.4rem 0.875rem", fontSize:"0.7rem", fontWeight:mode===m.key?700:400, color:mode===m.key?"var(--gold)":"rgba(255,255,255,0.5)", cursor:"pointer" }}>
-            {m.icon} {m.label}
+      <div style={{ display: "flex", gap: "0.35rem", marginBottom: "1.1rem", flexWrap: "wrap", alignItems: "center" }}>
+        {(["gallery","duel","stake"] as Mode[]).map(m => (
+          <button key={m} onClick={() => { setMode(m); setSelected(new Set()); clearBattle(); }}
+            style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "0.4rem 0.875rem", borderRadius: "8px", border: `1px solid ${mode === m ? "rgba(107,140,255,0.4)" : "rgba(255,255,255,0.08)"}`, background: mode === m ? "rgba(107,140,255,0.12)" : "transparent", color: mode === m ? "#6b8cff" : "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontWeight: mode === m ? 700 : 400, cursor: "pointer", textTransform: "capitalize" }}>
+            {m === "gallery" && <ShieldIcon size={12} style={{ color: mode === m ? "#6b8cff" : undefined }} />}
+            {m === "duel"    && <SwordsIcon size={12} />}
+            {m === "stake"   && <TrendIcon  size={12} />}
+            {m}
           </button>
         ))}
 
         {/* Category filter */}
-        <div style={{ marginLeft:"auto", display:"flex", gap:"0.3rem" }}>
-          {(["all","pokemon","onepiece","luxury"] as const).map((cat) => (
+        <div style={{ marginLeft: "auto", display: "flex", gap: "0.25rem" }}>
+          {(["all","pokemon","onepiece","luxury"] as const).map(cat => (
             <button key={cat} onClick={() => setFilter(cat)}
-              style={{ background:filter===cat?"rgba(200,169,110,0.12)":"transparent", border:`1px solid ${filter===cat?"var(--gold)":"rgba(255,255,255,0.08)"}`, borderRadius:"5px", padding:"0.3rem 0.5rem", fontSize:"0.6rem", fontWeight:filter===cat?700:400, color:filter===cat?"var(--gold)":"rgba(255,255,255,0.4)", cursor:"pointer" }}>
+              style={{ padding: "0.3rem 0.5rem", borderRadius: "5px", border: `1px solid ${filter === cat ? "var(--gold,#C8A96E)" : "rgba(255,255,255,0.08)"}`, background: filter === cat ? "rgba(200,169,110,0.1)" : "transparent", color: filter === cat ? "#C8A96E" : "rgba(255,255,255,0.35)", fontSize: "0.6rem", fontWeight: filter === cat ? 700 : 400, cursor: "pointer" }}>
               {cat === "all" ? "All" : cat === "pokemon" ? "Pokémon" : cat === "onepiece" ? "One Piece" : "Luxury"}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Duel launch bar */}
+      {/* Duel action bar */}
       {mode === "duel" && (
-        <div style={{ padding:"0.75rem 1rem", background:"rgba(255,107,53,0.08)", border:"1px solid rgba(255,107,53,0.2)", borderRadius:"10px", marginBottom:"1rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"0.75rem", flexWrap:"wrap" }}>
-          <div style={{ fontSize:"0.72rem", color:"rgba(255,107,53,0.8)" }}>
-            {selected.size === 0 ? "Select 2 cards to duel" : selected.size === 1 ? "Select 1 more card" : "Ready to duel!"}
+        <div style={{ padding: "0.75rem 1rem", background: "rgba(255,107,53,0.07)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: "10px", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)" }}>
+            {selected.size === 0 && "Select 2 assets to duel"}
+            {selected.size === 1 && `${selArray[0]?.name} selected — pick opponent`}
+            {selected.size === 2 && battle.status === "idle" && `${selArray[0]?.name} vs ${selArray[1]?.name} — ready`}
+            {battle.status === "ready" && "Duel ready — resolve to execute"}
+            {battle.status === "resolving" && "Resolving on-chain…"}
+            {battle.status === "resolved" && "Duel complete — new duel below"}
           </div>
-          <button onClick={launchDuel} disabled={selected.size !== 2}
-            style={{ background:selected.size===2?"#FF6B35":"rgba(255,255,255,0.04)", color:selected.size===2?"var(--void)":"rgba(255,255,255,0.3)", border:"none", borderRadius:"7px", padding:"0.4rem 1rem", fontSize:"0.72rem", fontWeight:700, cursor:selected.size===2?"pointer":"not-allowed" }}>
-            ⚔️ Launch Duel (0.5 $ABRA)
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            {canStartDuel && (
+              <button onClick={startDuel}
+                style={{ background: "rgba(255,107,53,0.15)", border: "1px solid rgba(255,107,53,0.35)", borderRadius: "7px", padding: "0.4rem 0.875rem", fontSize: "0.7rem", fontWeight: 700, color: "#FF6B35", cursor: "pointer" }}>
+                Start Duel →
+              </button>
+            )}
+            {canResolve && (
+              <button onClick={resolveDuel}
+                style={{ background: "#FF6B35", border: "none", borderRadius: "7px", padding: "0.4rem 0.875rem", fontSize: "0.72rem", fontWeight: 700, color: "#fff", cursor: "pointer" }}>
+                ⚔ Resolve Duel (0.5 $ABRA)
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Card grid */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(min(100%,180px),1fr))", gap:"0.75rem" }}>
-        {filtered.map((card) => (
-          <CardTile key={card.id} card={card} mode={mode} selected={selected.has(card.id)}
-            onSelect={() => mode === "duel" ? toggleSelect(card.id) : {}}
-            onAction={(action) => handleCardAction(card, action)} />
+      {/* Battle panel — only when battle has cards or log */}
+      {(battle.assetA || battle.log.length > 0) && (
+        <DuelPanel battle={battle} onClear={clearBattle} />
+      )}
+
+      {/* Asset grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,180px),1fr))", gap: "0.75rem" }}>
+        {filtered.map(asset => (
+          <AssetCard key={asset.id} asset={asset} mode={mode}
+            selected={selected.has(asset.id)}
+            onSelect={handleSelect}
+            onStake={handleStake} />
         ))}
       </div>
+
+      {filtered.length === 0 && (
+        <div style={{ padding: "3rem", textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: "0.72rem" }}>
+          No assets in this category.
+        </div>
+      )}
     </div>
   );
 }
