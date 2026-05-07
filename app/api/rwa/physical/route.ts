@@ -29,8 +29,8 @@ const ONEPIECE = [
 ];
 
 const METALS = [
-  { name: "Gold 1oz",   symbol: "XAU", baseUsd: 6787.69, seed: 7.1, range: 15 }, // XAUT May 2026
-  { name: "Silver 1oz", symbol: "XAG", baseUsd: 65.94, seed: 8.3, range: 0.3 }, // SLVON May 2026
+  { name: "Gold 1oz",   symbol: "XAU", baseUsd: 4733.39, seed: 7.1, range: 12 }, // Gold May 2026 $4,733.39/oz
+  { name: "Silver 1oz", symbol: "XAG", baseUsd: 72.91, seed: 8.3, range: 0.4 }, // Silver May 2026 $72.91/oz
 ];
 
 export async function GET() {

@@ -1943,7 +1943,7 @@
         4600,
         4700
       ],
-      "filter_note": "Included: $4,700 < $5,000 ceiling",
+      "filter_note": "Included: $4,700 < $5,000 ",
       "ticker": "JOSH-ALL",
       "grade": "PSA 10",
       "gradingCo": "PSA",
@@ -2005,7 +2005,7 @@
         4370,
         4472
       ],
-      "filter_note": "Included: $4,472 < $5,000 ceiling",
+      "filter_note": "Included: $4,472 < $5,000 ",
       "ticker": "SHOHEI-O",
       "grade": "PSA 10",
       "gradingCo": "PSA",
@@ -2281,9 +2281,9 @@
       "gradingCo": "LBMA",
       "vaultId": "XAUT-vault-001",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 6787.69,
-      "priceUsd": 6787.69,
-      "last_sold_price": 6787.69,
+      "insuranceUsd": 4733.39,
+      "priceUsd": 4733.39,
+      "last_sold_price": 4733.39,
       "last_sold_source": "Pyth Oracle",
       "last_sold_date": "2026-05-11",
       "change24h": 0.4,
@@ -2300,16 +2300,16 @@
       "staked": true,
       "apy": 6.8,
       "history": [
-        6200,
-        6350,
-        6450,
-        6550,
-        6620,
-        6680,
-        6720,
-        6750,
-        6775,
-        6787
+        4200,
+        4300,
+        4350,
+        4450,
+        4520,
+        4580,
+        4620,
+        4680,
+        4710,
+        4733
       ],
       "metadata": {
         "set": "LBMA Sovereign Metal",
@@ -2317,7 +2317,7 @@
         "grade_provider": "LBMA",
         "grade_score": "999.9"
       },
-      "valuation": 6787.69,
+      "valuation": 4733.39,
       "source_file": "pyth-oracle-2026",
       "attributes": {
         "power_level": 68,
@@ -2345,9 +2345,9 @@
       "gradingCo": "LBMA",
       "vaultId": "SLVON-vault-001",
       "vaultLocation": "Abraxas Vault \u2014 New Castle, DE",
-      "insuranceUsd": 65.94,
-      "priceUsd": 65.94,
-      "last_sold_price": 65.94,
+      "insuranceUsd": 72.91,
+      "priceUsd": 72.91,
+      "last_sold_price": 72.91,
       "last_sold_source": "Pyth Oracle",
       "last_sold_date": "2026-05-11",
       "change24h": 0.2,
@@ -2364,16 +2364,16 @@
       "staked": true,
       "apy": 8.2,
       "history": [
-        58,
-        60,
-        61,
         62,
-        63,
-        64,
-        64.5,
         65,
-        65.5,
-        65.94
+        67,
+        68,
+        69,
+        70,
+        71,
+        71.5,
+        72.2,
+        72.91
       ],
       "metadata": {
         "set": "LBMA Sovereign Metal",
@@ -2381,7 +2381,7 @@
         "grade_provider": "LBMA",
         "grade_score": "999"
       },
-      "valuation": 65.94,
+      "valuation": 72.91,
       "source_file": "pyth-oracle-2026",
       "attributes": {
         "power_level": 59,
@@ -2722,22 +2722,22 @@
   "excluded_assets": [
     {
       "name": "Kobe Bryant Gold Prizm",
-      "reason": "Sports > $5,000 ceiling",
+      "reason": "Sports > $5,000",
       "estimated_value": "10000+"
     },
     {
       "name": "Tom Brady 2000 Bowman Chrome RC",
-      "reason": "Sports > $5,000 ceiling",
+      "reason": "Sports > $5,000 ",
       "estimated_value": "9000-14000"
     },
     {
       "name": "Patrick Mahomes Orange Prizm RC",
-      "reason": "Sports > $5,000 ceiling",
+      "reason": "Sports > $5,000 ",
       "estimated_value": "5500+"
     },
     {
       "name": "Patrick Mahomes Prizm Silver RC",
-      "reason": "Sports > $5,000 ceiling",
+      "reason": "Sports > $5,000 ",
       "estimated_value": "5500"
     },
     {
@@ -2751,7 +2751,7 @@
     "one_piece_count": 8,
     "sports_count": 2,
     "total_assets": 44,
-    "total_insured_usd": 39567996.68,
+    "total_insured_usd": 39565949.35,
     "excluded_sports_count": 3
   }
 }
