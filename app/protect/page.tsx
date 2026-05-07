@@ -174,7 +174,7 @@ function VaultCard({ vault, assets }: VaultCardProps) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.625rem" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.15rem" }}>
-              <CircuitShield vaultId={vault.id} />
+              {sv && <CircuitShield vault={sv} />}
               <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "#f0f0f0" }}>{vault.name}</span>
             </div>
             <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.35)", fontFamily: "'JetBrains Mono',monospace" }}>

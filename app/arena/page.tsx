@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { resolveDuelSimulated, resolveImage } from "@/lib/arena/duelEngine";
+import { DuelButton, type WagerToken } from "@/components/DuelButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CardAsset {
@@ -38,8 +39,9 @@ const SPORTS_CEILING = 5000;
 
 function isEligible(card: CardAsset): boolean {
   if (!card.imagePath) return false;
-  if (!card.last_sold_price) return false;
   if (card.category === "Sports" && card.insuranceUsd > SPORTS_CEILING) return false;
+  // Respect is_duel_eligible from inventory.json if present
+  if ("is_duel_eligible" in card && !(card as any).is_duel_eligible) return false;
   return true;
 }
 

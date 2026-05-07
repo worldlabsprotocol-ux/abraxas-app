@@ -61,7 +61,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2000-SLOWKING-HO",
       "set": "Neo Genesis",
-      "year": 2000
+      "year": 2000,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 46.05,
+        "historical_volatility": 7.97,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 4828.0,
+      "last_sold_source": "BGS Registry",
+      "last_sold_date": "2000"
     },
     {
       "id": "2001-mewtwo-holo-psa10",
@@ -109,7 +120,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2001-MEWTWO-HOLO",
       "set": "Base Set 2",
-      "year": 2001
+      "year": 2001,
+      "attributes": {
+        "power_level": 71,
+        "liquidity_score": 43.81,
+        "historical_volatility": 6.51,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=71"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "last_sold_price": 4200.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2001"
     },
     {
       "id": "2005-latias-gold-star-psa10",
@@ -157,7 +179,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2005-LATIAS-GOLD",
       "set": "Delta Species",
-      "year": 2005
+      "year": 2005,
+      "attributes": {
+        "power_level": 69,
+        "liquidity_score": 44.97,
+        "historical_volatility": 7.04,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=69"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 4000.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2005"
     },
     {
       "id": "2000-dark-charizard-1st-psa10",
@@ -205,7 +238,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2000-DARK-CHARIZ",
       "set": "Team Rocket",
-      "year": 2000
+      "year": 2000,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 46.24,
+        "historical_volatility": 10.02,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 3600.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2000"
     },
     {
       "id": "2018-pretend-boss-pikachu-psa10",
@@ -253,7 +297,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2018-PRETEND-BOS",
       "set": "SM Promo",
-      "year": 2018
+      "year": 2018,
+      "attributes": {
+        "power_level": 69,
+        "liquidity_score": 44.84,
+        "historical_volatility": 7.04,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=69"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 3600.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2018"
     },
     {
       "id": "2004-treecko-gold-star-psa9",
@@ -301,7 +356,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2004-TREECKO-GOL",
       "set": "Team Rocket Returns",
-      "year": 2004
+      "year": 2004,
+      "attributes": {
+        "power_level": 62,
+        "liquidity_score": 44.8,
+        "historical_volatility": 7.26,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=62"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 3500.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2004"
     },
     {
       "id": "2001-shining-charizard-psa9",
@@ -349,7 +415,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2001-SHINING-CHA",
       "set": "Neo Revelation 1st Edition",
-      "year": 2001
+      "year": 2001,
+      "attributes": {
+        "power_level": 63,
+        "liquidity_score": 44.81,
+        "historical_volatility": 7.66,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=63"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 3200.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2001"
     },
     {
       "id": "2019-charizard-holo-psa10",
@@ -397,7 +474,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2019-CHARIZARD-H",
       "set": "Hidden Fates",
-      "year": 2019
+      "year": 2019,
+      "attributes": {
+        "power_level": 67,
+        "liquidity_score": 46.49,
+        "historical_volatility": 9.5,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=67"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "last_sold_price": 3000.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2019"
     },
     {
       "id": "2020-espeon-deoxys-gx-psa10",
@@ -445,7 +533,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2020-ESPEON-DEOX",
       "set": "Cosmic Eclipse",
-      "year": 2020
+      "year": 2020,
+      "attributes": {
+        "power_level": 69,
+        "liquidity_score": 44.81,
+        "historical_volatility": 8.87,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=69"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2810.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2020"
     },
     {
       "id": "2003-charizard-holo-psa9",
@@ -493,7 +592,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2003-CHARIZARD-H",
       "set": "Dragon",
-      "year": 2003
+      "year": 2003,
+      "attributes": {
+        "power_level": 62,
+        "liquidity_score": 44.8,
+        "historical_volatility": 8.74,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=62"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2800.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2003"
     },
     {
       "id": "2021-fa-rayquaza-vmax-bgs10",
@@ -541,7 +651,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2021-FA-RAYQUAZA",
       "set": "Evolving Skies",
-      "year": 2021
+      "year": 2021,
+      "attributes": {
+        "power_level": 69,
+        "liquidity_score": 44.81,
+        "historical_volatility": 11.54,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=69"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "last_sold_price": 2750.0,
+      "last_sold_source": "BGS Registry",
+      "last_sold_date": "2021"
     },
     {
       "id": "2003-golem-holo-cgc10",
@@ -589,7 +710,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2003-GOLEM-HOLO-",
       "set": "Skyridge",
-      "year": 2003
+      "year": 2003,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 46.83,
+        "historical_volatility": 11.16,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2600.0,
+      "last_sold_source": "CGC Registry",
+      "last_sold_date": "2003"
     },
     {
       "id": "2015-fa-team-magma-psa10",
@@ -637,7 +769,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2015-FA-TEAM-MAG",
       "set": "Double Crisis",
-      "year": 2015
+      "year": 2015,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 44.86,
+        "historical_volatility": 10.47,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2590.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2015"
     },
     {
       "id": "2024-mew-ex-psa10",
@@ -685,7 +828,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2024-MEW-EX-PSA1",
       "set": "151",
-      "year": 2024
+      "year": 2024,
+      "attributes": {
+        "power_level": 70,
+        "liquidity_score": 44.88,
+        "historical_volatility": 14.01,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=70"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "last_sold_price": 2550.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2024"
     },
     {
       "id": "2021-fa-gengar-vmax-psa10",
@@ -733,7 +887,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2021-FA-GENGAR-V",
       "set": "Fusion Strike",
-      "year": 2021
+      "year": 2021,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 44.88,
+        "historical_volatility": 12.25,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2525.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2021"
     },
     {
       "id": "2021-fa-umbreon-vmax-cgc95",
@@ -781,7 +946,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2021-FA-UMBREON-",
       "set": "Evolving Skies",
-      "year": 2021
+      "year": 2021,
+      "attributes": {
+        "power_level": 67,
+        "liquidity_score": 49.03,
+        "historical_volatility": 13.71,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=67"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2500.0,
+      "last_sold_source": "CGC Registry",
+      "last_sold_date": "2021"
     },
     {
       "id": "2018-psyduck-psa9",
@@ -829,7 +1005,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2018-PSYDUCK-PSA",
       "set": "SM Promo",
-      "year": 2018
+      "year": 2018,
+      "attributes": {
+        "power_level": 62,
+        "liquidity_score": 42.83,
+        "historical_volatility": 10.84,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=62"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2400.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2018"
     },
     {
       "id": "1996-charizard-holo-bgs9",
@@ -877,7 +1064,18 @@
       "rarity": "Rare Holo",
       "tokenId": "1996-CHARIZARD-H",
       "set": "Base Set (Japanese)",
-      "year": 1996
+      "year": 1996,
+      "attributes": {
+        "power_level": 60,
+        "liquidity_score": 44.97,
+        "historical_volatility": 11.1,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=60"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2420.0,
+      "last_sold_source": "BGS Registry",
+      "last_sold_date": "1996"
     },
     {
       "id": "2003-gyarados-holo-bgs85",
@@ -925,7 +1123,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2003-GYARADOS-HO",
       "set": "Skyridge",
-      "year": 2003
+      "year": 2003,
+      "attributes": {
+        "power_level": 58,
+        "liquidity_score": 43.24,
+        "historical_volatility": 10.5,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=58"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2242.0,
+      "last_sold_source": "BGS Registry",
+      "last_sold_date": "2003"
     },
     {
       "id": "2002-charizard-reverse-foil-psa4",
@@ -973,7 +1182,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2002-CHARIZARD-R",
       "set": "Legendary Collection",
-      "year": 2002
+      "year": 2002,
+      "attributes": {
+        "power_level": 38,
+        "liquidity_score": 45.12,
+        "historical_volatility": 11.98,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=38"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2210.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2002"
     },
     {
       "id": "2003-nidoking-holo-psa8",
@@ -1021,7 +1241,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2003-NIDOKING-HO",
       "set": "Skyridge",
-      "year": 2003
+      "year": 2003,
+      "attributes": {
+        "power_level": 55,
+        "liquidity_score": 45.1,
+        "historical_volatility": 11.8,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=55"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2200.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2003"
     },
     {
       "id": "2005-entei-holo-psa9",
@@ -1069,7 +1300,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2005-ENTEI-HOLO-",
       "set": "Unseen Forces",
-      "year": 2005
+      "year": 2005,
+      "attributes": {
+        "power_level": 62,
+        "liquidity_score": 43.97,
+        "historical_volatility": 10.26,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=62"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2165.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2005"
     },
     {
       "id": "2000-dark-blastoise-holo-bgs95",
@@ -1117,7 +1359,18 @@
       "rarity": "Rare Holo",
       "tokenId": "2000-DARK-BLASTO",
       "set": "Team Rocket",
-      "year": 2000
+      "year": 2000,
+      "attributes": {
+        "power_level": 67,
+        "liquidity_score": 41.58,
+        "historical_volatility": 10.84,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=67"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2125.0,
+      "last_sold_source": "BGS Registry",
+      "last_sold_date": "2000"
     },
     {
       "id": "luffy-gol-bgs10",
@@ -1165,7 +1418,18 @@
       "rarity": "Legendary",
       "tokenId": "LUFFY-GOL-BGS10",
       "set": "OP-01 Romance Dawn",
-      "year": 2022
+      "year": 2022,
+      "attributes": {
+        "power_level": 74,
+        "liquidity_score": 67.46,
+        "historical_volatility": 15.96,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=74"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "last_sold_price": 9500.0,
+      "last_sold_source": "BGS Registry",
+      "last_sold_date": "2022"
     },
     {
       "id": "luffy-manga-psa10",
@@ -1213,7 +1477,18 @@
       "rarity": "Legendary",
       "tokenId": "LUFFY-MANGA-PSA1",
       "set": "OP-05 Awakening of the New Era",
-      "year": 2023
+      "year": 2023,
+      "attributes": {
+        "power_level": 73,
+        "liquidity_score": 56.54,
+        "historical_volatility": 22.44,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=73"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 9000.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2023"
     },
     {
       "id": "shanks-manga-alt-psa10",
@@ -1261,7 +1536,18 @@
       "rarity": "Legendary",
       "tokenId": "SHANKS-MANGA-ALT",
       "set": "OP-01 Romance Dawn",
-      "year": 2022
+      "year": 2022,
+      "attributes": {
+        "power_level": 73,
+        "liquidity_score": 60.06,
+        "historical_volatility": 24.06,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=73"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "last_sold_price": 8500.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2022"
     },
     {
       "id": "zoro-promo-psa10",
@@ -1309,7 +1595,18 @@
       "rarity": "Ultra Rare",
       "tokenId": "ZORO-PROMO-PSA10",
       "set": "Promo",
-      "year": 2023
+      "year": 2023,
+      "attributes": {
+        "power_level": 71,
+        "liquidity_score": 51.63,
+        "historical_volatility": 21.75,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=71"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 6000.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2023"
     },
     {
       "id": "luffy-119-psa10",
@@ -1357,7 +1654,18 @@
       "rarity": "Ultra Rare",
       "tokenId": "LUFFY-119-PSA10",
       "set": "OP-05 Awakening of the New Era",
-      "year": 2023
+      "year": 2023,
+      "attributes": {
+        "power_level": 71,
+        "liquidity_score": 57.31,
+        "historical_volatility": 27.42,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=71"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 5455.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2023"
     },
     {
       "id": "zoro-manga-alt-psa10",
@@ -1405,7 +1713,18 @@
       "rarity": "Ultra Rare",
       "tokenId": "ZORO-MANGA-ALT-P",
       "set": "OP-01 Romance Dawn",
-      "year": 2022
+      "year": 2022,
+      "attributes": {
+        "power_level": 70,
+        "liquidity_score": 49.65,
+        "historical_volatility": 25.61,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=70"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "last_sold_price": 4500.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2022"
     },
     {
       "id": "nami-full-art-psa10",
@@ -1453,7 +1772,18 @@
       "rarity": "Secret Rare",
       "tokenId": "NAMI-FULL-ART-PS",
       "set": "OP-01 Romance Dawn",
-      "year": 2022
+      "year": 2022,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 51.26,
+        "historical_volatility": 26.34,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 3200.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2022"
     },
     {
       "id": "boa-hancock-051-psa10",
@@ -1501,7 +1831,18 @@
       "rarity": "Secret Rare",
       "tokenId": "BOA-HANCOCK-051-",
       "set": "OP-04 Kingdoms of Intrigue",
-      "year": 2023
+      "year": 2023,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 44.8,
+        "historical_volatility": 26.91,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 2800.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2023"
     },
     {
       "id": "2018-josh-allen-psa10",
@@ -1550,7 +1891,18 @@
       "rarity": "Premium",
       "tokenId": "2018-JOSH-ALLEN-",
       "set": "Panini Prizm",
-      "year": 2018
+      "year": 2018,
+      "attributes": {
+        "power_level": 69,
+        "liquidity_score": 52.82,
+        "historical_volatility": 14.89,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=69"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 4700.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2018"
     },
     {
       "id": "2018-shohei-ohtani-psa10",
@@ -1599,7 +1951,18 @@
       "rarity": "Premium",
       "tokenId": "2018-SHOHEI-OHTA",
       "set": "Topps Heritage",
-      "year": 2018
+      "year": 2018,
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 53.37,
+        "historical_volatility": 16.97,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "last_sold_price": 4472.0,
+      "last_sold_source": "PSA Registry",
+      "last_sold_date": "2018"
     },
     {
       "id": "superman-1-cgc90",
@@ -1649,7 +2012,15 @@
         "grade_score": "9.0"
       },
       "valuation": 9120000.0,
-      "source_file": "heritage-2026"
+      "source_file": "heritage-2026",
+      "attributes": {
+        "power_level": 82,
+        "liquidity_score": 81.04,
+        "historical_volatility": 13.66,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=82"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false
     },
     {
       "id": "batman-1-cgc94",
@@ -1699,7 +2070,15 @@
         "grade_score": "9.4"
       },
       "valuation": 6000000.0,
-      "source_file": "private-sale-2026"
+      "source_file": "private-sale-2026",
+      "attributes": {
+        "power_level": 83,
+        "liquidity_score": 77.96,
+        "historical_volatility": 15.75,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=83"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false
     },
     {
       "id": "action-comics-1-cgc85",
@@ -1749,7 +2128,15 @@
         "grade_score": "8.5"
       },
       "valuation": 6000000.0,
-      "source_file": "heritage-2026"
+      "source_file": "heritage-2026",
+      "attributes": {
+        "power_level": 80,
+        "liquidity_score": 78.46,
+        "historical_volatility": 20.87,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=80"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false
     },
     {
       "id": "dubai-plate-k121",
@@ -1799,7 +2186,15 @@
         "grade_score": "Certified"
       },
       "valuation": 394700.0,
-      "source_file": "emirates-auction-2026"
+      "source_file": "emirates-auction-2026",
+      "attributes": {
+        "power_level": 71,
+        "liquidity_score": 69.96,
+        "historical_volatility": 10.84,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=71"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": false
     },
     {
       "id": "gold-bar-xaut-2026",
@@ -1849,7 +2244,15 @@
         "grade_score": "999.9"
       },
       "valuation": 6787.69,
-      "source_file": "pyth-oracle-2026"
+      "source_file": "pyth-oracle-2026",
+      "attributes": {
+        "power_level": 68,
+        "liquidity_score": 45.79,
+        "historical_volatility": 2.86,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true
     },
     {
       "id": "silver-coin-slvon-2026",
@@ -1899,7 +2302,15 @@
         "grade_score": "999"
       },
       "valuation": 65.94,
-      "source_file": "pyth-oracle-2026"
+      "source_file": "pyth-oracle-2026",
+      "attributes": {
+        "power_level": 59,
+        "liquidity_score": 21.79,
+        "historical_volatility": 3.93,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=59"
+      },
+      "is_duel_eligible": true,
+      "is_vault_locked": true
     }
   ],
   "excluded_assets": [
