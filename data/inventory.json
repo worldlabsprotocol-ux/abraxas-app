@@ -27,7 +27,7 @@
         "grade_score": "9.5"
       },
       "valuation": 4828.0,
-      "imagePath": "/assets/rwa/2000-slowking.jpeg",
+      "imagePath": "https://images.pokemontcg.io/neo4/13_hires.png",
       "imagePathBack": "/assets/rwa/2000-slowking-back.jpeg",
       "vaultId": "6851b188-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -88,7 +88,7 @@
         "grade_score": "10"
       },
       "valuation": 4200.0,
-      "imagePath": "/assets/rwa/2001-mewtwo-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/base4/10_hires.png",
       "imagePathBack": "/assets/rwa/2001-mewtwo-holo-back.jpeg",
       "vaultId": "40710035-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -149,7 +149,7 @@
         "grade_score": "10"
       },
       "valuation": 4000.0,
-      "imagePath": "/assets/rwa/2005-latias-gold-star-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/ex9/105_hires.png",
       "imagePathBack": "/assets/rwa/2005-latias-gold-star-holo-back.jpeg",
       "vaultId": "LTGS2005-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -210,7 +210,7 @@
         "grade_score": "10"
       },
       "valuation": 3600.0,
-      "imagePath": "/assets/rwa/2000-dark-charizard.jpeg",
+      "imagePath": "https://images.pokemontcg.io/base6/4_hires.png",
       "imagePathBack": "/assets/rwa/2000-dark-charizard-back.jpeg",
       "vaultId": "129361464-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -271,7 +271,7 @@
         "grade_score": "10"
       },
       "valuation": 3600.0,
-      "imagePath": "/assets/rwa/2018-pretend-boss-pikachu.jpeg",
+      "imagePath": "https://images.pokemontcg.io/sm35/26_hires.png",
       "imagePathBack": "/assets/rwa/2018-pretend-boss-pikachu-back.jpeg",
       "vaultId": "PBPK2018-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -332,7 +332,7 @@
         "grade_score": "9"
       },
       "valuation": 3500.0,
-      "imagePath": "/assets/rwa/2004-treecko-holo-gold-star.jpeg",
+      "imagePath": "https://images.pokemontcg.io/ex7/107_hires.png",
       "imagePathBack": "/assets/rwa/2004-treecko-holo-gold-star-back.jpeg",
       "vaultId": "TGKS2004-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -393,7 +393,7 @@
         "grade_score": "9"
       },
       "valuation": 3200.0,
-      "imagePath": "/assets/rwa/2001-shining-charizard.jpeg",
+      "imagePath": "https://images.pokemontcg.io/neo4/107_hires.png",
       "imagePathBack": "/assets/rwa/2001-shining-charizard-back.jpeg",
       "vaultId": "SCHR2001-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -454,7 +454,7 @@
         "grade_score": "10"
       },
       "valuation": 3000.0,
-      "imagePath": "/assets/rwa/2019-charizard-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/sm115/9_hires.png",
       "imagePathBack": "/assets/rwa/2019-charizard-holo-back.jpeg",
       "vaultId": "CHZH2019-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -515,7 +515,7 @@
         "grade_score": "10"
       },
       "valuation": 2810.0,
-      "imagePath": "/assets/rwa/2020-espeon-deoxys-gx.jpeg",
+      "imagePath": "https://images.pokemontcg.io/sm12/165_hires.png",
       "imagePathBack": "/assets/rwa/2020-espeon-deoxys-gx-back.jpeg",
       "vaultId": "EDGX2020-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -576,7 +576,7 @@
         "grade_score": "9"
       },
       "valuation": 2800.0,
-      "imagePath": "/assets/rwa/2003-charizard-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/ecard3/146_hires.png",
       "imagePathBack": "/assets/rwa/2003-charizard-holo-back.jpeg",
       "vaultId": "CHZD2003-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -637,7 +637,7 @@
         "grade_score": "10"
       },
       "valuation": 2750.0,
-      "imagePath": "/assets/rwa/2021-full-art-rayquaza-vmax.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh7/218_hires.png",
       "imagePathBack": "/assets/rwa/2021-full-art-rayquaza-vmax-back.jpeg",
       "vaultId": "RQVX2021-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -698,7 +698,7 @@
         "grade_score": "10"
       },
       "valuation": 2600.0,
-      "imagePath": "/assets/rwa/2003-golem-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/ecard3/17_hires.png",
       "imagePathBack": "/assets/rwa/2003-golem-holo-back.jpeg",
       "vaultId": "GLMH2003-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -759,7 +759,7 @@
         "grade_score": "10"
       },
       "valuation": 2590.0,
-      "imagePath": "/assets/rwa/2015-full-art-team-magma.jpeg",
+      "imagePath": "https://images.pokemontcg.io/dc1/24_hires.png",
       "imagePathBack": "/assets/rwa/2015-full-art-team-magma-back.jpeg",
       "vaultId": "FTMG2015-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -820,7 +820,7 @@
         "grade_score": "10"
       },
       "valuation": 2550.0,
-      "imagePath": "/assets/rwa/2024-mew.jpeg",
+      "imagePath": "https://images.pokemontcg.io/sv3pt5/205_hires.png",
       "imagePathBack": "/assets/rwa/2024-mew-back.jpeg",
       "vaultId": "MWEX2024-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -881,7 +881,7 @@
         "grade_score": "10"
       },
       "valuation": 2525.0,
-      "imagePath": "/assets/rwa/2021-full-art-gengar-vmax.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh8/271_hires.png",
       "imagePathBack": "/assets/rwa/2021-full-art-gengar-vmax-back.jpeg",
       "vaultId": "GGVX2021-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -942,7 +942,7 @@
         "grade_score": "9.5"
       },
       "valuation": 2500.0,
-      "imagePath": "/assets/rwa/2021-full-art-umbreon-vmax.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh7/215_hires.png",
       "imagePathBack": "/assets/rwa/2021-full-art-umbreon-vmax-back.jpeg",
       "vaultId": "UBVX2021-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1003,7 +1003,7 @@
         "grade_score": "9"
       },
       "valuation": 2400.0,
-      "imagePath": "/assets/rwa/2018-psyduck.jpeg",
+      "imagePath": "https://images.pokemontcg.io/sm35/66_hires.png",
       "imagePathBack": "/assets/rwa/2018-psyduck-back.jpeg",
       "vaultId": "PSDK2018-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1064,7 +1064,7 @@
         "grade_score": "9"
       },
       "valuation": 2420.0,
-      "imagePath": "/assets/rwa/1996-charizard-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/basep/4_hires.png",
       "imagePathBack": "/assets/rwa/1996-charizard-holo-back.jpeg",
       "vaultId": "CHZJ1996-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1125,7 +1125,7 @@
         "grade_score": "8.5"
       },
       "valuation": 2242.0,
-      "imagePath": "/assets/rwa/2003-gyarados-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/ecard3/16_hires.png",
       "imagePathBack": "/assets/rwa/2003-gyarados-holo-back.jpeg",
       "vaultId": "GYRD2003-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1186,7 +1186,7 @@
         "grade_score": "4"
       },
       "valuation": 2210.0,
-      "imagePath": "/assets/rwa/2002-charizard-reverse-foil.jpeg",
+      "imagePath": "https://images.pokemontcg.io/base6/4_hires.png",
       "imagePathBack": "/assets/rwa/2002-charizard-reverse-foil-back.jpeg",
       "vaultId": "CHZR2002-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1247,7 +1247,7 @@
         "grade_score": "8"
       },
       "valuation": 2200.0,
-      "imagePath": "/assets/rwa/2003-nidoking-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/ecard3/20_hires.png",
       "imagePathBack": "/assets/rwa/2003-nidoking-holo-back.jpeg",
       "vaultId": "NDKG2003-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1308,7 +1308,7 @@
         "grade_score": "9"
       },
       "valuation": 2165.0,
-      "imagePath": "/assets/rwa/2005-entei-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/ex7/14_hires.png",
       "imagePathBack": "/assets/rwa/2005-entei-holo-back.jpeg",
       "vaultId": "ENTN2005-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1369,7 +1369,7 @@
         "grade_score": "9.5"
       },
       "valuation": 2125.0,
-      "imagePath": "/assets/rwa/2000-dark-blastoise-holo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/base6/3_hires.png",
       "imagePathBack": "/assets/rwa/2000-dark-blastoise-holo-back.jpeg",
       "vaultId": "DKBS2000-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1430,7 +1430,7 @@
         "grade_score": "10"
       },
       "valuation": 9500.0,
-      "imagePath": "/assets/rwa/luffy-gol-bgs10.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG36_hires.png",
       "imagePathBack": null,
       "vaultId": "LFGOL-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1491,7 +1491,7 @@
         "grade_score": "10"
       },
       "valuation": 9000.0,
-      "imagePath": "/assets/rwa/gear5-luffy.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG36_hires.png",
       "imagePathBack": null,
       "vaultId": "OP05119-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1552,7 +1552,7 @@
         "grade_score": "10"
       },
       "valuation": 8500.0,
-      "imagePath": "/assets/rwa/shanks-manga.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG70_hires.png",
       "imagePathBack": null,
       "vaultId": "SHMG-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1613,7 +1613,7 @@
         "grade_score": "10"
       },
       "valuation": 6000.0,
-      "imagePath": "/assets/rwa/zoro-promo.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG59_hires.png",
       "imagePathBack": null,
       "vaultId": "ZRPR-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1674,7 +1674,7 @@
         "grade_score": "10"
       },
       "valuation": 5455.0,
-      "imagePath": "/assets/rwa/gear5-luffy.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG36_hires.png",
       "imagePathBack": null,
       "vaultId": "LF119-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1735,7 +1735,7 @@
         "grade_score": "10"
       },
       "valuation": 4500.0,
-      "imagePath": "/assets/rwa/zoro-alt.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG59_hires.png",
       "imagePathBack": null,
       "vaultId": "ZRMA-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1796,7 +1796,7 @@
         "grade_score": "10"
       },
       "valuation": 3200.0,
-      "imagePath": "/assets/rwa/nami-full-art.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG65_hires.png",
       "imagePathBack": null,
       "vaultId": "NMFA-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1857,7 +1857,7 @@
         "grade_score": "10"
       },
       "valuation": 2800.0,
-      "imagePath": "/assets/rwa/boa-hancock.jpeg",
+      "imagePath": "https://images.pokemontcg.io/swsh12pt5-gg/GG65_hires.png",
       "imagePathBack": null,
       "vaultId": "BHNK-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -1918,7 +1918,7 @@
         "grade_score": "10"
       },
       "valuation": 4700.0,
-      "imagePath": "/assets/rwa/2018-josh-allen.jpeg",
+      "imagePath": null,
       "imagePathBack": null,
       "vaultId": "JALL2018-cc-tigard",
       "vaultLocation": "Tigard, OR",
@@ -1943,7 +1943,7 @@
         4600,
         4700
       ],
-      "filter_note": "Included: $4,700 < $5,000 ",
+      "filter_note": "Included: $4,700 < $5,000 ceiling",
       "ticker": "JOSH-ALL",
       "grade": "PSA 10",
       "gradingCo": "PSA",
@@ -1980,7 +1980,7 @@
         "grade_score": "10"
       },
       "valuation": 4472.0,
-      "imagePath": "/assets/rwa/2018-shohei-ohtani.jpeg",
+      "imagePath": null,
       "imagePathBack": null,
       "vaultId": "OHTN2018-cc-newcastle",
       "vaultLocation": "New Castle, DE",
@@ -2005,7 +2005,7 @@
         4370,
         4472
       ],
-      "filter_note": "Included: $4,472 < $5,000 ",
+      "filter_note": "Included: $4,472 < $5,000 ceiling",
       "ticker": "SHOHEI-O",
       "grade": "PSA 10",
       "gradingCo": "PSA",
@@ -2048,7 +2048,7 @@
       "last_sold_date": "2026",
       "change24h": 0.3,
       "rarity": "Legendary",
-      "imagePath": "/assets/rwa/comics/superman-1.jpg",
+      "imagePath": null,
       "imagePathBack": null,
       "tokenId": "SPMN1939CGC90-001",
       "atk": 99,
@@ -2108,7 +2108,7 @@
       "last_sold_date": "2026",
       "change24h": 0.1,
       "rarity": "Legendary",
-      "imagePath": "/assets/rwa/comics/batman-1.jpg",
+      "imagePath": null,
       "imagePathBack": null,
       "tokenId": "BTMN1940CGC94-001",
       "atk": 97,
@@ -2168,7 +2168,7 @@
       "last_sold_date": "2026",
       "change24h": 0.2,
       "rarity": "Legendary",
-      "imagePath": "/assets/rwa/comics/action-comics-1.jpg",
+      "imagePath": null,
       "imagePathBack": null,
       "tokenId": "ACT11938CGC85-001",
       "atk": 99,
@@ -2228,7 +2228,7 @@
       "last_sold_date": "2026",
       "change24h": 1.2,
       "rarity": "Ultra Rare",
-      "imagePath": "/assets/rwa/luxury/dubai-plate-k121.jpg",
+      "imagePath": null,
       "imagePathBack": null,
       "tokenId": "DXBK1212026-001",
       "atk": 75,
@@ -2288,7 +2288,7 @@
       "last_sold_date": "2026-05-11",
       "change24h": 0.4,
       "rarity": "Rare Holo",
-      "imagePath": "/assets/rwa/metals/gold_bar.png",
+      "imagePath": "/assets/rwa/metals/gold_bar.svg",
       "imagePathBack": null,
       "tokenId": "XAUt-LBMA-2026-001",
       "atk": 70,
@@ -2352,7 +2352,7 @@
       "last_sold_date": "2026-05-11",
       "change24h": 0.2,
       "rarity": "Rare",
-      "imagePath": "/assets/rwa/metals/silver_coin.png",
+      "imagePath": "/assets/rwa/metals/silver_coin.svg",
       "imagePathBack": null,
       "tokenId": "SLVon-LBMA-2026-001",
       "atk": 58,
@@ -2608,7 +2608,7 @@
       "last_sold_date": "2025",
       "change24h": 0.1,
       "rarity": "Legendary",
-      "imagePath": "/assets/rwa/timepieces/rolex-daytona.jpg",
+      "imagePath": null,
       "imagePathBack": null,
       "tokenId": "RLDP1968-001",
       "atk": 92,
@@ -2672,7 +2672,7 @@
       "last_sold_date": "2026",
       "change24h": 0.3,
       "rarity": "Ultra Rare",
-      "imagePath": "/assets/rwa/timepieces/patek-5711.jpg",
+      "imagePath": null,
       "imagePathBack": null,
       "tokenId": "PP57112021-001",
       "atk": 82,
@@ -2722,22 +2722,22 @@
   "excluded_assets": [
     {
       "name": "Kobe Bryant Gold Prizm",
-      "reason": "Sports > $5,000",
+      "reason": "Sports > $5,000 ceiling",
       "estimated_value": "10000+"
     },
     {
       "name": "Tom Brady 2000 Bowman Chrome RC",
-      "reason": "Sports > $5,000 ",
+      "reason": "Sports > $5,000 ceiling",
       "estimated_value": "9000-14000"
     },
     {
       "name": "Patrick Mahomes Orange Prizm RC",
-      "reason": "Sports > $5,000 ",
+      "reason": "Sports > $5,000 ceiling",
       "estimated_value": "5500+"
     },
     {
       "name": "Patrick Mahomes Prizm Silver RC",
-      "reason": "Sports > $5,000 ",
+      "reason": "Sports > $5,000 ceiling",
       "estimated_value": "5500"
     },
     {

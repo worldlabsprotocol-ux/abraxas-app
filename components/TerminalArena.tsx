@@ -1,25 +1,29 @@
 // FILE: components/TerminalArena.tsx
-// Unified Terminal: Sold Tape (top) + Active Arena (main).
-// Uses framer-motion for card flips when installed.
-// CSS-only fallback via data-flip attribute for pre-install safety.
-// Gold: $4,733.39 | Silver: $72.91 (May 2026)
+// Abraxas Sovereign Terminal — Sold Tape + Active Arena + Triple Triad Grid
+// NO emojis. Full-color images only (no grayscale filter).
+// Cards without images show name/data only — no placeholder icons.
+// Collector Crypt link on every card for purchase flow.
+// x402 ante visible on battle launch.
+// Triple Triad: 3x3 board, card sides 0-9/A, flip on higher-number adjacency.
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArenaAsset {
   id: string; name: string; category: string; ticker: string;
-  grade: string; vaultLocation: string;
-  priceUsd: number; last_sold_price: number; last_sold_source: string;
-  change24h: number; imagePath: string; rarity: string;
+  grade: string; gradingCo: string; vaultLocation: string;
+  priceUsd: number; last_sold_price: number; last_sold_source?: string;
+  change24h: number; imagePath?: string | null; rarity: string;
   atk: number; def: number; speed: number;
   circuitScore: number; defenseLevel: string;
-  protected: boolean; staked: boolean;
-  apy?: number; quick_duel?: boolean;
-  attributes?: { power_level: number; liquidity_velocity?: string };
-  is_duel_eligible?: boolean;
+  protected: boolean; staked: boolean; apy?: number;
+  quick_duel?: boolean; is_duel_eligible?: boolean;
+  attributes?: { power_level: number; win_formula?: string };
+  can_borrow?: boolean; ltv?: number;
+  // Triple Triad sides derived from stats
+  ttTop?: number; ttRight?: number; ttBottom?: number; ttLeft?: number;
 }
 
 interface SoldTick {
@@ -27,58 +31,82 @@ interface SoldTick {
   source: string; ts: number; ticker: string;
 }
 
-interface BattleState {
-  phase: "idle" | "selecting" | "fighting" | "resolved";
-  playerCard: ArenaAsset | null;
-  agentCard: ArenaAsset | null;
-  round: number; playerHp: number; agentHp: number;
-  log: string[]; winner: "player" | "agent" | null;
+type TTOwner = "player" | "agent" | null;
+interface TTCell { asset: ArenaAsset | null; owner: TTOwner }
+interface TTState {
+  board: TTCell[];         // 9 cells
+  playerHand: ArenaAsset[];
+  agentHand: ArenaAsset[];
+  phase: "select3" | "playing" | "done";
+  turn: "player" | "agent";
+  winner: "player" | "agent" | "draw" | null;
   abraEarned: number;
+  log: string[];
 }
 
-// ─── Framer Motion conditional import ──────────────────────────────────────
-// framer-motion may not be installed yet — wrap in try/catch at runtime
-// For SSR safety we use CSS transitions as the base and upgrade if available
-let motion: any = null;
-let AnimatePresence: any = null;
-if (typeof window !== "undefined") {
-  try {
-    const fm = require("framer-motion");
-    motion = fm.motion;
-    AnimatePresence = fm.AnimatePresence;
-  } catch {}
-}
-
-// ─── Sold tape entries — seeded from real sold data ───────────────────────────
-function buildSoldTape(assets: ArenaAsset[]): SoldTick[] {
-  const sold = assets
-    .filter(a => a.last_sold_price > 0)
-    .map(a => ({
-      id: a.id, name: a.name, price: a.last_sold_price,
-      category: a.category, source: a.last_sold_source ?? "Oracle",
-      ts: Date.now() - Math.floor(Math.random() * 7_200_000),
-      ticker: a.ticker,
-    }));
-  return sold.sort((a, b) => b.price - a.price).slice(0, 20);
-}
-
-// ─── Sophia agent flavor ───────────────────────────────────────────────────────
+// ─── Sophia Agents ────────────────────────────────────────────────────────────
 const SOPHIA_AGENTS = [
-  { id:"HED",  name:"Sophia-Hed",  role:"Hedge Strategist",    buff:"+20% DEF in arena",    color:"#14F195" },
-  { id:"REB",  name:"Sophia-Reb",  role:"Rebalance Engine",    buff:"+15% ATK on streaks",  color:"#6b8cff" },
-  { id:"YLD",  name:"Sophia-Yld",  role:"Yield Optimizer",     buff:"+2x $ABRA on win",     color:"#C8A96E" },
-  { id:"CGD",  name:"Sophia-Cgd",  role:"Circuit Guardian",    buff:"Shield: -40% damage",  color:"#a855f7" },
-];
+  { id:"HED",  name:"Sophia-Hed",  role:"Hedge Strategist",  buff:"+20% DEF",    buffVal:20, color:"#14F195" },
+  { id:"REB",  name:"Sophia-Reb",  role:"Rebalance Engine",  buff:"+15% ATK",    buffVal:15, color:"#6b8cff" },
+  { id:"YLD",  name:"Sophia-Yld",  role:"Yield Optimizer",   buff:"+2x $ABRA",   buffVal:0,  color:"#C8A96E" },
+  { id:"CGD",  name:"Sophia-Cgd",  role:"Circuit Guardian",  buff:"Shield -40%", buffVal:0,  color:"#a855f7" },
+] as const;
+type AgentId = typeof SOPHIA_AGENTS[number]["id"];
 
-// ─── Win formula ─────────────────────────────────────────────────────────────
-function calcWinProb(card: ArenaAsset, agent: typeof SOPHIA_AGENTS[0]): number {
-  const base  = card.attributes?.power_level ?? 60;
-  const buff  = agent.id === "HED" ? 8 : agent.id === "CGD" ? 6 : agent.id === "YLD" ? 4 : 5;
-  const circ  = Math.max(0, 100 - card.circuitScore) * 0.1;
-  return Math.min(92, Math.round(base * 0.6 + buff + circ));
+// ─── Category colors ──────────────────────────────────────────────────────────
+const CAT_COLOR: Record<string, string> = {
+  Pokemon:"#FBBF24", "One Piece":"#f26b6b", Comics:"#a855f7",
+  Metals:"#D4AF37", Stocks:"#14F195", Timepieces:"#C8A96E",
+  Luxury:"#60A5FA", Sports:"#fb923c",
+};
+
+// ─── Triple Triad helpers ─────────────────────────────────────────────────────
+// Map stats 0-100 to TT value 1-10 (A = 10)
+function statToTT(v: number): number { return Math.max(1, Math.min(10, Math.round(v / 10))); }
+function ttLabel(v: number): string  { return v === 10 ? "A" : String(v); }
+
+function enrichTT(a: ArenaAsset): ArenaAsset {
+  return {
+    ...a,
+    ttTop:    statToTT(a.def),
+    ttRight:  statToTT(a.atk),
+    ttBottom: statToTT(Math.round((a.atk + a.def) / 2)),
+    ttLeft:   statToTT(a.speed),
+  };
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Adjacency: cell → which (neighbor_cell, my_side, their_opposing_side)
+const ADJACENCY: Record<number, Array<[number, "ttTop"|"ttRight"|"ttBottom"|"ttLeft", "ttTop"|"ttRight"|"ttBottom"|"ttLeft"]>> = {
+  0:[[ 1,"ttRight","ttLeft"],[3,"ttBottom","ttTop"]],
+  1:[[ 0,"ttLeft","ttRight"],[2,"ttRight","ttLeft"],[4,"ttBottom","ttTop"]],
+  2:[[ 1,"ttLeft","ttRight"],[5,"ttBottom","ttTop"]],
+  3:[[ 0,"ttTop","ttBottom"],[4,"ttRight","ttLeft"],[6,"ttBottom","ttTop"]],
+  4:[[ 1,"ttTop","ttBottom"],[3,"ttLeft","ttRight"],[5,"ttRight","ttLeft"],[7,"ttBottom","ttTop"]],
+  5:[[ 2,"ttTop","ttBottom"],[4,"ttLeft","ttRight"],[8,"ttBottom","ttTop"]],
+  6:[[ 3,"ttTop","ttBottom"],[7,"ttRight","ttLeft"]],
+  7:[[ 4,"ttTop","ttBottom"],[6,"ttLeft","ttRight"],[8,"ttRight","ttLeft"]],
+  8:[[ 5,"ttTop","ttBottom"],[7,"ttLeft","ttRight"]],
+};
+
+function resolveFlips(board: TTCell[], idx: number, owner: TTOwner): TTCell[] {
+  const next = board.map(c => ({ ...c }));
+  const placed = next[idx];
+  if (!placed.asset || !owner) return next;
+  for (const [nIdx, mySide, theirSide] of ADJACENCY[idx]) {
+    const neighbor = next[nIdx];
+    if (!neighbor.asset || neighbor.owner === owner) continue;
+    const myVal   = placed.asset[mySide] ?? 1;
+    const theirVal = neighbor.asset[theirSide] ?? 1;
+    if (myVal > theirVal) next[nIdx] = { ...neighbor, owner };
+  }
+  return next;
+}
+
+function countOwned(board: TTCell[], owner: TTOwner): number {
+  return board.filter(c => c.owner === owner).length;
+}
+
+// ─── Format helpers ───────────────────────────────────────────────────────────
 function fmtUsd(v: number): string {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
   if (v >= 1_000)     return `$${(v / 1_000).toFixed(1)}K`;
@@ -86,352 +114,630 @@ function fmtUsd(v: number): string {
 }
 function timeAgo(ts: number): string {
   const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60)  return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s/60)}m ago`;
-  return `${Math.floor(s/3600)}h ago`;
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  return `${Math.floor(s / 3600)}h ago`;
 }
-const CAT_COLOR: Record<string, string> = {
-  Pokemon:"#FBBF24", "One Piece":"#f26b6b", Comics:"#a855f7",
-  Metals:"#D4AF37", Stocks:"#14F195", Timepieces:"#C8A96E",
-  Luxury:"#60A5FA", Sports:"#fb923c",
-};
 
-// ─── Sold tape (scrolling ticker) ────────────────────────────────────────────
+// ─── Sold tape ────────────────────────────────────────────────────────────────
+function buildSoldTape(assets: ArenaAsset[]): SoldTick[] {
+  return assets
+    .filter(a => a.last_sold_price > 0)
+    .map(a => ({
+      id: a.id, name: a.name, price: a.last_sold_price,
+      category: a.category, source: a.last_sold_source ?? "Oracle",
+      ts: Date.now() - Math.floor(Math.abs(Math.sin(a.id.length * 9301)) * 7_200_000),
+      ticker: a.ticker,
+    }))
+    .sort((a, b) => b.price - a.price)
+    .slice(0, 20);
+}
+
 function SoldTape({ ticks }: { ticks: SoldTick[] }) {
-  const ref = useRef<HTMLDivElement>(null);
-
+  if (!ticks.length) return null;
   return (
-    <div style={{ position:"relative", height:"36px", background:"rgba(2,3,10,0.95)", borderBottom:"1px solid rgba(255,255,255,0.06)", overflow:"hidden", display:"flex", alignItems:"center" }}>
-      {/* SOLD label */}
-      <div style={{ position:"absolute", left:0, top:0, bottom:0, width:"70px", background:"linear-gradient(90deg,rgba(2,3,10,1) 60%,transparent)", zIndex:2, display:"flex", alignItems:"center", paddingLeft:"0.75rem" }}>
-        <span style={{ fontSize:"0.5rem", fontWeight:900, color:"#14F195", letterSpacing:"0.16em", fontFamily:"'JetBrains Mono',monospace" }}>SOLD</span>
+    <div style={{ position:"relative", height:"34px", background:"rgba(2,3,10,0.97)", borderBottom:"1px solid rgba(255,255,255,0.05)", overflow:"hidden", display:"flex", alignItems:"center" }}>
+      <div style={{ position:"absolute", left:0, top:0, bottom:0, width:"72px", background:"linear-gradient(90deg,rgba(2,3,10,1) 60%,transparent)", zIndex:2, display:"flex", alignItems:"center", paddingLeft:"0.75rem" }}>
+        <span style={{ fontSize:"0.48rem", fontWeight:900, color:"#14F195", letterSpacing:"0.16em", fontFamily:"'JetBrains Mono',monospace" }}>SOLD</span>
       </div>
-      {/* Scrolling ticks */}
-      <div ref={ref} style={{ display:"flex", gap:"0", paddingLeft:"80px", animation:"ticker 60s linear infinite", whiteSpace:"nowrap" }}>
+      <div style={{ display:"flex", gap:"0", paddingLeft:"80px", animation:"ticker 55s linear infinite", whiteSpace:"nowrap" }}>
         {[...ticks, ...ticks].map((t, i) => (
-          <span key={i} style={{ display:"inline-flex", alignItems:"center", gap:"0.35rem", padding:"0 1.25rem", borderRight:"1px solid rgba(255,255,255,0.06)", fontSize:"0.58rem", fontFamily:"'JetBrains Mono',monospace", color:"rgba(255,255,255,0.7)" }}>
-            <span style={{ color:CAT_COLOR[t.category]???"#fff", fontWeight:700 }}>{t.ticker}</span>
+          <span key={i} style={{ display:"inline-flex", alignItems:"center", gap:"0.35rem", padding:"0 1.25rem", borderRight:"1px solid rgba(255,255,255,0.05)", fontSize:"0.56rem", fontFamily:"'JetBrains Mono',monospace", color:"rgba(255,255,255,0.65)" }}>
+            <span style={{ color: CAT_COLOR[t.category] ?? "#fff", fontWeight:700 }}>{t.ticker}</span>
             <span style={{ color:"#f0f0f0", fontVariantNumeric:"tabular-nums", fontWeight:700 }}>{fmtUsd(t.price)}</span>
-            <span style={{ color:"rgba(255,255,255,0.3)", fontSize:"0.5rem" }}>{t.source} · {timeAgo(t.ts)}</span>
+            <span style={{ color:"rgba(255,255,255,0.28)", fontSize:"0.48rem" }}>{t.source} · {timeAgo(t.ts)}</span>
           </span>
         ))}
       </div>
-      {/* Right fade */}
-      <div style={{ position:"absolute", right:0, top:0, bottom:0, width:"60px", background:"linear-gradient(270deg,rgba(2,3,10,1) 40%,transparent)", zIndex:2 }} />
+      <div style={{ position:"absolute", right:0, top:0, bottom:0, width:"50px", background:"linear-gradient(270deg,rgba(2,3,10,1) 40%,transparent)", zIndex:2 }} />
     </div>
   );
 }
 
-// ─── Asset card with flip animation ──────────────────────────────────────────
-function FlipCard({ asset, selected, onSelect, compact }: {
-  asset: ArenaAsset; selected: boolean;
-  onSelect: (a: ArenaAsset) => void; compact?: boolean;
-}) {
-  const [flipped, setFlipped] = useState(false);
-  const [imgErr,  setImgErr]  = useState(false);
-  const positive = asset.change24h >= 0;
+// ─── Asset image — full color, no grayscale, text-only fallback ───────────────
+function AssetImage({ asset, height = 140 }: { asset: ArenaAsset; height?: number }) {
+  const [err, setErr] = useState(false);
+  const src = asset.imagePath;
   const catColor = CAT_COLOR[asset.category] ?? "#6b8cff";
-  const power    = asset.attributes?.power_level ?? 60;
 
-  const CardDiv = motion?.div ?? "div";
-
-  return (
-    <div
-      style={{ perspective:"1000px", height:compact?"240px":"320px", cursor:"pointer" }}
-      onClick={() => { onSelect(asset); setFlipped(f => !f); }}
-    >
-      <div style={{
-        position:"relative", width:"100%", height:"100%",
-        transformStyle:"preserve-3d",
-        transform:flipped?"rotateY(180deg)":"rotateY(0deg)",
-        transition:"transform 0.55s cubic-bezier(0.4,0,0.2,1)",
-      }}>
-        {/* FRONT */}
-        <div style={{
-          position:"absolute", inset:0, backfaceVisibility:"hidden",
-          borderRadius:"14px", overflow:"hidden",
-          background:"rgba(6,8,16,0.97)",
-          border:`1px solid ${selected ? catColor+"88" : catColor+"22"}`,
-          boxShadow:selected?`0 0 24px ${catColor}22`:"none",
-        }}>
-          {/* Image — object-contain, full slab visible */}
-          <div style={{ position:"relative", height:compact?"120px":"180px", background:`linear-gradient(135deg,${catColor}14,rgba(6,8,16,0.98))`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            {!imgErr ? (
-              <img src={asset.imagePath} alt={asset.name}
-                onError={() => setImgErr(true)}
-                style={{ width:"100%", height:"100%", objectFit:"contain", maxHeight:compact?"120px":"180px", display:"block" }}
-              />
-            ) : (
-              <span style={{ fontSize:compact?"2rem":"3rem", filter:`drop-shadow(0 0 12px ${catColor}88)` }}>
-                {asset.category==="Metals"?"🥇":asset.category==="Comics"?"📕":asset.category==="Stocks"?"📈":"◈"}
-              </span>
-            )}
-            {/* Badges */}
-            <div style={{ position:"absolute", top:"0.4rem", left:"0.4rem" }}>
-              <span style={{ fontSize:"0.44rem", fontWeight:800, padding:"0.1rem 0.35rem", borderRadius:"3px", background:"rgba(0,0,0,0.75)", color:catColor, letterSpacing:"0.06em", fontFamily:"'JetBrains Mono',monospace" }}>
-                {asset.rarity?.slice(0,10).toUpperCase()}
-              </span>
-            </div>
-            {asset.protected && (
-              <div style={{ position:"absolute", top:"0.4rem", right:"0.4rem", display:"flex", alignItems:"center", gap:"0.2rem", padding:"0.08rem 0.35rem", borderRadius:"3px", background:"rgba(212,175,55,0.15)", border:"1px solid rgba(212,175,55,0.4)" }}>
-                <span style={{ width:"4px", height:"4px", borderRadius:"50%", background:"#D4AF37", animation:"pulse 2s ease-in-out infinite" }} />
-                <span style={{ fontSize:"0.42rem", fontWeight:700, color:"#D4AF37", letterSpacing:"0.08em", fontFamily:"'JetBrains Mono',monospace" }}>AUTH</span>
-              </div>
-            )}
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"50%", background:"linear-gradient(to top,rgba(6,8,16,0.9),transparent)", pointerEvents:"none" }} />
-          </div>
-
-          {/* Info */}
-          <div style={{ padding:"0.5rem 0.625rem" }}>
-            <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#f0f0f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", marginBottom:"1px" }}>{asset.name}</div>
-            <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.35rem" }}>{asset.grade} · {asset.vaultLocation?.split("—")[0]?.trim()}</div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"0.35rem" }}>
-              <span style={{ fontWeight:800, fontSize:"0.9rem", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>{fmtUsd(asset.priceUsd)}</span>
-              <span style={{ fontSize:"0.58rem", fontWeight:700, color:positive?"#14F195":"#f26b6b", fontVariantNumeric:"tabular-nums" }}>
-                {positive?"+":""}{asset.change24h?.toFixed(2)}%
-              </span>
-            </div>
-            {/* Power bar */}
-            <div>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.44rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"2px" }}>
-                <span>POWER</span><span style={{ color:catColor, fontWeight:700 }}>{power}</span>
-              </div>
-              <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:"2px", height:"2px" }}>
-                <div style={{ width:`${power}%`, height:"100%", background:`linear-gradient(90deg,${catColor}88,${catColor})`, borderRadius:"2px" }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BACK */}
-        <div style={{
-          position:"absolute", inset:0, backfaceVisibility:"hidden",
-          transform:"rotateY(180deg)", borderRadius:"14px", overflow:"hidden",
-          background:`linear-gradient(135deg,${catColor}18,rgba(6,8,16,0.99))`,
-          border:`1px solid ${catColor}44`,
-          display:"flex", flexDirection:"column", padding:"0.875rem",
-        }}>
-          <div style={{ fontWeight:900, fontSize:"0.72rem", color:catColor, letterSpacing:"-0.01em", marginBottom:"0.5rem" }}>{asset.name}</div>
-          {/* Combat stats */}
-          {(["atk","def","speed"] as const).map(stat => {
-            const v = asset[stat]; const c = stat==="atk"?"#FF6B35":stat==="def"?"#14F195":"#6b8cff";
-            return (
-              <div key={stat} style={{ marginBottom:"0.2rem" }}>
-                <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.46rem", color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"1px" }}>
-                  <span>{stat.toUpperCase()}</span><span style={{ color:c, fontWeight:700, fontVariantNumeric:"tabular-nums" }}>{v}</span>
-                </div>
-                <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:"2px", height:"3px" }}>
-                  <div style={{ width:`${v}%`, height:"100%", background:c, borderRadius:"2px" }} />
-                </div>
-              </div>
-            );
-          })}
-          <div style={{ flex:1 }} />
-          {/* Last sold */}
-          <div style={{ padding:"0.35rem 0.4rem", background:"rgba(212,175,55,0.08)", borderRadius:"5px", marginTop:"0.5rem" }}>
-            <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"1px" }}>LAST SOLD</div>
-            <div style={{ fontWeight:800, fontSize:"0.82rem", color:"#D4AF37", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>{fmtUsd(asset.last_sold_price)}</div>
-          </div>
-          {/* CTA */}
-          <button onClick={e => e.stopPropagation()} style={{
-            marginTop:"0.5rem", padding:"0.45rem", borderRadius:"8px", border:"none",
-            background:selected?catColor:"rgba(255,255,255,0.08)",
-            color:selected?"#000":"rgba(255,255,255,0.7)",
-            fontSize:"0.6rem", fontWeight:800, fontFamily:"'JetBrains Mono',monospace",
-            letterSpacing:"0.04em", cursor:"pointer",
-          }}>
-            {selected?"✓ Selected for Arena":"Enter Arena →"}
-          </button>
-        </div>
+  if (!src || err) {
+    // Text-only fallback — no icons, no emojis
+    return (
+      <div style={{ height, background:`linear-gradient(135deg,${catColor}14,rgba(6,8,16,0.98))`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"0.35rem", padding:"0.5rem" }}>
+        <span style={{ fontSize:"0.52rem", fontWeight:700, color:catColor, letterSpacing:"0.12em", textTransform:"uppercase", fontFamily:"'JetBrains Mono',monospace", textAlign:"center" }}>
+          {asset.category}
+        </span>
+        <span style={{ fontSize:"0.68rem", fontWeight:800, color:"#f0f0f0", textAlign:"center", lineHeight:1.25, padding:"0 0.25rem" }}>
+          {asset.name}
+        </span>
+        <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>
+          {asset.grade}
+        </span>
       </div>
-    </div>
-  );
-}
-
-// ─── Battle simulation ────────────────────────────────────────────────────────
-function simulateBattle(card: ArenaAsset, agent: typeof SOPHIA_AGENTS[0]): {
-  log: string[]; winner: "player"|"agent"; abraEarned: number;
-} {
-  const winProb = calcWinProb(card, agent);
-  const seed    = Date.now();
-  const roll    = Math.floor(Math.abs(Math.sin(seed) * 100));
-  const win     = roll < winProb;
-  const rounds  = [
-    `[R1] ${card.name} ATK: ${card.atk} vs Agent DEF: ${Math.floor(60 + Math.sin(seed)*20)} — ${card.atk > 60?"HIT":"MISS"}`,
-    `[R2] ${agent.name} deploys ${agent.buff}`,
-    `[R3] ${win ? card.name+" seizes victory" : "Agent holds the line — defense prevailed"}`,
-  ];
-  return {
-    log:        rounds,
-    winner:     win ? "player" : "agent",
-    abraEarned: win ? Math.round(card.attributes?.power_level ?? 50) * 2 : 0,
-  };
-}
-
-// ─── Active Arena ─────────────────────────────────────────────────────────────
-function ActiveArena({ assets }: { assets: ArenaAsset[] }) {
-  const [selectedCard, setSelectedCard]   = useState<ArenaAsset | null>(null);
-  const [selectedAgent, setSelectedAgent] = useState(SOPHIA_AGENTS[0]);
-  const [battle,  setBattle]              = useState<BattleState>({ phase:"idle", playerCard:null, agentCard:null, round:0, playerHp:100, agentHp:100, log:[], winner:null, abraEarned:0 });
-  const [filter, setFilter]               = useState<string>("all");
-  const logRef = useRef<HTMLDivElement>(null);
-
-  const cats = ["all", ...Array.from(new Set(assets.map(a => a.category)))];
-  const shown = assets.filter(a => filter === "all" || a.category === filter);
-  const winProb = selectedCard ? calcWinProb(selectedCard, selectedAgent) : 0;
-
-  useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [battle.log]);
-
-  async function launchBattle() {
-    if (!selectedCard) return;
-    const agentCard = assets.find(a => a.id !== selectedCard.id) ?? assets[1];
-    setBattle(b => ({ ...b, phase:"fighting", playerCard:selectedCard, agentCard, log:["[SYS] Deploying agent...", `[SYS] ${selectedAgent.name} entering arena...`], playerHp:100, agentHp:100 }));
-    await new Promise(r => setTimeout(r, 600));
-    const result = simulateBattle(selectedCard, selectedAgent);
-    for (let i = 0; i < result.log.length; i++) {
-      await new Promise(r => setTimeout(r, 700));
-      setBattle(b => ({ ...b, log:[...b.log, result.log[i]], playerHp:result.winner==="player"?100:100-(i+1)*15, agentHp:result.winner==="agent"?100:100-(i+1)*20 }));
-    }
-    await new Promise(r => setTimeout(r, 400));
-    setBattle(b => ({ ...b, phase:"resolved", winner:result.winner, abraEarned:result.abraEarned }));
+    );
   }
 
   return (
-    <div style={{ padding:"1.25rem 0 0" }}>
-      {/* Section header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.875rem", flexWrap:"wrap", gap:"0.5rem" }}>
-        <div>
-          <h2 style={{ fontWeight:900, fontSize:"1rem", letterSpacing:"-0.02em", margin:0 }}>Active Arena</h2>
-          <p style={{ fontSize:"0.58rem", color:"rgba(255,255,255,0.35)", margin:"2px 0 0", fontFamily:"'JetBrains Mono',monospace" }}>
-            {assets.length} assets · Click card to flip · Select → Deploy
-          </p>
+    <div style={{ position:"relative", height, background:"rgba(6,8,16,0.98)", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={asset.name}
+        onError={() => setErr(true)}
+        style={{ width:"100%", height:"100%", objectFit:"contain", display:"block" }}
+        loading="lazy"
+      />
+      <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"45%", background:"linear-gradient(to top,rgba(6,8,16,0.92),transparent)", pointerEvents:"none" }} />
+    </div>
+  );
+}
+
+// ─── Triple Triad side values display ─────────────────────────────────────────
+function TTSides({ asset, size = "sm" }: { asset: ArenaAsset; size?: "sm" | "lg" }) {
+  const fs    = size === "lg" ? "0.7rem" : "0.52rem";
+  const color = CAT_COLOR[asset.category] ?? "#6b8cff";
+  const w     = size === "lg" ? "20px" : "16px";
+  const h     = size === "lg" ? "20px" : "16px";
+  const top    = asset.ttTop    ?? 1;
+  const right  = asset.ttRight  ?? 1;
+  const bottom = asset.ttBottom ?? 1;
+  const left   = asset.ttLeft   ?? 1;
+
+  const box = (v: number) => (
+    <div style={{ width:w, height:h, display:"flex", alignItems:"center", justifyContent:"center", background:`${color}22`, border:`1px solid ${color}44`, borderRadius:"3px", fontSize:fs, fontWeight:900, fontFamily:"'JetBrains Mono',monospace", color }}>
+      {ttLabel(v)}
+    </div>
+  );
+
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:`${w} ${w} ${w}`, gridTemplateRows:`${h} ${h} ${h}`, gap:"2px", width:`calc(${w} * 3 + 4px)` }}>
+      <div/>{box(top)}<div/>
+      {box(left)}<div style={{ background:"rgba(255,255,255,0.03)", borderRadius:"2px", display:"flex", alignItems:"center", justifyContent:"center" }} />{box(right)}
+      <div/>{box(bottom)}<div/>
+    </div>
+  );
+}
+
+// ─── Arena card ───────────────────────────────────────────────────────────────
+interface CardProps {
+  asset: ArenaAsset; selected?: boolean; flipped?: boolean;
+  owner?: TTOwner; onSelect?: (a: ArenaAsset) => void; compact?: boolean;
+}
+
+function ArenaCard({ asset, selected, flipped, owner, onSelect, compact }: CardProps) {
+  const [flip, setFlip] = useState(false);
+  const catColor = CAT_COLOR[asset.category] ?? "#6b8cff";
+  const imgH     = compact ? 100 : 150;
+
+  const borderColor = owner === "player" ? "#14F195"
+                    : owner === "agent"  ? "#f26b6b"
+                    : selected           ? "#D4AF37"
+                    : catColor + "33";
+
+  return (
+    <div
+      onClick={() => { onSelect?.(asset); if (!compact) setFlip(f => !f); }}
+      style={{
+        position:"relative", borderRadius:"12px", overflow:"hidden",
+        background:"rgba(6,8,16,0.97)",
+        border:`1px solid ${borderColor}`,
+        boxShadow: selected ? `0 0 18px ${catColor}22` : owner ? `0 0 12px ${borderColor}44` : "none",
+        cursor: onSelect ? "pointer" : "default",
+        transition:"border-color 0.2s, box-shadow 0.2s",
+      }}
+    >
+      {/* Auth badge */}
+      {asset.protected && (
+        <div style={{ position:"absolute", top:"0.35rem", right:"0.35rem", zIndex:4, display:"flex", alignItems:"center", gap:"0.2rem", padding:"0.08rem 0.3rem", borderRadius:"3px", background:"rgba(212,175,55,0.15)", border:"1px solid rgba(212,175,55,0.4)" }}>
+          <span style={{ width:"4px", height:"4px", borderRadius:"50%", background:"#D4AF37", animation:"pulse 2s ease-in-out infinite" }} />
+          <span style={{ fontSize:"0.4rem", fontWeight:700, color:"#D4AF37", letterSpacing:"0.08em", fontFamily:"'JetBrains Mono',monospace" }}>AUTH</span>
         </div>
-        {/* Category filter */}
-        <div style={{ display:"flex", gap:"0.25rem", flexWrap:"wrap" }}>
-          {cats.slice(0, 6).map(cat => (
-            <button key={cat} onClick={() => setFilter(cat)} style={{
-              padding:"0.25rem 0.5rem", borderRadius:"5px", fontSize:"0.58rem", fontWeight:filter===cat?700:400,
-              border:`1px solid ${filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.08)"}`,
-              background:filter===cat?`${CAT_COLOR[cat]??"#6b8cff"}18`:"transparent",
-              color:filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.4)",
-              cursor:"pointer", textTransform:"capitalize",
-            }}>{cat==="all"?"All":cat}</button>
-          ))}
+      )}
+
+      {/* Owner indicator */}
+      {owner && (
+        <div style={{ position:"absolute", top:"0.35rem", left:"0.35rem", zIndex:4, width:"8px", height:"8px", borderRadius:"50%", background:owner==="player"?"#14F195":"#f26b6b", boxShadow:`0 0 6px ${owner==="player"?"#14F195":"#f26b6b"}` }} />
+      )}
+
+      {/* Image */}
+      <div style={{ position:"relative" }}>
+        <AssetImage asset={asset} height={imgH} />
+      </div>
+
+      {/* Card info */}
+      <div style={{ padding:"0.45rem 0.5rem" }}>
+        <div style={{ fontWeight:800, fontSize:"0.72rem", color:"#f0f0f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", marginBottom:"1px" }}>
+          {asset.name}
+        </div>
+        <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.32)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.3rem" }}>
+          {asset.grade} · {asset.category}
+        </div>
+
+        {!compact && (
+          <>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"0.3rem" }}>
+              <span style={{ fontWeight:800, fontSize:"0.82rem", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>
+                {fmtUsd(asset.priceUsd)}
+              </span>
+              <span style={{ fontSize:"0.52rem", fontWeight:700, color: asset.change24h >= 0 ? "#14F195" : "#f26b6b", fontVariantNumeric:"tabular-nums" }}>
+                {asset.change24h >= 0 ? "+" : ""}{asset.change24h?.toFixed(2)}%
+              </span>
+            </div>
+
+            {/* TT sides */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <TTSides asset={asset} />
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace" }}>LAST SOLD</div>
+                <div style={{ fontSize:"0.6rem", fontWeight:700, color:"#D4AF37", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>
+                  {fmtUsd(asset.last_sold_price)}
+                </div>
+              </div>
+            </div>
+
+            {/* Power bar */}
+            {asset.attributes?.power_level && (
+              <div style={{ marginTop:"0.3rem" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.42rem", color:"rgba(255,255,255,0.28)", marginBottom:"1px", fontFamily:"'JetBrains Mono',monospace" }}>
+                  <span>PWR</span>
+                  <span style={{ color:catColor, fontWeight:700 }}>{asset.attributes.power_level}</span>
+                </div>
+                <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:"1px", height:"2px" }}>
+                  <div style={{ width:`${asset.attributes.power_level}%`, height:"100%", background:catColor, borderRadius:"1px" }} />
+                </div>
+              </div>
+            )}
+
+            {/* CTAs */}
+            <div style={{ display:"flex", gap:"0.25rem", marginTop:"0.4rem" }}>
+              <a href="https://gacha.collectorcrypt.com/" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{
+                flex:1, padding:"0.3rem 0.2rem", borderRadius:"5px", fontSize:"0.5rem", fontWeight:700,
+                background:"rgba(200,169,110,0.1)", border:"1px solid rgba(200,169,110,0.25)",
+                color:"#C8A96E", cursor:"pointer", textAlign:"center", textDecoration:"none",
+                fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.03em",
+                display:"block",
+              }}>
+                Acquire
+              </a>
+              <button onClick={e => e.stopPropagation()} style={{
+                flex:1, padding:"0.3rem 0.2rem", borderRadius:"5px", fontSize:"0.5rem", fontWeight:700,
+                background:"rgba(107,140,255,0.1)", border:"1px solid rgba(107,140,255,0.22)",
+                color:"#6b8cff", cursor:"pointer", fontFamily:"'JetBrains Mono',monospace",
+              }}>
+                Tokenize
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Triple Triad board ────────────────────────────────────────────────────────
+function TripleTriadBoard({ tt, onPlace }: { tt: TTState; onPlace: (idx: number) => void }) {
+  const playerScore = countOwned(tt.board, "player");
+  const agentScore  = countOwned(tt.board, "agent");
+
+  return (
+    <div>
+      {/* Score header */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.625rem" }}>
+        <div style={{ textAlign:"left" }}>
+          <div style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>YOUR SCORE</div>
+          <div style={{ fontSize:"1.1rem", fontWeight:900, color:"#14F195", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>{playerScore}</div>
+        </div>
+        <div style={{ fontSize:"0.52rem", color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
+          {tt.turn === "player" ? "YOUR TURN" : "SOPHIA THINKING"}
+        </div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>SOPHIA</div>
+          <div style={{ fontSize:"1.1rem", fontWeight:900, color:"#f26b6b", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>{agentScore}</div>
         </div>
       </div>
 
-      {/* Battle panel — shown when a card is selected */}
-      {selectedCard && (
-        <div style={{ padding:"0.875rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(255,107,53,0.2)", borderRadius:"14px", marginBottom:"1rem" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:"1rem", alignItems:"center" }}>
-            {/* Player card */}
-            <div style={{ textAlign:"left" }}>
-              <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.25rem" }}>YOUR FIGHTER</div>
-              <div style={{ fontWeight:800, fontSize:"0.85rem", color:"#f0f0f0" }}>{selectedCard.name}</div>
-              <div style={{ fontSize:"0.56rem", color:CAT_COLOR[selectedCard.category]??"#fff", fontFamily:"'JetBrains Mono',monospace" }}>{selectedCard.grade}</div>
-              {battle.phase !== "idle" && (
-                <div style={{ marginTop:"0.375rem" }}>
-                  <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:"2px", height:"5px" }}>
-                    <div style={{ width:`${battle.playerHp}%`, height:"100%", background:battle.playerHp>50?"#14F195":"#FBBF24", borderRadius:"2px", transition:"width 0.4s" }} />
-                  </div>
-                  <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginTop:"1px" }}>{battle.playerHp}/100 HP</div>
-                </div>
-              )}
-            </div>
-
-            {/* Center controls */}
-            <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:"1.2rem", marginBottom:"0.5rem" }}>⚔</div>
-              {battle.phase === "idle" && (
+      {/* 3x3 grid */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"3px", background:"rgba(255,255,255,0.06)", padding:"3px", borderRadius:"10px", marginBottom:"0.75rem" }}>
+        {tt.board.map((cell, idx) => {
+          const occupied = !!cell.asset;
+          const color = cell.owner === "player" ? "#14F195" : cell.owner === "agent" ? "#f26b6b" : "transparent";
+          return (
+            <div key={idx}
+              onClick={() => !occupied && tt.turn === "player" && onPlace(idx)}
+              style={{
+                height:"110px", borderRadius:"7px", overflow:"hidden",
+                background: occupied ? "rgba(6,8,16,0.97)" : "rgba(2,3,10,0.7)",
+                border:`2px solid ${occupied ? color : "rgba(255,255,255,0.06)"}`,
+                cursor: !occupied && tt.turn === "player" ? "pointer" : "default",
+                position:"relative", transition:"border-color 0.2s",
+              }}>
+              {cell.asset ? (
                 <>
-                  {/* Agent selector */}
-                  <div style={{ display:"flex", flexDirection:"column", gap:"0.25rem", marginBottom:"0.5rem" }}>
-                    {SOPHIA_AGENTS.map(a => (
-                      <button key={a.id} onClick={() => setSelectedAgent(a)} style={{
-                        padding:"0.25rem 0.5rem", borderRadius:"5px", fontSize:"0.5rem", fontWeight:selectedAgent.id===a.id?700:400,
-                        border:`1px solid ${selectedAgent.id===a.id?a.color+"55":"rgba(255,255,255,0.08)"}`,
-                        background:selectedAgent.id===a.id?`${a.color}18`:"transparent",
-                        color:selectedAgent.id===a.id?a.color:"rgba(255,255,255,0.4)",
-                        cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", whiteSpace:"nowrap",
-                      }}>
-                        {a.name} {selectedAgent.id===a.id?"✓":""}
-                      </button>
-                    ))}
+                  <AssetImage asset={cell.asset} height={60} />
+                  <div style={{ padding:"0.2rem 0.3rem" }}>
+                    <div style={{ fontSize:"0.46rem", fontWeight:700, color:"#f0f0f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{cell.asset.name}</div>
+                    <div style={{ marginTop:"2px" }}><TTSides asset={cell.asset} size="sm" /></div>
                   </div>
-                  <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.35rem" }}>
-                    Win prob: {winProb}%
-                  </div>
-                  <button onClick={launchBattle} style={{
-                    padding:"0.5rem 0.875rem", borderRadius:"8px", border:"none",
-                    background:"linear-gradient(135deg,#D4AF37,#FF6B35)",
-                    color:"#000", fontWeight:900, fontSize:"0.7rem",
-                    fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em",
-                    cursor:"pointer", boxShadow:"0 0 20px rgba(212,175,55,0.35)",
-                  }}>
-                    Deploy + Fight
-                  </button>
+                  {/* Owner color overlay */}
+                  <div style={{ position:"absolute", inset:0, background:`${color}12`, pointerEvents:"none" }} />
                 </>
-              )}
-              {battle.phase === "fighting" && (
-                <div style={{ fontSize:"0.62rem", color:"#FBBF24", fontFamily:"'JetBrains Mono',monospace", animation:"pulse 0.5s ease-in-out infinite" }}>Simulating…</div>
-              )}
-              {battle.phase === "resolved" && (
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontWeight:900, fontSize:"0.95rem", color:battle.winner==="player"?"#14F195":"#f26b6b", marginBottom:"0.25rem" }}>
-                    {battle.winner==="player"?"VICTORY":"DEFEAT"}
-                  </div>
-                  {battle.abraEarned > 0 && (
-                    <div style={{ fontSize:"0.6rem", color:"#D4AF37", fontFamily:"'JetBrains Mono',monospace", fontWeight:700 }}>
-                      +{battle.abraEarned} $ABRA
-                    </div>
-                  )}
-                  <button onClick={() => { setBattle({phase:"idle",playerCard:null,agentCard:null,round:0,playerHp:100,agentHp:100,log:[],winner:null,abraEarned:0}); setSelectedCard(null); }} style={{ marginTop:"0.5rem", padding:"0.3rem 0.625rem", borderRadius:"6px", background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.5)", fontSize:"0.58rem", fontFamily:"'JetBrains Mono',monospace", cursor:"pointer" }}>
-                    New Duel
-                  </button>
+              ) : (
+                <div style={{ height:"100%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <span style={{ fontSize:"0.7rem", color:"rgba(255,255,255,0.12)", fontFamily:"'JetBrains Mono',monospace" }}>
+                    {tt.turn === "player" ? "[ ]" : "..."}
+                  </span>
                 </div>
               )}
             </div>
+          );
+        })}
+      </div>
 
-            {/* Agent */}
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.25rem" }}>SOPHIA AGENT</div>
-              <div style={{ fontWeight:800, fontSize:"0.85rem", color:selectedAgent.color }}>{selectedAgent.name}</div>
-              <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>{selectedAgent.buff}</div>
-              {battle.phase !== "idle" && (
-                <div style={{ marginTop:"0.375rem" }}>
-                  <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:"2px", height:"5px" }}>
-                    <div style={{ width:`${battle.agentHp}%`, height:"100%", background:battle.agentHp>50?"#f26b6b":"#FBBF24", borderRadius:"2px", transition:"width 0.4s" }} />
-                  </div>
-                  <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginTop:"1px" }}>{battle.agentHp}/100 HP</div>
+      {/* Hands */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.5rem" }}>
+        <div>
+          <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.25rem" }}>YOUR HAND ({tt.playerHand.length})</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:"0.25rem" }}>
+            {tt.playerHand.map(a => (
+              <div key={a.id} style={{ padding:"0.25rem 0.4rem", background:"rgba(20,241,149,0.06)", border:"1px solid rgba(20,241,149,0.18)", borderRadius:"5px", fontSize:"0.5rem", fontFamily:"'JetBrains Mono',monospace", color:"#14F195", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                {a.name}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.25rem" }}>SOPHIA HAND ({tt.agentHand.length})</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:"0.25rem" }}>
+            {tt.agentHand.map(a => (
+              <div key={a.id} style={{ padding:"0.25rem 0.4rem", background:"rgba(242,107,107,0.06)", border:"1px solid rgba(242,107,107,0.18)", borderRadius:"5px", fontSize:"0.5rem", fontFamily:"'JetBrains Mono',monospace", color:"#f26b6b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                {a.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tokenization CTA panel ────────────────────────────────────────────────────
+function TokenizeCTA() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginBottom:"1.25rem", padding:"0.875rem 1rem", background:"rgba(107,140,255,0.06)", border:"1px solid rgba(107,140,255,0.15)", borderRadius:"12px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.5rem" }}>
+        <div>
+          <div style={{ fontWeight:800, fontSize:"0.85rem", color:"#f0f0f0", marginBottom:"2px" }}>Tokenize Your Assets</div>
+          <div style={{ fontSize:"0.58rem", color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>
+            Luxury watches · Real estate · Stocks · Memorabilia · Collectibles
+          </div>
+        </div>
+        <button onClick={() => setOpen(o => !o)} style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", background:"rgba(107,140,255,0.14)", border:"1px solid rgba(107,140,255,0.3)", color:"#6b8cff", fontSize:"0.65rem", fontWeight:700, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace" }}>
+          {open ? "Close" : "How It Works"}
+        </button>
+      </div>
+      {open && (
+        <div style={{ marginTop:"0.875rem", display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:"0.5rem" }}>
+          {[
+            { label:"Luxury Watch",  desc:"Rolex, Patek Philippe. Vault in DE or OR. 65% LTV borrow." },
+            { label:"Real Estate",   desc:"Fractional ownership via SPV. On-chain deed certificate." },
+            { label:"Stocks",        desc:"Tokenized equity via verified custodian. 70% LTV borrow." },
+            { label:"Memorabilia",   desc:"PSA/BGS graded cards, comics, signed items. Full provenance." },
+            { label:"Precious Metals",desc:"1oz gold/silver. LBMA certified. Stored in vault. Yield-bearing." },
+          ].map(item => (
+            <div key={item.label} style={{ padding:"0.625rem 0.75rem", background:"rgba(6,8,16,0.95)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"8px" }}>
+              <div style={{ fontWeight:700, fontSize:"0.7rem", color:"#f0f0f0", marginBottom:"3px" }}>{item.label}</div>
+              <div style={{ fontSize:"0.52rem", color:"rgba(255,255,255,0.38)", lineHeight:1.5 }}>{item.desc}</div>
+            </div>
+          ))}
+          <div style={{ padding:"0.625rem 0.75rem", background:"rgba(200,169,110,0.07)", border:"1px solid rgba(200,169,110,0.2)", borderRadius:"8px", display:"flex", flexDirection:"column", justifyContent:"center", gap:"0.3rem" }}>
+            <div style={{ fontWeight:700, fontSize:"0.65rem", color:"#C8A96E" }}>Start Tokenizing</div>
+            <a href="mailto:worldlabsprotocol@gmail.com" style={{ fontSize:"0.52rem", color:"rgba(200,169,110,0.7)", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+              Contact vault intake
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Stocks data panel ─────────────────────────────────────────────────────────
+function StockPanel({ assets }: { assets: ArenaAsset[] }) {
+  const stocks = assets.filter(a => a.category === "Stocks");
+  if (!stocks.length) return null;
+  return (
+    <div style={{ marginBottom:"1.25rem", padding:"0.875rem 1rem", background:"rgba(20,241,149,0.04)", border:"1px solid rgba(20,241,149,0.12)", borderRadius:"12px" }}>
+      <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#14F195", marginBottom:"0.625rem", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.06em" }}>
+        TOKENIZED EQUITY · NASDAQ ON-CHAIN
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:"0.5rem" }}>
+        {stocks.map(s => (
+          <div key={s.id} style={{ padding:"0.625rem 0.75rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(20,241,149,0.12)", borderRadius:"8px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.375rem" }}>
+              <div>
+                <div style={{ fontWeight:800, fontSize:"0.75rem", color:"#14F195", fontFamily:"'JetBrains Mono',monospace" }}>{s.ticker}</div>
+                <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.35)" }}>{s.name}</div>
+              </div>
+              <AssetImage asset={s} height={36} />
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+              <span style={{ fontWeight:800, fontSize:"0.85rem", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>${s.priceUsd.toFixed(2)}</span>
+              <span style={{ fontSize:"0.56rem", fontWeight:700, color:s.change24h>=0?"#14F195":"#f26b6b", fontVariantNumeric:"tabular-nums" }}>
+                {s.change24h>=0?"+":""}{s.change24h.toFixed(2)}%
+              </span>
+            </div>
+            {s.can_borrow && s.ltv && (
+              <div style={{ marginTop:"0.35rem", fontSize:"0.46rem", color:"rgba(20,241,149,0.6)", fontFamily:"'JetBrains Mono',monospace" }}>
+                Borrow up to ${(s.priceUsd * s.ltv).toFixed(0)} USDC · {Math.round(s.ltv * 100)}% LTV
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop:"0.625rem", fontSize:"0.5rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace" }}>
+        Tokenized equities are held via verified custodian. On-chain transfer via Token-2022. LTV borrow available in Vaults.
+      </div>
+    </div>
+  );
+}
+
+// ─── x402 ante indicator ──────────────────────────────────────────────────────
+function X402Ante({ token = "SOL" }: { token?: string }) {
+  return (
+    <div style={{ display:"inline-flex", alignItems:"center", gap:"0.35rem", padding:"0.2rem 0.5rem", borderRadius:"4px", background:"rgba(96,165,250,0.08)", border:"1px solid rgba(96,165,250,0.2)" }}>
+      <span style={{ width:"5px", height:"5px", borderRadius:"50%", background:"#60A5FA" }} />
+      <span style={{ fontSize:"0.48rem", color:"#60A5FA", fontFamily:"'JetBrains Mono',monospace", fontWeight:700, letterSpacing:"0.06em" }}>x402 ANTE</span>
+      <span style={{ fontSize:"0.46rem", color:"rgba(96,165,250,0.7)", fontFamily:"'JetBrains Mono',monospace" }}>0.001 {token}</span>
+    </div>
+  );
+}
+
+// ─── Main Arena ────────────────────────────────────────────────────────────────
+function ActiveArena({ assets }: { assets: ArenaAsset[] }) {
+  const [filter,        setFilter]        = useState<string>("all");
+  const [selectedAgent, setSelectedAgent] = useState<typeof SOPHIA_AGENTS[number]>(SOPHIA_AGENTS[0]);
+  const [selected3,     setSelected3]     = useState<string[]>([]);
+  const [pinkSlips,     setPinkSlips]     = useState(false);
+  const [wagerToken,    setWagerToken]    = useState<"SOL"|"USDC"|"ABX">("SOL");
+  const [tt, setTT]                       = useState<TTState | null>(null);
+  const [boardLog, setBoardLog]           = useState<string[]>([]);
+
+  const allCats = ["all", ...Array.from(new Set(assets.map(a => a.category)))];
+  const shown   = assets.filter(a => filter === "all" || a.category === filter);
+
+  // Toggle selection for TT (max 3)
+  const toggleSelect = useCallback((id: string) => {
+    if (tt) return;
+    setSelected3(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (prev.length >= 3)  return prev;
+      return [...prev, id];
+    });
+  }, [tt]);
+
+  // Launch Triple Triad
+  function launchTT() {
+    if (selected3.length !== 3) return;
+    const playerHand  = selected3.map(id => enrichTT(assets.find(a => a.id === id)!));
+    const remaining   = assets.filter(a => !selected3.includes(a.id));
+    // Agent picks 3 highest power
+    const agentHand   = remaining
+      .sort((a, b) => (b.attributes?.power_level ?? 0) - (a.attributes?.power_level ?? 0))
+      .slice(0, 3)
+      .map(enrichTT);
+
+    setTT({
+      board:      Array(9).fill(null).map(() => ({ asset:null, owner:null })),
+      playerHand, agentHand,
+      phase: "playing", turn:"player",
+      winner:null, abraEarned:0, log:[
+        `[TT] Game started. Pink Slips: ${pinkSlips ? "ON" : "OFF"}`,
+        `[x402] Ante: 0.001 ${wagerToken} deducted`,
+        `[SOPHIA] ${selectedAgent.name} equipped — ${selectedAgent.buff}`,
+      ],
+    });
+    setBoardLog([]);
+  }
+
+  // Player places a card
+  async function playerPlace(cellIdx: number) {
+    if (!tt || tt.turn !== "player" || tt.board[cellIdx].asset) return;
+    if (!tt.playerHand.length) return;
+    const card  = tt.playerHand[0]; // always play first card in hand
+    const newBoard = resolveFlips(
+      tt.board.map((c, i) => i === cellIdx ? { asset:card, owner:"player" as TTOwner } : c),
+      cellIdx, "player"
+    );
+    const newHand = tt.playerHand.slice(1);
+    const log = [...tt.log, `[YOU]  ${card.name} placed at [${cellIdx}]`];
+    const allFilled = newBoard.every(c => !!c.asset) && !newHand.length && !tt.agentHand.length;
+
+    if (allFilled || (!newHand.length && !tt.agentHand.length)) {
+      const ps = countOwned(newBoard, "player");
+      const as = countOwned(newBoard, "agent");
+      const winner: "player"|"agent"|"draw" = ps > as ? "player" : as > ps ? "agent" : "draw";
+      const earned = winner === "player" ? Math.round((tt.playerHand.length + 1) * 50) : 0;
+      setTT({ ...tt, board:newBoard, playerHand:newHand, turn:"player", phase:"done", winner, abraEarned:earned, log:[...log, `[TT] Game over. You: ${ps} | Sophia: ${as} — ${winner.toUpperCase()}`] });
+      return;
+    }
+
+    setTT({ ...tt, board:newBoard, playerHand:newHand, turn:"agent", log });
+
+    // Agent plays after delay
+    setTimeout(() => {
+      setTT(prev => {
+        if (!prev || prev.turn !== "agent" || !prev.agentHand.length) return prev;
+        const agCard = prev.agentHand[0];
+        // Agent picks first empty cell
+        const emptyIdx = prev.board.findIndex(c => !c.asset);
+        if (emptyIdx === -1) return prev;
+        const b2 = resolveFlips(
+          prev.board.map((c, i) => i === emptyIdx ? { asset:agCard, owner:"agent" as TTOwner } : c),
+          emptyIdx, "agent"
+        );
+        const agHand2 = prev.agentHand.slice(1);
+        const log2    = [...prev.log, `[SOPHIA] ${agCard.name} placed at [${emptyIdx}]`];
+        const done2   = b2.every(c => !!c.asset) && !prev.playerHand.length && !agHand2.length;
+        if (done2) {
+          const ps2 = countOwned(b2,"player"); const as2 = countOwned(b2,"agent");
+          const w2: "player"|"agent"|"draw" = ps2>as2?"player":as2>ps2?"agent":"draw";
+          const e2 = w2==="player" ? Math.round(prev.playerHand.length * 50) : 0;
+          return { ...prev, board:b2, agentHand:agHand2, turn:"player", phase:"done", winner:w2, abraEarned:e2, log:[...log2, `[TT] Final. You: ${ps2} | Sophia: ${as2} — ${w2.toUpperCase()}`] };
+        }
+        return { ...prev, board:b2, agentHand:agHand2, turn:"player", log:log2 };
+      });
+    }, 900);
+  }
+
+  return (
+    <div>
+      {/* Category filter row */}
+      <div style={{ display:"flex", gap:"0.25rem", marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }}>
+        {allCats.map(cat => (
+          <button key={cat} onClick={() => setFilter(cat)} style={{
+            padding:"0.25rem 0.5rem", borderRadius:"4px", fontSize:"0.58rem", fontWeight:filter===cat?700:400,
+            border:`1px solid ${filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.07)"}`,
+            background:filter===cat?`${CAT_COLOR[cat]??"#6b8cff"}14`:"transparent",
+            color:filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.38)",
+            cursor:"pointer", textTransform:"capitalize",
+          }}>{cat==="all"?"All":cat}</button>
+        ))}
+      </div>
+
+      {/* TT setup panel */}
+      {!tt ? (
+        <div style={{ padding:"0.875rem 1rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(255,107,53,0.2)", borderRadius:"12px", marginBottom:"1.25rem" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem", marginBottom:"0.75rem" }}>
+            <div>
+              <div style={{ fontWeight:800, fontSize:"0.85rem", marginBottom:"2px" }}>Triple Triad Arena</div>
+              <div style={{ fontSize:"0.54rem", color:"rgba(255,255,255,0.38)", fontFamily:"'JetBrains Mono',monospace" }}>
+                Select 3 cards below · Place on 3x3 board · Higher side flips opponent · Most owned wins
+              </div>
+              {selected3.length > 0 && (
+                <div style={{ marginTop:"0.35rem", fontSize:"0.52rem", color:"#D4AF37", fontFamily:"'JetBrains Mono',monospace" }}>
+                  {selected3.length}/3 selected
                 </div>
               )}
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+              {/* Agent selector */}
+              <div style={{ display:"flex", gap:"0.25rem", flexWrap:"wrap" }}>
+                {SOPHIA_AGENTS.map(a => (
+                  <button key={a.id} onClick={() => setSelectedAgent(a)} style={{
+                    padding:"0.2rem 0.45rem", borderRadius:"4px", fontSize:"0.48rem", fontWeight:selectedAgent.id===a.id?700:400,
+                    border:`1px solid ${selectedAgent.id===a.id?a.color+"55":"rgba(255,255,255,0.07)"}`,
+                    background:selectedAgent.id===a.id?`${a.color}18`:"transparent",
+                    color:selectedAgent.id===a.id?a.color:"rgba(255,255,255,0.38)",
+                    cursor:"pointer", fontFamily:"'JetBrains Mono',monospace",
+                  }}>
+                    {a.name}
+                  </button>
+                ))}
+              </div>
+              {/* Wager token */}
+              <div style={{ display:"flex", gap:"0.25rem", alignItems:"center" }}>
+                <X402Ante token={wagerToken} />
+                {(["SOL","USDC","ABX"] as const).map(t => (
+                  <button key={t} onClick={() => setWagerToken(t)} style={{
+                    padding:"0.18rem 0.4rem", borderRadius:"3px", fontSize:"0.46rem", fontWeight:wagerToken===t?700:400,
+                    border:`1px solid ${wagerToken===t?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.08)"}`,
+                    background:wagerToken===t?"rgba(255,255,255,0.08)":"transparent",
+                    color:wagerToken===t?"#f0f0f0":"rgba(255,255,255,0.3)",
+                    cursor:"pointer", fontFamily:"'JetBrains Mono',monospace",
+                  }}>{t}</button>
+                ))}
+              </div>
+              {/* Pink slips */}
+              <div style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
+                <button onClick={() => setPinkSlips(p => !p)} style={{ width:"28px", height:"16px", borderRadius:"100px", border:"none", cursor:"pointer", background:pinkSlips?"#f26b6b":"rgba(255,255,255,0.1)", position:"relative", flexShrink:0, transition:"background 0.2s" }}>
+                  <span style={{ position:"absolute", top:"1px", left:pinkSlips?"13px":"1px", width:"14px", height:"14px", borderRadius:"50%", background:"#fff", transition:"left 0.2s", display:"block" }} />
+                </button>
+                <span style={{ fontSize:"0.5rem", color:pinkSlips?"#f26b6b":"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace", fontWeight:pinkSlips?700:400 }}>
+                  Pink Slips {pinkSlips?"ON — winner claims flipped card metadata":"OFF"}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Battle log */}
-          {battle.log.length > 0 && (
-            <div ref={logRef} style={{ marginTop:"0.75rem", background:"rgba(2,3,10,0.97)", border:"1px solid rgba(107,140,255,0.1)", borderRadius:"8px", padding:"0.5rem 0.75rem", maxHeight:"100px", overflowY:"auto", fontFamily:"'JetBrains Mono',monospace" }}>
-              {battle.log.map((l, i) => (
-                <p key={i} style={{ margin:"0 0 0.18rem", fontSize:"0.56rem", color:i===battle.log.length-1?"#60A5FA":`rgba(96,165,250,${Math.max(0.2,0.85-i*0.07)})`, lineHeight:1.4 }}>{l}</p>
-              ))}
+          <button onClick={launchTT} disabled={selected3.length !== 3} style={{
+            padding:"0.5rem 1.25rem", borderRadius:"8px", border:"none", fontWeight:800, fontSize:"0.75rem",
+            fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", cursor:selected3.length===3?"pointer":"not-allowed",
+            background:selected3.length===3?"linear-gradient(135deg,#D4AF37,#FF6B35)":"rgba(255,255,255,0.05)",
+            color:selected3.length===3?"#000":"rgba(255,255,255,0.2)",
+            boxShadow:selected3.length===3?"0 0 20px rgba(212,175,55,0.3)":"none",
+          }}>
+            {selected3.length===3 ? "Launch Triple Triad" : `Select ${3-selected3.length} more card${3-selected3.length!==1?"s":""}`}
+          </button>
+        </div>
+      ) : (
+        <div style={{ marginBottom:"1.25rem" }}>
+          {/* Active TT board */}
+          {tt.phase !== "done" ? (
+            <div style={{ padding:"1rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(255,107,53,0.2)", borderRadius:"12px" }}>
+              <TripleTriadBoard tt={tt} onPlace={playerPlace} />
+              {/* Log */}
+              <div style={{ marginTop:"0.625rem", background:"rgba(2,3,10,0.97)", border:"1px solid rgba(107,140,255,0.1)", borderRadius:"7px", padding:"0.4rem 0.625rem", maxHeight:"80px", overflowY:"auto", fontFamily:"'JetBrains Mono',monospace" }}>
+                {tt.log.slice(-6).map((l, i) => (
+                  <p key={i} style={{ margin:"0 0 0.18rem", fontSize:"0.52rem", color:`rgba(96,165,250,${Math.max(0.2,0.9-i*0.1)})`, lineHeight:1.4 }}>{l}</p>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Result
+            <div style={{ padding:"1rem", background:"rgba(6,8,16,0.97)", border:`1px solid ${tt.winner==="player"?"rgba(20,241,149,0.3)":"rgba(242,107,107,0.3)"}`, borderRadius:"12px", textAlign:"center" }}>
+              <div style={{ fontWeight:900, fontSize:"1.4rem", color:tt.winner==="player"?"#14F195":tt.winner==="draw"?"#FBBF24":"#f26b6b", letterSpacing:"-0.02em", marginBottom:"0.4rem" }}>
+                {tt.winner==="player"?"VICTORY":tt.winner==="draw"?"DRAW":"DEFEATED"}
+              </div>
+              {tt.abraEarned > 0 && (
+                <div style={{ fontSize:"0.72rem", fontWeight:700, color:"#D4AF37", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.5rem" }}>
+                  +{tt.abraEarned} $ABRA earned
+                </div>
+              )}
+              {pinkSlips && tt.winner === "player" && (
+                <div style={{ fontSize:"0.58rem", color:"#f26b6b", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.5rem" }}>
+                  Pink Slips: flipped card metadata transferred to your vault
+                </div>
+              )}
+              <button onClick={() => { setTT(null); setSelected3([]); }} style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.5)", fontSize:"0.62rem", fontFamily:"'JetBrains Mono',monospace", cursor:"pointer" }}>
+                Play Again
+              </button>
             </div>
           )}
         </div>
       )}
 
       {/* Card grid */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,175px),1fr))", gap:"0.75rem" }}>
-        {shown.map(asset => (
-          <FlipCard key={asset.id} asset={asset}
-            selected={selectedCard?.id===asset.id}
-            onSelect={a => setSelectedCard(prev => prev?.id===a.id?null:a)}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,185px),1fr))", gap:"0.75rem" }}>
+        {shown.map(a => (
+          <ArenaCard key={a.id} asset={a}
+            selected={selected3.includes(a.id)}
+            onSelect={!tt ? () => toggleSelect(a.id) : undefined}
           />
         ))}
         {shown.length === 0 && (
-          <div style={{ gridColumn:"1/-1", textAlign:"center", padding:"3rem", color:"rgba(255,255,255,0.2)", fontSize:"0.7rem", fontFamily:"'JetBrains Mono',monospace" }}>
-            [NO ASSETS IN THIS CATEGORY]
+          <div style={{ gridColumn:"1/-1", padding:"2.5rem", textAlign:"center", fontSize:"0.62rem", color:"rgba(255,255,255,0.2)", fontFamily:"'JetBrains Mono',monospace" }}>
+            NO ASSETS IN THIS CATEGORY
           </div>
         )}
       </div>
@@ -439,28 +745,29 @@ function ActiveArena({ assets }: { assets: ArenaAsset[] }) {
   );
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
+// ─── Skeletons ─────────────────────────────────────────────────────────────────
 export function TerminalArenaSkeleton() {
   return (
     <div>
-      <div style={{ height:"36px", background:"rgba(2,3,10,0.95)", borderBottom:"1px solid rgba(255,255,255,0.06)", animation:"pulse 1.5s ease-in-out infinite" }} />
+      <div style={{ height:"34px", background:"rgba(2,3,10,0.97)", borderBottom:"1px solid rgba(255,255,255,0.05)", animation:"pulse 1.5s ease-in-out infinite" }} />
       <div style={{ padding:"1.25rem" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))", gap:"0.75rem" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(185px,1fr))", gap:"0.75rem" }}>
           {Array.from({length:8}).map((_,i) => (
-            <div key={i} style={{ height:320, borderRadius:"14px", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(255,255,255,0.05)", animation:"pulse 1.5s ease-in-out infinite" }} />
+            <div key={i} style={{ height:340, borderRadius:"12px", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(255,255,255,0.04)", animation:`pulse ${1.3+i*0.08}s ease-in-out infinite` }} />
           ))}
         </div>
       </div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
     </div>
   );
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 export function TerminalArena() {
-  const [assets, setAssets]   = useState<ArenaAsset[]>([]);
-  const [ticks,  setTicks]    = useState<SoldTick[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState<string|null>(null);
+  const [assets, setAssets] = useState<ArenaAsset[]>([]);
+  const [ticks,  setTicks]  = useState<SoldTick[]>([]);
+  const [loading, setLoading]  = useState(true);
+  const [error,   setError]    = useState<string|null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -472,8 +779,8 @@ export function TerminalArena() {
           setAssets(data.assets);
           setTicks(buildSoldTape(data.assets));
         }
-      } catch (e) { if (!cancelled) setError("Oracle unavailable"); }
-      finally      { if (!cancelled) setLoading(false); }
+      } catch { if (!cancelled) setError("Oracle unavailable — /api/cards"); }
+      finally  { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -484,15 +791,17 @@ export function TerminalArena() {
     <div>
       <style>{`
         @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.5} }
+        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.45} }
       `}</style>
       {error && (
-        <div style={{ padding:"0.5rem 1rem", background:"rgba(242,107,107,0.08)", border:"1px solid rgba(242,107,107,0.15)", fontSize:"0.6rem", color:"#f26b6b", fontFamily:"'JetBrains Mono',monospace" }}>
-          [ORACLE] {error}
+        <div style={{ padding:"0.5rem 1rem", background:"rgba(242,107,107,0.07)", fontSize:"0.56rem", color:"#f26b6b", fontFamily:"'JetBrains Mono',monospace" }}>
+          [ORACLE ERROR] {error}
         </div>
       )}
       <SoldTape ticks={ticks} />
-      <div style={{ padding:"0 1.25rem 1.25rem" }}>
+      <div style={{ padding:"1.25rem" }}>
+        <TokenizeCTA />
+        <StockPanel assets={assets} />
         <ActiveArena assets={assets} />
       </div>
     </div>
