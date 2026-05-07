@@ -72,7 +72,9 @@
       "is_vault_locked": false,
       "last_sold_price": 4828.0,
       "last_sold_source": "BGS Registry",
-      "last_sold_date": "2000"
+      "last_sold_date": "2000",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2001-mewtwo-holo-psa10",
@@ -131,7 +133,9 @@
       "is_vault_locked": true,
       "last_sold_price": 4200.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2001"
+      "last_sold_date": "2001",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2005-latias-gold-star-psa10",
@@ -190,7 +194,9 @@
       "is_vault_locked": false,
       "last_sold_price": 4000.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2005"
+      "last_sold_date": "2005",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2000-dark-charizard-1st-psa10",
@@ -249,7 +255,9 @@
       "is_vault_locked": false,
       "last_sold_price": 3600.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2000"
+      "last_sold_date": "2000",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2018-pretend-boss-pikachu-psa10",
@@ -308,7 +316,9 @@
       "is_vault_locked": false,
       "last_sold_price": 3600.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2018"
+      "last_sold_date": "2018",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2004-treecko-gold-star-psa9",
@@ -367,7 +377,9 @@
       "is_vault_locked": false,
       "last_sold_price": 3500.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2004"
+      "last_sold_date": "2004",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2001-shining-charizard-psa9",
@@ -426,7 +438,9 @@
       "is_vault_locked": false,
       "last_sold_price": 3200.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2001"
+      "last_sold_date": "2001",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2019-charizard-holo-psa10",
@@ -485,7 +499,9 @@
       "is_vault_locked": true,
       "last_sold_price": 3000.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2019"
+      "last_sold_date": "2019",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2020-espeon-deoxys-gx-psa10",
@@ -544,7 +560,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2810.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2020"
+      "last_sold_date": "2020",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2003-charizard-holo-psa9",
@@ -603,7 +621,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2800.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2003"
+      "last_sold_date": "2003",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2021-fa-rayquaza-vmax-bgs10",
@@ -662,7 +682,9 @@
       "is_vault_locked": true,
       "last_sold_price": 2750.0,
       "last_sold_source": "BGS Registry",
-      "last_sold_date": "2021"
+      "last_sold_date": "2021",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2003-golem-holo-cgc10",
@@ -721,7 +743,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2600.0,
       "last_sold_source": "CGC Registry",
-      "last_sold_date": "2003"
+      "last_sold_date": "2003",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2015-fa-team-magma-psa10",
@@ -780,7 +804,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2590.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2015"
+      "last_sold_date": "2015",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2024-mew-ex-psa10",
@@ -839,7 +865,9 @@
       "is_vault_locked": true,
       "last_sold_price": 2550.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2024"
+      "last_sold_date": "2024",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2021-fa-gengar-vmax-psa10",
@@ -898,7 +926,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2525.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2021"
+      "last_sold_date": "2021",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2021-fa-umbreon-vmax-cgc95",
@@ -957,7 +987,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2500.0,
       "last_sold_source": "CGC Registry",
-      "last_sold_date": "2021"
+      "last_sold_date": "2021",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2018-psyduck-psa9",
@@ -1016,7 +1048,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2400.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2018"
+      "last_sold_date": "2018",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "1996-charizard-holo-bgs9",
@@ -1075,7 +1109,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2420.0,
       "last_sold_source": "BGS Registry",
-      "last_sold_date": "1996"
+      "last_sold_date": "1996",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2003-gyarados-holo-bgs85",
@@ -1134,7 +1170,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2242.0,
       "last_sold_source": "BGS Registry",
-      "last_sold_date": "2003"
+      "last_sold_date": "2003",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2002-charizard-reverse-foil-psa4",
@@ -1193,7 +1231,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2210.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2002"
+      "last_sold_date": "2002",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2003-nidoking-holo-psa8",
@@ -1252,7 +1292,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2200.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2003"
+      "last_sold_date": "2003",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2005-entei-holo-psa9",
@@ -1311,7 +1353,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2165.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2005"
+      "last_sold_date": "2005",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2000-dark-blastoise-holo-bgs95",
@@ -1370,7 +1414,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2125.0,
       "last_sold_source": "BGS Registry",
-      "last_sold_date": "2000"
+      "last_sold_date": "2000",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "luffy-gol-bgs10",
@@ -1429,7 +1475,9 @@
       "is_vault_locked": true,
       "last_sold_price": 9500.0,
       "last_sold_source": "BGS Registry",
-      "last_sold_date": "2022"
+      "last_sold_date": "2022",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "luffy-manga-psa10",
@@ -1488,7 +1536,9 @@
       "is_vault_locked": false,
       "last_sold_price": 9000.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2023"
+      "last_sold_date": "2023",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "shanks-manga-alt-psa10",
@@ -1547,7 +1597,9 @@
       "is_vault_locked": true,
       "last_sold_price": 8500.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2022"
+      "last_sold_date": "2022",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "zoro-promo-psa10",
@@ -1606,7 +1658,9 @@
       "is_vault_locked": false,
       "last_sold_price": 6000.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2023"
+      "last_sold_date": "2023",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "luffy-119-psa10",
@@ -1665,7 +1719,9 @@
       "is_vault_locked": false,
       "last_sold_price": 5455.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2023"
+      "last_sold_date": "2023",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "zoro-manga-alt-psa10",
@@ -1724,7 +1780,9 @@
       "is_vault_locked": true,
       "last_sold_price": 4500.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2022"
+      "last_sold_date": "2022",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "nami-full-art-psa10",
@@ -1783,7 +1841,9 @@
       "is_vault_locked": false,
       "last_sold_price": 3200.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2022"
+      "last_sold_date": "2022",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "boa-hancock-051-psa10",
@@ -1842,7 +1902,9 @@
       "is_vault_locked": false,
       "last_sold_price": 2800.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2023"
+      "last_sold_date": "2023",
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "2018-josh-allen-psa10",
@@ -1902,7 +1964,9 @@
       "is_vault_locked": false,
       "last_sold_price": 4700.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2018"
+      "last_sold_date": "2018",
+      "liquidity_velocity": "medium",
+      "quick_duel": true
     },
     {
       "id": "2018-shohei-ohtani-psa10",
@@ -1962,7 +2026,9 @@
       "is_vault_locked": false,
       "last_sold_price": 4472.0,
       "last_sold_source": "PSA Registry",
-      "last_sold_date": "2018"
+      "last_sold_date": "2018",
+      "liquidity_velocity": "medium",
+      "quick_duel": true
     },
     {
       "id": "superman-1-cgc90",
@@ -2020,7 +2086,9 @@
         "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=82"
       },
       "is_duel_eligible": true,
-      "is_vault_locked": false
+      "is_vault_locked": false,
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "batman-1-cgc94",
@@ -2078,7 +2146,9 @@
         "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=83"
       },
       "is_duel_eligible": true,
-      "is_vault_locked": false
+      "is_vault_locked": false,
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "action-comics-1-cgc85",
@@ -2136,7 +2206,9 @@
         "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=80"
       },
       "is_duel_eligible": true,
-      "is_vault_locked": false
+      "is_vault_locked": false,
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "dubai-plate-k121",
@@ -2194,7 +2266,9 @@
         "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=71"
       },
       "is_duel_eligible": true,
-      "is_vault_locked": false
+      "is_vault_locked": false,
+      "liquidity_velocity": "low",
+      "quick_duel": false
     },
     {
       "id": "gold-bar-xaut-2026",
@@ -2252,7 +2326,13 @@
         "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=68"
       },
       "is_duel_eligible": true,
-      "is_vault_locked": true
+      "is_vault_locked": true,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "ltv": 0.7,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 4751.38
     },
     {
       "id": "silver-coin-slvon-2026",
@@ -2310,7 +2390,333 @@
         "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=59"
       },
       "is_duel_eligible": true,
-      "is_vault_locked": true
+      "is_vault_locked": true,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "ltv": 0.7,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 46.16
+    },
+    {
+      "id": "aapl-tokenized-2026",
+      "name": "Apple Inc. (AAPL)",
+      "category": "Stocks",
+      "set": "NASDAQ Tokenized Equity",
+      "year": 2026,
+      "ticker": "AAPL",
+      "grade": "A+",
+      "gradingCo": "Market",
+      "vaultId": "AAPL-abraxas-001",
+      "vaultLocation": "Abraxas Vault \u2014 Digital Custody",
+      "insuranceUsd": 227.5,
+      "priceUsd": 227.5,
+      "last_sold_price": 227.5,
+      "last_sold_source": "Nasdaq",
+      "last_sold_date": "2026-05-11",
+      "change24h": 0.8,
+      "rarity": "Common",
+      "imagePath": "/assets/rwa/stocks/aapl.svg",
+      "imagePathBack": null,
+      "tokenId": "AAPL-TOK-2026-001",
+      "atk": 75,
+      "def": 88,
+      "speed": 82,
+      "circuitScore": 14,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 4.2,
+      "ltv": 0.7,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 159.25,
+      "history": [
+        185,
+        192,
+        198,
+        205,
+        210,
+        215,
+        218,
+        222,
+        225,
+        227
+      ],
+      "metadata": {
+        "set": "NASDAQ Tokenized Equity",
+        "year": 2026,
+        "grade_provider": "Market",
+        "grade_score": "A+"
+      },
+      "valuation": 227.5,
+      "source_file": "nasdaq-2026",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "high",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 63,
+        "liquidity_score": 26.94,
+        "historical_volatility": 6.51,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=63"
+      }
+    },
+    {
+      "id": "tsla-tokenized-2026",
+      "name": "Tesla Inc. (TSLA)",
+      "category": "Stocks",
+      "set": "NASDAQ Tokenized Equity",
+      "year": 2026,
+      "ticker": "TSLA",
+      "grade": "A+",
+      "gradingCo": "Market",
+      "vaultId": "TSLA-abraxas-001",
+      "vaultLocation": "Abraxas Vault \u2014 Digital Custody",
+      "insuranceUsd": 248.75,
+      "priceUsd": 248.75,
+      "last_sold_price": 248.75,
+      "last_sold_source": "Nasdaq",
+      "last_sold_date": "2026-05-11",
+      "change24h": 2.1,
+      "rarity": "Common",
+      "imagePath": "/assets/rwa/stocks/tsla.svg",
+      "imagePathBack": null,
+      "tokenId": "TSLA-TOK-2026-001",
+      "atk": 88,
+      "def": 72,
+      "speed": 95,
+      "circuitScore": 28,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 6.8,
+      "ltv": 0.7,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 174.12,
+      "history": [
+        195,
+        205,
+        215,
+        225,
+        232,
+        238,
+        242,
+        245,
+        247,
+        248
+      ],
+      "metadata": {
+        "set": "NASDAQ Tokenized Equity",
+        "year": 2026,
+        "grade_provider": "Market",
+        "grade_score": "A+"
+      },
+      "valuation": 248.75,
+      "source_file": "nasdaq-2026",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "high",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 61,
+        "liquidity_score": 27.38,
+        "historical_volatility": 7.74,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=61"
+      }
+    },
+    {
+      "id": "nvda-tokenized-2026",
+      "name": "NVIDIA Corp. (NVDA)",
+      "category": "Stocks",
+      "set": "NASDAQ Tokenized Equity",
+      "year": 2026,
+      "ticker": "NVDA",
+      "grade": "A+",
+      "gradingCo": "Market",
+      "vaultId": "NVDA-abraxas-001",
+      "vaultLocation": "Abraxas Vault \u2014 Digital Custody",
+      "insuranceUsd": 1024.8,
+      "priceUsd": 1024.8,
+      "last_sold_price": 1024.8,
+      "last_sold_source": "Nasdaq",
+      "last_sold_date": "2026-05-11",
+      "change24h": 3.4,
+      "rarity": "Ultra Rare",
+      "imagePath": "/assets/rwa/stocks/nvda.svg",
+      "imagePathBack": null,
+      "tokenId": "NVDA-TOK-2026-001",
+      "atk": 95,
+      "def": 80,
+      "speed": 90,
+      "circuitScore": 18,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": true,
+      "apy": 8.5,
+      "ltv": 0.7,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 717.36,
+      "history": [
+        780,
+        820,
+        860,
+        900,
+        940,
+        970,
+        995,
+        1005,
+        1015,
+        1024
+      ],
+      "metadata": {
+        "set": "NASDAQ Tokenized Equity",
+        "year": 2026,
+        "grade_provider": "Market",
+        "grade_score": "A+"
+      },
+      "valuation": 1024.8,
+      "source_file": "nasdaq-2026",
+      "is_duel_eligible": true,
+      "is_vault_locked": true,
+      "liquidity_velocity": "high",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 65,
+        "liquidity_score": 34.41,
+        "historical_volatility": 8.86,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=65"
+      }
+    },
+    {
+      "id": "rolex-daytona-paul-newman",
+      "name": "Rolex Daytona 'Paul Newman' Ref 6239",
+      "category": "Timepieces",
+      "set": "Rolex SA",
+      "year": 1968,
+      "ticker": "RLX-PN",
+      "grade": "Excellent",
+      "gradingCo": "Phillips",
+      "vaultId": "RLDP-phillips-2025",
+      "vaultLocation": "Phillips Auctions \u2014 Geneva, CH",
+      "insuranceUsd": 17800000.0,
+      "priceUsd": 17800000.0,
+      "last_sold_price": 17800000.0,
+      "last_sold_source": "Phillips",
+      "last_sold_date": "2025",
+      "change24h": 0.1,
+      "rarity": "Legendary",
+      "imagePath": "/assets/rwa/timepieces/rolex-daytona.jpg",
+      "imagePathBack": null,
+      "tokenId": "RLDP1968-001",
+      "atk": 92,
+      "def": 97,
+      "speed": 78,
+      "circuitScore": 6,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 3.2,
+      "ltv": 0.65,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 11570000.0,
+      "history": [
+        12000000,
+        13000000,
+        14000000,
+        15000000,
+        15500000,
+        16000000,
+        16500000,
+        17000000,
+        17500000,
+        17800000
+      ],
+      "metadata": {
+        "set": "Rolex SA",
+        "year": 1968,
+        "grade_provider": "Phillips",
+        "grade_score": "Excellent"
+      },
+      "valuation": 17800000.0,
+      "source_file": "phillips-2025",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": false,
+      "attributes": {
+        "power_level": 76,
+        "liquidity_score": 82.86,
+        "historical_volatility": 11.9,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=76"
+      }
+    },
+    {
+      "id": "patek-philippe-5711",
+      "name": "Patek Philippe Nautilus 5711/1A-010",
+      "category": "Timepieces",
+      "set": "Patek Philippe SA",
+      "year": 2021,
+      "ticker": "PP-5711",
+      "grade": "Mint",
+      "gradingCo": "Chrono24",
+      "vaultId": "PP5711-chrono24-2026",
+      "vaultLocation": "Chrono24 Vault \u2014 Hamburg, DE",
+      "insuranceUsd": 120000.0,
+      "priceUsd": 120000.0,
+      "last_sold_price": 120000.0,
+      "last_sold_source": "Chrono24",
+      "last_sold_date": "2026",
+      "change24h": 0.3,
+      "rarity": "Ultra Rare",
+      "imagePath": "/assets/rwa/timepieces/patek-5711.jpg",
+      "imagePathBack": null,
+      "tokenId": "PP57112021-001",
+      "atk": 82,
+      "def": 92,
+      "speed": 70,
+      "circuitScore": 12,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 5.5,
+      "ltv": 0.65,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 78000.0,
+      "history": [
+        85000,
+        90000,
+        95000,
+        100000,
+        105000,
+        110000,
+        113000,
+        116000,
+        118000,
+        120000
+      ],
+      "metadata": {
+        "set": "Patek Philippe SA",
+        "year": 2021,
+        "grade_provider": "Chrono24",
+        "grade_score": "Mint"
+      },
+      "valuation": 120000.0,
+      "source_file": "chrono24-2026",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 66,
+        "liquidity_score": 58.05,
+        "historical_volatility": 11.06,
+        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=66"
+      }
     }
   ],
   "excluded_assets": [
@@ -2344,8 +2750,8 @@
     "pokemon_count": 23,
     "one_piece_count": 8,
     "sports_count": 2,
-    "total_assets": 39,
-    "total_insured_usd": 21646495.63,
+    "total_assets": 44,
+    "total_insured_usd": 39567996.68,
     "excluded_sports_count": 3
   }
 }
