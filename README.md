@@ -4,7 +4,7 @@
 > *Vault assets. Deploy agents. Win the Arena.*
 
 [![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
-[![Discord](https://img.shields.io/badge/Discord-9945ff?style=flat-square)]([https://discord.gg/sHK8EWbnXH])
+
 
 Built by [@pabloretroworld](https://x.com/pabloretroworld) · World Labs Protocol
 
