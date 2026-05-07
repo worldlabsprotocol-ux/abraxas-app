@@ -1,12 +1,12 @@
-// Migrations are an early feature. Currently, they're nothing more than this
-// single deploy script that's invoked from the CLI, injecting a provider
-// configured from the workspace's Anchor.toml.
+// FILE: abraxas-program/migrations/deploy.ts
+// Anchor migration script — runs during `anchor migrate`.
+// NOTE: This file is excluded from Next.js TypeScript compilation via tsconfig.json.
+// It is NOT part of the Next.js app bundle.
 
-import * as anchor from "@anchor-lang/core";
+// @ts-nocheck
+import * as anchor from "@coral-xyz/anchor";
 
 module.exports = async function (provider: anchor.AnchorProvider) {
-  // Configure client to use the provider.
   anchor.setProvider(provider);
-
-  // Add your deploy script here.
+  // Add migration logic here
 };
