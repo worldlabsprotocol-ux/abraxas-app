@@ -1,151 +1,162 @@
-# Abraxas
+# ⬢ ABRAXAS PROTOCOL
 
-<p align="center">
-  <strong>Phase 3 infrastructure for operated real-world assets.</strong>
-</p>
+> **The Sovereign Terminal for Tokenized Reality on Solana.**  
+> *Vault assets. Deploy agents. Win the Arena.*
 
-<p align="center">
-  <img src="https://img.shields.io/badge/status-beta-c8a96e?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/built_on-Solana-9945FF?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/token-$ABRA-c8a96e?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/token-$CARDS-c8a96e?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/stack-Next.js_14-000000?style=for-the-badge" />
-</p>
-
-> Real-world assets stop being held.  
-> They start being **operated**.
-
-**Sovereign AI Guardian Protocol for Tokenized Real-World Assets on Solana.**
-
-
----
-
-### Links
-[![X](https://img.shields.io/badge/X-@pabloretroworld-000000?style=for-the-badge&logo=x)](https://x.com/pabloretroworld)
 [![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
+[![Discord](https://img.shields.io/badge/Discord-9945ff?style=flat-square)]([https://discord.gg/sHK8EWbnXH])
 
 Built by [@pabloretroworld](https://x.com/pabloretroworld) · World Labs Protocol
 
 ---
 
-## Thesis
+## ◈ What Is Abraxas
 
-**Phase 1** — Assets moved on-chain. Passive.  
-**Phase 2** — Assets became programmable. Static.  
-**Phase 3** — Assets become **reactive, operated, and defended**.
+Abraxas is a sovereign wealth operating system. It tokenizes real-world assets — graded collectibles, precious metals, luxury timepieces, equities — and turns them into playable, stakeable, duelable on-chain instruments.
 
-**Abraxas is Phase 3.**
+Every asset enters the **Arena**. Sophia Agents defend them. The Circuit Engine monitors risk in real time.
 
 ---
 
-## Vision
+## ✦ Navigation (3 Surfaces)
 
-Abraxas is the first AI-native protection layer for tokenized physical assets on Solana.
-
-We don’t build dashboards.  
-We build **fortresses**.
-
-Every asset that enters the system receives:
-- A **Sophia Agent** — autonomous AI guardian that monitors and acts 24/7
-- A **Circuit Shield** — programmable defense layer that reacts instantly
-- A **Token-2022 RWA position** — fully on-chain, yield-bearing, and reactive
+| Surface | Route | Purpose |
+|---|---|---|
+| **Terminal ⬢** | `/` | Sold Tape + Active Arena + Card Flip gameplay |
+| **Vaults ⛊** | `/protect` | Asset management + Circuit Engine + USDC Borrow |
+| **Arena** | `/arena` | 3v3 Duel system |
 
 ---
 
-## Core Features
+## ⊕ Core Features
 
-- **SovereignPulse** — Real-time terminal powered by Helius webhooks + SSE (<200ms updates)
-- **$CARDS** — Token-2022 with Interest-Bearing + Transfer Hooks (big moves auto-trigger duels & circuit events)
-- **Collector Arena** — Duel, stake, and fractionalize tokenized collectibles (Pokémon, One Piece, etc.)
-- **Circuit Defense** — Autonomous risk engine with verifiable on-chain actions
-- **Operated Vaults** — Music IP, Real Estate, Luxury Assets, and Receivables
-- **Helius Integration** — On-chain events instantly reflected in the UI
-
----
-
-## Current Status (Live)
-
-- **$ABRA** live with liquidity and holders
-- SovereignPulse real-time terminal active
-- $CARDS Anchor program complete with Transfer Hooks
-- Helius + SSE pipeline fully functional
-- Multiple operating vaults + active Circuit Defense
+| Feature | Description |
+|---|---|
+| **Sold Tape** | Live scrolling ticker of settled RWA transactions |
+| **Card Flip Arena** | Click any card to reveal combat stats — front/back flip animation |
+| **Sophia Agents** | 4 agents with unique buffs: Hed (DEF), Reb (ATK), Yld ($ABRA), Cgd (Shield) |
+| **Battle Simulation** | Deploy agent + asset → 3-round combat → $ABRA rewards |
+| **USDC Borrow** | Vault Stocks (70% LTV) or Timepieces (65% LTV) → borrow USDC for Arena |
+| **Yield Strategist** | Circuit Engine auto-lends collateral → earns $ABX |
+| **Pink Slips Mode** | Loser forfeits RWA metadata. High stakes, real consequences |
+| **Agentic Metadata** | Every asset carries `power_level`, `liquidity_velocity`, `win_formula` |
 
 ---
 
-## Tech Stack
+## ◈ Asset Categories (44 total, $39.5M insured)
 
-- **Frontend**: Next.js 14 App Router, TypeScript, Tailwind CSS
-- **Blockchain**: Solana · Anchor 0.30 · Token-2022 (Transfer Hooks + Interest Bearing)
-- **Real-time**: Helius Webhooks + Server-Sent Events
-- **On-chain**: Custom $CARDS program with Vault PDAs, Duel records, and admin suite
-- **Auth**: Wallet-first (Solana primary)
+| Category | Count | Notes |
+|---|---|---|
+| Pokemon | 23 | PSA/BGS/CGC graded, vault-verified |
+| One Piece | 8 | Manga Alt Arts, Secret Rares |
+| Comics | 3 | Superman #1, Batman #1, Action Comics #1 |
+| Stocks | 3 | AAPL, TSLA, NVDA tokenized equities |
+| Timepieces | 2 | Rolex Daytona Paul Newman, Patek 5711 |
+| Metals | 2 | Gold $4,733.39/oz · Silver $72.91/oz (May 2026) |
+| Sports | 2 | Josh Allen, Shohei Ohtani |
+| Luxury | 1 | Dubai Plate K-121 |
 
 ---
 
-## Architecture
+## ⬡ Tech Stack
 
 ```
-Helius Webhook → /api/helius → SSE Broadcast
-                    ↓
-            useHeliusStream + ingestHeliusEvent()
-                    ↓
-          System State → CIRCUIT_TRIGGERED UI
+Frontend:   Next.js 14 App Router · TypeScript · Tailwind CSS · Framer Motion
+Blockchain: Solana · @solana/wallet-adapter · @solana/web3.js · Token-2022
+Data:       Helius RPC · DeFiLlama · Pyth Oracle
+On-chain:   Anchor 0.30 · $CARDS program · Transfer Hooks
+AI:         Sophia Agent swarm · Circuit Engine (6-signal risk model)
+Deploy:     Vercel Edge + Serverless
 ```
-
-Large $CARDS transfers automatically fire the Transfer Hook → `DuelResolvedEvent` → live vault reaction.
 
 ---
 
-## Quick Start
+## ◈ Quick Start
 
 ```bash
 git clone https://github.com/worldlabsprotocol-ux/abraxas-app
 cd abraxas-app
 npm install
-cp .env.local.example .env.local
+npm install framer-motion sonner lucide-react
 npm run dev
 ```
 
-Open → `http://localhost:3000`
+### Environment Variables
+
+```bash
+NEXT_PUBLIC_SOLANA_RPC_URL=   # Helius RPC recommended
+VAULT_AUTHORITY_SECRET=        # JSON keypair bytes for live minting
+ELEVENLABS_API_KEY=            # Voice alerts (optional)
+CRON_SECRET=                   # /api/agent/tick protection
+POKEMON_TCG_KEY=               # Unlimited Pokemon TCG API
+```
 
 ---
 
-## $CARDS Program (On-Chain Engine)
+## ⚔ Arena Gameplay
 
-The reactive core of Abraxas.
+**Card Flip Mechanic:** Click any card in the Terminal to flip it and reveal combat stats (ATK/DEF/SPD) and last sold price.
 
-Located in the separate `abraxas-program` folder.
+**Battle Loop:**
+1. Select a card from the Arena grid
+2. Choose your Sophia Agent (4 agents, each with unique buff)
+3. View your win probability: `(grade×0.4) + (log_price×0.4) + (circuit_buff×0.2)`
+4. Click **Deploy + Fight** — 3-round simulation plays out
+5. Win → earn $ABRA · Lose → study the replay
 
-**Key Capabilities:**
-- Transfer Hooks with auto risk detection
-- Interest-bearing mechanics
-- Per-duel + Vault PDAs
-- Full admin control suite
-
----
-
-## $ABRA
-
-The participation & utility token of the operating layer.
-
-**CA**: `5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS`
-
-[Trade on Bags](https://bags.fm/$WORLDLABSPROTOCOL-UX)
+**Pink Slips Mode:** Available in DuelButton — loser forfeits the RWA's on-chain metadata. One-click via `components/DuelButton.tsx`.
 
 ---
 
-## Direction
+## ◈ $CARDS Program (Anchor)
 
-One unified system.  
-Real assets, defended and operated autonomously in real time.
+```
+programs/cards/src/lib.rs   — 569 lines, Token-2022 + Transfer Hook
+Vault PDA:    ["vault", authority]
+DuelRecord:   ["duel", vault, duel_id]
+HookConfig:   ["hook_config", authority]
+```
 
-**Abraxas closes the loop.**
+Deploy:
+```bash
+anchor build && anchor deploy --provider.cluster devnet
+```
 
 ---
 
-*Built by World Labs Protocol*  
-[abraxas-app.vercel.app](https://abraxas-app.vercel.app/)
+## ✦ Roadmap
+
+### Shipped
+- [x] 44-asset inventory (Pokemon, One Piece, Comics, Metals, Stocks, Timepieces)
+- [x] 3v3 Arena duel engine with Sophia Agent buffs
+- [x] Circuit Engine (6-signal risk model, auto-updates)
+- [x] USDC Borrow against Stocks + Timepieces (LTV-gated)
+- [x] Yield Strategist (Kamino routing → $ABX)
+- [x] Token-2022 $CARDS program with Transfer Hook
+- [x] Helius webhook → SSE → real-time UI
+
+### Next (Q3 2026)
+- [ ] Mainnet $CARDS deployment
+- [ ] Jupiter swap integration (one-click liquidity)
+- [ ] Real-time Pyth price feeds for metals
+- [ ] Solana Seeker biometric duel approvals
+- [ ] PvP Arena (real wallet vs wallet)
+- [ ] $ABRA token launch + liquidity
+
+---
+
+## ★ Links
+
+| | |
+|---|---|
+| Live | [abraxas-app.vercel.app](https://abraxas-app.vercel.app) |
+| Twitter | [@pabloretroworld](https://twitter.com/pabloretroworld) |
+| Token CA | `5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS` |
+
+---
+
+*"Vault assets. Deploy agents. Win the Arena."*
+
+<sub>Built on Solana · Powered by Sophia · Defended by Circuit</sub>
 
 MIT License
-```
