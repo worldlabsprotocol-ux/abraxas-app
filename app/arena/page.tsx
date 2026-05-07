@@ -1,577 +1,677 @@
 // FILE: app/arena/page.tsx
-// Abraxas Collector Arena — Anchor-aligned interactive duel system.
-// State models derived from on-chain Vault + DuelRecord accounts.
-// Navigation never breaks: all async is guarded, all renders have fallbacks.
-// Image system: resolveImage() handles https/ipfs/ar/undefined.
+// Sovereign Duel Arena — 3v3 Axie Classic mechanics driven by data/cards.json.
+// Turn order: speed stat. Animations: CSS transforms (no framer-motion installed).
+// Grayscale reveal on hover: CSS filter transition.
+// No hardcoded asset data — all from /api/cards.
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  ArenaAsset, DuelBattle, DuelRecord, DuelResolvedEvent,
-  resolveImage, resolveDuelSimulated, SEED_ASSETS,
-} from "@/lib/arena/duelEngine";
+import Image from "next/image";
+import { resolveImage, resolveDuelSimulated } from "@/lib/arena/duelEngine";
 
-// ─── Inline SVG icons ─────────────────────────────────────────────────────────
-type SVGProps = { size?: number; color?: string; style?: React.CSSProperties };
-const I = (d: string) => ({ size = 16, color, style }: SVGProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-    stroke={color ?? "currentColor"} strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <path d={d} />
-  </svg>
-);
-const ShieldIcon = I("M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z");
-const SwordsIcon = ({ size = 16, style }: SVGProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
-    <line x1="13" y1="19" x2="19" y2="13"/>
-    <line x1="16" y1="16" x2="20" y2="20"/>
-    <line x1="19" y1="21" x2="21" y2="19"/>
-    <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/>
-    <line x1="5" y1="14" x2="9" y2="18"/>
-    <line x1="7" y1="11" x2="11" y2="15"/>
-  </svg>
-);
-const ZapIcon   = I("M13 2L3 14h9l-1 8 10-12h-9l1-8z");
-const TrendIcon = ({ size = 16, style }: SVGProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-    <polyline points="17 6 23 6 23 12"/>
-  </svg>
-);
+// ─── Types (derived from cards.json schema) ────────────────────────────────────
+interface CardAsset {
+  id:             string;
+  name:           string;
+  ticker:         string;
+  grade:          string;
+  gradingCo:      string;
+  vaultId:        string;
+  vaultLocation:  string;
+  insuranceUsd:   number;
+  priceUsd:       number;
+  change24h:      number;
+  category:       string;
+  rarity:         string;
+  imagePath:      string;
+  tokenId:        string;
+  atk:            number;
+  def:            number;
+  speed:          number;
+  circuitScore:   number;
+  defenseLevel:   "armed" | "alert" | "breached" | "inactive";
+  apy:            number;
+  staked:         boolean;
+  protected:      boolean;
+  history:        Array<{ t: number; v: number }>;
+}
 
-// ─── Vault state labels (matches Vault.state: 0=normal,1=circuit_triggered,2=paused)
-const VAULT_STATE_CONFIG = {
-  0: { label: "NORMAL",   color: "#3dd68c" },
-  1: { label: "TRIGGERED",color: "#f26b6b" },
-  2: { label: "PAUSED",   color: "#FBBF24" },
-} as const;
+// ─── Game state ────────────────────────────────────────────────────────────────
+interface Combatant {
+  card:   CardAsset;
+  hp:     number;
+  maxHp:  number;
+  energy: number;
+  shield: boolean;  // Circuit Defense shield active
+}
 
-// ─── Safe image component ──────────────────────────────────────────────────────
-function SafeImage({ src, alt, fallbackIcon, color, height = 160 }: {
-  src?: string; alt: string; fallbackIcon: string; color: string; height?: number;
-}) {
-  const resolved            = resolveImage(src);
-  const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+interface BattleState {
+  phase:        "select" | "battle" | "done";
+  playerTeam:   Combatant[];
+  agentTeam:    Combatant[];
+  turn:         "player" | "agent";
+  turnNumber:   number;
+  energy:       number;  // player energy pool
+  activeIdx:    number;  // which player card is active
+  log:          string[];
+  winner:       "player" | "agent" | null;
+}
 
-  // Reset when src changes
-  useEffect(() => { setFailed(false); setLoaded(false); }, [resolved]);
+// ─── Sophia agent team (seeded from full card list) ───────────────────────────
+function buildAgentTeam(cards: CardAsset[]): CardAsset[] {
+  const sorted = [...cards].sort((a, b) => (b.atk + b.def + b.speed) - (a.atk + a.def + a.speed));
+  return sorted.slice(0, 3);
+}
 
+function makeHp(card: CardAsset) {
+  // HP = 100 + def bonus — mirrors circuit defense weighting
+  return Math.round(100 + card.def * 0.5);
+}
+
+function makeCombatant(card: CardAsset): Combatant {
+  const maxHp = makeHp(card);
+  return { card, hp: maxHp, maxHp, energy: 0, shield: card.protected };
+}
+
+// ─── Turn order — sorted by speed stat (Axie Classic mechanic) ────────────────
+function sortBySpeed(a: Combatant, b: Combatant): number {
+  return b.card.speed - a.card.speed;
+}
+
+// ─── Damage formula — atk vs opponent def + circuit bonus ────────────────────
+function calcDamage(attacker: Combatant, defender: Combatant, isSpecial = false): number {
+  const atkMult  = isSpecial ? 1.5 : 1.0;
+  const shieldMod = defender.shield ? 0.6 : 1.0;  // Circuit shield absorbs 40%
+  const raw = Math.round(attacker.card.atk * atkMult * shieldMod * (1 - defender.card.def / 300));
+  return Math.max(5, raw);
+}
+
+// ─── Battle log generator ─────────────────────────────────────────────────────
+function battleLine(attacker: string, defender: string, dmg: number, shielded: boolean): string {
+  const ts = new Date().toISOString().slice(11, 19);
+  if (shielded) return `[${ts}] [CIRCUIT] ${attacker} attacks ${defender} — Shield absorbs 40% → ${dmg} dmg`;
+  return `[${ts}] [BATTLE]  ${attacker} strikes ${defender} for ${dmg} dmg`;
+}
+
+// ─── SVG icons ────────────────────────────────────────────────────────────────
+function ShieldIcon({ size = 14, color = "#3dd68c" }: { size?: number; color?: string }) {
   return (
-    <div style={{
-      height, width: "100%", position: "relative", overflow: "hidden",
-      background: `linear-gradient(135deg, ${color}22, ${color}08)`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      {!failed && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={resolved}
-          alt={alt}
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
-          style={{
-            width: "100%", height: "100%", objectFit: "cover",
-            opacity: loaded ? 1 : 0, transition: "opacity 0.3s",
-            position: "absolute", inset: 0,
-          }}
-        />
-      )}
-      {/* Fallback icon — always rendered underneath, visible when image fails or loading */}
-      <span style={{
-        fontSize: "3rem",
-        filter: `drop-shadow(0 0 12px ${color}88)`,
-        opacity: (failed || !loaded) ? 1 : 0,
-        transition: "opacity 0.3s",
-        position: "absolute",
-        zIndex: 0,
-      }}>
-        {fallbackIcon}
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <path d="M8 1L2 4v4c0 3.5 2.5 6.5 6 7.5C11.5 14.5 14 11.5 14 8V4L8 1Z"
+        fill={`${color}22`} stroke={color} strokeWidth="1.2"/>
+      <path d="M5.5 8l2 2 3-3" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+function SwordsIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="#FF6B35" strokeWidth="1.2" strokeLinecap="round">
+      <path d="M9.5 11.5L2 4V2H4l7.5 7.5"/><path d="M6.5 4.5L11 9"/><path d="M11 11l2 2"/><path d="M4 10l2 2"/><path d="M10 4l2-2"/>
+    </svg>
+  );
+}
+function ZapIcon({ size = 12, color = "#FBBF24" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <path d="M9 1L3 9h5l-1 6 7-9h-5l1-5Z" fill={color} stroke={color} strokeWidth="0.5"/>
+    </svg>
+  );
+}
+function SpecialIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="6.5" stroke="#a855f7" strokeWidth="1.2"/>
+      <path d="M8 3v5l3 2" stroke="#a855f7" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ─── Stat bar ─────────────────────────────────────────────────────────────────
+function StatBar({ label, value, max = 100, color }: { label: string; value: number; max?: number; color: string }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.46rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>
+        <span>{label}</span>
+        <span style={{ color, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{value}</span>
+      </div>
+      <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "2px", height: "3px" }}>
+        <div style={{ width: `${(value / max) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${color}88, ${color})`, borderRadius: "2px" }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── HP bar ───────────────────────────────────────────────────────────────────
+function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
+  const pct   = (hp / maxHp) * 100;
+  const color = pct > 50 ? "#3dd68c" : pct > 25 ? "#FBBF24" : "#f26b6b";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+      <div style={{ flex: 1, background: "rgba(255,255,255,0.06)", borderRadius: "2px", height: "4px" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: "2px", transition: "width 0.4s ease" }} />
+      </div>
+      <span style={{ fontSize: "0.5rem", color, fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono',monospace", minWidth: "40px", textAlign: "right" }}>
+        {hp}/{maxHp}
       </span>
     </div>
   );
 }
 
-// ─── Stat bar ─────────────────────────────────────────────────────────────────
-function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.5rem", color: "rgba(255,255,255,0.35)", marginBottom: "2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-        <span>{label}</span><span style={{ color, fontWeight: 700 }}>{value}</span>
-      </div>
-      <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "2px", height: "3px" }}>
-        <div style={{ width: `${value}%`, height: "100%", background: `linear-gradient(90deg, ${color}88, ${color})`, borderRadius: "2px", transition: "width 0.5s" }} />
-      </div>
-    </div>
-  );
+// ─── Card component — grayscale reveal + CSS card flip ─────────────────────────
+interface ArenaCardProps {
+  combatant:    Combatant;
+  isActive?:    boolean;
+  isDefeated?:  boolean;
+  isFlipping?:  boolean;
+  onClick?:     () => void;
+  side:         "player" | "agent";
+  selectable?:  boolean;
+  selected?:    boolean;
 }
 
-// ─── Arena asset card ─────────────────────────────────────────────────────────
-interface AssetCardProps {
-  asset:     ArenaAsset;
-  mode:      "gallery" | "duel" | "stake";
-  selected:  boolean;
-  onSelect:  (id: string) => void;
-  onStake?:  (id: string) => void;
-}
-
-function AssetCard({ asset, mode, selected, onSelect, onStake }: AssetCardProps) {
-  const vc     = VAULT_STATE_CONFIG[asset.vaultState] ?? VAULT_STATE_CONFIG[0];
-  const riskC  = asset.riskLevel > 180 ? "#f26b6b" : asset.riskLevel > 90 ? "#FBBF24" : "#3dd68c";
+function ArenaCard({ combatant, isActive, isDefeated, isFlipping, onClick, side, selectable, selected }: ArenaCardProps) {
+  const { card } = combatant;
+  const dc  = card.defenseLevel === "armed" ? "#3dd68c" : card.defenseLevel === "alert" ? "#FBBF24" : "#f26b6b";
 
   return (
     <div
-      onClick={() => onSelect(asset.id)}
+      onClick={selectable ? onClick : undefined}
       style={{
-        background: selected
-          ? `linear-gradient(135deg, ${asset.color}20, ${asset.color}08)`
-          : "rgba(10,12,22,0.95)",
-        border: `1px solid ${selected ? asset.color + "80" : asset.color + "25"}`,
-        borderRadius: "14px",
-        overflow: "hidden",
-        cursor: "pointer",
-        boxShadow: selected ? `0 0 24px ${asset.color}22` : "none",
-        transform: selected ? "translateY(-2px)" : "translateY(0)",
-        transition: "all 0.2s ease",
-        position: "relative",
+        position:    "relative",
+        borderRadius:"12px",
+        overflow:    "hidden",
+        border:      `1px solid ${selected ? "#D4AF37" : isActive ? "#6b8cff55" : "rgba(255,255,255,0.08)"}`,
+        background:  "rgba(6,8,16,0.97)",
+        cursor:      selectable ? "pointer" : "default",
+        opacity:     isDefeated ? 0.35 : 1,
+        boxShadow:   selected ? "0 0 20px rgba(212,175,55,0.3)" : isActive ? "0 0 16px rgba(107,140,255,0.2)" : "none",
+        transition:  "all 0.25s ease",
+        // CSS 3D card flip when attacking
+        transform:   isFlipping ? "rotateY(180deg)" : "rotateY(0deg)",
+        transformStyle: "preserve-3d",
       }}
     >
-      {/* Selected overlay */}
-      {selected && mode === "duel" && (
+      {/* Authenticated badge — pulses in sovereign gold */}
+      {card.protected && (
         <div style={{
-          position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none",
-          background: `${asset.color}08`,
-          boxShadow: `inset 0 0 20px ${asset.color}22`,
-        }} />
+          position: "absolute", top: "0.4rem", right: "0.4rem", zIndex: 5,
+          display: "flex", alignItems: "center", gap: "0.2rem",
+          padding: "0.1rem 0.35rem", borderRadius: "3px",
+          background: "rgba(212,175,55,0.15)", border: "1px solid rgba(212,175,55,0.4)",
+        }}>
+          <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#D4AF37", animation: "pulse 2s ease-in-out infinite" }} />
+          <span style={{ fontSize: "0.42rem", fontWeight: 700, color: "#D4AF37", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace" }}>
+            AUTH
+          </span>
+        </div>
       )}
 
-      <SafeImage src={asset.image} alt={asset.name} fallbackIcon={asset.icon} color={asset.color} height={130} />
-
-      {/* State badges */}
-      <div style={{ position: "absolute", top: "0.5rem", left: "0.5rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-        <span style={{ fontSize: "0.46rem", fontWeight: 700, padding: "0.1rem 0.35rem", borderRadius: "3px", background: "rgba(0,0,0,0.72)", color: asset.color, letterSpacing: "0.06em" }}>
-          {asset.rarity.toUpperCase().slice(0, 10)}
-        </span>
-        <span style={{ fontSize: "0.44rem", fontWeight: 700, padding: "0.08rem 0.3rem", borderRadius: "3px", background: "rgba(0,0,0,0.72)", color: vc.color, letterSpacing: "0.04em" }}>
-          {vc.label}
-        </span>
-      </div>
-      <div style={{ position: "absolute", top: "0.5rem", right: "0.5rem" }}>
-        <span style={{ fontSize: "0.48rem", fontWeight: 700, padding: "0.1rem 0.35rem", borderRadius: "3px", background: "rgba(0,0,0,0.72)", color: "#FBBF24" }}>
-          {asset.grade}
-        </span>
-      </div>
-
-      {/* Defense/staked status */}
-      <div style={{ position: "absolute", bottom: "0.5rem", left: "0.5rem", display: "flex", gap: "0.25rem" }}>
-        {asset.protected && (
-          <span style={{ fontSize: "0.44rem", padding: "0.08rem 0.3rem", borderRadius: "3px", background: "rgba(61,214,140,0.2)", color: "#3dd68c", border: "1px solid rgba(61,214,140,0.3)" }}>
-            ARMED
-          </span>
+      {/* Card image — grayscale reveal on hover */}
+      <div style={{ position: "relative", height: 110 }} className="arena-card-img">
+        <Image
+          src={card.imagePath}
+          alt={card.name}
+          fill
+          sizes="180px"
+          style={{ objectFit: "cover" }}
+          onError={() => {}}
+          unoptimized
+        />
+        {/* Overlay for depth */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 50%, rgba(6,8,16,0.85) 100%)" }} />
+        {/* Circuit shield overlay */}
+        {combatant.shield && (
+          <div style={{ position: "absolute", inset: 0, background: `${dc}08`, boxShadow: `inset 0 0 12px ${dc}22` }} />
         )}
-        {asset.staked && (
-          <span style={{ fontSize: "0.44rem", padding: "0.08rem 0.3rem", borderRadius: "3px", background: "rgba(107,140,255,0.2)", color: "#6b8cff", border: "1px solid rgba(107,140,255,0.3)" }}>
-            STAKED
-          </span>
-        )}
+        {/* ATK reveal on flip back face */}
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(6,8,16,0.95)", backfaceVisibility: "hidden",
+          transform: "rotateY(180deg)",
+          fontSize: "1.2rem", fontWeight: 900, color: "#FF6B35", fontFamily: "'JetBrains Mono',monospace",
+        }}>
+          ATK {card.atk}
+        </div>
       </div>
 
       {/* Info */}
-      <div style={{ padding: "0.625rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.375rem" }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: "0.78rem", lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#f0f0f0" }}>{asset.name}</div>
-            <div style={{ fontSize: "0.54rem", color: "rgba(255,255,255,0.35)", marginTop: "1px" }}>{asset.series}</div>
-          </div>
-          <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "0.4rem" }}>
-            <div style={{ fontWeight: 800, fontSize: "0.85rem", color: "#fff" }}>{asset.priceSol.toFixed(0)}</div>
-            <div style={{ fontSize: "0.46rem", color: "rgba(255,255,255,0.3)" }}>SOL</div>
-          </div>
+      <div style={{ padding: "0.5rem 0.5rem 0.4rem" }}>
+        <div style={{ fontWeight: 700, fontSize: "0.68rem", color: "#f0f0f0", lineHeight: 1.2, marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {card.name}
+        </div>
+        <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", fontFamily: "'JetBrains Mono',monospace", marginBottom: "0.375rem", letterSpacing: "0.04em" }}>
+          {card.grade} · {card.vaultLocation}
         </div>
 
-        {/* Risk level bar — maps to Vault.risk_level (0-255) */}
-        <div style={{ marginBottom: "0.4rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", marginBottom: "2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            <span>Risk Level</span>
-            <span style={{ color: riskC, fontWeight: 700 }}>{asset.riskLevel}/255</span>
-          </div>
-          <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "2px", height: "3px" }}>
-            <div style={{ width: `${(asset.riskLevel / 255) * 100}%`, height: "100%", background: riskC, borderRadius: "2px", transition: "width 0.5s" }} />
-          </div>
+        {/* HP */}
+        <div style={{ marginBottom: "0.375rem" }}>
+          <HpBar hp={combatant.hp} maxHp={combatant.maxHp} />
         </div>
 
-        {/* Duel stats */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.18rem", marginBottom: "0.5rem" }}>
-          <StatBar label="PWR" value={asset.power}   color={asset.color} />
-          <StatBar label="DEF" value={asset.defense} color="#3dd68c" />
-          <StatBar label="SPD" value={asset.speed}   color="#6b8cff" />
+        {/* Stats */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem", marginBottom: "0.375rem" }}>
+          <StatBar label="ATK"   value={card.atk}   color="#FF6B35" />
+          <StatBar label="DEF"   value={card.def}   color="#3dd68c" />
+          <StatBar label="SPD"   value={card.speed} color="#6b8cff" />
         </div>
 
-        {/* Mode-specific action */}
-        {mode === "duel" && (
-          <div style={{ fontSize: "0.6rem", fontWeight: 700, textAlign: "center", padding: "0.25rem", borderRadius: "5px", background: selected ? `${asset.color}18` : "transparent", color: selected ? asset.color : "rgba(255,255,255,0.3)", border: `1px solid ${selected ? asset.color + "40" : "transparent"}`, transition: "all 0.2s" }}>
-            {selected ? "✓ Selected" : "Click to Select"}
+        {/* Insurance value */}
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.48rem", fontFamily: "'JetBrains Mono',monospace" }}>
+          <span style={{ color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Insured</span>
+          <span style={{ color: "#D4AF37", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+            ${card.insuranceUsd.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+
+        {/* Shield status */}
+        {combatant.shield && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", marginTop: "0.25rem" }}>
+            <ShieldIcon size={10} color={dc} />
+            <span style={{ fontSize: "0.44rem", color: dc, fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.06em" }}>
+              CIRCUIT DEFENSE
+            </span>
           </div>
-        )}
-        {mode === "stake" && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onStake?.(asset.id); }}
-            style={{ width: "100%", padding: "0.3rem", borderRadius: "6px", fontSize: "0.6rem", fontWeight: 700, background: asset.staked ? "rgba(242,107,107,0.12)" : "rgba(61,214,140,0.1)", border: `1px solid ${asset.staked ? "rgba(242,107,107,0.3)" : "rgba(61,214,140,0.25)"}`, color: asset.staked ? "#f26b6b" : "#3dd68c", cursor: "pointer" }}>
-            {asset.staked ? "Unstake" : "Stake"}
-          </button>
         )}
       </div>
+
+      {/* Selection ring */}
+      {selected && (
+        <div style={{ position: "absolute", inset: 0, border: "2px solid #D4AF37", borderRadius: "12px", pointerEvents: "none", boxShadow: "0 0 20px rgba(212,175,55,0.4)" }} />
+      )}
     </div>
   );
 }
 
-// ─── Duel panel ───────────────────────────────────────────────────────────────
-function DuelPanel({ battle, onClear }: { battle: DuelBattle; onClear: () => void }) {
-  const { assetA, assetB, event, log } = battle;
-  const winner = event?.winner && event.winner !== "draw"
-    ? (event.winner === assetA?.id ? assetA : assetB)
-    : null;
-  const draw   = event?.winner === "draw";
-
-  const RISK_SIGNAL_LABELS = { 0:"LOW", 1:"MEDIUM", 2:"HIGH", 3:"CRITICAL" };
-  const RISK_SIGNAL_COLORS = { 0:"#3dd68c", 1:"#FBBF24", 2:"#fb923c", 3:"#f26b6b" };
-
+// ─── Energy display ───────────────────────────────────────────────────────────
+function EnergyBar({ current, max = 10 }: { current: number; max?: number }) {
   return (
-    <div style={{ background: "rgba(10,12,22,0.97)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: "16px", padding: "1.25rem", marginBottom: "1rem" }}>
-      {/* Matchup header */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "0.75rem", alignItems: "center", marginBottom: "1rem" }}>
-        {[assetA, assetB].map((asset, i) => (
-          <div key={i} style={{ textAlign: i === 0 ? "left" : "right" }}>
-            {asset ? (
-              <>
-                <SafeImage src={asset.image} alt={asset.name} fallbackIcon={asset.icon} color={asset.color} height={80} />
-                <div style={{ fontWeight: 700, fontSize: "0.8rem", marginTop: "0.3rem", color: event ? (winner?.id === asset.id ? "#3dd68c" : draw ? "#FBBF24" : "#f26b6b") : "#f0f0f0" }}>
-                  {asset.name}
-                </div>
-                <div style={{ fontSize: "0.54rem", color: "rgba(255,255,255,0.35)" }}>{asset.grade}</div>
-                {event && (
-                  <div style={{ fontSize: "0.6rem", fontWeight: 700, color: winner?.id === asset.id ? "#3dd68c" : draw ? "#FBBF24" : "#f26b6b", marginTop: "0.2rem" }}>
-                    {winner?.id === asset.id ? "VICTORY" : draw ? "DRAW" : "DEFEATED"}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ height: 80, display: "flex", alignItems: "center", justifyContent: i === 0 ? "flex-start" : "flex-end" }}>
-                <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>Select card</div>
-              </div>
-            )}
-          </div>
-        ))}
-        <div style={{ textAlign: "center" }}>
-          <SwordsIcon size={28} style={{ color: "rgba(255,107,53,0.6)" }} />
-        </div>
-      </div>
-
-      {/* Event data — maps to DuelResolvedEvent fields */}
-      {event && (
-        <div style={{ marginBottom: "0.75rem", padding: "0.625rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
-            <div>
-              <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Risk Signal</div>
-              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: RISK_SIGNAL_COLORS[event.riskSignal] }}>
-                {RISK_SIGNAL_LABELS[event.riskSignal]}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Vault State</div>
-              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: VAULT_STATE_CONFIG[event.newVaultState]?.color ?? "#fff" }}>
-                {VAULT_STATE_CONFIG[event.newVaultState]?.label ?? "UNKNOWN"}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>$ABRA Burn</div>
-              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#f26b6b" }}>0.5</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Agent reasoning log */}
-      {log.length > 0 && (
-        <div style={{ background: "rgba(2,3,10,0.97)", border: "1px solid rgba(107,140,255,0.15)", borderRadius: "8px", padding: "0.625rem", maxHeight: "160px", overflowY: "auto", fontFamily: "'JetBrains Mono',monospace", marginBottom: "0.75rem" }}>
-          {log.map((line, i) => (
-            <p key={i} style={{ margin: "0 0 0.2rem", fontSize: "0.58rem", lineHeight: 1.5, color: i === 0 ? "#60A5FA" : `rgba(96,165,250,${Math.max(0.2, 0.85 - i * 0.05)})` }}>
-              {line}
-            </p>
-          ))}
-        </div>
-      )}
-
-      <button onClick={onClear} style={{ width: "100%", padding: "0.5rem", borderRadius: "8px", fontSize: "0.72rem", fontWeight: 700, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", cursor: "pointer" }}>
-        New Duel
-      </button>
+    <div style={{ display: "flex", gap: "0.2rem", alignItems: "center" }}>
+      {Array.from({ length: max }).map((_, i) => (
+        <div key={i} style={{
+          width: "8px", height: "12px", borderRadius: "2px",
+          background: i < current ? "#FBBF24" : "rgba(255,255,255,0.08)",
+          boxShadow: i < current ? "0 0 4px rgba(251,191,36,0.5)" : "none",
+          transition: "all 0.2s",
+        }} />
+      ))}
+      <span style={{ fontSize: "0.52rem", color: "#FBBF24", fontFamily: "'JetBrains Mono',monospace", marginLeft: "0.3rem", fontVariantNumeric: "tabular-nums" }}>
+        {current}/{max}
+      </span>
     </div>
   );
 }
 
-// ─── Main Arena page ──────────────────────────────────────────────────────────
-type Mode = "gallery" | "duel" | "stake";
-
+// ─── Main Arena page ───────────────────────────────────────────────────────────
 export default function ArenaPage() {
-  // ── Core state — never undefined, always initialised ──────────────────────
-  const [assets,    setAssets]    = useState<ArenaAsset[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
-  const [mode,      setMode]      = useState<Mode>("gallery");
-  const [filter,    setFilter]    = useState<ArenaAsset["category"] | "all">("all");
-  const [selected,  setSelected]  = useState<Set<string>>(new Set());
-  const [abraBurned, setAbraBurned] = useState(0);
-  const [battle, setBattle] = useState<DuelBattle>({
-    record: null, assetA: null, assetB: null,
-    status: "idle", event: null, log: [],
-  });
+  const [allCards, setAllCards]   = useState<CardAsset[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
 
-  // Load assets safely — never throws, always sets loading=false
+  // Card selection (pre-battle)
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Battle state
+  const [battle, setBattle] = useState<BattleState | null>(null);
+
+  // Animation state per card id
+  const [flipping, setFlipping] = useState<Record<string, boolean>>({});
+
+  const logRef = useRef<HTMLDivElement>(null);
+
+  // Fetch from /api/cards — single source of truth
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
+    (async () => {
       try {
-        // In production: fetch from /api/duel (DuelRecord PDAs) + NFT metadata
-        // For now: use seed data derived from on-chain structure
-        await new Promise(r => setTimeout(r, 300)); // simulate fetch latency
-        if (!cancelled) {
-          setAssets(SEED_ASSETS);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load assets");
-          setAssets(SEED_ASSETS); // always show something
-          setLoading(false);
-        }
+        const res  = await fetch("/api/cards");
+        const data = await res.json();
+        if (!cancelled && data.ok) setAllCards(data.assets);
+      } catch (e) {
+        if (!cancelled) setError("Oracle unavailable — check /api/cards");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    };
-    load();
+    })();
     return () => { cancelled = true; };
   }, []);
 
-  // ── Selection logic ───────────────────────────────────────────────────────
-  const handleSelect = useCallback((id: string) => {
-    if (mode !== "duel") return;
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else if (next.size < 2) {
-        next.add(id);
-      } else {
-        // Replace the first selected with new selection
-        const [first] = Array.from(next);
-        next.delete(first);
-        next.add(id);
-      }
-      return next;
-    });
-    setBattle(prev => ({ ...prev, status: "idle", event: null, log: [] }));
-  }, [mode]);
+  // Scroll log to bottom on update
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [battle?.log]);
 
-  // ── Start duel ────────────────────────────────────────────────────────────
-  const startDuel = useCallback(() => {
-    const sel = assets.filter(a => selected.has(a.id));
-    if (sel.length !== 2) return;
-    // Check vault state — mirrors Anchor require!(!vault.is_paused, CardsError::VaultPaused)
-    if (sel.some(a => a.vaultState === 2)) {
-      setBattle(prev => ({
-        ...prev,
-        status: "idle",
-        log: ["[ERROR] Duel blocked — vault is paused (VaultState=2). Anchor: CardsError::VaultPaused"],
-      }));
-      return;
-    }
+  // ── Selection phase ────────────────────────────────────────────────────────
+  const toggleSelect = useCallback((id: string) => {
+    if (battle) return;
+    setSelectedIds(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (prev.length >= 3)  return prev;
+      return [...prev, id];
+    });
+  }, [battle]);
+
+  // ── Start battle ──────────────────────────────────────────────────────────
+  const startBattle = useCallback(() => {
+    if (selectedIds.length !== 3 || allCards.length < 3) return;
+    const playerCards = selectedIds.map(id => allCards.find(c => c.id === id)!);
+    const remaining   = allCards.filter(c => !selectedIds.includes(c.id));
+    const agentCards  = buildAgentTeam(remaining);
+
+    const playerTeam = playerCards.map(makeCombatant);
+    const agentTeam  = agentCards.map(makeCombatant);
+
+    // Turn order determined by speed (Axie Classic)
+    const playerFirst = playerTeam.some(p =>
+      agentTeam.every(a => p.card.speed >= a.card.speed)
+    );
+
     setBattle({
-      record: null, assetA: sel[0], assetB: sel[1],
-      status: "ready", event: null, log: [
-        `[READY] ${sel[0].name} vs ${sel[1].name}`,
-        `[CHECK] Vault states: ${sel[0].vaultState} / ${sel[1].vaultState} — OK`,
-        "[READY] Click Resolve to execute duel on-chain",
+      phase:      "battle",
+      playerTeam, agentTeam,
+      turn:       playerFirst ? "player" : "agent",
+      turnNumber: 1,
+      energy:     3, // start with 3
+      activeIdx:  0,
+      log:        [
+        `[ARENA] Duel initiated. Turn order: speed-based.`,
+        `[ARENA] ${playerFirst ? "Your squad" : "Sophia Agent"} moves first.`,
+        `[SOPHIA] ${agentCards.map(c => c.name).join(" · ")} — defending sovereignty.`,
       ],
+      winner: null,
     });
-  }, [assets, selected]);
+  }, [selectedIds, allCards]);
 
-  // ── Resolve duel — calls Anchor-aligned simulation ────────────────────────
-  const resolveDuel = useCallback(async () => {
-    if (!battle.assetA || !battle.assetB || battle.status !== "ready") return;
-    setBattle(prev => ({ ...prev, status: "resolving" }));
+  // ── Player action ─────────────────────────────────────────────────────────
+  const playerAttack = useCallback(async (isSpecial = false) => {
+    if (!battle || battle.turn !== "player" || battle.winner) return;
+    if (isSpecial && battle.energy < 3) return;
 
-    await new Promise(r => setTimeout(r, 800)); // simulate on-chain latency
+    const attacker = battle.playerTeam[battle.activeIdx];
+    const defender = battle.agentTeam.find(c => c.hp > 0);
+    if (!defender) return;
 
-    const result = resolveDuelSimulated(battle.assetA!, battle.assetB!);
-    setAbraBurned(prev => prev + 0.5);
+    const dmg = calcDamage(attacker, defender, isSpecial);
+    const shielded = defender.shield;
 
-    // Update asset vault states based on DuelResolvedEvent.newVaultState
-    // In production: refetch Vault PDA after tx confirmation
-    if (result.event.newVaultState === 1) {
-      setAssets(prev => prev.map(a =>
-        selected.has(a.id) ? { ...a, vaultState: 1 as const, protected: false } : a
-      ));
+    // Flip animation
+    setFlipping(f => ({ ...f, [attacker.card.id]: true }));
+    await new Promise(r => setTimeout(r, 600));
+    setFlipping(f => ({ ...f, [attacker.card.id]: false }));
+
+    setBattle(prev => {
+      if (!prev) return prev;
+      const newAgent = prev.agentTeam.map(c => {
+        if (c !== defender) return c;
+        const newHp    = Math.max(0, c.hp - dmg);
+        const shield   = newHp > 0 ? c.shield : false;
+        return { ...c, hp: newHp, shield };
+      });
+
+      const energyCost = isSpecial ? 3 : 1;
+      const newLog = [
+        ...prev.log,
+        battleLine(attacker.card.name, defender.card.name, dmg, shielded),
+        ...(isSpecial ? [`[SPECIAL] Circuit Sovereign move — ${attacker.card.name} expends ${energyCost} energy`] : []),
+        ...(defender.hp - dmg <= 0 ? [`[DEFEATED] ${defender.card.name} eliminated`] : []),
+      ];
+
+      const allDefeated = newAgent.every(c => c.hp <= 0);
+      return {
+        ...prev,
+        agentTeam:  newAgent,
+        energy:     Math.max(0, prev.energy - energyCost),
+        turn:       "agent",
+        log:        newLog,
+        winner:     allDefeated ? "player" : null,
+        phase:      allDefeated ? "done" : "battle",
+      };
+    });
+
+    // Agent counter-attack after delay
+    if (!battle.agentTeam.every(c => c.hp <= 0)) {
+      setTimeout(() => agentTurn(), 1200);
     }
+  }, [battle]);
 
-    setBattle(prev => ({
-      ...prev,
-      record:  result.record,
-      event:   result.event,
-      status:  "resolved",
-      log:     result.log,
-    }));
-  }, [battle, selected]);
+  // ── Agent turn (AI) ────────────────────────────────────────────────────────
+  const agentTurn = useCallback(() => {
+    setBattle(prev => {
+      if (!prev || prev.winner) return prev;
+      const attacker = prev.agentTeam.find(c => c.hp > 0);
+      const defender = prev.playerTeam.find(c => c.hp > 0);
+      if (!attacker || !defender) return prev;
 
-  // ── Stake toggle ──────────────────────────────────────────────────────────
-  const handleStake = useCallback((id: string) => {
-    setAssets(prev => prev.map(a =>
-      a.id === id ? { ...a, staked: !a.staked } : a
-    ));
-    setAbraBurned(prev => prev + 0.1);
+      const dmg = calcDamage(attacker, defender);
+      const shielded = defender.shield;
+      const newPlayer = prev.playerTeam.map(c => {
+        if (c !== defender) return c;
+        const newHp = Math.max(0, c.hp - dmg);
+        return { ...c, hp: newHp, shield: newHp > 0 ? c.shield : false };
+      });
+
+      const allDefeated = newPlayer.every(c => c.hp <= 0);
+      const newEnergy = Math.min(10, prev.energy + 2); // +2 energy per turn
+      const newLog = [
+        ...prev.log,
+        `[SOPHIA]  ${attacker.card.name} → ${defender.card.name}: ${dmg} dmg${shielded ? " (shielded -40%)" : ""}`,
+        ...(defender.hp - dmg <= 0 ? [`[DEFEATED] ${defender.card.name} eliminated`] : []),
+      ];
+
+      return {
+        ...prev,
+        playerTeam: newPlayer,
+        energy:     newEnergy,
+        turn:       "player",
+        turnNumber: prev.turnNumber + 1,
+        log:        newLog,
+        winner:     allDefeated ? "agent" : null,
+        phase:      allDefeated ? "done" : "battle",
+      };
+    });
   }, []);
 
-  // ── Clear battle ──────────────────────────────────────────────────────────
-  const clearBattle = useCallback(() => {
-    setSelected(new Set());
-    setBattle({ record: null, assetA: null, assetB: null, status: "idle", event: null, log: [] });
+  const resetArena = useCallback(() => {
+    setBattle(null);
+    setSelectedIds([]);
+    setFlipping({});
   }, []);
 
-  // ── Derived values ─────────────────────────────────────────────────────────
-  const filtered     = assets.filter(a => filter === "all" || a.category === filter);
-  const selArray     = assets.filter(a => selected.has(a.id));
-  const canStartDuel = mode === "duel" && selected.size === 2 && battle.status === "idle";
-  const canResolve   = battle.status === "ready";
-
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Render ────────────────────────────────────────────────────────────────
   if (loading) return (
-    <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: "0.75rem" }}>
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} style={{ borderRadius: "14px", overflow: "hidden", background: "rgba(10,12,22,0.95)", border: "1px solid rgba(255,255,255,0.06)", height: 340, animation: "pulse 1.5s ease-in-out infinite" }}>
-            <div style={{ height: 130, background: "rgba(255,255,255,0.04)" }} />
-            <div style={{ padding: "0.625rem" }}>
-              <div style={{ height: "0.8rem", background: "rgba(255,255,255,0.06)", borderRadius: "4px", marginBottom: "0.4rem" }} />
-              <div style={{ height: "0.6rem", background: "rgba(255,255,255,0.04)", borderRadius: "4px", width: "60%" }} />
-            </div>
-          </div>
+    <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1.25rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "0.75rem" }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} style={{ height: 320, background: "rgba(6,8,16,0.97)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "12px", animation: "pulse 1.5s ease-in-out infinite" }} />
         ))}
       </div>
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
     </div>
   );
 
-  return (
-    <div style={{ maxWidth: "960px", margin: "0 auto", padding: "1.5rem 1.25rem 3rem" }}>
+  const inBattle = !!battle && battle.phase !== "select";
 
-      {/* Error banner — non-blocking */}
+  return (
+    <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "1.5rem 1.25rem 3rem" }}>
+
+      {/* Error banner */}
       {error && (
-        <div style={{ padding: "0.625rem 1rem", background: "rgba(242,107,107,0.08)", border: "1px solid rgba(242,107,107,0.2)", borderRadius: "8px", marginBottom: "1rem", fontSize: "0.7rem", color: "#f26b6b" }}>
-          ⚠ {error} — showing cached data
+        <div style={{ padding: "0.625rem 1rem", background: "rgba(242,107,107,0.08)", border: "1px solid rgba(242,107,107,0.2)", borderRadius: "8px", marginBottom: "1rem", fontSize: "0.65rem", color: "#f26b6b", fontFamily: "'JetBrains Mono',monospace" }}>
+          [ORACLE ERROR] {error}
         </div>
       )}
+
+      {/* Grayscale reveal global style */}
+      <style>{`
+        .arena-card-img img { filter: grayscale(1); transition: filter 0.4s ease; }
+        .arena-card-img:hover img { filter: grayscale(0); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+      `}</style>
 
       {/* Header */}
       <div style={{ marginBottom: "1.25rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
-          <div>
-            <p style={{ fontSize: "0.56rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: "0.2rem" }}>
-              Collector Crypt · $CARDS Program
-            </p>
-            <h1 style={{ fontWeight: 800, fontSize: "clamp(1.4rem,3.5vw,1.9rem)", letterSpacing: "-0.02em", margin: 0 }}>
-              Collector Arena
-            </h1>
-          </div>
-          <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap", alignItems: "flex-end" }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--gold,#C8A96E)" }}>
-                {assets.reduce((s, a) => s + a.priceSol, 0).toFixed(0)} SOL
-              </div>
-              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Portfolio</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#3dd68c" }}>
-                {assets.filter(a => a.staked).length}
-              </div>
-              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Staked</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#f26b6b", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                <ZapIcon size={14} style={{ color: "#f26b6b" }} />{abraBurned.toFixed(1)}
-              </div>
-              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>$ABRA Burned</div>
-            </div>
+        <p style={{ fontSize: "0.54rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: "0.2rem", fontFamily: "'JetBrains Mono',monospace" }}>
+          Collector Crypt · $CARDS Program · Verified Inventory
+        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "0.75rem" }}>
+          <h1 style={{ fontWeight: 900, fontSize: "clamp(1.4rem,3.5vw,2rem)", letterSpacing: "-0.03em", margin: 0,
+            background: "linear-gradient(135deg, #D4AF37, #a855f7, #6b8cff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            Sovereign Duel Arena
+          </h1>
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem" }}>
+            {battle && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <ZapIcon />
+                  <span style={{ color: "rgba(255,255,255,0.5)" }}>Energy</span>
+                  <EnergyBar current={battle.energy} />
+                </div>
+                <div style={{ color: "rgba(255,255,255,0.3)" }}>Turn {battle.turnNumber}</div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Mode tabs */}
-      <div style={{ display: "flex", gap: "0.35rem", marginBottom: "1.1rem", flexWrap: "wrap", alignItems: "center" }}>
-        {(["gallery","duel","stake"] as Mode[]).map(m => (
-          <button key={m} onClick={() => { setMode(m); setSelected(new Set()); clearBattle(); }}
-            style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "0.4rem 0.875rem", borderRadius: "8px", border: `1px solid ${mode === m ? "rgba(107,140,255,0.4)" : "rgba(255,255,255,0.08)"}`, background: mode === m ? "rgba(107,140,255,0.12)" : "transparent", color: mode === m ? "#6b8cff" : "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontWeight: mode === m ? 700 : 400, cursor: "pointer", textTransform: "capitalize" }}>
-            {m === "gallery" && <ShieldIcon size={12} style={{ color: mode === m ? "#6b8cff" : undefined }} />}
-            {m === "duel"    && <SwordsIcon size={12} />}
-            {m === "stake"   && <TrendIcon  size={12} />}
-            {m}
-          </button>
-        ))}
-
-        {/* Category filter */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: "0.25rem" }}>
-          {(["all","pokemon","onepiece","luxury"] as const).map(cat => (
-            <button key={cat} onClick={() => setFilter(cat)}
-              style={{ padding: "0.3rem 0.5rem", borderRadius: "5px", border: `1px solid ${filter === cat ? "var(--gold,#C8A96E)" : "rgba(255,255,255,0.08)"}`, background: filter === cat ? "rgba(200,169,110,0.1)" : "transparent", color: filter === cat ? "#C8A96E" : "rgba(255,255,255,0.35)", fontSize: "0.6rem", fontWeight: filter === cat ? 700 : 400, cursor: "pointer" }}>
-              {cat === "all" ? "All" : cat === "pokemon" ? "Pokémon" : cat === "onepiece" ? "One Piece" : "Luxury"}
+      {/* ── Pre-battle: card selection ── */}
+      {!inBattle && (
+        <>
+          <div style={{ padding: "0.625rem 1rem", background: "rgba(107,140,255,0.06)", border: "1px solid rgba(107,140,255,0.15)", borderRadius: "8px", marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.55)", fontFamily: "'JetBrains Mono',monospace" }}>
+              {selectedIds.length === 0 && "[SELECT] Choose 3 cards for your squad"}
+              {selectedIds.length > 0 && selectedIds.length < 3 && `[SELECT] ${selectedIds.length}/3 selected — pick ${3 - selectedIds.length} more`}
+              {selectedIds.length === 3 && "[READY] Squad assembled — initiate duel"}
+            </div>
+            <button onClick={startBattle} disabled={selectedIds.length !== 3}
+              style={{
+                padding: "0.4rem 1.25rem", borderRadius: "7px", fontWeight: 700, fontSize: "0.72rem",
+                fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.04em",
+                background: selectedIds.length === 3 ? "linear-gradient(135deg, #D4AF37, #FF6B35)" : "rgba(255,255,255,0.06)",
+                border: "none", color: selectedIds.length === 3 ? "#000" : "rgba(255,255,255,0.25)",
+                cursor: selectedIds.length === 3 ? "pointer" : "not-allowed",
+                boxShadow: selectedIds.length === 3 ? "0 0 20px rgba(212,175,55,0.3)" : "none",
+              }}>
+              ⚔ Initiate Duel
             </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,180px),1fr))", gap: "0.75rem" }}>
+            {allCards.map(card => (
+              <ArenaCard key={card.id}
+                combatant={makeCombatant(card)}
+                selected={selectedIds.includes(card.id)}
+                selectable
+                side="player"
+                onClick={() => toggleSelect(card.id)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ── Battle phase ── */}
+      {inBattle && battle && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "1rem", alignItems: "flex-start" }}>
+
+          {/* Player team */}
+          <div>
+            <div style={{ fontSize: "0.54rem", fontWeight: 700, color: "#6b8cff", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "0.625rem", fontFamily: "'JetBrains Mono',monospace" }}>
+              Your Squad
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+              {battle.playerTeam.map((c, i) => (
+                <ArenaCard key={c.card.id}
+                  combatant={c}
+                  isActive={i === battle.activeIdx && battle.turn === "player" && !battle.winner}
+                  isDefeated={c.hp <= 0}
+                  isFlipping={!!flipping[c.card.id]}
+                  side="player"
+                  selectable={!battle.winner && battle.turn === "player" && c.hp > 0}
+                  selected={i === battle.activeIdx}
+                  onClick={() => setBattle(prev => prev ? { ...prev, activeIdx: i } : prev)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Center controls */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", paddingTop: "2rem" }}>
+            <div style={{ fontSize: "1.5rem", animation: battle.winner ? "none" : "pulse 2s ease-in-out infinite" }}>⚔</div>
+
+            {!battle.winner && (
+              <>
+                <button onClick={() => playerAttack(false)} disabled={battle.turn !== "player"}
+                  style={{
+                    padding: "0.5rem 0.875rem", borderRadius: "8px", fontWeight: 700, fontSize: "0.65rem",
+                    fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.04em", cursor: "pointer",
+                    background: battle.turn === "player" ? "rgba(255,107,53,0.15)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${battle.turn === "player" ? "rgba(255,107,53,0.4)" : "rgba(255,255,255,0.08)"}`,
+                    color: battle.turn === "player" ? "#FF6B35" : "rgba(255,255,255,0.25)",
+                    display: "flex", alignItems: "center", gap: "0.3rem", width: "100%", justifyContent: "center",
+                  }}>
+                  <SwordsIcon size={12} /> Attack
+                </button>
+                <button onClick={() => playerAttack(true)} disabled={battle.turn !== "player" || battle.energy < 3}
+                  style={{
+                    padding: "0.5rem 0.875rem", borderRadius: "8px", fontWeight: 700, fontSize: "0.65rem",
+                    fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.04em", cursor: "pointer",
+                    background: battle.turn === "player" && battle.energy >= 3 ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${battle.turn === "player" && battle.energy >= 3 ? "rgba(168,85,247,0.4)" : "rgba(255,255,255,0.08)"}`,
+                    color: battle.turn === "player" && battle.energy >= 3 ? "#a855f7" : "rgba(255,255,255,0.25)",
+                    display: "flex", alignItems: "center", gap: "0.3rem", width: "100%", justifyContent: "center",
+                  }}>
+                  <SpecialIcon size={12} /> Special (3⚡)
+                </button>
+                <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.25)", textAlign: "center", fontFamily: "'JetBrains Mono',monospace" }}>
+                  {battle.turn === "player" ? "YOUR TURN" : "SOPHIA THINKING…"}
+                </div>
+              </>
+            )}
+
+            {/* Battle result */}
+            {battle.winner && (
+              <div style={{ textAlign: "center", padding: "0.75rem" }}>
+                <div style={{ fontSize: "0.9rem", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace",
+                  color: battle.winner === "player" ? "#3dd68c" : "#f26b6b", marginBottom: "0.5rem" }}>
+                  {battle.winner === "player" ? "VICTORY" : "DEFEATED"}
+                </div>
+                <button onClick={resetArena} style={{ padding: "0.4rem 0.75rem", borderRadius: "7px", fontWeight: 700, fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)", cursor: "pointer" }}>
+                  New Duel
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Agent team */}
+          <div>
+            <div style={{ fontSize: "0.54rem", fontWeight: 700, color: "#f26b6b", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "0.625rem", fontFamily: "'JetBrains Mono',monospace", textAlign: "right" }}>
+              Sophia Agent
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+              {battle.agentTeam.map((c) => (
+                <ArenaCard key={c.card.id}
+                  combatant={c}
+                  isDefeated={c.hp <= 0}
+                  side="agent"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Battle log */}
+      {battle && battle.log.length > 0 && (
+        <div ref={logRef} style={{
+          marginTop: "1.25rem", background: "rgba(2,3,10,0.97)",
+          border: "1px solid rgba(107,140,255,0.12)", borderRadius: "10px",
+          padding: "0.625rem 1rem", maxHeight: "160px", overflowY: "auto",
+          fontFamily: "'JetBrains Mono',monospace",
+        }}>
+          {battle.log.slice(-12).map((line, i, arr) => (
+            <p key={i} style={{ margin: "0 0 0.2rem", fontSize: "0.58rem", lineHeight: 1.5,
+              color: i === arr.length - 1 ? "#60A5FA" : `rgba(96,165,250,${Math.max(0.2, 0.8 - (arr.length - 1 - i) * 0.07)})` }}>
+              {line}
+            </p>
           ))}
-        </div>
-      </div>
-
-      {/* Duel action bar */}
-      {mode === "duel" && (
-        <div style={{ padding: "0.75rem 1rem", background: "rgba(255,107,53,0.07)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: "10px", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap" }}>
-          <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)" }}>
-            {selected.size === 0 && "Select 2 assets to duel"}
-            {selected.size === 1 && `${selArray[0]?.name} selected — pick opponent`}
-            {selected.size === 2 && battle.status === "idle" && `${selArray[0]?.name} vs ${selArray[1]?.name} — ready`}
-            {battle.status === "ready" && "Duel ready — resolve to execute"}
-            {battle.status === "resolving" && "Resolving on-chain…"}
-            {battle.status === "resolved" && "Duel complete — new duel below"}
-          </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            {canStartDuel && (
-              <button onClick={startDuel}
-                style={{ background: "rgba(255,107,53,0.15)", border: "1px solid rgba(255,107,53,0.35)", borderRadius: "7px", padding: "0.4rem 0.875rem", fontSize: "0.7rem", fontWeight: 700, color: "#FF6B35", cursor: "pointer" }}>
-                Start Duel →
-              </button>
-            )}
-            {canResolve && (
-              <button onClick={resolveDuel}
-                style={{ background: "#FF6B35", border: "none", borderRadius: "7px", padding: "0.4rem 0.875rem", fontSize: "0.72rem", fontWeight: 700, color: "#fff", cursor: "pointer" }}>
-                ⚔ Resolve Duel (0.5 $ABRA)
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Battle panel — only when battle has cards or log */}
-      {(battle.assetA || battle.log.length > 0) && (
-        <DuelPanel battle={battle} onClear={clearBattle} />
-      )}
-
-      {/* Asset grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,180px),1fr))", gap: "0.75rem" }}>
-        {filtered.map(asset => (
-          <AssetCard key={asset.id} asset={asset} mode={mode}
-            selected={selected.has(asset.id)}
-            onSelect={handleSelect}
-            onStake={handleStake} />
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div style={{ padding: "3rem", textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: "0.72rem" }}>
-          No assets in this category.
         </div>
       )}
     </div>
