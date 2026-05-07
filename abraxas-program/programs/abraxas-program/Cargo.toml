@@ -1,0 +1,29 @@
+[package]
+name    = "cards"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name       = "cards"
+
+[features]
+no-entrypoint  = []
+no-idl         = []
+no-log-ix-name = []
+cpi            = ["no-entrypoint"]
+default        = []
+
+[dependencies]
+# Anchor 0.30 — stable, Token-2022 compatible
+anchor-lang = { version = "0.30.1", features = ["init-if-needed"] }
+anchor-spl  = { version = "0.30.1", features = ["token-2022", "associated-token", "metadata"] }
+
+# SPL Transfer Hook Interface — required for #[interface(spl_transfer_hook_interface::execute)]
+spl-transfer-hook-interface = "0.6"
+
+# TLV Account Resolution — ExtraAccountMetaList
+spl-tlv-account-resolution = "0.6"
+
+# Token-2022 (pulled transitively — listed explicitly for version pinning)
+spl-token-2022 = { version = "4", features = ["no-entrypoint"] }
