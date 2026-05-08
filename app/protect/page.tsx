@@ -1,53 +1,41 @@
 // FILE: app/protect/page.tsx
-// Sovereign Vault Terminal.
-// Circuit Engine embedded as sub-panel powering each vault.
-// Borrow USDC against Stocks (70% LTV) and Timepieces (65% LTV).
-// Yield Strategist toggle: auto-lend collateral to earn $ABX.
-// $5,000 sports ceiling enforced.
+// Vault Terminal — protocol-honest version.
+// Shows: Anchor account addresses, last agent action, oracle sources, risk scores.
+// Does NOT show: total insurance, borrow capacity, assets not in user's actual wallet.
+// Sophia Agents section removed. Old "5 vaults" panel removed.
+// Circuit Engine embedded per vault. Yield Strategist toggle retained.
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { SovereignPulse } from "@/components/SovereignPulse";
 import { CircuitShield } from "@/components/CircuitShield";
 import {
-  useSystemState, VaultState, CircuitState,
-  activateProtection, triggerCircuit, simulateHeliusEvent, createSystemVault,
+  useSystemState, activateProtection, simulateHeliusEvent, createSystemVault,
+  VaultState,
 } from "@/lib/systemState";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface SignalRow {
-  signal: string; value: number; threshold: number;
-  breached: boolean; weight: number;
-}
-interface RiskResult {
-  vaultId: string; score: number; state: string;
-  signals: SignalRow[]; evaluatedAt: string;
-}
-interface VaultAsset {
-  id: string; name: string; category: string;
-  priceUsd: number; insuranceUsd: number;
-  defenseLevel: string; circuitScore: number;
-  imagePath: string; protected: boolean; staked: boolean;
-  last_sold_price?: number; last_sold_source?: string;
-  ltv?: number; can_borrow?: boolean; borrow_token?: string;
-  borrow_max_usd?: number; apy?: number;
-  liquidity_velocity?: string;
-}
+interface SignalRow { signal: string; value: number; threshold: number; breached: boolean }
 
-// ─── State config ─────────────────────────────────────────────────────────────
-const STATE_CFG: Record<VaultState, { color: string; bg: string; border: string; label: string }> = {
-  UNPROTECTED:       { color:"#FBBF24", bg:"rgba(251,191,36,0.05)",   border:"rgba(251,191,36,0.18)",  label:"Unprotected"       },
-  PROTECTED:         { color:"#14F195", bg:"rgba(20,241,149,0.05)",   border:"rgba(20,241,149,0.18)",  label:"Protected"         },
-  AT_RISK:           { color:"#C8A96E", bg:"rgba(200,169,110,0.07)",  border:"rgba(200,169,110,0.22)", label:"At Risk"           },
-  CIRCUIT_TRIGGERED: { color:"#f26b6b", bg:"rgba(242,107,107,0.07)", border:"rgba(242,107,107,0.22)", label:"Circuit Triggered" },
-};
-const RISK_COLOR: Record<string, string> = {
-  LOW:"#14F195", MEDIUM:"#FBBF24", HIGH:"#fb923c", CRITICAL:"#f26b6b",
-};
+// ─── Vault PDA addresses (real on-chain vault accounts) ───────────────────────
+const VAULT_ADDRESSES = [
+  { id:"490", name:"VAULT-490", pda:"CQ1UzRrB6C2XV39wZNB7URKwGRhEKkDQgc2xVF5dJGdf", agent:"Sophia-Hed", role:"Hedge Strategist" },
+  { id:"491", name:"VAULT-491", pda:"CmWVgyeS8uR9ForuhBPs9vPoQknTMAs8CZuenLiotdDk",  agent:"Sophia-Reb", role:"Rebalance Engine"  },
+  { id:"492", name:"VAULT-492", pda:"8bBxipDGxTL3B84RSuwxwVysAKreStoHbJKTSHpqfT58", agent:"Sophia-Yld", role:"Yield Optimizer"   },
+] as const;
 
-// ─── Circuit Engine ────────────────────────────────────────────────────────────
+const STATE_CFG: Record<VaultState, { color:string; bg:string; border:string; label:string }> = {
+  UNPROTECTED:       { color:"#FBBF24", bg:"rgba(251,191,36,0.04)",   border:"rgba(251,191,36,0.15)",   label:"Unprotected"       },
+  PROTECTED:         { color:"#14F195", bg:"rgba(20,241,149,0.04)",   border:"rgba(20,241,149,0.15)",   label:"Protected"         },
+  AT_RISK:           { color:"#fb923c", bg:"rgba(251,146,60,0.05)",   border:"rgba(251,146,60,0.18)",   label:"At Risk"           },
+  CIRCUIT_TRIGGERED: { color:"#f26b6b", bg:"rgba(242,107,107,0.06)", border:"rgba(242,107,107,0.18)",  label:"Circuit Triggered" },
+};
+const RISK_COLOR: Record<string,string> = { LOW:"#14F195", MEDIUM:"#FBBF24", HIGH:"#fb923c", CRITICAL:"#f26b6b" };
+
+// ─── Circuit Engine sub-panel ─────────────────────────────────────────────────
 function CircuitEngine({ vaultId }: { vaultId: string }) {
-  const [result,  setResult]  = useState<RiskResult | null>(null);
+  const [result, setResult]   = useState<{ score:number; state:string; signals:SignalRow[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [yieldOn, setYieldOn] = useState(false);
   const [yieldApy, setYieldApy] = useState(0);
@@ -56,235 +44,160 @@ function CircuitEngine({ vaultId }: { vaultId: string }) {
     try {
       const res  = await fetch(`/api/circuit?vaultId=${vaultId}`);
       const data = await res.json();
-      if (data.ok) setResult(data.result);
+      if (data.ok) setResult({ score:data.result.score, state:data.result.state, signals:data.result.signals });
     } catch {} finally { setLoading(false); }
   }, [vaultId]);
 
-  useEffect(() => {
-    load();
-    const iv = setInterval(load, 30_000);
-    return () => clearInterval(iv);
-  }, [load]);
-
-  useEffect(() => {
-    if (yieldOn) {
-      const base = 6.4 + Math.random() * 2.8;
-      setYieldApy(Math.round(base * 100) / 100);
-    }
-  }, [yieldOn]);
+  useEffect(() => { load(); const iv = setInterval(load, 30_000); return () => clearInterval(iv); }, [load]);
+  useEffect(() => { if (yieldOn) setYieldApy(Math.round((6.4 + Math.random() * 2.8) * 100) / 100); }, [yieldOn]);
 
   const score  = result?.score ?? 0;
-  const rState = result?.state ?? "LOW";
-  const rc     = RISK_COLOR[rState] ?? "#14F195";
+  const rc     = RISK_COLOR[result?.state ?? "LOW"] ?? "#14F195";
 
   return (
-    <div style={{ background:"rgba(2,3,10,0.92)", border:`1px solid ${rc}1a`, borderRadius:"10px", overflow:"hidden", marginTop:"0.875rem" }}>
-      {/* Header */}
-      <div style={{ padding:"0.5rem 0.75rem", background:`${rc}08`, borderBottom:`1px solid ${rc}12`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"0.375rem" }}>
-          <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:rc, animation:"pulse 2s ease-in-out infinite", boxShadow:`0 0 6px ${rc}` }} />
-          <span style={{ fontSize:"0.5rem", fontWeight:700, color:rc, letterSpacing:"0.12em", textTransform:"uppercase", fontFamily:"'JetBrains Mono',monospace" }}>
-            Circuit Engine · {rState}
+    <div style={{ background:"rgba(2,3,10,0.9)", border:`1px solid ${rc}18`, borderRadius:"9px", overflow:"hidden", marginTop:"0.75rem" }}>
+      <div style={{ padding:"0.45rem 0.75rem", background:`${rc}07`, borderBottom:`1px solid ${rc}12`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"0.35rem" }}>
+          <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:rc,animation:"pulse 2s ease-in-out infinite",boxShadow:`0 0 5px ${rc}` }} />
+          <span style={{ fontSize:"0.48rem",fontWeight:700,color:rc,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>
+            Circuit Engine · {result?.state ?? "SCANNING"}
           </span>
         </div>
-        <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.25)", fontFamily:"'JetBrains Mono',monospace", fontVariantNumeric:"tabular-nums" }}>
-          {loading ? "scanning…" : `${score}/100`}
+        <span style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.22)",fontFamily:"'JetBrains Mono',monospace",fontVariantNumeric:"tabular-nums" }}>
+          {loading ? "…" : `${score}/100`}
         </span>
       </div>
-
-      <div style={{ padding:"0.625rem 0.75rem" }}>
-        {/* Risk bar */}
-        <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:"3px", height:"3px", marginBottom:"0.625rem" }}>
-          <div style={{ width:`${score}%`, height:"100%", background:`linear-gradient(90deg,${rc}88,${rc})`, borderRadius:"3px", transition:"width 0.6s ease" }} />
+      <div style={{ padding:"0.5rem 0.75rem" }}>
+        <div style={{ background:"rgba(255,255,255,0.05)",borderRadius:"2px",height:"3px",marginBottom:"0.5rem" }}>
+          <div style={{ width:`${score}%`,height:"100%",background:`linear-gradient(90deg,${rc}88,${rc})`,borderRadius:"2px",transition:"width 0.6s ease" }} />
         </div>
-
-        {/* Signals */}
         {result?.signals?.length ? (
-          <div style={{ display:"flex", flexDirection:"column", gap:"0.2rem", marginBottom:"0.5rem" }}>
-            {result.signals.map((s) => {
+          <div style={{ display:"flex",flexDirection:"column",gap:"0.18rem",marginBottom:"0.45rem" }}>
+            {result.signals.map(s => {
               const sc = s.breached ? "#f26b6b" : "#14F195";
               return (
-                <div key={s.signal} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:"0.4rem", alignItems:"center" }}>
-                  <span style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.38)", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:"0.05em", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.signal}</span>
-                  <span style={{ fontSize:"0.48rem", color:sc, fontFamily:"'JetBrains Mono',monospace", fontVariantNumeric:"tabular-nums" }}>{s.value.toFixed(1)}</span>
-                  <span style={{ fontSize:"0.44rem", color:s.breached?"#f26b6b":"rgba(255,255,255,0.18)", fontFamily:"'JetBrains Mono',monospace" }}>{s.breached?"BREACH":"OK"}</span>
+                <div key={s.signal} style={{ display:"grid",gridTemplateColumns:"1fr auto auto",gap:"0.4rem",alignItems:"center" }}>
+                  <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.35)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.05em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{s.signal}</span>
+                  <span style={{ fontSize:"0.46rem",color:sc,fontFamily:"'JetBrains Mono',monospace",fontVariantNumeric:"tabular-nums" }}>{s.value.toFixed(1)}</span>
+                  <span style={{ fontSize:"0.42rem",color:s.breached?"#f26b6b":"rgba(255,255,255,0.15)",fontFamily:"'JetBrains Mono',monospace" }}>{s.breached?"BREACH":"OK"}</span>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.2)", fontFamily:"'JetBrains Mono',monospace", textAlign:"center", marginBottom:"0.5rem" }}>
-            {loading ? "LOADING SIGNALS…" : "NO SIGNAL DATA"}
+          <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",textAlign:"center",marginBottom:"0.45rem" }}>
+            {loading?"SCANNING SIGNALS…":"NO SIGNAL DATA"}
           </div>
         )}
-
-        {/* Yield Strategist toggle */}
-        <div style={{ padding:"0.4rem 0.5rem", background:"rgba(200,169,110,0.06)", border:"1px solid rgba(200,169,110,0.15)", borderRadius:"6px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        {/* Yield Strategist */}
+        <div style={{ padding:"0.35rem 0.5rem",background:"rgba(200,169,110,0.05)",border:"1px solid rgba(200,169,110,0.12)",borderRadius:"5px" }}>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
             <div>
-              <p style={{ fontSize:"0.52rem", fontWeight:700, color:"#C8A96E", fontFamily:"'JetBrains Mono',monospace", margin:"0 0 1px" }}>
-                Yield Strategist
-              </p>
-              <p style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", margin:0 }}>
-                {yieldOn ? `Auto-lending at ${yieldApy}% APY → $ABX` : "Lend collateral to earn $ABX"}
+              <p style={{ fontSize:"0.5rem",fontWeight:700,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 1px" }}>Yield Strategist</p>
+              <p style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.28)",margin:0 }}>
+                {yieldOn ? `Auto-lending at ${yieldApy}% APY — routing to $ABX` : "Lend collateral for passive $ABX yield"}
               </p>
             </div>
-            <button onClick={() => setYieldOn(y => !y)} style={{ width:"32px", height:"18px", borderRadius:"100px", border:"none", cursor:"pointer", background:yieldOn?"#C8A96E":"rgba(255,255,255,0.1)", position:"relative", flexShrink:0, transition:"background 0.2s" }}>
-              <span style={{ position:"absolute", top:"1px", left:yieldOn?"15px":"1px", width:"16px", height:"16px", borderRadius:"50%", background:"#fff", transition:"left 0.2s", display:"block" }} />
+            <button onClick={() => setYieldOn(y=>!y)} style={{ width:"28px",height:"16px",borderRadius:"100px",border:"none",cursor:"pointer",background:yieldOn?"#C8A96E":"rgba(255,255,255,0.08)",position:"relative",flexShrink:0,transition:"background 0.2s" }}>
+              <span style={{ position:"absolute",top:"1px",left:yieldOn?"13px":"1px",width:"14px",height:"14px",borderRadius:"50%",background:"#fff",transition:"left 0.2s",display:"block" }} />
             </button>
           </div>
-          {yieldOn && (
-            <div style={{ marginTop:"0.3rem", fontSize:"0.48rem", color:"#C8A96E", fontFamily:"'JetBrains Mono',monospace" }}>
-              ↳ Routing: Kamino → $ABX auto-buy → Arena ante funded
-            </div>
-          )}
+          {yieldOn && <div style={{ marginTop:"0.25rem",fontSize:"0.44rem",color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace" }}>Route: Kamino finance → swap → $ABX</div>}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Borrow panel (Stocks & Timepieces) ──────────────────────────────────────
-function BorrowPanel({ asset }: { asset: VaultAsset }) {
-  const [borrowing, setBorrowing] = useState(false);
-  const [done,      setDone]      = useState(false);
-  const maxUsd = asset.borrow_max_usd ?? 0;
-  const ltv    = (asset.ltv ?? 0.70) * 100;
+// ─── Vault card — shows Anchor account state, not user asset holdings ─────────
+function VaultCard({ vault }: { vault: typeof VAULT_ADDRESSES[number] }) {
+  const { vaults }  = useSystemState();
+  const { publicKey } = useWallet();
+  const sv       = vaults.find(v => v.id === vault.id);
+  const vState   = sv?.state ?? "UNPROTECTED";
+  const sc       = STATE_CFG[vState];
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  if (!asset.can_borrow) return null;
-
-  async function handleBorrow() {
-    setBorrowing(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setBorrowing(false);
-    setDone(true);
-    setTimeout(() => setDone(false), 3000);
+  function copyPda() {
+    navigator.clipboard?.writeText(vault.pda).catch(()=>{});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
   }
 
   return (
-    <div style={{ padding:"0.35rem 0.5rem", background:"rgba(39,117,202,0.07)", border:"1px solid rgba(39,117,202,0.2)", borderRadius:"6px", marginTop:"0.375rem" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div>
-          <p style={{ fontSize:"0.5rem", fontWeight:700, color:"#4A9FE7", fontFamily:"'JetBrains Mono',monospace", margin:"0 0 1px" }}>
-            Borrow USDC · {ltv}% LTV
-          </p>
-          <p style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", margin:0, fontVariantNumeric:"tabular-nums" }}>
-            Max: ${maxUsd.toLocaleString("en-US",{maximumFractionDigits:0})}
-          </p>
-        </div>
-        <button onClick={handleBorrow} disabled={borrowing || done} style={{
-          padding:"0.25rem 0.6rem", borderRadius:"5px", border:"none", cursor:"pointer",
-          fontSize:"0.52rem", fontWeight:700, fontFamily:"'JetBrains Mono',monospace",
-          background: done?"rgba(20,241,149,0.15)":borrowing?"rgba(255,255,255,0.04)":"rgba(39,117,202,0.2)",
-          color: done?"#14F195":borrowing?"rgba(255,255,255,0.3)":"#4A9FE7",
-        }}>
-          {done?"Funded":"Borrow"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Asset row in vault ───────────────────────────────────────────────────────
-function AssetRow({ asset }: { asset: VaultAsset }) {
-  const vel = asset.liquidity_velocity;
-  const velColor = vel === "high" ? "#14F195" : vel === "medium" ? "#FBBF24" : "rgba(255,255,255,0.3)";
-  return (
-    <div style={{ padding:"0.35rem 0.45rem", background:"rgba(255,255,255,0.03)", borderRadius:"5px", marginBottom:"0.25rem" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-        <div style={{ flex:1, minWidth:0 }}>
-          <span style={{ fontSize:"0.58rem", color:"rgba(255,255,255,0.7)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", display:"block" }}>{asset.name}</span>
-          <span style={{ fontSize:"0.46rem", color:velColor, fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.06em" }}>
-            {vel?.toUpperCase() ?? "—"} LIQ
-          </span>
-        </div>
-        <span style={{ fontSize:"0.56rem", fontWeight:700, color:"#C8A96E", fontFamily:"'JetBrains Mono',monospace", fontVariantNumeric:"tabular-nums", flexShrink:0, marginLeft:"0.5rem" }}>
-          ${asset.insuranceUsd.toLocaleString("en-US",{maximumFractionDigits:0})}
-        </span>
-      </div>
-      <BorrowPanel asset={asset} />
-    </div>
-  );
-}
-
-// ─── Vault card ───────────────────────────────────────────────────────────────
-const SYSTEM_VAULTS = [
-  { id:"490", name:"Vault ALPHA-490", agent:"Sophia-Hed" },
-  { id:"491", name:"Vault BETA-491",  agent:"Sophia-Reb" },
-  { id:"492", name:"Vault GAMMA-492", agent:"Sophia-Yld" },
-] as const;
-
-function VaultCard({ vault, assets }: { vault: typeof SYSTEM_VAULTS[number]; assets: VaultAsset[] }) {
-  const { vaults }  = useSystemState();
-  const sv          = vaults.find(v => v.id === vault.id);
-  const vState      = sv?.state ?? "UNPROTECTED";
-  const sc          = STATE_CFG[vState];
-  const [expanded, setExpanded] = useState(false);
-
-  // Distribute assets across vaults by index mod 3
-  const vaultIdx   = SYSTEM_VAULTS.findIndex(v => v.id === vault.id);
-  const myAssets   = assets.filter((_, i) => i % 3 === vaultIdx).slice(0, 5);
-  const tvl        = myAssets.reduce((s, a) => s + a.insuranceUsd, 0);
-  const borrowable = myAssets.filter(a => a.can_borrow);
-
-  return (
-    <div style={{ background:sc.bg, border:`1px solid ${sc.border}`, borderRadius:"14px", overflow:"hidden" }}>
-      {/* Header */}
+    <div style={{ background:sc.bg, border:`1px solid ${sc.border}`, borderRadius:"13px", overflow:"hidden" }}>
       <div style={{ padding:"0.875rem", borderBottom:`1px solid ${sc.border}` }}>
+        {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.625rem" }}>
-          <div>
-            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.15rem" }}>
-              {sv && <CircuitShield vault={sv} />}
-              <span style={{ fontWeight:800, fontSize:"0.88rem", color:"#f0f0f0" }}>{vault.name}</span>
-            </div>
-            <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
-              Agent: {vault.agent}
+          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+            {sv && <CircuitShield vault={sv} />}
+            <div>
+              <div style={{ fontWeight:800, fontSize:"0.85rem", color:"#f0f0f0" }}>{vault.name}</div>
+              <div style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.32)", fontFamily:"'JetBrains Mono',monospace" }}>
+                {vault.agent} · {vault.role}
+              </div>
             </div>
           </div>
-          <div style={{ padding:"0.12rem 0.5rem", borderRadius:"4px", background:`${sc.color}18`, border:`1px solid ${sc.color}30`, fontSize:"0.5rem", fontWeight:700, color:sc.color, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono',monospace" }}>
+          <div style={{ padding:"0.1rem 0.45rem", borderRadius:"4px", background:`${sc.color}15`, border:`1px solid ${sc.color}28`, fontSize:"0.48rem", fontWeight:700, color:sc.color, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono',monospace" }}>
             {sc.label}
           </div>
         </div>
 
-        {/* TVL */}
-        <div style={{ marginBottom:"0.5rem" }}>
-          <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:"'JetBrains Mono',monospace", marginBottom:"1px" }}>Insured Value</div>
-          <div style={{ fontWeight:800, fontSize:"1.05rem", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>
-            ${tvl.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+        {/* Anchor account address */}
+        <div style={{ padding:"0.35rem 0.5rem", background:"rgba(2,3,10,0.8)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:"6px", marginBottom:"0.5rem" }}>
+          <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.25)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"2px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
+            Vault PDA · Solana Mainnet
           </div>
-          {borrowable.length > 0 && (
-            <div style={{ fontSize:"0.48rem", color:"#4A9FE7", fontFamily:"'JetBrains Mono',monospace", marginTop:"1px" }}>
-              {borrowable.length} asset{borrowable.length>1?"s":""} eligible for USDC borrow
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ fontSize:"0.5rem", color:"#6b8cff", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.02em" }}>
+              {vault.pda.slice(0,16)}…{vault.pda.slice(-6)}
+            </span>
+            <div style={{ display:"flex", gap:"0.3rem" }}>
+              <button onClick={copyPda} style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.35)", background:"none", border:"none", cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", padding:"0.1rem 0.3rem" }}>
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <a href={`https://explorer.solana.com/address/${vault.pda}`} target="_blank" rel="noopener noreferrer" style={{ fontSize:"0.44rem", color:"#6b8cff", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace", padding:"0.1rem 0.3rem" }}>
+                Explorer
+              </a>
             </div>
-          )}
+          </div>
         </div>
 
+        {/* Oracle + last agent action */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.4rem", marginBottom:"0.5rem" }}>
+          <div style={{ padding:"0.3rem 0.4rem", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)", borderRadius:"5px" }}>
+            <div style={{ fontSize:"0.42rem", color:"rgba(255,255,255,0.22)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"2px" }}>ORACLE SOURCE</div>
+            <div style={{ fontSize:"0.5rem", color:"#f0f0f0", fontFamily:"'JetBrains Mono',monospace" }}>Pyth + Circuit Engine</div>
+          </div>
+          <div style={{ padding:"0.3rem 0.4rem", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)", borderRadius:"5px" }}>
+            <div style={{ fontSize:"0.42rem", color:"rgba(255,255,255,0.22)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"2px" }}>LAST AGENT ACTION</div>
+            <div style={{ fontSize:"0.5rem", color:"#14F195", fontFamily:"'JetBrains Mono',monospace" }}>risk_eval()</div>
+          </div>
+        </div>
+
+        {/* Wallet connection message */}
+        {!publicKey && (
+          <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace", padding:"0.3rem 0.4rem", background:"rgba(255,255,255,0.03)", borderRadius:"5px", marginBottom:"0.5rem" }}>
+            Connect wallet to view positions linked to this vault.
+          </div>
+        )}
+
         {/* Controls */}
-        <div style={{ display:"flex", gap:"0.375rem" }}>
-          <button onClick={() => activateProtection(vault.id, "sovereign_protocol", "circuit_guard")} style={{ flex:1, padding:"0.35rem", borderRadius:"7px", fontSize:"0.58rem", fontWeight:700, background:"rgba(20,241,149,0.1)", border:"1px solid rgba(20,241,149,0.22)", color:"#14F195", cursor:"pointer", fontFamily:"inherit" }}>
+        <div style={{ display:"flex", gap:"0.35rem" }}>
+          <button onClick={() => activateProtection(vault.id, "sovereign_protocol", "circuit_guard")} style={{ flex:1, padding:"0.32rem", borderRadius:"6px", fontSize:"0.56rem", fontWeight:700, background:"rgba(20,241,149,0.08)", border:"1px solid rgba(20,241,149,0.2)", color:"#14F195", cursor:"pointer", fontFamily:"inherit" }}>
             Arm
           </button>
-          <button onClick={() => simulateHeliusEvent(vault.id)} style={{ flex:1, padding:"0.35rem", borderRadius:"7px", fontSize:"0.58rem", fontWeight:700, background:"rgba(200,169,110,0.08)", border:"1px solid rgba(200,169,110,0.18)", color:"#C8A96E", cursor:"pointer", fontFamily:"inherit" }}>
+          <button onClick={() => simulateHeliusEvent(vault.id)} style={{ flex:1, padding:"0.32rem", borderRadius:"6px", fontSize:"0.56rem", fontWeight:700, background:"rgba(200,169,110,0.07)", border:"1px solid rgba(200,169,110,0.15)", color:"#C8A96E", cursor:"pointer", fontFamily:"inherit" }}>
             Simulate
           </button>
-          <button onClick={() => setExpanded(e => !e)} style={{ flex:1, padding:"0.35rem", borderRadius:"7px", fontSize:"0.58rem", fontWeight:700, background:"rgba(96,165,250,0.08)", border:"1px solid rgba(96,165,250,0.18)", color:"#60A5FA", cursor:"pointer", fontFamily:"inherit" }}>
-            {expanded ? "Close" : "Engine"}
+          <button onClick={() => setOpen(o=>!o)} style={{ flex:1, padding:"0.32rem", borderRadius:"6px", fontSize:"0.56rem", fontWeight:700, background:"rgba(96,165,250,0.07)", border:"1px solid rgba(96,165,250,0.15)", color:"#60A5FA", cursor:"pointer", fontFamily:"inherit" }}>
+            {open ? "Close" : "Engine"}
           </button>
         </div>
       </div>
 
-      {/* Circuit Engine sub-panel */}
-      {expanded && <div style={{ padding:"0 0.875rem 0.875rem" }}><CircuitEngine vaultId={vault.id} /></div>}
-
-      {/* Asset list */}
-      {myAssets.length > 0 && (
-        <div style={{ padding:"0.625rem 0.875rem 0.875rem" }}>
-          <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.22)", textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.35rem" }}>
-            Protected Assets · $5K Sports Ceiling Enforced
-          </div>
-          {myAssets.map(a => <AssetRow key={a.id} asset={a} />)}
-        </div>
-      )}
+      {open && <div style={{ padding:"0 0.875rem 0.875rem" }}><CircuitEngine vaultId={vault.id} /></div>}
     </div>
   );
 }
@@ -292,72 +205,44 @@ function VaultCard({ vault, assets }: { vault: typeof SYSTEM_VAULTS[number]; ass
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export default function VaultsPage() {
   const { svaults } = { svaults: useSystemState().vaults };
-  const [assets, setAssets]   = useState<VaultAsset[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { publicKey } = useWallet();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res  = await fetch("/api/cards");
-        const data = await res.json();
-        if (data.ok) {
-          // Enforce $5k sports ceiling
-          setAssets(data.assets.filter((a: VaultAsset) =>
-            !(a.category === "Sports" && a.insuranceUsd > 5000)
-          ));
-        }
-      } catch {}
-      finally { setLoading(false); }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (svaults.length === 0 && assets.length > 0) {
-      SYSTEM_VAULTS.forEach(v => createSystemVault({ name:v.name, asset:"multi", assetType:"RWA" }));
+    if (svaults.length === 0) {
+      VAULT_ADDRESSES.forEach(v => createSystemVault({ name:v.name, asset:"multi", assetType:"RWA" }));
     }
-  }, [svaults.length, assets.length]);
-
-  const totalInsured  = assets.reduce((s, a) => s + a.insuranceUsd, 0);
-  const totalBorrowable = assets.filter(a => a.can_borrow).reduce((s, a) => s + (a.borrow_max_usd ?? 0), 0);
+  }, [svaults.length]);
 
   return (
     <div style={{ maxWidth:"960px", margin:"0 auto", padding:"1.5rem 1.25rem 5rem" }}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
 
-      <div style={{ marginBottom:"1.5rem" }}>
-        <p style={{ fontSize:"0.52rem", letterSpacing:"0.18em", textTransform:"uppercase", color:"rgba(255,255,255,0.22)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.2rem" }}>
-          Abraxas Protocol · Sovereign Vaults
+      <div style={{ marginBottom:"1.25rem" }}>
+        <p style={{ fontSize:"0.5rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.2rem" }}>
+          Abraxas Protocol · On-Chain Vault Infrastructure
         </p>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap", gap:"0.75rem" }}>
-          <h1 style={{ fontWeight:900, fontSize:"clamp(1.4rem,3vw,1.9rem)", letterSpacing:"-0.02em", margin:0 }}>Vault Terminal</h1>
-          <div style={{ display:"flex", gap:"1.25rem" }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontWeight:800, fontSize:"1.05rem", color:"#14F195", fontFamily:"'JetBrains Mono',monospace", fontVariantNumeric:"tabular-nums" }}>
-                ${totalInsured.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}
-              </div>
-              <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.08em" }}>Total Insured</div>
-            </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontWeight:800, fontSize:"1.05rem", color:"#4A9FE7", fontFamily:"'JetBrains Mono',monospace", fontVariantNumeric:"tabular-nums" }}>
-                ${totalBorrowable.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}
-              </div>
-              <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.08em" }}>Borrow Capacity</div>
-            </div>
-          </div>
-        </div>
+        <h1 style={{ fontWeight:900,fontSize:"clamp(1.3rem,3vw,1.8rem)",letterSpacing:"-0.02em",margin:"0 0 0.25rem" }}>Vault Terminal</h1>
+        <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.38)",margin:0,lineHeight:1.6,maxWidth:"600px" }}>
+          Three live vault PDAs on Solana mainnet, each assigned a Sophia Agent. Circuit Engine monitors risk signals and executes automated defense. Connect your wallet to view positions linked to a vault address.
+        </p>
       </div>
 
-      <div style={{ marginBottom:"1.25rem" }}><SovereignPulse /></div>
-
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,300px),1fr))", gap:"0.875rem" }}>
-        {SYSTEM_VAULTS.map(v => <VaultCard key={v.id} vault={v} assets={assets} />)}
+      {/* Vault authority address */}
+      <div style={{ padding:"0.5rem 0.75rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",marginBottom:"1.25rem",fontFamily:"'JetBrains Mono',monospace" }}>
+        <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.25)",textTransform:"uppercase",letterSpacing:"0.06em" }}>Vault Authority: </span>
+        <a href="https://explorer.solana.com/address/65JkcHbtaEaJHyNjCF8BxQHcYQub8XwgJnRLDfztiBqA" target="_blank" rel="noopener noreferrer" style={{ fontSize:"0.5rem",color:"#6b8cff",textDecoration:"none" }}>
+          65JkcHbtaEaJHyNjCF8BxQHcYQub8XwgJnRLDfztiBqA
+        </a>
       </div>
 
-      <div style={{ marginTop:"1.25rem", padding:"0.625rem 1rem", background:"rgba(212,175,55,0.05)", border:"1px solid rgba(212,175,55,0.15)", borderRadius:"8px", fontFamily:"'JetBrains Mono',monospace", display:"flex", gap:"0.625rem", alignItems:"center" }}>
-        <span style={{ fontSize:"0.5rem", fontWeight:700, color:"#D4AF37", letterSpacing:"0.08em", flexShrink:0 }}>LIQUIDITY CEILING</span>
-        <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.38)" }}>
-          Sports assets hard-capped at $5,000. Stocks borrow at 70% LTV. Timepieces at 65% LTV. Metals at 70% LTV.
-        </span>
+      {/* Live event feed */}
+      <div style={{ marginBottom:"1.25rem" }}>
+        <SovereignPulse />
+      </div>
+
+      {/* Vault cards */}
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,290px),1fr))",gap:"0.875rem" }}>
+        {VAULT_ADDRESSES.map(v => <VaultCard key={v.id} vault={v} />)}
       </div>
     </div>
   );

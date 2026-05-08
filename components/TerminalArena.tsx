@@ -310,7 +310,7 @@ function ArenaCard({ asset, selected, flipped, owner, onSelect, compact }: CardP
 
             {/* CTAs */}
             <div style={{ display:"flex", gap:"0.25rem", marginTop:"0.4rem" }}>
-              <a href="https://gacha.collectorcrypt.com/" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{
+              <a href="https://gacha.collectorcrypt.com/#pokemon" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{
                 flex:1, padding:"0.3rem 0.2rem", borderRadius:"5px", fontSize:"0.5rem", fontWeight:700,
                 background:"rgba(200,169,110,0.1)", border:"1px solid rgba(200,169,110,0.25)",
                 color:"#C8A96E", cursor:"pointer", textAlign:"center", textDecoration:"none",
@@ -319,13 +319,7 @@ function ArenaCard({ asset, selected, flipped, owner, onSelect, compact }: CardP
               }}>
                 Acquire
               </a>
-              <button onClick={e => e.stopPropagation()} style={{
-                flex:1, padding:"0.3rem 0.2rem", borderRadius:"5px", fontSize:"0.5rem", fontWeight:700,
-                background:"rgba(107,140,255,0.1)", border:"1px solid rgba(107,140,255,0.22)",
-                color:"#6b8cff", cursor:"pointer", fontFamily:"'JetBrains Mono',monospace",
-              }}>
-                Tokenize
-              </button>
+
             </div>
           </>
         )}
@@ -452,8 +446,8 @@ function TokenizeCTA() {
           ))}
           <div style={{ padding:"0.625rem 0.75rem", background:"rgba(200,169,110,0.07)", border:"1px solid rgba(200,169,110,0.2)", borderRadius:"8px", display:"flex", flexDirection:"column", justifyContent:"center", gap:"0.3rem" }}>
             <div style={{ fontWeight:700, fontSize:"0.65rem", color:"#C8A96E" }}>Start Tokenizing</div>
-            <a href="mailto:worldlabsprotocol@gmail.com" style={{ fontSize:"0.52rem", color:"rgba(200,169,110,0.7)", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
-              Contact vault intake
+            <a href="https://twitter.com/worldlabsprotocol" target="_blank" rel="noopener noreferrer" style={{ fontSize:"0.52rem", color:"rgba(200,169,110,0.7)", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+              DM @worldlabsprotocol
             </a>
           </div>
         </div>
