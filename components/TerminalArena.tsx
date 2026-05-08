@@ -508,7 +508,51 @@ function X402Ante({ token = "SOL" }: { token?: string }) {
 }
 
 // ─── Main Arena ────────────────────────────────────────────────────────────────
-function ActiveArena({ assets }: { assets: ArenaAsset[] }) {
+
+// ─── Metals strip ─────────────────────────────────────────────────────────────
+function MetalsStrip({ assets }: { assets: ArenaAsset[] }) {
+  const metals = assets.filter(a => a.category === "Metals");
+  if (!metals.length) return null;
+  return (
+    <div style={{ marginBottom:"1.25rem", display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
+      {metals.map(m => {
+        const positive = m.change24h >= 0;
+        return (
+          <div key={m.id} style={{ flex:"1 1 200px", padding:"0.75rem 1rem", background:"rgba(212,175,55,0.05)", border:"1px solid rgba(212,175,55,0.15)", borderRadius:"10px", display:"flex", alignItems:"center", gap:"0.875rem" }}>
+            <div style={{ width:"48px", height:"48px", flexShrink:0, borderRadius:"6px", overflow:"hidden", background:"rgba(6,8,16,0.95)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {m.imagePath ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.imagePath} alt={m.name} style={{ width:"100%", height:"100%", objectFit:"contain" }} onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />
+              ) : null}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#D4AF37", fontFamily:"'JetBrains Mono',monospace" }}>{m.ticker}</div>
+              <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.35)", marginBottom:"0.2rem" }}>{m.name}</div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                <span style={{ fontWeight:800, fontSize:"0.88rem", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>
+                  ${m.priceUsd.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+                </span>
+                <span style={{ fontSize:"0.56rem", fontWeight:700, color:positive?"#14F195":"#f26b6b", fontVariantNumeric:"tabular-nums" }}>
+                  {positive?"+":""}{m.change24h.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+            {m.can_borrow && m.ltv && (
+              <div style={{ textAlign:"right", flexShrink:0 }}>
+                <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace" }}>LTV BORROW</div>
+                <div style={{ fontSize:"0.6rem", color:"#4A9FE7", fontFamily:"'JetBrains Mono',monospace", fontWeight:700 }}>
+                  {Math.round(m.ltv*100)}%
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SovereignArena({ assets }: { assets: ArenaAsset[] }) {
   const [filter,        setFilter]        = useState<string>("all");
   const [selectedAgent, setSelectedAgent] = useState<typeof SOPHIA_AGENTS[number]>(SOPHIA_AGENTS[0]);
   const [selected3,     setSelected3]     = useState<string[]>([]);
@@ -624,9 +668,9 @@ function ActiveArena({ assets }: { assets: ArenaAsset[] }) {
         <div style={{ padding:"0.875rem 1rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(255,107,53,0.2)", borderRadius:"12px", marginBottom:"1.25rem" }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem", marginBottom:"0.75rem" }}>
             <div>
-              <div style={{ fontWeight:800, fontSize:"0.85rem", marginBottom:"2px" }}>Triple Triad Arena</div>
+              <div style={{ fontWeight:800, fontSize:"0.85rem", marginBottom:"2px" }}>Sovereign Asset Combat</div>
               <div style={{ fontSize:"0.54rem", color:"rgba(255,255,255,0.38)", fontFamily:"'JetBrains Mono',monospace" }}>
-                Select 3 cards below · Place on 3x3 board · Higher side flips opponent · Most owned wins
+                Select 3 assets · Deploy on 3x3 grid · Risk scores drive flips · Economic warfare simulated
               </div>
               {selected3.length > 0 && (
                 <div style={{ marginTop:"0.35rem", fontSize:"0.52rem", color:"#D4AF37", fontFamily:"'JetBrains Mono',monospace" }}>
@@ -681,7 +725,7 @@ function ActiveArena({ assets }: { assets: ArenaAsset[] }) {
             color:selected3.length===3?"#000":"rgba(255,255,255,0.2)",
             boxShadow:selected3.length===3?"0 0 20px rgba(212,175,55,0.3)":"none",
           }}>
-            {selected3.length===3 ? "Launch Triple Triad" : `Select ${3-selected3.length} more card${3-selected3.length!==1?"s":""}`}
+            {selected3.length===3 ? "Launch Sovereign Combat" : `Select ${3-selected3.length} more card${3-selected3.length!==1?"s":""}`}
           </button>
         </div>
       ) : (
@@ -796,7 +840,8 @@ export function TerminalArena() {
       <div style={{ padding:"1.25rem" }}>
         <TokenizeCTA />
         <StockPanel assets={assets} />
-        <ActiveArena assets={assets} />
+        <MetalsStrip assets={assets} />
+        <SovereignArena assets={assets} />
       </div>
     </div>
   );

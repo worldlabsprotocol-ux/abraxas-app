@@ -1,259 +1,124 @@
 // FILE: app/page.tsx
-// Abraxas Sovereign Terminal — unified hub.
-// Tabs: #terminal (Sold Tape + Active Arena) | #vaults
-// URL hash persistence. No "Featured Collector Assets" section.
-// Framer Motion used where available; CSS transitions as fallback.
+// Abraxas Sovereign Terminal — no fake connect button, no Enter Arena button.
+// Layout: StatusBar → ProtocolOverview (with Buy ABRA) → TerminalArena
+// TerminalArena internal order: SoldTape → TokenizeCTA → StockPanel → MetalsStrip → ArenaEngine
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import Link from "next/link";
+import { Suspense } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { TerminalArena, TerminalArenaSkeleton } from "@/components/TerminalArena";
-import { useSystemState, simulateHeliusEvent } from "@/lib/systemState";
 import { useCircuitState } from "@/lib/protocolStream";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type TabId = "terminal" | "vaults";
-
-// ─── Wallet status mock (full wiring uses useWallet from @solana/wallet-adapter-react) ─
-function WalletStatus() {
-  const [connected, setConnected] = useState(false);
-  const [copied,    setCopied]    = useState(false);
-  const addr = "7F3k…Ab2Q";
-  const solBal = "12.48";
-  const abraBal = "1,247";
-
-  function copyAddr() {
-    navigator.clipboard?.writeText("7F3kabcde12345Ab2Q").catch(()=>{});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  if (!connected) return (
-    <button onClick={() => setConnected(true)} style={{
-      padding:"0.375rem 1rem", borderRadius:"8px", fontWeight:700, fontSize:"0.72rem",
-      background:"linear-gradient(135deg,rgba(107,140,255,0.15),rgba(107,140,255,0.08))",
-      border:"1px solid rgba(107,140,255,0.35)", color:"#6b8cff", cursor:"pointer",
-      fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em",
-      transition:"all 0.2s",
-    }}>
-      Connect ⚔
-    </button>
-  );
-
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-      <button onClick={copyAddr} style={{
-        display:"flex", alignItems:"center", gap:"0.4rem", padding:"0.3rem 0.625rem",
-        borderRadius:"7px", background:"rgba(20,241,149,0.08)", border:"1px solid rgba(20,241,149,0.25)",
-        color:"#14F195", fontSize:"0.62rem", fontFamily:"'JetBrains Mono',monospace",
-        cursor:"pointer", fontWeight:700,
-      }}>
-        <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#14F195", flexShrink:0 }} />
-        {copied ? "Copied!" : addr}
-      </button>
-      <div style={{ display:"flex", gap:"0.4rem", fontSize:"0.56rem", fontFamily:"'JetBrains Mono',monospace" }}>
-        <span style={{ color:"rgba(255,255,255,0.5)" }}>{solBal} SOL</span>
-        <span style={{ color:"#C8A96E" }}>{abraBal} $ABRA</span>
-      </div>
-      <button onClick={() => setConnected(false)} style={{ padding:"0.2rem 0.45rem", borderRadius:"5px", background:"transparent", border:"1px solid rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.3)", fontSize:"0.55rem", cursor:"pointer", fontFamily:"'JetBrains Mono',monospace" }}>
-        ✕
-      </button>
-    </div>
-  );
-}
-
-// ─── System status strip ───────────────────────────────────────────────────────
-function StatusStrip() {
+// ─── Status bar (price feed + circuit state) ──────────────────────────────────
+function StatusBar() {
   const { state } = useCircuitState();
-  const { systemState, vaults } = useSystemState();
   const color = state === "RISK" ? "#f26b6b" : state === "WATCH" ? "#FBBF24" : "#14F195";
-  const msg   = systemState === "CIRCUIT_TRIGGERED" ? "CIRCUIT TRIGGERED" : systemState === "AT_RISK" ? "AT RISK" : "SOVEREIGN ONLINE";
-
   return (
-    <div style={{
-      padding:"0.3rem 1.25rem",
-      background:"rgba(2,3,10,0.9)",
-      borderBottom:"1px solid rgba(255,255,255,0.04)",
-      display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"0.4rem",
-    }}>
-      <div style={{ display:"flex", alignItems:"center", gap:"1.25rem" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"0.35rem" }}>
-          <span style={{ width:"5px", height:"5px", borderRadius:"50%", background:color, animation:"pulse 1.5s ease-in-out infinite", boxShadow:`0 0 6px ${color}` }} />
-          <span style={{ fontSize:"0.5rem", fontWeight:700, color, letterSpacing:"0.1em", textTransform:"uppercase", fontFamily:"'JetBrains Mono',monospace" }}>{msg}</span>
+    <div style={{ padding:"0.28rem 1.25rem", background:"rgba(2,3,10,0.97)", borderBottom:"1px solid rgba(255,255,255,0.04)", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"0.4rem" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:"0.875rem", flexWrap:"wrap" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"0.3rem" }}>
+          <span style={{ width:"4px",height:"4px",borderRadius:"50%",background:color,animation:"pulse 1.5s ease-in-out infinite",flexShrink:0 }} />
+          <span style={{ fontSize:"0.46rem",fontWeight:700,color,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>Circuit {state === "RISK" ? "Alert" : state === "WATCH" ? "Watch" : "Safe"}</span>
         </div>
-        <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.25)", fontFamily:"'JetBrains Mono',monospace" }}>
-          Gold: <span style={{ color:"#D4AF37", fontWeight:700 }}>$4,733.39</span>
-        </span>
-        <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.25)", fontFamily:"'JetBrains Mono',monospace" }}>
-          Silver: <span style={{ color:"#C0C0C0", fontWeight:700 }}>$72.91</span>
-        </span>
+        {[
+          { label:"XAU",  value:"$4,733.39", color:"#D4AF37" },
+          { label:"XAG",  value:"$72.91",    color:"#C0C0C0" },
+          { label:"NVDA", value:"$211.48",   color:"#76B900" },
+          { label:"TSLA", value:"$411.89",   color:"#CC0000" },
+          { label:"AAPL", value:"$287.46",   color:"#f0f0f0" },
+        ].map(({ label, value, color: c }) => (
+          <span key={label} style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.22)",fontFamily:"'JetBrains Mono',monospace" }}>
+            {label} <span style={{ color:c,fontWeight:700 }}>{value}</span>
+          </span>
+        ))}
       </div>
-      <span style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.2)", fontFamily:"'JetBrains Mono',monospace" }}>
-        {vaults.length} vaults · {new Date().toLocaleTimeString()}
+      <span style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.16)",fontFamily:"'JetBrains Mono',monospace" }}>
+        Solana · Token-2022 · {new Date().toLocaleTimeString()}
       </span>
     </div>
   );
 }
 
-// ─── Hero section ─────────────────────────────────────────────────────────────
-function Hero({ setTab }: { setTab: (t: TabId) => void }) {
-  const [tick, setTick] = useState(0);
-  const LINES = [
-    "Sovereign terminal for tokenized reality.",
-    "RWA. Collectibles. AI Arena. On Solana.",
-    "Deploy agents. Vault assets. Win prestige.",
-  ];
-  useEffect(() => {
-    const iv = setInterval(() => setTick(t => (t + 1) % LINES.length), 3000);
-    return () => clearInterval(iv);
-  }, []);
+// ─── Protocol overview — buy ABRA + institutional description ─────────────────
+function ProtocolOverview() {
+  const { connected, wallet, disconnect, connecting } = useWallet();
+  const { setVisible } = useWalletModal();
 
   return (
-    <div style={{
-      padding:"2rem 1.25rem 1.5rem",
-      background:"radial-gradient(ellipse at 50% -20%, rgba(107,140,255,0.1) 0%, transparent 60%)",
-      textAlign:"center", position:"relative",
-    }}>
-      {/* Rune ring */}
-      <div style={{
-        width:"64px", height:"64px", borderRadius:"50%", margin:"0 auto 1rem",
-        background:"rgba(107,140,255,0.08)", border:"1px solid rgba(107,140,255,0.25)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        boxShadow:"0 0 30px rgba(107,140,255,0.2), inset 0 0 20px rgba(107,140,255,0.06)",
-        animation:"pulse 3s ease-in-out infinite",
-      }}>
-        <span style={{ fontSize:"1.75rem", color:"#6b8cff" }}>⬢</span>
+    <div style={{ padding:"1.25rem 1.25rem 0.75rem", background:"radial-gradient(ellipse at 50% -20%, rgba(107,140,255,0.06) 0%, transparent 65%)" }}>
+
+      {/* Title row */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem", marginBottom:"0.875rem" }}>
+        <div>
+          <p style={{ fontSize:"0.48rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.2rem" }}>
+            World Labs Protocol · Solana Mainnet
+          </p>
+          <h1 style={{ fontWeight:900,fontSize:"clamp(1.2rem,3.5vw,1.7rem)",letterSpacing:"-0.03em",margin:0, background:"linear-gradient(135deg,#D4AF37,#a855f7 45%,#6b8cff)", WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>
+            Sovereign RWA Terminal
+          </h1>
+        </div>
+
+        {/* Actions — Buy ABRA + wallet */}
+        <div style={{ display:"flex", gap:"0.4rem", alignItems:"center", flexWrap:"wrap" }}>
+          <a href="https://jup.ag/swap/SOL-5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.35rem 0.75rem",borderRadius:"7px",fontSize:"0.58rem",fontWeight:700, background:"rgba(255,133,0,0.12)",border:"1px solid rgba(255,133,0,0.3)",color:"#FF8500",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace",display:"inline-flex",alignItems:"center",gap:"0.3rem" }}>
+            <svg width="10" height="10" viewBox="0 0 20 20" fill="#FF8500"><path d="M10 2L3 7v6c0 4 3 7 7 8 4-1 7-4 7-8V7L10 2z"/></svg>
+            Buy $ABRA · Jupiter
+          </a>
+          <a href="https://app.bags.fm/abraxas" target="_blank" rel="noopener noreferrer" style={{ padding:"0.35rem 0.75rem",borderRadius:"7px",fontSize:"0.58rem",fontWeight:700, background:"rgba(107,140,255,0.1)",border:"1px solid rgba(107,140,255,0.25)",color:"#6b8cff",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace",display:"inline-flex",alignItems:"center",gap:"0.3rem" }}>
+            <svg width="10" height="10" viewBox="0 0 20 20" fill="#6b8cff"><rect x="3" y="6" width="14" height="10" rx="2"/><path d="M7 6V4a3 3 0 016 0v2" stroke="#6b8cff" fill="none" strokeWidth="1.5"/></svg>
+            Buy $ABRA · Bags
+          </a>
+          {/* Wallet — only show if wallet extension detected */}
+          {wallet && !connected && !connecting && (
+            <button onClick={() => setVisible(true)} style={{ padding:"0.35rem 0.75rem",borderRadius:"7px",fontSize:"0.58rem",fontWeight:700,background:"rgba(6,8,16,0.9)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+              Connect Wallet
+            </button>
+          )}
+          {!wallet && (
+            <button onClick={() => setVisible(true)} style={{ padding:"0.35rem 0.75rem",borderRadius:"7px",fontSize:"0.58rem",fontWeight:700,background:"rgba(6,8,16,0.9)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.35)",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+              Install Wallet
+            </button>
+          )}
+          {connecting && (
+            <span style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace" }}>Connecting…</span>
+          )}
+          {connected && (
+            <button onClick={() => disconnect()} style={{ padding:"0.35rem 0.75rem",borderRadius:"7px",fontSize:"0.58rem",fontWeight:700,background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.25)",color:"#14F195",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",display:"flex",alignItems:"center",gap:"0.3rem" }}>
+              <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 2s ease-in-out infinite" }} />
+              Connected · Disconnect
+            </button>
+          )}
+        </div>
       </div>
-      <h1 style={{
-        fontWeight:900, fontSize:"clamp(1.6rem,5vw,2.4rem)",
-        letterSpacing:"-0.03em", margin:"0 0 0.5rem",
-        background:"linear-gradient(135deg,#D4AF37,#a855f7 40%,#6b8cff)",
-        WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
-      }}>
-        ABRAXAS
-      </h1>
-      {/* Typewriter-style rotating tagline */}
-      <p style={{
-        fontSize:"0.82rem", color:"rgba(255,255,255,0.5)",
-        minHeight:"1.4em", transition:"opacity 0.3s", margin:"0 0 1.5rem",
-        fontFamily:"'JetBrains Mono',monospace",
-      }}>
-        {LINES[tick]}
-      </p>
-      <div style={{ display:"flex", gap:"0.625rem", justifyContent:"center", flexWrap:"wrap" }}>
-        <button onClick={() => setTab("terminal")} style={{
-          padding:"0.6rem 1.5rem", borderRadius:"10px", fontWeight:800, fontSize:"0.82rem",
-          background:"linear-gradient(135deg,#a855f7,#6b8cff)", border:"none", color:"#fff",
-          cursor:"pointer", boxShadow:"0 0 20px rgba(168,85,247,0.4)", letterSpacing:"0.02em",
-        }}>
-          Enter Arena →
-        </button>
-        <Link href="/protect">
-          <button style={{
-            padding:"0.6rem 1.5rem", borderRadius:"10px", fontWeight:700, fontSize:"0.82rem",
-            background:"rgba(20,241,149,0.08)", border:"1px solid rgba(20,241,149,0.3)",
-            color:"#14F195", cursor:"pointer", letterSpacing:"0.02em",
-          }}>
-            Vault Assets
-          </button>
-        </Link>
+
+      {/* Protocol description */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:"0.5rem", marginBottom:"0.5rem" }}>
+        {[
+          { label:"What Abraxas Does", body:"An autonomous AI operating layer for tokenized real-world assets on Solana. Each vault holds verified physical collectibles, precious metals, equities, and luxury assets governed by Sophia Agents and defended by Circuit Engine." },
+          { label:"Sovereign Arena", body:"Financialized strategic asset combat. Assets enter the Arena with real economic attributes — risk score, liquidity depth, yield, momentum. Sophia Agents apply macro buffs. Match outcomes are semi-deterministic, data-influenced, and wager-compatible." },
+          { label:"x402 Settlement", body:"Micropayments power autonomous execution. Arena antes, agent oracle fees, and hedge settlements run through x402 middleware on Solana — instant, sub-cent, no approval required. This is how the protocol funds itself without human intervention." },
+        ].map(item => (
+          <div key={item.label} style={{ padding:"0.625rem 0.75rem",background:"rgba(6,8,16,0.92)",border:"1px solid rgba(255,255,255,0.05)",borderRadius:"8px" }}>
+            <div style={{ fontSize:"0.52rem",fontWeight:700,color:"#f0f0f0",marginBottom:"0.25rem",letterSpacing:"0.02em" }}>{item.label}</div>
+            <div style={{ fontSize:"0.51rem",color:"rgba(255,255,255,0.4)",lineHeight:1.65 }}>{item.body}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-// ─── Vaults tab (embedded) ────────────────────────────────────────────────────
-function VaultsEmbed() {
-  return (
-    <div style={{ padding:"1.25rem", textAlign:"center" }}>
-      <p style={{ fontSize:"0.7rem", color:"rgba(255,255,255,0.35)", marginBottom:"1rem", fontFamily:"'JetBrains Mono',monospace" }}>
-        Full vault management runs on the dedicated Vaults page for optimal performance.
-      </p>
-      <Link href="/protect">
-        <button style={{
-          padding:"0.6rem 1.5rem", borderRadius:"10px", fontWeight:700, fontSize:"0.8rem",
-          background:"rgba(107,140,255,0.12)", border:"1px solid rgba(107,140,255,0.3)",
-          color:"#6b8cff", cursor:"pointer",
-        }}>
-          Open Vault Terminal →
-        </button>
-      </Link>
-    </div>
-  );
-}
-
-// ─── Main page ─────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<TabId>("terminal");
-
-  // URL hash persistence
-  useEffect(() => {
-    const hash = window.location.hash.replace("#","") as TabId;
-    if (hash === "terminal" || hash === "vaults") setActiveTab(hash);
-  }, []);
-
-  function setTab(tab: TabId) {
-    setActiveTab(tab);
-    window.history.replaceState(null,"",`#${tab}`);
-    window.scrollTo({ top:0, behavior:"smooth" });
-  }
-
-  const TABS = [
-    { id:"terminal" as TabId, label:"Terminal ⬢" },
-    { id:"vaults"   as TabId, label:"Vaults ⛊"   },
-  ];
-
   return (
     <div style={{ maxWidth:"1100px", margin:"0 auto", paddingBottom:"5rem" }}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
-
-      {/* System status */}
-      <StatusStrip />
-
-      {/* Page header with wallet */}
-      <div style={{ padding:"0.75rem 1.25rem", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.25)", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.06em" }}>
-          ABRAXAS PROTOCOL · MAY 2026
-        </div>
-        <WalletStatus />
-      </div>
-
-      {/* Hero — visible only on terminal tab */}
-      {activeTab === "terminal" && <Hero setTab={setTab} />}
-
-      {/* Tab bar */}
-      <div style={{
-        display:"flex", gap:"0.25rem", margin:"0 1.25rem 1.25rem",
-        background:"rgba(6,8,16,0.8)", padding:"0.3rem", borderRadius:"10px",
-        border:"1px solid rgba(255,255,255,0.06)",
-      }}>
-        {TABS.map(tab => {
-          const active = activeTab === tab.id;
-          return (
-            <button key={tab.id} onClick={() => setTab(tab.id)} style={{
-              flex:1, padding:"0.45rem 0.875rem", borderRadius:"8px", border:"none",
-              background:active?"rgba(107,140,255,0.14)":"transparent",
-              boxShadow:active?"0 0 12px rgba(107,140,255,0.15)":"none",
-              color:active?"#6b8cff":"rgba(255,255,255,0.38)",
-              fontWeight:active?700:400, fontSize:"0.72rem",
-              cursor:"pointer", letterSpacing:"0.02em", transition:"all 0.15s",
-            }}>
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Content with fade transition */}
-      <div key={activeTab} style={{ animation:"fadeIn 0.2s ease" }}>
-        {activeTab === "terminal" && (
-          <Suspense fallback={<TerminalArenaSkeleton />}>
-            <TerminalArena />
-          </Suspense>
-        )}
-        {activeTab === "vaults" && <VaultsEmbed />}
-      </div>
-      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <StatusBar />
+      <ProtocolOverview />
+      <Suspense fallback={<TerminalArenaSkeleton />}>
+        <TerminalArena />
+      </Suspense>
     </div>
   );
 }

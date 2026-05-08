@@ -244,6 +244,34 @@ export default function VaultsPage() {
       <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,290px),1fr))",gap:"0.875rem" }}>
         {VAULT_ADDRESSES.map(v => <VaultCard key={v.id} vault={v} />)}
       </div>
+
+      {/* $ABRA CA — buy section at bottom of vault terminal */}
+      <div style={{ marginTop:"1.5rem", padding:"1rem 1.25rem", background:"rgba(200,169,110,0.05)", border:"1px solid rgba(200,169,110,0.18)", borderRadius:"12px" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
+          <div>
+            <div style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:"0.2rem" }}>
+              $ABRA Token · Solana SPL
+            </div>
+            <div style={{ fontWeight:800, fontSize:"0.75rem", color:"#C8A96E", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.02em", marginBottom:"0.2rem" }}>
+              5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
+            </div>
+            <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.32)", fontFamily:"'JetBrains Mono',monospace" }}>
+              Protocol utility token. Powers Arena antes, agent fees, and vault yield.
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:"0.4rem" }}>
+            <a href="https://jup.ag/swap/SOL-5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(255,133,0,0.12)", border:"1px solid rgba(255,133,0,0.28)", color:"#FF8500", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+              Buy on Jupiter
+            </a>
+            <a href="https://app.bags.fm/abraxas" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(107,140,255,0.1)", border:"1px solid rgba(107,140,255,0.22)", color:"#6b8cff", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+              Buy on Bags
+            </a>
+            <a href={`https://explorer.solana.com/address/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS`} target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.4)", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+              Explorer
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
