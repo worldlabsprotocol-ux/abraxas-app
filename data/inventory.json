@@ -28,9 +28,9 @@
       "imagePath": "/assets/rwa/1996-blastoise-holo.jpeg",
       "imagePathBack": "/assets/rwa/1996-blastoise-holo-back.jpeg",
       "tokenId": "1996-BLASTOI-001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 53,
+      "def": 79,
+      "speed": 50,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -61,11 +61,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 56,
         "liquidity_score": 38.03,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=56"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "1996-charizard-holo",
@@ -88,9 +90,9 @@
       "imagePath": "/assets/rwa/1996-charizard-holo.jpeg",
       "imagePathBack": "/assets/rwa/1996-charizard-holo-back.jpeg",
       "tokenId": "1996-CHARIZA-001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 86,
+      "def": 38,
+      "speed": 81,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -121,11 +123,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 41,
         "liquidity_score": 40.5,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=41"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "1999-charizard-holo",
@@ -148,9 +152,9 @@
       "imagePath": "/assets/rwa/1999-charizard-holo.jpeg",
       "imagePathBack": "/assets/rwa/1999-charizard-holo-back.jpeg",
       "tokenId": "1999-CHARIZA-001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 40,
+      "def": 91,
+      "speed": 41,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -181,11 +185,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 68,
+        "power_level": 71,
         "liquidity_score": 65.6,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=68"
-      }
+        "win_formula": "arch=Tank,pwr=71"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "2000-dark-blastoise",
@@ -208,9 +214,9 @@
       "imagePath": "/assets/rwa/2000-dark-blastoise-holo.jpeg",
       "imagePathBack": "/assets/rwa/2000-dark-blastoise-holo-back.jpeg",
       "tokenId": "2000-DARK-BL-001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 63,
+      "def": 76,
+      "speed": 52,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -241,11 +247,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 55,
         "liquidity_score": 38.03,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=55"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2000-dark-charizard",
@@ -268,9 +276,9 @@
       "imagePath": "/assets/rwa/2000-dark-charizard.jpeg",
       "imagePathBack": "/assets/rwa/2000-dark-charizard-back.jpeg",
       "tokenId": "2000-DARK-CH-001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 45,
+      "def": 86,
+      "speed": 42,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -301,11 +309,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 62,
         "liquidity_score": 45.48,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Tank,pwr=62"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "2000-slowking",
@@ -328,9 +338,9 @@
       "imagePath": "/assets/rwa/2000-slowking.jpeg",
       "imagePathBack": "/assets/rwa/2000-slowking-back.jpeg",
       "tokenId": "2000-SLOWKIN-001",
-      "atk": 55,
-      "def": 83,
-      "speed": 72,
+      "atk": 94,
+      "def": 38,
+      "speed": 88,
       "circuitScore": 24,
       "defenseLevel": "armed",
       "protected": true,
@@ -361,11 +371,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 45,
         "liquidity_score": 42.1,
         "historical_volatility": 14.21,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=45"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2001-mewtwo",
@@ -388,9 +400,9 @@
       "imagePath": "/assets/rwa/2001-mewtwo-holo.jpeg",
       "imagePathBack": "/assets/rwa/2001-mewtwo-holo-back.jpeg",
       "tokenId": "2001-MEWTWO-001",
-      "atk": 57,
-      "def": 78,
-      "speed": 91,
+      "atk": 91,
+      "def": 37,
+      "speed": 81,
       "circuitScore": 15,
       "defenseLevel": "armed",
       "protected": true,
@@ -421,11 +433,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 46,
         "liquidity_score": 41.41,
         "historical_volatility": 10.89,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=46"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2001-shining-charizard",
@@ -448,9 +462,9 @@
       "imagePath": "/assets/rwa/2001-shining-charizard.jpeg",
       "imagePathBack": "/assets/rwa/2001-shining-charizard-back.jpeg",
       "tokenId": "2001-SHINING-001",
-      "atk": 50,
-      "def": 85,
-      "speed": 68,
+      "atk": 88,
+      "def": 42,
+      "speed": 96,
       "circuitScore": 42,
       "defenseLevel": "armed",
       "protected": true,
@@ -481,11 +495,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 43,
         "liquidity_score": 40.5,
         "historical_volatility": 14.98,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=43"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2002-charizard-reverse",
@@ -508,9 +524,9 @@
       "imagePath": "/assets/rwa/2002-charizard-reverse-foil.jpeg",
       "imagePathBack": "/assets/rwa/2002-charizard-reverse-foil-back.jpeg",
       "tokenId": "2002-CHARIZA-001",
-      "atk": 50,
-      "def": 85,
-      "speed": 68,
+      "atk": 91,
+      "def": 37,
+      "speed": 98,
       "circuitScore": 42,
       "defenseLevel": "armed",
       "protected": true,
@@ -541,11 +557,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 41,
         "liquidity_score": 40.5,
         "historical_volatility": 14.98,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=41"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2002-squirtle",
@@ -568,9 +586,9 @@
       "imagePath": "/assets/rwa/2002-squirtle-holo.jpeg",
       "imagePathBack": "/assets/rwa/2002-squirtle-holo-back.jpeg",
       "tokenId": "2002-SQUIRTL-001",
-      "atk": 55,
-      "def": 83,
-      "speed": 72,
+      "atk": 61,
+      "def": 75,
+      "speed": 55,
       "circuitScore": 24,
       "defenseLevel": "armed",
       "protected": true,
@@ -601,11 +619,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 58,
         "liquidity_score": 37.73,
         "historical_volatility": 14.21,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=58"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2003-charizard",
@@ -628,9 +648,9 @@
       "imagePath": "/assets/rwa/2003-charizard-holo.jpeg",
       "imagePathBack": "/assets/rwa/2003-charizard-holo-back.jpeg",
       "tokenId": "2003-CHARIZA-001",
-      "atk": 54,
-      "def": 71,
-      "speed": 57,
+      "atk": 98,
+      "def": 49,
+      "speed": 90,
       "circuitScore": 28,
       "defenseLevel": "armed",
       "protected": true,
@@ -661,11 +681,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 48,
         "liquidity_score": 40.5,
         "historical_volatility": 1.63,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=48"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2003-golem",
@@ -688,9 +710,9 @@
       "imagePath": "/assets/rwa/2003-golem-holo.jpeg",
       "imagePathBack": "/assets/rwa/2003-golem-holo-back.jpeg",
       "tokenId": "2003-GOLEM-001",
-      "atk": 58,
-      "def": 76,
-      "speed": 87,
+      "atk": 69,
+      "def": 65,
+      "speed": 68,
       "circuitScore": 11,
       "defenseLevel": "armed",
       "protected": true,
@@ -721,11 +743,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 57,
         "liquidity_score": 37.73,
         "historical_volatility": 12.42,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=57"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2003-gyarados",
@@ -748,9 +772,9 @@
       "imagePath": "/assets/rwa/2003-gyarados-holo.jpeg",
       "imagePathBack": "/assets/rwa/2003-gyarados-holo-back.jpeg",
       "tokenId": "2003-GYARADO-001",
-      "atk": 55,
-      "def": 83,
-      "speed": 72,
+      "atk": 69,
+      "def": 77,
+      "speed": 51,
       "circuitScore": 24,
       "defenseLevel": "armed",
       "protected": true,
@@ -781,11 +805,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 59,
         "liquidity_score": 37.73,
         "historical_volatility": 14.21,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=59"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2003-nidoking",
@@ -808,9 +834,9 @@
       "imagePath": "/assets/rwa/2003-nidoking-holo.jpeg",
       "imagePathBack": "/assets/rwa/2003-nidoking-holo-back.jpeg",
       "tokenId": "2003-NIDOKIN-001",
-      "atk": 55,
-      "def": 83,
-      "speed": 72,
+      "atk": 67,
+      "def": 77,
+      "speed": 67,
       "circuitScore": 24,
       "defenseLevel": "armed",
       "protected": true,
@@ -841,11 +867,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 59,
         "liquidity_score": 37.73,
         "historical_volatility": 14.21,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=59"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2004-torchic",
@@ -868,9 +896,9 @@
       "imagePath": "/assets/rwa/2004-torchic-holo.jpeg",
       "imagePathBack": "/assets/rwa/2004-torchic-holo-back.jpeg",
       "tokenId": "2004-TORCHIC-001",
-      "atk": 56,
-      "def": 52,
-      "speed": 86,
+      "atk": 65,
+      "def": 79,
+      "speed": 69,
       "circuitScore": 19,
       "defenseLevel": "armed",
       "protected": true,
@@ -901,11 +929,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 61,
         "liquidity_score": 37.73,
         "historical_volatility": 7.74,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=61"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2004-treecko",
@@ -928,9 +958,9 @@
       "imagePath": "/assets/rwa/2004-treecko-holo-gold-star.jpeg",
       "imagePathBack": "/assets/rwa/2004-treecko-holo-gold-star-back.jpeg",
       "tokenId": "2004-TREECKO-001",
-      "atk": 56,
-      "def": 52,
-      "speed": 86,
+      "atk": 68,
+      "def": 79,
+      "speed": 61,
       "circuitScore": 19,
       "defenseLevel": "armed",
       "protected": true,
@@ -961,11 +991,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 61,
         "liquidity_score": 37.73,
         "historical_volatility": 7.74,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=61"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2005-camerupt",
@@ -988,9 +1020,9 @@
       "imagePath": "/assets/rwa/2005-camerupt-ex.jpeg",
       "imagePathBack": "/assets/rwa/2005-camerupt-ex-back.jpeg",
       "tokenId": "2005-CAMERUP-001",
-      "atk": 55,
-      "def": 83,
-      "speed": 72,
+      "atk": 51,
+      "def": 79,
+      "speed": 64,
       "circuitScore": 24,
       "defenseLevel": "armed",
       "protected": true,
@@ -1021,11 +1053,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 60,
         "liquidity_score": 37.73,
         "historical_volatility": 14.21,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=60"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2005-entei",
@@ -1048,9 +1082,9 @@
       "imagePath": "/assets/rwa/2005-entei-holo.jpeg",
       "imagePathBack": "/assets/rwa/2005-entei-holo-back.jpeg",
       "tokenId": "2005-ENTEI-001",
-      "atk": 58,
-      "def": 76,
-      "speed": 87,
+      "atk": 65,
+      "def": 79,
+      "speed": 69,
       "circuitScore": 11,
       "defenseLevel": "armed",
       "protected": true,
@@ -1081,11 +1115,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 63,
         "liquidity_score": 38.12,
         "historical_volatility": 12.42,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=63"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2005-latias",
@@ -1108,9 +1144,9 @@
       "imagePath": "/assets/rwa/2005-latias-gold-star-holo.jpeg",
       "imagePathBack": "/assets/rwa/2005-latias-gold-star-holo-back.jpeg",
       "tokenId": "2005-LATIAS-001",
-      "atk": 57,
-      "def": 78,
-      "speed": 91,
+      "atk": 97,
+      "def": 46,
+      "speed": 85,
       "circuitScore": 15,
       "defenseLevel": "armed",
       "protected": true,
@@ -1141,11 +1177,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 50,
         "liquidity_score": 41.17,
         "historical_volatility": 10.89,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=50"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2005-latios",
@@ -1168,9 +1206,9 @@
       "imagePath": "/assets/rwa/2005-latios-holo.jpeg",
       "imagePathBack": "/assets/rwa/2005-latios-holo-back.jpeg",
       "tokenId": "2005-LATIOS-001",
-      "atk": 57,
-      "def": 78,
-      "speed": 91,
+      "atk": 69,
+      "def": 79,
+      "speed": 66,
       "circuitScore": 15,
       "defenseLevel": "armed",
       "protected": true,
@@ -1201,11 +1239,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 62,
         "liquidity_score": 37.2,
         "historical_volatility": 10.89,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=62"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2005-milotic",
@@ -1228,9 +1268,9 @@
       "imagePath": "/assets/rwa/2005-milotic-ex-holo.jpeg",
       "imagePathBack": "/assets/rwa/2005-milotic-ex-holo-back.jpeg",
       "tokenId": "2005-MILOTIC-001",
-      "atk": 56,
-      "def": 52,
-      "speed": 86,
+      "atk": 43,
+      "def": 74,
+      "speed": 48,
       "circuitScore": 19,
       "defenseLevel": "armed",
       "protected": true,
@@ -1261,11 +1301,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 60,
         "liquidity_score": 41.53,
         "historical_volatility": 7.74,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=60"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2006-mew",
@@ -1288,9 +1330,9 @@
       "imagePath": "/assets/rwa/2006-mew-holo.jpeg",
       "imagePathBack": "/assets/rwa/2006-mew-holo-back.jpeg",
       "tokenId": "2006-MEW-001",
-      "atk": 60,
-      "def": 84,
-      "speed": 58,
+      "atk": 86,
+      "def": 37,
+      "speed": 96,
       "circuitScore": 6,
       "defenseLevel": "armed",
       "protected": true,
@@ -1321,11 +1363,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 47,
         "liquidity_score": 38.93,
         "historical_volatility": 14.8,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=47"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2011-rayquaza",
@@ -1348,9 +1392,9 @@
       "imagePath": "/assets/rwa/2011-rayquaza-holo.jpeg",
       "imagePathBack": "/assets/rwa/2011-rayquaza-holo-back.jpeg",
       "tokenId": "2011-RAYQUAZ-001",
-      "atk": 55,
-      "def": 83,
-      "speed": 72,
+      "atk": 93,
+      "def": 49,
+      "speed": 87,
       "circuitScore": 24,
       "defenseLevel": "armed",
       "protected": true,
@@ -1381,11 +1425,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 49,
         "liquidity_score": 41.86,
         "historical_volatility": 14.21,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=49"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2015-fa-team-magma",
@@ -1408,9 +1454,9 @@
       "imagePath": "/assets/rwa/2015-full-art-team-magma.jpeg",
       "imagePathBack": "/assets/rwa/2015-full-art-team-magma-back.jpeg",
       "tokenId": "2015-FA-TEAM-001",
-      "atk": 52,
-      "def": 60,
-      "speed": 77,
+      "atk": 67,
+      "def": 79,
+      "speed": 53,
       "circuitScore": 43,
       "defenseLevel": "armed",
       "protected": true,
@@ -1441,11 +1487,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 56,
         "liquidity_score": 37.73,
         "historical_volatility": 10.31,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=56"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2016-fa-charizard-ex",
@@ -1468,9 +1516,9 @@
       "imagePath": "/assets/rwa/2016-full-art-charizard-ex.jpeg",
       "imagePathBack": "/assets/rwa/2016-full-art-charizard-ex-back.jpeg",
       "tokenId": "2016-FA-CHAR-001",
-      "atk": 51,
-      "def": 57,
-      "speed": 91,
+      "atk": 96,
+      "def": 49,
+      "speed": 98,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -1501,11 +1549,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 45,
         "liquidity_score": 40.5,
         "historical_volatility": 13.93,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=45"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2016-fa-pretend-team",
@@ -1528,9 +1578,9 @@
       "imagePath": "/assets/rwa/2016-full-art-pretend-team.jpeg",
       "imagePathBack": "/assets/rwa/2016-full-art-pretend-team-back.jpeg",
       "tokenId": "2016-FA-PRET-001",
-      "atk": 51,
-      "def": 57,
-      "speed": 91,
+      "atk": 63,
+      "def": 67,
+      "speed": 68,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -1561,11 +1611,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 51,
         "liquidity_score": 37.73,
         "historical_volatility": 13.93,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=51"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2016-mega-tokyo-pikachu",
@@ -1588,9 +1640,9 @@
       "imagePath": "/assets/rwa/2016-mega-tokyo-pikachu.jpeg",
       "imagePathBack": "/assets/rwa/2016-mega-tokyo-pikachu-back.jpeg",
       "tokenId": "2016-MEGA-TO-001",
-      "atk": 50,
-      "def": 53,
-      "speed": 54,
+      "atk": 46,
+      "def": 93,
+      "speed": 41,
       "circuitScore": 39,
       "defenseLevel": "armed",
       "protected": true,
@@ -1621,11 +1673,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 67,
         "liquidity_score": 49.29,
         "historical_volatility": 4.0,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Tank,pwr=67"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "2016-poncho-pikachu",
@@ -1648,9 +1702,9 @@
       "imagePath": "/assets/rwa/2016-poncho-wearing-pikachu-.jpeg",
       "imagePathBack": "/assets/rwa/2016-poncho-wearing-pikachu--back.jpeg",
       "tokenId": "2016-PONCHO--001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 49,
+      "def": 82,
+      "speed": 54,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -1681,11 +1735,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 61,
         "liquidity_score": 47.73,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Tank,pwr=61"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "2018-pretend-boss-pikachu",
@@ -1708,9 +1764,9 @@
       "imagePath": "/assets/rwa/2018-pretend-boss-pikachu.jpeg",
       "imagePathBack": "/assets/rwa/2018-pretend-boss-pikachu-back.jpeg",
       "tokenId": "2018-PRETEND-001",
-      "atk": 50,
-      "def": 79,
-      "speed": 52,
+      "atk": 92,
+      "def": 44,
+      "speed": 98,
       "circuitScore": 31,
       "defenseLevel": "armed",
       "protected": true,
@@ -1741,11 +1797,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 46,
         "liquidity_score": 40.64,
         "historical_volatility": 9.7,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=46"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2018-psyduck",
@@ -1768,9 +1826,9 @@
       "imagePath": "/assets/rwa/2018-psyduck.jpeg",
       "imagePathBack": "/assets/rwa/2018-psyduck-back.jpeg",
       "tokenId": "2018-PSYDUCK-001",
-      "atk": 56,
-      "def": 52,
-      "speed": 86,
+      "atk": 69,
+      "def": 66,
+      "speed": 57,
       "circuitScore": 19,
       "defenseLevel": "armed",
       "protected": true,
@@ -1801,11 +1859,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 56,
         "liquidity_score": 37.73,
         "historical_volatility": 7.74,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=56"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2019-charizard-holo",
@@ -1828,9 +1888,9 @@
       "imagePath": "/assets/rwa/2019-charizard-holo.jpeg",
       "imagePathBack": "/assets/rwa/2019-charizard-holo-back.jpeg",
       "tokenId": "2019-CHARIZA-001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 93,
+      "def": 43,
+      "speed": 94,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -1861,11 +1921,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 43,
         "liquidity_score": 40.5,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=43"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2020-espeon-deoxys",
@@ -1888,9 +1950,9 @@
       "imagePath": "/assets/rwa/2020-espeon-deoxys-gx.jpeg",
       "imagePathBack": "/assets/rwa/2020-espeon-deoxys-gx-back.jpeg",
       "tokenId": "2020-ESPEON--001",
-      "atk": 52,
-      "def": 60,
-      "speed": 77,
+      "atk": 84,
+      "def": 39,
+      "speed": 98,
       "circuitScore": 43,
       "defenseLevel": "armed",
       "protected": true,
@@ -1921,11 +1983,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 40,
         "liquidity_score": 37.73,
         "historical_volatility": 10.31,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=40"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2021-fa-gengar-vmax",
@@ -1948,9 +2012,9 @@
       "imagePath": "/assets/rwa/2021-full-art-gengar-vmax.jpeg",
       "imagePathBack": "/assets/rwa/2021-full-art-gengar-vmax-back.jpeg",
       "tokenId": "2021-FA-GENG-001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 57,
+      "def": 69,
+      "speed": 66,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -1981,11 +2045,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 52,
         "liquidity_score": 38.88,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=52"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2021-fa-rayquaza-vmax",
@@ -2008,9 +2074,9 @@
       "imagePath": "/assets/rwa/2021-full-art-rayquaza-vmax.jpeg",
       "imagePathBack": "/assets/rwa/2021-full-art-rayquaza-vmax-back.jpeg",
       "tokenId": "2021-FA-RAYQ-001",
-      "atk": 50,
-      "def": 67,
-      "speed": 83,
+      "atk": 84,
+      "def": 48,
+      "speed": 84,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -2041,11 +2107,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 45,
         "liquidity_score": 41.86,
         "historical_volatility": 2.44,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=45"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2021-fa-umbreon-vmax",
@@ -2068,9 +2136,9 @@
       "imagePath": "/assets/rwa/2021-full-art-umbreon-vmax.jpeg",
       "imagePathBack": "/assets/rwa/2021-full-art-umbreon-vmax-back.jpeg",
       "tokenId": "2021-FA-UMBR-001",
-      "atk": 51,
-      "def": 57,
-      "speed": 91,
+      "atk": 44,
+      "def": 89,
+      "speed": 40,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -2101,11 +2169,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 60,
         "liquidity_score": 38.83,
         "historical_volatility": 13.93,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=60"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2024-mew",
@@ -2128,9 +2198,9 @@
       "imagePath": "/assets/rwa/2024-mew.jpeg",
       "imagePathBack": "/assets/rwa/2024-mew-back.jpeg",
       "tokenId": "2024-MEW-001",
-      "atk": 60,
-      "def": 84,
-      "speed": 58,
+      "atk": 98,
+      "def": 43,
+      "speed": 94,
       "circuitScore": 6,
       "defenseLevel": "armed",
       "protected": true,
@@ -2161,11 +2231,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 50,
         "liquidity_score": 38.93,
         "historical_volatility": 14.8,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=50"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2025-mew",
@@ -2188,9 +2260,9 @@
       "imagePath": "/assets/rwa/2025-mew.jpeg",
       "imagePathBack": "/assets/rwa/2025-mew-back.jpeg",
       "tokenId": "2025-MEW-001",
-      "atk": 60,
-      "def": 84,
-      "speed": 58,
+      "atk": 95,
+      "def": 38,
+      "speed": 93,
       "circuitScore": 6,
       "defenseLevel": "armed",
       "protected": true,
@@ -2221,11 +2293,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 48,
         "liquidity_score": 38.93,
         "historical_volatility": 14.8,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=48"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2022-monkey-d-luffy",
@@ -2248,9 +2322,9 @@
       "imagePath": "/assets/rwa/2022-monkey-d-luffy.jpeg",
       "imagePathBack": "/assets/rwa/2022-monkey-d-luffy-back.jpeg",
       "tokenId": "2022-MONKEY--001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 86,
+      "def": 37,
+      "speed": 96,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -2281,11 +2355,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 41,
         "liquidity_score": 42.27,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=41"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2022-nami-alt",
@@ -2308,9 +2384,9 @@
       "imagePath": "/assets/rwa/2022-nami-alt.jpeg",
       "imagePathBack": "/assets/rwa/2022-nami-alt-back.jpeg",
       "tokenId": "2022-NAMI-AL-001",
-      "atk": 55,
-      "def": 83,
-      "speed": 72,
+      "atk": 42,
+      "def": 74,
+      "speed": 34,
       "circuitScore": 24,
       "defenseLevel": "armed",
       "protected": true,
@@ -2341,11 +2417,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 58,
         "liquidity_score": 37.73,
         "historical_volatility": 14.21,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=58"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2022-portgas-d-ace",
@@ -2368,9 +2446,9 @@
       "imagePath": "/assets/rwa/2022-portgas-d-ace-seri.jpeg",
       "imagePathBack": "/assets/rwa/2022-portgas-d-ace-seri-back.jpeg",
       "tokenId": "2022-PORTGAS-001",
-      "atk": 52,
-      "def": 60,
-      "speed": 77,
+      "atk": 30,
+      "def": 74,
+      "speed": 43,
       "circuitScore": 43,
       "defenseLevel": "armed",
       "protected": true,
@@ -2401,11 +2479,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 54,
         "liquidity_score": 37.73,
         "historical_volatility": 10.31,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=54"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2022-shanks-manga",
@@ -2428,9 +2508,9 @@
       "imagePath": "/assets/rwa/2022-shanks-manga-alternate.jpeg",
       "imagePathBack": "/assets/rwa/2022-shanks-manga-alternate-back.jpeg",
       "tokenId": "2022-SHANKS--001",
-      "atk": 52,
-      "def": 63,
-      "speed": 61,
+      "atk": 54,
+      "def": 78,
+      "speed": 50,
       "circuitScore": 40,
       "defenseLevel": "armed",
       "protected": true,
@@ -2461,11 +2541,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 58,
         "liquidity_score": 43.18,
         "historical_volatility": 12.86,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=58"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2023-monkey-d-luffy",
@@ -2488,9 +2570,9 @@
       "imagePath": "/assets/rwa/2023-monkey-d-luffy.jpeg",
       "imagePathBack": "/assets/rwa/2023-monkey-d-luffy-back.jpeg",
       "tokenId": "2023-MONKEY--001",
-      "atk": 51,
-      "def": 87,
-      "speed": 89,
+      "atk": 97,
+      "def": 29,
+      "speed": 97,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -2521,11 +2603,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 38,
         "liquidity_score": 42.27,
         "historical_volatility": 8.43,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=38"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2023-portgas-d-ace",
@@ -2548,9 +2632,9 @@
       "imagePath": "/assets/rwa/2023-portgas-d-ace.jpeg",
       "imagePathBack": "/assets/rwa/2023-portgas-d-ace-back.jpeg",
       "tokenId": "2023-PORTGAS-001",
-      "atk": 52,
-      "def": 60,
-      "speed": 77,
+      "atk": 41,
+      "def": 77,
+      "speed": 36,
       "circuitScore": 43,
       "defenseLevel": "armed",
       "protected": true,
@@ -2581,11 +2665,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 55,
         "liquidity_score": 37.73,
         "historical_volatility": 10.31,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=55"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2023-shanks-event",
@@ -2608,9 +2694,9 @@
       "imagePath": "/assets/rwa/2023-shanks-official-event.jpeg",
       "imagePathBack": "/assets/rwa/2023-shanks-official-event-back.jpeg",
       "tokenId": "2023-SHANKS--001",
-      "atk": 52,
-      "def": 63,
-      "speed": 61,
+      "atk": 55,
+      "def": 72,
+      "speed": 65,
       "circuitScore": 40,
       "defenseLevel": "armed",
       "protected": true,
@@ -2641,11 +2727,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 56,
         "liquidity_score": 43.18,
         "historical_volatility": 12.86,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=56"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2023-shanks",
@@ -2668,9 +2756,9 @@
       "imagePath": "/assets/rwa/2023-shanks.jpeg",
       "imagePathBack": "/assets/rwa/2023-shanks-back.jpeg",
       "tokenId": "2023-SHANKS-001",
-      "atk": 57,
-      "def": 78,
-      "speed": 91,
+      "atk": 50,
+      "def": 72,
+      "speed": 65,
       "circuitScore": 15,
       "defenseLevel": "armed",
       "protected": true,
@@ -2701,11 +2789,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 61,
         "liquidity_score": 43.18,
         "historical_volatility": 10.89,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=61"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2024-boa-hancock",
@@ -2728,9 +2818,9 @@
       "imagePath": "/assets/rwa/2024-boa-hancock.jpeg",
       "imagePathBack": "/assets/rwa/2024-boa-hancock-back.jpeg",
       "tokenId": "2024-BOA-HAN-001",
-      "atk": 53,
-      "def": 87,
-      "speed": 50,
+      "atk": 44,
+      "def": 85,
+      "speed": 35,
       "circuitScore": 37,
       "defenseLevel": "armed",
       "protected": true,
@@ -2761,11 +2851,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 60,
         "liquidity_score": 37.73,
         "historical_volatility": 4.78,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=60"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2024-marshall-d-teach-mang",
@@ -2788,9 +2880,9 @@
       "imagePath": "/assets/rwa/2024-marshall-d-teach-mang.jpeg",
       "imagePathBack": "/assets/rwa/2024-marshall-d-teach-mang-back.jpeg",
       "tokenId": "2024-MARSHAL-001",
-      "atk": 50,
-      "def": 52,
-      "speed": 65,
+      "atk": 61,
+      "def": 74,
+      "speed": 56,
       "circuitScore": 26,
       "defenseLevel": "armed",
       "protected": true,
@@ -2821,11 +2913,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 58,
         "liquidity_score": 37.73,
         "historical_volatility": 9.09,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=58"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2024-marshall-d-teach",
@@ -2848,9 +2942,9 @@
       "imagePath": "/assets/rwa/2024-marshall-d-teach.jpeg",
       "imagePathBack": "/assets/rwa/2024-marshall-d-teach-back.jpeg",
       "tokenId": "2024-MARSHAL-001",
-      "atk": 50,
-      "def": 67,
-      "speed": 83,
+      "atk": 69,
+      "def": 77,
+      "speed": 69,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -2881,11 +2975,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 55,
         "liquidity_score": 37.73,
         "historical_volatility": 2.44,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=55"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2024-monkey-d-luffy-manga",
@@ -2908,9 +3004,9 @@
       "imagePath": "/assets/rwa/2024-monkey-d-luffy-manga.jpeg",
       "imagePathBack": "/assets/rwa/2024-monkey-d-luffy-manga-back.jpeg",
       "tokenId": "2024-MONKEY--001",
-      "atk": 50,
-      "def": 79,
-      "speed": 52,
+      "atk": 97,
+      "def": 25,
+      "speed": 78,
       "circuitScore": 31,
       "defenseLevel": "armed",
       "protected": true,
@@ -2941,11 +3037,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 39,
         "liquidity_score": 42.27,
         "historical_volatility": 9.7,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=39"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2024-monkey-luffy-manga",
@@ -2968,9 +3066,9 @@
       "imagePath": "/assets/rwa/2024-monkey-luffy-manga.jpeg",
       "imagePathBack": "/assets/rwa/2024-monkey-luffy-manga-back.jpeg",
       "tokenId": "2024-MONKEY--001",
-      "atk": 50,
-      "def": 53,
-      "speed": 54,
+      "atk": 94,
+      "def": 43,
+      "speed": 80,
       "circuitScore": 39,
       "defenseLevel": "armed",
       "protected": true,
@@ -3001,11 +3099,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 44,
         "liquidity_score": 42.27,
         "historical_volatility": 4.0,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=44"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2024-nami",
@@ -3028,9 +3128,9 @@
       "imagePath": "/assets/rwa/2024-nami.jpeg",
       "imagePathBack": "/assets/rwa/2024-nami-back.jpeg",
       "tokenId": "2024-NAMI-001",
-      "atk": 59,
-      "def": 52,
-      "speed": 73,
+      "atk": 28,
+      "def": 89,
+      "speed": 48,
       "circuitScore": 8,
       "defenseLevel": "armed",
       "protected": true,
@@ -3061,11 +3161,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 67,
         "liquidity_score": 37.73,
         "historical_volatility": 5.55,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=67"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2024-roronoa-zoro-manga",
@@ -3088,9 +3190,9 @@
       "imagePath": "/assets/rwa/2024-roronoa-zoro-manga.jpeg",
       "imagePathBack": "/assets/rwa/2024-roronoa-zoro-manga-back.jpeg",
       "tokenId": "2024-RORONOA-001",
-      "atk": 50,
-      "def": 53,
-      "speed": 54,
+      "atk": 52,
+      "def": 73,
+      "speed": 69,
       "circuitScore": 39,
       "defenseLevel": "armed",
       "protected": true,
@@ -3121,11 +3223,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 56,
         "liquidity_score": 41.75,
         "historical_volatility": 4.0,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=56"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2024-roronoa-zoro",
@@ -3148,9 +3252,9 @@
       "imagePath": "/assets/rwa/2024-roronoa-zoro.jpeg",
       "imagePathBack": "/assets/rwa/2024-roronoa-zoro-back.jpeg",
       "tokenId": "2024-RORONOA-001",
-      "atk": 52,
-      "def": 63,
-      "speed": 61,
+      "atk": 56,
+      "def": 78,
+      "speed": 59,
       "circuitScore": 40,
       "defenseLevel": "armed",
       "protected": true,
@@ -3181,11 +3285,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 58,
         "liquidity_score": 41.75,
         "historical_volatility": 12.86,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=58"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2024-tony-tony-chopper",
@@ -3208,9 +3314,9 @@
       "imagePath": "/assets/rwa/2024-tony-tony-chopper.jpeg",
       "imagePathBack": "/assets/rwa/2024-tony-tony-chopper-back.jpeg",
       "tokenId": "2024-TONY-TO-001",
-      "atk": 50,
-      "def": 85,
-      "speed": 68,
+      "atk": 36,
+      "def": 82,
+      "speed": 35,
       "circuitScore": 42,
       "defenseLevel": "armed",
       "protected": true,
@@ -3241,11 +3347,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 58,
         "liquidity_score": 37.73,
         "historical_volatility": 14.98,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=58"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2025-hibari",
@@ -3268,9 +3376,9 @@
       "imagePath": "/assets/rwa/2025-hibari.jpeg",
       "imagePathBack": "/assets/rwa/2025-hibari-back.jpeg",
       "tokenId": "2025-HIBARI-001",
-      "atk": 57,
-      "def": 78,
-      "speed": 91,
+      "atk": 90,
+      "def": 44,
+      "speed": 84,
       "circuitScore": 15,
       "defenseLevel": "armed",
       "protected": true,
@@ -3301,11 +3409,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 48,
         "liquidity_score": 37.73,
         "historical_volatility": 10.89,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=48"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2025-luffy-alt",
@@ -3328,9 +3438,9 @@
       "imagePath": "/assets/rwa/2025-luffy-alt.jpeg",
       "imagePathBack": "/assets/rwa/2025-luffy-alt-back.jpeg",
       "tokenId": "2025-LUFFY-A-001",
-      "atk": 54,
-      "def": 71,
-      "speed": 57,
+      "atk": 81,
+      "def": 37,
+      "speed": 97,
       "circuitScore": 28,
       "defenseLevel": "armed",
       "protected": true,
@@ -3361,11 +3471,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 44,
         "liquidity_score": 42.07,
         "historical_volatility": 1.63,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=44"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2025-luffy-gold",
@@ -3388,9 +3500,9 @@
       "imagePath": "/assets/rwa/2025-luffy-gold.jpeg",
       "imagePathBack": "/assets/rwa/2025-luffy-gold-back.jpeg",
       "tokenId": "2025-LUFFY-G-001",
-      "atk": 54,
-      "def": 55,
-      "speed": 48,
+      "atk": 49,
+      "def": 89,
+      "speed": 59,
       "circuitScore": 33,
       "defenseLevel": "armed",
       "protected": true,
@@ -3421,11 +3533,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 65,
         "liquidity_score": 45.46,
         "historical_volatility": 14.91,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Tank,pwr=65"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "2025-luffy",
@@ -3448,9 +3562,9 @@
       "imagePath": "/assets/rwa/2025-luffy.jpeg",
       "imagePathBack": "/assets/rwa/2025-luffy-back.jpeg",
       "tokenId": "2025-LUFFY-001",
-      "atk": 58,
-      "def": 76,
-      "speed": 87,
+      "atk": 75,
+      "def": 44,
+      "speed": 89,
       "circuitScore": 11,
       "defenseLevel": "armed",
       "protected": true,
@@ -3481,11 +3595,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 50,
         "liquidity_score": 42.07,
         "historical_volatility": 12.42,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=50"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2025-monkey-luffy-manga",
@@ -3508,9 +3624,9 @@
       "imagePath": "/assets/rwa/2025-monkey-luffy-manga.jpeg",
       "imagePathBack": "/assets/rwa/2025-monkey-luffy-manga-back.jpeg",
       "tokenId": "2025-MONKEY--001",
-      "atk": 50,
-      "def": 53,
-      "speed": 54,
+      "atk": 92,
+      "def": 30,
+      "speed": 79,
       "circuitScore": 39,
       "defenseLevel": "armed",
       "protected": true,
@@ -3541,11 +3657,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 39,
         "liquidity_score": 42.07,
         "historical_volatility": 4.0,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=39"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2025-nami",
@@ -3568,9 +3686,9 @@
       "imagePath": "/assets/rwa/2025-nami.jpeg",
       "imagePathBack": "/assets/rwa/2025-nami-back.jpeg",
       "tokenId": "2025-NAMI-001",
-      "atk": 59,
-      "def": 52,
-      "speed": 73,
+      "atk": 35,
+      "def": 89,
+      "speed": 47,
       "circuitScore": 8,
       "defenseLevel": "armed",
       "protected": true,
@@ -3601,11 +3719,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 67,
         "liquidity_score": 37.73,
         "historical_volatility": 5.55,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Yield,pwr=67"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "2025-roronoa-zoro",
@@ -3628,9 +3748,9 @@
       "imagePath": "/assets/rwa/2025-roronoa-zoro.jpeg",
       "imagePathBack": "/assets/rwa/2025-roronoa-zoro-back.jpeg",
       "tokenId": "2025-RORONOA-001",
-      "atk": 52,
-      "def": 63,
-      "speed": 61,
+      "atk": 57,
+      "def": 70,
+      "speed": 54,
       "circuitScore": 40,
       "defenseLevel": "armed",
       "protected": true,
@@ -3661,11 +3781,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 55,
         "liquidity_score": 41.75,
         "historical_volatility": 12.86,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Control,pwr=55"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "2025-tashigi",
@@ -3688,9 +3810,9 @@
       "imagePath": "/assets/rwa/2025-tashigi.jpeg",
       "imagePathBack": "/assets/rwa/2025-tashigi-back.jpeg",
       "tokenId": "2025-TASHIGI-001",
-      "atk": 56,
-      "def": 52,
-      "speed": 86,
+      "atk": 89,
+      "def": 32,
+      "speed": 98,
       "circuitScore": 19,
       "defenseLevel": "armed",
       "protected": true,
@@ -3721,11 +3843,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 42,
         "liquidity_score": 37.73,
         "historical_volatility": 7.74,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Volatility,pwr=42"
+      },
+      "archetype": "Volatility",
+      "archetype_color": "#f26b6b"
     },
     {
       "id": "2000-tom-brady",
@@ -3748,9 +3872,9 @@
       "imagePath": "/assets/rwa/2000-tom-brady.jpeg",
       "imagePathBack": "/assets/rwa/2000-tom-brady-back.jpeg",
       "tokenId": "2000-TOM-BRA-001",
-      "atk": 54,
-      "def": 71,
-      "speed": 57,
+      "atk": 39,
+      "def": 90,
+      "speed": 49,
       "circuitScore": 28,
       "defenseLevel": "armed",
       "protected": true,
@@ -3781,11 +3905,13 @@
       "liquidity_velocity": "high",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 67,
         "liquidity_score": 46.62,
         "historical_volatility": 1.63,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Tank,pwr=67"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "2013-kobe-bryant",
@@ -3808,9 +3934,9 @@
       "imagePath": "/assets/rwa/2013-kobe-bryant.jpeg",
       "imagePathBack": "/assets/rwa/2013-kobe-bryant-back.jpeg",
       "tokenId": "2013-KOBE-BR-001",
-      "atk": 53,
-      "def": 87,
-      "speed": 50,
+      "atk": 30,
+      "def": 84,
+      "speed": 58,
       "circuitScore": 37,
       "defenseLevel": "armed",
       "protected": true,
@@ -3841,11 +3967,13 @@
       "liquidity_velocity": "high",
       "quick_duel": true,
       "attributes": {
-        "power_level": 36,
+        "power_level": 65,
         "liquidity_score": 53.18,
         "historical_volatility": 4.78,
-        "win_formula": "pwr=36"
-      }
+        "win_formula": "arch=Tank,pwr=65"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "2017-patrick-mahomes",
@@ -3868,9 +3996,9 @@
       "imagePath": "/assets/rwa/2017-patrick-mahomes.jpeg",
       "imagePathBack": "/assets/rwa/2017-patrick-mahomes-back.jpeg",
       "tokenId": "2017-PATRICK-001",
-      "atk": 51,
-      "def": 57,
-      "speed": 91,
+      "atk": 85,
+      "def": 48,
+      "speed": 82,
       "circuitScore": 44,
       "defenseLevel": "armed",
       "protected": true,
@@ -3901,11 +4029,13 @@
       "liquidity_velocity": "high",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 45,
         "liquidity_score": 42.75,
         "historical_volatility": 13.93,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Aggro,pwr=45"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35"
     },
     {
       "id": "2018-shohei-ohtani",
@@ -3928,9 +4058,9 @@
       "imagePath": "/assets/rwa/2018-shohei-ohtani.jpeg",
       "imagePathBack": "/assets/rwa/2018-shohei-ohtani-back.jpeg",
       "tokenId": "2018-SHOHEI--001",
-      "atk": 52,
-      "def": 60,
-      "speed": 77,
+      "atk": 41,
+      "def": 89,
+      "speed": 45,
       "circuitScore": 43,
       "defenseLevel": "armed",
       "protected": true,
@@ -3961,11 +4091,13 @@
       "liquidity_velocity": "high",
       "quick_duel": true,
       "attributes": {
-        "power_level": 30,
+        "power_level": 62,
         "liquidity_score": 41.72,
         "historical_volatility": 10.31,
-        "win_formula": "pwr=30"
-      }
+        "win_formula": "arch=Tank,pwr=62"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "gold-1oz-lbma",
@@ -3988,9 +4120,9 @@
       "imagePath": "/assets/rwa/metals/1-oz-gold.png",
       "imagePathBack": "/assets/rwa/metals/1-oz-gold-back.png",
       "tokenId": "XAUT-LBMA-001",
-      "atk": 70,
-      "def": 95,
-      "speed": 60,
+      "atk": 26,
+      "def": 89,
+      "speed": 44,
       "circuitScore": 12,
       "defenseLevel": "armed",
       "protected": true,
@@ -4028,8 +4160,10 @@
         "power_level": 68,
         "liquidity_score": 52.1,
         "historical_volatility": 3.2,
-        "win_formula": "pwr=68"
-      }
+        "win_formula": "arch=Yield,pwr=68"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "silver-1oz-lbma",
@@ -4052,9 +4186,9 @@
       "imagePath": "/assets/rwa/metals/1-oz-silver.png",
       "imagePathBack": "/assets/rwa/metals/1-oz-silver-back.png",
       "tokenId": "SLVON-LBMA-001",
-      "atk": 58,
-      "def": 88,
-      "speed": 65,
+      "atk": 31,
+      "def": 89,
+      "speed": 39,
       "circuitScore": 15,
       "defenseLevel": "armed",
       "protected": true,
@@ -4089,11 +4223,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 40,
+        "power_level": 60,
         "liquidity_score": 28.5,
         "historical_volatility": 2.1,
-        "win_formula": "pwr=40"
-      }
+        "win_formula": "arch=Yield,pwr=60"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "superman-1-cgc90",
@@ -4116,9 +4252,9 @@
       "imagePath": null,
       "imagePathBack": null,
       "tokenId": "SPMN1939CGC90-001",
-      "atk": 99,
-      "def": 99,
-      "speed": 40,
+      "atk": 47,
+      "def": 84,
+      "speed": 58,
       "circuitScore": 8,
       "defenseLevel": "armed",
       "protected": true,
@@ -4145,15 +4281,17 @@
       "valuation": 9120000.0,
       "source_file": "heritage-2026",
       "attributes": {
-        "power_level": 82,
+        "power_level": 80,
         "liquidity_score": 81.04,
         "historical_volatility": 13.66,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=82"
+        "win_formula": "arch=Tank,pwr=80"
       },
       "is_duel_eligible": true,
       "is_vault_locked": false,
       "liquidity_velocity": "low",
-      "quick_duel": false
+      "quick_duel": false,
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "batman-1-cgc94",
@@ -4176,9 +4314,9 @@
       "imagePath": null,
       "imagePathBack": null,
       "tokenId": "BTMN1940CGC94-001",
-      "atk": 97,
-      "def": 96,
-      "speed": 55,
+      "atk": 45,
+      "def": 94,
+      "speed": 42,
       "circuitScore": 9,
       "defenseLevel": "armed",
       "protected": true,
@@ -4208,12 +4346,14 @@
         "power_level": 83,
         "liquidity_score": 77.96,
         "historical_volatility": 15.75,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=83"
+        "win_formula": "arch=Tank,pwr=83"
       },
       "is_duel_eligible": true,
       "is_vault_locked": false,
       "liquidity_velocity": "low",
-      "quick_duel": false
+      "quick_duel": false,
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "action-comics-1-cgc85",
@@ -4236,9 +4376,9 @@
       "imagePath": null,
       "imagePathBack": null,
       "tokenId": "ACT11938CGC85-001",
-      "atk": 99,
-      "def": 98,
-      "speed": 35,
+      "atk": 41,
+      "def": 81,
+      "speed": 50,
       "circuitScore": 7,
       "defenseLevel": "armed",
       "protected": true,
@@ -4265,15 +4405,17 @@
       "valuation": 6000000.0,
       "source_file": "heritage-2026",
       "attributes": {
-        "power_level": 80,
+        "power_level": 78,
         "liquidity_score": 78.46,
         "historical_volatility": 20.87,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=80"
+        "win_formula": "arch=Tank,pwr=78"
       },
       "is_duel_eligible": true,
       "is_vault_locked": false,
       "liquidity_velocity": "low",
-      "quick_duel": false
+      "quick_duel": false,
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "dubai-plate-k121",
@@ -4296,9 +4438,9 @@
       "imagePath": null,
       "imagePathBack": null,
       "tokenId": "DXBK1212026-001",
-      "atk": 75,
-      "def": 90,
-      "speed": 88,
+      "atk": 43,
+      "def": 94,
+      "speed": 50,
       "circuitScore": 18,
       "defenseLevel": "armed",
       "protected": true,
@@ -4325,15 +4467,17 @@
       "valuation": 394700.0,
       "source_file": "emirates-auction-2026",
       "attributes": {
-        "power_level": 71,
+        "power_level": 76,
         "liquidity_score": 69.96,
         "historical_volatility": 10.84,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=71"
+        "win_formula": "arch=Tank,pwr=76"
       },
       "is_duel_eligible": true,
       "is_vault_locked": false,
       "liquidity_velocity": "low",
-      "quick_duel": false
+      "quick_duel": false,
+      "archetype": "Tank",
+      "archetype_color": "#14F195"
     },
     {
       "id": "aapl-tokenized-2026",
@@ -4356,9 +4500,9 @@
       "imagePath": "/assets/rwa/stocks/aapl.svg",
       "imagePathBack": null,
       "tokenId": "AAPL-TOK-2026-001",
-      "atk": 75,
-      "def": 88,
-      "speed": 82,
+      "atk": 58,
+      "def": 72,
+      "speed": 67,
       "circuitScore": 14,
       "defenseLevel": "armed",
       "protected": true,
@@ -4393,11 +4537,13 @@
       "liquidity_velocity": "high",
       "quick_duel": true,
       "attributes": {
-        "power_level": 63,
+        "power_level": 56,
         "liquidity_score": 26.94,
         "historical_volatility": 6.51,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=63"
-      }
+        "win_formula": "arch=Control,pwr=56"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "tsla-tokenized-2026",
@@ -4420,9 +4566,9 @@
       "imagePath": "/assets/rwa/stocks/tsla.svg",
       "imagePathBack": null,
       "tokenId": "TSLA-TOK-2026-001",
-      "atk": 88,
-      "def": 72,
-      "speed": 95,
+      "atk": 61,
+      "def": 79,
+      "speed": 67,
       "circuitScore": 28,
       "defenseLevel": "armed",
       "protected": true,
@@ -4457,11 +4603,13 @@
       "liquidity_velocity": "high",
       "quick_duel": true,
       "attributes": {
-        "power_level": 61,
+        "power_level": 56,
         "liquidity_score": 27.38,
         "historical_volatility": 7.74,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=61"
-      }
+        "win_formula": "arch=Control,pwr=56"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "nvda-tokenized-2026",
@@ -4484,9 +4632,9 @@
       "imagePath": "/assets/rwa/stocks/nvda.svg",
       "imagePathBack": null,
       "tokenId": "NVDA-TOK-2026-001",
-      "atk": 95,
-      "def": 80,
-      "speed": 90,
+      "atk": 64,
+      "def": 65,
+      "speed": 67,
       "circuitScore": 18,
       "defenseLevel": "armed",
       "protected": true,
@@ -4521,11 +4669,13 @@
       "liquidity_velocity": "high",
       "quick_duel": true,
       "attributes": {
-        "power_level": 65,
+        "power_level": 52,
         "liquidity_score": 34.41,
         "historical_volatility": 8.86,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=65"
-      }
+        "win_formula": "arch=Control,pwr=52"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7"
     },
     {
       "id": "rolex-daytona-paul-newman",
@@ -4548,9 +4698,9 @@
       "imagePath": null,
       "imagePathBack": null,
       "tokenId": "RLDP1968-001",
-      "atk": 92,
-      "def": 97,
-      "speed": 78,
+      "atk": 42,
+      "def": 86,
+      "speed": 36,
       "circuitScore": 6,
       "defenseLevel": "armed",
       "protected": true,
@@ -4585,11 +4735,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": false,
       "attributes": {
-        "power_level": 76,
+        "power_level": 82,
         "liquidity_score": 82.86,
         "historical_volatility": 11.9,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=76"
-      }
+        "win_formula": "arch=Yield,pwr=82"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     },
     {
       "id": "patek-philippe-5711",
@@ -4612,9 +4764,9 @@
       "imagePath": null,
       "imagePathBack": null,
       "tokenId": "PP57112021-001",
-      "atk": 82,
-      "def": 92,
-      "speed": 70,
+      "atk": 43,
+      "def": 78,
+      "speed": 46,
       "circuitScore": 12,
       "defenseLevel": "armed",
       "protected": true,
@@ -4649,11 +4801,13 @@
       "liquidity_velocity": "medium",
       "quick_duel": true,
       "attributes": {
-        "power_level": 66,
+        "power_level": 69,
         "liquidity_score": 58.05,
         "historical_volatility": 11.06,
-        "win_formula": "(grade*0.4)+(log_price*0.4)+(circuit_buff*0.2)=66"
-      }
+        "win_formula": "arch=Yield,pwr=69"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E"
     }
   ],
   "totals": {

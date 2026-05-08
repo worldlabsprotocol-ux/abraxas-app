@@ -19,13 +19,13 @@ const STATUS_CONFIG = {
 // Idle heartbeat messages — shown when stream is quiet
 const HEARTBEAT_LINES = [
   "[00:00:00] [CIRCUIT]  All circuits nominal — monitoring vault PDAs on-chain",
-  "[00:00:01] [SOPHIA]   Agent evaluation cycle complete — no anomalies",
+  "[00:00:01] [CIRCUIT]  Vault PDA state verified — no anomalies detected",
   "[00:00:02] [SCAN]     Helius telemetry active — awaiting on-chain events",
   "[00:00:03] [CIRCUIT]  Liquidity depth nominal across all monitored pools",
-  "[00:00:04] [SOPHIA]   Strategy bounds verified — portfolio within policy",
+  "[00:00:04] [CIRCUIT]  Policy bounds verified — portfolio within risk threshold",
   "[00:00:05] [SCAN]     Oracle price feeds stable — no deviation detected",
   "[00:00:06] [CIRCUIT]  Circuit breaker armed — threshold monitoring active",
-  "[00:00:07] [SOPHIA]   Counterparty credit scores within acceptable range",
+  "[00:00:07] [CIRCUIT]  Counterparty exposure within acceptable parameters",
   "[00:00:08] [SCAN]     Block progression nominal — 0 missed slots",
   "[00:00:09] [CIRCUIT]  Reserve buffer at 22% — above minimum threshold",
 ];
