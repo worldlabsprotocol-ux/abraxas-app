@@ -1,139 +1,145 @@
-// FILE: app/app/page.tsx
+// FILE: app/page.tsx
+// Abraxas Sovereign Terminal — unified hub.
+// No top nav links. BottomNav only. No "Enter Arena" hero button (Terminal IS the arena).
+// WalletStatus tied to real wallet adapter.
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { usePositions } from "@/lib/positionStore";
-import { useAuth } from "@/lib/authState";
-import { fmtUSD, VAULTS } from "@/lib/appData";
-import { LiveFeed } from "@/components/LiveFeed";
-import { ConnectWalletButton } from "@/components/ConnectWalletButton";
+import { useState, useEffect, Suspense } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { TerminalArena, TerminalArenaSkeleton } from "@/components/TerminalArena";
+import { useSystemState } from "@/lib/systemState";
+import { useCircuitState } from "@/lib/protocolStream";
 
-export default function DashboardPage() {
-  const router   = useRouter();
-  const { walletConnected, walletAddress } = useAuth();
-  const positions = usePositions();
-  const active    = positions.filter((p) => p.status !== "withdrawn");
-
-  const totalDeposited = active.reduce((s, p) => s + p.principal, 0);
-  const annualYield    = active.reduce((s, p) => s + Math.round(p.principal * p.apy / 100), 0);
+// ─── Protocol status bar ──────────────────────────────────────────────────────
+function StatusBar() {
+  const { state } = useCircuitState();
+  const color = state === "RISK" ? "#f26b6b" : state === "WATCH" ? "#FBBF24" : "#14F195";
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2.5rem 1.25rem 4rem" }}>
-      <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>Dashboard</p>
-      <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(1.75rem, 5vw, 2.4rem)", letterSpacing: "-0.02em", marginBottom: "1.5rem" }}>
-        Your operations
-      </h1>
+    <div style={{
+      padding:"0.28rem 1.25rem",
+      background:"rgba(2,3,10,0.97)",
+      borderBottom:"1px solid rgba(255,255,255,0.04)",
+      display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"0.4rem",
+    }}>
+      <div style={{ display:"flex", alignItems:"center", gap:"1rem" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"0.35rem" }}>
+          <span style={{ width:"4px",height:"4px",borderRadius:"50%",background:color,animation:"pulse 1.5s ease-in-out infinite" }} />
+          <span style={{ fontSize:"0.48rem",fontWeight:700,color,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>
+            Sovereign Protocol Online
+          </span>
+        </div>
+        <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.22)",fontFamily:"'JetBrains Mono',monospace" }}>
+          XAU <span style={{ color:"#D4AF37",fontWeight:700 }}>$4,733.39</span>
+        </span>
+        <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.22)",fontFamily:"'JetBrains Mono',monospace" }}>
+          XAG <span style={{ color:"#C0C0C0",fontWeight:700 }}>$72.91</span>
+        </span>
+        <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.22)",fontFamily:"'JetBrains Mono',monospace" }}>
+          NVDA <span style={{ color:"#76B900",fontWeight:700 }}>$211.48</span>
+        </span>
+        <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.22)",fontFamily:"'JetBrains Mono',monospace" }}>
+          TSLA <span style={{ color:"#CC0000",fontWeight:700 }}>$411.89</span>
+        </span>
+      </div>
+      <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace" }}>
+        Solana · Token-2022 · {new Date().toLocaleTimeString()}
+      </span>
+    </div>
+  );
+}
 
-      {!walletConnected && (
-        <div style={{ background: "rgba(200,169,110,0.06)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "12px", padding: "1.5rem", marginBottom: "1.5rem", textAlign: "center" }}>
-          <p style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: "0.4rem" }}>Connect your wallet</p>
-          <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "1rem" }}>
-            See your balance, positions, and minted tokens.
+// ─── Protocol overview — replaces the old hero with purpose/depth ─────────────
+function ProtocolOverview() {
+  return (
+    <div style={{
+      padding:"1.25rem 1.25rem 0.5rem",
+      background:"radial-gradient(ellipse at 50% -30%, rgba(107,140,255,0.07) 0%, transparent 65%)",
+    }}>
+      {/* Wordmark row */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem", marginBottom:"0.875rem" }}>
+        <div>
+          <p style={{ fontSize:"0.5rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.2rem" }}>
+            World Labs Protocol · Solana Mainnet
           </p>
-          <div style={{ display: "inline-block" }}>
-            <ConnectWalletButton size="lg" />
-          </div>
+          <h1 style={{ fontWeight:900,fontSize:"clamp(1.2rem,3.5vw,1.7rem)",letterSpacing:"-0.03em",margin:0,
+            background:"linear-gradient(135deg,#D4AF37,#a855f7 45%,#6b8cff)",
+            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>
+            Sovereign RWA Terminal
+          </h1>
         </div>
-      )}
-
-      {walletConnected && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.625rem", marginBottom: "1.5rem" }}>
-          {[
-            { k: "Wallet",          v: walletAddress ?? "—", mono: true },
-            { k: "Positions",       v: String(active.length)            },
-            { k: "Total deposited", v: fmtUSD(totalDeposited)           },
-            { k: "Annual yield",    v: fmtUSD(annualYield), green: true },
-          ].map((s) => (
-            <div key={s.k} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "10px", padding: "0.875rem 1rem" }}>
-              <div style={{ fontSize: "0.58rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.25rem" }}>{s.k}</div>
-              <div style={{
-                fontWeight: 700, fontSize: s.mono ? "0.75rem" : "1rem",
-                color: (s as { green?: boolean }).green ? "var(--green)" : "var(--text)",
-                fontFamily: s.mono ? "'JetBrains Mono', monospace" : "'Space Grotesk', sans-serif",
-                wordBreak: "break-all",
-              }}>
-                {s.v}
-              </div>
-            </div>
-          ))}
+        {/* Buy ABRA */}
+        <div style={{ display:"flex", gap:"0.4rem" }}>
+          <a href="https://jup.ag/swap/SOL-ABRA" target="_blank" rel="noopener noreferrer" style={{
+            padding:"0.35rem 0.75rem", borderRadius:"7px", fontSize:"0.58rem", fontWeight:700,
+            background:"rgba(200,169,110,0.12)", border:"1px solid rgba(200,169,110,0.3)",
+            color:"#C8A96E", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace",
+            display:"inline-flex", alignItems:"center", gap:"0.3rem",
+          }}>
+            <svg width="10" height="10" viewBox="0 0 20 20" fill="#FF8500"><path d="M10 2L3 7v6c0 4 3 7 7 8 4-1 7-4 7-8V7L10 2z"/></svg>
+            Buy $ABRA · Jupiter
+          </a>
+          <a href="https://app.bags.fm/abraxas" target="_blank" rel="noopener noreferrer" style={{
+            padding:"0.35rem 0.75rem", borderRadius:"7px", fontSize:"0.58rem", fontWeight:700,
+            background:"rgba(107,140,255,0.1)", border:"1px solid rgba(107,140,255,0.25)",
+            color:"#6b8cff", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace",
+            display:"inline-flex", alignItems:"center", gap:"0.3rem",
+          }}>
+            <svg width="10" height="10" viewBox="0 0 20 20" fill="#6b8cff"><rect x="3" y="6" width="14" height="10" rx="2"/><path d="M7 6V4a3 3 0 016 0v2"/></svg>
+            Buy $ABRA · Bags
+          </a>
         </div>
-      )}
-
-      {/* Positions */}
-      <div style={{ marginBottom: "2rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.875rem" }}>
-          <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)" }}>Active positions</p>
-          {active.length > 0 && (
-            <Link href="/use" style={{ fontSize: "0.72rem", color: "var(--gold)", textDecoration: "none" }}>Withdraw →</Link>
-          )}
-        </div>
-
-        {active.length === 0 ? (
-          <div style={{ background: "var(--surface)", border: "1px dashed var(--line)", borderRadius: "12px", padding: "2.5rem 1.25rem", textAlign: "center" }}>
-            <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1rem" }}>
-              {walletConnected ? "No active positions. Deposit to a vault to get started." : "Connect your wallet to see positions."}
-            </p>
-            <Link href="/onboard" style={{ textDecoration: "none" }}>
-              <button style={{ background: "var(--gold)", color: "var(--void)", border: "none", borderRadius: "8px", padding: "0.7rem 1.4rem", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
-                Start Operating →
-              </button>
-            </Link>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            {active.map((p) => {
-              const vault  = VAULTS.find((v) => v.id === p.vaultId);
-              const annual = Math.round(p.principal * p.apy / 100);
-              return (
-                <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "12px", padding: "1.1rem 1.25rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.625rem", flexWrap: "wrap", gap: "0.5rem" }}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{p.vaultName}</div>
-                      <div style={{ fontSize: "0.7rem", color: "var(--subtle)" }}>{p.assetType} · {vault?.agent}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--green)" }}>{p.apy}%</div>
-                      <div style={{ fontSize: "0.6rem", color: "var(--subtle)", textTransform: "uppercase" }}>APY</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.625rem", marginBottom: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div>
-                      <div style={{ fontSize: "0.58rem", color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Deposited</div>
-                      <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>{fmtUSD(p.principal)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "0.58rem", color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Yield/yr</div>
-                      <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--green)" }}>{fmtUSD(annual)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "0.58rem", color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Position token</div>
-                      <div style={{ fontWeight: 600, fontSize: "0.72rem", fontFamily: "'JetBrains Mono', monospace", color: "var(--gold)" }}>ABRAP</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", alignItems: "center" }}>
-                    <a href={`https://solscan.io/tx/${p.txSignature}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--gold)", textDecoration: "none" }}>
-                      View tx ↗
-                    </a>
-                    <a href={`https://solscan.io/token/${p.mintAddress}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--gold)", textDecoration: "none" }}>
-                      View token ↗
-                    </a>
-                    <button onClick={() => router.push(`/use?id=${p.id}`)}
-                      style={{ marginLeft: "auto", background: "transparent", color: "var(--text)", border: "1px solid var(--line)", borderRadius: "6px", padding: "0.3rem 0.75rem", fontSize: "0.72rem", fontWeight: 600, cursor: "pointer" }}>
-                      Withdraw
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
-      <p style={{ fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.75rem" }}>Activity</p>
-      <LiveFeed limit={8} showHeader={false} />
+      {/* Protocol description — institutional depth */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:"0.5rem", marginBottom:"0.5rem" }}>
+        {[
+          {
+            label:"What Abraxas Is",
+            body:"An autonomous AI operating layer for tokenized real-world assets on Solana. Vaults hold verified physical collectibles, precious metals, equities, and luxury assets — each governed by Sophia Agents and defended by Circuit Engine.",
+          },
+          {
+            label:"How Vaults Work",
+            body:"Each position is a Token-2022 account with provenance metadata, LTV ratios, and on-chain risk scoring. Sophia Agents monitor price feeds, execute hedges, and trigger circuit breaks automatically without user approval.",
+          },
+          {
+            label:"Arena as Risk Layer",
+            body:"Triple Triad mechanic simulates vault stress scenarios — counterparty risk, liquidity shocks, volatility events. Stats map to real asset metrics: ATK=volume, DEF=liquidity, SPD=settlement finality. Win conditions reflect protocol resilience.",
+          },
+        ].map(item => (
+          <div key={item.label} style={{ padding:"0.625rem 0.75rem", background:"rgba(6,8,16,0.92)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:"8px" }}>
+            <div style={{ fontSize:"0.52rem", fontWeight:700, color:"#f0f0f0", marginBottom:"0.25rem", letterSpacing:"0.02em" }}>{item.label}</div>
+            <div style={{ fontSize:"0.52rem", color:"rgba(255,255,255,0.42)", lineHeight:1.6 }}>{item.body}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* x402 explanation */}
+      <div style={{ padding:"0.5rem 0.75rem", background:"rgba(96,165,250,0.05)", border:"1px solid rgba(96,165,250,0.15)", borderRadius:"7px", marginBottom:"0.5rem" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", gap:"0.5rem" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.25rem", flexShrink:0, paddingTop:"1px" }}>
+            <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#60A5FA" }} />
+            <span style={{ fontSize:"0.48rem",fontWeight:700,color:"#60A5FA",letterSpacing:"0.08em",fontFamily:"'JetBrains Mono',monospace" }}>x402 PROTOCOL</span>
+          </div>
+          <p style={{ margin:0, fontSize:"0.52rem", color:"rgba(255,255,255,0.4)", lineHeight:1.6 }}>
+            x402 is the payment standard powering agentic transactions. When you enter the Arena, a micropayment (0.001 SOL/USDC/ABX) is deducted as an ante via x402 middleware — no approval required, no gas overhead. Sophia Agents use x402 to pay for oracle data, execute hedges, and settle duels autonomously. This is how the protocol funds itself without human intervention.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────────
+export default function HomePage() {
+  return (
+    <div style={{ maxWidth:"1100px", margin:"0 auto", paddingBottom:"5rem" }}>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
+      <StatusBar />
+      <ProtocolOverview />
+      <Suspense fallback={<TerminalArenaSkeleton />}>
+        <TerminalArena />
+      </Suspense>
     </div>
   );
 }
