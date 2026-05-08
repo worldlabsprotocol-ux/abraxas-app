@@ -260,10 +260,10 @@ export default function VaultsPage() {
             </div>
           </div>
           <div style={{ display:"flex", gap:"0.4rem" }}>
-            <a href="https://jup.ag/swap/SOL-5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(255,133,0,0.12)", border:"1px solid rgba(255,133,0,0.28)", color:"#FF8500", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+            <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(255,133,0,0.12)", border:"1px solid rgba(255,133,0,0.28)", color:"#FF8500", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
               Buy on Jupiter
             </a>
-            <a href="https://app.bags.fm/abraxas" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(107,140,255,0.1)", border:"1px solid rgba(107,140,255,0.22)", color:"#6b8cff", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+            <a href="https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(107,140,255,0.1)", border:"1px solid rgba(107,140,255,0.22)", color:"#6b8cff", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
               Buy on Bags
             </a>
             <a href={`https://explorer.solana.com/address/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS`} target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.4)", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
