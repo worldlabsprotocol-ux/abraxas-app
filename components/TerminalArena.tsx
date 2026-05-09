@@ -4,6 +4,7 @@
 // Card grid: 2-per-row default, stat display replaces broken TT side boxes
 // All images from /public/assets/rwa/ — CDN URLs removed
 "use client";
+import { getLoopscaleLiquidity, calcEloChange, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
@@ -84,6 +85,25 @@ const ARCH_CFG: Record<string, { label:string; color:string; desc:string; liqCos
   Yield:      { label:"Yield",      color:"#C8A96E", desc:"Passive economy · LIQ generation",   liqCost:1 },
   Volatility: { label:"Volatility", color:"#f26b6b", desc:"Huge swings · High reward",           liqCost:4 },
 };
+
+
+// ─── Default ELO state (persisted in sessionStorage in real impl) ─────────────
+const DEFAULT_ELO: EloState = { rating:1000, rank:"Bronze", wins:0, losses:0, streak:0, prestige:0, abraEarned:0 };
+function loadElo(): EloState {
+  if (typeof window === "undefined") return DEFAULT_ELO;
+  try { return JSON.parse(sessionStorage.getItem("abraxas_elo") ?? "{}") || DEFAULT_ELO; } catch { return DEFAULT_ELO; }
+}
+function saveElo(s: EloState) {
+  if (typeof window !== "undefined") sessionStorage.setItem("abraxas_elo", JSON.stringify(s));
+}
+
+// ─── Daily quests ────────────────────────────────────────────────────────────
+const DAILY_QUESTS = [
+  { id:"win3",     label:"Win 3 battles",              reward:150, progress:0, goal:3  },
+  { id:"metal",    label:"Win with a Metal asset",     reward:80,  progress:0, goal:1  },
+  { id:"tokenize", label:"Tokenize 1 new asset",       reward:200, progress:0, goal:1  },
+  { id:"streak",   label:"Get a 2-win streak",         reward:120, progress:0, goal:2  },
+];
 
 // ─── Category colors ──────────────────────────────────────────────────────────
 const CAT_COLOR: Record<string, string> = {
@@ -400,6 +420,9 @@ function BoardCell({ cell, idx, canPlace, onPlace }:{ cell:Cell; idx:number; can
 function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
   const [filter,   setFilter]   = useState("all");
   const [sel3,     setSel3]     = useState<string[]>([]);
+  const [elo,      setElo]      = useState<EloState>(() => loadElo());
+  const [quests,   setQuests]   = useState(DAILY_QUESTS.map(q => ({...q})));
+  const [brokerOpen, setBrokerOpen] = useState(false);
   const [agent,    setAgent]    = useState(AGENTS[0]);
   const [wager,    setWager]    = useState(0.5);
   const [wTok,     setWTok]     = useState<"SOL"|"USDC"|"ABX">("SOL");
@@ -458,6 +481,24 @@ function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
       const winner: "player"|"agent"|"draw" = ps>as?"player":as>ps?"agent":"draw";
       const abra = winner==="player" ? Math.round(match.playerHand.length*60 + (match.pinkSlips?120:0)) : 0;
       const pres = winner==="player" ? Math.round(wager*100) : 0;
+      // Update ELO
+      const eloChange = calcEloChange(elo.rating, 1050, winner==="player");
+      const newElo: EloState = {
+        rating:   Math.max(0, elo.rating + eloChange),
+        rank:     getRank(Math.max(0, elo.rating + eloChange)),
+        wins:     elo.wins + (winner==="player"?1:0),
+        losses:   elo.losses + (winner!=="player"?1:0),
+        streak:   winner==="player" ? elo.streak+1 : 0,
+        prestige: elo.prestige + pres,
+        abraEarned: elo.abraEarned + abra,
+      };
+      setElo(newElo); saveElo(newElo);
+      // Update quests
+      setQuests(qs => qs.map(q => {
+        if (q.id==="win3"&&winner==="player") return {...q,progress:Math.min(q.goal,q.progress+1)};
+        if (q.id==="streak"&&newElo.streak>=2) return {...q,progress:Math.min(q.goal,2)};
+        return q;
+      }));
       setMatch(m=>m?{...m, phase:"done", winner, abraEarned:abra, prestige:pres,
         log:[...m.log,`[PHASE 5] Settlement — Player: ${ps} | Sophia: ${as}`,
           winner==="player"?`[VICTORY] +${abra} $ABRA earned, +${pres} prestige`:`[DEFEATED] Sophia holds the position`]}:m);
@@ -546,6 +587,86 @@ function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
           </div>
         </div>
       </div>
+
+
+      {/* ELO / rank strip + broker connect */}
+      <div style={{ display:"flex", gap:"0.5rem", marginBottom:"0.875rem", flexWrap:"wrap", alignItems:"stretch" }}>
+        {/* Rank card */}
+        <div style={{ flex:"1 1 200px", padding:"0.625rem 0.75rem", background:"rgba(6,8,16,0.97)", border:`1px solid ${RANK_COLORS[elo.rank]}30`, borderRadius:"10px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.3rem" }}>
+            <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:"0.08em" }}>Sovereign Rank</span>
+            <span style={{ fontSize:"0.8rem", fontWeight:900, color:RANK_COLORS[elo.rank] }}>{elo.rank}</span>
+          </div>
+          <div style={{ display:"flex", gap:"1rem" }}>
+            {[["ELO",String(elo.rating)],["W",String(elo.wins)],["L",String(elo.losses)],["Streak",`${elo.streak}x`]].map(([l,v])=>(
+              <div key={l}>
+                <div style={{ fontSize:"0.42rem", color:"rgba(255,255,255,0.25)", fontFamily:"'JetBrains Mono',monospace" }}>{l}</div>
+                <div style={{ fontSize:"0.62rem", fontWeight:700, color:"#f0f0f0", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Daily quests */}
+        <div style={{ flex:"2 1 280px", padding:"0.625rem 0.75rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(168,85,247,0.15)", borderRadius:"10px" }}>
+          <div style={{ fontSize:"0.46rem", color:"rgba(168,85,247,0.7)", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:"0.35rem" }}>Daily Quests</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.25rem" }}>
+            {quests.map(q => {
+              const done = q.progress >= q.goal;
+              return (
+                <div key={q.id} style={{ display:"flex", alignItems:"center", gap:"0.3rem" }}>
+                  <div style={{ width:"5px", height:"5px", borderRadius:"50%", background:done?"#a855f7":"rgba(255,255,255,0.15)", flexShrink:0 }} />
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:"0.46rem", color:done?"#a855f7":"rgba(255,255,255,0.45)", fontFamily:"'JetBrains Mono',monospace" }}>{q.label}</div>
+                    <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:"1px", height:"2px", marginTop:"1px" }}>
+                      <div style={{ width:`${(q.progress/q.goal)*100}%`, height:"100%", background:"#a855f7", borderRadius:"1px" }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize:"0.44rem", color:"#a855f7", fontFamily:"'JetBrains Mono',monospace", flexShrink:0 }}>+{q.reward}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Broker connect */}
+        <div style={{ flex:"1 1 180px", padding:"0.625rem 0.75rem", background:"rgba(20,241,149,0.04)", border:"1px solid rgba(20,241,149,0.14)", borderRadius:"10px", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:"0.5rem", fontWeight:700, color:"#14F195", marginBottom:"3px" }}>Broker Connect</div>
+            <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.32)", lineHeight:1.5, marginBottom:"0.4rem" }}>
+              Tokenize stocks, borrow USDC via Loopscale
+            </div>
+          </div>
+          <button onClick={() => setBrokerOpen(b => !b)} style={{ padding:"0.3rem 0.5rem", borderRadius:"5px", background:"rgba(20,241,149,0.1)", border:"1px solid rgba(20,241,149,0.25)", color:"#14F195", fontSize:"0.54rem", fontWeight:700, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace" }}>
+            {brokerOpen ? "Close" : "Connect Broker →"}
+          </button>
+        </div>
+      </div>
+
+      {/* Broker flow panel */}
+      {brokerOpen && (
+        <div style={{ padding:"0.875rem 1rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(20,241,149,0.2)", borderRadius:"12px", marginBottom:"1rem" }}>
+          <div style={{ fontWeight:700, fontSize:"0.75rem", color:"#14F195", marginBottom:"0.5rem" }}>Broker → Tokenize → Borrow</div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:"0.5rem", marginBottom:"0.625rem" }}>
+            {[
+              { step:"1", label:"Connect Broker", desc:"Alpaca, Schwab, or any FIX-compatible broker", color:"#14F195" },
+              { step:"2", label:"Tokenize",        desc:"Convert NVDA/AAPL/TSLA to Token-2022 position", color:"#6b8cff" },
+              { step:"3", label:"Instant Credit",  desc:`Borrow up to ${getLoopscaleLiquidity(211.48,"Stocks").borrowLimit.toLocaleString()} USDC at 5.2% APR via Loopscale`, color:"#C8A96E" },
+            ].map(item => (
+              <div key={item.step} style={{ padding:"0.5rem 0.625rem", background:"rgba(255,255,255,0.03)", border:`1px solid ${item.color}20`, borderRadius:"7px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"0.3rem", marginBottom:"0.2rem" }}>
+                  <span style={{ width:"16px", height:"16px", borderRadius:"50%", background:`${item.color}20`, border:`1px solid ${item.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.44rem", fontWeight:700, color:item.color, flexShrink:0 }}>{item.step}</span>
+                  <span style={{ fontSize:"0.54rem", fontWeight:700, color:"#f0f0f0" }}>{item.label}</span>
+                </div>
+                <div style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.38)", lineHeight:1.5 }}>{item.desc}</div>
+              </div>
+            ))}
+          </div>
+          <a href="/tokenize" style={{ display:"inline-flex", alignItems:"center", gap:"0.3rem", padding:"0.4rem 0.875rem", borderRadius:"7px", background:"linear-gradient(135deg,#14F195,#6b8cff)", color:"#000", fontSize:"0.62rem", fontWeight:800, textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+            Start Tokenizing →
+          </a>
+        </div>
+      )}
 
       {/* Pre-match setup */}
       {!match&&(
@@ -695,6 +816,16 @@ function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
               {match.abraEarned>0&&<div style={{ fontSize:"0.72rem",fontWeight:700,color:"#D4AF37",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.25rem" }}>+{match.abraEarned} $ABRA</div>}
               {match.prestige>0&&<div style={{ fontSize:"0.58rem",color:"#a855f7",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.5rem" }}>+{match.prestige} Prestige</div>}
               {match.pinkSlips&&match.winner==="player"&&<div style={{ fontSize:"0.52rem",color:"#f26b6b",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.5rem" }}>Pink Slips: RWA metadata transferred to winner's vault</div>}
+              <div style={{ display:"flex", gap:"0.625rem", justifyContent:"center", marginBottom:"0.625rem", flexWrap:"wrap" }}>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace" }}>ELO</div>
+                  <div style={{ fontSize:"0.68rem",fontWeight:700,color:RANK_COLORS[elo.rank],fontFamily:"'JetBrains Mono',monospace" }}>{elo.rating} · {elo.rank}</div>
+                </div>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace" }}>Record</div>
+                  <div style={{ fontSize:"0.68rem",fontWeight:700,color:"#f0f0f0",fontFamily:"'JetBrains Mono',monospace" }}>{elo.wins}W {elo.losses}L</div>
+                </div>
+              </div>
               <button onClick={()=>{setMatch(null);setSel3([]);}} style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",color:"rgba(255,255,255,0.5)",fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>
                 New Match
               </button>

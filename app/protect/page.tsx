@@ -12,6 +12,7 @@ import { CircuitShield } from "@/components/CircuitShield";
 import {
   useSystemState, activateProtection, simulateHeliusEvent, createSystemVault, VaultState,
 } from "@/lib/systemState";
+import { getLoopscaleLiquidity, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
 
 interface SignalRow { signal: string; value: number; threshold: number; breached: boolean }
 
@@ -193,6 +194,55 @@ export default function VaultsPage() {
       {/* Vault cards */}
       <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,290px),1fr))",gap:"0.75rem",marginBottom:"1.5rem" }}>
         {VAULT_ADDRS.map(v => <VaultCard key={v.id} vault={v} />)}
+      </div>
+
+
+      {/* Loopscale Borrowing Panel */}
+      <div style={{ marginBottom:"1rem", padding:"1rem 1.25rem", background:"rgba(20,241,149,0.04)", border:"1px solid rgba(20,241,149,0.14)", borderRadius:"12px" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.625rem", marginBottom:"0.875rem" }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:"0.4rem", marginBottom:"0.2rem" }}>
+              <span style={{ fontWeight:800, fontSize:"0.82rem", color:"#14F195" }}>Loopscale Borrowing</span>
+              <span style={{ fontSize:"0.46rem", fontWeight:700, padding:"0.1rem 0.35rem", borderRadius:"3px", background:"rgba(20,241,149,0.12)", border:"1px solid rgba(20,241,149,0.3)", color:"#14F195", fontFamily:"'JetBrains Mono',monospace" }}>LIVE</span>
+            </div>
+            <div style={{ fontSize:"0.54rem", color:"rgba(255,255,255,0.38)", fontFamily:"'JetBrains Mono',monospace" }}>
+              Borrow USDC against vaulted RWA collateral · Fixed 5.2% APR
+            </div>
+          </div>
+          <a href="https://loopscale.com" target="_blank" rel="noopener noreferrer" style={{ padding:"0.35rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(20,241,149,0.1)", border:"1px solid rgba(20,241,149,0.25)", color:"#14F195", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+            Loopscale
+          </a>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"0.5rem" }}>
+          {[
+            { label:"1999 Charizard Holo PSA 10", type:"Pokemon", value:550000 },
+            { label:"Gold Bar 1oz (XAUt)",         type:"Metals",  value:4733.39 },
+            { label:"NVDA Tokenized Equity",        type:"Stocks",  value:211.48 },
+            { label:"Rolex Daytona Paul Newman",    type:"Timepieces", value:17800000 },
+          ].map(asset => {
+            const q = getLoopscaleLiquidity(asset.value, asset.type);
+            return (
+              <div key={asset.label} style={{ padding:"0.625rem 0.75rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(20,241,149,0.1)", borderRadius:"8px" }}>
+                <div style={{ fontSize:"0.52rem", fontWeight:700, color:"#f0f0f0", marginBottom:"2px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{asset.label}</div>
+                <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.35rem" }}>
+                  {asset.type} · {Math.round(q.ltv * 100)}% LTV
+                </div>
+                <div style={{ fontSize:"0.62rem", fontWeight:800, color:"#14F195", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace", marginBottom:"2px" }}>
+                  Instant Credit: ${q.borrowLimit.toLocaleString("en-US")} USDC
+                </div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace" }}>
+                    {q.fixedAPR} APR · ~${q.weeklyPayment}/wk
+                  </span>
+                  <span style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace" }}>Loopscale</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop:"0.625rem", fontSize:"0.48rem", color:"rgba(255,255,255,0.22)", fontFamily:"'JetBrains Mono',monospace" }}>
+          Connect your broker, tokenize your stocks, borrow against them — all in one click. Loopscale Modular Vault handles custody and execution on Solana.
+        </div>
       </div>
 
       {/* x402 + Hermes explanation */}

@@ -142,7 +142,7 @@ export default function TokenizePage() {
             assetType={cls.label}
             vaultName="VAULT-490"
             onComplete={(result) => {
-              setMinted({ tokenId: result?.tokenId ?? `TKN-${Date.now().toString(36).toUpperCase()}`, sig: result?.txSignature ?? "" });
+              setMinted({ tokenId: result?.mintAddress ?? `TKN-${Date.now().toString(36).toUpperCase()}`, sig: result?.txSignature ?? "" });
               setStep("done");
             }}
             onCancel={() => setStep("form")}
