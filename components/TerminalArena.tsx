@@ -783,6 +783,7 @@ export function TerminalArena() {
   const [ticks,   setTicks]   = useState<SoldTick[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string|null>(null);
+  const [mainTab, setMainTab] = useState("terminal");
   const arenaRef = useRef<HTMLDivElement>(null);
 
   useEffect(()=>{
@@ -808,13 +809,28 @@ export function TerminalArena() {
       {error&&<div style={{ padding:"0.5rem 1rem",background:"rgba(242,107,107,0.07)",fontSize:"0.56rem",color:"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>[ORACLE] {error}</div>}
       <SoldTape ticks={ticks} />
       <CommandBar onScrollToArena={()=>arenaRef.current?.scrollIntoView({behavior:"smooth"})} />
-      <div style={{ padding:"1.25rem" }}>
-        <ProvenanceBanner />
-        <TokenizeCTA />
-        <StockPanel assets={assets} />
-        <MetalsStrip assets={assets} />
-        <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
+      {/* Main view tabs */}
+      <div style={{ display:"flex", gap:"0", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.9)", padding:"0 1.25rem" }}>
+        {[["terminal","Terminal","#f0f0f0"],["game_modes","Game Modes","#FBBF24"]].map(([id,label,color])=>(
+          <button key={id} onClick={()=>setMainTab(id)} style={{ padding:"0.5rem 0.875rem", border:"none", borderBottom:mainTab===id?`2px solid ${color}`:"2px solid transparent", background:"transparent", color:mainTab===id?color:"rgba(255,255,255,0.32)", fontSize:"0.62rem", fontWeight:mainTab===id?700:400, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", marginBottom:"-1px" }}>
+            {label}
+          </button>
+        ))}
       </div>
+      {mainTab==="terminal"&&(
+        <div style={{ padding:"1.25rem" }}>
+          <ProvenanceBanner />
+          <TokenizeCTA />
+          <StockPanel assets={assets} />
+          <MetalsStrip assets={assets} />
+          <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
+        </div>
+      )}
+      {mainTab==="game_modes"&&(
+        <div style={{ padding:"1.25rem" }}>
+          <GameModesHub assets={assets} />
+        </div>
+      )}
     </div>
   );
 }
