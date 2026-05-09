@@ -423,7 +423,7 @@ function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
   const [elo,      setElo]      = useState<EloState>(() => loadElo());
   const [quests,   setQuests]   = useState(DAILY_QUESTS.map(q => ({...q})));
   const [brokerOpen, setBrokerOpen] = useState(false);
-  const [agent,    setAgent]    = useState(AGENTS[0]);
+  const [agent,    setAgent]    = useState<typeof AGENTS[number]>(AGENTS[0]);
   const [wager,    setWager]    = useState(0.5);
   const [wTok,     setWTok]     = useState<"SOL"|"USDC"|"ABX">("SOL");
   const [pink,     setPink]     = useState(false);
