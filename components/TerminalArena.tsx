@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getLoopscaleLiquidity, calcEloChange, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
+import { GameModesHub } from "@/components/GameModes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArenaAsset {

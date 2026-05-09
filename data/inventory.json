@@ -763,7 +763,132 @@
       "archetype_color": "#a855f7",
       "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
-  
+    {
+      "id": "2003-gyarados",
+      "name": "Gyarados Holo",
+      "category": "Pokemon",
+      "set": "Verified Vault 2003",
+      "year": 2003,
+      "ticker": "2003GYA",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2003-gyarados-vault",
+      "vaultLocation": "New Castle, DE",
+      "insuranceUsd": 2000.0,
+      "priceUsd": 2000.0,
+      "last_sold_price": 2000.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2003",
+      "change24h": -2.03,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/2003-gyarados-holo.jpeg",
+      "imagePathBack": "/assets/rwa/2003-gyarados-holo-back.jpeg",
+      "tokenId": "2003-GYARADO-001",
+      "atk": 69,
+      "def": 77,
+      "speed": 51,
+      "circuitScore": 24,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 21.9,
+      "history": [
+        1400.0,
+        1466.0,
+        1532.0,
+        1598.0,
+        1664.0,
+        1730.0,
+        1796.0,
+        1862.0,
+        1928.0,
+        1994.0
+      ],
+      "metadata": {
+        "set": "Vault 2003",
+        "year": 2003,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 2000.0,
+      "source_file": "2003-gyarados-holo.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 59,
+        "liquidity_score": 37.73,
+        "historical_volatility": 14.21,
+        "win_formula": "arch=Control,pwr=59"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
+    {
+      "id": "2003-nidoking",
+      "name": "Nidoking Holo",
+      "category": "Pokemon",
+      "set": "Verified Vault 2003",
+      "year": 2003,
+      "ticker": "2003NID",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2003-nidoking-vault",
+      "vaultLocation": "New Castle, DE",
+      "insuranceUsd": 2000.0,
+      "priceUsd": 2000.0,
+      "last_sold_price": 2000.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2003",
+      "change24h": -2.03,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/2003-nidoking-holo.jpeg",
+      "imagePathBack": "/assets/rwa/2003-nidoking-holo-back.jpeg",
+      "tokenId": "2003-NIDOKIN-001",
+      "atk": 67,
+      "def": 77,
+      "speed": 67,
+      "circuitScore": 24,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 21.9,
+      "history": [
+        1400.0,
+        1466.0,
+        1532.0,
+        1598.0,
+        1664.0,
+        1730.0,
+        1796.0,
+        1862.0,
+        1928.0,
+        1994.0
+      ],
+      "metadata": {
+        "set": "Vault 2003",
+        "year": 2003,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 2000.0,
+      "source_file": "2003-nidoking-holo.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 59,
+        "liquidity_score": 37.73,
+        "historical_volatility": 14.21,
+        "win_formula": "arch=Control,pwr=59"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
     {
       "id": "2004-torchic",
       "name": "Torchic Holo",
@@ -953,8 +1078,259 @@
       "archetype_color": "#a855f7",
       "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
-    
-      {
+    {
+      "id": "2005-entei",
+      "name": "Entei Holo",
+      "category": "Pokemon",
+      "set": "Verified Vault 2005",
+      "year": 2005,
+      "ticker": "2005ENT",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2005-entei-vault",
+      "vaultLocation": "Tigard, OR",
+      "insuranceUsd": 2165.0,
+      "priceUsd": 2165.0,
+      "last_sold_price": 2165.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2005",
+      "change24h": 0.03,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/2005-entei-holo.jpeg",
+      "imagePathBack": "/assets/rwa/2005-entei-holo-back.jpeg",
+      "tokenId": "2005-ENTEI-001",
+      "atk": 65,
+      "def": 79,
+      "speed": 69,
+      "circuitScore": 11,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 16.1,
+      "history": [
+        1515.5,
+        1586.94,
+        1658.39,
+        1729.83,
+        1801.28,
+        1872.72,
+        1944.17,
+        2015.61,
+        2087.06,
+        2158.51
+      ],
+      "metadata": {
+        "set": "Vault 2005",
+        "year": 2005,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 2165.0,
+      "source_file": "2005-entei-holo.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 63,
+        "liquidity_score": 38.12,
+        "historical_volatility": 12.42,
+        "win_formula": "arch=Control,pwr=63"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
+    {
+      "id": "2005-latias",
+      "name": "Latias Gold Star Holo",
+      "category": "Pokemon",
+      "set": "Verified Vault 2005",
+      "year": 2005,
+      "ticker": "2005LAT",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2005-latias-vault",
+      "vaultLocation": "New Castle, DE",
+      "insuranceUsd": 4000.0,
+      "priceUsd": 4000.0,
+      "last_sold_price": 4000.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2005",
+      "change24h": 3.32,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/2005-latias-gold-star-holo.jpeg",
+      "imagePathBack": "/assets/rwa/2005-latias-gold-star-holo-back.jpeg",
+      "tokenId": "2005-LATIAS-001",
+      "atk": 97,
+      "def": 46,
+      "speed": 85,
+      "circuitScore": 15,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 21.1,
+      "history": [
+        2800.0,
+        2932.0,
+        3064.0,
+        3196.0,
+        3328.0,
+        3460.0,
+        3592.0,
+        3724.0,
+        3856.0,
+        3988.0
+      ],
+      "metadata": {
+        "set": "Vault 2005",
+        "year": 2005,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 4000.0,
+      "source_file": "2005-latias-gold-star-holo.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 50,
+        "liquidity_score": 41.17,
+        "historical_volatility": 10.89,
+        "win_formula": "arch=Aggro,pwr=50"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
+    {
+      "id": "2005-latios",
+      "name": "Latios Holo",
+      "category": "Pokemon",
+      "set": "Verified Vault 2005",
+      "year": 2005,
+      "ticker": "2005LAT",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2005-latios-vault",
+      "vaultLocation": "New Castle, DE",
+      "insuranceUsd": 1800.0,
+      "priceUsd": 1800.0,
+      "last_sold_price": 1800.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2005",
+      "change24h": 3.32,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/2005-latios-holo.jpeg",
+      "imagePathBack": "/assets/rwa/2005-latios-holo-back.jpeg",
+      "tokenId": "2005-LATIOS-001",
+      "atk": 69,
+      "def": 79,
+      "speed": 66,
+      "circuitScore": 15,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 21.1,
+      "history": [
+        1260.0,
+        1319.4,
+        1378.8,
+        1438.2,
+        1497.6,
+        1557.0,
+        1616.4,
+        1675.8,
+        1735.2,
+        1794.6
+      ],
+      "metadata": {
+        "set": "Vault 2005",
+        "year": 2005,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 1800.0,
+      "source_file": "2005-latios-holo.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 62,
+        "liquidity_score": 37.2,
+        "historical_volatility": 10.89,
+        "win_formula": "arch=Control,pwr=62"
+      },
+      "archetype": "Control",
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
+    {
+      "id": "2005-milotic",
+      "name": "Milotic Ex Holo",
+      "category": "Pokemon",
+      "set": "Verified Vault 2005",
+      "year": 2005,
+      "ticker": "2005MIL",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2005-milotic-vault",
+      "vaultLocation": "Tigard, OR",
+      "insuranceUsd": 4300.0,
+      "priceUsd": 4300.0,
+      "last_sold_price": 4300.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2005",
+      "change24h": -2.08,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/2005-milotic-ex-holo.jpeg",
+      "imagePathBack": "/assets/rwa/2005-milotic-ex-holo-back.jpeg",
+      "tokenId": "2005-MILOTIC-001",
+      "atk": 43,
+      "def": 74,
+      "speed": 48,
+      "circuitScore": 19,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 9.6,
+      "history": [
+        3010.0,
+        3151.9,
+        3293.8,
+        3435.7,
+        3577.6,
+        3719.5,
+        3861.4,
+        4003.3,
+        4145.2,
+        4287.1
+      ],
+      "metadata": {
+        "set": "Vault 2005",
+        "year": 2005,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 4300.0,
+      "source_file": "2005-milotic-ex-holo.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 60,
+        "liquidity_score": 41.53,
+        "historical_volatility": 7.74,
+        "win_formula": "arch=Yield,pwr=60"
+      },
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
+    {
       "id": "2006-mew",
       "name": "Mew Holo",
       "category": "Pokemon",
@@ -1017,7 +1393,69 @@
       "archetype_color": "#f26b6b",
       "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
-   
+    {
+      "id": "2011-rayquaza",
+      "name": "Rayquaza Holo",
+      "category": "Pokemon",
+      "set": "Verified Vault 2011",
+      "year": 2011,
+      "ticker": "2011RAY",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2011-rayquaza-vault",
+      "vaultLocation": "New Castle, DE",
+      "insuranceUsd": 4600.0,
+      "priceUsd": 4600.0,
+      "last_sold_price": 4600.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2011",
+      "change24h": -2.03,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/2011-rayquaza-holo.jpeg",
+      "imagePathBack": "/assets/rwa/2011-rayquaza-holo-back.jpeg",
+      "tokenId": "2011-RAYQUAZ-001",
+      "atk": 93,
+      "def": 49,
+      "speed": 87,
+      "circuitScore": 24,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 21.9,
+      "history": [
+        3220.0,
+        3371.8,
+        3523.6,
+        3675.4,
+        3827.2,
+        3979.0,
+        4130.8,
+        4282.6,
+        4434.4,
+        4586.2
+      ],
+      "metadata": {
+        "set": "Vault 2011",
+        "year": 2011,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 4600.0,
+      "source_file": "2011-rayquaza-holo.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 49,
+        "liquidity_score": 41.86,
+        "historical_volatility": 14.21,
+        "win_formula": "arch=Aggro,pwr=49"
+      },
+      "archetype": "Aggro",
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
     {
       "id": "2015-fa-team-magma",
       "name": "Full Art Team Magma",
@@ -3538,7 +3976,69 @@
       "archetype_color": "#14F195",
       "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
-  
+    {
+      "id": "2013-kobe-bryant",
+      "name": "Kobe Bryant",
+      "category": "Sports",
+      "set": "Verified Vault 2013",
+      "year": 2013,
+      "ticker": "2013KOB",
+      "grade": "PSA 10",
+      "gradingCo": "PSA",
+      "vaultId": "2013-kobe-bryant-vault",
+      "vaultLocation": "Tigard, OR",
+      "insuranceUsd": 45000.0,
+      "priceUsd": 45000.0,
+      "last_sold_price": 45000.0,
+      "last_sold_source": "Collector Crypt",
+      "last_sold_date": "2013",
+      "change24h": -3.31,
+      "rarity": "Legendary",
+      "imagePath": "/assets/rwa/2013-kobe-bryant.jpeg",
+      "imagePathBack": "/assets/rwa/2013-kobe-bryant-back.jpeg",
+      "tokenId": "2013-KOBE-BR-001",
+      "atk": 30,
+      "def": 84,
+      "speed": 58,
+      "circuitScore": 37,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 18.9,
+      "history": [
+        31500.0,
+        32985.0,
+        34470.0,
+        35955.0,
+        37440.0,
+        38925.0,
+        40410.0,
+        41895.0,
+        43380.0,
+        44865.0
+      ],
+      "metadata": {
+        "set": "Vault 2013",
+        "year": 2013,
+        "grade_provider": "PSA",
+        "grade_score": "10"
+      },
+      "valuation": 45000.0,
+      "source_file": "2013-kobe-bryant.jpeg",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "high",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 65,
+        "liquidity_score": 53.18,
+        "historical_volatility": 4.78,
+        "win_formula": "arch=Tank,pwr=65"
+      },
+      "archetype": "Tank",
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
+    },
     {
       "id": "2017-patrick-mahomes",
       "name": "Patrick Mahomes",
@@ -3996,6 +4496,142 @@
       "archetype_color": "#a855f7"
     },
     {
+      "id": "rolex-daytona-paul-newman",
+      "name": "Rolex Daytona 'Paul Newman' Ref 6239",
+      "category": "Watches",
+      "set": "Rolex SA",
+      "year": 1968,
+      "ticker": "RLX-PN",
+      "grade": "Excellent",
+      "gradingCo": "Phillips",
+      "vaultId": "RLDP-phillips-2025",
+      "vaultLocation": "Phillips Auctions \u2014 Geneva, CH",
+      "insuranceUsd": 17800000.0,
+      "priceUsd": 17800000.0,
+      "last_sold_price": 17800000.0,
+      "last_sold_source": "Phillips",
+      "last_sold_date": "2025",
+      "change24h": 0.1,
+      "rarity": "Legendary",
+      "imagePath": null,
+      "imagePathBack": null,
+      "tokenId": "RLDP1968-001",
+      "atk": 42,
+      "def": 86,
+      "speed": 36,
+      "circuitScore": 6,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 3.2,
+      "ltv": 0.65,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 11570000.0,
+      "history": [
+        12000000,
+        13000000,
+        14000000,
+        15000000,
+        15500000,
+        16000000,
+        16500000,
+        17000000,
+        17500000,
+        17800000
+      ],
+      "metadata": {
+        "set": "Rolex SA",
+        "year": 1968,
+        "grade_provider": "Phillips",
+        "grade_score": "Excellent"
+      },
+      "valuation": 17800000.0,
+      "source_file": "phillips-2025",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": false,
+      "attributes": {
+        "power_level": 82,
+        "liquidity_score": 82.86,
+        "historical_volatility": 11.9,
+        "win_formula": "arch=Yield,pwr=82"
+      },
+      "archetype": "Control",
+      "archetype_color": "#6b8cff",
+      "arena_buff": "Precision Strike",
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
+    },
+    {
+      "id": "patek-philippe-5711",
+      "name": "Patek Philippe Nautilus 5711/1A-010",
+      "category": "Watches",
+      "set": "Patek Philippe SA",
+      "year": 2021,
+      "ticker": "PP-5711",
+      "grade": "Mint",
+      "gradingCo": "Chrono24",
+      "vaultId": "PP5711-chrono24-2026",
+      "vaultLocation": "Chrono24 Vault \u2014 Hamburg, DE",
+      "insuranceUsd": 120000.0,
+      "priceUsd": 120000.0,
+      "last_sold_price": 120000.0,
+      "last_sold_source": "Chrono24",
+      "last_sold_date": "2026",
+      "change24h": 0.3,
+      "rarity": "Ultra Rare",
+      "imagePath": null,
+      "imagePathBack": null,
+      "tokenId": "PP57112021-001",
+      "atk": 43,
+      "def": 78,
+      "speed": 46,
+      "circuitScore": 12,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 5.5,
+      "ltv": 0.65,
+      "can_borrow": true,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 78000.0,
+      "history": [
+        85000,
+        90000,
+        95000,
+        100000,
+        105000,
+        110000,
+        113000,
+        116000,
+        118000,
+        120000
+      ],
+      "metadata": {
+        "set": "Patek Philippe SA",
+        "year": 2021,
+        "grade_provider": "Chrono24",
+        "grade_score": "Mint"
+      },
+      "valuation": 120000.0,
+      "source_file": "chrono24-2026",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "medium",
+      "quick_duel": true,
+      "attributes": {
+        "power_level": 69,
+        "liquidity_score": 58.05,
+        "historical_volatility": 11.06,
+        "win_formula": "arch=Yield,pwr=69"
+      },
+      "archetype": "Control",
+      "archetype_color": "#6b8cff",
+      "arena_buff": "Precision Strike",
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
+    },
+    {
       "id": "blantons-single-barrel-1990",
       "name": "Blanton's Single Barrel 1990",
       "category": "Spirits",
@@ -4065,7 +4701,75 @@
       "acquire_url": "https://www.baxus.co/asset/D54u5uWC4NsWKNbRSm1FqqkBx759WEe6cfkTWzGLp2h7",
       "baxusUrl": "https://www.baxus.co/asset/D54u5uWC4NsWKNbRSm1FqqkBx759WEe6cfkTWzGLp2h7"
     },
-    
+    {
+      "id": "bomberger-declaration-pfg-2025",
+      "name": "Bomberger's Declaration PFG 2025",
+      "category": "Spirits",
+      "set": "Michter's",
+      "year": 2026,
+      "ticker": "BOMBERGE",
+      "grade": "Authenticated",
+      "gradingCo": "Baxus",
+      "vaultId": "bomberger-declaration-pfg-2025-vault",
+      "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
+      "insuranceUsd": 2200,
+      "priceUsd": 2200,
+      "last_sold_price": 2200,
+      "last_sold_source": "Baxus",
+      "last_sold_date": "2026",
+      "change24h": -2.38,
+      "rarity": "Rare Holo",
+      "imagePath": "/assets/rwa/spirits/bomberger-declaration-pfg-2025.webp",
+      "videoPath": null,
+      "imagePathBack": null,
+      "tokenId": "BOMBERGER-DECL-001",
+      "atk": 43,
+      "def": 93,
+      "speed": 39,
+      "circuitScore": 31,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 6.8,
+      "history": [
+        1584.0,
+        1652.2,
+        1720.4,
+        1788.6,
+        1856.8,
+        1925.0,
+        1993.2,
+        2061.4,
+        2129.6,
+        2197.8
+      ],
+      "metadata": {
+        "set": "Michter's",
+        "year": 2026,
+        "grade_provider": "Baxus",
+        "grade_score": "Auth"
+      },
+      "valuation": 2200,
+      "source_file": "bomberger-declaration-pfg-2025.webp",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "low",
+      "quick_duel": false,
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E",
+      "arena_buff": "Liquid Gold",
+      "can_borrow": true,
+      "ltv": 0.55,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 1210.0,
+      "attributes": {
+        "power_level": 57,
+        "liquidity_score": 38.2,
+        "historical_volatility": 6.77,
+        "win_formula": "arch=Yield,pwr=57"
+      },
+      "acquire_url": "https://www.baxus.co/"
+    },
     {
       "id": "canadian-club-1970",
       "name": "Canadian Club 1970",
@@ -4903,7 +5607,7 @@
         "historical_volatility": 12.0,
         "win_formula": "arch=Yield,pwr=61"
       },
-      "acquire_url": "https://www.baxus.co/browse?search=glenmorangie+1976"
+      "acquire_url": "https://www.baxus.co/"
     },
     {
       "id": "caol-ila-1984-ultimate",
@@ -5042,7 +5746,7 @@
         "historical_volatility": 7.99,
         "win_formula": "arch=Yield,pwr=60"
       },
-      "acquire_url": "https://www.baxus.co/browse?search=heaven+hill+1998+jewbilee"
+      "acquire_url": "https://www.baxus.co/"
     },
     {
       "id": "four-roses-10year",
@@ -5254,7 +5958,75 @@
       "acquire_url": "https://www.baxus.co/asset/7hV5GND8Z2sqy99a1iVDPgg6nksvfSq9Lo8F725dwjsu",
       "baxusUrl": "https://www.baxus.co/asset/7hV5GND8Z2sqy99a1iVDPgg6nksvfSq9Lo8F725dwjsu"
     },
-
+    {
+      "id": "strathisla-1948-royal-marriage",
+      "name": "Strathisla 1948\u20131961 Royal Marriage",
+      "category": "Spirits",
+      "set": "Strathisla",
+      "year": 2026,
+      "ticker": "STRATHIS",
+      "grade": "Authenticated",
+      "gradingCo": "Baxus",
+      "vaultId": "strathisla-1948-royal-marriage-vault",
+      "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
+      "insuranceUsd": 88000,
+      "priceUsd": 88000,
+      "last_sold_price": 88000,
+      "last_sold_source": "Baxus",
+      "last_sold_date": "2026",
+      "change24h": -2.38,
+      "rarity": "Legendary",
+      "imagePath": "/assets/rwa/spirits/strathisla-1948-1961-royal-marriage.webp",
+      "videoPath": null,
+      "imagePathBack": null,
+      "tokenId": "STRATHISLA-194-001",
+      "atk": 43,
+      "def": 93,
+      "speed": 39,
+      "circuitScore": 31,
+      "defenseLevel": "armed",
+      "protected": true,
+      "staked": false,
+      "apy": 6.8,
+      "history": [
+        63360.0,
+        66088.0,
+        68816.0,
+        71544.0,
+        74272.0,
+        77000.0,
+        79728.0,
+        82456.0,
+        85184.0,
+        87912.0
+      ],
+      "metadata": {
+        "set": "Strathisla",
+        "year": 2026,
+        "grade_provider": "Baxus",
+        "grade_score": "Auth"
+      },
+      "valuation": 88000,
+      "source_file": "strathisla-1948-1961-royal-marriage.webp",
+      "is_duel_eligible": true,
+      "is_vault_locked": false,
+      "liquidity_velocity": "low",
+      "quick_duel": false,
+      "archetype": "Yield",
+      "archetype_color": "#C8A96E",
+      "arena_buff": "Liquid Gold",
+      "can_borrow": true,
+      "ltv": 0.55,
+      "borrow_token": "USDC",
+      "borrow_max_usd": 48400.0,
+      "attributes": {
+        "power_level": 63,
+        "liquidity_score": 56.51,
+        "historical_volatility": 6.77,
+        "win_formula": "arch=Yield,pwr=63"
+      },
+      "acquire_url": "https://www.baxus.co/"
+    },
     {
       "id": "perrier-jouet-2006",
       "name": "Perrier-Jou\u00ebt Belle \u00c9poque 2006",
@@ -5462,7 +6234,7 @@
         "historical_volatility": 0.48,
         "win_formula": "arch=Control,pwr=58"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "cartier-santos-large-blue",
@@ -5531,7 +6303,7 @@
         "historical_volatility": 12.0,
         "win_formula": "arch=Control,pwr=56"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "rolex-deepsea-black",
@@ -5600,7 +6372,7 @@
         "historical_volatility": 2.03,
         "win_formula": "arch=Control,pwr=57"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "rolex-oyster-grape",
@@ -5669,7 +6441,7 @@
         "historical_volatility": 10.02,
         "win_formula": "arch=Control,pwr=55"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "rolex-air-king",
@@ -5738,7 +6510,7 @@
         "historical_volatility": 10.79,
         "win_formula": "arch=Control,pwr=54"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "rolex-datejust-41-white",
@@ -5807,7 +6579,7 @@
         "historical_volatility": 0.48,
         "win_formula": "arch=Control,pwr=56"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "rolex-datejust-36-black",
@@ -5876,7 +6648,7 @@
         "historical_volatility": 0.48,
         "win_formula": "arch=Control,pwr=56"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "cartier-santos-green-medium",
@@ -5945,7 +6717,7 @@
         "historical_volatility": 1.07,
         "win_formula": "arch=Control,pwr=56"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "rolex-submariner-no-date",
@@ -6014,7 +6786,7 @@
         "historical_volatility": 8.42,
         "win_formula": "arch=Control,pwr=57"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "iwc-pilots-mark-xviii",
@@ -6083,7 +6855,7 @@
         "historical_volatility": 11.93,
         "win_formula": "arch=Control,pwr=55"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "iwc-pilots-mark-xx-steel",
@@ -6152,7 +6924,7 @@
         "historical_volatility": 8.42,
         "win_formula": "arch=Control,pwr=55"
       },
-      "acquire_url": "https://www.courtyard.io/"
+      "acquire_url": "https://courtyard.io/vending-machine/rolex-watch-box"
     },
     {
       "id": "amazing-fantasy-15",
@@ -6214,7 +6986,7 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 262500.0,
+      "borrow_max_usd": 341250.0,
       "attributes": {
         "power_level": 67,
         "liquidity_score": 68.05,
@@ -6228,7 +7000,7 @@
       "name": "Batman #1 1940\u20132011 Reprint",
       "category": "Comics",
       "set": "Comics",
-      "year": 1940-2011,
+      "year": 1940,
       "ticker": "BATMAN1",
       "grade": "Authenticated",
       "gradingCo": "CGC",
@@ -6267,7 +7039,7 @@
       ],
       "metadata": {
         "set": "Comics",
-        "year": 1940-2011,
+        "year": 1940,
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
@@ -6283,7 +7055,7 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 112500.0,
+      "borrow_max_usd": 146250.0,
       "attributes": {
         "power_level": 61,
         "liquidity_score": 48.63,
@@ -6297,7 +7069,7 @@
       "name": "Crime SuspenStories #22 (1954)",
       "category": "Comics",
       "set": "Comics",
-      "year": 1950-55,
+      "year": 1954,
       "ticker": "CRIMESU",
       "grade": "Authenticated",
       "gradingCo": "CGC",
@@ -6336,7 +7108,7 @@
       ],
       "metadata": {
         "set": "Comics",
-        "year": 1950-55,
+        "year": 1954,
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
@@ -6352,7 +7124,7 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 72500.0,
+      "borrow_max_usd": 94250.0,
       "attributes": {
         "power_level": 58,
         "liquidity_score": 41.41,
@@ -6366,7 +7138,7 @@
       "name": "MAD #1 (1952\u20132018)",
       "category": "Comics",
       "set": "Comics",
-      "year": 1952-2018,
+      "year": 1952,
       "ticker": "MAD1952",
       "grade": "Authenticated",
       "gradingCo": "CGC",
@@ -6405,7 +7177,7 @@
       ],
       "metadata": {
         "set": "Comics",
-        "year": 1952-2018,
+        "year": 1952,
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
@@ -6421,7 +7193,7 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 57500.0,
+      "borrow_max_usd": 74750.0,
       "attributes": {
         "power_level": 58,
         "liquidity_score": 40.91,
@@ -6435,7 +7207,7 @@
       "name": "Sensation Comics #1 (1942)",
       "category": "Comics",
       "set": "Comics",
-      "year": 2026,
+      "year": 1942,
       "ticker": "SENSATIO",
       "grade": "Authenticated",
       "gradingCo": "CGC",
@@ -6474,11 +7246,11 @@
       ],
       "metadata": {
         "set": "Comics",
-        "year": 2026,
+        "year": 1942,
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 85000,
+      "valuation": 89000,
       "source_file": "sensation-comics-1.jpg",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6490,7 +7262,7 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 44500.0,
+      "borrow_max_usd": 57850.0,
       "attributes": {
         "power_level": 63,
         "liquidity_score": 56.34,
@@ -6502,7 +7274,7 @@
   ],
   "totals": {
     "total_assets": 111,
-    "total_insured_usd": 20022981.13,
+    "total_insured_usd": 20110981.13,
     "pokemon_count": 37,
     "one_piece_count": 25,
     "sports_count": 4,
