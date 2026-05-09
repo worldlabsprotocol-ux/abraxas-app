@@ -67,7 +67,8 @@
         "win_formula": "arch=Control,pwr=56"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "1996-charizard-holo",
@@ -129,7 +130,8 @@
         "win_formula": "arch=Aggro,pwr=41"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "1999-charizard-holo",
@@ -191,7 +193,8 @@
         "win_formula": "arch=Tank,pwr=71"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2000-dark-blastoise",
@@ -253,7 +256,8 @@
         "win_formula": "arch=Control,pwr=55"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2000-dark-charizard",
@@ -315,7 +319,8 @@
         "win_formula": "arch=Tank,pwr=62"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2000-slowking",
@@ -377,7 +382,8 @@
         "win_formula": "arch=Aggro,pwr=45"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2001-mewtwo",
@@ -439,7 +445,8 @@
         "win_formula": "arch=Volatility,pwr=46"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2001-shining-charizard",
@@ -501,7 +508,8 @@
         "win_formula": "arch=Aggro,pwr=43"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2002-charizard-reverse",
@@ -563,7 +571,8 @@
         "win_formula": "arch=Aggro,pwr=41"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2002-squirtle",
@@ -625,7 +634,8 @@
         "win_formula": "arch=Control,pwr=58"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2003-charizard",
@@ -687,7 +697,8 @@
         "win_formula": "arch=Aggro,pwr=48"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2003-golem",
@@ -749,7 +760,8 @@
         "win_formula": "arch=Control,pwr=57"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2003-gyarados",
@@ -811,7 +823,8 @@
         "win_formula": "arch=Control,pwr=59"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2003-nidoking",
@@ -873,7 +886,8 @@
         "win_formula": "arch=Control,pwr=59"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2004-torchic",
@@ -935,7 +949,8 @@
         "win_formula": "arch=Control,pwr=61"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2004-treecko",
@@ -997,7 +1012,8 @@
         "win_formula": "arch=Control,pwr=61"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2005-camerupt",
@@ -1059,7 +1075,8 @@
         "win_formula": "arch=Control,pwr=60"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2005-entei",
@@ -1121,7 +1138,8 @@
         "win_formula": "arch=Control,pwr=63"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2005-latias",
@@ -1183,7 +1201,8 @@
         "win_formula": "arch=Aggro,pwr=50"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2005-latios",
@@ -1245,7 +1264,8 @@
         "win_formula": "arch=Control,pwr=62"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2005-milotic",
@@ -1307,7 +1327,8 @@
         "win_formula": "arch=Yield,pwr=60"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2006-mew",
@@ -1369,7 +1390,8 @@
         "win_formula": "arch=Volatility,pwr=47"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2011-rayquaza",
@@ -1431,7 +1453,8 @@
         "win_formula": "arch=Aggro,pwr=49"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2015-fa-team-magma",
@@ -1493,7 +1516,8 @@
         "win_formula": "arch=Control,pwr=56"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2016-fa-charizard-ex",
@@ -1555,7 +1579,8 @@
         "win_formula": "arch=Aggro,pwr=45"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2016-fa-pretend-team",
@@ -1617,7 +1642,8 @@
         "win_formula": "arch=Control,pwr=51"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2016-mega-tokyo-pikachu",
@@ -1679,7 +1705,8 @@
         "win_formula": "arch=Tank,pwr=67"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2016-poncho-pikachu",
@@ -1741,7 +1768,8 @@
         "win_formula": "arch=Tank,pwr=61"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2018-pretend-boss-pikachu",
@@ -1803,7 +1831,8 @@
         "win_formula": "arch=Volatility,pwr=46"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2018-psyduck",
@@ -1865,7 +1894,8 @@
         "win_formula": "arch=Control,pwr=56"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2019-charizard-holo",
@@ -1927,7 +1957,8 @@
         "win_formula": "arch=Aggro,pwr=43"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2020-espeon-deoxys",
@@ -1989,7 +2020,8 @@
         "win_formula": "arch=Volatility,pwr=40"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2021-fa-gengar-vmax",
@@ -2051,7 +2083,8 @@
         "win_formula": "arch=Control,pwr=52"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2021-fa-rayquaza-vmax",
@@ -2113,7 +2146,8 @@
         "win_formula": "arch=Aggro,pwr=45"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2021-fa-umbreon-vmax",
@@ -2175,7 +2209,8 @@
         "win_formula": "arch=Yield,pwr=60"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-mew",
@@ -2237,7 +2272,8 @@
         "win_formula": "arch=Volatility,pwr=50"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-mew",
@@ -2299,7 +2335,8 @@
         "win_formula": "arch=Volatility,pwr=48"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2022-monkey-d-luffy",
@@ -2361,7 +2398,8 @@
         "win_formula": "arch=Volatility,pwr=41"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2022-nami-alt",
@@ -2423,7 +2461,8 @@
         "win_formula": "arch=Yield,pwr=58"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2022-portgas-d-ace",
@@ -2485,7 +2524,8 @@
         "win_formula": "arch=Yield,pwr=54"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2022-shanks-manga",
@@ -2547,7 +2587,8 @@
         "win_formula": "arch=Control,pwr=58"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2023-monkey-d-luffy",
@@ -2609,7 +2650,8 @@
         "win_formula": "arch=Volatility,pwr=38"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2023-portgas-d-ace",
@@ -2671,7 +2713,8 @@
         "win_formula": "arch=Yield,pwr=55"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2023-shanks-event",
@@ -2733,7 +2776,8 @@
         "win_formula": "arch=Control,pwr=56"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2023-shanks",
@@ -2795,7 +2839,8 @@
         "win_formula": "arch=Control,pwr=61"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-boa-hancock",
@@ -2857,7 +2902,8 @@
         "win_formula": "arch=Yield,pwr=60"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-marshall-d-teach-mang",
@@ -2919,7 +2965,8 @@
         "win_formula": "arch=Control,pwr=58"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-marshall-d-teach",
@@ -2981,7 +3028,8 @@
         "win_formula": "arch=Control,pwr=55"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-monkey-d-luffy-manga",
@@ -3043,7 +3091,8 @@
         "win_formula": "arch=Volatility,pwr=39"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-monkey-luffy-manga",
@@ -3105,7 +3154,8 @@
         "win_formula": "arch=Volatility,pwr=44"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-nami",
@@ -3167,7 +3217,8 @@
         "win_formula": "arch=Yield,pwr=67"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-roronoa-zoro-manga",
@@ -3229,7 +3280,8 @@
         "win_formula": "arch=Control,pwr=56"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-roronoa-zoro",
@@ -3291,7 +3343,8 @@
         "win_formula": "arch=Control,pwr=58"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2024-tony-tony-chopper",
@@ -3353,7 +3406,8 @@
         "win_formula": "arch=Yield,pwr=58"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-hibari",
@@ -3415,7 +3469,8 @@
         "win_formula": "arch=Volatility,pwr=48"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-luffy-alt",
@@ -3477,7 +3532,8 @@
         "win_formula": "arch=Aggro,pwr=44"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-luffy-gold",
@@ -3539,7 +3595,8 @@
         "win_formula": "arch=Tank,pwr=65"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-luffy",
@@ -3601,7 +3658,8 @@
         "win_formula": "arch=Volatility,pwr=50"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-monkey-luffy-manga",
@@ -3663,7 +3721,8 @@
         "win_formula": "arch=Volatility,pwr=39"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-nami",
@@ -3725,7 +3784,8 @@
         "win_formula": "arch=Yield,pwr=67"
       },
       "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype_color": "#C8A96E",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-roronoa-zoro",
@@ -3787,7 +3847,8 @@
         "win_formula": "arch=Control,pwr=55"
       },
       "archetype": "Control",
-      "archetype_color": "#a855f7"
+      "archetype_color": "#a855f7",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2025-tashigi",
@@ -3849,7 +3910,8 @@
         "win_formula": "arch=Volatility,pwr=42"
       },
       "archetype": "Volatility",
-      "archetype_color": "#f26b6b"
+      "archetype_color": "#f26b6b",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2000-tom-brady",
@@ -3911,7 +3973,8 @@
         "win_formula": "arch=Tank,pwr=67"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2013-kobe-bryant",
@@ -3973,7 +4036,8 @@
         "win_formula": "arch=Tank,pwr=65"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2017-patrick-mahomes",
@@ -4035,7 +4099,8 @@
         "win_formula": "arch=Aggro,pwr=45"
       },
       "archetype": "Aggro",
-      "archetype_color": "#FF6B35"
+      "archetype_color": "#FF6B35",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "2018-shohei-ohtani",
@@ -4097,7 +4162,8 @@
         "win_formula": "arch=Tank,pwr=62"
       },
       "archetype": "Tank",
-      "archetype_color": "#14F195"
+      "archetype_color": "#14F195",
+      "acquire_url": "https://gacha.collectorcrypt.com/#pokemon"
     },
     {
       "id": "gold-1oz-lbma",
@@ -4230,254 +4296,6 @@
       },
       "archetype": "Yield",
       "archetype_color": "#C8A96E"
-    },
-    {
-      "id": "superman-1-cgc90",
-      "name": "Superman #1 (1939)",
-      "category": "Comics",
-      "set": "Action Comics Publishing",
-      "year": 1939,
-      "ticker": "SPMN-1",
-      "grade": "CGC 9.0",
-      "gradingCo": "CGC",
-      "vaultId": "SPMN1-heritage-2026",
-      "vaultLocation": "Heritage Auctions \u2014 Dallas, TX",
-      "insuranceUsd": 9120000.0,
-      "priceUsd": 9120000.0,
-      "last_sold_price": 9120000.0,
-      "last_sold_source": "Heritage Auctions",
-      "last_sold_date": "2026",
-      "change24h": 0.3,
-      "rarity": "Legendary",
-      "imagePath": null,
-      "imagePathBack": null,
-      "tokenId": "SPMN1939CGC90-001",
-      "atk": 47,
-      "def": 84,
-      "speed": 58,
-      "circuitScore": 8,
-      "defenseLevel": "armed",
-      "protected": true,
-      "staked": false,
-      "apy": 4.2,
-      "history": [
-        6000000,
-        6500000,
-        7000000,
-        7500000,
-        8000000,
-        8500000,
-        8800000,
-        9000000,
-        9080000,
-        9120000
-      ],
-      "metadata": {
-        "set": "Action Comics Publishing",
-        "year": 1939,
-        "grade_provider": "CGC",
-        "grade_score": "9.0"
-      },
-      "valuation": 9120000.0,
-      "source_file": "heritage-2026",
-      "attributes": {
-        "power_level": 80,
-        "liquidity_score": 81.04,
-        "historical_volatility": 13.66,
-        "win_formula": "arch=Tank,pwr=80"
-      },
-      "is_duel_eligible": true,
-      "is_vault_locked": false,
-      "liquidity_velocity": "low",
-      "quick_duel": false,
-      "archetype": "Tank",
-      "archetype_color": "#14F195"
-    },
-    {
-      "id": "batman-1-cgc94",
-      "name": "Batman #1 (1940)",
-      "category": "Comics",
-      "set": "DC Comics",
-      "year": 1940,
-      "ticker": "BTMN-1",
-      "grade": "CGC 9.4",
-      "gradingCo": "CGC",
-      "vaultId": "BTMN1-private-2026",
-      "vaultLocation": "Private Sale \u2014 Undisclosed",
-      "insuranceUsd": 6000000.0,
-      "priceUsd": 6000000.0,
-      "last_sold_price": 6000000.0,
-      "last_sold_source": "Private Sale",
-      "last_sold_date": "2026",
-      "change24h": 0.1,
-      "rarity": "Legendary",
-      "imagePath": null,
-      "imagePathBack": null,
-      "tokenId": "BTMN1940CGC94-001",
-      "atk": 45,
-      "def": 94,
-      "speed": 42,
-      "circuitScore": 9,
-      "defenseLevel": "armed",
-      "protected": true,
-      "staked": false,
-      "apy": 3.8,
-      "history": [
-        3500000,
-        4000000,
-        4500000,
-        5000000,
-        5200000,
-        5400000,
-        5600000,
-        5800000,
-        5900000,
-        6000000
-      ],
-      "metadata": {
-        "set": "DC Comics",
-        "year": 1940,
-        "grade_provider": "CGC",
-        "grade_score": "9.4"
-      },
-      "valuation": 6000000.0,
-      "source_file": "private-sale-2026",
-      "attributes": {
-        "power_level": 83,
-        "liquidity_score": 77.96,
-        "historical_volatility": 15.75,
-        "win_formula": "arch=Tank,pwr=83"
-      },
-      "is_duel_eligible": true,
-      "is_vault_locked": false,
-      "liquidity_velocity": "low",
-      "quick_duel": false,
-      "archetype": "Tank",
-      "archetype_color": "#14F195"
-    },
-    {
-      "id": "action-comics-1-cgc85",
-      "name": "Action Comics #1 (1938)",
-      "category": "Comics",
-      "set": "Action Comics Publishing",
-      "year": 1938,
-      "ticker": "ACT1-38",
-      "grade": "CGC 8.5",
-      "gradingCo": "CGC",
-      "vaultId": "ACT1-heritage-2026",
-      "vaultLocation": "Heritage Auctions \u2014 Dallas, TX",
-      "insuranceUsd": 6000000.0,
-      "priceUsd": 6000000.0,
-      "last_sold_price": 6000000.0,
-      "last_sold_source": "Heritage Auctions",
-      "last_sold_date": "2026",
-      "change24h": 0.2,
-      "rarity": "Legendary",
-      "imagePath": null,
-      "imagePathBack": null,
-      "tokenId": "ACT11938CGC85-001",
-      "atk": 41,
-      "def": 81,
-      "speed": 50,
-      "circuitScore": 7,
-      "defenseLevel": "armed",
-      "protected": true,
-      "staked": false,
-      "apy": 3.5,
-      "history": [
-        3000000,
-        3500000,
-        4000000,
-        4500000,
-        5000000,
-        5300000,
-        5600000,
-        5800000,
-        5950000,
-        6000000
-      ],
-      "metadata": {
-        "set": "Action Comics Publishing",
-        "year": 1938,
-        "grade_provider": "CGC",
-        "grade_score": "8.5"
-      },
-      "valuation": 6000000.0,
-      "source_file": "heritage-2026",
-      "attributes": {
-        "power_level": 78,
-        "liquidity_score": 78.46,
-        "historical_volatility": 20.87,
-        "win_formula": "arch=Tank,pwr=78"
-      },
-      "is_duel_eligible": true,
-      "is_vault_locked": false,
-      "liquidity_velocity": "low",
-      "quick_duel": false,
-      "archetype": "Tank",
-      "archetype_color": "#14F195"
-    },
-    {
-      "id": "dubai-plate-k121",
-      "name": "Dubai Plate K-121",
-      "category": "Luxury",
-      "set": "Emirates Auction",
-      "year": 2026,
-      "ticker": "DXB-K121",
-      "grade": "Certified",
-      "gradingCo": "Emirates Auction",
-      "vaultId": "DXBK121-emirates-2026",
-      "vaultLocation": "Emirates Auction \u2014 Dubai, UAE",
-      "insuranceUsd": 394700.0,
-      "priceUsd": 394700.0,
-      "last_sold_price": 394700.0,
-      "last_sold_source": "Emirates Auction",
-      "last_sold_date": "2026",
-      "change24h": 1.2,
-      "rarity": "Ultra Rare",
-      "imagePath": null,
-      "imagePathBack": null,
-      "tokenId": "DXBK1212026-001",
-      "atk": 43,
-      "def": 94,
-      "speed": 50,
-      "circuitScore": 18,
-      "defenseLevel": "armed",
-      "protected": true,
-      "staked": false,
-      "apy": 7.5,
-      "history": [
-        280000,
-        300000,
-        320000,
-        340000,
-        355000,
-        368000,
-        378000,
-        386000,
-        391000,
-        394700
-      ],
-      "metadata": {
-        "set": "Emirates Auction",
-        "year": 2026,
-        "grade_provider": "Emirates",
-        "grade_score": "Certified"
-      },
-      "valuation": 394700.0,
-      "source_file": "emirates-auction-2026",
-      "attributes": {
-        "power_level": 76,
-        "liquidity_score": 69.96,
-        "historical_volatility": 10.84,
-        "win_formula": "arch=Tank,pwr=76"
-      },
-      "is_duel_eligible": true,
-      "is_vault_locked": false,
-      "liquidity_velocity": "low",
-      "quick_duel": false,
-      "archetype": "Tank",
-      "archetype_color": "#14F195"
     },
     {
       "id": "aapl-tokenized-2026",
@@ -4680,7 +4498,7 @@
     {
       "id": "rolex-daytona-paul-newman",
       "name": "Rolex Daytona 'Paul Newman' Ref 6239",
-      "category": "Timepieces",
+      "category": "Watches",
       "set": "Rolex SA",
       "year": 1968,
       "ticker": "RLX-PN",
@@ -4740,13 +4558,15 @@
         "historical_volatility": 11.9,
         "win_formula": "arch=Yield,pwr=82"
       },
-      "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype": "Control",
+      "archetype_color": "#6b8cff",
+      "arena_buff": "Precision Strike",
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "patek-philippe-5711",
       "name": "Patek Philippe Nautilus 5711/1A-010",
-      "category": "Timepieces",
+      "category": "Watches",
       "set": "Patek Philippe SA",
       "year": 2021,
       "ticker": "PP-5711",
@@ -4806,8 +4626,10 @@
         "historical_volatility": 11.06,
         "win_formula": "arch=Yield,pwr=69"
       },
-      "archetype": "Yield",
-      "archetype_color": "#C8A96E"
+      "archetype": "Control",
+      "archetype_color": "#6b8cff",
+      "arena_buff": "Precision Strike",
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "blantons-single-barrel-1990",
@@ -4820,9 +4642,9 @@
       "gradingCo": "Baxus",
       "vaultId": "blantons-single-barrel-1990-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 4800,
-      "priceUsd": 4800,
-      "last_sold_price": 4800,
+      "insuranceUsd": 550,
+      "priceUsd": 550,
+      "last_sold_price": 550,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 2.22,
@@ -4857,7 +4679,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 4800,
+      "valuation": 550,
       "source_file": "blantons-single-barrel-1990.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -4869,13 +4691,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 2640.0,
+      "borrow_max_usd": 302.5,
       "attributes": {
         "power_level": 58,
         "liquidity_score": 42.07,
         "historical_volatility": 1.07,
         "win_formula": "arch=Yield,pwr=58"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/D54u5uWC4NsWKNbRSm1FqqkBx759WEe6cfkTWzGLp2h7",
+      "baxusUrl": "https://www.baxus.co/asset/D54u5uWC4NsWKNbRSm1FqqkBx759WEe6cfkTWzGLp2h7"
     },
     {
       "id": "bomberger-declaration-pfg-2025",
@@ -4943,7 +4767,8 @@
         "liquidity_score": 38.2,
         "historical_volatility": 6.77,
         "win_formula": "arch=Yield,pwr=57"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/browse?search=bomberger+declaration"
     },
     {
       "id": "canadian-club-1970",
@@ -4956,9 +4781,9 @@
       "gradingCo": "Baxus",
       "vaultId": "canadian-club-1970-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 1800,
-      "priceUsd": 1800,
-      "last_sold_price": 1800,
+      "insuranceUsd": 200,
+      "priceUsd": 200,
+      "last_sold_price": 200,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -1.61,
@@ -4993,7 +4818,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 1800,
+      "valuation": 200,
       "source_file": "canadian-club-1970.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5005,28 +4830,30 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 990.0,
+      "borrow_max_usd": 110.0,
       "attributes": {
         "power_level": 57,
         "liquidity_score": 37.2,
         "historical_volatility": 10.02,
         "win_formula": "arch=Yield,pwr=57"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/HsxmKrtA7nxFJ9faWZqsJe3otozDfCyCRbSQt2R7pAEP",
+      "baxusUrl": "https://www.baxus.co/asset/HsxmKrtA7nxFJ9faWZqsJe3otozDfCyCRbSQt2R7pAEP"
     },
     {
       "id": "chartreuse-german-green-1970",
       "name": "Chartreuse German Green 1970",
       "category": "Spirits",
       "set": "Chartreuse",
-      "year": 2026,
+      "year": 1969,
       "ticker": "CHARTREU",
       "grade": "Authenticated",
       "gradingCo": "Baxus",
       "vaultId": "chartreuse-german-green-1970-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 9200,
-      "priceUsd": 9200,
-      "last_sold_price": 9200,
+      "insuranceUsd": 1300,
+      "priceUsd": 1300,
+      "last_sold_price": 1300,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -0.27,
@@ -5061,7 +4888,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 9200,
+      "valuation": 1300,
       "source_file": "chartreuuse-german-green-1970.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5073,13 +4900,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 5060.0,
+      "borrow_max_usd": 715.0,
       "attributes": {
         "power_level": 59,
         "liquidity_score": 45.3,
         "historical_volatility": 9.45,
         "win_formula": "arch=Yield,pwr=59"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/Uqg3oxz9HrCK53cniqeWzF2thHZRfADjQ1A45Cg1DtP",
+      "baxusUrl": "https://www.baxus.co/asset/Uqg3oxz9HrCK53cniqeWzF2thHZRfADjQ1A45Cg1DtP"
     },
     {
       "id": "pappy-van-winkle-2021",
@@ -5092,9 +4921,9 @@
       "gradingCo": "Baxus",
       "vaultId": "pappy-van-winkle-2021-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 5500,
-      "priceUsd": 5500,
-      "last_sold_price": 5500,
+      "insuranceUsd": 2400,
+      "priceUsd": 2400,
+      "last_sold_price": 2400,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 1.83,
@@ -5129,7 +4958,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 5500,
+      "valuation": 2400,
       "source_file": "pappy-van-winkle-2021.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5141,13 +4970,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 3025.0,
+      "borrow_max_usd": 1320.0,
       "attributes": {
         "power_level": 59,
         "liquidity_score": 42.75,
         "historical_volatility": 11.93,
         "win_formula": "arch=Yield,pwr=59"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/4WWBYBZ3LJ3Rmzt4SXk9zP5U7rUwRQY5SDVia7jwzs8a",
+      "baxusUrl": "https://www.baxus.co/asset/4WWBYBZ3LJ3Rmzt4SXk9zP5U7rUwRQY5SDVia7jwzs8a"
     },
     {
       "id": "mortlach-sherry-butt-1997",
@@ -5160,9 +4991,9 @@
       "gradingCo": "Baxus",
       "vaultId": "mortlach-sherry-butt-1997-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 3200,
-      "priceUsd": 3200,
-      "last_sold_price": 3200,
+      "insuranceUsd": 975,
+      "priceUsd": 975,
+      "last_sold_price": 975,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 0.55,
@@ -5197,7 +5028,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 3200,
+      "valuation": 975,
       "source_file": "mortlach-sherry-butt-hart-brothers-1997.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5209,13 +5040,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 1760.0,
+      "borrow_max_usd": 536.25,
       "attributes": {
         "power_level": 58,
         "liquidity_score": 40.06,
         "historical_volatility": 12.0,
         "win_formula": "arch=Yield,pwr=58"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/8gNUNJDKofU9jx3DufqC3jCfeYAsBNtRUMgbvQF8pEVT",
+      "baxusUrl": "https://www.baxus.co/asset/8gNUNJDKofU9jx3DufqC3jCfeYAsBNtRUMgbvQF8pEVT"
     },
     {
       "id": "weller-single-barrel",
@@ -5228,9 +5061,9 @@
       "gradingCo": "Baxus",
       "vaultId": "weller-single-barrel-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 1200,
-      "priceUsd": 1200,
-      "last_sold_price": 1200,
+      "insuranceUsd": 550,
+      "priceUsd": 550,
+      "last_sold_price": 550,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 2.77,
@@ -5265,7 +5098,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 1200,
+      "valuation": 550,
       "source_file": "weller-single-barrel.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5277,13 +5110,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 660.0,
+      "borrow_max_usd": 302.5,
       "attributes": {
         "power_level": 56,
         "liquidity_score": 35.19,
         "historical_volatility": 7.24,
         "win_formula": "arch=Yield,pwr=56"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/9HEB93caJgppWqtKJ6ZHvd6D1pM76kXUL4Ly9ujh7FM7",
+      "baxusUrl": "https://www.baxus.co/asset/9HEB93caJgppWqtKJ6ZHvd6D1pM76kXUL4Ly9ujh7FM7"
     },
     {
       "id": "caroni-1998-23yr",
@@ -5296,9 +5131,9 @@
       "gradingCo": "Baxus",
       "vaultId": "caroni-1998-23yr-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 18000,
-      "priceUsd": 18000,
-      "last_sold_price": 18000,
+      "insuranceUsd": 1950,
+      "priceUsd": 1950,
+      "last_sold_price": 1950,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -1.35,
@@ -5333,7 +5168,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 18000,
+      "valuation": 1950,
       "source_file": "caroni-1998-23year-single-cask-tortuga-no2.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5345,13 +5180,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 9900.0,
+      "borrow_max_usd": 1072.5,
       "attributes": {
         "power_level": 60,
         "liquidity_score": 48.63,
         "historical_volatility": 5.94,
         "win_formula": "arch=Yield,pwr=60"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/GsXZ7QUVXnyYqTYDYQgKBFqpjsUo7x5fYmZ3oAxE1TMr",
+      "baxusUrl": "https://www.baxus.co/asset/GsXZ7QUVXnyYqTYDYQgKBFqpjsUo7x5fYmZ3oAxE1TMr"
     },
     {
       "id": "miltonduff-1967-mackillop",
@@ -5364,9 +5201,9 @@
       "gradingCo": "Baxus",
       "vaultId": "miltonduff-1967-mackillop-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 22000,
-      "priceUsd": 22000,
-      "last_sold_price": 22000,
+      "insuranceUsd": 950,
+      "priceUsd": 950,
+      "last_sold_price": 950,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 0.55,
@@ -5401,7 +5238,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 22000,
+      "valuation": 950,
       "source_file": "miltonduff-19967-single-cask-mackillop.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5413,13 +5250,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 12100.0,
+      "borrow_max_usd": 522.5,
       "attributes": {
         "power_level": 61,
         "liquidity_score": 49.63,
         "historical_volatility": 12.0,
         "win_formula": "arch=Yield,pwr=61"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/FgkKk2GbJyntWzEyjLbS3HQ4qo4LyvYCX2iNp1p2USpb",
+      "baxusUrl": "https://www.baxus.co/asset/FgkKk2GbJyntWzEyjLbS3HQ4qo4LyvYCX2iNp1p2USpb"
     },
     {
       "id": "hakushu-18year",
@@ -5432,9 +5271,9 @@
       "gradingCo": "Baxus",
       "vaultId": "hakushu-18year-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 3800,
-      "priceUsd": 3800,
-      "last_sold_price": 3800,
+      "insuranceUsd": 900,
+      "priceUsd": 900,
+      "last_sold_price": 900,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 2.8,
@@ -5469,7 +5308,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 3800,
+      "valuation": 900,
       "source_file": "hakushu-18year.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5481,13 +5320,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 2090.0,
+      "borrow_max_usd": 495.0,
       "attributes": {
         "power_level": 57,
         "liquidity_score": 40.91,
         "historical_volatility": 10.79,
         "win_formula": "arch=Yield,pwr=57"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/HfQfK1bLrtQYfD1wL12j1VBagEfa6Yccbb4LU8aQ7c6w",
+      "baxusUrl": "https://www.baxus.co/asset/HfQfK1bLrtQYfD1wL12j1VBagEfa6Yccbb4LU8aQ7c6w"
     },
     {
       "id": "old-overholt-1916",
@@ -5500,9 +5341,9 @@
       "gradingCo": "Baxus",
       "vaultId": "old-overholt-1916-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 28000,
-      "priceUsd": 28000,
-      "last_sold_price": 28000,
+      "insuranceUsd": 2200,
+      "priceUsd": 2200,
+      "last_sold_price": 2200,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -2.8,
@@ -5537,7 +5378,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 28000,
+      "valuation": 2200,
       "source_file": "old-overholt-1916.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5549,13 +5390,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 15400.0,
+      "borrow_max_usd": 1210.0,
       "attributes": {
         "power_level": 61,
         "liquidity_score": 50.82,
         "historical_volatility": 11.67,
         "win_formula": "arch=Yield,pwr=61"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/CDVUyuxZhpXDuz9k5wYccguUzW3LTPrLHRzTKkVx8DSx",
+      "baxusUrl": "https://www.baxus.co/asset/CDVUyuxZhpXDuz9k5wYccguUzW3LTPrLHRzTKkVx8DSx"
     },
     {
       "id": "dos-artes-skull-decanter",
@@ -5568,9 +5411,9 @@
       "gradingCo": "Baxus",
       "vaultId": "dos-artes-skull-decanter-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 2800,
-      "priceUsd": 2800,
-      "last_sold_price": 2800,
+      "insuranceUsd": 2000,
+      "priceUsd": 2000,
+      "last_sold_price": 2000,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -2.04,
@@ -5605,7 +5448,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 2800,
+      "valuation": 2000,
       "source_file": "dos-artes-extra-anejo-skull-decanter.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5617,13 +5460,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 1540.0,
+      "borrow_max_usd": 1100.0,
       "attributes": {
         "power_level": 58,
         "liquidity_score": 39.4,
         "historical_volatility": 8.42,
         "win_formula": "arch=Yield,pwr=58"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/877SjJR8uuCAWyrkXTNFqQstrqdWd15uFWRMG9MTJ4vk",
+      "baxusUrl": "https://www.baxus.co/asset/877SjJR8uuCAWyrkXTNFqQstrqdWd15uFWRMG9MTJ4vk"
     },
     {
       "id": "heaven-hill-1999-single-butt",
@@ -5636,9 +5481,9 @@
       "gradingCo": "Baxus",
       "vaultId": "heaven-hill-1999-single-butt-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 8500,
-      "priceUsd": 8500,
-      "last_sold_price": 8500,
+      "insuranceUsd": 1100,
+      "priceUsd": 1100,
+      "last_sold_price": 1100,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -0.27,
@@ -5673,7 +5518,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 8500,
+      "valuation": 1100,
       "source_file": "heaven-hill-1999-single-butt.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5685,13 +5530,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 4675.0,
+      "borrow_max_usd": 605.0,
       "attributes": {
         "power_level": 59,
         "liquidity_score": 44.91,
         "historical_volatility": 9.45,
         "win_formula": "arch=Yield,pwr=59"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/5EzWjZiEjaboDBxrmGLHnUzVLFmpmUnJW32YMCDL8SJj",
+      "baxusUrl": "https://www.baxus.co/asset/5EzWjZiEjaboDBxrmGLHnUzVLFmpmUnJW32YMCDL8SJj"
     },
     {
       "id": "glenmorangie-1976-concord",
@@ -5704,9 +5551,9 @@
       "gradingCo": "Baxus",
       "vaultId": "glenmorangie-1976-concord-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 14000,
-      "priceUsd": 14000,
-      "last_sold_price": 14000,
+      "insuranceUsd": 3150,
+      "priceUsd": 3150,
+      "last_sold_price": 3150,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 0.55,
@@ -5741,7 +5588,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 14000,
+      "valuation": 3150,
       "source_file": "glenmorangie-1976-concord.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5753,13 +5600,14 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 7700.0,
+      "borrow_max_usd": 1732.5,
       "attributes": {
         "power_level": 61,
         "liquidity_score": 47.38,
         "historical_volatility": 12.0,
         "win_formula": "arch=Yield,pwr=61"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/browse?search=glenmorangie+1976"
     },
     {
       "id": "caol-ila-1984-ultimate",
@@ -5772,9 +5620,9 @@
       "gradingCo": "Baxus",
       "vaultId": "caol-ila-1984-ultimate-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 6200,
-      "priceUsd": 6200,
-      "last_sold_price": 6200,
+      "insuranceUsd": 750,
+      "priceUsd": 750,
+      "last_sold_price": 750,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -0.83,
@@ -5809,7 +5657,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 6200,
+      "valuation": 750,
       "source_file": "caol-ila-1984-the-ultimate.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5821,13 +5669,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 3410.0,
+      "borrow_max_usd": 412.5,
       "attributes": {
         "power_level": 59,
         "liquidity_score": 43.34,
         "historical_volatility": 9.08,
         "win_formula": "arch=Yield,pwr=59"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/G4L3s4vdEQMvRTRAsLBsKhNCE9xcszcXAcEvLsT8XAaw",
+      "baxusUrl": "https://www.baxus.co/asset/G4L3s4vdEQMvRTRAsLBsKhNCE9xcszcXAcEvLsT8XAaw"
     },
     {
       "id": "heaven-hills-1998-jewbilee",
@@ -5840,9 +5690,9 @@
       "gradingCo": "Baxus",
       "vaultId": "heaven-hills-1998-jewbilee-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 7800,
-      "priceUsd": 7800,
-      "last_sold_price": 7800,
+      "insuranceUsd": 4500,
+      "priceUsd": 4500,
+      "last_sold_price": 4500,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 2.62,
@@ -5877,7 +5727,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 7800,
+      "valuation": 4500,
       "source_file": "heaven-hills-1998-whisky-jewbilee.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5889,13 +5739,14 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 4290.0,
+      "borrow_max_usd": 2475.0,
       "attributes": {
         "power_level": 60,
         "liquidity_score": 44.48,
         "historical_volatility": 7.99,
         "win_formula": "arch=Yield,pwr=60"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/browse?search=heaven+hill+1998+jewbilee"
     },
     {
       "id": "four-roses-10year",
@@ -5908,9 +5759,9 @@
       "gradingCo": "Baxus",
       "vaultId": "four-roses-10year-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 950,
-      "priceUsd": 950,
-      "last_sold_price": 950,
+      "insuranceUsd": 375,
+      "priceUsd": 375,
+      "last_sold_price": 375,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -2.8,
@@ -5945,7 +5796,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 950,
+      "valuation": 375,
       "source_file": "four-rses-10year.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -5957,13 +5808,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 522.5,
+      "borrow_max_usd": 206.25,
       "attributes": {
         "power_level": 55,
         "liquidity_score": 34.03,
         "historical_volatility": 11.67,
         "win_formula": "arch=Yield,pwr=55"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/AKJCjVqiqdbS8jgU1ijdZdwrqUyjR5gmwmHCfZu1dKDz",
+      "baxusUrl": "https://www.baxus.co/asset/AKJCjVqiqdbS8jgU1ijdZdwrqUyjR5gmwmHCfZu1dKDz"
     },
     {
       "id": "littlemill-1965-1998",
@@ -5976,9 +5829,9 @@
       "gradingCo": "Baxus",
       "vaultId": "littlemill-1965-1998-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 45000,
-      "priceUsd": 45000,
-      "last_sold_price": 45000,
+      "insuranceUsd": 2100,
+      "priceUsd": 2100,
+      "last_sold_price": 2100,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 2.77,
@@ -6013,7 +5866,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 45000,
+      "valuation": 2100,
       "source_file": "liittlemill-1965-bottled-1998.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6025,13 +5878,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 24750.0,
+      "borrow_max_usd": 1155.0,
       "attributes": {
         "power_level": 62,
         "liquidity_score": 53.18,
         "historical_volatility": 7.24,
         "win_formula": "arch=Yield,pwr=62"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/GgxZADcYiNbLV8Z9RSg5c7PuvZckMUTSvYBJrF2WREzs",
+      "baxusUrl": "https://www.baxus.co/asset/GgxZADcYiNbLV8Z9RSg5c7PuvZckMUTSvYBJrF2WREzs"
     },
     {
       "id": "michel-couvreur-1969",
@@ -6044,9 +5899,9 @@
       "gradingCo": "Baxus",
       "vaultId": "michel-couvreur-1969-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 32000,
-      "priceUsd": 32000,
-      "last_sold_price": 32000,
+      "insuranceUsd": 2000,
+      "priceUsd": 2000,
+      "last_sold_price": 2000,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": 2.77,
@@ -6081,7 +5936,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 32000,
+      "valuation": 2000,
       "source_file": "michel-couvreur-1969.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6093,13 +5948,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 17600.0,
+      "borrow_max_usd": 1100.0,
       "attributes": {
         "power_level": 62,
         "liquidity_score": 51.49,
         "historical_volatility": 7.24,
         "win_formula": "arch=Yield,pwr=62"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/7hV5GND8Z2sqy99a1iVDPgg6nksvfSq9Lo8F725dwjsu",
+      "baxusUrl": "https://www.baxus.co/asset/7hV5GND8Z2sqy99a1iVDPgg6nksvfSq9Lo8F725dwjsu"
     },
     {
       "id": "strathisla-1948-royal-marriage",
@@ -6167,7 +6024,8 @@
         "liquidity_score": 56.51,
         "historical_volatility": 6.77,
         "win_formula": "arch=Yield,pwr=63"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/browse?search=strathisla+1948"
     },
     {
       "id": "perrier-jouet-2006",
@@ -6180,9 +6038,9 @@
       "gradingCo": "Baxus",
       "vaultId": "perrier-jouet-2006-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 1800,
-      "priceUsd": 1800,
-      "last_sold_price": 1800,
+      "insuranceUsd": 999,
+      "priceUsd": 999,
+      "last_sold_price": 999,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -1.61,
@@ -6217,7 +6075,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 1800,
+      "valuation": 999,
       "source_file": "perrier-jouet-belle-epoque3-2006.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6229,13 +6087,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 990.0,
+      "borrow_max_usd": 549.45,
       "attributes": {
         "power_level": 57,
         "liquidity_score": 37.2,
         "historical_volatility": 10.02,
         "win_formula": "arch=Yield,pwr=57"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/2THuHEy2S56fzjGkbYHDJYJ1oYoJYzWFYDUyY4X5k7i5",
+      "baxusUrl": "https://www.baxus.co/asset/2THuHEy2S56fzjGkbYHDJYJ1oYoJYzWFYDUyY4X5k7i5"
     },
     {
       "id": "american-medicinal-spirits-1916",
@@ -6248,9 +6108,9 @@
       "gradingCo": "Baxus",
       "vaultId": "american-medicinal-spirits-1916-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 52000,
-      "priceUsd": 52000,
-      "last_sold_price": 52000,
+      "insuranceUsd": 2645,
+      "priceUsd": 2645,
+      "last_sold_price": 2645,
       "last_sold_source": "Baxus",
       "last_sold_date": "2026",
       "change24h": -0.01,
@@ -6285,7 +6145,7 @@
         "grade_provider": "Baxus",
         "grade_score": "Auth"
       },
-      "valuation": 52000,
+      "valuation": 2645,
       "source_file": "american-medicinal-spiriits-1916.webp",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6297,13 +6157,15 @@
       "can_borrow": true,
       "ltv": 0.55,
       "borrow_token": "USDC",
-      "borrow_max_usd": 28600.0,
+      "borrow_max_usd": 1454.75,
       "attributes": {
         "power_level": 62,
         "liquidity_score": 53.9,
         "historical_volatility": 2.6,
         "win_formula": "arch=Yield,pwr=62"
-      }
+      },
+      "acquire_url": "https://www.baxus.co/asset/6Csr6N9V8nbtDwvWj8qdHSG9Tie7JKf9jszgm5ZqrHbZ",
+      "baxusUrl": "https://www.baxus.co/asset/6Csr6N9V8nbtDwvWj8qdHSG9Tie7JKf9jszgm5ZqrHbZ"
     },
     {
       "id": "rolex-yacht-master-blue",
@@ -6316,9 +6178,9 @@
       "gradingCo": "Courtyard",
       "vaultId": "rolex-yacht-master-blue-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 28500,
-      "priceUsd": 28500,
-      "last_sold_price": 28500,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
+      "last_sold_price": 11000,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
       "change24h": -2.71,
@@ -6353,7 +6215,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 28500,
+      "valuation": 11000,
       "source_file": "rolex-yacht-master-blue-dial.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6365,13 +6227,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 18525.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 58,
         "liquidity_score": 50.91,
         "historical_volatility": 0.48,
         "win_formula": "arch=Control,pwr=58"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "cartier-santos-large-blue",
@@ -6384,9 +6247,9 @@
       "gradingCo": "Courtyard",
       "vaultId": "cartier-santos-large-blue-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 12000,
-      "priceUsd": 12000,
-      "last_sold_price": 12000,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
+      "last_sold_price": 11000,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
       "change24h": 0.55,
@@ -6421,7 +6284,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 12000,
+      "valuation": 11000,
       "source_file": "cartier-santos-large-blue-dial.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6433,13 +6296,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 7800.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 56,
         "liquidity_score": 46.62,
         "historical_volatility": 12.0,
         "win_formula": "arch=Control,pwr=56"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "rolex-deepsea-black",
@@ -6452,9 +6316,9 @@
       "gradingCo": "Courtyard",
       "vaultId": "rolex-deepsea-black-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 22000,
-      "priceUsd": 22000,
-      "last_sold_price": 22000,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
+      "last_sold_price": 11000,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
       "change24h": 1.1,
@@ -6489,7 +6353,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 22000,
+      "valuation": 11000,
       "source_file": "rolex-deepsea-sea-dweller-black-dial.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6501,13 +6365,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 14300.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 57,
         "liquidity_score": 49.63,
         "historical_volatility": 2.03,
         "win_formula": "arch=Control,pwr=57"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "rolex-oyster-grape",
@@ -6520,9 +6385,9 @@
       "gradingCo": "Courtyard",
       "vaultId": "rolex-oyster-grape-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 8500,
-      "priceUsd": 8500,
-      "last_sold_price": 8500,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
+      "last_sold_price": 11000,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
       "change24h": -1.61,
@@ -6557,7 +6422,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 8500,
+      "valuation": 11000,
       "source_file": "rolex-oyster-perpetual-39mm-grape-dial.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6569,13 +6434,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 5525.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 55,
         "liquidity_score": 44.91,
         "historical_volatility": 10.02,
         "win_formula": "arch=Control,pwr=55"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "rolex-air-king",
@@ -6588,8 +6454,8 @@
       "gradingCo": "Courtyard",
       "vaultId": "rolex-air-king-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 7200,
-      "priceUsd": 7200,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
       "last_sold_price": 7200,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
@@ -6625,7 +6491,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 7200,
+      "valuation": 11000,
       "source_file": "rolex-air-king.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6637,13 +6503,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 4680.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 54,
         "liquidity_score": 44.08,
         "historical_volatility": 10.79,
         "win_formula": "arch=Control,pwr=54"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "rolex-datejust-41-white",
@@ -6656,9 +6523,9 @@
       "gradingCo": "Courtyard",
       "vaultId": "rolex-datejust-41-white-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 10500,
-      "priceUsd": 10500,
-      "last_sold_price": 10500,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
+      "last_sold_price": 11000,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
       "change24h": -2.71,
@@ -6693,7 +6560,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 10500,
+      "valuation": 11000,
       "source_file": "rolex-datejust-41mm-white-dial-oyster.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6705,13 +6572,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 6825.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 56,
         "liquidity_score": 45.96,
         "historical_volatility": 0.48,
         "win_formula": "arch=Control,pwr=56"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "rolex-datejust-36-black",
@@ -6724,9 +6592,9 @@
       "gradingCo": "Courtyard",
       "vaultId": "rolex-datejust-36-black-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 9200,
-      "priceUsd": 9200,
-      "last_sold_price": 9200,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
+      "last_sold_price": 11000,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
       "change24h": -2.71,
@@ -6761,7 +6629,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 9200,
+      "valuation": 11000,
       "source_file": "rolex-datejust-36mm-black-jubilee.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6773,13 +6641,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 5980.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 56,
         "liquidity_score": 45.3,
         "historical_volatility": 0.48,
         "win_formula": "arch=Control,pwr=56"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "cartier-santos-green-medium",
@@ -6847,7 +6716,8 @@
         "liquidity_score": 46.19,
         "historical_volatility": 1.07,
         "win_formula": "arch=Control,pwr=56"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "rolex-submariner-no-date",
@@ -6860,9 +6730,9 @@
       "gradingCo": "Courtyard",
       "vaultId": "rolex-submariner-no-date-vault",
       "vaultLocation": "Abraxas Vault \u2014 Tigard, OR",
-      "insuranceUsd": 14500,
-      "priceUsd": 14500,
-      "last_sold_price": 14500,
+      "insuranceUsd": 11000,
+      "priceUsd": 11000,
+      "last_sold_price": 11000,
       "last_sold_source": "Courtyard",
       "last_sold_date": "2026",
       "change24h": -2.04,
@@ -6897,7 +6767,7 @@
         "grade_provider": "CGC",
         "grade_score": "Auth"
       },
-      "valuation": 14500,
+      "valuation": 11000,
       "source_file": "rolex-submariner-no-date.mp4",
       "is_duel_eligible": true,
       "is_vault_locked": false,
@@ -6909,13 +6779,14 @@
       "can_borrow": true,
       "ltv": 0.65,
       "borrow_token": "USDC",
-      "borrow_max_usd": 9425.0,
+      "borrow_max_usd": 7150.0,
       "attributes": {
         "power_level": 57,
         "liquidity_score": 47.56,
         "historical_volatility": 8.42,
         "win_formula": "arch=Control,pwr=57"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "iwc-pilots-mark-xviii",
@@ -6983,7 +6854,8 @@
         "liquidity_score": 43.01,
         "historical_volatility": 11.93,
         "win_formula": "arch=Control,pwr=55"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "iwc-pilots-mark-xx-steel",
@@ -7051,7 +6923,8 @@
         "liquidity_score": 43.34,
         "historical_volatility": 8.42,
         "win_formula": "arch=Control,pwr=55"
-      }
+      },
+      "acquire_url": "https://www.courtyard.io/"
     },
     {
       "id": "amazing-fantasy-15",
@@ -7119,7 +6992,8 @@
         "liquidity_score": 68.05,
         "historical_volatility": 10.02,
         "win_formula": "arch=Tank,pwr=67"
-      }
+      },
+      "acquire_url": "https://www.metropoliscomics.com/?hl=en-US"
     },
     {
       "id": "batman-1940-2011-1",
@@ -7187,7 +7061,8 @@
         "liquidity_score": 48.63,
         "historical_volatility": 10.02,
         "win_formula": "arch=Tank,pwr=61"
-      }
+      },
+      "acquire_url": "https://www.metropoliscomics.com/?hl=en-US"
     },
     {
       "id": "crime-suspenstories-1950-22",
@@ -7255,7 +7130,8 @@
         "liquidity_score": 41.41,
         "historical_volatility": 1.07,
         "win_formula": "arch=Tank,pwr=58"
-      }
+      },
+      "acquire_url": "https://www.metropoliscomics.com/?hl=en-US"
     },
     {
       "id": "mad-1952-2018-1",
@@ -7323,7 +7199,8 @@
         "liquidity_score": 40.91,
         "historical_volatility": 3.54,
         "win_formula": "arch=Tank,pwr=58"
-      }
+      },
+      "acquire_url": "https://www.metropoliscomics.com/?hl=en-US"
     },
     {
       "id": "sensation-comics-1",
@@ -7391,20 +7268,21 @@
         "liquidity_score": 56.34,
         "historical_volatility": 10.02,
         "win_formula": "arch=Tank,pwr=63"
-      }
+      },
+      "acquire_url": "https://www.metropoliscomics.com/?hl=en-US"
     }
   ],
   "totals": {
-    "total_assets": 115,
-    "total_insured_usd": 41799037.13,
+    "total_assets": 111,
+    "total_insured_usd": 20022981.13,
     "pokemon_count": 37,
     "one_piece_count": 25,
     "sports_count": 4,
     "metals_count": 2,
     "stocks_count": 3,
-    "timepieces_count": 2,
-    "comics_count": 3,
-    "luxury_count": 1
+    "timepieces_count": 0,
+    "comics_count": 5,
+    "luxury_count": 0
   },
   "excluded_assets": []
 }
