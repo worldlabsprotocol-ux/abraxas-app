@@ -468,11 +468,10 @@ function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
       // Phase 2: deploy — player places first card
       setMatch(m=>m?{...m, phase:"deploy", log:[...m.log,"[PHASE 2] Strategic Deployment — place your assets"]}:m);
     } else if (match.phase==="macro") {
-      // Phase 4: agent reactions
-      const ev = match.macroEvent;
       const log = [...match.log,"[PHASE 4] Agent Reactions"];
-      if (ev && agent.tactic==="hedge") log.push(`[${agent.name}] Hedge triggered — defending against ${ev.name}`);
-      if (ev && agent.tactic==="yield") log.push(`[${agent.name}] Yield maximized under ${ev.name}`);
+      const matchTactic = match.activeAgent.tactic as string;
+      if (ev && matchTactic==="hedge") log.push(`[${match.activeAgent.name}] Hedge triggered — defending against ${ev.name}`);
+      if (ev && matchTactic==="yield") log.push(`[${match.activeAgent.name}] Yield maximized under ${ev.name}`);
       setMatch(m=>m?{...m, phase:"agents", log}:m);
     } else if (match.phase==="agents") {
       // Phase 5: settlement
