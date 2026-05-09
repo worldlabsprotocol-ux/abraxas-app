@@ -18,6 +18,8 @@ interface ArenaAsset {
   circuitScore: number; defenseLevel: string;
   protected: boolean; staked: boolean; apy?: number;
   is_duel_eligible?: boolean;
+  videoPath?: string | null;
+  arena_buff?: string;
   attributes?: { power_level: number };
   can_borrow?: boolean; ltv?: number;
   archetype?: string; archetype_color?: string;
@@ -110,6 +112,7 @@ const CAT_COLOR: Record<string, string> = {
   Pokemon:"#FBBF24", "One Piece":"#f26b6b", Comics:"#a855f7",
   Metals:"#D4AF37", Stocks:"#14F195", Timepieces:"#C8A96E",
   Luxury:"#60A5FA", Sports:"#fb923c",
+  Spirits:"#FF8C00", Watches:"#6b8cff",
 };
 
 // ─── TT / board helpers ───────────────────────────────────────────────────────
@@ -204,6 +207,24 @@ function SoldTape({ ticks }:{ ticks:SoldTick[] }) {
 function AssetImage({ asset, height=140 }:{ asset:ArenaAsset; height?:number }) {
   const [err,setErr]=useState(false);
   const catColor=CAT_COLOR[asset.category]??"#6b8cff";
+
+  // Video asset (Watches)
+  if (asset.videoPath && !err) {
+    return (
+      <div style={{ position:"relative",height,background:"rgba(6,8,16,0.98)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden" }}>
+        <video
+          src={asset.videoPath} autoPlay muted loop playsInline
+          onError={()=>setErr(true)}
+          style={{ width:"100%",height:"100%",objectFit:"cover",display:"block" }}
+        />
+        <div style={{ position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"linear-gradient(to top,rgba(6,8,16,0.9),transparent)",pointerEvents:"none" }} />
+        <div style={{ position:"absolute",top:"0.3rem",left:"0.3rem",padding:"0.08rem 0.28rem",borderRadius:"3px",background:"rgba(107,140,255,0.2)",border:"1px solid rgba(107,140,255,0.4)" }}>
+          <span style={{ fontSize:"0.4rem",fontWeight:700,color:"#6b8cff",letterSpacing:"0.08em",fontFamily:"'JetBrains Mono',monospace" }}>LIVE</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!asset.imagePath||err) {
     return (
       <div style={{ height,background:`linear-gradient(135deg,${catColor}12,rgba(6,8,16,0.98))`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.3rem",padding:"0.5rem" }}>
@@ -263,9 +284,14 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
 
       <div style={{ padding:"0.4rem 0.45rem" }}>
         <div style={{ fontWeight:800,fontSize:"0.7rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"2px" }}>{asset.name}</div>
-        <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.28rem" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.28rem",flexWrap:"wrap" }}>
           <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace" }}>{asset.grade}</span>
           <ArchBadge arch={asset.archetype} />
+          {asset.arena_buff&&(
+            <span style={{ fontSize:"0.4rem",fontWeight:700,padding:"0.06rem 0.25rem",borderRadius:"3px",background:"rgba(168,85,247,0.12)",border:"1px solid rgba(168,85,247,0.3)",color:"#a855f7",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
+              {asset.arena_buff}
+            </span>
+          )}
         </div>
 
         {!compact&&(
@@ -295,7 +321,7 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
               {asset.attributes?.power_level&&<span style={{ fontSize:"0.42rem",color:archColor,fontFamily:"'JetBrains Mono',monospace" }}>PWR {asset.attributes.power_level}</span>}
             </div>
 
-            <a href="https://gacha.collectorcrypt.com/#pokemon" target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ display:"block",padding:"0.28rem",borderRadius:"5px",fontSize:"0.5rem",fontWeight:700,background:"rgba(200,169,110,0.1)",border:"1px solid rgba(200,169,110,0.22)",color:"#C8A96E",textAlign:"center",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
+            <a href={asset.category==="Spirits"?"https://www.baxus.co/":asset.category==="Watches"?"https://www.courtyard.io/":"https://gacha.collectorcrypt.com/#pokemon"} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ display:"block",padding:"0.28rem",borderRadius:"5px",fontSize:"0.5rem",fontWeight:700,background:"rgba(200,169,110,0.1)",border:"1px solid rgba(200,169,110,0.22)",color:"#C8A96E",textAlign:"center",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
               Acquire
             </a>
           </>
