@@ -465,20 +465,24 @@ function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
     if (!match||match.phase==="done") return;
 
     if (match.phase==="treasury") {
+      // Phase 2: deploy — player places first card
       setMatch(m=>m?{...m, phase:"deploy", log:[...m.log,"[PHASE 2] Strategic Deployment — place your assets"]}:m);
     } else if (match.phase==="macro") {
+      // Phase 4: agent reactions
       const macroEv = match.macroEvent;
       const log = [...match.log,"[PHASE 4] Agent Reactions"];
-      const matchTactic = match.activeAgent.tactic as string;
+      const matchTactic = (match.activeAgent.tactic as string);
       if (macroEv && matchTactic==="hedge") log.push(`[${match.activeAgent.name}] Hedge triggered — defending against ${macroEv.name}`);
       if (macroEv && matchTactic==="yield") log.push(`[${match.activeAgent.name}] Yield maximized under ${macroEv.name}`);
       setMatch(m=>m?{...m, phase:"agents", log}:m);
     } else if (match.phase==="agents") {
+      // Phase 5: settlement
       const ps = scoreBoard(match.board,"player");
       const as = scoreBoard(match.board,"agent");
       const winner: "player"|"agent"|"draw" = ps>as?"player":as>ps?"agent":"draw";
       const abra = winner==="player" ? Math.round(match.playerHand.length*60 + (match.pinkSlips?120:0)) : 0;
-      const pres = winner==="player" ? Math.round(match.wager*100) : 0;
+      const pres = winner==="player" ? Math.round(wager*100) : 0;
+      // Update ELO
       const eloChange = calcEloChange(elo.rating, 1050, winner==="player");
       const newElo: EloState = {
         rating:   Math.max(0, elo.rating + eloChange),
@@ -490,6 +494,12 @@ function SovereignArena({ assets }:{ assets:ArenaAsset[] }) {
         abraEarned: elo.abraEarned + abra,
       };
       setElo(newElo); saveElo(newElo);
+      // Update quests
+      setQuests(qs => qs.map(q => {
+        if (q.id==="win3"&&winner==="player") return {...q,progress:Math.min(q.goal,q.progress+1)};
+        if (q.id==="streak"&&newElo.streak>=2) return {...q,progress:Math.min(q.goal,2)};
+        return q;
+      }));
       setMatch(m=>m?{...m, phase:"done", winner, abraEarned:abra, prestige:pres,
         log:[...m.log,`[PHASE 5] Settlement — Player: ${ps} | Sophia: ${as}`,
           winner==="player"?`[VICTORY] +${abra} $ABRA earned, +${pres} prestige`:`[DEFEATED] Sophia holds the position`]}:m);
