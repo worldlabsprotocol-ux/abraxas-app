@@ -15,7 +15,8 @@ interface GameAsset {
 }
 const CAT_COLOR: Record<string,string> = {
   Pokemon:"#FBBF24","One Piece":"#f26b6b",Comics:"#a855f7",
-  Metals:"#D4AF37",Stocks:"#14F195",Watches:"#6b8cff",Sports:"#fb923c",Spirits:"#FF8C00",
+  Metals:"#D4AF37",Stocks:"#14F195",Watches:"#6b8cff",Sports:"#fb923c",
+  Spirits:"#FF8C00",Racehorses:"#22c55e",
 };
 function fmtUsd(v:number):string {
   if(v>=1_000_000) return `$${(v/1_000_000).toFixed(2)}M`;

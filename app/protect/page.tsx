@@ -12,6 +12,7 @@ import {
 } from "@/lib/systemState";
 import { getLoopscaleLiquidity } from "@/lib/loopscale";
 import { PrizePool } from "@/components/PrizePool";
+import { AbraVault } from "@/components/AbraVault";
 import { RWACharts } from "@/components/RWACharts";
 
 interface SignalRow { signal: string; value: number; threshold: number; breached: boolean }
@@ -249,6 +250,9 @@ export default function VaultsPage() {
 
       {/* ★ LOOPSCALE HERO — top of page */}
       <LoopscaleHero />
+
+      {/* $ABRA Vault — sovereign staking */}
+      <AbraVault />
 
       {/* Circuit alerts */}
       <div style={{ marginBottom:"1rem" }}><SovereignPulse /></div>

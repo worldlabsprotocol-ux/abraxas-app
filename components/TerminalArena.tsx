@@ -68,7 +68,7 @@ const ARCH_CFG: Record<string, { label:string; color:string; liqCost:number }> =
 const CAT_COLOR: Record<string, string> = {
   Pokemon:"#FBBF24", "One Piece":"#f26b6b", Comics:"#a855f7",
   Metals:"#D4AF37", Stocks:"#14F195", Watches:"#6b8cff",
-  Sports:"#fb923c", Spirits:"#FF8C00",
+  Sports:"#fb923c", Spirits:"#FF8C00", Racehorses:"#22c55e",
 };
 
 // ─── ELO ──────────────────────────────────────────────────────────────────────
@@ -247,11 +247,10 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
               {asset.archetype}
             </span>
           )}
-          {asset.arena_buff&&(
-            <span style={{ fontSize:"0.38rem",fontWeight:700,padding:"0.05rem 0.22rem",borderRadius:"3px",background:"rgba(168,85,247,0.12)",border:"1px solid rgba(168,85,247,0.3)",color:"#a855f7",fontFamily:"'JetBrains Mono',monospace" }}>
-              {asset.arena_buff}
-            </span>
-          )}
+          {asset.arena_buff&&(()=>{
+            const bclr = asset.arena_buff==="Liquid Gold"?"#C8A96E":asset.arena_buff==="Precision Strike"?"#6b8cff":asset.arena_buff==="Thunderhooves"?"#22c55e":"#a855f7";
+            return <span style={{ fontSize:"0.38rem",fontWeight:700,padding:"0.05rem 0.22rem",borderRadius:"3px",background:`${bclr}12`,border:`1px solid ${bclr}35`,color:bclr,fontFamily:"'JetBrains Mono',monospace" }}>{asset.arena_buff}</span>;
+          })()}
         </div>
 
         {!compact&&(
@@ -274,9 +273,20 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
               {asset.last_sold_source} · {fmtUsd(asset.last_sold_price)} last sold
             </div>
 
-            <a href={acquireUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ display:"block",padding:"0.3rem",borderRadius:"5px",fontSize:"0.52rem",fontWeight:700,background:"rgba(200,169,110,0.1)",border:"1px solid rgba(200,169,110,0.22)",color:"#C8A96E",textAlign:"center",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
-              Acquire
-            </a>
+            {asset.category==="Racehorses"?(
+              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.25rem" }}>
+                <a href={acquireUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ display:"block",padding:"0.3rem",borderRadius:"5px",fontSize:"0.46rem",fontWeight:700,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",textAlign:"center",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
+                  Acquire
+                </a>
+                <button onClick={e=>{e.stopPropagation();}} style={{ padding:"0.3rem",borderRadius:"5px",fontSize:"0.46rem",fontWeight:700,background:"rgba(255,107,53,0.12)",border:"1px solid rgba(255,107,53,0.35)",color:"#FF6B35",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+                  Enter Race
+                </button>
+              </div>
+            ):(
+              <a href={acquireUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ display:"block",padding:"0.3rem",borderRadius:"5px",fontSize:"0.52rem",fontWeight:700,background:"rgba(200,169,110,0.1)",border:"1px solid rgba(200,169,110,0.22)",color:"#C8A96E",textAlign:"center",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
+                Acquire
+              </a>
+            )}
           </>
         )}
       </div>
@@ -451,11 +461,11 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
 
   // Feed order: Spirits first, then Watches, then everything else
   const sortedAssets = [...assets].sort((a,b)=>{
-    const order: Record<string,number> = { Spirits:0, Watches:1, Comics:2, Metals:3, Stocks:4, Sports:5, Pokemon:6, "One Piece":7 };
+    const order: Record<string,number> = { Spirits:0, Watches:1, Comics:2, Metals:3, Stocks:4, Racehorses:5, Sports:6, Pokemon:7, "One Piece":8 };
     return (order[a.category]??9) - (order[b.category]??9);
   });
 
-  const cats = ["all","Spirits","Watches","Comics","Metals","Stocks","Sports","Pokemon","One Piece"];
+  const cats = ["all","Spirits","Watches","Comics","Metals","Stocks","Racehorses","Sports","Pokemon","One Piece"];
   const shown = filter==="all"
     ? sortedAssets
     : sortedAssets.filter(a=>a.category===filter);
