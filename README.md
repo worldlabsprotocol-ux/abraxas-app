@@ -2,6 +2,12 @@
 The Sovereign Terminal for Tokenized Reality on Solana.
  The OpenSea of RWAs — vault assets, borrow USDC, win the Arena.
      
+[![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
+
+
+
+
+Built by [@pabloretroworld](https://x.com/pabloretroworld) · World Labs Protocol
 
 ◈ What Is Abraxas
 Abraxas is a sovereign RWA operating system — the first protocol that treats physical assets (graded cards, aged spirits, luxury watches, vintage comics, precious metals, tokenized equities) as first-class DeFi citizens.
