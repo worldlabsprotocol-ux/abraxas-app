@@ -1,4 +1,4 @@
-we⬢ ABRAXAS PROTOCOL
+⬢ ABRAXAS PROTOCOL
 The Sovereign Terminal for Tokenized Reality on Solana.
  The OpenSea of RWAs — vault assets, borrow USDC, win the Arena.
      
