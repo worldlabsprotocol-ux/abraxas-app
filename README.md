@@ -4,7 +4,8 @@ The Sovereign Terminal for Tokenized Reality on Solana.
 [![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
 
 
-
+[![Buy $ABRA]
+https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
 
 Built by [@pabloretroworld](https://x.com/pabloretroworld) · World Labs Protocol
 
@@ -185,7 +186,7 @@ Live App
 https://abraxas-app.vercel.app
 
 Buy $ABRA
-https://jup.ag/swap?sell=So11…&buy=5c1FHZj…
+https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
 
 Bags
 https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
