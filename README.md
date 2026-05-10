@@ -1,7 +1,6 @@
 ⬢ ABRAXAS PROTOCOL
 The Sovereign Terminal for Tokenized Reality on Solana.
  The OpenSea of RWAs — vault assets, borrow USDC, win the Arena.
-     
 [![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
 
 
@@ -9,8 +8,8 @@ The Sovereign Terminal for Tokenized Reality on Solana.
 
 Built by [@pabloretroworld](https://x.com/pabloretroworld) · World Labs Protocol
 
-◈ What Is Abraxas
 
+◈ What Is Abraxas
 Abraxas is a sovereign RWA operating system — the first protocol that treats physical assets (graded cards, aged spirits, luxury watches, vintage comics, precious metals, tokenized equities) as first-class DeFi citizens.
 The insight behind Abraxas: existing tokenization rails (Baxus, Courtyard, Collector Crypt) have already solved custody. Abraxas is the utility layer on top — lending, yield, gameplay, and prediction markets that activate those dormant physical assets without ever moving them from their vaults.
 
@@ -185,21 +184,21 @@ Languages:   18 — EN ES PT ZH JA KO FR DE AR FA TR HI BN RU UK VI TH ID
 
 
 
-
+Live App
+https://abraxas-app.vercel.app
 Buy $ABRA
 https://jup.ag/swap?sell=So11…&buy=5c1FHZj…
-
 Bags
 https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
-
+Twitter
+@pabloretroworld
 Baxus
 https://www.baxus.co
-
 Courtyard
 https://courtyard.io/vending-machine/rolex-watch-box
-
 Collector Crypt
 https://gacha.collectorcrypt.com/#pokemon
 
 
 Built by Pablo · World Labs Protocol · Solana · May 2026
+
