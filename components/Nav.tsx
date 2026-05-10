@@ -8,6 +8,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useAuth } from "@/lib/authState";
 import { useCircuitState } from "@/lib/protocolStream";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 function WalletButton() {
   const { connected, disconnect, wallet, connecting } = useWallet();
@@ -92,7 +93,10 @@ export function Nav() {
         </div>
       </Link>
 
-      <WalletButton />
+      <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+        <LanguageSelector />
+        <WalletButton />
+      </div>
     </nav>
   );
 }

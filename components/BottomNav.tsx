@@ -62,6 +62,7 @@ export function BottomNav() {
 
         return (
           <Link key={tab.key} href={tab.href}
+            onClick={() => { window.scrollTo({ top:0, behavior:"smooth" }); }}
             style={{ textDecoration: "none", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.25rem", position: "relative", padding: "0.375rem 0" }}>
 
             {/* Active bar */}

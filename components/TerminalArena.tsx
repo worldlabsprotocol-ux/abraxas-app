@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getLoopscaleLiquidity, calcEloChange, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
 import { GameModesHub } from "@/components/GameModes";
+import { RWACharts } from "@/components/RWACharts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArenaAsset {
@@ -824,7 +825,8 @@ export function TerminalArena() {
           <TokenizeCTA />
           <StockPanel assets={assets} />
           <MetalsStrip assets={assets} />
-          <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
+          <RWACharts />
+        <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
         </div>
       )}
       {mainTab==="game_modes"&&(

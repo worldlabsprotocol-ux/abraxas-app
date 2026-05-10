@@ -11,6 +11,8 @@ import {
   useSystemState, activateProtection, simulateHeliusEvent, createSystemVault, VaultState,
 } from "@/lib/systemState";
 import { getLoopscaleLiquidity } from "@/lib/loopscale";
+import { PrizePool } from "@/components/PrizePool";
+import { RWACharts } from "@/components/RWACharts";
 
 interface SignalRow { signal: string; value: number; threshold: number; breached: boolean }
 
@@ -264,11 +266,20 @@ export default function VaultsPage() {
         {VAULT_ADDRS.map(v => <VaultCard key={v.id} vault={v} />)}
       </div>
 
-      {/* x402 CLI */}
+      {/* Prize Pool */}
+      <PrizePool />
+
+      {/* RWA Charts + Market News */}
+      <RWACharts />
+
+      {/* x402 CLI — deeper */}
       <div style={{ padding:"0.875rem 1rem",background:"rgba(96,165,250,0.04)",border:"1px solid rgba(96,165,250,0.12)",borderRadius:"10px",marginBottom:"1rem" }}>
-        <div style={{ fontWeight:700,fontSize:"0.7rem",color:"#60A5FA",marginBottom:"0.5rem",fontFamily:"'JetBrains Mono',monospace" }}>x402 · Agentic Payment Protocol</div>
+        <div style={{ fontWeight:700,fontSize:"0.7rem",color:"#60A5FA",marginBottom:"0.5rem",fontFamily:"'JetBrains Mono',monospace" }}>x402 · Agentic Micropayment Protocol</div>
         <p style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.38)",lineHeight:1.65,margin:"0 0 0.625rem" }}>
-          Agents pay for oracle data, hedge execution, and Arena antes autonomously via x402 micropayment middleware on Solana.
+          x402 is an open payment standard (HTTP 402 Payment Required) that lets AI agents, wallets, and any HTTP client pay for services
+          without a pre-existing account. Sophia Agents use x402 to pay for oracle data, hedge execution, Arena antes, and Prize Pool entry
+          autonomously. External builders can fund vault positions or enter the Prize Pool by sending a signed USDC transaction in the
+          X-Payment header of any POST to Abraxas API endpoints.
         </p>
         <div style={{ background:"rgba(2,3,10,0.97)",border:"1px solid rgba(96,165,250,0.1)",borderRadius:"6px",padding:"0.5rem 0.625rem",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.5rem" }}>
           {[

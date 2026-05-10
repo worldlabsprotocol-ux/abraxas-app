@@ -10,9 +10,17 @@ const LANGUAGES = [
   { code: "ja", label: "日本語",      flag: "🇯🇵" },
   { code: "ko", label: "한국어",      flag: "🇰🇷" },
   { code: "fr", label: "Français",   flag: "🇫🇷" },
+  { code: "de", label: "Deutsch",    flag: "🇩🇪" },
   { code: "ar", label: "العربية",    flag: "🇸🇦" },
+  { code: "fa", label: "فارسی",      flag: "🇮🇷" },
+  { code: "tr", label: "Türkçe",     flag: "🇹🇷" },
   { code: "hi", label: "हिन्दी",     flag: "🇮🇳" },
+  { code: "bn", label: "বাংলা",      flag: "🇧🇩" },
   { code: "ru", label: "Русский",    flag: "🇷🇺" },
+  { code: "uk", label: "Українська", flag: "🇺🇦" },
+  { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", label: "ภาษาไทย",   flag: "🇹🇭" },
+  { code: "id", label: "Indonesia",  flag: "🇮🇩" },
 ];
 
 /**

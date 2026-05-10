@@ -182,7 +182,7 @@ function ChaseMarkets({ assets, onEarn }:{ assets:GameAsset[]; onEarn:(n:number)
 
       {/* Stats strip */}
       <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"0.35rem",marginBottom:"0.875rem" }}>
-        {[["Open",openCount,"#FBBF24"],["Wins",wonCount,"#14F195"],["Earned",`${ totalWon }$ABRA`,"#C8A96E"],["Call Bonus",`+${Math.round((CALL_MULT-1)*100)}%`,"#6b8cff"]].map(([l,v,c])=>(
+        {([["Open",String(openCount),"#FBBF24"],["Wins",String(wonCount),"#14F195"],["Earned",`${totalWon}$A`,"#C8A96E"],["Call Bonus",`+${Math.round((CALL_MULT-1)*100)}%`,"#6b8cff"]] as [string,string,string][]).map(([l,v,c])=>(
           <div key={l} style={{ padding:"0.35rem 0.5rem",background:"rgba(6,8,16,0.97)",border:`1px solid ${c}18`,borderRadius:"7px",textAlign:"center" }}>
             <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"1px" }}>{l}</div>
             <div style={{ fontSize:"0.65rem",fontWeight:700,color:c,fontFamily:"'JetBrains Mono',monospace" }}>{v}</div>
