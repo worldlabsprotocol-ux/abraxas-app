@@ -6,6 +6,8 @@ The Sovereign Terminal for Tokenized Reality on Solana.
 
 [![Buy $ABRA](https://img.shields.io/badge/Buy_$ABRA_on_Jupiter-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
 
+[![Buy $ABRA](https://img.shields.io/badge/Buy_$ABRA_on_Bags-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
+
 Built by [@pabloretroworld](https://x.com/pabloretroworld) · World Labs Protocol
 
 
