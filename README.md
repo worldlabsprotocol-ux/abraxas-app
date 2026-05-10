@@ -1,4 +1,4 @@
-⬢ ABRAXAS PROTOCOL
+we⬢ ABRAXAS PROTOCOL
 The Sovereign Terminal for Tokenized Reality on Solana.
  The OpenSea of RWAs — vault assets, borrow USDC, win the Arena.
      
@@ -185,18 +185,19 @@ Languages:   18 — EN ES PT ZH JA KO FR DE AR FA TR HI BN RU UK VI TH ID
 
 
 
-Live App
-https://abraxas-app.vercel.app
+
 Buy $ABRA
 https://jup.ag/swap?sell=So11…&buy=5c1FHZj…
+
 Bags
 https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
-Twitter
-@pabloretroworld
+
 Baxus
 https://www.baxus.co
+
 Courtyard
 https://courtyard.io/vending-machine/rolex-watch-box
+
 Collector Crypt
 https://gacha.collectorcrypt.com/#pokemon
 
