@@ -10,6 +10,7 @@ The Sovereign Terminal for Tokenized Reality on Solana.
 Built by [@pabloretroworld](https://x.com/pabloretroworld) · World Labs Protocol
 
 ◈ What Is Abraxas
+
 Abraxas is a sovereign RWA operating system — the first protocol that treats physical assets (graded cards, aged spirits, luxury watches, vintage comics, precious metals, tokenized equities) as first-class DeFi citizens.
 The insight behind Abraxas: existing tokenization rails (Baxus, Courtyard, Collector Crypt) have already solved custody. Abraxas is the utility layer on top — lending, yield, gameplay, and prediction markets that activate those dormant physical assets without ever moving them from their vaults.
 
