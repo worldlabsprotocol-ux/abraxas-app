@@ -244,11 +244,11 @@ function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 // ─── Dynamic Capital Metrics Panel ──────────────────────────────────────────
 function CapitalMetrics() {
-  const [metrics, setMetrics] = React.useState({
+  const [metrics, setMetrics] = useState({
     tvl:1_840_000, utilization:68, activeVaults:47,
     totalBorrow:980_000, reserveRatio:142, issuancePressure:74,
   });
-  React.useEffect(()=>{
+  useEffect(()=>{
     const iv=setInterval(()=>setMetrics(m=>({
       tvl:               Math.max(0,m.tvl+Math.round((Math.random()-0.45)*8000)),
       utilization:       Math.min(95,Math.max(45,m.utilization+(Math.random()-0.5)*1.5)),
