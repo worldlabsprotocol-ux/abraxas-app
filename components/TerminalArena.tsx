@@ -325,8 +325,8 @@ function CommandBar({ onScrollToArena }:{ onScrollToArena:()=>void }) {
   return (
     <div style={{ position:"sticky",top:"52px",zIndex:40,padding:"0.5rem 1.25rem",background:"rgba(2,3,10,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"0.5rem",flexWrap:"wrap" }}>
       <div style={{ display:"flex",gap:"0.4rem",alignItems:"center" }}>
-        <button onClick={onScrollToArena} style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",background:"linear-gradient(135deg,rgba(212,175,55,0.2),rgba(255,107,53,0.15))",border:"1px solid rgba(212,175,55,0.35)",color:"#D4AF37",fontSize:"0.6rem",fontWeight:800,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
-          Deploy Squad
+        <button onClick={onScrollToArena} style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",background:"linear-gradient(135deg,rgba(168,85,247,0.2),rgba(107,140,255,0.15))",border:"1px solid rgba(168,85,247,0.35)",color:"#a855f7",fontSize:"0.6rem",fontWeight:800,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
+          Enter Arena
         </button>
         <a href="/tokenize" style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",background:"rgba(107,140,255,0.1)",border:"1px solid rgba(107,140,255,0.25)",color:"#6b8cff",fontSize:"0.6rem",fontWeight:700,textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
           Tokenize Asset
@@ -356,6 +356,75 @@ function ProvenanceBanner() {
 }
 
 // ─── Section headers ──────────────────────────────────────────────────────────
+// ─── Live Activity Feed ──────────────────────────────────────────────────────
+const FEED_EVENTS = [
+  { type:"pull",    user:"7xA3…mK9f", msg:"pulled a Legendary Secretariat",       asset:"Secretariat",      val:500000, color:"#FBBF24", time:12  },
+  { type:"borrow",  user:"Db6R…xQ2p", msg:"borrowed 66,000 USDC against",          asset:"American Pharoah", val:66000,  color:"#14F195", time:28  },
+  { type:"battle",  user:"CQ1U…dJGd", msg:"won 420 $ABRA battling with",           asset:"Amazing Fantasy",  val:420,    color:"#a855f7", time:45  },
+  { type:"pull",    user:"9G4k…Fa2m", msg:"pulled Ultra Rare",                     asset:"Pappy Van Winkle", val:2400,   color:"#a855f7", time:71  },
+  { type:"market",  user:"",          msg:"RWA market cap hits $18.4B · +3.2%",    asset:"",                 val:0,      color:"#14F195", time:88  },
+  { type:"borrow",  user:"HeFq…wZq5", msg:"borrowed 7,150 USDC against",           asset:"Rolex Submariner", val:7150,   color:"#14F195", time:112 },
+  { type:"battle",  user:"8bBx…pf58", msg:"deployed Charizard 1999 and won",       asset:"1999 Charizard",   val:550,    color:"#FF6B35", time:134 },
+  { type:"stake",   user:"CmWV…tdDk", msg:"staked 5,000 $ABRA at 25% APY",        asset:"",                 val:5000,   color:"#C8A96E", time:156 },
+  { type:"market",  user:"",          msg:"Solana RWA TVL crosses $2.2B · +41% YTD","",                     val:0,      color:"#9945FF", time:189 },
+  { type:"pull",    user:"7xA3…mK9f", msg:"pulled Rare Holo",                      asset:"Blanton's 1990",   val:550,    color:"#6b8cff", time:201 },
+  { type:"battle",  user:"Db6R…xQ2p", msg:"entered Prize Pool with",               asset:"Flightline 2019",  val:180000, color:"#22c55e", time:224 },
+  { type:"market",  user:"",          msg:"Gold hits $4,733/oz · +0.4%",           asset:"",                 val:0,      color:"#D4AF37", time:247 },
+];
+const TYPE_LABELS: Record<string,string> = { pull:"GACHA", borrow:"BORROW", battle:"ARENA", stake:"VAULT", market:"MARKET" };
+const TYPE_COLORS: Record<string,string> = { pull:"#FBBF24", borrow:"#14F195", battle:"#a855f7", stake:"#C8A96E", market:"#9945FF" };
+
+function LiveActivityFeed() {
+  const [visible, setVisible] = useState(FEED_EVENTS.slice(0,6));
+  const [tick,    setTick]    = useState(0);
+  const [paused,  setPaused]  = useState(false);
+
+  useEffect(()=>{
+    if(paused) return;
+    const iv=setInterval(()=>{
+      setTick(t=>{
+        const next=(t+1)%FEED_EVENTS.length;
+        setVisible(prev=>[FEED_EVENTS[next],...prev.slice(0,5)]);
+        return next;
+      });
+    },3200);
+    return ()=>clearInterval(iv);
+  },[paused]);
+
+  return (
+    <div style={{ marginBottom:"1.5rem" }}>
+      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.5rem" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:"0.4rem" }}>
+          <div style={{ width:"6px",height:"6px",borderRadius:"50%",background:"#14F195",animation:"pulse 1.5s ease-in-out infinite",boxShadow:"0 0 6px rgba(20,241,149,0.8)" }} />
+          <span style={{ fontSize:"0.48rem",fontWeight:700,color:"rgba(255,255,255,0.45)",letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>Live Activity</span>
+        </div>
+        <button onClick={()=>setPaused(p=>!p)} style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.22)",background:"none",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"3px",padding:"0.1rem 0.35rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+          {paused?"RESUME":"PAUSE"}
+        </button>
+      </div>
+      <div style={{ display:"flex",flexDirection:"column",gap:"0.2rem",overflow:"hidden" }}>
+        {visible.map((ev,i)=>{
+          const tcolor = TYPE_COLORS[ev.type]??"#6b8cff";
+          const tlabel = TYPE_LABELS[ev.type]??"EVENT";
+          return (
+            <div key={`${ev.user}-${ev.time}-${i}`} style={{ display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.3rem 0.5rem",borderRadius:"6px",background:i===0?"rgba(255,255,255,0.025)":"rgba(255,255,255,0.01)",border:`1px solid ${i===0?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.02)"}`,transition:"all 0.3s",opacity:Math.max(0.3,1-i*0.12) }}>
+              <span style={{ fontSize:"0.38rem",fontWeight:800,padding:"0.06rem 0.3rem",borderRadius:"3px",background:`${tcolor}14`,color:tcolor,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",flexShrink:0,border:`1px solid ${tcolor}25` }}>{tlabel}</span>
+              {ev.user&&<span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.45)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0 }}>{ev.user}</span>}
+              <span style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>
+                {ev.msg}{ev.asset?<strong style={{ color:"#f0f0f0",marginLeft:"0.2rem" }}>{ev.asset}</strong>:null}
+              </span>
+              {ev.val>0&&<span style={{ marginLeft:"auto",fontSize:"0.44rem",color:ev.color,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",flexShrink:0,fontVariantNumeric:"tabular-nums" }}>
+                {ev.type==="borrow"?`$${ev.val.toLocaleString()}`:ev.type==="stake"?`${ev.val.toLocaleString()}$A`:ev.type==="pull"?`${fmtUsd(ev.val)}`:`+${ev.val}$A`}
+              </span>}
+              <span style={{ fontSize:"0.4rem",color:"rgba(255,255,255,0.15)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0 }}>{ev.time}s ago</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SectionHeader({ icon, title, sub, color }:{ icon:string; title:string; sub:string; color:string }) {
   return (
     <div style={{ display:"flex",alignItems:"baseline",gap:"0.5rem",marginBottom:"0.625rem",borderBottom:`1px solid ${color}18`,paddingBottom:"0.4rem" }}>
@@ -474,7 +543,7 @@ function BoardCell({ cell, idx, canPlace, onPlace }:{ cell:Cell; idx:number; can
 // ─── Sovereign Arena engine ───────────────────────────────────────────────────
 function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:React.RefObject<HTMLDivElement> }) {
   const [filter,      setFilter]      = useState("all");
-  const [cols,        setCols]        = useState(2);
+  const [cols,        setCols]        = useState(3);
   const [sel3,        setSel3]        = useState<string[]>([]);
   const [agent,       setAgent]       = useState<typeof AGENTS[number]>(AGENTS[0]);
   const [wager,       setWager]       = useState(0.5);
@@ -488,11 +557,11 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
 
   // Feed order: Spirits first, then Watches, then everything else
   const sortedAssets = [...assets].sort((a,b)=>{
-    const order: Record<string,number> = { Spirits:0, Watches:1, Comics:2, Metals:3, Stocks:4, Racehorses:5, Sports:6, Pokemon:7, "One Piece":8 };
+    const order: Record<string,number> = { Watches:0, Comics:1, Spirits:2, Metals:3, Stocks:4, Racehorses:5, Sports:6, Pokemon:7, "One Piece":8 };
     return (order[a.category]??9) - (order[b.category]??9);
   });
 
-  const cats = ["all","Spirits","Watches","Comics","Metals","Stocks","Racehorses","Sports","Pokemon","One Piece"];
+  const cats = ["all","Watches","Comics","Spirits","Metals","Stocks","Racehorses","Sports","Pokemon","One Piece"];
   const shown = filter==="all"
     ? sortedAssets
     : sortedAssets.filter(a=>a.category===filter);
@@ -674,7 +743,7 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
                 <span style={{ fontSize:"0.48rem",color:pink?"#f26b6b":"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace" }}>Pink Slips {pink?"ON":"OFF"}</span>
               </div>
               <button onClick={launchMatch} disabled={sel3.length!==3} style={{ padding:"0.45rem 0.875rem",borderRadius:"7px",border:"none",fontWeight:800,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em",cursor:sel3.length===3?"pointer":"not-allowed",background:sel3.length===3?"linear-gradient(135deg,#D4AF37,#FF6B35)":"rgba(255,255,255,0.05)",color:sel3.length===3?"#000":"rgba(255,255,255,0.18)",boxShadow:sel3.length===3?"0 0 18px rgba(212,175,55,0.3)":"none" }}>
-                {sel3.length===3?"Deploy Squad →":`Select ${3-sel3.length} more`}
+                {sel3.length===3?"Enter Arena →":`Select ${3-sel3.length} more`}
               </button>
             </div>
           </div>
@@ -799,12 +868,24 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
         )}
       </div>
 
-      {/* Bottom deploy CTA */}
-      <div style={{ marginTop:"2rem",padding:"1.25rem",background:"rgba(212,175,55,0.05)",border:"1px solid rgba(212,175,55,0.15)",borderRadius:"12px",textAlign:"center" }}>
-        <p style={{ fontSize:"0.62rem",color:"rgba(255,255,255,0.4)",marginBottom:"0.75rem" }}>Ready to deploy autonomous defenses?</p>
-        <button onClick={()=>window.scrollTo({top:arenaRef.current?.offsetTop??0,behavior:"smooth"})} style={{ padding:"0.6rem 1.5rem",borderRadius:"9px",border:"none",fontWeight:800,fontSize:"0.78rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em",background:"linear-gradient(135deg,#D4AF37,#FF6B35)",color:"#000",cursor:"pointer",boxShadow:"0 0 20px rgba(212,175,55,0.3)" }}>
-          Deploy Squad
-        </button>
+      {/* Tokenize CTA — bottom of asset grid */}
+      <div style={{ marginTop:"2rem",padding:"1.5rem",background:"linear-gradient(135deg,rgba(168,85,247,0.06),rgba(6,8,16,0.99))",border:"1px solid rgba(168,85,247,0.18)",borderRadius:"14px",textAlign:"center" }}>
+        <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(168,85,247,0.5)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.35rem" }}>Abraxas Protocol · Token-2022 · Solana</p>
+        <h3 style={{ fontWeight:900,fontSize:"1.1rem",letterSpacing:"-0.02em",margin:"0 0 0.5rem",color:"#f0f0f0" }}>Tokenize Your Asset</h3>
+        <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.38)",lineHeight:1.65,maxWidth:"420px",margin:"0 auto 1.25rem" }}>
+          Convert a physical asset to a Token-2022 position on Solana in under 2 minutes. Vault it, borrow USDC, earn $ABRA, and battle in the Arena.
+        </p>
+        <a href="/tokenize" style={{ display:"inline-block",padding:"0.75rem 2rem",borderRadius:"10px",background:"linear-gradient(135deg,#a855f7,#6b8cff)",color:"#fff",fontWeight:900,fontSize:"0.82rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 28px rgba(168,85,247,0.3)",transition:"all 0.2s" }}>
+          Start Tokenizing →
+        </a>
+        <div style={{ display:"flex",justifyContent:"center",gap:"1.5rem",marginTop:"1rem" }}>
+          {[["Spirits","Baxus"],["Watches","Courtyard"],["Cards","Collector Crypt"],["Comics","Metropolis"]].map(([cat,src])=>(
+            <div key={cat} style={{ textAlign:"center" }}>
+              <div style={{ fontSize:"0.54rem",fontWeight:700,color:"rgba(255,255,255,0.5)" }}>{cat}</div>
+              <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace" }}>{src}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -857,47 +938,76 @@ export function TerminalArena() {
       {error&&<div style={{ padding:"0.5rem 1rem",background:"rgba(242,107,107,0.07)",fontSize:"0.56rem",color:"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>[ORACLE] {error}</div>}
       <SoldTape ticks={ticks} />
       <CommandBar onScrollToArena={()=>arenaRef.current?.scrollIntoView({behavior:"smooth"})} />
-      {/* Main view tabs */}
-      <div style={{ display:"flex", gap:"0.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.95)", padding:"0.5rem 1.25rem", alignItems:"center" }}>
-        <button onClick={()=>setMainTab("terminal")} style={{ padding:"0.5rem 1rem", borderRadius:"7px", border:`1px solid ${mainTab==="terminal"?"rgba(240,240,240,0.2)":"rgba(255,255,255,0.06)"}`, background:mainTab==="terminal"?"rgba(240,240,240,0.06)":"transparent", color:mainTab==="terminal"?"#f0f0f0":"rgba(255,255,255,0.32)", fontSize:"0.62rem", fontWeight:mainTab==="terminal"?700:400, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em" }}>
-          Terminal
-        </button>
-        <button onClick={()=>setMainTab("game_modes")} style={{ padding:"0.5rem 1.25rem", borderRadius:"7px", border:`1px solid ${mainTab==="game_modes"?"rgba(251,191,36,0.4)":"rgba(251,191,36,0.12)"}`, background:mainTab==="game_modes"?"rgba(251,191,36,0.1)":"rgba(251,191,36,0.04)", color:mainTab==="game_modes"?"#FBBF24":"rgba(251,191,36,0.55)", fontSize:"0.65rem", fontWeight:700, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", transition:"all 0.15s" }}>
-          Game Modes
-        </button>
+      {/* Main navigation tabs */}
+      <div style={{ display:"flex", gap:"0.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.96)", padding:"0.5rem 1.25rem", alignItems:"center" }}>
+        {([
+          ["terminal",   "Terminal",      "#f0f0f0",  "rgba(240,240,240,0.2)", "rgba(240,240,240,0.06)"],
+          ["markets",    "Markets",       "#14F195",  "rgba(20,241,149,0.35)", "rgba(20,241,149,0.07)"],
+          ["game_modes", "Game Modes",   "#FBBF24",  "rgba(251,191,36,0.4)",  "rgba(251,191,36,0.08)"],
+        ] as const).map(([id,label,color,activeBorder,activeBg])=>(
+          <button key={id} onClick={()=>setMainTab(id)} style={{ padding:"0.5rem 1rem", borderRadius:"7px", border:`1px solid ${mainTab===id?activeBorder:"rgba(255,255,255,0.06)"}`, background:mainTab===id?activeBg:"transparent", color:mainTab===id?color:"rgba(255,255,255,0.3)", fontSize:id==="game_modes"?"0.65rem":"0.62rem", fontWeight:mainTab===id?700:400, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", transition:"all 0.15s" }}>
+            {label}
+          </button>
+        ))}
       </div>
       {mainTab==="terminal"&&(
         <div style={{ padding:"1.25rem" }}>
           {/* ──── SOVEREIGN HERO ──── */}
-          <div style={{ position:"relative",overflow:"hidden",borderRadius:"16px",padding:"1.75rem 1.5rem",marginBottom:"1.5rem",background:"linear-gradient(135deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.06) 50%,rgba(6,8,16,0.99) 100%)",border:"1px solid rgba(200,169,110,0.18)" }}>
-            <div style={{ position:"absolute",top:"-40%",right:"-10%",width:"280px",height:"280px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.07) 0%,transparent 70%)",pointerEvents:"none" }} />
-            <p style={{ fontSize:"0.46rem",letterSpacing:"0.25em",textTransform:"uppercase",color:"rgba(200,169,110,0.55)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.4rem" }}>World Labs Protocol · Solana · May 2026</p>
-            <h1 style={{ fontWeight:900,fontSize:"clamp(1.3rem,3.5vw,2rem)",letterSpacing:"-0.03em",margin:"0 0 0.5rem",lineHeight:1.1 }}>
-              <span style={{ background:"linear-gradient(135deg,#C8A96E,#FBBF24,#f0f0f0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>The OpenSea of RWAs</span>
-            </h1>
-            <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.42)",margin:"0 0 1rem",maxWidth:"500px",lineHeight:1.7 }}>
-              Vault real-world assets on Solana — borrow USDC instantly, battle in the Sovereign Arena, earn $ABRA. Tokenized spirits, watches, comics, racehorses &amp; collectibles.
-            </p>
-            <div style={{ display:"flex",gap:"0.5rem",flexWrap:"wrap",marginBottom:"1rem" }}>
-              <a href="/tokenize" style={{ padding:"0.5rem 1.1rem",borderRadius:"8px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em" }}>Tokenize Asset</a>
-              <a href="/protect" style={{ padding:"0.5rem 1.1rem",borderRadius:"8px",background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.22)",color:"#14F195",fontWeight:700,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Borrow USDC</a>
-              <button onClick={()=>setMainTab("game_modes")} style={{ padding:"0.5rem 1.1rem",borderRadius:"8px",background:"rgba(168,85,247,0.08)",border:"1px solid rgba(168,85,247,0.22)",color:"#a855f7",fontWeight:700,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Play Games</button>
+          {/* ═══════ HERO — Big & Premium ═══════ */}
+          <div style={{ position:"relative",overflow:"hidden",borderRadius:"18px",padding:"2.5rem 2rem",marginBottom:"1.75rem",background:"linear-gradient(145deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.08) 40%,rgba(168,85,247,0.04) 70%,rgba(6,8,16,0.99) 100%)",border:"1px solid rgba(200,169,110,0.2)",boxShadow:"0 0 60px rgba(200,169,110,0.05)" }}>
+            {/* Background orbs */}
+            <div style={{ position:"absolute",top:"-30%",right:"-5%",width:"350px",height:"350px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.09) 0%,transparent 65%)",pointerEvents:"none" }} />
+            <div style={{ position:"absolute",bottom:"-20%",left:"-5%",width:"250px",height:"250px",borderRadius:"50%",background:"radial-gradient(circle,rgba(168,85,247,0.06) 0%,transparent 65%)",pointerEvents:"none" }} />
+            {/* Flywheel pill */}
+            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.5rem",padding:"0.25rem 0.75rem",borderRadius:"20px",background:"rgba(200,169,110,0.08)",border:"1px solid rgba(200,169,110,0.2)",marginBottom:"1rem" }}>
+              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#C8A96E",animation:"pulse 2s ease-in-out infinite" }} />
+              <span style={{ fontSize:"0.46rem",fontWeight:700,color:"rgba(200,169,110,0.7)",letterSpacing:"0.15em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana · May 2026</span>
             </div>
-            <div style={{ display:"flex",gap:"1.25rem",flexWrap:"wrap" }}>
-              {[["104","RWA Assets"],["$20M+","Protocol Insured"],["5","Live Vault PDAs"],["5.2%","Fixed Borrow APR"]].map(([v,l])=>(
+            {/* Main headline */}
+            <h1 style={{ fontWeight:900,fontSize:"clamp(1.8rem,5vw,2.8rem)",letterSpacing:"-0.04em",margin:"0 0 0.75rem",lineHeight:1.05 }}>
+              <span style={{ background:"linear-gradient(135deg,#C8A96E 0%,#FBBF24 40%,#f0f0f0 80%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>The OpenSea of RWAs</span>
+            </h1>
+            {/* Sub-headline */}
+            <p style={{ fontSize:"0.72rem",color:"rgba(255,255,255,0.48)",margin:"0 0 0.4rem",maxWidth:"560px",lineHeight:1.65,fontWeight:400 }}>
+              Tokenize physical assets on Solana. Borrow USDC instantly via Loopscale. Battle in the Sovereign Arena. Earn $ABRA.
+            </p>
+            <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.28)",margin:"0 0 1.5rem",maxWidth:"480px",lineHeight:1.65 }}>
+              Spirits · Watches · Comics · Racehorses · Graded Cards · Precious Metals · Tokenized Equities
+            </p>
+            {/* CTAs */}
+            <div style={{ display:"flex",gap:"0.625rem",flexWrap:"wrap",marginBottom:"1.75rem" }}>
+              <a href="/tokenize" style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 20px rgba(212,175,55,0.3)" }}>Tokenize Asset</a>
+              <a href="/protect" style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(20,241,149,0.09)",border:"1px solid rgba(20,241,149,0.25)",color:"#14F195",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Borrow USDC</a>
+              <button onClick={()=>setMainTab("game_modes")} style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(168,85,247,0.09)",border:"1px solid rgba(168,85,247,0.28)",color:"#a855f7",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Play Games</button>
+              <button onClick={()=>setMainTab("markets")} style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(20,241,149,0.05)",border:"1px solid rgba(20,241,149,0.15)",color:"rgba(20,241,149,0.7)",fontWeight:600,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Markets</button>
+            </div>
+            {/* Stats */}
+            <div style={{ display:"flex",gap:"2rem",flexWrap:"wrap",paddingTop:"1.25rem",borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+              {[["102","RWA Assets"],["$20M+","Protocol Insured"],["5","Live Vault PDAs"],["5.2%","Fixed APR · Loopscale"]].map(([v,l])=>(
                 <div key={l}>
-                  <div style={{ fontSize:"0.88rem",fontWeight:900,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace" }}>{v}</div>
-                  <div style={{ fontSize:"0.4rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase" }}>{l}</div>
+                  <div style={{ fontSize:"1.1rem",fontWeight:900,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"-0.02em" }}>{v}</div>
+                  <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:"1px" }}>{l}</div>
                 </div>
               ))}
             </div>
           </div>
-          <ProvenanceBanner />
-          <TokenizeCTA />
           <StockPanel assets={assets} />
           <MetalsStrip assets={assets} />
-          <RWACharts />
+          <LiveActivityFeed />
           <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
+        </div>
+      )}
+      {mainTab==="markets"&&(
+        <div style={{ padding:"1.25rem" }}>
+          {/* Markets header */}
+          <div style={{ marginBottom:"1.25rem" }}>
+            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(20,241,149,0.4)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.25rem" }}>Live Intelligence · May 2026</p>
+            <h2 style={{ fontWeight:900,fontSize:"1.1rem",color:"#f0f0f0",margin:"0 0 0.35rem",letterSpacing:"-0.01em" }}>RWA Market Intelligence</h2>
+            <p style={{ fontSize:"0.54rem",color:"rgba(255,255,255,0.35)",margin:0,lineHeight:1.65,maxWidth:"520px" }}>
+              Real-world asset market data, news, and price charts. <strong style={{ color:"rgba(255,255,255,0.5)" }}>Green = price up, red = down.</strong> "RWA" means any physical asset tokenized on blockchain — from gold bars to graded Pokémon cards.
+            </p>
+          </div>
+          <RWACharts />
         </div>
       )}
       {mainTab==="game_modes"&&(
