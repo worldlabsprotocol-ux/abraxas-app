@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useAbraStore, type AssetStatus } from "@/lib/abraxasStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AssetClass = "Spirits"|"Watches"|"Cards (PSA/BGS)"|"Comics (CGC)"|"Racehorses"|"Metals"|"Art"|"Other";
@@ -67,6 +68,16 @@ export function IssuanceEngine() {
   const { connected, publicKey } = useWallet();
   const { setVisible } = useWalletModal();
 
+  // Store hooks — single source of truth
+  const abraBalance  = useAbraStore(s=>s.abraBalance);
+  const abraUsdPrice = useAbraStore(s=>s.abraUsdPrice);
+  const mintAsset    = useAbraStore(s=>s.mintAsset);
+  const storeEvents  = useAbraStore(s=>s.events);
+  const [lastAssetId, setLastAssetId] = useState<string|null>(null);
+
+  // Watch for asset status changes in store (reactive to auto-advance)
+  const mintedAsset  = useAbraStore(s=>s.assets.find(a=>a.id===lastAssetId));
+
   // Init animation
   const [initIdx,   setInitIdx]   = useState(0);
   const [initDone,  setInitDone]  = useState(false);
@@ -117,8 +128,29 @@ export function IssuanceEngine() {
   // ── Simulated mint ─────────────────────────────────────────────────────────
   async function processMint() {
     setStep("processing");
-    await new Promise(r=>setTimeout(r,3200));
-    setMintTxId(`AbrxM${Math.random().toString(36).slice(2,10).toUpperCase()}...${Math.random().toString(36).slice(2,6).toUpperCase()}`);
+    // Real $ABRA deduction via Zustand store — fails if balance insufficient
+    const wallet = publicKey?.toBase58()??"demo-wallet";
+    const result = mintAsset({
+      name:           meta.name||"Unnamed Asset",
+      description:    meta.description||"",
+      assetClass:     assetClass,
+      mintCostAbra:   abraFee + 10,
+      imagePreview:   preview??undefined,
+      estimatedUsd:   parseFloat(val.estimatedUsd)||0,
+      ltv:            cfg.ltv,
+      custodyPartner: cfg.partner,
+      grade:          meta.grade||undefined,
+      year:           meta.year||undefined,
+      serialNumber:   meta.serialNumber||undefined,
+    }, wallet);
+
+    if (!result) {
+      // Insufficient $ABRA — back to fee step
+      setStep("fee"); return;
+    }
+    setLastAssetId(result.id);
+    setMintTxId(result.txSignature);
+    await new Promise(r=>setTimeout(r,800)); // small UI pause for polish
     setStep("queue");
   }
 
@@ -361,7 +393,15 @@ export function IssuanceEngine() {
       <StepBar step="fee" />
       <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",margin:"0 0 0.5rem" }}>Studio · Step 5 of 7 · Mint Fee</p>
       <h2 style={{ fontWeight:900,fontSize:"1.3rem",color:"#f0f0f0",margin:"0 0 0.25rem",letterSpacing:"-0.025em" }}>Confirm $ABRA Mint Fee</h2>
-      <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.4)",lineHeight:1.7,margin:"0 0 1.25rem" }}>The mint fee is deducted from your $ABRA balance and permanently consumed. This creates real economic commitment for every issuance — preventing spam and ensuring asset quality.</p>
+      <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.4)",lineHeight:1.7,margin:"0 0 0.75rem" }}>The mint fee is deducted from your $ABRA balance and permanently consumed. This creates real economic commitment for every issuance — preventing spam and ensuring asset quality.</p>
+      <div style={{ padding:"0.4rem 0.75rem",background:abraBalance>=(abraFee+10)?"rgba(20,241,149,0.05)":"rgba(242,107,107,0.05)",border:`1px solid ${abraBalance>=(abraFee+10)?"rgba(20,241,149,0.18)":"rgba(242,107,107,0.25)"}`,borderRadius:"7px",marginBottom:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+        <span style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.4)" }}>Your $ABRA balance</span>
+        <div style={{ textAlign:"right" }}>
+          <span style={{ fontSize:"0.72rem",fontWeight:800,color:abraBalance>=(abraFee+10)?"#14F195":"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>{abraBalance.toLocaleString()} $ABRA</span>
+          <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.3)",marginLeft:"0.4rem" }}>(~${(abraBalance*abraUsdPrice).toFixed(2)} USD)</span>
+          {abraBalance<(abraFee+10)&&<div style={{ fontSize:"0.42rem",color:"#f26b6b",marginTop:"1px" }}>Insufficient — need {(abraFee+10)-abraBalance} more</div>}
+        </div>
+      </div>
 
       {/* Fee breakdown */}
       <div style={{ background:"rgba(6,8,16,0.99)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",overflow:"hidden",marginBottom:"1.25rem" }}>
@@ -393,8 +433,8 @@ export function IssuanceEngine() {
 
       <div style={{ display:"flex",gap:"0.5rem" }}>
         <button onClick={()=>setStep("wallet")} style={{ padding:"0.75rem 1.25rem",borderRadius:"9px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.3)",fontSize:"0.64rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>← Back</button>
-        <button onClick={processMint} style={{ flex:1,padding:"0.875rem",borderRadius:"10px",border:"none",fontWeight:900,fontSize:"0.78rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",boxShadow:"0 0 28px rgba(200,169,110,0.4)",letterSpacing:"0.04em" }}>
-          Confirm — Deduct {abraFee+10} $ABRA →
+        <button onClick={processMint} disabled={abraBalance<(abraFee+10)} style={{ flex:1,padding:"0.875rem",borderRadius:"10px",border:"none",fontWeight:900,fontSize:"0.78rem",fontFamily:"'JetBrains Mono',monospace",cursor:abraBalance>=(abraFee+10)?"pointer":"not-allowed",background:abraBalance>=(abraFee+10)?"linear-gradient(135deg,#C8A96E,#FBBF24)":"rgba(255,255,255,0.05)",color:abraBalance>=(abraFee+10)?"#000":"rgba(255,255,255,0.2)",boxShadow:abraBalance>=(abraFee+10)?"0 0 28px rgba(200,169,110,0.4)":"none",letterSpacing:"0.04em",transition:"all 0.2s" }}>
+          {abraBalance>=(abraFee+10)?`Confirm — Deduct ${abraFee+10} $ABRA →`:`Need ${(abraFee+10)-abraBalance} more $ABRA`}
         </button>
       </div>
     </div>
@@ -428,6 +468,11 @@ export function IssuanceEngine() {
       {/* Mint confirmation */}
       <div style={{ padding:"0.75rem 1rem",background:"rgba(20,241,149,0.05)",border:"1px solid rgba(20,241,149,0.2)",borderRadius:"10px",marginBottom:"1.25rem",display:"flex",gap:"1rem",flexWrap:"wrap",alignItems:"center" }}>
         {preview&&<img src={preview} style={{ width:"52px",height:"52px",borderRadius:"7px",objectFit:"contain",border:"1px solid rgba(20,241,149,0.2)",flexShrink:0 }} />}
+          {/* Updated balance display */}
+          <div style={{ marginLeft:"auto",padding:"0.3rem 0.6rem",background:"rgba(20,241,149,0.07)",border:"1px solid rgba(20,241,149,0.15)",borderRadius:"6px",textAlign:"right" }}>
+            <div style={{ fontSize:"0.4rem",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase" }}>$ABRA Remaining</div>
+            <div style={{ fontSize:"0.62rem",fontWeight:800,color:"#14F195",fontFamily:"'JetBrains Mono',monospace" }}>{abraBalance.toLocaleString()}</div>
+          </div>
         <div>
           <div style={{ fontSize:"0.44rem",color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",marginBottom:"2px" }}>Token-2022 Minted · {assetClass}</div>
           <div style={{ fontSize:"0.72rem",fontWeight:800,color:"#f0f0f0" }}>{meta.name||"Asset"}</div>
@@ -458,8 +503,12 @@ export function IssuanceEngine() {
           );
         })}
         {queueProgress>=QUEUE_STEPS.length-1&&(
-          <div style={{ marginTop:"0.625rem",padding:"0.5rem 0.75rem",background:"rgba(251,191,36,0.07)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"7px" }}>
-            <span style={{ fontSize:"0.52rem",color:"#FBBF24",fontWeight:700 }}>Awaiting custodian response (3–7 business days) — you'll be notified when approved</span>
+          <div style={{ marginTop:"0.625rem",padding:"0.5rem 0.75rem",background:mintedAsset?.status==="listed"?"rgba(20,241,149,0.07)":"rgba(251,191,36,0.07)",border:`1px solid ${mintedAsset?.status==="listed"?"rgba(20,241,149,0.25)":"rgba(251,191,36,0.2)"}`,borderRadius:"7px" }}>
+            {mintedAsset?.status==="listed"?
+              <span style={{ fontSize:"0.52rem",color:"#14F195",fontWeight:700 }}>Verified and listed in Markets — asset is now tradable and collateral eligible</span>:
+              mintedAsset?.status==="verified"?
+              <span style={{ fontSize:"0.52rem",color:"#14F195",fontWeight:700 }}>Verification complete — entering Markets listing queue</span>:
+              <span style={{ fontSize:"0.52rem",color:"#FBBF24",fontWeight:700 }}>Awaiting custodian response — asset appears in Markets as pending preview</span>}
           </div>
         )}
       </div>

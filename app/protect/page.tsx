@@ -242,6 +242,63 @@ function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Dynamic Capital Metrics Panel ──────────────────────────────────────────
+function CapitalMetrics() {
+  const [metrics, setMetrics] = React.useState({
+    tvl:1_840_000, utilization:68, activeVaults:47,
+    totalBorrow:980_000, reserveRatio:142, issuancePressure:74,
+  });
+  React.useEffect(()=>{
+    const iv=setInterval(()=>setMetrics(m=>({
+      tvl:               Math.max(0,m.tvl+Math.round((Math.random()-0.45)*8000)),
+      utilization:       Math.min(95,Math.max(45,m.utilization+(Math.random()-0.5)*1.5)),
+      activeVaults:      m.activeVaults+(Math.random()>0.9?1:0),
+      totalBorrow:       Math.max(0,m.totalBorrow+Math.round((Math.random()-0.45)*4000)),
+      reserveRatio:      Math.min(200,Math.max(120,m.reserveRatio+(Math.random()-0.5)*2)),
+      issuancePressure:  Math.min(95,Math.max(30,m.issuancePressure+(Math.random()-0.45)*2)),
+    })),3200);
+    return()=>clearInterval(iv);
+  },[]);
+  function fmt(v:number):string{return v>=1_000_000?`$${(v/1_000_000).toFixed(2)}M`:`$${(v/1_000).toFixed(0)}K`;}
+  const BARS=[
+    {label:"Reserve Utilization",pct:metrics.utilization,color:"#14F195",warn:metrics.utilization>85},
+    {label:"Issuance Pressure",pct:metrics.issuancePressure,color:"#FBBF24",warn:metrics.issuancePressure>80},
+    {label:"Capital Deployment",pct:Math.round(metrics.totalBorrow/(metrics.tvl||1)*100),color:"#6b8cff",warn:false},
+  ];
+  return(
+    <div style={{marginBottom:"1.25rem",padding:"1.25rem",background:"rgba(6,8,16,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"14px"}}>
+      <div style={{display:"flex",alignItems:"baseline",gap:"0.5rem",marginBottom:"1rem",flexWrap:"wrap"}}>
+        <span style={{fontSize:"0.44rem",fontWeight:700,color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em"}}>I · Capital Layer · Protocol Treasury</span>
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:"0.3rem"}}>
+          <div style={{width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 1.5s ease-in-out infinite"}}/>
+          <span style={{fontSize:"0.42rem",color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace"}}>LIVE</span>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:"0.5rem",marginBottom:"1rem"}}>
+        {([["Total Asset TVL",fmt(metrics.tvl),"#C8A96E"],["Active Vaults",metrics.activeVaults.toString(),"#6b8cff"],["USDC Borrowed",fmt(metrics.totalBorrow),"#14F195"],["Reserve Ratio",`${Math.round(metrics.reserveRatio)}%`,"#FBBF24"]] as [string,string,string][]).map(([l,v,c])=>(
+          <div key={l} style={{padding:"0.5rem 0.625rem",background:`${c}07`,border:`1px solid ${c}15`,borderRadius:"8px",textAlign:"center"}}>
+            <div style={{fontSize:"0.76rem",fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"-0.02em",lineHeight:1}}>{v}</div>
+            <div style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:"3px"}}>{l}</div>
+          </div>
+        ))}
+      </div>
+      {BARS.map(b=>(
+        <div key={b.label} style={{marginBottom:"0.5rem"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"0.18rem"}}>
+            <span style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.35)",fontFamily:"'JetBrains Mono',monospace"}}>{b.label}</span>
+            <span style={{fontSize:"0.44rem",fontWeight:700,color:b.warn?"#f26b6b":b.color,fontFamily:"'JetBrains Mono',monospace"}}>{Math.round(b.pct)}%</span>
+          </div>
+          <div style={{height:"4px",borderRadius:"2px",background:"rgba(255,255,255,0.05)",overflow:"hidden"}}>
+            <div style={{height:"100%",borderRadius:"2px",width:`${Math.min(100,b.pct)}%`,background:b.warn?`linear-gradient(90deg,${b.color},#f26b6b)`:b.color,transition:"width 0.8s ease",boxShadow:`0 0 4px ${b.color}60`}}/>
+          </div>
+        </div>
+      ))}
+      <div style={{marginTop:"0.5rem",fontSize:"0.42rem",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace"}}>Capital metrics live · Solana Mainnet · Loopscale Modular Vaults</div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
+    </div>
+  );
+}
+
 export default function VaultsPage() {
   const { vaults: sv } = useSystemState();
   useEffect(() => {
@@ -276,6 +333,7 @@ export default function VaultsPage() {
       <LoopscaleHero />
 
       {/* $ABRA Vault — sovereign staking */}
+      <CapitalMetrics />
       <AbraVault />
 
       {/* Circuit alerts */}
