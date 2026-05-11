@@ -57,23 +57,36 @@ function AbraxClaw({ assets, onEarn }:{ assets:GameAsset[]; onEarn:(n:number)=>v
   function clearTimers() { timerRefs.current.forEach(clearTimeout); timerRefs.current=[]; }
   useEffect(()=>()=>clearTimers(),[]);
 
-  function weightedPick(): GameAsset {
-    const total = catEligible.reduce((s,a)=>s+(RARITY_CONFIG[a.rarity]?.weight??20),0);
+  function weightedPick(forceLegendary=false): GameAsset {
+    const pool = forceLegendary
+      ? catEligible.filter(a=>a.rarity==="Legendary"||a.rarity==="Ultra Rare")
+      : catEligible;
+    const eligible = pool.length>0?pool:catEligible;
+    const total = eligible.reduce((s,a)=>s+(RARITY_CONFIG[a.rarity]?.weight??20),0);
     let r = Math.random()*total;
-    for (const a of catEligible) { r-=(RARITY_CONFIG[a.rarity]?.weight??20); if(r<=0) return a; }
-    return catEligible[0];
+    for (const a of eligible) { r-=(RARITY_CONFIG[a.rarity]?.weight??20); if(r<=0) return a; }
+    return eligible[0];
   }
 
+  const PITY_THRESHOLD = 10;
+  const [pityCount, setPityCount] = useState(0);
+  const [energy, setEnergy] = useState(100);
+  const PULL_COST = 10; // energy per pull
+
   function pull() {
-    if(tickets<=0||phase!=="idle") return;
+    if(tickets<=0||phase!=="idle"||energy<PULL_COST) return;
     clearTimers();
     setTickets(t=>t-1); setPulls(p=>p+1);
+    setEnergy(e=>Math.max(0,e-PULL_COST));
+    setPityCount(p=>p+1);
     const tx = 15+Math.random()*70;
     setClawX(tx); setPhase("paid");
     const t1=setTimeout(()=>{ setPhase("drop"); setClawY(70); },600);
     const t2=setTimeout(()=>{ setPhase("grab"); },1400);
     const t3=setTimeout(()=>{
-      const pick = weightedPick();
+      const isPityPull = pityCount>=PITY_THRESHOLD;
+      const pick = weightedPick(isPityPull);
+      if(isPityPull) setPityCount(0);
       const cfg  = RARITY_CONFIG[pick.rarity]??RARITY_CONFIG["Common"];
       const comboBonus = combo>=3?Math.round(cfg.abraReward*0.5):0;
       const earned = cfg.abraReward+comboBonus;
@@ -110,6 +123,30 @@ function AbraxClaw({ assets, onEarn }:{ assets:GameAsset[]; onEarn:(n:number)=>v
             <div style={{ fontSize:"0.4rem",color:cfg.color,fontFamily:"'JetBrains Mono',monospace",fontWeight:700 }}>+{cfg.abraReward}$A</div>
           </div>
         ))}
+      </div>
+
+      {/* Pity + Energy meters */}
+      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem",marginBottom:"0.875rem" }}>
+        <div>
+          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:"0.2rem" }}>
+            <span style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em" }}>Pity Meter</span>
+            <span style={{ fontSize:"0.44rem",fontWeight:700,color:pityCount>=PITY_THRESHOLD-2?"#FBBF24":"rgba(255,255,255,0.35)",fontFamily:"'JetBrains Mono',monospace" }}>{pityCount}/{PITY_THRESHOLD}</span>
+          </div>
+          <div style={{ height:"5px",borderRadius:"3px",background:"rgba(255,255,255,0.06)",overflow:"hidden" }}>
+            <div style={{ height:"100%",borderRadius:"3px",width:`${(pityCount/PITY_THRESHOLD)*100}%`,background:`linear-gradient(90deg,#FBBF24,#FF6B35)`,boxShadow:`0 0 6px rgba(251,191,36,0.4)`,transition:"width 0.4s ease" }} />
+          </div>
+          <div style={{ fontSize:"0.38rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",marginTop:"2px" }}>Guaranteed Legendary at {PITY_THRESHOLD}</div>
+        </div>
+        <div>
+          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:"0.2rem" }}>
+            <span style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em" }}>Energy</span>
+            <span style={{ fontSize:"0.44rem",fontWeight:700,color:energy>=PULL_COST?"#14F195":"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>{energy}/100</span>
+          </div>
+          <div style={{ height:"5px",borderRadius:"3px",background:"rgba(255,255,255,0.06)",overflow:"hidden" }}>
+            <div style={{ height:"100%",borderRadius:"3px",width:`${energy}%`,background:`linear-gradient(90deg,#14F195,#6b8cff)`,boxShadow:`0 0 6px rgba(20,241,149,0.3)`,transition:"width 0.4s ease" }} />
+          </div>
+          <div style={{ fontSize:"0.38rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",marginTop:"2px" }}>Regens 10/battle win · {PULL_COST} per pull</div>
+        </div>
       </div>
 
       {/* Machine viewport */}
@@ -671,6 +708,37 @@ export function GameModesHub({ assets }:{ assets:GameAsset[] }) {
       {mode==="chase"       &&<ChaseMarkets assets={assets}      onEarn={earn} />}
       {mode==="brain"       &&<BrainGames                        onEarn={earn} />}
       {mode==="leaderboard" &&<Leaderboard  abraEarned={totalAbra} wins={totalWins} />}
+
+      {/* $ABRA Utility — earn/spend/stake/burn */}
+      {mode==="hub"&&(
+        <div style={{ marginTop:"1.5rem",padding:"1.25rem",background:"rgba(200,169,110,0.04)",border:"1px solid rgba(200,169,110,0.15)",borderRadius:"14px" }}>
+          <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.2rem" }}>Token Economics</p>
+          <h3 style={{ fontWeight:900,fontSize:"0.92rem",color:"#f0f0f0",margin:"0 0 0.2rem",letterSpacing:"-0.01em" }}>$ABRA — The Blood of Abraxas</h3>
+          <p style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.32)",margin:"0 0 0.875rem",lineHeight:1.6 }}>Play to earn. Stake for yield. Spend to level up. Burn for permanent power.</p>
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,200px),1fr))",gap:"0.5rem",marginBottom:"0.875rem" }}>
+            {([
+              { a:"Earn",  c:"#14F195",items:["Arena battles (+50–200$A)","Gacha pulls (+20–250$A)","Brain Games (+40–65$A)","Daily quests (+100$A)"] },
+              { a:"Spend", c:"#FBBF24",items:["Tokenization fee (50–250$A)","Premium gacha (100$A/pull)","Agent training acceleration","Arena entry & wagering"] },
+              { a:"Stake", c:"#C8A96E",items:["Flexible: 18% APY","30-day lock: 21% APY","90-day lock: 25% APY","Borrow USDC at 50% LTV"] },
+              { a:"Burn",  c:"#f26b6b",items:["+5% vault yield (permanent)","Ultra-rare pull guarantee","Agent trait unlock","Higher Loopscale LTV tier"] },
+            ] as const).map(s=>(
+              <div key={s.a} style={{ padding:"0.75rem",background:`${s.c}06`,border:`1px solid ${s.c}18`,borderRadius:"9px" }}>
+                <div style={{ fontSize:"0.52rem",fontWeight:800,color:s.c,marginBottom:"0.3rem",letterSpacing:"0.06em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>{s.a} $ABRA</div>
+                {s.items.map(it=>(
+                  <div key={it} style={{ display:"flex",gap:"0.3rem",marginBottom:"0.18rem",alignItems:"flex-start" }}>
+                    <div style={{ width:"4px",height:"4px",borderRadius:"50%",background:s.c,flexShrink:0,marginTop:"0.3rem" }} />
+                    <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.42)",lineHeight:1.5 }}>{it}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"flex",gap:"0.5rem",flexWrap:"wrap" }}>
+            <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.45rem 1rem",borderRadius:"7px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Buy $ABRA on Jupiter →</a>
+            <a href="/protect" style={{ padding:"0.45rem 1rem",borderRadius:"7px",background:"rgba(200,169,110,0.09)",border:"1px solid rgba(200,169,110,0.22)",color:"#C8A96E",fontWeight:700,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Vault $ABRA →</a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

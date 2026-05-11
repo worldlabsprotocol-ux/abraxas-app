@@ -94,6 +94,8 @@ export default function TokenizePage() {
   const [whyOpen,    setWhyOpen]    = useState(false);
 
   function selectClass(id:AssetClass) { setAssetClass(id); setStep("form"); }
+  const ABRA_FEE = form.estimatedValue ? Math.max(50, Math.min(250, Math.round(parseFloat(form.estimatedValue||"0")/1000))) : 100;
+
   function handleSubmit() {
     if(!connected){ setVisible(true); return; }
     if(!form.name||!form.estimatedValue) return;
@@ -248,10 +250,23 @@ export default function TokenizePage() {
               />
             </div>
           ))}
-          <div style={{ display:"flex",gap:"0.5rem",marginTop:"1rem" }}>
+          {/* $ABRA fee display */}
+          {form.estimatedValue&&(
+            <div style={{ padding:"0.5rem 0.75rem",borderRadius:"7px",background:"rgba(200,169,110,0.07)",border:"1px solid rgba(200,169,110,0.2)",marginTop:"0.5rem",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+              <div>
+                <div style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.4)",fontFamily:"'JetBrains Mono',monospace" }}>Tokenization Fee</div>
+                <div style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace" }}>Paid in $ABRA · Scales with asset value</div>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:"0.82rem",fontWeight:900,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace" }}>{ABRA_FEE} $ABRA</div>
+                <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ fontSize:"0.4rem",color:"rgba(200,169,110,0.6)",fontFamily:"'JetBrains Mono',monospace" }}>Need $ABRA? Buy on Jupiter →</a>
+              </div>
+            </div>
+          )}
+          <div style={{ display:"flex",gap:"0.5rem",marginTop:"0.5rem" }}>
             <button onClick={()=>setStep("select")} style={{ padding:"0.5rem 1rem",borderRadius:"7px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.35)",fontSize:"0.62rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>← Back</button>
             <button onClick={handleSubmit} disabled={!form.name||!form.estimatedValue} style={{ flex:1,padding:"0.625rem",borderRadius:"7px",border:"none",fontWeight:800,fontSize:"0.75rem",cursor:form.name&&form.estimatedValue?"pointer":"not-allowed",background:form.name&&form.estimatedValue?`linear-gradient(135deg,${cls.color},#a855f7)`:"rgba(255,255,255,0.05)",color:form.name&&form.estimatedValue?"#000":"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace" }}>
-              {connected?"Proceed to Mint →":"Connect Wallet to Mint"}
+              {connected?`Mint · ${ABRA_FEE} $ABRA fee`:"Connect Wallet to Mint"}
             </button>
           </div>
         </div>

@@ -135,12 +135,25 @@ function timeAgo(ts:number): string {
   if(s<60) return `${s}s ago`; if(s<3600) return `${Math.floor(s/60)}m ago`;
   return `${Math.floor(s/3600)}h ago`;
 }
+// Curated ticks from partner platforms + Abraxas-native
+const PARTNER_TICKS = [
+  { id:"bx-pappy",   name:"Pappy Van Winkle 2021",         price:2400,   category:"Spirits",    source:"Baxus",         ticker:"PAPPY",   ts:Date.now()-60000  },
+  { id:"ct-rxsub",   name:"Rolex Submariner",               price:11000,  category:"Watches",    source:"Courtyard",     ticker:"RXSUB",   ts:Date.now()-180000 },
+  { id:"cc-char99",  name:"1999 Charizard PSA 10",          price:550000, category:"Pokemon",    source:"Collector Crypt",ticker:"CHAR99",  ts:Date.now()-300000 },
+  { id:"bx-ltmill",  name:"Littlemill 1965 Bottled 1998",   price:2100,   category:"Spirits",    source:"Baxus",         ticker:"LTML65",  ts:Date.now()-420000 },
+  { id:"abx-af15",   name:"Amazing Fantasy #15 (1962)",     price:525000, category:"Comics",     source:"Abraxas",       ticker:"AF15",    ts:Date.now()-540000 },
+  { id:"ct-csant",   name:"Cartier Santos Large Blue",       price:11000,  category:"Watches",    source:"Courtyard",     ticker:"CSANT",   ts:Date.now()-660000 },
+  { id:"bx-caroni",  name:"Caroni 1998 23yr Single Cask",   price:1950,   category:"Spirits",    source:"Baxus",         ticker:"CARON98", ts:Date.now()-780000 },
+  { id:"abx-sec73",  name:"Secretariat 1973",               price:500000, category:"Racehorses", source:"Abraxas",       ticker:"SECRTAT", ts:Date.now()-900000 },
+  { id:"abx-gold",   name:"Gold 1oz (LBMA)",                price:4733,   category:"Metals",     source:"Abraxas",       ticker:"XAUt",    ts:Date.now()-1020000},
+];
 function buildSoldTape(assets:ArenaAsset[]): SoldTick[] {
-  return assets.filter(a=>a.last_sold_price>0)
+  const native = assets.filter(a=>a.last_sold_price>0)
     .map(a=>({ id:a.id, name:a.name, price:a.last_sold_price, category:a.category,
-      source:a.last_sold_source??"Oracle",
+      source:a.last_sold_source??"Abraxas",
       ts:Date.now()-Math.floor(Math.abs(Math.sin(a.id.length*9301))*7_200_000), ticker:a.ticker }))
-    .sort((a,b)=>b.price-a.price).slice(0,20);
+    .sort((a,b)=>b.price-a.price).slice(0,18);
+  return [...PARTNER_TICKS, ...native];
 }
 
 // ─── Sold tape ────────────────────────────────────────────────────────────────
@@ -239,13 +252,24 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
   const acquireUrl=getAcquireUrl(asset);
   const q = asset.can_borrow && asset.ltv ? getLoopscaleLiquidity(asset.priceUsd, asset.category) : null;
 
+  const [hov,setHov]=useState(false);
+  const glowIntensity = selected?"40":owner?"30":hov?"22":"08";
+  const borderIntensity = selected?"60":owner?"70":hov?"45":"30";
+
   return (
-    <div onClick={()=>onSelect?.(asset)} style={{
-      position:"relative",borderRadius:"12px",overflow:"hidden",
-      background:"rgba(6,8,16,0.97)",border:`1px solid ${borderColor}`,
-      boxShadow:selected?`0 0 18px ${catColor}22`:owner?`0 0 10px ${borderColor}44`:"none",
-      cursor:onSelect?"pointer":"default",transition:"border-color 0.2s,box-shadow 0.2s",
-    }}>
+    <div
+      onClick={()=>onSelect?.(asset)}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        position:"relative",borderRadius:"12px",overflow:"hidden",
+        background:`linear-gradient(145deg,${catColor}06,rgba(6,8,16,0.99))`,
+        border:`1px solid ${catColor}${borderIntensity}`,
+        boxShadow:`0 0 ${hov||selected?24:8}px ${catColor}${glowIntensity},inset 0 0 ${hov?12:0}px ${catColor}08`,
+        cursor:onSelect?"pointer":"default",
+        transition:"border-color 0.18s,box-shadow 0.18s,transform 0.18s",
+        transform:hov&&onSelect?`translateY(-3px) scale(1.005)`:"none",
+      }}>
       {asset.protected&&(
         <div style={{ position:"absolute",top:"0.3rem",right:"0.3rem",zIndex:4,display:"flex",alignItems:"center",gap:"0.18rem",padding:"0.07rem 0.28rem",borderRadius:"3px",background:"rgba(212,175,55,0.15)",border:"1px solid rgba(212,175,55,0.4)" }}>
           <span style={{ width:"3px",height:"3px",borderRadius:"50%",background:"#D4AF37",animation:"pulse 2s ease-in-out infinite" }} />
@@ -257,13 +281,12 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
       <AssetImage asset={asset} height={imgH} />
 
       <div style={{ padding:"0.45rem 0.5rem" }}>
-        {/* Category label */}
-        <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.2rem",flexWrap:"wrap" }}>
-          <span style={{ fontSize:"0.38rem",fontWeight:800,padding:"0.05rem 0.28rem",borderRadius:"3px",background:`${CAT_COLOR[asset.category]??"#6b8cff"}18`,border:`1px solid ${CAT_COLOR[asset.category]??"#6b8cff"}30`,color:CAT_COLOR[asset.category]??"#6b8cff",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",textTransform:"uppercase" }}>{asset.category}</span>
-          {isHorse&&(asset as any).race_record&&<span style={{ fontSize:"0.36rem",color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",fontWeight:700 }}>{(asset as any).race_record}</span>}
-          {isHorse&&(asset as any).fractional_shares&&<span style={{ fontSize:"0.36rem",color:"rgba(34,197,94,0.7)",fontFamily:"'JetBrains Mono',monospace" }}>Frac. Shares</span>}
+        {/* Category badge — neon glow */}
+        <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.3rem",flexWrap:"wrap" }}>
+          <span style={{ fontSize:"0.44rem",fontWeight:900,padding:"0.12rem 0.4rem",borderRadius:"10px",background:`${catColor}18`,border:`1px solid ${catColor}45`,color:catColor,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase",boxShadow:`0 0 8px ${catColor}20` }}>{asset.category}</span>
+          {isHorse&&(asset as any).race_record&&<span style={{ fontSize:"0.42rem",color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",fontWeight:700 }}>{(asset as any).race_record}</span>}
         </div>
-        <div style={{ fontWeight:800,fontSize:"0.72rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"1px" }}>{asset.name}</div>
+        <div style={{ fontWeight:900,fontSize:"0.78rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"2px",letterSpacing:"-0.01em" }}>{asset.name}</div>
 
         {/* Category + archetype + buff — no ATK/DEF/SPD on card face */}
         <div style={{ display:"flex",alignItems:"center",gap:"0.25rem",marginBottom:"0.3rem",flexWrap:"wrap" }}>
@@ -700,13 +723,31 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
         </div>
       )}
 
-      {/* Category filter */}
-      <div style={{ display:"flex",gap:"0.2rem",marginBottom:"0.875rem",flexWrap:"wrap" }}>
-        {cats.filter(c=>c==="all"||assets.some(a=>a.category===c)).map(cat=>(
-          <button key={cat} onClick={()=>setFilter(cat)} style={{ padding:"0.22rem 0.5rem",borderRadius:"4px",fontSize:"0.56rem",fontWeight:filter===cat?700:400,border:`1px solid ${filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.07)"}`,background:filter===cat?`${CAT_COLOR[cat]??"#6b8cff"}12`:"transparent",color:filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.36)",cursor:"pointer" }}>
-            {cat==="all"?"All":cat}
-          </button>
-        ))}
+      {/* Category filter — big neon pills */}
+      <div style={{ display:"flex",gap:"0.4rem",marginBottom:"1rem",flexWrap:"wrap" }}>
+        {cats.filter(c=>c==="all"||assets.some(a=>a.category===c)).map(cat=>{
+          const c = cat==="all"?"#f0f0f0":(CAT_COLOR[cat]??"#6b8cff");
+          const active = filter===cat;
+          return (
+            <button key={cat} onClick={()=>setFilter(cat)} style={{
+              padding:"0.4rem 0.875rem",borderRadius:"20px",
+              fontSize:"0.62rem",fontWeight:active?800:500,
+              border:`1px solid ${active?c:c+"22"}`,
+              background:active?`${c}15`:"rgba(255,255,255,0.02)",
+              color:active?c:c+"55",
+              cursor:"pointer",
+              letterSpacing:"0.04em",
+              fontFamily:"'JetBrains Mono',monospace",
+              boxShadow:active?`0 0 12px ${c}25,inset 0 0 12px ${c}08`:"none",
+              transition:"all 0.15s",
+              textTransform:"uppercase",
+            }}
+            onMouseEnter={e=>{if(!active){(e.currentTarget as HTMLElement).style.borderColor=c+"44";(e.currentTarget as HTMLElement).style.color=c+"88";}}}
+            onMouseLeave={e=>{if(!active){(e.currentTarget as HTMLElement).style.borderColor=c+"22";(e.currentTarget as HTMLElement).style.color=c+"55";}}}>
+              {cat==="all"?"All":cat}
+            </button>
+          );
+        })}
       </div>
 
       {/* Pre-match setup */}
@@ -917,6 +958,16 @@ export function TerminalArena() {
   const [error,   setError]   = useState<string|null>(null);
   const [mainTab, setMainTab] = useState("terminal");
   const arenaRef = useRef<HTMLDivElement>(null);
+
+  // Listen for BottomNav tab dispatch events
+  useEffect(()=>{
+    function onTabEvent(e: Event) {
+      const detail = (e as CustomEvent).detail as string;
+      if(detail) setMainTab(detail);
+    }
+    window.addEventListener("abraxas-tab", onTabEvent);
+    return ()=>window.removeEventListener("abraxas-tab", onTabEvent);
+  },[]);
 
   useEffect(()=>{
     let cancelled=false;
