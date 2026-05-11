@@ -11,6 +11,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getLoopscaleLiquidity, calcEloChange, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
 import { GameModesHub } from "@/components/GameModes";
 import { RWACharts } from "@/components/RWACharts";
+<<<<<<< HEAD
+=======
+import { GlobalMarketBar } from "@/components/GlobalMarketBar";
+import { AIConvictionBadge } from "@/components/AIConviction";
+import { IssuanceEngine } from "@/components/IssuanceEngine";
+>>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArenaAsset {
@@ -915,7 +921,12 @@ export function TerminalArena() {
   const [ticks,   setTicks]   = useState<SoldTick[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string|null>(null);
+<<<<<<< HEAD
   const [mainTab, setMainTab] = useState("terminal");
+=======
+  // 3-layer architecture: Capital (assets/borrow) | Arena (games/strategy) | Studio (tokenize/create)
+  const [mainTab, setMainTab] = useState("studio");
+>>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
   const arenaRef = useRef<HTMLDivElement>(null);
 
   useEffect(()=>{
@@ -945,6 +956,7 @@ export function TerminalArena() {
       {error&&<div style={{ padding:"0.5rem 1rem",background:"rgba(242,107,107,0.07)",fontSize:"0.56rem",color:"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>[ORACLE] {error}</div>}
       <SoldTape ticks={ticks} />
       <CommandBar onScrollToArena={()=>arenaRef.current?.scrollIntoView({behavior:"smooth"})} />
+<<<<<<< HEAD
       {/* Main navigation tabs */}
       <div style={{ display:"flex", gap:"0.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.96)", padding:"0.5rem 1.25rem", alignItems:"center" }}>
         {([
@@ -969,6 +981,59 @@ export function TerminalArena() {
             <div style={{ display:"inline-flex",alignItems:"center",gap:"0.5rem",padding:"0.25rem 0.75rem",borderRadius:"20px",background:"rgba(200,169,110,0.08)",border:"1px solid rgba(200,169,110,0.2)",marginBottom:"1rem" }}>
               <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#C8A96E",animation:"pulse 2s ease-in-out infinite" }} />
               <span style={{ fontSize:"0.46rem",fontWeight:700,color:"rgba(200,169,110,0.7)",letterSpacing:"0.15em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana · May 2026</span>
+=======
+      {/* ══ 3-LAYER NAVIGATION: Capital · Arena · Studio ══ */}
+      <div style={{ borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.97)", padding:"0 1.25rem" }}>
+        {/* Layer description line */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"0.4rem 0 0" }}>
+          <div style={{ fontSize:"0.38rem", color:"rgba(255,255,255,0.16)", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.1em", textTransform:"uppercase" }}>
+            {mainTab==="studio"?"Studio Layer — issuance, creation, asset onboarding":mainTab==="markets"?"Markets Layer — listings, activity, price discovery":"Arena Layer — strategy deployment, execution, competition"}
+          </div>
+          <div style={{ fontSize:"0.38rem", color:"rgba(200,169,110,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>$ABRA {mainTab==="studio"?"tokenization fees":mainTab==="markets"?"market activity":"earn & deploy"}</div>
+        </div>
+        {/* Layer tabs */}
+        <div style={{ display:"flex", gap:"0", marginTop:"0.25rem" }}>
+          {([
+            ["studio",  "III · Studio", "#14F195",  "Tokenize · Create · Issue"],
+            ["markets", "II · Markets", "#6b8cff",  "Listings · Activity · Liquidity"],
+            ["arena",   "I · Arena",    "#FBBF24",  "Games · Strategy · Compete"],
+          ] as const).map(([id,label,color,sub])=>(
+            <button key={id} onClick={()=>setMainTab(id)} style={{
+              padding:"0.5rem 1rem 0.45rem", border:"none", borderBottom:mainTab===id?`2px solid ${color}`:"2px solid transparent",
+              background:"transparent", cursor:"pointer", transition:"all 0.15s", textAlign:"left", marginBottom:"-1px",
+            }}>
+              <div style={{ fontSize:"0.62rem", fontWeight:mainTab===id?800:400, color:mainTab===id?color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", lineHeight:1.2 }}>{label}</div>
+              <div style={{ fontSize:"0.4rem", color:mainTab===id?`${color}88`:"rgba(255,255,255,0.14)", fontFamily:"'JetBrains Mono',monospace", marginTop:"1px" }}>{sub}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+      {mainTab==="markets"&&(
+        <div style={{ padding:"0.875rem 1.25rem 1.25rem" }}>
+          {/* Markets layer header */}
+          <div style={{ marginBottom:"1rem",display:"flex",alignItems:"baseline",justifyContent:"space-between",flexWrap:"wrap",gap:"0.5rem" }}>
+            <div>
+              <p style={{ fontSize:"0.42rem",letterSpacing:"0.18em",color:"rgba(107,140,255,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",margin:"0 0 0.15rem" }}>Markets Layer · II · Verified Assets Only</p>
+              <h2 style={{ fontWeight:900,fontSize:"1.05rem",color:"#f0f0f0",margin:0,letterSpacing:"-0.02em" }}>Live Asset Listings</h2>
+            </div>
+            <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",fontStyle:"italic" }}>
+              All assets verified before listing · Educational tooltips on hover
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════
+              VISION HERO — "Eyes wide looking at the sky"
+              Future-focused, not feature-listing.
+              Tokenization IS the product. Games are bonus.
+              ═══════════════════════════════════════════════ */}
+          <div style={{ position:"relative",overflow:"hidden",borderRadius:"18px",padding:"2.25rem 2rem",marginBottom:"1rem",background:"linear-gradient(160deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.06) 35%,rgba(6,8,16,0.99) 70%,rgba(168,85,247,0.03) 100%)",border:"1px solid rgba(200,169,110,0.16)" }}>
+            <div style={{ position:"absolute",top:"-25%",right:"-8%",width:"340px",height:"340px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.07) 0%,transparent 60%)",pointerEvents:"none" }} />
+            <div style={{ position:"absolute",bottom:"-20%",left:"-3%",width:"220px",height:"220px",borderRadius:"50%",background:"radial-gradient(circle,rgba(168,85,247,0.05) 0%,transparent 65%)",pointerEvents:"none" }} />
+
+            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.35rem",padding:"0.18rem 0.625rem",borderRadius:"20px",background:"rgba(200,169,110,0.06)",border:"1px solid rgba(200,169,110,0.15)",marginBottom:"1rem" }}>
+              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 3s ease-in-out infinite" }} />
+              <span style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(200,169,110,0.6)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana · Building the Future Standard</span>
+>>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
             </div>
             {/* Main headline */}
             <h1 style={{ fontWeight:900,fontSize:"clamp(1.8rem,5vw,2.8rem)",letterSpacing:"-0.04em",margin:"0 0 0.75rem",lineHeight:1.05 }}>
@@ -1026,6 +1091,7 @@ export function TerminalArena() {
           <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
         </div>
       )}
+<<<<<<< HEAD
       {mainTab==="markets"&&(
         <div style={{ padding:"1.25rem" }}>
           {/* Markets header */}
@@ -1040,6 +1106,18 @@ export function TerminalArena() {
         </div>
       )}
       {mainTab==="game_modes"&&(
+=======
+
+      {/* Markets content is now part of Capital layer — see RWACharts below SovereignArena */}
+
+      {mainTab==="studio"&&(
+        <div style={{ padding:"1.25rem 1.25rem 5rem" }}>
+          <IssuanceEngine />
+        </div>
+      )}
+
+      {mainTab==="arena"&&(
+>>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
         <div style={{ padding:"1.25rem" }}>
           <GameModesHub assets={assets} />
         </div>
