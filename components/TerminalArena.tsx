@@ -1089,8 +1089,6 @@ export function TerminalArena() {
               Explore Games →
             </button>
           </div>
-          <StockPanel assets={assets} />
-          <MetalsStrip assets={assets} />
           <LiveActivityFeed />
           <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
         </div>

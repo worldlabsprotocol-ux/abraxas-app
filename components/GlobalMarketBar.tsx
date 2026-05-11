@@ -7,13 +7,13 @@ import { useState, useEffect } from "react";
 interface Ticker { sym:string; price:string; chg:string; up:boolean; color:string; }
 
 const INIT_TICKERS: Ticker[] = [
-  { sym:"BTC",  price:"$97,420", chg:"+1.2%",  up:true,  color:"#F7931A" },
-  { sym:"ETH",  price:"$3,841",  chg:"+0.8%",  up:true,  color:"#627EEA" },
-  { sym:"SOL",  price:"$178.34", chg:"+3.1%",  up:true,  color:"#9945FF" },
-  { sym:"XAUt", price:"$4,733",  chg:"+0.4%",  up:true,  color:"#D4AF37" },
-  { sym:"NVDA", price:"$211.48", chg:"+2.1%",  up:true,  color:"#76B900" },
-  { sym:"TSLA", price:"$411.89", chg:"-0.3%",  up:false, color:"#CC0000" },
-  { sym:"ABRA", price:"$0.032",  chg:"+8.4%",  up:true,  color:"#C8A96E" },
+  { sym:"BTC",  price:"$80,635", chg:"-2.1%",  up:false, color:"#F7931A" },
+  { sym:"ETH",  price:"$2,322",  chg:"-3.4%",  up:false, color:"#627EEA" },
+  { sym:"SOL",  price:"$95.15",  chg:"-4.2%",  up:false, color:"#9945FF" },
+  { sym:"SUI",  price:"$1.27",   chg:"-1.8%",  up:false, color:"#4DA2FF" },
+  { sym:"XAUt", price:"$3,232",  chg:"+0.3%",  up:true,  color:"#D4AF37" },
+  { sym:"NVDA", price:"$105.82", chg:"+1.4%",  up:true,  color:"#76B900" },
+  { sym:"ABRA", price:"$0.021",  chg:"+6.2%",  up:true,  color:"#C8A96E" },
 ];
 
 const AI_SIGNALS = [
@@ -34,9 +34,10 @@ export function GlobalMarketBar() {
     const iv = setInterval(()=>{
       setTickers(t=>t.map(tk=>({
         ...tk,
-        price: tk.sym==="BTC"  ? `$${(97420+Math.round((Math.random()-0.5)*200)).toLocaleString()}` :
-               tk.sym==="SOL"  ? `$${(178.34+(Math.random()-0.5)*2).toFixed(2)}` :
-               tk.sym==="ABRA" ? `$${(0.032+(Math.random()-0.5)*0.002).toFixed(4)}` : tk.price,
+        price: tk.sym==="BTC"  ? `$${(80635+Math.round((Math.random()-0.5)*400)).toLocaleString()}` :
+               tk.sym==="SOL"  ? `$${(95.15+(Math.random()-0.5)*1.5).toFixed(2)}` :
+               tk.sym==="ETH"  ? `$${(2322+(Math.random()-0.5)*20).toFixed(0)}` :
+               tk.sym==="ABRA" ? `$${(0.021+(Math.random()-0.5)*0.001).toFixed(4)}` : tk.price,
       })));
       setFear(f=>Math.max(0,Math.min(100,f+Math.round((Math.random()-0.5)*3))));
     }, 2800);
