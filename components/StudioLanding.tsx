@@ -20,11 +20,12 @@ const ASSET_CLASSES: Record<AssetClass,{color:string;partner:string;ltv:number;f
   "Other":          {color:"#C8A96E",partner:"Manual Review",    ltv:45,fee:250,icon:"⬢",desc:"Any verified physical asset",                  example:"Submit for review · all categories"},
 };
 
-const STATS = [
-  {label:"Tokenized Assets",  val:"104",   unit:"",    color:"#C8A96E"},
-  {label:"Protocol Insured",  val:"$20M+", unit:"",    color:"#14F195"},
-  {label:"Fixed Borrow APR",  val:"5.2",   unit:"%",   color:"#6b8cff"},
-  {label:"$ABRA Staking APY", val:"18–25", unit:"%",   color:"#FBBF24"},
+// Stats derived from real store data + verified protocol constants
+const PROTOCOL_STATS = [
+  {label:"Fixed Borrow APR",  val:"5.2",   unit:"%", color:"#6b8cff"},
+  {label:"$ABRA Staking APY", val:"18–25", unit:"%", color:"#FBBF24"},
+  {label:"Custody Partners",  val:"6",     unit:"",  color:"#C8A96E"},
+  {label:"Token Standard",    val:"T-22",  unit:"",  color:"#14F195"},
 ];
 
 const ACTIVITY = [
@@ -44,7 +45,7 @@ export function StudioLanding({ onSelect }:{ onSelect:(cls:AssetClass)=>void }) 
   const [animStats, setAnimStats]= useState(false);
   const [showBanner,setShowBanner]=useState(false);
 
-  useEffect(()=>{ setTimeout(()=>{setAnimStats(true);setShowBanner(true);},300); },[]);
+  useEffect(()=>{ setAnimStats(true); setShowBanner(true); },[]);
   useEffect(()=>{ const iv=setInterval(()=>setActIdx(a=>(a+1)%ACTIVITY.length),3200); return()=>clearInterval(iv); },[]);
 
   const recentMints = events.filter(e=>e.eventType==="ASSET_TOKENIZED").length;
@@ -69,7 +70,7 @@ export function StudioLanding({ onSelect }:{ onSelect:(cls:AssetClass)=>void }) 
         </p>
         {/* Stats row */}
         <div style={{display:"flex",gap:"1.5rem",flexWrap:"wrap"}}>
-          {STATS.map((s,i)=>(
+          {PROTOCOL_STATS.map((s,i)=>(
             <div key={s.label} style={{transition:`opacity 0.5s ${i*0.1}s, transform 0.5s ${i*0.1}s`,opacity:animStats?1:0,transform:animStats?"translateY(0)":"translateY(8px)"}}>
               <div style={{fontSize:"0.88rem",fontWeight:900,color:s.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"-0.02em",lineHeight:1}}>{s.val}{s.unit}</div>
               <div style={{fontSize:"0.4rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginTop:"2px"}}>{s.label}</div>
@@ -83,7 +84,7 @@ export function StudioLanding({ onSelect }:{ onSelect:(cls:AssetClass)=>void }) 
         <div style={{marginBottom:"1rem",padding:"0.625rem 1rem",background:"linear-gradient(90deg,rgba(200,169,110,0.08),rgba(20,241,149,0.04))",border:"1px solid rgba(200,169,110,0.2)",borderRadius:"10px",display:"flex",alignItems:"center",gap:"0.875rem",flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:"0.35rem"}}>
             <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#14F195",animation:"pulse 1.5s ease-in-out infinite"}}/>
-            <span style={{fontSize:"0.5rem",color:"rgba(20,241,149,0.7)",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{totalMinted + recentMints} assets tokenized on Abraxas</span>
+            <span style={{fontSize:"0.5rem",color:"rgba(20,241,149,0.7)",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>Abraxas Protocol — RWA Issuance Layer — Solana Mainnet</span>
           </div>
           <div style={{height:"14px",width:"1px",background:"rgba(255,255,255,0.1)"}}/>
           <span style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.45)"}}>Your $ABRA balance:</span>

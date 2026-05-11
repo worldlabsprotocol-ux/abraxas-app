@@ -11,7 +11,7 @@ import { useAbraStore, type AssetStatus } from "@/lib/abraxasStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AssetClass = "Spirits"|"Watches"|"Cards (PSA/BGS)"|"Comics (CGC)"|"Racehorses"|"Metals"|"Art"|"Other";
-type Step = "init"|"upload"|"metadata"|"valuation"|"wallet"|"fee"|"processing"|"queue";
+type Step = "upload"|"metadata"|"valuation"|"wallet"|"fee"|"processing"|"queue";
 
 const ASSET_CLASSES: Record<AssetClass,{ color:string; partner:string; ltv:number; fee:number; icon:string; }> = {
   "Spirits":       { color:"#FF8C00", partner:"Baxus",           ltv:55, fee:100, icon:"◈" },
@@ -24,13 +24,7 @@ const ASSET_CLASSES: Record<AssetClass,{ color:string; partner:string; ltv:numbe
   "Other":         { color:"#C8A96E", partner:"Manual Review",    ltv:45, fee:250, icon:"⬢" },
 };
 
-const INIT_SEQUENCE = [
-  { msg:"Syncing Market State",           dur:700 },
-  { msg:"Verifying Oracle Feeds",         dur:800 },
-  { msg:"Initializing Issuance Engine",   dur:900 },
-  { msg:"Connecting Solana Settlement Layer", dur:700 },
-  { msg:"Studio ready.",                  dur:500 },
-];
+
 
 const QUEUE_STEPS = [
   "Asset received by issuance protocol",
@@ -78,12 +72,9 @@ export function IssuanceEngine() {
   // Watch for asset status changes in store (reactive to auto-advance)
   const mintedAsset  = useAbraStore(s=>s.assets.find(a=>a.id===lastAssetId));
 
-  // Init animation
-  const [initIdx,   setInitIdx]   = useState(0);
-  const [initDone,  setInitDone]  = useState(false);
 
   // Flow state
-  const [step,      setStep]      = useState<Step>("init");
+  const [step,      setStep]      = useState<Step>("upload");
   const [assetClass,setAssetClass]= useState<AssetClass>("Watches");
   const [file,      setFile]      = useState<File|null>(null);
   const [preview,   setPreview]   = useState<string|null>(null);
@@ -98,17 +89,7 @@ export function IssuanceEngine() {
   const abraFee = cfg.fee;
   const borrowMax = Math.round(estUsd * cfg.ltv / 100);
 
-  // ── Init sequence ──────────────────────────────────────────────────────────
-  useEffect(()=>{
-    if(initDone) return;
-    let total = 0;
-    INIT_SEQUENCE.forEach((s,i)=>{
-      total += i===0?0:INIT_SEQUENCE[i-1].dur;
-      setTimeout(()=>setInitIdx(i), total);
-    });
-    const finalTime = INIT_SEQUENCE.reduce((acc,s,i)=>i<INIT_SEQUENCE.length-1?acc+s.dur:acc,0);
-    setTimeout(()=>{ setInitDone(true); setStep("upload"); }, finalTime+400);
-  },[]);
+
 
   // ── Queue progress animation ───────────────────────────────────────────────
   useEffect(()=>{
@@ -154,44 +135,8 @@ export function IssuanceEngine() {
     setStep("queue");
   }
 
-  // ─── INIT SEQUENCE ─────────────────────────────────────────────────────────
-  if(!initDone) return (
-    <div style={{ minHeight:"70vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"2rem" }}>
-      <div style={{ width:"100%",maxWidth:"440px" }}>
-        {/* Protocol mark */}
-        <div style={{ display:"flex",alignItems:"center",gap:"0.625rem",marginBottom:"2rem" }}>
-          <div style={{ width:"32px",height:"32px",borderRadius:"8px",background:"rgba(200,169,110,0.1)",border:"1px solid rgba(200,169,110,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1rem",color:"#C8A96E" }}>⬢</div>
-          <div>
-            <div style={{ fontSize:"0.62rem",fontWeight:800,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.06em" }}>ABRAXAS PROTOCOL</div>
-            <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace" }}>Issuance Engine · III · Studio</div>
-          </div>
-        </div>
 
-        {/* Sequence lines */}
-        <div style={{ marginBottom:"2rem" }}>
-          {INIT_SEQUENCE.map((s,i)=>{
-            const done = i < initIdx, active = i === initIdx;
-            return (
-              <div key={i} style={{ display:"flex",alignItems:"center",gap:"0.625rem",padding:"0.4rem 0",opacity:i>initIdx?0.15:1,transition:"opacity 0.3s" }}>
-                <div style={{ width:"6px",height:"6px",borderRadius:"50%",flexShrink:0,background:done?"#14F195":active?"#C8A96E":"rgba(255,255,255,0.15)",boxShadow:active?"0 0 8px rgba(200,169,110,0.8)":"none",transition:"all 0.3s",animation:active?"pulse 0.8s ease-in-out infinite":"none" }} />
-                <span style={{ fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",color:done?"#14F195":active?"#C8A96E":"rgba(255,255,255,0.35)",transition:"color 0.3s",letterSpacing:"0.04em" }}>{s.msg}</span>
-                {done&&<span style={{ marginLeft:"auto",fontSize:"0.44rem",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace" }}>OK</span>}
-                {active&&<div style={{ marginLeft:"auto",display:"flex",gap:"2px" }}>{[0,1,2].map(j=><div key={j} style={{ width:"3px",height:"3px",borderRadius:"50%",background:"#C8A96E",animation:`pulse ${0.6+j*0.2}s ease-in-out infinite` }} />)}</div>}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ height:"2px",borderRadius:"1px",background:"rgba(255,255,255,0.04)",overflow:"hidden" }}>
-          <div style={{ height:"100%",borderRadius:"1px",background:"linear-gradient(90deg,#C8A96E,#14F195)",width:`${((initIdx+1)/INIT_SEQUENCE.length)*100}%`,transition:"width 0.5s ease" }} />
-        </div>
-      </div>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-    </div>
-  );
-
-  // ─── UPLOAD ────────────────────────────────────────────────────────────────
+  // ─── UPLOAD  // ─── UPLOAD ────────────────────────────────────────────────────────────────
   if(step==="upload") return (
     <div style={{ padding:"1.25rem",maxWidth:"680px" }}>
       <StepBar step="upload" />
