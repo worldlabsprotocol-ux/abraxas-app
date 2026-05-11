@@ -11,6 +11,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getLoopscaleLiquidity, calcEloChange, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
 import { GameModesHub } from "@/components/GameModes";
 import { RWACharts } from "@/components/RWACharts";
+import { GlobalMarketBar } from "@/components/GlobalMarketBar";
+import { AIConvictionBadge } from "@/components/AIConviction";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArenaAsset {
@@ -311,6 +313,14 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
               </span>
             </div>
 
+            {/* AI Conviction compact badge */}
+            <div style={{ marginBottom:"0.25rem" }}>
+              <AIConvictionBadge
+                assetId={asset.id} assetName={asset.name} category={asset.category}
+                price={asset.priceUsd} change24h={asset.change24h} rarity={asset.rarity}
+                compact={true}
+              />
+            </div>
             {/* Loopscale borrow line */}
             {q&&(
               <div style={{ fontSize:"0.44rem",color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.25rem" }}>
@@ -995,6 +1005,7 @@ export function TerminalArena() {
       `}</style>
       {error&&<div style={{ padding:"0.5rem 1rem",background:"rgba(242,107,107,0.07)",fontSize:"0.56rem",color:"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>[ORACLE] {error}</div>}
       <SoldTape ticks={ticks} />
+      <GlobalMarketBar />
       <CommandBar onScrollToArena={()=>arenaRef.current?.scrollIntoView({behavior:"smooth"})} />
       {/* Main navigation tabs */}
       <div style={{ display:"flex", gap:"0.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.96)", padding:"0.5rem 1.25rem", alignItems:"center" }}>
@@ -1009,74 +1020,30 @@ export function TerminalArena() {
         ))}
       </div>
       {mainTab==="terminal"&&(
-        <div style={{ padding:"1.25rem" }}>
-          {/* ──── SOVEREIGN HERO ──── */}
-          {/* ═══════ HERO — Big & Premium ═══════ */}
-          <div style={{ position:"relative",overflow:"hidden",borderRadius:"18px",padding:"2.5rem 2rem",marginBottom:"1.75rem",background:"linear-gradient(145deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.08) 40%,rgba(168,85,247,0.04) 70%,rgba(6,8,16,0.99) 100%)",border:"1px solid rgba(200,169,110,0.2)",boxShadow:"0 0 60px rgba(200,169,110,0.05)" }}>
-            {/* Background orbs */}
-            <div style={{ position:"absolute",top:"-30%",right:"-5%",width:"350px",height:"350px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.09) 0%,transparent 65%)",pointerEvents:"none" }} />
-            <div style={{ position:"absolute",bottom:"-20%",left:"-5%",width:"250px",height:"250px",borderRadius:"50%",background:"radial-gradient(circle,rgba(168,85,247,0.06) 0%,transparent 65%)",pointerEvents:"none" }} />
-            {/* Flywheel pill */}
-            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.5rem",padding:"0.25rem 0.75rem",borderRadius:"20px",background:"rgba(200,169,110,0.08)",border:"1px solid rgba(200,169,110,0.2)",marginBottom:"1rem" }}>
-              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#C8A96E",animation:"pulse 2s ease-in-out infinite" }} />
-              <span style={{ fontSize:"0.46rem",fontWeight:700,color:"rgba(200,169,110,0.7)",letterSpacing:"0.15em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana · May 2026</span>
+        <div style={{ padding:"0.875rem 1.25rem 1.25rem" }}>
+          {/* Slim Buy $ABRA + OpenSea header */}
+          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem",flexWrap:"wrap",gap:"0.5rem" }}>
+            <div>
+              <div style={{ fontSize:"0.42rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.15rem" }}>
+                World Labs Protocol · Solana
+              </div>
+              <h2 style={{ fontWeight:900,fontSize:"clamp(1.1rem,3vw,1.5rem)",letterSpacing:"-0.03em",margin:0,lineHeight:1.1 }}>
+                <span style={{ background:"linear-gradient(135deg,#C8A96E,#FBBF24,#f0f0f0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>The OpenSea of RWAs</span>
+              </h2>
             </div>
-            {/* Main headline */}
-            <h1 style={{ fontWeight:900,fontSize:"clamp(1.8rem,5vw,2.8rem)",letterSpacing:"-0.04em",margin:"0 0 0.75rem",lineHeight:1.05 }}>
-              <span style={{ background:"linear-gradient(135deg,#C8A96E 0%,#FBBF24 40%,#f0f0f0 80%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>The OpenSea of RWAs</span>
-            </h1>
-            {/* Sub-headline */}
-            <p style={{ fontSize:"0.72rem",color:"rgba(255,255,255,0.48)",margin:"0 0 0.4rem",maxWidth:"560px",lineHeight:1.65,fontWeight:400 }}>
-              Tokenize physical assets on Solana. Borrow USDC instantly via Loopscale. Battle in the Sovereign Arena. Earn $ABRA.
-            </p>
-            <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.28)",margin:"0 0 1.5rem",maxWidth:"480px",lineHeight:1.65 }}>
-              Spirits · Watches · Comics · Racehorses · Graded Cards · Precious Metals · Tokenized Equities
-            </p>
-            {/* CTAs */}
-            <div style={{ display:"flex",gap:"0.625rem",flexWrap:"wrap",marginBottom:"1.75rem" }}>
-              <a href="/tokenize" style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 20px rgba(212,175,55,0.3)" }}>Tokenize Asset</a>
-              <a href="/protect" style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(20,241,149,0.09)",border:"1px solid rgba(20,241,149,0.25)",color:"#14F195",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Borrow USDC</a>
-              <button onClick={()=>setMainTab("game_modes")} style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(168,85,247,0.09)",border:"1px solid rgba(168,85,247,0.28)",color:"#a855f7",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Play Games</button>
-              <button onClick={()=>setMainTab("markets")} style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(20,241,149,0.05)",border:"1px solid rgba(20,241,149,0.15)",color:"rgba(20,241,149,0.7)",fontWeight:600,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Markets</button>
-            </div>
-            {/* Stats */}
-            <div style={{ display:"flex",gap:"2rem",flexWrap:"wrap",paddingTop:"1.25rem",borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-              {[["102","RWA Assets"],["$20M+","Protocol Insured"],["5","Live Vault PDAs"],["5.2%","Fixed APR · Loopscale"]].map(([v,l])=>(
-                <div key={l}>
-                  <div style={{ fontSize:"1.1rem",fontWeight:900,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"-0.02em" }}>{v}</div>
-                  <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:"1px" }}>{l}</div>
-                </div>
-              ))}
+            <div style={{ display:"flex",gap:"0.4rem",flexWrap:"wrap",alignItems:"center" }}>
+              <a href="/tokenize" style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",background:"rgba(168,85,247,0.1)",border:"1px solid rgba(168,85,247,0.25)",color:"#a855f7",fontWeight:700,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Tokenize</a>
+              <a href="/protect" style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.2)",color:"#14F195",fontWeight:700,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Borrow</a>
+              <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em" }}>Buy $ABRA</a>
             </div>
           </div>
-          {/* ═══ HOW IT WORKS — Flywheel ═══ */}
-          <div style={{ marginBottom:"1.5rem",padding:"1.25rem 1.5rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"14px" }}>
-            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.4rem" }}>Protocol Flywheel</p>
-            <h3 style={{ fontWeight:800,fontSize:"0.88rem",color:"#f0f0f0",margin:"0 0 0.875rem",letterSpacing:"-0.01em" }}>How Abraxas Works — 4 Steps</h3>
-            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,200px),1fr))",gap:"0.625rem" }}>
-              {([
-                { n:"01",label:"Tokenize",  color:"#a855f7", desc:"Convert any physical asset to a Token-2022 position on Solana in under 2 minutes. Spirits, watches, comics, cards, metals." },
-                { n:"02",label:"Vault + Borrow", color:"#14F195",desc:"Deposit your token into an Abraxas vault. Borrow USDC instantly at 5.2% fixed APR via Loopscale Modular Vaults. LTV: 55–80%." },
-                { n:"03",label:"Battle + Earn",  color:"#FBBF24",desc:"Deploy your assets in the Sovereign Arena. Win battles, pull gacha, hit Chase Markets. Earn $ABRA on every action." },
-                { n:"04",label:"Compound",   color:"#C8A96E",desc:"$ABRA auto-stakes at 18–25% APY. Borrow against staked $ABRA at 50% LTV. Compound across every RWA class you hold." },
-              ] as const).map(s=>(
-                <div key={s.n} style={{ padding:"0.75rem",background:`${s.color}06`,border:`1px solid ${s.color}18`,borderRadius:"9px" }}>
-                  <div style={{ display:"flex",alignItems:"center",gap:"0.4rem",marginBottom:"0.35rem" }}>
-                    <span style={{ fontSize:"0.4rem",fontWeight:900,color:s.color,fontFamily:"'JetBrains Mono',monospace",opacity:0.5 }}>{s.n}</span>
-                    <span style={{ fontSize:"0.68rem",fontWeight:800,color:s.color,letterSpacing:"-0.01em" }}>{s.label}</span>
-                  </div>
-                  <p style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.42)",lineHeight:1.65,margin:0 }}>{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <StockPanel assets={assets} />
           <MetalsStrip assets={assets} />
           <LiveActivityFeed />
           <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
         </div>
       )}
+
       {mainTab==="markets"&&(
         <div style={{ padding:"1.25rem" }}>
           {/* Markets header */}

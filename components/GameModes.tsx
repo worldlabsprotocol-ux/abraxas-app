@@ -616,13 +616,128 @@ function Leaderboard({ abraEarned, wins }:{ abraEarned:number; wins:number }) {
   );
 }
 
+// ─── Circuit Studio ──────────────────────────────────────────────────────────
+const GENRES = ["Lo-fi Hip Hop","House","Trap","Ambient","Dark Electronic","Neo-Soul","RWA Terminal"] as const;
+type Genre = typeof GENRES[number];
+const BPM_PRESETS = [75,90,110,128,140,170];
+const PADS = ["KICK","SNARE","HI-HAT","OPEN HH","BASS","SYNTH","SAMPLE","FX"];
+
+function CircuitStudio({ onEarn }:{ onEarn:(n:number)=>void }) {
+  const [bpm,    setBpm]    = useState(128);
+  const [genre,  setGenre]  = useState<Genre>("Dark Electronic");
+  const [playing,setPlaying]= useState(false);
+  const [grid,   setGrid]   = useState<boolean[][]>(PADS.map(()=>Array(16).fill(false)));
+  const [beat,   setBeat]   = useState(0);
+  const [name,   setName]   = useState("");
+  const [minted, setMinted] = useState(false);
+  const [toast,  setToast]  = useState<string|null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval>|null>(null);
+
+  function showToast(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
+
+  useEffect(()=>{
+    if(!playing){if(timerRef.current)clearInterval(timerRef.current);return;}
+    const interval=Math.round(60000/bpm/4);
+    timerRef.current=setInterval(()=>setBeat(b=>(b+1)%16),interval);
+    return()=>{if(timerRef.current)clearInterval(timerRef.current);};
+  },[playing,bpm]);
+
+  function togglePad(row:number,col:number){setGrid(g=>g.map((r,ri)=>ri===row?r.map((c,ci)=>ci===col?!c:c):r));}
+  const activePads=grid.filter(r=>r.some(Boolean)).length;
+  const PAD_COLORS=["#f26b6b","#FBBF24","#a855f7","#6b8cff","#14F195","#C8A96E","#fb923c","#22c55e"];
+
+  function mintBeat(){
+    if(!name)return;
+    setMinted(true);onEarn(200);
+    showToast(`"${name}" tokenized · +200 $ABRA`);
+  }
+
+  return (
+    <div style={{ maxWidth:"600px",margin:"0 auto" }}>
+      {toast&&<div style={{ position:"fixed",top:"80px",left:"50%",transform:"translateX(-50%)",zIndex:999,padding:"0.5rem 1.25rem",borderRadius:"8px",background:"rgba(242,107,107,0.14)",border:"1px solid rgba(242,107,107,0.4)",color:"#f26b6b",fontSize:"0.58rem",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap" }}>{toast}</div>}
+      <div style={{ textAlign:"center",marginBottom:"1rem" }}>
+        <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(242,107,107,0.4)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.2rem" }}>Circuit Studio · RWA Music NFTs</p>
+        <h2 style={{ fontWeight:900,fontSize:"1.1rem",background:"linear-gradient(135deg,#f26b6b,#FBBF24)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",margin:"0 0 0.2rem",letterSpacing:"-0.02em" }}>Tokenize Your Sound</h2>
+        <p style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.3)",margin:0 }}>Create a beat · Mint as Token-2022 RWA · Earn royalties in $ABRA</p>
+      </div>
+      {/* BPM + Genre row */}
+      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem",marginBottom:"0.75rem" }}>
+        <div style={{ background:"rgba(6,8,16,0.97)",border:"1px solid rgba(242,107,107,0.12)",borderRadius:"9px",padding:"0.625rem" }}>
+          <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"0.3rem" }}>BPM</div>
+          <div style={{ display:"flex",gap:"0.2rem",flexWrap:"wrap" }}>
+            {BPM_PRESETS.map(b=><button key={b} onClick={()=>setBpm(b)} style={{ padding:"0.18rem 0.38rem",borderRadius:"4px",border:`1px solid ${bpm===b?"rgba(242,107,107,0.45)":"rgba(255,255,255,0.07)"}`,background:bpm===b?"rgba(242,107,107,0.1)":"transparent",color:bpm===b?"#f26b6b":"rgba(255,255,255,0.28)",fontSize:"0.46rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",fontWeight:bpm===b?700:400 }}>{b}</button>)}
+          </div>
+        </div>
+        <div style={{ background:"rgba(6,8,16,0.97)",border:"1px solid rgba(242,107,107,0.12)",borderRadius:"9px",padding:"0.625rem" }}>
+          <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"0.3rem" }}>Genre</div>
+          <div style={{ display:"flex",gap:"0.18rem",flexWrap:"wrap" }}>
+            {GENRES.map(g=><button key={g} onClick={()=>setGenre(g)} style={{ padding:"0.14rem 0.3rem",borderRadius:"4px",border:`1px solid ${genre===g?"rgba(251,191,36,0.35)":"rgba(255,255,255,0.06)"}`,background:genre===g?"rgba(251,191,36,0.08)":"transparent",color:genre===g?"#FBBF24":"rgba(255,255,255,0.22)",fontSize:"0.4rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",fontWeight:genre===g?700:400 }}>{g}</button>)}
+          </div>
+        </div>
+      </div>
+      {/* Step sequencer */}
+      <div style={{ background:"rgba(4,5,12,0.99)",border:"1px solid rgba(242,107,107,0.12)",borderRadius:"12px",padding:"0.75rem",marginBottom:"0.625rem",overflowX:"auto" }}>
+        <div style={{ minWidth:"480px" }}>
+          {PADS.map((pad,row)=>(
+            <div key={pad} style={{ display:"flex",alignItems:"center",gap:"0.18rem",marginBottom:"0.22rem" }}>
+              <div style={{ width:"52px",fontSize:"0.4rem",fontWeight:700,color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0,letterSpacing:"0.06em" }}>{pad}</div>
+              <div style={{ display:"flex",gap:"0.12rem",flex:1 }}>
+                {grid[row].map((on,col)=>{
+                  const isNow=playing&&col===beat;
+                  const pc=PAD_COLORS[row];
+                  return <button key={col} onClick={()=>togglePad(row,col)} style={{ flex:1,height:"20px",borderRadius:"2px",border:"none",cursor:"pointer",background:on?pc:isNow?"rgba(255,255,255,0.07)":"rgba(255,255,255,0.025)",boxShadow:on?`0 0 5px ${pc}50`:"none",transition:"background 0.06s",outline:col%4===0?"1px solid rgba(255,255,255,0.03)":"none" }} />;
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Transport */}
+      <div style={{ display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.875rem" }}>
+        <button onClick={()=>setPlaying(p=>!p)} style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",border:"none",background:playing?"rgba(242,107,107,0.12)":"rgba(20,241,149,0.12)",border:`1px solid ${playing?"rgba(242,107,107,0.28)":"rgba(20,241,149,0.28)"}`,color:playing?"#f26b6b":"#14F195",fontWeight:800,fontSize:"0.68rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",minWidth:"68px" }}>{playing?"■ STOP":"▶ PLAY"}</button>
+        <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace",flex:1,textAlign:"center" }}>{activePads} tracks · {bpm} BPM · {genre}{playing&&<span style={{ color:"#14F195",marginLeft:"0.4rem",animation:"pulse 0.5s ease-in-out infinite" }}>●</span>}</span>
+        <button onClick={()=>setGrid(PADS.map(()=>Array(16).fill(false)))} style={{ padding:"0.3rem 0.5rem",borderRadius:"5px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.22)",fontSize:"0.48rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>CLEAR</button>
+      </div>
+      {/* Mint */}
+      {!minted?(
+        <div style={{ background:"rgba(6,8,16,0.97)",border:"1px solid rgba(242,107,107,0.18)",borderRadius:"12px",padding:"1rem" }}>
+          <div style={{ fontSize:"0.5rem",fontWeight:700,color:"#f26b6b",marginBottom:"0.4rem",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em" }}>Tokenize This Beat</div>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Track name (e.g. Sovereign Sessions Vol.1)" style={{ width:"100%",padding:"0.42rem 0.6rem",borderRadius:"7px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"#f0f0f0",fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",outline:"none",boxSizing:"border-box",marginBottom:"0.5rem" }} onFocus={e=>{e.currentTarget.style.borderColor="rgba(242,107,107,0.4)";}} onBlur={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";}} />
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.4rem",marginBottom:"0.5rem" }}>
+            {[["Royalty Split","70% creator · 20% protocol · 10% buyback"],["Distribution","TuneCore · Distro+ · Solana chain"],["Lending","Borrow USDC via Loopscale"],["Arena","Agent battle theme"]].map(([k,v])=>(
+              <div key={k} style={{ padding:"0.3rem 0.45rem",background:"rgba(242,107,107,0.04)",border:"1px solid rgba(242,107,107,0.1)",borderRadius:"6px" }}>
+                <div style={{ fontSize:"0.4rem",fontWeight:700,color:"rgba(242,107,107,0.65)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",marginBottom:"0.1rem" }}>{k}</div>
+                <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.35)" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <button onClick={mintBeat} disabled={!name||activePads<2} style={{ width:"100%",padding:"0.6rem",borderRadius:"8px",border:"none",fontWeight:900,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",cursor:name&&activePads>=2?"pointer":"not-allowed",background:name&&activePads>=2?"linear-gradient(135deg,#f26b6b,#FBBF24)":"rgba(255,255,255,0.04)",color:name&&activePads>=2?"#000":"rgba(255,255,255,0.18)",boxShadow:name&&activePads>=2?"0 0 20px rgba(242,107,107,0.3)":"none" }}>
+            {name&&activePads>=2?"Mint Beat as RWA NFT · +200 $ABRA →":!name?"Enter track name":"Add tracks to sequence"}
+          </button>
+        </div>
+      ):(
+        <div style={{ background:"rgba(20,241,149,0.05)",border:"1px solid rgba(20,241,149,0.22)",borderRadius:"12px",padding:"1.25rem",textAlign:"center" }}>
+          <div style={{ fontWeight:900,fontSize:"1rem",color:"#14F195",marginBottom:"0.35rem" }}>Beat Tokenized</div>
+          <p style={{ fontSize:"0.54rem",color:"rgba(255,255,255,0.35)",margin:"0 0 1rem" }}>"{name}" is live as a Token-2022 RWA. Royalties flow to your $ABRA vault automatically.</p>
+          <div style={{ display:"flex",gap:"0.4rem",justifyContent:"center",flexWrap:"wrap" }}>
+            <a href="https://www.tunecore.com" target="_blank" rel="noopener noreferrer" style={{ padding:"0.38rem 0.875rem",borderRadius:"6px",background:"rgba(242,107,107,0.1)",border:"1px solid rgba(242,107,107,0.22)",color:"#f26b6b",fontSize:"0.58rem",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>TuneCore →</a>
+            <a href="https://distrokid.com" target="_blank" rel="noopener noreferrer" style={{ padding:"0.38rem 0.875rem",borderRadius:"6px",background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.18)",color:"#FBBF24",fontSize:"0.58rem",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>DistroKid →</a>
+            <a href="/protect" style={{ padding:"0.38rem 0.875rem",borderRadius:"6px",background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.18)",color:"#14F195",fontSize:"0.58rem",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Vault $ABRA →</a>
+            <button onClick={()=>{setMinted(false);setName("");setGrid(PADS.map(()=>Array(16).fill(false)));}} style={{ padding:"0.38rem 0.875rem",borderRadius:"6px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.32)",fontSize:"0.58rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>New Beat</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Game Modes Hub — Billion-Dollar Styling ──────────────────────────────────
 const ABRA_PRICE_USD = 0.032; // mock May 2026 price
 const MIN_USD_VALUE  = 50;    // $50 min to enter paid modes
 const MIN_ABRA       = Math.ceil(MIN_USD_VALUE / ABRA_PRICE_USD); // ~1563 tokens
 
 export function GameModesHub({ assets }:{ assets:GameAsset[] }) {
-  const [mode,      setMode]      = useState<"hub"|"claw"|"chase"|"brain"|"leaderboard">("hub");
+  const [mode,      setMode]      = useState<"hub"|"claw"|"chase"|"brain"|"leaderboard"|"circuit_studio">("hub");
   const [totalAbra, setTotalAbra] = useState(0);
   const [totalWins, setTotalWins] = useState(0);
   const [session,   setSession]   = useState(0);
@@ -674,6 +789,13 @@ export function GameModesHub({ assets }:{ assets:GameAsset[] }) {
       sub:"Global ELO rankings · Season 1 · Prize distributions",
       detail:"Every Arena battle, gacha pull, and brain game feeds your ELO. Sovereign rank holders receive protocol fee distributions in $ABRA.",
       reward:"Season prizes",
+    },
+    {
+      id:"circuit_studio", color:"#f26b6b", minAbra:0,
+      title:"Circuit Studio",
+      sub:"Tokenize original beats · Sell on TuneCore/Distro · Earn $ABRA",
+      detail:"Create or upload original music. Tokenize as a Token-2022 RWA on Solana. Use as Arena battle music, agent themes, or sell commercially. Royalties flow to your $ABRA vault.",
+      reward:"Royalty income",
     },
   ] as const;
 
@@ -804,7 +926,8 @@ export function GameModesHub({ assets }:{ assets:GameAsset[] }) {
       {mode==="claw"        &&<AbraxClaw    assets={assets}      onEarn={earn} />}
       {mode==="chase"       &&<ChaseMarkets assets={assets}      onEarn={earn} />}
       {mode==="brain"       &&<BrainGames                        onEarn={earn} />}
-      {mode==="leaderboard" &&<Leaderboard  abraEarned={totalAbra} wins={totalWins} />}
+      {mode==="leaderboard"    &&<Leaderboard  abraEarned={totalAbra} wins={totalWins} />}
+      {mode==="circuit_studio"  &&<CircuitStudio onEarn={earn} />}
 
       {/* $ABRA Utility — earn/spend/stake/burn */}
       {mode==="hub"&&(
