@@ -366,7 +366,7 @@ const FEED_EVENTS = [
   { type:"borrow",  user:"HeFq…wZq5", msg:"borrowed 7,150 USDC against",           asset:"Rolex Submariner", val:7150,   color:"#14F195", time:112 },
   { type:"battle",  user:"8bBx…pf58", msg:"deployed Charizard 1999 and won",       asset:"1999 Charizard",   val:550,    color:"#FF6B35", time:134 },
   { type:"stake",   user:"CmWV…tdDk", msg:"staked 5,000 $ABRA at 25% APY",        asset:"",                 val:5000,   color:"#C8A96E", time:156 },
-  { type:"market",  user:"",          msg:"Solana RWA TVL crosses $2.2B · +41% YTD","",                     val:0,      color:"#9945FF", time:189 },
+  { type:"market",  user:"",          msg:"Solana RWA TVL crosses $2.2B · +41% YTD",  asset:"",              val:0,      color:"#9945FF", time:189 },
   { type:"pull",    user:"7xA3…mK9f", msg:"pulled Rare Holo",                      asset:"Blanton's 1990",   val:550,    color:"#6b8cff", time:201 },
   { type:"battle",  user:"Db6R…xQ2p", msg:"entered Prize Pool with",               asset:"Flightline 2019",  val:180000, color:"#22c55e", time:224 },
   { type:"market",  user:"",          msg:"Gold hits $4,733/oz · +0.4%",           asset:"",                 val:0,      color:"#D4AF37", time:247 },
@@ -742,9 +742,12 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
                 </button>
                 <span style={{ fontSize:"0.48rem",color:pink?"#f26b6b":"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace" }}>Pink Slips {pink?"ON":"OFF"}</span>
               </div>
-              <button onClick={launchMatch} disabled={sel3.length!==3} style={{ padding:"0.45rem 0.875rem",borderRadius:"7px",border:"none",fontWeight:800,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em",cursor:sel3.length===3?"pointer":"not-allowed",background:sel3.length===3?"linear-gradient(135deg,#D4AF37,#FF6B35)":"rgba(255,255,255,0.05)",color:sel3.length===3?"#000":"rgba(255,255,255,0.18)",boxShadow:sel3.length===3?"0 0 18px rgba(212,175,55,0.3)":"none" }}>
-                {sel3.length===3?"Enter Arena →":`Select ${3-sel3.length} more`}
-              </button>
+              <div style={{ display:"flex",flexDirection:"column",gap:"0.25rem" }}>
+                <button onClick={launchMatch} disabled={sel3.length!==3} style={{ padding:"0.55rem 1rem",borderRadius:"8px",border:"none",fontWeight:900,fontSize:"0.72rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em",cursor:sel3.length===3?"pointer":"not-allowed",background:sel3.length===3?"linear-gradient(135deg,#a855f7,#6b8cff)":"rgba(255,255,255,0.04)",color:sel3.length===3?"#fff":"rgba(255,255,255,0.15)",boxShadow:sel3.length===3?"0 0 24px rgba(168,85,247,0.4)":"none",transition:"all 0.2s",whiteSpace:"nowrap" }}>
+                  {sel3.length===3?"Enter Arena — Battle Now →":`Select ${3-sel3.length} more asset${3-sel3.length!==1?"s":""}…`}
+                </button>
+                {sel3.length===0&&<span style={{ fontSize:"0.42rem",color:"rgba(251,191,36,0.5)",fontFamily:"'JetBrains Mono',monospace",textAlign:"center" }}>First time? Pick 3 cards then hit Enter Arena</span>}
+              </div>
             </div>
           </div>
         </div>
@@ -931,6 +934,10 @@ export function TerminalArena() {
 
   return (
     <div>
+      {/* Win Toast */}
+      <div id="abra-win-toast" style={{ position:"fixed",top:"70px",left:"50%",transform:"translateX(-50%) translateY(-12px)",zIndex:9999,padding:"0.625rem 1.5rem",borderRadius:"10px",background:"linear-gradient(135deg,rgba(168,85,247,0.2),rgba(107,140,255,0.2))",border:"1px solid rgba(168,85,247,0.4)",color:"#f0f0f0",fontSize:"0.68rem",fontWeight:800,fontFamily:"'JetBrains Mono',monospace",opacity:0,transition:"opacity 0.3s,transform 0.3s",pointerEvents:"none",whiteSpace:"nowrap",backdropFilter:"blur(12px)",boxShadow:"0 0 30px rgba(168,85,247,0.3)" }}>
+        Sovereign Victory · $ABRA earned · Auto-staking to vault
+      </div>
       <style>{`
         @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
@@ -991,6 +998,28 @@ export function TerminalArena() {
               ))}
             </div>
           </div>
+          {/* ═══ HOW IT WORKS — Flywheel ═══ */}
+          <div style={{ marginBottom:"1.5rem",padding:"1.25rem 1.5rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"14px" }}>
+            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.4rem" }}>Protocol Flywheel</p>
+            <h3 style={{ fontWeight:800,fontSize:"0.88rem",color:"#f0f0f0",margin:"0 0 0.875rem",letterSpacing:"-0.01em" }}>How Abraxas Works — 4 Steps</h3>
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,200px),1fr))",gap:"0.625rem" }}>
+              {([
+                { n:"01",label:"Tokenize",  color:"#a855f7", desc:"Convert any physical asset to a Token-2022 position on Solana in under 2 minutes. Spirits, watches, comics, cards, metals." },
+                { n:"02",label:"Vault + Borrow", color:"#14F195",desc:"Deposit your token into an Abraxas vault. Borrow USDC instantly at 5.2% fixed APR via Loopscale Modular Vaults. LTV: 55–80%." },
+                { n:"03",label:"Battle + Earn",  color:"#FBBF24",desc:"Deploy your assets in the Sovereign Arena. Win battles, pull gacha, hit Chase Markets. Earn $ABRA on every action." },
+                { n:"04",label:"Compound",   color:"#C8A96E",desc:"$ABRA auto-stakes at 18–25% APY. Borrow against staked $ABRA at 50% LTV. Compound across every RWA class you hold." },
+              ] as const).map(s=>(
+                <div key={s.n} style={{ padding:"0.75rem",background:`${s.color}06`,border:`1px solid ${s.color}18`,borderRadius:"9px" }}>
+                  <div style={{ display:"flex",alignItems:"center",gap:"0.4rem",marginBottom:"0.35rem" }}>
+                    <span style={{ fontSize:"0.4rem",fontWeight:900,color:s.color,fontFamily:"'JetBrains Mono',monospace",opacity:0.5 }}>{s.n}</span>
+                    <span style={{ fontSize:"0.68rem",fontWeight:800,color:s.color,letterSpacing:"-0.01em" }}>{s.label}</span>
+                  </div>
+                  <p style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.42)",lineHeight:1.65,margin:0 }}>{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <StockPanel assets={assets} />
           <MetalsStrip assets={assets} />
           <LiveActivityFeed />
