@@ -694,7 +694,7 @@ function CircuitStudio({ onEarn }:{ onEarn:(n:number)=>void }) {
       </div>
       {/* Transport */}
       <div style={{ display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.875rem" }}>
-        <button onClick={()=>setPlaying(p=>!p)} style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",border:"none",background:playing?"rgba(242,107,107,0.12)":"rgba(20,241,149,0.12)",border:`1px solid ${playing?"rgba(242,107,107,0.28)":"rgba(20,241,149,0.28)"}`,color:playing?"#f26b6b":"#14F195",fontWeight:800,fontSize:"0.68rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",minWidth:"68px" }}>{playing?"■ STOP":"▶ PLAY"}</button>
+        <button onClick={()=>setPlaying(p=>!p)} style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",border:`1px solid ${playing?"rgba(242,107,107,0.28)":"rgba(20,241,149,0.28)"}`,background:playing?"rgba(242,107,107,0.12)":"rgba(20,241,149,0.12)",color:playing?"#f26b6b":"#14F195",fontWeight:800,fontSize:"0.68rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",minWidth:"68px" }}>{playing?"■ STOP":"▶ PLAY"}</button>
         <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace",flex:1,textAlign:"center" }}>{activePads} tracks · {bpm} BPM · {genre}{playing&&<span style={{ color:"#14F195",marginLeft:"0.4rem",animation:"pulse 0.5s ease-in-out infinite" }}>●</span>}</span>
         <button onClick={()=>setGrid(PADS.map(()=>Array(16).fill(false)))} style={{ padding:"0.3rem 0.5rem",borderRadius:"5px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.22)",fontSize:"0.48rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>CLEAR</button>
       </div>

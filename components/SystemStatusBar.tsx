@@ -13,12 +13,12 @@ const STATE_COLORS = {
 };
 
 const RWA_TICKERS = [
-  "RWA Mkt Cap $18.4B  +3.2% · ",
-  "Stablecoin Supply $240B · Tether $141B · USDC $61B · ",
-  "Tokenized T-Bills AUM $3.1B  +12% MoM · ",
-  "Centrifuge TVL $642M · Maple $385M · Goldfinch $124M · ",
-  "BlackRock BUIDL $520M · Franklin OnChain $420M · ",
-  "Solana RWA TVL $2.2B  +41% YTD · ",
+  "RWA on-chain market cap $18.4B  +3.2% — real assets, real liquidity · ",
+  "Tokenized T-Bills AUM $3.1B  +12% MoM · BlackRock BUIDL $520M · Franklin OnChain $420M · ",
+  "Stablecoin supply $240B · Tether $141B · USDC $61B — settlement infrastructure growing · ",
+  "Solana RWA TVL $2.2B  +41% YTD · Loopscale Modular Vaults live · Abraxas Protocol active · ",
+  "Tokenized gold volume +8% WoW · Silver +3% · Physical asset demand on-chain rising · ",
+  "Collector market Q1 2026: $840M PSA card volume · Baxus spirits activity +31% · Courtyard watches +18% · ",
 ];
 
 export function SystemStatusBar() {
@@ -46,7 +46,7 @@ export function SystemStatusBar() {
       <div style={{ display:"flex", alignItems:"center", gap:"0.35rem", flexShrink:0 }}>
         <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:c.text,animation:pulse?"pulse 1.2s ease-in-out infinite":"none" }} />
         <span style={{ fontSize:"0.52rem",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:c.text,fontFamily:"'JetBrains Mono',monospace" }}>
-          CIRCUIT {state}
+          PROTOCOL ACTIVE
         </span>
       </div>
 

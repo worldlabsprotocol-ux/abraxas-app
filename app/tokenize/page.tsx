@@ -109,13 +109,19 @@ export default function TokenizePage() {
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}} @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* Header */}
-      <div style={{ marginBottom:"1.5rem" }}>
-        <p style={{ fontSize:"0.5rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.2rem" }}>
-          Abraxas Protocol · Token-2022 · Solana
+      <div style={{ marginBottom:"1.75rem",padding:"1.5rem 1.75rem",background:"linear-gradient(145deg,rgba(6,8,16,0.99),rgba(200,169,110,0.06) 50%,rgba(6,8,16,0.99))",border:"1px solid rgba(200,169,110,0.18)",borderRadius:"14px",position:"relative",overflow:"hidden" }}>
+        <div style={{ position:"absolute",top:"-30%",right:"-5%",width:"200px",height:"200px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.07) 0%,transparent 65%)",pointerEvents:"none" }} />
+        <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.4rem" }}>
+          Abraxas Protocol · Token-2022 · Solana Mainnet
         </p>
-        <h1 style={{ fontWeight:900,fontSize:"clamp(1.2rem,3vw,1.6rem)",letterSpacing:"-0.02em",margin:"0 0 0.4rem" }}>Tokenize Your Asset</h1>
-        <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.4)",margin:0,lineHeight:1.65 }}>
-          Convert a real-world asset into a Token-2022 position on Solana — then vault it, borrow against it, earn yield, or deploy it in the Arena.
+        <h1 style={{ fontWeight:900,fontSize:"clamp(1.3rem,3.5vw,2rem)",letterSpacing:"-0.03em",margin:"0 0 0.5rem",lineHeight:1.05 }}>
+          <span style={{ background:"linear-gradient(135deg,#C8A96E,#FBBF24,#f0f0f0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Tokenize Your Asset.<br/>Own the Future Standard.</span>
+        </h1>
+        <p style={{ fontSize:"0.62rem",color:"rgba(255,255,255,0.45)",margin:"0 0 0.4rem",lineHeight:1.7,maxWidth:"480px" }}>
+          Physical assets tokenized as Token-2022 positions on Solana. Instantly borrow USDC via Loopscale. Earn yield. Deploy in the Arena. This is how assets will be owned in 5 years.
+        </p>
+        <p style={{ fontSize:"0.52rem",color:"rgba(200,169,110,0.45)",margin:0,fontFamily:"'JetBrains Mono',monospace",lineHeight:1.6 }}>
+          Custody: Baxus · Courtyard · Collector Crypt · Metropolis · LBMA &nbsp;|&nbsp; Verification: PSA · CGC · LBMA · The Jockey Club
         </p>
       </div>
 

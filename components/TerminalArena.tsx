@@ -1021,21 +1021,73 @@ export function TerminalArena() {
       </div>
       {mainTab==="terminal"&&(
         <div style={{ padding:"0.875rem 1.25rem 1.25rem" }}>
-          {/* Slim Buy $ABRA + OpenSea header */}
-          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem",flexWrap:"wrap",gap:"0.5rem" }}>
-            <div>
-              <div style={{ fontSize:"0.42rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.15rem" }}>
-                World Labs Protocol · Solana
-              </div>
-              <h2 style={{ fontWeight:900,fontSize:"clamp(1.1rem,3vw,1.5rem)",letterSpacing:"-0.03em",margin:0,lineHeight:1.1 }}>
-                <span style={{ background:"linear-gradient(135deg,#C8A96E,#FBBF24,#f0f0f0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>The OpenSea of RWAs</span>
-              </h2>
+          {/* ══════════════════════════════════════════════════
+              SOVEREIGN HERO — Tokenization First, Vision Second
+              ══════════════════════════════════════════════════ */}
+          <div style={{ position:"relative",overflow:"hidden",borderRadius:"16px",padding:"2rem 1.75rem",marginBottom:"1.25rem",background:"linear-gradient(145deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.07) 50%,rgba(6,8,16,0.99) 100%)",border:"1px solid rgba(200,169,110,0.18)" }}>
+            <div style={{ position:"absolute",top:"-20%",right:"-5%",width:"250px",height:"250px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.08) 0%,transparent 65%)",pointerEvents:"none" }} />
+
+            {/* Protocol tag */}
+            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.35rem",padding:"0.18rem 0.625rem",borderRadius:"20px",background:"rgba(200,169,110,0.07)",border:"1px solid rgba(200,169,110,0.18)",marginBottom:"0.875rem" }}>
+              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 2s ease-in-out infinite" }} />
+              <span style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(200,169,110,0.65)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana Mainnet · Live</span>
             </div>
-            <div style={{ display:"flex",gap:"0.4rem",flexWrap:"wrap",alignItems:"center" }}>
-              <a href="/tokenize" style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",background:"rgba(168,85,247,0.1)",border:"1px solid rgba(168,85,247,0.25)",color:"#a855f7",fontWeight:700,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Tokenize</a>
-              <a href="/protect" style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.2)",color:"#14F195",fontWeight:700,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Borrow</a>
-              <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.4rem 0.875rem",borderRadius:"7px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em" }}>Buy $ABRA</a>
+
+            {/* Primary headline — tokenization first */}
+            <h1 style={{ fontWeight:900,fontSize:"clamp(1.4rem,4vw,2.2rem)",letterSpacing:"-0.035em",margin:"0 0 0.625rem",lineHeight:1.05,maxWidth:"600px" }}>
+              <span style={{ background:"linear-gradient(135deg,#C8A96E 0%,#FBBF24 45%,#f0f0f0 85%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>
+                Tokenize Your Real Assets.<br/>Own the Future Standard.
+              </span>
+            </h1>
+
+            {/* Vision sub-headline */}
+            <p style={{ fontSize:"0.66rem",color:"rgba(255,255,255,0.52)",margin:"0 0 0.35rem",maxWidth:"520px",lineHeight:1.7,fontWeight:400 }}>
+              Physical assets — spirits, watches, comics, racehorses, graded cards — tokenized as Token-2022 positions on Solana. Instantly borrowable. Permanently liquid. Arena-playable.
+            </p>
+            <p style={{ fontSize:"0.56rem",color:"rgba(200,169,110,0.5)",margin:"0 0 1.5rem",maxWidth:"480px",lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace" }}>
+              This is how physical assets will be owned in 5 years. Tokenize today to be positioned before it becomes the standard.
+            </p>
+
+            {/* Primary CTA — Tokenize dominant */}
+            <div style={{ display:"flex",gap:"0.625rem",flexWrap:"wrap",alignItems:"center",marginBottom:"1.5rem" }}>
+              <a href="/tokenize" style={{ padding:"0.75rem 1.75rem",borderRadius:"9px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.72rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 24px rgba(212,175,55,0.35)",flexShrink:0 }}>
+                Tokenize Your Asset →
+              </a>
+              <a href="/protect" style={{ padding:"0.7rem 1.25rem",borderRadius:"9px",background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.22)",color:"#14F195",fontWeight:700,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>
+                Borrow USDC
+              </a>
+              <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.7rem 1.25rem",borderRadius:"9px",background:"rgba(200,169,110,0.06)",border:"1px solid rgba(200,169,110,0.2)",color:"#C8A96E",fontWeight:700,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>
+                Buy $ABRA
+              </a>
             </div>
+
+            {/* Trust + legitimacy row */}
+            <div style={{ display:"flex",gap:"1.25rem",paddingTop:"1rem",borderTop:"1px solid rgba(255,255,255,0.05)",flexWrap:"wrap" }}>
+              {[
+                ["Custody",      "Baxus · Courtyard · Collector Crypt"],
+                ["Verification", "CGC · PSA · LBMA · The Jockey Club"],
+                ["Liquidity",    "Loopscale Modular Vaults · 5.2% APR"],
+                ["Protocol",     "Token-2022 · Solana Mainnet · Abraxas"],
+              ].map(([k,v])=>(
+                <div key={k}>
+                  <div style={{ fontSize:"0.42rem",fontWeight:700,color:"rgba(200,169,110,0.55)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"1px" }}>{k}</div>
+                  <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.35)" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Gaming context strip — repositioned as utility, not core */}
+          <div style={{ padding:"0.5rem 0.875rem",marginBottom:"1rem",background:"rgba(168,85,247,0.04)",border:"1px solid rgba(168,85,247,0.1)",borderRadius:"8px",display:"flex",alignItems:"center",gap:"0.625rem",flexWrap:"wrap" }}>
+            <span style={{ fontSize:"0.48rem",fontWeight:700,color:"rgba(168,85,247,0.7)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase",flexShrink:0 }}>Asset Utility</span>
+            <span style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.35)",lineHeight:1.5 }}>
+              Tokenized assets can be played in the Sovereign Arena, used in prediction markets, and staked for $ABRA yield — while continuing to appreciate in custody.
+            </span>
+            <button onClick={()=>{
+              if(typeof window!=="undefined") window.dispatchEvent(new CustomEvent("abraxas-tab",{detail:"game_modes"}));
+            }} style={{ marginLeft:"auto",padding:"0.3rem 0.625rem",borderRadius:"5px",background:"rgba(168,85,247,0.1)",border:"1px solid rgba(168,85,247,0.2)",color:"#a855f7",fontSize:"0.5rem",fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",flexShrink:0 }}>
+              Explore Games →
+            </button>
           </div>
           <StockPanel assets={assets} />
           <MetalsStrip assets={assets} />

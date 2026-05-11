@@ -260,6 +260,19 @@ export default function VaultsPage() {
       </div>
 
       {/* ★ LOOPSCALE HERO — top of page */}
+      {/* Sovereign Bank Vision Banner */}
+      <div style={{ padding:"0.875rem 1.25rem",marginBottom:"1rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(200,169,110,0.14)",borderRadius:"10px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"1rem",flexWrap:"wrap" }}>
+        <div>
+          <div style={{ fontSize:"0.44rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.2rem" }}>Abraxas Vault Terminal · Sovereign Finance</div>
+          <div style={{ fontWeight:900,fontSize:"0.92rem",color:"#f0f0f0",letterSpacing:"-0.01em" }}>Your Assets. Your Rules. Your Liquidity.</div>
+          <div style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.35)",marginTop:"0.2rem",maxWidth:"400px",lineHeight:1.6 }}>
+            Tokenized RWAs held in verified custody. Borrow USDC instantly without selling. Earn $ABRA yield. The sovereign banking experience for physical asset owners.
+          </div>
+        </div>
+        <a href="/tokenize" style={{ padding:"0.5rem 1.125rem",borderRadius:"8px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",flexShrink:0,alignSelf:"center" }}>
+          Tokenize First →
+        </a>
+      </div>
       <LoopscaleHero />
 
       {/* $ABRA Vault — sovereign staking */}
