@@ -15,6 +15,7 @@ import { MarketsLayer } from "@/components/MarketsLayer";
 import { GlobalMarketBar } from "@/components/GlobalMarketBar";
 import { AIConvictionBadge } from "@/components/AIConviction";
 import { IssuanceEngine } from "@/components/IssuanceEngine";
+import { StudioLanding } from "@/components/StudioLanding";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArenaAsset {
@@ -971,7 +972,8 @@ export function TerminalArena() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string|null>(null);
   // 3-layer architecture: Capital (assets/borrow) | Arena (games/strategy) | Studio (tokenize/create)
-  const [mainTab, setMainTab] = useState("studio");
+  const [mainTab,     setMainTab]     = useState("studio");
+  const [studioClass, setStudioClass] = useState<string|null>(null);
   const arenaRef = useRef<HTMLDivElement>(null);
 
   // Listen for BottomNav tab dispatch events
@@ -1057,6 +1059,20 @@ export function TerminalArena() {
         </div>
       )}
 
+      {mainTab==="studio"&&(
+        <div style={{ padding:"1.25rem 1.25rem 5rem" }}>
+          {studioClass===null?(
+            <StudioLanding onSelect={(cls)=>setStudioClass(cls)} />
+          ):(
+            <div>
+              <button onClick={()=>setStudioClass(null)} style={{ marginBottom:"1.25rem",display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.32rem 0.7rem",borderRadius:"6px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.35)",fontSize:"0.54rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+                ← Back to Studio
+              </button>
+              <IssuanceEngine />
+            </div>
+          )}
+        </div>
+      )}
       {mainTab==="arena"&&(
         <div style={{ padding:"1.25rem" }}>
           <GameModesHub assets={assets} />
