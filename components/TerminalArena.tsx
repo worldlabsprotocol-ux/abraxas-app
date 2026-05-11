@@ -181,11 +181,30 @@ function AssetImage({ asset, height=150 }:{ asset:ArenaAsset; height?:number }) 
     </div>
   );
 
+  const CAT_SVG: Record<string,string> = {
+    Pokemon:"⬡",Spirits:"◈","One Piece":"◉",Comics:"◫",
+    Metals:"◆",Stocks:"▲",Watches:"◎",Sports:"◉",Racehorses:"◈",
+  };
+  const catIcon = CAT_SVG[asset.category]??"⬡";
+
   if(!asset.imagePath||err) return (
-    <div style={{ height,background:`linear-gradient(135deg,${catColor}12,rgba(6,8,16,0.98))`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.3rem",padding:"0.5rem" }}>
-      <span style={{ fontSize:"0.5rem",fontWeight:700,color:catColor,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace",textAlign:"center" }}>{asset.category}</span>
-      <span style={{ fontSize:"0.68rem",fontWeight:800,color:"#f0f0f0",textAlign:"center",lineHeight:1.25,padding:"0 0.25rem" }}>{asset.name}</span>
-      <span style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.38)",fontFamily:"'JetBrains Mono',monospace" }}>{asset.grade}</span>
+    <div style={{ height,background:`linear-gradient(145deg,${catColor}10 0%,rgba(6,8,16,0.99) 60%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.25rem",padding:"0.75rem",position:"relative",overflow:"hidden" }}>
+      {/* Subtle rune grid background */}
+      <div style={{ position:"absolute",inset:0,opacity:0.04,fontSize:"1.8rem",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:"0.5rem",letterSpacing:"0.2em",color:catColor,userSelect:"none",pointerEvents:"none" }}>
+        {Array.from({length:12}).map((_,i)=><span key={i}>{catIcon}</span>)}
+      </div>
+      {/* Category badge */}
+      <div style={{ padding:"0.1rem 0.4rem",borderRadius:"3px",background:`${catColor}18`,border:`1px solid ${catColor}30`,marginBottom:"0.1rem" }}>
+        <span style={{ fontSize:"0.42rem",fontWeight:800,color:catColor,letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>{asset.category}</span>
+      </div>
+      {/* Large icon */}
+      <div style={{ fontSize:"2rem",color:catColor,opacity:0.6,lineHeight:1,textShadow:`0 0 20px ${catColor}` }}>{catIcon}</div>
+      {/* Asset name */}
+      <span style={{ fontSize:"0.64rem",fontWeight:900,color:"#f0f0f0",textAlign:"center",lineHeight:1.3,padding:"0 0.25rem",maxWidth:"90%" }}>{asset.name}</span>
+      {/* Grade */}
+      <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.35)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.06em" }}>{asset.grade}</span>
+      {/* Glow line bottom */}
+      <div style={{ position:"absolute",bottom:0,left:0,right:0,height:"2px",background:`linear-gradient(90deg,transparent,${catColor}60,transparent)` }} />
     </div>
   );
 
@@ -212,7 +231,8 @@ function getAcquireUrl(asset: ArenaAsset): string {
 function ArenaCard({ asset, selected, owner, onSelect, compact }:{
   asset:ArenaAsset; selected?:boolean; owner?:Owner; onSelect?:(a:ArenaAsset)=>void; compact?:boolean;
 }) {
-  const imgH=compact?90:160;
+  const imgH=compact?90:150;
+  const isHorse = asset.category==="Racehorses";
   const catColor=CAT_COLOR[asset.category]??"#6b8cff";
   const archColor=asset.archetype_color??catColor;
   const borderColor=owner==="player"?"#14F195":owner==="agent"?"#f26b6b":selected?"#D4AF37":`${catColor}30`;
@@ -237,6 +257,12 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
       <AssetImage asset={asset} height={imgH} />
 
       <div style={{ padding:"0.45rem 0.5rem" }}>
+        {/* Category label */}
+        <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.2rem",flexWrap:"wrap" }}>
+          <span style={{ fontSize:"0.38rem",fontWeight:800,padding:"0.05rem 0.28rem",borderRadius:"3px",background:`${CAT_COLOR[asset.category]??"#6b8cff"}18`,border:`1px solid ${CAT_COLOR[asset.category]??"#6b8cff"}30`,color:CAT_COLOR[asset.category]??"#6b8cff",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",textTransform:"uppercase" }}>{asset.category}</span>
+          {isHorse&&(asset as any).race_record&&<span style={{ fontSize:"0.36rem",color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",fontWeight:700 }}>{(asset as any).race_record}</span>}
+          {isHorse&&(asset as any).fractional_shares&&<span style={{ fontSize:"0.36rem",color:"rgba(34,197,94,0.7)",fontFamily:"'JetBrains Mono',monospace" }}>Frac. Shares</span>}
+        </div>
         <div style={{ fontWeight:800,fontSize:"0.72rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"1px" }}>{asset.name}</div>
 
         {/* Category + archetype + buff — no ATK/DEF/SPD on card face */}
@@ -448,6 +474,7 @@ function BoardCell({ cell, idx, canPlace, onPlace }:{ cell:Cell; idx:number; can
 // ─── Sovereign Arena engine ───────────────────────────────────────────────────
 function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:React.RefObject<HTMLDivElement> }) {
   const [filter,      setFilter]      = useState("all");
+  const [cols,        setCols]        = useState(2);
   const [sel3,        setSel3]        = useState<string[]>([]);
   const [agent,       setAgent]       = useState<typeof AGENTS[number]>(AGENTS[0]);
   const [wager,       setWager]       = useState(0.5);
@@ -748,8 +775,17 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
         </div>
       )}
 
-      {/* Card grid — 2 wide default */}
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,220px),1fr))",gap:"0.75rem" }}>
+      {/* Card grid — 2/3 col toggle */}
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"0.5rem" }}>
+        <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace" }}>
+          {shown.length} assets · {filter==="all"?"All Categories":filter}
+        </div>
+        <div style={{ display:"flex",gap:"0.2rem" }}>
+          <button onClick={()=>setCols(2)} style={{ padding:"0.18rem 0.4rem",borderRadius:"3px",border:`1px solid ${cols===2?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.07)"}`,background:cols===2?"rgba(255,255,255,0.07)":"transparent",color:cols===2?"#f0f0f0":"rgba(255,255,255,0.28)",fontSize:"0.48rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>⊟⊟</button>
+          <button onClick={()=>setCols(3)} style={{ padding:"0.18rem 0.4rem",borderRadius:"3px",border:`1px solid ${cols===3?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.07)"}`,background:cols===3?"rgba(255,255,255,0.07)":"transparent",color:cols===3?"#f0f0f0":"rgba(255,255,255,0.28)",fontSize:"0.48rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>⊟⊟⊟</button>
+        </div>
+      </div>
+      <div style={{ display:"grid",gridTemplateColumns:`repeat(${cols},minmax(0,1fr))`,gap:"0.6rem" }}>
         {shown.map(a=>(
           <ArenaCard key={a.id} asset={a}
             selected={sel3.includes(a.id)}
@@ -822,21 +858,46 @@ export function TerminalArena() {
       <SoldTape ticks={ticks} />
       <CommandBar onScrollToArena={()=>arenaRef.current?.scrollIntoView({behavior:"smooth"})} />
       {/* Main view tabs */}
-      <div style={{ display:"flex", gap:"0", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.9)", padding:"0 1.25rem" }}>
-        {[["terminal","Terminal","#f0f0f0"],["game_modes","Game Modes","#FBBF24"]].map(([id,label,color])=>(
-          <button key={id} onClick={()=>setMainTab(id)} style={{ padding:"0.5rem 0.875rem", border:"none", borderBottom:mainTab===id?`2px solid ${color}`:"2px solid transparent", background:"transparent", color:mainTab===id?color:"rgba(255,255,255,0.32)", fontSize:"0.62rem", fontWeight:mainTab===id?700:400, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", marginBottom:"-1px" }}>
-            {label}
-          </button>
-        ))}
+      <div style={{ display:"flex", gap:"0.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.95)", padding:"0.5rem 1.25rem", alignItems:"center" }}>
+        <button onClick={()=>setMainTab("terminal")} style={{ padding:"0.5rem 1rem", borderRadius:"7px", border:`1px solid ${mainTab==="terminal"?"rgba(240,240,240,0.2)":"rgba(255,255,255,0.06)"}`, background:mainTab==="terminal"?"rgba(240,240,240,0.06)":"transparent", color:mainTab==="terminal"?"#f0f0f0":"rgba(255,255,255,0.32)", fontSize:"0.62rem", fontWeight:mainTab==="terminal"?700:400, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em" }}>
+          Terminal
+        </button>
+        <button onClick={()=>setMainTab("game_modes")} style={{ padding:"0.5rem 1.25rem", borderRadius:"7px", border:`1px solid ${mainTab==="game_modes"?"rgba(251,191,36,0.4)":"rgba(251,191,36,0.12)"}`, background:mainTab==="game_modes"?"rgba(251,191,36,0.1)":"rgba(251,191,36,0.04)", color:mainTab==="game_modes"?"#FBBF24":"rgba(251,191,36,0.55)", fontSize:"0.65rem", fontWeight:700, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", transition:"all 0.15s" }}>
+          Game Modes
+        </button>
       </div>
       {mainTab==="terminal"&&(
         <div style={{ padding:"1.25rem" }}>
+          {/* ──── SOVEREIGN HERO ──── */}
+          <div style={{ position:"relative",overflow:"hidden",borderRadius:"16px",padding:"1.75rem 1.5rem",marginBottom:"1.5rem",background:"linear-gradient(135deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.06) 50%,rgba(6,8,16,0.99) 100%)",border:"1px solid rgba(200,169,110,0.18)" }}>
+            <div style={{ position:"absolute",top:"-40%",right:"-10%",width:"280px",height:"280px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.07) 0%,transparent 70%)",pointerEvents:"none" }} />
+            <p style={{ fontSize:"0.46rem",letterSpacing:"0.25em",textTransform:"uppercase",color:"rgba(200,169,110,0.55)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.4rem" }}>World Labs Protocol · Solana · May 2026</p>
+            <h1 style={{ fontWeight:900,fontSize:"clamp(1.3rem,3.5vw,2rem)",letterSpacing:"-0.03em",margin:"0 0 0.5rem",lineHeight:1.1 }}>
+              <span style={{ background:"linear-gradient(135deg,#C8A96E,#FBBF24,#f0f0f0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>The OpenSea of RWAs</span>
+            </h1>
+            <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.42)",margin:"0 0 1rem",maxWidth:"500px",lineHeight:1.7 }}>
+              Vault real-world assets on Solana — borrow USDC instantly, battle in the Sovereign Arena, earn $ABRA. Tokenized spirits, watches, comics, racehorses &amp; collectibles.
+            </p>
+            <div style={{ display:"flex",gap:"0.5rem",flexWrap:"wrap",marginBottom:"1rem" }}>
+              <a href="/tokenize" style={{ padding:"0.5rem 1.1rem",borderRadius:"8px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em" }}>Tokenize Asset</a>
+              <a href="/protect" style={{ padding:"0.5rem 1.1rem",borderRadius:"8px",background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.22)",color:"#14F195",fontWeight:700,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Borrow USDC</a>
+              <button onClick={()=>setMainTab("game_modes")} style={{ padding:"0.5rem 1.1rem",borderRadius:"8px",background:"rgba(168,85,247,0.08)",border:"1px solid rgba(168,85,247,0.22)",color:"#a855f7",fontWeight:700,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Play Games</button>
+            </div>
+            <div style={{ display:"flex",gap:"1.25rem",flexWrap:"wrap" }}>
+              {[["104","RWA Assets"],["$20M+","Protocol Insured"],["5","Live Vault PDAs"],["5.2%","Fixed Borrow APR"]].map(([v,l])=>(
+                <div key={l}>
+                  <div style={{ fontSize:"0.88rem",fontWeight:900,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace" }}>{v}</div>
+                  <div style={{ fontSize:"0.4rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase" }}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
           <ProvenanceBanner />
           <TokenizeCTA />
           <StockPanel assets={assets} />
           <MetalsStrip assets={assets} />
           <RWACharts />
-        <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
+          <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
         </div>
       )}
       {mainTab==="game_modes"&&(

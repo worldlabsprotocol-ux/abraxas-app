@@ -6,26 +6,53 @@
 import { useState } from "react";
 
 // ─── Sparkline chart ──────────────────────────────────────────────────────────
-function Sparkline({ data, color, width=120, height=36 }:{ data:number[]; color:string; width?:number; height?:number }) {
+function Sparkline({ data, color, width=200, height=52, label, unit }:{ data:number[]; color:string; width?:number; height?:number; label?:string; unit?:string }) {
   const mn = Math.min(...data); const mx = Math.max(...data);
   const range = mx - mn || 1;
   const pts = data.map((v,i) => {
     const x = (i / (data.length-1)) * width;
-    const y = height - ((v-mn)/range) * height;
+    const y = (height-16) - ((v-mn)/range) * (height-16);
     return `${x},${y}`;
   }).join(" ");
-  const area = `0,${height} ${pts} ${width},${height}`;
+  const area = `0,${height-16} ${pts} ${width},${height-16}`;
+  const gradId = `g${color.replace('#','')}`;
+  const pctChange = ((data[data.length-1]-data[0])/data[0]*100).toFixed(1);
+  const isUp = data[data.length-1]>=data[0];
+  // X-axis time labels
+  const xLabels = ["10P ago","8P","6P","4P","2P","Now"];
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow:"visible" }}>
-      <defs>
-        <linearGradient id={`g${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.01" />
-        </linearGradient>
-      </defs>
-      <polygon points={area} fill={`url(#g${color.replace('#','')})`} />
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <div style={{ position:"relative" }}>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow:"visible",display:"block" }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+        {/* Grid lines */}
+        {[0,0.5,1].map(f=>(
+          <line key={f} x1={0} y1={(height-16)*f} x2={width} y2={(height-16)*f} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+        ))}
+        {/* Area fill */}
+        <polygon points={area} fill={`url(#${gradId})`} />
+        {/* Line */}
+        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Current value dot */}
+        {pts.split(" ").length>0&&(()=>{
+          const last=pts.split(" ").at(-1)??`${width},0`;
+          const [lx,ly]=last.split(",").map(Number);
+          return <circle cx={lx} cy={ly} r="3" fill={color} stroke="rgba(6,8,16,0.9)" strokeWidth="1.5" />;
+        })()}
+        {/* X-axis labels */}
+        {xLabels.map((l,i)=>(
+          <text key={l} x={(i/(xLabels.length-1))*width} y={height-1} textAnchor="middle" fill="rgba(255,255,255,0.18)" fontSize="5" fontFamily="JetBrains Mono">{l}</text>
+        ))}
+      </svg>
+      {/* Change badge */}
+      <div style={{ position:"absolute",top:2,right:2,fontSize:"0.38rem",fontWeight:700,color:isUp?"#14F195":"#f26b6b",fontFamily:"'JetBrains Mono',monospace",background:isUp?"rgba(20,241,149,0.08)":"rgba(242,107,107,0.08)",padding:"0.05rem 0.25rem",borderRadius:"3px",border:`1px solid ${isUp?"rgba(20,241,149,0.2)":"rgba(242,107,107,0.2)"}`}}>
+        {isUp?"+":""}{pctChange}%
+      </div>
+    </div>
   );
 }
 
@@ -86,14 +113,17 @@ export function RWACharts() {
   return (
     <div style={{ background:"rgba(6,8,16,0.97)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"14px", padding:"1.125rem", marginBottom:"1.5rem" }}>
       {/* Header + tabs */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.875rem", flexWrap:"wrap", gap:"0.5rem" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1rem", flexWrap:"wrap", gap:"0.5rem" }}>
         <div>
-          <div style={{ fontSize:"0.46rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.15rem" }}>Live Data · May 2026</div>
-          <div style={{ fontWeight:800, fontSize:"0.88rem", color:"#f0f0f0" }}>RWA Market Intelligence</div>
+          <div style={{ fontSize:"0.44rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.2rem" }}>Live Data · May 2026</div>
+          <div style={{ fontWeight:900, fontSize:"0.92rem", color:"#f0f0f0", letterSpacing:"-0.01em" }}>RWA Market Intelligence</div>
+          <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.28)",marginTop:"0.2rem",maxWidth:"340px",lineHeight:1.55 }}>
+            Charts show 10-period price history for each asset class. Green = up, red = down. RWA = any physical asset tokenized on blockchain.
+          </div>
         </div>
-        <div style={{ display:"flex", gap:"0.25rem" }}>
+        <div style={{ display:"flex", gap:"0.25rem",flexShrink:0 }}>
           {(["markets","news"] as const).map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{ padding:"0.25rem 0.625rem",borderRadius:"5px",border:`1px solid ${tab===t?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.07)"}`,background:tab===t?"rgba(255,255,255,0.08)":"transparent",color:tab===t?"#f0f0f0":"rgba(255,255,255,0.3)",fontSize:"0.54rem",fontWeight:tab===t?700:400,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",textTransform:"capitalize" }}>{t}</button>
+            <button key={t} onClick={()=>setTab(t)} style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",border:`1px solid ${tab===t?"rgba(255,255,255,0.22)":"rgba(255,255,255,0.07)"}`,background:tab===t?"rgba(255,255,255,0.08)":"transparent",color:tab===t?"#f0f0f0":"rgba(255,255,255,0.3)",fontSize:"0.56rem",fontWeight:tab===t?700:400,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>{t==="markets"?"Markets":"News"}</button>
           ))}
         </div>
       </div>
@@ -116,7 +146,7 @@ export function RWACharts() {
                   {m.unit==="$"?"$":""}{m.value.toLocaleString()}{m.unit!=="$"?` ${m.unit}`:""}
                 </span>
               </div>
-              <Sparkline data={m.data} color={m.color} width={200} height={40} />
+              <Sparkline data={m.data} color={m.color} width={200} height={52} label={m.label} unit={m.unit} />
               <div style={{ marginTop:"0.4rem",fontSize:"0.44rem",color:"rgba(255,255,255,0.22)",lineHeight:1.5 }}>{m.desc}</div>
             </div>
           ))}

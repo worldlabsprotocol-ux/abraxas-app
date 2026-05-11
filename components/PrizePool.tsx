@@ -133,16 +133,16 @@ export function PrizePool() {
         <PoolDonut winner={POOL_CONFIG.winnerPct} protocol={POOL_CONFIG.protocolPct} buyback={POOL_CONFIG.buybackPct} />
         <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
           {[
-            { label:"Winner Takes", pct:POOL_CONFIG.winnerPct, amt:winnerPrize,  color:"#14F195", desc:"Top vault by Arena score" },
-            { label:"Protocol",     pct:POOL_CONFIG.protocolPct, amt:protocolCut, color:"#6b8cff", desc:"Treasury · ops + growth" },
-            { label:"$ABRA Buyback",pct:POOL_CONFIG.buybackPct, amt:buybackCut,  color:"#C8A96E", desc:"Open market buyback" },
+            { label:"Winner Takes", pct:POOL_CONFIG.winnerPct,   color:"#14F195", desc:"Top vault by Arena ELO score at season end" },
+            { label:"Protocol Treasury", pct:POOL_CONFIG.protocolPct, color:"#6b8cff", desc:"Operations, development, ecosystem growth" },
+            { label:"$ABRA Buyback",pct:POOL_CONFIG.buybackPct,  color:"#C8A96E", desc:"Open market buyback → deflationary pressure" },
           ].map(s=>(
             <div key={s.label} style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
               <div style={{ width:"8px",height:"8px",borderRadius:"50%",background:s.color,flexShrink:0 }} />
               <div>
-                <span style={{ fontSize:"0.56rem",fontWeight:700,color:s.color,fontFamily:"'JetBrains Mono',monospace" }}>{s.pct}% · ${s.amt} USDC</span>
-                <span style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.28)",marginLeft:"0.4rem" }}>{s.label}</span>
-                <div style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace" }}>{s.desc}</div>
+                <span style={{ fontSize:"0.62rem",fontWeight:800,color:s.color,fontFamily:"'JetBrains Mono',monospace" }}>{s.pct}%</span>
+                <span style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.5)",marginLeft:"0.4rem",fontWeight:600 }}>{s.label}</span>
+                <div style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",marginTop:"1px" }}>{s.desc}</div>
               </div>
             </div>
           ))}
