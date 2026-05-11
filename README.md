@@ -1,7 +1,7 @@
 ABRAXAS
 The Sovereign Terminal for Tokenized Real-World Assets on Solana.
-[![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
 
+[![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
 
 [![Buy $ABRA](https://img.shields.io/badge/Buy_$ABRA_on_Jupiter-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
 
