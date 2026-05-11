@@ -246,7 +246,7 @@ function getAcquireUrl(asset: ArenaAsset): string {
 function ArenaCard({ asset, selected, owner, onSelect, compact }:{
   asset:ArenaAsset; selected?:boolean; owner?:Owner; onSelect?:(a:ArenaAsset)=>void; compact?:boolean;
 }) {
-  const imgH=compact?90:150;
+  const imgH=compact?56:68;  // Compact — density over imagery
   const isHorse = asset.category==="Racehorses";
   const catColor=CAT_COLOR[asset.category]??"#6b8cff";
   const archColor=asset.archetype_color??catColor;
@@ -282,13 +282,13 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
 
       <AssetImage asset={asset} height={imgH} />
 
-      <div style={{ padding:"0.45rem 0.5rem" }}>
+      <div style={{ padding:"0.35rem 0.45rem" }}>
         {/* Category badge — neon glow */}
         <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.3rem",flexWrap:"wrap" }}>
           <span style={{ fontSize:"0.44rem",fontWeight:900,padding:"0.12rem 0.4rem",borderRadius:"10px",background:`${catColor}18`,border:`1px solid ${catColor}45`,color:catColor,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase",boxShadow:`0 0 8px ${catColor}20` }}>{asset.category}</span>
           {isHorse&&(asset as any).race_record&&<span style={{ fontSize:"0.42rem",color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",fontWeight:700 }}>{(asset as any).race_record}</span>}
         </div>
-        <div style={{ fontWeight:900,fontSize:"0.78rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"2px",letterSpacing:"-0.01em" }}>{asset.name}</div>
+        <div style={{ fontWeight:800,fontSize:"0.66rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"1px",letterSpacing:"-0.01em" }}>{asset.name}</div>
 
         {/* Category + archetype + buff — no ATK/DEF/SPD on card face */}
         <div style={{ display:"flex",alignItems:"center",gap:"0.25rem",marginBottom:"0.3rem",flexWrap:"wrap" }}>
@@ -358,19 +358,21 @@ function CommandBar({ onScrollToArena }:{ onScrollToArena:()=>void }) {
   return (
     <div style={{ position:"sticky",top:"52px",zIndex:40,padding:"0.5rem 1.25rem",background:"rgba(2,3,10,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"0.5rem",flexWrap:"wrap" }}>
       <div style={{ display:"flex",gap:"0.4rem",alignItems:"center" }}>
-        <button onClick={onScrollToArena} style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",background:"linear-gradient(135deg,rgba(168,85,247,0.2),rgba(107,140,255,0.15))",border:"1px solid rgba(168,85,247,0.35)",color:"#a855f7",fontSize:"0.6rem",fontWeight:800,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
-          Enter Arena
-        </button>
-        <a href="/tokenize" style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",background:"rgba(107,140,255,0.1)",border:"1px solid rgba(107,140,255,0.25)",color:"#6b8cff",fontSize:"0.6rem",fontWeight:700,textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
+        <a href="/tokenize" style={{ padding:"0.3rem 0.875rem",borderRadius:"6px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontSize:"0.6rem",fontWeight:900,textDecoration:"none",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
           Tokenize Asset
         </a>
+        <button onClick={onScrollToArena} style={{ padding:"0.28rem 0.625rem",borderRadius:"6px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.28)",fontSize:"0.56rem",fontWeight:500,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+          Arena
+        </button>
       </div>
       <div style={{ display:"flex",gap:"0.875rem",alignItems:"center" }}>
-        {[["XAU","$4,733.39","#D4AF37"],["XAG","$72.91","#C0C0C0"],["NVDA","$211.48","#76B900"],["TSLA","$411.89","#CC0000"]].map(([l,v,c])=>(
+        {[["XAUt","$3,232","#D4AF37"],["SOL","$95.15","#9945FF"],["ABRA","$0.021","#C8A96E"]].map(([l,v,c])=>(
           <span key={l} style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace" }}>
             {l} <span style={{ color:c,fontWeight:700 }}>{v}</span>
           </span>
         ))}
+        <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 3s ease-in-out infinite" }} />
+        <span style={{ fontSize:"0.4rem",color:"rgba(255,255,255,0.15)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em" }}>PROTOCOL ACTIVE</span>
       </div>
     </div>
   );
@@ -1021,74 +1023,130 @@ export function TerminalArena() {
       </div>
       {mainTab==="terminal"&&(
         <div style={{ padding:"0.875rem 1.25rem 1.25rem" }}>
-          {/* ══════════════════════════════════════════════════
-              SOVEREIGN HERO — Tokenization First, Vision Second
-              ══════════════════════════════════════════════════ */}
-          <div style={{ position:"relative",overflow:"hidden",borderRadius:"16px",padding:"2rem 1.75rem",marginBottom:"1.25rem",background:"linear-gradient(145deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.07) 50%,rgba(6,8,16,0.99) 100%)",border:"1px solid rgba(200,169,110,0.18)" }}>
-            <div style={{ position:"absolute",top:"-20%",right:"-5%",width:"250px",height:"250px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.08) 0%,transparent 65%)",pointerEvents:"none" }} />
 
-            {/* Protocol tag */}
-            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.35rem",padding:"0.18rem 0.625rem",borderRadius:"20px",background:"rgba(200,169,110,0.07)",border:"1px solid rgba(200,169,110,0.18)",marginBottom:"0.875rem" }}>
-              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 2s ease-in-out infinite" }} />
-              <span style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(200,169,110,0.65)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana Mainnet · Live</span>
+          {/* ═══════════════════════════════════════════════
+              VISION HERO — "Eyes wide looking at the sky"
+              Future-focused, not feature-listing.
+              Tokenization IS the product. Games are bonus.
+              ═══════════════════════════════════════════════ */}
+          <div style={{ position:"relative",overflow:"hidden",borderRadius:"18px",padding:"2.25rem 2rem",marginBottom:"1rem",background:"linear-gradient(160deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.06) 35%,rgba(6,8,16,0.99) 70%,rgba(168,85,247,0.03) 100%)",border:"1px solid rgba(200,169,110,0.16)" }}>
+            <div style={{ position:"absolute",top:"-25%",right:"-8%",width:"340px",height:"340px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.07) 0%,transparent 60%)",pointerEvents:"none" }} />
+            <div style={{ position:"absolute",bottom:"-20%",left:"-3%",width:"220px",height:"220px",borderRadius:"50%",background:"radial-gradient(circle,rgba(168,85,247,0.05) 0%,transparent 65%)",pointerEvents:"none" }} />
+
+            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.35rem",padding:"0.18rem 0.625rem",borderRadius:"20px",background:"rgba(200,169,110,0.06)",border:"1px solid rgba(200,169,110,0.15)",marginBottom:"1rem" }}>
+              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 3s ease-in-out infinite" }} />
+              <span style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(200,169,110,0.6)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana · Building the Future Standard</span>
             </div>
 
-            {/* Primary headline — tokenization first */}
-            <h1 style={{ fontWeight:900,fontSize:"clamp(1.4rem,4vw,2.2rem)",letterSpacing:"-0.035em",margin:"0 0 0.625rem",lineHeight:1.05,maxWidth:"600px" }}>
-              <span style={{ background:"linear-gradient(135deg,#C8A96E 0%,#FBBF24 45%,#f0f0f0 85%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>
+            <h1 style={{ fontWeight:900,fontSize:"clamp(1.6rem,4.5vw,2.5rem)",letterSpacing:"-0.04em",margin:"0 0 0.75rem",lineHeight:1.02,maxWidth:"640px" }}>
+              <span style={{ background:"linear-gradient(135deg,#C8A96E 0%,#FBBF24 40%,#f0f0f0 80%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>
                 Tokenize Your Real Assets.<br/>Own the Future Standard.
               </span>
             </h1>
 
-            {/* Vision sub-headline */}
-            <p style={{ fontSize:"0.66rem",color:"rgba(255,255,255,0.52)",margin:"0 0 0.35rem",maxWidth:"520px",lineHeight:1.7,fontWeight:400 }}>
-              Physical assets — spirits, watches, comics, racehorses, graded cards — tokenized as Token-2022 positions on Solana. Instantly borrowable. Permanently liquid. Arena-playable.
+            <p style={{ fontSize:"0.7rem",color:"rgba(255,255,255,0.55)",margin:"0 0 0.5rem",maxWidth:"540px",lineHeight:1.75,fontWeight:400 }}>
+              Physical assets — rare spirits, luxury watches, graded comics, racehorses, PSA cards — will be tokenized, traded, and borrowed against as freely as stocks. That future is being built now, on Solana.
             </p>
-            <p style={{ fontSize:"0.56rem",color:"rgba(200,169,110,0.5)",margin:"0 0 1.5rem",maxWidth:"480px",lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace" }}>
-              This is how physical assets will be owned in 5 years. Tokenize today to be positioned before it becomes the standard.
+            <p style={{ fontSize:"0.6rem",color:"rgba(200,169,110,0.5)",margin:"0 0 1.75rem",maxWidth:"500px",lineHeight:1.7,fontFamily:"'JetBrains Mono',monospace",fontStyle:"italic" }}>
+              "Tokenize today so when this becomes the standard — and it will — you are already positioned."
             </p>
 
-            {/* Primary CTA — Tokenize dominant */}
-            <div style={{ display:"flex",gap:"0.625rem",flexWrap:"wrap",alignItems:"center",marginBottom:"1.5rem" }}>
-              <a href="/tokenize" style={{ padding:"0.75rem 1.75rem",borderRadius:"9px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.72rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 24px rgba(212,175,55,0.35)",flexShrink:0 }}>
+            <div style={{ display:"flex",gap:"0.625rem",flexWrap:"wrap",alignItems:"center",marginBottom:"1.75rem" }}>
+              <a href="/tokenize" style={{ padding:"0.875rem 2rem",borderRadius:"10px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.8rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 32px rgba(212,175,55,0.4)",flexShrink:0 }}>
                 Tokenize Your Asset →
               </a>
-              <a href="/protect" style={{ padding:"0.7rem 1.25rem",borderRadius:"9px",background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.22)",color:"#14F195",fontWeight:700,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>
+              <a href="/protect" style={{ padding:"0.8rem 1.375rem",borderRadius:"10px",background:"rgba(20,241,149,0.07)",border:"1px solid rgba(20,241,149,0.2)",color:"#14F195",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>
                 Borrow USDC
               </a>
-              <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.7rem 1.25rem",borderRadius:"9px",background:"rgba(200,169,110,0.06)",border:"1px solid rgba(200,169,110,0.2)",color:"#C8A96E",fontWeight:700,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>
+              <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.8rem 1.375rem",borderRadius:"10px",background:"rgba(200,169,110,0.05)",border:"1px solid rgba(200,169,110,0.15)",color:"rgba(200,169,110,0.8)",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>
                 Buy $ABRA
               </a>
             </div>
 
-            {/* Trust + legitimacy row */}
-            <div style={{ display:"flex",gap:"1.25rem",paddingTop:"1rem",borderTop:"1px solid rgba(255,255,255,0.05)",flexWrap:"wrap" }}>
-              {[
+            {/* 4-step vision flow */}
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,196px),1fr))",gap:"0.625rem",marginBottom:"1.5rem" }}>
+              {([
+                ["01","Tokenize",       "#C8A96E","Submit any physical asset. Verified custody via PSA, CGC, Baxus, Courtyard, or LBMA. Token-2022 minted on Solana."],
+                ["02","Vault + Borrow", "#14F195","Deposit to Abraxas vault. Borrow USDC instantly at 5.2% APR via Loopscale — zero sell pressure, full custody."],
+                ["03","Earn Yield",     "#FBBF24","Earn $ABRA on every protocol action. Stake at 18–25% APY. Asset appreciates in custody while generating on-chain yield."],
+                ["04","Lead the Market","#a855f7","When physical asset tokenization becomes the global standard, your position is already established. First movers define the rails."],
+              ] as const).map(([n,label,color,desc])=>(
+                <div key={n} style={{ padding:"0.75rem",background:`${color}06`,border:`1px solid ${color}18`,borderRadius:"10px" }}>
+                  <div style={{ display:"flex",alignItems:"center",gap:"0.35rem",marginBottom:"0.25rem" }}>
+                    <span style={{ fontSize:"0.38rem",fontWeight:900,color:color,fontFamily:"'JetBrains Mono',monospace",opacity:0.4 }}>{n}</span>
+                    <span style={{ fontSize:"0.66rem",fontWeight:800,color:color,letterSpacing:"-0.01em" }}>{label}</span>
+                  </div>
+                  <p style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.38)",lineHeight:1.65,margin:0 }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Accountability row — answers "how do I know it's legit?" */}
+            <div style={{ display:"flex",gap:"1.5rem",paddingTop:"1rem",borderTop:"1px solid rgba(255,255,255,0.05)",flexWrap:"wrap" }}>
+              {([
                 ["Custody",      "Baxus · Courtyard · Collector Crypt"],
                 ["Verification", "CGC · PSA · LBMA · The Jockey Club"],
-                ["Liquidity",    "Loopscale Modular Vaults · 5.2% APR"],
-                ["Protocol",     "Token-2022 · Solana Mainnet · Abraxas"],
-              ].map(([k,v])=>(
+                ["Settlement",   "Assets locked until delivery or USDC settled"],
+                ["Protocol",     "Token-2022 · Solana Mainnet · Abraxas v1"],
+              ] as const).map(([k,v])=>(
                 <div key={k}>
-                  <div style={{ fontSize:"0.42rem",fontWeight:700,color:"rgba(200,169,110,0.55)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"1px" }}>{k}</div>
-                  <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.35)" }}>{v}</div>
+                  <div style={{ fontSize:"0.4rem",fontWeight:700,color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"2px" }}>{k}</div>
+                  <div style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.3)" }}>{v}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Gaming context strip — repositioned as utility, not core */}
-          <div style={{ padding:"0.5rem 0.875rem",marginBottom:"1rem",background:"rgba(168,85,247,0.04)",border:"1px solid rgba(168,85,247,0.1)",borderRadius:"8px",display:"flex",alignItems:"center",gap:"0.625rem",flexWrap:"wrap" }}>
-            <span style={{ fontSize:"0.48rem",fontWeight:700,color:"rgba(168,85,247,0.7)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase",flexShrink:0 }}>Asset Utility</span>
-            <span style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.35)",lineHeight:1.5 }}>
-              Tokenized assets can be played in the Sovereign Arena, used in prediction markets, and staked for $ABRA yield — while continuing to appreciate in custody.
-            </span>
-            <button onClick={()=>{
-              if(typeof window!=="undefined") window.dispatchEvent(new CustomEvent("abraxas-tab",{detail:"game_modes"}));
-            }} style={{ marginLeft:"auto",padding:"0.3rem 0.625rem",borderRadius:"5px",background:"rgba(168,85,247,0.1)",border:"1px solid rgba(168,85,247,0.2)",color:"#a855f7",fontSize:"0.5rem",fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",flexShrink:0 }}>
-              Explore Games →
+          {/* ══ WHAT THIS COULD BE — The Forward Vision ══ */}
+          <div style={{ marginBottom:"1rem",padding:"1.25rem 1.5rem",background:"rgba(6,8,16,0.98)",border:"1px solid rgba(200,169,110,0.1)",borderRadius:"12px" }}>
+            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(200,169,110,0.45)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.35rem" }}>The Ideal Future · Buy In Now · Eyes Wide</p>
+            <h3 style={{ fontWeight:900,fontSize:"0.95rem",color:"#f0f0f0",margin:"0 0 0.5rem",letterSpacing:"-0.02em",lineHeight:1.15 }}>
+              What Abraxas Could Look Like — If We Build It Right
+            </h3>
+            <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.4)",margin:"0 0 0.875rem",maxWidth:"560px",lineHeight:1.75 }}>
+              Courtyard proved a market exists for tokenized physical goods. Baxus proved it for spirits. We are building the unified liquidity layer — where every verified physical asset has an on-chain token, a borrowing line, and a secondary market. Here is what that looks like when it arrives:
+            </p>
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,220px),1fr))",gap:"0.5rem",marginBottom:"0.75rem" }}>
+              {([
+                { yr:"Year 1", color:"#C8A96E",
+                  title:"Tokenized Custody Goes Mainstream",
+                  body:"Baxus, Courtyard, and Collector Crypt tokenize at scale. Abraxas becomes the borrowing and yield layer on top — 10,000+ assets generating USDC liquidity without leaving vaults." },
+                { yr:"Year 2", color:"#14F195",
+                  title:"Physical Assets Trade Like Equities",
+                  body:"A PSA 10 Charizard 1999 trades in milliseconds. A Rolex Submariner changes hands without shipping. Bid/ask spreads tighten. Price discovery becomes continuous. Liquidity, finally." },
+                { yr:"Year 3", color:"#6b8cff",
+                  title:"The Illiquid Premium Disappears",
+                  body:"Physical assets stop carrying an illiquidity penalty. A tokenized Pappy Van Winkle trades at par with its auction equivalent. Owners who tokenized early set the market price." },
+                { yr:"Year 5+", color:"#a855f7",
+                  title:"This Is Just How Assets Work",
+                  body:"Owning a physical asset without tokenizing it feels as archaic as keeping stock certificates in a drawer. Abraxas is the rail. You either built position early — or you didn't." },
+              ] as const).map(s=>(
+                <div key={s.yr} style={{ padding:"0.625rem 0.75rem",background:`${s.color}06`,border:`1px solid ${s.color}14`,borderRadius:"9px" }}>
+                  <div style={{ fontSize:"0.4rem",fontWeight:800,color:s.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"0.22rem" }}>{s.yr}</div>
+                  <div style={{ fontSize:"0.56rem",fontWeight:700,color:"rgba(255,255,255,0.75)",marginBottom:"0.22rem",lineHeight:1.3 }}>{s.title}</div>
+                  <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.38)",lineHeight:1.65 }}>{s.body}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex",gap:"0.5rem",alignItems:"center",paddingTop:"0.75rem",borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+              <span style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.38)",flex:1,lineHeight:1.6 }}>
+                Tokenize your assets now. Not to play games — to hold the position when liquidity arrives. Early movers define the price rails.
+              </span>
+              <a href="/tokenize" style={{ padding:"0.45rem 1rem",borderRadius:"7px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.6rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",flexShrink:0,boxShadow:"0 0 16px rgba(200,169,110,0.3)" }}>
+                Tokenize Now →
+              </a>
+            </div>
+          </div>
+
+          {/* Gaming utility — ONE quiet line. Not a feature. */}
+          <div style={{ padding:"0.38rem 0.75rem",marginBottom:"0.875rem",display:"flex",alignItems:"center",gap:"0.5rem",borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
+            <span style={{ fontSize:"0.42rem",color:"rgba(168,85,247,0.4)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.06em",textTransform:"uppercase",flexShrink:0 }}>Bonus Utility</span>
+            <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.22)" }}>Tokenized assets can earn $ABRA in the Sovereign Arena while staying in verified custody.</span>
+            <button onClick={()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("abraxas-tab",{detail:"game_modes"}));}} style={{ marginLeft:"auto",padding:"0.15rem 0.4rem",borderRadius:"3px",background:"transparent",border:"1px solid rgba(168,85,247,0.12)",color:"rgba(168,85,247,0.35)",fontSize:"0.42rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",flexShrink:0 }}>
+              Games →
             </button>
           </div>
+
           <LiveActivityFeed />
           <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
         </div>
