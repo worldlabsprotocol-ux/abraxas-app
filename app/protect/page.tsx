@@ -52,21 +52,32 @@ function LoopscaleHero() {
   }, []);
 
   return (
-    <div style={{ marginBottom:"1.5rem", padding:"1.25rem 1.5rem", background:"linear-gradient(135deg,rgba(20,241,149,0.08),rgba(96,165,250,0.06))", border:"1px solid rgba(20,241,149,0.25)", borderRadius:"14px" }}>
+    <div style={{ marginBottom:"1.75rem", padding:"2rem 2rem", background:"linear-gradient(145deg,rgba(6,8,16,0.99),rgba(20,241,149,0.07) 50%,rgba(6,8,16,0.99))", border:"1px solid rgba(20,241,149,0.3)", borderRadius:"18px", position:"relative", overflow:"hidden", boxShadow:"0 0 60px rgba(20,241,149,0.06)" }}>
+      {/* Green orb */}
+      <div style={{ position:"absolute",top:"-30%",right:"-5%",width:"280px",height:"280px",borderRadius:"50%",background:"radial-gradient(circle,rgba(20,241,149,0.08) 0%,transparent 65%)",pointerEvents:"none" }} />
       {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem", marginBottom:"1rem" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem", marginBottom:"1.25rem" }}>
         <div>
-          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.3rem" }}>
-            <span style={{ fontWeight:900, fontSize:"1.1rem", color:"#14F195" }}>Instant Credit via Loopscale</span>
-            <span style={{ fontSize:"0.46rem", fontWeight:700, padding:"0.08rem 0.35rem", borderRadius:"3px", background:"rgba(20,241,149,0.15)", border:"1px solid rgba(20,241,149,0.4)", color:"#14F195", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.08em" }}>LIVE</span>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.4rem",flexWrap:"wrap" }}>
+            <div style={{ width:"8px",height:"8px",borderRadius:"50%",background:"#14F195",animation:"pulse 2s ease-in-out infinite",boxShadow:"0 0 8px rgba(20,241,149,0.8)" }} />
+            <span style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(20,241,149,0.6)",letterSpacing:"0.2em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>Sovereign Banking · Loopscale Modular Vaults</span>
           </div>
-          <p style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.5)", margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
-            Own the asset. Borrow against it. Control your liquidity.
+          <h2 style={{ fontWeight:900, fontSize:"clamp(1.4rem,3vw,2rem)", color:"#f0f0f0", margin:"0 0 0.4rem", letterSpacing:"-0.03em", lineHeight:1.05 }}>
+            <span style={{ background:"linear-gradient(135deg,#14F195,#60A5FA)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>Instant Credit via Loopscale</span>
+          </h2>
+          <p style={{ fontSize:"0.64rem", color:"rgba(255,255,255,0.48)", margin:"0 0 0.25rem", lineHeight:1.65, maxWidth:"460px" }}>
+            Vault your tokenized asset. Borrow USDC in minutes at 5.2% fixed APR. Zero sell pressure. Full custody. Your assets. Your rules. Your liquidity.
+          </p>
+          <p style={{ fontSize:"0.52rem", color:"rgba(20,241,149,0.5)", margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
+            LTVs: Metals 80% · Stocks 70% · Watches 65% · Comics 65% · Spirits & Cards 55%
           </p>
         </div>
-        <a href="https://loopscale.com" target="_blank" rel="noopener noreferrer" style={{ padding:"0.5rem 1.25rem", borderRadius:"8px", background:"rgba(20,241,149,0.14)", border:"1px solid rgba(20,241,149,0.3)", color:"#14F195", fontSize:"0.68rem", fontWeight:800, textDecoration:"none", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em" }}>
-          Open Loopscale →
-        </a>
+        <div style={{ display:"flex",flexDirection:"column",gap:"0.4rem",flexShrink:0 }}>
+          <a href="https://loopscale.com" target="_blank" rel="noopener noreferrer" style={{ padding:"0.7rem 1.5rem", borderRadius:"9px", background:"linear-gradient(135deg,#14F195,#60A5FA)", color:"#000", fontSize:"0.72rem", fontWeight:900, textDecoration:"none", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", boxShadow:"0 0 20px rgba(20,241,149,0.3)" }}>
+            Borrow Now →
+          </a>
+          <div style={{ fontSize:"0.44rem",color:"rgba(20,241,149,0.5)",textAlign:"center",fontFamily:"'JetBrains Mono',monospace" }}>Powered by Loopscale</div>
+        </div>
       </div>
 
       {/* Live example rotator */}

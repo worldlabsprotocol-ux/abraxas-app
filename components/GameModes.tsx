@@ -617,38 +617,63 @@ function Leaderboard({ abraEarned, wins }:{ abraEarned:number; wins:number }) {
 }
 
 // ─── Game Modes Hub — Billion-Dollar Styling ──────────────────────────────────
+const ABRA_PRICE_USD = 0.032; // mock May 2026 price
+const MIN_USD_VALUE  = 50;    // $50 min to enter paid modes
+const MIN_ABRA       = Math.ceil(MIN_USD_VALUE / ABRA_PRICE_USD); // ~1563 tokens
+
 export function GameModesHub({ assets }:{ assets:GameAsset[] }) {
   const [mode,      setMode]      = useState<"hub"|"claw"|"chase"|"brain"|"leaderboard">("hub");
   const [totalAbra, setTotalAbra] = useState(0);
   const [totalWins, setTotalWins] = useState(0);
   const [session,   setSession]   = useState(0);
+  const [abraBal,   setAbraBal]   = useState<number|null>(null);
+  const [gateModal, setGateModal] = useState<string|null>(null);
+
+  // Mock $ABRA balance — in prod: use @solana/web3.js getTokenAccountsByOwner
+  useEffect(()=>{
+    const mockBal = Math.random()>0.4 ? 200+Math.floor(Math.random()*2000) : 0;
+    setTimeout(()=>setAbraBal(mockBal), 600);
+  },[]);
 
   function earn(n:number) { setTotalAbra(a=>a+n); setSession(s=>s+n); }
 
+  function enterMode(id:string, minAbra:number) {
+    if(abraBal===null) return; // still loading
+    if(abraBal < minAbra && minAbra > 0) {
+      setGateModal(id);
+      return;
+    }
+    setMode(id as "claw"|"chase"|"brain"|"leaderboard");
+  }
+
   const MODES = [
     {
-      id:"claw",        color:"#D4AF37",
+      id:"claw",        color:"#D4AF37", minAbra:10,
       title:"AbraxClaw Gacha Machine",
-      sub:"Rarity-weighted asset pulls. Legendary odds: 0.5%.",
+      sub:"Rarity-weighted asset pulls · Pity at 10 · Legendary odds 0.5%",
       detail:"Deploy the mechanical claw into the prize pool. Rarer assets yield exponentially more $ABRA. Combo streaks unlock bonus multipliers.",
+      reward:"Up to 250 $ABRA",
     },
     {
-      id:"chase",       color:"#14F195",
+      id:"chase",       color:"#14F195", minAbra:50,
       title:"Chase Markets",
-      sub:"CALL or SHORT tokenized RWA prices. Bullish positions pay +18%.",
-      detail:"Place directional bets on any asset in the Abraxas ecosystem. CALL positions carry an 18% long bonus — reflecting the protocol's bullish RWA thesis.",
+      sub:"LONG or SHORT tokenized RWA prices · CALL positions pay +18%",
+      detail:"Place directional bets on any tokenized asset. CALL positions carry an 18% long bonus reflecting Abraxas's bullish RWA thesis.",
+      reward:"Up to 500 $ABRA",
     },
     {
-      id:"brain",       color:"#a855f7",
+      id:"brain",       color:"#a855f7", minAbra:10,
       title:"Circuit Brain Games",
-      sub:"Sovereign Trivia · Oracle Gauntlet · Memory Match.",
-      detail:"Three cognitive disciplines, each under 90 seconds. Sophia Agents provide hints. Streak bonuses compound your $ABRA rewards.",
+      sub:"Sovereign Trivia · Oracle Gauntlet · Memory Match",
+      detail:"Three cognitive disciplines under 90 seconds each. Sophia Agents guide you. Streak bonuses compound your $ABRA rewards.",
+      reward:"Up to 200 $ABRA",
     },
     {
-      id:"leaderboard", color:"#C8A96E",
+      id:"leaderboard", color:"#C8A96E", minAbra:0,
       title:"Sovereign Leaderboard",
-      sub:"Global ELO rankings. Season 1 in progress.",
-      detail:"Every Arena battle, gacha pull, and brain game feeds your ELO score. Sovereign rank holders receive protocol fee distributions.",
+      sub:"Global ELO rankings · Season 1 · Prize distributions",
+      detail:"Every Arena battle, gacha pull, and brain game feeds your ELO. Sovereign rank holders receive protocol fee distributions in $ABRA.",
+      reward:"Season prizes",
     },
   ] as const;
 
@@ -668,38 +693,110 @@ export function GameModesHub({ assets }:{ assets:GameAsset[] }) {
           Overview
         </button>
         {MODES.map(m=>(
-          <button key={m.id} onClick={()=>setMode(m.id)} style={{ padding:"0.35rem 0.875rem",borderRadius:"6px",border:`1px solid ${mode===m.id?m.color+"55":"rgba(255,255,255,0.07)"}`,background:mode===m.id?`${m.color}10`:"transparent",color:mode===m.id?m.color:"rgba(255,255,255,0.3)",fontSize:"0.58rem",fontWeight:mode===m.id?700:400,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em",transition:"all 0.15s" }}>
+          <button key={m.id} onClick={()=>enterMode(m.id, m.minAbra)} style={{ padding:"0.35rem 0.875rem",borderRadius:"6px",border:`1px solid ${mode===m.id?m.color+"55":"rgba(255,255,255,0.07)"}`,background:mode===m.id?`${m.color}10`:"transparent",color:mode===m.id?m.color:"rgba(255,255,255,0.3)",fontSize:"0.58rem",fontWeight:mode===m.id?700:400,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em",transition:"all 0.15s" }}>
             {m.title.split(" ")[0]}
           </button>
         ))}
       </div>
 
+      {/* $ABRA balance gate modal */}
+      {gateModal&&(
+        <div style={{ position:"fixed",inset:0,zIndex:999,background:"rgba(2,3,10,0.92)",display:"flex",alignItems:"center",justifyContent:"center",padding:"1.25rem" }}>
+          <div style={{ maxWidth:"400px",width:"100%",background:"rgba(6,8,16,0.99)",border:"1px solid rgba(200,169,110,0.35)",borderRadius:"16px",padding:"2rem",textAlign:"center",boxShadow:"0 0 60px rgba(200,169,110,0.15)" }}>
+            <div style={{ fontSize:"2rem",marginBottom:"0.75rem" }}>⬢</div>
+            <h3 style={{ fontWeight:900,fontSize:"1.1rem",color:"#C8A96E",margin:"0 0 0.5rem",letterSpacing:"-0.02em" }}>$ABRA Required</h3>
+            <p style={{ fontSize:"0.6rem",color:"rgba(255,255,255,0.45)",lineHeight:1.65,margin:"0 0 0.25rem" }}>
+              You need at least <strong style={{ color:"#C8A96E" }}>${MIN_USD_VALUE} worth of $ABRA</strong> (~{MIN_ABRA.toLocaleString()} tokens at ${ABRA_PRICE_USD}/token) to enter this game mode.
+            </p>
+            <p style={{ fontSize:"0.54rem",color:"rgba(255,255,255,0.28)",margin:"0 0 1.5rem" }}>
+              Your balance: <span style={{ color:abraBal&&abraBal>0?"#f26b6b":"rgba(255,255,255,0.4)",fontWeight:700 }}>{abraBal?.toLocaleString()??0} $ABRA</span>
+            </p>
+            <div style={{ display:"flex",gap:"0.625rem",flexWrap:"wrap",justifyContent:"center" }}>
+              <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.625rem 1.25rem",borderRadius:"8px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em" }}>Buy $ABRA on Jupiter →</a>
+              <a href="https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.625rem 1.25rem",borderRadius:"8px",background:"rgba(200,169,110,0.1)",border:"1px solid rgba(200,169,110,0.3)",color:"#C8A96E",fontWeight:700,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Buy on Bags</a>
+              <button onClick={()=>setGateModal(null)} style={{ padding:"0.625rem 1.25rem",borderRadius:"8px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.35)",fontWeight:600,fontSize:"0.66rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {mode==="hub"&&(
         <div>
+          {/* $ABRA Balance strip */}
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0.625rem 0.875rem",background:"rgba(200,169,110,0.05)",border:"1px solid rgba(200,169,110,0.15)",borderRadius:"10px",marginBottom:"1.25rem" }}>
+            <div>
+              <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em" }}>Your $ABRA Balance</div>
+              <div style={{ fontSize:"0.88rem",fontWeight:900,color:abraBal&&abraBal>=MIN_ABRA?"#C8A96E":"#f26b6b",fontFamily:"'JetBrains Mono',monospace",transition:"color 0.3s" }}>
+                {abraBal===null?"Loading…":`${abraBal.toLocaleString()} $ABRA`}
+                {abraBal!==null&&<span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.3)",marginLeft:"0.4rem" }}>(~${abraBal!==null?((abraBal*ABRA_PRICE_USD).toFixed(2)):"0"} USD)</span>}
+              </div>
+            </div>
+            <div style={{ display:"flex",gap:"0.4rem",flexShrink:0 }}>
+              <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.35rem 0.75rem",borderRadius:"6px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.56rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Buy $ABRA</a>
+              {abraBal!==null&&abraBal<MIN_ABRA&&<span style={{ fontSize:"0.44rem",color:"#f26b6b",alignSelf:"center",fontFamily:"'JetBrains Mono',monospace" }}>Need {(MIN_ABRA-abraBal).toLocaleString()} more</span>}
+            </div>
+          </div>
+
+          {/* Hub heading */}
           <div style={{ marginBottom:"1.25rem" }}>
-            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.3rem" }}>Abraxas Protocol · Game Economy</p>
-            <h2 style={{ fontWeight:900,fontSize:"1.2rem",color:"#f0f0f0",margin:"0 0 0.4rem",letterSpacing:"-0.02em" }}>Game Modes</h2>
-            <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.38)",margin:0,lineHeight:1.65,maxWidth:"540px" }}>
-              Every mode earns $ABRA — which auto-stakes to your vault, earns 18–25% APY, and can be borrowed against via Loopscale. Play to earn. Vault to compound.
+            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.25rem" }}>Abraxas Protocol · Game Economy · Season 1</p>
+            <h2 style={{ fontWeight:900,fontSize:"1.4rem",color:"#f0f0f0",margin:"0 0 0.35rem",letterSpacing:"-0.03em" }}>Game Modes</h2>
+            <p style={{ fontSize:"0.6rem",color:"rgba(255,255,255,0.38)",margin:0,lineHeight:1.65,maxWidth:"560px" }}>
+              Every mode earns $ABRA — auto-stakes at 18–25% APY, borrowable via Loopscale. Play to earn. Vault to compound. Win to dominate the leaderboard.
             </p>
           </div>
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,260px),1fr))",gap:"0.75rem" }}>
-            {MODES.map(m=>(
-              <button key={m.id} onClick={()=>setMode(m.id)} style={{ textAlign:"left",padding:"1.375rem 1.25rem",borderRadius:"12px",background:"rgba(6,8,16,0.97)",border:`1px solid ${m.color}18`,cursor:"pointer",transition:"border-color 0.18s,box-shadow 0.18s",display:"flex",flexDirection:"column",gap:"0.5rem" }}
-                onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor=m.color+"45";el.style.boxShadow=`0 0 24px ${m.color}0E`;}}
-                onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor=m.color+"18";el.style.boxShadow="none";}}>
-                <div style={{ width:"10px",height:"10px",borderRadius:"50%",background:m.color,boxShadow:`0 0 8px ${m.color}` }} />
-                <div>
-                  <div style={{ fontWeight:900,fontSize:"0.88rem",color:"#f0f0f0",marginBottom:"0.2rem",letterSpacing:"-0.01em" }}>{m.title}</div>
-                  <div style={{ fontSize:"0.5rem",color:m.color,marginBottom:"0.3rem",fontWeight:600 }}>{m.sub}</div>
-                  <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.35)",lineHeight:1.6 }}>{m.detail}</div>
-                </div>
-                <div style={{ marginTop:"auto",display:"flex",alignItems:"center",gap:"0.25rem" }}>
-                  <div style={{ width:"6px",height:"1px",background:`${m.color}60` }} />
-                  <span style={{ fontSize:"0.44rem",color:m.color,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,letterSpacing:"0.1em" }}>ENTER →</span>
-                </div>
-              </button>
-            ))}
+
+          {/* BIG mode cards — full width rows, not tiny grid */}
+          <div style={{ display:"flex",flexDirection:"column",gap:"0.75rem" }}>
+            {MODES.map(m=>{
+              const locked = abraBal!==null && m.minAbra>0 && abraBal<m.minAbra;
+              return (
+                <button key={m.id}
+                  onClick={()=>enterMode(m.id, m.minAbra)}
+                  style={{
+                    width:"100%",textAlign:"left",
+                    padding:"1.5rem 1.5rem",borderRadius:"14px",
+                    background:`linear-gradient(135deg,${m.color}08,rgba(6,8,16,0.99))`,
+                    border:`1px solid ${locked?"rgba(255,255,255,0.08)":m.color+"30"}`,
+                    cursor:"pointer",
+                    transition:"all 0.2s",
+                    display:"grid",
+                    gridTemplateColumns:"1fr auto",
+                    gap:"1rem",
+                    alignItems:"center",
+                    opacity:locked?0.65:1,
+                    boxShadow:locked?"none":`0 0 0 0 ${m.color}`,
+                  }}
+                  onMouseEnter={e=>{
+                    const el=e.currentTarget as HTMLElement;
+                    if(!locked){el.style.borderColor=m.color+"55";el.style.boxShadow=`0 0 30px ${m.color}18`;el.style.transform="translateX(3px)";}
+                  }}
+                  onMouseLeave={e=>{
+                    const el=e.currentTarget as HTMLElement;
+                    el.style.borderColor=locked?"rgba(255,255,255,0.08)":m.color+"30";
+                    el.style.boxShadow="none"; el.style.transform="none";
+                  }}>
+                  <div>
+                    {/* Title row */}
+                    <div style={{ display:"flex",alignItems:"center",gap:"0.625rem",marginBottom:"0.4rem",flexWrap:"wrap" }}>
+                      <div style={{ width:"10px",height:"10px",borderRadius:"50%",background:locked?"rgba(255,255,255,0.2)":m.color,boxShadow:locked?"none":`0 0 8px ${m.color}`,flexShrink:0 }} />
+                      <span style={{ fontWeight:900,fontSize:"1.05rem",color:locked?"rgba(255,255,255,0.35)":"#f0f0f0",letterSpacing:"-0.02em" }}>{m.title}</span>
+                      <span style={{ fontSize:"0.52rem",fontWeight:700,color:locked?"rgba(255,255,255,0.2)":m.color,padding:"0.1rem 0.4rem",borderRadius:"10px",background:`${locked?"rgba(255,255,255,0.03)":m.color+"14"}`,border:`1px solid ${locked?"rgba(255,255,255,0.08)":m.color+"30"}` }}>
+                        {locked?`Locked · ${m.minAbra.toLocaleString()} $ABRA min`:m.reward}
+                      </span>
+                    </div>
+                    <div style={{ fontSize:"0.56rem",color:locked?"rgba(255,255,255,0.25)":m.color,marginBottom:"0.3rem",fontWeight:600 }}>{m.sub}</div>
+                    <div style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.38)",lineHeight:1.65,maxWidth:"520px" }}>{m.detail}</div>
+                  </div>
+                  {/* CTA side */}
+                  <div style={{ flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"0.4rem" }}>
+                    <div style={{ padding:"0.625rem 1.25rem",borderRadius:"9px",background:locked?"rgba(255,255,255,0.04)":m.color,color:locked?"rgba(255,255,255,0.2)":"#000",fontWeight:900,fontSize:"0.72rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.06em",boxShadow:locked?"none":`0 0 16px ${m.color}40`,whiteSpace:"nowrap" }}>
+                      {locked?"Need $ABRA":"Enter →"}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
