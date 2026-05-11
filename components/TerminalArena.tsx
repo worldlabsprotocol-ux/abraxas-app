@@ -968,14 +968,20 @@ export function TerminalArena() {
   const [ticks,   setTicks]   = useState<SoldTick[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string|null>(null);
-  const [mainTab, setMainTab] = useState("terminal");
+  // 3-layer architecture: Capital (assets/borrow) | Arena (games/strategy) | Studio (tokenize/create)
+  const [mainTab, setMainTab] = useState("capital");
   const arenaRef = useRef<HTMLDivElement>(null);
 
   // Listen for BottomNav tab dispatch events
   useEffect(()=>{
     function onTabEvent(e: Event) {
       const detail = (e as CustomEvent).detail as string;
-      if(detail) setMainTab(detail);
+      // Map legacy ids → 3-layer architecture
+      const MAP: Record<string,string> = {
+        terminal:"capital", markets:"capital", game_modes:"arena",
+        capital:"capital",  arena:"arena",     studio:"studio",
+      };
+      if(detail) setMainTab(MAP[detail]??detail);
     }
     window.addEventListener("abraxas-tab", onTabEvent);
     return ()=>window.removeEventListener("abraxas-tab", onTabEvent);
@@ -1009,19 +1015,33 @@ export function TerminalArena() {
       <SoldTape ticks={ticks} />
       <GlobalMarketBar />
       <CommandBar onScrollToArena={()=>arenaRef.current?.scrollIntoView({behavior:"smooth"})} />
-      {/* Main navigation tabs */}
-      <div style={{ display:"flex", gap:"0.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.96)", padding:"0.5rem 1.25rem", alignItems:"center" }}>
-        {([
-          ["terminal",   "Terminal",      "#f0f0f0",  "rgba(240,240,240,0.2)", "rgba(240,240,240,0.06)"],
-          ["markets",    "Markets",       "#14F195",  "rgba(20,241,149,0.35)", "rgba(20,241,149,0.07)"],
-          ["game_modes", "Game Modes",   "#FBBF24",  "rgba(251,191,36,0.4)",  "rgba(251,191,36,0.08)"],
-        ] as const).map(([id,label,color,activeBorder,activeBg])=>(
-          <button key={id} onClick={()=>setMainTab(id)} style={{ padding:"0.5rem 1rem", borderRadius:"7px", border:`1px solid ${mainTab===id?activeBorder:"rgba(255,255,255,0.06)"}`, background:mainTab===id?activeBg:"transparent", color:mainTab===id?color:"rgba(255,255,255,0.3)", fontSize:id==="game_modes"?"0.65rem":"0.62rem", fontWeight:mainTab===id?700:400, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", transition:"all 0.15s" }}>
-            {label}
-          </button>
-        ))}
+      {/* ══ 3-LAYER NAVIGATION: Capital · Arena · Studio ══ */}
+      <div style={{ borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.97)", padding:"0 1.25rem" }}>
+        {/* Layer description line */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"0.4rem 0 0" }}>
+          <div style={{ fontSize:"0.38rem", color:"rgba(255,255,255,0.16)", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.1em", textTransform:"uppercase" }}>
+            {mainTab==="capital"?"Capital Layer — asset exposure, pricing, borrow":mainTab==="arena"?"Arena Layer — strategy deployment, execution, competition":"Studio Layer — issuance, creation, asset onboarding"}
+          </div>
+          <div style={{ fontSize:"0.38rem", color:"rgba(200,169,110,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>$ABRA {mainTab==="capital"?"staking & yield":mainTab==="arena"?"earn & deploy":"tokenization fees"}</div>
+        </div>
+        {/* Layer tabs */}
+        <div style={{ display:"flex", gap:"0", marginTop:"0.25rem" }}>
+          {([
+            ["capital", "I · Capital",  "#6b8cff",  "Assets · Prices · Borrow"],
+            ["arena",   "II · Arena",   "#FBBF24",  "Games · Strategy · Compete"],
+            ["studio",  "III · Studio", "#14F195",  "Tokenize · Create · Issue"],
+          ] as const).map(([id,label,color,sub])=>(
+            <button key={id} onClick={()=>setMainTab(id)} style={{
+              padding:"0.5rem 1rem 0.45rem", border:"none", borderBottom:mainTab===id?`2px solid ${color}`:"2px solid transparent",
+              background:"transparent", cursor:"pointer", transition:"all 0.15s", textAlign:"left", marginBottom:"-1px",
+            }}>
+              <div style={{ fontSize:"0.62rem", fontWeight:mainTab===id?800:400, color:mainTab===id?color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", lineHeight:1.2 }}>{label}</div>
+              <div style={{ fontSize:"0.4rem", color:mainTab===id?`${color}88`:"rgba(255,255,255,0.14)", fontFamily:"'JetBrains Mono',monospace", marginTop:"1px" }}>{sub}</div>
+            </button>
+          ))}
+        </div>
       </div>
-      {mainTab==="terminal"&&(
+      {mainTab==="capital"&&(
         <div style={{ padding:"0.875rem 1.25rem 1.25rem" }}>
 
           {/* ═══════════════════════════════════════════════
@@ -1142,30 +1162,79 @@ export function TerminalArena() {
           <div style={{ padding:"0.38rem 0.75rem",marginBottom:"0.875rem",display:"flex",alignItems:"center",gap:"0.5rem",borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
             <span style={{ fontSize:"0.42rem",color:"rgba(168,85,247,0.4)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.06em",textTransform:"uppercase",flexShrink:0 }}>Bonus Utility</span>
             <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.22)" }}>Tokenized assets can earn $ABRA in the Sovereign Arena while staying in verified custody.</span>
-            <button onClick={()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("abraxas-tab",{detail:"game_modes"}));}} style={{ marginLeft:"auto",padding:"0.15rem 0.4rem",borderRadius:"3px",background:"transparent",border:"1px solid rgba(168,85,247,0.12)",color:"rgba(168,85,247,0.35)",fontSize:"0.42rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",flexShrink:0 }}>
+            <button onClick={()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("abraxas-tab",{detail:"arena"}));}} style={{ marginLeft:"auto",padding:"0.15rem 0.4rem",borderRadius:"3px",background:"transparent",border:"1px solid rgba(168,85,247,0.12)",color:"rgba(168,85,247,0.35)",fontSize:"0.42rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",flexShrink:0 }}>
               Games →
             </button>
           </div>
 
           <LiveActivityFeed />
           <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
+          {/* Market intelligence always visible in Capital layer */}
+          <div style={{ marginTop:"1.5rem",paddingTop:"1.25rem",borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ marginBottom:"0.875rem",display:"flex",alignItems:"baseline",gap:"0.5rem" }}>
+              <span style={{ fontSize:"0.5rem",fontWeight:800,color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em" }}>Market Intelligence</span>
+              <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.25)" }}>Price history · RWA asset class performance · Live data</span>
+            </div>
+            <RWACharts />
+          </div>
         </div>
       )}
 
-      {mainTab==="markets"&&(
+      {/* Markets content is now part of Capital layer — see RWACharts below SovereignArena */}
+
+      {mainTab==="studio"&&(
         <div style={{ padding:"1.25rem" }}>
-          {/* Markets header */}
+          {/* Studio Layer — Issuance + Supply Creation */}
           <div style={{ marginBottom:"1.25rem" }}>
-            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(20,241,149,0.4)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.25rem" }}>Live Intelligence · May 2026</p>
-            <h2 style={{ fontWeight:900,fontSize:"1.1rem",color:"#f0f0f0",margin:"0 0 0.35rem",letterSpacing:"-0.01em" }}>RWA Market Intelligence</h2>
-            <p style={{ fontSize:"0.54rem",color:"rgba(255,255,255,0.35)",margin:0,lineHeight:1.65,maxWidth:"520px" }}>
-              Real-world asset market data, news, and price charts. <strong style={{ color:"rgba(255,255,255,0.5)" }}>Green = price up, red = down.</strong> "RWA" means any physical asset tokenized on blockchain — from gold bars to graded Pokémon cards.
+            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.25rem" }}>Studio Layer · III · Governed Issuance</p>
+            <h2 style={{ fontWeight:900,fontSize:"1.15rem",color:"#f0f0f0",margin:"0 0 0.35rem",letterSpacing:"-0.02em" }}>
+              <span style={{ background:"linear-gradient(135deg,#14F195,#C8A96E)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>All Assets Enter Through Here</span>
+            </h2>
+            <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.38)",margin:0,lineHeight:1.7,maxWidth:"520px" }}>
+              The Studio is the origin layer. Every tokenized asset in the Capital layer was issued here — verified, structured, and onboarded with provenance metadata. No arbitrary listings. Governed issuance only.
             </p>
           </div>
-          <RWACharts />
+
+          {/* Asset class selector */}
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,200px),1fr))",gap:"0.625rem",marginBottom:"1.25rem" }}>
+            {([
+              { label:"Spirits",    color:"#FF8C00", partner:"Baxus",           ltv:"55%", desc:"Single malts, bourbons, rare releases. Lock-in price before appreciation." },
+              { label:"Watches",    color:"#6b8cff", partner:"Courtyard",        ltv:"65%", desc:"Rolex, AP, Patek. Tokenized and borrowable without shipping." },
+              { label:"Cards",      color:"#FBBF24", partner:"Collector Crypt",  ltv:"55%", desc:"PSA / BGS graded cards. Pokémon, One Piece, sports." },
+              { label:"Comics",     color:"#a855f7", partner:"Metropolis",        ltv:"65%", desc:"CGC graded vintage comics. Silver/bronze age." },
+              { label:"Racehorses", color:"#22c55e", partner:"The Jockey Club",  ltv:"55%", desc:"Thoroughbred bloodstock. Fractional ownership." },
+              { label:"Metals",     color:"#D4AF37", partner:"LBMA",             ltv:"80%", desc:"Gold and silver bars. 999.9 fine. Highest LTV." },
+            ] as const).map(a=>(
+              <div key={a.label} style={{ padding:"0.875rem",background:`${a.color}07`,border:`1px solid ${a.color}20`,borderRadius:"10px" }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"0.3rem" }}>
+                  <span style={{ fontSize:"0.6rem",fontWeight:800,color:a.color,letterSpacing:"-0.01em" }}>{a.label}</span>
+                  <span style={{ fontSize:"0.42rem",fontWeight:700,color:`${a.color}80`,fontFamily:"'JetBrains Mono',monospace",padding:"0.05rem 0.3rem",borderRadius:"4px",background:`${a.color}12`,border:`1px solid ${a.color}22` }}>LTV {a.ltv}</span>
+                </div>
+                <div style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.35)",lineHeight:1.6,marginBottom:"0.35rem" }}>{a.desc}</div>
+                <div style={{ fontSize:"0.4rem",color:`${a.color}60`,fontFamily:"'JetBrains Mono',monospace" }}>Custody: {a.partner}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Studio CTA — single dominant action */}
+          <div style={{ padding:"1.5rem",background:"linear-gradient(145deg,rgba(20,241,149,0.06),rgba(6,8,16,0.99))",border:"1px solid rgba(20,241,149,0.2)",borderRadius:"14px",textAlign:"center" }}>
+            <p style={{ fontSize:"0.44rem",color:"rgba(20,241,149,0.45)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.15em",margin:"0 0 0.4rem" }}>Studio · Governed Issuance · Token-2022 · Solana</p>
+            <h3 style={{ fontWeight:900,fontSize:"1.1rem",color:"#f0f0f0",margin:"0 0 0.4rem",letterSpacing:"-0.02em" }}>Submit Your Asset for Tokenization</h3>
+            <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.38)",margin:"0 0 1.25rem",maxWidth:"400px",lineHeight:1.7,marginLeft:"auto",marginRight:"auto" }}>
+              Your asset enters verified custody with a recognized partner. A Token-2022 position is minted on Solana. It immediately becomes liquid, borrowable, and Capital Layer eligible.
+            </p>
+            <div style={{ display:"flex",gap:"0.5rem",justifyContent:"center",flexWrap:"wrap" }}>
+              <a href="/tokenize" style={{ padding:"0.75rem 2rem",borderRadius:"9px",background:"linear-gradient(135deg,#14F195,#C8A96E)",color:"#000",fontWeight:900,fontSize:"0.72rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 24px rgba(20,241,149,0.3)" }}>
+                Begin Issuance →
+              </a>
+              <a href="/protect" style={{ padding:"0.72rem 1.25rem",borderRadius:"9px",background:"rgba(20,241,149,0.07)",border:"1px solid rgba(20,241,149,0.2)",color:"#14F195",fontWeight:700,fontSize:"0.68rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>
+                View Vault Layer →
+              </a>
+            </div>
+          </div>
         </div>
       )}
-      {mainTab==="game_modes"&&(
+      {mainTab==="arena"&&(
         <div style={{ padding:"1.25rem" }}>
           <GameModesHub assets={assets} />
         </div>

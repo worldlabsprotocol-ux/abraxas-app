@@ -134,7 +134,8 @@ export function BottomNav() {
               setActiveInPage(tab.isInPage!);
               if(typeof window!=="undefined"){
                 if(pathname!=="/") { window.location.href="/"; return; }
-                window.dispatchEvent(new CustomEvent("abraxas-tab",{detail:tab.isInPage}));
+                const layerMap: Record<string,string> = {markets:"capital",game_modes:"arena",terminal:"capital"};
+              window.dispatchEvent(new CustomEvent("abraxas-tab",{detail:layerMap[tab.isInPage!]??tab.isInPage}));
                 window.scrollTo({top:0,behavior:"smooth"});
               }
             }} style={sharedStyle}>
