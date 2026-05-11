@@ -91,7 +91,7 @@ interface AbraState {
   // Actions
   setAbraBalance: (n: number) => void;
   deductAbra:     (amount: number, reason: string, wallet: string) => boolean;
-  mintAsset:      (asset: Omit<AbraAsset,"id"|"tokenId"|"createdAt"|"status">, wallet: string) => AbraAsset | null;
+  mintAsset:      (asset: Omit<AbraAsset,"id"|"tokenId"|"createdAt"|"status"|"ownerWallet"|"txSignature">, wallet: string) => AbraAsset | null;
   advanceStatus:  (assetId: string, to: AssetStatus) => void;
   addPosition:    (p: Omit<AbraPosition,"id"|"createdAt">) => void;
   emitEvent:      (e: Omit<AbraEvent,"id"|"timestamp">) => void;
