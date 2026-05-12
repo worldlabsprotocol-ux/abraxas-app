@@ -7,10 +7,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useAbraStore, type AssetStatus } from "@/lib/abraxasStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AssetClass = "Spirits"|"Watches"|"Cards (PSA/BGS)"|"Comics (CGC)"|"Racehorses"|"Metals"|"Art"|"Other";
-type Step = "init"|"upload"|"metadata"|"valuation"|"wallet"|"fee"|"processing"|"queue";
+type Step = "upload"|"metadata"|"valuation"|"wallet"|"fee"|"processing"|"queue";
 
 const ASSET_CLASSES: Record<AssetClass,{ color:string; partner:string; ltv:number; fee:number; icon:string; }> = {
   "Spirits":       { color:"#FF8C00", partner:"Baxus",           ltv:55, fee:100, icon:"◈" },
@@ -23,13 +24,7 @@ const ASSET_CLASSES: Record<AssetClass,{ color:string; partner:string; ltv:numbe
   "Other":         { color:"#C8A96E", partner:"Manual Review",    ltv:45, fee:250, icon:"⬢" },
 };
 
-const INIT_SEQUENCE = [
-  { msg:"Syncing Market State",           dur:700 },
-  { msg:"Verifying Oracle Feeds",         dur:800 },
-  { msg:"Initializing Issuance Engine",   dur:900 },
-  { msg:"Connecting Solana Settlement Layer", dur:700 },
-  { msg:"Studio ready.",                  dur:500 },
-];
+
 
 const QUEUE_STEPS = [
   "Asset received by issuance protocol",
@@ -67,12 +62,19 @@ export function IssuanceEngine() {
   const { connected, publicKey } = useWallet();
   const { setVisible } = useWalletModal();
 
-  // Init animation
-  const [initIdx,   setInitIdx]   = useState(0);
-  const [initDone,  setInitDone]  = useState(false);
+  // Store hooks — single source of truth
+  const abraBalance  = useAbraStore(s=>s.abraBalance);
+  const abraUsdPrice = useAbraStore(s=>s.abraUsdPrice);
+  const mintAsset    = useAbraStore(s=>s.mintAsset);
+  const storeEvents  = useAbraStore(s=>s.events);
+  const [lastAssetId, setLastAssetId] = useState<string|null>(null);
+
+  // Watch for asset status changes in store (reactive to auto-advance)
+  const mintedAsset  = useAbraStore(s=>s.assets.find(a=>a.id===lastAssetId));
+
 
   // Flow state
-  const [step,      setStep]      = useState<Step>("init");
+  const [step,      setStep]      = useState<Step>("upload");
   const [assetClass,setAssetClass]= useState<AssetClass>("Watches");
   const [file,      setFile]      = useState<File|null>(null);
   const [preview,   setPreview]   = useState<string|null>(null);
@@ -87,17 +89,7 @@ export function IssuanceEngine() {
   const abraFee = cfg.fee;
   const borrowMax = Math.round(estUsd * cfg.ltv / 100);
 
-  // ── Init sequence ──────────────────────────────────────────────────────────
-  useEffect(()=>{
-    if(initDone) return;
-    let total = 0;
-    INIT_SEQUENCE.forEach((s,i)=>{
-      total += i===0?0:INIT_SEQUENCE[i-1].dur;
-      setTimeout(()=>setInitIdx(i), total);
-    });
-    const finalTime = INIT_SEQUENCE.reduce((acc,s,i)=>i<INIT_SEQUENCE.length-1?acc+s.dur:acc,0);
-    setTimeout(()=>{ setInitDone(true); setStep("upload"); }, finalTime+400);
-  },[]);
+
 
   // ── Queue progress animation ───────────────────────────────────────────────
   useEffect(()=>{
@@ -114,52 +106,49 @@ export function IssuanceEngine() {
     r.readAsDataURL(f);
   }
 
-  // ── Simulated mint ─────────────────────────────────────────────────────────
+  // ── Mint — API route (Supabase) with Zustand fallback ──────────────────────
   async function processMint() {
     setStep("processing");
-    await new Promise(r=>setTimeout(r,3200));
-    setMintTxId(`AbrxM${Math.random().toString(36).slice(2,10).toUpperCase()}...${Math.random().toString(36).slice(2,6).toUpperCase()}`);
+    const wallet = publicKey?.toBase58()??"demo-wallet";
+    const assetPayload = {
+      name:           meta.name||"Unnamed Asset",
+      description:    meta.description||"",
+      assetClass,
+      estimatedUsd:   parseFloat(val.estimatedUsd)||0,
+      ltv:            cfg.ltv,
+      custodyPartner: cfg.partner,
+      imagePreview:   preview??null,
+      grade:          meta.grade||null,
+      year:           meta.year||null,
+    };
+
+    // Try /api/mint (Supabase atomic: tx + asset + event)
+    try {
+      const res = await fetch("/api/mint", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ wallet, asset:assetPayload, mintCostAbra:abraFee+10 }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          if(data.assetId)     setLastAssetId(data.assetId);
+          if(data.txSignature) setMintTxId(data.txSignature);
+          setStep("queue"); return;
+        }
+      }
+    } catch { /* API unavailable — use Zustand fallback */ }
+
+    // Zustand fallback (demo / no Supabase)
+    const result = mintAsset({ ...assetPayload, mintCostAbra:abraFee+10, assetClass }, wallet);
+    if (!result) { setStep("fee"); return; }
+    setLastAssetId(result.id);
+    setMintTxId(result.txSignature);
     setStep("queue");
   }
 
-  // ─── INIT SEQUENCE ─────────────────────────────────────────────────────────
-  if(!initDone) return (
-    <div style={{ minHeight:"70vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"2rem" }}>
-      <div style={{ width:"100%",maxWidth:"440px" }}>
-        {/* Protocol mark */}
-        <div style={{ display:"flex",alignItems:"center",gap:"0.625rem",marginBottom:"2rem" }}>
-          <div style={{ width:"32px",height:"32px",borderRadius:"8px",background:"rgba(200,169,110,0.1)",border:"1px solid rgba(200,169,110,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1rem",color:"#C8A96E" }}>⬢</div>
-          <div>
-            <div style={{ fontSize:"0.62rem",fontWeight:800,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.06em" }}>ABRAXAS PROTOCOL</div>
-            <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace" }}>Issuance Engine · III · Studio</div>
-          </div>
-        </div>
 
-        {/* Sequence lines */}
-        <div style={{ marginBottom:"2rem" }}>
-          {INIT_SEQUENCE.map((s,i)=>{
-            const done = i < initIdx, active = i === initIdx;
-            return (
-              <div key={i} style={{ display:"flex",alignItems:"center",gap:"0.625rem",padding:"0.4rem 0",opacity:i>initIdx?0.15:1,transition:"opacity 0.3s" }}>
-                <div style={{ width:"6px",height:"6px",borderRadius:"50%",flexShrink:0,background:done?"#14F195":active?"#C8A96E":"rgba(255,255,255,0.15)",boxShadow:active?"0 0 8px rgba(200,169,110,0.8)":"none",transition:"all 0.3s",animation:active?"pulse 0.8s ease-in-out infinite":"none" }} />
-                <span style={{ fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",color:done?"#14F195":active?"#C8A96E":"rgba(255,255,255,0.35)",transition:"color 0.3s",letterSpacing:"0.04em" }}>{s.msg}</span>
-                {done&&<span style={{ marginLeft:"auto",fontSize:"0.44rem",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace" }}>OK</span>}
-                {active&&<div style={{ marginLeft:"auto",display:"flex",gap:"2px" }}>{[0,1,2].map(j=><div key={j} style={{ width:"3px",height:"3px",borderRadius:"50%",background:"#C8A96E",animation:`pulse ${0.6+j*0.2}s ease-in-out infinite` }} />)}</div>}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ height:"2px",borderRadius:"1px",background:"rgba(255,255,255,0.04)",overflow:"hidden" }}>
-          <div style={{ height:"100%",borderRadius:"1px",background:"linear-gradient(90deg,#C8A96E,#14F195)",width:`${((initIdx+1)/INIT_SEQUENCE.length)*100}%`,transition:"width 0.5s ease" }} />
-        </div>
-      </div>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-    </div>
-  );
-
-  // ─── UPLOAD ────────────────────────────────────────────────────────────────
+  // ─── UPLOAD  // ─── UPLOAD ────────────────────────────────────────────────────────────────
   if(step==="upload") return (
     <div style={{ padding:"1.25rem",maxWidth:"680px" }}>
       <StepBar step="upload" />
@@ -361,7 +350,15 @@ export function IssuanceEngine() {
       <StepBar step="fee" />
       <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",margin:"0 0 0.5rem" }}>Studio · Step 5 of 7 · Mint Fee</p>
       <h2 style={{ fontWeight:900,fontSize:"1.3rem",color:"#f0f0f0",margin:"0 0 0.25rem",letterSpacing:"-0.025em" }}>Confirm $ABRA Mint Fee</h2>
-      <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.4)",lineHeight:1.7,margin:"0 0 1.25rem" }}>The mint fee is deducted from your $ABRA balance and permanently consumed. This creates real economic commitment for every issuance — preventing spam and ensuring asset quality.</p>
+      <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.4)",lineHeight:1.7,margin:"0 0 0.75rem" }}>The mint fee is deducted from your $ABRA balance and permanently consumed. This creates real economic commitment for every issuance — preventing spam and ensuring asset quality.</p>
+      <div style={{ padding:"0.4rem 0.75rem",background:abraBalance>=(abraFee+10)?"rgba(20,241,149,0.05)":"rgba(242,107,107,0.05)",border:`1px solid ${abraBalance>=(abraFee+10)?"rgba(20,241,149,0.18)":"rgba(242,107,107,0.25)"}`,borderRadius:"7px",marginBottom:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+        <span style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.4)" }}>Your $ABRA balance</span>
+        <div style={{ textAlign:"right" }}>
+          <span style={{ fontSize:"0.72rem",fontWeight:800,color:abraBalance>=(abraFee+10)?"#14F195":"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>{abraBalance.toLocaleString()} $ABRA</span>
+          <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.3)",marginLeft:"0.4rem" }}>(~${(abraBalance*abraUsdPrice).toFixed(2)} USD)</span>
+          {abraBalance<(abraFee+10)&&<div style={{ fontSize:"0.42rem",color:"#f26b6b",marginTop:"1px" }}>Insufficient — need {(abraFee+10)-abraBalance} more</div>}
+        </div>
+      </div>
 
       {/* Fee breakdown */}
       <div style={{ background:"rgba(6,8,16,0.99)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",overflow:"hidden",marginBottom:"1.25rem" }}>
@@ -393,8 +390,8 @@ export function IssuanceEngine() {
 
       <div style={{ display:"flex",gap:"0.5rem" }}>
         <button onClick={()=>setStep("wallet")} style={{ padding:"0.75rem 1.25rem",borderRadius:"9px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.3)",fontSize:"0.64rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>← Back</button>
-        <button onClick={processMint} style={{ flex:1,padding:"0.875rem",borderRadius:"10px",border:"none",fontWeight:900,fontSize:"0.78rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",boxShadow:"0 0 28px rgba(200,169,110,0.4)",letterSpacing:"0.04em" }}>
-          Confirm — Deduct {abraFee+10} $ABRA →
+        <button onClick={processMint} disabled={abraBalance<(abraFee+10)} style={{ flex:1,padding:"0.875rem",borderRadius:"10px",border:"none",fontWeight:900,fontSize:"0.78rem",fontFamily:"'JetBrains Mono',monospace",cursor:abraBalance>=(abraFee+10)?"pointer":"not-allowed",background:abraBalance>=(abraFee+10)?"linear-gradient(135deg,#C8A96E,#FBBF24)":"rgba(255,255,255,0.05)",color:abraBalance>=(abraFee+10)?"#000":"rgba(255,255,255,0.2)",boxShadow:abraBalance>=(abraFee+10)?"0 0 28px rgba(200,169,110,0.4)":"none",letterSpacing:"0.04em",transition:"all 0.2s" }}>
+          {abraBalance>=(abraFee+10)?`Confirm — Deduct ${abraFee+10} $ABRA →`:`Need ${(abraFee+10)-abraBalance} more $ABRA`}
         </button>
       </div>
     </div>
@@ -428,6 +425,11 @@ export function IssuanceEngine() {
       {/* Mint confirmation */}
       <div style={{ padding:"0.75rem 1rem",background:"rgba(20,241,149,0.05)",border:"1px solid rgba(20,241,149,0.2)",borderRadius:"10px",marginBottom:"1.25rem",display:"flex",gap:"1rem",flexWrap:"wrap",alignItems:"center" }}>
         {preview&&<img src={preview} style={{ width:"52px",height:"52px",borderRadius:"7px",objectFit:"contain",border:"1px solid rgba(20,241,149,0.2)",flexShrink:0 }} />}
+          {/* Updated balance display */}
+          <div style={{ marginLeft:"auto",padding:"0.3rem 0.6rem",background:"rgba(20,241,149,0.07)",border:"1px solid rgba(20,241,149,0.15)",borderRadius:"6px",textAlign:"right" }}>
+            <div style={{ fontSize:"0.4rem",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase" }}>$ABRA Remaining</div>
+            <div style={{ fontSize:"0.62rem",fontWeight:800,color:"#14F195",fontFamily:"'JetBrains Mono',monospace" }}>{abraBalance.toLocaleString()}</div>
+          </div>
         <div>
           <div style={{ fontSize:"0.44rem",color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",marginBottom:"2px" }}>Token-2022 Minted · {assetClass}</div>
           <div style={{ fontSize:"0.72rem",fontWeight:800,color:"#f0f0f0" }}>{meta.name||"Asset"}</div>
@@ -458,8 +460,12 @@ export function IssuanceEngine() {
           );
         })}
         {queueProgress>=QUEUE_STEPS.length-1&&(
-          <div style={{ marginTop:"0.625rem",padding:"0.5rem 0.75rem",background:"rgba(251,191,36,0.07)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"7px" }}>
-            <span style={{ fontSize:"0.52rem",color:"#FBBF24",fontWeight:700 }}>Awaiting custodian response (3–7 business days) — you'll be notified when approved</span>
+          <div style={{ marginTop:"0.625rem",padding:"0.5rem 0.75rem",background:mintedAsset?.status==="listed"?"rgba(20,241,149,0.07)":"rgba(251,191,36,0.07)",border:`1px solid ${mintedAsset?.status==="listed"?"rgba(20,241,149,0.25)":"rgba(251,191,36,0.2)"}`,borderRadius:"7px" }}>
+            {mintedAsset?.status==="listed"?
+              <span style={{ fontSize:"0.52rem",color:"#14F195",fontWeight:700 }}>Verified and listed in Markets — asset is now tradable and collateral eligible</span>:
+              mintedAsset?.status==="verified"?
+              <span style={{ fontSize:"0.52rem",color:"#14F195",fontWeight:700 }}>Verification complete — entering Markets listing queue</span>:
+              <span style={{ fontSize:"0.52rem",color:"#FBBF24",fontWeight:700 }}>Awaiting custodian response — asset appears in Markets as pending preview</span>}
           </div>
         )}
       </div>
