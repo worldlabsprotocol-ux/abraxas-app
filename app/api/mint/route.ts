@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { calcVaultAllocation, recordVaultRouting } from "@/lib/abraVaultRouter";
 
 // Use service-role key server-side (bypasses RLS for writes)
 const supabase = createClient(
@@ -58,7 +59,15 @@ export async function POST(req: NextRequest) {
       payload:{ name:asset.name, assetClass:asset.assetClass, estimatedUsd:asset.estimatedUsd },
     });
 
-    // 4. Auto-advance to listed after verification delay (demo: immediate)
+    // 4. Record vault routing — 80% main treasury, 20% asset-class PDA
+    const alloc = calcVaultAllocation(asset.assetClass, mintCostAbra);
+    // This is recorded in DB; on-chain SPL transfer would be triggered here in production
+    await recordVaultRouting({
+      wallet, assetId: assetRow.id, assetClass: asset.assetClass,
+      totalAbra: mintCostAbra, txSignature: txSig,
+    });
+
+    // 5. Auto-advance to listed after verification delay (demo: immediate)
     // In production: this would be triggered by custodian webhook
     setTimeout(async () => {
       await supabase.from("assets").update({ status:"verified",   updated_at:new Date().toISOString() }).eq("id",assetRow.id);

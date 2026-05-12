@@ -60,6 +60,7 @@ function StepBar({ step }:{ step:Step }) {
 // ─── Main IssuanceEngine export ───────────────────────────────────────────────
 export function IssuanceEngine() {
   const { connected, publicKey } = useWallet();
+  const [vaultAlloc, setVaultAlloc] = useState<VaultAllocation|null>(null);
   const { setVisible } = useWalletModal();
 
   // Store hooks — single source of truth
@@ -85,6 +86,8 @@ export function IssuanceEngine() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const cfg = ASSET_CLASSES[assetClass];
+  // Compute vault split live
+  useEffect(()=>{ setVaultAlloc(calcVaultAllocation(assetClass, cfg.fee+10)); }, [assetClass]);
   const estUsd = parseFloat(val.estimatedUsd)||0;
   const abraFee = cfg.fee;
   const borrowMax = Math.round(estUsd * cfg.ltv / 100);
@@ -149,10 +152,28 @@ export function IssuanceEngine() {
 
 
   // ─── UPLOAD  // ─── UPLOAD ────────────────────────────────────────────────────────────────
+  // ─── Custody Safety Banner (appears on every step) ───────────────────────────
+  function CustodySafetyBanner() {
+    return (
+      <div style={{ marginBottom:"1rem",padding:"0.6rem 0.875rem",background:"rgba(20,241,149,0.04)",border:"1px solid rgba(20,241,149,0.1)",borderRadius:"9px",display:"flex",gap:"0.625rem",alignItems:"flex-start" }}>
+        <span style={{ fontSize:"0.9rem",color:"rgba(20,241,149,0.5)",flexShrink:0 }}>🔐</span>
+        <div>
+          <div style={{ fontSize:"0.44rem",fontWeight:800,color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"0.15rem" }}>
+            Your asset stays in your control — always
+          </div>
+          <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.38)",lineHeight:1.6 }}>
+            Tokenizing does not transfer ownership of your physical asset. Your wallet holds the on-chain token. The asset moves to verified custody only after you authorize it. No transfer can occur without your wallet signature — and custody partner co-sign.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if(step==="upload") return (
     <div style={{ padding:"1.25rem",maxWidth:"680px" }}>
       <StepBar step="upload" />
 
+      <CustodySafetyBanner />
       {/* Header */}
       <div style={{ marginBottom:"1.5rem" }}>
         <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",color:"rgba(20,241,149,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",margin:"0 0 0.3rem" }}>Studio · Step 1 of 7 · Asset Origination</p>
@@ -360,6 +381,36 @@ export function IssuanceEngine() {
         </div>
       </div>
 
+      <CustodySafetyBanner />
+
+      {/* Vault routing preview */}
+      {vaultAlloc&&(
+        <div style={{ marginBottom:"0.875rem",padding:"0.625rem 0.875rem",background:"rgba(200,169,110,0.05)",border:"1px solid rgba(200,169,110,0.15)",borderRadius:"9px" }}>
+          <div style={{ fontSize:"0.42rem",fontWeight:700,color:"rgba(200,169,110,0.6)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"0.4rem" }}>Where Your $ABRA Goes</div>
+          <div style={{ display:"flex",flexDirection:"column",gap:"0.22rem" }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+              <span style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.45)" }}>Protocol Treasury (Main Vault)</span>
+              <div style={{ textAlign:"right" }}>
+                <span style={{ fontSize:"0.52rem",fontWeight:700,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace" }}>{vaultAlloc.mainVault.amount} $ABRA</span>
+                <span style={{ fontSize:"0.38rem",color:"rgba(255,255,255,0.2)",marginLeft:"0.35rem",fontFamily:"'JetBrains Mono',monospace" }}>{vaultAlloc.mainVault.pct}%</span>
+              </div>
+            </div>
+            {vaultAlloc.classVault.amount>0&&(
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                <span style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.45)" }}>{assetClass} Class Vault (PDA)</span>
+                <div style={{ textAlign:"right" }}>
+                  <span style={{ fontSize:"0.52rem",fontWeight:700,color:"#6b8cff",fontFamily:"'JetBrains Mono',monospace" }}>{vaultAlloc.classVault.amount} $ABRA</span>
+                  <span style={{ fontSize:"0.38rem",color:"rgba(255,255,255,0.2)",marginLeft:"0.35rem",fontFamily:"'JetBrains Mono',monospace" }}>20%</span>
+                </div>
+              </div>
+            )}
+            <div style={{ marginTop:"0.22rem",fontSize:"0.4rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",wordBreak:"break-all" }}>
+              Main: {VAULTS.MAIN.slice(0,12)}…{VAULTS.MAIN.slice(-6)}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fee breakdown */}
       <div style={{ background:"rgba(6,8,16,0.99)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",overflow:"hidden",marginBottom:"1.25rem" }}>
         {[[`${assetClass} Issuance`,`${abraFee} $ABRA`,"#C8A96E"],
@@ -468,6 +519,28 @@ export function IssuanceEngine() {
               <span style={{ fontSize:"0.52rem",color:"#FBBF24",fontWeight:700 }}>Awaiting custodian response — asset appears in Markets as pending preview</span>}
           </div>
         )}
+      </div>
+
+      {/* Admin verification explanation */}
+      <div style={{ marginBottom:"1rem",padding:"0.75rem 0.875rem",background:"rgba(251,191,36,0.04)",border:"1px solid rgba(251,191,36,0.12)",borderRadius:"9px" }}>
+        <div style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(251,191,36,0.6)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"0.4rem" }}>🔍 Human Review — What This Means</div>
+        <div style={{ display:"flex",flexDirection:"column",gap:"0.28rem" }}>
+          {([
+            ["Abraxas team reviews your submission","We check metadata accuracy, image quality, and asset description integrity."],
+            ["Custody partner notified","Your designated partner (e.g. Baxus, Courtyard) receives a custody notification for the physical asset."],
+            ["Ownership verification","We verify wallet ownership of the token matches declared ownership of the physical asset."],
+            ["No asset movement without you","Your physical asset does NOT move during this review. Nothing ships or transfers until YOU authorize it."],
+            ["Anti-fraud check","Each submission is screened against known counterfeit registries and duplicate listings."],
+          ] as const).map(([title,desc])=>(
+            <div key={title} style={{ display:"flex",gap:"0.4rem" }}>
+              <span style={{ color:"rgba(251,191,36,0.5)",flexShrink:0,marginTop:"1px" }}>▸</span>
+              <div>
+                <div style={{ fontSize:"0.48rem",fontWeight:700,color:"rgba(255,255,255,0.55)" }}>{title}</div>
+                <div style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.32)",lineHeight:1.55 }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* What happens next */}
