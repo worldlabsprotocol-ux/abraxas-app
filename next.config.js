@@ -1,33 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-
-  webpack: (config, { isServer, webpack }) => {
+  // Silence React-Native peer dependency warnings in browser builds
+  webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false, net: false, tls: false,
-        crypto: false, stream: false, path: false, os: false,
-        "react-native": false,
-        "@react-native/virtualized-lists": false,
+      // Stub out RN-only packages that get pulled in by MetaMask SDK / wagmi connectors
+      // These are never used in the web runtime — aliasing to false removes the bundle error
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@react-native-async-storage/async-storage": false,
       };
-
-      // Suppress missing @react-native-async-storage inside @metamask/sdk browser dist
-      // (@wagmi/connectors bundles MetaMask SDK as a transitive dep)
-      config.plugins.push(
-        new webpack.IgnorePlugin({
-          resourceRegExp: /^@react-native-async-storage\/async-storage$/,
-        })
-      );
     }
-
-    if (!Array.isArray(config.externals)) {
-      config.externals = [config.externals].filter(Boolean);
-    }
-    config.externals.push("pino-pretty", "lokijs", "encoding");
-
     return config;
   },
+
+  // Required for importing data/inventory.json directly in components
+  experimental: {},
 };
 
 module.exports = nextConfig;

@@ -7,7 +7,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useAbraStore, type AssetStatus } from "@/lib/abraxasStore";
+import { useAbraStore } from "@/lib/abraxasStore";
+import { calcVaultAllocation, VAULTS } from "@/lib/abraVaultRouter";
+
+// ─── Inline type (mirrors abraVaultRouter export — safe even if router not yet in repo)
+interface VaultAllocation {
+  mainVault:  { address: string; amount: number; pct: number };
+  classVault: { address: string; amount: number; pct: number };
+  total:      number;
+  assetClass: string;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AssetClass = "Spirits"|"Watches"|"Cards (PSA/BGS)"|"Comics (CGC)"|"Racehorses"|"Metals"|"Art"|"Other";
@@ -87,7 +96,10 @@ export function IssuanceEngine() {
 
   const cfg = ASSET_CLASSES[assetClass];
   // Compute vault split live
-  useEffect(()=>{ setVaultAlloc(calcVaultAllocation(assetClass, cfg.fee+10)); }, [assetClass]);
+  useEffect(()=>{
+    try { setVaultAlloc(calcVaultAllocation(assetClass, cfg.fee+10)); }
+    catch { /* abraVaultRouter not yet available — vault display hidden */ }
+  }, [assetClass]);
   const estUsd = parseFloat(val.estimatedUsd)||0;
   const abraFee = cfg.fee;
   const borrowMax = Math.round(estUsd * cfg.ltv / 100);
