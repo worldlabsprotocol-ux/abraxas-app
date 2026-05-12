@@ -60,12 +60,17 @@ function AssetCard({ asset, isNew=false }:{ asset:InvAsset; isNew?:boolean }) {
       <div style={{height:"2px",background:`linear-gradient(90deg,${c}90,${c}15)`}}/>
       {/* Image */}
       {asset.imagePath&&!imgErr?(
-        <div style={{height:"110px",background:"rgba(6,8,16,0.98)",display:"flex",alignItems:"center",justifyContent:"center",padding:"0.4rem",overflow:"hidden"}}>
-          <img src={asset.imagePath} alt={asset.name} onError={()=>setImgErr(true)}
-            style={{maxHeight:"102px",maxWidth:"100%",objectFit:"contain"}} loading="lazy"/>
+        <div style={{height:"120px",background:"rgba(6,8,16,0.98)",display:"flex",alignItems:"center",justifyContent:"center",padding:"0.35rem",overflow:"hidden"}}>
+          <img
+            src={asset.imagePath}
+            alt={asset.name}
+            onError={()=>setImgErr(true)}
+            style={{maxHeight:"112px",maxWidth:"100%",objectFit:"contain",borderRadius:"4px"}}
+            loading="lazy"
+          />
         </div>
       ):(
-        <div style={{height:"72px",background:`linear-gradient(145deg,${c}09,rgba(6,8,16,0.99))`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.15rem",position:"relative"}}>
+        <div style={{height:"100px",background:`linear-gradient(145deg,${c}09,rgba(6,8,16,0.99))`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.15rem",position:"relative"}}>
           <div style={{position:"absolute",inset:0,opacity:0.04,display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:"0.5rem",color:c,fontSize:"1.2rem",userSelect:"none"}}>{"◈◈◈◈◈◈◈◈"}</div>
           <div style={{fontSize:"1.2rem",color:c,opacity:0.55,zIndex:1}}>◈</div>
           <div style={{fontSize:"0.38rem",color:c,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em",zIndex:1}}>{asset.category}</div>

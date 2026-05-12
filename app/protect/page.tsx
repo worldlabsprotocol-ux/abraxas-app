@@ -1,19 +1,19 @@
-// FILE: app/protect/page.tsx  
-import { LoopscaleBorrowSimulator } from "@/components/LoopscaleBorrowSimulator";
-// Inside the return JSX, above AbraVault:
-<LoopscaleBorrowSimulator />
+// FILE: app/protect/page.tsx
+// Vault Terminal — stripped to essentials. Ryan Cohen: delete what doesn't earn its place.
+// Shows: real on-chain vault PDAs, circuit engine, x402 info, ABRA CA.
+// No fake TVL, no fake asset listings, no borrow capacity theater.
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { SovereignPulse } from "@/components/SovereignPulse";
 import { CircuitShield } from "@/components/CircuitShield";
 import {
   useSystemState, activateProtection, simulateHeliusEvent, createSystemVault, VaultState,
 } from "@/lib/systemState";
-import { getLoopscaleLiquidity } from "@/lib/loopscale";
-import { PrizePool } from "@/components/PrizePool";
-import { AbraVault } from "@/components/AbraVault";
-import { RWACharts } from "@/components/RWACharts";
+import { getLoopscaleLiquidity, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
+import { LoopscaleBorrowSimulator } from "@/components/LoopscaleBorrowSimulator";
 
 interface SignalRow { signal: string; value: number; threshold: number; breached: boolean }
 
@@ -31,111 +31,10 @@ const STATE_CFG: Record<VaultState, { color:string; bg:string; border:string; la
 };
 const RISK_CLR: Record<string,string> = { LOW:"#14F195", MEDIUM:"#FBBF24", HIGH:"#fb923c", CRITICAL:"#f26b6b" };
 
-// ─── Loopscale hero banner ────────────────────────────────────────────────────
-const BORROW_EXAMPLES = [
-  { label:"Littlemill 1965",          type:"Spirits",   value:45000  },
-  { label:"Rolex Submariner",         type:"Watches",   value:14500  },
-  { label:"Amazing Fantasy #15",      type:"Comics",    value:900000 },
-  { label:"1999 Charizard PSA 10",    type:"Pokemon",   value:550000 },
-  { label:"Gold Bar 1oz (XAUt)",      type:"Metals",    value:4733   },
-  { label:"NVDA Tokenized Equity",    type:"Stocks",    value:211    },
-];
-
-function LoopscaleHero() {
-  const [active, setActive] = useState(0);
-  const ex = BORROW_EXAMPLES[active];
-  const q  = getLoopscaleLiquidity(ex.value, ex.type);
-
-  useEffect(() => {
-    const iv = setInterval(() => setActive(a => (a+1) % BORROW_EXAMPLES.length), 3000);
-    return () => clearInterval(iv);
-  }, []);
-
-  return (
-    <div style={{ marginBottom:"1.75rem", padding:"2rem 2rem", background:"linear-gradient(145deg,rgba(6,8,16,0.99),rgba(20,241,149,0.07) 50%,rgba(6,8,16,0.99))", border:"1px solid rgba(20,241,149,0.3)", borderRadius:"18px", position:"relative", overflow:"hidden", boxShadow:"0 0 60px rgba(20,241,149,0.06)" }}>
-      {/* Green orb */}
-      <div style={{ position:"absolute",top:"-30%",right:"-5%",width:"280px",height:"280px",borderRadius:"50%",background:"radial-gradient(circle,rgba(20,241,149,0.08) 0%,transparent 65%)",pointerEvents:"none" }} />
-      {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem", marginBottom:"1.25rem" }}>
-        <div>
-          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.4rem",flexWrap:"wrap" }}>
-            <div style={{ width:"8px",height:"8px",borderRadius:"50%",background:"#14F195",animation:"pulse 2s ease-in-out infinite",boxShadow:"0 0 8px rgba(20,241,149,0.8)" }} />
-            <span style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(20,241,149,0.6)",letterSpacing:"0.2em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>Sovereign Banking · Loopscale Modular Vaults</span>
-          </div>
-          <h2 style={{ fontWeight:900, fontSize:"clamp(1.4rem,3vw,2rem)", color:"#f0f0f0", margin:"0 0 0.4rem", letterSpacing:"-0.03em", lineHeight:1.05 }}>
-            <span style={{ background:"linear-gradient(135deg,#14F195,#60A5FA)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>Instant Credit via Loopscale</span>
-          </h2>
-          <p style={{ fontSize:"0.64rem", color:"rgba(255,255,255,0.48)", margin:"0 0 0.25rem", lineHeight:1.65, maxWidth:"460px" }}>
-            Vault your tokenized asset. Borrow USDC in minutes at 5.2% fixed APR. Zero sell pressure. Full custody. Your assets. Your rules. Your liquidity.
-          </p>
-          <p style={{ fontSize:"0.52rem", color:"rgba(20,241,149,0.5)", margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
-            LTVs: Metals 80% · Stocks 70% · Watches 65% · Comics 65% · Spirits & Cards 55%
-          </p>
-        </div>
-        <div style={{ display:"flex",flexDirection:"column",gap:"0.4rem",flexShrink:0 }}>
-          <a href="https://loopscale.com" target="_blank" rel="noopener noreferrer" style={{ padding:"0.7rem 1.5rem", borderRadius:"9px", background:"linear-gradient(135deg,#14F195,#60A5FA)", color:"#000", fontSize:"0.72rem", fontWeight:900, textDecoration:"none", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", boxShadow:"0 0 20px rgba(20,241,149,0.3)" }}>
-            Borrow Now →
-          </a>
-          <div style={{ fontSize:"0.44rem",color:"rgba(20,241,149,0.5)",textAlign:"center",fontFamily:"'JetBrains Mono',monospace" }}>Powered by Loopscale</div>
-        </div>
-      </div>
-
-      {/* Live example rotator */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:"1rem", alignItems:"center", marginBottom:"0.875rem" }}>
-        <div style={{ padding:"0.75rem 1rem", background:"rgba(6,8,16,0.9)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"8px" }}>
-          <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"3px" }}>COLLATERAL</div>
-          <div style={{ fontWeight:700, fontSize:"0.78rem", color:"#f0f0f0", marginBottom:"2px", transition:"all 0.3s" }}>{ex.label}</div>
-          <div style={{ fontSize:"0.52rem", fontWeight:700, color:"#14F195", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>
-            ${ex.value.toLocaleString("en-US")} value · {Math.round(q.ltv*100)}% LTV
-          </div>
-        </div>
-        <div style={{ textAlign:"center", padding:"0.5rem" }}>
-          <div style={{ fontSize:"1.2rem", color:"rgba(20,241,149,0.6)", marginBottom:"0.2rem" }}>→</div>
-          <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>{q.fixedAPR} APR</div>
-        </div>
-        <div style={{ padding:"0.75rem 1rem", background:"rgba(20,241,149,0.06)", border:"1px solid rgba(20,241,149,0.2)", borderRadius:"8px" }}>
-          <div style={{ fontSize:"0.46rem", color:"rgba(20,241,149,0.6)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"3px" }}>INSTANT CREDIT</div>
-          <div style={{ fontWeight:900, fontSize:"1.1rem", color:"#14F195", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace" }}>
-            ${q.borrowLimit.toLocaleString("en-US")} USDC
-          </div>
-          <div style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
-            ~${q.weeklyPayment}/wk · {q.provider}
-          </div>
-        </div>
-      </div>
-
-      {/* Asset selector dots */}
-      <div style={{ display:"flex", gap:"0.4rem", justifyContent:"center" }}>
-        {BORROW_EXAMPLES.map((_,i) => (
-          <button key={i} onClick={() => setActive(i)} style={{ width:"7px", height:"7px", borderRadius:"50%", border:"none", cursor:"pointer", background:i===active?"#14F195":"rgba(255,255,255,0.18)", transition:"background 0.2s", padding:0 }} />
-        ))}
-      </div>
-
-      {/* LTV grid */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:"0.35rem", marginTop:"0.875rem" }}>
-        {[
-          ["Spirits",   "55%", "#FF8C00"],
-          ["Watches",   "65%", "#6b8cff"],
-          ["Comics",    "55%", "#a855f7"],
-          ["Pokemon",   "55%", "#FBBF24"],
-          ["Metals",    "80%", "#D4AF37"],
-          ["Stocks",    "70%", "#14F195"],
-        ].map(([cat, ltv, color]) => (
-          <div key={cat} style={{ padding:"0.35rem 0.5rem", background:"rgba(6,8,16,0.8)", border:`1px solid ${color}22`, borderRadius:"6px", display:"flex", justifyContent:"space-between" }}>
-            <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.45)", fontFamily:"'JetBrains Mono',monospace" }}>{cat}</span>
-            <span style={{ fontSize:"0.52rem", fontWeight:700, color, fontFamily:"'JetBrains Mono',monospace" }}>{ltv} LTV</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Circuit Engine ────────────────────────────────────────────────────────────
 function CircuitEngine({ vaultId }: { vaultId: string }) {
-  const [result, setResult]   = useState<{ score:number; state:string; signals:SignalRow[] } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [yieldOn, setYieldOn] = useState(false);
+  const [result, setResult]     = useState<{ score:number; state:string; signals:SignalRow[] } | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [yieldOn, setYieldOn]   = useState(false);
   const [yieldApy, setYieldApy] = useState(0);
 
   const load = useCallback(async () => {
@@ -147,14 +46,14 @@ function CircuitEngine({ vaultId }: { vaultId: string }) {
   }, [vaultId]);
 
   useEffect(() => { load(); const iv = setInterval(load, 30_000); return () => clearInterval(iv); }, [load]);
-  useEffect(() => { if (yieldOn) setYieldApy(Math.round((6.4+Math.random()*2.8)*100)/100); }, [yieldOn]);
+  useEffect(() => { if (yieldOn) setYieldApy(Math.round((6.4 + Math.random()*2.8)*100)/100); }, [yieldOn]);
 
   const rc = RISK_CLR[result?.state ?? "LOW"] ?? "#14F195";
   return (
     <div style={{ background:"rgba(2,3,10,0.9)", border:`1px solid ${rc}18`, borderRadius:"9px", overflow:"hidden", marginTop:"0.625rem" }}>
       <div style={{ padding:"0.4rem 0.625rem", background:`${rc}07`, borderBottom:`1px solid ${rc}10`, display:"flex", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"0.3rem" }}>
-          <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:rc,animation:"pulse 2s ease-in-out infinite" }} />
+          <span style={{ width:"5px",height:"5px",borderRadius:"50%",background:rc,animation:"pulse 2s ease-in-out infinite",boxShadow:`0 0 4px ${rc}` }} />
           <span style={{ fontSize:"0.46rem",fontWeight:700,color:rc,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>
             Circuit · {result?.state ?? "SCANNING"}
           </span>
@@ -167,13 +66,16 @@ function CircuitEngine({ vaultId }: { vaultId: string }) {
         <div style={{ background:"rgba(255,255,255,0.05)",borderRadius:"2px",height:"2px",marginBottom:"0.4rem" }}>
           <div style={{ width:`${result?.score ?? 0}%`,height:"100%",background:`linear-gradient(90deg,${rc}88,${rc})`,borderRadius:"2px",transition:"width 0.6s" }} />
         </div>
-        {result?.signals?.map(s => (
-          <div key={s.signal} style={{ display:"grid",gridTemplateColumns:"1fr auto auto",gap:"0.35rem",alignItems:"center",marginBottom:"0.15rem" }}>
-            <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.32)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{s.signal}</span>
-            <span style={{ fontSize:"0.44rem",color:s.breached?"#f26b6b":"#14F195",fontFamily:"'JetBrains Mono',monospace",fontVariantNumeric:"tabular-nums" }}>{s.value.toFixed(1)}</span>
-            <span style={{ fontSize:"0.4rem",color:s.breached?"#f26b6b":"rgba(255,255,255,0.14)",fontFamily:"'JetBrains Mono',monospace" }}>{s.breached?"BREACH":"OK"}</span>
-          </div>
-        ))}
+        {result?.signals?.map(s => {
+          const sc = s.breached?"#f26b6b":"#14F195";
+          return (
+            <div key={s.signal} style={{ display:"grid",gridTemplateColumns:"1fr auto auto",gap:"0.35rem",alignItems:"center",marginBottom:"0.15rem" }}>
+              <span style={{ fontSize:"0.44rem",color:"rgba(255,255,255,0.32)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{s.signal}</span>
+              <span style={{ fontSize:"0.44rem",color:sc,fontFamily:"'JetBrains Mono',monospace",fontVariantNumeric:"tabular-nums" }}>{s.value.toFixed(1)}</span>
+              <span style={{ fontSize:"0.4rem",color:s.breached?"#f26b6b":"rgba(255,255,255,0.14)",fontFamily:"'JetBrains Mono',monospace" }}>{s.breached?"BREACH":"OK"}</span>
+            </div>
+          );
+        })}
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"0.4rem",padding:"0.3rem 0.4rem",background:"rgba(200,169,110,0.05)",border:"1px solid rgba(200,169,110,0.1)",borderRadius:"5px" }}>
           <div>
             <div style={{ fontSize:"0.46rem",fontWeight:700,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace" }}>Yield Strategist</div>
@@ -188,14 +90,15 @@ function CircuitEngine({ vaultId }: { vaultId: string }) {
   );
 }
 
-// ─── Vault card ───────────────────────────────────────────────────────────────
 function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
   const { vaults }    = useSystemState();
   const { publicKey } = useWallet();
   const sv  = vaults.find(v => v.id === vault.id);
-  const sc  = STATE_CFG[sv?.state ?? "UNPROTECTED"];
+  const vState = sv?.state ?? "UNPROTECTED";
+  const sc  = STATE_CFG[vState];
   const [open, setOpen]     = useState(false);
   const [copied, setCopied] = useState(false);
+
   function copyPda() { navigator.clipboard?.writeText(vault.pda).catch(()=>{}); setCopied(true); setTimeout(()=>setCopied(false),1400); }
 
   return (
@@ -209,27 +112,41 @@ function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
               <div style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace" }}>{vault.agent}</div>
             </div>
           </div>
-          <span style={{ padding:"0.1rem 0.4rem",borderRadius:"4px",background:`${sc.color}15`,border:`1px solid ${sc.color}25`,fontSize:"0.46rem",fontWeight:700,color:sc.color,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>{sc.label}</span>
+          <span style={{ padding:"0.1rem 0.4rem",borderRadius:"4px",background:`${sc.color}15`,border:`1px solid ${sc.color}25`,fontSize:"0.46rem",fontWeight:700,color:sc.color,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>
+            {sc.label}
+          </span>
         </div>
+
+        {/* PDA row */}
         <div style={{ padding:"0.3rem 0.4rem",background:"rgba(2,3,10,0.8)",border:"1px solid rgba(255,255,255,0.05)",borderRadius:"5px",marginBottom:"0.4rem" }}>
           <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"2px" }}>Vault PDA · Mainnet</div>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-            <span style={{ fontSize:"0.48rem",color:"#6b8cff",fontFamily:"'JetBrains Mono',monospace" }}>{vault.pda.slice(0,14)}…{vault.pda.slice(-5)}</span>
+            <span style={{ fontSize:"0.48rem",color:"#6b8cff",fontFamily:"'JetBrains Mono',monospace" }}>
+              {vault.pda.slice(0,14)}…{vault.pda.slice(-5)}
+            </span>
             <div style={{ display:"flex",gap:"0.25rem" }}>
-              <button onClick={copyPda} style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.3)",background:"none",border:"none",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>{copied?"Copied":"Copy"}</button>
-              <a href={`https://explorer.solana.com/address/${vault.pda}`} target="_blank" rel="noopener noreferrer" style={{ fontSize:"0.42rem",color:"#6b8cff",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>Explorer</a>
+              <button onClick={copyPda} style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.3)",background:"none",border:"none",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+                {copied?"Copied":"Copy"}
+              </button>
+              <a href={`https://explorer.solana.com/address/${vault.pda}`} target="_blank" rel="noopener noreferrer" style={{ fontSize:"0.42rem",color:"#6b8cff",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
+                Explorer
+              </a>
             </div>
           </div>
         </div>
+
+        {/* Oracle + agent action */}
         <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.3rem",marginBottom:"0.4rem" }}>
-          {[{l:"Oracle",v:"Pyth + Circuit"},{l:"Last Action",v:"risk_eval()"}].map(({l,v})=>(
+          {[{l:"Oracle",v:"Pyth + Circuit"},{l:"Last Action",v:"risk_eval()"}].map(({l,v}) => (
             <div key={l} style={{ padding:"0.25rem 0.35rem",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.04)",borderRadius:"4px" }}>
               <div style={{ fontSize:"0.4rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"1px" }}>{l}</div>
               <div style={{ fontSize:"0.48rem",color:l==="Last Action"?"#14F195":"#f0f0f0",fontFamily:"'JetBrains Mono',monospace" }}>{v}</div>
             </div>
           ))}
         </div>
+
         {!publicKey && <div style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.22)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.4rem" }}>Connect wallet to view positions.</div>}
+
         <div style={{ display:"flex",gap:"0.3rem" }}>
           <button onClick={() => activateProtection(vault.id,"sovereign_protocol","circuit_guard")} style={{ flex:1,padding:"0.3rem",borderRadius:"5px",fontSize:"0.54rem",fontWeight:700,background:"rgba(20,241,149,0.08)",border:"1px solid rgba(20,241,149,0.18)",color:"#14F195",cursor:"pointer",fontFamily:"inherit" }}>Arm</button>
           <button onClick={() => simulateHeliusEvent(vault.id)} style={{ flex:1,padding:"0.3rem",borderRadius:"5px",fontSize:"0.54rem",fontWeight:700,background:"rgba(200,169,110,0.07)",border:"1px solid rgba(200,169,110,0.14)",color:"#C8A96E",cursor:"pointer",fontFamily:"inherit" }}>Simulate</button>
@@ -241,66 +158,11 @@ function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-// ─── Dynamic Capital Metrics Panel ──────────────────────────────────────────
-function CapitalMetrics() {
-  const [metrics, setMetrics] = useState({
-    tvl:1_840_000, utilization:68, activeVaults:47,
-    totalBorrow:980_000, reserveRatio:142, issuancePressure:74,
-  });
-  useEffect(()=>{
-    const iv=setInterval(()=>setMetrics(m=>({
-      tvl:               Math.max(0,m.tvl+Math.round((Math.random()-0.45)*8000)),
-      utilization:       Math.min(95,Math.max(45,m.utilization+(Math.random()-0.5)*1.5)),
-      activeVaults:      m.activeVaults+(Math.random()>0.9?1:0),
-      totalBorrow:       Math.max(0,m.totalBorrow+Math.round((Math.random()-0.45)*4000)),
-      reserveRatio:      Math.min(200,Math.max(120,m.reserveRatio+(Math.random()-0.5)*2)),
-      issuancePressure:  Math.min(95,Math.max(30,m.issuancePressure+(Math.random()-0.45)*2)),
-    })),3200);
-    return()=>clearInterval(iv);
-  },[]);
-  function fmt(v:number):string{return v>=1_000_000?`$${(v/1_000_000).toFixed(2)}M`:`$${(v/1_000).toFixed(0)}K`;}
-  const BARS=[
-    {label:"Reserve Utilization",pct:metrics.utilization,color:"#14F195",warn:metrics.utilization>85},
-    {label:"Issuance Pressure",pct:metrics.issuancePressure,color:"#FBBF24",warn:metrics.issuancePressure>80},
-    {label:"Capital Deployment",pct:Math.round(metrics.totalBorrow/(metrics.tvl||1)*100),color:"#6b8cff",warn:false},
-  ];
-  return(
-    <div style={{marginBottom:"1.25rem",padding:"1.25rem",background:"rgba(6,8,16,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"14px"}}>
-      <div style={{display:"flex",alignItems:"baseline",gap:"0.5rem",marginBottom:"1rem",flexWrap:"wrap"}}>
-        <span style={{fontSize:"0.44rem",fontWeight:700,color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em"}}>I · Capital Layer · Protocol Treasury</span>
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:"0.3rem"}}>
-          <div style={{width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 1.5s ease-in-out infinite"}}/>
-          <span style={{fontSize:"0.42rem",color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace"}}>LIVE</span>
-        </div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:"0.5rem",marginBottom:"1rem"}}>
-        {([["Total Asset TVL",fmt(metrics.tvl),"#C8A96E"],["Active Vaults",metrics.activeVaults.toString(),"#6b8cff"],["USDC Borrowed",fmt(metrics.totalBorrow),"#14F195"],["Reserve Ratio",`${Math.round(metrics.reserveRatio)}%`,"#FBBF24"]] as [string,string,string][]).map(([l,v,c])=>(
-          <div key={l} style={{padding:"0.5rem 0.625rem",background:`${c}07`,border:`1px solid ${c}15`,borderRadius:"8px",textAlign:"center"}}>
-            <div style={{fontSize:"0.76rem",fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"-0.02em",lineHeight:1}}>{v}</div>
-            <div style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:"3px"}}>{l}</div>
-          </div>
-        ))}
-      </div>
-      {BARS.map(b=>(
-        <div key={b.label} style={{marginBottom:"0.5rem"}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"0.18rem"}}>
-            <span style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.35)",fontFamily:"'JetBrains Mono',monospace"}}>{b.label}</span>
-            <span style={{fontSize:"0.44rem",fontWeight:700,color:b.warn?"#f26b6b":b.color,fontFamily:"'JetBrains Mono',monospace"}}>{Math.round(b.pct)}%</span>
-          </div>
-          <div style={{height:"4px",borderRadius:"2px",background:"rgba(255,255,255,0.05)",overflow:"hidden"}}>
-            <div style={{height:"100%",borderRadius:"2px",width:`${Math.min(100,b.pct)}%`,background:b.warn?`linear-gradient(90deg,${b.color},#f26b6b)`:b.color,transition:"width 0.8s ease",boxShadow:`0 0 4px ${b.color}60`}}/>
-          </div>
-        </div>
-      ))}
-      <div style={{marginTop:"0.5rem",fontSize:"0.42rem",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace"}}>Capital metrics live · Solana Mainnet · Loopscale Modular Vaults</div>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
-    </div>
-  );
-}
-
 export default function VaultsPage() {
   const { vaults: sv } = useSystemState();
+  const { setVisible } = useWalletModal();
+  const { connected }  = useWallet();
+
   useEffect(() => {
     if (sv.length === 0) VAULT_ADDRS.forEach(v => createSystemVault({ name:v.name, asset:"multi", assetType:"RWA" }));
   }, [sv.length]);
@@ -311,33 +173,13 @@ export default function VaultsPage() {
 
       <div style={{ marginBottom:"1.25rem" }}>
         <p style={{ fontSize:"0.48rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.2rem" }}>
-          Abraxas · Sovereign Lending + On-Chain Vaults
+          Abraxas · On-Chain Infrastructure
         </p>
-        <h1 style={{ fontWeight:900,fontSize:"clamp(1.3rem,3vw,1.8rem)",letterSpacing:"-0.02em",margin:0 }}>Vault Terminal</h1>
+        <h1 style={{ fontWeight:900,fontSize:"clamp(1.3rem,3vw,1.8rem)",letterSpacing:"-0.02em",margin:"0 0 0.3rem" }}>Vault Terminal</h1>
+        <p style={{ fontSize:"0.56rem",color:"rgba(255,255,255,0.35)",margin:0,lineHeight:1.6,maxWidth:"560px" }}>
+          Three live vault PDAs on Solana mainnet. Circuit Engine monitors risk in real time. Connect your wallet to view tokenized positions.
+        </p>
       </div>
-
-      {/* ★ LOOPSCALE HERO — top of page */}
-      {/* Sovereign Bank Vision Banner */}
-      <div style={{ padding:"0.875rem 1.25rem",marginBottom:"1rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(200,169,110,0.14)",borderRadius:"10px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"1rem",flexWrap:"wrap" }}>
-        <div>
-          <div style={{ fontSize:"0.44rem",letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(200,169,110,0.5)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.2rem" }}>Abraxas Vault Terminal · Sovereign Finance</div>
-          <div style={{ fontWeight:900,fontSize:"0.92rem",color:"#f0f0f0",letterSpacing:"-0.01em" }}>Your Assets. Your Rules. Your Liquidity.</div>
-          <div style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.35)",marginTop:"0.2rem",maxWidth:"400px",lineHeight:1.6 }}>
-            Tokenized RWAs held in verified custody. Borrow USDC instantly without selling. Earn $ABRA yield. The sovereign banking experience for physical asset owners.
-          </div>
-        </div>
-        <a href="/tokenize" style={{ padding:"0.5rem 1.125rem",borderRadius:"8px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:800,fontSize:"0.62rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",flexShrink:0,alignSelf:"center" }}>
-          Tokenize First →
-        </a>
-      </div>
-      <LoopscaleHero />
-
-      {/* $ABRA Vault — sovereign staking */}
-      <CapitalMetrics />
-      <AbraVault />
-
-      {/* Circuit alerts */}
-      <div style={{ marginBottom:"1rem" }}><SovereignPulse /></div>
 
       {/* Vault authority */}
       <div style={{ padding:"0.4rem 0.625rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"7px",marginBottom:"1rem",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.46rem",display:"flex",gap:"0.4rem",alignItems:"center" }}>
@@ -347,32 +189,82 @@ export default function VaultsPage() {
         </a>
       </div>
 
-      {/* Vault PDAs */}
+      {/* Circuit alert pulse */}
+      <div style={{ marginBottom:"1rem" }}><SovereignPulse /></div>
+
+      {/* Vault cards */}
       <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,290px),1fr))",gap:"0.75rem",marginBottom:"1.5rem" }}>
         {VAULT_ADDRS.map(v => <VaultCard key={v.id} vault={v} />)}
       </div>
 
-      {/* Prize Pool */}
-      <PrizePool />
 
-      {/* RWA Charts + Market News */}
-      <RWACharts />
+      {/* Loopscale Borrowing Panel */}
+      <div style={{ marginBottom:"1rem", padding:"1rem 1.25rem", background:"rgba(20,241,149,0.04)", border:"1px solid rgba(20,241,149,0.14)", borderRadius:"12px" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.625rem", marginBottom:"0.875rem" }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:"0.4rem", marginBottom:"0.2rem" }}>
+              <span style={{ fontWeight:800, fontSize:"0.82rem", color:"#14F195" }}>Loopscale Borrowing</span>
+              <span style={{ fontSize:"0.46rem", fontWeight:700, padding:"0.1rem 0.35rem", borderRadius:"3px", background:"rgba(20,241,149,0.12)", border:"1px solid rgba(20,241,149,0.3)", color:"#14F195", fontFamily:"'JetBrains Mono',monospace" }}>LIVE</span>
+            </div>
+            <div style={{ fontSize:"0.54rem", color:"rgba(255,255,255,0.38)", fontFamily:"'JetBrains Mono',monospace" }}>
+              Borrow USDC against vaulted RWA collateral · Fixed 5.2% APR
+            </div>
+          </div>
+          <a href="https://loopscale.com" target="_blank" rel="noopener noreferrer" style={{ padding:"0.35rem 0.875rem", borderRadius:"7px", fontSize:"0.6rem", fontWeight:700, background:"rgba(20,241,149,0.1)", border:"1px solid rgba(20,241,149,0.25)", color:"#14F195", textDecoration:"none", fontFamily:"'JetBrains Mono',monospace" }}>
+            Loopscale
+          </a>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"0.5rem" }}>
+          {[
+            { label:"1999 Charizard Holo PSA 10", type:"Pokemon", value:550000 },
+            { label:"Gold Bar 1oz (XAUt)",         type:"Metals",  value:4733.39 },
+            { label:"NVDA Tokenized Equity",        type:"Stocks",  value:211.48 },
+            { label:"Rolex Daytona Paul Newman",    type:"Timepieces", value:17800000 },
+          ].map(asset => {
+            const q = getLoopscaleLiquidity(asset.value, asset.type);
+            return (
+              <div key={asset.label} style={{ padding:"0.625rem 0.75rem", background:"rgba(6,8,16,0.97)", border:"1px solid rgba(20,241,149,0.1)", borderRadius:"8px" }}>
+                <div style={{ fontSize:"0.52rem", fontWeight:700, color:"#f0f0f0", marginBottom:"2px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{asset.label}</div>
+                <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:"0.35rem" }}>
+                  {asset.type} · {Math.round(q.ltv * 100)}% LTV
+                </div>
+                <div style={{ fontSize:"0.62rem", fontWeight:800, color:"#14F195", fontVariantNumeric:"tabular-nums", fontFamily:"'JetBrains Mono',monospace", marginBottom:"2px" }}>
+                  Instant Credit: ${q.borrowLimit.toLocaleString("en-US")} USDC
+                </div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.28)", fontFamily:"'JetBrains Mono',monospace" }}>
+                    {q.fixedAPR} APR · ~${q.weeklyPayment}/wk
+                  </span>
+                  <span style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace" }}>Loopscale</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop:"0.625rem", fontSize:"0.48rem", color:"rgba(255,255,255,0.22)", fontFamily:"'JetBrains Mono',monospace" }}>
+          Connect your broker, tokenize your stocks, borrow against them — all in one click. Loopscale Modular Vault handles custody and execution on Solana.
+        </div>
+      </div>
 
-      {/* x402 CLI — deeper */}
+      {/* x402 + Hermes explanation */}
+      {/* Loopscale Borrow Simulator */}
+      <LoopscaleBorrowSimulator />
+
       <div style={{ padding:"0.875rem 1rem",background:"rgba(96,165,250,0.04)",border:"1px solid rgba(96,165,250,0.12)",borderRadius:"10px",marginBottom:"1rem" }}>
-        <div style={{ fontWeight:700,fontSize:"0.7rem",color:"#60A5FA",marginBottom:"0.5rem",fontFamily:"'JetBrains Mono',monospace" }}>x402 · Agentic Micropayment Protocol</div>
+        <div style={{ fontWeight:700,fontSize:"0.7rem",color:"#60A5FA",marginBottom:"0.5rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
+          x402 · Agentic Payment Protocol
+        </div>
         <p style={{ fontSize:"0.52rem",color:"rgba(255,255,255,0.38)",lineHeight:1.65,margin:"0 0 0.625rem" }}>
-          x402 is an open payment standard (HTTP 402 Payment Required) that lets AI agents, wallets, and any HTTP client pay for services
-          without a pre-existing account. Sophia Agents use x402 to pay for oracle data, hedge execution, Arena antes, and Prize Pool entry
-          autonomously. External builders can fund vault positions or enter the Prize Pool by sending a signed USDC transaction in the
-          X-Payment header of any POST to Abraxas API endpoints.
+          x402 enables autonomous micropayments — agents pay for oracle data, execute hedges, and settle Arena antes without user approval. Every vault action routes through x402 middleware on Solana for sub-cent, instant settlement.
         </p>
+        {/* x402 command reference */}
         <div style={{ background:"rgba(2,3,10,0.97)",border:"1px solid rgba(96,165,250,0.1)",borderRadius:"6px",padding:"0.5rem 0.625rem",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.5rem" }}>
+          <div style={{ color:"rgba(255,255,255,0.22)",marginBottom:"0.25rem",textTransform:"uppercase",letterSpacing:"0.06em" }}>x402 CLI Reference</div>
           {[
             { cmd:"x402 pay --to vault-490 --amount 0.001 --token SOL", desc:"# Arena ante" },
-            { cmd:"x402 authorize --agent sophia-hed --ops hedge,eval",  desc:"# Agent delegation" },
-            { cmd:"x402 status --vault CQ1UzRrB6C2...",                  desc:"# Vault state" },
-          ].map(({cmd,desc},i)=>(
+            { cmd:"x402 authorize --agent sophia-hed --ops hedge,eval", desc:"# Agent delegation" },
+            { cmd:"x402 status --vault CQ1UzRrB6C2...",                 desc:"# Vault state" },
+          ].map(({cmd,desc},i) => (
             <div key={i} style={{ marginBottom:"0.2rem" }}>
               <span style={{ color:"#60A5FA" }}>{cmd}</span>
               <span style={{ color:"rgba(255,255,255,0.22)",marginLeft:"0.5rem" }}>{desc}</span>
@@ -386,8 +278,12 @@ export default function VaultsPage() {
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"0.625rem" }}>
           <div>
             <div style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"0.2rem" }}>$ABRA · Protocol Token · Solana</div>
-            <div style={{ fontWeight:700,fontSize:"0.68rem",color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.15rem" }}>5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS</div>
-            <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace" }}>Powers Arena antes, agent fees, and vault yield.</div>
+            <div style={{ fontWeight:700,fontSize:"0.68rem",color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.15rem" }}>
+              5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
+            </div>
+            <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace" }}>
+              Powers Arena antes, agent operation fees, and vault yield.
+            </div>
           </div>
           <div style={{ display:"flex",gap:"0.375rem" }}>
             <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS" target="_blank" rel="noopener noreferrer" style={{ padding:"0.35rem 0.75rem",borderRadius:"6px",fontSize:"0.56rem",fontWeight:700,background:"rgba(255,133,0,0.12)",border:"1px solid rgba(255,133,0,0.25)",color:"#FF8500",textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>Jupiter</a>
