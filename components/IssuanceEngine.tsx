@@ -555,10 +555,40 @@ export function IssuanceEngine() {
         </div>
       </div>
 
+      {/* Loopscale instant liquidity callout */}
+      {estUsd>0&&(
+        <div style={{ marginBottom:"1rem",padding:"0.75rem 1rem",background:"linear-gradient(145deg,rgba(20,241,149,0.07),rgba(6,8,16,0.99))",border:"1px solid rgba(20,241,149,0.2)",borderRadius:"10px" }}>
+          <div style={{ display:"flex",alignItems:"center",gap:"0.4rem",marginBottom:"0.5rem" }}>
+            <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 2s ease-in-out infinite" }}/>
+            <span style={{ fontSize:"0.44rem",fontWeight:800,color:"rgba(20,241,149,0.7)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em" }}>Loopscale Lending — Unlocks After Verification</span>
+          </div>
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"0.4rem",marginBottom:"0.5rem" }}>
+            {([
+              ["Borrow Up To",   `$${borrowMax.toLocaleString()}`, "#14F195"],
+              ["Fixed APR",      "5.2%",                           "#14F195"],
+              ["LTV Cap",        `${cfg.ltv}%`,                    "#6b8cff"],
+            ] as const).map(([l,v,c])=>(
+              <div key={l} style={{ padding:"0.3rem 0.4rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"6px",textAlign:"center" }}>
+                <div style={{ fontSize:"0.62rem",fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace",lineHeight:1 }}>{v}</div>
+                <div style={{ fontSize:"0.36rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",marginTop:"2px" }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.38)",lineHeight:1.6 }}>
+            Once verified, borrow USDC in minutes — no intermediary, no waiting. Your {assetClass.toLowerCase()} stays in {cfg.partner} custody. Repay on your timeline. This is the primary value of tokenizing: <strong style={{color:"rgba(255,255,255,0.55)"}}>capital without selling.</strong>
+          </div>
+        </div>
+      )}
+
       {/* What happens next */}
       <div style={{ padding:"0.875rem 1rem",background:"rgba(6,8,16,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"10px",marginBottom:"1rem" }}>
         <div style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(255,255,255,0.3)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"0.5rem" }}>After Verification</div>
-        {[`Asset enters the Markets layer as a verified listing`,`Becomes collateralizable in the Capital layer via Loopscale`,`Max borrow unlocked: $${borrowMax.toLocaleString()} USDC at ${cfg.ltv}% LTV`,`$ABRA yield begins accruing from protocol interactions`].map((t,i)=>(
+        {[
+          `Asset enters Markets — joins Baxus spirits, Courtyard watches, and LBMA metals already listed`,
+          `Immediately borrowable on Loopscale: up to $${borrowMax.toLocaleString()} USDC at ${cfg.ltv}% LTV, 5.2% APR fixed`,
+          `Hold your asset in verified custody — no need to sell to access capital`,
+          `$ABRA yield accrues from protocol interactions, collateral activity, and fee routing`
+        ].map((t,i)=>(
           <div key={i} style={{ display:"flex",gap:"0.35rem",marginBottom:"0.18rem" }}>
             <span style={{ fontSize:"0.44rem",color:"rgba(200,169,110,0.5)" }}>{i+1}.</span>
             <span style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.42)",lineHeight:1.5 }}>{t}</span>

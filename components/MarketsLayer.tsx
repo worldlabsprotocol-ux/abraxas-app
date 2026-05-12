@@ -267,7 +267,7 @@ export function MarketsLayer() {
         </div>
       ):(
         <div style={{display:view==="grid"?"grid":"flex",gridTemplateColumns:view==="grid"?"repeat(auto-fill,minmax(min(100%,210px),1fr))":undefined,flexDirection:view==="list"?"column":undefined,gap:"0.5rem"}}>
-          {shown.map(a=><AssetCard key={a.id} asset={a} isNew={storeIds.has(a.id)}/>)}
+          {shown.map(a=><AssetCard key={a.id} asset={a} isNew={knownIds.has(a.id)}/>)}
         </div>
       )}
 

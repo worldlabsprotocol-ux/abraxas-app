@@ -65,9 +65,26 @@ export function StudioLanding({ onSelect }:{ onSelect:(cls:AssetClass)=>void }) 
         <p style={{fontSize:"0.64rem",color:"rgba(255,255,255,0.48)",margin:"0 0 0.3rem",maxWidth:"500px",lineHeight:1.7}}>
           Upload your asset. Pay the $ABRA mint fee. Enter the verification queue. Once verified — your asset becomes liquid, borrowable, and tradable on Solana.
         </p>
-        <p style={{fontSize:"0.54rem",color:"rgba(200,169,110,0.5)",margin:"0 0 1.5rem",fontFamily:"'JetBrains Mono',monospace"}}>
-          This is how physical assets will be owned in 5 years. Tokenize now to hold position before it becomes the standard.
+        <p style={{fontSize:"0.54rem",color:"rgba(200,169,110,0.5)",margin:"0 0 0.875rem",fontFamily:"'JetBrains Mono',monospace"}}>
+          Tokenize now. Borrow USDC against your asset via Loopscale immediately after verification — no waiting, no selling. Hold position before this becomes the standard.
         </p>
+        {/* Protocol value props */}
+        <div style={{display:"flex",gap:"0.75rem",flexWrap:"wrap",marginBottom:"1.5rem"}}>
+          {([
+            ["⚡","Instant Liquidity","Borrow USDC minutes after verification via Loopscale"],
+            ["🔐","Non-Custodial",   "Your wallet. Your asset. Co-sign required for any transfer."],
+            ["🏛️","Custody Partners","Baxus · Courtyard · LBMA · Metropolis · The Jockey Club"],
+            ["📍","Physical Locations","Abraxas tokenization stations coming — bring your art in-person"],
+          ] as const).map(([icon,t,d])=>(
+            <div key={t} style={{display:"flex",gap:"0.35rem",alignItems:"flex-start",padding:"0.5rem 0.625rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",minWidth:"min(100%,200px)",flex:"1 1 160px"}}>
+              <span style={{fontSize:"0.9rem",flexShrink:0}}>{icon}</span>
+              <div>
+                <div style={{fontSize:"0.48rem",fontWeight:700,color:"rgba(255,255,255,0.65)",marginBottom:"1px"}}>{t}</div>
+                <div style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.32)",lineHeight:1.5}}>{d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
         {/* Stats row */}
         <div style={{display:"flex",gap:"1.5rem",flexWrap:"wrap"}}>
           {PROTOCOL_STATS.map((s,i)=>(
@@ -139,12 +156,13 @@ export function StudioLanding({ onSelect }:{ onSelect:(cls:AssetClass)=>void }) 
       {/* ══ TRUST SIGNALS ══ */}
       <div style={{padding:"1rem 1.25rem",background:"rgba(6,8,16,0.98)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"12px",marginBottom:"1rem"}}>
         <div style={{fontSize:"0.44rem",fontWeight:700,color:"rgba(255,255,255,0.25)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"0.625rem"}}>How It Works — 4 Steps</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,180px),1fr))",gap:"0.5rem"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,200px),1fr))",gap:"0.5rem"}}>
           {([
-            {n:"01",color:"#C8A96E",t:"Tokenize",d:"Upload asset image + metadata. Pay $ABRA mint fee. Minted on Solana as Token-2022."},
-            {n:"02",color:"#14F195",t:"Verify",  d:"Custody partner confirms ownership. Asset enters verification queue (0–24h)."},
-            {n:"03",color:"#6b8cff",t:"List",    d:"Verified assets enter Markets automatically. Tradable + collateral eligible."},
-            {n:"04",color:"#FBBF24",t:"Borrow",  d:"Borrow USDC via Loopscale at 5.2% APR. No need to sell your asset."},
+            {n:"01",color:"#C8A96E",t:"Tokenize",  d:"Upload asset + metadata. Pay $ABRA mint fee. Token-2022 minted on Solana — you hold the on-chain claim."},
+            {n:"02",color:"#14F195",t:"Verify",    d:"Baxus, Courtyard, or LBMA co-signs custody. Completes in 0–24h. Nothing moves without your wallet signature."},
+            {n:"03",color:"#6b8cff",t:"List",      d:"Verified asset enters Markets live. Real pricing, provenance, and custody chain visible to all participants."},
+            {n:"04",color:"#FBBF24",t:"Borrow",    d:"Immediately borrow USDC via Loopscale at 5.2% APR against your LTV. No selling. Capital today, asset retained."},
+            {n:"05",color:"#a855f7",t:"Compound",  d:"Use USDC to acquire more assets, stake $ABRA for yield, or hold. Tokenized assets generate ongoing protocol value."},
           ] as const).map(s=>(
             <div key={s.n} style={{padding:"0.625rem 0.75rem",background:`${s.color}07`,border:`1px solid ${s.color}16`,borderRadius:"9px"}}>
               <div style={{display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.22rem"}}>
