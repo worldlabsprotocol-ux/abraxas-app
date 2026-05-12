@@ -386,7 +386,7 @@ export function IssuanceEngine() {
       )}
       {/* Fee breakdown */}
       <div style={{background:"rgba(6,8,16,0.99)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",overflow:"hidden",marginBottom:"1.25rem"}}>
-        {([`${assetClass} Issuance`,`${abraFee} $ABRA`,"#C8A96E"],["Verification Queue Fee","10 $ABRA","rgba(255,255,255,0.5)"],["Solana Network Fee","~0.000005 SOL","rgba(255,255,255,0.5)"]).map(([l,v,c],i)=>(
+        {([[`${assetClass} Issuance`,`${abraFee} $ABRA`,"#C8A96E"],["Verification Queue Fee","10 $ABRA","rgba(255,255,255,0.5)"],["Solana Network Fee","~0.000005 SOL","rgba(255,255,255,0.5)"]]).map(([l,v,c],i)=>(
           <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"0.625rem 0.875rem",borderBottom:i<2?"1px solid rgba(255,255,255,0.04)":"none"}}>
             <span style={{fontSize:"0.56rem",color:"rgba(255,255,255,0.45)"}}>{l}</span>
             <span style={{fontSize:"0.56rem",fontWeight:700,color:c as string,fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
