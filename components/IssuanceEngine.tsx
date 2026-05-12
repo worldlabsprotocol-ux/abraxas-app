@@ -106,6 +106,7 @@ export function IssuanceEngine() {
     r.readAsDataURL(f);
   }
 
+<<<<<<< HEAD
   // ── Simulated mint ─────────────────────────────────────────────────────────
   async function processMint() {
     setStep("processing");
@@ -132,6 +133,46 @@ export function IssuanceEngine() {
     setLastAssetId(result.id);
     setMintTxId(result.txSignature);
     await new Promise(r=>setTimeout(r,800)); // small UI pause for polish
+=======
+  // ── Mint — API route (Supabase) with Zustand fallback ──────────────────────
+  async function processMint() {
+    setStep("processing");
+    const wallet = publicKey?.toBase58()??"demo-wallet";
+    const assetPayload = {
+      name:           meta.name||"Unnamed Asset",
+      description:    meta.description||"",
+      assetClass,
+      estimatedUsd:   parseFloat(val.estimatedUsd)||0,
+      ltv:            cfg.ltv,
+      custodyPartner: cfg.partner,
+      imagePreview:   preview??null,
+      grade:          meta.grade||null,
+      year:           meta.year||null,
+    };
+
+    // Try /api/mint (Supabase atomic: tx + asset + event)
+    try {
+      const res = await fetch("/api/mint", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ wallet, asset:assetPayload, mintCostAbra:abraFee+10 }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          if(data.assetId)     setLastAssetId(data.assetId);
+          if(data.txSignature) setMintTxId(data.txSignature);
+          setStep("queue"); return;
+        }
+      }
+    } catch { /* API unavailable — use Zustand fallback */ }
+
+    // Zustand fallback (demo / no Supabase)
+    const result = mintAsset({ ...assetPayload, mintCostAbra:abraFee+10, assetClass }, wallet);
+    if (!result) { setStep("fee"); return; }
+    setLastAssetId(result.id);
+    setMintTxId(result.txSignature);
+>>>>>>> mint-flow-fix
     setStep("queue");
   }
 

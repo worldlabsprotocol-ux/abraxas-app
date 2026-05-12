@@ -5,7 +5,12 @@
 
 import { useState, useEffect } from "react";
 import { useAbraStore } from "@/lib/abraxasStore";
+<<<<<<< HEAD
 // Direct import — no API fetch, never empty
+=======
+import { useRealtimeMarkets } from "@/lib/hooks/useRealtimeMarkets";
+// Direct import fallback — 102 assets always visible, never empty
+>>>>>>> mint-flow-fix
 import rawInventory from "@/data/inventory.json";
 
 interface InvAsset {
@@ -125,10 +130,19 @@ function EventFeed() {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function MarketsLayer() {
+<<<<<<< HEAD
   const storeListedAssets = useAbraStore(s=>s.getListedAssets());
   const pendingAssets     = useAbraStore(s=>s.getPendingAssets());
 
   // Direct inventory import — always available, never fails
+=======
+  // 1. Real-time DB subscription (Supabase when live, Zustand fallback when not)
+  const { assets: dbAssets, loading: dbLoading } = useRealtimeMarkets();
+  // 2. Zustand store assets (demo mints before DB is confirmed)
+  const storeListedAssets = useAbraStore(s=>s.getListedAssets());
+  const pendingAssets     = useAbraStore(s=>s.getPendingAssets());
+  // 3. Full 102-asset inventory — always visible as base market layer
+>>>>>>> mint-flow-fix
   const inventoryAssets: InvAsset[] = (rawInventory as any).assets ?? [];
 
   const [filter,  setFilter]  = useState("all");
@@ -137,6 +151,7 @@ export function MarketsLayer() {
   const [view,    setView]    = useState<"grid"|"list">("grid");
   const [tooltip, setTooltip] = useState<string|null>(null);
 
+<<<<<<< HEAD
   // Merge: newly minted store assets first, then full inventory (deduped)
   const storeIds = new Set(storeListedAssets.map(a=>a.id));
   const allAssets: InvAsset[] = [
@@ -146,6 +161,22 @@ export function MarketsLayer() {
       rarity:"Listed", change24h:0,
     })),
     ...inventoryAssets.filter(a=>!storeIds.has(a.id)),
+=======
+  // 3-tier merge: DB > Zustand > Inventory (deduped by id)
+  const knownIds = new Set([...dbAssets.map(a=>a.id), ...storeListedAssets.map(a=>a.id)]);
+  const allAssets: InvAsset[] = [
+    ...dbAssets.map(a=>({
+      id:a.id, name:a.name, category:a.category, priceUsd:a.price_usd,
+      ticker:a.token_id??"", ltv:a.ltv, imagePath:a.image_url??null,
+      borrow_max_usd:a.borrow_max_usd, change24h:0,
+    })),
+    ...storeListedAssets.filter(a=>!knownIds.has(a.id)).map(a=>({
+      id:a.id, name:a.name, category:a.assetClass, priceUsd:a.estimatedUsd,
+      ticker:a.tokenId, ltv:a.ltv, imagePath:a.imagePreview??null,
+      borrow_max_usd:Math.round(a.estimatedUsd*a.ltv/100), change24h:0,
+    })),
+    ...inventoryAssets.filter(a=>!knownIds.has(a.id)),
+>>>>>>> mint-flow-fix
   ];
 
   // All unique categories in display order
