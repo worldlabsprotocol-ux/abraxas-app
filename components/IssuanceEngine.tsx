@@ -106,34 +106,6 @@ export function IssuanceEngine() {
     r.readAsDataURL(f);
   }
 
-<<<<<<< HEAD
-  // ── Simulated mint ─────────────────────────────────────────────────────────
-  async function processMint() {
-    setStep("processing");
-    // Real $ABRA deduction via Zustand store — fails if balance insufficient
-    const wallet = publicKey?.toBase58()??"demo-wallet";
-    const result = mintAsset({
-      name:           meta.name||"Unnamed Asset",
-      description:    meta.description||"",
-      assetClass:     assetClass,
-      mintCostAbra:   abraFee + 10,
-      imagePreview:   preview??undefined,
-      estimatedUsd:   parseFloat(val.estimatedUsd)||0,
-      ltv:            cfg.ltv,
-      custodyPartner: cfg.partner,
-      grade:          meta.grade||undefined,
-      year:           meta.year||undefined,
-      serialNumber:   meta.serialNumber||undefined,
-    }, wallet);
-
-    if (!result) {
-      // Insufficient $ABRA — back to fee step
-      setStep("fee"); return;
-    }
-    setLastAssetId(result.id);
-    setMintTxId(result.txSignature);
-    await new Promise(r=>setTimeout(r,800)); // small UI pause for polish
-=======
   // ── Mint — API route (Supabase) with Zustand fallback ──────────────────────
   async function processMint() {
     setStep("processing");
@@ -172,7 +144,6 @@ export function IssuanceEngine() {
     if (!result) { setStep("fee"); return; }
     setLastAssetId(result.id);
     setMintTxId(result.txSignature);
->>>>>>> mint-flow-fix
     setStep("queue");
   }
 
