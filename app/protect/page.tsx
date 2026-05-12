@@ -1,7 +1,7 @@
 // FILE: app/protect/page.tsx  
-// Vault Terminal — Loopscale is the hero. Protocol-honest PDA display.
-// Loopscale banner at top, then vault cards, then x402, then ABRA CA.
-"use client";
+import { LoopscaleBorrowSimulator } from "@/components/LoopscaleBorrowSimulator";
+// Inside the return JSX, above AbraVault:
+<LoopscaleBorrowSimulator />
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
