@@ -59,11 +59,14 @@ export function usePositions() {
         });
     } else {
       setPositions(storePositions
-        .filter(p => p.wallet === wallet)
+        .filter(p => p.wallet === wallet &&
+          (p.positionType === "collateral" || p.positionType === "borrow"))
         .map(p => ({
           id:p.id, wallet:p.wallet, assetId:p.assetId,
-          positionType:p.positionType, ltvRatio:p.ltvRatio,
-          exposure:p.exposureValue, createdAt: new Date(p.createdAt).toISOString(),
+          positionType: p.positionType as "collateral"|"borrow",
+          ltvRatio:p.ltvRatio,
+          exposure:p.exposureValue,
+          createdAt: new Date(p.createdAt).toISOString(),
         }))
       );
       setLoading(false);
