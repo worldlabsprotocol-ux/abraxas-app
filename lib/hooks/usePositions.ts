@@ -26,11 +26,17 @@ export function usePositions() {
   useEffect(() => {
     if (!wallet) {
       // No wallet — show store positions for demo
-      setPositions(storePositions.map(p => ({
-        id:p.id, wallet:p.wallet, assetId:p.assetId,
-        positionType:p.positionType, ltvRatio:p.ltvRatio,
-        exposure:p.exposureValue, createdAt: new Date(p.createdAt).toISOString(),
-      })));
+      setPositions(
+        storePositions
+          .filter(p => p.positionType === "collateral" || p.positionType === "borrow")
+          .map(p => ({
+            id:p.id, wallet:p.wallet, assetId:p.assetId,
+            positionType: p.positionType as "collateral"|"borrow",
+            ltvRatio:p.ltvRatio,
+            exposure:p.exposureValue,
+            createdAt: new Date(p.createdAt).toISOString(),
+          }))
+      );
       setLoading(false);
       return;
     }
