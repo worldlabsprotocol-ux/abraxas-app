@@ -56,17 +56,18 @@ export function useRealtimeMarkets() {
 
     if (supabase) {
       // Real-time: re-fetch whenever any asset row changes
-      const channel = supabase
+      const sb = supabase; // capture non-null for cleanup closure
+      const channel = sb
         .channel("market-assets")
         .on("postgres_changes",
           { event:"*", schema:"public", table:"assets" },
           (payload)=>{
             setLastEvent(`${payload.eventType}:${(payload.new as any)?.id?.slice(0,8)}`);
-            fetchListed(); // re-fetch to get latest listed set
+            fetchListed();
           }
         )
         .subscribe();
-      return ()=>{ supabase.removeChannel(channel); };
+      return ()=>{ sb.removeChannel(channel); };
     } else {
       // Fallback: poll every 10s in demo mode
       const iv = setInterval(fetchListed, 10000);

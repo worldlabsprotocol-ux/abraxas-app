@@ -50,12 +50,13 @@ export function useEventFeed(limit = 12) {
     fetchEvents();
 
     if (supabase) {
-      const ch = supabase.channel("event-feed")
+      const sb = supabase; // capture non-null reference for cleanup closure
+      const ch = sb.channel("event-feed")
         .on("postgres_changes",
           { event:"INSERT", schema:"public", table:"events" },
           () => fetchEvents()
         ).subscribe();
-      return () => { supabase.removeChannel(ch); };
+      return () => { sb.removeChannel(ch); };
     }
   }, [fetchEvents]);
 
