@@ -11,12 +11,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getLoopscaleLiquidity, calcEloChange, getRank, RANK_COLORS, type EloState } from "@/lib/loopscale";
 import { GameModesHub } from "@/components/GameModes";
 import { RWACharts } from "@/components/RWACharts";
-<<<<<<< HEAD
-=======
+import { MarketsLayer } from "@/components/MarketsLayer";
 import { GlobalMarketBar } from "@/components/GlobalMarketBar";
 import { AIConvictionBadge } from "@/components/AIConviction";
 import { IssuanceEngine } from "@/components/IssuanceEngine";
->>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
+import { StudioLanding } from "@/components/StudioLanding";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArenaAsset {
@@ -141,12 +140,25 @@ function timeAgo(ts:number): string {
   if(s<60) return `${s}s ago`; if(s<3600) return `${Math.floor(s/60)}m ago`;
   return `${Math.floor(s/3600)}h ago`;
 }
+// Curated ticks from partner platforms + Abraxas-native
+const PARTNER_TICKS = [
+  { id:"bx-pappy",   name:"Pappy Van Winkle 2021",         price:2400,   category:"Spirits",    source:"Baxus",         ticker:"PAPPY",   ts:Date.now()-60000  },
+  { id:"ct-rxsub",   name:"Rolex Submariner",               price:11000,  category:"Watches",    source:"Courtyard",     ticker:"RXSUB",   ts:Date.now()-180000 },
+  { id:"cc-char99",  name:"1999 Charizard PSA 10",          price:550000, category:"Pokemon",    source:"Collector Crypt",ticker:"CHAR99",  ts:Date.now()-300000 },
+  { id:"bx-ltmill",  name:"Littlemill 1965 Bottled 1998",   price:2100,   category:"Spirits",    source:"Baxus",         ticker:"LTML65",  ts:Date.now()-420000 },
+  { id:"abx-af15",   name:"Amazing Fantasy #15 (1962)",     price:525000, category:"Comics",     source:"Abraxas",       ticker:"AF15",    ts:Date.now()-540000 },
+  { id:"ct-csant",   name:"Cartier Santos Large Blue",       price:11000,  category:"Watches",    source:"Courtyard",     ticker:"CSANT",   ts:Date.now()-660000 },
+  { id:"bx-caroni",  name:"Caroni 1998 23yr Single Cask",   price:1950,   category:"Spirits",    source:"Baxus",         ticker:"CARON98", ts:Date.now()-780000 },
+  { id:"abx-sec73",  name:"Secretariat 1973",               price:500000, category:"Racehorses", source:"Abraxas",       ticker:"SECRTAT", ts:Date.now()-900000 },
+  { id:"abx-gold",   name:"Gold 1oz (LBMA)",                price:4733,   category:"Metals",     source:"Abraxas",       ticker:"XAUt",    ts:Date.now()-1020000},
+];
 function buildSoldTape(assets:ArenaAsset[]): SoldTick[] {
-  return assets.filter(a=>a.last_sold_price>0)
+  const native = assets.filter(a=>a.last_sold_price>0)
     .map(a=>({ id:a.id, name:a.name, price:a.last_sold_price, category:a.category,
-      source:a.last_sold_source??"Oracle",
+      source:a.last_sold_source??"Abraxas",
       ts:Date.now()-Math.floor(Math.abs(Math.sin(a.id.length*9301))*7_200_000), ticker:a.ticker }))
-    .sort((a,b)=>b.price-a.price).slice(0,20);
+    .sort((a,b)=>b.price-a.price).slice(0,18);
+  return [...PARTNER_TICKS, ...native];
 }
 
 // ─── Sold tape ────────────────────────────────────────────────────────────────
@@ -237,7 +249,7 @@ function getAcquireUrl(asset: ArenaAsset): string {
 function ArenaCard({ asset, selected, owner, onSelect, compact }:{
   asset:ArenaAsset; selected?:boolean; owner?:Owner; onSelect?:(a:ArenaAsset)=>void; compact?:boolean;
 }) {
-  const imgH=compact?90:150;
+  const imgH=compact?56:68;  // Compact — density over imagery
   const isHorse = asset.category==="Racehorses";
   const catColor=CAT_COLOR[asset.category]??"#6b8cff";
   const archColor=asset.archetype_color??catColor;
@@ -245,13 +257,24 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
   const acquireUrl=getAcquireUrl(asset);
   const q = asset.can_borrow && asset.ltv ? getLoopscaleLiquidity(asset.priceUsd, asset.category) : null;
 
+  const [hov,setHov]=useState(false);
+  const glowIntensity = selected?"40":owner?"30":hov?"22":"08";
+  const borderIntensity = selected?"60":owner?"70":hov?"45":"30";
+
   return (
-    <div onClick={()=>onSelect?.(asset)} style={{
-      position:"relative",borderRadius:"12px",overflow:"hidden",
-      background:"rgba(6,8,16,0.97)",border:`1px solid ${borderColor}`,
-      boxShadow:selected?`0 0 18px ${catColor}22`:owner?`0 0 10px ${borderColor}44`:"none",
-      cursor:onSelect?"pointer":"default",transition:"border-color 0.2s,box-shadow 0.2s",
-    }}>
+    <div
+      onClick={()=>onSelect?.(asset)}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        position:"relative",borderRadius:"12px",overflow:"hidden",
+        background:`linear-gradient(145deg,${catColor}06,rgba(6,8,16,0.99))`,
+        border:`1px solid ${catColor}${borderIntensity}`,
+        boxShadow:`0 0 ${hov||selected?24:8}px ${catColor}${glowIntensity},inset 0 0 ${hov?12:0}px ${catColor}08`,
+        cursor:onSelect?"pointer":"default",
+        transition:"border-color 0.18s,box-shadow 0.18s,transform 0.18s",
+        transform:hov&&onSelect?`translateY(-3px) scale(1.005)`:"none",
+      }}>
       {asset.protected&&(
         <div style={{ position:"absolute",top:"0.3rem",right:"0.3rem",zIndex:4,display:"flex",alignItems:"center",gap:"0.18rem",padding:"0.07rem 0.28rem",borderRadius:"3px",background:"rgba(212,175,55,0.15)",border:"1px solid rgba(212,175,55,0.4)" }}>
           <span style={{ width:"3px",height:"3px",borderRadius:"50%",background:"#D4AF37",animation:"pulse 2s ease-in-out infinite" }} />
@@ -262,14 +285,13 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
 
       <AssetImage asset={asset} height={imgH} />
 
-      <div style={{ padding:"0.45rem 0.5rem" }}>
-        {/* Category label */}
-        <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.2rem",flexWrap:"wrap" }}>
-          <span style={{ fontSize:"0.38rem",fontWeight:800,padding:"0.05rem 0.28rem",borderRadius:"3px",background:`${CAT_COLOR[asset.category]??"#6b8cff"}18`,border:`1px solid ${CAT_COLOR[asset.category]??"#6b8cff"}30`,color:CAT_COLOR[asset.category]??"#6b8cff",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",textTransform:"uppercase" }}>{asset.category}</span>
-          {isHorse&&(asset as any).race_record&&<span style={{ fontSize:"0.36rem",color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",fontWeight:700 }}>{(asset as any).race_record}</span>}
-          {isHorse&&(asset as any).fractional_shares&&<span style={{ fontSize:"0.36rem",color:"rgba(34,197,94,0.7)",fontFamily:"'JetBrains Mono',monospace" }}>Frac. Shares</span>}
+      <div style={{ padding:"0.35rem 0.45rem" }}>
+        {/* Category badge — neon glow */}
+        <div style={{ display:"flex",alignItems:"center",gap:"0.3rem",marginBottom:"0.3rem",flexWrap:"wrap" }}>
+          <span style={{ fontSize:"0.44rem",fontWeight:900,padding:"0.12rem 0.4rem",borderRadius:"10px",background:`${catColor}18`,border:`1px solid ${catColor}45`,color:catColor,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase",boxShadow:`0 0 8px ${catColor}20` }}>{asset.category}</span>
+          {isHorse&&(asset as any).race_record&&<span style={{ fontSize:"0.42rem",color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",fontWeight:700 }}>{(asset as any).race_record}</span>}
         </div>
-        <div style={{ fontWeight:800,fontSize:"0.72rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"1px" }}>{asset.name}</div>
+        <div style={{ fontWeight:800,fontSize:"0.66rem",color:"#f0f0f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"1px",letterSpacing:"-0.01em" }}>{asset.name}</div>
 
         {/* Category + archetype + buff — no ATK/DEF/SPD on card face */}
         <div style={{ display:"flex",alignItems:"center",gap:"0.25rem",marginBottom:"0.3rem",flexWrap:"wrap" }}>
@@ -294,6 +316,14 @@ function ArenaCard({ asset, selected, owner, onSelect, compact }:{
               </span>
             </div>
 
+            {/* AI Conviction compact badge */}
+            <div style={{ marginBottom:"0.25rem" }}>
+              <AIConvictionBadge
+                assetId={asset.id} assetName={asset.name} category={asset.category}
+                price={asset.priceUsd} change24h={asset.change24h} rarity={asset.rarity}
+                compact={true}
+              />
+            </div>
             {/* Loopscale borrow line */}
             {q&&(
               <div style={{ fontSize:"0.44rem",color:"rgba(20,241,149,0.6)",fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.25rem" }}>
@@ -331,19 +361,21 @@ function CommandBar({ onScrollToArena }:{ onScrollToArena:()=>void }) {
   return (
     <div style={{ position:"sticky",top:"52px",zIndex:40,padding:"0.5rem 1.25rem",background:"rgba(2,3,10,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"0.5rem",flexWrap:"wrap" }}>
       <div style={{ display:"flex",gap:"0.4rem",alignItems:"center" }}>
-        <button onClick={onScrollToArena} style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",background:"linear-gradient(135deg,rgba(168,85,247,0.2),rgba(107,140,255,0.15))",border:"1px solid rgba(168,85,247,0.35)",color:"#a855f7",fontSize:"0.6rem",fontWeight:800,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
-          Enter Arena
-        </button>
-        <a href="/tokenize" style={{ padding:"0.3rem 0.75rem",borderRadius:"6px",background:"rgba(107,140,255,0.1)",border:"1px solid rgba(107,140,255,0.25)",color:"#6b8cff",fontSize:"0.6rem",fontWeight:700,textDecoration:"none",fontFamily:"'JetBrains Mono',monospace" }}>
+        <a href="/tokenize" style={{ padding:"0.3rem 0.875rem",borderRadius:"6px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontSize:"0.6rem",fontWeight:900,textDecoration:"none",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em" }}>
           Tokenize Asset
         </a>
+        <button onClick={onScrollToArena} style={{ padding:"0.28rem 0.625rem",borderRadius:"6px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.28)",fontSize:"0.56rem",fontWeight:500,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+          Arena
+        </button>
       </div>
       <div style={{ display:"flex",gap:"0.875rem",alignItems:"center" }}>
-        {[["XAU","$4,733.39","#D4AF37"],["XAG","$72.91","#C0C0C0"],["NVDA","$211.48","#76B900"],["TSLA","$411.89","#CC0000"]].map(([l,v,c])=>(
+        {[["XAUt","$3,232","#D4AF37"],["SOL","$95.15","#9945FF"],["ABRA","$0.021","#C8A96E"]].map(([l,v,c])=>(
           <span key={l} style={{ fontSize:"0.46rem",color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace" }}>
             {l} <span style={{ color:c,fontWeight:700 }}>{v}</span>
           </span>
         ))}
+        <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 3s ease-in-out infinite" }} />
+        <span style={{ fontSize:"0.4rem",color:"rgba(255,255,255,0.15)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.08em" }}>PROTOCOL ACTIVE</span>
       </div>
     </div>
   );
@@ -706,13 +738,31 @@ function SovereignArena({ assets, arenaRef }:{ assets:ArenaAsset[]; arenaRef:Rea
         </div>
       )}
 
-      {/* Category filter */}
-      <div style={{ display:"flex",gap:"0.2rem",marginBottom:"0.875rem",flexWrap:"wrap" }}>
-        {cats.filter(c=>c==="all"||assets.some(a=>a.category===c)).map(cat=>(
-          <button key={cat} onClick={()=>setFilter(cat)} style={{ padding:"0.22rem 0.5rem",borderRadius:"4px",fontSize:"0.56rem",fontWeight:filter===cat?700:400,border:`1px solid ${filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.07)"}`,background:filter===cat?`${CAT_COLOR[cat]??"#6b8cff"}12`:"transparent",color:filter===cat?(CAT_COLOR[cat]??"#6b8cff"):"rgba(255,255,255,0.36)",cursor:"pointer" }}>
-            {cat==="all"?"All":cat}
-          </button>
-        ))}
+      {/* Category filter — big neon pills */}
+      <div style={{ display:"flex",gap:"0.4rem",marginBottom:"1rem",flexWrap:"wrap" }}>
+        {cats.filter(c=>c==="all"||assets.some(a=>a.category===c)).map(cat=>{
+          const c = cat==="all"?"#f0f0f0":(CAT_COLOR[cat]??"#6b8cff");
+          const active = filter===cat;
+          return (
+            <button key={cat} onClick={()=>setFilter(cat)} style={{
+              padding:"0.4rem 0.875rem",borderRadius:"20px",
+              fontSize:"0.62rem",fontWeight:active?800:500,
+              border:`1px solid ${active?c:c+"22"}`,
+              background:active?`${c}15`:"rgba(255,255,255,0.02)",
+              color:active?c:c+"55",
+              cursor:"pointer",
+              letterSpacing:"0.04em",
+              fontFamily:"'JetBrains Mono',monospace",
+              boxShadow:active?`0 0 12px ${c}25,inset 0 0 12px ${c}08`:"none",
+              transition:"all 0.15s",
+              textTransform:"uppercase",
+            }}
+            onMouseEnter={e=>{if(!active){(e.currentTarget as HTMLElement).style.borderColor=c+"44";(e.currentTarget as HTMLElement).style.color=c+"88";}}}
+            onMouseLeave={e=>{if(!active){(e.currentTarget as HTMLElement).style.borderColor=c+"22";(e.currentTarget as HTMLElement).style.color=c+"55";}}}>
+              {cat==="all"?"All":cat}
+            </button>
+          );
+        })}
       </div>
 
       {/* Pre-match setup */}
@@ -921,13 +971,25 @@ export function TerminalArena() {
   const [ticks,   setTicks]   = useState<SoldTick[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string|null>(null);
-<<<<<<< HEAD
-  const [mainTab, setMainTab] = useState("terminal");
-=======
   // 3-layer architecture: Capital (assets/borrow) | Arena (games/strategy) | Studio (tokenize/create)
-  const [mainTab, setMainTab] = useState("studio");
->>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
+  const [mainTab,     setMainTab]     = useState("studio");
+  const [studioClass, setStudioClass] = useState<string|null>(null);
   const arenaRef = useRef<HTMLDivElement>(null);
+
+  // Listen for BottomNav tab dispatch events
+  useEffect(()=>{
+    function onTabEvent(e: Event) {
+      const detail = (e as CustomEvent).detail as string;
+      // Map legacy ids → 3-layer architecture
+      const MAP: Record<string,string> = {
+        terminal:"capital", markets:"capital", game_modes:"arena",
+        capital:"capital",  arena:"arena",     studio:"studio",
+      };
+      if(detail) setMainTab(MAP[detail]??detail);
+    }
+    window.addEventListener("abraxas-tab", onTabEvent);
+    return ()=>window.removeEventListener("abraxas-tab", onTabEvent);
+  },[]);
 
   useEffect(()=>{
     let cancelled=false;
@@ -955,33 +1017,8 @@ export function TerminalArena() {
       `}</style>
       {error&&<div style={{ padding:"0.5rem 1rem",background:"rgba(242,107,107,0.07)",fontSize:"0.56rem",color:"#f26b6b",fontFamily:"'JetBrains Mono',monospace" }}>[ORACLE] {error}</div>}
       <SoldTape ticks={ticks} />
+      <GlobalMarketBar />
       <CommandBar onScrollToArena={()=>arenaRef.current?.scrollIntoView({behavior:"smooth"})} />
-<<<<<<< HEAD
-      {/* Main navigation tabs */}
-      <div style={{ display:"flex", gap:"0.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.96)", padding:"0.5rem 1.25rem", alignItems:"center" }}>
-        {([
-          ["terminal",   "Terminal",      "#f0f0f0",  "rgba(240,240,240,0.2)", "rgba(240,240,240,0.06)"],
-          ["markets",    "Markets",       "#14F195",  "rgba(20,241,149,0.35)", "rgba(20,241,149,0.07)"],
-          ["game_modes", "Game Modes",   "#FBBF24",  "rgba(251,191,36,0.4)",  "rgba(251,191,36,0.08)"],
-        ] as const).map(([id,label,color,activeBorder,activeBg])=>(
-          <button key={id} onClick={()=>setMainTab(id)} style={{ padding:"0.5rem 1rem", borderRadius:"7px", border:`1px solid ${mainTab===id?activeBorder:"rgba(255,255,255,0.06)"}`, background:mainTab===id?activeBg:"transparent", color:mainTab===id?color:"rgba(255,255,255,0.3)", fontSize:id==="game_modes"?"0.65rem":"0.62rem", fontWeight:mainTab===id?700:400, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em", transition:"all 0.15s" }}>
-            {label}
-          </button>
-        ))}
-      </div>
-      {mainTab==="terminal"&&(
-        <div style={{ padding:"1.25rem" }}>
-          {/* ──── SOVEREIGN HERO ──── */}
-          {/* ═══════ HERO — Big & Premium ═══════ */}
-          <div style={{ position:"relative",overflow:"hidden",borderRadius:"18px",padding:"2.5rem 2rem",marginBottom:"1.75rem",background:"linear-gradient(145deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.08) 40%,rgba(168,85,247,0.04) 70%,rgba(6,8,16,0.99) 100%)",border:"1px solid rgba(200,169,110,0.2)",boxShadow:"0 0 60px rgba(200,169,110,0.05)" }}>
-            {/* Background orbs */}
-            <div style={{ position:"absolute",top:"-30%",right:"-5%",width:"350px",height:"350px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.09) 0%,transparent 65%)",pointerEvents:"none" }} />
-            <div style={{ position:"absolute",bottom:"-20%",left:"-5%",width:"250px",height:"250px",borderRadius:"50%",background:"radial-gradient(circle,rgba(168,85,247,0.06) 0%,transparent 65%)",pointerEvents:"none" }} />
-            {/* Flywheel pill */}
-            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.5rem",padding:"0.25rem 0.75rem",borderRadius:"20px",background:"rgba(200,169,110,0.08)",border:"1px solid rgba(200,169,110,0.2)",marginBottom:"1rem" }}>
-              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#C8A96E",animation:"pulse 2s ease-in-out infinite" }} />
-              <span style={{ fontSize:"0.46rem",fontWeight:700,color:"rgba(200,169,110,0.7)",letterSpacing:"0.15em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana · May 2026</span>
-=======
       {/* ══ 3-LAYER NAVIGATION: Capital · Arena · Studio ══ */}
       <div style={{ borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(2,3,10,0.97)", padding:"0 1.25rem" }}>
         {/* Layer description line */}
@@ -1009,115 +1046,34 @@ export function TerminalArena() {
         </div>
       </div>
       {mainTab==="markets"&&(
-        <div style={{ padding:"0.875rem 1.25rem 1.25rem" }}>
+        <div style={{ padding:"1.25rem" }}>
           {/* Markets layer header */}
           <div style={{ marginBottom:"1rem",display:"flex",alignItems:"baseline",justifyContent:"space-between",flexWrap:"wrap",gap:"0.5rem" }}>
             <div>
               <p style={{ fontSize:"0.42rem",letterSpacing:"0.18em",color:"rgba(107,140,255,0.5)",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",margin:"0 0 0.15rem" }}>Markets Layer · II · Verified Assets Only</p>
               <h2 style={{ fontWeight:900,fontSize:"1.05rem",color:"#f0f0f0",margin:0,letterSpacing:"-0.02em" }}>Live Asset Listings</h2>
             </div>
-            <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",fontStyle:"italic" }}>
-              All assets verified before listing · Educational tooltips on hover
-            </div>
+            <div style={{ fontSize:"0.48rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace" }}>State-driven · Assets update automatically after Studio verification</div>
           </div>
-
-          {/* ═══════════════════════════════════════════════
-              VISION HERO — "Eyes wide looking at the sky"
-              Future-focused, not feature-listing.
-              Tokenization IS the product. Games are bonus.
-              ═══════════════════════════════════════════════ */}
-          <div style={{ position:"relative",overflow:"hidden",borderRadius:"18px",padding:"2.25rem 2rem",marginBottom:"1rem",background:"linear-gradient(160deg,rgba(6,8,16,0.99) 0%,rgba(200,169,110,0.06) 35%,rgba(6,8,16,0.99) 70%,rgba(168,85,247,0.03) 100%)",border:"1px solid rgba(200,169,110,0.16)" }}>
-            <div style={{ position:"absolute",top:"-25%",right:"-8%",width:"340px",height:"340px",borderRadius:"50%",background:"radial-gradient(circle,rgba(200,169,110,0.07) 0%,transparent 60%)",pointerEvents:"none" }} />
-            <div style={{ position:"absolute",bottom:"-20%",left:"-3%",width:"220px",height:"220px",borderRadius:"50%",background:"radial-gradient(circle,rgba(168,85,247,0.05) 0%,transparent 65%)",pointerEvents:"none" }} />
-
-            <div style={{ display:"inline-flex",alignItems:"center",gap:"0.35rem",padding:"0.18rem 0.625rem",borderRadius:"20px",background:"rgba(200,169,110,0.06)",border:"1px solid rgba(200,169,110,0.15)",marginBottom:"1rem" }}>
-              <div style={{ width:"5px",height:"5px",borderRadius:"50%",background:"#14F195",animation:"pulse 3s ease-in-out infinite" }} />
-              <span style={{ fontSize:"0.44rem",fontWeight:700,color:"rgba(200,169,110,0.6)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace" }}>World Labs Protocol · Solana · Building the Future Standard</span>
->>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
-            </div>
-            {/* Main headline */}
-            <h1 style={{ fontWeight:900,fontSize:"clamp(1.8rem,5vw,2.8rem)",letterSpacing:"-0.04em",margin:"0 0 0.75rem",lineHeight:1.05 }}>
-              <span style={{ background:"linear-gradient(135deg,#C8A96E 0%,#FBBF24 40%,#f0f0f0 80%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>The OpenSea of RWAs</span>
-            </h1>
-            {/* Sub-headline */}
-            <p style={{ fontSize:"0.72rem",color:"rgba(255,255,255,0.48)",margin:"0 0 0.4rem",maxWidth:"560px",lineHeight:1.65,fontWeight:400 }}>
-              Tokenize physical assets on Solana. Borrow USDC instantly via Loopscale. Battle in the Sovereign Arena. Earn $ABRA.
-            </p>
-            <p style={{ fontSize:"0.58rem",color:"rgba(255,255,255,0.28)",margin:"0 0 1.5rem",maxWidth:"480px",lineHeight:1.65 }}>
-              Spirits · Watches · Comics · Racehorses · Graded Cards · Precious Metals · Tokenized Equities
-            </p>
-            {/* CTAs */}
-            <div style={{ display:"flex",gap:"0.625rem",flexWrap:"wrap",marginBottom:"1.75rem" }}>
-              <a href="/tokenize" style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"linear-gradient(135deg,#C8A96E,#FBBF24)",color:"#000",fontWeight:900,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",letterSpacing:"0.04em",boxShadow:"0 0 20px rgba(212,175,55,0.3)" }}>Tokenize Asset</a>
-              <a href="/protect" style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(20,241,149,0.09)",border:"1px solid rgba(20,241,149,0.25)",color:"#14F195",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",textDecoration:"none" }}>Borrow USDC</a>
-              <button onClick={()=>setMainTab("game_modes")} style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(168,85,247,0.09)",border:"1px solid rgba(168,85,247,0.28)",color:"#a855f7",fontWeight:700,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Play Games</button>
-              <button onClick={()=>setMainTab("markets")} style={{ padding:"0.7rem 1.5rem",borderRadius:"9px",background:"rgba(20,241,149,0.05)",border:"1px solid rgba(20,241,149,0.15)",color:"rgba(20,241,149,0.7)",fontWeight:600,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace",cursor:"pointer" }}>Markets</button>
-            </div>
-            {/* Stats */}
-            <div style={{ display:"flex",gap:"2rem",flexWrap:"wrap",paddingTop:"1.25rem",borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-              {[["102","RWA Assets"],["$20M+","Protocol Insured"],["5","Live Vault PDAs"],["5.2%","Fixed APR · Loopscale"]].map(([v,l])=>(
-                <div key={l}>
-                  <div style={{ fontSize:"1.1rem",fontWeight:900,color:"#C8A96E",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"-0.02em" }}>{v}</div>
-                  <div style={{ fontSize:"0.42rem",color:"rgba(255,255,255,0.28)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:"1px" }}>{l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* ═══ HOW IT WORKS — Flywheel ═══ */}
-          <div style={{ marginBottom:"1.5rem",padding:"1.25rem 1.5rem",background:"rgba(6,8,16,0.97)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"14px" }}>
-            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.4rem" }}>Protocol Flywheel</p>
-            <h3 style={{ fontWeight:800,fontSize:"0.88rem",color:"#f0f0f0",margin:"0 0 0.875rem",letterSpacing:"-0.01em" }}>How Abraxas Works — 4 Steps</h3>
-            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,200px),1fr))",gap:"0.625rem" }}>
-              {([
-                { n:"01",label:"Tokenize",  color:"#a855f7", desc:"Convert any physical asset to a Token-2022 position on Solana in under 2 minutes. Spirits, watches, comics, cards, metals." },
-                { n:"02",label:"Vault + Borrow", color:"#14F195",desc:"Deposit your token into an Abraxas vault. Borrow USDC instantly at 5.2% fixed APR via Loopscale Modular Vaults. LTV: 55–80%." },
-                { n:"03",label:"Battle + Earn",  color:"#FBBF24",desc:"Deploy your assets in the Sovereign Arena. Win battles, pull gacha, hit Chase Markets. Earn $ABRA on every action." },
-                { n:"04",label:"Compound",   color:"#C8A96E",desc:"$ABRA auto-stakes at 18–25% APY. Borrow against staked $ABRA at 50% LTV. Compound across every RWA class you hold." },
-              ] as const).map(s=>(
-                <div key={s.n} style={{ padding:"0.75rem",background:`${s.color}06`,border:`1px solid ${s.color}18`,borderRadius:"9px" }}>
-                  <div style={{ display:"flex",alignItems:"center",gap:"0.4rem",marginBottom:"0.35rem" }}>
-                    <span style={{ fontSize:"0.4rem",fontWeight:900,color:s.color,fontFamily:"'JetBrains Mono',monospace",opacity:0.5 }}>{s.n}</span>
-                    <span style={{ fontSize:"0.68rem",fontWeight:800,color:s.color,letterSpacing:"-0.01em" }}>{s.label}</span>
-                  </div>
-                  <p style={{ fontSize:"0.5rem",color:"rgba(255,255,255,0.42)",lineHeight:1.65,margin:0 }}>{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <StockPanel assets={assets} />
-          <MetalsStrip assets={assets} />
-          <LiveActivityFeed />
-          <SovereignArena assets={assets} arenaRef={arenaRef as React.RefObject<HTMLDivElement>} />
+          <MarketsLayer />
         </div>
       )}
-<<<<<<< HEAD
-      {mainTab==="markets"&&(
-        <div style={{ padding:"1.25rem" }}>
-          {/* Markets header */}
-          <div style={{ marginBottom:"1.25rem" }}>
-            <p style={{ fontSize:"0.44rem",letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(20,241,149,0.4)",fontFamily:"'JetBrains Mono',monospace",margin:"0 0 0.25rem" }}>Live Intelligence · May 2026</p>
-            <h2 style={{ fontWeight:900,fontSize:"1.1rem",color:"#f0f0f0",margin:"0 0 0.35rem",letterSpacing:"-0.01em" }}>RWA Market Intelligence</h2>
-            <p style={{ fontSize:"0.54rem",color:"rgba(255,255,255,0.35)",margin:0,lineHeight:1.65,maxWidth:"520px" }}>
-              Real-world asset market data, news, and price charts. <strong style={{ color:"rgba(255,255,255,0.5)" }}>Green = price up, red = down.</strong> "RWA" means any physical asset tokenized on blockchain — from gold bars to graded Pokémon cards.
-            </p>
-          </div>
-          <RWACharts />
-        </div>
-      )}
-      {mainTab==="game_modes"&&(
-=======
-
-      {/* Markets content is now part of Capital layer — see RWACharts below SovereignArena */}
 
       {mainTab==="studio"&&(
         <div style={{ padding:"1.25rem 1.25rem 5rem" }}>
-          <IssuanceEngine />
+          {studioClass===null?(
+            <StudioLanding onSelect={(cls)=>setStudioClass(cls)} />
+          ):(
+            <div>
+              <button onClick={()=>setStudioClass(null)} style={{ marginBottom:"1.25rem",display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.32rem 0.7rem",borderRadius:"6px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.35)",fontSize:"0.54rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace" }}>
+                ← Back to Studio
+              </button>
+              <IssuanceEngine />
+            </div>
+          )}
         </div>
       )}
-
       {mainTab==="arena"&&(
->>>>>>> 053617e... arch: Studio/Markets/Capital ontology + IssuanceEngine 7-step flow
         <div style={{ padding:"1.25rem" }}>
           <GameModesHub assets={assets} />
         </div>
