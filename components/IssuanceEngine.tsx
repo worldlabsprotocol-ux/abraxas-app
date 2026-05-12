@@ -132,9 +132,9 @@ export function IssuanceEngine() {
       estimatedUsd:   parseFloat(val.estimatedUsd)||0,
       ltv:            cfg.ltv,
       custodyPartner: cfg.partner,
-      imagePreview:   preview??null,
-      grade:          meta.grade||null,
-      year:           meta.year||null,
+      imagePreview:   preview??undefined,
+      grade:          meta.grade||undefined,
+      year:           meta.year||undefined,
     };
 
     // Try /api/mint (Supabase atomic: tx + asset + event)
