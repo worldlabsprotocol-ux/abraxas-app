@@ -121,7 +121,7 @@ function EventFeed() {
             <span style={{fontSize:"0.46rem",color:"rgba(255,255,255,0.48)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
               {a?.name ?? String(ev.payload?.name ?? "Protocol action")}
             </span>
-            <span style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.15)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0}}>{Math.round((Date.now()-ev.timestamp)/1000)}s ago</span>
+            <span suppressHydrationWarning style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.15)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0}}>{typeof window!=="undefined"?`${Math.round((Date.now()-ev.timestamp)/1000)}s ago`:""}</span>
           </div>
         );
       })}
@@ -281,7 +281,7 @@ export function MarketsLayer() {
           <span style={{color:"rgba(20,241,149,0.5)"}}>▸ </span>All assets verified via custody partner. Hover a category for pricing education. Newly minted assets appear here automatically after verification.
         </span>
       </div>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}`}</style>
+      
     </div>
   );
 }

@@ -111,8 +111,8 @@ const SEED_ASSETS: AbraAsset[] = [
     assetClass:"Cards (PSA/BGS)", status:"listed",
     mintCostAbra:80, txSignature:"5nzK...bH2m",
     estimatedUsd:550000, ltv:55, custodyPartner:"Collector Crypt",
-    createdAt:Date.now()-8640000*7, verifiedAt:Date.now()-8640000*5,
-    listedAt:Date.now()-8640000*4, grade:"PSA 10", year:"1999",
+    createdAt:1747939520000, verifiedAt:1747956800000,
+    listedAt:1747965440000, grade:"PSA 10", year:"1999",
   },
   {
     id:"seed-2", tokenId:"Abrax2BGAQ3ywQch4rSxaFvNxMjNXpFmKX7uHkGy",
@@ -121,8 +121,8 @@ const SEED_ASSETS: AbraAsset[] = [
     assetClass:"Spirits", status:"listed",
     mintCostAbra:100, txSignature:"7mzK...cH3n",
     estimatedUsd:2400, ltv:55, custodyPartner:"Baxus",
-    createdAt:Date.now()-8640000*5, verifiedAt:Date.now()-8640000*3,
-    listedAt:Date.now()-8640000*2, grade:"Baxus Verified", year:"2021",
+    createdAt:1747956800000, verifiedAt:1747974080000,
+    listedAt:1747982720000, grade:"Baxus Verified", year:"2021",
   },
   {
     id:"seed-3", tokenId:"Abrax3BGAQ4ywQch5rSxaFvNxMjNXpFmKX7uHkGz",
@@ -131,8 +131,8 @@ const SEED_ASSETS: AbraAsset[] = [
     assetClass:"Comics (CGC)", status:"listed",
     mintCostAbra:120, txSignature:"9kzK...dH4o",
     estimatedUsd:525000, ltv:65, custodyPartner:"Metropolis",
-    createdAt:Date.now()-8640000*10, verifiedAt:Date.now()-8640000*8,
-    listedAt:Date.now()-8640000*7, grade:"CGC 7.5", year:"1962",
+    createdAt:1747913600000, verifiedAt:1747930880000,
+    listedAt:1747939520000, grade:"CGC 7.5", year:"1962",
   },
   {
     id:"seed-4", tokenId:"Abrax4BGAQ5ywQch6rSxaFvNxMjNXpFmKX7uHkHA",
@@ -141,8 +141,8 @@ const SEED_ASSETS: AbraAsset[] = [
     assetClass:"Watches", status:"listed",
     mintCostAbra:150, txSignature:"2pzK...eH5p",
     estimatedUsd:95000, ltv:65, custodyPartner:"Courtyard",
-    createdAt:Date.now()-8640000*14, verifiedAt:Date.now()-8640000*12,
-    listedAt:Date.now()-8640000*11, grade:"All Original", year:"1958",
+    createdAt:1747879040000, verifiedAt:1747896320000,
+    listedAt:1747904960000, grade:"All Original", year:"1958",
   },
   {
     id:"seed-5", tokenId:"Abrax5BGAQ6ywQch7rSxaFvNxMjNXpFmKX7uHkHB",
@@ -151,16 +151,16 @@ const SEED_ASSETS: AbraAsset[] = [
     assetClass:"Metals", status:"listed",
     mintCostAbra:60, txSignature:"3qzK...fH6q",
     estimatedUsd:3232, ltv:80, custodyPartner:"LBMA",
-    createdAt:Date.now()-8640000*3, verifiedAt:Date.now()-8640000*2,
-    listedAt:Date.now()-8640000*1, grade:"LBMA 999.9", year:"2026",
+    createdAt:1747974080000, verifiedAt:1747982720000,
+    listedAt:1747991360000, grade:"LBMA 999.9", year:"2026",
   },
 ];
 
 const SEED_POSITIONS: AbraPosition[] = [
-  { id:"pos-1", wallet:"7xA3...mK9f", assetId:"seed-1", positionType:"collateral", exposureValue:302500, ltvRatio:55, riskScore:22, createdAt:Date.now()-8640000*4 },
-  { id:"pos-2", wallet:"Db6R...xQ2p", assetId:"seed-2", positionType:"collateral", exposureValue:1320, ltvRatio:55, riskScore:18, createdAt:Date.now()-8640000*2 },
-  { id:"pos-3", wallet:"9G4k...Fa2m", assetId:"seed-3", positionType:"borrow",     exposureValue:341250, ltvRatio:65, riskScore:31, createdAt:Date.now()-8640000*7 },
-  { id:"pos-4", wallet:"HeFq...wZq5", assetId:"seed-4", positionType:"collateral", exposureValue:61750, ltvRatio:65, riskScore:25, createdAt:Date.now()-8640000*11 },
+  { id:"pos-1", wallet:"7xA3...mK9f", assetId:"seed-1", positionType:"collateral", exposureValue:302500, ltvRatio:55, riskScore:22, createdAt:1747965440000 },
+  { id:"pos-2", wallet:"Db6R...xQ2p", assetId:"seed-2", positionType:"collateral", exposureValue:1320, ltvRatio:55, riskScore:18, createdAt:1747982720000 },
+  { id:"pos-3", wallet:"9G4k...Fa2m", assetId:"seed-3", positionType:"borrow",     exposureValue:341250, ltvRatio:65, riskScore:31, createdAt:1747939520000 },
+  { id:"pos-4", wallet:"HeFq...wZq5", assetId:"seed-4", positionType:"collateral", exposureValue:61750, ltvRatio:65, riskScore:25, createdAt:1747904960000 },
 ];
 
 function uid():string { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`; }
@@ -264,6 +264,10 @@ export const useAbraStore = create<AbraState>()(
         abraBalance: 2850, totalMinted: 47, totalVerified: 42,
       }),
     }),
-    { name:"abraxas-store", storage: createJSONStorage(()=>localStorage) }
+    {
+      name: "abraxas-store",
+      storage: createJSONStorage(()=>localStorage),
+      skipHydration: true,  // prevent server/client mismatch — rehydrate manually in client
+    }
   )
 );

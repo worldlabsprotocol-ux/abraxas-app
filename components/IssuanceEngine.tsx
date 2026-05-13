@@ -239,7 +239,6 @@ export function IssuanceEngine() {
       <button onClick={()=>setStep("metadata")} disabled={!file} style={{width:"100%",padding:"0.875rem",borderRadius:"10px",border:"none",fontWeight:900,fontSize:"0.78rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.04em",cursor:file?"pointer":"not-allowed",background:file?"linear-gradient(135deg,#14F195,#C8A96E)":"rgba(255,255,255,0.04)",color:file?"#000":"rgba(255,255,255,0.2)",boxShadow:file?"0 0 24px rgba(20,241,149,0.3)":"none",transition:"all 0.2s"}}>
         {file?"Continue to Metadata →":"Upload asset image to continue"}
       </button>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
     </div>
   );
 
@@ -422,7 +421,6 @@ export function IssuanceEngine() {
       <div style={{display:"flex",gap:"0.3rem"}}>
         {[0,1,2,3,4].map(i=><div key={i} style={{width:"4px",height:"4px",borderRadius:"50%",background:"#C8A96E",animation:`bounce 0.8s ease-in-out ${i*0.12}s infinite`}}/>)}
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}`}</style>
     </div>
   );
 
@@ -507,7 +505,6 @@ export function IssuanceEngine() {
         ))}
       </div>
       <button onClick={()=>{setStep("upload");setFile(null);setPreview(null);setMeta({name:"",grade:"",year:"",condition:"",serialNumber:"",description:""});setVal({estimatedUsd:"",referenceSource:"",insurer:""});setQueueProgress(0);setMintTxId("");setLastAssetId(null);}} style={{width:"100%",padding:"0.625rem",borderRadius:"8px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.32)",fontSize:"0.62rem",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>Submit Another Asset →</button>
-      <style>{`@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
     </div>
   );
 
