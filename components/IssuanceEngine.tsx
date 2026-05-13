@@ -7,8 +7,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { useAbraStore, type AssetClass } from "@/lib/abraxasStore";
+import { useAbraStore } from "@/lib/abraxasStore";
 
+type AssetClass = "Spirits"|"Watches"|"Cards (PSA/BGS)"|"Comics (CGC)"|"Racehorses"|"Metals"|"Art"|"Other";
 type Step = "upload"|"metadata"|"valuation"|"wallet"|"fee"|"processing"|"queue";
 
 const CLASSES: Record<AssetClass,{color:string;partner:string;ltv:number;fee:number;icon:string}> = {
