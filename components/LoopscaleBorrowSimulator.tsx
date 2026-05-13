@@ -2,6 +2,7 @@
 // Capital tab — "Borrow Against Your RWAs" powered by Loopscale.
 // Shows user's tokenized assets with max borrow, clean handoff to Loopscale app.
 "use client";
+"use client";
 
 import { useState } from "react";
 import { useAbraStore } from "@/lib/abraxasStore";

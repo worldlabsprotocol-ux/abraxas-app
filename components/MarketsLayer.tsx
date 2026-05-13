@@ -2,6 +2,7 @@
 // Markets Layer II — reads inventory directly (no API dependency) + Zustand minted assets.
 // Shows ALL 102 assets: Watches, Spirits, Comics, Cards, Metals, Racehorses, Pokemon, etc.
 "use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useAbraStore } from "@/lib/abraxasStore";

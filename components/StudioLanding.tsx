@@ -3,6 +3,7 @@
 // Pop banners, animated stats, category picker, trust signals, urgency messaging.
 // After picking an asset class → hands off to IssuanceEngine.
 "use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useAbraStore } from "@/lib/abraxasStore";

@@ -3,6 +3,7 @@
 // Prevents server/client mismatch from localStorage values.
 // Must be rendered inside the app layout as a client component.
 "use client";
+"use client";
 
 import { useEffect } from "react";
 import { useAbraStore } from "@/lib/abraxasStore";

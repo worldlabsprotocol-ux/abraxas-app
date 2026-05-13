@@ -2,6 +2,7 @@
 // Studio Layer III — 7-step tokenization flow wired to Supabase + Zustand fallback
 // Step flow: upload → metadata → valuation → wallet → fee → processing → queue
 "use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
