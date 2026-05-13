@@ -1,41 +1,27 @@
 // FILE: app/layout.tsx
-// Root layout — deterministic, hydration-safe.
-// Uses next/font for Inter (no inline font injection).
-// suppressHydrationWarning on html/body handles wallet extension DOM mutations.
-import type { Metadata, Viewport } from "next";
+// Root layout — minimal. Providers + font. suppressHydrationWarning for wallet extensions.
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { SolanaProvider } from "@/components/SolanaProvider";
+import { StoreHydrator } from "@/components/StoreHydrator";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Abraxas Protocol — Tokenize Your Real Assets",
-  description: "The RWA issuance layer on Solana. Tokenize physical assets, borrow USDC via Loopscale, trade in verified markets.",
-  icons: { icon: "/favicon.ico" },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
+  description: "RWA issuance layer on Solana.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={inter.variable}
-      suppressHydrationWarning  // wallet extensions modify <html> attrs — suppress
-    >
-      <body
-        style={{ fontFamily: "var(--font-inter), sans-serif" }}
-        suppressHydrationWarning  // wallet extensions inject scripts into <body>
-      >
-        {children}
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body style={{ fontFamily:"var(--font-inter),sans-serif", background:"#060810", color:"#f0f0f0", margin:0 }}
+            suppressHydrationWarning>
+        <SolanaProvider>
+          <StoreHydrator />
+          {children}
+        </SolanaProvider>
       </body>
     </html>
   );
