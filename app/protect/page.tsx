@@ -165,7 +165,7 @@ function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
 export default function VaultsPage() {
   const { vaults: sv } = useSystemState();
   const walletModal = useWalletModal();
-  const setVisible = mounted ? walletModal.setVisible : () => {};
+  const setVisible = __mounted ? walletModal.setVisible : () => {};
   const [__mounted, __setMounted] = useState(false);
   useEffect(()=>{ __setMounted(true); },[]);
   const __wallet  = useWallet();
