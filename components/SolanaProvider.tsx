@@ -1,3 +1,4 @@
+"use client";
 // FILE: components/SolanaProvider.tsx
 // Wallet provider only. No wagmi, no RainbowKit, no EVM.
 "use client";
@@ -8,7 +9,6 @@ import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
-  BackpackWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
@@ -18,7 +18,6 @@ export function SolanaProvider({ children }: { children: React.ReactNode }) {
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),
-    new BackpackWalletAdapter(),
   ], []);
 
   return (
