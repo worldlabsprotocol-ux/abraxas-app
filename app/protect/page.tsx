@@ -164,12 +164,12 @@ function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
 
 export default function VaultsPage() {
   const { vaults: sv } = useSystemState();
-  const walletModal = useWalletModal();
-  const setVisible = __mounted ? walletModal.setVisible : () => {};
   const [__mounted, __setMounted] = useState(false);
   useEffect(()=>{ __setMounted(true); },[]);
   const __wallet  = useWallet();
   const connected = __mounted ? __wallet.connected : false;
+  const walletModal = useWalletModal();
+  const setVisible = __mounted ? walletModal.setVisible : () => {};
 
   useEffect(() => {
     if (sv.length === 0) VAULT_ADDRS.forEach(v => createSystemVault({ name:v.name, asset:"multi", assetType:"RWA" }));
