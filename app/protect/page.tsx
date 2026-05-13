@@ -3,6 +3,7 @@
 // Shows: real on-chain vault PDAs, circuit engine, x402 info, ABRA CA.
 // No fake TVL, no fake asset listings, no borrow capacity theater.
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -92,7 +93,10 @@ function CircuitEngine({ vaultId }: { vaultId: string }) {
 
 function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
   const { vaults }    = useSystemState();
-  const { publicKey } = useWallet();
+  const [_mounted, _setMounted] = useState(false);
+  useEffect(()=>{ _setMounted(true); },[]);
+  const _wallet = useWallet();
+  const publicKey = _mounted ? _wallet.publicKey : null;
   const sv  = vaults.find(v => v.id === vault.id);
   const vState = sv?.state ?? "UNPROTECTED";
   const sc  = STATE_CFG[vState];
@@ -160,8 +164,12 @@ function VaultCard({ vault }: { vault: typeof VAULT_ADDRS[number] }) {
 
 export default function VaultsPage() {
   const { vaults: sv } = useSystemState();
-  const { setVisible } = useWalletModal();
-  const { connected }  = useWallet();
+  const walletModal = useWalletModal();
+  const setVisible = mounted ? walletModal.setVisible : () => {};
+  const [__mounted, __setMounted] = useState(false);
+  useEffect(()=>{ __setMounted(true); },[]);
+  const __wallet  = useWallet();
+  const connected = __mounted ? __wallet.connected : false;
 
   useEffect(() => {
     if (sv.length === 0) VAULT_ADDRS.forEach(v => createSystemVault({ name:v.name, asset:"multi", assetType:"RWA" }));
