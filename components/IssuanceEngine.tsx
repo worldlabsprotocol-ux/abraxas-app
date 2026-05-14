@@ -1,4 +1,5 @@
 // FILE: components/IssuanceEngine.tsx
+"use client";
 // MINIMAL 7-step mint flow. Zustand store only. No Supabase. No vault routing.
 // Step: upload → metadata → valuation → wallet → fee → processing → queue
 "use client";
@@ -7,6 +8,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useAbraBalance, ABRA_GATE } from "@/lib/hooks/useAbraBalance";
 import { useAbraStore } from "@/lib/abraxasStore";
 
 type AssetClass = "Spirits"|"Watches"|"Cards (PSA/BGS)"|"Comics (CGC)"|"Racehorses"|"Metals"|"Art"|"Other";
@@ -84,8 +86,12 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
   const connected    = mounted ? walletCtx.connected  : false;
   const publicKey    = mounted ? walletCtx.publicKey  : null;
   const setVisible   = mounted ? modalCtx.setVisible  : () => {};
-  const abraBalance  = useAbraStore(s => s.abraBalance);
-  const mintAsset    = useAbraStore(s => s.mintAsset);
+  const mintAsset        = useAbraStore(s => s.mintAsset);
+  const demoBalance      = useAbraStore(s => s.abraBalance);
+  const { balance: realBalance, loading: balLoading, meetsGate } = useAbraBalance();
+  // Use real SPL balance when wallet connected, demo balance otherwise
+  const abraBalance      = connected ? realBalance  : demoBalance;
+  const canAffordGate    = connected ? meetsGate    : demoBalance >= ABRA_GATE;
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -308,14 +314,33 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
       <p style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace",
                   textTransform:"uppercase", margin:"0 0 0.25rem", letterSpacing:"0.18em" }}>Step 5 · Mint Fee</p>
       <h2 style={{ fontWeight:900, fontSize:"1.2rem", color:"#f0f0f0", margin:"0 0 1rem" }}>Confirm Fee</h2>
-      {/* Balance */}
-      <div style={{ padding:"0.5rem 0.875rem", background:canAfford?"rgba(20,241,149,0.05)":"rgba(242,107,107,0.05)",
-                    border:`1px solid ${canAfford?"rgba(20,241,149,0.2)":"rgba(242,107,107,0.25)"}`,
-                    borderRadius:"8px", marginBottom:"0.875rem",
-                    display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.4)" }}>Your $ABRA balance</span>
-        <span style={{ fontSize:"0.72rem", fontWeight:800, color:canAfford?"#14F195":"#f26b6b",
-                       fontFamily:"'JetBrains Mono',monospace" }}>{abraBalance.toLocaleString()} $ABRA</span>
+      {/* Balance + gate */}
+      <div style={{ padding:"0.625rem 0.875rem",
+                    background:canAffordGate?"rgba(20,241,149,0.05)":"rgba(242,107,107,0.05)",
+                    border:`1px solid ${canAffordGate?"rgba(20,241,149,0.2)":"rgba(242,107,107,0.25)"}`,
+                    borderRadius:"8px", marginBottom:"0.875rem" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span style={{ fontSize:"0.48rem", color:"rgba(255,255,255,0.4)" }}>
+            {connected ? "Wallet ABRA Balance" : "Demo Balance"}
+          </span>
+          <span style={{ fontSize:"0.72rem", fontWeight:800,
+                         color:canAffordGate?"#14F195":"#f26b6b",
+                         fontFamily:"'JetBrains Mono',monospace" }}>
+            {balLoading ? "…" : abraBalance.toLocaleString()} $ABRA
+          </span>
+        </div>
+        {!canAffordGate && (
+          <div style={{ fontSize:"0.44rem", color:"#f26b6b", marginTop:4, lineHeight:1.5 }}>
+            {ABRA_GATE.toLocaleString()} ABRA required to mint.
+            {!connected ? " Connect your wallet to verify your balance." : " Acquire more ABRA to unlock minting."}
+          </div>
+        )}
+        {!connected && (
+          <div style={{ fontSize:"0.4rem", color:"rgba(255,255,255,0.25)",
+                        marginTop:3, fontFamily:"'JetBrains Mono',monospace" }}>
+            Demo mode — real gating requires wallet connection
+          </div>
+        )}
       </div>
       {/* Breakdown */}
       <div style={{ background:"rgba(6,8,16,0.99)", border:"1px solid rgba(255,255,255,0.08)",
@@ -342,12 +367,12 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
       </div>
       <div style={{ display:"flex", gap:"0.5rem" }}>
         <button onClick={() => setStep("wallet")} style={S_STYLE.back}>← Back</button>
-        <button onClick={executeMint} disabled={!canAfford} style={{
+        <button onClick={executeMint} disabled={!canAffordGate} style={{
           flex:1, padding:"0.875rem", borderRadius:"10px", border:"none",
           cursor:canAfford?"pointer":"not-allowed",
           fontWeight:900, fontSize:"0.72rem", fontFamily:"'JetBrains Mono',monospace",
-          background:canAfford?"linear-gradient(135deg,#C8A96E,#FBBF24)":"rgba(255,255,255,0.05)",
-          color:canAfford?"#000":"rgba(255,255,255,0.2)",
+          background:canAffordGate?"linear-gradient(135deg,#C8A96E,#FBBF24)":"rgba(255,255,255,0.05)",
+          color:canAffordGate?"#000":"rgba(255,255,255,0.2)",
         }}>{canAfford?`Confirm — Deduct ${fee} $ABRA →`:`Need ${fee-abraBalance} more $ABRA`}</button>
       </div>
     </div>

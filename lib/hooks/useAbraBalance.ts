@@ -1,47 +1,53 @@
 // FILE: lib/hooks/useAbraBalance.ts
-// $ABRA balance = sum of confirmed mint transactions for wallet.
-// DB-first when Supabase available. Zustand store balance fallback.
-// NEVER hardcoded. No  constant.
-
+// Reads the REAL on-chain ABRA SPL token balance from connected wallet.
+// Falls back to 0 if wallet not connected or no ABRA account exists.
+// Token: 5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
 "use client";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { useAbraStore } from "@/lib/abraxasStore";
 
-export function useAbraBalance(wallet?: string) {
-  const storeBalance = useAbraStore(s => s.abraBalance);
-  const [balance, setBalance] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+import { useState, useEffect, useCallback } from "react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
+
+export const ABRA_MINT   = "5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS";
+export const ABRA_GATE   = 100_000;   // min ABRA to qualify for minting
+export const MIN_BALANCE  = ABRA_GATE;
+
+export function useAbraBalance() {
+  const { connection }        = useConnection();
+  const { publicKey, connected } = useWallet();
+  const [balance,  setBalance]  = useState<number>(0);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+
+  const fetchBalance = useCallback(async () => {
+    if (!publicKey || !connected) { setBalance(0); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      const mint = new PublicKey(ABRA_MINT);
+      // Dynamic import — avoids SSR issues with @solana/spl-token
+      const { getAssociatedTokenAddress } = await import("@solana/spl-token");
+      const ata  = await getAssociatedTokenAddress(mint, publicKey);
+      const info = await connection.getTokenAccountBalance(ata);
+      setBalance(Number(info.value.uiAmount ?? 0));
+    } catch {
+      setBalance(0);  // no ATA = 0 balance (not an error)
+    } finally {
+      setLoading(false);
+    }
+  }, [publicKey, connected, connection]);
 
   useEffect(() => {
-    if (!wallet) {
-      // No wallet connected — show store balance as default
-      setBalance(storeBalance);
-      setLoading(false);
-      return;
-    }
+    fetchBalance();
+    const iv = setInterval(fetchBalance, 30_000);
+    return () => clearInterval(iv);
+  }, [fetchBalance]);
 
-    if (supabase) {
-      // DB path: sum transactions for this wallet
-      supabase
-        .from("transactions")
-        .select("amount_abra")
-        .eq("wallet", wallet)
-        .eq("type",   "mint")
-        .eq("status", "confirmed")
-        .then(({ data, error }) => {
-          if (error || !data) { setBalance(storeBalance); setLoading(false); return; }
-          const total = data.reduce((sum, row) => sum + (row.amount_abra ?? 0), 0);
-          setBalance(total);
-          setLoading(false);
-        });
-    } else {
-      // Zustand fallback
-      setBalance(storeBalance);
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallet, storeBalance]);
-
-  return { balance: balance ?? storeBalance, loading };
+  return {
+    balance,
+    loading,
+    error,
+    meetsGate: balance >= ABRA_GATE,
+    refetch:   fetchBalance,
+  };
 }

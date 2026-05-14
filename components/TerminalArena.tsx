@@ -8,11 +8,12 @@ import { useState, useEffect } from "react";
 import { IssuanceEngine }       from "@/components/IssuanceEngine";
 import { MarketsLayer }          from "@/components/MarketsLayer";
 import { LoopscaleBorrowSimulator } from "@/components/LoopscaleBorrowSimulator";
+import { PortfolioTab } from "@/components/PortfolioTab";
 import { IntroScreen }           from "@/components/IntroScreen";
 import { WalletMultiButton }     from "@solana/wallet-adapter-react-ui";
 import { useAbraStore }          from "@/lib/abraxasStore";
 
-type Tab = "markets" | "studio" | "capital";
+type Tab = "markets" | "studio" | "capital" | "portfolio";
 
 const SESSION_KEY = "abraxas_intro_done";
 
@@ -42,9 +43,10 @@ export function TerminalArena() {
   }
 
   const TABS: {id:Tab; label:string}[] = [
-    { id:"markets", label:"II · Markets"  },
-    { id:"studio",  label:"III · Studio"  },
-    { id:"capital", label:"I · Capital"   },
+    { id:"markets",   label:"II · Markets"   },
+    { id:"studio",    label:"III · Studio"   },
+    { id:"capital",   label:"I · Capital"    },
+    { id:"portfolio", label:"IV · Portfolio" },
   ];
 
   return (
@@ -90,10 +92,13 @@ export function TerminalArena() {
               <MarketsLayer onTokenize={() => setTab("studio")} />
             )}
             {tab === "studio" && (
-              <IssuanceEngine onSuccess={() => setTab("markets")} />
+              <IssuanceEngine onSuccess={() => setTab("portfolio")} />
             )}
             {tab === "capital" && (
               <LoopscaleBorrowSimulator />
+            )}
+            {tab === "portfolio" && (
+              <PortfolioTab onTokenize={() => setTab("studio")} />
             )}
           </div>
         </div>
