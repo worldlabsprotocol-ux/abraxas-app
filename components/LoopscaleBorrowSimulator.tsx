@@ -27,7 +27,7 @@ export function LoopscaleBorrowSimulator() {
   if (!mounted) return null;
 
   const eligible = assets.filter(a =>
-    a.status === "listed" || a.status === "pending_verification" || a.status === "verified"
+    a.status !== "closed"   // show everything except closed/burned
   );
 
   const totalBorrowable = eligible.reduce(
