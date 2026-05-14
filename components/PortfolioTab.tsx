@@ -58,7 +58,8 @@ export function PortfolioTab({ onTokenize }: { onTokenize?: () => void }) {
           Portfolio
         </h2>
         <p style={{ fontSize:"0.52rem", color:"rgba(255,255,255,0.35)", margin:0, lineHeight:1.6 }}>
-          Every tokenized asset you hold — validation status, borrow capacity, and protocol position.
+          Your on-chain position registry. Every tokenized asset with its validation status,
+          declared value, and available liquidity — all in one place.
         </p>
       </div>
 
@@ -131,11 +132,11 @@ export function PortfolioTab({ onTokenize }: { onTokenize?: () => void }) {
                         color:"rgba(255,255,255,0.28)", marginBottom:"0.5rem" }}>
             No assets tokenized yet
           </div>
-          <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.18)",
-                        marginBottom:"1.25rem", lineHeight:1.65 }}>
-            Use Studio to tokenize your first real-world asset.
-            Each asset becomes a Token-2022 position on Solana,
-            unlocking immediate borrow eligibility via Loopscale.
+          <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.2)",
+                        marginBottom:"1.25rem", lineHeight:1.7, maxWidth:380 }}>
+            Real-world assets — watches, spirits, metals, art — were once locked behind
+            institutions. Tokenize your first asset to bring it on-chain and unlock
+            immediate capital access via Loopscale lending.
           </div>
           <button onClick={onTokenize} style={{
             padding:"0.625rem 1.25rem", borderRadius:"8px", border:"none",
@@ -296,8 +297,8 @@ export function PortfolioTab({ onTokenize }: { onTokenize?: () => void }) {
               </div>
               <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.38)",
                             lineHeight:1.6, maxWidth:340 }}>
-                Your verified assets unlock immediate USDC borrowing via Loopscale at 5.2% fixed APR.
-                Capital on demand — no selling required.
+                Your verified assets unlock institutional-grade USDC liquidity via Loopscale
+                at 5.2% fixed APR. Retain ownership. Access capital. No liquidation without consent.
               </div>
             </div>
             <button onClick={() => window.open("https://app.loopscale.com","_blank","noopener")}
