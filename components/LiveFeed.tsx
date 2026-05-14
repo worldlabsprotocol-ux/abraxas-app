@@ -1,61 +1,6 @@
 // FILE: components/LiveFeed.tsx
+// Stubbed — activityStore removed in hard reset. Reinstated after mint flow stable.
 "use client";
-
-import Link from "next/link";
-import { useActivity, timeAgo, ProtocolEvent } from "@/lib/activityStore";
-import { fmtUSD } from "@/lib/appData";
-
-const EVENT_STYLES: Record<string, { dot: string; label: string }> = {
-  deposit:   { dot: "var(--green)", label: "DEPOSIT"   },
-  mint:      { dot: "var(--gold)",  label: "MINT"      },
-  withdraw:  { dot: "#a78bfa",      label: "WITHDRAW"  },
-  rebalance: { dot: "var(--muted)", label: "REBALANCE" },
-  defense:   { dot: "#f0d98a",      label: "DEFENSE"   },
-  agent:     { dot: "var(--subtle)",label: "AGENT"     },
-};
-
-interface Props { limit?: number; showHeader?: boolean }
-
-export function LiveFeed({ limit = 12, showHeader = true }: Props) {
-  const items = useActivity().slice(0, limit);
-
-  return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "12px", overflow: "hidden" }}>
-      {showHeader && (
-        <div style={{ padding: "0.875rem 1.25rem", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--green)", animation: "pulse 2s ease-in-out infinite" }} />
-            <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Live Activity</span>
-          </div>
-          <span style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>{items.length} events</span>
-        </div>
-      )}
-      <div>
-        {items.map((a: ProtocolEvent) => {
-          const s = EVENT_STYLES[a.type] ?? EVENT_STYLES.agent;
-          return (
-            <div key={a.id} style={{ display: "grid", gridTemplateColumns: "40px 1fr auto", gap: "0.625rem", alignItems: "center", padding: "0.65rem 1.1rem", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: s.dot }} />
-                <span style={{ fontSize: "0.5rem", color: "var(--subtle)", letterSpacing: "0.04em", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap" }}>{s.label}</span>
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: "0.78rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.message}</div>
-                <div style={{ fontSize: "0.62rem", color: "var(--subtle)", marginTop: "1px" }}>
-                  <Link href={`/vault/${a.vaultId}`} style={{ color: "var(--gold)", textDecoration: "none" }}>{a.vaultName}</Link>
-                  {" · "}{a.assetType}
-                  {a.amount ? ` · ${fmtUSD(a.amount)}` : ""}
-                  {a.simulated ? " · sim" : ""}
-                </div>
-              </div>
-              <span style={{ fontSize: "0.6rem", color: "var(--subtle)", whiteSpace: "nowrap" }}>{timeAgo(a.ts)}</span>
-            </div>
-          );
-        })}
-        {items.length === 0 && (
-          <div style={{ padding: "2rem", textAlign: "center", color: "var(--subtle)", fontSize: "0.78rem" }}>No activity yet.</div>
-        )}
-      </div>
-    </div>
-  );
+export function LiveFeed({ limit = 12, showHeader = true }: { limit?: number; showHeader?: boolean }) {
+  return null;
 }
