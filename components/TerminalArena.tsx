@@ -116,7 +116,7 @@ export function TerminalArena() {
               <IssuanceEngine onSuccess={() => setTab("portfolio")} />
             )}
             {tab === "markets" && (
-              <MarketsLayer onTokenize={() => setTab("studio")} />
+              <MarketsLayer />
             )}
             {tab === "capital" && (
               <LoopscaleBorrowSimulator />
