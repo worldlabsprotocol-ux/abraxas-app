@@ -355,8 +355,8 @@ export function PortfolioTab() {
             {field:intel.abraConsumedTotal,     fmt:(v:number)=>fmtAbra(v),unit:"ABRA"},
           ] as const).map((m,i)=>(
             <div key={i} style={{background:"rgba(6,8,16,0.99)"}}>
-              <MetricCell field={m.field as IntelligenceField<number>}
-                fmt={m.fmt as (v:number)=>string}/>
+              <MetricCell field={m.field as IntelligenceField<unknown>}
+                fmt={m.fmt as (v:unknown)=>string}/>
             </div>
           ))}
         </div>
