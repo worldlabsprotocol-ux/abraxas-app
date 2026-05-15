@@ -675,9 +675,8 @@ export function PortfolioTab() {
               Acquire ABRA
             </div>
             {([
-              ["Raydium", RAYDIUM_URL, "#14F195"],
-              ["Jupiter", JUPITER_URL, "#6b8cff"],
-              [`https://bags.fm/t/${ABRA_CA}`, "#C8A96E", "Bags"],
+                      ["Jupiter", JUPITER_URL, "#6b8cff"],
+              [`https://bags.fm/${ABRA_CA}`, "#C8A96E", "Bags"],
             ] as [string,string,string][]).map(([a,b,c]) => {
               const [url,col,name] = a.startsWith("http") ? [a,b,c] : [b,c,a];
               return (
