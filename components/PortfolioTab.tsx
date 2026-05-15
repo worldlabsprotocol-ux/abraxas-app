@@ -52,9 +52,9 @@ function shortPk(k:string):string {
 }
 
 // ── Intelligence metric cell ──────────────────────────────────────────────────
-function MetricCell<T>({field,fmt,unit}:{
-  field:IntelligenceField<T>;
-  fmt?:(v:T)=>string;
+function MetricCell({field,fmt,unit}:{
+  field:IntelligenceField<unknown>;
+  fmt?:(v:unknown)=>string;
   unit?:string;
 }) {
   const display = field.value === null
@@ -369,14 +369,14 @@ export function PortfolioTab() {
           border:"1px solid rgba(255,255,255,0.06)",
           borderRadius:"8px",overflow:"hidden",marginTop:"1px",
         }}>
-          {[
+          {([
             intel.walletTrustScore,
             intel.healthFactor,
             intel.activeLoansUsd,
             intel.liquidationRisk,
             intel.assetQualityScore,
             intel.capitalBehaviorScore,
-          ].map((f,i)=>(
+          ] as IntelligenceField<unknown>[]).map((f,i)=>(
             <div key={i} style={{background:"rgba(6,8,16,0.95)"}}>
               <MetricCell field={f}/>
             </div>
