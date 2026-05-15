@@ -1,4 +1,5 @@
 // FILE: lib/hooks/usePortfolioIntelligence.ts
+"use client";
 // Live portfolio intelligence object.
 // Real data: SPL ABRA balance, minted assets from Zustand store.
 // Unavailable data: trust score, active loans, health factor — shown as null.
@@ -24,7 +25,7 @@ export interface PortfolioIntelligence {
   isAuthenticated:      boolean;
 
   // Real computed values
-  abraBalance:          IntelligenceField<number>;
+  abraBalance:          IntelligenceField<number | null>;
   verifiedAssetCount:   IntelligenceField<number>;
   totalDeclaredValueUsd:IntelligenceField<number>;
   borrowingPowerUsd:    IntelligenceField<number>;

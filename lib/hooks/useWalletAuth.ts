@@ -1,4 +1,5 @@
 // FILE: lib/hooks/useWalletAuth.ts
+"use client";
 // Level 1 — Wallet verification via signed message.
 // Creates authenticated session: wallet address + timestamp + signature hash.
 // Solana-native only. No Ethereum abstractions.
