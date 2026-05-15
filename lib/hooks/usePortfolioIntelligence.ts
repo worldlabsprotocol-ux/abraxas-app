@@ -60,8 +60,9 @@ export function usePortfolioIntelligence(): PortfolioIntelligence {
     const wallet = publicKey?.toBase58() ?? null;
 
     // Real computed values
+    const VERIFIED_STATUSES = ["verified","collateral_eligible","borrowed","listed"];
     const verified        = assets.filter(a =>
-      ["verified","collateral_eligible","borrowed","listed"].includes(a.status)
+      VERIFIED_STATUSES.includes(a.status as string)
     );
     const totalDeclared   = verified.reduce((s,a) => s + a.estimatedUsd, 0);
     const borrowPower     = verified.reduce((s,a) => s + Math.round(a.estimatedUsd * a.ltv / 100), 0);

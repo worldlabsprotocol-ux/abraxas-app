@@ -1,47 +1,98 @@
 // FILE: lib/abraxasStore.ts
-// MINIMAL STORE — only what mint flow needs.
-// No vault routing. No Supabase. No treasury logic.
-// Single source of truth for: ABRA balance, minted assets.
+"use client";
+// CANONICAL ASSET STATE MACHINE — unified lowercase type.
+// Covers all legacy comparisons AND full verification pipeline.
+// This is the single source of truth for AssetStatus across all components.
 "use client";
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-export type AssetClass = "Spirits"|"Watches"|"Cards (PSA/BGS)"|"Comics (CGC)"|"Racehorses"|"Metals"|"Art"|"Other";
-// Full 9-state verification pipeline
-export type AssetStatus =
-  | "SUBMITTED"             // asset submitted, awaiting metadata review
-  | "SIGNATURE_VERIFIED"    // wallet ownership confirmed via signed message
-  | "OWNERSHIP_VERIFIED"    // documentation and provenance reviewed
-  | "CUSTODY_PENDING"       // custody partner notified, awaiting physical check
-  | "CUSTODY_CONFIRMED"     // physical inspection confirmed by custody partner
-  | "APPRAISAL_PENDING"     // appraisal / liquidity analysis in progress
-  | "LIQUIDITY_SCORED"      // liquidity and valuation confidence established
-  | "COLLATERAL_ELIGIBLE"   // ready for USDC borrowing via Loopscale
-  | "MARKET_LISTED";        // visible in verified asset marketplace
+export type AssetClass =
+  | "Spirits" | "Watches" | "Cards (PSA/BGS)" | "Comics (CGC)"
+  | "Racehorses" | "Metals" | "Art" | "Other";
 
-// Legacy status aliases (for backward compatibility with older assets)
-export type AssetStatusLegacy = "pending_verification"|"verified"|"listed"|"closed";
+// ── CANONICAL 13-STATE VERIFICATION PIPELINE ─────────────────────────────────
+// Lowercase throughout — matches all legacy code and new pipeline logic.
+// NO UPPER_CASE — was incorrect direction for existing codebase.
+export type AssetStatus =
+  | "created"               // submitted, awaiting document review
+  | "pending_documents"     // document upload in progress
+  | "pending_identity"      // ownership identity being verified
+  | "pending_appraisal"     // professional appraisal in progress
+  | "pending_custody"       // physical custody check in progress
+  | "pending_verification"  // final verification queue (legacy compat)
+  | "verified"              // fully authenticated — borrow eligible
+  | "collateral_eligible"   // active collateral, can borrow against
+  | "borrowed"              // has active loan against this asset
+  | "listed"                // visible in verified marketplace
+  | "rejected"              // failed verification checks
+  | "closed";               // lifecycle ended
+
+// Pipeline step number for progress bar (0-12)
+export const STATUS_STEP: Record<AssetStatus, number> = {
+  created:              1,
+  pending_documents:    2,
+  pending_identity:     3,
+  pending_appraisal:    4,
+  pending_custody:      5,
+  pending_verification: 6,
+  verified:             8,
+  collateral_eligible:  9,
+  borrowed:            10,
+  listed:              11,
+  rejected:             0,
+  closed:               0,
+};
+
+export const STATUS_LABEL: Record<AssetStatus, string> = {
+  created:              "Submitted",
+  pending_documents:    "Documents Pending",
+  pending_identity:     "Identity Verification",
+  pending_appraisal:    "Appraisal",
+  pending_custody:      "Custody Check",
+  pending_verification: "Final Review",
+  verified:             "Verified",
+  collateral_eligible:  "Borrow Eligible",
+  borrowed:             "Active Loan",
+  listed:               "Market Ready",
+  rejected:             "Rejected",
+  closed:               "Closed",
+};
+
+export const STATUS_COLOR: Record<AssetStatus, string> = {
+  created:              "#C8A96E",
+  pending_documents:    "#FBBF24",
+  pending_identity:     "#FBBF24",
+  pending_appraisal:    "#FBBF24",
+  pending_custody:      "#FBBF24",
+  pending_verification: "#FBBF24",
+  verified:             "#14F195",
+  collateral_eligible:  "#14F195",
+  borrowed:             "#6b8cff",
+  listed:               "#14F195",
+  rejected:             "#f26b6b",
+  closed:               "rgba(255,255,255,0.2)",
+};
 
 export interface AbraAsset {
-  id:            string;
-  name:          string;
-  description:   string;
-  assetClass:    AssetClass;
-  imagePreview?: string;       // undefined = no image
-  estimatedUsd:  number;
-  ltv:           number;
-  custodyPartner:string;
-  mintCostAbra:  number;
-  txSignature:   string;
-  tokenId:       string;
-  ownerWallet:   string;
-  createdAt:     number;       // fixed epoch — no Date.now() in render
-  status:        AssetStatus;
-  grade?:        string;
-  year?:         string;
-  txDeduction?:  string;   // on-chain tx signature for ABRA deduction
-  deductedAt?:   number;   // timestamp of confirmed on-chain deduction
+  id:             string;
+  name:           string;
+  description:    string;
+  assetClass:     AssetClass;
+  imagePreview?:  string;
+  estimatedUsd:   number;
+  ltv:            number;
+  custodyPartner: string;
+  mintCostAbra:   number;
+  txSignature:    string;
+  txDeduction?:   string;   // on-chain ABRA deduction tx
+  tokenId:        string;
+  ownerWallet:    string;
+  createdAt:      number;
+  status:         AssetStatus;
+  grade?:         string;
+  year?:          string;
 }
 
 interface AbraState {
@@ -52,12 +103,24 @@ interface AbraState {
     asset: Omit<AbraAsset,"id"|"tokenId"|"createdAt"|"status"|"ownerWallet"|"txSignature">,
     wallet: string
   ) => AbraAsset | null;
+  updateAssetStatus: (id: string, status: AssetStatus) => void;
   resetDemo: () => void;
 }
 
 function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
 }
+
+// ── Demo pipeline auto-advance (remove in production) ─────────────────────────
+const DEMO_PIPELINE: Array<[AssetStatus, number]> = [
+  ["pending_documents",    3_000],
+  ["pending_identity",     8_000],
+  ["pending_appraisal",   15_000],
+  ["pending_custody",     22_000],
+  ["pending_verification",30_000],
+  ["verified",            40_000],
+  ["collateral_eligible", 50_000],
+];
 
 export const useAbraStore = create<AbraState>()(
   persist(
@@ -68,8 +131,7 @@ export const useAbraStore = create<AbraState>()(
 
       mintAsset(assetData, wallet) {
         const { abraBalance } = get();
-        const cost = assetData.mintCostAbra;
-        if (abraBalance < cost) return null;
+        if (abraBalance < assetData.mintCostAbra) return null;
 
         const asset: AbraAsset = {
           ...assetData,
@@ -77,41 +139,45 @@ export const useAbraStore = create<AbraState>()(
           tokenId:     `ABRA-${uid().toUpperCase()}`,
           txSignature: `${uid()}${uid()}`.replace(/-/g,""),
           ownerWallet: wallet,
-          createdAt:   1748000000000, // fixed epoch — no SSR mismatch
-          status:      "SUBMITTED",
+          createdAt:   1748000000000,  // fixed epoch — no SSR mismatch
+          status:      "created",
         };
 
         set(s => ({
-          abraBalance: s.abraBalance - cost,
+          abraBalance: s.abraBalance - assetData.mintCostAbra,
           assets:      [asset, ...s.assets],
         }));
 
-        // Auto-advance to listed after 18s (demo)
-        // Auto-advance through pipeline (demo mode only)
-        // In production each state requires real custodian sign-off
-        const advance = (id:string, toStatus:AssetStatus, delay:number) =>
-          setTimeout(()=>set(s=>({assets:s.assets.map(a=>
-            a.id===id?{...a,status:toStatus}:a)})), delay);
-        advance(asset.id, "SIGNATURE_VERIFIED",   3_000);
-        advance(asset.id, "OWNERSHIP_VERIFIED",   8_000);
-        advance(asset.id, "CUSTODY_PENDING",     14_000);
-        advance(asset.id, "CUSTODY_CONFIRMED",   28_000);
-        advance(asset.id, "APPRAISAL_PENDING",   35_000);
-        advance(asset.id, "LIQUIDITY_SCORED",    42_000);
-        advance(asset.id, "COLLATERAL_ELIGIBLE", 50_000);
+        // Demo auto-advance through verification pipeline
+        // In production each transition requires custodian sign-off
+        DEMO_PIPELINE.forEach(([status, delay]) => {
+          setTimeout(() => {
+            set(s => ({
+              assets: s.assets.map(a =>
+                a.id === asset.id ? { ...a, status } : a
+              ),
+            }));
+          }, delay);
+        });
 
         return asset;
       },
 
+      updateAssetStatus(id, status) {
+        set(s => ({
+          assets: s.assets.map(a => a.id === id ? { ...a, status } : a),
+        }));
+      },
+
       resetDemo() {
-        set({ abraBalance: 2850, assets: [] });
+        set({ abraBalance:2850, assets:[] });
       },
     }),
     {
-      name:           "abraxas-store",
-      storage:        createJSONStorage(() => localStorage),
-      skipHydration:  true,   // manual rehydrate in StoreHydrator to prevent SSR mismatch
-      partialize:     (s) => ({ abraBalance: s.abraBalance, assets: s.assets }),
+      name:          "abraxas-store",
+      storage:       createJSONStorage(() => localStorage),
+      skipHydration: true,
+      partialize:    (s) => ({ abraBalance:s.abraBalance, assets:s.assets }),
     }
   )
 );

@@ -21,22 +21,26 @@ const JUPITER_URL = `https://jup.ag/swap/SOL-${ABRA_CA}`;
 
 type AbraAsset = ReturnType<typeof useAbraStore.getState>["assets"][0];
 
+// Mirrors canonical AssetStatus from abraxasStore — single source of truth
 const STATUS_META: Record<string,{label:string;color:string;step:number}> = {
-  created:              {label:"Submitted",        color:"#C8A96E",step:1},
-  pending_soft:         {label:"Metadata Review",  color:"#FBBF24",step:2},
-  pending_standard:     {label:"Custody Check",    color:"#FBBF24",step:4},
-  pending_verification: {label:"Ownership Check",  color:"#FBBF24",step:3},
-  verified:             {label:"Borrow Eligible",  color:"#14F195",step:7},
-  collateral_eligible:  {label:"Borrow Eligible",  color:"#14F195",step:7},
-  borrowed:             {label:"Active Loan",      color:"#6b8cff",step:8},
-  listed:               {label:"Market Ready",     color:"#14F195",step:8},
-  closed:               {label:"Closed",           color:"rgba(255,255,255,0.2)",step:0},
+  created:              {label:"Submitted",          color:"#C8A96E",step:1},
+  pending_documents:    {label:"Documents Pending",  color:"#FBBF24",step:2},
+  pending_identity:     {label:"Identity Review",    color:"#FBBF24",step:3},
+  pending_appraisal:    {label:"Appraisal",          color:"#FBBF24",step:4},
+  pending_custody:      {label:"Custody Check",      color:"#FBBF24",step:5},
+  pending_verification: {label:"Final Review",       color:"#FBBF24",step:6},
+  verified:             {label:"Verified",           color:"#14F195",step:8},
+  collateral_eligible:  {label:"Borrow Eligible",    color:"#14F195",step:9},
+  borrowed:             {label:"Active Loan",        color:"#6b8cff",step:10},
+  listed:               {label:"Market Ready",       color:"#14F195",step:11},
+  rejected:             {label:"Rejected",           color:"#f26b6b",step:0},
+  closed:               {label:"Closed",             color:"rgba(255,255,255,0.2)",step:0},
 };
 
 const PIPELINE = [
-  "Submitted","Metadata Review","Ownership Verification",
-  "Custody Validation","Liquidity Analysis",
-  "Appraisal Confirmation","Borrow Eligibility","Market Ready",
+  "Submitted","Documents","Identity Verification",
+  "Appraisal","Custody Check","Final Review",
+  "Verified","Borrow Eligible","Active Loan","Market Ready","","",
 ];
 
 function fmtUsd(n: number | null): string {
@@ -225,8 +229,14 @@ export function PortfolioTab() {
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
-  const pending  = assets.filter(a => STATUS_META[a.status]?.step < 7 && a.status !== "closed");
-  const verified = assets.filter(a => STATUS_META[a.status]?.step >= 7 && a.status !== "closed");
+  const pending  = assets.filter(a => {
+    const step = STATUS_META[a.status]?.step ?? 0;
+    return step > 0 && step < 8 && a.status !== "closed" && a.status !== "rejected";
+  });
+  const verified = assets.filter(a => {
+    const step = STATUS_META[a.status]?.step ?? 0;
+    return step >= 8 && a.status !== "closed" && a.status !== "rejected";
+  });
   const displayedAssets = showAllAssets ? verified : verified.slice(0, 3);
 
   function openStudio() {
@@ -675,8 +685,9 @@ export function PortfolioTab() {
               Acquire ABRA
             </div>
             {([
-                      ["Jupiter", JUPITER_URL, "#6b8cff"],
-              [`https://bags.fm/${ABRA_CA}`, "#C8A96E", "Bags"],
+              ["Raydium", RAYDIUM_URL, "#14F195"],
+              ["Jupiter", JUPITER_URL, "#6b8cff"],
+              [`https://bags.fm/t/${ABRA_CA}`, "#C8A96E", "Bags"],
             ] as [string,string,string][]).map(([a,b,c]) => {
               const [url,col,name] = a.startsWith("http") ? [a,b,c] : [b,c,a];
               return (
