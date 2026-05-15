@@ -1,4 +1,4 @@
 "use client";
-export function useRealtimeMarkets() {
+export function useMarkets() {
   return { assets: [], loading: false };
 }
