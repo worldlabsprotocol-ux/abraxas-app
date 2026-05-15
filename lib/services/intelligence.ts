@@ -126,14 +126,19 @@ export async function fetchWalletAssets(
     const json  = await res.json();
     const items = json?.result?.items ?? [];
 
-    const assets: WalletAsset[] = items.map((item:Record<string,unknown>) => ({
-      mint:    String(item.id ?? ""),
-      name:    String((item.content as Record<string,unknown>)?.metadata?.name ?? "Unknown"),
-      symbol:  String((item.content as Record<string,unknown>)?.metadata?.symbol ?? ""),
-      usdValue:null,  // price enrichment requires separate call
-      decimals:0,
-      amount:  0,
-    }));
+    const assets: WalletAsset[] = items.map((item:Record<string,unknown>) => {
+      type Meta = Record<string,unknown>;
+      const content  = item.content  as Meta | undefined;
+      const metadata = content?.metadata as Meta | undefined;
+      return {
+        mint:    String(item.id ?? ""),
+        name:    String(metadata?.name    ?? "Unknown"),
+        symbol:  String(metadata?.symbol  ?? ""),
+        usdValue:null,
+        decimals:0,
+        amount:  0,
+      };
+    });
     setCached(key, assets);
     return assets;
   } catch {
