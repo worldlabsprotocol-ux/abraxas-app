@@ -1,4 +1,5 @@
+// FILE: lib/hooks/useNotifications.ts
 "use client";
 export function useNotifications() {
-  return { notifications: [], loading: false };
+  return { notifications: [] as unknown[], loading: false };
 }

@@ -1,4 +1,5 @@
+// FILE: lib/hooks/useRealtimeMarkets.ts
 "use client";
 export function useRealtimeMarkets() {
-  return { assets: [], loading: false };
+  return { assets: [] as unknown[], loading: false };
 }
