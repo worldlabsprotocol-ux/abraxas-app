@@ -148,11 +148,11 @@ export function TransactionReceipt({
 
       {onContinue && (
         <button onClick={onContinue} style={{
-          width:"100%", padding:"0.75rem", borderRadius:"6px", border:"none",
+          width:"100%", padding:"0.75rem", borderRadius:"6px",
           cursor:"pointer", fontWeight:700, fontSize:"0.6rem",
           fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.04em",
           background:"rgba(200,169,110,0.12)", color:"#C8A96E",
-          border:"1px solid rgba(200,169,110,0.25)" as any,
+          border:"1px solid rgba(200,169,110,0.25)",
         }}>
           View Portfolio
         </button>
