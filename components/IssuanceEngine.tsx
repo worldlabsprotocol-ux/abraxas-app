@@ -1,430 +1,704 @@
 // FILE: components/IssuanceEngine.tsx
-// MINIMAL 7-step mint flow. Zustand store only. No Supabase. No vault routing.
-// Step: upload → metadata → valuation → wallet → fee → processing → queue
 "use client";
+// Full 7-step tokenization studio.
+// Asset classes include Property + Short-Term Rental (Airbnb use case).
+// Real SPL ABRA deduction. Supabase sync after mint. TransactionReceipt shown.
+// SOL payment UI scaffolded for X402 integration.
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { useAbraStore, type AssetClass } from "@/lib/abraxasStore";
+import { useState, useCallback, useRef }    from "react";
+import { useWallet }                         from "@solana/wallet-adapter-react";
+import { useWalletModal }                    from "@solana/wallet-adapter-react-ui";
+import { useConnection }                     from "@solana/wallet-adapter-react";
+import { useAbraStore, type AssetClass }     from "@/lib/abraxasStore";
+import { useAbraBalance }                    from "@/lib/hooks/useAbraBalance";
+import { deductAbraForMint,
+         simulateMintDeduction }             from "@/lib/services/mintService";
+import { TransactionReceipt }               from "@/components/TransactionReceipt";
 
+// ── Asset class config ────────────────────────────────────────────────────────
+const CLASSES: Record<string, {
+  fee:number; ltv:number; partner:string; color:string;
+  description:string; icon:string; category:string;
+}> = {
+  "Watches":           {fee:150,ltv:65,color:"#6b8cff",icon:"◎",category:"Collectible",
+    partner:"Certified Custody Network",
+    description:"Mechanical, luxury, and vintage timepieces with verifiable provenance."},
+  "Spirits":           {fee:120,ltv:55,color:"#FF8C00",icon:"◈",category:"Collectible",
+    partner:"Certified Custody Network",
+    description:"Rare and aged whisky, cognac, rum, and wine with authentication records."},
+  "Cards (PSA/BGS)":  {fee:110,ltv:55,color:"#FBBF24",icon:"⬡",category:"Collectible",
+    partner:"Certified Custody Network",
+    description:"Professionally graded trading cards from PSA, BGS, or CGC."},
+  "Comics (CGC)":      {fee:130,ltv:65,color:"#a855f7",icon:"◫",category:"Collectible",
+    partner:"Certified Custody Network",
+    description:"CGC-certified comic books with case-verified grade."},
+  "Metals":            {fee:200,ltv:80,color:"#D4AF37",icon:"◆",category:"Commodity",
+    partner:"Certified Custody Network",
+    description:"LBMA-standard gold, silver, platinum, and palladium in bullion form."},
+  "Art":               {fee:180,ltv:50,color:"#f26b6b",icon:"◭",category:"Fine Art",
+    partner:"Certified Custody Network",
+    description:"Fine art, limited editions, and authenticated prints with provenance."},
+  "Racehorses":        {fee:250,ltv:55,color:"#22c55e",icon:"◉",category:"Animal Asset",
+    partner:"Certified Custody Network",
+    description:"Thoroughbred and racing horses with registry documentation."},
+  "Property":          {fee:300,ltv:60,color:"#14F195",icon:"⬛",category:"Real Estate",
+    partner:"Title and Deed Verification Network",
+    description:"Residential, commercial, or vacation property with clear title and deed."},
+  "Short-Term Rental": {fee:250,ltv:55,color:"#14F195",icon:"⊞",category:"Real Estate",
+    partner:"Title and Deed Verification Network",
+    description:"Airbnb, VRBO, or short-term rental property. Tokenize your listing to unlock DeFi capital."},
+  "Other":             {fee:100,ltv:45,color:"#C8A96E",icon:"⬢",category:"General",
+    partner:"Certified Custody Network",
+    description:"Any real-world asset with documented ownership and provable value."},
+};
+
+type AssetClassKey = keyof typeof CLASSES;
 type Step = "upload"|"metadata"|"valuation"|"wallet"|"fee"|"processing"|"queue";
+type PayMethod = "abra"|"sol";
 
-const CLASSES: Record<AssetClass,{color:string;partner:string;ltv:number;fee:number;icon:string}> = {
-  "Watches":        {color:"#6b8cff",partner:"Courtyard",       ltv:65,fee:150,icon:"◎"},
-  "Spirits":        {color:"#FF8C00",partner:"Baxus",           ltv:55,fee:100,icon:"◈"},
-  "Cards (PSA/BGS)":{color:"#FBBF24",partner:"Collector Crypt", ltv:55,fee:80, icon:"⬡"},
-  "Comics (CGC)":   {color:"#a855f7",partner:"Metropolis",      ltv:65,fee:120,icon:"◫"},
-  "Racehorses":     {color:"#22c55e",partner:"Jockey Club",     ltv:55,fee:200,icon:"◉"},
-  "Metals":         {color:"#D4AF37",partner:"LBMA",            ltv:80,fee:60, icon:"◆"},
-  "Art":            {color:"#f26b6b",partner:"Verified Custodian",ltv:50,fee:180,icon:"◭"},
-  "Other":          {color:"#C8A96E",partner:"Manual Review",   ltv:45,fee:250,icon:"⬢"},
-};
-
-const S_STYLE = {
-  input: {
-    width:"100%", padding:"0.5rem 0.7rem", borderRadius:"7px", boxSizing:"border-box" as const,
-    background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)",
-    color:"#f0f0f0", fontSize:"0.58rem", fontFamily:"'JetBrains Mono',monospace", outline:"none",
-  },
-  label: {
-    display:"block" as const, fontSize:"0.42rem", fontWeight:700 as const,
-    color:"rgba(255,255,255,0.4)", marginBottom:"0.2rem",
-    fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase" as const,
-  },
-  back: {
-    padding:"0.7rem 1.1rem", borderRadius:"8px", border:"1px solid rgba(255,255,255,0.07)",
-    background:"transparent", color:"rgba(255,255,255,0.3)", fontSize:"0.62rem",
-    cursor:"pointer", fontFamily:"'JetBrains Mono',monospace",
-  },
-};
-
-function StepDots({ step }: { step:Step }) {
-  const STEPS:Step[] = ["upload","metadata","valuation","wallet","fee","processing","queue"];
-  const idx = STEPS.indexOf(step);
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:0, marginBottom:"1.5rem" }}>
-      {STEPS.map((s,i) => {
-        const done=i<idx, active=i===idx;
-        return (
-          <div key={s} style={{ display:"flex", alignItems:"center", flex:i<STEPS.length-1?"1":"0" }}>
-            <div style={{ width:16, height:16, borderRadius:"50%", flexShrink:0,
-                          border:`2px solid ${done||active?"#14F195":"rgba(255,255,255,0.1)"}`,
-                          background: done?"#14F195":"rgba(6,8,16,0.99)",
-                          display:"flex", alignItems:"center", justifyContent:"center" }}>
-              {done && <div style={{ width:5, height:5, borderRadius:"50%", background:"#000" }}/>}
-            </div>
-            {i<STEPS.length-1 && (
-              <div style={{ flex:1, height:1,
-                            background:done?"rgba(20,241,149,0.4)":"rgba(255,255,255,0.06)" }}/>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+// ── Supabase sync ─────────────────────────────────────────────────────────────
+async function syncToSupabase(asset: {
+  name:string; assetClass:string; estimatedUsd:number; mintCostAbra:number;
+  txSignature:string; ownerWallet:string; ltv:number;
+  description?:string; imagePreview?:string;
+}) {
+  try {
+    await fetch("/api/assets", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(asset),
+    });
+  } catch {
+    // Supabase sync failure is non-fatal — asset is in Zustand store
+    console.warn("Supabase sync failed — asset saved to local store only");
+  }
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
-  const [mounted, setMounted]       = useState(false);
-  const [step, setStep]             = useState<Step>("upload");
-  const [assetClass, setAssetClass] = useState<AssetClass>("Watches");
-  const [file, setFile]             = useState<File|null>(null);
-  const [preview, setPreview]       = useState<string|undefined>(undefined);
-  const [meta, setMeta]             = useState({ name:"", grade:"", year:"", description:"" });
-  const [val, setVal]               = useState({ estimatedUsd:"" });
-  const [mintedId, setMintedId]     = useState<string|null>(null);
-  const [txSig, setTxSig]           = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [step,       setStep]       = useState<Step>("upload");
+  const [assetClass, setAssetClass] = useState<AssetClassKey>("Watches");
+  const [preview,    setPreview]    = useState<string|undefined>();
+  const [meta,       setMeta]       = useState({ name:"", description:"", grade:"", year:"" });
+  const [estUsd,     setEstUsd]     = useState(0);
+  const [mintedId,   setMintedId]   = useState("");
+  const [txSig,      setTxSig]      = useState("");
+  const [payMethod,  setPayMethod]  = useState<PayMethod>("abra");
+  const [mintedAsset,setMintedAsset]= useState<{name:string;assetClass:string;tokenId:string}|null>(null);
+  const [errorMsg,   setErrorMsg]   = useState("");
+  const fileRef                     = useRef<HTMLInputElement>(null);
 
-  const walletCtx    = useWallet();
-  const modalCtx     = useWalletModal();
-  const connected    = mounted ? walletCtx.connected  : false;
-  const publicKey    = mounted ? walletCtx.publicKey  : null;
-  const setVisible   = mounted ? modalCtx.setVisible  : () => {};
-  const abraBalance  = useAbraStore(s => s.abraBalance);
-  const mintAsset    = useAbraStore(s => s.mintAsset);
+  const { connection }                            = useConnection();
+  const { publicKey, connected, signTransaction } = useWallet();
+  const { setVisible }                            = useWalletModal();
+  const { balance: realBalance, loading: balLoading } = useAbraBalance();
+  const abraBalance   = useAbraStore(s => s.abraBalance);
+  const mintAsset     = useAbraStore(s => s.mintAsset);
 
-  useEffect(() => { setMounted(true); }, []);
+  const cfg        = CLASSES[assetClass] ?? CLASSES["Other"];
+  const fee        = cfg.fee;
+  const displayBal = connected ? realBalance : abraBalance;
+  const canAfford  = displayBal >= fee;
 
-  const cfg      = CLASSES[assetClass];
-  const fee      = cfg.fee + 10;
-  const estUsd   = parseFloat(val.estimatedUsd) || 0;
-  const borrowMax= Math.round(estUsd * cfg.ltv / 100);
-  const canAfford= abraBalance >= fee;
+  // ── Image upload ─────────────────────────────────────────────────────────
+  const onFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
 
-  function handleFile(f: File) {
-    setFile(f);
-    const r = new FileReader();
-    r.onload = e => setPreview(e.target?.result as string);
-    r.readAsDataURL(f);
-  }
-
-  function executeMint() {
+  // ── Mint execution ────────────────────────────────────────────────────────
+  async function executeMint() {
     setStep("processing");
+    setErrorMsg("");
     const wallet = publicKey?.toBase58() ?? "demo-wallet";
-    setTimeout(() => {
-      const result = mintAsset({
-        name:          meta.name || "Unnamed Asset",
-        description:   meta.description || "",
-        assetClass,
-        mintCostAbra:  fee,
-        imagePreview:  preview,          // string|undefined — matches store type
-        estimatedUsd:  estUsd,
-        ltv:           cfg.ltv,
-        custodyPartner:cfg.partner,
-        grade:         meta.grade || undefined,
-        year:          meta.year  || undefined,
-      }, wallet);
 
-      if (!result) { setStep("fee"); return; }
-      setMintedId(result.id);
-      setTxSig(result.txSignature);
-      setStep("queue");
-    }, 2200); // simulate processing
+    // Real SPL deduction if wallet connected, demo otherwise
+    let deductResult;
+    if (connected && publicKey && signTransaction) {
+      deductResult = await deductAbraForMint({
+        connection, userWallet: publicKey, amountAbra: fee,
+        signAndSendTransaction: async (tx) => {
+          const signed = await signTransaction(tx);
+          return connection.sendRawTransaction(signed.serialize());
+        },
+      });
+    } else {
+      deductResult = simulateMintDeduction(fee);
+    }
+
+    if (!deductResult.success) {
+      setErrorMsg(deductResult.error ?? "Transaction failed. Please try again.");
+      setStep("fee");
+      return;
+    }
+
+    // Write to Zustand store
+    const result = mintAsset({
+      name:           meta.name || "Unnamed Asset",
+      description:    meta.description || cfg.description,
+      assetClass:     assetClass as AssetClass,
+      mintCostAbra:   fee,
+      imagePreview:   preview,
+      estimatedUsd:   estUsd,
+      ltv:            cfg.ltv,
+      custodyPartner: cfg.partner,
+      grade:          meta.grade || undefined,
+      year:           meta.year  || undefined,
+    }, wallet);
+
+    if (!result) { setStep("fee"); return; }
+
+    const finalTx = deductResult.txSignature ?? result.txSignature;
+    setMintedId(result.id);
+    setTxSig(finalTx);
+    setMintedAsset({ name: result.name, assetClass: result.assetClass, tokenId: result.tokenId });
+
+    // Sync to Supabase (non-blocking)
+    await syncToSupabase({
+      name:          result.name,
+      assetClass:    result.assetClass,
+      estimatedUsd:  estUsd,
+      mintCostAbra:  fee,
+      txSignature:   finalTx,
+      ownerWallet:   wallet,
+      ltv:           cfg.ltv,
+      description:   meta.description,
+      imagePreview:  preview,
+    });
+
+    setStep("queue");
   }
 
-  const W = { padding:"1.25rem", maxWidth:560 };
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const T = (styles: React.CSSProperties) => styles;
+  const mono = "'JetBrains Mono',monospace";
 
-  // ── UPLOAD ─────────────────────────────────────────────────────────────────
-  if (step==="upload") return (
-    <div style={W}>
-      <StepDots step="upload"/>
-      <p style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace",
-                  textTransform:"uppercase", margin:"0 0 0.25rem", letterSpacing:"0.18em" }}>
-        Step 1 · Upload Asset
-      </p>
-      <h2 style={{ fontWeight:900, fontSize:"1.2rem", color:"#f0f0f0", margin:"0 0 1rem" }}>
-        Submit Your Asset
-      </h2>
-      {/* Class picker */}
-      <div style={{ marginBottom:"1rem" }}>
-        <div style={S_STYLE.label}>Asset Class</div>
-        <div style={{ display:"flex", gap:"0.3rem", flexWrap:"wrap" }}>
-          {(Object.keys(CLASSES) as AssetClass[]).map(a => (
-            <button key={a} onClick={() => setAssetClass(a)} style={{
-              padding:"0.35rem 0.7rem", borderRadius:"6px", cursor:"pointer",
-              border:`1px solid ${assetClass===a?CLASSES[a].color+"60":"rgba(255,255,255,0.08)"}`,
-              background: assetClass===a?`${CLASSES[a].color}12`:"rgba(255,255,255,0.02)",
-              color: assetClass===a?CLASSES[a].color:"rgba(255,255,255,0.4)",
-              fontSize:"0.54rem", fontWeight:assetClass===a?700:400,
-              fontFamily:"'JetBrains Mono',monospace",
-            }}>{a}</button>
-          ))}
-        </div>
-      </div>
-      {/* Drop zone */}
-      <div onClick={() => fileRef.current?.click()} style={{
-        border:`2px dashed ${cfg.color}30`, borderRadius:"12px", padding:"2rem",
-        textAlign:"center", cursor:"pointer", background:`${cfg.color}04`, marginBottom:"1rem",
-      }}>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }}
-               onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f); }}/>
-        {preview
-          ? <img src={preview} alt="" style={{ maxHeight:160, maxWidth:"100%", borderRadius:6 }}/>
-          : <><div style={{ fontSize:"2rem", color:`${cfg.color}60`, marginBottom:"0.5rem" }}>{cfg.icon}</div>
-             <div style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.5)" }}>Click or drop image</div>
-             <div style={{ fontSize:"0.46rem", color:"rgba(255,255,255,0.25)", marginTop:"0.2rem" }}>JPG, PNG · Max 25MB</div></>}
-      </div>
-      <button onClick={() => setStep("metadata")} disabled={!file} style={{
-        width:"100%", padding:"0.85rem", borderRadius:"10px", border:"none", cursor:file?"pointer":"not-allowed",
-        fontWeight:900, fontSize:"0.72rem", fontFamily:"'JetBrains Mono',monospace",
-        background: file?"linear-gradient(135deg,#14F195,#C8A96E)":"rgba(255,255,255,0.04)",
-        color: file?"#000":"rgba(255,255,255,0.2)",
-      }}>{file?"Continue →":"Upload image to continue"}</button>
-    </div>
-  );
+  const stepNum = {upload:1,metadata:2,valuation:3,wallet:4,fee:5,processing:6,queue:7};
+  const pct = Math.round((stepNum[step]/7)*100);
 
-  // ── METADATA ───────────────────────────────────────────────────────────────
-  if (step==="metadata") {
-    const ok = !!(meta.name && meta.grade);
-    return (
-      <div style={W}>
-        <StepDots step="metadata"/>
-        <p style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace",
-                    textTransform:"uppercase", margin:"0 0 0.25rem", letterSpacing:"0.18em" }}>Step 2 · Metadata</p>
-        <h2 style={{ fontWeight:900, fontSize:"1.2rem", color:"#f0f0f0", margin:"0 0 1rem" }}>Define Your Asset</h2>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.5rem", marginBottom:"0.875rem" }}>
-          {([["name","Asset Name *",""],["grade","Grade / Cert *","PSA 10, CGC 9.8…"],
-             ["year","Year","1999"],["description","Notes","Provenance…"]] as const).map(([k,label,ph]) => (
-            <div key={k} style={{ gridColumn:k==="description"?"1/-1":"auto" }}>
-              <label style={S_STYLE.label}>{label}</label>
-              <input value={(meta as any)[k]} placeholder={ph}
-                     onChange={e => setMeta(m => ({...m,[k]:e.target.value}))}
-                     style={S_STYLE.input}/>
-            </div>
-          ))}
-        </div>
-        <div style={{ display:"flex", gap:"0.5rem" }}>
-          <button onClick={() => setStep("upload")} style={S_STYLE.back}>← Back</button>
-          <button onClick={() => setStep("valuation")} disabled={!ok} style={{
-            flex:1, padding:"0.7rem", borderRadius:"8px", border:"none", cursor:ok?"pointer":"not-allowed",
-            fontWeight:900, fontSize:"0.68rem", fontFamily:"'JetBrains Mono',monospace",
-            background:ok?`linear-gradient(135deg,${cfg.color},#14F195)`:"rgba(255,255,255,0.04)",
-            color:ok?"#000":"rgba(255,255,255,0.2)",
-          }}>Continue →</button>
-        </div>
-      </div>
-    );
+  function labelStyle(): React.CSSProperties {
+    return {fontSize:"0.38rem",fontWeight:700,color:"rgba(255,255,255,0.3)",
+      fontFamily:mono,textTransform:"uppercase" as const,letterSpacing:"0.12em",marginBottom:"0.35rem"};
+  }
+  function inputStyle(): React.CSSProperties {
+    return {width:"100%",padding:"0.625rem 0.75rem",borderRadius:"6px",
+      background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",
+      color:"#f0f0f0",fontSize:"0.6rem",outline:"none",fontFamily:mono,
+      boxSizing:"border-box" as const};
   }
 
-  // ── VALUATION ──────────────────────────────────────────────────────────────
-  if (step==="valuation") {
-    const ok = estUsd > 0;
-    return (
-      <div style={W}>
-        <StepDots step="valuation"/>
-        <p style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace",
-                    textTransform:"uppercase", margin:"0 0 0.25rem", letterSpacing:"0.18em" }}>Step 3 · Valuation</p>
-        <h2 style={{ fontWeight:900, fontSize:"1.2rem", color:"#f0f0f0", margin:"0 0 1rem" }}>Set Your Valuation</h2>
-        <div style={{ marginBottom:"0.875rem" }}>
-          <label style={S_STYLE.label}>Estimated Market Value (USD) *</label>
-          <div style={{ position:"relative" }}>
-            <span style={{ position:"absolute", left:"0.7rem", top:"50%", transform:"translateY(-50%)",
-                           color:"rgba(255,255,255,0.4)", fontSize:"0.62rem" }}>$</span>
-            <input type="number" value={val.estimatedUsd} placeholder="0"
-                   onChange={e => setVal(v => ({...v,estimatedUsd:e.target.value}))}
-                   style={{ ...S_STYLE.input, paddingLeft:"1.4rem", fontSize:"0.8rem", fontWeight:700 }}/>
-          </div>
-        </div>
-        {ok && (
-          <div style={{ padding:"0.75rem 1rem", background:"rgba(20,241,149,0.05)",
-                        border:"1px solid rgba(20,241,149,0.15)", borderRadius:"9px",
-                        display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.5rem", marginBottom:"0.875rem" }}>
-            {([["Asset Value",`$${estUsd.toLocaleString()}`,"rgba(255,255,255,0.7)"],
-               ["Borrow Up To",`$${borrowMax.toLocaleString()} USDC`,"#14F195"],
-               ["LTV Cap",`${cfg.ltv}%`,"#6b8cff"]] as [string,string,string][]).map(([l,v,c]) => (
-              <div key={l} style={{ textAlign:"center" }}>
-                <div style={{ fontSize:"0.75rem", fontWeight:900, color:c,
-                              fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{v}</div>
-                <div style={{ fontSize:"0.38rem", color:"rgba(255,255,255,0.3)", marginTop:2 }}>{l}</div>
-              </div>
-            ))}
-          </div>
-        )}
-        <div style={{ display:"flex", gap:"0.5rem" }}>
-          <button onClick={() => setStep("metadata")} style={S_STYLE.back}>← Back</button>
-          <button onClick={() => setStep("wallet")} disabled={!ok} style={{
-            flex:1, padding:"0.7rem", borderRadius:"8px", border:"none", cursor:ok?"pointer":"not-allowed",
-            fontWeight:900, fontSize:"0.68rem", fontFamily:"'JetBrains Mono',monospace",
-            background:ok?`linear-gradient(135deg,${cfg.color},#14F195)`:"rgba(255,255,255,0.04)",
-            color:ok?"#000":"rgba(255,255,255,0.2)",
-          }}>Continue →</button>
-        </div>
-      </div>
-    );
-  }
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <div style={{maxWidth:560,margin:"0 auto"}}>
 
-  // ── WALLET ─────────────────────────────────────────────────────────────────
-  if (step==="wallet") return (
-    <div style={W}>
-      <StepDots step="wallet"/>
-      <p style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace",
-                  textTransform:"uppercase", margin:"0 0 0.25rem", letterSpacing:"0.18em" }}>Step 4 · Wallet</p>
-      <h2 style={{ fontWeight:900, fontSize:"1.2rem", color:"#f0f0f0", margin:"0 0 1rem" }}>Connect Wallet</h2>
-      {connected ? (
-        <>
-          <div style={{ padding:"0.75rem 1rem", background:"rgba(20,241,149,0.06)",
-                        border:"1px solid rgba(20,241,149,0.2)", borderRadius:"9px", marginBottom:"1rem" }}>
-            <div style={{ fontSize:"0.42rem", color:"rgba(20,241,149,0.6)",
-                          fontFamily:"'JetBrains Mono',monospace", marginBottom:2 }}>Connected</div>
-            <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#14F195",
-                          fontFamily:"'JetBrains Mono',monospace" }}>
-              {publicKey?.toBase58().slice(0,6)}…{publicKey?.toBase58().slice(-4)}
-            </div>
+      {/* Progress bar */}
+      {step!=="queue"&&(
+        <div style={{marginBottom:"1.25rem"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"0.3rem"}}>
+            <span style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.25)",fontFamily:mono,
+              textTransform:"uppercase",letterSpacing:"0.12em"}}>
+              Step {stepNum[step]} of 7
+            </span>
+            <span style={{fontSize:"0.38rem",fontWeight:700,color:"#C8A96E",fontFamily:mono}}>
+              {pct}%
+            </span>
           </div>
-          <div style={{ display:"flex", gap:"0.5rem" }}>
-            <button onClick={() => setStep("valuation")} style={S_STYLE.back}>← Back</button>
-            <button onClick={() => setStep("fee")} style={{
-              flex:1, padding:"0.7rem", borderRadius:"8px", border:"none", cursor:"pointer",
-              fontWeight:900, fontSize:"0.68rem", fontFamily:"'JetBrains Mono',monospace",
-              background:"linear-gradient(135deg,#14F195,#C8A96E)", color:"#000",
-            }}>Review Mint Fee →</button>
+          <div style={{height:2,background:"rgba(255,255,255,0.07)",borderRadius:1}}>
+            <div style={{height:"100%",background:"linear-gradient(90deg,#7c3aed,#C8A96E)",
+              borderRadius:1,width:`${pct}%`,transition:"width 0.4s ease"}}/>
           </div>
-        </>
-      ) : (
-        <>
-          <p style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.4)", margin:"0 0 1rem", lineHeight:1.7 }}>
-            Connect your Solana wallet to authorize the mint. Your wallet becomes the owner of the tokenized asset.
+        </div>
+      )}
+
+      {/* ── STEP 1: SELECT ASSET CLASS ── */}
+      {step==="upload"&&(
+        <div>
+          <h2 style={{fontWeight:900,fontSize:"1rem",color:"#f0f0f0",margin:"0 0 0.25rem"}}>
+            Select Asset Class
+          </h2>
+          <p style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.3)",
+            margin:"0 0 1.25rem",lineHeight:1.6}}>
+            Choose the category that best describes your real-world asset.
+            Each class has specific verification requirements and lending parameters.
           </p>
-          <button onClick={() => setVisible(true)} style={{
-            width:"100%", padding:"0.875rem", borderRadius:"10px", border:"none", cursor:"pointer",
-            fontWeight:900, fontSize:"0.72rem", fontFamily:"'JetBrains Mono',monospace",
-            background:"linear-gradient(135deg,#9945FF,#14F195)", color:"#fff",
-            marginBottom:"0.5rem",
-          }}>Connect Wallet</button>
-          <button onClick={() => setStep("valuation")} style={{ ...S_STYLE.back, width:"100%" }}>← Back</button>
-        </>
-      )}
-    </div>
-  );
 
-  // ── FEE ────────────────────────────────────────────────────────────────────
-  if (step==="fee") return (
-    <div style={W}>
-      <StepDots step="fee"/>
-      <p style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.5)", fontFamily:"'JetBrains Mono',monospace",
-                  textTransform:"uppercase", margin:"0 0 0.25rem", letterSpacing:"0.18em" }}>Step 5 · Mint Fee</p>
-      <h2 style={{ fontWeight:900, fontSize:"1.2rem", color:"#f0f0f0", margin:"0 0 1rem" }}>Confirm Fee</h2>
-      {/* Balance */}
-      <div style={{ padding:"0.5rem 0.875rem", background:canAfford?"rgba(20,241,149,0.05)":"rgba(242,107,107,0.05)",
-                    border:`1px solid ${canAfford?"rgba(20,241,149,0.2)":"rgba(242,107,107,0.25)"}`,
-                    borderRadius:"8px", marginBottom:"0.875rem",
-                    display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <span style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.4)" }}>Your $ABRA balance</span>
-        <span style={{ fontSize:"0.72rem", fontWeight:800, color:canAfford?"#14F195":"#f26b6b",
-                       fontFamily:"'JetBrains Mono',monospace" }}>{abraBalance.toLocaleString()} $ABRA</span>
-      </div>
-      {/* Breakdown */}
-      <div style={{ background:"rgba(6,8,16,0.99)", border:"1px solid rgba(255,255,255,0.08)",
-                    borderRadius:"10px", overflow:"hidden", marginBottom:"1rem" }}>
-        {([
-          [`${assetClass} Issuance`, `${cfg.fee} $ABRA`, "#C8A96E"],
-          ["Verification Queue",     "10 $ABRA",         "rgba(255,255,255,0.5)"],
-          ["Solana Network Fee",     "~0.000005 SOL",    "rgba(255,255,255,0.5)"],
-        ] as [string,string,string][]).map(([l,v,c],i) => (
-          <div key={l} style={{ display:"flex", justifyContent:"space-between",
-                                padding:"0.6rem 0.875rem",
-                                borderBottom:i<2?"1px solid rgba(255,255,255,0.04)":"none" }}>
-            <span style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.45)" }}>{l}</span>
-            <span style={{ fontSize:"0.56rem", fontWeight:700, color:c,
-                           fontFamily:"'JetBrains Mono',monospace" }}>{v}</span>
+          <div style={{display:"grid",
+            gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,160px),1fr))",
+            gap:"0.5rem",marginBottom:"1.25rem"}}>
+            {Object.entries(CLASSES).map(([name,cfg])=>{
+              const active = assetClass===name;
+              return(
+                <div key={name} onClick={()=>setAssetClass(name as AssetClassKey)} style={{
+                  padding:"0.875rem",borderRadius:"7px",cursor:"pointer",
+                  border:`1px solid ${active?`${cfg.color}40`:cfg.color+"18"}`,
+                  background:active?`${cfg.color}10`:`${cfg.color}04`,
+                  transition:"all 0.15s",
+                }}
+                onMouseEnter={e=>{if(!active){const el=e.currentTarget as HTMLDivElement;
+                  el.style.background=`${cfg.color}08`;el.style.borderColor=`${cfg.color}30`;}}}
+                onMouseLeave={e=>{if(!active){const el=e.currentTarget as HTMLDivElement;
+                  el.style.background=`${cfg.color}04`;el.style.borderColor=`${cfg.color}18`;}}}>
+                  <div style={{fontSize:"1rem",color:cfg.color,opacity:active?0.9:0.5,
+                    marginBottom:"0.25rem",lineHeight:1}}>{cfg.icon}</div>
+                  <div style={{fontWeight:800,fontSize:"0.56rem",color:active?"#f0f0f0":"rgba(255,255,255,0.7)",
+                    marginBottom:2}}>{name}</div>
+                  <div style={{fontSize:"0.34rem",color:cfg.color,fontFamily:mono,
+                    marginBottom:2,opacity:0.7}}>{cfg.category}</div>
+                  <div style={{fontSize:"0.36rem",color:"rgba(255,255,255,0.25)",fontFamily:mono}}>
+                    {cfg.ltv}% LTV · {cfg.fee} ABRA
+                  </div>
+                  {/* Property/Airbnb highlight */}
+                  {(name==="Property"||name==="Short-Term Rental")&&(
+                    <div style={{marginTop:4,padding:"1px 5px",borderRadius:3,
+                      background:`${cfg.color}15`,border:`1px solid ${cfg.color}30`,
+                      display:"inline-block"}}>
+                      <span style={{fontSize:"0.3rem",fontWeight:700,color:cfg.color,
+                        fontFamily:mono,textTransform:"uppercase",letterSpacing:"0.08em"}}>
+                        Real Estate
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        ))}
-        <div style={{ display:"flex", justifyContent:"space-between", padding:"0.65rem 0.875rem",
-                      background:"rgba(200,169,110,0.05)", borderTop:"1px solid rgba(200,169,110,0.1)" }}>
-          <span style={{ fontSize:"0.62rem", fontWeight:700, color:"rgba(255,255,255,0.7)" }}>Total</span>
-          <span style={{ fontSize:"0.7rem", fontWeight:900, color:"#C8A96E",
-                         fontFamily:"'JetBrains Mono',monospace" }}>{fee} $ABRA</span>
-        </div>
-      </div>
-      <div style={{ display:"flex", gap:"0.5rem" }}>
-        <button onClick={() => setStep("wallet")} style={S_STYLE.back}>← Back</button>
-        <button onClick={executeMint} disabled={!canAfford} style={{
-          flex:1, padding:"0.875rem", borderRadius:"10px", border:"none",
-          cursor:canAfford?"pointer":"not-allowed",
-          fontWeight:900, fontSize:"0.72rem", fontFamily:"'JetBrains Mono',monospace",
-          background:canAfford?"linear-gradient(135deg,#C8A96E,#FBBF24)":"rgba(255,255,255,0.05)",
-          color:canAfford?"#000":"rgba(255,255,255,0.2)",
-        }}>{canAfford?`Confirm — Deduct ${fee} $ABRA →`:`Need ${fee-abraBalance} more $ABRA`}</button>
-      </div>
-    </div>
-  );
 
-  // ── PROCESSING ─────────────────────────────────────────────────────────────
-  if (step==="processing") return (
-    <div style={{ ...W, minHeight:"60vh", display:"flex", flexDirection:"column",
-                  alignItems:"center", justifyContent:"center", textAlign:"center" }}>
-      <div style={{ width:52, height:52, borderRadius:"50%", marginBottom:"1.25rem",
-                    border:"3px solid rgba(200,169,110,0.15)", borderTopColor:"#C8A96E",
-                    animation:"spin 0.9s linear infinite" }}/>
-      <h3 style={{ fontWeight:900, fontSize:"1.1rem", color:"#f0f0f0", margin:"0 0 0.4rem" }}>
-        Minting on Solana
-      </h3>
-      <p style={{ fontSize:"0.56rem", color:"rgba(255,255,255,0.38)", maxWidth:300, lineHeight:1.7, margin:0 }}>
-        Creating Token-2022 position · Anchoring metadata · Notifying {cfg.partner}
-      </p>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
+          {/* Description for selected class */}
+          <div style={{padding:"0.875rem",background:"rgba(255,255,255,0.02)",
+            border:"1px solid rgba(255,255,255,0.06)",borderRadius:"7px",
+            marginBottom:"1.25rem"}}>
+            <div style={{fontSize:"0.36rem",fontWeight:700,color:`${cfg.color}80`,
+              fontFamily:mono,textTransform:"uppercase",letterSpacing:"0.1em",
+              marginBottom:"0.3rem"}}>{assetClass} · {cfg.category}</div>
+            <div style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.4)",lineHeight:1.65}}>
+              {cfg.description}
+            </div>
+            {(assetClass==="Property"||assetClass==="Short-Term Rental")&&(
+              <div style={{marginTop:"0.625rem",padding:"0.5rem",
+                background:"rgba(20,241,149,0.05)",
+                border:"1px solid rgba(20,241,149,0.15)",borderRadius:"5px"}}>
+                <div style={{fontSize:"0.44rem",color:"rgba(20,241,149,0.7)",lineHeight:1.65}}>
+                  Real estate tokenization unlocks DeFi capital without selling your property.
+                  Tokenize your cabin, rental, or home to access USDC liquidity at 5.2% APR —
+                  while continuing to earn rental income.
+                </div>
+              </div>
+            )}
+          </div>
 
-  // ── QUEUE / SUCCESS ─────────────────────────────────────────────────────────
-  if (step==="queue") return (
-    <div style={W}>
-      <StepDots step="queue"/>
-      <div style={{ padding:"1rem", background:"rgba(20,241,149,0.06)",
-                    border:"1px solid rgba(20,241,149,0.25)", borderRadius:"12px", marginBottom:"1.25rem" }}>
-        <div style={{ fontSize:"0.44rem", color:"rgba(20,241,149,0.6)",
-                      fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase",
-                      marginBottom:"0.4rem" }}>✓ Token-2022 Minted</div>
-        {preview && (
-          <img src={preview} alt="" style={{ width:64, height:64, objectFit:"contain",
-                                             borderRadius:8, marginBottom:"0.5rem",
-                                             border:"1px solid rgba(20,241,149,0.2)" }}/>
-        )}
-        <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#f0f0f0",
-                      marginBottom:"0.25rem" }}>{meta.name}</div>
-        <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.35)",
-                      fontFamily:"'JetBrains Mono',monospace", wordBreak:"break-all" }}>
-          Tx: {txSig.slice(0,20)}…
+          {/* Image upload */}
+          <div style={{marginBottom:"1.25rem"}}>
+            <div style={labelStyle()}>Asset Photo (optional)</div>
+            <div onClick={()=>fileRef.current?.click()} style={{
+              height:120,borderRadius:"7px",cursor:"pointer",
+              border:`2px dashed ${preview?"rgba(20,241,149,0.3)":"rgba(255,255,255,0.1)"}`,
+              background:preview?"rgba(20,241,149,0.04)":"rgba(255,255,255,0.02)",
+              display:"flex",flexDirection:"column",alignItems:"center",
+              justifyContent:"center",overflow:"hidden",
+              transition:"all 0.15s",
+            }}>
+              {preview?(
+                <img src={preview} alt="preview" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+              ):(
+                <>
+                  <div style={{fontSize:"1.5rem",opacity:0.2,marginBottom:"0.35rem"}}>↑</div>
+                  <div style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.25)"}}>
+                    Click to upload image
+                  </div>
+                  <div style={{fontSize:"0.4rem",color:"rgba(255,255,255,0.15)",marginTop:3,fontFamily:mono}}>
+                    JPG, PNG, HEIC supported
+                  </div>
+                </>
+              )}
+            </div>
+            <input ref={fileRef} type="file" accept="image/*"
+              onChange={onFile} style={{display:"none"}}/>
+          </div>
+
+          <button onClick={()=>setStep("metadata")} style={{
+            width:"100%",padding:"0.875rem",borderRadius:"7px",border:"none",
+            cursor:"pointer",fontWeight:800,fontSize:"0.64rem",
+            fontFamily:mono,letterSpacing:"0.04em",
+            background:"linear-gradient(135deg,#7c3aed,#C8A96E)",color:"#fff"}}>
+            Continue with {assetClass} →
+          </button>
         </div>
-      </div>
-      {estUsd>0 && (
-        <div style={{ padding:"0.75rem 1rem", background:"rgba(107,140,255,0.07)",
-                      border:"1px solid rgba(107,140,255,0.2)", borderRadius:"10px", marginBottom:"1rem" }}>
-          <div style={{ fontSize:"0.44rem", fontWeight:700, color:"rgba(107,140,255,0.7)",
-                        fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase",
-                        marginBottom:"0.35rem" }}>Loopscale Lending — Unlocks After Verification</div>
-          <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
-            {([["Borrow Up To",`$${borrowMax.toLocaleString()} USDC`,"#14F195"],
-               ["Fixed APR","5.2%","#14F195"],
-               ["LTV",`${cfg.ltv}%`,"#6b8cff"]] as [string,string,string][]).map(([l,v,c]) => (
-              <div key={l}>
-                <div style={{ fontSize:"0.68rem", fontWeight:900, color:c,
-                              fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{v}</div>
-                <div style={{ fontSize:"0.38rem", color:"rgba(255,255,255,0.3)", marginTop:1 }}>{l}</div>
+      )}
+
+      {/* ── STEP 2: METADATA ── */}
+      {step==="metadata"&&(
+        <div>
+          <h2 style={{fontWeight:900,fontSize:"1rem",color:"#f0f0f0",margin:"0 0 0.25rem"}}>
+            Asset Details
+          </h2>
+          <p style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.3)",margin:"0 0 1.25rem",lineHeight:1.6}}>
+            This metadata is hashed and anchored on Solana. It becomes the immutable
+            fingerprint of your submission.
+          </p>
+
+          <div style={{display:"flex",flexDirection:"column",gap:"0.875rem",marginBottom:"1.25rem"}}>
+            <div>
+              <div style={labelStyle()}>Asset Name *</div>
+              <input value={meta.name} onChange={e=>setMeta(m=>({...m,name:e.target.value}))}
+                placeholder={assetClass==="Property"?"123 Main Street, Austin TX":"e.g. Rolex Submariner Ref 5513 1966"}
+                style={inputStyle()}/>
+            </div>
+            <div>
+              <div style={labelStyle()}>Description</div>
+              <textarea value={meta.description}
+                onChange={e=>setMeta(m=>({...m,description:e.target.value}))}
+                placeholder={
+                  assetClass==="Property"
+                    ? "3-bed, 2-bath cabin with private lake access. Listed on Airbnb. $180/night avg rate."
+                    : "Condition, serial numbers, notable features, acquisition details..."
+                }
+                style={{...inputStyle(),minHeight:80,resize:"vertical" as const}}/>
+            </div>
+            {(assetClass==="Property"||assetClass==="Short-Term Rental")&&(
+              <div style={{padding:"0.875rem",background:"rgba(20,241,149,0.04)",
+                border:"1px solid rgba(20,241,149,0.12)",borderRadius:"7px"}}>
+                <div style={{fontSize:"0.38rem",fontWeight:700,color:"rgba(20,241,149,0.5)",
+                  fontFamily:mono,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"0.5rem"}}>
+                  Real Estate Documents Required
+                </div>
+                {["Title deed or ownership certificate",
+                  "Recent property appraisal (within 12 months)",
+                  "Property photo documentation",
+                  "Rental income records (if applicable)"
+                ].map((doc,i)=>(
+                  <div key={i} style={{display:"flex",gap:"0.4rem",
+                    marginBottom:i<3?"0.3rem":0}}>
+                    <span style={{fontSize:"0.44rem",color:"rgba(20,241,149,0.5)",
+                      fontFamily:mono,flexShrink:0}}>
+                      {String(i+1).padStart(2,"0")}
+                    </span>
+                    <span style={{fontSize:"0.46rem",color:"rgba(255,255,255,0.35)"}}>{doc}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(assetClass==="Watches"||assetClass==="Spirits"||assetClass==="Cards (PSA/BGS)"||assetClass==="Comics (CGC)")&&(
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.625rem"}}>
+                <div>
+                  <div style={labelStyle()}>Grade / Certification</div>
+                  <input value={meta.grade} onChange={e=>setMeta(m=>({...m,grade:e.target.value}))}
+                    placeholder="PSA 10 / CGC 9.8" style={inputStyle()}/>
+                </div>
+                <div>
+                  <div style={labelStyle()}>Year / Vintage</div>
+                  <input value={meta.year} onChange={e=>setMeta(m=>({...m,year:e.target.value}))}
+                    placeholder="1986" style={inputStyle()}/>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+            <button onClick={()=>setStep("upload")} style={{
+              padding:"0.75rem",borderRadius:"7px",border:"1px solid rgba(255,255,255,0.1)",
+              cursor:"pointer",fontWeight:700,fontSize:"0.58rem",fontFamily:mono,
+              background:"transparent",color:"rgba(255,255,255,0.4)"}}>
+              Back
+            </button>
+            <button onClick={()=>setStep("valuation")} disabled={!meta.name.trim()}
+              style={{padding:"0.75rem",borderRadius:"7px",border:"none",
+                cursor:meta.name.trim()?"pointer":"not-allowed",fontWeight:700,
+                fontSize:"0.58rem",fontFamily:mono,
+                background:meta.name.trim()?"#7c3aed":"rgba(255,255,255,0.07)",
+                color:meta.name.trim()?"#fff":"rgba(255,255,255,0.3)"}}>
+              Continue →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 3: VALUATION ── */}
+      {step==="valuation"&&(
+        <div>
+          <h2 style={{fontWeight:900,fontSize:"1rem",color:"#f0f0f0",margin:"0 0 0.25rem"}}>
+            Declared Value
+          </h2>
+          <p style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.3)",margin:"0 0 1.25rem",lineHeight:1.6}}>
+            Enter the declared USD value. This determines your borrowing power once verified.
+            Overstated values will be flagged during custody verification.
+          </p>
+
+          <div style={{marginBottom:"1.25rem"}}>
+            <div style={labelStyle()}>Estimated Value (USD)</div>
+            <div style={{position:"relative" as const}}>
+              <span style={{position:"absolute" as const,left:"0.75rem",top:"50%",
+                transform:"translateY(-50%)",fontSize:"0.6rem",color:"rgba(255,255,255,0.4)",
+                fontFamily:mono}}>$</span>
+              <input type="number" value={estUsd||""} min={0}
+                onChange={e=>setEstUsd(Math.max(0,Number(e.target.value)))}
+                placeholder={
+                  assetClass==="Property"||assetClass==="Short-Term Rental"
+                    ? "350000" : "12500"
+                }
+                style={{...inputStyle(),paddingLeft:"1.5rem"}}/>
+            </div>
+          </div>
+
+          {estUsd>0&&(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1,
+              background:"rgba(255,255,255,0.06)",borderRadius:"7px",overflow:"hidden",
+              marginBottom:"1.25rem"}}>
+              {([
+                ["Declared",    `$${estUsd.toLocaleString()}`,"#f0f0f0"],
+                ["LTV Cap",     `${cfg.ltv}%`,                "#FBBF24"],
+                ["Max Borrow",  `$${Math.round(estUsd*cfg.ltv/100).toLocaleString()} USDC`,"#14F195"],
+              ] as [string,string,string][]).map(([l,v,c])=>(
+                <div key={l} style={{padding:"0.75rem",background:"rgba(6,8,16,0.98)"}}>
+                  <div style={{fontSize:"0.72rem",fontWeight:900,color:c,
+                    fontFamily:mono,lineHeight:1,marginBottom:3}}>{v}</div>
+                  <div style={{fontSize:"0.36rem",color:"rgba(255,255,255,0.25)",
+                    fontFamily:mono,textTransform:"uppercase",letterSpacing:"0.1em"}}>{l}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+            <button onClick={()=>setStep("metadata")} style={{
+              padding:"0.75rem",borderRadius:"7px",border:"1px solid rgba(255,255,255,0.1)",
+              cursor:"pointer",fontWeight:700,fontSize:"0.58rem",fontFamily:mono,
+              background:"transparent",color:"rgba(255,255,255,0.4)"}}>Back</button>
+            <button onClick={()=>setStep("wallet")} style={{
+              padding:"0.75rem",borderRadius:"7px",border:"none",cursor:"pointer",
+              fontWeight:700,fontSize:"0.58rem",fontFamily:mono,
+              background:"#7c3aed",color:"#fff"}}>Continue →</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 4: WALLET ── */}
+      {step==="wallet"&&(
+        <div>
+          <h2 style={{fontWeight:900,fontSize:"1rem",color:"#f0f0f0",margin:"0 0 0.25rem"}}>
+            Connect Wallet
+          </h2>
+          <p style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.3)",margin:"0 0 1.25rem",lineHeight:1.6}}>
+            Your wallet is bound to this tokenized position.
+            The signing address becomes the on-chain owner of the Token-2022 asset.
+          </p>
+
+          {!connected?(
+            <div style={{textAlign:"center" as const,padding:"2rem",
+              border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",
+              marginBottom:"1.25rem"}}>
+              <div style={{fontSize:"0.6rem",fontWeight:700,color:"rgba(255,255,255,0.3)",
+                marginBottom:"0.5rem"}}>Wallet not connected</div>
+              <div style={{fontSize:"0.48rem",color:"rgba(255,255,255,0.18)",
+                marginBottom:"1rem",lineHeight:1.6}}>
+                Connect Phantom or Solflare to bind your wallet to this issuance.
+              </div>
+              <button onClick={()=>setVisible(true)} style={{
+                padding:"0.7rem 1.4rem",borderRadius:"6px",border:"none",
+                cursor:"pointer",fontWeight:800,fontSize:"0.6rem",fontFamily:mono,
+                background:"#7c3aed",color:"#fff"}}>Connect Wallet</button>
+              <div style={{marginTop:"0.875rem",fontSize:"0.42rem",
+                color:"rgba(255,255,255,0.15)",fontFamily:mono}}>
+                Continuing without wallet uses demo mode — no on-chain transaction
+              </div>
+              <button onClick={()=>setStep("fee")} style={{
+                marginTop:"0.5rem",padding:"0.4rem 0.875rem",borderRadius:"5px",
+                border:"1px solid rgba(255,255,255,0.08)",cursor:"pointer",
+                fontWeight:600,fontSize:"0.48rem",fontFamily:mono,
+                background:"transparent",color:"rgba(255,255,255,0.3)"}}>
+                Continue in demo mode
+              </button>
+            </div>
+          ):(
+            <div style={{padding:"1rem",border:"1px solid rgba(20,241,149,0.2)",
+              borderRadius:"8px",background:"rgba(20,241,149,0.04)",
+              marginBottom:"1.25rem"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:"0.5rem"}}>
+                <div style={{width:6,height:6,borderRadius:"50%",background:"#14F195"}}/>
+                <span style={{fontSize:"0.52rem",fontWeight:700,color:"#14F195",fontFamily:mono}}>
+                  Wallet Connected
+                </span>
+              </div>
+              <div style={{fontSize:"0.46rem",color:"rgba(255,255,255,0.5)",
+                fontFamily:mono,wordBreak:"break-all" as const}}>
+                {publicKey?.toBase58()}
+              </div>
+              <div style={{marginTop:"0.5rem",fontSize:"0.44rem",
+                color:"rgba(255,255,255,0.3)"}}>
+                This address will own the Token-2022 position on Solana.
+              </div>
+            </div>
+          )}
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+            <button onClick={()=>setStep("valuation")} style={{
+              padding:"0.75rem",borderRadius:"7px",border:"1px solid rgba(255,255,255,0.1)",
+              cursor:"pointer",fontWeight:700,fontSize:"0.58rem",fontFamily:mono,
+              background:"transparent",color:"rgba(255,255,255,0.4)"}}>Back</button>
+            <button onClick={()=>setStep("fee")} style={{
+              padding:"0.75rem",borderRadius:"7px",border:"none",cursor:"pointer",
+              fontWeight:700,fontSize:"0.58rem",fontFamily:mono,
+              background:"#7c3aed",color:"#fff"}}>Continue →</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 5: FEE + PAYMENT ── */}
+      {step==="fee"&&(
+        <div>
+          <h2 style={{fontWeight:900,fontSize:"1rem",color:"#f0f0f0",margin:"0 0 0.25rem"}}>
+            Issuance Fee
+          </h2>
+          <p style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.3)",margin:"0 0 1.25rem",lineHeight:1.6}}>
+            The protocol charges a one-time issuance fee routed to the Abraxas treasury.
+            This funds the verification pipeline and custody coordination.
+          </p>
+
+          {/* Payment method selector */}
+          <div style={{marginBottom:"1rem"}}>
+            <div style={labelStyle()}>Payment Method</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,
+              background:"rgba(255,255,255,0.06)",borderRadius:"6px",overflow:"hidden"}}>
+              {([
+                ["abra","Pay with ABRA"],
+                ["sol", "Pay with SOL (coming)"],
+              ] as [PayMethod,string][]).map(([id,label])=>(
+                <button key={id} onClick={()=>setPayMethod(id)}
+                  disabled={id==="sol"}
+                  style={{padding:"0.6rem",border:"none",
+                    cursor:id==="sol"?"not-allowed":"pointer",
+                    fontFamily:mono,fontSize:"0.48rem",fontWeight:700,
+                    background:payMethod===id?"rgba(124,58,237,0.15)":"rgba(6,8,16,0.98)",
+                    color:id==="sol"?"rgba(255,255,255,0.2)":payMethod===id?"#a78bfa":"rgba(255,255,255,0.35)",
+                    borderBottom:payMethod===id?"2px solid #7c3aed":"2px solid transparent",
+                    transition:"all 0.15s"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {payMethod==="sol"&&(
+              <div style={{marginTop:"0.4rem",fontSize:"0.42rem",
+                color:"rgba(255,255,255,0.3)",fontFamily:mono}}>
+                SOL payment via X402 protocol — launching soon
+              </div>
+            )}
+          </div>
+
+          {/* Fee breakdown */}
+          <div style={{padding:"1rem",border:"1px solid rgba(255,255,255,0.07)",
+            borderRadius:"7px",marginBottom:"1rem"}}>
+            {([
+              [`${assetClass} Issuance`, `${fee - 10} ABRA`],
+              ["Verification Queue",    "10 ABRA"],
+            ]).map(([k,v])=>(
+              <div key={k} style={{display:"flex",justifyContent:"space-between",
+                padding:"0.35rem 0",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                <span style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.35)"}}>{k}</span>
+                <span style={{fontSize:"0.52rem",fontWeight:700,color:"rgba(255,255,255,0.6)",
+                  fontFamily:mono}}>{v}</span>
               </div>
             ))}
+            <div style={{display:"flex",justifyContent:"space-between",paddingTop:"0.5rem"}}>
+              <span style={{fontSize:"0.56rem",fontWeight:700,color:"#f0f0f0"}}>Total</span>
+              <span style={{fontSize:"0.68rem",fontWeight:900,color:"#C8A96E",fontFamily:mono}}>
+                {fee} ABRA
+              </span>
+            </div>
+          </div>
+
+          {/* Balance */}
+          <div style={{padding:"0.75rem 0.875rem",
+            background:canAfford?"rgba(20,241,149,0.04)":"rgba(242,107,107,0.04)",
+            border:`1px solid ${canAfford?"rgba(20,241,149,0.2)":"rgba(242,107,107,0.2)"}`,
+            borderRadius:"7px",marginBottom:"1rem",
+            display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.3)",
+                fontFamily:mono,textTransform:"uppercase" as const,letterSpacing:"0.1em",marginBottom:2}}>
+                {connected?"Wallet Balance":"Demo Balance"}
+              </div>
+              <div style={{fontSize:"0.72rem",fontWeight:900,
+                color:canAfford?"#14F195":"#f26b6b",fontFamily:mono}}>
+                {balLoading?"…":displayBal.toLocaleString()} ABRA
+              </div>
+            </div>
+            {!canAfford&&(
+              <div style={{textAlign:"right" as const}}>
+                <div style={{fontSize:"0.44rem",color:"#f26b6b",fontFamily:mono}}>
+                  Need {(fee-displayBal).toLocaleString()} more
+                </div>
+                <a href={`https://jup.ag/swap/SOL-5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:"0.4rem",color:"#6b8cff",fontFamily:mono,textDecoration:"none"}}>
+                  Buy ABRA on Jupiter →
+                </a>
+              </div>
+            )}
+          </div>
+
+          {errorMsg&&(
+            <div style={{padding:"0.625rem 0.875rem",background:"rgba(242,107,107,0.08)",
+              border:"1px solid rgba(242,107,107,0.25)",borderRadius:"6px",
+              marginBottom:"0.875rem",fontSize:"0.48rem",color:"#f26b6b",lineHeight:1.5}}>
+              {errorMsg}
+            </div>
+          )}
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+            <button onClick={()=>setStep("wallet")} style={{
+              padding:"0.75rem",borderRadius:"7px",border:"1px solid rgba(255,255,255,0.1)",
+              cursor:"pointer",fontWeight:700,fontSize:"0.58rem",fontFamily:mono,
+              background:"transparent",color:"rgba(255,255,255,0.4)"}}>Back</button>
+            <button onClick={executeMint} disabled={!canAfford} style={{
+              padding:"0.75rem",borderRadius:"7px",border:"none",
+              cursor:canAfford?"pointer":"not-allowed",fontWeight:800,
+              fontSize:"0.58rem",fontFamily:mono,
+              background:canAfford?"linear-gradient(135deg,#C8A96E,#FBBF24)":"rgba(255,255,255,0.07)",
+              color:canAfford?"#000":"rgba(255,255,255,0.2)"}}>
+              {canAfford?`Confirm ${fee} ABRA →`:`Insufficient ABRA`}
+            </button>
           </div>
         </div>
       )}
-      <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.4)", marginBottom:"1.25rem", lineHeight:1.7 }}>
-        Asset is pending verification by {cfg.partner}. Once verified it will appear as listed in Markets.
-      </div>
-      <div style={{ display:"flex", gap:"0.5rem" }}>
-        <button onClick={() => { setStep("upload"); setFile(null); setPreview(undefined);
-                                 setMeta({name:"",grade:"",year:"",description:""});
-                                 setVal({estimatedUsd:""}); setMintedId(null); setTxSig(""); }}
-                style={{ ...S_STYLE.back, flex:1 }}>Mint Another Asset</button>
-        <button onClick={onSuccess} style={{
-          flex:1, padding:"0.7rem", borderRadius:"8px", border:"none", cursor:"pointer",
-          fontWeight:900, fontSize:"0.66rem", fontFamily:"'JetBrains Mono',monospace",
-          background:"linear-gradient(135deg,#14F195,#6b8cff)", color:"#000",
-        }}>View in Markets →</button>
-      </div>
+
+      {/* ── STEP 6: PROCESSING ── */}
+      {step==="processing"&&(
+        <div style={{textAlign:"center" as const,padding:"3rem 1rem"}}>
+          <div style={{width:48,height:48,borderRadius:"50%",
+            border:"2px solid rgba(200,169,110,0.2)",
+            borderTop:"2px solid #C8A96E",
+            margin:"0 auto 1.25rem",
+            animation:"spin 1s linear infinite"}}/>
+          <div style={{fontWeight:900,fontSize:"0.9rem",color:"#f0f0f0",marginBottom:"0.35rem"}}>
+            {connected?"Broadcasting Transaction":"Processing"}
+          </div>
+          <div style={{fontSize:"0.52rem",color:"rgba(255,255,255,0.35)",lineHeight:1.65}}>
+            {connected
+              ? "Signing ABRA transfer and submitting to Solana mainnet."
+              : "Creating your asset position in the verification queue."}
+          </div>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        </div>
+      )}
+
+      {/* ── STEP 7: SUCCESS + RECEIPT ── */}
+      {step==="queue"&&mintedAsset&&(
+        <div>
+          <TransactionReceipt
+            txSignature={txSig}
+            amountAbra={fee}
+            assetName={mintedAsset.name}
+            assetClass={mintedAsset.assetClass}
+            tokenId={mintedAsset.tokenId}
+            onContinue={()=>{
+              if(onSuccess) onSuccess();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
-
-  return null;
 }
