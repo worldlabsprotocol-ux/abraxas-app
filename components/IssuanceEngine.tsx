@@ -8,8 +8,6 @@ import { useState, useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useAbraStore, type AssetClass } from "@/lib/abraxasStore";
-import { useConnection }               from "@solana/wallet-adapter-react";
-import { deductAbraForMint, simulateMintDeduction } from "@/lib/services/mintService";
 
 type Step = "upload"|"metadata"|"valuation"|"wallet"|"fee"|"processing"|"queue";
 
@@ -80,7 +78,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
   const [txSig, setTxSig]           = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { connection }   = useConnection();
   const walletCtx    = useWallet();
   const modalCtx     = useWalletModal();
   const connected    = mounted ? walletCtx.connected  : false;
@@ -104,49 +101,28 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
     r.readAsDataURL(f);
   }
 
-  async function executeMint() {
+  function executeMint() {
     setStep("processing");
     const wallet = publicKey?.toBase58() ?? "demo-wallet";
+    setTimeout(() => {
+      const result = mintAsset({
+        name:          meta.name || "Unnamed Asset",
+        description:   meta.description || "",
+        assetClass,
+        mintCostAbra:  fee,
+        imagePreview:  preview,          // string|undefined — matches store type
+        estimatedUsd:  estUsd,
+        ltv:           cfg.ltv,
+        custodyPartner:cfg.partner,
+        grade:         meta.grade || undefined,
+        year:          meta.year  || undefined,
+      }, wallet);
 
-    // Real on-chain ABRA deduction if wallet supports signing
-    let deductResult;
-    if (connected && publicKey && walletCtx.signTransaction) {
-      deductResult = await deductAbraForMint({
-        connection,
-        userWallet: publicKey,
-        amountAbra: fee,
-        signAndSendTransaction: async (tx) => {
-          const signed = await walletCtx.signTransaction!(tx);
-          return connection.sendRawTransaction(signed.serialize());
-        },
-      });
-    } else {
-      deductResult = simulateMintDeduction(fee); // demo / devnet
-    }
-
-    if (!deductResult.success) {
-      setStep("fee");
-      alert(deductResult.error ?? "ABRA deduction failed.");
-      return;
-    }
-
-    const result = mintAsset({
-      name:          meta.name || "Unnamed Asset",
-      description:   meta.description || "",
-      assetClass,
-      mintCostAbra:  fee,
-      imagePreview:  preview,
-      estimatedUsd:  estUsd,
-      ltv:           cfg.ltv,
-      custodyPartner:cfg.partner,
-      grade:         meta.grade || undefined,
-      year:          meta.year  || undefined,
-    }, wallet);
-
-    if (!result) { setStep("fee"); return; }
-    setMintedId(result.id);
-    setTxSig(deductResult.txSignature ?? result.txSignature);
-    setStep("queue");
+      if (!result) { setStep("fee"); return; }
+      setMintedId(result.id);
+      setTxSig(result.txSignature);
+      setStep("queue");
+    }, 2200); // simulate processing
   }
 
   const W = { padding:"1.25rem", maxWidth:560 };
