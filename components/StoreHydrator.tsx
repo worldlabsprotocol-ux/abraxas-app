@@ -1,11 +1,13 @@
 // FILE: components/StoreHydrator.tsx
-// Rehydrates Zustand persist store client-side after mount.
-// Prevents server/client mismatch from localStorage values.
-"use client";
+// Deterministic Zustand rehydration — solves SSR/CSR mismatch.
+// Mount once in layout.tsx. Required for skipHydration stores.
 "use client";
 import { useEffect } from "react";
 import { useAbraStore } from "@/lib/abraxasStore";
+
 export function StoreHydrator() {
-  useEffect(() => { useAbraStore.persist.rehydrate(); }, []);
+  useEffect(() => {
+    useAbraStore.persist.rehydrate();
+  }, []);
   return null;
 }
