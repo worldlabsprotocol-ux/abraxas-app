@@ -355,18 +355,16 @@ export default function AdminPage() {
                       marginBottom:"0.625rem",boxSizing:"border-box"}}/>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"0.5rem"}}>
                     <button onClick={()=>approve(sel.id)} disabled={!noteText.trim()}
-                      style={{padding:"0.6rem",borderRadius:"5px",border:"none",
-                        cursor:noteText.trim()?"pointer":"not-allowed",fontWeight:700,
-                        fontSize:"0.5rem",fontFamily:"'JetBrains Mono',monospace",
+                      style={{padding:"0.6rem",borderRadius:"5px",cursor:noteText.trim()?"pointer":"not-allowed",
+                        fontWeight:700,fontSize:"0.5rem",fontFamily:"'JetBrains Mono',monospace",
                         background:noteText.trim()?"rgba(20,241,149,0.15)":"rgba(255,255,255,0.03)",
                         color:noteText.trim()?"#14F195":"rgba(255,255,255,0.2)",
                         border:`1px solid ${noteText.trim()?"rgba(20,241,149,0.3)":"rgba(255,255,255,0.06)"}`}}>
                       Approve
                     </button>
                     <button onClick={()=>reject(sel.id)} disabled={!noteText.trim()}
-                      style={{padding:"0.6rem",borderRadius:"5px",border:"none",
-                        cursor:noteText.trim()?"pointer":"not-allowed",fontWeight:700,
-                        fontSize:"0.5rem",fontFamily:"'JetBrains Mono',monospace",
+                      style={{padding:"0.6rem",borderRadius:"5px",cursor:noteText.trim()?"pointer":"not-allowed",
+                        fontWeight:700,fontSize:"0.5rem",fontFamily:"'JetBrains Mono',monospace",
                         background:noteText.trim()?"rgba(242,107,107,0.12)":"rgba(255,255,255,0.03)",
                         color:noteText.trim()?"#f26b6b":"rgba(255,255,255,0.2)",
                         border:`1px solid ${noteText.trim()?"rgba(242,107,107,0.25)":"rgba(255,255,255,0.06)"}`}}>
