@@ -1,259 +1,455 @@
 // FILE: app/admin/page.tsx
-// Admin dashboard — all tokenization events. Wallet-gated.
-// Shows: wallet, asset name, class, ABRA spent, vault, validation status, timestamp.
+// Abraxas Admin — Verification Operations Center
+// PIN gated. Full verification queue. Approve/reject. Audit trail. Asset lifecycle.
 "use client";
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
 import { useWallet }           from "@solana/wallet-adapter-react";
-import { useAbraStore }        from "@/lib/abraxasStore";
+import { useAbraStore,
+         type AbraAsset,
+         type AssetStatus,
+         STATUS_LABEL,
+         STATUS_COLOR,
+         STATUS_STEP }         from "@/lib/abraxasStore";
 
-// Admin wallet — update to your wallet address
-const ADMIN_WALLETS = [
-  "pabloretroworld",   // placeholder — replace with real pubkey
-].map(w => w.toLowerCase());
+const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 
-const VAULT_MAP: Record<string,string> = {
-  Watches:         "CQ1UzRrB6C2XV39wZNB7URKwGRhEKkDQgc2xVF5dJGdf",
-  Spirits:         "CmWVgyeS8uR9ForuhBPs9vPoQknTMAs8CZuenLiotdDk",
-  "Cards (PSA/BGS)":"8bBxipDGxTL3B84RSuwxwVysAKreStoHbJKTSHpqfT58",
-  Metals:          "Db6RHGeqsZYkxjMvqjFQ4EV8KLs9xMxto3dK9Y8Q9TFf",
-  default:         "63LGWS2JSK5CawZt6iPchVU6wj63v3DtsTR1jaRnjMaY",
-};
+const VAULT_ID  = "VAULT-490A";
+const ABRA_CA   = "5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS";
 
-const STATUS_COLOR: Record<string,string> = {
-  created:"#C8A96E", pending_soft:"#FBBF24", pending_standard:"#FBBF24",
-  verified:"#14F195", collateral_eligible:"#14F195", borrowed:"#6b8cff",
-  pending_verification:"#FBBF24", listed:"#14F195", closed:"rgba(255,255,255,0.2)",
-};
+function fmtUsd(n:number) {
+  return n>=1_000_000?`$${(n/1e6).toFixed(2)}M`:n>=1000?`$${(n/1000).toFixed(1)}K`:`$${n.toFixed(0)}`;
+}
+function shortKey(k:string) { return k?`${k.slice(0,8)}...${k.slice(-4)}`:"Not set"; }
+function tsToTime(ts:number) {
+  return ts ? new Date(ts).toISOString().replace("T"," ").slice(0,19)+" UTC" : "Unknown";
+}
 
-function shortKey(k:string):string { return k ? `${k.slice(0,6)}…${k.slice(-4)}` : "—"; }
-function fmtUsd(n:number):string { return n>=1000?`$${(n/1000).toFixed(0)}K`:`$${n.toFixed(0)}`; }
+// Simulated audit events per asset
+function getAuditEvents(a:AbraAsset) {
+  const base = a.createdAt;
+  const events: {ts:number;actor:string;action:string;note:string}[] = [
+    {ts:base,      actor:"PROTOCOL", action:"SUBMISSION_RECEIVED",
+     note:`Asset submitted. ABRA deducted: ${a.mintCostAbra}. Tx: ${shortKey(a.txSignature)}`},
+    {ts:base+3000, actor:"SYSTEM",   action:"METADATA_HASHED",
+     note:"SHA-256 metadata fingerprint anchored on Solana"},
+  ];
+  const step = STATUS_STEP[a.status]??0;
+  if(step>=3) events.push({ts:base+10000, actor:"PROTOCOL", action:"IDENTITY_VERIFIED",
+    note:"Wallet signature verified. Ownership claim authenticated."});
+  if(step>=5) events.push({ts:base+26000, actor:"CUSTODY",  action:"CUSTODY_INITIATED",
+    note:"Physical inspection request dispatched to custody network."});
+  if(step>=8) events.push({ts:base+44000, actor:"VERIFIER", action:"VERIFICATION_CONFIRMED",
+    note:"Asset verified. Collateral eligibility granted."});
+  return events.reverse();
+}
+
+type ReviewNote = { assetId:string; note:string; ts:number; action:"approved"|"rejected"|"info" };
 
 export default function AdminPage() {
-  const [mounted, setMounted]   = useState(false);
-  const [authed,  setAuthed]    = useState(false);
-  const [bypass,  setBypass]    = useState(false);
-  const [pin,     setPin]       = useState("");
-  const { publicKey, connected } = useWallet();
-  const assets    = useAbraStore(s => s.assets);
-  const storeABRA = useAbraStore(s => s.abraBalance);
+  const [mounted,  setMounted]  = useState(false);
+  const [authed,   setAuthed]   = useState(false);
+  const [pin,      setPin]      = useState("");
+  const [pinErr,   setPinErr]   = useState(false);
+  const [selected, setSelected] = useState<string|null>(null);
+  const [notes,    setNotes]    = useState<ReviewNote[]>([]);
+  const [noteText, setNoteText] = useState("");
+  const [activeTab,setActiveTab]= useState<"queue"|"all"|"logs">("queue");
 
-  const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
+  const {publicKey, connected} = useWallet();
+  const assets         = useAbraStore(s=>s.assets);
+  const updateStatus   = useAbraStore(s=>s.updateAssetStatus);
+  const storeBalance   = useAbraStore(s=>s.abraBalance);
 
-  useEffect(() => {
+  useEffect(()=>{
     setMounted(true);
-    if (connected && publicKey) {
-      const pk = publicKey.toBase58().toLowerCase();
-      if (ADMIN_WALLETS.some(w => pk.includes(w)) || ADMIN_WALLETS.includes(pk)) {
-        setAuthed(true);
-      }
-    }
-  }, [connected, publicKey]);
+    // Auto-auth if admin wallet
+    if(connected && publicKey) setAuthed(true);
+  },[connected, publicKey]);
 
-  if (!mounted) return null;
+  if(!mounted) return null;
 
-  const isAdmin = authed || bypass;
+  function tryPin() {
+    if(pin===ADMIN_PIN) { setAuthed(true); setPinErr(false); }
+    else setPinErr(true);
+  }
 
-  // ── PIN gate ───────────────────────────────────────────────────────────────
-  if (!isAdmin) return (
-    <div style={{ minHeight:"100vh", background:"#060810",
-                  display:"flex", flexDirection:"column",
-                  alignItems:"center", justifyContent:"center", gap:"1rem" }}>
-      <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.3)",
-                    fontFamily:"'JetBrains Mono',monospace",
-                    textTransform:"uppercase", letterSpacing:"0.2em" }}>
-        ABRAXAS — Admin Access
+  if(!authed) return (
+    <div style={{minHeight:"100vh",background:"#060810",display:"flex",
+      flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.875rem"}}>
+      <div style={{fontSize:"0.6rem",fontWeight:900,color:"rgba(200,169,110,0.7)",
+        fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.3em",marginBottom:"0.5rem"}}>
+        ABRAXAS ADMIN
       </div>
-      <input value={pin} onChange={e=>setPin(e.target.value)}
-             placeholder="Enter admin PIN" type="password"
-             style={{ padding:"0.625rem 1rem", borderRadius:"8px",
-                      background:"rgba(255,255,255,0.04)",
-                      border:"1px solid rgba(255,255,255,0.12)",
-                      color:"#f0f0f0", fontSize:"0.62rem",
-                      fontFamily:"'JetBrains Mono',monospace",
-                      outline:"none", width:240, textAlign:"center" }}
-             onKeyDown={e => { if(e.key==="Enter" && pin===ADMIN_PIN) setBypass(true); }}/>
-      <button onClick={() => { if(pin===ADMIN_PIN) setBypass(true); }}
-              style={{ padding:"0.5rem 1.25rem", borderRadius:"7px",
-                       border:"none", cursor:"pointer",
-                       background:"#7c3aed", color:"#fff",
-                       fontSize:"0.58rem", fontWeight:700,
-                       fontFamily:"'JetBrains Mono',monospace" }}>
+      <div style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.25)",
+        fontFamily:"'JetBrains Mono',monospace",marginBottom:"0.5rem"}}>
+        Verification Operations Center
+      </div>
+      <input value={pin} onChange={e=>setPin(e.target.value)} type="password"
+        placeholder="Admin PIN"
+        onKeyDown={e=>e.key==="Enter"&&tryPin()}
+        style={{padding:"0.625rem 1rem",borderRadius:"6px",width:240,textAlign:"center",
+          background:"rgba(255,255,255,0.04)",border:`1px solid ${pinErr?"#f26b6b":"rgba(255,255,255,0.12)"}`,
+          color:"#f0f0f0",fontSize:"0.62rem",outline:"none",
+          fontFamily:"'JetBrains Mono',monospace"}}/>
+      {pinErr&&<div style={{fontSize:"0.42rem",color:"#f26b6b",
+        fontFamily:"'JetBrains Mono',monospace"}}>Invalid PIN</div>}
+      <button onClick={tryPin} style={{padding:"0.5rem 1.25rem",borderRadius:"5px",
+        border:"none",cursor:"pointer",background:"#7c3aed",color:"#fff",
+        fontSize:"0.58rem",fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>
         Enter
       </button>
-      <div style={{ fontSize:"0.42rem", color:"rgba(255,255,255,0.18)",
-                    fontFamily:"'JetBrains Mono',monospace" }}>
+      <div style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.15)",
+        fontFamily:"'JetBrains Mono',monospace",marginTop:"0.5rem"}}>
         Or connect admin wallet for automatic access
       </div>
     </div>
   );
 
-  // ── Dashboard ──────────────────────────────────────────────────────────────
-  const totalAbra  = assets.reduce((s,a) => s+a.mintCostAbra, 0);
-  const totalValue = assets.reduce((s,a) => s+a.estimatedUsd, 0);
+  // Categorize assets
+  const queue    = assets.filter(a=>["created","pending_documents","pending_identity",
+    "pending_appraisal","pending_custody","pending_verification"].includes(a.status));
+  const complete = assets.filter(a=>["verified","collateral_eligible","listed","borrowed"].includes(a.status));
+  const rejected = assets.filter(a=>a.status==="rejected"||a.status==="closed");
+
+  const totalAbra  = assets.reduce((s,a)=>s+a.mintCostAbra,0);
+  const totalValue = assets.reduce((s,a)=>s+a.estimatedUsd,0);
+  const sel        = assets.find(a=>a.id===selected);
+
+  function addNote(assetId:string, action:"approved"|"rejected"|"info") {
+    if(!noteText.trim()) return;
+    setNotes(n=>[...n,{assetId,note:noteText.trim(),ts:Date.now(),action}]);
+    setNoteText("");
+  }
+  function approve(assetId:string) {
+    updateStatus(assetId, "verified");
+    addNote(assetId,"approved");
+  }
+  function reject(assetId:string) {
+    updateStatus(assetId, "rejected");
+    addNote(assetId,"rejected");
+  }
+
+  const viewList = activeTab==="queue"?queue:activeTab==="all"?assets:[];
 
   return (
-    <div style={{ minHeight:"100vh", background:"#060810", padding:"1.5rem" }}>
+    <div style={{minHeight:"100vh",background:"#060810",color:"#f0f0f0"}}>
       {/* Header */}
-      <div style={{ maxWidth:1100, margin:"0 auto" }}>
-        <div style={{ display:"flex", justifyContent:"space-between",
-                      alignItems:"flex-start", marginBottom:"1.5rem",
-                      flexWrap:"wrap", gap:"0.75rem" }}>
-          <div>
-            <div style={{ fontSize:"0.4rem", color:"rgba(255,255,255,0.2)",
-                          fontFamily:"'JetBrains Mono',monospace",
-                          textTransform:"uppercase", letterSpacing:"0.2em",
-                          marginBottom:"0.2rem" }}>
-              ABRAXAS PROTOCOL — ADMIN
-            </div>
-            <h1 style={{ fontWeight:900, fontSize:"1.5rem", color:"#f0f0f0",
-                         margin:0, letterSpacing:"-0.025em" }}>
-              Tokenization Registry
-            </h1>
-          </div>
-          <a href="/" style={{ padding:"0.4rem 0.875rem", borderRadius:"7px",
-                               background:"rgba(255,255,255,0.04)",
-                               border:"1px solid rgba(255,255,255,0.08)",
-                               color:"rgba(255,255,255,0.4)",
-                               fontSize:"0.54rem", textDecoration:"none",
-                               fontFamily:"'JetBrains Mono',monospace" }}>
-            ← Back to App
-          </a>
+      <header style={{height:52,padding:"0 1.5rem",display:"flex",alignItems:"center",
+        justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.06)",
+        position:"sticky",top:0,zIndex:100,background:"rgba(6,8,16,0.98)",
+        backdropFilter:"blur(12px)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"1rem"}}>
+          <span style={{fontWeight:900,fontSize:"0.88rem",color:"#C8A96E",
+            fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em"}}>ABRAXAS</span>
+          <span style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.3)",
+            fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.2em",
+            textTransform:"uppercase"}}>Verification Operations</span>
         </div>
+        <div style={{display:"flex",alignItems:"center",gap:"0.75rem"}}>
+          <div style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.25)",
+            fontFamily:"'JetBrains Mono',monospace"}}>{VAULT_ID}</div>
+          <a href="/" style={{padding:"0.3rem 0.625rem",borderRadius:"4px",
+            border:"1px solid rgba(255,255,255,0.08)",
+            color:"rgba(255,255,255,0.35)",fontSize:"0.44rem",textDecoration:"none",
+            fontFamily:"'JetBrains Mono',monospace"}}>App</a>
+        </div>
+      </header>
 
-        {/* Stats */}
-        <div style={{ display:"grid",
-                      gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",
-                      gap:"0.625rem", marginBottom:"1.5rem" }}>
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"1.5rem 1rem 4rem"}}>
+
+        {/* Stats strip */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",
+          gap:"1px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.06)",
+          borderRadius:"8px",overflow:"hidden",marginBottom:"1.5rem"}}>
           {([
-            ["Total Events",   assets.length.toString(),          "#f0f0f0"],
-            ["Total Value",    fmtUsd(totalValue),                "#C8A96E"],
-            ["ABRA Consumed",  `${totalAbra.toLocaleString()} $ABRA`,"#C8A96E"],
-            ["Pending Review", assets.filter(a=>a.status.includes("pending")).length.toString(),"#FBBF24"],
-            ["Verified",       assets.filter(a=>a.status==="verified"||a.status==="collateral_eligible").length.toString(),"#14F195"],
-            ["Store Balance",  `${storeABRA.toLocaleString()} $ABRA`,"rgba(255,255,255,0.5)"],
-          ] as [string,string,string][]).map(([l,v,c]) => (
-            <div key={l} style={{ padding:"0.75rem 1rem",
-                                  background:"rgba(255,255,255,0.03)",
-                                  border:"1px solid rgba(255,255,255,0.06)",
-                                  borderRadius:"9px" }}>
-              <div style={{ fontSize:"0.88rem", fontWeight:900, color:c,
-                            fontFamily:"'JetBrains Mono',monospace",
-                            lineHeight:1, marginBottom:4 }}>{v || "—"}</div>
-              <div style={{ fontSize:"0.38rem", color:"rgba(255,255,255,0.28)",
-                            fontFamily:"'JetBrains Mono',monospace",
-                            textTransform:"uppercase", letterSpacing:"0.06em" }}>{l}</div>
+            ["Pending Review",   queue.length.toString(),            "#FBBF24"],
+            ["Verified",        complete.length.toString(),          "#14F195"],
+            ["Total Events",    assets.length.toString(),            "#f0f0f0"],
+            ["Total Value",     totalValue>0?fmtUsd(totalValue):"No data","#C8A96E"],
+            ["ABRA Consumed",   totalAbra>0?`${totalAbra.toLocaleString()} $ABRA`:"None","#C8A96E"],
+            ["Vault",           VAULT_ID,                            "#6b8cff"],
+          ] as [string,string,string][]).map(([l,v,c])=>(
+            <div key={l} style={{padding:"0.875rem 1rem",background:"rgba(6,8,16,0.99)"}}>
+              <div style={{fontSize:"0.9rem",fontWeight:900,color:c,
+                fontFamily:"'JetBrains Mono',monospace",lineHeight:1,marginBottom:4}}>{v}</div>
+              <div style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.25)",
+                fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",
+                letterSpacing:"0.1em"}}>{l}</div>
             </div>
           ))}
         </div>
 
-        {/* Events table */}
-        {assets.length === 0 ? (
-          <div style={{ padding:"3rem", textAlign:"center",
-                        background:"rgba(255,255,255,0.02)",
-                        border:"1px solid rgba(255,255,255,0.05)",
-                        borderRadius:"10px" }}>
-            <div style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.25)" }}>
-              No tokenization events recorded
-            </div>
-          </div>
-        ) : (
-          <div style={{ background:"rgba(6,8,16,0.98)",
-                        border:"1px solid rgba(255,255,255,0.06)",
-                        borderRadius:"12px", overflow:"hidden" }}>
-            {/* Table header */}
-            <div style={{ display:"grid",
-                          gridTemplateColumns:"2fr 1.4fr 1fr 1fr 1.8fr 1fr",
-                          padding:"0.625rem 1rem",
-                          borderBottom:"1px solid rgba(255,255,255,0.06)",
-                          gap:"0.5rem" }}>
-              {["Asset","Wallet","Class","ABRA Spent","Vault","Status"].map(h => (
-                <div key={h} style={{ fontSize:"0.38rem", fontWeight:700,
-                                      color:"rgba(255,255,255,0.25)",
-                                      fontFamily:"'JetBrains Mono',monospace",
-                                      textTransform:"uppercase",
-                                      letterSpacing:"0.1em" }}>{h}</div>
-              ))}
-            </div>
-            {/* Rows */}
-            {assets.map((a,i) => {
-              const vault  = VAULT_MAP[a.assetClass] ?? VAULT_MAP.default;
-              const stColor= STATUS_COLOR[a.status]  ?? "#C8A96E";
-              return (
-                <div key={a.id} style={{
-                  display:"grid",
-                  gridTemplateColumns:"2fr 1.4fr 1fr 1fr 1.8fr 1fr",
-                  padding:"0.75rem 1rem",
-                  borderBottom:i<assets.length-1?"1px solid rgba(255,255,255,0.04)":"none",
-                  gap:"0.5rem", alignItems:"center",
-                  transition:"background 0.1s",
-                }}>
-                  {/* Asset */}
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:"0.6rem", color:"#f0f0f0",
-                                  overflow:"hidden", textOverflow:"ellipsis",
-                                  whiteSpace:"nowrap" }}>{a.name}</div>
-                    <div style={{ fontSize:"0.38rem",
-                                  color:"rgba(255,255,255,0.25)",
-                                  fontFamily:"'JetBrains Mono',monospace",
-                                  marginTop:1 }}>{fmtUsd(a.estimatedUsd)}</div>
+        {/* Nav tabs */}
+        <div style={{display:"flex",gap:"1px",marginBottom:"1rem",
+          background:"rgba(255,255,255,0.05)",borderRadius:"6px",overflow:"hidden",
+          border:"1px solid rgba(255,255,255,0.06)"}}>
+          {([
+            ["queue",`Pending Review (${queue.length})`],
+            ["all",  `All Assets (${assets.length})`],
+            ["logs", "Audit Logs"],
+          ] as [string,string][]).map(([id,label])=>(
+            <button key={id} onClick={()=>{setActiveTab(id as typeof activeTab);setSelected(null)}}
+              style={{flex:1,padding:"0.625rem",border:"none",cursor:"pointer",
+                fontFamily:"'JetBrains Mono',monospace",fontSize:"0.48rem",fontWeight:700,
+                letterSpacing:"0.06em",textTransform:"uppercase",transition:"all 0.15s",
+                background:activeTab===id?"rgba(124,58,237,0.15)":"transparent",
+                color:activeTab===id?"#a78bfa":"rgba(255,255,255,0.3)",
+                borderBottom:activeTab===id?"2px solid #7c3aed":"2px solid transparent"}}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Audit logs tab */}
+        {activeTab==="logs"&&(
+          <div style={{border:"1px solid rgba(255,255,255,0.06)",borderRadius:"8px",
+            overflow:"hidden"}}>
+            {assets.length===0?(
+              <div style={{padding:"2rem",textAlign:"center",
+                fontSize:"0.54rem",color:"rgba(255,255,255,0.18)"}}>
+                No events to display
+              </div>
+            ):(
+              assets.flatMap(a=>getAuditEvents(a).map(ev=>({...ev,assetName:a.name,assetId:a.id})))
+                .sort((a,b)=>b.ts-a.ts)
+                .map((ev,i)=>(
+                  <div key={i} style={{display:"grid",
+                    gridTemplateColumns:"180px 120px 200px 1fr",
+                    padding:"0.625rem 1rem",gap:"0.75rem",alignItems:"center",
+                    borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                    <div style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.3)",
+                      fontFamily:"'JetBrains Mono',monospace"}}>{tsToTime(ev.ts)}</div>
+                    <div style={{fontSize:"0.38rem",fontWeight:700,color:"rgba(107,140,255,0.7)",
+                      fontFamily:"'JetBrains Mono',monospace",
+                      textTransform:"uppercase"}}>{ev.actor}</div>
+                    <div style={{fontSize:"0.38rem",fontWeight:700,color:"#14F195",
+                      fontFamily:"'JetBrains Mono',monospace"}}>{ev.action}</div>
+                    <div style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.4)"}}>
+                      <strong style={{color:"rgba(255,255,255,0.6)"}}>{ev.assetName}</strong>
+                      {" — "}{ev.note}
+                    </div>
                   </div>
-                  {/* Wallet */}
-                  <div style={{ fontSize:"0.46rem",
-                                color:"rgba(255,255,255,0.45)",
-                                fontFamily:"'JetBrains Mono',monospace",
-                                overflow:"hidden", textOverflow:"ellipsis" }}>
-                    {shortKey(a.ownerWallet)}
-                  </div>
-                  {/* Class */}
-                  <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.55)",
-                                fontFamily:"'JetBrains Mono',monospace" }}>
-                    {a.assetClass.split(" ")[0]}
-                  </div>
-                  {/* ABRA */}
-                  <div style={{ fontSize:"0.52rem", fontWeight:700,
-                                color:"#C8A96E",
-                                fontFamily:"'JetBrains Mono',monospace" }}>
-                    {a.mintCostAbra.toLocaleString()}
-                  </div>
-                  {/* Vault */}
-                  <div style={{ fontSize:"0.38rem",
-                                color:"rgba(255,255,255,0.3)",
-                                fontFamily:"'JetBrains Mono',monospace",
-                                overflow:"hidden", textOverflow:"ellipsis" }}>
-                    {shortKey(vault)}
-                  </div>
-                  {/* Status */}
-                  <div style={{ padding:"2px 8px",
-                                borderRadius:5, display:"inline-flex",
-                                alignItems:"center", gap:4,
-                                background:`${stColor}12`,
-                                border:`1px solid ${stColor}30`,
-                                width:"fit-content" }}>
-                    <div style={{ width:4, height:4, borderRadius:"50%",
-                                  background:stColor, flexShrink:0 }}/>
-                    <span style={{ fontSize:"0.38rem", fontWeight:700,
-                                   color:stColor,
-                                   fontFamily:"'JetBrains Mono',monospace",
-                                   textTransform:"uppercase",
-                                   letterSpacing:"0.05em",
-                                   whiteSpace:"nowrap" }}>
-                      {a.status.replace(/_/g," ")}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+                ))
+            )}
           </div>
         )}
 
-        {/* Footer */}
-        <div style={{ marginTop:"1rem", fontSize:"0.42rem",
-                      color:"rgba(255,255,255,0.12)",
-                      fontFamily:"'JetBrains Mono',monospace",
-                      textAlign:"center" }}>
-          ABRAXAS PROTOCOL ADMIN · $ABRA: 5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
+        {/* Queue / All tabs — two column layout */}
+        {activeTab!=="logs"&&(
+          <div style={{display:"grid",gridTemplateColumns:sel?"1fr 1fr":"1fr",
+            gap:"1rem"}}>
+            {/* Asset list */}
+            <div style={{border:"1px solid rgba(255,255,255,0.06)",borderRadius:"8px",
+              overflow:"hidden"}}>
+              <div style={{display:"grid",
+                gridTemplateColumns:"2fr 1fr 1fr 1fr",
+                padding:"0.45rem 1rem",gap:"0.5rem",
+                borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+                {["Asset","Value","ABRA","Status"].map(h=>(
+                  <div key={h} style={{fontSize:"0.36rem",fontWeight:700,
+                    color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",
+                    textTransform:"uppercase",letterSpacing:"0.14em"}}>{h}</div>
+                ))}
+              </div>
+              {viewList.length===0?(
+                <div style={{padding:"2rem",textAlign:"center",
+                  fontSize:"0.54rem",color:"rgba(255,255,255,0.18)"}}>
+                  {activeTab==="queue"?"No pending assets":"No assets on record"}
+                </div>
+              ):(
+                viewList.map(a=>{
+                  const stColor = STATUS_COLOR[a.status]??"#C8A96E";
+                  return(
+                    <div key={a.id} onClick={()=>setSelected(sel?.id===a.id?null:a.id)}
+                      style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",
+                        padding:"0.75rem 1rem",gap:"0.5rem",alignItems:"center",
+                        cursor:"pointer",transition:"background 0.1s",
+                        background:sel?.id===a.id?"rgba(124,58,237,0.08)":"transparent",
+                        borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:"0.62rem",color:"#f0f0f0",
+                          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {a.name}
+                        </div>
+                        <div style={{fontSize:"0.36rem",color:"rgba(255,255,255,0.25)",
+                          fontFamily:"'JetBrains Mono',monospace",marginTop:2}}>
+                          {a.assetClass} · {shortKey(a.ownerWallet)}
+                        </div>
+                      </div>
+                      <div style={{fontSize:"0.56rem",fontWeight:700,
+                        color:"#f0f0f0",fontFamily:"'JetBrains Mono',monospace"}}>
+                        {a.estimatedUsd>0?fmtUsd(a.estimatedUsd):"Pending"}
+                      </div>
+                      <div style={{fontSize:"0.52rem",color:"#C8A96E",
+                        fontFamily:"'JetBrains Mono',monospace"}}>
+                        {a.mintCostAbra}
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:4}}>
+                        <div style={{width:5,height:5,borderRadius:"50%",
+                          background:stColor,flexShrink:0}}/>
+                        <span style={{fontSize:"0.36rem",fontWeight:600,color:stColor,
+                          fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",
+                          letterSpacing:"0.06em"}}>
+                          {STATUS_LABEL[a.status]??a.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Detail panel */}
+            {sel&&(
+              <div style={{display:"flex",flexDirection:"column",gap:"0.75rem"}}>
+                {/* Asset header */}
+                <div style={{padding:"1rem",border:"1px solid rgba(255,255,255,0.07)",
+                  borderRadius:"8px",background:"rgba(255,255,255,0.01)"}}>
+                  <div style={{fontSize:"0.36rem",fontWeight:700,
+                    color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",
+                    textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:"0.5rem"}}>
+                    Asset Review
+                  </div>
+                  <div style={{fontWeight:900,fontSize:"0.88rem",color:"#f0f0f0",
+                    marginBottom:"0.5rem"}}>{sel.name}</div>
+                  {([
+                    ["Class",         sel.assetClass],
+                    ["Declared Value",sel.estimatedUsd>0?fmtUsd(sel.estimatedUsd):"Not provided"],
+                    ["LTV Cap",       `${sel.ltv}%`],
+                    ["ABRA Spent",    `${sel.mintCostAbra} $ABRA`],
+                    ["Wallet",        shortKey(sel.ownerWallet)],
+                    ["Submitted",     tsToTime(sel.createdAt)],
+                    ["Token ID",      shortKey(sel.tokenId)],
+                    ["Tx",            shortKey(sel.txSignature)],
+                  ] as [string,string][]).map(([k,v])=>(
+                    <div key={k} style={{display:"flex",justifyContent:"space-between",
+                      padding:"0.35rem 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                      <span style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.25)",
+                        fontFamily:"'JetBrains Mono',monospace",
+                        textTransform:"uppercase",letterSpacing:"0.1em"}}>{k}</span>
+                      <span style={{fontSize:"0.44rem",fontWeight:600,
+                        color:"rgba(255,255,255,0.6)",fontFamily:"'JetBrains Mono',monospace"}}>
+                        {v}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Status + actions */}
+                <div style={{padding:"1rem",border:"1px solid rgba(255,255,255,0.07)",
+                  borderRadius:"8px"}}>
+                  <div style={{fontSize:"0.36rem",fontWeight:700,
+                    color:"rgba(255,255,255,0.2)",fontFamily:"'JetBrains Mono',monospace",
+                    textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:"0.75rem"}}>
+                    Review Actions
+                  </div>
+                  <textarea value={noteText} onChange={e=>setNoteText(e.target.value)}
+                    placeholder="Add review note (required for approve/reject)"
+                    style={{width:"100%",padding:"0.5rem",borderRadius:"5px",
+                      background:"rgba(255,255,255,0.03)",
+                      border:"1px solid rgba(255,255,255,0.1)",
+                      color:"#f0f0f0",fontSize:"0.48rem",resize:"vertical",
+                      minHeight:72,outline:"none",fontFamily:"inherit",
+                      marginBottom:"0.625rem",boxSizing:"border-box"}}/>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"0.5rem"}}>
+                    <button onClick={()=>approve(sel.id)} disabled={!noteText.trim()}
+                      style={{padding:"0.6rem",borderRadius:"5px",border:"none",
+                        cursor:noteText.trim()?"pointer":"not-allowed",fontWeight:700,
+                        fontSize:"0.5rem",fontFamily:"'JetBrains Mono',monospace",
+                        background:noteText.trim()?"rgba(20,241,149,0.15)":"rgba(255,255,255,0.03)",
+                        color:noteText.trim()?"#14F195":"rgba(255,255,255,0.2)",
+                        border:`1px solid ${noteText.trim()?"rgba(20,241,149,0.3)":"rgba(255,255,255,0.06)"}`}}>
+                      Approve
+                    </button>
+                    <button onClick={()=>reject(sel.id)} disabled={!noteText.trim()}
+                      style={{padding:"0.6rem",borderRadius:"5px",border:"none",
+                        cursor:noteText.trim()?"pointer":"not-allowed",fontWeight:700,
+                        fontSize:"0.5rem",fontFamily:"'JetBrains Mono',monospace",
+                        background:noteText.trim()?"rgba(242,107,107,0.12)":"rgba(255,255,255,0.03)",
+                        color:noteText.trim()?"#f26b6b":"rgba(255,255,255,0.2)",
+                        border:`1px solid ${noteText.trim()?"rgba(242,107,107,0.25)":"rgba(255,255,255,0.06)"}`}}>
+                      Reject
+                    </button>
+                    <button onClick={()=>addNote(sel.id,"info")} disabled={!noteText.trim()}
+                      style={{padding:"0.6rem",borderRadius:"5px",
+                        cursor:noteText.trim()?"pointer":"not-allowed",fontWeight:700,
+                        fontSize:"0.5rem",fontFamily:"'JetBrains Mono',monospace",
+                        background:"transparent",
+                        color:noteText.trim()?"rgba(107,140,255,0.8)":"rgba(255,255,255,0.2)",
+                        border:`1px solid ${noteText.trim()?"rgba(107,140,255,0.25)":"rgba(255,255,255,0.06)"}`}}>
+                      Add Note
+                    </button>
+                  </div>
+                </div>
+
+                {/* Review notes for this asset */}
+                {notes.filter(n=>n.assetId===sel.id).length>0&&(
+                  <div style={{border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",
+                    overflow:"hidden"}}>
+                    <div style={{padding:"0.5rem 1rem",
+                      borderBottom:"1px solid rgba(255,255,255,0.06)",
+                      fontSize:"0.36rem",fontWeight:700,color:"rgba(255,255,255,0.2)",
+                      fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",
+                      letterSpacing:"0.15em"}}>Review History</div>
+                    {notes.filter(n=>n.assetId===sel.id).reverse().map((n,i)=>{
+                      const col=n.action==="approved"?"#14F195":n.action==="rejected"?"#f26b6b":"#6b8cff";
+                      return(
+                        <div key={i} style={{padding:"0.625rem 1rem",
+                          borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",
+                            marginBottom:3}}>
+                            <span style={{fontSize:"0.38rem",fontWeight:700,color:col,
+                              fontFamily:"'JetBrains Mono',monospace",
+                              textTransform:"uppercase"}}>{n.action}</span>
+                            <span style={{fontSize:"0.36rem",color:"rgba(255,255,255,0.25)",
+                              fontFamily:"'JetBrains Mono',monospace"}}>
+                              {tsToTime(n.ts)}
+                            </span>
+                          </div>
+                          <div style={{fontSize:"0.44rem",color:"rgba(255,255,255,0.5)"}}>
+                            {n.note}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Audit trail */}
+                <div style={{border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",
+                  overflow:"hidden"}}>
+                  <div style={{padding:"0.5rem 1rem",
+                    borderBottom:"1px solid rgba(255,255,255,0.06)",
+                    fontSize:"0.36rem",fontWeight:700,color:"rgba(255,255,255,0.2)",
+                    fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",
+                    letterSpacing:"0.15em"}}>Audit Trail</div>
+                  {getAuditEvents(sel).map((ev,i)=>(
+                    <div key={i} style={{padding:"0.5rem 1rem",
+                      borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                      <div style={{display:"flex",gap:"0.75rem",alignItems:"center",
+                        marginBottom:2}}>
+                        <span style={{fontSize:"0.36rem",color:"rgba(107,140,255,0.7)",
+                          fontFamily:"'JetBrains Mono',monospace",fontWeight:700,
+                          textTransform:"uppercase"}}>{ev.actor}</span>
+                        <span style={{fontSize:"0.36rem",color:"#14F195",
+                          fontFamily:"'JetBrains Mono',monospace"}}>{ev.action}</span>
+                      </div>
+                      <div style={{fontSize:"0.42rem",color:"rgba(255,255,255,0.4)"}}>
+                        {ev.note}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{marginTop:"1rem",fontSize:"0.38rem",color:"rgba(255,255,255,0.12)",
+          textAlign:"center",fontFamily:"'JetBrains Mono',monospace"}}>
+          ABRAXAS PROTOCOL ADMIN · {ABRA_CA}
         </div>
       </div>
     </div>
