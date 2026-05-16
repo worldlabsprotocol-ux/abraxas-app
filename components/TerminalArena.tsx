@@ -1,102 +1,116 @@
 // FILE: components/TerminalArena.tsx
 "use client";
-// TWO TABS ONLY: Portfolio + Borrow.
-// Markets removed. Capital merged into Portfolio.
-// Bottom nav kept to 2 tabs.
+// 2 tabs: Portfolio + Borrow. Admin link in header for authenticated wallets.
+// Intelligence ticker integrated. Intro screen on first session load.
 "use client";
 
-import { useState, useEffect }     from "react";
-import { PortfolioTab }            from "@/components/PortfolioTab";
-import { BorrowPage }              from "@/components/BorrowPage";
-import { IntroScreen }             from "@/components/IntroScreen";
-import { WalletMultiButton }       from "@solana/wallet-adapter-react-ui";
+import { useState, useEffect }      from "react";
+import { PortfolioTab }             from "@/components/PortfolioTab";
+import { BorrowPage }               from "@/components/BorrowPage";
+import { IntroScreen }              from "@/components/IntroScreen";
+import { IntelligenceTicker }       from "@/components/IntelligenceTicker";
+import { WalletMultiButton }        from "@solana/wallet-adapter-react-ui";
+import { useWallet }                from "@solana/wallet-adapter-react";
+import { useWalletAuth }            from "@/lib/hooks/useWalletAuth";
 
 type Tab = "portfolio" | "borrow";
-
-const SESSION_KEY = "abraxas_intro_done";
+const SESSION_KEY = "abraxas_intro_v2";
 
 export function TerminalArena() {
-  const [tab,       setTab]      = useState<Tab>("portfolio");
-  const [showIntro, setShowIntro]= useState(false);
+  const [tab,       setTab]       = useState<Tab>("portfolio");
+  const [showIntro, setShowIntro] = useState(false);
+  const [mounted,   setMounted]   = useState(false);
+
+  const { connected }  = useWallet();
+  const { isVerified } = useWalletAuth();
 
   useEffect(() => {
+    setMounted(true);
     if (!sessionStorage.getItem(SESSION_KEY)) setShowIntro(true);
-    const h = (e: Event) => {
-      const t = (e as CustomEvent<{tab:Tab}>).detail?.tab;
-      if (t === "portfolio" || t === "borrow") setTab(t);
-    };
-    window.addEventListener("abraxas-tab", h);
-    return () => window.removeEventListener("abraxas-tab", h);
   }, []);
+
+  function doneIntro() {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    setShowIntro(false);
+  }
 
   return (
     <>
-      {showIntro && (
-        <IntroScreen onComplete={() => {
-          sessionStorage.setItem(SESSION_KEY, "1");
-          setShowIntro(false);
-        }} />
-      )}
+      {showIntro && <IntroScreen onComplete={doneIntro} />}
 
       <div style={{ minHeight:"100vh", background:"#060810",
                     display:"flex", flexDirection:"column" }}>
 
-        {/* ── Top bar ────────────────────────────────────────────────── */}
+        {/* Intelligence ticker — always visible at top */}
+        {mounted && <IntelligenceTicker />}
+
+        {/* Header */}
         <header style={{
           height:48, padding:"0 1.25rem",
-          display:"flex", alignItems:"center",
-          justifyContent:"space-between",
+          display:"flex", alignItems:"center", justifyContent:"space-between",
           borderBottom:"1px solid rgba(255,255,255,0.06)",
-          position:"sticky", top:0, zIndex:100,
-          background:"rgba(6,8,16,0.98)",
-          backdropFilter:"blur(12px)",
+          position:"sticky", top:36, zIndex:100,
+          background:"rgba(6,8,16,0.98)", backdropFilter:"blur(12px)",
         }}>
-          <div style={{ display:"flex", alignItems:"baseline", gap:"0.5rem" }}>
+          <div style={{ display:"flex", alignItems:"center",
+                        gap:"0.5rem" }}>
             <span style={{
-              fontSize:"0.88rem", fontWeight:900, color:"#f0f0f0",
+              fontSize:"0.92rem", fontWeight:900, color:"#f0f0f0",
               fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.1em",
             }}>ABRAXAS</span>
             <span style={{
               fontSize:"0.34rem", color:"rgba(255,255,255,0.18)",
-              fontFamily:"'JetBrains Mono',monospace", letterSpacing:"0.25em",
+              fontFamily:"'JetBrains Mono',monospace",
+              letterSpacing:"0.25em", textTransform:"uppercase",
             }}>PROTOCOL</span>
           </div>
 
-          <style>{`
-            .wallet-adapter-button{
-              background:#7c3aed!important;border-radius:6px!important;
-              font-size:0.56rem!important;padding:0.35rem 0.75rem!important;
-              height:auto!important;font-family:'JetBrains Mono',monospace!important;
-              font-weight:700!important;letter-spacing:0.04em!important;
-            }
-            .wallet-adapter-button:hover{background:#6d28d9!important;}
-          `}</style>
-          <WalletMultiButton />
+          <div style={{ display:"flex", alignItems:"center", gap:"0.75rem" }}>
+            {/* Admin link — only shown when wallet is verified */}
+            {mounted && connected && isVerified && (
+              <a href="/admin" style={{
+                fontSize:"0.4rem", fontWeight:700,
+                color:"rgba(200,169,110,0.5)",
+                fontFamily:"'JetBrains Mono',monospace",
+                textDecoration:"none", letterSpacing:"0.15em",
+                textTransform:"uppercase",
+                padding:"0.2rem 0.5rem",
+                border:"1px solid rgba(200,169,110,0.15)",
+                borderRadius:"3px",
+                transition:"all 0.15s",
+              }}>Admin</a>
+            )}
+
+            <style>{`
+              .wallet-adapter-button{
+                background:#7c3aed!important;border-radius:6px!important;
+                font-size:0.56rem!important;padding:0.35rem 0.75rem!important;
+                height:auto!important;font-family:'JetBrains Mono',monospace!important;
+                font-weight:700!important;letter-spacing:0.04em!important;
+              }
+              .wallet-adapter-button:hover{background:#6d28d9!important;}
+            `}</style>
+            <WalletMultiButton />
+          </div>
         </header>
 
-        {/* ── Content ────────────────────────────────────────────────── */}
+        {/* Content */}
         <main style={{ flex:1, overflowY:"auto" }}>
-          <div style={{ maxWidth:900, margin:"0 auto",
-                        padding:"1.5rem 1rem 5rem" }}>
+          <div style={{ maxWidth:960, margin:"0 auto", padding:"1.5rem 1rem 5.5rem" }}>
             {tab === "portfolio" && <PortfolioTab />}
             {tab === "borrow"    && <BorrowPage />}
           </div>
         </main>
 
-        {/* ── Bottom nav — 2 tabs ──────────────────────────────────── */}
+        {/* Bottom nav — 2 tabs */}
         <nav style={{
-          position:"fixed", bottom:0, left:0, right:0,
-          height:48, display:"flex",
-          borderTop:"1px solid rgba(255,255,255,0.06)",
-          background:"rgba(6,8,16,0.98)",
-          backdropFilter:"blur(12px)", zIndex:100,
+          position:"fixed", bottom:0, left:0, right:0, height:48,
+          display:"flex", borderTop:"1px solid rgba(255,255,255,0.06)",
+          background:"rgba(6,8,16,0.98)", backdropFilter:"blur(12px)", zIndex:100,
         }}>
-          {([
-            ["portfolio","Portfolio"] as const,
-            ["borrow",   "Borrow"]   as const,
-          ]).map(([id, label]) => {
+          {([["portfolio","Portfolio"],["borrow","Borrow"]] as const).map(([id,label])=>{
             const active = tab === id;
-            return (
+            return(
               <button key={id} onClick={() => setTab(id)} style={{
                 flex:1, height:"100%", border:"none", cursor:"pointer",
                 fontFamily:"'JetBrains Mono',monospace",
