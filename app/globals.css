@@ -1,100 +1,65 @@
 /* FILE: app/globals.css
-   Typography patch — 12-18% increase across all font sizes.
-   Preserves Bloomberg/terminal density. Improves readability.
-   Institutional aesthetic maintained.
+   Typography scale +10% across all layers.
+   Institutional terminal aesthetic. Bloomberg density with real readability.
 */
 
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  margin: 0;
-  padding: 0;
   background: #060810;
   color: #f0f0f0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-body {
   font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
-  font-size: 15px;       /* Up from ~13px */
+  font-size: 16px;        /* was ~14px — +14% */
   line-height: 1.6;
 }
 
-/* Monospace scale — used for all terminal/protocol text */
-.mono, [style*="JetBrains Mono"] {
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
-}
-
-/* Protocol metric labels — previously 0.32-0.38rem, now 0.4-0.46rem */
-.label-xs  { font-size: 0.44rem; letter-spacing: 0.12em; }
-.label-sm  { font-size: 0.52rem; letter-spacing: 0.08em; }
-.label-md  { font-size: 0.6rem;  letter-spacing: 0.04em; }
-
-/* Body text — previously 0.48-0.54rem, now 0.56-0.62rem */
-.body-sm   { font-size: 0.56rem; line-height: 1.7; }
-.body-md   { font-size: 0.64rem; line-height: 1.65; }
-.body-lg   { font-size: 0.72rem; line-height: 1.6;  }
-
-/* Heading scale */
-.heading-sm { font-size: 0.88rem; font-weight: 700; }
-.heading-md { font-size: 1.1rem;  font-weight: 800; }
-.heading-lg { font-size: 1.4rem;  font-weight: 900; }
-.heading-xl { font-size: clamp(1.6rem, 3.5vw, 2.5rem); font-weight: 900; }
-
-/* Wallet adapter buttons — purple only */
-.wallet-adapter-button {
-  background: #7c3aed !important;
-  border-radius: 6px !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-weight: 700 !important;
-  font-size: 0.62rem !important;
-  letter-spacing: 0.04em !important;
-  padding: 0.4rem 0.875rem !important;
-  height: auto !important;
-  transition: background 0.15s !important;
-}
-.wallet-adapter-button:hover {
-  background: #6d28d9 !important;
-}
-.wallet-adapter-button-trigger {
-  background: #7c3aed !important;
-}
-.wallet-adapter-modal-wrapper {
-  background: #0d1017 !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  border-radius: 12px !important;
-}
-.wallet-adapter-modal-title {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 0.72rem !important;
-  color: #f0f0f0 !important;
-}
-
-/* Mobile scale — maintain readability on small screens */
-@media (max-width: 480px) {
-  body { font-size: 14px; }
-  .heading-xl { font-size: clamp(1.3rem, 6vw, 1.8rem); }
-}
-
-/* Scrollbar — thin, institutional */
+/* ── Scrollbar ─────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-/* Protocol animations */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+/* ── Wallet adapter overrides — purple only ────────────────────── */
+.wallet-adapter-button {
+  background:     #7c3aed !important;
+  border-radius:  6px !important;
+  font-family:    'JetBrains Mono', monospace !important;
+  font-weight:    700 !important;
+  font-size:      0.625rem !important;   /* was ~0.56rem */
+  letter-spacing: 0.04em !important;
+  padding:        0.4rem 0.875rem !important;
+  height:         auto !important;
+  transition:     background 0.15s !important;
+  border:         none !important;
 }
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+.wallet-adapter-button:hover        { background: #6d28d9 !important; }
+.wallet-adapter-button-trigger      { background: #7c3aed !important; }
+.wallet-adapter-modal-wrapper {
+  background:    #0d1017 !important;
+  border:        1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 12px !important;
 }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0);   }
+.wallet-adapter-modal-title {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size:   0.78rem !important;
+  color:       #f0f0f0 !important;
+}
+.wallet-adapter-modal-list-more-button-list-item,
+.wallet-adapter-modal-middle-button {
+  background: rgba(124,58,237,0.15) !important;
 }
 
+/* ── Protocol animations ───────────────────────────────────────── */
+@keyframes pulse   { 0%,100%{ opacity:1   } 50%{ opacity:0.3  } }
+@keyframes fadeIn  { from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:translateY(0) } }
+@keyframes shimmer { 0%{ background-position:-200% 0 } 100%{ background-position:200% 0 } }
+@keyframes spin    { to{ transform:rotate(360deg) } }
+
 .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* ── Mobile ────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  html, body { font-size: 15px; }
+}
