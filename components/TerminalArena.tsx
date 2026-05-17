@@ -8,7 +8,6 @@ import { useState, useEffect }      from "react";
 import { PortfolioTab }             from "@/components/PortfolioTab";
 import { BorrowPage }               from "@/components/BorrowPage";
 import { IntroScreen }              from "@/components/IntroScreen";
-import { IntelligenceTicker }       from "@/components/IntelligenceTicker";
 import { WalletMultiButton }        from "@solana/wallet-adapter-react-ui";
 import { useWallet }                from "@solana/wallet-adapter-react";
 import { useWalletAuth }            from "@/lib/hooks/useWalletAuth";
@@ -42,14 +41,13 @@ export function TerminalArena() {
                     display:"flex", flexDirection:"column" }}>
 
         {/* Intelligence ticker — always visible at top */}
-        {mounted && <IntelligenceTicker />}
 
         {/* Header */}
         <header style={{
           height:48, padding:"0 1.25rem",
           display:"flex", alignItems:"center", justifyContent:"space-between",
           borderBottom:"1px solid rgba(255,255,255,0.06)",
-          position:"sticky", top:36, zIndex:100,
+          position:"sticky", top:0,  zIndex:100,
           background:"rgba(6,8,16,0.98)", backdropFilter:"blur(12px)",
         }}>
           <div style={{ display:"flex", alignItems:"center",
