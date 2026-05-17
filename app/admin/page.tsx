@@ -541,11 +541,11 @@ export default function AdminPage() {
 
                   <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
                     <button onClick={()=>setAdvancing(true)} style={{
-                      padding:"0.7rem", borderRadius:"6px", border:"none",
+                      padding:"0.7rem", borderRadius:"6px",
                       cursor:"pointer", fontWeight:700, fontSize:"0.56rem",
                       fontFamily:MONO, background:"rgba(20,241,149,0.12)",
                       color:"#14F195",
-                      border:"1px solid rgba(20,241,149,0.25)" as any }}>
+                      border:"1px solid rgba(20,241,149,0.25)" }}>
                       Advance Verification Stage
                     </button>
                     <button onClick={()=>updateStatus(selected_asset.id,"rejected")}
