@@ -20,6 +20,7 @@ export type VerificationStatus =
 export interface VerificationStageRecord {
   stageNumber:   number;
   stageName:     string;
+  description?:  string;      // human-readable stage description
   partnerType:   VerificationPartnerType;
   partnerId?:    string;      // ID of the specific partner who actioned
   partnerName?:  string;
@@ -81,6 +82,7 @@ export function buildInitialRecord(params: {
   const stages = def.verificationStages.map(s => ({
     stageNumber:        s.stage,
     stageName:          s.name,
+    description:        s.description,
     partnerType:        s.partnerType,
     status:             "pending" as const,
     documentsReceived:  [],

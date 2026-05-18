@@ -1,44 +1,53 @@
 // FILE: lib/hooks/useAbraBalance.ts
-// Reads real on-chain ABRA SPL balance. Gate = covers the mint fee (not 100k).
-"use client";
+// Real SPL token balance for $ABRA on Solana mainnet.
+// Returns 0 when wallet not connected — NO fake demo balance ever shown.
+import { useEffect, useState }     from "react";
+import { useConnection }           from "@solana/wallet-adapter-react";
+import { useWallet }               from "@solana/wallet-adapter-react";
+import { getAccount, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { PublicKey }               from "@solana/web3.js";
 
-import { useState, useEffect, useCallback } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
-
-export const ABRA_MINT = "5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS";
-
-// Realistic minimum: enough to cover the base mint fee.
-// NOT 100,000. Removed the exaggerated holding requirement.
-export const ABRA_MIN_FEE = 110; // minimum fee across all asset classes
+const ABRA_MINT    = new PublicKey("5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS");
+export const ABRA_MIN_FEE = 110; // minimum fee in ABRA across all asset classes
 
 export function useAbraBalance() {
-  const { connection }            = useConnection();
-  const { publicKey, connected }  = useWallet();
-  const [balance,  setBalance]    = useState<number>(0);
-  const [loading,  setLoading]    = useState(false);
-
-  const fetchBalance = useCallback(async () => {
-    if (!publicKey || !connected) { setBalance(0); return; }
-    setLoading(true);
-    try {
-      const mint = new PublicKey(ABRA_MINT);
-      const { getAssociatedTokenAddress } = await import("@solana/spl-token");
-      const ata  = await getAssociatedTokenAddress(mint, publicKey);
-      const info = await connection.getTokenAccountBalance(ata);
-      setBalance(Number(info.value.uiAmount ?? 0));
-    } catch {
-      setBalance(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [publicKey, connected, connection]);
+  const { connection }          = useConnection();
+  const { publicKey, connected } = useWallet();
+  const [balance, setBalance]   = useState(0);
+  const [loading, setLoading]   = useState(false);
 
   useEffect(() => {
-    fetchBalance();
-    const iv = setInterval(fetchBalance, 30_000);
-    return () => clearInterval(iv);
-  }, [fetchBalance]);
+    // Not connected — always 0, never a fake number
+    if (!connected || !publicKey) {
+      setBalance(0);
+      return;
+    }
 
-  return { balance, loading, refetch: fetchBalance };
+    let cancelled = false;
+
+    async function fetchBalance() {
+      setLoading(true);
+      try {
+        const ata = getAssociatedTokenAddressSync(ABRA_MINT, publicKey!);
+        const acct = await getAccount(connection, ata);
+        if (!cancelled) {
+          // Token-2022 uses raw amounts — divide by 10^6 for ABRA decimals
+          setBalance(Number(acct.amount) / 1_000_000);
+        }
+      } catch {
+        // No token account = 0 balance, not an error
+        if (!cancelled) setBalance(0);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchBalance();
+
+    // Refresh every 30 seconds while connected
+    const iv = setInterval(fetchBalance, 30_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [connected, publicKey, connection]);
+
+  return { balance, loading };
 }

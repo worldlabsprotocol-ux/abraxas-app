@@ -330,7 +330,7 @@ export function PortfolioTab() {
   useEffect(()=>{setMounted(true);},[]);
   if(!mounted) return null;
 
-  const displayBalance = connected ? balance : storeBalance;
+  const displayBalance = balance; // real balance — 0 when not connected
   const pending  = assets.filter(a=>{
     const step = STATUS_META[a.status]?.step??0;
     return step>0&&step<8&&a.status!=="closed"&&a.status!=="rejected";
@@ -609,7 +609,7 @@ export function PortfolioTab() {
             {balLoading?"...":displayBalance.toLocaleString()}
           </div>
           <div style={{fontSize:"0.38rem",color:"rgba(200,169,110,0.4)",fontFamily:MONO}}>
-            {connected?"Live on-chain balance":"Demo balance — connect wallet"}
+            {connected?"Live on-chain balance":"Connect wallet to view balance"}
           </div>
         </div>
 
