@@ -1,5 +1,5 @@
-⬢ ABRAXAS
-The Sovereign Terminal for Tokenized Real-World Assets on Solana.
+⬢ Abraxas Protocol
+Verification + Collateral Intelligence Infrastructure for Real-World Assets on Solana.
 
 [![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
 
@@ -9,8 +9,7 @@ The Sovereign Terminal for Tokenized Real-World Assets on Solana.
 
 [![Buy $ABRA](https://img.shields.io/badge/Buy_$ABRA_on_Bags-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
 
-Abraxas Protocol
-Verification + Collateral Intelligence Infrastructure for Real-World Assets on Solana.
+
 Not another tokenization marketplace. Abraxas operates a seven-stage cryptographic verification pipeline where named, credentialed authentication partners co-sign every state transition — producing portable, independently auditable on-chain certificates that enable institutional USDC lending against physical assets.
 
 Architecture
