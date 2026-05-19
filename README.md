@@ -9,252 +9,186 @@ The Sovereign Terminal for Tokenized Real-World Assets on Solana.
 
 [![Buy $ABRA](https://img.shields.io/badge/Buy_$ABRA_on_Bags-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
 
+Abraxas Protocol
+Verification + Collateral Intelligence Infrastructure for Real-World Assets on Solana.
+Not another tokenization marketplace. Abraxas operates a seven-stage cryptographic verification pipeline where named, credentialed authentication partners co-sign every state transition — producing portable, independently auditable on-chain certificates that enable institutional USDC lending against physical assets.
 
-What Abraxas Is
-Abraxas is a sovereign RWA infrastructure protocol — the operating system for tokenizing, managing, and monetizing physical assets on Solana.
-Physical assets — rare spirits, luxury watches, graded comics, racehorses, PSA-graded cards, precious metals — tokenized as Token-2022 positions with verified custody, grade certification, and vault-backed liquidity.
-This is how physical assets will be owned in 5–10 years. Tokenize now to be positioned before it becomes the standard.
-
-Core Thesis
-Most RWA protocols target institutional verticals (T-bills, real estate). Abraxas covers the cultural and collectible long tail — the $2T+ market of physical assets that currently have no on-chain liquidity rails.
-The insight: custody infrastructure already exists (Baxus, Courtyard, Collector Crypt). Abraxas is the utility and liquidity layer on top — lending, yield, market intelligence, and optional gameplay utility for assets already in verified vaults.
-
-Primary Use Case: Tokenize Your Asset
-Physical Asset → Verified Custody → Token-2022 on Solana → Liquid
-
-Submit your asset — spirits, watches, comics, cards, metals, racehorses
-Custody verification — graded/authenticated by recognized partner (PSA, CGC, Baxus, LBMA)
-Tokenize — Token-2022 position minted on Solana with provenance metadata
-Borrow USDC — via Loopscale Modular Vaults at 5.2% fixed APR (55–80% LTV)
-Earn yield — $ABRA staking at 18–25% APY
-Optional — deploy in the Sovereign Arena for additional utility and $ABRA rewards
-
-Protocol Stack
-Layer
-Technology
-Blockchain
-Solana Mainnet
-Token Standard
-Token-2022 with transfer hooks
-Lending
-Loopscale Modular Vaults
-Payments
-x402 HTTP micropayment protocol
-Oracles
-Pyth Network (metals / equities)
-Frontend
-Next.js 14 App Router
-Wallets
-Phantom · Backpack · Solflare
-Languages
-18 — EN ES PT ZH JA KO FR DE AR FA TR HI BN RU UK VI TH ID
+Architecture
+┌─────────────────────────────────────────────────────────┐
+│                    CLIENT LAYER                          │
+│  Next.js 14 + Solana Wallet Adapter + Zustand           │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│                   SERVICE LAYER                          │
+│  lib/services/assetService.ts                            │
+│  lib/services/eventService.ts                            │
+│  lib/services/verificationStateMachine.ts                │
+│  lib/services/riskScoringEngine.ts                       │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│                  SUPABASE / POSTGRES                     │
+│  17 tables · RLS on all · append-only asset_events       │
+│  Materialized view: asset_intelligence_view              │
+│  State machine: allowed_transitions table                │
+│  Helper RPCs: get_asset_timeline, verify_certificate     │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│                  SOLANA MAINNET                          │
+│  Token-2022 verification certificates                    │
+│  SPL ABRA token (protocol fee)                          │
+│  On-chain state anchoring (mint txs)                     │
+└─────────────────────────────────────────────────────────┘
 
 
-Asset Coverage — 102 Tokenized Positions
-Category
-Count
-Custody Partner
-LTV
-Pokémon Cards
-28
-Collector Crypt / PSA
-55%
-One Piece Cards
-25
-Collector Crypt / PSA
-55%
-Rare Spirits
-20
-Baxus
-55%
-Luxury Watches
-11
-Courtyard
-65%
-Racehorses
-5
-The Jockey Club / Keeneland
-55%
-Comics (CGC)
-5
-Metropolis Comics
-65%
-Tokenized Equities
-3
-Digital Custody
-70%
-Precious Metals
-2
-LBMA
-80%
-Sports Cards
-3
-Collector Crypt / PSA
-55%
-
-
-Loopscale Lending
-Borrow USDC against vaulted assets at 5.2% fixed APR with no sell pressure:
-Gold 1oz (LBMA)     → Borrow $2,586 USDC (80% LTV)
-Rolex Submariner    → Borrow $7,150 USDC (65% LTV)
-Amazing Fantasy #15 → Borrow $341K USDC  (65% LTV)
-Pappy Van Winkle    → Borrow $1,320 USDC (55% LTV)
-1999 Charizard PSA10→ Borrow $302K USDC  (55% LTV)
-
-
-$ABRA Token
-Contract: 5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
- Vault: 63LGWS2JSK5CawZt6iPchVU6wj63v3DtsTR1jaRnjMaY
-$ABRA is the protocol fuel — required for tokenization fees, used for Arena entry, staked for yield, and burned for permanent upgrades.
-Action
-$ABRA Role
-Tokenize asset
-Fee: 50–250 $ABRA (scales with value)
-Arena battle entry
-10–50 $ABRA ante
-Gacha pull
-10 energy per pull
-Stake (Flexible)
-18% APY
-Stake (90-day lock)
-25% APY
-Burn for boost
-Permanent yield/LTV upgrades
-
-
-Application Navigation
-Tab
-Purpose
-Terminal
-Live asset feed · AI conviction signals · Activity · Borrow · Tokenize
-Markets
-RWA market cap · Price charts · News intelligence
-Game Modes
-AbraxClaw Gacha · Chase Markets · Brain Games · Circuit Studio · Leaderboard
-Vaults
-Loopscale lending · $ABRA staking · Prize Pool · x402
-
-
-Asset Utility (Gaming Layer)
-Gaming is additional utility for tokenized asset owners — not the core product identity.
-Mode
-Description
-Reward
-AbraxClaw Gacha
-Rarity-weighted claw machine pulls · Pity system at 10
-Up to 250 $ABRA
-Chase Markets
-LONG/SHORT tokenized RWA prices · 18% call bonus
-Up to 500 $ABRA
-Circuit Brain Games
-Trivia · Oracle Gauntlet · Memory Match
-Up to 200 $ABRA
-Sovereign Arena
-5-phase asset battle engine · ELO progression
-50–200 $ABRA
-Circuit Studio
-Tokenize original music as RWA NFT · Sell on TuneCore/DistroKid
-Royalty income
-
-
-On-Chain Addresses
-$ABRA Token:        5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
-$ABRA Vault:        63LGWS2JSK5CawZt6iPchVU6wj63v3DtsTR1jaRnjMaY
-Vault Authority:    65JkcHbtaEaJHyNjCF8BxQHcYQub8XwgJnRLDfztiBqA
-VAULT-490 PDA:      CQ1UzRrB6C2XV39wZNB7URKwGRhEKkDQgc2xVF5dJGdf
-VAULT-491 PDA:      CmWVgyeS8uR9ForuhBPs9vPoQknTMAs8CZuenLiotdDk
-VAULT-492 PDA:      8bBxipDGxTL3B84RSuwxwVysAKreStoHbJKTSHpqfT58
-VAULT-493 PDA:      Db6RHGeqsZYkxjMvqjFQ4EV8KLs9xMxto3dK9Y8Q9TFf
-VAULT-494 PDA:      HeFqPHNCTgZ68fxaGgJes9af16W63mg7UbZUy5LScwZq
-
-
-Custody & Verification Partners
-Partner
-Asset Class
-Verification
-Baxus
-Rare spirits
-Blockchain-authenticated ownership
-Courtyard
-Luxury watches
-Physical vault custody
-Collector Crypt
-Graded cards
-PSA/BGS grade certification
-Metropolis Comics
-Vintage comics
-CGC/CBCS certification
-LBMA
-Precious metals
-999.9 fine assay certification
-The Jockey Club
-Racehorses
-Registry and bloodstock verification
-PSA / CGC
-Cards / Comics
-Third-party grade authority
-
-
-Transparency — Current Tech Gaps
-Area
+Key Features
+Feature
 Status
-Detail
-Physical custody attestation
-In Progress
-Custodian co-sign on-chain — Q3 2026
-Token → Physical redemption
-Manual
-Programmatic redemption via Anchor planned
-Real-time price oracles
-Partial
-Metals/equities via Pyth live; collectibles via API planned
-On-chain lending settlement
-Simulated
-Loopscale CPI implemented, not mainnet-deployed
-Legal SPV wrapper
-Roadmap
-Required for equities/real estate — exploring Securitize
+7-stage verification pipeline
+✅ Live
+Deterministic state machine (DB-enforced)
+✅ Live
+Token-2022 asset tokenization
+✅ Live
+Real SPL ABRA deduction
+✅ Live
+Append-only event sourcing
+✅ Live
+Public certificate verification
+✅ Live
+4-factor collateral scoring engine
+✅ Live
+Energy / Mineral Rights vertical
+✅ Live
+Admin verification operations
+✅ Live
+Loopscale borrow integration
+🔄 In Progress
+Solana Anchor certificate program
+📋 Planned
 
 
-Deployment
+API Endpoints
+Public (no auth required)
+GET /api/certificates/[id]/verify
+
+Returns structured JSON with verifier signature, provenance Merkle root, custody reference, collateral score, and validity status. Anyone — lenders, auditors — can independently verify any certificate.
+GET /api/assets/[id]/timeline
+
+Returns the full immutable event history for an asset in chronological order.
+Authenticated
+GET  /api/assets/wallet/[wallet]     — all assets for a wallet
+POST /api/assets                     — create asset, initiate pipeline
+POST /api/verification/initiate      — start verification record
+POST /api/verification/[id]/advance  — advance pipeline stage
+PATCH /api/assets/[id]/status        — update verification status
+
+
+Verification Pipeline
+Asset Submission
+      ↓
+Authentication Partner Review
+      ↓
+Provenance + Ownership Validation
+      ↓
+Custody / Vault Assignment
+      ↓
+Risk + Collateral Scoring
+      ↓
+On-Chain Certificate Mint (Token-2022)
+      ↓
+Collateral Activation → USDC Borrowing via Loopscale
+
+Each transition is enforced by the allowed_transitions table. No frontend-only state changes are possible.
+
+Supported Asset Classes
+Class
+LTV Cap
+Fee (ABRA)
+Verification Path
+Fine Metals
+80%
+200
+LBMA assay + custody
+Luxury Watches
+65%
+150
+Certified watchmaker + vault
+Real Estate
+60%
+300
+Title search + MAI appraisal
+Mineral Rights
+55%
+500
+SPE-PRMS reserve engineer + BIA
+Graded Cards
+55%
+110
+PSA/BGS/SGC + vault
+Fine Art
+50%
+180
+Provenance + specialist auction
+Tribal Land
+50%
+600
+BIA + tribal council
+
+
+Tech Stack
+Frontend: Next.js 14.2, TypeScript, Solana Wallet Adapter
+Chain: Solana Mainnet, Token-2022 program
+Token: $ABRA — 5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
+Database: Supabase (Postgres 15), RLS enabled
+Deployment: Vercel (main branch)
+Schema: v4.1 — 17 tables, enums, triggers, materialized view
+
+Local Development
+# Install
 npm install
-npm run dev       # localhost:3000
-npm run build     # production build
-vercel deploy     # Vercel deployment
 
-Required environment variables:
-NEXT_PUBLIC_SOLANA_RPC_URL=   # Helius RPC endpoint
-VAULT_AUTHORITY_SECRET=       # JSON keypair bytes
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
+# Environment variables
+cp .env.example .env.local
+# Set: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Set: SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_ADMIN_PIN
 
+# Run schema (Supabase SQL Editor)
+# Paste: supabase/abraxas_schema_v41.sql
 
-Links
+# Start
+npm run dev
 
+Demo Data
+Schema v4.1 seeds 3 demo assets on first run:
+Rolex Submariner 5513 (1968) — approved status
+50× LBMA Gold Bars — collateral_eligible status
+Non-Op Working Interest — under_review status
 
+Roadmap
+Now
+Complete frontend ↔ Supabase wiring
+Asset detail pages with provenance timeline
+Mobile layout improvements
+Next
+Solana Anchor verification certificate program
+On-chain revocation mechanics
+Merkle provenance anchoring
+Loopscale live loan data
+Later
+Verifier reputation + staking system
+ZK certificate verification
+Multi-chain certificate bridging
+Institutional API + SDK
 
+Security
+Row Level Security on all 17 tables
+asset_events is INSERT-only (no UPDATE/DELETE policy)
+State machine transitions enforced at DB level
+Service role key never exposed to client
+Wallet signatures required for all minting actions
 
-Live App
-https://abraxas-app.vercel.app
+Built by World Labs Protocol · abraxas-app.vercel.app
 
-Buy $ABRA (Jupiter)
-https://jup.ag/swap?sell=So11...&buy=5c1FHZj...
-
-Buy $ABRA (Bags)
-https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
-
-Baxus Spirits
-https://www.baxus.co
-
-Courtyard Watches
-https://courtyard.io/vending-machine/rolex-watch-box
-
-Collector Crypt
-https://gacha.collectorcrypt.com/#pokemon
-
-Twitter
-@pabloretroworld
-
-
-Built by Pablo · World Labs Protocol · Solana · 2026
- Sovereign RWA infrastructure. This is how physical assets will be owned.
- 
