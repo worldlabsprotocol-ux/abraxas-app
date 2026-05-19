@@ -1,9 +1,8 @@
 /* FILE: app/globals.css
-   Typography scale +10% across all layers.
-   Institutional terminal aesthetic. Bloomberg density with real readability.
+   DeFi-grade typography. Institutional weight.
+   +20% across all font sizes. Billboard hero scale.
 */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
 
 html, body {
   background: #060810;
@@ -11,55 +10,59 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
-  font-size: 16px;        /* was ~14px — +14% */
+  font-size: 17px;
   line-height: 1.6;
 }
 
-/* ── Scrollbar ─────────────────────────────────────────────────── */
-::-webkit-scrollbar       { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-
-/* ── Wallet adapter overrides — purple only ────────────────────── */
+/* Wallet adapter — purple, right-sized */
 .wallet-adapter-button {
-  background:     #7c3aed !important;
-  border-radius:  6px !important;
-  font-family:    'JetBrains Mono', monospace !important;
-  font-weight:    700 !important;
-  font-size:      0.625rem !important;   /* was ~0.56rem */
+  background: #7c3aed !important;
+  border-radius: 6px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 700 !important;
+  font-size: 0.65rem !important;
   letter-spacing: 0.04em !important;
-  padding:        0.4rem 0.875rem !important;
-  height:         auto !important;
-  transition:     background 0.15s !important;
-  border:         none !important;
+  padding: 0.42rem 0.875rem !important;
+  height: auto !important;
+  border: none !important;
+  transition: background 0.15s !important;
 }
 .wallet-adapter-button:hover        { background: #6d28d9 !important; }
 .wallet-adapter-button-trigger      { background: #7c3aed !important; }
 .wallet-adapter-modal-wrapper {
-  background:    #0d1017 !important;
-  border:        1px solid rgba(255,255,255,0.08) !important;
+  background: #0d1017 !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
   border-radius: 12px !important;
 }
 .wallet-adapter-modal-title {
   font-family: 'JetBrains Mono', monospace !important;
-  font-size:   0.78rem !important;
-  color:       #f0f0f0 !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  color: #f0f0f0 !important;
 }
-.wallet-adapter-modal-list-more-button-list-item,
-.wallet-adapter-modal-middle-button {
-  background: rgba(124,58,237,0.15) !important;
+.wallet-adapter-modal-list li {
+  background: rgba(255,255,255,0.03) !important;
+  border-radius: 8px !important;
+}
+.wallet-adapter-modal-list li:hover {
+  background: rgba(124,58,237,0.12) !important;
 }
 
-/* ── Protocol animations ───────────────────────────────────────── */
-@keyframes pulse   { 0%,100%{ opacity:1   } 50%{ opacity:0.3  } }
-@keyframes fadeIn  { from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:translateY(0) } }
-@keyframes shimmer { 0%{ background-position:-200% 0 } 100%{ background-position:200% 0 } }
-@keyframes spin    { to{ transform:rotate(360deg) } }
+/* Scrollbar */
+::-webkit-scrollbar       { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.2); }
 
-.fade-in { animation: fadeIn 0.3s ease forwards; }
+/* Animations */
+@keyframes pulse  { 0%,100%{opacity:1}50%{opacity:0.3} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spin   { to{transform:rotate(360deg)} }
+@keyframes ticker-run { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
-/* ── Mobile ────────────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  html, body { font-size: 15px; }
+.fade-in { animation:fadeIn 0.3s ease forwards; }
+
+/* Mobile */
+@media (max-width:480px) {
+  html,body { font-size:15px; }
 }
