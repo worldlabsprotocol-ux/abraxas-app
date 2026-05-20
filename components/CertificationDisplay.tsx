@@ -206,3 +206,6 @@ export function CertificatePage({ certId }: { certId: string }) {
     </div>
   );
 }
+
+// Default export for compatibility with both import styles
+export default CertificateDisplay;

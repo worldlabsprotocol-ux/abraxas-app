@@ -5,7 +5,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("ABRAXASverify1111111111111111111111111111111");
+declare_id!("4zzf63hA7UHZTcf4H5TiqrxDPR7NQeDGbeyhwq4vE6pr");
 
 #[program]
 pub mod abraxas_verification {

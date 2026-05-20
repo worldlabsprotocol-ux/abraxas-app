@@ -1,18 +1,16 @@
 # FILE: abraxas-program/Anchor.toml
-# Run from inside the abraxas-program/ folder:
-#   anchor build
-#   anchor deploy --provider.cluster mainnet
-#
-# IMPORTANT: run `anchor keys list` first to get your real program ID,
-# then paste it below AND into programs/verification/src/lib.rs declare_id!()
+# CLEAN VERSION — no backslash, correct cluster value
+# After pasting this file, run: anchor keys list
+# Then replace the placeholder program ID in BOTH:
+#   1. This file  (verification = "YOUR_KEY")
+#   2. programs/verification/src/lib.rs  (declare_id!("YOUR_KEY"))
 
 [features]
-seeds = true
+seeds = false
 skip-lint = false
 
 [programs.mainnet]
 verification = "ABRAXASverify1111111111111111111111111111111"
-# ↑ Replace with output of `anchor keys list` after first build
 
 [programs.devnet]
 verification = "ABRAXASverify1111111111111111111111111111111"
@@ -23,10 +21,6 @@ url = "https://api.apr.dev"
 [provider]
 cluster = "mainnet"
 wallet = "~/.config/solana/id.json"
-# ↑ Path to your deployer keypair — must hold SOL to pay for program account
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-
-[[test.validator]]
-url = "https://api.mainnet-beta.solana.com"
