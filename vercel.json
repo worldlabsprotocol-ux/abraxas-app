@@ -1,0 +1,3 @@
+{
+    "crons": [{ "path": "/api/cron/bags-sync", "schedule": "0 */6 * * *" }]
+  }

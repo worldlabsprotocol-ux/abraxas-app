@@ -1,22 +1,32 @@
+# FILE: abraxas-program/Anchor.toml
+# Run from inside the abraxas-program/ folder:
+#   anchor build
+#   anchor deploy --provider.cluster mainnet
+#
+# IMPORTANT: run `anchor keys list` first to get your real program ID,
+# then paste it below AND into programs/verification/src/lib.rs declare_id!()
+
 [features]
-seeds     = false
+seeds = true
 skip-lint = false
 
-[programs.devnet]
-cards = "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp"
-
 [programs.mainnet]
-cards = "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp"
+verification = "ABRAXASverify1111111111111111111111111111111"
+# ↑ Replace with output of `anchor keys list` after first build
+
+[programs.devnet]
+verification = "ABRAXASverify1111111111111111111111111111111"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
-wallet  = "~/.config/solana/id.json"
+cluster = "mainnet"
+wallet = "~/.config/solana/id.json"
+# ↑ Path to your deployer keypair — must hold SOL to pay for program account
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
-[workspace]
-members = ["programs/cards"]
+[[test.validator]]
+url = "https://api.mainnet-beta.solana.com"
