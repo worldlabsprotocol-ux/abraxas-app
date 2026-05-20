@@ -4,7 +4,7 @@
 // Real SPL ABRA deduction. Supabase sync after mint. TransactionReceipt shown.
 // SOL payment UI scaffolded for X402 integration.
 
-import { useState, useCallback, useRef }    from "react";
+import React, { useState, useCallback, useRef, type CSSProperties } from "react";
 import { useWallet }                         from "@solana/wallet-adapter-react";
 import { useWalletModal }                    from "@solana/wallet-adapter-react-ui";
 import { useConnection }                     from "@solana/wallet-adapter-react";
@@ -173,17 +173,16 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  const T = (styles: React.CSSProperties) => styles;
   const mono = "'JetBrains Mono',monospace";
 
   const stepNum = {upload:1,metadata:2,valuation:3,wallet:4,fee:5,processing:6,queue:7};
   const pct = Math.round((stepNum[step]/7)*100);
 
-  function labelStyle(): React.CSSProperties {
+  function labelStyle(): CSSProperties {
     return {fontSize:"0.38rem",fontWeight:700,color:"rgba(255,255,255,0.3)",
       fontFamily:mono,textTransform:"uppercase" as const,letterSpacing:"0.12em",marginBottom:"0.35rem"};
   }
-  function inputStyle(): React.CSSProperties {
+  function inputStyle(): CSSProperties {
     return {width:"100%",padding:"0.625rem 0.75rem",borderRadius:"6px",
       background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",
       color:"#f0f0f0",fontSize:"0.6rem",outline:"none",fontFamily:mono,
