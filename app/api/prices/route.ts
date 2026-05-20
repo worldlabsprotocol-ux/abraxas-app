@@ -1,42 +1,77 @@
 // FILE: app/api/prices/route.ts
-// Server-side price fetcher — avoids CORS issues with CoinGecko.
-// Returns crypto + metals prices. Cached for 55s (just under client 60s interval).
-import { NextResponse } from "next/server";
+// Price proxy — CryptoRank v2 primary, CoinGecko fallback.
+// Cached 60s. Never exposes API key to browser.
+import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 55;
 
-const METALS_BASE = { GOLD: 4733.39, SILVER: 72.91 }; // May 2026 base
+const CRYPTORANK_KEY = process.env.CRYPTORANK_API_KEY ?? "";
+const COINGECKO_IDS: Record<string, string> = {
+  gold:    "gold",
+  silver:  "silver",
+  bitcoin: "bitcoin",
+  solana:  "solana",
+  oil:     "crude-oil",
+};
 
-export async function GET() {
+interface PriceResult {
+  symbol:    string;
+  price:     number;
+  change24h: number;
+  source:    "cryptorank" | "coingecko" | "fallback";
+}
+
+async function fromCryptoRank(symbols: string[]): Promise<PriceResult[] | null> {
+  if (!CRYPTORANK_KEY) return null;
   try {
-    // CoinGecko free API — no key required
-    const cgRes = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,sui&vs_currencies=usd&precision=2",
-      { next: { revalidate: 55 } }
+    const slugMap: Record<string,string> = {
+      gold:"gold",silver:"silver",bitcoin:"bitcoin",solana:"solana",oil:"crude-oil"
+    };
+    const slugs = symbols.map(s => slugMap[s] ?? s).join(",");
+    const res = await fetch(
+      `https://api.cryptorank.io/v2/currencies?slugs=${slugs}&fields=price,percentChange24H`,
+      {
+        headers: { "X-Api-Key": CRYPTORANK_KEY },
+        next: { revalidate: 60 },
+      }
     );
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json.data ?? []).map((item: Record<string,unknown>) => ({
+      symbol:    (item.slug as string) ?? "",
+      price:     (item.price as number) ?? 0,
+      change24h: (item.percentChange24H as number) ?? 0,
+      source:    "cryptorank" as const,
+    }));
+  } catch { return null; }
+}
 
-    if (!cgRes.ok) throw new Error("CoinGecko unavailable");
-    const cg = await cgRes.json();
-
-    return NextResponse.json({
-      BTC:    cg.bitcoin?.usd    ?? 80635,
-      ETH:    cg.ethereum?.usd   ?? 2323,
-      SOL:    cg.solana?.usd     ?? 95,
-      SUI:    cg.sui?.usd        ?? 1.27,
-      ABRA:   0.021,             // from DEX once live
-      GOLD:   METALS_BASE.GOLD,  // metals: base + override when metals API available
-      SILVER: METALS_BASE.SILVER,
-      source: "coingecko",
-      ts:     Date.now(),
+async function fromCoinGecko(symbols: string[]): Promise<PriceResult[]> {
+  try {
+    const ids = symbols.map(s => COINGECKO_IDS[s] ?? s).join(",");
+    const res = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`,
+      { next: { revalidate: 60 } }
+    );
+    if (!res.ok) throw new Error("CoinGecko error");
+    const json = await res.json();
+    return symbols.map(sym => {
+      const id = COINGECKO_IDS[sym] ?? sym;
+      const d = json[id];
+      return { symbol:sym, price:d?.usd??0, change24h:d?.usd_24h_change??0, source:"coingecko" };
     });
   } catch {
-    // Return May 2026 fallback values — never fails
-    return NextResponse.json({
-      BTC:80635, ETH:2323, SOL:95, SUI:1.27, ABRA:0.021,
-      GOLD:METALS_BASE.GOLD, SILVER:METALS_BASE.SILVER,
-      source: "fallback",
-      ts: Date.now(),
-    });
+    // Static fallback — stale but never crashes
+    return symbols.map(sym => ({
+      symbol:sym, price:0, change24h:0, source:"fallback"
+    }));
   }
+}
+
+export async function GET(req: NextRequest) {
+  const symbols = (req.nextUrl.searchParams.get("symbols") ?? "bitcoin,solana,gold").split(",");
+  const results  = await fromCryptoRank(symbols) ?? await fromCoinGecko(symbols);
+  return NextResponse.json({ prices: results, ts: Date.now() }, {
+    headers: { "Cache-Control":"public,max-age=60" },
+  });
 }

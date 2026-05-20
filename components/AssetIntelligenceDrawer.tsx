@@ -376,8 +376,9 @@ export function AssetIntelligenceDrawer({
           {tab === "custody"  && <CustodyPanel asset={asset} />}
           {tab === "risk"     && <RiskPanel asset={asset} />}
           {tab === "timeline" && (
-            <EventTimeline assetId={asset.id} createdAt={asset.createdAt} />
-          )}
+            import { LiveEventFeed } from "@/components/LiveEventFeed";
+            // tab==="timeline":
+            <LiveEventFeed assetId={asset.id} />
         </div>
       </div>
     </div>

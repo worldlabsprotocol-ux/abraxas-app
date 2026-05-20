@@ -687,16 +687,19 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
       {/* ── STEP 7: SUCCESS + RECEIPT ── */}
       {step==="queue"&&mintedAsset&&(
         <div>
-          <TransactionReceipt
-            txSignature={txSig}
-            amountAbra={fee}
-            assetName={mintedAsset.name}
-            assetClass={mintedAsset.assetClass}
-            tokenId={mintedAsset.tokenId}
-            onContinue={()=>{
-              if(onSuccess) onSuccess();
-            }}
-          />
+          import { TokenizationProgress } from "@/components/TokenizationProgress";
+
+// In step==="queue":
+{step==="queue" && mintedAsset && (
+  <TokenizationProgress
+    assetName={mintedAsset.name}
+    assetClass={mintedAsset.assetClass}
+    txSignature={txSig}
+    tokenId={mintedAsset.tokenId}
+    amountAbra={fee}
+    onViewPortfolio={() => { if(onSuccess) onSuccess(); }}
+  />
+)}
         </div>
       )}
     </div>
