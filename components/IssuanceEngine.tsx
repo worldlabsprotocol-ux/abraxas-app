@@ -1,10 +1,8 @@
-// FILE: components/IssuanceEngine.tsx
 "use client";
 // Full 7-step tokenization studio.
 // Asset classes include Property + Short-Term Rental (Airbnb use case).
 // Real SPL ABRA deduction. Supabase sync after mint. TransactionReceipt shown.
 // SOL payment UI scaffolded for X402 integration.
-"use client";
 
 import { useState, useCallback, useRef }    from "react";
 import { useWallet }                         from "@solana/wallet-adapter-react";

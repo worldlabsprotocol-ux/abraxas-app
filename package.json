@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev":     "next dev",
-    "build":   "next build",
-    "start":   "next start",
-    "lint":    "next lint",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts"
   },
   "dependencies": {
@@ -21,10 +21,12 @@
     "@solana/web3.js": "^1.95.4",
     "@supabase/supabase-js": "^2.105.4",
     "@tanstack/react-query": "^5.51.21",
+    "buffer": "^6.0.3",
     "next": "14.2.35",
-    "next-auth": "^4.24.7",
+    "next-auth": "^4.24.14",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "tweetnacl": "^1.0.3",
     "viem": "^2.21.4",
     "wagmi": "^2.12.7",
     "zustand": "^5.0.13"
