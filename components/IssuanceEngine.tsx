@@ -15,6 +15,7 @@ import { useAbraBalance }                    from "@/lib/hooks/useAbraBalance";
 import { deductAbraForMint,
          simulateMintDeduction }             from "@/lib/services/mintService";
 import { TransactionReceipt }               from "@/components/TransactionReceipt";
+import { TokenizationProgress }             from "@/components/TokenizationProgress";
 
 // ── Asset class config ────────────────────────────────────────────────────────
 const CLASSES: Record<string, {
@@ -212,7 +213,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
               borderRadius:1,width:`${pct}%`,transition:"width 0.4s ease"}}/>
           </div>
         </div>
-      )}
 
       {/* ── STEP 1: SELECT ASSET CLASS ── */}
       {step==="upload"&&(
@@ -261,7 +261,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                         Real Estate
                       </span>
                     </div>
-                  )}
                 </div>
               );
             })}
@@ -287,7 +286,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                   while continuing to earn rental income.
                 </div>
               </div>
-            )}
           </div>
 
           {/* Image upload */}
@@ -313,7 +311,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                     JPG, PNG, HEIC supported
                   </div>
                 </>
-              )}
             </div>
             <input ref={fileRef} type="file" accept="image/*"
               onChange={onFile} style={{display:"none"}}/>
@@ -327,7 +324,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
             Continue with {assetClass} →
           </button>
         </div>
-      )}
 
       {/* ── STEP 2: METADATA ── */}
       {step==="metadata"&&(
@@ -380,7 +376,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                   </div>
                 ))}
               </div>
-            )}
             {(assetClass==="Watches"||assetClass==="Spirits"||assetClass==="Cards (PSA/BGS)"||assetClass==="Comics (CGC)")&&(
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.625rem"}}>
                 <div>
@@ -394,7 +389,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                     placeholder="1986" style={inputStyle()}/>
                 </div>
               </div>
-            )}
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
@@ -414,7 +408,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
             </button>
           </div>
         </div>
-      )}
 
       {/* ── STEP 3: VALUATION ── */}
       {step==="valuation"&&(
@@ -460,7 +453,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                 </div>
               ))}
             </div>
-          )}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
             <button onClick={()=>setStep("metadata")} style={{
@@ -473,7 +465,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
               background:"#7c3aed",color:"#fff"}}>Continue →</button>
           </div>
         </div>
-      )}
 
       {/* ── STEP 4: WALLET ── */}
       {step==="wallet"&&(
@@ -531,7 +522,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                 This address will own the Token-2022 position on Solana.
               </div>
             </div>
-          )}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
             <button onClick={()=>setStep("valuation")} style={{
@@ -544,7 +534,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
               background:"#7c3aed",color:"#fff"}}>Continue →</button>
           </div>
         </div>
-      )}
 
       {/* ── STEP 5: FEE + PAYMENT ── */}
       {step==="fee"&&(
@@ -584,7 +573,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                 color:"rgba(255,255,255,0.3)",fontFamily:mono}}>
                 SOL payment via X402 protocol — launching soon
               </div>
-            )}
           </div>
 
           {/* Fee breakdown */}
@@ -636,7 +624,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                   Buy ABRA on Jupiter →
                 </a>
               </div>
-            )}
           </div>
 
           {errorMsg&&(
@@ -645,7 +632,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
               marginBottom:"0.875rem",fontSize:"0.48rem",color:"#f26b6b",lineHeight:1.5}}>
               {errorMsg}
             </div>
-          )}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
             <button onClick={()=>setStep("wallet")} style={{
@@ -662,7 +648,6 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
             </button>
           </div>
         </div>
-      )}
 
       {/* ── STEP 6: PROCESSING ── */}
       {step==="processing"&&(
@@ -682,26 +667,17 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
           </div>
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
-      )}
 
-      {/* ── STEP 7: SUCCESS + RECEIPT ── */}
+      {/* ── STEP 7: SUCCESS + PROGRESS ── */}
       {step==="queue"&&mintedAsset&&(
-        <div>
-          import { TokenizationProgress } from "@/components/TokenizationProgress";
-
-// In step==="queue":
-{step==="queue" && mintedAsset && (
-  <TokenizationProgress
-    assetName={mintedAsset.name}
-    assetClass={mintedAsset.assetClass}
-    txSignature={txSig}
-    tokenId={mintedAsset.tokenId}
-    amountAbra={fee}
-    onViewPortfolio={() => { if(onSuccess) onSuccess(); }}
-  />
-)}
-        </div>
+        <TokenizationProgress
+          assetName={mintedAsset.name}
+          assetClass={mintedAsset.assetClass}
+          txSignature={txSig}
+          tokenId={mintedAsset.tokenId}
+          amountAbra={fee}
+          onViewPortfolio={()=>{ if(onSuccess) onSuccess(); }}
+        />
       )}
-    </div>
   );
 }
