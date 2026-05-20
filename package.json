@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev":     "next dev",
+    "build":   "next build",
+    "start":   "next start",
+    "lint":    "next lint",
+    "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.1.6",
@@ -53,4 +54,3 @@
     "node": ">=18.17.0"
   }
 }
-"db:seed": "npx ts-node -e \"require('dotenv').config({path:'.env.local'})\" scripts/seed.ts"

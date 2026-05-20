@@ -1,11 +1,7 @@
-import NextAuth from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+// FILE: app/api/auth/[...nextauth]/route.ts
+// NextAuth catch-all route. All imports at top.
+import NextAuth    from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-/**
- * App Router-compatible NextAuth handler.
- * Both GET and POST are required — GET for the sign-in page renders,
- * POST for callback exchanges.
- */
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };

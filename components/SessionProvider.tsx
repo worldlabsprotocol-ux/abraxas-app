@@ -1,10 +1,21 @@
+// FILE: components/SessionProvider.tsx
+// Wraps the app with NextAuth SessionProvider.
+// Must wrap SolanaProvider in app/layout.tsx or providers.tsx.
 "use client";
 
 import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
-import { ReactNode } from "react";
+import type { Session } from "next-auth";
 
-/** Thin wrapper around next-auth's SessionProvider so we can mark it
-    "use client" without forcing the rest of providers.tsx to inherit. */
-export function SessionProvider({ children }: { children: ReactNode }) {
-  return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>;
+export function SessionProvider({
+  children,
+  session,
+}: {
+  children:  React.ReactNode;
+  session?:  Session | null;
+}) {
+  return (
+    <NextAuthSessionProvider session={session}>
+      {children}
+    </NextAuthSessionProvider>
+  );
 }
