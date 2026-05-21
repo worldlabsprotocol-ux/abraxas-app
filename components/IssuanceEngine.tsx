@@ -75,7 +75,7 @@ async function syncToSupabase(asset: {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
+export default function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
   const [step,       setStep]       = useState<Step>("upload");
   const [assetClass, setAssetClass] = useState<AssetClassKey>("Watches");
   const [preview,    setPreview]    = useState<string|undefined>();
@@ -259,7 +259,8 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                         Real Estate
                       </span>
                     </div>
-                </div>
+                    </div>
+                  )}
               );
             })}
           </div>
@@ -285,6 +286,7 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                 </div>
               </div>
           </div>
+            )}
 
           {/* Image upload */}
           <div style={{marginBottom:"1.25rem"}}>
@@ -374,6 +376,7 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                   </div>
                 ))}
               </div>
+            )}
             {(assetClass==="Watches"||assetClass==="Spirits"||assetClass==="Cards (PSA/BGS)"||assetClass==="Comics (CGC)")&&(
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.625rem"}}>
                 <div>
@@ -387,6 +390,7 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
                     placeholder="1986" style={inputStyle()}/>
                 </div>
               </div>
+            )}
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
@@ -406,6 +410,7 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
             </button>
           </div>
         </div>
+      )}
 
       {/* ── STEP 3: VALUATION ── */}
       {step==="valuation"&&(
