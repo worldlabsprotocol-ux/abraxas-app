@@ -93,7 +93,7 @@ export function CompactWallet() {
                       background:connected?"#14F195":"rgba(255,255,255,0.3)" }}/>
         <span style={{ fontSize:"0.5rem",fontWeight:700,
                        color:"rgba(255,255,255,0.7)",fontFamily:MONO }}>
-          {connected ? short : (user?.name ?? String(user?.email ?? "Account")).split("@")[0]}
+          {connected ? short : String(user?.name ?? user?.email ?? "Account").split("@")[0]}
         </span>
         {!loading && balance > 0 && connected && (
           <span style={{ fontSize:"0.44rem",color:"rgba(200,169,110,0.6)",
