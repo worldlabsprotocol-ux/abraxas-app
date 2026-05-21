@@ -210,6 +210,7 @@ export function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
               borderRadius:1,width:`${pct}%`,transition:"width 0.4s ease"}}/>
           </div>
         </div>
+      )}
 
       {/* ── STEP 1: SELECT ASSET CLASS ── */}
       {step==="upload"&&(
