@@ -189,81 +189,61 @@ export default function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }
       boxSizing:"border-box" as const};
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-  return (
-    <div style={{maxWidth:560,margin:"0 auto"}}>
+ {/* ── STEP 1: SELECT ASSET CLASS ── */}
+     {step==="upload"&&(
+       <div>
+         <h2 style={{fontWeight:900,fontSize:"1rem",color:"#f0f0f0",margin:"0 0 0.25rem"}}>
+           Select Asset Class
+         </h2>
+         <p style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.3)",
+           margin:"0 0 1.25rem",lineHeight:1.6}}>
+           Choose the category that best describes your real-world asset.
+           Each class has specific verification requirements and lending parameters.
+         </p>
 
-      {/* Progress bar */}
-      {step!=="queue"&&(
-        <div style={{marginBottom:"1.25rem"}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"0.3rem"}}>
-            <span style={{fontSize:"0.38rem",color:"rgba(255,255,255,0.25)",fontFamily:mono,
-              textTransform:"uppercase",letterSpacing:"0.12em"}}>
-              Step {stepNum[step]} of 7
-            </span>
-            <span style={{fontSize:"0.38rem",fontWeight:700,color:"#C8A96E",fontFamily:mono}}>
-              {pct}%
-            </span>
-          </div>
-          <div style={{height:2,background:"rgba(255,255,255,0.07)",borderRadius:1}}>
-            <div style={{height:"100%",background:"linear-gradient(90deg,#7c3aed,#C8A96E)",
-              borderRadius:1,width:`${pct}%`,transition:"width 0.4s ease"}}/>
-          </div>
-        </div>
-      )}
+         <div style={{display:"grid",
+           gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,160px),1fr))",
+           gap:"0.5rem",marginBottom:"1.25rem"}}>
+           {Object.entries(CLASSES).map(([name,cfg])=>{
+             const active = assetClass===name;
+             return(
+               <div key={name} onClick={()=>setAssetClass(name as AssetClassKey)} style={{
+                 padding:"0.875rem",borderRadius:"7px",cursor:"pointer",
+                 border:`1px solid \( {active?` \){cfg.color}40`:cfg.color+"18"}`,
+                 background:active?`\( {cfg.color}10`:` \){cfg.color}04`,
+                 transition:"all 0.15s",
+               }}
+               onMouseEnter={e=>{if(!active){const el=e.currentTarget as HTMLDivElement;
+                 el.style.background=`\( {cfg.color}08`;el.style.borderColor=` \){cfg.color}30`;}}}
+               onMouseLeave={e=>{if(!active){const el=e.currentTarget as HTMLDivElement;
+                 el.style.background=`\( {cfg.color}04`;el.style.borderColor=` \){cfg.color}18`;}}}>
+                 
+                 <div style={{fontSize:"1rem",color:cfg.color,opacity:active?0.9:0.5,
+                   marginBottom:"0.25rem",lineHeight:1}}>{cfg.icon}</div>
+                 <div style={{fontWeight:800,fontSize:"0.56rem",color:active?"#f0f0f0":"rgba(255,255,255,0.7)",
+                   marginBottom:2}}>{name}</div>
+                 <div style={{fontSize:"0.34rem",color:cfg.color,fontFamily:mono,
+                   marginBottom:2,opacity:0.7}}>{cfg.category}</div>
+                 <div style={{fontSize:"0.36rem",color:"rgba(255,255,255,0.25)",fontFamily:mono}}>
+                   {cfg.ltv}% LTV · {cfg.fee} ABRA
+                 </div>
 
-      {/* ── STEP 1: SELECT ASSET CLASS ── */}
-      {step==="upload"&&(
-        <div>
-          <h2 style={{fontWeight:900,fontSize:"1rem",color:"#f0f0f0",margin:"0 0 0.25rem"}}>
-            Select Asset Class
-          </h2>
-          <p style={{fontSize:"0.5rem",color:"rgba(255,255,255,0.3)",
-            margin:"0 0 1.25rem",lineHeight:1.6}}>
-            Choose the category that best describes your real-world asset.
-            Each class has specific verification requirements and lending parameters.
-          </p>
+                 {/* Property/Airbnb highlight */}
+                 {(name==="Property"||name==="Short-Term Rental")&&(
+                   <div style={{marginTop:4,padding:"1px 5px",borderRadius:3,
+                     background:`${cfg.color}15`,border:`1px solid ${cfg.color}30`,
+                     display:"inline-block"}}>
+                     <span style={{fontSize:"0.3rem",fontWeight:700,color:cfg.color,
+                       fontFamily:mono,textTransform:"uppercase",letterSpacing:"0.08em"}}>
+                       Real Estate
+                     </span>
+                   </div>
+                 )}
+               </div>
+             );
+           })}
+         </div>
 
-          <div style={{display:"grid",
-            gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,160px),1fr))",
-            gap:"0.5rem",marginBottom:"1.25rem"}}>
-            {Object.entries(CLASSES).map(([name,cfg])=>{
-              const active = assetClass===name;
-              return(
-                <div key={name} onClick={()=>setAssetClass(name as AssetClassKey)} style={{
-                  padding:"0.875rem",borderRadius:"7px",cursor:"pointer",
-                  border:`1px solid ${active?`${cfg.color}40`:cfg.color+"18"}`,
-                  background:active?`${cfg.color}10`:`${cfg.color}04`,
-                  transition:"all 0.15s",
-                }}
-                onMouseEnter={e=>{if(!active){const el=e.currentTarget as HTMLDivElement;
-                  el.style.background=`${cfg.color}08`;el.style.borderColor=`${cfg.color}30`;}}}
-                onMouseLeave={e=>{if(!active){const el=e.currentTarget as HTMLDivElement;
-                  el.style.background=`${cfg.color}04`;el.style.borderColor=`${cfg.color}18`;}}}>
-                  <div style={{fontSize:"1rem",color:cfg.color,opacity:active?0.9:0.5,
-                    marginBottom:"0.25rem",lineHeight:1}}>{cfg.icon}</div>
-                  <div style={{fontWeight:800,fontSize:"0.56rem",color:active?"#f0f0f0":"rgba(255,255,255,0.7)",
-                    marginBottom:2}}>{name}</div>
-                  <div style={{fontSize:"0.34rem",color:cfg.color,fontFamily:mono,
-                    marginBottom:2,opacity:0.7}}>{cfg.category}</div>
-                  <div style={{fontSize:"0.36rem",color:"rgba(255,255,255,0.25)",fontFamily:mono}}>
-                    {cfg.ltv}% LTV · {cfg.fee} ABRA
-                  </div>
-                  {/* Property/Airbnb highlight */}
-                  {(name==="Property"||name==="Short-Term Rental")&&(
-                    <div style={{marginTop:4,padding:"1px 5px",borderRadius:3,
-                      background:`${cfg.color}15`,border:`1px solid ${cfg.color}30`,
-                      display:"inline-block"}}>
-                      <span style={{fontSize:"0.3rem",fontWeight:700,color:cfg.color,
-                        fontFamily:mono,textTransform:"uppercase",letterSpacing:"0.08em"}}>
-                        Real Estate
-                      </span>
-                    </div>
-                    </div>
-                  )}
-              );
-            })}
-          </div>
 
           {/* Description for selected class */}
           <div style={{padding:"0.875rem",background:"rgba(255,255,255,0.02)",
