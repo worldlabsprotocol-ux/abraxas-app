@@ -41,7 +41,7 @@ async function syncToSupabase(data: Record<string, unknown>): Promise<void> {
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
-export default function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
+function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
   const [step,        setStep]       = useState<Step>("upload");
   const [cls,         setCls]        = useState<AssetClassKey>("Watches");
   const [preview,     setPreview]    = useState<string | undefined>();
@@ -106,7 +106,7 @@ export default function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }
     setErrorMsg("");
     const wallet = publicKey?.toBase58() ?? "demo-wallet";
 
-    let result: { success: boolean; txSignature?: string; error?: string };
+    let result: { success: boolean; txSignature?: string | null; error?: string | null };
 
     if (connected && publicKey && signTransaction) {
       result = await deductAbraForMint({
@@ -146,7 +146,7 @@ export default function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }
       return;
     }
 
-    const finalTx = result.txSignature ?? assetResult.txSignature;
+    const finalTx = result.txSignature ?? assetResult.txSignature ?? "";
     setTxSig(finalTx);
     setMinted({ name: assetResult.name, assetClass: assetResult.assetClass, tokenId: assetResult.tokenId });
 
@@ -535,3 +535,6 @@ export default function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }
     </div>
   );
 }
+
+export default IssuanceEngine;
+export { IssuanceEngine };

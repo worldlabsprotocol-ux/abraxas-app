@@ -1,8 +1,8 @@
+"use client";
 // FILE: components/AssetDetailClient.tsx
 // Client component for asset detail — all real data wired.
 // Uses CertificateDisplay, LiveEventFeed, BorrowPanel.
 // All imports at top.
-"use client";
 
 import { useState }             from "react";
 import { CertificateDisplay }   from "@/components/CertificateDisplay";

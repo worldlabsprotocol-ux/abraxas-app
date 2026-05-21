@@ -1,211 +1,210 @@
-Abraxas Protocol
+# Abraxas Protocol
 
-[![Live App](https://img.shields.io/badge/Live_App-abraxas--app.vercel.app-9945FF?style=for-the-badge&logo=vercel)](https://abraxas-app.vercel.app/)
+> **Verification + Collateral Intelligence Infrastructure for Real-World Assets on Solana**
 
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-black?logo=vercel)](https://abraxas-app.vercel.app)
+[![Solana](https://img.shields.io/badge/Solana-Mainnet-9945FF?logo=solana)](https://solana.com)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-[![Buy $ABRA](https://img.shields.io/badge/Buy_$ABRA_on_Jupiter-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
+**Live:** [abraxas-app.vercel.app](https://abraxas-app.vercel.app) · **Token:** `$ABRA` · **Chain:** Solana Mainnet
 
+---
 
-[![Buy $ABRA](https://img.shields.io/badge/Buy_$ABRA_on_Bags-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://bags.fm/5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS)
+## What Is Abraxas?
 
-Verification + Collateral Intelligence Infrastructure for Real-World Assets on Solana.
-Not another tokenization marketplace. Abraxas runs a seven-stage cryptographic verification pipeline — authentication partners co-sign every state transition, provenance is anchored on Solana, and the result is a portable Token-2022 certificate that any lender can independently verify.
+Most tokenization platforms stop at minting a generic NFT. Abraxas runs a **seven-stage cryptographic verification pipeline** — authentication partners co-sign every state transition, provenance is anchored on Solana, and the result is a portable Token-2022 certificate that any lender can independently verify.
 
-Architecture
-┌─────────────────────────────────────────────────────────┐
-│  CLIENT — Next.js 14 · Solana Wallet Adapter · Zustand  │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│  SERVICE LAYER                                           │
-│  lib/services/assetService.ts    — Supabase CRUD        │
-│  lib/services/riskEngine.ts      — Live price scoring   │
-│  lib/services/bagsService.ts     — Bags.fm CLI bridge   │
-│  lib/services/verificationStateMachine.ts               │
-│  lib/services/eventService.ts    — append-only events   │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│  SUPABASE / POSTGRES                                     │
-│  17 tables · RLS on all · append-only asset_events      │
-│  Materialized view: asset_intelligence_view             │
-│  State machine: allowed_transitions table               │
-│  RPCs: get_asset_timeline, verify_certificate           │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│  SOLANA MAINNET                                          │
-│  Token-2022 verification certificates                   │
-│  Anchor program: abraxas_verification                   │
-│  ABRA SPL token — protocol fee                          │
-│  PDA: ["certificate", asset_id] seeds                   │
-└─────────────────────────────────────────────────────────┘
+```
+Asset Submission → Partner Review → Provenance Validation
+→ Custody Assignment → Risk Scoring
+→ Certificate Mint (Token-2022) → Collateral Activation → USDC via Loopscale
+```
 
+---
 
-Key Features
-Feature
-Status
-7-stage verification pipeline
-✅ Live
-Deterministic DB state machine
-✅ Live
-Token-2022 asset tokenization
-✅ Live
-Real SPL ABRA deduction
-✅ Live
-Append-only event sourcing
-✅ Live
-Public certificate verification
-✅ Live
-4-factor collateral scoring (live prices)
-✅ Live
-Energy / Mineral Rights vertical
-✅ Live
-Bags.fm CLI business revenue integration
-✅ Live
-Admin verification operations
-✅ Live
-Sophia AI Guardian + Circuit Safety
-✅ Live
-Anchor certificate program (deployed)
-🔄 Deploying
-Loopscale borrow live data
-📋 Planned
+## ✨ Features
 
+| Feature | Status |
+|---|---|
+| 7-stage verification pipeline | ✅ Live |
+| Token-2022 asset tokenization | ✅ Live |
+| Real $ABRA fee deduction on Solana | ✅ Live |
+| Append-only event sourcing | ✅ Live |
+| Public certificate verification endpoint | ✅ Live |
+| 4-factor collateral scoring (live prices) | ✅ Live |
+| Energy / Mineral Rights vertical | ✅ Live |
+| Bags.fm business revenue integration | ✅ Live |
+| Multi-provider authentication | ✅ Live |
+| Language selector (10 languages) | ✅ Live |
+| Sophia AI Guardian + Circuit Safety | ✅ Live |
+| Anchor certificate program | 🔄 Deploying |
 
-API Endpoints
-Public (no authentication required)
-GET  /api/certificates/[id]/verify     — verify any certificate
-GET  /api/assets/[id]/timeline         — full event history
-GET  /api/prices?symbols=gold,solana   — live prices (CryptoRank + CoinGecko)
+---
 
-Authenticated
-GET  /api/assets/wallet/[wallet]           — wallet asset portfolio
-GET  /api/assets/[id]                      — full asset intelligence
-POST /api/assets                           — create asset + initiate pipeline
-POST /api/bags/tokenize                    — tokenize business revenue via Bags.fm
-POST /api/verification/initiate            — start verification record
-POST /api/verification/[id]/advance        — advance pipeline stage
-PATCH /api/assets/[id]/status             — update verification status
+## Authentication
 
-Cron (protected by CRON_SECRET)
-GET  /api/cron/bags-sync                   — sync Bags.fm revenue positions
+Abraxas supports four login methods — reducing onboarding friction for both crypto-native and traditional users:
 
+| Method | Description |
+|---|---|
+| **Solana Wallet** | Phantom, Solflare — full on-chain access |
+| **GitHub** | OAuth 2.0 — read access until wallet linked |
+| **X (Twitter)** | OAuth 2.0 — read access until wallet linked |
+| **Email** | Magic link via Resend — no password required |
 
-Verification Pipeline
-Asset Submission → Authentication Partner Review
-  → Provenance + Ownership Validation
-    → Custody / Vault Assignment
-      → Risk + Collateral Scoring (live prices)
-        → On-Chain Certificate Mint (Anchor PDA)
-          → Collateral Activation → USDC via Loopscale
+**Wallet Linking:** Social/email users can link a Solana wallet via a one-time Ed25519 signature. Once linked, all on-chain actions (tokenization, ABRA fees, certificate minting) become available.
 
-Transitions enforced at database level via allowed_transitions table. No frontend-only state changes.
+---
 
-Supported Asset Classes
-Class
-LTV Cap
-Fee (ABRA)
-Fine Metals
-80%
-200
-Luxury Watches
-65%
-150
-Real Estate
-60%
-300
-Mineral Rights / Non-Op WI
-55%
-500
-Graded Cards
-55%
-110
-Fine Art
-50%
-180
-Business Revenue (Bags.fm)
-55%
-200
+## Language Support
 
+The **Language Selector** is in the top navigation bar — look for the flag icon (🇺🇸 EN ▼). Click to switch between 10 supported languages instantly. The interface updates without a page reload.
 
-Tech Stack
-Frontend: Next.js 14.2, TypeScript, Solana Wallet Adapter, Zustand
-Chain: Solana Mainnet, Token-2022, Anchor framework
-Program: abraxas_verification — anchor build && anchor deploy --provider.cluster mainnet
-Token: $ABRA — 5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS
-Database: Supabase Postgres 15, RLS on all 17 tables
-Prices: CryptoRank v2 → CoinGecko fallback
-Revenue: Bags.fm CLI integration
-Deploy: Vercel (main branch)
+Supported: English · Español · Português · Français · Deutsch · 中文 · 日本語 · 한국어 · العربية · Русский
 
-Local Development
-# 1. Install
+---
+
+## Architecture
+
+```
+┌───────────────────────────────────────────────────────┐
+│  CLIENT — Next.js 14 · Wallet Adapter · Zustand        │
+└──────────────────────┬────────────────────────────────┘
+                       │
+┌──────────────────────▼────────────────────────────────┐
+│  SERVICE LAYER                                         │
+│  lib/services/assetService.ts   — Supabase CRUD        │
+│  lib/services/riskEngine.ts     — Live price scoring   │
+│  lib/services/bagsService.ts    — Bags.fm CLI bridge   │
+│  lib/services/eventService.ts   — Append-only events   │
+└──────────────────────┬────────────────────────────────┘
+                       │
+┌──────────────────────▼────────────────────────────────┐
+│  SUPABASE / POSTGRES                                   │
+│  17 tables · RLS on all · asset_events append-only     │
+│  Materialized view: asset_intelligence_view            │
+│  State machine: allowed_transitions                    │
+└──────────────────────┬────────────────────────────────┘
+                       │
+┌──────────────────────▼────────────────────────────────┐
+│  SOLANA MAINNET                                        │
+│  Token-2022 certificates · Anchor program              │
+│  $ABRA SPL token · PDA: ["certificate", asset_id]      │
+└───────────────────────────────────────────────────────┘
+```
+
+---
+
+## API Reference
+
+### Public (no auth)
+
+```
+GET  /api/certificates/[id]/verify    — verify any certificate
+GET  /api/assets/[id]/timeline        — full event history
+GET  /api/prices?symbols=gold,solana  — live prices
+```
+
+### Authenticated
+
+```
+GET  /api/assets/wallet/[wallet]      — wallet portfolio
+POST /api/assets                      — create + initiate pipeline
+POST /api/bags/tokenize               — tokenize business revenue
+POST /api/verification/initiate       — start verification record
+```
+
+---
+
+## Supported Asset Classes
+
+| Class | Max LTV | Fee (ABRA) |
+|---|---|---|
+| Fine Metals | 80% | 200 |
+| Luxury Watches | 65% | 150 |
+| Real Estate | 60% | 300 |
+| Mineral Rights / Non-Op WI | 55% | 500 |
+| Graded Cards (PSA/BGS) | 55% | 110 |
+| Fine Art | 50% | 180 |
+| Business Revenue (Bags.fm) | 55% | 200 |
+
+---
+
+## Tech Stack
+
+- **Frontend**: Next.js 14.2, TypeScript, Solana Wallet Adapter
+- **Auth**: NextAuth.js v4 (Email + GitHub + X)
+- **Chain**: Solana Mainnet, Token-2022, Anchor
+- **Database**: Supabase Postgres 15 + RLS
+- **Prices**: CryptoRank v2 → CoinGecko fallback
+- **Deployment**: Vercel
+
+---
+
+## Local Development
+
+```bash
+# 1. Clone + install
+git clone https://github.com/worldlabsprotocol-ux/abraxas-app
 npm install
 
 # 2. Environment
-cp .env.example .env.local
-# Required:
-# NEXT_PUBLIC_SUPABASE_URL
-# NEXT_PUBLIC_SUPABASE_ANON_KEY
-# SUPABASE_SERVICE_ROLE_KEY
-# NEXT_PUBLIC_ADMIN_PIN=abraxas2026
-# CRYPTORANK_API_KEY
-# NEXT_PUBLIC_SOLANA_RPC
-# NEXT_PUBLIC_VERIFICATION_PROGRAM_ID
-# CRON_SECRET
+cp .env.local.example .env.local
+# Fill in your keys
 
-# 3. Schema (Supabase SQL Editor)
-# Paste: supabase/abraxas_schema_v41.sql
+# 3. Database
+# Run supabase/abraxas_schema_v41.sql in Supabase SQL editor
 
 # 4. Seed demo data
 npm run db:seed
 
-# 5. Dev server
+# 5. Dev
 npm run dev
+```
 
-Deploy Anchor Program
+### Deploy Anchor Program
+
+```bash
 cd abraxas-program
-anchor keys list                           # copy the program ID
-# paste into programs/verification/src/lib.rs declare_id!()
-# paste into Anchor.toml [programs.mainnet]
+anchor keys list        # copy output key
+# Update declare_id!() in programs/verification/src/lib.rs
+# Update Anchor.toml [programs.mainnet]
 anchor build
 anchor deploy --provider.cluster mainnet
+```
 
+---
 
-Environment Variables
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_ADMIN_PIN=abraxas2026
-CRYPTORANK_API_KEY=
-NEXT_PUBLIC_SOLANA_RPC=https://your-rpc.com
-NEXT_PUBLIC_VERIFICATION_PROGRAM_ID=ABRAXASverify1111111111111111111111111111111
-NEXT_PUBLIC_APP_URL=https://abraxas-app.vercel.app
-CRON_SECRET=
+## Environment Variables
 
+See `.env.local.example` for the complete list including:
+- Supabase connection strings
+- NextAuth providers (GitHub, X, Email/Resend)
+- Solana RPC endpoint
+- CryptoRank API key
+- Cron secret
 
-Security
-Row Level Security on all 17 tables
-asset_events is INSERT-only (no UPDATE/DELETE policy = physically blocked)
-Bags.fm CLI: argument whitelist, shell metacharacter stripping, no raw user input
-State machine transitions enforced in Postgres, not application code
-Service role key server-side only — never exposed to client
+---
 
-Roadmap
-Active
-Solana Anchor program deployment
-Bags.fm business revenue tokenization
-Asset detail pages with full intelligence
-Next
-Merkle provenance anchoring on-chain
-ZK certificate verification
-Loopscale live health factor feed
-Verifier reputation staking system
-Later
-Multi-chain certificate bridging
-Institutional API + SDK
-Autonomous Sophia agent activation
+## Roadmap
 
-Built by World Labs Protocol · abraxas-app.vercel.app · $ABRA on Solana
+**Active**
+- Solana Anchor program deployment + PDA certificate system
+- Bags.fm business revenue tokenization
+- Merkle provenance anchoring on-chain
 
+**Next**
+- Loopscale live health factor feed
+- ZK certificate verification
+- Verifier reputation staking
+
+**Later**
+- Multi-chain certificate bridging
+- Institutional API + SDK
+- Autonomous Sophia agent activation
+- Solana dApp Store listing
+
+---
+
+Built by World Labs Protocol · [abraxas-app.vercel.app](https://abraxas-app.vercel.app)

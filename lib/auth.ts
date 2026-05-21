@@ -1,9 +1,6 @@
 // FILE: lib/auth.ts
-// NextAuth configuration — Email + GitHub + X (Twitter)
-// JWT sessions only — no database adapter required.
-// Wallet is stored in the JWT token and retrieved via session callback.
-// All imports at top. No @auth/supabase-adapter dependency.
-
+// NextAuth config — Email + GitHub + X.
+// Session extended via types/next-auth.d.ts — zero unsafe casts.
 import { NextAuthOptions } from "next-auth";
 import GitHubProvider      from "next-auth/providers/github";
 import TwitterProvider     from "next-auth/providers/twitter";
@@ -13,10 +10,10 @@ export const authOptions: NextAuthOptions = {
   providers: [
     EmailProvider({
       server: {
-        host:   process.env.EMAIL_SERVER_HOST    ?? "smtp.resend.com",
-        port:   parseInt(process.env.EMAIL_SERVER_PORT ?? "465"),
+        host: process.env.EMAIL_SERVER_HOST  ?? "smtp.resend.com",
+        port: parseInt(process.env.EMAIL_SERVER_PORT ?? "465"),
         auth: {
-          user: process.env.EMAIL_SERVER_USER    ?? "resend",
+          user: process.env.EMAIL_SERVER_USER     ?? "resend",
           pass: process.env.EMAIL_SERVER_PASSWORD ?? "",
         },
       },
@@ -36,26 +33,26 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // JWT-only — no database adapter, no extra packages
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
 
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger, session: updateSession }) {
       if (user) {
-        token.userId = user.id;
-        token.email  = user.email ?? token.email;
-        token.name   = user.name  ?? token.name;
+        token.userId        = user.id;
+        token.walletAddress = (user as { walletAddress?: string | null }).walletAddress ?? null;
       }
-      // Allow wallet address to be updated via useSession().update()
-      if (trigger === "update" && session?.walletAddress) {
-        token.walletAddress = session.walletAddress;
+      if (trigger === "update" && updateSession?.walletAddress !== undefined) {
+        token.walletAddress = updateSession.walletAddress as string | null;
       }
       return token;
     },
+
     async session({ session, token }) {
-      (session as Record<string,unknown>).walletAddress = token.walletAddress ?? null;
+      // Types are extended in types/next-auth.d.ts — no cast needed
+      session.walletAddress = token.walletAddress ?? null;
       if (session.user) {
-        (session.user as Record<string,unknown>).id = token.userId;
+        session.user.id            = token.userId ?? "";
+        session.user.walletAddress = token.walletAddress ?? null;
       }
       return session;
     },
@@ -67,6 +64,6 @@ export const authOptions: NextAuthOptions = {
     error:         "/auth/error",
   },
 
-  secret: process.env.NEXTAUTH_SECRET ?? "fallback-dev-secret-change-in-production",
+  secret: process.env.NEXTAUTH_SECRET ?? "change-this-in-production",
   debug:  process.env.NODE_ENV === "development",
 };
