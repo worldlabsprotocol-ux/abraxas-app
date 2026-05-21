@@ -1,44 +1,46 @@
 // FILE: lib/solana/program.ts
-// Anchor program client — IDL uses v0.30+ field names (writable/signer).
-// Lazy-loaded only on the server — never bundled for the browser.
-import type { Idl, AnchorProvider } from "@coral-xyz/anchor";
+// Anchor v0.30+: new Program(idl, provider) — no programId argument.
+// programId lives in idl.address. All dynamic imports = zero browser errors.
+"use client";
 
-export const PROGRAM_ID_STRING = 
+export const PROGRAM_ID_STRING =
   process.env.NEXT_PUBLIC_VERIFICATION_PROGRAM_ID ??
   "ABRAXASverify1111111111111111111111111111111";
 
-// IDL uses Anchor v0.30+ format: writable/signer instead of isMut/isSigner
-export const IDL: Idl = {
+// IDL includes address — required by Anchor v0.30+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const IDL: any = {
+  address: "ABRAXASverify1111111111111111111111111111111",
   version: "0.1.0",
   name:    "abraxas_verification",
   instructions: [
     {
       name: "mintCertificate",
       accounts: [
-        { name:"certificate",   writable:true  },
-        { name:"payer",         writable:true,  signer:true },
-        { name:"verifier",      signer:true },
-        { name:"systemProgram" },
-      ] as Idl["instructions"][0]["accounts"],
-      args: [{ name:"params", type:{ defined:"CertificateParams" } }],
+        { name: "certificate",   writable: true              },
+        { name: "payer",         writable: true, signer: true },
+        { name: "verifier",                      signer: true },
+        { name: "systemProgram"                               },
+      ],
+      args: [{ name: "params", type: { defined: { name: "CertificateParams" } } }],
     },
     {
       name: "revokeCertificate",
       accounts: [
-        { name:"certificate", writable:true },
-        { name:"verifier",    signer:true },
-      ] as Idl["instructions"][0]["accounts"],
-      args: [{ name:"reason", type:"string" }],
+        { name: "certificate", writable: true              },
+        { name: "verifier",                   signer: true },
+      ],
+      args: [{ name: "reason", type: "string" }],
     },
     {
       name: "updateRiskScore",
       accounts: [
-        { name:"certificate", writable:true },
-        { name:"verifier",    signer:true },
-      ] as Idl["instructions"][0]["accounts"],
+        { name: "certificate", writable: true              },
+        { name: "verifier",                   signer: true },
+      ],
       args: [
-        { name:"newCollateralScore", type:"u8" },
-        { name:"newFraudRisk",       type:"u8" },
+        { name: "newCollateralScore", type: "u8" },
+        { name: "newFraudRisk",       type: "u8" },
       ],
     },
   ],
@@ -48,17 +50,17 @@ export const IDL: Idl = {
       type: {
         kind: "struct",
         fields: [
-          { name:"assetId",          type:"publicKey" },
-          { name:"verifier",         type:"publicKey" },
-          { name:"provenanceRoot",   type:{ array:["u8",32] } },
-          { name:"custodyRef",       type:{ array:["u8",32] } },
-          { name:"collateralScore",  type:"u8" },
-          { name:"fraudRisk",        type:"u8" },
-          { name:"issuedAt",         type:"i64" },
-          { name:"validUntil",       type:"i64" },
-          { name:"revoked",          type:"bool" },
-          { name:"revokedAt",        type:{ option:"i64" } },
-          { name:"revocationReason", type:"string" },
+          { name: "assetId",          type: "publicKey"           },
+          { name: "verifier",         type: "publicKey"           },
+          { name: "provenanceRoot",   type: { array: ["u8", 32] } },
+          { name: "custodyRef",       type: { array: ["u8", 32] } },
+          { name: "collateralScore",  type: "u8"                  },
+          { name: "fraudRisk",        type: "u8"                  },
+          { name: "issuedAt",         type: "i64"                 },
+          { name: "validUntil",       type: "i64"                 },
+          { name: "revoked",          type: "bool"                },
+          { name: "revokedAt",        type: { option: "i64" }     },
+          { name: "revocationReason", type: "string"              },
         ],
       },
     },
@@ -69,52 +71,48 @@ export const IDL: Idl = {
       type: {
         kind: "struct",
         fields: [
-          { name:"assetId",         type:"publicKey" },
-          { name:"provenanceRoot",  type:{ array:["u8",32] } },
-          { name:"custodyRef",      type:{ array:["u8",32] } },
-          { name:"collateralScore", type:"u8" },
-          { name:"fraudRisk",       type:"u8" },
-          { name:"validUntil",      type:{ option:"i64" } },
+          { name: "assetId",         type: "publicKey"           },
+          { name: "provenanceRoot",  type: { array: ["u8", 32] } },
+          { name: "custodyRef",      type: { array: ["u8", 32] } },
+          { name: "collateralScore", type: "u8"                  },
+          { name: "fraudRisk",       type: "u8"                  },
+          { name: "validUntil",      type: { option: "i64" }     },
         ],
       },
     },
   ],
-  events: [
-    {
-      name: "CertificateMinted",
-      fields: [
-        { name:"certificateId",   type:"publicKey", index:false },
-        { name:"assetId",         type:"publicKey", index:false },
-        { name:"verifier",        type:"publicKey", index:false },
-        { name:"collateralScore", type:"u8",        index:false },
-      ],
-    },
-    {
-      name: "CertificateRevoked",
-      fields: [
-        { name:"certificateId", type:"publicKey", index:false },
-        { name:"reason",        type:"string",    index:false },
-      ],
-    },
-  ],
-  errors: [{ code:6000, name:"Unauthorized", msg:"Unauthorized" }],
+  errors: [{ code: 6000, name: "Unauthorized", msg: "Unauthorized" }],
 };
 
-// Server-side only — lazy load to avoid browser bundle issues
-export async function getProgram(provider?: AnchorProvider) {
-  const { Program, AnchorProvider: AP, web3 } =
-    await import("@coral-xyz/anchor");
-  const { Connection, PublicKey } = web3;
+// Server-side only. Never imported statically — zero browser bundle impact.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getProgram(provider?: any): Promise<any> {
+  const anchor           = await import("@coral-xyz/anchor");
+  const { Connection }   = await import("@solana/web3.js");
 
-  const programId = new PublicKey(PROGRAM_ID_STRING);
-
+  // Anchor v0.30: Program(idl, provider) — programId comes from idl.address
   if (provider) {
-    return new Program(IDL, programId, provider);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return new (anchor.Program as any)(IDL, provider);
   }
 
   const connection = new Connection(
     process.env.NEXT_PUBLIC_SOLANA_RPC ?? "https://api.mainnet-beta.solana.com"
   );
-  const defaultProvider = new AP(connection, {} as never, {});
-  return new Program(IDL, programId, defaultProvider);
+
+  const { PublicKey } = await import("@solana/web3.js");
+
+  const readOnly = new anchor.AnchorProvider(
+    connection,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    {
+      publicKey:           new PublicKey("11111111111111111111111111111111"),
+      signTransaction:     async (tx: unknown) => tx,
+      signAllTransactions: async (txs: unknown) => txs,
+    } as Parameters<typeof anchor.AnchorProvider>[1],
+    { commitment: "confirmed" }
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new (anchor.Program as any)(IDL, readOnly);
 }
