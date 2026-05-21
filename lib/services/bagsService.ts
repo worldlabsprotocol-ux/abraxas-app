@@ -158,13 +158,15 @@ export async function tokenizeBagsRevenue(
 
     // Log failure event if DB is available
     if (db) {
-      await db.from("audit_logs").insert({
-        actor:       params.walletAddress,
-        action:      "BAGS_TOKENIZE_FAILED",
-        resource:    "bags_service",
-        resource_id: params.businessName,
-        new_state:   { error:msg, attempt, cliArgs:params.cliArgs },
-      }).catch(() => {});
+      try {
+        await db.from("audit_logs").insert({
+          actor:       params.walletAddress,
+          action:      "BAGS_TOKENIZE_FAILED",
+          resource:    "bags_service",
+          resource_id: params.businessName,
+          new_state:   { error:msg, attempt, cliArgs:params.cliArgs },
+        });
+      } catch { /* audit log failure is non-fatal */ }
     }
 
     return { success:false, error:msg, retries:attempt };
