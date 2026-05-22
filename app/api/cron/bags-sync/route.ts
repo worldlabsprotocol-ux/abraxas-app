@@ -1,7 +1,8 @@
 // FILE: app/api/cron/bags-sync/route.ts
-// Periodic sync of all Bags-tokenized revenue assets.
-// Add to Vercel Cron: schedule = "0 */6 * * *" (every 6 hours)
-// Protect with CRON_SECRET env var.
+// Daily sync of all Bags-tokenized revenue assets.
+// Vercel Hobby plan: ONE cron per day maximum.
+// Schedule: "0 0 * * *" (daily at midnight UTC) — set in vercel.json
+// Protected with CRON_SECRET env var.
 import { NextRequest, NextResponse } from "next/server";
 import { syncBagsRevenue }           from "@/lib/services/bagsService";
 
