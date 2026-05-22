@@ -3,7 +3,6 @@
 // SELF-CONTAINED. Billboard typography. Full DeFi aesthetic.
 // Larger fonts throughout. Verification section. FAQ included.
 // ABRA + SOL payment options. Train link fixed.
-"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useWallet }       from "@solana/wallet-adapter-react";

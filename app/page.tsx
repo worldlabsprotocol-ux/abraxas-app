@@ -1,5 +1,13 @@
-// FILE: app/page.tsx
 "use client";
-export const dynamic = "force-dynamic";
-import { TerminalArena } from "@/components/TerminalArena";
-export default function Home() { return <TerminalArena />; }
+// FILE: app/page.tsx
+import dynamic from "next/dynamic";
+
+// Dynamic import prevents SSR issues with Solana wallet adapter
+const TerminalArena = dynamic(
+  () => import("@/components/TerminalArena").then(m => ({ default: m.TerminalArena })),
+  { ssr: false }
+);
+
+export default function Home() {
+  return <TerminalArena />;
+}
