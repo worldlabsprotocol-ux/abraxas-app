@@ -90,7 +90,7 @@ async function seed() {
   for (const asset of assets) {
     const { data, error } = await supabase
       .from("assets")
-      .upsert(asset, { onConflict:"title" })
+      .upsert(asset as any, { onConflict:"title" })
       .select("id")
       .single();
     if (error) { console.error(`✗ Asset "${asset.title}":`, error.message); continue; }
