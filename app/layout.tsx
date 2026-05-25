@@ -1,9 +1,10 @@
 // FILE: app/layout.tsx
-// Root layout. SessionProvider wraps everything for NextAuth.
-// Solana providers are in SolanaProvider (client component, dynamic import in page).
-import type { Metadata } from "next";
+// Root layout. Both SessionProvider (NextAuth) and SolanaProvider live here.
+// SolanaProvider MUST wrap everything so useWallet() works in all child components.
+import type { Metadata }       from "next";
 import "./globals.css";
-import { SessionProvider } from "@/components/SessionProvider";
+import { SessionProvider }     from "@/components/SessionProvider";
+import { SolanaProvider }      from "@/components/SolanaProvider";
 
 export const metadata: Metadata = {
   title:       "Abraxas Protocol",
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <SessionProvider>
-          {children}
+          <SolanaProvider>
+            {children}
+          </SolanaProvider>
         </SessionProvider>
       </body>
     </html>

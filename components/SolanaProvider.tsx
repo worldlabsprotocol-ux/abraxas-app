@@ -1,28 +1,31 @@
 // FILE: components/SolanaProvider.tsx
 // Solana-native only. No WalletConnect, no EVM, no Reown.
-// Imports Phantom and Solflare directly — no adapter-wallets aggregator
-// which would pull in the WalletConnect → viem → ox/tempo chain.
+// Phantom + Solflare directly. Wrapped as client component.
 "use client";
 
-import { useMemo }                   from "react";
-import { ConnectionProvider,
-         WalletProvider }            from "@solana/wallet-adapter-react";
-import { WalletModalProvider }       from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter }      from "@solana/wallet-adapter-phantom";
-import { SolflareWalletAdapter }     from "@solana/wallet-adapter-solflare";
-// 
+import { useMemo }                       from "react";
+import { clusterApiUrl, Connection }      from "@solana/web3.js";
+import { WalletAdapterNetwork }           from "@solana/wallet-adapter-base";
+import { PhantomWalletAdapter }           from "@solana/wallet-adapter-phantom";
+import { SolflareWalletAdapter }          from "@solana/wallet-adapter-solflare";
+import {
+  ConnectionProvider,
+  WalletProvider,
+}                                         from "@solana/wallet-adapter-react";
+import { WalletModalProvider }            from "@solana/wallet-adapter-react-ui";
 
-const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL
-         ?? "https://api.mainnet-beta.solana.com";
+const NETWORK   = WalletAdapterNetwork.Mainnet;
+const RPC       = process.env.NEXT_PUBLIC_SOLANA_RPC ?? clusterApiUrl(NETWORK);
 
 export function SolanaProvider({ children }: { children: React.ReactNode }) {
-  const wallets = useMemo(() => [
+  const endpoint = useMemo(() => RPC, []);
+  const wallets  = useMemo(() => [
     new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
+    new SolflareWalletAdapter({ network: NETWORK }),
   ], []);
 
   return (
-    <ConnectionProvider endpoint={RPC}>
+    <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           {children}

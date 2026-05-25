@@ -50,12 +50,13 @@ const STEPS = [
   },
 ] as const;
 
+// Metrics sourced from Supabase + on-chain — "Pending Sync" until env vars set
 const METRICS = [
-  { label:"Total Assets Verified",    value:"$2.4M",   tag:"LIVE" },
-  { label:"Active Certificates",      value:"847",      tag:"CHAIN" },
-  { label:"Avg Collateral Score",     value:"82/100",   tag:"RISK" },
-  { label:"USDC Borrowing Capacity",  value:"$1.6M",   tag:"LEND" },
-  { label:"Protocol Fees Collected",  value:"148K ABRA",tag:"ABRA" },
+  { label:"Total Assets Verified",    value:"Pending Sync", tag:"LIVE" },
+  { label:"Active Certificates",      value:"Pending Sync", tag:"CHAIN" },
+  { label:"Avg Collateral Score",     value:"Pending Sync", tag:"RISK" },
+  { label:"USDC Borrowing Capacity",  value:"Pending Sync", tag:"LEND" },
+  { label:"Protocol Fees Collected",  value:"Pending Sync", tag:"ABRA" },
 ];
 
 export function ProtocolFlow({ onStartTokenize }: { onStartTokenize?: () => void }) {

@@ -7,7 +7,6 @@
 
 import { useState, useEffect }    from "react";
 import { useWallet }               from "@solana/wallet-adapter-react";
-import { useWalletModal }          from "@solana/wallet-adapter-react-ui";
 import { useAbraStore }            from "@/lib/abraxasStore";
 import { useAbraBalance }          from "@/lib/hooks/useAbraBalance";
 import { IssuanceEngine }          from "@/components/IssuanceEngine";
@@ -67,7 +66,6 @@ function Rule({ label }: { label: string }) {
 
 export function PortfolioTab() {
   const { connected, publicKey } = useWallet();
-  const { setVisible }           = useWalletModal();
   const assets                   = useAbraStore(s => s.assets);
   const { balance, loading }     = useAbraBalance();
   const [showStudio, setShowStudio] = useState(false);
@@ -273,34 +271,14 @@ export function PortfolioTab() {
                        maxWidth:420, margin:"0 auto 1.5rem" }}>
             Watches · Metals · Art · Property · Mineral Rights · Short-Term Rentals
           </p>
-          {connected ? (
-            <button onClick={openStudio} style={{
-              padding:"0.875rem 2.5rem", borderRadius:"7px", border:"none",
-              cursor:"pointer", fontWeight:900, fontSize:"0.72rem", fontFamily:MONO,
-              background:"linear-gradient(135deg, #7c3aed, #C8A96E)", color:"#fff",
-            }}>
-              Open Studio →
-            </button>
-          ) : (
-            <div style={{ display:"flex", gap:"0.75rem", justifyContent:"center", flexWrap:"wrap" }}>
-              <button onClick={() => setVisible(true)} style={{
-                padding:"0.875rem 2rem", borderRadius:"7px", border:"none",
-                cursor:"pointer", fontWeight:900, fontSize:"0.68rem", fontFamily:MONO,
-                background:"#7c3aed", color:"#fff",
-              }}>
-                Connect Wallet to Start
-              </button>
-              <a href="/auth/signin" style={{
-                padding:"0.875rem 1.5rem", borderRadius:"7px",
-                border:"1px solid rgba(200,169,110,0.3)",
-                background:"rgba(200,169,110,0.06)",
-                fontSize:"0.64rem", fontWeight:800, fontFamily:MONO,
-                color:"rgba(200,169,110,0.8)", textDecoration:"none",
-              }}>
-                Sign In with GitHub / X
-              </a>
-            </div>
-          )}
+          <button onClick={openStudio} style={{
+            padding:"0.875rem 2.5rem", borderRadius:"7px", border:"none",
+            cursor:"pointer", fontWeight:900, fontSize:"0.72rem", fontFamily:MONO,
+            background:"linear-gradient(135deg, #7c3aed, #C8A96E)", color:"#fff",
+            opacity: !connected ? 0.7 : 1,
+          }}>
+            {connected ? "Open Studio →" : "Connect Wallet (top-right) to Start"}
+          </button>
         </div>
       ) : (
         <div>
