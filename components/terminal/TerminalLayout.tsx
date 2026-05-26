@@ -262,7 +262,6 @@ export function TerminalLayout() {
                   id: asset.id,
                   assetClass: asset.assetClass,
                   status: asset.status,
-                  collateralScore: asset.collateralScore,
                   ltv: asset.ltv,
                   estimatedUsd: asset.estimatedUsd,
                   createdAt: new Date().toISOString(),
