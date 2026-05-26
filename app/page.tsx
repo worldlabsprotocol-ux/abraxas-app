@@ -1,22 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter }           from "next/navigation";
 
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
 export default function Home() {
-  const router = useRouter();
+  const router       = useRouter();
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setPct(p => {
-        if (p >= 100) { clearInterval(t); return 100; }
-        return p + 2;
-      });
-    }, 30);
+    const timer    = setInterval(() => setPct(p => Math.min(p + 2, 100)), 30);
     const redirect = setTimeout(() => router.push("/auth/signin"), 2200);
-    return () => { clearInterval(t); clearTimeout(redirect); };
+    return () => { clearInterval(timer); clearTimeout(redirect); };
   }, [router]);
 
   return (
@@ -32,7 +27,7 @@ export default function Home() {
           color:"#f0f0f0", letterSpacing:"-0.04em", lineHeight:1,
           marginBottom:"0.75rem",
         }}>
-          <span style={{ color:"#10B981" }}>◈</span> ABRAXAS
+          <span style={{ color:"#10B981" }}>◈</span>{" "}ABRAXAS
         </div>
         <div style={{
           fontSize:"clamp(0.4rem,1.4vw,0.56rem)", fontWeight:700,
@@ -44,11 +39,14 @@ export default function Home() {
       </div>
 
       <div style={{ width:280, marginBottom:"1.5rem" }}>
-        <div style={{ height:1, background:"rgba(255,255,255,0.06)", borderRadius:1, overflow:"hidden" }}>
+        <div style={{
+          height:1, background:"rgba(255,255,255,0.06)",
+          borderRadius:1, overflow:"hidden",
+        }}>
           <div style={{
             height:"100%", borderRadius:1,
             background:"linear-gradient(90deg,#10B981,#3182CE)",
-            width:, transition:"width 0.05s linear",
+            width:`${pct}%`, transition:"width 0.05s linear",
           }}/>
         </div>
       </div>
