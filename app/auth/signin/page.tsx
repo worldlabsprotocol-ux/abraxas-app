@@ -90,10 +90,10 @@ export default function SignInPage() {
           onClick={() => handleProvider("github")}
           style={{
             width:"100%", padding:"0.875rem", borderRadius:"8px",
-            border:"1px solid rgba(255,255,255,0.1)",
             cursor:"pointer", fontWeight:700, fontSize:"0.64rem", fontFamily:MONO,
             marginBottom:"0.625rem",
             background:"rgba(255,255,255,0.06)",
+            border:"1px solid rgba(255,255,255,0.1)",
             color:"rgba(255,255,255,0.75)",
             display:"flex", alignItems:"center", justifyContent:"center",
             gap:"0.6rem", opacity: loading === "github" ? 0.5 : 1,
