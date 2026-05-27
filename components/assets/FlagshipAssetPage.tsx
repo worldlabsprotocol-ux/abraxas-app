@@ -5,11 +5,6 @@
 
 import { useState }          from "react";
 import { FLAGSHIP_PROPERTY }       from "@/lib/data/flagshipProperty";
-import { VerificationTimeline }    from "@/components/verification/VerificationTimeline";
-import { AttestationCards }        from "@/components/verification/AttestationCards";
-import type { Attestation }        from "@/components/verification/AttestationCards";
-import { AssetIntelligence }       from "@/components/verification/AssetIntelligence";
-import type { AssetIntelligenceData } from "@/components/verification/AssetIntelligence";
 
 const M  = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const BG = "#0C0E12"; const CARD = "#0E1117"; const BORDER = "#1F2937";
@@ -370,34 +365,19 @@ export function FlagshipAssetPage() {
         {/* ════ VERIFICATION ════════════════════════════════════════════ */}
         {tab === "verification" && (
           <div style={{ display:"flex", flexDirection:"column", gap:"1.5rem" }}>
-            {/* Verification Timeline */}
-            <VerificationTimeline
-              currentStage="certificate_minted"
-              completedStages={CIELO_VERIFICATION_STAGES as any}
-            />
 
-            {/* Asset Intelligence */}
-            <AssetIntelligence data={CIELO_INTELLIGENCE} />
-
-            {/* Attestation Cards */}
-            <AttestationCards attestations={CIELO_ATTESTATIONS} />
-
-            <div style={{ display:"grid",
-                           gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))",
-                           gap:"1.5rem" }}>
-            {/* Certificate */}
+            {/* Verification Certificate */}
             <Section title="AAS-1 Verification Certificate" icon="◉">
-              <div style={{ padding:"1rem", background:`${GREEN}06`,
-                             border:`1px solid ${GREEN}25`, borderRadius:"6px",
+              <div style={{ padding:"1rem", background:"rgba(16,185,129,0.06)",
+                             border:"1px solid rgba(16,185,129,0.25)", borderRadius:"6px",
                              marginBottom:"0.875rem" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
-                               marginBottom:"0.5rem" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.5rem" }}>
                   <span style={{ color:GREEN, fontSize:"0.9rem" }}>✓</span>
-                  <span style={{ fontFamily:M, fontSize:"0.44rem", fontWeight:900,
-                                  color:GREEN }}>VERIFIED — AAS-1 STANDARD</span>
+                  <span style={{ fontFamily:M, fontSize:"0.44rem", fontWeight:900, color:GREEN }}>
+                    VERIFIED — AAS-1 STANDARD
+                  </span>
                 </div>
-                <div style={{ fontFamily:M, fontSize:"0.36rem",
-                               color:"rgba(255,255,255,0.3)", lineHeight:1.7 }}>
+                <div style={{ fontFamily:M, fontSize:"0.36rem", color:"rgba(255,255,255,0.3)", lineHeight:1.7 }}>
                   Certificate: {V.certificateId}<br/>
                   Issued: {new Date(V.issuedAt).toLocaleDateString()}<br/>
                   Valid Until: {new Date(V.validUntil).toLocaleDateString()}<br/>
@@ -407,10 +387,10 @@ export function FlagshipAssetPage() {
               <CopyHash label="Document SHA-256 Hash"  value={V.documentHash} />
               <CopyHash label="Metadata Hash"          value={V.metaHash} />
               <CopyHash label="Anchored Transaction"   value={V.anchoredTx}
-                link={`https://explorer.solana.com/tx/${V.anchoredTx}`} />
+                link={"https://explorer.solana.com/tx/" + V.anchoredTx} />
             </Section>
 
-            {/* Timeline */}
+            {/* Provenance Timeline */}
             <Section title="Provenance Timeline" icon="◈">
               <div style={{ position:"relative", paddingLeft:"1.25rem" }}>
                 <div style={{ position:"absolute", left:"0.25rem", top:0, bottom:0,
@@ -419,18 +399,15 @@ export function FlagshipAssetPage() {
                   <div key={i} style={{ position:"relative", marginBottom:"0.875rem" }}>
                     <div style={{ position:"absolute", left:"-1.15rem", top:3,
                                    width:8, height:8, borderRadius:"50%",
-                                   background: ev.status==="COMPLETE" ? GREEN : AMBER,
-                                   border:`2px solid ${BG}` }}/>
-                    <div style={{ fontFamily:M, fontSize:"0.28rem",
-                                   color:"rgba(255,255,255,0.2)", marginBottom:2 }}>
+                                   background: ev.status === "COMPLETE" ? GREEN : AMBER,
+                                   border:"2px solid #0C0E12" }}/>
+                    <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(255,255,255,0.2)", marginBottom:2 }}>
                       {ev.date}
                     </div>
-                    <div style={{ fontFamily:M, fontSize:"0.42rem",
-                                   fontWeight:700, color:"#f0f0f0", marginBottom:2 }}>
+                    <div style={{ fontFamily:M, fontSize:"0.42rem", fontWeight:700, color:"#f0f0f0", marginBottom:2 }}>
                       {ev.event}
                     </div>
-                    <div style={{ fontFamily:M, fontSize:"0.34rem",
-                                   color:"rgba(255,255,255,0.3)" }}>
+                    <div style={{ fontFamily:M, fontSize:"0.34rem", color:"rgba(255,255,255,0.3)" }}>
                       {ev.actor}
                     </div>
                   </div>
@@ -438,59 +415,46 @@ export function FlagshipAssetPage() {
               </div>
             </Section>
 
-            {/* Custody ledger */}
+            {/* Custody Ledger */}
             <Section title="Custody Ledger — Multi-Signature" icon="◆">
               <div style={{ marginBottom:"0.875rem" }}>
                 {[
-                  ["Custodian",    V.custodyLedger.custodian],
-                  ["Vault Type",   V.custodyLedger.vaultType],
-                  ["Jurisdiction", V.custodyLedger.jurisdiction],
-                  ["Audit Cadence",V.custodyLedger.auditCadence],
+                  ["Custodian",     V.custodyLedger.custodian],
+                  ["Vault Type",    V.custodyLedger.vaultType],
+                  ["Jurisdiction",  V.custodyLedger.jurisdiction],
+                  ["Audit Cadence", V.custodyLedger.auditCadence],
                 ].map(([k,v]) => (
                   <div key={k} style={{ display:"flex", justifyContent:"space-between",
-                                         padding:"0.4rem 0",
-                                         borderBottom:`1px solid rgba(31,41,55,0.5)` }}>
-                    <span style={{ fontFamily:M, fontSize:"0.36rem",
-                                    color:"rgba(255,255,255,0.3)" }}>{k}</span>
-                    <span style={{ fontFamily:M, fontSize:"0.36rem",
-                                    fontWeight:700, color:"#f0f0f0",
+                                         padding:"0.4rem 0", borderBottom:"1px solid rgba(31,41,55,0.5)" }}>
+                    <span style={{ fontFamily:M, fontSize:"0.36rem", color:"rgba(255,255,255,0.3)" }}>{k}</span>
+                    <span style={{ fontFamily:M, fontSize:"0.36rem", fontWeight:700, color:"#f0f0f0",
                                     textAlign:"right", maxWidth:"55%" }}>{v}</span>
                   </div>
                 ))}
               </div>
-              {/* Signatory dots */}
-              <div style={{ fontFamily:M, fontSize:"0.3rem",
-                             color:"rgba(255,255,255,0.2)",
-                             textTransform:"uppercase", letterSpacing:"0.1em",
-                             marginBottom:"0.5rem" }}>
+              <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.2)",
+                             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"0.5rem" }}>
                 {V.custodyLedger.signatories.length}/{V.custodyLedger.signatories.length} TRUSTEES ATTESTED
               </div>
               {V.custodyLedger.signatories.map(s => (
-                <div key={s.id} style={{ display:"flex", alignItems:"center",
-                                          gap:"0.5rem", marginBottom:"0.4rem",
-                                          padding:"0.4rem 0.625rem",
-                                          background:CARD, border:`1px solid ${BORDER}`,
+                <div key={s.id} style={{ display:"flex", alignItems:"center", gap:"0.5rem",
+                                          marginBottom:"0.4rem", padding:"0.4rem 0.625rem",
+                                          background:"#0E1117", border:"1px solid #1F2937",
                                           borderRadius:"4px" }}>
-                  <div style={{ width:8, height:8, borderRadius:"50%",
-                                  background:s.status==="ACTIVE"?GREEN:AMBER,
-                                  boxShadow:`0 0 6px ${s.status==="ACTIVE"?GREEN:AMBER}`,
-                                  flexShrink:0 }}/>
-                  <span style={{ fontFamily:M, fontSize:"0.36rem",
-                                  color:"rgba(255,255,255,0.5)", flex:1 }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", flexShrink:0,
+                                  background: s.status === "ACTIVE" ? GREEN : AMBER,
+                                  boxShadow: "0 0 6px " + (s.status === "ACTIVE" ? GREEN : AMBER) }}/>
+                  <span style={{ fontFamily:M, fontSize:"0.36rem", color:"rgba(255,255,255,0.5)", flex:1 }}>
                     {s.role}
                   </span>
-                  <code style={{ fontFamily:M, fontSize:"0.32rem", color:GREEN }}>
-                    {s.hash}
-                  </code>
+                  <code style={{ fontFamily:M, fontSize:"0.32rem", color:GREEN }}>{s.hash}</code>
                 </div>
               ))}
             </Section>
+
           </div>
         )}
 
-            </div>
-
-        {/* ════ COLLATERAL ══════════════════════════════════════════════ */}
         {tab === "collateral" && (
           <div style={{ display:"grid",
                          gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))",
