@@ -89,7 +89,8 @@ export function FlagshipAssetPage() {
   const [tab, setTab] = useState<"overview"|"financials"|"verification"|"collateral">("overview");
   const maxRev = Math.max(...F.monthlyRevenue.map(m => m.rev));
 
-  const tabs = [
+  type Tab = "overview"|"financials"|"verification"|"collateral";
+  const tabs: {id:Tab;label:string}[] = [
     { id:"overview",     label:"OVERVIEW" },
     { id:"financials",   label:"FINANCIALS" },
     { id:"verification", label:"VERIFICATION" },
