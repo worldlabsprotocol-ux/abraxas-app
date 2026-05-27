@@ -1,97 +1,42 @@
 /* FILE: app/globals.css */
-/* Premium dark substrate — Abraxas Protocol */
-
-*, *::before, *::after {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
-  margin: 0;
-  padding: 0;
-  /* Richer dark — not flat black, has depth */
-  background: #070a14;
-  color: #f0f0f0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0; padding: 0;
+  background: #0C0E12; color: #f0f0f0;
+  font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* Subtle radial gradient for depth */
-  background-image: radial-gradient(
-    ellipse 80% 60% at 50% -10%,
-    rgba(124, 58, 237, 0.08) 0%,
-    transparent 60%
-  );
-  background-attachment: fixed;
   min-height: 100vh;
 }
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  cursor: pointer;
-  font-family: inherit;
-}
-
-/* Mobile viewport fix */
-@supports (height: 100dvh) {
-  html, body {
-    min-height: 100dvh;
-  }
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+/* iOS zoom prevention */
+input, textarea, select { font-size: 16px; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.5); }
-
-/* Wallet adapter overrides — match Abraxas aesthetic */
+::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 2px; }
+/* Wallet adapter modal */
 .wallet-adapter-modal-wrapper {
-  background: rgba(7, 10, 20, 0.98) !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  border-radius: 12px !important;
+  background: rgba(12,14,18,0.98) !important;
+  border: 1px solid #1F2937 !important;
+  border-radius: 10px !important;
 }
 .wallet-adapter-modal-title {
   color: #f0f0f0 !important;
-  font-family: "JetBrains Mono", monospace !important;
+  font-family: 'JetBrains Mono', monospace !important;
   font-weight: 900 !important;
   letter-spacing: 0.08em !important;
 }
 .wallet-adapter-button {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
-  color: #fff !important;
-  border-radius: 7px !important;
+  background: linear-gradient(135deg, #7c3aed, #10B981) !important;
+  color: #fff !important; border-radius: 6px !important;
   font-weight: 800 !important;
-  border: none !important;
-}
-.wallet-adapter-button:hover {
-  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
 }
 .wallet-adapter-modal-list .wallet-adapter-button {
   background: rgba(255,255,255,0.04) !important;
-  border: 1px solid rgba(255,255,255,0.07) !important;
+  border: 1px solid #1F2937 !important;
   color: rgba(255,255,255,0.8) !important;
 }
-.wallet-adapter-modal-list .wallet-adapter-button:hover {
-  background: rgba(124,58,237,0.12) !important;
-  border-color: rgba(124,58,237,0.3) !important;
-}
-
-/* Mobile input fix */
-input, textarea, select {
-  font-size: 16px; /* prevents iOS zoom on focus */
-}
-
-/* Safe area for iPhone notch/home bar */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  nav[style*="position: fixed; bottom: 0"] {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
+/* Google Translate toolbar hide */
+.goog-te-banner-frame { display: none !important; }
+body { top: 0 !important; }
