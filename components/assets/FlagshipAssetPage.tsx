@@ -99,7 +99,7 @@ export function FlagshipAssetPage() {
     { id:"financials",   label:"FINANCIALS" },
     { id:"verification", label:"VERIFICATION" },
     { id:"collateral",   label:"COLLATERAL" },
-  ] as const;
+  ];
 
   return (
     <div style={{ background:BG, minHeight:"100vh", color:"#f0f0f0" }}>
