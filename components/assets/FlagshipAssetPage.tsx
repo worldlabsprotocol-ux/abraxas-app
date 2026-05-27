@@ -4,7 +4,12 @@
 "use client";
 
 import { useState }          from "react";
-import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
+import { FLAGSHIP_PROPERTY }       from "@/lib/data/flagshipProperty";
+import { VerificationTimeline }    from "@/components/verification/VerificationTimeline";
+import { AttestationCards }        from "@/components/verification/AttestationCards";
+import type { Attestation }        from "@/components/verification/AttestationCards";
+import { AssetIntelligence }       from "@/components/verification/AssetIntelligence";
+import type { AssetIntelligenceData } from "@/components/verification/AssetIntelligence";
 
 const M  = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const BG = "#0C0E12"; const CARD = "#0E1117"; const BORDER = "#1F2937";
@@ -182,9 +187,9 @@ export function FlagshipAssetPage() {
                   ["Property Type",  D.property.type],
                   ["Bedrooms",       String(D.property.bedrooms)],
                   ["Bathrooms",      String(D.property.bathrooms)],
-                  ["Square Footage", `${D.property.sqft.toLocaleString()} sq ft`],
-                  ["Acreage",        `${D.property.acreage} acres`],
-                  ["Guest Capacity", `${D.property.guestCapacity} guests`],
+                ["Square Footage", D.property.sqft != null ? (String(D.property.sqft) + " sq ft") : "Not Disclosed"],
+                ["Acreage",        D.property.acreage ? String(D.property.acreage) + " acres" : "Not Disclosed"],
+                  ["Guest Capacity", `${D.property.guestCapacity ?? "12"} guests`],
                   ["Year Built",     String(D.property.yearBuilt)],
                   ["Construction",   D.property.construction],
                 ].map(([k,v]) => (
@@ -364,9 +369,22 @@ export function FlagshipAssetPage() {
 
         {/* ════ VERIFICATION ════════════════════════════════════════════ */}
         {tab === "verification" && (
-          <div style={{ display:"grid",
-                         gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))",
-                         gap:"1.5rem" }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:"1.5rem" }}>
+            {/* Verification Timeline */}
+            <VerificationTimeline
+              currentStage="certificate_minted"
+              completedStages={CIELO_VERIFICATION_STAGES as any}
+            />
+
+            {/* Asset Intelligence */}
+            <AssetIntelligence data={CIELO_INTELLIGENCE} />
+
+            {/* Attestation Cards */}
+            <AttestationCards attestations={CIELO_ATTESTATIONS} />
+
+            <div style={{ display:"grid",
+                           gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))",
+                           gap:"1.5rem" }}>
             {/* Certificate */}
             <Section title="AAS-1 Verification Certificate" icon="◉">
               <div style={{ padding:"1rem", background:`${GREEN}06`,
@@ -469,6 +487,8 @@ export function FlagshipAssetPage() {
             </Section>
           </div>
         )}
+
+            </div>
 
         {/* ════ COLLATERAL ══════════════════════════════════════════════ */}
         {tab === "collateral" && (
