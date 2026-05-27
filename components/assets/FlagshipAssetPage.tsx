@@ -130,18 +130,18 @@ export function FlagshipAssetPage() {
         <h1 style={{ fontFamily:M, fontSize:"clamp(1.4rem,4vw,2.8rem)", fontWeight:900,
                       color:"#f0f0f0", margin:"0 0 0.5rem", letterSpacing:"-0.03em",
                       lineHeight:1.1 }}>
-          {D.title}
+          Cielo Sunrise
         </h1>
         <div style={{ fontFamily:M, fontSize:"clamp(0.44rem,1.4vw,0.6rem)",
                        color:"rgba(255,255,255,0.35)", marginBottom:"2rem" }}>
-          {D.subtitle} · {D.location.address}
+          Mirrored Wellness Dome · 2,800ft Ridgeline · Tri-State Views · {D.location.address}
         </div>
 
         {/* Hero metrics grid */}
         <div style={{ display:"grid",
                        gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))",
                        gap:"0.625rem" }}>
-          <MetricCard label="Estimated Value"     value={`$${D.collateral.appraisalValue.toLocaleString()}`}  sub="March 2025 Appraisal" color="#f0f0f0"/>
+          <MetricCard label="Estimated Value"     value={`$${(D.collateral.appraisalValue/1_000_000).toFixed(1)}M`}  sub="Appraised Value 2025" color="#f0f0f0"/>
           <MetricCard label="Annual NOI"          value={`$${F.annualNOI.toLocaleString()}`}                  sub="Net Operating Income" color={GREEN}/>
           <MetricCard label="Cash Yield"          value={`${(F.cashYield*100).toFixed(1)}%`}                  sub="On Purchase Price"    color={GREEN}/>
           <MetricCard label="Avg Occupancy"       value={`${(F.occupancyRate*100).toFixed(0)}%`}              sub="Annual Average"       color={BLUE}/>
