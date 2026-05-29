@@ -1,3 +1,4 @@
+"use client";
 // FILE: app/auth/signin/page.tsx
 // Must be "use client" — uses useWalletModal and signIn
 
