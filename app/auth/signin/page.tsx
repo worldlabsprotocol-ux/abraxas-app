@@ -1,6 +1,6 @@
 // FILE: app/auth/signin/page.tsx
 // Must be "use client" — uses useWalletModal and signIn
-"use client";
+
 
 import { useState }         from "react";
 import { signIn }           from "next-auth/react";
