@@ -67,14 +67,22 @@ const KEY_FINDINGS = [
 ] as const;
 
 // ── Inline SVG bar chart ──────────────────────────────────────────────
+// label is required; all other keys are numeric data values
+interface BarDataPoint {
+  label: string;
+  [key: string]: number | string;
+}
+
 function BarSVG({ data, keys, colors, height=180 }:{
-  data:{[k:string]:number; label:string}[];
-  keys:string[]; colors:string[]; height?:number;
+  data: BarDataPoint[];
+  keys: string[];
+  colors: string[];
+  height?: number;
 }) {
   const W=520; const H=height;
   const PAD={top:10,right:8,bottom:36,left:44};
   const cW=W-PAD.left-PAD.right; const cH=H-PAD.top-PAD.bottom;
-  const allV=data.flatMap(d=>keys.map(k=>d[k]??0));
+  const allV=data.flatMap(d=>keys.map(k=>{ const v=d[k]; return typeof v==='number'?v:0; }));
   const maxV=Math.max(...allV,0); const minV=Math.min(...allV,0);
   const range=(maxV-minV)||1;
   const groupW=cW/data.length;
@@ -102,7 +110,7 @@ function BarSVG({ data, keys, colors, height=180 }:{
       {data.map((d,gi)=>(
         <g key={gi}>
           {keys.map((k,ki)=>{
-            const v=d[k]??0;
+            const raw=d[k]; const v=typeof raw==='number'?raw:0;
             const x=PAD.left+gi*groupW+gOff+ki*barW;
             const y=v>=0?yS(v):zY;
             const h=Math.max(Math.abs(yS(v)-zY),1);
