@@ -137,9 +137,22 @@ export function TerminalLayout() {
               </div>
               <div style={{ flex:1, overflowY:"auto" }}>
                 {assets.length === 0 ? (
-                  <div style={{ padding:"1.5rem 1rem", fontFamily:M,
-                                  fontSize:"0.38rem", color:"rgba(255,255,255,0.2)" }}>
-                    NO ASSETS REGISTERED
+                  <div style={{ padding:"1.25rem 1rem" }}>
+                    <div style={{ fontFamily:M, fontSize:"0.36rem",
+                                   color:"rgba(255,255,255,0.3)", marginBottom:"0.75rem" }}>
+                      NO VERIFIED ASSETS
+                    </div>
+                    <div style={{ fontFamily:M, fontSize:"0.3rem",
+                                   color:"rgba(255,255,255,0.18)", lineHeight:1.8 }}>
+                      Submit an asset via the PROTOCOL tab to begin
+                      the verification pipeline.<br/>
+                      <br/>
+                      Required:<br/>
+                      · Deed, title, or mineral rights instrument<br/>
+                      · Independent appraisal or reserve report<br/>
+                      · Entity formation documents<br/>
+                      · Custody documentation
+                    </div>
                   </div>
                 ) : (
                   assets.map((a, i) => {
