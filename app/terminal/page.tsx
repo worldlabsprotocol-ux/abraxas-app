@@ -197,16 +197,36 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
         <h1 style={{ fontFamily:S, fontSize:"clamp(1.6rem,4.5vw,3.2rem)",
                       fontWeight:800, color:W, margin:"0 0 1rem",
                       letterSpacing:"-0.03em", lineHeight:1.08 }}>
-          Institutional collateral<br/>infrastructure, on-chain.
+          Verification first.<br/>
+          <span style={{ color:G }}>Financeability second.</span>
         </h1>
         <p style={{ fontFamily:S, fontSize:"clamp(0.8rem,1.8vw,1rem)",
                      color:"rgba(255,255,255,0.32)", lineHeight:1.8,
-                     maxWidth:560, margin:"0 0 1.75rem" }}>
-          Abraxas verifies whether a real-world asset is financeable.
-          Verified property, minerals, energy reserves, and precious metals
-          become programmable on-chain collateral — backed by legal, custodial,
-          and audit infrastructure.
+                     maxWidth:580, margin:"0 0 0.875rem" }}>
+          Most RWA projects tokenize first and verify never.
+          Abraxas does the opposite — rigorous legal, custodial,
+          and audit verification before anything is issued on-chain.
+          The result: collateral that lenders can actually trust.
         </p>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"0.625rem",
+                       marginBottom:"1.75rem" }}>
+          {[
+            { t:"Legal Review",        c:G },
+            { t:"Custody Verified",    c:G },
+            { t:"Auditor Sign-Off",     c:G },
+            { t:"On-Chain Attestation",c:B },
+            { t:"Collateral Eligible", c:B },
+          ].map(tag=>(
+            <span key={tag.t} style={{ fontFamily:M, fontSize:"0.3rem",
+                                        fontWeight:700, color:tag.c,
+                                        background:`${tag.c}10`,
+                                        border:`1px solid ${tag.c}25`,
+                                        borderRadius:3, padding:"2px 8px",
+                                        letterSpacing:"0.08em" }}>
+              ✓ {tag.t}
+            </span>
+          ))}
+        </div>
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
           <button onClick={()=>goTo("protocol")} style={{
             padding:"0.875rem 1.75rem", borderRadius:6, border:"none",
@@ -231,12 +251,20 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
                        justifyContent:"space-between", marginBottom:"1.5rem" }}>
           <div>
             <Label>Platform Economics</Label>
+            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.3rem" }}>
+              <Label>Platform Economics</Label>
+              <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
+                              color:A, background:`${A}12`,
+                              border:`1px solid ${A}25`, borderRadius:3,
+                              padding:"1px 6px", textTransform:"uppercase", letterSpacing:"0.1em" }}>
+                PROJECTED · LARGE ASSET PATH
+              </span>
+            </div>
             <h2 style={{ fontFamily:S, fontSize:"clamp(1.2rem,3vw,1.9rem)",
                           fontWeight:800, color:W, margin:0,
                           letterSpacing:"-0.02em" }}>
-              Real revenue. Real assets. Sustainable economics.
+              Built for recurring revenue, not token events.
             </h2>
-          </div>
           <a href="/economics" style={{ fontFamily:M, fontSize:"0.34rem",
                                           color:`${B}60`, textDecoration:"none",
                                           flexShrink:0, marginLeft:"1rem" }}>
@@ -427,6 +455,15 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
       {/* Fee structure */}
       <div style={{ marginBottom:"2rem" }}>
         <Label>Fee Structure</Label>
+        <div style={{ padding:"0.875rem 1.25rem", borderRadius:7,
+                       border:`1px solid ${B}20`, background:`${B}04`,
+                       marginBottom:"1.125rem",
+                       fontFamily:S, fontSize:"clamp(0.68rem,1.4vw,0.78rem)",
+                       color:"rgba(255,255,255,0.4)", lineHeight:1.75 }}>
+          Fee structure is identical across asset classes. Platform fees
+          are charged on verified AUM — not on token creation. This aligns
+          Abraxas incentives with long-term collateral quality, not issuance volume.
+        </div>
         <div style={{ border:`1px solid ${BDR}`, borderRadius:7, overflow:"hidden" }}>
           <div style={{ display:"grid",
                          gridTemplateColumns:"1fr 72px 88px 1fr",
@@ -473,7 +510,18 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
 
       {/* Verification pipeline */}
       <div style={{ marginBottom:"2rem" }}>
-        <Label>Collateral Activation Pipeline</Label>
+        <div style={{ display:"flex", alignItems:"center",
+                       gap:"0.625rem", marginBottom:"0.875rem" }}>
+          <span style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
+                          color:"rgba(255,255,255,0.22)", textTransform:"uppercase",
+                          letterSpacing:"0.15em" }}>
+            Collateral Activation Pipeline
+          </span>
+          <div style={{ width:6, height:6, borderRadius:"50%", background:G,
+                         boxShadow:`0 0 6px ${G}80`, flexShrink:0 }}/>
+          <span style={{ fontFamily:M, fontSize:"0.26rem", color:`${G}70`,
+                          letterSpacing:"0.1em" }}>ACTIVE</span>
+        </div>
         <div style={{ display:"grid",
                        gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",
                        gap:"0.5rem" }}>
@@ -595,8 +643,40 @@ export default function TerminalPage() {
     <div style={{ background:BG, minHeight:"100vh",
                    display:"flex", flexDirection:"column" }}>
 
+      {/* ── Protocol Status Strip ──────────────────────────────────── */}
+      <div style={{
+        background:"#060810", borderBottom:"1px solid #0F1929",
+        padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
+        height:28, display:"flex", alignItems:"center",
+        gap:"1.5rem", overflowX:"auto", flexShrink:0,
+      }}>
+        {[
+          { dot:G,  text:"SOLANA MAINNET" },
+          { dot:G,  text:"AAS-1 PROTOCOL ACTIVE" },
+          { dot:A,  text:"VERIFICATION NETWORK v1.0" },
+          { dot:B,  text:"COLLATERAL TERMINAL" },
+        ].map(s=>(
+          <div key={s.text} style={{ display:"flex", alignItems:"center",
+                                      gap:"0.35rem", flexShrink:0 }}>
+            <div style={{ width:5, height:5, borderRadius:"50%",
+                           background:s.dot,
+                           boxShadow:`0 0 5px ${s.dot}80` }}/>
+            <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
+                            color:"rgba(255,255,255,0.25)", letterSpacing:"0.12em",
+                            textTransform:"uppercase" }}>
+              {s.text}
+            </span>
+          </div>
+        ))}
+        <div style={{ flex:1 }}/>
+        <span style={{ fontFamily:M, fontSize:"0.26rem",
+                        color:"rgba(255,255,255,0.15)", letterSpacing:"0.1em" }}>
+          ABRAXAS OS · BUILD 2025.1
+        </span>
+      </div>
+
       <nav style={{
-        position:"sticky", top:0, zIndex:200,
+        position:"sticky", top:28, zIndex:200,
         background:"rgba(10,12,16,0.97)", backdropFilter:"blur(12px)",
         borderBottom:`1px solid ${BDR}`,
         display:"flex", alignItems:"center",
@@ -608,10 +688,17 @@ export default function TerminalPage() {
         <div style={{ display:"flex", alignItems:"center", gap:"0.375rem",
                        flexShrink:0, marginRight:"clamp(0.375rem,1.5vw,1rem)" }}>
           <span style={{ color:G, fontSize:"clamp(0.7rem,2vw,0.9rem)" }}>◈</span>
-          <span style={{ fontFamily:M, fontSize:"clamp(0.5rem,1.5vw,0.7rem)",
-                          fontWeight:900, color:W, letterSpacing:"0.1em" }}>
-            ABRAXAS
-          </span>
+          <div>
+            <span style={{ fontFamily:M, fontSize:"clamp(0.5rem,1.5vw,0.7rem)",
+                            fontWeight:900, color:W, letterSpacing:"0.1em" }}>
+              ABRAXAS
+            </span>
+            <span style={{ fontFamily:M, fontSize:"0.24rem",
+                            color:"rgba(255,255,255,0.2)", letterSpacing:"0.15em",
+                            marginLeft:"0.375rem", verticalAlign:"middle" }}>
+              PROTOCOL OS
+            </span>
+          </div>
         </div>
 
         {(["overview","collateral","lending","protocol"] as Tab[]).map(t=>(
