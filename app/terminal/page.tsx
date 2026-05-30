@@ -1,245 +1,517 @@
 "use client";
 // FILE: app/terminal/page.tsx
-// Abraxas Collateral Terminal — 4-tab institutional workspace
-// OVERVIEW | COLLATERAL | LENDING | PROTOCOL
-// Language selector removed (non-functional). Single auth point (CompactWallet).
-// Economics surfaced inline on OVERVIEW. Genesis + Terminal merged into COLLATERAL.
+// Abraxas Collateral Terminal — OVERVIEW | COLLATERAL | LENDING | PROTOCOL
+// Economics fully visible on OVERVIEW — not isolated elsewhere.
 
-import { useState }              from "react";
-import { FlagshipAssetPage }     from "@/components/assets/FlagshipAssetPage";
-import { TerminalLayout }        from "@/components/terminal/TerminalLayout";
-import { AssetOwnerOnboarding }  from "@/components/onboarding/AssetOwnerOnboarding";
-import { TrustStack }            from "@/components/onboarding/TrustStack";
-import { BorrowPage }            from "@/components/BorrowPage";
-import { LanguageSelector } from "@/components/LanguageSelector";
-import { CompactWallet }         from "@/components/CompactWallet";
+import { useState }             from "react";
+import { FlagshipAssetPage }    from "@/components/assets/FlagshipAssetPage";
+import { TerminalLayout }       from "@/components/terminal/TerminalLayout";
+import { AssetOwnerOnboarding } from "@/components/onboarding/AssetOwnerOnboarding";
+import { TrustStack }           from "@/components/onboarding/TrustStack";
+import { BorrowPage }           from "@/components/BorrowPage";
+import { CompactWallet }        from "@/components/CompactWallet";
+import { LanguageSelector }     from "@/components/LanguageSelector";
 
-const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const S = "system-ui,-apple-system,sans-serif";
-const BG = "#0A0C10"; const CARD = "#0D1117"; const BORDER = "#1C2333";
-const G  = "#10B981"; const A = "#F59E0B"; const B = "#3B82F6";
+const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const S    = "system-ui,-apple-system,sans-serif";
+const BG   = "#0A0C10";
+const CARD = "#0D1117";
+const BDR  = "#1C2333";
+const G    = "#10B981";
+const A    = "#F59E0B";
+const B    = "#3B82F6";
+const W    = "#F8FAFC";
 
-type Tab = "overview" | "collateral" | "lending" | "protocol";
-type CollateralView = "featured" | "registry";
+type Tab    = "overview" | "collateral" | "lending" | "protocol";
+type ColV   = "featured" | "registry";
+type ProV   = "onboarding" | "trust";
 
-// ── Protocol metrics (live once Supabase connected) ──────────────────
-// Currently: realistic projections from the financial model
-// Replace with real hook once API is wired
-const METRICS = [
-  { label:"Tokenized AUM",          value:"$375M",    sub:"Year 1 large-asset path", color:G,  tag:"PROJECTED" },
-  { label:"Assets Verified (Y1)",   value:"25",        sub:"Large asset pipeline",    color:G,  tag:"PROJECTED" },
-  { label:"Max Borrow Capacity",    value:"$225M USDC",sub:"60% LTV on current AUM",  color:B,  tag:"PROJECTED" },
-  { label:"Platform Fee Revenue",   value:"$1.4M",     sub:"Annual recurring (Y1)",   color:G,  tag:"PROJECTED" },
-  { label:"Verification Fee (Y1)",  value:"$1.9M",     sub:"25 assets at $15M avg",   color:A,  tag:"PROJECTED" },
-  { label:"Year 2 EBITDA",          value:"$13.2M",    sub:"Large-asset path",        color:G,  tag:"PROJECTED" },
-];
+// ── All data from Abraxas_Sensitivity_ProForma.xlsx ───────────────────
+const SMALL = {
+  color:A, label:"Small ($1–3M avg)",
+  assets:[75,250,500], aum:[112.5,595.6,1786.1],
+  rev:[1.33,7.12,21.43], ebitda:[-5.19,-6.87,-3.20],
+  ebitdaMargin:[-389.1,-96.5,-14.9], grossMargin:[-87.5,6.8,44.2],
+};
+const LARGE = {
+  color:G, label:"Large ($15–25M avg)",
+  assets:[25,75,150], aum:[375,1818.8,5386.9],
+  rev:[4.57,22.64,67.04], ebitda:[-0.21,13.18,49.95],
+  ebitdaMargin:[-4.6,58.2,74.5], grossMargin:[74.8,87.6,91.8],
+};
 
-const VERIFICATION_STEPS = [
-  { n:"01", t:"Asset Submission",      d:"Owner submits asset details, jurisdiction, and estimated value. No wallet required at this stage.",         color:G },
-  { n:"02", t:"Documentation Review",  d:"Title, deed, appraisal, reserve report, or equivalent instrument reviewed by Abraxas verification team.",   color:G },
-  { n:"03", t:"Legal Verification",    d:"Licensed legal counsel confirms ownership structure, entity formation, and jurisdictional compliance.",       color:G },
-  { n:"04", t:"Custody Verification",  d:"Physical or legal asset confirmed under vault, escrow, or entity-controlled custody arrangement.",           color:B },
-  { n:"05", t:"Auditor Sign-Off",       d:"Independent auditor reviews documentation chain for completeness and accuracy. Collateral score assigned.",  color:B },
-  { n:"06", t:"On-Chain Attestation",  d:"SHA-256 document hashes committed to Solana mainnet. AAS-1 certificate minted as Token-2022.",              color:A },
-  { n:"07", t:"Collateral Activation", d:"Verified certificate becomes eligible collateral. LTV tier assigned based on asset class and risk score.",   color:A },
-  { n:"08", t:"Borrow / Finance",       d:"Asset owner draws USDC against collateral via integrated lending protocol. Non-recourse.",                   color:G },
+const PIPELINE = [
+  { n:"01", t:"Asset Submission",     c:G },
+  { n:"02", t:"Documentation Review", c:G },
+  { n:"03", t:"Legal Verification",   c:G },
+  { n:"04", t:"Custody Confirmation", c:B },
+  { n:"05", t:"Auditor Sign-Off",      c:B },
+  { n:"06", t:"On-Chain Attestation", c:A },
+  { n:"07", t:"Collateral Activation",c:A },
+  { n:"08", t:"Borrow / Finance",     c:G },
 ] as const;
 
-const REVENUE_STREAMS = [
-  { icon:"◉", color:B,   title:"Verification",   rate:"0.50%", basis:"Asset value", type:"One-time" },
-  { icon:"◈", color:"#8B5CF6", title:"Tokenization",  rate:"0.25%", basis:"Asset value", type:"One-time" },
-  { icon:"◆", color:G,   title:"Platform AUM",   rate:"0.75%", basis:"Annual AUM",  type:"Recurring" },
-  { icon:"⬡", color:A,   title:"Lending Spread", rate:"1.50%", basis:"Loan volume", type:"Recurring" },
-];
+const KEY_FINDINGS = [
+  { n:"01", c:G, t:"Asset value is the single most leveraged variable.",
+    d:"Doubling average asset value from $1.5M to $3M has more impact on economics than doubling asset count. Verification cost is per-asset, not per-dollar." },
+  { n:"02", c:G, t:"Recurring AUM fees are the long-term value driver.",
+    d:"Platform fees compound annually with AUM retention. By Year 3, large-asset path generates $27M in platform fees alone — more than the small-asset path's total Year 2 revenue." },
+  { n:"03", c:G, t:"Margin expansion is structural, not cyclical.",
+    d:"Large-asset path reaches 74.5% EBITDA margins in Year 3. Fixed verification infrastructure supports exponentially growing AUM — operating leverage is inherent to the model." },
+  { n:"04", c:A, t:"Hybrid sourcing balances credibility and economics.",
+    d:"Showcase assets (sub-$5M) build proof and community trust. Revenue engine should be built on $10M+ institutional deals where onboarding margin is positive from Day 1." },
+  { n:"05", c:B, t:"Profitability timeline: 2+ years shorter on large-asset path.",
+    d:"Near-breakeven in Year 1 (−4.6% EBITDA) and solidly profitable in Year 2 (+58.2%) vs. small-asset path which remains unprofitable across all three modeled years." },
+  { n:"06", c:G, t:"Verification capacity is the primary operational constraint.",
+    d:"Small-asset path requires 50 analysts in Year 3 vs. 20 for the large-asset path — processing equivalent dollar volume. Automation is prerequisite for small-asset viability." },
+] as const;
 
-function SLabel({ c = "children" }:{ c?: string; children: React.ReactNode }){
+// ── Inline SVG bar chart ──────────────────────────────────────────────
+function BarSVG({ data, keys, colors, height=180 }:{
+  data:{[k:string]:number; label:string}[];
+  keys:string[]; colors:string[]; height?:number;
+}) {
+  const W=520; const H=height;
+  const PAD={top:10,right:8,bottom:36,left:44};
+  const cW=W-PAD.left-PAD.right; const cH=H-PAD.top-PAD.bottom;
+  const allV=data.flatMap(d=>keys.map(k=>d[k]??0));
+  const maxV=Math.max(...allV,0); const minV=Math.min(...allV,0);
+  const range=(maxV-minV)||1;
+  const groupW=cW/data.length;
+  const barW=Math.min((groupW/keys.length)*0.78,32);
+  const gOff=(groupW-barW*keys.length)/2;
+  const yS=(v:number)=>PAD.top+cH-((v-minV)/range)*cH;
+  const zY=yS(0);
+  const ticks=[minV,minV+range/4,minV+range/2,minV+range*3/4,maxV]
+    .map(t=>Math.round(t*10)/10);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto"}}>
+      {ticks.map(t=>(
+        <g key={t}>
+          <line x1={PAD.left} x2={PAD.left+cW} y1={yS(t)} y2={yS(t)}
+            stroke={BDR} strokeWidth="1"/>
+          <text x={PAD.left-4} y={yS(t)+4} textAnchor="end"
+            fill="rgba(255,255,255,0.25)" fontSize="9" fontFamily={M}>
+            {t>=0?`$${t.toFixed(0)}M`:`($${Math.abs(t).toFixed(0)}M)`}
+          </text>
+        </g>
+      ))}
+      {minV<0&&<line x1={PAD.left} x2={PAD.left+cW} y1={zY} y2={zY}
+        stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>}
+      {data.map((d,gi)=>(
+        <g key={gi}>
+          {keys.map((k,ki)=>{
+            const v=d[k]??0;
+            const x=PAD.left+gi*groupW+gOff+ki*barW;
+            const y=v>=0?yS(v):zY;
+            const h=Math.max(Math.abs(yS(v)-zY),1);
+            return(
+              <rect key={k} x={x} y={y} width={barW-1} height={h}
+                fill={colors[ki]} opacity="0.85" rx="1"/>
+            );
+          })}
+          <text x={PAD.left+gi*groupW+groupW/2} y={H-6}
+            textAnchor="middle" fill="rgba(255,255,255,0.3)"
+            fontSize="9" fontFamily={M}>{d.label}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// ── Shared primitives ─────────────────────────────────────────────────
+function Label({ children }: { children:React.ReactNode }) {
   return (
     <div style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
-                   color:`${G}80`, textTransform:"uppercase",
-                   letterSpacing:"0.2em", marginBottom:"0.75rem" }}>
-      {c}
+                   color:"rgba(255,255,255,0.22)", textTransform:"uppercase",
+                   letterSpacing:"0.15em", marginBottom:"0.875rem" }}>
+      {children}
+    </div>
+  );
+}
+function Divider() {
+  return <div style={{ height:1, background:BDR, margin:"2.5rem 0" }}/>;
+}
+
+function SubNav<T extends string>({ tabs, active, onSelect, accent=B }:{
+  tabs:{id:T;label:string;sub:string}[]; active:T;
+  onSelect:(id:T)=>void; accent?:string;
+}) {
+  return (
+    <div style={{ display:"flex", borderBottom:`1px solid ${BDR}`,
+                   background:CARD, overflowX:"auto" }}>
+      {tabs.map(t=>(
+        <button key={t.id} onClick={()=>onSelect(t.id)} style={{
+          padding:"0.7rem clamp(0.75rem,2vw,1.5rem)",
+          background:"transparent", border:"none",
+          borderBottom:`2px solid ${active===t.id?accent:"transparent"}`,
+          fontFamily:M, fontSize:"clamp(0.28rem,0.9vw,0.36rem)", fontWeight:700,
+          color:active===t.id?accent:"rgba(255,255,255,0.25)",
+          cursor:"pointer", textTransform:"uppercase",
+          letterSpacing:"0.1em", whiteSpace:"nowrap",
+          flexShrink:0, transition:"all 0.15s",
+        }}>
+          {t.label}
+          <span style={{ display:"block", fontSize:"0.26rem",
+                          color:"rgba(255,255,255,0.15)",
+                          fontWeight:400, letterSpacing:"0.05em", marginTop:1 }}>
+            {t.sub}
+          </span>
+        </button>
+      ))}
     </div>
   );
 }
 
-function MetricTag({ v, color }: { v:string; color:string }) {
-  return (
-    <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
-                    color, background:`${color}12`, border:`1px solid ${color}25`,
-                    borderRadius:3, padding:"1px 5px",
-                    textTransform:"uppercase", letterSpacing:"0.08em" }}>
-      {v}
-    </span>
-  );
-}
+// ── OVERVIEW — economics fully visible ───────────────────────────────
+function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
+  const [scenario, setScenario] = useState<"small"|"large">("large");
+  const SC = scenario === "small" ? SMALL : LARGE;
 
-// ── OVERVIEW tab — economics + pipeline + positioning ─────────────────
-function OverviewTab({ onGoToCollateral, onGoToProtocol }:
-  { onGoToCollateral:()=>void; onGoToProtocol:()=>void }) {
+  const ebitdaData = [
+    { label:"Year 1", small:-5.19, large:-0.21 },
+    { label:"Year 2", small:-6.87, large:13.18 },
+    { label:"Year 3", small:-3.20, large:49.95 },
+  ];
 
   return (
     <div style={{ maxWidth:1060, margin:"0 auto",
-                   padding:"2.5rem clamp(1rem,3vw,2rem) 4rem" }}>
+                   padding:"2.5rem clamp(1rem,3vw,2rem) 5rem" }}>
 
-      {/* ── Positioning headline ────────────────────────────────── */}
+      {/* ── Positioning ──────────────────────────────────────── */}
       <div style={{ marginBottom:"2.5rem" }}>
-        <div style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
-                       color:`${G}80`, textTransform:"uppercase",
-                       letterSpacing:"0.2em", marginBottom:"0.75rem" }}>
+        <div style={{ fontFamily:M, fontSize:"0.3rem", color:`${G}70`,
+                       textTransform:"uppercase", letterSpacing:"0.2em",
+                       marginBottom:"0.75rem" }}>
           ABRAXAS PROTOCOL · SOLANA
         </div>
         <h1 style={{ fontFamily:S, fontSize:"clamp(1.6rem,4.5vw,3.2rem)",
-                      fontWeight:800, color:"#F8FAFC", margin:"0 0 1rem",
+                      fontWeight:800, color:W, margin:"0 0 1rem",
                       letterSpacing:"-0.03em", lineHeight:1.08 }}>
-          Institutional collateral<br/>
-          infrastructure, on-chain.
+          Institutional collateral<br/>infrastructure, on-chain.
         </h1>
         <p style={{ fontFamily:S, fontSize:"clamp(0.8rem,1.8vw,1rem)",
                      color:"rgba(255,255,255,0.32)", lineHeight:1.8,
-                     maxWidth:580, margin:"0 0 2rem" }}>
+                     maxWidth:560, margin:"0 0 1.75rem" }}>
           Abraxas verifies whether a real-world asset is financeable.
-          We transform verified property, minerals, energy reserves, and
-          precious metals into programmable on-chain collateral — backed
-          by legal, custodial, and audit infrastructure.
+          Verified property, minerals, energy reserves, and precious metals
+          become programmable on-chain collateral — backed by legal, custodial,
+          and audit infrastructure.
         </p>
-        {/* Primary CTAs */}
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
-          <button onClick={onGoToProtocol} style={{
+          <button onClick={()=>goTo("protocol")} style={{
             padding:"0.875rem 1.75rem", borderRadius:6, border:"none",
             background:G, color:"#000", fontFamily:M, fontSize:"0.5rem",
             fontWeight:900, cursor:"pointer", letterSpacing:"0.04em",
             textTransform:"uppercase",
-          }}>
-            SUBMIT AN ASSET →
-          </button>
-          <button onClick={onGoToCollateral} style={{
+          }}>SUBMIT AN ASSET →</button>
+          <button onClick={()=>goTo("collateral")} style={{
             padding:"0.875rem 1.75rem", borderRadius:6,
             border:`1px solid ${B}40`, background:`${B}08`,
             color:B, fontFamily:M, fontSize:"0.5rem", fontWeight:700,
             cursor:"pointer", letterSpacing:"0.04em", textTransform:"uppercase",
-          }}>
-            VIEW COLLATERAL TERMINAL →
-          </button>
+          }}>VIEW COLLATERAL →</button>
         </div>
       </div>
 
-      {/* ── Protocol metrics grid ───────────────────────────────── */}
-      <div style={{ marginBottom:"2.5rem" }}>
-        <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.2)",
-                       textTransform:"uppercase", letterSpacing:"0.15em",
-                       marginBottom:"0.875rem" }}>
-          PROTOCOL PROJECTIONS — LARGE ASSET PATH (YEAR 1)
+      <Divider />
+
+      {/* ── ECONOMICS SECTION ─────────────────────────────────── */}
+      <div style={{ marginBottom:"0.5rem" }}>
+        <div style={{ display:"flex", alignItems:"baseline",
+                       justifyContent:"space-between", marginBottom:"1.5rem" }}>
+          <div>
+            <Label>Platform Economics</Label>
+            <h2 style={{ fontFamily:S, fontSize:"clamp(1.2rem,3vw,1.9rem)",
+                          fontWeight:800, color:W, margin:0,
+                          letterSpacing:"-0.02em" }}>
+              Real revenue. Real assets. Sustainable economics.
+            </h2>
+          </div>
+          <a href="/economics" style={{ fontFamily:M, fontSize:"0.34rem",
+                                          color:`${B}60`, textDecoration:"none",
+                                          flexShrink:0, marginLeft:"1rem" }}>
+            Full model →
+          </a>
         </div>
-        <div style={{ display:"grid",
-                       gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",
-                       gap:"1px", border:`1px solid ${BORDER}`,
-                       borderRadius:8, overflow:"hidden" }}>
-          {METRICS.map(m => (
-            <div key={m.label} style={{ background:CARD, padding:"1.125rem 1rem" }}>
-              <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(255,255,255,0.2)",
-                             textTransform:"uppercase", letterSpacing:"0.1em",
-                             marginBottom:"0.35rem" }}>
-                {m.label}
-              </div>
-              <div style={{ fontFamily:M, fontSize:"clamp(0.8rem,2vw,1.15rem)",
-                             fontWeight:900, color:m.color, lineHeight:1 }}>
-                {m.value}
-              </div>
-              <div style={{ fontFamily:M, fontSize:"0.26rem",
-                             color:"rgba(255,255,255,0.2)", marginTop:"0.25rem" }}>
-                {m.sub}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(255,255,255,0.18)",
-                       marginTop:"0.5rem" }}>
-          ↑ Illustrative projections from Abraxas sensitivity pro forma. Not a guarantee of performance.
-        </div>
+        <p style={{ fontFamily:S, fontSize:"clamp(0.78rem,1.6vw,0.9rem)",
+                     color:"rgba(255,255,255,0.3)", lineHeight:1.8,
+                     maxWidth:580, margin:"0 0 2rem" }}>
+          Abraxas is engineered around recurring fee streams tied to assets under
+          management — not speculative token activity. Verification workload grows
+          with asset count, not value. Revenue grows with both.
+        </p>
       </div>
 
-      {/* ── Verification pipeline ────────────────────────────────── */}
-      <div style={{ marginBottom:"2.5rem" }}>
-        <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.2)",
-                       textTransform:"uppercase", letterSpacing:"0.15em",
-                       marginBottom:"1.125rem" }}>
-          COLLATERAL ACTIVATION PIPELINE
-        </div>
-        <div style={{ display:"grid",
-                       gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",
-                       gap:"0.625rem" }}>
-          {VERIFICATION_STEPS.map(step => (
-            <div key={step.n} style={{ background:CARD, border:`1px solid ${BORDER}`,
-                                         borderLeft:`2px solid ${step.color}`,
-                                         borderRadius:6, padding:"0.875rem 1rem" }}>
-              <div style={{ fontFamily:M,
-                             fontSize:"clamp(0.9rem,2vw,1.3rem)",
-                             fontWeight:900, color:`${step.color}20`,
-                             lineHeight:1, marginBottom:"0.35rem" }}>
-                {step.n}
-              </div>
-              <div style={{ fontFamily:S, fontSize:"clamp(0.72rem,1.6vw,0.82rem)",
-                             fontWeight:700, color:"#F8FAFC", marginBottom:"0.3rem" }}>
-                {step.t}
-              </div>
-              <div style={{ fontFamily:S, fontSize:"clamp(0.6rem,1.3vw,0.7rem)",
-                             color:"rgba(255,255,255,0.3)", lineHeight:1.65 }}>
-                {step.d}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Revenue model ────────────────────────────────────────── */}
-      <div style={{ marginBottom:"2.5rem" }}>
-        <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.2)",
-                       textTransform:"uppercase", letterSpacing:"0.15em",
-                       marginBottom:"0.875rem" }}>
-          REVENUE ARCHITECTURE
-        </div>
+      {/* Revenue streams */}
+      <div style={{ marginBottom:"2rem" }}>
+        <Label>Revenue Architecture</Label>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)",
-                       gap:"1px", border:`1px solid ${BORDER}`,
+                       gap:"1px", border:`1px solid ${BDR}`,
                        borderRadius:8, overflow:"hidden" }}>
-          {REVENUE_STREAMS.map(r => (
-            <div key={r.title} style={{ background:CARD, padding:"1rem",
-                                          borderTop:`2px solid ${r.color}` }}>
+          {[
+            { icon:"◉", color:B,        t:"Verification",  r:"0.50%", b:"asset value",  k:"One-time"  },
+            { icon:"◈", color:"#8B5CF6",t:"Tokenization",  r:"0.25%", b:"asset value",  k:"One-time"  },
+            { icon:"◆", color:G,        t:"Platform AUM",  r:"0.75%", b:"annual AUM",   k:"Recurring" },
+            { icon:"⬡", color:A,        t:"Lending Spread",r:"1.50%", b:"loan volume",  k:"Recurring" },
+          ].map(r=>(
+            <div key={r.t} style={{ background:CARD, padding:"1rem",
+                                      borderTop:`2px solid ${r.color}` }}>
               <div style={{ display:"flex", alignItems:"center",
                              gap:"0.35rem", marginBottom:"0.5rem" }}>
                 <span style={{ color:r.color, fontSize:"0.55rem" }}>{r.icon}</span>
                 <span style={{ fontFamily:M, fontSize:"0.38rem",
-                                fontWeight:700, color:"#F8FAFC" }}>{r.title}</span>
+                                fontWeight:700, color:W }}>{r.t}</span>
               </div>
+              <div style={{ fontFamily:M, fontSize:"clamp(0.8rem,2vw,1.1rem)",
+                             fontWeight:900, color:r.color }}>{r.r}</div>
+              <div style={{ fontFamily:M, fontSize:"0.26rem",
+                             color:"rgba(255,255,255,0.2)",
+                             marginBottom:"0.4rem" }}>of {r.b}</div>
+              <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
+                              color:r.k==="Recurring"?G:A,
+                              background:r.k==="Recurring"?`${G}12`:`${A}12`,
+                              border:`1px solid ${r.k==="Recurring"?G:A}25`,
+                              borderRadius:3, padding:"1px 5px",
+                              textTransform:"uppercase",letterSpacing:"0.08em" }}>
+                {r.k}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Scenario analysis */}
+      <div style={{ marginBottom:"2rem" }}>
+        <div style={{ display:"flex", alignItems:"center",
+                       justifyContent:"space-between",
+                       marginBottom:"1rem", flexWrap:"wrap", gap:"0.5rem" }}>
+          <Label>Scenario Analysis — Year-by-Year</Label>
+          <div style={{ display:"flex", gap:"0.4rem" }}>
+            {(["small","large"] as const).map(k=>(
+              <button key={k} onClick={()=>setScenario(k)} style={{
+                padding:"0.3rem 0.75rem", borderRadius:4, cursor:"pointer",
+                border:`1px solid ${scenario===k?(k==="small"?A:G):BDR}`,
+                background:scenario===k?`${k==="small"?A:G}12`:CARD,
+                color:scenario===k?(k==="small"?A:G):"rgba(255,255,255,0.3)",
+                fontFamily:M, fontSize:"0.32rem", fontWeight:700,
+                textTransform:"uppercase", letterSpacing:"0.08em",
+                transition:"all 0.15s",
+              }}>
+                {k==="small"?"SMALL ($1–3M)":"LARGE ($15–25M)"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)",
+                       gap:"0.75rem", marginBottom:"1.25rem" }}>
+          {[0,1,2].map(y=>{
+            const profit = SC.ebitda[y]>0;
+            return (
+              <div key={y} style={{ background:CARD,
+                                      border:`1px solid ${BDR}`,
+                                      borderTop:`2px solid ${profit?G:"#EF4444"}`,
+                                      borderRadius:7, padding:"1rem" }}>
+                <div style={{ fontFamily:M, fontSize:"0.3rem",
+                               color:"rgba(255,255,255,0.2)",
+                               textTransform:"uppercase",
+                               letterSpacing:"0.1em",
+                               marginBottom:"0.75rem" }}>
+                  YEAR {y+1}
+                </div>
+                {[
+                  { l:"Assets Verified",  v:`${SC.assets[y]}`               },
+                  { l:"Tokenized AUM",    v:`$${SC.aum[y].toFixed(0)}M`     },
+                  { l:"Total Revenue",    v:`$${SC.rev[y].toFixed(2)}M`     },
+                  { l:"Gross Margin",     v:`${SC.grossMargin[y].toFixed(1)}%`,
+                    c:SC.grossMargin[y]>0?G:"#EF4444" },
+                  { l:"EBITDA",
+                    v:SC.ebitda[y]<0?`($${Math.abs(SC.ebitda[y]).toFixed(2)}M)`:`$${SC.ebitda[y].toFixed(2)}M`,
+                    c:profit?G:"#EF4444" },
+                  { l:"EBITDA Margin",    v:`${SC.ebitdaMargin[y].toFixed(1)}%`,
+                    c:profit?G:"#EF4444" },
+                ].map(row=>(
+                  <div key={row.l} style={{ display:"flex",
+                                             justifyContent:"space-between",
+                                             padding:"0.3rem 0",
+                                             borderBottom:`1px solid ${BDR}` }}>
+                    <span style={{ fontFamily:S, fontSize:"0.62rem",
+                                    color:"rgba(255,255,255,0.35)" }}>
+                      {row.l}
+                    </span>
+                    <span style={{ fontFamily:M, fontSize:"0.58rem",
+                                    fontWeight:700,
+                                    color:(row as any).c??W }}>
+                      {row.v}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* EBITDA chart */}
+        <div style={{ background:CARD, border:`1px solid ${BDR}`,
+                       borderRadius:7, padding:"1.25rem" }}>
+          <div style={{ fontFamily:M, fontSize:"0.3rem",
+                         color:"rgba(255,255,255,0.2)",
+                         textTransform:"uppercase", letterSpacing:"0.1em",
+                         marginBottom:"0.875rem" }}>
+            EBITDA TRAJECTORY ($M) — SMALL vs. LARGE ASSET PATH
+          </div>
+          <BarSVG
+            data={ebitdaData}
+            keys={["small","large"]}
+            colors={[A, G]}
+            height={180}
+          />
+          <div style={{ display:"flex", gap:"1rem", marginTop:"0.5rem" }}>
+            {[{c:A,l:"Small Assets"},{c:G,l:"Large Assets"}].map(x=>(
+              <div key={x.l} style={{ display:"flex", alignItems:"center", gap:"0.3rem" }}>
+                <div style={{ width:10, height:10, borderRadius:2, background:x.c, opacity:0.85 }}/>
+                <span style={{ fontFamily:M, fontSize:"0.3rem",
+                                color:"rgba(255,255,255,0.3)" }}>{x.l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Key findings */}
+      <div style={{ marginBottom:"2rem" }}>
+        <Label>Key Findings</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"0.625rem" }}>
+          {KEY_FINDINGS.map(f=>(
+            <div key={f.n} style={{ display:"grid",
+                                      gridTemplateColumns:"48px 1fr",
+                                      gap:"0.875rem", padding:"1rem 1.125rem",
+                                      background:CARD,
+                                      border:`1px solid ${BDR}`,
+                                      borderLeft:`3px solid ${f.c}`,
+                                      borderRadius:7, alignItems:"start" }}>
               <div style={{ fontFamily:M,
-                             fontSize:"clamp(0.8rem,2vw,1.1rem)",
-                             fontWeight:900, color:r.color,
-                             marginBottom:"0.25rem" }}>
-                {r.rate}
+                             fontSize:"clamp(0.9rem,2.5vw,1.4rem)",
+                             fontWeight:900, color:`${f.c}20`, lineHeight:1 }}>
+                {f.n}
               </div>
-              <div style={{ fontFamily:M, fontSize:"0.28rem",
-                             color:"rgba(255,255,255,0.2)", marginBottom:"0.4rem" }}>
-                of {r.basis}
-              </div>
-              <div style={{ fontFamily:M, fontSize:"0.28rem", color:r.color,
-                             background:`${r.color}12`, border:`1px solid ${r.color}20`,
-                             borderRadius:3, padding:"1px 5px", display:"inline-block" }}>
-                {r.type}
+              <div>
+                <div style={{ fontFamily:S,
+                               fontSize:"clamp(0.78rem,1.8vw,0.92rem)",
+                               fontWeight:700, color:W,
+                               marginBottom:"0.3rem" }}>
+                  {f.t}
+                </div>
+                <div style={{ fontFamily:S,
+                               fontSize:"clamp(0.64rem,1.4vw,0.76rem)",
+                               color:"rgba(255,255,255,0.32)",
+                               lineHeight:1.75 }}>
+                  {f.d}
+                </div>
               </div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop:"0.75rem", textAlign:"right" }}>
-          <a href="/economics" style={{ fontFamily:M, fontSize:"0.34rem",
-                                         color:`${B}80`, textDecoration:"none" }}>
-            Full economics model →
-          </a>
+      </div>
+
+      {/* Fee structure */}
+      <div style={{ marginBottom:"2rem" }}>
+        <Label>Fee Structure</Label>
+        <div style={{ border:`1px solid ${BDR}`, borderRadius:7, overflow:"hidden" }}>
+          <div style={{ display:"grid",
+                         gridTemplateColumns:"1fr 72px 88px 1fr",
+                         padding:"0.6rem 1.25rem",
+                         borderBottom:`1px solid ${BDR}`,
+                         background:"#111620",
+                         fontFamily:M, fontSize:"0.28rem",
+                         color:"rgba(255,255,255,0.2)",
+                         textTransform:"uppercase",
+                         letterSpacing:"0.1em" }}>
+            <span>Fee Type</span>
+            <span style={{ textAlign:"center" }}>Rate</span>
+            <span style={{ textAlign:"center" }}>Structure</span>
+            <span>Basis</span>
+          </div>
+          {[
+            { t:"Verification Fee",  r:"0.50%", k:"One-time",  b:"Asset value at onboarding",  kc:A },
+            { t:"Tokenization Fee",  r:"0.25%", k:"One-time",  b:"Asset value at issuance",    kc:A },
+            { t:"Platform Fee",      r:"0.75%", k:"Recurring", b:"Average AUM per annum",      kc:G },
+            { t:"Lending Take Rate", r:"1.50%", k:"Recurring", b:"Total loan volume originated",kc:G },
+          ].map((row,i)=>(
+            <div key={row.t} style={{ display:"grid",
+                                       gridTemplateColumns:"1fr 72px 88px 1fr",
+                                       padding:"0.75rem 1.25rem",
+                                       alignItems:"center",
+                                       borderBottom:i<3?`1px solid ${BDR}`:"none",
+                                       background:i%2===0?CARD:"transparent" }}>
+              <span style={{ fontFamily:S, fontSize:"0.76rem",
+                              fontWeight:600, color:W }}>{row.t}</span>
+              <span style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
+                              color:G, textAlign:"center" }}>{row.r}</span>
+              <span style={{ fontFamily:M, fontSize:"0.3rem",
+                              color:row.kc, background:`${row.kc}10`,
+                              border:`1px solid ${row.kc}25`, borderRadius:3,
+                              padding:"2px 5px", display:"inline-block",
+                              textAlign:"center", textTransform:"uppercase",
+                              letterSpacing:"0.06em" }}>{row.k}</span>
+              <span style={{ fontFamily:S, fontSize:"0.7rem",
+                              color:"rgba(255,255,255,0.3)" }}>{row.b}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Genesis asset callout ────────────────────────────────── */}
-      <div style={{ padding:"1.375rem 1.5rem", borderRadius:8,
-                     border:`1px solid ${G}25`,
-                     background:`${G}05`,
+      {/* Verification pipeline */}
+      <div style={{ marginBottom:"2rem" }}>
+        <Label>Collateral Activation Pipeline</Label>
+        <div style={{ display:"grid",
+                       gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",
+                       gap:"0.5rem" }}>
+          {PIPELINE.map(s=>(
+            <div key={s.n} style={{ background:CARD,
+                                      border:`1px solid ${BDR}`,
+                                      borderLeft:`2px solid ${s.c}`,
+                                      borderRadius:6, padding:"0.75rem 1rem",
+                                      display:"flex", alignItems:"center",
+                                      gap:"0.625rem" }}>
+              <span style={{ fontFamily:M,
+                              fontSize:"clamp(0.7rem,1.8vw,0.88rem)",
+                              fontWeight:900, color:`${s.c}25`,
+                              flexShrink:0, width:28 }}>{s.n}</span>
+              <span style={{ fontFamily:S,
+                              fontSize:"clamp(0.62rem,1.5vw,0.74rem)",
+                              fontWeight:600,
+                              color:"rgba(255,255,255,0.5)" }}>{s.t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Investor disclosure */}
+      <div style={{ padding:"1.5rem", background:CARD,
+                     border:`1px solid ${BDR}`, borderRadius:7 }}>
+        <div style={{ fontFamily:M, fontSize:"0.3rem",
+                       color:"rgba(255,255,255,0.2)",
+                       textTransform:"uppercase", letterSpacing:"0.15em",
+                       marginBottom:"0.75rem" }}>
+          Investor Disclosure
+        </div>
+        <p style={{ fontFamily:S, fontSize:"clamp(0.68rem,1.4vw,0.8rem)",
+                     color:"rgba(255,255,255,0.28)", lineHeight:1.9, margin:0 }}>
+          These projections are illustrative and based on current fee structures,
+          assumed onboarding velocity, modeled verification capacity, and projected
+          AUM retention rates. Actual results will vary based on market conditions,
+          regulatory environment, competitive dynamics, and execution. Neither scenario
+          constitutes a guarantee of future performance. Abraxas does not provide
+          investment advice. This material is for informational purposes only.
+        </p>
+      </div>
+
+      {/* Genesis callout */}
+      <div style={{ marginTop:"2rem", padding:"1.375rem 1.5rem", borderRadius:8,
+                     border:`1px solid ${G}25`, background:`${G}05`,
                      display:"flex", justifyContent:"space-between",
                      alignItems:"center", flexWrap:"wrap", gap:"1rem" }}>
         <div>
@@ -249,178 +521,115 @@ function OverviewTab({ onGoToCollateral, onGoToProtocol }:
             GENESIS ASSET · AAS-1 VERIFIED · SERIES A
           </div>
           <div style={{ fontFamily:S, fontSize:"clamp(0.8rem,2vw,1rem)",
-                         fontWeight:700, color:"#F8FAFC" }}>
+                         fontWeight:700, color:W }}>
             Cielo Sunrise — $1,100,000 · Mineral Bluff, Georgia
           </div>
-          <div style={{ fontFamily:S, fontSize:"clamp(0.64rem,1.4vw,0.76rem)",
-                         color:"rgba(255,255,255,0.3)", marginTop:"0.2rem" }}>
-            89/100 collateral score · $660K max borrow · 75% occupancy · 5.0★ superhost
+          <div style={{ fontFamily:S, fontSize:"clamp(0.62rem,1.3vw,0.74rem)",
+                         color:"rgba(255,255,255,0.28)", marginTop:"0.2rem" }}>
+            89/100 collateral score · $660K max borrow · 5.0★ · AAS-1 certified
           </div>
         </div>
-        <button onClick={onGoToCollateral} style={{
+        <button onClick={()=>goTo("collateral")} style={{
           padding:"0.625rem 1.25rem", borderRadius:5,
           border:`1px solid ${G}40`, background:`${G}08`,
           fontFamily:M, fontSize:"0.38rem", fontWeight:700,
           color:G, cursor:"pointer",
           textTransform:"uppercase", letterSpacing:"0.06em", whiteSpace:"nowrap",
-        }}>
-          INSPECT ASSET →
-        </button>
+        }}>INSPECT ASSET →</button>
       </div>
     </div>
   );
 }
 
-// ── COLLATERAL tab — Genesis + Terminal merged ───────────────────────
+// ── COLLATERAL ────────────────────────────────────────────────────────
 function CollateralTab() {
-  const [view, setView] = useState<CollateralView>("featured");
-
+  const [view, setView] = useState<ColV>("featured");
   return (
     <div>
-      {/* Sub-nav */}
-      <div style={{ display:"flex", borderBottom:`1px solid ${BORDER}`,
-                     background:CARD, overflowX:"auto", flexShrink:0 }}>
-        {([
-          { id:"featured" as CollateralView, label:"FEATURED ASSET",  sub:"Cielo Sunrise · Genesis" },
-          { id:"registry" as CollateralView,  label:"ASSET TERMINAL",  sub:"Inspector · Registry"    },
-        ]).map(v => (
-          <button key={v.id} onClick={() => setView(v.id)} style={{
-            padding:"0.75rem clamp(0.75rem,2vw,1.5rem)", background:"transparent",
-            border:"none", borderBottom:`2px solid ${view===v.id ? B : "transparent"}`,
-            fontFamily:M, fontSize:"clamp(0.28rem,0.9vw,0.36rem)", fontWeight:700,
-            color:view===v.id ? B : "rgba(255,255,255,0.25)",
-            cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.1em",
-            whiteSpace:"nowrap", flexShrink:0, transition:"all 0.15s",
-          }}>
-            {v.label}
-            <span style={{ display:"block", fontSize:"0.26rem",
-                            color:"rgba(255,255,255,0.15)", fontWeight:400,
-                            letterSpacing:"0.05em", marginTop:1 }}>
-              {v.sub}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
+      <SubNav
+        tabs={[
+          { id:"featured" as ColV, label:"FEATURED ASSET", sub:"Cielo Sunrise · Genesis" },
+          { id:"registry" as ColV, label:"ASSET REGISTRY",  sub:"Inspector · On-chain"  },
+        ]}
+        active={view} onSelect={setView} accent={B}
+      />
       {view === "featured" && <FlagshipAssetPage />}
       {view === "registry"  && <TerminalLayout />}
     </div>
   );
 }
 
-// ── PROTOCOL tab — onboarding + trust stack ──────────────────────────
+// ── PROTOCOL ──────────────────────────────────────────────────────────
 function ProtocolTab() {
-  const [view, setView] = useState<"onboarding"|"trust">("onboarding");
-
+  const [view, setView] = useState<ProV>("onboarding");
   return (
     <div>
-      <div style={{ display:"flex", borderBottom:`1px solid ${BORDER}`,
-                     background:CARD, overflowX:"auto" }}>
-        {([
-          { id:"onboarding" as const, label:"SUBMIT AN ASSET",  sub:"Owner onboarding" },
-          { id:"trust"      as const, label:"TRUST ARCHITECTURE",sub:"Verification layers" },
-        ]).map(v => (
-          <button key={v.id} onClick={() => setView(v.id)} style={{
-            padding:"0.75rem clamp(0.75rem,2vw,1.5rem)", background:"transparent",
-            border:"none", borderBottom:`2px solid ${view===v.id ? G : "transparent"}`,
-            fontFamily:M, fontSize:"clamp(0.28rem,0.9vw,0.36rem)", fontWeight:700,
-            color:view===v.id ? G : "rgba(255,255,255,0.25)",
-            cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.1em",
-            whiteSpace:"nowrap", flexShrink:0, transition:"all 0.15s",
-          }}>
-            {v.label}
-            <span style={{ display:"block", fontSize:"0.26rem",
-                            color:"rgba(255,255,255,0.15)", fontWeight:400,
-                            letterSpacing:"0.05em", marginTop:1 }}>
-              {v.sub}
-            </span>
-          </button>
-        ))}
-      </div>
-
+      <SubNav
+        tabs={[
+          { id:"onboarding" as ProV, label:"SUBMIT AN ASSET",    sub:"Owner onboarding"    },
+          { id:"trust"      as ProV, label:"TRUST ARCHITECTURE",  sub:"Verification layers" },
+        ]}
+        active={view} onSelect={setView} accent={G}
+      />
       {view === "onboarding" && (
-        <AssetOwnerOnboarding onEnterTerminal={() => setView("trust")} />
+        <AssetOwnerOnboarding onEnterTerminal={()=>setView("trust")} />
       )}
       {view === "trust" && <TrustStack />}
     </div>
   );
 }
 
-// ── MAIN PAGE ─────────────────────────────────────────────────────────
+// ── MAIN ──────────────────────────────────────────────────────────────
 export default function TerminalPage() {
   const [tab, setTab] = useState<Tab>("overview");
 
-  const TABS: { id:Tab; label:string; sub:string }[] = [
-    { id:"overview",   label:"OVERVIEW",   sub:"Economics · Protocol" },
-    { id:"collateral", label:"COLLATERAL", sub:"Assets · Verification" },
-    { id:"lending",    label:"LENDING",    sub:"Borrow · LTV"          },
-    { id:"protocol",   label:"PROTOCOL",   sub:"Submit · Trust"        },
-  ];
-
   return (
-    <div style={{ background:BG, minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+    <div style={{ background:BG, minHeight:"100vh",
+                   display:"flex", flexDirection:"column" }}>
 
-      {/* ── Primary nav ─────────────────────────────────────────── */}
       <nav style={{
         position:"sticky", top:0, zIndex:200,
         background:"rgba(10,12,16,0.97)", backdropFilter:"blur(12px)",
-        borderBottom:`1px solid ${BORDER}`,
+        borderBottom:`1px solid ${BDR}`,
         display:"flex", alignItems:"center",
         padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
         height:"clamp(46px,6vw,54px)",
         gap:"clamp(0.25rem,1vw,0.5rem)",
         flexWrap:"nowrap", overflowX:"auto",
       }}>
-        {/* Brand */}
         <div style={{ display:"flex", alignItems:"center", gap:"0.375rem",
                        flexShrink:0, marginRight:"clamp(0.375rem,1.5vw,1rem)" }}>
-          <span style={{ color:G, fontSize:"clamp(0.7rem,2vw,0.88rem)", lineHeight:1 }}>◈</span>
-          <span style={{ fontFamily:M, fontSize:"clamp(0.5rem,1.5vw,0.68rem)",
-                          fontWeight:900, color:"#F8FAFC", letterSpacing:"0.1em" }}>
+          <span style={{ color:G, fontSize:"clamp(0.7rem,2vw,0.9rem)" }}>◈</span>
+          <span style={{ fontFamily:M, fontSize:"clamp(0.5rem,1.5vw,0.7rem)",
+                          fontWeight:900, color:W, letterSpacing:"0.1em" }}>
             ABRAXAS
-          </span>
-          <span style={{ fontFamily:M, fontSize:"0.26rem",
-                          color:"rgba(255,255,255,0.2)", letterSpacing:"0.15em",
-                          display:"none", ["@media(min-width:640px)" as string]:{display:"block"} }}>
-            COLLATERAL TERMINAL
           </span>
         </div>
 
-        {/* 4 tabs */}
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding:"0.25rem clamp(0.4rem,1.2vw,0.75rem)",
-            borderRadius:4,
-            border:`1px solid ${tab===t.id ? `${G}50` : BORDER}`,
-            background: tab===t.id ? `${G}10` : "transparent",
-            color: tab===t.id ? G : "rgba(255,255,255,0.28)",
+        {(["overview","collateral","lending","protocol"] as Tab[]).map(t=>(
+          <button key={t} onClick={()=>setTab(t)} style={{
+            padding:"0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius:4,
+            border:`1px solid ${tab===t?`${G}50`:BDR}`,
+            background: tab===t?`${G}10`:"transparent",
+            color: tab===t?G:"rgba(255,255,255,0.28)",
             fontFamily:M, fontSize:"clamp(0.28rem,0.85vw,0.36rem)",
             fontWeight:700, cursor:"pointer", textTransform:"uppercase",
             letterSpacing:"0.1em", whiteSpace:"nowrap", flexShrink:0,
             transition:"all 0.15s",
-          }}>{t.label}</button>
+          }}>{t.toUpperCase()}</button>
         ))}
 
         <div style={{ flex:1 }}/>
-
-        {/* Language + wallet */}
         <LanguageSelector />
         <CompactWallet />
       </nav>
 
-      {/* ── Tab content ─────────────────────────────────────────── */}
       <div style={{ flex:1 }}>
-        {tab === "overview" && (
-          <OverviewTab
-            onGoToCollateral={() => setTab("collateral")}
-            onGoToProtocol={() => setTab("protocol")}
-          />
-        )}
+        {tab === "overview"   && <OverviewTab goTo={setTab} />}
         {tab === "collateral" && <CollateralTab />}
         {tab === "lending"    && (
           <div style={{ maxWidth:1060, margin:"0 auto",
-                         padding:"2rem clamp(1rem,3vw,2rem) 4rem" }}>
+                         padding:"2rem clamp(1rem,3vw,2rem) 5rem" }}>
             <BorrowPage />
           </div>
         )}

@@ -1,44 +1,69 @@
+/* FILE: app/globals.css */
 @import "@solana/wallet-adapter-react-ui/styles.css";
 
-/* FILE: app/globals.css */
 *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
   margin: 0; padding: 0;
-  background: #0C0E12; color: #f0f0f0;
+  background: #0A0C10; color: #F8FAFC;
   font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
-/* iOS zoom prevention */
 input, textarea, select { font-size: 16px; }
-/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
 ::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 2px; }
+
 /* Wallet adapter modal */
 .wallet-adapter-modal-wrapper {
-  background: rgba(12,14,18,0.98) !important;
-  border: 1px solid #1F2937 !important;
+  background: rgba(10,12,16,0.98) !important;
+  border: 1px solid #1C2333 !important;
   border-radius: 10px !important;
 }
 .wallet-adapter-modal-title {
-  color: #f0f0f0 !important;
+  color: #F8FAFC !important;
   font-family: 'JetBrains Mono', monospace !important;
   font-weight: 900 !important;
-  letter-spacing: 0.08em !important;
 }
 .wallet-adapter-button {
   background: linear-gradient(135deg, #7c3aed, #10B981) !important;
-  color: #fff !important; border-radius: 6px !important;
-  font-weight: 800 !important;
+  color: #fff !important; border-radius: 6px !important; font-weight: 800 !important;
 }
 .wallet-adapter-modal-list .wallet-adapter-button {
   background: rgba(255,255,255,0.04) !important;
-  border: 1px solid #1F2937 !important;
+  border: 1px solid #1C2333 !important;
   color: rgba(255,255,255,0.8) !important;
 }
-/* Google Translate toolbar hide */
-.goog-te-banner-frame { display: none !important; }
-body { top: 0 !important; }
+
+/* ── Google Translate — hide ALL injected UI completely ─────────────
+   Achieves clean institutional translation with no visible Google chrome.
+   Translation still works; only their UI is suppressed.           ── */
+.goog-te-banner-frame,
+.goog-te-ftab-float,
+.goog-te-menu-frame,
+#goog-gt-tt,
+.goog-tooltip,
+.goog-tooltip-content,
+.goog-te-balloon-frame,
+.goog-logo-link,
+.goog-te-gadget-icon,
+.VIpgJd-ZVi9od-aZ2wEe,
+.VIpgJd-yAWNEb-L7lbkb {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Prevent GT from pushing body down */
+body {
+  top: 0 !important;
+  position: relative !important;
+}
+
+/* Hide the GT badge on translated elements */
+font[style*="vertical-align"] {
+  vertical-align: inherit !important;
+}
