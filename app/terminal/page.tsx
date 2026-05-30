@@ -1,7 +1,8 @@
 "use client";
 // FILE: app/terminal/page.tsx
-// Abraxas Collateral Terminal — OVERVIEW | COLLATERAL | LENDING | PROTOCOL
-// Economics fully visible on OVERVIEW — not isolated elsewhere.
+// Abraxas Collateral Terminal — OVERVIEW | TERMINAL | LENDING
+// Economics on OVERVIEW. Protocol+Collateral unified in TERMINAL.
+// Tribal sovereignty + natural resource reclamation narrative integrated.
 
 import { useState }             from "react";
 import { FlagshipAssetPage }    from "@/components/assets/FlagshipAssetPage";
@@ -22,7 +23,7 @@ const A    = "#F59E0B";
 const B    = "#3B82F6";
 const W    = "#F8FAFC";
 
-type Tab    = "overview" | "collateral" | "lending" | "protocol";
+type Tab    = "overview" | "terminal" | "lending";
 type ColV   = "featured" | "registry";
 type ProV   = "onboarding" | "trust";
 
@@ -227,19 +228,37 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
             </span>
           ))}
         </div>
+        {/* Tribal sovereignty callout */}
+        <div style={{ padding:"0.875rem 1.125rem", borderRadius:6,
+                       border:`1px solid ${A}20`, background:`${A}04`,
+                       marginBottom:"1.5rem", maxWidth:580 }}>
+          <div style={{ fontFamily:M, fontSize:"0.28rem", fontWeight:700,
+                         color:`${A}80`, textTransform:"uppercase",
+                         letterSpacing:"0.15em", marginBottom:"0.35rem" }}>
+            TRIBAL SOVEREIGNTY · NATURAL RESOURCE RECLAMATION
+          </div>
+          <div style={{ fontFamily:S, fontSize:"clamp(0.68rem,1.5vw,0.8rem)",
+                         color:"rgba(255,255,255,0.38)", lineHeight:1.75 }}>
+            McGirt v. Oklahoma reaffirmed sovereign Native land rights across
+            half of Oklahoma — including jurisdiction over oil, gas, and mineral
+            resources. Abraxas provides the verification infrastructure to bring
+            these assets on-chain, preserving tribal sovereignty while unlocking
+            institutional capital.
+          </div>
+        </div>
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
-          <button onClick={()=>goTo("protocol")} style={{
+          <button onClick={()=>goTo("terminal")} style={{
             padding:"0.875rem 1.75rem", borderRadius:6, border:"none",
             background:G, color:"#000", fontFamily:M, fontSize:"0.5rem",
             fontWeight:900, cursor:"pointer", letterSpacing:"0.04em",
             textTransform:"uppercase",
           }}>SUBMIT AN ASSET →</button>
-          <button onClick={()=>goTo("collateral")} style={{
+          <button onClick={()=>goTo("terminal")} style={{
             padding:"0.875rem 1.75rem", borderRadius:6,
             border:`1px solid ${B}40`, background:`${B}08`,
             color:B, fontFamily:M, fontSize:"0.5rem", fontWeight:700,
             cursor:"pointer", letterSpacing:"0.04em", textTransform:"uppercase",
-          }}>VIEW COLLATERAL →</button>
+          }}>VIEW TERMINAL →</button>
         </div>
       </div>
 
@@ -565,8 +584,59 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
         </p>
       </div>
 
+      {/* Tribal sovereign assets — dedicated section */}
+      <div style={{ marginBottom:"1.25rem", padding:"1.5rem",
+                     borderRadius:8,
+                     border:`1px solid ${A}25`,
+                     background:`${A}04` }}>
+        <div style={{ display:"flex", alignItems:"flex-start",
+                       justifyContent:"space-between",
+                       flexWrap:"wrap", gap:"1rem",
+                       marginBottom:"1rem" }}>
+          <div>
+            <div style={{ fontFamily:M, fontSize:"0.28rem", color:`${A}70`,
+                           textTransform:"uppercase", letterSpacing:"0.15em",
+                           marginBottom:"0.35rem" }}>
+              SOVEREIGN ASSET CLASSES · TRIBAL NATIONS
+            </div>
+            <div style={{ fontFamily:S, fontSize:"clamp(0.8rem,2vw,1rem)",
+                           fontWeight:700, color:W, marginBottom:"0.3rem" }}>
+              McGirt v. Oklahoma — Land, Minerals & Resources
+            </div>
+            <div style={{ fontFamily:S, fontSize:"clamp(0.64rem,1.4vw,0.76rem)",
+                           color:"rgba(255,255,255,0.35)", lineHeight:1.7,
+                           maxWidth:540 }}>
+              The Supreme Court's McGirt decision reaffirmed tribal sovereignty
+              over roughly half of Oklahoma — including jurisdiction over oil, gas,
+              and mineral resources. Abraxas is building the verification
+              infrastructure to bring these assets on-chain while preserving
+              sovereign governance, legal compliance, and tribal control.
+            </div>
+          </div>
+        </div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"0.5rem" }}>
+          {[
+            "Mineral Rights (Oil & Gas)",
+            "Tribal Land Title",
+            "Working Interests",
+            "Timber & Conservation",
+            "Water Rights",
+            "Carbon Credits / REC",
+          ].map(a=>(
+            <span key={a} style={{ fontFamily:M, fontSize:"0.3rem",
+                                    fontWeight:700, color:A,
+                                    background:`${A}10`,
+                                    border:`1px solid ${A}20`,
+                                    borderRadius:3, padding:"2px 8px",
+                                    letterSpacing:"0.06em" }}>
+              {a}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Genesis callout */}
-      <div style={{ marginTop:"2rem", padding:"1.375rem 1.5rem", borderRadius:8,
+      <div style={{ marginTop:0, padding:"1.375rem 1.5rem", borderRadius:8,
                      border:`1px solid ${G}25`, background:`${G}05`,
                      display:"flex", justifyContent:"space-between",
                      alignItems:"center", flexWrap:"wrap", gap:"1rem" }}>
@@ -585,7 +655,7 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
             89/100 collateral score · $660K max borrow · 5.0★ · AAS-1 certified
           </div>
         </div>
-        <button onClick={()=>goTo("collateral")} style={{
+        <button onClick={()=>goTo("terminal")} style={{
           padding:"0.625rem 1.25rem", borderRadius:5,
           border:`1px solid ${G}40`, background:`${G}08`,
           fontFamily:M, fontSize:"0.38rem", fontWeight:700,
@@ -597,36 +667,47 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
   );
 }
 
-// ── COLLATERAL ────────────────────────────────────────────────────────
-function CollateralTab() {
-  const [view, setView] = useState<ColV>("featured");
-  return (
-    <div>
-      <SubNav
-        tabs={[
-          { id:"featured" as ColV, label:"FEATURED ASSET", sub:"Cielo Sunrise · Genesis" },
-          { id:"registry" as ColV, label:"ASSET REGISTRY",  sub:"Inspector · On-chain"  },
-        ]}
-        active={view} onSelect={setView} accent={B}
-      />
-      {view === "featured" && <FlagshipAssetPage />}
-      {view === "registry"  && <TerminalLayout />}
-    </div>
-  );
-}
+// ── TERMINAL WORKSPACE — Collateral + Protocol unified ───────────────
+type WView = "featured" | "registry" | "onboarding" | "trust";
 
-// ── PROTOCOL ──────────────────────────────────────────────────────────
-function ProtocolTab() {
-  const [view, setView] = useState<ProV>("onboarding");
+function TerminalWorkspace() {
+  const [view, setView] = useState<WView>("featured");
+
+  const VIEWS: { id:WView; label:string; sub:string; accent:string }[] = [
+    { id:"featured",   label:"GENESIS ASSET",    sub:"Cielo Sunrise · Series A", accent:B },
+    { id:"registry",   label:"ASSET REGISTRY",   sub:"Inspector · On-chain",     accent:B },
+    { id:"onboarding", label:"SUBMIT AN ASSET",  sub:"Owner onboarding",         accent:G },
+    { id:"trust",      label:"TRUST LAYER",      sub:"Verification architecture",accent:G },
+  ];
+
+  const active = VIEWS.find(v => v.id === view)!;
+
   return (
     <div>
-      <SubNav
-        tabs={[
-          { id:"onboarding" as ProV, label:"SUBMIT AN ASSET",    sub:"Owner onboarding"    },
-          { id:"trust"      as ProV, label:"TRUST ARCHITECTURE",  sub:"Verification layers" },
-        ]}
-        active={view} onSelect={setView} accent={G}
-      />
+      <div style={{ display:"flex", borderBottom:`1px solid ${BDR}`,
+                     background:CARD, overflowX:"auto" }}>
+        {VIEWS.map(v=>(
+          <button key={v.id} onClick={()=>setView(v.id)} style={{
+            padding:"0.7rem clamp(0.75rem,2vw,1.5rem)",
+            background:"transparent", border:"none",
+            borderBottom:`2px solid ${view===v.id?v.accent:"transparent"}`,
+            fontFamily:M, fontSize:"clamp(0.28rem,0.9vw,0.36rem)", fontWeight:700,
+            color:view===v.id?v.accent:"rgba(255,255,255,0.25)",
+            cursor:"pointer", textTransform:"uppercase",
+            letterSpacing:"0.1em", whiteSpace:"nowrap", flexShrink:0,
+            transition:"all 0.15s",
+          }}>
+            {v.label}
+            <span style={{ display:"block", fontSize:"0.26rem",
+                            color:"rgba(255,255,255,0.15)", fontWeight:400,
+                            letterSpacing:"0.05em", marginTop:1 }}>
+              {v.sub}
+            </span>
+          </button>
+        ))}
+      </div>
+      {view === "featured"   && <FlagshipAssetPage />}
+      {view === "registry"   && <TerminalLayout />}
       {view === "onboarding" && (
         <AssetOwnerOnboarding onEnterTerminal={()=>setView("trust")} />
       )}
@@ -655,6 +736,7 @@ export default function TerminalPage() {
           { dot:G,  text:"AAS-1 PROTOCOL ACTIVE" },
           { dot:A,  text:"VERIFICATION NETWORK v1.0" },
           { dot:B,  text:"COLLATERAL TERMINAL" },
+          { dot:A,  text:"TRIBAL SOVEREIGNTY · RESOURCE TOKENIZATION" },
         ].map(s=>(
           <div key={s.text} style={{ display:"flex", alignItems:"center",
                                       gap:"0.35rem", flexShrink:0 }}>
@@ -701,17 +783,21 @@ export default function TerminalPage() {
           </div>
         </div>
 
-        {(["overview","collateral","lending","protocol"] as Tab[]).map(t=>(
-          <button key={t} onClick={()=>setTab(t)} style={{
+        {([
+          { id:"overview" as Tab, label:"OVERVIEW"  },
+          { id:"terminal" as Tab, label:"TERMINAL"  },
+          { id:"lending"  as Tab, label:"LENDING"   },
+        ]).map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{
             padding:"0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius:4,
-            border:`1px solid ${tab===t?`${G}50`:BDR}`,
-            background: tab===t?`${G}10`:"transparent",
-            color: tab===t?G:"rgba(255,255,255,0.28)",
+            border:`1px solid ${tab===t.id?`${G}50`:BDR}`,
+            background: tab===t.id?`${G}10`:"transparent",
+            color: tab===t.id?G:"rgba(255,255,255,0.28)",
             fontFamily:M, fontSize:"clamp(0.28rem,0.85vw,0.36rem)",
             fontWeight:700, cursor:"pointer", textTransform:"uppercase",
             letterSpacing:"0.1em", whiteSpace:"nowrap", flexShrink:0,
             transition:"all 0.15s",
-          }}>{t.toUpperCase()}</button>
+          }}>{t.label}</button>
         ))}
 
         <div style={{ flex:1 }}/>
@@ -720,15 +806,14 @@ export default function TerminalPage() {
       </nav>
 
       <div style={{ flex:1 }}>
-        {tab === "overview"   && <OverviewTab goTo={setTab} />}
-        {tab === "collateral" && <CollateralTab />}
-        {tab === "lending"    && (
+        {tab === "overview"  && <OverviewTab goTo={setTab} />}
+        {tab === "terminal"  && <TerminalWorkspace />}
+        {tab === "lending"   && (
           <div style={{ maxWidth:1060, margin:"0 auto",
                          padding:"2rem clamp(1rem,3vw,2rem) 5rem" }}>
             <BorrowPage />
           </div>
         )}
-        {tab === "protocol"   && <ProtocolTab />}
       </div>
     </div>
   );
