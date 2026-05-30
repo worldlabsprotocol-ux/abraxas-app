@@ -2,7 +2,10 @@
 module.exports = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/    "{js,ts,j    "./components/    "{js,ts,j   ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  them  them  them  them  theugins: [],
+  theme: { extend: {} },
+  plugins: [],
 };

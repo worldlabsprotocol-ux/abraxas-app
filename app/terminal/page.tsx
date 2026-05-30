@@ -1,9 +1,4 @@
 "use client";
-// FILE: app/terminal/page.tsx
-// Abraxas Collateral Terminal — OVERVIEW | TERMINAL | LENDING
-// Economics on OVERVIEW. Protocol+Collateral unified in TERMINAL.
-// Tribal sovereignty + natural resource reclamation narrative integrated.
-
 import { useState }             from "react";
 import { FlagshipAssetPage }    from "@/components/assets/FlagshipAssetPage";
 import { TerminalLayout }       from "@/components/terminal/TerminalLayout";
@@ -23,114 +18,123 @@ const A    = "#F59E0B";
 const B    = "#3B82F6";
 const W    = "#F8FAFC";
 
-type Tab    = "overview" | "terminal" | "lending";
-type ColV   = "featured" | "registry";
-type ProV   = "onboarding" | "trust";
+type Tab   = "overview" | "terminal" | "lending";
+type WView = "featured" | "registry" | "onboarding" | "trust";
 
-// ── All data from Abraxas_Sensitivity_ProForma.xlsx ───────────────────
-const SMALL = {
-  color:A, label:"Small ($1–3M avg)",
-  assets:[75,250,500], aum:[112.5,595.6,1786.1],
-  rev:[1.33,7.12,21.43], ebitda:[-5.19,-6.87,-3.20],
-  ebitdaMargin:[-389.1,-96.5,-14.9], grossMargin:[-87.5,6.8,44.2],
+interface ScenarioData {
+  color: string; label: string;
+  assets: number[]; aum: number[];
+  rev: number[]; ebitda: number[];
+  ebitdaMargin: number[]; grossMargin: number[];
+}
+
+const SMALL: ScenarioData = {
+  color: A, label: "Small ($1-3M avg)",
+  assets: [75,250,500], aum: [112.5,595.6,1786.1],
+  rev: [1.33,7.12,21.43], ebitda: [-5.19,-6.87,-3.20],
+  ebitdaMargin: [-389.1,-96.5,-14.9], grossMargin: [-87.5,6.8,44.2],
 };
-const LARGE = {
-  color:G, label:"Large ($15–25M avg)",
-  assets:[25,75,150], aum:[375,1818.8,5386.9],
-  rev:[4.57,22.64,67.04], ebitda:[-0.21,13.18,49.95],
-  ebitdaMargin:[-4.6,58.2,74.5], grossMargin:[74.8,87.6,91.8],
+const LARGE: ScenarioData = {
+  color: G, label: "Large ($15-25M avg)",
+  assets: [25,75,150], aum: [375,1818.8,5386.9],
+  rev: [4.57,22.64,67.04], ebitda: [-0.21,13.18,49.95],
+  ebitdaMargin: [-4.6,58.2,74.5], grossMargin: [74.8,87.6,91.8],
 };
 
-const PIPELINE = [
-  { n:"01", t:"Asset Submission",     c:G },
-  { n:"02", t:"Documentation Review", c:G },
-  { n:"03", t:"Legal Verification",   c:G },
-  { n:"04", t:"Custody Confirmation", c:B },
-  { n:"05", t:"Auditor Sign-Off",      c:B },
-  { n:"06", t:"On-Chain Attestation", c:A },
-  { n:"07", t:"Collateral Activation",c:A },
-  { n:"08", t:"Borrow / Finance",     c:G },
-] as const;
+interface PipelineStep { n: string; t: string; c: string; }
+const PIPELINE: PipelineStep[] = [
+  { n:"01", t:"Asset Submission",      c:G },
+  { n:"02", t:"Documentation Review",  c:G },
+  { n:"03", t:"Legal Verification",    c:G },
+  { n:"04", t:"Custody Confirmation",  c:B },
+  { n:"05", t:"Auditor Sign-Off",       c:B },
+  { n:"06", t:"On-Chain Attestation",  c:A },
+  { n:"07", t:"Collateral Activation", c:A },
+  { n:"08", t:"Borrow / Finance",      c:G },
+];
 
-const KEY_FINDINGS = [
+interface Finding { n: string; c: string; t: string; d: string; }
+const KEY_FINDINGS: Finding[] = [
   { n:"01", c:G, t:"Asset value is the single most leveraged variable.",
     d:"Doubling average asset value from $1.5M to $3M has more impact on economics than doubling asset count. Verification cost is per-asset, not per-dollar." },
   { n:"02", c:G, t:"Recurring AUM fees are the long-term value driver.",
-    d:"Platform fees compound annually with AUM retention. By Year 3, large-asset path generates $27M in platform fees alone — more than the small-asset path's total Year 2 revenue." },
+    d:"Platform fees compound annually with AUM retention. By Year 3, large-asset path generates $27M in platform fees alone." },
   { n:"03", c:G, t:"Margin expansion is structural, not cyclical.",
-    d:"Large-asset path reaches 74.5% EBITDA margins in Year 3. Fixed verification infrastructure supports exponentially growing AUM — operating leverage is inherent to the model." },
+    d:"Large-asset path reaches 74.5% EBITDA margins in Year 3. Operating leverage is inherent to the model." },
   { n:"04", c:A, t:"Hybrid sourcing balances credibility and economics.",
-    d:"Showcase assets (sub-$5M) build proof and community trust. Revenue engine should be built on $10M+ institutional deals where onboarding margin is positive from Day 1." },
-  { n:"05", c:B, t:"Profitability timeline: 2+ years shorter on large-asset path.",
-    d:"Near-breakeven in Year 1 (−4.6% EBITDA) and solidly profitable in Year 2 (+58.2%) vs. small-asset path which remains unprofitable across all three modeled years." },
+    d:"Showcase assets build proof and community trust. Revenue engine should be built on $10M+ institutional deals." },
+  { n:"05", c:B, t:"Profitability timeline is 2+ years shorter on large-asset path.",
+    d:"Near-breakeven in Year 1 (-4.6% EBITDA) and solidly profitable in Year 2 (+58.2%)." },
   { n:"06", c:G, t:"Verification capacity is the primary operational constraint.",
-    d:"Small-asset path requires 50 analysts in Year 3 vs. 20 for the large-asset path — processing equivalent dollar volume. Automation is prerequisite for small-asset viability." },
-] as const;
+    d:"Small-asset path requires 50 analysts in Year 3 vs. 20 for the large-asset path — processing equivalent dollar volume." },
+];
 
 // ── Inline SVG bar chart ──────────────────────────────────────────────
-// label is required; all other keys are numeric data values
-interface BarDataPoint {
-  label: string;
-  [key: string]: number | string;
-}
+interface BarDataPoint { label: string; [key: string]: number | string; }
 
-function BarSVG({ data, keys, colors, height=180 }:{
-  data: BarDataPoint[];
-  keys: string[];
-  colors: string[];
-  height?: number;
+function BarSVG({ data, keys, colors, height = 180 }: {
+  data: BarDataPoint[]; keys: string[]; colors: string[]; height?: number;
 }) {
-  const W=520; const H=height;
-  const PAD={top:10,right:8,bottom:36,left:44};
-  const cW=W-PAD.left-PAD.right; const cH=H-PAD.top-PAD.bottom;
-  const allV=data.flatMap(d=>keys.map(k=>{ const v=d[k]; return typeof v==='number'?v:0; }));
-  const maxV=Math.max(...allV,0); const minV=Math.min(...allV,0);
-  const range=(maxV-minV)||1;
-  const groupW=cW/data.length;
-  const barW=Math.min((groupW/keys.length)*0.78,32);
-  const gOff=(groupW-barW*keys.length)/2;
-  const yS=(v:number)=>PAD.top+cH-((v-minV)/range)*cH;
-  const zY=yS(0);
-  const ticks=[minV,minV+range/4,minV+range/2,minV+range*3/4,maxV]
-    .map(t=>Math.round(t*10)/10);
+  const W2 = 520; const H = height;
+  const PAD = { top:10, right:8, bottom:36, left:44 };
+  const cW = W2 - PAD.left - PAD.right;
+  const cH = H  - PAD.top  - PAD.bottom;
+  const allV = data.flatMap(d => keys.map(k => {
+    const v = d[k]; return typeof v === "number" ? v : 0;
+  }));
+  const maxV = Math.max(...allV, 0);
+  const minV = Math.min(...allV, 0);
+  const range = (maxV - minV) || 1;
+  const groupW = cW / data.length;
+  const barW   = Math.min((groupW / keys.length) * 0.78, 32);
+  const gOff   = (groupW - barW * keys.length) / 2;
+  const yS = (v: number) => PAD.top + cH - ((v - minV) / range) * cH;
+  const zY = yS(0);
+  const ticks = [minV, minV+range/4, minV+range/2, minV+range*3/4, maxV]
+    .map(t => Math.round(t * 10) / 10);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto"}}>
-      {ticks.map(t=>(
+    <svg viewBox={`0 0 ${W2} ${H}`} style={{ width:"100%", height:"auto" }}>
+      {ticks.map(t => (
         <g key={t}>
           <line x1={PAD.left} x2={PAD.left+cW} y1={yS(t)} y2={yS(t)}
             stroke={BDR} strokeWidth="1"/>
           <text x={PAD.left-4} y={yS(t)+4} textAnchor="end"
             fill="rgba(255,255,255,0.25)" fontSize="9" fontFamily={M}>
-            {t>=0?`$${t.toFixed(0)}M`:`($${Math.abs(t).toFixed(0)}M)`}
+            {t >= 0 ? `$${t.toFixed(0)}M` : `($${Math.abs(t).toFixed(0)}M)`}
           </text>
         </g>
       ))}
-      {minV<0&&<line x1={PAD.left} x2={PAD.left+cW} y1={zY} y2={zY}
-        stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>}
-      {data.map((d,gi)=>(
+      {minV < 0 && (
+        <line x1={PAD.left} x2={PAD.left+cW} y1={zY} y2={zY}
+          stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>
+      )}
+      {data.map((d, gi) => (
         <g key={gi}>
-          {keys.map((k,ki)=>{
-            const raw=d[k]; const v=typeof raw==='number'?raw:0;
-            const x=PAD.left+gi*groupW+gOff+ki*barW;
-            const y=v>=0?yS(v):zY;
-            const h=Math.max(Math.abs(yS(v)-zY),1);
-            return(
+          {keys.map((k, ki) => {
+            const raw = d[k];
+            const v   = typeof raw === "number" ? raw : 0;
+            const x   = PAD.left + gi*groupW + gOff + ki*barW;
+            const y   = v >= 0 ? yS(v) : zY;
+            const h   = Math.max(Math.abs(yS(v) - zY), 1);
+            return (
               <rect key={k} x={x} y={y} width={barW-1} height={h}
                 fill={colors[ki]} opacity="0.85" rx="1"/>
             );
           })}
           <text x={PAD.left+gi*groupW+groupW/2} y={H-6}
             textAnchor="middle" fill="rgba(255,255,255,0.3)"
-            fontSize="9" fontFamily={M}>{d.label}</text>
+            fontSize="9" fontFamily={M}>
+            {d.label}
+          </text>
         </g>
       ))}
     </svg>
   );
 }
 
-// ── Shared primitives ─────────────────────────────────────────────────
-function Label({ children }: { children:React.ReactNode }) {
+// ── Primitives ────────────────────────────────────────────────────────
+function SLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
                    color:"rgba(255,255,255,0.22)", textTransform:"uppercase",
@@ -142,29 +146,30 @@ function Label({ children }: { children:React.ReactNode }) {
 function Divider() {
   return <div style={{ height:1, background:BDR, margin:"2.5rem 0" }}/>;
 }
-
-function SubNav<T extends string>({ tabs, active, onSelect, accent=B }:{
-  tabs:{id:T;label:string;sub:string}[]; active:T;
-  onSelect:(id:T)=>void; accent?:string;
+function SubNav({ tabs, active, onSelect, accent = B }: {
+  tabs: { id: string; label: string; sub: string }[];
+  active: string;
+  onSelect: (id: string) => void;
+  accent?: string;
 }) {
   return (
     <div style={{ display:"flex", borderBottom:`1px solid ${BDR}`,
                    background:CARD, overflowX:"auto" }}>
-      {tabs.map(t=>(
-        <button key={t.id} onClick={()=>onSelect(t.id)} style={{
+      {tabs.map(t => (
+        <button key={t.id} onClick={() => onSelect(t.id)} style={{
           padding:"0.7rem clamp(0.75rem,2vw,1.5rem)",
           background:"transparent", border:"none",
-          borderBottom:`2px solid ${active===t.id?accent:"transparent"}`,
+          borderBottom:`2px solid ${active === t.id ? accent : "transparent"}`,
           fontFamily:M, fontSize:"clamp(0.28rem,0.9vw,0.36rem)", fontWeight:700,
-          color:active===t.id?accent:"rgba(255,255,255,0.25)",
+          color: active === t.id ? accent : "rgba(255,255,255,0.25)",
           cursor:"pointer", textTransform:"uppercase",
           letterSpacing:"0.1em", whiteSpace:"nowrap",
           flexShrink:0, transition:"all 0.15s",
         }}>
           {t.label}
           <span style={{ display:"block", fontSize:"0.26rem",
-                          color:"rgba(255,255,255,0.15)",
-                          fontWeight:400, letterSpacing:"0.05em", marginTop:1 }}>
+                          color:"rgba(255,255,255,0.15)", fontWeight:400,
+                          letterSpacing:"0.05em", marginTop:1 }}>
             {t.sub}
           </span>
         </button>
@@ -173,12 +178,12 @@ function SubNav<T extends string>({ tabs, active, onSelect, accent=B }:{
   );
 }
 
-// ── OVERVIEW — economics fully visible ───────────────────────────────
-function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
-  const [scenario, setScenario] = useState<"small"|"large">("large");
-  const SC = scenario === "small" ? SMALL : LARGE;
+// ── OVERVIEW ─────────────────────────────────────────────────────────
+function OverviewTab({ goTo }: { goTo: (t: Tab) => void }) {
+  const [scenario, setScenario] = useState<"small" | "large">("large");
+  const SC: ScenarioData = scenario === "small" ? SMALL : LARGE;
 
-  const ebitdaData = [
+  const ebitdaData: BarDataPoint[] = [
     { label:"Year 1", small:-5.19, large:-0.21 },
     { label:"Year 2", small:-6.87, large:13.18 },
     { label:"Year 3", small:-3.20, large:49.95 },
@@ -188,7 +193,7 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
     <div style={{ maxWidth:1060, margin:"0 auto",
                    padding:"2.5rem clamp(1rem,3vw,2rem) 5rem" }}>
 
-      {/* ── Positioning ──────────────────────────────────────── */}
+      {/* Positioning */}
       <div style={{ marginBottom:"2.5rem" }}>
         <div style={{ fontFamily:M, fontSize:"0.3rem", color:`${G}70`,
                        textTransform:"uppercase", letterSpacing:"0.2em",
@@ -209,25 +214,25 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
           and audit verification before anything is issued on-chain.
           The result: collateral that lenders can actually trust.
         </p>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:"0.625rem",
-                       marginBottom:"1.75rem" }}>
+
+        {/* Trust badges */}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"0.5rem", marginBottom:"1.25rem" }}>
           {[
             { t:"Legal Review",        c:G },
             { t:"Custody Verified",    c:G },
             { t:"Auditor Sign-Off",     c:G },
             { t:"On-Chain Attestation",c:B },
             { t:"Collateral Eligible", c:B },
-          ].map(tag=>(
-            <span key={tag.t} style={{ fontFamily:M, fontSize:"0.3rem",
-                                        fontWeight:700, color:tag.c,
-                                        background:`${tag.c}10`,
-                                        border:`1px solid ${tag.c}25`,
-                                        borderRadius:3, padding:"2px 8px",
-                                        letterSpacing:"0.08em" }}>
-              ✓ {tag.t}
+          ].map(tag => (
+            <span key={tag.t} style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
+                                        color:tag.c, background:`${tag.c}10`,
+                                        border:`1px solid ${tag.c}25`, borderRadius:3,
+                                        padding:"2px 8px", letterSpacing:"0.08em" }}>
+              &#10003; {tag.t}
             </span>
           ))}
         </div>
+
         {/* Tribal sovereignty callout */}
         <div style={{ padding:"0.875rem 1.125rem", borderRadius:6,
                        border:`1px solid ${A}20`, background:`${A}04`,
@@ -246,36 +251,44 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
             institutional capital.
           </div>
         </div>
+
+        {/* CTAs */}
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
-          <button onClick={()=>goTo("terminal")} style={{
+          <button onClick={() => goTo("terminal")} style={{
             padding:"0.875rem 1.75rem", borderRadius:6, border:"none",
             background:G, color:"#000", fontFamily:M, fontSize:"0.5rem",
             fontWeight:900, cursor:"pointer", letterSpacing:"0.04em",
             textTransform:"uppercase",
-          }}>SUBMIT AN ASSET →</button>
-          <button onClick={()=>goTo("terminal")} style={{
+          }}>
+            SUBMIT AN ASSET &#8594;
+          </button>
+          <button onClick={() => goTo("terminal")} style={{
             padding:"0.875rem 1.75rem", borderRadius:6,
             border:`1px solid ${B}40`, background:`${B}08`,
             color:B, fontFamily:M, fontSize:"0.5rem", fontWeight:700,
             cursor:"pointer", letterSpacing:"0.04em", textTransform:"uppercase",
-          }}>VIEW TERMINAL →</button>
+          }}>
+            VIEW TERMINAL &#8594;
+          </button>
         </div>
       </div>
 
-      <Divider />
+      <Divider/>
 
-      {/* ── ECONOMICS SECTION ─────────────────────────────────── */}
+      {/* Economics */}
       <div style={{ marginBottom:"0.5rem" }}>
         <div style={{ display:"flex", alignItems:"baseline",
-                       justifyContent:"space-between", marginBottom:"1.5rem" }}>
+                       justifyContent:"space-between", marginBottom:"1.5rem",
+                       flexWrap:"wrap", gap:"0.5rem" }}>
           <div>
-            <Label>Platform Economics</Label>
-            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.3rem" }}>
-              <Label>Platform Economics</Label>
+            <div style={{ display:"flex", alignItems:"center",
+                           gap:"0.5rem", marginBottom:"0.4rem" }}>
+              <SLabel>Platform Economics</SLabel>
               <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
                               color:A, background:`${A}12`,
                               border:`1px solid ${A}25`, borderRadius:3,
-                              padding:"1px 6px", textTransform:"uppercase", letterSpacing:"0.1em" }}>
+                              padding:"1px 6px", textTransform:"uppercase",
+                              letterSpacing:"0.1em" }}>
                 PROJECTED · LARGE ASSET PATH
               </span>
             </div>
@@ -284,53 +297,58 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
                           letterSpacing:"-0.02em" }}>
               Built for recurring revenue, not token events.
             </h2>
+          </div>
           <a href="/economics" style={{ fontFamily:M, fontSize:"0.34rem",
                                           color:`${B}60`, textDecoration:"none",
-                                          flexShrink:0, marginLeft:"1rem" }}>
-            Full model →
+                                          flexShrink:0 }}>
+            Full model &#8594;
           </a>
         </div>
-        <p style={{ fontFamily:S, fontSize:"clamp(0.78rem,1.6vw,0.9rem)",
-                     color:"rgba(255,255,255,0.3)", lineHeight:1.8,
+        <p style={{ fontFamily:S, fontSize:"clamp(0.78rem,1.5vw,0.9rem)",
+                     color:"rgba(255,255,255,0.3)", lineHeight:1.85,
                      maxWidth:580, margin:"0 0 2rem" }}>
-          Abraxas is engineered around recurring fee streams tied to assets under
-          management — not speculative token activity. Verification workload grows
-          with asset count, not value. Revenue grows with both.
+          Abraxas generates revenue at verification and tokenization (one-time),
+          then recurring platform fees on AUM and lending spreads.
+          The recurring streams scale with collateral growth without
+          proportional cost increases.
         </p>
       </div>
 
       {/* Revenue streams */}
       <div style={{ marginBottom:"2rem" }}>
-        <Label>Revenue Architecture</Label>
+        <SLabel>Revenue Architecture</SLabel>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)",
                        gap:"1px", border:`1px solid ${BDR}`,
                        borderRadius:8, overflow:"hidden" }}>
           {[
-            { icon:"◉", color:B,        t:"Verification",  r:"0.50%", b:"asset value",  k:"One-time"  },
-            { icon:"◈", color:"#8B5CF6",t:"Tokenization",  r:"0.25%", b:"asset value",  k:"One-time"  },
-            { icon:"◆", color:G,        t:"Platform AUM",  r:"0.75%", b:"annual AUM",   k:"Recurring" },
-            { icon:"⬡", color:A,        t:"Lending Spread",r:"1.50%", b:"loan volume",  k:"Recurring" },
-          ].map(r=>(
-            <div key={r.t} style={{ background:CARD, padding:"1rem",
-                                      borderTop:`2px solid ${r.color}` }}>
+            { icon:"&#9673;", color:B,        title:"Verification",  rate:"0.50%", basis:"asset value",  kind:"One-time"  },
+            { icon:"&#9672;", color:"#8B5CF6", title:"Tokenization",  rate:"0.25%", basis:"asset value",  kind:"One-time"  },
+            { icon:"&#9670;", color:G,         title:"Platform AUM",  rate:"0.75%", basis:"annual AUM",   kind:"Recurring" },
+            { icon:"&#11041;",color:A,         title:"Lending Spread",rate:"1.50%", basis:"loan volume",  kind:"Recurring" },
+          ].map(r => (
+            <div key={r.title} style={{ background:CARD, padding:"1rem",
+                                          borderTop:`2px solid ${r.color}` }}>
               <div style={{ display:"flex", alignItems:"center",
                              gap:"0.35rem", marginBottom:"0.5rem" }}>
-                <span style={{ color:r.color, fontSize:"0.55rem" }}>{r.icon}</span>
+                <span style={{ color:r.color, fontSize:"0.55rem"
+                  }} dangerouslySetInnerHTML={{ __html: r.icon }}/>
                 <span style={{ fontFamily:M, fontSize:"0.38rem",
-                                fontWeight:700, color:W }}>{r.t}</span>
+                                fontWeight:700, color:W }}>{r.title}</span>
               </div>
               <div style={{ fontFamily:M, fontSize:"clamp(0.8rem,2vw,1.1rem)",
-                             fontWeight:900, color:r.color }}>{r.r}</div>
+                             fontWeight:900, color:r.color }}>{r.rate}</div>
               <div style={{ fontFamily:M, fontSize:"0.26rem",
                              color:"rgba(255,255,255,0.2)",
-                             marginBottom:"0.4rem" }}>of {r.b}</div>
+                             marginBottom:"0.4rem" }}>
+                of {r.basis}
+              </div>
               <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
-                              color:r.k==="Recurring"?G:A,
-                              background:r.k==="Recurring"?`${G}12`:`${A}12`,
-                              border:`1px solid ${r.k==="Recurring"?G:A}25`,
+                              color:r.kind === "Recurring" ? G : A,
+                              background:r.kind === "Recurring" ? `${G}12` : `${A}12`,
+                              border:`1px solid ${r.kind === "Recurring" ? G : A}25`,
                               borderRadius:3, padding:"1px 5px",
-                              textTransform:"uppercase",letterSpacing:"0.08em" }}>
-                {r.k}
+                              textTransform:"uppercase", letterSpacing:"0.08em" }}>
+                {r.kind}
               </span>
             </div>
           ))}
@@ -342,19 +360,19 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
         <div style={{ display:"flex", alignItems:"center",
                        justifyContent:"space-between",
                        marginBottom:"1rem", flexWrap:"wrap", gap:"0.5rem" }}>
-          <Label>Scenario Analysis — Year-by-Year</Label>
+          <SLabel>Scenario Analysis</SLabel>
           <div style={{ display:"flex", gap:"0.4rem" }}>
-            {(["small","large"] as const).map(k=>(
-              <button key={k} onClick={()=>setScenario(k)} style={{
+            {(["small", "large"] as Array<"small" | "large">).map(k => (
+              <button key={k} onClick={() => setScenario(k)} style={{
                 padding:"0.3rem 0.75rem", borderRadius:4, cursor:"pointer",
-                border:`1px solid ${scenario===k?(k==="small"?A:G):BDR}`,
-                background:scenario===k?`${k==="small"?A:G}12`:CARD,
-                color:scenario===k?(k==="small"?A:G):"rgba(255,255,255,0.3)",
+                border:`1px solid ${scenario === k ? (k === "small" ? A : G) : BDR}`,
+                background: scenario === k ? `${k === "small" ? A : G}12` : CARD,
+                color: scenario === k ? (k === "small" ? A : G) : "rgba(255,255,255,0.3)",
                 fontFamily:M, fontSize:"0.32rem", fontWeight:700,
                 textTransform:"uppercase", letterSpacing:"0.08em",
                 transition:"all 0.15s",
               }}>
-                {k==="small"?"SMALL ($1–3M)":"LARGE ($15–25M)"}
+                {k === "small" ? "SMALL ($1-3M)" : "LARGE ($15-25M)"}
               </button>
             ))}
           </div>
@@ -362,32 +380,31 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)",
                        gap:"0.75rem", marginBottom:"1.25rem" }}>
-          {[0,1,2].map(y=>{
-            const profit = SC.ebitda[y]>0;
+          {[0, 1, 2].map(y => {
+            const profit = SC.ebitda[y] > 0;
+            const ebitdaVal = SC.ebitda[y];
+            const ebitdaStr = ebitdaVal < 0
+              ? `($${Math.abs(ebitdaVal).toFixed(2)}M)`
+              : `$${ebitdaVal.toFixed(2)}M`;
             return (
               <div key={y} style={{ background:CARD,
                                       border:`1px solid ${BDR}`,
-                                      borderTop:`2px solid ${profit?G:"#EF4444"}`,
+                                      borderTop:`2px solid ${profit ? G : "#EF4444"}`,
                                       borderRadius:7, padding:"1rem" }}>
                 <div style={{ fontFamily:M, fontSize:"0.3rem",
                                color:"rgba(255,255,255,0.2)",
-                               textTransform:"uppercase",
-                               letterSpacing:"0.1em",
+                               textTransform:"uppercase", letterSpacing:"0.1em",
                                marginBottom:"0.75rem" }}>
-                  YEAR {y+1}
+                  YEAR {y + 1}
                 </div>
                 {[
-                  { l:"Assets Verified",  v:`${SC.assets[y]}`               },
-                  { l:"Tokenized AUM",    v:`$${SC.aum[y].toFixed(0)}M`     },
-                  { l:"Total Revenue",    v:`$${SC.rev[y].toFixed(2)}M`     },
-                  { l:"Gross Margin",     v:`${SC.grossMargin[y].toFixed(1)}%`,
-                    c:SC.grossMargin[y]>0?G:"#EF4444" },
-                  { l:"EBITDA",
-                    v:SC.ebitda[y]<0?`($${Math.abs(SC.ebitda[y]).toFixed(2)}M)`:`$${SC.ebitda[y].toFixed(2)}M`,
-                    c:profit?G:"#EF4444" },
-                  { l:"EBITDA Margin",    v:`${SC.ebitdaMargin[y].toFixed(1)}%`,
-                    c:profit?G:"#EF4444" },
-                ].map(row=>(
+                  { l:"Assets Verified",  v:`${SC.assets[y]}`,                              vc:"" },
+                  { l:"Tokenized AUM",    v:`$${SC.aum[y].toFixed(0)}M`,                    vc:"" },
+                  { l:"Total Revenue",    v:`$${SC.rev[y].toFixed(2)}M`,                    vc:"" },
+                  { l:"Gross Margin",     v:`${SC.grossMargin[y].toFixed(1)}%`,              vc:SC.grossMargin[y] > 0 ? G : "#EF4444" },
+                  { l:"EBITDA",           v:ebitdaStr,                                       vc:profit ? G : "#EF4444" },
+                  { l:"EBITDA Margin",    v:`${SC.ebitdaMargin[y].toFixed(1)}%`,             vc:profit ? G : "#EF4444" },
+                ].map(row => (
                   <div key={row.l} style={{ display:"flex",
                                              justifyContent:"space-between",
                                              padding:"0.3rem 0",
@@ -398,7 +415,7 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
                     </span>
                     <span style={{ fontFamily:M, fontSize:"0.58rem",
                                     fontWeight:700,
-                                    color:(row as any).c??W }}>
+                                    color:row.vc || W }}>
                       {row.v}
                     </span>
                   </div>
@@ -417,16 +434,13 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
                          marginBottom:"0.875rem" }}>
             EBITDA TRAJECTORY ($M) — SMALL vs. LARGE ASSET PATH
           </div>
-          <BarSVG
-            data={ebitdaData}
-            keys={["small","large"]}
-            colors={[A, G]}
-            height={180}
-          />
+          <BarSVG data={ebitdaData} keys={["small","large"]}
+                  colors={[A, G]} height={180}/>
           <div style={{ display:"flex", gap:"1rem", marginTop:"0.5rem" }}>
-            {[{c:A,l:"Small Assets"},{c:G,l:"Large Assets"}].map(x=>(
+            {[{ c:A, l:"Small Assets" }, { c:G, l:"Large Assets" }].map(x => (
               <div key={x.l} style={{ display:"flex", alignItems:"center", gap:"0.3rem" }}>
-                <div style={{ width:10, height:10, borderRadius:2, background:x.c, opacity:0.85 }}/>
+                <div style={{ width:10, height:10, borderRadius:2,
+                               background:x.c, opacity:0.85 }}/>
                 <span style={{ fontFamily:M, fontSize:"0.3rem",
                                 color:"rgba(255,255,255,0.3)" }}>{x.l}</span>
               </div>
@@ -437,9 +451,9 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
 
       {/* Key findings */}
       <div style={{ marginBottom:"2rem" }}>
-        <Label>Key Findings</Label>
+        <SLabel>Key Findings</SLabel>
         <div style={{ display:"flex", flexDirection:"column", gap:"0.625rem" }}>
-          {KEY_FINDINGS.map(f=>(
+          {KEY_FINDINGS.map(f => (
             <div key={f.n} style={{ display:"grid",
                                       gridTemplateColumns:"48px 1fr",
                                       gap:"0.875rem", padding:"1rem 1.125rem",
@@ -447,22 +461,17 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
                                       border:`1px solid ${BDR}`,
                                       borderLeft:`3px solid ${f.c}`,
                                       borderRadius:7, alignItems:"start" }}>
-              <div style={{ fontFamily:M,
-                             fontSize:"clamp(0.9rem,2.5vw,1.4rem)",
+              <div style={{ fontFamily:M, fontSize:"clamp(0.9rem,2.5vw,1.4rem)",
                              fontWeight:900, color:`${f.c}20`, lineHeight:1 }}>
                 {f.n}
               </div>
               <div>
-                <div style={{ fontFamily:S,
-                               fontSize:"clamp(0.78rem,1.8vw,0.92rem)",
-                               fontWeight:700, color:W,
-                               marginBottom:"0.3rem" }}>
+                <div style={{ fontFamily:S, fontSize:"clamp(0.78rem,1.8vw,0.92rem)",
+                               fontWeight:700, color:W, marginBottom:"0.3rem" }}>
                   {f.t}
                 </div>
-                <div style={{ fontFamily:S,
-                               fontSize:"clamp(0.64rem,1.4vw,0.76rem)",
-                               color:"rgba(255,255,255,0.32)",
-                               lineHeight:1.75 }}>
+                <div style={{ fontFamily:S, fontSize:"clamp(0.64rem,1.4vw,0.76rem)",
+                               color:"rgba(255,255,255,0.32)", lineHeight:1.75 }}>
                   {f.d}
                 </div>
               </div>
@@ -473,25 +482,21 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
 
       {/* Fee structure */}
       <div style={{ marginBottom:"2rem" }}>
-        <Label>Fee Structure</Label>
+        <SLabel>Fee Structure</SLabel>
         <div style={{ padding:"0.875rem 1.25rem", borderRadius:7,
                        border:`1px solid ${B}20`, background:`${B}04`,
-                       marginBottom:"1.125rem",
-                       fontFamily:S, fontSize:"clamp(0.68rem,1.4vw,0.78rem)",
+                       marginBottom:"1rem", fontFamily:S,
+                       fontSize:"clamp(0.68rem,1.4vw,0.78rem)",
                        color:"rgba(255,255,255,0.4)", lineHeight:1.75 }}>
-          Fee structure is identical across asset classes. Platform fees
-          are charged on verified AUM — not on token creation. This aligns
-          Abraxas incentives with long-term collateral quality, not issuance volume.
+          Platform fees are charged on verified AUM, not on token creation.
+          This aligns Abraxas incentives with long-term collateral quality,
+          not issuance volume.
         </div>
         <div style={{ border:`1px solid ${BDR}`, borderRadius:7, overflow:"hidden" }}>
-          <div style={{ display:"grid",
-                         gridTemplateColumns:"1fr 72px 88px 1fr",
-                         padding:"0.6rem 1.25rem",
-                         borderBottom:`1px solid ${BDR}`,
-                         background:"#111620",
-                         fontFamily:M, fontSize:"0.28rem",
-                         color:"rgba(255,255,255,0.2)",
-                         textTransform:"uppercase",
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 72px 88px 1fr",
+                         padding:"0.6rem 1.25rem", borderBottom:`1px solid ${BDR}`,
+                         background:"#111620", fontFamily:M, fontSize:"0.28rem",
+                         color:"rgba(255,255,255,0.2)", textTransform:"uppercase",
                          letterSpacing:"0.1em" }}>
             <span>Fee Type</span>
             <span style={{ textAlign:"center" }}>Rate</span>
@@ -503,21 +508,19 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
             { t:"Tokenization Fee",  r:"0.25%", k:"One-time",  b:"Asset value at issuance",    kc:A },
             { t:"Platform Fee",      r:"0.75%", k:"Recurring", b:"Average AUM per annum",      kc:G },
             { t:"Lending Take Rate", r:"1.50%", k:"Recurring", b:"Total loan volume originated",kc:G },
-          ].map((row,i)=>(
+          ].map((row, i) => (
             <div key={row.t} style={{ display:"grid",
                                        gridTemplateColumns:"1fr 72px 88px 1fr",
-                                       padding:"0.75rem 1.25rem",
-                                       alignItems:"center",
-                                       borderBottom:i<3?`1px solid ${BDR}`:"none",
-                                       background:i%2===0?CARD:"transparent" }}>
+                                       padding:"0.75rem 1.25rem", alignItems:"center",
+                                       borderBottom:i < 3 ? `1px solid ${BDR}` : "none",
+                                       background:i % 2 === 0 ? CARD : "transparent" }}>
               <span style={{ fontFamily:S, fontSize:"0.76rem",
                               fontWeight:600, color:W }}>{row.t}</span>
               <span style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
                               color:G, textAlign:"center" }}>{row.r}</span>
-              <span style={{ fontFamily:M, fontSize:"0.3rem",
-                              color:row.kc, background:`${row.kc}10`,
-                              border:`1px solid ${row.kc}25`, borderRadius:3,
-                              padding:"2px 5px", display:"inline-block",
+              <span style={{ fontFamily:M, fontSize:"0.3rem", color:row.kc,
+                              background:`${row.kc}10`, border:`1px solid ${row.kc}25`,
+                              borderRadius:3, padding:"2px 5px", display:"inline-block",
                               textAlign:"center", textTransform:"uppercase",
                               letterSpacing:"0.06em" }}>{row.k}</span>
               <span style={{ fontFamily:S, fontSize:"0.7rem",
@@ -527,30 +530,26 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
         </div>
       </div>
 
-      {/* Verification pipeline */}
+      {/* Pipeline */}
       <div style={{ marginBottom:"2rem" }}>
         <div style={{ display:"flex", alignItems:"center",
                        gap:"0.625rem", marginBottom:"0.875rem" }}>
-          <span style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
-                          color:"rgba(255,255,255,0.22)", textTransform:"uppercase",
-                          letterSpacing:"0.15em" }}>
-            Collateral Activation Pipeline
-          </span>
+          <SLabel>Collateral Activation Pipeline</SLabel>
           <div style={{ width:6, height:6, borderRadius:"50%", background:G,
                          boxShadow:`0 0 6px ${G}80`, flexShrink:0 }}/>
-          <span style={{ fontFamily:M, fontSize:"0.26rem", color:`${G}70`,
-                          letterSpacing:"0.1em" }}>ACTIVE</span>
+          <span style={{ fontFamily:M, fontSize:"0.26rem",
+                          color:`${G}70`, letterSpacing:"0.1em" }}>
+            ACTIVE
+          </span>
         </div>
         <div style={{ display:"grid",
                        gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",
                        gap:"0.5rem" }}>
-          {PIPELINE.map(s=>(
-            <div key={s.n} style={{ background:CARD,
-                                      border:`1px solid ${BDR}`,
-                                      borderLeft:`2px solid ${s.c}`,
-                                      borderRadius:6, padding:"0.75rem 1rem",
-                                      display:"flex", alignItems:"center",
-                                      gap:"0.625rem" }}>
+          {PIPELINE.map(s => (
+            <div key={s.n} style={{ background:CARD, border:`1px solid ${BDR}`,
+                                      borderLeft:`2px solid ${s.c}`, borderRadius:6,
+                                      padding:"0.75rem 1rem", display:"flex",
+                                      alignItems:"center", gap:"0.625rem" }}>
               <span style={{ fontFamily:M,
                               fontSize:"clamp(0.7rem,1.8vw,0.88rem)",
                               fontWeight:900, color:`${s.c}25`,
@@ -564,55 +563,26 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
         </div>
       </div>
 
-      {/* Investor disclosure */}
-      <div style={{ padding:"1.5rem", background:CARD,
-                     border:`1px solid ${BDR}`, borderRadius:7 }}>
-        <div style={{ fontFamily:M, fontSize:"0.3rem",
-                       color:"rgba(255,255,255,0.2)",
+      {/* Tribal sovereign assets */}
+      <div style={{ marginBottom:"1.25rem", padding:"1.5rem", borderRadius:8,
+                     border:`1px solid ${A}25`, background:`${A}04` }}>
+        <div style={{ fontFamily:M, fontSize:"0.28rem", color:`${A}70`,
                        textTransform:"uppercase", letterSpacing:"0.15em",
-                       marginBottom:"0.75rem" }}>
-          Investor Disclosure
+                       marginBottom:"0.35rem" }}>
+          SOVEREIGN ASSET CLASSES · TRIBAL NATIONS
         </div>
-        <p style={{ fontFamily:S, fontSize:"clamp(0.68rem,1.4vw,0.8rem)",
-                     color:"rgba(255,255,255,0.28)", lineHeight:1.9, margin:0 }}>
-          These projections are illustrative and based on current fee structures,
-          assumed onboarding velocity, modeled verification capacity, and projected
-          AUM retention rates. Actual results will vary based on market conditions,
-          regulatory environment, competitive dynamics, and execution. Neither scenario
-          constitutes a guarantee of future performance. Abraxas does not provide
-          investment advice. This material is for informational purposes only.
-        </p>
-      </div>
-
-      {/* Tribal sovereign assets — dedicated section */}
-      <div style={{ marginBottom:"1.25rem", padding:"1.5rem",
-                     borderRadius:8,
-                     border:`1px solid ${A}25`,
-                     background:`${A}04` }}>
-        <div style={{ display:"flex", alignItems:"flex-start",
-                       justifyContent:"space-between",
-                       flexWrap:"wrap", gap:"1rem",
-                       marginBottom:"1rem" }}>
-          <div>
-            <div style={{ fontFamily:M, fontSize:"0.28rem", color:`${A}70`,
-                           textTransform:"uppercase", letterSpacing:"0.15em",
-                           marginBottom:"0.35rem" }}>
-              SOVEREIGN ASSET CLASSES · TRIBAL NATIONS
-            </div>
-            <div style={{ fontFamily:S, fontSize:"clamp(0.8rem,2vw,1rem)",
-                           fontWeight:700, color:W, marginBottom:"0.3rem" }}>
-              McGirt v. Oklahoma — Land, Minerals & Resources
-            </div>
-            <div style={{ fontFamily:S, fontSize:"clamp(0.64rem,1.4vw,0.76rem)",
-                           color:"rgba(255,255,255,0.35)", lineHeight:1.7,
-                           maxWidth:540 }}>
-              The Supreme Court's McGirt decision reaffirmed tribal sovereignty
-              over roughly half of Oklahoma — including jurisdiction over oil, gas,
-              and mineral resources. Abraxas is building the verification
-              infrastructure to bring these assets on-chain while preserving
-              sovereign governance, legal compliance, and tribal control.
-            </div>
-          </div>
+        <div style={{ fontFamily:S, fontSize:"clamp(0.8rem,2vw,1rem)",
+                       fontWeight:700, color:W, marginBottom:"0.3rem" }}>
+          McGirt v. Oklahoma — Land, Minerals &amp; Resources
+        </div>
+        <div style={{ fontFamily:S, fontSize:"clamp(0.64rem,1.4vw,0.76rem)",
+                       color:"rgba(255,255,255,0.35)", lineHeight:1.7,
+                       maxWidth:540, marginBottom:"0.875rem" }}>
+          The Supreme Court reaffirmed tribal sovereignty over roughly half
+          of Oklahoma — including jurisdiction over oil, gas, and mineral
+          resources. Abraxas is building the verification infrastructure to
+          bring these assets on-chain while preserving sovereign governance,
+          legal compliance, and tribal control.
         </div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:"0.5rem" }}>
           {[
@@ -622,10 +592,9 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
             "Timber & Conservation",
             "Water Rights",
             "Carbon Credits / REC",
-          ].map(a=>(
-            <span key={a} style={{ fontFamily:M, fontSize:"0.3rem",
-                                    fontWeight:700, color:A,
-                                    background:`${A}10`,
+          ].map(a => (
+            <span key={a} style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
+                                    color:A, background:`${A}10`,
                                     border:`1px solid ${A}20`,
                                     borderRadius:3, padding:"2px 8px",
                                     letterSpacing:"0.06em" }}>
@@ -635,8 +604,26 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
         </div>
       </div>
 
+      {/* Investor disclosure */}
+      <div style={{ marginBottom:"2rem", padding:"1.5rem", background:CARD,
+                     border:`1px solid ${BDR}`, borderRadius:7 }}>
+        <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.2)",
+                       textTransform:"uppercase", letterSpacing:"0.15em",
+                       marginBottom:"0.75rem" }}>
+          Investor Disclosure
+        </div>
+        <p style={{ fontFamily:S, fontSize:"clamp(0.68rem,1.4vw,0.8rem)",
+                     color:"rgba(255,255,255,0.28)", lineHeight:1.9, margin:0 }}>
+          These projections are illustrative and based on current fee structures,
+          assumed onboarding velocity, modeled verification capacity, and projected
+          AUM retention rates. Actual results will vary. Neither scenario constitutes
+          a guarantee of future performance. This material is for informational
+          purposes only.
+        </p>
+      </div>
+
       {/* Genesis callout */}
-      <div style={{ marginTop:0, padding:"1.375rem 1.5rem", borderRadius:8,
+      <div style={{ padding:"1.375rem 1.5rem", borderRadius:8,
                      border:`1px solid ${G}25`, background:`${G}05`,
                      display:"flex", justifyContent:"space-between",
                      alignItems:"center", flexWrap:"wrap", gap:"1rem" }}>
@@ -652,50 +639,48 @@ function OverviewTab({ goTo }: { goTo:(t:Tab)=>void }) {
           </div>
           <div style={{ fontFamily:S, fontSize:"clamp(0.62rem,1.3vw,0.74rem)",
                          color:"rgba(255,255,255,0.28)", marginTop:"0.2rem" }}>
-            89/100 collateral score · $660K max borrow · 5.0★ · AAS-1 certified
+            89/100 collateral score · $660K max borrow · 5.0 stars · AAS-1 certified
           </div>
         </div>
-        <button onClick={()=>goTo("terminal")} style={{
+        <button onClick={() => goTo("terminal")} style={{
           padding:"0.625rem 1.25rem", borderRadius:5,
           border:`1px solid ${G}40`, background:`${G}08`,
           fontFamily:M, fontSize:"0.38rem", fontWeight:700,
-          color:G, cursor:"pointer",
-          textTransform:"uppercase", letterSpacing:"0.06em", whiteSpace:"nowrap",
-        }}>INSPECT ASSET →</button>
+          color:G, cursor:"pointer", textTransform:"uppercase",
+          letterSpacing:"0.06em", whiteSpace:"nowrap",
+        }}>
+          INSPECT ASSET &#8594;
+        </button>
       </div>
     </div>
   );
 }
 
-// ── TERMINAL WORKSPACE — Collateral + Protocol unified ───────────────
-type WView = "featured" | "registry" | "onboarding" | "trust";
-
+// ── TERMINAL WORKSPACE ────────────────────────────────────────────────
 function TerminalWorkspace() {
   const [view, setView] = useState<WView>("featured");
 
-  const VIEWS: { id:WView; label:string; sub:string; accent:string }[] = [
-    { id:"featured",   label:"GENESIS ASSET",    sub:"Cielo Sunrise · Series A", accent:B },
-    { id:"registry",   label:"ASSET REGISTRY",   sub:"Inspector · On-chain",     accent:B },
-    { id:"onboarding", label:"SUBMIT AN ASSET",  sub:"Owner onboarding",         accent:G },
-    { id:"trust",      label:"TRUST LAYER",      sub:"Verification architecture",accent:G },
+  const VIEWS = [
+    { id:"featured"   as WView, label:"GENESIS ASSET",   sub:"Cielo Sunrise · Series A",  accent:B },
+    { id:"registry"   as WView, label:"ASSET REGISTRY",  sub:"Inspector · On-chain",       accent:B },
+    { id:"onboarding" as WView, label:"SUBMIT AN ASSET", sub:"Owner onboarding",           accent:G },
+    { id:"trust"      as WView, label:"TRUST LAYER",     sub:"Verification architecture",  accent:G },
   ];
-
-  const active = VIEWS.find(v => v.id === view)!;
 
   return (
     <div>
       <div style={{ display:"flex", borderBottom:`1px solid ${BDR}`,
                      background:CARD, overflowX:"auto" }}>
-        {VIEWS.map(v=>(
-          <button key={v.id} onClick={()=>setView(v.id)} style={{
+        {VIEWS.map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} style={{
             padding:"0.7rem clamp(0.75rem,2vw,1.5rem)",
             background:"transparent", border:"none",
-            borderBottom:`2px solid ${view===v.id?v.accent:"transparent"}`,
+            borderBottom:`2px solid ${view === v.id ? v.accent : "transparent"}`,
             fontFamily:M, fontSize:"clamp(0.28rem,0.9vw,0.36rem)", fontWeight:700,
-            color:view===v.id?v.accent:"rgba(255,255,255,0.25)",
+            color: view === v.id ? v.accent : "rgba(255,255,255,0.25)",
             cursor:"pointer", textTransform:"uppercase",
-            letterSpacing:"0.1em", whiteSpace:"nowrap", flexShrink:0,
-            transition:"all 0.15s",
+            letterSpacing:"0.1em", whiteSpace:"nowrap",
+            flexShrink:0, transition:"all 0.15s",
           }}>
             {v.label}
             <span style={{ display:"block", fontSize:"0.26rem",
@@ -709,7 +694,7 @@ function TerminalWorkspace() {
       {view === "featured"   && <FlagshipAssetPage />}
       {view === "registry"   && <TerminalLayout />}
       {view === "onboarding" && (
-        <AssetOwnerOnboarding onEnterTerminal={()=>setView("trust")} />
+        <AssetOwnerOnboarding onEnterTerminal={() => setView("trust")} />
       )}
       {view === "trust" && <TrustStack />}
     </div>
@@ -724,20 +709,18 @@ export default function TerminalPage() {
     <div style={{ background:BG, minHeight:"100vh",
                    display:"flex", flexDirection:"column" }}>
 
-      {/* ── Protocol Status Strip ──────────────────────────────────── */}
-      <div style={{
-        background:"#060810", borderBottom:"1px solid #0F1929",
-        padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
-        height:28, display:"flex", alignItems:"center",
-        gap:"1.5rem", overflowX:"auto", flexShrink:0,
-      }}>
+      {/* Protocol status strip */}
+      <div style={{ background:"#060810", borderBottom:"1px solid #0F1929",
+                     padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
+                     height:28, display:"flex", alignItems:"center",
+                     gap:"1.5rem", overflowX:"auto", flexShrink:0 }}>
         {[
-          { dot:G,  text:"SOLANA MAINNET" },
-          { dot:G,  text:"AAS-1 PROTOCOL ACTIVE" },
-          { dot:A,  text:"VERIFICATION NETWORK v1.0" },
-          { dot:B,  text:"COLLATERAL TERMINAL" },
-          { dot:A,  text:"TRIBAL SOVEREIGNTY · RESOURCE TOKENIZATION" },
-        ].map(s=>(
+          { dot:G, text:"SOLANA MAINNET" },
+          { dot:G, text:"AAS-1 PROTOCOL ACTIVE" },
+          { dot:A, text:"VERIFICATION NETWORK v1.0" },
+          { dot:B, text:"COLLATERAL TERMINAL" },
+          { dot:A, text:"TRIBAL SOVEREIGNTY · RESOURCE TOKENIZATION" },
+        ].map(s => (
           <div key={s.text} style={{ display:"flex", alignItems:"center",
                                       gap:"0.35rem", flexShrink:0 }}>
             <div style={{ width:5, height:5, borderRadius:"50%",
@@ -757,19 +740,17 @@ export default function TerminalPage() {
         </span>
       </div>
 
-      <nav style={{
-        position:"sticky", top:28, zIndex:200,
-        background:"rgba(10,12,16,0.97)", backdropFilter:"blur(12px)",
-        borderBottom:`1px solid ${BDR}`,
-        display:"flex", alignItems:"center",
-        padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
-        height:"clamp(46px,6vw,54px)",
-        gap:"clamp(0.25rem,1vw,0.5rem)",
-        flexWrap:"nowrap", overflowX:"auto",
-      }}>
+      {/* Nav */}
+      <nav style={{ position:"sticky", top:28, zIndex:200,
+                     background:"rgba(10,12,16,0.97)", backdropFilter:"blur(12px)",
+                     borderBottom:`1px solid ${BDR}`, display:"flex", alignItems:"center",
+                     padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
+                     height:"clamp(46px,6vw,54px)",
+                     gap:"clamp(0.25rem,1vw,0.5rem)",
+                     flexWrap:"nowrap", overflowX:"auto" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"0.375rem",
                        flexShrink:0, marginRight:"clamp(0.375rem,1.5vw,1rem)" }}>
-          <span style={{ color:G, fontSize:"clamp(0.7rem,2vw,0.9rem)" }}>◈</span>
+          <span style={{ color:G, fontSize:"clamp(0.7rem,2vw,0.9rem)" }}>&#9672;</span>
           <div>
             <span style={{ fontFamily:M, fontSize:"clamp(0.5rem,1.5vw,0.7rem)",
                             fontWeight:900, color:W, letterSpacing:"0.1em" }}>
@@ -784,34 +765,37 @@ export default function TerminalPage() {
         </div>
 
         {([
-          { id:"overview" as Tab, label:"OVERVIEW"  },
-          { id:"terminal" as Tab, label:"TERMINAL"  },
-          { id:"lending"  as Tab, label:"LENDING"   },
-        ]).map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{
+          { id:"overview" as Tab,  label:"OVERVIEW"  },
+          { id:"terminal" as Tab,  label:"TERMINAL"  },
+          { id:"lending"  as Tab,  label:"LENDING"   },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding:"0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius:4,
-            border:`1px solid ${tab===t.id?`${G}50`:BDR}`,
-            background: tab===t.id?`${G}10`:"transparent",
-            color: tab===t.id?G:"rgba(255,255,255,0.28)",
+            border:`1px solid ${tab === t.id ? `${G}50` : BDR}`,
+            background: tab === t.id ? `${G}10` : "transparent",
+            color: tab === t.id ? G : "rgba(255,255,255,0.28)",
             fontFamily:M, fontSize:"clamp(0.28rem,0.85vw,0.36rem)",
             fontWeight:700, cursor:"pointer", textTransform:"uppercase",
             letterSpacing:"0.1em", whiteSpace:"nowrap", flexShrink:0,
             transition:"all 0.15s",
-          }}>{t.label}</button>
+          }}>
+            {t.label}
+          </button>
         ))}
 
         <div style={{ flex:1 }}/>
-        <LanguageSelector />
-        <CompactWallet />
+        <LanguageSelector/>
+        <CompactWallet/>
       </nav>
 
+      {/* Content */}
       <div style={{ flex:1 }}>
-        {tab === "overview"  && <OverviewTab goTo={setTab} />}
-        {tab === "terminal"  && <TerminalWorkspace />}
+        {tab === "overview"  && <OverviewTab goTo={setTab}/>}
+        {tab === "terminal"  && <TerminalWorkspace/>}
         {tab === "lending"   && (
           <div style={{ maxWidth:1060, margin:"0 auto",
                          padding:"2rem clamp(1rem,3vw,2rem) 5rem" }}>
-            <BorrowPage />
+            <BorrowPage/>
           </div>
         )}
       </div>
