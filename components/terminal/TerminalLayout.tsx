@@ -5,13 +5,10 @@
 
 import { useState }             from "react";
 import { useWallet }            from "@solana/wallet-adapter-react";
-import { useWalletModal }       from "@solana/wallet-adapter-react-ui";
 import { useAbraStore }         from "@/lib/abraxasStore";
 import { TerminalHeader }       from "@/components/terminal/TerminalHeader";
 import { CryptographicProof }   from "@/components/inspection/CryptographicProof";
 import { UnderwritingEngine }   from "@/components/inspection/UnderwritingEngine";
-import { LanguageSelector }     from "@/components/LanguageSelector";
-import { CompactWallet }        from "@/components/CompactWallet";
 import { IssuanceEngine }       from "@/components/IssuanceEngine";
 import { BorrowPage }           from "@/components/BorrowPage";
 
@@ -31,7 +28,6 @@ type View = "inspect" | "ingest" | "borrow";
 
 export function TerminalLayout() {
   const { connected }           = useWallet();
-  const { setVisible }          = useWalletModal();
   const assets                  = useAbraStore(s => s.assets);
   const [selected, setSelected] = useState<number>(0);
   const [view, setView]         = useState<View>("inspect");
@@ -71,8 +67,6 @@ export function TerminalLayout() {
         ))}
 
         <div style={{ flex:1 }}/>
-        <LanguageSelector />
-        <CompactWallet />
       </div>
 
       {/* ── 3-column body ─────────────────────────────────────────────── */}
@@ -94,10 +88,10 @@ export function TerminalLayout() {
               .abr-mobile-tab { display:none !important; }
             }
             @media(max-width:767px){
-              .abr-col-left  { display: none; }
-              .abr-col-right { display: none; }
-              .abr-col-left.active  { display:flex !important; }
-              .abr-col-right.active { display:flex !important; }
+              .abr-col-left  { display: none; width:100% !important; }
+              .abr-col-right { display: none !important; }
+              .abr-col-left.active  { display:flex !important; flex-direction:column; }
+              .abr-col-mid   { width:100% !important; }
             }
           `}</style>
 
@@ -212,18 +206,12 @@ export function TerminalLayout() {
                                   textTransform:"uppercase", letterSpacing:"0.12em" }}>
                     SELECT ASSET FROM REGISTRY
                   </span>
-                  {!connected && (
-                    <button onClick={() => setVisible(true)} style={{
-                      padding:"0.75rem 1.5rem", borderRadius:"5px",
-                      border:"1px solid rgba(16,185,129,0.25)",
-                      background:"rgba(16,185,129,0.06)",
-                      color:"#10B981", fontFamily:M, fontSize:"0.38rem",
-                      fontWeight:700, cursor:"pointer",
-                      textTransform:"uppercase", letterSpacing:"0.1em",
-                    }}>
-                      LINK WALLET NODE →
-                    </button>
-                  )}
+                  <div style={{ fontFamily:"'JetBrains Mono',monospace",
+                                  fontSize:"0.38rem", color:"rgba(16,185,129,0.35)",
+                                  textTransform:"uppercase", letterSpacing:"0.1em",
+                                  textAlign:"center" }}>
+                    Use CONNECT in the navigation above
+                  </div>
                 </div>
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>

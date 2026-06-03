@@ -7,6 +7,7 @@ import { TrustStack }           from "@/components/onboarding/TrustStack";
 import { BorrowPage }           from "@/components/BorrowPage";
 import { CompactWallet }        from "@/components/CompactWallet";
 import { LanguageSelector }     from "@/components/LanguageSelector";
+import { VerificationTerminal } from "@/components/vos/VerificationTerminal";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
@@ -19,7 +20,7 @@ const B    = "#3B82F6";
 const W    = "#F8FAFC";
 
 type Tab   = "overview" | "terminal" | "lending";
-type WView = "featured" | "registry" | "onboarding" | "trust";
+type WView = "vos" | "featured" | "registry" | "onboarding" | "trust";
 
 interface ScenarioData {
   color: string; label: string;
@@ -658,9 +659,10 @@ function OverviewTab({ goTo }: { goTo: (t: Tab) => void }) {
 
 // ── TERMINAL WORKSPACE ────────────────────────────────────────────────
 function TerminalWorkspace() {
-  const [view, setView] = useState<WView>("featured");
+  const [view, setView] = useState<WView>("vos");
 
   const VIEWS = [
+    { id:"vos"        as WView, label:"COMMAND TERMINAL",sub:"Verification OS · vos>",     accent:G },
     { id:"featured"   as WView, label:"GENESIS ASSET",   sub:"Cielo Sunrise · Series A",  accent:B },
     { id:"registry"   as WView, label:"ASSET REGISTRY",  sub:"Inspector · On-chain",       accent:B },
     { id:"onboarding" as WView, label:"SUBMIT AN ASSET", sub:"Owner onboarding",           accent:G },
@@ -691,6 +693,7 @@ function TerminalWorkspace() {
           </button>
         ))}
       </div>
+      {view === "vos"        && <VerificationTerminal />}
       {view === "featured"   && <FlagshipAssetPage />}
       {view === "registry"   && <TerminalLayout />}
       {view === "onboarding" && (
