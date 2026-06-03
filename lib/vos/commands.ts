@@ -353,6 +353,122 @@ commandRegistry.register({
   },
 });
 
+
+// ── USER ASSETS (persistent layer) ───────────────────────────────────
+// Bridge from terminal commands → userAssetStore (localStorage).
+// On the client, dynamic imports avoid SSR issues.
+async function loadUserStore() {
+  const mod = await import("./userAssetStore");
+  return mod.userAssetStore;
+}
+async function loadSession() {
+  const mod = await import("./sessionStore");
+  return mod.sessionStore.get();
+}
+
+commandRegistry.register({
+  name: "my assets", aliases: ["mine", "my"], category: "core",
+  description: "List assets you've submitted in this session",
+  syntax: "my assets",
+  handler: async (ctx) => {
+    const store   = await loadUserStore();
+    const session = await loadSession();
+    ctx.emit({ kind: "agent", text: "[Agent] Loading your session..." });
+    await wait(120);
+    ctx.emit({ kind: "agent", text: `[Agent] Session: ${session.label} (${session.id})` });
+    await wait(100);
+    const mine = store.listMine();
+    if (mine.length === 0) {
+      ctx.emit({ kind: "out", text:
+        "No assets submitted yet. Run 'submit' to start the onboarding flow, " +
+        "or visit /dashboard."
+      });
+      return;
+    }
+    let out = `── YOUR ASSETS (${mine.length}) ──\n\n`;
+    out += "ID".padEnd(12) + "TYPE".padEnd(18) + "STATE".padEnd(14) + "VALUE\n";
+    out += "─".repeat(72) + "\n";
+    mine.forEach(a => {
+      out += a.id.padEnd(12) +
+             a.assetType.slice(0, 17).padEnd(18) +
+             a.state.padEnd(14) +
+             (a.estimatedValue ? `$${a.estimatedValue}` : "—") + "\n";
+    });
+    out += "\nRun 'track <id>' for the full lifecycle event log.";
+    ctx.emit({ kind: "report", text: out });
+  },
+});
+
+commandRegistry.register({
+  name: "track", category: "intelligence",
+  description: "Show full lifecycle event log for one of your assets",
+  syntax: "track <asset_id>",
+  example: "track USR-XYZ123",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Missing asset ID. Syntax: track <asset_id>" });
+      ctx.emit({ kind: "out",   text: "Run 'my assets' to see your asset IDs." });
+      return;
+    }
+    const store = await loadUserStore();
+    const a = store.get(ctx.args[0].toUpperCase());
+    if (!a) {
+      ctx.emit({ kind: "error", text: `Asset not found in your session: ${ctx.args[0]}` });
+      return;
+    }
+    ctx.emit({ kind: "agent", text: `[Agent] Loading lifecycle for ${a.id}...` });
+    await wait(140);
+    let out = `── LIFECYCLE · ${a.id} ──\n\n`;
+    out += `Type:           ${a.assetType}\n`;
+    out += `Current State:  ${a.state}\n`;
+    out += `Submitted:      ${new Date(a.createdAt).toLocaleString()}\n`;
+    out += `Value:          ${a.estimatedValue ? "$" + a.estimatedValue : "—"}\n`;
+    out += `Jurisdiction:   ${a.jurisdiction}\n\n`;
+    out += `── EVENT LOG (append-only, ${a.timeline.length} events) ──\n`;
+    a.timeline.forEach(ev => {
+      const t = new Date(ev.at).toLocaleString();
+      out += `\n[${t}]\n  ${ev.state.padEnd(12)} actor: ${ev.actor}`;
+      if (ev.note) out += `\n  note: ${ev.note}`;
+    });
+    out += "\n\nView in browser: /dashboard";
+    ctx.emit({ kind: "report", text: out });
+  },
+});
+
+commandRegistry.register({
+  name: "submit", aliases: ["onboard", "create"], category: "execution",
+  description: "Open the asset submission flow",
+  syntax: "submit",
+  handler: (ctx) => {
+    ctx.emit({ kind: "agent", text: "[Agent] Opening onboarding flow..." });
+    ctx.emit({ kind: "out", text:
+      "Switch to the SUBMIT AN ASSET sub-view, or navigate to:\n" +
+      "  /terminal → TERMINAL tab → submit\n" +
+      "Your asset will persist on /dashboard after submission."
+    });
+  },
+});
+
+commandRegistry.register({
+  name: "session", aliases: ["whoami"], category: "core",
+  description: "Show your anonymous session identity",
+  syntax: "session",
+  handler: async (ctx) => {
+    const session = await loadSession();
+    const store   = await loadUserStore();
+    const mine    = store.listMine();
+    ctx.emit({ kind: "report", text:
+      `── SESSION ──\n\n` +
+      `Label:        ${session.label}\n` +
+      `ID:           ${session.id}\n` +
+      `Created:      ${new Date(session.createdAt).toLocaleString()}\n` +
+      `Your Assets:  ${mine.length}\n\n` +
+      `Sessions are anonymous and stored locally (localStorage).\n` +
+      `Dashboard: /dashboard`
+    });
+  },
+});
+
 // ── CLEAR ────────────────────────────────────────────────────────────
 commandRegistry.register({
   name: "clear", aliases: ["cls"], category: "core",

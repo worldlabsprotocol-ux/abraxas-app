@@ -145,7 +145,14 @@ function TerminalTab() {
   return (
     <div>
       {/* ── 1. COMMAND TERMINAL — primary entry point ──────────────── */}
-      <div style={{ height: "min(70vh, 720px)", borderBottom: `1px solid ${BDR}` }}>
+      {/* Height-isolated wrapper: prevents inner scroll from bleeding into page */}
+      <div style={{
+        height: "min(70vh, 720px)",
+        borderBottom: `1px solid ${BDR}`,
+        overflow: "hidden",
+        position: "relative",
+        isolation: "isolate",
+      }}>
         <VerificationTerminal />
       </div>
 
@@ -708,6 +715,17 @@ export default function TerminalPage() {
             {t.label}
           </button>
         ))}
+
+        <a href="/dashboard" style={{
+          padding: "0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius: 4,
+          border: `1px solid ${BDR}`, background: "transparent",
+          color: "rgba(255,255,255,0.4)", fontFamily: M,
+          fontSize: "clamp(0.28rem,0.85vw,0.36rem)", fontWeight: 700,
+          textDecoration: "none", textTransform: "uppercase",
+          letterSpacing: "0.1em", whiteSpace: "nowrap", flexShrink: 0,
+        }}>
+          DASHBOARD
+        </a>
 
         <div style={{ flex: 1 }}/>
         <LanguageSelector/>

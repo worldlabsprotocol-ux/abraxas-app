@@ -1,9 +1,12 @@
 // FILE: components/vos/VerificationTerminal.tsx
 // Bloomberg/Palantir-style verification terminal.
-// Driven entirely by the command registry — UI never references specific commands.
+// Architecture:
+//   - InputBar is a memoized child — its focus survives parent re-renders.
+//   - All command execution goes through commandRegistry.
+//   - Output is a controlled stream; input state lives inside InputBar.
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { commandRegistry } from "@/lib/vos/commandRegistry";
 import { assetRegistry }    from "@/lib/vos/assetRegistry";
 import "@/lib/vos/commands"; // side effect: registers all commands
@@ -26,20 +29,19 @@ ABRAXAS VERIFICATION OS
 Asset Intelligence · Provenance · Custody · Collateral
 Build 2025.1 · Solana Mainnet · AAS-1 Protocol
 
-Type 'help' to begin. Try: inspect AAS-1
+Type 'help' to begin. Try: inspect AAS-1 · my assets · status
 `.trim();
 
 interface Suggestion { label: string; cmd: string; }
 const QUICK_COMMANDS: Suggestion[] = [
-  { label: "STATUS",            cmd: "status" },
-  { label: "LIST REGISTRY",     cmd: "list" },
-  { label: "INSPECT AAS-1",     cmd: "inspect AAS-1" },
-  { label: "VERIFY AAS-1",      cmd: "verify AAS-1" },
-  { label: "PROVENANCE AAS-1",  cmd: "show provenance AAS-1" },
-  { label: "CUSTODY AAS-1",     cmd: "show custody AAS-1" },
-  { label: "COLLATERAL AAS-1",  cmd: "show collateral AAS-1" },
-  { label: "RISK AAS-1",        cmd: "show risk AAS-1" },
-  { label: "HELP",              cmd: "help" },
+  { label: "STATUS",           cmd: "status" },
+  { label: "LIST",             cmd: "list" },
+  { label: "INSPECT AAS-1",    cmd: "inspect AAS-1" },
+  { label: "VERIFY AAS-1",     cmd: "verify AAS-1" },
+  { label: "PROVENANCE",       cmd: "show provenance AAS-1" },
+  { label: "MY ASSETS",        cmd: "my assets" },
+  { label: "SESSION",          cmd: "session" },
+  { label: "HELP",             cmd: "help" },
 ];
 
 function lineColor(kind: LogLine["kind"]): string {
@@ -53,34 +55,112 @@ function lineColor(kind: LogLine["kind"]): string {
   }
 }
 
+// ── Isolated input bar (memoized — survives parent re-renders) ───────
+interface InputBarProps {
+  onSubmit: (raw: string) => void;
+  busy: boolean;
+  history: string[];
+}
+const InputBar = memo(function InputBar({ onSubmit, busy, history }: InputBarProps) {
+  // Input state is LOCAL to this component so parent re-renders don't reset it.
+  const [value, setValue] = useState("");
+  const [hIdx,  setHIdx]  = useState<number>(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Refocus after submit so mobile keyboard stays open
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const submit = () => {
+    if (busy || !value.trim()) return;
+    onSubmit(value);
+    setValue("");
+    setHIdx(-1);
+    // Refocus immediately — prevents keyboard dismiss on mobile
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (history.length === 0) return;
+      const next = hIdx < 0 ? history.length - 1 : Math.max(0, hIdx - 1);
+      setHIdx(next);
+      setValue(history[next]);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (hIdx < 0) return;
+      const next = hIdx + 1;
+      if (next >= history.length) { setHIdx(-1); setValue(""); }
+      else { setHIdx(next); setValue(history[next]); }
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      const all = commandRegistry.all();
+      const match = all.find(c => c.name.startsWith(value.toLowerCase()) && !c.future);
+      if (match) setValue(match.name + " ");
+    }
+  };
+
+  return (
+    <div style={{
+      borderTop: `1px solid ${BDR}`, background: "#0A0D13",
+      padding: "0.625rem clamp(0.75rem,2.5vw,1.5rem)",
+      display: "flex", alignItems: "center", gap: "0.5rem",
+      flexShrink: 0,
+    }}>
+      <span style={{ color: G, fontWeight: 900, fontSize: "0.5rem", letterSpacing: "0.05em" }}>vos&gt;</span>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={onKeyDown}
+        disabled={busy}
+        placeholder="type a command — try 'help', 'inspect AAS-1', 'my assets'"
+        spellCheck={false}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        style={{
+          flex: 1, background: "transparent", border: "none",
+          outline: "none", color: W, fontFamily: M,
+          fontSize: "16px", padding: "0.25rem 0",
+          caretColor: G, minWidth: 0,
+        }}
+      />
+      <span style={{ fontSize: "0.3rem", color: DIM,
+                      whiteSpace: "nowrap", display: "none" }}
+            className="vos-hint-desktop">
+        ↑↓ history · TAB complete · ENTER run
+      </span>
+    </div>
+  );
+});
+
+// ── Main terminal ────────────────────────────────────────────────────
 export function VerificationTerminal() {
-  const [lines, setLines]     = useState<LogLine[]>([
+  const [lines,   setLines]   = useState<LogLine[]>([
     { kind: "report", text: BANNER, ts: Date.now() },
   ]);
-  const [input,   setInput]   = useState("");
   const [history, setHistory] = useState<string[]>([]);
-  const [histIdx, setHistIdx] = useState<number>(-1);
   const [busy,    setBusy]    = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef  = useRef<HTMLInputElement>(null);
 
   // Autoscroll on new lines
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [lines]);
 
-  // Focus input on mount
-  useEffect(() => { inputRef.current?.focus(); }, []);
-
   const emit = useCallback((line: Omit<LogLine, "ts">) => {
     setLines(prev => [...prev, { ...line, ts: Date.now() }]);
   }, []);
 
+  // Stable reference — passed to memoized InputBar
   const run = useCallback(async (raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) return;
 
-    // Handle clear directly
     if (trimmed.toLowerCase() === "clear" || trimmed.toLowerCase() === "cls") {
       setLines([{ kind: "report", text: BANNER, ts: Date.now() }]);
       setHistory(h => [...h, trimmed]);
@@ -89,7 +169,6 @@ export function VerificationTerminal() {
 
     setBusy(true);
     setHistory(h => [...h, trimmed]);
-    setHistIdx(-1);
     try {
       await commandRegistry.execute(trimmed, assetRegistry, emit, history);
     } finally {
@@ -97,47 +176,17 @@ export function VerificationTerminal() {
     }
   }, [emit, history]);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (busy) return;
-    const v = input;
-    setInput("");
-    run(v);
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (history.length === 0) return;
-      const next = histIdx < 0 ? history.length - 1 : Math.max(0, histIdx - 1);
-      setHistIdx(next);
-      setInput(history[next]);
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (histIdx < 0) return;
-      const next = histIdx + 1;
-      if (next >= history.length) { setHistIdx(-1); setInput(""); }
-      else { setHistIdx(next); setInput(history[next]); }
-    } else if (e.key === "Tab") {
-      e.preventDefault();
-      // Simple completion: match first command starting with current input
-      const all = commandRegistry.all();
-      const match = all.find(c => c.name.startsWith(input.toLowerCase()) && !c.future);
-      if (match) setInput(match.name + " ");
-    }
-  };
-
   return (
     <div style={{
-      background: BG, minHeight: "100vh", display: "flex", flexDirection: "column",
-      fontFamily: M, color: W,
+      background: BG, height: "100%", display: "flex", flexDirection: "column",
+      fontFamily: M, color: W, overflow: "hidden",
     }}>
-      {/* ── Banner row ────────────────────────────────────────────────── */}
+      {/* Banner row */}
       <div style={{
         background: "#040608", borderBottom: `1px solid ${BDR}`,
         padding: "0.5rem clamp(0.75rem,2.5vw,1.5rem)",
         display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap",
-        fontSize: "0.36rem", color: DIM,
+        fontSize: "0.36rem", color: DIM, flexShrink: 0,
       }}>
         <span style={{ color: G, fontWeight: 700 }}>● VOS-1 ONLINE</span>
         <span>NODE: SOLANA-MAINNET</span>
@@ -147,12 +196,12 @@ export function VerificationTerminal() {
         <span>{new Date().toISOString().split("T")[0]}</span>
       </div>
 
-      {/* ── Quick command bar ─────────────────────────────────────────── */}
+      {/* Quick command bar */}
       <div style={{
         background: CARD, borderBottom: `1px solid ${BDR}`,
         padding: "0.5rem clamp(0.75rem,2.5vw,1.5rem)",
         display: "flex", gap: "0.375rem", flexWrap: "wrap",
-        overflowX: "auto",
+        overflowX: "auto", flexShrink: 0,
       }}>
         {QUICK_COMMANDS.map(q => (
           <button key={q.cmd} onClick={() => run(q.cmd)} disabled={busy} style={{
@@ -169,9 +218,9 @@ export function VerificationTerminal() {
         ))}
       </div>
 
-      {/* ── Output stream ─────────────────────────────────────────────── */}
+      {/* Output stream — scrolls independently */}
       <div ref={scrollRef} style={{
-        flex: 1, overflowY: "auto",
+        flex: 1, minHeight: 0, overflowY: "auto",
         padding: "1rem clamp(0.75rem,2.5vw,1.5rem)",
         fontSize: "0.42rem", lineHeight: 1.75,
       }}>
@@ -201,38 +250,10 @@ export function VerificationTerminal() {
         )}
       </div>
 
-      {/* ── Command prompt ────────────────────────────────────────────── */}
-      <form onSubmit={onSubmit} style={{
-        borderTop: `1px solid ${BDR}`, background: "#0A0D13",
-        padding: "0.625rem clamp(0.75rem,2.5vw,1.5rem)",
-        display: "flex", alignItems: "center", gap: "0.5rem",
-        flexShrink: 0,
-      }}>
-        <span style={{ color: G, fontWeight: 900, fontSize: "0.5rem", letterSpacing: "0.05em" }}>vos&gt;</span>
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          disabled={busy}
-          placeholder="type a command — try 'help' or 'inspect AAS-1'"
-          spellCheck={false}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          style={{
-            flex: 1, background: "transparent", border: "none",
-            outline: "none", color: W, fontFamily: M,
-            fontSize: "0.48rem", padding: "0.25rem 0",
-            caretColor: G,
-          }}
-        />
-        <span style={{ fontSize: "0.3rem", color: DIM, whiteSpace: "nowrap" }}>
-          ↑↓ history · TAB complete · ENTER run
-        </span>
-      </form>
+      {/* Input — isolated, focus-stable */}
+      <InputBar onSubmit={run} busy={busy} history={history} />
 
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes abrx-blink { 50% { opacity: 0; } }
       `}</style>
     </div>
