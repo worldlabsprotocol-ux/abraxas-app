@@ -16,7 +16,7 @@ import { CompactWallet }        from "@/components/CompactWallet";
 import { LanguageSelector }     from "@/components/LanguageSelector";
 import { VerificationTerminal } from "@/components/vos/VerificationTerminal";
 import { ExplainerCarousel }    from "@/components/ExplainerCarousel";
-import { userAssetStore }       from "@/lib/vos/userAssetStore";
+import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
@@ -130,174 +130,12 @@ function Divider() {
 
 
 
-// ── WYOMING LLC FORMATION MODAL ───────────────────────────────────
-function WyomingModal({ open, onClose, onSuccess }: {
-  open: boolean; onClose: () => void; onSuccess: (id: string) => void;
-}) {
-  const [name, setName] = useState("");
-  const [value, setValue] = useState("");
-  const [wallet, setWallet] = useState("");
-  const [desc, setDesc] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  if (!open) return null;
-
-  function submit() {
-    if (!name.trim()) { alert("Company name is required."); return; }
-    setBusy(true);
-    try {
-      const asset = userAssetStore.create({
-        assetType:      "wyoming_llc",
-        estimatedValue: value || "1000000",
-        jurisdiction:   "Wyoming, USA",
-        hasLiens:       "no",
-        hasAppraisal:   "no",
-        hasCustody:     "yes",
-      });
-      // Persist supplemental details locally so we can show them later
-      if (typeof window !== "undefined") {
-        const meta = { name, wallet, desc, assetId: asset.id, createdAt: new Date().toISOString() };
-        const all = JSON.parse(localStorage.getItem("abraxas_wy_meta_v1") || "[]");
-        all.push(meta);
-        localStorage.setItem("abraxas_wy_meta_v1", JSON.stringify(all));
-      }
-      onSuccess(asset.id);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const input: React.CSSProperties = {
-    width: "100%", padding: "0.75rem 0.875rem", borderRadius: 5,
-    border: `1px solid ${BDR}`, background: "rgba(255,255,255,0.03)",
-    color: W, fontFamily: S, fontSize: "16px", outline: "none",
-    boxSizing: "border-box",
-  };
-  const label: React.CSSProperties = {
-    fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
-    color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
-    letterSpacing: "0.12em", marginBottom: "0.375rem", display: "block",
-  };
-
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(2,4,8,0.85)", backdropFilter: "blur(8px)",
-      display: "flex", alignItems: "flex-start", justifyContent: "center",
-      padding: "2rem 1rem", overflowY: "auto",
-    }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: CARD, border: `1px solid ${G}40`,
-        borderRadius: 10, width: "100%", maxWidth: 560,
-        boxShadow: `0 0 40px ${G}20`,
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: "1.25rem 1.5rem", borderBottom: `1px solid ${BDR}`,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <div>
-            <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
-                           color: G, letterSpacing: "0.15em",
-                           textTransform: "uppercase", marginBottom: 4 }}>
-              WYOMING LLC FORMATION
-            </div>
-            <div style={{ fontFamily: S, fontSize: "clamp(1rem,2.2vw,1.25rem)",
-                           fontWeight: 800, color: W }}>
-              Launch your business on-chain.
-            </div>
-          </div>
-          <button onClick={onClose} style={{
-            padding: "0.4rem 0.75rem", borderRadius: 4,
-            border: `1px solid ${BDR}`, background: "transparent",
-            color: "rgba(255,255,255,0.4)", fontFamily: M,
-            fontSize: "0.4rem", fontWeight: 700, cursor: "pointer",
-          }}>✕</button>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: "1.25rem 1.5rem" }}>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={label}>Business / Company Name *</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)}
-              placeholder="e.g. Acme Holdings LLC" style={input}/>
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={label}>Estimated Valuation (USD)</label>
-            <input type="text" value={value} onChange={e => setValue(e.target.value)}
-              placeholder="e.g. 500000" style={input}/>
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={label}>Wallet Address (for token receipt)</label>
-            <input type="text" value={wallet} onChange={e => setWallet(e.target.value)}
-              placeholder="Solana wallet address — optional, can add later"
-              style={input}/>
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={label}>Short Description / Purpose</label>
-            <textarea value={desc} onChange={e => setDesc(e.target.value)}
-              placeholder="What does the business do? Optional but helpful for review."
-              rows={3} style={{...input, fontFamily: S, resize: "vertical"}}/>
-          </div>
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label style={label}>Jurisdiction</label>
-            <input type="text" defaultValue="Wyoming, USA" disabled
-              style={{...input, opacity: 0.6, cursor: "not-allowed"}}/>
-            <div style={{ fontFamily: M, fontSize: "0.28rem",
-                           color: "rgba(255,255,255,0.25)", marginTop: 4,
-                           letterSpacing: "0.05em" }}>
-              Formation documents can be uploaded via dashboard after submission.
-            </div>
-          </div>
-
-          {/* Pipeline preview */}
-          <div style={{ padding: "0.75rem 0.875rem", background: `${G}06`,
-                         border: `1px solid ${G}25`, borderRadius: 5,
-                         marginBottom: "1.25rem" }}>
-            <div style={{ fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
-                           color: G, letterSpacing: "0.12em",
-                           textTransform: "uppercase", marginBottom: 6 }}>
-              ON SUBMISSION
-            </div>
-            <div style={{ fontFamily: S, fontSize: "0.72rem",
-                           color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
-              Asset enters Abraxas V5 pipeline at <strong>SUBMITTED</strong> state.
-              Tracked through all 10 verification stages.
-              View progress on /dashboard or via terminal: <code>my assets</code>.
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: "flex", gap: "0.625rem" }}>
-            <button onClick={onClose} disabled={busy} style={{
-              flex: 1, padding: "0.875rem", borderRadius: 5,
-              border: `1px solid ${BDR}`, background: "transparent",
-              color: "rgba(255,255,255,0.5)", fontFamily: M,
-              fontSize: "0.42rem", fontWeight: 700, cursor: "pointer",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-            }}>Cancel</button>
-            <button onClick={submit} disabled={busy || !name.trim()} style={{
-              flex: 2, padding: "0.875rem", borderRadius: 5, border: "none",
-              background: G, color: "#000", fontFamily: M,
-              fontSize: "0.5rem", fontWeight: 900,
-              cursor: busy || !name.trim() ? "not-allowed" : "pointer",
-              opacity: busy || !name.trim() ? 0.5 : 1,
-              letterSpacing: "0.04em", textTransform: "uppercase",
-            }}>
-              {busy ? "SUBMITTING..." : "SUBMIT TO V5 PIPELINE →"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── TERMINAL — primary unified experience ────────────────────────────
 function TerminalTab() {
   const [deep, setDeep] = useState<Deep>("main");
   const [scenario, setScenario] = useState<"small" | "large">("large");
   const [wyOpen, setWyOpen] = useState(false);
+  const [initialTier, setInitialTier] = useState<"starter"|"growth"|"enterprise"|null>(null);
   const SC: ScenarioData = scenario === "small" ? SMALL : LARGE;
 
   const ebitdaData: BarDataPoint[] = [
@@ -314,11 +152,12 @@ function TerminalTab() {
 
   return (
     <div>
-      {/* Wyoming LLC formation modal */}
-      <WyomingModal open={wyOpen} onClose={() => setWyOpen(false)} onSuccess={(id) => {
-        setWyOpen(false);
-        if (typeof window !== "undefined") window.location.href = "/dashboard";
-      }}/>
+      {/* Tokenization Request modal (Supabase-backed) */}
+      <TokenizationRequestModal
+        open={wyOpen}
+        initialTier={initialTier}
+        onClose={() => { setWyOpen(false); setInitialTier(null); }}
+      />
 
       {/* ── 0. INLINE EXPLAINER — first-visit context ─────────────── */}
       <ExplainerCarousel />
@@ -355,15 +194,16 @@ function TerminalTab() {
             <div style={{ display: "grid",
                            gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
                            gap: "0.75rem", marginBottom: "1.5rem" }}>
-              {[
-                { tier: "STARTER",    price: "$1,499",  color: B,         items: ["Wyoming LLC Formation","Operating Agreement","On-chain Tokenization","Basic Verification"] },
-                { tier: "GROWTH",     price: "$2,999",  color: "#8B5CF6", items: ["Everything in Starter","Multi-sig Governance","Cap Table Management","Lending Eligibility"] },
-                { tier: "ENTERPRISE", price: "$4,999+", color: G,         items: ["Everything in Growth","Full Compliance Package","Priority Verification","Dedicated Verifier"] },
-              ].map(pkg => (
+              {([
+                { id: "starter"    as const, tier: "STARTER",    price: "$1,499",  amount: 1499, color: B,         items: ["Wyoming LLC Formation","Operating Agreement","On-chain Tokenization","V5 Basic Verification"] },
+                { id: "growth"     as const, tier: "GROWTH",     price: "$2,999",  amount: 2999, color: "#8B5CF6", items: ["Everything in Starter","Multi-sig Governance","Cap Table Management","Lending Eligible (60% LTV)"] },
+                { id: "enterprise" as const, tier: "ENTERPRISE", price: "$4,999",  amount: 4999, color: G,         items: ["Everything in Growth","Full Compliance Package","Priority Verification (24h)","Dedicated Verifier"] },
+              ]).map(pkg => (
                 <div key={pkg.tier} style={{ padding: "1.25rem", borderRadius: 7,
                                               background: CARD,
                                               border: `1px solid ${pkg.color}30`,
-                                              borderTop: `3px solid ${pkg.color}` }}>
+                                              borderTop: `3px solid ${pkg.color}`,
+                                              display: "flex", flexDirection: "column" }}>
                   <div style={{ fontFamily: M, fontSize: "0.32rem", fontWeight: 900,
                                  color: pkg.color, letterSpacing: "0.12em",
                                  marginBottom: "0.375rem" }}>
@@ -373,21 +213,35 @@ function TerminalTab() {
                                  color: W, marginBottom: "0.75rem" }}>
                     {pkg.price}
                   </div>
-                  {pkg.items.map(item => (
-                    <div key={item} style={{ display: "flex", gap: "0.4rem",
-                                              alignItems: "center", marginBottom: 4 }}>
-                      <span style={{ color: pkg.color, fontSize: "0.5rem" }}>◉</span>
-                      <span style={{ fontFamily: S, fontSize: "clamp(0.6rem,1.4vw,0.72rem)",
-                                      color: "rgba(255,255,255,0.5)" }}>
-                        {item}
-                      </span>
-                    </div>
-                  ))}
+                  <div style={{ flex: 1, marginBottom: "0.75rem" }}>
+                    {pkg.items.map(item => (
+                      <div key={item} style={{ display: "flex", gap: "0.4rem",
+                                                alignItems: "center", marginBottom: 4 }}>
+                        <span style={{ color: pkg.color, fontSize: "0.5rem" }}>◉</span>
+                        <span style={{ fontFamily: S, fontSize: "clamp(0.6rem,1.4vw,0.72rem)",
+                                        color: "rgba(255,255,255,0.5)" }}>
+                          {item}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => { setInitialTier(pkg.id); setWyOpen(true); }}
+                    style={{
+                      width: "100%", padding: "0.625rem", borderRadius: 4,
+                      border: `1px solid ${pkg.color}80`,
+                      background: `${pkg.color}15`,
+                      color: pkg.color, fontFamily: M, fontSize: "0.4rem",
+                      fontWeight: 900, cursor: "pointer",
+                      letterSpacing: "0.06em", textTransform: "uppercase",
+                      transition: "all 0.15s",
+                    }}>
+                    SELECT {pkg.tier} →
+                  </button>
                 </div>
               ))}
             </div>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-              <button onClick={() => setWyOpen(true)} style={{
+              <button onClick={() => { setInitialTier(null); setWyOpen(true); }} style={{
                 padding: "0.875rem 1.75rem", borderRadius: 5, border: "none",
                 background: G, color: "#000", fontFamily: M, fontSize: "0.5rem",
                 fontWeight: 900, cursor: "pointer", letterSpacing: "0.04em",
