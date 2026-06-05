@@ -744,6 +744,42 @@ _originalRegister({
   handler: async (ctx) => {
     if (ctx.args.length === 0) {
       ctx.emit({ kind: "error", text: "Missing asset ID. Syntax: tokenize <asset_id> [supply]" });
+
+
+commandRegistry.register({
+  name: "wyoming",
+  aliases: ["business", "tokenize-business"],
+  category: "execution",
+  description: "Start Wyoming LLC + V5 tokenization flow",
+  syntax: "wyoming <business_name>",
+  example: "wyoming \"Retro World LLC\"",
+  handler: async (ctx) => {
+    if (!ctx.args.length) {
+      ctx.emit({ kind: "out", text: "Usage: wyoming <business_name>" });
+      return;
+    }
+    const name = ctx.args.join(" ");
+    const store = await loadUserStore();
+
+
+    const asset = store.create({
+      assetType: "WYOMING_LLC",
+      estimatedValue: "750000",
+      jurisdiction: "Wyoming",
+      hasLiens: "no",
+      hasAppraisal: "pending",
+      hasCustody: "pending",
+    });
+
+
+    store.advance(asset.id, "SUBMITTED", "user", `Wyoming LLC tokenization started: ${name}`);
+
+
+    ctx.emit({ kind: "out", text: `Started V5 pipeline for "${name}"` });
+    ctx.emit({ kind: "out", text: `Asset ID: ${asset.id} — Run 'advance ${asset.id}' to progress through the 10 stages.` });
+  },
+});
+
       ctx.emit({ kind: "out",   text: "Run 'my assets' to see your asset IDs." });
       return;
     }

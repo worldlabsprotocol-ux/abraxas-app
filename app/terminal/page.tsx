@@ -775,7 +775,7 @@ function TerminalTab() {
   </div>
 </div>
 
-Launch your business on-chain. <span className="ml-3 text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 align-middle">LIVE</span>
+Launch your business on-chain.
             </h2>
             <p style={{ fontFamily: S, fontSize: "clamp(0.74rem,1.5vw,0.88rem)",
                          color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
@@ -999,3 +999,34 @@ export default function TerminalPage() {
     </div>
   );
 }
+
+
+
+{/* ========== WYOMING LLC + TOKENIZATION — LIVE (at bottom of section) ========== */}
+<div className="mt-10 pt-8 border-t border-white/10">
+  <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-y-6">
+    <div className="max-w-lg">
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono tracking-[2px] mb-3">
+        V5 • LIVE PIPELINE
+      </div>
+      <h3 className="text-2xl font-semibold tracking-tight">Ready to tokenize your business?</h3>
+      <p className="text-zinc-400 mt-2">
+        Launch a Wyoming LLC and enter the 10-stage Abraxas verification → tokenization flow. 
+        Real on-chain collateral with real revenue potential.
+      </p>
+      <div className="mt-3 text-[10px] text-zinc-500 font-mono tracking-widest">
+        WE COLLECT: Business name • Valuation • Wallet • Formation docs • Description
+      </div>
+    </div>
+
+
+    <button
+      onClick={() => {
+        window.location.href = "/terminal?type=WYOMING_LLC&quickstart=true";
+      }}
+      className="px-8 py-3.5 rounded-2xl bg-white text-black font-semibold hover:bg-zinc-100 active:scale-[0.985] transition-all flex items-center gap-2"
+    >
+      START TOKENIZATION NOW →
+    </button>
+  </div>
+</div>
