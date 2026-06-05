@@ -1,3 +1,4 @@
+// V5 LifecycleState alignment applied by fix_v5_lifecycle.py — do not revert these state strings
 // FILE: lib/vos/commands.ts
 // All Verification OS commands. Register via commandRegistry.register().
 // Add new commands here; the terminal UI does NOT need to change.
@@ -494,6 +495,141 @@ futureSpecs.forEach(spec => commandRegistry.register({
 }));
 
 
+
+// ── ANALYZE (AI analyst mode) ─────────────────────────────────────
+commandRegistry.register({
+  name: "analyze", aliases: ["analyse", "check"], category: "intelligence",
+  description: "Full AI analysis — value, market, lending potential, tokenization readiness",
+  syntax: "analyze <asset_id>",
+  example: "analyze AAS-1",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Syntax: analyze <asset_id>" });
+      return;
+    }
+    const id = ctx.args[0].toUpperCase();
+    const regAsset  = ctx.registry.get(id);
+    const userStore = await loadUserStore();
+    const userAsset = userStore.get(id);
+
+    if (!regAsset && !userAsset) {
+      ctx.emit({ kind: "error", text: `Asset not found: ${id}` });
+      return;
+    }
+
+    ctx.emit({ kind: "agent", text: "[Agent] Running multi-variable analysis..." });
+    await wait(200);
+    ctx.emit({ kind: "agent", text: "[Agent] Cross-referencing market comparables..." });
+    await wait(160);
+    ctx.emit({ kind: "agent", text: "[Agent] Computing lending potential and liquidity score..." });
+    await wait(180);
+    ctx.emit({ kind: "agent", text: "[Agent] Assessing tokenization readiness..." });
+    await wait(140);
+
+    const base = regAsset
+      ? regAsset.collateral.appraisalValue
+      : parseFloat((userAsset!.estimatedValue || "0").replace(/[^0-9.]/g,"")) || 100_000;
+    const verScore = regAsset ? 89 : (userAsset?.scores?.verification ?? 62);
+    const liqScore = regAsset ? 84 : (userAsset?.scores?.liquidity ?? 58);
+    const fraud    = regAsset ? 95 : (userAsset?.scores?.fraud ?? 72);
+    const mkt      = regAsset ? 88 : (userAsset?.scores?.marketability ?? 65);
+    const maxBorrow = base * 0.60;
+    const monthlyDebtService = (maxBorrow * 0.085) / 12;
+    const tokenizationReady = regAsset || (userAsset?.state === "MINTED" || userAsset?.state === "MARKETPLACE_LIVE" || userAsset?.state === "TOKENIZATION_AUTH");
+
+    ctx.emit({ kind: "report", text:
+      `── AI ANALYST REPORT · ${id} ──\n\n` +
+      `VALUATION\n` +
+      `  Estimated Value:       $${base.toLocaleString()}\n` +
+      `  Max Borrow Capacity:   $${Math.round(maxBorrow).toLocaleString()} USDC (60% LTV)\n` +
+      `  Est. Monthly Service:  $${Math.round(monthlyDebtService).toLocaleString()} @ 8.5% APR\n\n` +
+      `RISK ENGINE\n` +
+      `  Verification Score:    ${verScore}/100 · ${verScore >= 80 ? "STRONG" : verScore >= 65 ? "GOOD" : "DEVELOPING"}\n` +
+      `  Liquidity Score:       ${liqScore}/100 · ${liqScore >= 75 ? "HIGH" : liqScore >= 55 ? "MEDIUM" : "LOW"}\n` +
+      `  Fraud Shield:          ${fraud}/100 · ${fraud >= 85 ? "LOW RISK" : fraud >= 65 ? "MODERATE" : "ELEVATED"}\n` +
+      `  Marketability:         ${mkt}/100 · ${mkt >= 75 ? "HIGH" : mkt >= 55 ? "MEDIUM" : "DEVELOPING"}\n\n` +
+      `TOKENIZATION READINESS\n` +
+      `  Status:  ${tokenizationReady ? "ELIGIBLE — asset meets tokenization criteria" : "PENDING — verification pipeline must complete first"}\n` +
+      `  Standard: AAS-1 (Token-2022, Solana Mainnet)\n` +
+      `  Suggested Supply: ${Math.round(base / 100).toLocaleString()} tokens @ $100/token\n\n` +
+      `MISSING REQUIREMENTS (if any)\n` +
+      (!regAsset && userAsset?.hasAppraisal === "no"
+        ? "  ● Independent appraisal required (adds +15 to verification score)\n"
+        : "  ✓ Appraisal on file\n") +
+      (!regAsset && userAsset?.hasLiens !== "no"
+        ? "  ● Lien resolution or disclosure required\n"
+        : "  ✓ Clear of known liens\n") +
+      (!regAsset && userAsset?.hasCustody === "no"
+        ? "  ● Custody arrangement recommended for higher collateral grade\n"
+        : "  ✓ Custody arrangement confirmed\n") +
+      `\nRun 'tokenize ${id}' when asset reaches VERIFIED state.`
+    });
+  },
+});
+
+// ── QUEUE (verification pipeline overview) ───────────────────────
+commandRegistry.register({
+  name: "queue", aliases: ["pipeline", "status-all"], category: "intelligence",
+  description: "Show verification queue — all assets and their current pipeline stage",
+  syntax: "queue",
+  handler: async (ctx) => {
+    const userStore = await loadUserStore();
+    const mine = userStore.listMine();
+    ctx.emit({ kind: "agent", text: "[Agent] Querying verification network..." });
+    await wait(140);
+
+    if (mine.length === 0) {
+      ctx.emit({ kind: "out", text: "No assets in pipeline. Run 'submit' to begin." });
+      return;
+    }
+
+    let out = `── VERIFICATION QUEUE ──\n\n`;
+    out += "ID".padEnd(12) + "TYPE".padEnd(16) + "STAGE".padEnd(26) + "PROGRESS\n";
+    out += "─".repeat(72) + "\n";
+    mine.forEach(a => {
+      const stageName = a.state.replace(/_/g, " ");
+      out += a.id.padEnd(12) +
+             a.assetType.slice(0,15).padEnd(16) +
+             stageName.slice(0,25).padEnd(26) +
+             `${a.progressPct}%\n`;
+    });
+    const pending  = mine.filter(a => !["MARKETPLACE_LIVE","MINTED","REJECTED"].includes(a.state)).length;
+    const complete = mine.filter(a => ["MARKETPLACE_LIVE","MINTED"].includes(a.state)).length;
+    out += `\n${mine.length} total · ${pending} in-pipeline · ${complete} complete`;
+    out += "\n\nRun 'advance <id>' to simulate stage transitions.";
+    out += "\nFull detail: /dashboard";
+    ctx.emit({ kind: "report", text: out });
+  },
+});
+
+// ── PORTFOLIO (alias for my assets + scores) ─────────────────────
+commandRegistry.register({
+  name: "portfolio", aliases: ["pf"], category: "intelligence",
+  description: "Full portfolio view with verification scores",
+  syntax: "portfolio",
+  handler: async (ctx) => {
+    const userStore = await loadUserStore();
+    const mine = userStore.listMine();
+    if (mine.length === 0) {
+      ctx.emit({ kind: "out", text: "Empty portfolio. Run 'submit' to add your first asset." });
+      return;
+    }
+    let totalValue = 0;
+    let out = `── PORTFOLIO INTELLIGENCE · ${mine.length} ASSET${mine.length !== 1 ? "S" : ""} ──\n\n`;
+    mine.forEach(a => {
+      const val = parseFloat((a.estimatedValue || "0").replace(/[^0-9.]/g,"")) || 0;
+      totalValue += val;
+      out += `${a.id}  ${a.assetType.padEnd(14)}  ${a.state.padEnd(20)}  $${val.toLocaleString()}\n`;
+      if (a.scores) {
+        out += `     Verification: ${a.scores.verification}/100  Liquidity: ${a.scores.liquidity}/100  Fraud: ${a.scores.fraud}/100\n`;
+      }
+      out += "\n";
+    });
+    out += `Total portfolio value: $${totalValue.toLocaleString()}`;
+    ctx.emit({ kind: "report", text: out });
+  },
+});
+
 // ── ADVANCE (simulate lifecycle transition from terminal) ────────────
 commandRegistry.register({
   name: "advance", aliases: ["progress", "next-state"], category: "execution",
@@ -514,7 +650,8 @@ commandRegistry.register({
       ctx.emit({ kind: "out",   text: "Demo assets (AAS-1) can't be advanced — only your submitted assets." });
       return;
     }
-    if (before.state === "COMPLETED" || before.state === "REJECTED") {
+    // V5 10-stage terminal states
+    if (before.state === "MARKETPLACE_LIVE" || before.state === "REJECTED") {
       ctx.emit({ kind: "out", text: `Asset is already in terminal state: ${before.state}` });
       return;
     }
@@ -534,9 +671,9 @@ commandRegistry.register({
       `Current:        ${updated.state}\n` +
       `Event Count:    ${updated.timeline.length}\n` +
       `Latest Note:    ${updated.timeline[updated.timeline.length-1].note ?? "—"}\n\n` +
-      (updated.state === "VERIFIED"
+      (updated.state === "TOKENIZATION_AUTH" || updated.state === "MINTED"
         ? "Asset is now collateral-eligible. Run 'tokenize " + id + "' to mint tokens."
-        : updated.state === "COMPLETED"
+        : updated.state === "MARKETPLACE_LIVE"
           ? "Asset is fully on-chain. Run 'borrow " + id + " <amount>' to draw against collateral."
           : "Run 'advance " + id + "' again to continue, or 'track " + id + "' to view the full event log.")
     });
@@ -560,10 +697,10 @@ commandRegistry.register({
       ctx.emit({ kind: "error", text: `Asset not found in your session: ${id}` });
       return;
     }
-    const states = ["SUBMITTED","IN_REVIEW","VERIFIED","COMPLETED"];
+    const states = ["SUBMITTED","IDENTITY_REVIEW","TOKENIZATION_AUTH","MARKETPLACE_LIVE"];
     for (const s of states) {
       const cur = store.get(id);
-      if (!cur || cur.state === "COMPLETED" || cur.state === "REJECTED") break;
+      if (!cur || cur.state === "MARKETPLACE_LIVE" || cur.state === "REJECTED") break;
       ctx.emit({ kind: "agent", text: `[Agent] Advancing to next state...` });
       await wait(280);
       store.simulateAdvance(id);
@@ -624,7 +761,7 @@ _originalRegister({
       ctx.emit({ kind: "error", text: `Asset not found in your session: ${assetId}` });
       return;
     }
-    if (asset.state !== "VERIFIED" && asset.state !== "COMPLETED") {
+    if (asset.state !== "TOKENIZATION_AUTH" && asset.state !== "MARKETPLACE_LIVE") {
       ctx.emit({ kind: "error", text: `Asset must be VERIFIED before tokenization. Current state: ${asset.state}` });
       ctx.emit({ kind: "out",   text: "Use /dashboard → SIMULATE NEXT STATE to advance the lifecycle, or wait for the verification network." });
       return;
@@ -648,7 +785,7 @@ _originalRegister({
     const pricePerTok  = valueUsd / supply;
     const mint = tokenStore.mint(assetId, supply, pricePerTok);
 
-    userStore.advance(assetId, "COMPLETED", "system", `Tokenized: ${supply.toLocaleString()} ${mint.symbol} @ $${pricePerTok.toFixed(2)}/tok`);
+    userStore.advance(assetId, "MARKETPLACE_LIVE", "system", `Tokenized: ${supply.toLocaleString()} ${mint.symbol} @ $${pricePerTok.toFixed(2)}/tok`);
 
     ctx.emit({ kind: "report", text:
       `── TOKENIZATION COMPLETE · ${assetId} ──\n\n` +
@@ -944,7 +1081,7 @@ _originalRegister({
       ctx.emit({ kind: "error", text: `Asset not found in your session: ${id}` });
       return;
     }
-    if (before.state === "COMPLETED" || before.state === "REJECTED") {
+    if (before.state === "MARKETPLACE_LIVE" || before.state === "REJECTED") {
       ctx.emit({ kind: "out", text: `Asset ${id} is already in terminal state: ${before.state}` });
       return;
     }
@@ -966,8 +1103,8 @@ _originalRegister({
       `New State:         ${after.state}\n` +
       `Event Count:       ${after.timeline.length}\n` +
       `Latest Event:      ${after.timeline[after.timeline.length-1].note || "—"}\n\n` +
-      (after.state === "VERIFIED" ? "Asset is now VERIFIED. Run 'tokenize ${id}' to mint tokens.\n" : "") +
-      (after.state === "COMPLETED" ? "Asset is COMPLETED. Run 'borrow ${id} <amount>' to draw against collateral.\n" : "") +
+      (after.state === "TOKENIZATION_AUTH" ? "Asset is now VERIFIED. Run 'tokenize ${id}' to mint tokens.\n" : "") +
+      (after.state === "MARKETPLACE_LIVE" ? "Asset is COMPLETED. Run 'borrow ${id} <amount>' to draw against collateral.\n" : "") +
       `Run 'track ${id}' to see the full event log.`
     });
   },

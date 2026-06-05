@@ -718,6 +718,88 @@ function TerminalTab() {
           </div>
         </div>
 
+
+        <Divider/>
+
+        {/* ── WYOMING LLC ENGINE ─────────────────────────────────── */}
+        <div style={{ marginBottom: "2rem" }}>
+          <Label>Wyoming LLC Formation</Label>
+          <div style={{ padding: "2rem", borderRadius: 8,
+                         background: "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.05))",
+                         border: `1px solid ${B}30` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem",
+                           marginBottom: "0.875rem" }}>
+              <div style={{ padding: "0.4rem 0.875rem", borderRadius: 4,
+                             background: `${B}20`, border: `1px solid ${B}40`,
+                             fontFamily: M, fontSize: "0.3rem", fontWeight: 900,
+                             color: B, letterSpacing: "0.15em",
+                             textTransform: "uppercase" }}>
+                TOKENIZE YOUR BUSINESS
+              </div>
+            </div>
+            <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.75rem)",
+                          fontWeight: 800, color: W, margin: "0 0 0.625rem",
+                          letterSpacing: "-0.02em" }}>
+              Launch your business on-chain.
+            </h2>
+            <p style={{ fontFamily: S, fontSize: "clamp(0.74rem,1.5vw,0.88rem)",
+                         color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
+                         maxWidth: 580, margin: "0 0 1.5rem" }}>
+              Structure your business through a Wyoming LLC for full on-chain ownership,
+              governance, fundraising, and lending. Powered by Abraxas Protocol.
+            </p>
+            <div style={{ display: "grid",
+                           gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
+                           gap: "0.75rem", marginBottom: "1.5rem" }}>
+              {[
+                { tier: "STARTER",    price: "$1,499",  color: B,         items: ["Wyoming LLC Formation","Operating Agreement","On-chain Tokenization","Basic Verification"] },
+                { tier: "GROWTH",     price: "$2,999",  color: "#8B5CF6", items: ["Everything in Starter","Multi-sig Governance","Cap Table Management","Lending Eligibility"] },
+                { tier: "ENTERPRISE", price: "$4,999+", color: G,         items: ["Everything in Growth","Full Compliance Package","Priority Verification","Dedicated Verifier"] },
+              ].map(pkg => (
+                <div key={pkg.tier} style={{ padding: "1.25rem", borderRadius: 7,
+                                              background: CARD,
+                                              border: `1px solid ${pkg.color}30`,
+                                              borderTop: `3px solid ${pkg.color}` }}>
+                  <div style={{ fontFamily: M, fontSize: "0.32rem", fontWeight: 900,
+                                 color: pkg.color, letterSpacing: "0.12em",
+                                 marginBottom: "0.375rem" }}>
+                    {pkg.tier}
+                  </div>
+                  <div style={{ fontFamily: M, fontSize: "1.3rem", fontWeight: 900,
+                                 color: W, marginBottom: "0.75rem" }}>
+                    {pkg.price}
+                  </div>
+                  {pkg.items.map(item => (
+                    <div key={item} style={{ display: "flex", gap: "0.4rem",
+                                              alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ color: pkg.color, fontSize: "0.5rem" }}>◉</span>
+                      <span style={{ fontFamily: S, fontSize: "clamp(0.6rem,1.4vw,0.72rem)",
+                                      color: "rgba(255,255,255,0.5)" }}>
+                        {item}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button style={{
+                padding: "0.875rem 1.75rem", borderRadius: 5, border: "none",
+                background: B, color: "#fff", fontFamily: M, fontSize: "0.5rem",
+                fontWeight: 900, cursor: "not-allowed", letterSpacing: "0.04em",
+                textTransform: "uppercase", opacity: 0.7,
+              }}>
+                START FORMATION — COMING SOON
+              </button>
+              <div style={{ fontFamily: M, fontSize: "0.3rem",
+                             color: "rgba(255,255,255,0.25)",
+                             display: "flex", alignItems: "center" }}>
+                Formation services launching Q3 2025
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div style={{ height: "3rem" }}/>
       </div>
     </div>
@@ -828,18 +910,7 @@ export default function TerminalPage() {
           </button>
         ))}
 
-        <a href="/about" style={{
-          padding: "0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius: 4,
-          border: `1px solid ${BDR}`, background: "transparent",
-          color: "rgba(255,255,255,0.4)", fontFamily: M,
-          fontSize: "clamp(0.28rem,0.85vw,0.36rem)", fontWeight: 700,
-          textDecoration: "none", textTransform: "uppercase",
-          letterSpacing: "0.1em", whiteSpace: "nowrap", flexShrink: 0,
-        }}>
-          ABOUT
-        </a>
-
-        <a href="/dashboard" style={{
+<a href="/dashboard" style={{
           padding: "0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius: 4,
           border: `1px solid ${BDR}`, background: "transparent",
           color: "rgba(255,255,255,0.4)", fontFamily: M,
@@ -860,8 +931,33 @@ export default function TerminalPage() {
         {tab === "terminal" && <TerminalTab/>}
         {tab === "lending"  && (
           <div style={{ maxWidth: 1060, margin: "0 auto",
-                         padding: "2rem clamp(1rem,3vw,2rem) 5rem" }}>
-            <BorrowPage/>
+                         padding: "3rem clamp(1rem,3vw,2rem) 5rem",
+                         textAlign: "center" }}>
+            <div style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+                           color: `${A}80`, textTransform: "uppercase",
+                           letterSpacing: "0.2em", marginBottom: "1rem" }}>
+              LENDING ENGINE
+            </div>
+            <h2 style={{ fontFamily: "Georgia, serif",
+                          fontSize: "clamp(1.5rem,4vw,2.5rem)", fontWeight: 800,
+                          color: W, margin: "0 0 0.75rem" }}>
+              Collateral-backed USDC lending<br/>
+              <span style={{ color: A }}>for verified real-world assets.</span>
+            </h2>
+            <p style={{ fontFamily: S, fontSize: "clamp(0.8rem,1.8vw,1rem)",
+                         color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
+                         maxWidth: 540, margin: "0 auto 2rem" }}>
+              Verify your asset first. Once Abraxas issues an AAS-1 attestation,
+              your asset becomes collateral-eligible for USDC lending at up to 60% LTV.
+            </p>
+            <a href="/lending" style={{
+              display: "inline-block", padding: "0.875rem 2rem", borderRadius: 5,
+              background: A, color: "#000", fontFamily: M, fontSize: "0.5rem",
+              fontWeight: 900, letterSpacing: "0.04em", textTransform: "uppercase",
+              textDecoration: "none",
+            }}>
+              VIEW LENDING ENGINE →
+            </a>
           </div>
         )}
       </div>

@@ -1,15 +1,11 @@
 // FILE: components/vos/VerificationTerminal.tsx
-// Bloomberg/Palantir-style verification terminal.
-// Architecture:
-//   - InputBar is a memoized child — its focus survives parent re-renders.
-//   - All command execution goes through commandRegistry.
-//   - Output is a controlled stream; input state lives inside InputBar.
+// Bloomberg/Palantir-style terminal. UNCONTROLLED input — keyboard stays open.
 "use client";
 
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { commandRegistry } from "@/lib/vos/commandRegistry";
 import { assetRegistry }    from "@/lib/vos/assetRegistry";
-import "@/lib/vos/commands"; // side effect: registers all commands
+import "@/lib/vos/commands";
 import type { LogLine } from "@/lib/vos/types";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -29,19 +25,18 @@ ABRAXAS VERIFICATION OS
 Asset Intelligence · Provenance · Custody · Collateral
 Build 2025.1 · Solana Mainnet · AAS-1 Protocol
 
-Type 'help' to begin. Try: inspect AAS-1 · my assets · status
+Type 'help' to begin. Try: inspect AAS-1 · my assets · demo
 `.trim();
 
 interface Suggestion { label: string; cmd: string; }
 const QUICK_COMMANDS: Suggestion[] = [
+  { label: "HELP",             cmd: "help" },
   { label: "STATUS",           cmd: "status" },
   { label: "LIST",             cmd: "list" },
   { label: "INSPECT AAS-1",    cmd: "inspect AAS-1" },
-  { label: "VERIFY AAS-1",     cmd: "verify AAS-1" },
-  { label: "PROVENANCE",       cmd: "show provenance AAS-1" },
+  { label: "ORACLE AAS-1",     cmd: "oracle AAS-1" },
   { label: "MY ASSETS",        cmd: "my assets" },
   { label: "SESSION",          cmd: "session" },
-  { label: "HELP",             cmd: "help" },
 ];
 
 function lineColor(kind: LogLine["kind"]): string {
@@ -55,85 +50,116 @@ function lineColor(kind: LogLine["kind"]): string {
   }
 }
 
-// ── Isolated input bar (memoized — survives parent re-renders) ───────
+// ── Isolated UNCONTROLLED input bar ──────────────────────────────────
+// defaultValue + useRef = zero React re-renders during typing.
+// Mobile keyboard stays open because the input element is never reconciled.
 interface InputBarProps {
   onSubmit: (raw: string) => void;
   busy: boolean;
   history: string[];
 }
 const InputBar = memo(function InputBar({ onSubmit, busy, history }: InputBarProps) {
-  // Input state is LOCAL to this component so parent re-renders don't reset it.
-  const [value, setValue] = useState("");
-  const [hIdx,  setHIdx]  = useState<number>(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hIdxRef  = useRef<number>(-1);
 
-  // Refocus after submit so mobile keyboard stays open
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  // Focus on mount and every time busy goes false (after a command finishes)
+  useEffect(() => {
+    if (!busy) inputRef.current?.focus();
+  }, [busy]);
 
-  const submit = () => {
+  const submit = useCallback(() => {
+    const value = inputRef.current?.value ?? "";
     if (busy || !value.trim()) return;
     onSubmit(value);
-    setValue("");
-    setHIdx(-1);
-    // Refocus immediately — prevents keyboard dismiss on mobile
+    if (inputRef.current) inputRef.current.value = "";
+    hIdxRef.current = -1;
+    // Re-focus aggressively on the next frame and again after a tick
     requestAnimationFrame(() => inputRef.current?.focus());
-  };
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, [busy, onSubmit]);
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       submit();
-    } else if (e.key === "ArrowUp") {
+      return;
+    }
+    if (e.key === "ArrowUp") {
       e.preventDefault();
       if (history.length === 0) return;
-      const next = hIdx < 0 ? history.length - 1 : Math.max(0, hIdx - 1);
-      setHIdx(next);
-      setValue(history[next]);
-    } else if (e.key === "ArrowDown") {
+      const next = hIdxRef.current < 0
+        ? history.length - 1
+        : Math.max(0, hIdxRef.current - 1);
+      hIdxRef.current = next;
+      if (inputRef.current) inputRef.current.value = history[next];
+      return;
+    }
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      if (hIdx < 0) return;
-      const next = hIdx + 1;
-      if (next >= history.length) { setHIdx(-1); setValue(""); }
-      else { setHIdx(next); setValue(history[next]); }
-    } else if (e.key === "Tab") {
+      if (hIdxRef.current < 0) return;
+      const next = hIdxRef.current + 1;
+      if (next >= history.length) {
+        hIdxRef.current = -1;
+        if (inputRef.current) inputRef.current.value = "";
+      } else {
+        hIdxRef.current = next;
+        if (inputRef.current) inputRef.current.value = history[next];
+      }
+      return;
+    }
+    if (e.key === "Tab") {
       e.preventDefault();
       const all = commandRegistry.all();
-      const match = all.find(c => c.name.startsWith(value.toLowerCase()) && !c.future);
-      if (match) setValue(match.name + " ");
+      const cur = (inputRef.current?.value ?? "").toLowerCase();
+      const match = all.find(c => c.name.startsWith(cur) && !c.future);
+      if (match && inputRef.current) inputRef.current.value = match.name + " ";
     }
-  };
+  }, [history, submit]);
 
   return (
     <div style={{
-      borderTop: `1px solid ${BDR}`, background: "#0A0D13",
-      padding: "0.625rem clamp(0.75rem,2.5vw,1.5rem)",
+      borderTop: `1px solid ${BDR}`,
+      background: "#0A0D13",
+      padding: "0.75rem clamp(0.75rem,2.5vw,1.5rem)",
       display: "flex", alignItems: "center", gap: "0.5rem",
       flexShrink: 0,
+      position: "sticky", bottom: 0, zIndex: 10,
     }}>
-      <span style={{ color: G, fontWeight: 900, fontSize: "0.5rem", letterSpacing: "0.05em" }}>vos&gt;</span>
+      <span style={{
+        color: G, fontWeight: 900, fontSize: "0.55rem",
+        letterSpacing: "0.05em", flexShrink: 0,
+      }}>vos&gt;</span>
       <input
         ref={inputRef}
-        value={value}
-        onChange={e => setValue(e.target.value)}
+        defaultValue=""
         onKeyDown={onKeyDown}
         disabled={busy}
-        placeholder="type a command — try 'help', 'inspect AAS-1', 'my assets'"
+        placeholder="type a command — 'help', 'inspect AAS-1', 'demo'"
         spellCheck={false}
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
+        inputMode="text"
+        enterKeyHint="go"
         style={{
-          flex: 1, background: "transparent", border: "none",
-          outline: "none", color: W, fontFamily: M,
-          fontSize: "16px", padding: "0.25rem 0",
-          caretColor: G, minWidth: 0,
+          flex: 1, minWidth: 0,
+          background: "transparent", border: "none", outline: "none",
+          color: W, fontFamily: M,
+          fontSize: "16px",
+          padding: "0.25rem 0",
+          caretColor: G,
         }}
       />
-      <span style={{ fontSize: "0.3rem", color: DIM,
-                      whiteSpace: "nowrap", display: "none" }}
-            className="vos-hint-desktop">
-        ↑↓ history · TAB complete · ENTER run
-      </span>
+      <button onClick={submit} disabled={busy} style={{
+        padding: "0.35rem 0.8rem", borderRadius: 4,
+        border: `1px solid ${G}50`, background: `${G}15`,
+        color: G, fontFamily: M, fontSize: "0.5rem", fontWeight: 900,
+        cursor: busy ? "wait" : "pointer", textTransform: "uppercase",
+        letterSpacing: "0.08em", flexShrink: 0,
+        opacity: busy ? 0.4 : 1,
+      }}>
+        RUN
+      </button>
     </div>
   );
 });
@@ -147,7 +173,6 @@ export function VerificationTerminal() {
   const [busy,    setBusy]    = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Autoscroll on new lines
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [lines]);
@@ -156,7 +181,6 @@ export function VerificationTerminal() {
     setLines(prev => [...prev, { ...line, ts: Date.now() }]);
   }, []);
 
-  // Stable reference — passed to memoized InputBar
   const run = useCallback(async (raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) return;
@@ -180,6 +204,7 @@ export function VerificationTerminal() {
     <div style={{
       background: BG, height: "100%", display: "flex", flexDirection: "column",
       fontFamily: M, color: W, overflow: "hidden",
+      minHeight: 0,
     }}>
       {/* Banner row */}
       <div style={{
@@ -205,9 +230,9 @@ export function VerificationTerminal() {
       }}>
         {QUICK_COMMANDS.map(q => (
           <button key={q.cmd} onClick={() => run(q.cmd)} disabled={busy} style={{
-            padding: "0.25rem 0.625rem", borderRadius: 3,
+            padding: "0.3rem 0.7rem", borderRadius: 3,
             border: `1px solid ${BDR}`, background: "transparent",
-            color: DIM, fontFamily: M, fontSize: "0.3rem",
+            color: DIM, fontFamily: M, fontSize: "0.34rem",
             fontWeight: 700, cursor: busy ? "wait" : "pointer",
             textTransform: "uppercase", letterSpacing: "0.08em",
             whiteSpace: "nowrap",
@@ -218,17 +243,16 @@ export function VerificationTerminal() {
         ))}
       </div>
 
-      {/* Output stream — scrolls independently */}
+      {/* Output stream */}
       <div ref={scrollRef} style={{
         flex: 1, minHeight: 0, overflowY: "auto",
         padding: "1rem clamp(0.75rem,2.5vw,1.5rem)",
-        fontSize: "0.42rem", lineHeight: 1.75,
+        fontSize: "0.46rem", lineHeight: 1.75,
       }}>
         {lines.map((l, i) => (
           <div key={i} style={{
             color: lineColor(l.kind),
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
+            whiteSpace: "pre-wrap", wordBreak: "break-word",
             marginBottom: l.kind === "report" ? "0.625rem" : "0.15rem",
             paddingLeft: l.kind === "user" ? 0 : (l.kind === "agent" ? "0.75rem" : 0),
             borderLeft: l.kind === "report" ? `2px solid ${G}40` : "none",
@@ -243,14 +267,14 @@ export function VerificationTerminal() {
           </div>
         ))}
         {busy && (
-          <div style={{ color: A, fontSize: "0.38rem", marginTop: "0.5rem" }}>
+          <div style={{ color: A, fontSize: "0.42rem", marginTop: "0.5rem" }}>
             <span style={{ display: "inline-block", animation: "abrx-blink 1s steps(2) infinite" }}>▊</span>
             <span style={{ marginLeft: 6 }}>processing...</span>
           </div>
         )}
       </div>
 
-      {/* Input — isolated, focus-stable */}
+      {/* Input — uncontrolled, focus-stable */}
       <InputBar onSubmit={run} busy={busy} history={history} />
 
       <style jsx global>{`

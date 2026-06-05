@@ -1,36 +1,80 @@
 "use client";
-// FILE: app/dashboard/page.tsx
-// Wallet-style dashboard. Shows session identity + all user-submitted assets.
-// Each asset shows lifecycle state + append-only timeline.
+// FILE: app/dashboard/page.tsx — Institutional Bloomberg-style asset intelligence center
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { sessionStore } from "@/lib/vos/sessionStore";
-import { userAssetStore, ASSET_LABELS, STATE_LABELS } from "@/lib/vos/userAssetStore";
-import type { Session } from "@/lib/vos/sessionStore";
+import Image from "next/image";
+import {
+  userAssetStore, ASSET_LABELS, STATE_COLORS,
+  STAGE_META, PIPELINE_STAGES,
+} from "@/lib/vos/userAssetStore";
 import type { UserAsset, LifecycleState } from "@/lib/vos/userAssetStore";
+import { sessionStore } from "@/lib/vos/sessionStore";
+import type { Session } from "@/lib/vos/sessionStore";
 import { CompactWallet }    from "@/components/CompactWallet";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
-const BG   = "#0A0C10";
-const CARD = "#0D1117";
-const BDR  = "#1C2333";
+const BG   = "#070A0F";
+const CARD = "#0C0F14";
+const BDR  = "#1A2233";
 const G    = "#10B981";
 const A    = "#F59E0B";
 const B    = "#3B82F6";
-const W    = "#F8FAFC";
+const R    = "#EF4444";
+const W    = "#F0F2F5";
 
-const STATE_ORDER: LifecycleState[] = ["DRAFT","SUBMITTED","IN_REVIEW","VERIFIED","COMPLETED"];
+function Mono({ children, color = W, size = "0.36rem" }: {
+  children: React.ReactNode; color?: string; size?: string;
+}) {
+  return <span style={{ fontFamily: M, fontSize: size, color }}>{children}</span>;
+}
+
+function ScoreCard({ label, value, color, sub }: {
+  label: string; value: number; color: string; sub?: string;
+}) {
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 6,
+                   borderTop: `3px solid ${color}`, padding: "0.75rem 1rem" }}>
+      <div style={{ fontFamily: M, fontSize: "0.28rem", color: "rgba(255,255,255,0.3)",
+                     textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ fontFamily: M, fontSize: "1.4rem", fontWeight: 900, color,
+                     lineHeight: 1, marginBottom: 4 }}>
+        {value}<span style={{ fontSize: "0.5rem", fontWeight: 400 }}>/100</span>
+      </div>
+      {sub && <div style={{ fontFamily: M, fontSize: "0.26rem",
+                             color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
+        {sub}
+      </div>}
+    </div>
+  );
+}
+
+// Score label helper
+function scoreLabel(v: number, isRisk = false) {
+  if (isRisk) {
+    if (v >= 85) return "LOW RISK";
+    if (v >= 65) return "MODERATE";
+    return "ELEVATED";
+  }
+  if (v >= 85) return "STRONG";
+  if (v >= 70) return "GOOD";
+  if (v >= 55) return "MODERATE";
+  return "DEVELOPING";
+}
 
 export default function DashboardPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [assets,  setAssets]  = useState<UserAsset[]>([]);
-  const [selected,setSelected]= useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [tab, setTab] = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
 
   function refresh() {
-    setSession(sessionStore.get());
+    const s = sessionStore.get();
+    setSession(s);
     const mine = userAssetStore.listMine();
     setAssets(mine);
     if (mine.length > 0 && !selected) setSelected(mine[0].id);
@@ -38,430 +82,494 @@ export default function DashboardPage() {
 
   useEffect(() => { refresh(); }, []);
 
-  const stats = userAssetStore.stats();
-  const sel   = assets.find(a => a.id === selected);
+  const sel = assets.find(a => a.id === selected);
 
   function advance(id: string) {
     userAssetStore.simulateAdvance(id);
     refresh();
   }
-  function remove(id: string) {
-    if (!confirm("Remove this asset record?")) return;
-    userAssetStore.remove(id);
-    setSelected(null);
-    refresh();
-  }
   function reset() {
-    if (!confirm("Clear all your asset records and reset your session?")) return;
+    if (!confirm("Reset all assets and session?")) return;
     userAssetStore.clearMine();
     sessionStore.reset();
     setSelected(null);
     refresh();
   }
 
-  return (
-    <div style={{ background:BG, minHeight:"100vh",
-                   display:"flex", flexDirection:"column" }}>
+  const pipelineIndex = sel ? PIPELINE_STAGES.indexOf(sel.state) : -1;
 
-      {/* Top status strip */}
-      <div style={{ background:"#060810", borderBottom:"1px solid #0F1929",
-                     padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
-                     height:28, display:"flex", alignItems:"center",
-                     gap:"1.5rem", overflowX:"auto", flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"0.35rem" }}>
-          <div style={{ width:5, height:5, borderRadius:"50%",
-                         background:G, boxShadow:`0 0 5px ${G}80` }}/>
-          <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
-                          color:"rgba(255,255,255,0.25)", letterSpacing:"0.12em",
-                          textTransform:"uppercase" }}>
-            DASHBOARD · SESSION ACTIVE
-          </span>
+  return (
+    <div style={{ background: BG, minHeight: "100vh",
+                   display: "flex", flexDirection: "column", color: W }}>
+
+      {/* Status strip */}
+      <div style={{ background: "#030507", borderBottom: "1px solid #0D1520",
+                     padding: "0 1.5rem", height: 28,
+                     display: "flex", alignItems: "center", gap: "1.5rem",
+                     overflowX: "auto", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: G,
+                         boxShadow: `0 0 5px ${G}80` }}/>
+          <Mono color="rgba(255,255,255,0.3)" size="0.26rem">
+            PORTFOLIO · SESSION {session?.label ?? "..."}
+          </Mono>
         </div>
-        <span style={{ fontFamily:M, fontSize:"0.26rem", color:"rgba(255,255,255,0.2)",
-                        letterSpacing:"0.1em" }}>
-          {session ? `ID: ${session.id}` : "..."}
-        </span>
-        <div style={{ flex:1 }}/>
-        <span style={{ fontFamily:M, fontSize:"0.26rem",
-                        color:"rgba(255,255,255,0.15)", letterSpacing:"0.1em" }}>
-          ABRAXAS OS · BUILD 2025.1
-        </span>
+        <Mono color="rgba(255,255,255,0.15)" size="0.26rem">
+          {assets.length} ASSET{assets.length !== 1 ? "S" : ""} · ABRAXAS OS BUILD 2025.1
+        </Mono>
       </div>
 
       {/* Nav */}
-      <nav style={{ position:"sticky", top:28, zIndex:200,
-                     background:"rgba(10,12,16,0.97)", backdropFilter:"blur(12px)",
-                     borderBottom:`1px solid ${BDR}`, display:"flex", alignItems:"center",
-                     padding:"0 clamp(0.75rem,2.5vw,1.5rem)",
-                     height:"clamp(46px,6vw,54px)",
-                     gap:"clamp(0.25rem,1vw,0.5rem)" }}>
-        <Link href="/terminal" style={{ display:"flex", alignItems:"center",
-                       gap:"0.375rem", textDecoration:"none",
-                       flexShrink:0, marginRight:"clamp(0.375rem,1.5vw,1rem)" }}>
-          <span style={{ color:G, fontSize:"clamp(0.7rem,2vw,0.9rem)" }}>&#9672;</span>
-          <div>
-            <span style={{ fontFamily:M, fontSize:"clamp(0.5rem,1.5vw,0.7rem)",
-                            fontWeight:900, color:W, letterSpacing:"0.1em" }}>
-              ABRAXAS
-            </span>
-            <span style={{ fontFamily:M, fontSize:"0.24rem",
-                            color:"rgba(255,255,255,0.2)", letterSpacing:"0.15em",
-                            marginLeft:"0.375rem" }}>
-              PROTOCOL OS
-            </span>
-          </div>
+      <nav style={{ position: "sticky", top: 28, zIndex: 200,
+                     background: "rgba(7,10,15,0.97)", backdropFilter: "blur(12px)",
+                     borderBottom: `1px solid ${BDR}`,
+                     display: "flex", alignItems: "center",
+                     padding: "0 clamp(0.75rem,2.5vw,1.5rem)",
+                     height: 52, gap: "0.5rem" }}>
+        <Link href="/terminal" style={{ display: "flex", alignItems: "center",
+                       gap: "0.375rem", textDecoration: "none", marginRight: "0.75rem" }}>
+          <Image src="/icon-48.png" alt="" width={22} height={22}/>
+          <Mono size="0.6rem" color={W}>ABRAXAS</Mono>
+          <Mono size="0.24rem" color="rgba(255,255,255,0.2)">PROTOCOL OS</Mono>
         </Link>
-
-        <Link href="/terminal" style={{
-          padding:"0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius:4,
-          border:`1px solid ${BDR}`, color:"rgba(255,255,255,0.28)",
-          fontFamily:M, fontSize:"clamp(0.28rem,0.85vw,0.36rem)", fontWeight:700,
-          textDecoration:"none", textTransform:"uppercase",
-          letterSpacing:"0.1em", whiteSpace:"nowrap",
-        }}>TERMINAL</Link>
-
-        <button style={{
-          padding:"0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius:4,
-          border:`1px solid ${G}50`, background:`${G}10`, color:G,
-          fontFamily:M, fontSize:"clamp(0.28rem,0.85vw,0.36rem)", fontWeight:700,
-          cursor:"default", textTransform:"uppercase",
-          letterSpacing:"0.1em", whiteSpace:"nowrap",
-        }}>DASHBOARD</button>
-
-        <Link href="/terminal" style={{
-          padding:"0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius:4,
-          border:`1px solid ${BDR}`, color:"rgba(255,255,255,0.28)",
-          fontFamily:M, fontSize:"clamp(0.28rem,0.85vw,0.36rem)", fontWeight:700,
-          textDecoration:"none", textTransform:"uppercase",
-          letterSpacing:"0.1em", whiteSpace:"nowrap",
-        }}>LENDING</Link>
-
-        <div style={{ flex:1 }}/>
+        {["TERMINAL","LENDING","DASHBOARD"].map(t => (
+          <Link key={t} href={t === "TERMINAL" ? "/terminal" : t === "LENDING" ? "/lending" : "/dashboard"}
+            style={{
+              padding: "0.25rem 0.75rem", borderRadius: 4, textDecoration: "none",
+              border: `1px solid ${t === "DASHBOARD" ? `${G}50` : BDR}`,
+              background: t === "DASHBOARD" ? `${G}10` : "transparent",
+              color: t === "DASHBOARD" ? G : "rgba(255,255,255,0.3)",
+              fontFamily: M, fontSize: "0.32rem", fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "0.08em",
+              whiteSpace: "nowrap",
+            }}>
+            {t}
+          </Link>
+        ))}
+        <div style={{ flex: 1 }}/>
         <LanguageSelector/>
         <CompactWallet/>
       </nav>
 
-      {/* Content */}
-      <div style={{ maxWidth:1100, margin:"0 auto", width:"100%",
-                     padding:"2rem clamp(1rem,3vw,2rem) 4rem" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%",
+                     padding: "1.5rem clamp(1rem,3vw,2rem) 4rem" }}>
 
-        {/* Identity card */}
-        <div style={{ display:"grid",
-                       gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",
-                       gap:"1px", border:`1px solid ${BDR}`,
-                       borderRadius:8, overflow:"hidden", marginBottom:"2rem" }}>
-          <div style={{ background:CARD, padding:"1.125rem 1rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.4rem" }}>SESSION</div>
-            <div style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:900,
-                           color:G, letterSpacing:"0.05em" }}>
-              {session?.label ?? "..."}
+        {/* ── Stat strip ── */}
+        <div style={{ display: "grid",
+                       gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))",
+                       gap: "1px", border: `1px solid ${BDR}`, borderRadius: 7,
+                       overflow: "hidden", marginBottom: "1.5rem" }}>
+          {[
+            { label: "Total Assets",   val: assets.length,   color: W },
+            { label: "In Review",      val: assets.filter(a => ["IDENTITY_REVIEW","OWNERSHIP_REVIEW","LEGAL_REVIEW","DUE_DILIGENCE","RISK_SCORING","APPROVAL_COMMITTEE"].includes(a.state)).length, color: A },
+            { label: "Authorized",     val: assets.filter(a => ["TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(a.state)).length, color: G },
+            { label: "Portfolio Value", val: "$" + (assets.reduce((s,a) => s + (parseFloat(a.estimatedValue?.replace(/[^0-9.]/g,"")) || 0), 0) / 1e6).toFixed(2) + "M", color: G },
+          ].map(s => (
+            <div key={s.label} style={{ background: CARD, padding: "1rem" }}>
+              <Mono size="0.28rem" color="rgba(255,255,255,0.25)">{s.label.toUpperCase()}</Mono>
+              <div style={{ fontFamily: M, fontSize: "1.2rem", fontWeight: 900,
+                             color: s.color, marginTop: 4 }}>
+                {s.val}
+              </div>
             </div>
-            <div style={{ fontFamily:M, fontSize:"0.26rem",
-                           color:"rgba(255,255,255,0.25)", marginTop:"0.2rem" }}>
-              {session?.id ?? ""}
-            </div>
-          </div>
-          <div style={{ background:CARD, padding:"1.125rem 1rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.4rem" }}>TOTAL ASSETS</div>
-            <div style={{ fontFamily:M, fontSize:"1rem", fontWeight:900, color:W }}>
-              {stats.total}
-            </div>
-          </div>
-          <div style={{ background:CARD, padding:"1.125rem 1rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.4rem" }}>IN REVIEW</div>
-            <div style={{ fontFamily:M, fontSize:"1rem", fontWeight:900, color:A }}>
-              {stats.byState.SUBMITTED + stats.byState.IN_REVIEW}
-            </div>
-          </div>
-          <div style={{ background:CARD, padding:"1.125rem 1rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.4rem" }}>VERIFIED</div>
-            <div style={{ fontFamily:M, fontSize:"1rem", fontWeight:900, color:G }}>
-              {stats.byState.VERIFIED + stats.byState.COMPLETED}
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Empty state */}
         {assets.length === 0 && (
-          <div style={{ padding:"3rem 2rem", border:`1px solid ${BDR}`,
-                         background:CARD, borderRadius:8, textAlign:"center" }}>
-            <div style={{ fontFamily:M, fontSize:"0.32rem", color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.2em",
-                           marginBottom:"0.875rem" }}>EMPTY REGISTRY</div>
-            <h2 style={{ fontFamily:S, fontSize:"clamp(1.1rem,2.5vw,1.5rem)",
-                          fontWeight:800, color:W, margin:"0 0 0.625rem",
-                          letterSpacing:"-0.02em" }}>
-              No assets submitted yet.
-            </h2>
-            <p style={{ fontFamily:S, fontSize:"clamp(0.72rem,1.5vw,0.84rem)",
-                         color:"rgba(255,255,255,0.4)", lineHeight:1.7,
-                         maxWidth:480, margin:"0 auto 1.25rem" }}>
-              Submit your first asset for verification through the terminal.
-              Records persist across visits — your session is saved locally.
+          <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 8,
+                         padding: "3rem", textAlign: "center" }}>
+            <div style={{ fontFamily: M, fontSize: "0.32rem", color: "rgba(255,255,255,0.25)",
+                           textTransform: "uppercase", letterSpacing: "0.2em",
+                           marginBottom: "1rem" }}>
+              EMPTY REGISTRY
+            </div>
+            <div style={{ fontFamily: S, fontSize: "1.4rem", fontWeight: 800,
+                           color: W, marginBottom: "0.625rem" }}>
+              No assets in verification pipeline.
+            </div>
+            <p style={{ fontFamily: S, fontSize: "0.86rem", color: "rgba(255,255,255,0.4)",
+                         lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.5rem" }}>
+              Submit your first asset through the terminal.
             </p>
             <Link href="/terminal" style={{
-              display:"inline-block", padding:"0.75rem 1.5rem", borderRadius:6,
-              background:G, color:"#000", fontFamily:M, fontSize:"0.48rem",
-              fontWeight:900, letterSpacing:"0.04em",
-              textTransform:"uppercase", textDecoration:"none",
+              padding: "0.75rem 1.5rem", borderRadius: 5, background: G, color: "#000",
+              fontFamily: M, fontSize: "0.5rem", fontWeight: 900,
+              textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.04em",
             }}>
-              OPEN TERMINAL &#8594;
+              OPEN TERMINAL →
             </Link>
           </div>
         )}
 
-        {/* Asset list + detail split */}
         {assets.length > 0 && (
-          <div style={{ display:"grid",
-                         gridTemplateColumns:"minmax(0,1fr) minmax(0,1.4fr)",
-                         gap:"1rem" }}>
+          <div style={{ display: "grid",
+                         gridTemplateColumns: "min(280px,35%) 1fr",
+                         gap: "1rem", alignItems: "start" }}>
 
-            {/* Asset list */}
-            <div>
-              <div style={{ fontFamily:M, fontSize:"0.3rem",
-                             color:"rgba(255,255,255,0.25)",
-                             textTransform:"uppercase", letterSpacing:"0.15em",
-                             marginBottom:"0.625rem" }}>
-                MY ASSETS ({assets.length})
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:"0.4rem" }}>
-                {assets.map(a => {
-                  const st = STATE_LABELS[a.state];
-                  const isSel = a.id === selected;
-                  return (
-                    <button key={a.id} onClick={() => setSelected(a.id)} style={{
-                      padding:"0.75rem 0.875rem", borderRadius:6, textAlign:"left",
-                      cursor:"pointer", transition:"all 0.15s",
-                      border:`1px solid ${isSel ? st.color : BDR}`,
-                      borderLeft:`3px solid ${st.color}`,
-                      background: isSel ? `${st.color}10` : CARD,
+            {/* ── Asset list ── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+              <Mono size="0.3rem" color="rgba(255,255,255,0.25)">
+                ASSET REGISTRY ({assets.length})
+              </Mono>
+              {assets.map(a => {
+                const color = STATE_COLORS[a.state];
+                const isSel = a.id === selected;
+                return (
+                  <button key={a.id} onClick={() => { setSelected(a.id); setTab("overview"); }}
+                    style={{
+                      padding: "0.75rem 0.875rem", borderRadius: 6,
+                      textAlign: "left", cursor: "pointer",
+                      border: `1px solid ${isSel ? color : BDR}`,
+                      borderLeft: `3px solid ${color}`,
+                      background: isSel ? `${color}12` : CARD,
+                      transition: "all 0.15s",
                     }}>
-                      <div style={{ display:"flex", justifyContent:"space-between",
-                                     alignItems:"baseline", marginBottom:"0.3rem" }}>
-                        <span style={{ fontFamily:M, fontSize:"0.4rem",
-                                        fontWeight:900, color:W,
-                                        letterSpacing:"0.05em" }}>
-                          {a.id}
-                        </span>
-                        <span style={{ fontFamily:M, fontSize:"0.26rem", fontWeight:700,
-                                        color:st.color, background:`${st.color}15`,
-                                        border:`1px solid ${st.color}30`,
-                                        borderRadius:3, padding:"1px 5px",
-                                        letterSpacing:"0.08em" }}>
-                          {st.label}
-                        </span>
+                    <div style={{ display: "flex", justifyContent: "space-between",
+                                   alignItems: "baseline", marginBottom: 3 }}>
+                      <Mono size="0.38rem" color={W}>{a.id}</Mono>
+                      <span style={{ fontFamily: M, fontSize: "0.24rem", fontWeight: 700,
+                                      color, background: `${color}20`, borderRadius: 3,
+                                      padding: "1px 5px", letterSpacing: "0.06em" }}>
+                        {STAGE_META[a.state]?.shortLabel ?? a.state}
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: S, fontSize: "0.76rem",
+                                   color: "rgba(255,255,255,0.55)", marginBottom: 2 }}>
+                      {ASSET_LABELS[a.assetType] ?? a.assetType}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ flex: 1, height: 3, background: `${color}20`, borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${a.progressPct}%`,
+                                       background: color, borderRadius: 2,
+                                       transition: "width 0.3s" }}/>
                       </div>
-                      <div style={{ fontFamily:S, fontSize:"0.74rem",
-                                     color:"rgba(255,255,255,0.55)",
-                                     marginBottom:"0.2rem" }}>
-                        {ASSET_LABELS[a.assetType] ?? a.assetType}
-                      </div>
-                      <div style={{ fontFamily:M, fontSize:"0.28rem",
-                                     color:"rgba(255,255,255,0.3)" }}>
-                        {a.estimatedValue ? `$${a.estimatedValue}` : "—"} · {a.jurisdiction}
-                      </div>
-                    </button>
-                  );
-                })}
+                      <Mono size="0.26rem" color={color}>{a.progressPct}%</Mono>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Registry stats */}
+              <div style={{ background: CARD, border: `1px solid ${BDR}`,
+                             borderRadius: 6, padding: "0.75rem", marginTop: "0.5rem" }}>
+                <Mono size="0.28rem" color="rgba(255,255,255,0.25)">REGISTRY OVERVIEW</Mono>
+                {[
+                  { label: "Verified Properties",   val: 1, color: G },
+                  { label: "Pending Verification",   val: assets.filter(a => !["MINTED","MARKETPLACE_LIVE","REJECTED"].includes(a.state)).length, color: A },
+                  { label: "Total Verified",          val: 1 + assets.filter(a => ["MINTED","MARKETPLACE_LIVE"].includes(a.state)).length, color: B },
+                ].map(r => (
+                  <div key={r.label} style={{ display: "flex", justifyContent: "space-between",
+                                               padding: "0.35rem 0",
+                                               borderBottom: `1px solid ${BDR}40` }}>
+                    <Mono size="0.3rem" color="rgba(255,255,255,0.4)">{r.label}</Mono>
+                    <Mono size="0.3rem" color={r.color}>{r.val}</Mono>
+                  </div>
+                ))}
               </div>
+
               <button onClick={reset} style={{
-                marginTop:"1rem", padding:"0.5rem 0.75rem", borderRadius:4,
-                border:`1px solid ${BDR}`, background:"transparent",
-                color:"rgba(239,68,68,0.5)", fontFamily:M, fontSize:"0.3rem",
-                fontWeight:700, cursor:"pointer", letterSpacing:"0.08em",
-                textTransform:"uppercase",
+                marginTop: "0.5rem", padding: "0.4rem 0.75rem", borderRadius: 4,
+                border: `1px solid ${R}30`, background: "transparent",
+                color: `${R}60`, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
               }}>
                 RESET SESSION
               </button>
             </div>
 
-            {/* Asset detail */}
-            <div>
-              {sel && (
-                <div style={{ background:CARD, border:`1px solid ${BDR}`,
-                               borderRadius:8, padding:"1.5rem" }}>
+            {/* ── Asset detail ── */}
+            {sel && (
+              <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 8 }}>
 
-                  {/* Header */}
-                  <div style={{ display:"flex", justifyContent:"space-between",
-                                 alignItems:"baseline", marginBottom:"1.25rem",
-                                 flexWrap:"wrap", gap:"0.5rem" }}>
-                    <div>
-                      <div style={{ fontFamily:M, fontSize:"0.3rem",
-                                     color:"rgba(255,255,255,0.25)",
-                                     textTransform:"uppercase", letterSpacing:"0.15em",
-                                     marginBottom:"0.3rem" }}>
-                        ASSET RECORD
-                      </div>
-                      <div style={{ fontFamily:M, fontSize:"clamp(0.75rem,1.8vw,0.95rem)",
-                                     fontWeight:900, color:W,
-                                     letterSpacing:"0.05em" }}>
-                        {sel.id}
-                      </div>
+                {/* Header */}
+                <div style={{ padding: "1.25rem 1.5rem",
+                               borderBottom: `1px solid ${BDR}`,
+                               display: "flex", justifyContent: "space-between",
+                               alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem",
+                                   marginBottom: 4 }}>
+                      <Mono size="0.3rem" color="rgba(255,255,255,0.3)">ASSET RECORD</Mono>
+                      <Mono size="0.42rem" color={STATE_COLORS[sel.state]}>●</Mono>
                     </div>
-                    <span style={{ fontFamily:M, fontSize:"0.32rem", fontWeight:700,
-                                    color:STATE_LABELS[sel.state].color,
-                                    background:`${STATE_LABELS[sel.state].color}15`,
-                                    border:`1px solid ${STATE_LABELS[sel.state].color}30`,
-                                    borderRadius:4, padding:"3px 9px",
-                                    letterSpacing:"0.1em",
-                                    textTransform:"uppercase" }}>
-                      {STATE_LABELS[sel.state].label}
+                    <Mono size="0.9rem" color={W}>{sel.id}</Mono>
+                    <div style={{ fontFamily: S, fontSize: "0.8rem",
+                                   color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+                      {ASSET_LABELS[sel.assetType] ?? sel.assetType}
+                      {sel.estimatedValue ? ` · $${sel.estimatedValue}` : ""}
+                      {sel.jurisdiction ? ` · ${sel.jurisdiction}` : ""}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+                                    color: STATE_COLORS[sel.state],
+                                    background: `${STATE_COLORS[sel.state]}20`,
+                                    border: `1px solid ${STATE_COLORS[sel.state]}40`,
+                                    borderRadius: 4, padding: "3px 10px",
+                                    textTransform: "uppercase", letterSpacing: "0.1em",
+                                    display: "block", marginBottom: 4 }}>
+                      {STAGE_META[sel.state]?.label ?? sel.state}
                     </span>
-                  </div>
-
-                  {/* Stepper */}
-                  <div style={{ marginBottom:"1.5rem" }}>
-                    <div style={{ fontFamily:M, fontSize:"0.28rem",
-                                   color:"rgba(255,255,255,0.25)",
-                                   textTransform:"uppercase", letterSpacing:"0.12em",
-                                   marginBottom:"0.625rem" }}>
-                      LIFECYCLE
-                    </div>
-                    <div style={{ display:"flex", gap:"0.2rem",
-                                   alignItems:"center" }}>
-                      {STATE_ORDER.map((s, i) => {
-                        const reached = STATE_ORDER.indexOf(sel.state) >= i;
-                        const color = reached ? STATE_LABELS[s].color : "rgba(255,255,255,0.1)";
-                        return (
-                          <div key={s} style={{ flex:1,
-                                                  display:"flex",
-                                                  flexDirection:"column",
-                                                  alignItems:"center",
-                                                  gap:"0.35rem" }}>
-                            <div style={{ height:3, width:"100%",
-                                           background:color, borderRadius:1,
-                                           boxShadow: reached ? `0 0 4px ${color}80` : "none" }}/>
-                            <span style={{ fontFamily:M, fontSize:"0.24rem", fontWeight:700,
-                                            color:reached ? color : "rgba(255,255,255,0.15)",
-                                            letterSpacing:"0.06em",
-                                            textAlign:"center", whiteSpace:"nowrap" }}>
-                              {STATE_LABELS[s].label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Asset details */}
-                  <div style={{ marginBottom:"1.5rem",
-                                 borderTop:`1px solid ${BDR}`,
-                                 paddingTop:"1rem" }}>
-                    {[
-                      ["Asset Type",     ASSET_LABELS[sel.assetType] ?? sel.assetType],
-                      ["Estimated",      sel.estimatedValue ? `$${sel.estimatedValue}` : "—"],
-                      ["Jurisdiction",   sel.jurisdiction],
-                      ["Existing Liens", sel.hasLiens],
-                      ["Appraisal",      sel.hasAppraisal],
-                      ["Custody",        sel.hasCustody],
-                      ["Submitted",      new Date(sel.createdAt).toLocaleString()],
-                    ].map(([k, v]) => (
-                      <div key={k} style={{ display:"flex", justifyContent:"space-between",
-                                             padding:"0.4rem 0",
-                                             borderBottom:"1px solid rgba(28,35,51,0.6)" }}>
-                        <span style={{ fontFamily:M, fontSize:"0.32rem",
-                                        color:"rgba(255,255,255,0.35)",
-                                        textTransform:"uppercase",
-                                        letterSpacing:"0.08em" }}>{k}</span>
-                        <span style={{ fontFamily:M, fontSize:"0.38rem",
-                                        color:W, fontWeight:700,
-                                        textAlign:"right", maxWidth:"60%" }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Timeline */}
-                  <div style={{ marginBottom:"1.5rem" }}>
-                    <div style={{ fontFamily:M, fontSize:"0.28rem",
-                                   color:"rgba(255,255,255,0.25)",
-                                   textTransform:"uppercase", letterSpacing:"0.12em",
-                                   marginBottom:"0.625rem" }}>
-                      EVENT LOG (APPEND-ONLY · {sel.timeline.length} EVENTS)
-                    </div>
-                    <div style={{ position:"relative", paddingLeft:"1.25rem" }}>
-                      <div style={{ position:"absolute", left:"0.25rem", top:0, bottom:0,
-                                     width:1, background:"rgba(16,185,129,0.2)" }}/>
-                      {sel.timeline.map((ev, i) => {
-                        const c = STATE_LABELS[ev.state].color;
-                        return (
-                          <div key={i} style={{ position:"relative", marginBottom:"0.625rem" }}>
-                            <div style={{ position:"absolute", left:"-1.15rem", top:3,
-                                           width:8, height:8, borderRadius:"50%",
-                                           background:c,
-                                           boxShadow:`0 0 4px ${c}80`,
-                                           border:`2px solid ${BG}` }}/>
-                            <div style={{ display:"flex", justifyContent:"space-between",
-                                           gap:"0.5rem", marginBottom:1, flexWrap:"wrap" }}>
-                              <span style={{ fontFamily:M, fontSize:"0.34rem",
-                                              fontWeight:700, color:c,
-                                              letterSpacing:"0.08em" }}>
-                                {STATE_LABELS[ev.state].label}
-                              </span>
-                              <span style={{ fontFamily:M, fontSize:"0.28rem",
-                                              color:"rgba(255,255,255,0.3)" }}>
-                                {new Date(ev.at).toLocaleString()}
-                              </span>
-                            </div>
-                            {ev.note && (
-                              <div style={{ fontFamily:S, fontSize:"0.7rem",
-                                             color:"rgba(255,255,255,0.45)",
-                                             lineHeight:1.6 }}>
-                                {ev.note}
-                              </div>
-                            )}
-                            <div style={{ fontFamily:M, fontSize:"0.26rem",
-                                           color:"rgba(255,255,255,0.25)",
-                                           marginTop:1 }}>
-                              actor: {ev.actor}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap",
-                                 borderTop:`1px solid ${BDR}`, paddingTop:"1rem" }}>
-                    {sel.state !== "COMPLETED" && sel.state !== "REJECTED" && (
-                      <button onClick={() => advance(sel.id)} style={{
-                        flex:1, padding:"0.625rem 1rem", borderRadius:5,
-                        background:`${G}10`, border:`1px solid ${G}40`,
-                        color:G, fontFamily:M, fontSize:"0.36rem",
-                        fontWeight:700, cursor:"pointer",
-                        textTransform:"uppercase", letterSpacing:"0.08em",
-                      }}>
-                        SIMULATE NEXT STATE &#8594;
-                      </button>
+                    {sel.assignedVerifier && (
+                      <Mono size="0.28rem" color="rgba(255,255,255,0.3)">
+                        Verifier: {sel.assignedVerifier}
+                      </Mono>
                     )}
-                    <button onClick={() => remove(sel.id)} style={{
-                      padding:"0.625rem 1rem", borderRadius:5,
-                      background:"transparent", border:`1px solid rgba(239,68,68,0.3)`,
-                      color:"rgba(239,68,68,0.7)", fontFamily:M, fontSize:"0.34rem",
-                      fontWeight:700, cursor:"pointer",
-                      textTransform:"uppercase", letterSpacing:"0.08em",
-                    }}>
-                      REMOVE
-                    </button>
-                  </div>
-                  <div style={{ marginTop:"0.625rem", fontFamily:M,
-                                 fontSize:"0.28rem",
-                                 color:"rgba(255,255,255,0.2)",
-                                 lineHeight:1.6 }}>
-                    Demo mode: simulate state transitions to walk through the verification lifecycle.
-                    In production, transitions are triggered by the verification network.
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* Sub-tabs */}
+                <div style={{ display: "flex", borderBottom: `1px solid ${BDR}`,
+                               padding: "0 1.5rem" }}>
+                  {(["overview","lifecycle","documents","activity"] as const).map(t => (
+                    <button key={t} onClick={() => setTab(t)} style={{
+                      padding: "0.625rem 0.875rem", background: "transparent", border: "none",
+                      borderBottom: `2px solid ${tab === t ? G : "transparent"}`,
+                      color: tab === t ? G : "rgba(255,255,255,0.3)",
+                      fontFamily: M, fontSize: "0.32rem", fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.08em",
+                      cursor: "pointer", marginBottom: -1,
+                    }}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ padding: "1.25rem 1.5rem" }}>
+
+                  {/* OVERVIEW TAB */}
+                  {tab === "overview" && (
+                    <div>
+                      {/* 4-score grid */}
+                      <div style={{ display: "grid",
+                                     gridTemplateColumns: "repeat(auto-fill,minmax(120px,1fr))",
+                                     gap: "0.5rem", marginBottom: "1.25rem" }}>
+                        <ScoreCard label="Verification" value={sel.scores.verification}
+                                   color={sel.scores.verification >= 75 ? G : A}
+                                   sub={scoreLabel(sel.scores.verification)}/>
+                        <ScoreCard label="Liquidity"    value={sel.scores.liquidity}
+                                   color={sel.scores.liquidity >= 70 ? B : A}
+                                   sub={scoreLabel(sel.scores.liquidity)}/>
+                        <ScoreCard label="Fraud Shield" value={sel.scores.fraud}
+                                   color={sel.scores.fraud >= 80 ? G : sel.scores.fraud >= 60 ? A : R}
+                                   sub={scoreLabel(sel.scores.fraud, true)}/>
+                        <ScoreCard label="Marketability" value={sel.scores.marketability}
+                                   color={sel.scores.marketability >= 70 ? B : A}
+                                   sub={scoreLabel(sel.scores.marketability)}/>
+                      </div>
+
+                      {/* Bloomberg-style data grid */}
+                      <div style={{ background: "#080B10", border: `1px solid ${BDR}`,
+                                     borderRadius: 6, marginBottom: "1rem" }}>
+                        {[
+                          ["Asset Value",      sel.estimatedValue ? `$${sel.estimatedValue}` : "Pending"],
+                          ["Jurisdiction",     sel.jurisdiction || "—"],
+                          ["Verification Score", `${sel.scores.overall}/100 · ${scoreLabel(sel.scores.overall)}`],
+                          ["Legal Review",     STAGE_META[sel.state]?.progressPct >= 42 ? "In Progress" : "Pending"],
+                          ["Tokenization",     sel.state === "MINTED" || sel.state === "MARKETPLACE_LIVE" ? "Authorized" : sel.state === "TOKENIZATION_AUTH" ? "Authorized" : "Pending Approval"],
+                          ["Collateral Status",sel.state === "MARKETPLACE_LIVE" ? "ELIGIBLE" : "Pending Verification"],
+                          ["Lending Status",   sel.state === "MARKETPLACE_LIVE" ? "AVAILABLE" : "Not Yet Available"],
+                          ["Assigned Verifier",sel.assignedVerifier ?? "—"],
+                          ["Progress",         `${sel.progressPct}% · ${STAGE_META[sel.state]?.label}`],
+                          ["Submitted",        new Date(sel.createdAt).toLocaleString()],
+                        ].map(([k,v]) => (
+                          <div key={k} style={{ display: "flex", justifyContent: "space-between",
+                                                 padding: "0.5rem 0.875rem",
+                                                 borderBottom: `1px solid ${BDR}30` }}>
+                            <Mono size="0.32rem" color="rgba(255,255,255,0.35)">{k}</Mono>
+                            <Mono size="0.36rem" color={
+                              v === "ELIGIBLE" || v === "AVAILABLE" || v === "Authorized" ? G :
+                              v === "Pending Approval" || v === "Pending Verification" ? A : W
+                            }>{v}</Mono>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* AI Notes */}
+                      {sel.aiNotes && (
+                        <div style={{ padding: "0.875rem 1rem", background: `${B}08`,
+                                       border: `1px solid ${B}30`, borderRadius: 6,
+                                       marginBottom: "1rem" }}>
+                          <Mono size="0.28rem" color={B}>AI ENGINE · CURRENT ASSESSMENT</Mono>
+                          <div style={{ fontFamily: S, fontSize: "0.76rem",
+                                         color: "rgba(255,255,255,0.65)", lineHeight: 1.7,
+                                         marginTop: 6 }}>
+                            {sel.aiNotes}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sim control */}
+                      {sel.state !== "MARKETPLACE_LIVE" && sel.state !== "REJECTED" && (
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <button onClick={() => advance(sel.id)} style={{
+                            flex: 1, padding: "0.75rem", borderRadius: 5,
+                            background: `${G}10`, border: `1px solid ${G}40`,
+                            color: G, fontFamily: M, fontSize: "0.38rem", fontWeight: 700,
+                            cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
+                          }}>
+                            SIMULATE NEXT STAGE →
+                          </button>
+                        </div>
+                      )}
+                      {sel.state === "MARKETPLACE_LIVE" && (
+                        <div style={{ padding: "0.75rem 1rem", background: `${G}10`,
+                                       border: `1px solid ${G}40`, borderRadius: 5,
+                                       textAlign: "center" }}>
+                          <Mono size="0.42rem" color={G}>● MARKETPLACE LIVE · LENDING ELIGIBLE</Mono>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* LIFECYCLE TAB */}
+                  {tab === "lifecycle" && (
+                    <div>
+                      <div style={{ position: "relative" }}>
+                        {PIPELINE_STAGES.map((stage, i) => {
+                          const meta = STAGE_META[stage];
+                          const done = i <= pipelineIndex;
+                          const active = stage === sel.state;
+                          const color = done ? meta.color : "rgba(255,255,255,0.1)";
+                          const timelineEv = sel.timeline.find(e => e.state === stage);
+                          return (
+                            <div key={stage} style={{
+                              display: "grid", gridTemplateColumns: "28px 1fr",
+                              gap: "0.875rem", marginBottom: "0.75rem",
+                              opacity: done ? 1 : 0.4,
+                            }}>
+                              <div style={{ display: "flex", flexDirection: "column",
+                                             alignItems: "center" }}>
+                                <div style={{
+                                  width: 28, height: 28, borderRadius: "50%",
+                                  border: `2px solid ${color}`,
+                                  background: done ? `${color}20` : "transparent",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  boxShadow: active ? `0 0 8px ${color}80` : "none",
+                                }}>
+                                  <Mono size="0.3rem" color={color}>{i+1}</Mono>
+                                </div>
+                                {i < PIPELINE_STAGES.length - 1 && (
+                                  <div style={{ width: 2, flex: 1, minHeight: 12,
+                                                 background: done && i < pipelineIndex ? `${color}60` : `${BDR}` }}/>
+                                )}
+                              </div>
+                              <div style={{ paddingBottom: "0.625rem" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between",
+                                               alignItems: "baseline", flexWrap: "wrap", gap: 4,
+                                               marginBottom: 2 }}>
+                                  <Mono size="0.38rem" color={done ? W : "rgba(255,255,255,0.3)"}>
+                                    {meta.label}
+                                  </Mono>
+                                  {timelineEv && (
+                                    <Mono size="0.26rem" color="rgba(255,255,255,0.25)">
+                                      {new Date(timelineEv.at).toLocaleString()}
+                                    </Mono>
+                                  )}
+                                </div>
+                                <div style={{ fontFamily: S, fontSize: "0.72rem",
+                                               color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>
+                                  {meta.description}
+                                </div>
+                                {active && (
+                                  <div style={{ fontFamily: S, fontSize: "0.72rem",
+                                                 color: `${color}90`, fontStyle: "italic" }}>
+                                    {meta.aiNote}
+                                  </div>
+                                )}
+                                <Mono size="0.26rem" color="rgba(255,255,255,0.2)">
+                                  Verifier: {meta.verifier}
+                                </Mono>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DOCUMENTS TAB */}
+                  {tab === "documents" && (
+                    <div>
+                      <Mono size="0.3rem" color="rgba(255,255,255,0.3)">
+                        VERIFICATION PACKAGE — REQUIRED DOCUMENTS
+                      </Mono>
+                      <div style={{ marginTop: "1rem" }}>
+                        {PIPELINE_STAGES.slice(0, pipelineIndex + 3).map(stage => {
+                          const meta = STAGE_META[stage];
+                          if (!meta.requiredDocs.length) return null;
+                          const done = PIPELINE_STAGES.indexOf(stage) <= pipelineIndex;
+                          return (
+                            <div key={stage} style={{ marginBottom: "1rem" }}>
+                              <Mono size="0.3rem" color={done ? G : A}>
+                                {done ? "✓ " : "● "}{meta.label.toUpperCase()}
+                              </Mono>
+                              {meta.requiredDocs.map(d => (
+                                <div key={d} style={{ display: "flex", gap: "0.5rem",
+                                                       alignItems: "center",
+                                                       padding: "0.35rem 0",
+                                                       borderBottom: `1px solid ${BDR}40` }}>
+                                  <Mono size="0.3rem" color={done ? G : "rgba(255,255,255,0.2)"}>
+                                    {done ? "✓" : "○"}
+                                  </Mono>
+                                  <span style={{ fontFamily: S, fontSize: "0.76rem",
+                                                  color: done ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.3)" }}>
+                                    {d}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ACTIVITY TAB */}
+                  {tab === "activity" && (
+                    <div>
+                      <Mono size="0.3rem" color="rgba(255,255,255,0.3)">
+                        AUDIT LOG — APPEND-ONLY · {sel.timeline.length} EVENTS
+                      </Mono>
+                      <div style={{ marginTop: "1rem", position: "relative",
+                                     paddingLeft: "1.25rem" }}>
+                        <div style={{ position: "absolute", left: "0.25rem", top: 0, bottom: 0,
+                                       width: 1, background: `${G}20` }}/>
+                        {[...sel.timeline].reverse().map((ev, i) => {
+                          const color = STATE_COLORS[ev.state] ?? G;
+                          return (
+                            <div key={i} style={{ position: "relative", marginBottom: "1rem" }}>
+                              <div style={{ position: "absolute", left: "-1.15rem", top: 3,
+                                             width: 8, height: 8, borderRadius: "50%",
+                                             background: color, border: "2px solid #070A0F",
+                                             boxShadow: `0 0 4px ${color}60` }}/>
+                              <div style={{ display: "flex", justifyContent: "space-between",
+                                             flexWrap: "wrap", gap: 4, marginBottom: 2 }}>
+                                <Mono size="0.36rem" color={color}>
+                                  {STAGE_META[ev.state]?.label ?? ev.state}
+                                </Mono>
+                                <Mono size="0.28rem" color="rgba(255,255,255,0.25)">
+                                  {new Date(ev.at).toLocaleString()}
+                                </Mono>
+                              </div>
+                              {ev.note && (
+                                <div style={{ fontFamily: S, fontSize: "0.72rem",
+                                               color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                                  {ev.note}
+                                </div>
+                              )}
+                              <Mono size="0.26rem" color="rgba(255,255,255,0.2)">
+                                actor: {ev.actor} · progress: {ev.progress ?? 0}%
+                              </Mono>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
