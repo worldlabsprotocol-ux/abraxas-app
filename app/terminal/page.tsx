@@ -116,9 +116,21 @@ function BarSVG({ data, keys, colors, height = 180 }: {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily:M, fontSize:"0.3rem", fontWeight:700,
-                   color:"rgba(255,255,255,0.22)", textTransform:"uppercase",
-                   letterSpacing:"0.15em", marginBottom:"0.875rem" }}>
+    <div style={{
+      display: "flex", alignItems: "center", gap: "0.625rem",
+      marginBottom: "1.125rem",
+    }}>
+      <div style={{ width: 4, height: 18, background: G, borderRadius: 2,
+                     boxShadow: `0 0 8px ${G}60` }}/>
+      <span style={{
+        fontFamily: M, fontSize: "clamp(0.9rem,2vw,1.05rem)", fontWeight: 800,
+        color: G, letterSpacing: "0.16em", textTransform: "uppercase",
+      }}>
+        {children}
+      </span>
+    </div>
+  );
+}>
       {children}
     </div>
   );
@@ -174,7 +186,7 @@ function TerminalTab() {
                            marginBottom: "0.875rem" }}>
               <div style={{ padding: "0.4rem 0.875rem", borderRadius: 4,
                              background: `${B}20`, border: `1px solid ${B}40`,
-                             fontFamily: M, fontSize: "0.3rem", fontWeight: 900,
+                             fontFamily: M, fontSize: "0.75rem", fontWeight: 900,
                              color: B, letterSpacing: "0.15em",
                              textTransform: "uppercase" }}>
                 TOKENIZE YOUR BUSINESS
@@ -185,7 +197,7 @@ function TerminalTab() {
                           letterSpacing: "-0.02em" }}>
               Launch your business on-chain.
             </h2>
-            <p style={{ fontFamily: S, fontSize: "clamp(0.74rem,1.5vw,0.88rem)",
+            <p style={{ fontFamily: S, fontSize: "clamp(0.9rem,1.5vw,1.05rem)",
                          color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
                          maxWidth: 580, margin: "0 0 1.5rem" }}>
               Structure your business through a Wyoming LLC for full on-chain ownership,
@@ -204,7 +216,7 @@ function TerminalTab() {
                                               border: `1px solid ${pkg.color}30`,
                                               borderTop: `3px solid ${pkg.color}`,
                                               display: "flex", flexDirection: "column" }}>
-                  <div style={{ fontFamily: M, fontSize: "0.32rem", fontWeight: 900,
+                  <div style={{ fontFamily: M, fontSize: "0.78rem", fontWeight: 900,
                                  color: pkg.color, letterSpacing: "0.12em",
                                  marginBottom: "0.375rem" }}>
                     {pkg.tier}
@@ -215,10 +227,10 @@ function TerminalTab() {
                   </div>
                   <div style={{ flex: 1, marginBottom: "0.75rem" }}>
                     {pkg.items.map(item => (
-                      <div key={item} style={{ display: "flex", gap: "0.4rem",
+                      <div key={item} style={{ display: "flex", gap: "0.875rem",
                                                 alignItems: "center", marginBottom: 4 }}>
-                        <span style={{ color: pkg.color, fontSize: "0.5rem" }}>◉</span>
-                        <span style={{ fontFamily: S, fontSize: "clamp(0.6rem,1.4vw,0.72rem)",
+                        <span style={{ color: pkg.color, fontSize: "1rem" }}>◉</span>
+                        <span style={{ fontFamily: S, fontSize: "clamp(1.1rem,1.4vw,1.2rem)",
                                         color: "rgba(255,255,255,0.5)" }}>
                           {item}
                         </span>
@@ -227,13 +239,14 @@ function TerminalTab() {
                   </div>
                   <button onClick={() => { setInitialTier(pkg.id); setWyOpen(true); }}
                     style={{
-                      width: "100%", padding: "0.625rem", borderRadius: 4,
-                      border: `1px solid ${pkg.color}80`,
-                      background: `${pkg.color}15`,
-                      color: pkg.color, fontFamily: M, fontSize: "0.4rem",
+                      width: "100%", padding: "0.875rem 1rem", borderRadius: 5,
+                      border: `2px solid ${pkg.color}`,
+                      background: `${pkg.color}20`,
+                      color: pkg.color, fontFamily: M, fontSize: "1rem",
                       fontWeight: 900, cursor: "pointer",
                       letterSpacing: "0.06em", textTransform: "uppercase",
                       transition: "all 0.15s",
+                      boxShadow: `0 0 12px ${pkg.color}30`,
                     }}>
                     SELECT {pkg.tier} →
                   </button>
@@ -243,17 +256,17 @@ function TerminalTab() {
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
               <button onClick={() => { setInitialTier(null); setWyOpen(true); }} style={{
                 padding: "0.875rem 1.75rem", borderRadius: 5, border: "none",
-                background: G, color: "#000", fontFamily: M, fontSize: "0.5rem",
-                fontWeight: 900, cursor: "pointer", letterSpacing: "0.04em",
+                background: G, color: "#000", fontFamily: M, fontSize: "1.125rem",
+                fontWeight: 900, cursor: "pointer", letterSpacing: "0.05em",
                 textTransform: "uppercase",
-                boxShadow: `0 0 12px ${G}40`,
+                boxShadow: `0 0 20px ${G}60`,
               }}>
                 START TOKENIZATION NOW &#8594;
               </button>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%",
                                background: G, boxShadow: `0 0 5px ${G}90` }}/>
-                <span style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                <span style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                                 color: G, letterSpacing: "0.1em",
                                 textTransform: "uppercase" }}>
                   Available now &middot; Powered by Abraxas V5
@@ -264,7 +277,7 @@ function TerminalTab() {
             <div style={{ marginTop: "1.5rem", padding: "1.125rem 1.25rem",
                            background: `${G}06`, border: `1px solid ${G}25`,
                            borderRadius: 7 }}>
-              <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+              <div style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                              color: G, textTransform: "uppercase",
                              letterSpacing: "0.15em", marginBottom: "0.625rem" }}>
                 WHY TOKENIZE YOUR BUSINESS WITH ABRAXAS
@@ -283,7 +296,7 @@ function TerminalTab() {
                                    fontWeight: 700, color: W, marginBottom: 4 }}>
                       &#10003; {b.t}
                     </div>
-                    <div style={{ fontSize: "clamp(0.66rem,1.4vw,0.76rem)",
+                    <div style={{ fontSize: "clamp(0.85rem,1.4vw,0.95rem)",
                                    color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
                       {b.d}
                     </div>
@@ -315,7 +328,7 @@ function TerminalTab() {
                      padding: "3rem clamp(1rem,3vw,2rem) 0" }}>
 
         <div style={{ marginBottom: "2.5rem" }}>
-          <div style={{ fontFamily: M, fontSize: "0.3rem", color: `${G}80`,
+          <div style={{ fontFamily: M, fontSize: "0.75rem", color: `${G}80`,
                          textTransform: "uppercase", letterSpacing: "0.2em",
                          marginBottom: "0.75rem" }}>
             ABRAXAS PROTOCOL · SOLANA
@@ -334,7 +347,7 @@ function TerminalTab() {
             anything is issued on-chain. The result is collateral that lenders
             can underwrite and communities can actually own.
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem",
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem",
                          marginBottom: "1.75rem" }}>
             {[
               { t: "Legal Review",         c: G },
@@ -343,7 +356,7 @@ function TerminalTab() {
               { t: "Reg A / D / CF Ready", c: B },
               { t: "On-Chain Attestation", c: B },
             ].map(tag => (
-              <span key={tag.t} style={{ fontFamily: M, fontSize: "0.3rem",
+              <span key={tag.t} style={{ fontFamily: M, fontSize: "0.75rem",
                                           fontWeight: 700, color: tag.c,
                                           background: `${tag.c}10`,
                                           border: `1px solid ${tag.c}25`,
@@ -356,14 +369,14 @@ function TerminalTab() {
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <button onClick={() => setDeep("submit")} style={{
               padding: "0.875rem 1.75rem", borderRadius: 6, border: "none",
-              background: G, color: "#000", fontFamily: M, fontSize: "0.5rem",
+              background: G, color: "#000", fontFamily: M, fontSize: "1rem",
               fontWeight: 900, cursor: "pointer", letterSpacing: "0.04em",
               textTransform: "uppercase",
             }}>SUBMIT AN ASSET &#8594;</button>
             <button onClick={() => setDeep("asset")} style={{
               padding: "0.875rem 1.75rem", borderRadius: 6,
               border: `1px solid ${B}40`, background: `${B}08`,
-              color: B, fontFamily: M, fontSize: "0.5rem", fontWeight: 700,
+              color: B, fontFamily: M, fontSize: "1rem", fontWeight: 700,
               cursor: "pointer", letterSpacing: "0.04em", textTransform: "uppercase",
             }}>VIEW GENESIS ASSET &#8594;</button>
           </div>
@@ -385,7 +398,7 @@ function TerminalTab() {
             Each layer compounds value. Assets flow up; ownership compounds across
             generations. Compliant by default, programmable by design.
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {[
               { n: "L5", title: "Reinvestment Engine",
                 desc: "Compounding ownership across generations",
@@ -429,7 +442,7 @@ function TerminalTab() {
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: M, fontSize: "0.28rem",
+          <div style={{ fontFamily: M, fontSize: "0.7rem",
                          color: "rgba(255,255,255,0.25)",
                          textAlign: "right", marginTop: "0.625rem",
                          letterSpacing: "0.1em" }}>
@@ -443,7 +456,7 @@ function TerminalTab() {
         <div style={{ marginBottom: "2rem" }}>
           <div style={{ display: "flex", alignItems: "baseline",
                          justifyContent: "space-between",
-                         flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
+                         flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
             <div>
               <Label>Platform Economics</Label>
               <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.8rem)",
@@ -452,7 +465,7 @@ function TerminalTab() {
                 Built for recurring revenue.
               </h2>
             </div>
-            <a href="/economics" style={{ fontFamily: M, fontSize: "0.34rem",
+            <a href="/economics" style={{ fontFamily: M, fontSize: "0.8rem",
                                             color: `${B}60`, textDecoration: "none" }}>
               Full model &#8594;
             </a>
@@ -471,16 +484,16 @@ function TerminalTab() {
             ].map(r => (
               <div key={r.t} style={{ background: CARD, padding: "0.875rem 1rem",
                                         borderTop: `2px solid ${r.color}` }}>
-                <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                <div style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                                color: r.color, textTransform: "uppercase",
-                               letterSpacing: "0.08em", marginBottom: "0.3rem" }}>
+                               letterSpacing: "0.08em", marginBottom: "0.75rem" }}>
                   {r.t}
                 </div>
                 <div style={{ fontFamily: M, fontSize: "clamp(0.85rem,2vw,1.1rem)",
                                fontWeight: 900, color: W, marginBottom: "0.2rem" }}>
                   {r.r}
                 </div>
-                <div style={{ fontFamily: M, fontSize: "0.26rem",
+                <div style={{ fontFamily: M, fontSize: "0.65rem",
                                color: `${r.color}90`, letterSpacing: "0.05em" }}>
                   {r.k}
                 </div>
@@ -491,20 +504,20 @@ function TerminalTab() {
           {/* Scenario toggle */}
           <div style={{ display: "flex", alignItems: "center",
                          justifyContent: "space-between",
-                         marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-            <span style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                         marginBottom: "1rem", flexWrap: "wrap", gap: "1rem" }}>
+            <span style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                             color: "rgba(255,255,255,0.4)",
                             textTransform: "uppercase", letterSpacing: "0.12em" }}>
               3-YEAR PROJECTION
             </span>
-            <div style={{ display: "flex", gap: "0.4rem" }}>
+            <div style={{ display: "flex", gap: "0.875rem" }}>
               {(["small", "large"] as Array<"small" | "large">).map(k => (
                 <button key={k} onClick={() => setScenario(k)} style={{
                   padding: "0.3rem 0.75rem", borderRadius: 4, cursor: "pointer",
                   border: `1px solid ${scenario === k ? (k === "small" ? A : G) : BDR}`,
                   background: scenario === k ? `${k === "small" ? A : G}12` : CARD,
                   color: scenario === k ? (k === "small" ? A : G) : "rgba(255,255,255,0.3)",
-                  fontFamily: M, fontSize: "0.32rem", fontWeight: 700,
+                  fontFamily: M, fontSize: "0.78rem", fontWeight: 700,
                   textTransform: "uppercase", letterSpacing: "0.08em",
                   transition: "all 0.15s",
                 }}>
@@ -527,7 +540,7 @@ function TerminalTab() {
                                         border: `1px solid ${BDR}`,
                                         borderTop: `2px solid ${profit ? G : "#EF4444"}`,
                                         borderRadius: 7, padding: "0.875rem 1rem" }}>
-                  <div style={{ fontFamily: M, fontSize: "0.3rem",
+                  <div style={{ fontFamily: M, fontSize: "0.75rem",
                                  color: "rgba(255,255,255,0.25)",
                                  textTransform: "uppercase", letterSpacing: "0.1em",
                                  marginBottom: "0.625rem" }}>
@@ -538,7 +551,7 @@ function TerminalTab() {
                                  marginBottom: "0.35rem" }}>
                     {ebStr}
                   </div>
-                  <div style={{ fontFamily: M, fontSize: "0.3rem",
+                  <div style={{ fontFamily: M, fontSize: "0.75rem",
                                  color: "rgba(255,255,255,0.3)" }}>
                     AUM: ${SC.aum[y].toFixed(0)}M · Rev: ${SC.rev[y].toFixed(1)}M · {SC.ebitdaMargin[y].toFixed(0)}% margin
                   </div>
@@ -550,7 +563,7 @@ function TerminalTab() {
           {/* EBITDA chart */}
           <div style={{ background: CARD, border: `1px solid ${BDR}`,
                          borderRadius: 7, padding: "1rem" }}>
-            <div style={{ fontFamily: M, fontSize: "0.3rem",
+            <div style={{ fontFamily: M, fontSize: "0.75rem",
                            color: "rgba(255,255,255,0.25)",
                            textTransform: "uppercase", letterSpacing: "0.1em",
                            marginBottom: "0.75rem" }}>
@@ -558,12 +571,12 @@ function TerminalTab() {
             </div>
             <BarSVG data={ebitdaData} keys={["small","large"]}
                     colors={[A, G]} height={160}/>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
               {[{ c: A, l: "Small" }, { c: G, l: "Large" }].map(x => (
-                <div key={x.l} style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <div key={x.l} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <div style={{ width: 10, height: 10, borderRadius: 2,
                                  background: x.c, opacity: 0.85 }}/>
-                  <span style={{ fontFamily: M, fontSize: "0.3rem",
+                  <span style={{ fontFamily: M, fontSize: "0.75rem",
                                   color: "rgba(255,255,255,0.4)" }}>{x.l}</span>
                 </div>
               ))}
@@ -617,12 +630,12 @@ function TerminalTab() {
                                         borderRadius: 7, padding: "1.125rem" }}>
                 <div style={{ display: "flex", alignItems: "center",
                                justifyContent: "space-between",
-                               marginBottom: "0.5rem" }}>
-                  <span style={{ fontFamily: M, fontSize: "0.42rem",
+                               marginBottom: "1rem" }}>
+                  <span style={{ fontFamily: M, fontSize: "0.9rem",
                                   fontWeight: 900, color: `${v.color}50` }}>
                     {v.n}
                   </span>
-                  <span style={{ fontFamily: M, fontSize: "0.26rem",
+                  <span style={{ fontFamily: M, fontSize: "0.65rem",
                                   fontWeight: 700, color: v.color,
                                   background: `${v.color}12`,
                                   border: `1px solid ${v.color}25`,
@@ -634,17 +647,17 @@ function TerminalTab() {
                 </div>
                 <div style={{ fontFamily: S, fontSize: "clamp(0.84rem,1.8vw,0.96rem)",
                                fontWeight: 700, color: W,
-                               marginBottom: "0.5rem" }}>
+                               marginBottom: "1rem" }}>
                   {v.title}
                 </div>
-                <div style={{ fontFamily: S, fontSize: "clamp(0.66rem,1.4vw,0.76rem)",
+                <div style={{ fontFamily: S, fontSize: "clamp(0.85rem,1.4vw,0.95rem)",
                                color: "rgba(255,255,255,0.38)", lineHeight: 1.7,
                                marginBottom: "0.75rem" }}>
                   {v.desc}
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
                   {v.tags.map(t => (
-                    <span key={t} style={{ fontFamily: M, fontSize: "0.26rem",
+                    <span key={t} style={{ fontFamily: M, fontSize: "0.65rem",
                                             fontWeight: 700, color: `${v.color}90`,
                                             background: `${v.color}08`,
                                             border: `1px solid ${v.color}18`,
@@ -665,7 +678,7 @@ function TerminalTab() {
         <div style={{ marginBottom: "2rem" }}>
           <div style={{ display: "flex", alignItems: "baseline",
                          justifyContent: "space-between",
-                         flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
+                         flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
             <div>
               <Label>Asset Registry</Label>
               <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.8rem)",
@@ -675,7 +688,7 @@ function TerminalTab() {
               </h2>
             </div>
             <button onClick={() => setDeep("registry")}
-              style={{ fontFamily: M, fontSize: "0.36rem", color: `${B}80`,
+              style={{ fontFamily: M, fontSize: "0.82rem", color: `${B}80`,
                         background: "transparent", border: "none",
                         cursor: "pointer", textDecoration: "underline",
                         textUnderlineOffset: 4 }}>
@@ -692,14 +705,14 @@ function TerminalTab() {
             cursor: "pointer", transition: "background 0.15s",
           }}>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem",
-                             marginBottom: "0.3rem" }}>
-                <span style={{ fontFamily: M, fontSize: "0.28rem",
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem",
+                             marginBottom: "0.75rem" }}>
+                <span style={{ fontFamily: M, fontSize: "0.7rem",
                                 color: `${G}60`, textTransform: "uppercase",
                                 letterSpacing: "0.12em" }}>
                   AAS-1 · GENESIS ASSET
                 </span>
-                <span style={{ fontFamily: M, fontSize: "0.26rem", fontWeight: 700,
+                <span style={{ fontFamily: M, fontSize: "0.65rem", fontWeight: 700,
                                 color: G, background: `${G}15`,
                                 border: `1px solid ${G}30`, borderRadius: 3,
                                 padding: "1px 6px", textTransform: "uppercase",
@@ -716,7 +729,7 @@ function TerminalTab() {
                 Mineral Bluff, Georgia · 89/100 collateral score · $660K max borrow · 96% verification confidence
               </div>
             </div>
-            <span style={{ fontFamily: M, fontSize: "0.4rem", color: G,
+            <span style={{ fontFamily: M, fontSize: "0.875rem", color: G,
                             letterSpacing: "0.06em" }}>INSPECT &#8594;</span>
           </div>
         </div>
@@ -727,7 +740,7 @@ function TerminalTab() {
         <div style={{ padding: "2rem", borderRadius: 8,
                        border: `1px solid ${B}25`, background: `${B}05`,
                        textAlign: "center", marginBottom: "2rem" }}>
-          <div style={{ fontFamily: M, fontSize: "0.3rem", color: `${B}80`,
+          <div style={{ fontFamily: M, fontSize: "0.75rem", color: `${B}80`,
                          textTransform: "uppercase", letterSpacing: "0.2em",
                          marginBottom: "0.625rem" }}>
             BRING AN ASSET INTO THE PROTOCOL
@@ -747,7 +760,7 @@ function TerminalTab() {
           <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", justifyContent: "center" }}>
             <button onClick={() => setDeep("submit")} style={{
               padding: "0.75rem 1.5rem", borderRadius: 6, border: "none",
-              background: G, color: "#000", fontFamily: M, fontSize: "0.48rem",
+              background: G, color: "#000", fontFamily: M, fontSize: "0.98rem",
               fontWeight: 900, cursor: "pointer", letterSpacing: "0.04em",
               textTransform: "uppercase",
             }}>START ONBOARDING &#8594;</button>
@@ -755,7 +768,7 @@ function TerminalTab() {
               padding: "0.75rem 1.5rem", borderRadius: 6,
               border: `1px solid ${BDR}`, background: "transparent",
               color: "rgba(255,255,255,0.55)", fontFamily: M,
-              fontSize: "0.48rem", fontWeight: 700, cursor: "pointer",
+              fontSize: "0.98rem", fontWeight: 700, cursor: "pointer",
               letterSpacing: "0.04em", textTransform: "uppercase",
             }}>VIEW TRUST LAYER</button>
           </div>
@@ -779,7 +792,7 @@ function DeepView({ children, onBack }: { children: React.ReactNode; onBack: () 
           padding: "0.3rem 0.75rem", borderRadius: 4,
           border: `1px solid ${BDR}`, background: "transparent",
           color: "rgba(255,255,255,0.5)", fontFamily: M,
-          fontSize: "0.34rem", fontWeight: 700, cursor: "pointer",
+          fontSize: "0.8rem", fontWeight: 700, cursor: "pointer",
           textTransform: "uppercase", letterSpacing: "0.08em",
         }}>&#8592; BACK TO TERMINAL</button>
       </div>
@@ -812,7 +825,7 @@ export default function TerminalPage() {
             <div style={{ width: 5, height: 5, borderRadius: "50%",
                            background: s.dot,
                            boxShadow: `0 0 5px ${s.dot}80` }}/>
-            <span style={{ fontFamily: M, fontSize: "0.26rem", fontWeight: 700,
+            <span style={{ fontFamily: M, fontSize: "0.65rem", fontWeight: 700,
                             color: "rgba(255,255,255,0.25)",
                             letterSpacing: "0.12em",
                             textTransform: "uppercase" }}>
@@ -821,7 +834,7 @@ export default function TerminalPage() {
           </div>
         ))}
         <div style={{ flex: 1 }}/>
-        <span style={{ fontFamily: M, fontSize: "0.26rem",
+        <span style={{ fontFamily: M, fontSize: "0.65rem",
                         color: "rgba(255,255,255,0.15)", letterSpacing: "0.1em" }}>
           ABRAXAS OS · BUILD 2025.1
         </span>
@@ -842,11 +855,11 @@ export default function TerminalPage() {
           <Image src="/icon-48.png" alt="Abraxas" width={24} height={24}
                   priority style={{ display:"block", flexShrink:0 }}/>
           <div>
-            <span style={{ fontFamily: M, fontSize: "clamp(0.5rem,1.5vw,0.7rem)",
+            <span style={{ fontFamily: M, fontSize: "clamp(1rem,1.5vw,1.15rem)",
                             fontWeight: 900, color: W, letterSpacing: "0.1em" }}>
               ABRAXAS
             </span>
-            <span style={{ fontFamily: M, fontSize: "0.24rem",
+            <span style={{ fontFamily: M, fontSize: "1.1rem",
                             color: "rgba(255,255,255,0.2)", letterSpacing: "0.15em",
                             marginLeft: "0.375rem", verticalAlign: "middle" }}>
               PROTOCOL OS
@@ -859,11 +872,11 @@ export default function TerminalPage() {
           { id: "lending"  as Tab, label: "LENDING"  },
         ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding: "0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius: 4,
+            padding: "0.5rem clamp(0.75rem,1.5vw,1.125rem)", borderRadius: 5,
             border: `1px solid ${tab === t.id ? `${G}50` : BDR}`,
             background: tab === t.id ? `${G}10` : "transparent",
             color: tab === t.id ? G : "rgba(255,255,255,0.28)",
-            fontFamily: M, fontSize: "clamp(0.28rem,0.85vw,0.36rem)",
+            fontFamily: M, fontSize: "clamp(0.7rem,0.85vw,0.85rem)",
             fontWeight: 700, cursor: "pointer", textTransform: "uppercase",
             letterSpacing: "0.1em", whiteSpace: "nowrap", flexShrink: 0,
             transition: "all 0.15s",
@@ -873,10 +886,10 @@ export default function TerminalPage() {
         ))}
 
 <a href="/dashboard" style={{
-          padding: "0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius: 4,
+          padding: "0.5rem clamp(0.75rem,1.5vw,1.125rem)", borderRadius: 5,
           border: `1px solid ${BDR}`, background: "transparent",
           color: "rgba(255,255,255,0.4)", fontFamily: M,
-          fontSize: "clamp(0.28rem,0.85vw,0.36rem)", fontWeight: 700,
+          fontSize: "clamp(0.7rem,0.85vw,0.85rem)", fontWeight: 700,
           textDecoration: "none", textTransform: "uppercase",
           letterSpacing: "0.1em", whiteSpace: "nowrap", flexShrink: 0,
         }}>
@@ -895,13 +908,13 @@ export default function TerminalPage() {
           <div style={{ maxWidth: 1060, margin: "0 auto",
                          padding: "3rem clamp(1rem,3vw,2rem) 5rem",
                          textAlign: "center" }}>
-            <div style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+            <div style={{ fontFamily: M, fontSize: "0.8rem", fontWeight: 700,
                            color: `${A}80`, textTransform: "uppercase",
                            letterSpacing: "0.2em", marginBottom: "1rem" }}>
               LENDING ENGINE
             </div>
             <h2 style={{ fontFamily: "Georgia, serif",
-                          fontSize: "clamp(1.5rem,4vw,2.5rem)", fontWeight: 800,
+                          fontSize: "clamp(1.85rem,4.5vw,2.75rem)", fontWeight: 800,
                           color: W, margin: "0 0 0.75rem" }}>
               Collateral-backed USDC lending<br/>
               <span style={{ color: A }}>for verified real-world assets.</span>
@@ -914,7 +927,7 @@ export default function TerminalPage() {
             </p>
             <a href="/lending" style={{
               display: "inline-block", padding: "0.875rem 2rem", borderRadius: 5,
-              background: A, color: "#000", fontFamily: M, fontSize: "0.5rem",
+              background: A, color: "#000", fontFamily: M, fontSize: "1rem",
               fontWeight: 900, letterSpacing: "0.04em", textTransform: "uppercase",
               textDecoration: "none",
             }}>

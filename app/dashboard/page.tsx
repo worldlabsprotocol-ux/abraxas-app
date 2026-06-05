@@ -25,7 +25,7 @@ const B    = "#3B82F6";
 const R    = "#EF4444";
 const W    = "#F0F2F5";
 
-function Mono({ children, color = W, size = "0.36rem" }: {
+function Mono({ children, color = W, size = "0.82rem" }: {
   children: React.ReactNode; color?: string; size?: string;
 }) {
   return <span style={{ fontFamily: M, fontSize: size, color }}>{children}</span>;
@@ -37,15 +37,15 @@ function ScoreCard({ label, value, color, sub }: {
   return (
     <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 6,
                    borderTop: `3px solid ${color}`, padding: "0.75rem 1rem" }}>
-      <div style={{ fontFamily: M, fontSize: "0.28rem", color: "rgba(255,255,255,0.3)",
+      <div style={{ fontFamily: M, fontSize: "0.7rem", color: "rgba(255,255,255,0.3)",
                      textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>
         {label}
       </div>
       <div style={{ fontFamily: M, fontSize: "1.4rem", fontWeight: 900, color,
                      lineHeight: 1, marginBottom: 4 }}>
-        {value}<span style={{ fontSize: "0.5rem", fontWeight: 400 }}>/100</span>
+        {value}<span style={{ fontSize: "1rem", fontWeight: 400 }}>/100</span>
       </div>
-      {sub && <div style={{ fontFamily: M, fontSize: "0.26rem",
+      {sub && <div style={{ fontFamily: M, fontSize: "0.65rem",
                              color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
         {sub}
       </div>}
@@ -110,11 +110,11 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: G,
                          boxShadow: `0 0 5px ${G}80` }}/>
-          <Mono color="rgba(255,255,255,0.3)" size="0.26rem">
+          <Mono color="rgba(255,255,255,0.3)" size="0.65rem">
             PORTFOLIO · SESSION {session?.label ?? "..."}
           </Mono>
         </div>
-        <Mono color="rgba(255,255,255,0.15)" size="0.26rem">
+        <Mono color="rgba(255,255,255,0.15)" size="0.65rem">
           {assets.length} ASSET{assets.length !== 1 ? "S" : ""} · ABRAXAS OS BUILD 2025.1
         </Mono>
       </div>
@@ -125,12 +125,12 @@ export default function DashboardPage() {
                      borderBottom: `1px solid ${BDR}`,
                      display: "flex", alignItems: "center",
                      padding: "0 clamp(0.75rem,2.5vw,1.5rem)",
-                     height: 52, gap: "0.5rem" }}>
+                     height: 52, gap: "1rem" }}>
         <Link href="/terminal" style={{ display: "flex", alignItems: "center",
                        gap: "0.375rem", textDecoration: "none", marginRight: "0.75rem" }}>
           <Image src="/icon-48.png" alt="" width={22} height={22}/>
-          <Mono size="0.6rem" color={W}>ABRAXAS</Mono>
-          <Mono size="0.24rem" color="rgba(255,255,255,0.2)">PROTOCOL OS</Mono>
+          <Mono size="1.1rem" color={W}>ABRAXAS</Mono>
+          <Mono size="1.1rem" color="rgba(255,255,255,0.2)">PROTOCOL OS</Mono>
         </Link>
         {["TERMINAL","LENDING","DASHBOARD"].map(t => (
           <Link key={t} href={t === "TERMINAL" ? "/terminal" : t === "LENDING" ? "/lending" : "/dashboard"}
@@ -139,7 +139,7 @@ export default function DashboardPage() {
               border: `1px solid ${t === "DASHBOARD" ? `${G}50` : BDR}`,
               background: t === "DASHBOARD" ? `${G}10` : "transparent",
               color: t === "DASHBOARD" ? G : "rgba(255,255,255,0.3)",
-              fontFamily: M, fontSize: "0.32rem", fontWeight: 700,
+              fontFamily: M, fontSize: "0.78rem", fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "0.08em",
               whiteSpace: "nowrap",
             }}>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
             { label: "Portfolio Value", val: "$" + (assets.reduce((s,a) => s + (parseFloat(a.estimatedValue?.replace(/[^0-9.]/g,"")) || 0), 0) / 1e6).toFixed(2) + "M", color: G },
           ].map(s => (
             <div key={s.label} style={{ background: CARD, padding: "1rem" }}>
-              <Mono size="0.28rem" color="rgba(255,255,255,0.25)">{s.label.toUpperCase()}</Mono>
+              <Mono size="0.7rem" color="rgba(255,255,255,0.25)">{s.label.toUpperCase()}</Mono>
               <div style={{ fontFamily: M, fontSize: "1.2rem", fontWeight: 900,
                              color: s.color, marginTop: 4 }}>
                 {s.val}
@@ -178,7 +178,7 @@ export default function DashboardPage() {
         {assets.length === 0 && (
           <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 8,
                          padding: "3rem", textAlign: "center" }}>
-            <div style={{ fontFamily: M, fontSize: "0.32rem", color: "rgba(255,255,255,0.25)",
+            <div style={{ fontFamily: M, fontSize: "0.78rem", color: "rgba(255,255,255,0.25)",
                            textTransform: "uppercase", letterSpacing: "0.2em",
                            marginBottom: "1rem" }}>
               EMPTY REGISTRY
@@ -193,7 +193,7 @@ export default function DashboardPage() {
             </p>
             <Link href="/terminal" style={{
               padding: "0.75rem 1.5rem", borderRadius: 5, background: G, color: "#000",
-              fontFamily: M, fontSize: "0.5rem", fontWeight: 900,
+              fontFamily: M, fontSize: "1rem", fontWeight: 900,
               textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.04em",
             }}>
               OPEN TERMINAL →
@@ -208,7 +208,7 @@ export default function DashboardPage() {
 
             {/* ── Asset list ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-              <Mono size="0.3rem" color="rgba(255,255,255,0.25)">
+              <Mono size="0.75rem" color="rgba(255,255,255,0.25)">
                 ASSET REGISTRY ({assets.length})
               </Mono>
               {assets.map(a => {
@@ -226,8 +226,8 @@ export default function DashboardPage() {
                     }}>
                     <div style={{ display: "flex", justifyContent: "space-between",
                                    alignItems: "baseline", marginBottom: 3 }}>
-                      <Mono size="0.38rem" color={W}>{a.id}</Mono>
-                      <span style={{ fontFamily: M, fontSize: "0.24rem", fontWeight: 700,
+                      <Mono size="0.85rem" color={W}>{a.id}</Mono>
+                      <span style={{ fontFamily: M, fontSize: "1.1rem", fontWeight: 700,
                                       color, background: `${color}20`, borderRadius: 3,
                                       padding: "1px 5px", letterSpacing: "0.06em" }}>
                         {STAGE_META[a.state]?.shortLabel ?? a.state}
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                                        background: color, borderRadius: 2,
                                        transition: "width 0.3s" }}/>
                       </div>
-                      <Mono size="0.26rem" color={color}>{a.progressPct}%</Mono>
+                      <Mono size="0.65rem" color={color}>{a.progressPct}%</Mono>
                     </div>
                   </button>
                 );
@@ -251,8 +251,8 @@ export default function DashboardPage() {
 
               {/* Registry stats */}
               <div style={{ background: CARD, border: `1px solid ${BDR}`,
-                             borderRadius: 6, padding: "0.75rem", marginTop: "0.5rem" }}>
-                <Mono size="0.28rem" color="rgba(255,255,255,0.25)">REGISTRY OVERVIEW</Mono>
+                             borderRadius: 6, padding: "0.75rem", marginTop: "1rem" }}>
+                <Mono size="0.7rem" color="rgba(255,255,255,0.25)">REGISTRY OVERVIEW</Mono>
                 {[
                   { label: "Verified Properties",   val: 1, color: G },
                   { label: "Pending Verification",   val: assets.filter(a => !["MINTED","MARKETPLACE_LIVE","REJECTED"].includes(a.state)).length, color: A },
@@ -261,16 +261,16 @@ export default function DashboardPage() {
                   <div key={r.label} style={{ display: "flex", justifyContent: "space-between",
                                                padding: "0.35rem 0",
                                                borderBottom: `1px solid ${BDR}40` }}>
-                    <Mono size="0.3rem" color="rgba(255,255,255,0.4)">{r.label}</Mono>
-                    <Mono size="0.3rem" color={r.color}>{r.val}</Mono>
+                    <Mono size="0.75rem" color="rgba(255,255,255,0.4)">{r.label}</Mono>
+                    <Mono size="0.75rem" color={r.color}>{r.val}</Mono>
                   </div>
                 ))}
               </div>
 
               <button onClick={reset} style={{
-                marginTop: "0.5rem", padding: "0.4rem 0.75rem", borderRadius: 4,
+                marginTop: "1rem", padding: "0.4rem 0.75rem", borderRadius: 4,
                 border: `1px solid ${R}30`, background: "transparent",
-                color: `${R}60`, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                color: `${R}60`, fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                 cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
               }}>
                 RESET SESSION
@@ -285,12 +285,12 @@ export default function DashboardPage() {
                 <div style={{ padding: "1.25rem 1.5rem",
                                borderBottom: `1px solid ${BDR}`,
                                display: "flex", justifyContent: "space-between",
-                               alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
+                               alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
                   <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem",
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem",
                                    marginBottom: 4 }}>
-                      <Mono size="0.3rem" color="rgba(255,255,255,0.3)">ASSET RECORD</Mono>
-                      <Mono size="0.42rem" color={STATE_COLORS[sel.state]}>●</Mono>
+                      <Mono size="0.75rem" color="rgba(255,255,255,0.3)">ASSET RECORD</Mono>
+                      <Mono size="0.9rem" color={STATE_COLORS[sel.state]}>●</Mono>
                     </div>
                     <Mono size="0.9rem" color={W}>{sel.id}</Mono>
                     <div style={{ fontFamily: S, fontSize: "0.8rem",
@@ -301,7 +301,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+                    <span style={{ fontFamily: M, fontSize: "0.8rem", fontWeight: 700,
                                     color: STATE_COLORS[sel.state],
                                     background: `${STATE_COLORS[sel.state]}20`,
                                     border: `1px solid ${STATE_COLORS[sel.state]}40`,
@@ -311,7 +311,7 @@ export default function DashboardPage() {
                       {STAGE_META[sel.state]?.label ?? sel.state}
                     </span>
                     {sel.assignedVerifier && (
-                      <Mono size="0.28rem" color="rgba(255,255,255,0.3)">
+                      <Mono size="0.7rem" color="rgba(255,255,255,0.3)">
                         Verifier: {sel.assignedVerifier}
                       </Mono>
                     )}
@@ -326,7 +326,7 @@ export default function DashboardPage() {
                       padding: "0.625rem 0.875rem", background: "transparent", border: "none",
                       borderBottom: `2px solid ${tab === t ? G : "transparent"}`,
                       color: tab === t ? G : "rgba(255,255,255,0.3)",
-                      fontFamily: M, fontSize: "0.32rem", fontWeight: 700,
+                      fontFamily: M, fontSize: "0.78rem", fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "0.08em",
                       cursor: "pointer", marginBottom: -1,
                     }}>
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                       {/* 4-score grid */}
                       <div style={{ display: "grid",
                                      gridTemplateColumns: "repeat(auto-fill,minmax(120px,1fr))",
-                                     gap: "0.5rem", marginBottom: "1.25rem" }}>
+                                     gap: "1rem", marginBottom: "1.25rem" }}>
                         <ScoreCard label="Verification" value={sel.scores.verification}
                                    color={sel.scores.verification >= 75 ? G : A}
                                    sub={scoreLabel(sel.scores.verification)}/>
@@ -376,8 +376,8 @@ export default function DashboardPage() {
                           <div key={k} style={{ display: "flex", justifyContent: "space-between",
                                                  padding: "0.5rem 0.875rem",
                                                  borderBottom: `1px solid ${BDR}30` }}>
-                            <Mono size="0.32rem" color="rgba(255,255,255,0.35)">{k}</Mono>
-                            <Mono size="0.36rem" color={
+                            <Mono size="0.78rem" color="rgba(255,255,255,0.35)">{k}</Mono>
+                            <Mono size="0.82rem" color={
                               v === "ELIGIBLE" || v === "AVAILABLE" || v === "Authorized" ? G :
                               v === "Pending Approval" || v === "Pending Verification" ? A : W
                             }>{v}</Mono>
@@ -390,7 +390,7 @@ export default function DashboardPage() {
                         <div style={{ padding: "0.875rem 1rem", background: `${B}08`,
                                        border: `1px solid ${B}30`, borderRadius: 6,
                                        marginBottom: "1rem" }}>
-                          <Mono size="0.28rem" color={B}>AI ENGINE · CURRENT ASSESSMENT</Mono>
+                          <Mono size="0.7rem" color={B}>AI ENGINE · CURRENT ASSESSMENT</Mono>
                           <div style={{ fontFamily: S, fontSize: "0.76rem",
                                          color: "rgba(255,255,255,0.65)", lineHeight: 1.7,
                                          marginTop: 6 }}>
@@ -401,11 +401,11 @@ export default function DashboardPage() {
 
                       {/* Sim control */}
                       {sel.state !== "MARKETPLACE_LIVE" && sel.state !== "REJECTED" && (
-                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <div style={{ display: "flex", gap: "1rem" }}>
                           <button onClick={() => advance(sel.id)} style={{
                             flex: 1, padding: "0.75rem", borderRadius: 5,
                             background: `${G}10`, border: `1px solid ${G}40`,
-                            color: G, fontFamily: M, fontSize: "0.38rem", fontWeight: 700,
+                            color: G, fontFamily: M, fontSize: "0.85rem", fontWeight: 700,
                             cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
                           }}>
                             SIMULATE NEXT STAGE →
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                         <div style={{ padding: "0.75rem 1rem", background: `${G}10`,
                                        border: `1px solid ${G}40`, borderRadius: 5,
                                        textAlign: "center" }}>
-                          <Mono size="0.42rem" color={G}>● MARKETPLACE LIVE · LENDING ELIGIBLE</Mono>
+                          <Mono size="0.9rem" color={G}>● MARKETPLACE LIVE · LENDING ELIGIBLE</Mono>
                         </div>
                       )}
                     </div>
@@ -447,7 +447,7 @@ export default function DashboardPage() {
                                   display: "flex", alignItems: "center", justifyContent: "center",
                                   boxShadow: active ? `0 0 8px ${color}80` : "none",
                                 }}>
-                                  <Mono size="0.3rem" color={color}>{i+1}</Mono>
+                                  <Mono size="0.75rem" color={color}>{i+1}</Mono>
                                 </div>
                                 {i < PIPELINE_STAGES.length - 1 && (
                                   <div style={{ width: 2, flex: 1, minHeight: 12,
@@ -458,11 +458,11 @@ export default function DashboardPage() {
                                 <div style={{ display: "flex", justifyContent: "space-between",
                                                alignItems: "baseline", flexWrap: "wrap", gap: 4,
                                                marginBottom: 2 }}>
-                                  <Mono size="0.38rem" color={done ? W : "rgba(255,255,255,0.3)"}>
+                                  <Mono size="0.85rem" color={done ? W : "rgba(255,255,255,0.3)"}>
                                     {meta.label}
                                   </Mono>
                                   {timelineEv && (
-                                    <Mono size="0.26rem" color="rgba(255,255,255,0.25)">
+                                    <Mono size="0.65rem" color="rgba(255,255,255,0.25)">
                                       {new Date(timelineEv.at).toLocaleString()}
                                     </Mono>
                                   )}
@@ -477,7 +477,7 @@ export default function DashboardPage() {
                                     {meta.aiNote}
                                   </div>
                                 )}
-                                <Mono size="0.26rem" color="rgba(255,255,255,0.2)">
+                                <Mono size="0.65rem" color="rgba(255,255,255,0.2)">
                                   Verifier: {meta.verifier}
                                 </Mono>
                               </div>
@@ -491,7 +491,7 @@ export default function DashboardPage() {
                   {/* DOCUMENTS TAB */}
                   {tab === "documents" && (
                     <div>
-                      <Mono size="0.3rem" color="rgba(255,255,255,0.3)">
+                      <Mono size="0.75rem" color="rgba(255,255,255,0.3)">
                         VERIFICATION PACKAGE — REQUIRED DOCUMENTS
                       </Mono>
                       <div style={{ marginTop: "1rem" }}>
@@ -501,15 +501,15 @@ export default function DashboardPage() {
                           const done = PIPELINE_STAGES.indexOf(stage) <= pipelineIndex;
                           return (
                             <div key={stage} style={{ marginBottom: "1rem" }}>
-                              <Mono size="0.3rem" color={done ? G : A}>
+                              <Mono size="0.75rem" color={done ? G : A}>
                                 {done ? "✓ " : "● "}{meta.label.toUpperCase()}
                               </Mono>
                               {meta.requiredDocs.map(d => (
-                                <div key={d} style={{ display: "flex", gap: "0.5rem",
+                                <div key={d} style={{ display: "flex", gap: "1rem",
                                                        alignItems: "center",
                                                        padding: "0.35rem 0",
                                                        borderBottom: `1px solid ${BDR}40` }}>
-                                  <Mono size="0.3rem" color={done ? G : "rgba(255,255,255,0.2)"}>
+                                  <Mono size="0.75rem" color={done ? G : "rgba(255,255,255,0.2)"}>
                                     {done ? "✓" : "○"}
                                   </Mono>
                                   <span style={{ fontFamily: S, fontSize: "0.76rem",
@@ -528,7 +528,7 @@ export default function DashboardPage() {
                   {/* ACTIVITY TAB */}
                   {tab === "activity" && (
                     <div>
-                      <Mono size="0.3rem" color="rgba(255,255,255,0.3)">
+                      <Mono size="0.75rem" color="rgba(255,255,255,0.3)">
                         AUDIT LOG — APPEND-ONLY · {sel.timeline.length} EVENTS
                       </Mono>
                       <div style={{ marginTop: "1rem", position: "relative",
@@ -545,10 +545,10 @@ export default function DashboardPage() {
                                              boxShadow: `0 0 4px ${color}60` }}/>
                               <div style={{ display: "flex", justifyContent: "space-between",
                                              flexWrap: "wrap", gap: 4, marginBottom: 2 }}>
-                                <Mono size="0.36rem" color={color}>
+                                <Mono size="0.82rem" color={color}>
                                   {STAGE_META[ev.state]?.label ?? ev.state}
                                 </Mono>
-                                <Mono size="0.28rem" color="rgba(255,255,255,0.25)">
+                                <Mono size="0.7rem" color="rgba(255,255,255,0.25)">
                                   {new Date(ev.at).toLocaleString()}
                                 </Mono>
                               </div>
@@ -558,7 +558,7 @@ export default function DashboardPage() {
                                   {ev.note}
                                 </div>
                               )}
-                              <Mono size="0.26rem" color="rgba(255,255,255,0.2)">
+                              <Mono size="0.65rem" color="rgba(255,255,255,0.2)">
                                 actor: {ev.actor} · progress: {ev.progress ?? 0}%
                               </Mono>
                             </div>

@@ -38,7 +38,7 @@ export default function AboutPage() {
           <div style={{ width: 5, height: 5, borderRadius: "50%",
                          background: "#10B981",
                          boxShadow: "0 0 5px rgba(16,185,129,0.8)" }}/>
-          <span style={{ fontFamily: M, fontSize: "0.26rem", fontWeight: 700,
+          <span style={{ fontFamily: M, fontSize: "0.65rem", fontWeight: 700,
                           color: "rgba(255,255,255,0.3)",
                           letterSpacing: "0.12em",
                           textTransform: "uppercase" }}>
@@ -46,7 +46,7 @@ export default function AboutPage() {
           </span>
         </div>
         <div style={{ flex: 1 }}/>
-        <Link href="/terminal" style={{ fontFamily: M, fontSize: "0.28rem",
+        <Link href="/terminal" style={{ fontFamily: M, fontSize: "0.7rem",
                                           color: "#10B981", textDecoration: "none",
                                           letterSpacing: "0.1em",
                                           textTransform: "uppercase" }}>
@@ -57,7 +57,7 @@ export default function AboutPage() {
       {/* Header */}
       <div style={{ padding: "3rem clamp(1rem,3vw,2rem) 1rem",
                      textAlign: "center", maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+        <div style={{ fontFamily: M, fontSize: "0.8rem", fontWeight: 700,
                        color: "rgba(16,185,129,0.7)",
                        textTransform: "uppercase", letterSpacing: "0.25em",
                        marginBottom: "1rem" }}>
@@ -115,7 +115,7 @@ export default function AboutPage() {
           <Link href="/terminal" style={{
             padding: "0.75rem 1.5rem", borderRadius: 5,
             background: "#10B981", color: "#000",
-            fontFamily: M, fontSize: "0.5rem", fontWeight: 900,
+            fontFamily: M, fontSize: "1rem", fontWeight: 900,
             textDecoration: "none", letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}>
@@ -125,14 +125,14 @@ export default function AboutPage() {
             padding: "0.75rem 1.5rem", borderRadius: 5,
             border: "1px solid rgba(59,130,246,0.4)",
             background: "rgba(59,130,246,0.08)",
-            color: "#3B82F6", fontFamily: M, fontSize: "0.5rem", fontWeight: 700,
+            color: "#3B82F6", fontFamily: M, fontSize: "1rem", fontWeight: 700,
             textDecoration: "none", letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}>
             VIEW DASHBOARD
           </Link>
         </div>
-        <div style={{ fontFamily: M, fontSize: "0.3rem",
+        <div style={{ fontFamily: M, fontSize: "0.75rem",
                        color: "rgba(255,255,255,0.3)",
                        letterSpacing: "0.15em",
                        textTransform: "uppercase" }}>

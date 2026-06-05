@@ -60,23 +60,23 @@ export function ExplainerCarousel() {
       {/* Header bar */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem",
+        marginBottom: "0.75rem", flexWrap: "wrap", gap: "1rem",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <div style={{
             width: 6, height: 6, borderRadius: "50%",
             background: G, boxShadow: `0 0 6px ${G}90`,
             animation: paused ? "none" : "abrx-pulse 2s ease-in-out infinite",
           }} />
           <span style={{
-            fontFamily: M, fontSize: "0.34rem", fontWeight: 700, color: W,
+            fontFamily: M, fontSize: "0.8rem", fontWeight: 700, color: W,
             letterSpacing: "0.12em", textTransform: "uppercase",
           }}>
             EXPLAINER · {current.label} · {String(idx + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}
           </span>
           {paused && (
             <span style={{
-              fontFamily: M, fontSize: "0.28rem", color: "rgba(255,255,255,0.3)",
+              fontFamily: M, fontSize: "0.7rem", color: "rgba(255,255,255,0.3)",
               letterSpacing: "0.1em",
             }}>
               · PAUSED
@@ -86,7 +86,7 @@ export function ExplainerCarousel() {
         <a href="/about" style={{
           padding: "0.25rem 0.625rem", borderRadius: 3,
           border: `1px solid ${G}40`, background: `${G}10`,
-          color: G, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+          color: G, fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
           textDecoration: "none", textTransform: "uppercase",
           letterSpacing: "0.08em", whiteSpace: "nowrap",
         }}>
@@ -170,15 +170,15 @@ export function ExplainerCarousel() {
         display: "flex", alignItems: "center", gap: "0.625rem",
       }}>
         {/* Dots */}
-        <div style={{ display: "flex", gap: "0.4rem", flex: 1, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: "0.875rem", flex: 1, justifyContent: "center" }}>
           {SLIDES.map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
               aria-label={`Go to slide ${i + 1}`}
               style={{
-                width: i === idx ? 24 : 8,
-                height: 8, borderRadius: 4, border: "none",
+                width: i === idx ? 32 : 10,
+                height: 10, borderRadius: 5, border: "none",
                 background: i === idx ? G : "rgba(255,255,255,0.2)",
                 cursor: "pointer",
                 transition: "all 0.3s",

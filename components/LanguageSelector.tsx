@@ -1,183 +1,190 @@
-"use client";
 // FILE: components/LanguageSelector.tsx
-// Google Translate — zero signup, zero API key, zero visible Google UI.
-// Translation runs silently. No banner. No toolbar. No layout shift.
-// Script loaded at app level in layout.tsx.
-import { useState, useRef, useEffect } from "react";
+// Custom language dropdown — no Google Translate banner, proper z-index,
+// readable sizing. Uses Google Translate API silently for actual translation.
+
+"use client";
+
+import { useState, useEffect, useRef } from "react";
 
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const G = "#10B981";
+const BDR = "#1C2333";
+const CARD = "#0D1117";
+const W = "#F8FAFC";
 
-const LANGS = [
-  { code:"en",    label:"English",   flag:"🇺🇸" },
-  { code:"es",    label:"Español",   flag:"🇪🇸" },
-  { code:"pt",    label:"Português", flag:"🇧🇷" },
-  { code:"fr",    label:"Français",  flag:"🇫🇷" },
-  { code:"de",    label:"Deutsch",   flag:"🇩🇪" },
-  { code:"zh-CN", label:"中文",       flag:"🇨🇳" },
-  { code:"ja",    label:"日本語",     flag:"🇯🇵" },
-  { code:"ko",    label:"한국어",     flag:"🇰🇷" },
-  { code:"ar",    label:"العربية",   flag:"🇸🇦" },
-  { code:"ru",    label:"Русский",   flag:"🇷🇺" },
-] as const;
+interface Lang { code: string; name: string; flag: string; }
 
-type LangCode = typeof LANGS[number]["code"];
-const STORAGE_KEY = "abraxas_lang";
+const LANGUAGES: Lang[] = [
+  { code: "en", name: "English",   flag: "🇺🇸" },
+  { code: "es", name: "Español",   flag: "🇪🇸" },
+  { code: "pt", name: "Português", flag: "🇧🇷" },
+  { code: "fr", name: "Français",  flag: "🇫🇷" },
+  { code: "de", name: "Deutsch",   flag: "🇩🇪" },
+  { code: "zh", name: "中文",       flag: "🇨🇳" },
+];
 
-// Suppress every Google Translate UI element after it injects
-function suppressGoogleUI() {
-  const selectors = [
-    ".goog-te-banner-frame",
-    ".goog-te-ftab-float",
-    "#goog-gt-tt",
-    ".goog-tooltip",
-    ".VIpgJd-ZVi9od-aZ2wEe",
-    ".VIpgJd-yAWNEb-L7lbkb",
-  ];
-  selectors.forEach(sel => {
-    document.querySelectorAll<HTMLElement>(sel).forEach(el => {
-      el.style.cssText = "display:none!important;height:0!important;";
-    });
-  });
-  // Reset body position GT pushes down
-  if (document.body.style.top && document.body.style.top !== "0px") {
-    document.body.style.top = "0";
+declare global {
+  interface Window {
+    google?: { translate: { TranslateElement: new (cfg: object, id: string) => unknown } };
+    googleTranslateElementInit?: () => void;
   }
-}
-
-function applyLanguage(code: LangCode) {
-  const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-  if (!select) return false;
-
-  if (code === "en") {
-    // Restore original language
-    select.value = "";
-    select.dispatchEvent(new Event("change"));
-  } else {
-    select.value = code;
-    select.dispatchEvent(new Event("change"));
-  }
-
-  // Suppress any GT UI that appeared after the change
-  setTimeout(suppressGoogleUI, 100);
-  setTimeout(suppressGoogleUI, 500);
-  return true;
 }
 
 export function LanguageSelector() {
-  const [current, setCurrent]   = useState<LangCode>("en");
-  const [open,    setOpen]      = useState(false);
-  const [ready,   setReady]     = useState(false);
+  const [open, setOpen]       = useState(false);
+  const [current, setCurrent] = useState<Lang>(LANGUAGES[0]);
+  const [ready,   setReady]   = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Initialize Google Translate (hidden)
   useEffect(() => {
-    // Watch for GT to inject its select element
-    const poll = setInterval(() => {
-      if (document.querySelector(".goog-te-combo")) {
-        setReady(true);
-        clearInterval(poll);
-
-        // Set up MutationObserver to catch any GT UI injection
-        const obs = new MutationObserver(() => suppressGoogleUI());
-        obs.observe(document.body, { childList: true, subtree: true });
-
-        // Restore saved language
-        const saved = localStorage.getItem(STORAGE_KEY) as LangCode | null;
-        if (saved && saved !== "en") {
-          setCurrent(saved);
-          applyLanguage(saved);
-        }
+    if (typeof window === "undefined") return;
+    if (document.getElementById("gt-script")) {
+      setReady(true);
+      return;
+    }
+    window.googleTranslateElementInit = () => {
+      if (window.google?.translate) {
+        new window.google.translate.TranslateElement({
+          pageLanguage: "en",
+          includedLanguages: LANGUAGES.map(l => l.code).join(","),
+          autoDisplay: false,
+          layout: 0,
+        }, "google_translate_element");
+        setTimeout(() => setReady(true), 500);
       }
-    }, 200);
-
-    // Close dropdown on outside click
-    const outside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", outside);
+    const s = document.createElement("script");
+    s.id = "gt-script";
+    s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+    s.async = true;
+    document.body.appendChild(s);
 
-    return () => {
-      clearInterval(poll);
-      document.removeEventListener("mousedown", outside);
-    };
+    // Restore saved language
+    const saved = localStorage.getItem("abraxas_lang");
+    if (saved) {
+      const lang = LANGUAGES.find(l => l.code === saved);
+      if (lang) setCurrent(lang);
+    }
   }, []);
 
-  function select(lang: typeof LANGS[number]) {
+  // Apply saved language once Google is ready
+  useEffect(() => {
     if (!ready) return;
-    const applied = applyLanguage(lang.code);
-    if (applied || lang.code === "en") {
-      setCurrent(lang.code);
-      localStorage.setItem(STORAGE_KEY, lang.code);
+    if (current.code === "en") return;
+    setTimeout(() => applyTranslate(current.code), 300);
+  }, [ready, current.code]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  function applyTranslate(code: string) {
+    const sel = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
+    if (sel) {
+      sel.value = code;
+      sel.dispatchEvent(new Event("change"));
     }
-    setOpen(false);
   }
 
-  const active = LANGS.find(l => l.code === current) ?? LANGS[0];
-  const displayCode = active.code === "en" ? "EN"
-    : active.code === "zh-CN" ? "ZH"
-    : active.code.split("-")[0].toUpperCase();
+  function pick(lang: Lang) {
+    setCurrent(lang);
+    setOpen(false);
+    localStorage.setItem("abraxas_lang", lang.code);
+    if (lang.code === "en") {
+      // Reset by removing the googtrans cookie
+      document.cookie = "googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "googtrans=;path=/;domain=." + window.location.hostname + ";expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      window.location.reload();
+      return;
+    }
+    applyTranslate(lang.code);
+  }
 
   return (
-    <div ref={ref} style={{ position:"relative", flexShrink:0 }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display:"flex", alignItems:"center",
-          gap:"0.3rem", padding:"0.25rem 0.5rem",
-          borderRadius:"4px",
-          border:`1px solid ${open ? "#1C2333" : "rgba(28,35,51,0.7)"}`,
-          background: open ? "rgba(255,255,255,0.04)" : "transparent",
-          cursor: ready ? "pointer" : "default",
-          opacity: ready ? 1 : 0.4,
-          transition:"all 0.15s",
-        }}
-      >
-        <span style={{ fontSize:"0.75rem", lineHeight:1 }}>{active.flag}</span>
-        <span style={{ fontFamily:M, fontSize:"0.34rem", fontWeight:700,
-                        color:"rgba(255,255,255,0.4)", letterSpacing:"0.08em" }}>
-          {displayCode}
-        </span>
-        <span style={{
-          fontSize:"0.28rem", color:"rgba(255,255,255,0.2)",
-          transform: open ? "rotate(180deg)" : "none",
-          transition:"transform 0.2s", display:"inline-block",
-        }}>▾</span>
-      </button>
+    <>
+      {/* Hidden Google Translate root */}
+      <div id="google_translate_element" style={{
+        position: "absolute", width: 0, height: 0, overflow: "hidden",
+        opacity: 0, pointerEvents: "none",
+      }}/>
 
-      {open && ready && (
-        <div style={{
-          position:"absolute", top:"calc(100% + 4px)", right:0, zIndex:600,
-          background:"#0D1117", border:"1px solid #1C2333",
-          borderRadius:"6px", minWidth:148, overflow:"hidden",
-          boxShadow:"0 8px 32px rgba(0,0,0,0.7)",
+      {/* Aggressive CSS to hide all Google Translate UI */}
+      <style jsx global>{`
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0 !important; position: static !important; }
+        .goog-te-gadget { font-size: 0 !important; }
+        .goog-te-gadget > span > a { display: none !important; }
+        .goog-te-gadget .goog-te-combo { display: none !important; }
+        .goog-tooltip,
+        .goog-tooltip:hover,
+        .goog-text-highlight {
+          background-color: transparent !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        .skiptranslate iframe { display: none !important; visibility: hidden !important; }
+        #goog-gt-tt { display: none !important; }
+      `}</style>
+
+      <div ref={ref} className="notranslate" style={{ position: "relative", zIndex: 500 }}>
+        <button onClick={() => setOpen(o => !o)} style={{
+          padding: "0.5rem 0.875rem", borderRadius: 5,
+          border: `1px solid ${BDR}`, background: "rgba(13,17,23,0.7)",
+          backdropFilter: "blur(4px)",
+          color: W, fontFamily: M, fontSize: "0.875rem", fontWeight: 700,
+          cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
+          whiteSpace: "nowrap", lineHeight: 1,
         }}>
-          {LANGS.map((lang, i) => {
-            const isActive = lang.code === current;
-            return (
-              <button key={lang.code} onClick={() => select(lang)} style={{
-                width:"100%", padding:"0.5rem 0.75rem",
-                background: isActive ? "rgba(16,185,129,0.08)" : "transparent",
-                border:"none",
-                borderBottom: i < LANGS.length-1 ? "1px solid rgba(28,35,51,0.6)" : "none",
-                cursor:"pointer", textAlign:"left",
-                display:"flex", alignItems:"center", gap:"0.5rem",
-                transition:"background 0.1s",
-              }}>
-                <span style={{ fontSize:"0.7rem" }}>{lang.flag}</span>
-                <span style={{
-                  fontFamily:M, fontSize:"0.42rem",
-                  color: isActive ? "#10B981" : "rgba(255,255,255,0.5)",
-                  fontWeight: isActive ? 800 : 400,
-                }}>
-                  {lang.label}
-                </span>
-                {isActive && (
-                  <span style={{ marginLeft:"auto", fontSize:"0.36rem", color:"#10B981" }}>✓</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+          <span style={{ fontSize: "1rem" }}>{current.flag}</span>
+          <span style={{ letterSpacing: "0.05em" }}>{current.code.toUpperCase()}</span>
+          <span style={{ fontSize: "0.7rem", color: `${G}`, marginLeft: 2 }}>▾</span>
+        </button>
+
+        {open && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 6px)", right: 0,
+            minWidth: 200, background: CARD,
+            border: `1px solid ${G}40`, borderRadius: 6,
+            boxShadow: `0 12px 32px rgba(0,0,0,0.7), 0 0 0 1px ${G}10`,
+            padding: "0.375rem",
+            zIndex: 9999,
+          }}>
+            {LANGUAGES.map(lang => {
+              const active = lang.code === current.code;
+              return (
+                <button key={lang.code} onClick={() => pick(lang)} style={{
+                  width: "100%", padding: "0.625rem 0.75rem", borderRadius: 4,
+                  border: "none", background: active ? `${G}15` : "transparent",
+                  color: active ? G : W,
+                  fontFamily: M, fontSize: "0.875rem", fontWeight: active ? 700 : 500,
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: "0.625rem",
+                  textAlign: "left",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={e => { if (!active) (e.target as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={e => { if (!active) (e.target as HTMLElement).style.background = "transparent"; }}>
+                  <span style={{ fontSize: "1.125rem" }}>{lang.flag}</span>
+                  <span style={{ flex: 1 }}>{lang.name}</span>
+                  {active && <span style={{ color: G, fontWeight: 900 }}>✓</span>}
+                </button>
+              );
+            })}
+            <div style={{ height: 1, background: BDR, margin: "0.375rem 0" }}/>
+            <div style={{ padding: "0.5rem 0.75rem", fontFamily: M,
+                           fontSize: "0.7rem", color: "rgba(255,255,255,0.35)",
+                           letterSpacing: "0.05em" }}>
+              Powered by Google Translate
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

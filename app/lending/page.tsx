@@ -18,7 +18,7 @@ export default function LendingPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#F59E0B",
                          boxShadow: "0 0 5px rgba(245,158,11,0.7)" }}/>
-          <span style={{ fontFamily: M, fontSize: "0.26rem", fontWeight: 700,
+          <span style={{ fontFamily: M, fontSize: "0.65rem", fontWeight: 700,
                           color: "rgba(255,255,255,0.3)", letterSpacing: "0.12em",
                           textTransform: "uppercase" }}>
             LENDING ENGINE · COMING ONLINE
@@ -29,11 +29,11 @@ export default function LendingPage() {
       {/* Nav */}
       <nav style={{ background: "rgba(4,6,8,0.97)", borderBottom: "1px solid #1C2333",
                      display: "flex", alignItems: "center", padding: "0 1.5rem",
-                     height: 52, gap: "0.5rem" }}>
+                     height: 52, gap: "1rem" }}>
         <Link href="/terminal" style={{ display:"flex", alignItems:"center",
                        gap:"0.375rem", textDecoration:"none", marginRight:"0.75rem" }}>
           <Image src="/icon-48.png" alt="" width={22} height={22}/>
-          <span style={{ fontFamily: M, fontSize: "0.6rem", fontWeight: 900,
+          <span style={{ fontFamily: M, fontSize: "1.1rem", fontWeight: 900,
                           color: "#F8FAFC" }}>ABRAXAS</span>
         </Link>
         {["TERMINAL","LENDING","DASHBOARD"].map(t => (
@@ -43,7 +43,7 @@ export default function LendingPage() {
               border: t==="LENDING" ? "1px solid rgba(245,158,11,0.5)" : "1px solid #1C2333",
               background: t==="LENDING" ? "rgba(245,158,11,0.08)" : "transparent",
               color: t==="LENDING" ? "#F59E0B" : "rgba(255,255,255,0.3)",
-              fontFamily: M, fontSize: "0.32rem", fontWeight: 700,
+              fontFamily: M, fontSize: "0.78rem", fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "0.08em",
               whiteSpace: "nowrap",
             }}>
@@ -57,7 +57,7 @@ export default function LendingPage() {
 
         {/* Header */}
         <div style={{ marginBottom: "3rem" }}>
-          <div style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+          <div style={{ fontFamily: M, fontSize: "0.8rem", fontWeight: 700,
                          color: "rgba(245,158,11,0.8)", textTransform: "uppercase",
                          letterSpacing: "0.25em", marginBottom: "1rem" }}>
             ABRAXAS LENDING ENGINE · STATUS: COMING ONLINE
@@ -81,14 +81,14 @@ export default function LendingPage() {
         {/* Supported asset classes */}
         <div style={{ background: "#0C0F14", border: "1px solid #1C2333",
                        borderRadius: 8, padding: "1.5rem", marginBottom: "1.5rem" }}>
-          <div style={{ fontFamily: M, fontSize: "0.3rem", color: "rgba(255,255,255,0.3)",
+          <div style={{ fontFamily: M, fontSize: "0.75rem", color: "rgba(255,255,255,0.3)",
                          textTransform: "uppercase", letterSpacing: "0.15em",
                          marginBottom: "1rem" }}>
             SUPPORTED COLLATERAL CLASSES
           </div>
           <div style={{ display: "grid",
                          gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
-                         gap: "0.5rem" }}>
+                         gap: "1rem" }}>
             {[
               { label: "Real Estate",       status: "PRIORITY",  color: "#10B981" },
               { label: "Mineral Rights",    status: "PRIORITY",  color: "#10B981" },
@@ -104,7 +104,7 @@ export default function LendingPage() {
                                color: "#F8FAFC", marginBottom: 4 }}>
                   {a.label}
                 </div>
-                <span style={{ fontFamily: M, fontSize: "0.26rem", fontWeight: 700,
+                <span style={{ fontFamily: M, fontSize: "0.65rem", fontWeight: 700,
                                 color: a.color, background: `${a.color}15`,
                                 borderRadius: 3, padding: "1px 6px",
                                 letterSpacing: "0.08em" }}>
@@ -118,7 +118,7 @@ export default function LendingPage() {
         {/* Collateralization framework */}
         <div style={{ background: "#0C0F14", border: "1px solid #1C2333",
                        borderRadius: 8, padding: "1.5rem", marginBottom: "1.5rem" }}>
-          <div style={{ fontFamily: M, fontSize: "0.3rem", color: "rgba(255,255,255,0.3)",
+          <div style={{ fontFamily: M, fontSize: "0.75rem", color: "rgba(255,255,255,0.3)",
                          textTransform: "uppercase", letterSpacing: "0.15em",
                          marginBottom: "1rem" }}>
             COLLATERALIZATION FRAMEWORK
@@ -132,7 +132,7 @@ export default function LendingPage() {
             ].map(r => (
               <div key={r.metric} style={{ background: "#080B10", padding: "1rem",
                                             borderTop: `3px solid ${r.color}` }}>
-                <div style={{ fontFamily: M, fontSize: "0.3rem", color: "rgba(255,255,255,0.3)",
+                <div style={{ fontFamily: M, fontSize: "0.75rem", color: "rgba(255,255,255,0.3)",
                                marginBottom: 4 }}>{r.metric}</div>
                 <div style={{ fontFamily: M, fontSize: "1.2rem", fontWeight: 900,
                                color: r.color }}>{r.value}</div>
@@ -146,13 +146,13 @@ export default function LendingPage() {
                        borderRadius: 8, padding: "1.5rem", marginBottom: "2rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between",
                          alignItems: "baseline", marginBottom: "0.75rem" }}>
-            <div style={{ fontFamily: M, fontSize: "0.3rem", color: "rgba(255,255,255,0.3)",
+            <div style={{ fontFamily: M, fontSize: "0.75rem", color: "rgba(255,255,255,0.3)",
                            textTransform: "uppercase", letterSpacing: "0.15em" }}>
               CURRENT LENDING PARTNERS
             </div>
             <a href="https://app.loopscale.com/vaults" target="_blank"
               rel="noopener noreferrer"
-              style={{ fontFamily: M, fontSize: "0.3rem", color: "#3B82F6",
+              style={{ fontFamily: M, fontSize: "0.75rem", color: "#3B82F6",
                         textDecoration: "none" }}>
               Loopscale ↗
             </a>
@@ -169,7 +169,7 @@ export default function LendingPage() {
           <Link href="/terminal" style={{
             display: "inline-block", padding: "0.875rem 2rem", borderRadius: 5,
             background: "#F59E0B", color: "#000", fontFamily: M,
-            fontSize: "0.5rem", fontWeight: 900, letterSpacing: "0.04em",
+            fontSize: "1rem", fontWeight: 900, letterSpacing: "0.04em",
             textTransform: "uppercase", textDecoration: "none",
           }}>
             SUBMIT AN ASSET TO BEGIN →

@@ -156,7 +156,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
     boxSizing: "border-box",
   };
   const labelStyle: React.CSSProperties = {
-    fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+    fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
     color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
     letterSpacing: "0.12em", marginBottom: "0.375rem", display: "block",
   };
@@ -174,7 +174,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
             <div key={s} style={{ flex: 1 }}>
               <div style={{ height: 2, borderRadius: 1, marginBottom: 4,
                              background: active ? G : done ? `${G}60` : BDR }}/>
-              <div style={{ fontFamily: M, fontSize: "0.26rem", fontWeight: 700,
+              <div style={{ fontFamily: M, fontSize: "0.65rem", fontWeight: 700,
                              color: active ? G : done ? `${G}80` : "rgba(255,255,255,0.2)",
                              textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 {labels[i]}
@@ -205,7 +205,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
           background: CARD_2,
         }}>
           <div>
-            <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+            <div style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                            color: G, letterSpacing: "0.15em",
                            textTransform: "uppercase", marginBottom: 4 }}>
               TOKENIZATION REQUEST
@@ -219,7 +219,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
             padding: "0.4rem 0.75rem", borderRadius: 4,
             border: `1px solid ${BDR}`, background: "transparent",
             color: "rgba(255,255,255,0.4)", fontFamily: M,
-            fontSize: "0.5rem", fontWeight: 700, cursor: "pointer",
+            fontSize: "1rem", fontWeight: 700, cursor: "pointer",
           }}>✕</button>
         </div>
 
@@ -245,7 +245,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between",
                                    alignItems: "baseline", marginBottom: 4 }}>
-                      <span style={{ fontFamily: M, fontSize: "0.4rem", fontWeight: 900,
+                      <span style={{ fontFamily: M, fontSize: "0.875rem", fontWeight: 900,
                                       color: t.color, letterSpacing: "0.12em" }}>
                         {t.name}
                       </span>
@@ -265,7 +265,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                 marginTop: "1.25rem", width: "100%",
                 padding: "0.875rem", borderRadius: 5, border: "none",
                 background: G, color: "#000", fontFamily: M,
-                fontSize: "0.5rem", fontWeight: 900, cursor: "pointer",
+                fontSize: "1rem", fontWeight: 900, cursor: "pointer",
                 letterSpacing: "0.04em", textTransform: "uppercase",
               }}>
                 CONTINUE WITH {selectedTier.name} · ${selectedTier.price.toLocaleString()} →
@@ -283,7 +283,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                   Tell us about your business.
                 </div>
                 <button onClick={() => setStep("tier")} style={{
-                  fontFamily: M, fontSize: "0.32rem", color: `${G}90`,
+                  fontFamily: M, fontSize: "0.78rem", color: `${G}90`,
                   background: "transparent", border: "none", cursor: "pointer",
                   textDecoration: "underline", textUnderlineOffset: 3,
                 }}>
@@ -299,7 +299,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                              display: "flex", justifyContent: "space-between",
                              alignItems: "center" }}>
                 <div>
-                  <span style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 900,
+                  <span style={{ fontFamily: M, fontSize: "0.8rem", fontWeight: 900,
                                   color: selectedTier.color,
                                   letterSpacing: "0.12em" }}>
                     {selectedTier.name}
@@ -345,7 +345,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               {err && (
                 <div style={{ padding: "0.5rem 0.75rem", borderRadius: 4,
                                background: `${R}10`, border: `1px solid ${R}40`,
-                               color: R, fontFamily: M, fontSize: "0.34rem",
+                               color: R, fontFamily: M, fontSize: "0.8rem",
                                marginBottom: "0.875rem" }}>
                   {err}
                 </div>
@@ -357,7 +357,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                   flex: 1, padding: "0.875rem", borderRadius: 5,
                   border: `1px solid ${BDR}`, background: "transparent",
                   color: "rgba(255,255,255,0.5)", fontFamily: M,
-                  fontSize: "0.42rem", fontWeight: 700, cursor: "pointer",
+                  fontSize: "0.9rem", fontWeight: 700, cursor: "pointer",
                   textTransform: "uppercase", letterSpacing: "0.08em",
                 }}>
                   {initialTier ? "Cancel" : "← Back"}
@@ -365,7 +365,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                 <button onClick={submitInfo} disabled={busy || !name.trim()} style={{
                   flex: 2, padding: "0.875rem", borderRadius: 5, border: "none",
                   background: G, color: "#000", fontFamily: M,
-                  fontSize: "0.5rem", fontWeight: 900,
+                  fontSize: "1rem", fontWeight: 900,
                   cursor: busy || !name.trim() ? "not-allowed" : "pointer",
                   opacity: busy || !name.trim() ? 0.5 : 1,
                   letterSpacing: "0.04em", textTransform: "uppercase",
@@ -380,7 +380,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
           {step === "payment" && (
             <div>
               <div style={{ fontFamily: S, fontSize: "1.05rem", fontWeight: 700,
-                             color: W, marginBottom: "0.5rem" }}>
+                             color: W, marginBottom: "1rem" }}>
                 Send USDC payment.
               </div>
               <div style={{ fontFamily: S, fontSize: "0.78rem",
@@ -394,12 +394,12 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               <div style={{ padding: "1.25rem", borderRadius: 7,
                              background: `${G}08`, border: `2px solid ${G}40`,
                              marginBottom: "0.75rem" }}>
-                <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                <div style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                                color: G, letterSpacing: "0.15em",
                                textTransform: "uppercase", marginBottom: 6 }}>
                   AMOUNT DUE
                 </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem",
+                <div style={{ display: "flex", alignItems: "baseline", gap: "1rem",
                                marginBottom: "0.625rem" }}>
                   <span style={{ fontFamily: M, fontSize: "2rem", fontWeight: 900,
                                   color: W }}>
@@ -408,20 +408,20 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                   <span style={{ fontFamily: M, fontSize: "0.85rem", fontWeight: 700,
                                   color: G }}>USDC</span>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
+                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
                                   color: G, background: `${G}15`,
                                   border: `1px solid ${G}30`, borderRadius: 3,
                                   padding: "2px 8px", letterSpacing: "0.08em" }}>
                     NETWORK · SOLANA
                   </span>
-                  <span style={{ fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
+                  <span style={{ fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
                                   color: B, background: `${B}15`,
                                   border: `1px solid ${B}30`, borderRadius: 3,
                                   padding: "2px 8px", letterSpacing: "0.08em" }}>
                     TOKEN · USDC (SPL)
                   </span>
-                  <span style={{ fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
+                  <span style={{ fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
                                   color: P, background: `${P}15`,
                                   border: `1px solid ${P}30`, borderRadius: 3,
                                   padding: "2px 8px", letterSpacing: "0.08em" }}>
@@ -435,14 +435,14 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                              background: CARD_2, border: `1px solid ${BDR}`,
                              borderLeft: `3px solid ${G_BR}`,
                              marginBottom: "1rem" }}>
-                <div style={{ fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
+                <div style={{ fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
                                color: "rgba(255,255,255,0.35)",
                                letterSpacing: "0.15em", textTransform: "uppercase",
                                marginBottom: 6 }}>
                   {TREASURY_LABEL}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.625rem",
-                               marginBottom: "0.5rem" }}>
+                               marginBottom: "1rem" }}>
                   <span style={{ fontFamily: M, fontSize: "1.1rem", fontWeight: 900,
                                   color: G_BR, letterSpacing: "0.02em",
                                   wordBreak: "break-all" }}>
@@ -453,7 +453,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                     border: `1px solid ${copied ? G : BDR}`,
                     background: copied ? `${G}15` : "transparent",
                     color: copied ? G : "rgba(255,255,255,0.6)",
-                    fontFamily: M, fontSize: "0.32rem", fontWeight: 700,
+                    fontFamily: M, fontSize: "0.78rem", fontWeight: 700,
                     cursor: "pointer", textTransform: "uppercase",
                     letterSpacing: "0.08em", whiteSpace: "nowrap",
                   }}>
@@ -472,7 +472,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               <div style={{ padding: "0.875rem 1rem", borderRadius: 6,
                              background: `${A}08`, border: `1px solid ${A}30`,
                              marginBottom: "1rem" }}>
-                <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                <div style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                                color: A, letterSpacing: "0.12em",
                                textTransform: "uppercase", marginBottom: 6 }}>
                   INSTRUCTIONS
@@ -489,7 +489,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
 
               {/* Request ID */}
               {requestId && (
-                <div style={{ fontFamily: M, fontSize: "0.28rem",
+                <div style={{ fontFamily: M, fontSize: "0.7rem",
                                color: "rgba(255,255,255,0.25)",
                                marginBottom: "1rem", letterSpacing: "0.05em",
                                wordBreak: "break-all" }}>
@@ -500,7 +500,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               <button onClick={() => setStep("confirm")} style={{
                 width: "100%", padding: "0.875rem", borderRadius: 5, border: "none",
                 background: G, color: "#000", fontFamily: M,
-                fontSize: "0.5rem", fontWeight: 900, cursor: "pointer",
+                fontSize: "1rem", fontWeight: 900, cursor: "pointer",
                 letterSpacing: "0.04em", textTransform: "uppercase",
               }}>
                 I&apos;VE SENT THE PAYMENT →
@@ -512,7 +512,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
           {step === "confirm" && (
             <div>
               <div style={{ fontFamily: S, fontSize: "1.05rem", fontWeight: 700,
-                             color: W, marginBottom: "0.5rem" }}>
+                             color: W, marginBottom: "1rem" }}>
                 Confirm your payment.
               </div>
               <div style={{ fontFamily: S, fontSize: "0.78rem",
@@ -527,9 +527,9 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                 <label style={labelStyle}>Transaction Signature (optional)</label>
                 <input type="text" value={txSig} onChange={e => setTxSig(e.target.value)}
                   placeholder="Paste Solana tx signature"
-                  style={{...inputStyle, fontFamily: M, fontSize: "0.42rem"}}
+                  style={{...inputStyle, fontFamily: M, fontSize: "0.9rem"}}
                   autoComplete="off"/>
-                <div style={{ fontFamily: M, fontSize: "0.28rem",
+                <div style={{ fontFamily: M, fontSize: "0.7rem",
                                color: "rgba(255,255,255,0.25)", marginTop: 4,
                                letterSpacing: "0.05em" }}>
                   Find this in your wallet&apos;s transaction history. Base58 string, ~88 chars.
@@ -539,7 +539,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               {err && (
                 <div style={{ padding: "0.5rem 0.75rem", borderRadius: 4,
                                background: `${R}10`, border: `1px solid ${R}40`,
-                               color: R, fontFamily: M, fontSize: "0.34rem",
+                               color: R, fontFamily: M, fontSize: "0.8rem",
                                marginBottom: "0.875rem" }}>
                   {err}
                 </div>
@@ -550,7 +550,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                   flex: 1, padding: "0.875rem", borderRadius: 5,
                   border: `1px solid ${BDR}`, background: "transparent",
                   color: "rgba(255,255,255,0.5)", fontFamily: M,
-                  fontSize: "0.42rem", fontWeight: 700, cursor: "pointer",
+                  fontSize: "0.9rem", fontWeight: 700, cursor: "pointer",
                   textTransform: "uppercase", letterSpacing: "0.08em",
                 }}>
                   ← Back
@@ -558,7 +558,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                 <button onClick={confirmPayment} disabled={busy} style={{
                   flex: 2, padding: "0.875rem", borderRadius: 5, border: "none",
                   background: G, color: "#000", fontFamily: M,
-                  fontSize: "0.5rem", fontWeight: 900,
+                  fontSize: "1rem", fontWeight: 900,
                   cursor: busy ? "not-allowed" : "pointer",
                   opacity: busy ? 0.5 : 1,
                   letterSpacing: "0.04em", textTransform: "uppercase",
@@ -575,10 +575,10 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               <div style={{ padding: "1.5rem", borderRadius: 8,
                              background: `${G}10`, border: `2px solid ${G}40`,
                              marginBottom: "1.25rem", textAlign: "center" }}>
-                <div style={{ fontSize: "3rem", color: G, marginBottom: "0.5rem",
+                <div style={{ fontSize: "3rem", color: G, marginBottom: "1rem",
                                fontWeight: 900 }}>✓</div>
                 <div style={{ fontFamily: S, fontSize: "1.25rem", fontWeight: 800,
-                               color: W, marginBottom: "0.5rem" }}>
+                               color: W, marginBottom: "1rem" }}>
                   Payment recorded.
                 </div>
                 <div style={{ fontFamily: S, fontSize: "0.82rem",
@@ -592,7 +592,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               <div style={{ padding: "1rem", background: CARD_2,
                              border: `1px solid ${BDR}`, borderRadius: 6,
                              marginBottom: "1.25rem" }}>
-                <div style={{ fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
+                <div style={{ fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
                                color: "rgba(255,255,255,0.3)",
                                letterSpacing: "0.12em", textTransform: "uppercase",
                                marginBottom: 8 }}>
@@ -609,10 +609,10 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
                   <div key={k} style={{ display: "flex", justifyContent: "space-between",
                                          padding: "0.35rem 0",
                                          borderBottom: `1px solid ${BDR}40`,
-                                         gap: "0.5rem" }}>
-                    <span style={{ fontFamily: M, fontSize: "0.3rem",
+                                         gap: "1rem" }}>
+                    <span style={{ fontFamily: M, fontSize: "0.75rem",
                                     color: "rgba(255,255,255,0.4)" }}>{k}</span>
-                    <span style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+                    <span style={{ fontFamily: M, fontSize: "0.8rem", fontWeight: 700,
                                     color: W, textAlign: "right",
                                     wordBreak: "break-all", maxWidth: "60%" }}>{v}</span>
                   </div>
@@ -623,7 +623,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               <div style={{ padding: "0.875rem 1rem", borderRadius: 6,
                              background: `${B}08`, border: `1px solid ${B}30`,
                              marginBottom: "1.25rem" }}>
-                <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                <div style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
                                color: B, letterSpacing: "0.12em",
                                textTransform: "uppercase", marginBottom: 6 }}>
                   WHAT HAPPENS NEXT
@@ -641,7 +641,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: Props) 
               <button onClick={close} style={{
                 width: "100%", padding: "0.875rem", borderRadius: 5, border: "none",
                 background: G, color: "#000", fontFamily: M,
-                fontSize: "0.5rem", fontWeight: 900, cursor: "pointer",
+                fontSize: "1rem", fontWeight: 900, cursor: "pointer",
                 letterSpacing: "0.04em", textTransform: "uppercase",
               }}>
                 CLOSE

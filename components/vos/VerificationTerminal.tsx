@@ -121,12 +121,12 @@ const InputBar = memo(function InputBar({ onSubmit, busy, history }: InputBarPro
       borderTop: `1px solid ${BDR}`,
       background: "#0A0D13",
       padding: "0.75rem clamp(0.75rem,2.5vw,1.5rem)",
-      display: "flex", alignItems: "center", gap: "0.5rem",
+      display: "flex", alignItems: "center", gap: "1rem",
       flexShrink: 0,
       position: "sticky", bottom: 0, zIndex: 10,
     }}>
       <span style={{
-        color: G, fontWeight: 900, fontSize: "0.55rem",
+        color: G, fontWeight: 900, fontSize: "1.05rem",
         letterSpacing: "0.05em", flexShrink: 0,
       }}>vos&gt;</span>
       <input
@@ -151,9 +151,9 @@ const InputBar = memo(function InputBar({ onSubmit, busy, history }: InputBarPro
         }}
       />
       <button onClick={submit} disabled={busy} style={{
-        padding: "0.35rem 0.8rem", borderRadius: 4,
-        border: `1px solid ${G}50`, background: `${G}15`,
-        color: G, fontFamily: M, fontSize: "0.5rem", fontWeight: 900,
+        padding: "0.625rem 1.125rem", borderRadius: 5,
+        border: `1px solid ${G}`, background: `${G}25`,
+        color: G, fontFamily: M, fontSize: "1rem", fontWeight: 900,
         cursor: busy ? "wait" : "pointer", textTransform: "uppercase",
         letterSpacing: "0.08em", flexShrink: 0,
         opacity: busy ? 0.4 : 1,
@@ -211,7 +211,7 @@ export function VerificationTerminal() {
         background: "#040608", borderBottom: `1px solid ${BDR}`,
         padding: "0.5rem clamp(0.75rem,2.5vw,1.5rem)",
         display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap",
-        fontSize: "0.36rem", color: DIM, flexShrink: 0,
+        fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", flexShrink: 0,
       }}>
         <span style={{ color: G, fontWeight: 700 }}>● VOS-1 ONLINE</span>
         <span>NODE: SOLANA-MAINNET</span>
@@ -230,13 +230,14 @@ export function VerificationTerminal() {
       }}>
         {QUICK_COMMANDS.map(q => (
           <button key={q.cmd} onClick={() => run(q.cmd)} disabled={busy} style={{
-            padding: "0.3rem 0.7rem", borderRadius: 3,
-            border: `1px solid ${BDR}`, background: "transparent",
-            color: DIM, fontFamily: M, fontSize: "0.34rem",
+            padding: "0.5rem 0.875rem", borderRadius: 4,
+            border: `1px solid ${G}40`, background: `${G}08`,
+            color: G, fontFamily: M, fontSize: "0.875rem",
             fontWeight: 700, cursor: busy ? "wait" : "pointer",
             textTransform: "uppercase", letterSpacing: "0.08em",
             whiteSpace: "nowrap",
             opacity: busy ? 0.5 : 1,
+            transition: "all 0.15s",
           }}>
             {q.label}
           </button>
@@ -247,7 +248,7 @@ export function VerificationTerminal() {
       <div ref={scrollRef} style={{
         flex: 1, minHeight: 0, overflowY: "auto",
         padding: "1rem clamp(0.75rem,2.5vw,1.5rem)",
-        fontSize: "0.46rem", lineHeight: 1.75,
+        fontSize: "0.95rem", lineHeight: 1.8,
       }}>
         {lines.map((l, i) => (
           <div key={i} style={{
@@ -256,8 +257,8 @@ export function VerificationTerminal() {
             marginBottom: l.kind === "report" ? "0.625rem" : "0.15rem",
             paddingLeft: l.kind === "user" ? 0 : (l.kind === "agent" ? "0.75rem" : 0),
             borderLeft: l.kind === "report" ? `2px solid ${G}40` : "none",
-            paddingTop: l.kind === "report" ? "0.5rem" : 0,
-            paddingBottom: l.kind === "report" ? "0.5rem" : 0,
+            paddingTop: l.kind === "report" ? "1rem" : 0,
+            paddingBottom: l.kind === "report" ? "1rem" : 0,
             paddingRight: l.kind === "report" ? "0.75rem" : 0,
             background: l.kind === "report" ? "rgba(16,185,129,0.03)" : "transparent",
             borderRadius: l.kind === "report" ? 3 : 0,
@@ -267,7 +268,7 @@ export function VerificationTerminal() {
           </div>
         ))}
         {busy && (
-          <div style={{ color: A, fontSize: "0.42rem", marginTop: "0.5rem" }}>
+          <div style={{ color: A, fontSize: "0.9rem", marginTop: "1rem" }}>
             <span style={{ display: "inline-block", animation: "abrx-blink 1s steps(2) infinite" }}>▊</span>
             <span style={{ marginLeft: 6 }}>processing...</span>
           </div>
