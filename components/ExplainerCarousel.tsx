@@ -1,67 +1,223 @@
+// FILE: components/ExplainerCarousel.tsx
+// Auto-advancing carousel for the 8-slide Abraxas explainer.
 "use client";
-import React, { useState, useEffect } from "react";
 
+import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
-const slides = [
-  {
-    id: 1,
-    label: "01 · WHAT IS ABRAXAS",
-    visual: <div className="text-[110px] text-emerald-400 tracking-[-10px] font-light">✧</div>,
-    title: "ABRAXAS",
-    subtitle: "WHERE ASSETS BECOME COLLATERAL",
-  },
-  {
-    id: 2,
-    label: "02 · THE PROBLEM",
-    title: <>You own a valuable thing.<br />You need cash.</>,
-    body: <>You own a $1M+ asset.<br />You don’t want to sell it.<br />You want liquidity without losing ownership.<br /><span className="text-emerald-400">Traditional finance and crypto both failed at this — until Abraxas.</span></>,
-  },
-  {
-    id: 3,
-    label: "03 · THE SOLUTION",
-    title: <>Abraxas turns real assets<br />into on-chain collateral.</>,
-    body: "10-stage institutional verification. Wyoming LLC formation. Real yield. Real ownership. Real liquidity on Solana.",
-  },
+const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const G = "#10B981";
+const BDR = "#1C2333";
+const W = "#F8FAFC";
+
+const SLIDES = [
+  { src: "/about/01_cover.png",      title: "What is Abraxas",      label: "OVERVIEW" },
+  { src: "/about/02_problem.png",    title: "The Problem",           label: "PROBLEM" },
+  { src: "/about/03_broken.png",     title: "Why RWA Fails",         label: "GAP" },
+  { src: "/about/04_approach.png",   title: "Verify First",          label: "APPROACH" },
+  { src: "/about/05_pipeline.png",   title: "10-Stage Pipeline",     label: "PIPELINE" },
+  { src: "/about/06_genesis.png",    title: "Genesis Asset",         label: "PROOF" },
+  { src: "/about/07_verticals.png",  title: "Asset Verticals",       label: "MARKETS" },
+  { src: "/about/08_cta.png",        title: "Trust Layer",           label: "VISION" },
 ];
 
+const AUTO_ADVANCE_MS = 7000;
 
-export default function ExplainerCarousel() {
-  const [index, setIndex] = useState(0);
-  const [auto, setAuto] = useState(true);
-
+export function ExplainerCarousel() {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!auto) return;
-    const t = setTimeout(() => setIndex(i => (i + 1) % slides.length), 7000);
-    return () => clearTimeout(t);
-  }, [index, auto]);
+    if (paused) return;
+    timerRef.current = setInterval(() => {
+      setIdx(i => (i + 1) % SLIDES.length);
+    }, AUTO_ADVANCE_MS);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [paused]);
 
+  const goTo = useCallback((i: number) => {
+    setIdx(((i % SLIDES.length) + SLIDES.length) % SLIDES.length);
+  }, []);
+  const next = () => goTo(idx + 1);
+  const prev = () => goTo(idx - 1);
 
-  const go = (i: number) => { setIndex(i); setAuto(false); setTimeout(() => setAuto(true), 12000); };
+  const current = SLIDES[idx];
 
-
-  const s = slides[index];
   return (
-    <div className="relative w-full max-w-[1180px] mx-auto rounded-3xl border border-white/10 bg-[#0a0a0a] overflow-hidden">
-      <div className="grid lg:grid-cols-5 min-h-[560px]">
-        <div className="lg:col-span-3 flex items-center justify-center p-12 bg-black/40">
-          <div className="text-center">{s.visual}<div className="text-7xl font-semibold tracking-[-3px] mt-4">{s.title}</div><div className="text-emerald-400/70 text-sm tracking-[3px] mt-1">{s.subtitle}</div></div>
+    <div
+      style={{
+        background: "#0A0C10",
+        borderBottom: `1px solid ${BDR}`,
+        padding: "1rem clamp(0.75rem,2.5vw,1.5rem) 1.25rem",
+      }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+    >
+      {/* Header bar */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: G, boxShadow: `0 0 6px ${G}90`,
+            animation: paused ? "none" : "abrx-pulse 2s ease-in-out infinite",
+          }} />
+          <span style={{
+            fontFamily: M, fontSize: "0.34rem", fontWeight: 700, color: W,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+          }}>
+            EXPLAINER · {current.label} · {String(idx + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}
+          </span>
+          {paused && (
+            <span style={{
+              fontFamily: M, fontSize: "0.28rem", color: "rgba(255,255,255,0.3)",
+              letterSpacing: "0.1em",
+            }}>
+              · PAUSED
+            </span>
+          )}
         </div>
-        <div className="lg:col-span-2 p-10 lg:p-12 border-l border-white/10 flex flex-col">
-          <div className="text-[10px] text-white/50 font-mono tracking-[3px] mb-4">{s.label}</div>
-          <div className="text-5xl font-semibold tracking-[-1.5px] leading-none">{s.title}</div>
-          <div className="mt-6 text-lg text-zinc-300">{s.body}</div>
+        <a href="/about" style={{
+          padding: "0.25rem 0.625rem", borderRadius: 3,
+          border: `1px solid ${G}40`, background: `${G}10`,
+          color: G, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+          textDecoration: "none", textTransform: "uppercase",
+          letterSpacing: "0.08em", whiteSpace: "nowrap",
+        }}>
+          FULL PAGE &#8594;
+        </a>
+      </div>
 
-
-          <div className="mt-auto pt-8 flex items-center justify-between border-t border-white/10">
-            <div className="flex gap-1.5">{slides.map((_, i) => <button key={i} onClick={() => go(i)} className={`h-[3px] rounded-full transition-all ${index===i ? "w-8 bg-white" : "w-4 bg-white/30"}`} />)}</div>
-            <div className="flex gap-2">
-              <button onClick={() => go((index-1+slides.length)%slides.length)} className="w-9 h-9 rounded-full border border-white/20 hover:bg-white/5">←</button>
-              <button onClick={() => go((index+1)%slides.length)} className="w-9 h-9 rounded-full border border-white/20 hover:bg-white/5">→</button>
-            </div>
+      {/* Main slide area */}
+      <div style={{
+        position: "relative",
+        maxWidth: 720, margin: "0 auto",
+        aspectRatio: "1 / 1",
+        background: "#000",
+        borderRadius: 8,
+        overflow: "hidden",
+        border: `1px solid ${BDR}`,
+      }}>
+        {/* Render all slides stacked, only active visible */}
+        {SLIDES.map((s, i) => (
+          <div key={s.src} style={{
+            position: "absolute", inset: 0,
+            opacity: i === idx ? 1 : 0,
+            transition: "opacity 0.5s ease-in-out",
+            pointerEvents: i === idx ? "auto" : "none",
+          }}>
+            <Image
+              src={s.src}
+              alt={s.title}
+              fill
+              priority={i < 2}
+              sizes="(max-width: 720px) 100vw, 720px"
+              style={{ objectFit: "cover" }}
+            />
           </div>
+        ))}
+
+        {/* Left arrow */}
+        <button
+          onClick={prev}
+          aria-label="Previous slide"
+          style={{
+            position: "absolute", left: 8, top: "50%",
+            transform: "translateY(-50%)",
+            width: 36, height: 36, borderRadius: "50%",
+            background: "rgba(10,12,16,0.75)",
+            border: `1px solid ${G}50`,
+            color: G, fontFamily: M, fontSize: "0.8rem", fontWeight: 900,
+            cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            backdropFilter: "blur(4px)",
+            transition: "all 0.15s",
+          }}
+        >
+          &#8592;
+        </button>
+
+        {/* Right arrow */}
+        <button
+          onClick={next}
+          aria-label="Next slide"
+          style={{
+            position: "absolute", right: 8, top: "50%",
+            transform: "translateY(-50%)",
+            width: 36, height: 36, borderRadius: "50%",
+            background: "rgba(10,12,16,0.75)",
+            border: `1px solid ${G}50`,
+            color: G, fontFamily: M, fontSize: "0.8rem", fontWeight: 900,
+            cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            backdropFilter: "blur(4px)",
+            transition: "all 0.15s",
+          }}
+        >
+          &#8594;
+        </button>
+      </div>
+
+      {/* Dot indicators + progress bar */}
+      <div style={{
+        maxWidth: 720, margin: "0.75rem auto 0",
+        display: "flex", alignItems: "center", gap: "0.625rem",
+      }}>
+        {/* Dots */}
+        <div style={{ display: "flex", gap: "0.4rem", flex: 1, justifyContent: "center" }}>
+          {SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              style={{
+                width: i === idx ? 24 : 8,
+                height: 8, borderRadius: 4, border: "none",
+                background: i === idx ? G : "rgba(255,255,255,0.2)",
+                cursor: "pointer",
+                transition: "all 0.3s",
+                padding: 0,
+              }}
+            />
+          ))}
         </div>
       </div>
+
+      {/* Progress bar */}
+      <div style={{
+        maxWidth: 720, margin: "0.5rem auto 0",
+        height: 2, background: "rgba(255,255,255,0.06)",
+        borderRadius: 1, overflow: "hidden",
+      }}>
+        <div
+          key={`${idx}-${paused}`}
+          style={{
+            height: "100%",
+            background: G,
+            width: paused ? "0%" : "100%",
+            transformOrigin: "left",
+            animation: paused ? "none" : `abrx-progress ${AUTO_ADVANCE_MS}ms linear`,
+            boxShadow: `0 0 4px ${G}60`,
+          }}
+        />
+      </div>
+
+      <style jsx global>{`
+        @keyframes abrx-pulse {
+          0%, 100% { opacity: 1; }
+          50%      { opacity: 0.4; }
+        }
+        @keyframes abrx-progress {
+          from { width: 0%; }
+          to   { width: 100%; }
+        }
+      `}</style>
     </div>
   );
 }

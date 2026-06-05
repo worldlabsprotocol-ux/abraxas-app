@@ -15,6 +15,8 @@ import { BorrowPage }           from "@/components/BorrowPage";
 import { CompactWallet }        from "@/components/CompactWallet";
 import { LanguageSelector }     from "@/components/LanguageSelector";
 import { VerificationTerminal } from "@/components/vos/VerificationTerminal";
+import { ExplainerCarousel }    from "@/components/ExplainerCarousel";
+import { userAssetStore }       from "@/lib/vos/userAssetStore";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
@@ -126,107 +128,166 @@ function Divider() {
 }
 
 
-// ── INLINE EXPLAINER STRIP — horizontal carousel of /about slides ────
-function ExplainerStrip() {
-  const [open, setOpen] = useState(true);
-  const slides = [
-    { src: "/about/01_cover.png",     label: "What is Abraxas" },
-    { src: "/about/02_problem.png",   label: "The problem" },
-    { src: "/about/03_broken.png",    label: "Why RWA fails" },
-    { src: "/about/04_approach.png",  label: "Verify first" },
-    { src: "/about/05_pipeline.png",  label: "Pipeline" },
-    { src: "/about/06_genesis.png",   label: "Genesis asset" },
-    { src: "/about/07_verticals.png", label: "Verticals" },
-    { src: "/about/08_cta.png",       label: "Trust layer" },
-  ];
 
-  if (!open) {
-    return (
-      <div style={{ background: CARD, borderBottom: `1px solid ${BDR}`,
-                     padding: "0.5rem clamp(0.75rem,2.5vw,1.5rem)",
-                     display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
-                        color: `${G}80`, letterSpacing: "0.1em",
-                        textTransform: "uppercase" }}>
-          NEW HERE? View the explainer
-        </span>
-        <button onClick={() => setOpen(true)} style={{
-          padding: "0.25rem 0.625rem", borderRadius: 3,
-          border: `1px solid ${G}40`, background: `${G}10`,
-          color: G, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
-          cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
-        }}>
-          SHOW &#9662;
-        </button>
-      </div>
-    );
+
+// ── WYOMING LLC FORMATION MODAL ───────────────────────────────────
+function WyomingModal({ open, onClose, onSuccess }: {
+  open: boolean; onClose: () => void; onSuccess: (id: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [value, setValue] = useState("");
+  const [wallet, setWallet] = useState("");
+  const [desc, setDesc] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  if (!open) return null;
+
+  function submit() {
+    if (!name.trim()) { alert("Company name is required."); return; }
+    setBusy(true);
+    try {
+      const asset = userAssetStore.create({
+        assetType:      "wyoming_llc",
+        estimatedValue: value || "1000000",
+        jurisdiction:   "Wyoming, USA",
+        hasLiens:       "no",
+        hasAppraisal:   "no",
+        hasCustody:     "yes",
+      });
+      // Persist supplemental details locally so we can show them later
+      if (typeof window !== "undefined") {
+        const meta = { name, wallet, desc, assetId: asset.id, createdAt: new Date().toISOString() };
+        const all = JSON.parse(localStorage.getItem("abraxas_wy_meta_v1") || "[]");
+        all.push(meta);
+        localStorage.setItem("abraxas_wy_meta_v1", JSON.stringify(all));
+      }
+      onSuccess(asset.id);
+    } finally {
+      setBusy(false);
+    }
   }
 
+  const input: React.CSSProperties = {
+    width: "100%", padding: "0.75rem 0.875rem", borderRadius: 5,
+    border: `1px solid ${BDR}`, background: "rgba(255,255,255,0.03)",
+    color: W, fontFamily: S, fontSize: "16px", outline: "none",
+    boxSizing: "border-box",
+  };
+  const label: React.CSSProperties = {
+    fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+    color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
+    letterSpacing: "0.12em", marginBottom: "0.375rem", display: "block",
+  };
+
   return (
-    <div style={{ background: CARD, borderBottom: `1px solid ${BDR}` }}>
-      <div style={{ padding: "0.625rem clamp(0.75rem,2.5vw,1.5rem) 0.5rem",
-                     display: "flex", alignItems: "center",
-                     justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: G,
-                         boxShadow: `0 0 5px ${G}80` }}/>
-          <span style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
-                          color: W, letterSpacing: "0.12em",
-                          textTransform: "uppercase" }}>
-            EXPLAINER · WHAT IS ABRAXAS
-          </span>
-          <span style={{ fontFamily: M, fontSize: "0.28rem",
-                          color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
-            8 SLIDES · TAP TO ENLARGE
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: "0.375rem" }}>
-          <a href="/about" style={{
-            padding: "0.25rem 0.625rem", borderRadius: 3,
-            border: `1px solid ${B}40`, background: `${B}10`,
-            color: B, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
-            textDecoration: "none", textTransform: "uppercase",
-            letterSpacing: "0.08em", whiteSpace: "nowrap",
-          }}>
-            FULL PAGE &#8594;
-          </a>
-          <button onClick={() => setOpen(false)} style={{
-            padding: "0.25rem 0.625rem", borderRadius: 3,
-            border: `1px solid ${BDR}`, background: "transparent",
-            color: "rgba(255,255,255,0.4)", fontFamily: M, fontSize: "0.3rem",
-            fontWeight: 700, cursor: "pointer", textTransform: "uppercase",
-            letterSpacing: "0.08em",
-          }}>
-            HIDE &#9652;
-          </button>
-        </div>
-      </div>
-      <div style={{ display: "flex", overflowX: "auto", gap: "0.5rem",
-                     padding: "0 clamp(0.75rem,2.5vw,1.5rem) 0.875rem",
-                     scrollSnapType: "x mandatory" }}>
-        {slides.map((s, i) => (
-          <a key={s.src} href={s.src} target="_blank" rel="noopener noreferrer"
-            style={{
-              flexShrink: 0, scrollSnapAlign: "start",
-              width: 180, height: 180, borderRadius: 6, overflow: "hidden",
-              border: `1px solid ${BDR}`, background: "#000",
-              position: "relative", display: "block",
-              textDecoration: "none",
-            }}>
-            <Image src={s.src} alt={s.label} fill sizes="180px"
-                    style={{ objectFit: "cover" }}/>
-            <div style={{
-              position: "absolute", left: 0, right: 0, bottom: 0,
-              padding: "0.5rem 0.625rem 0.4rem",
-              background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.85))",
-              fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
-              color: W, letterSpacing: "0.08em",
-              textTransform: "uppercase",
-            }}>
-              {(i+1).toString().padStart(2,"0")} · {s.label}
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(2,4,8,0.85)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "flex-start", justifyContent: "center",
+      padding: "2rem 1rem", overflowY: "auto",
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: CARD, border: `1px solid ${G}40`,
+        borderRadius: 10, width: "100%", maxWidth: 560,
+        boxShadow: `0 0 40px ${G}20`,
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: "1.25rem 1.5rem", borderBottom: `1px solid ${BDR}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div>
+            <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                           color: G, letterSpacing: "0.15em",
+                           textTransform: "uppercase", marginBottom: 4 }}>
+              WYOMING LLC FORMATION
             </div>
-          </a>
-        ))}
+            <div style={{ fontFamily: S, fontSize: "clamp(1rem,2.2vw,1.25rem)",
+                           fontWeight: 800, color: W }}>
+              Launch your business on-chain.
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            padding: "0.4rem 0.75rem", borderRadius: 4,
+            border: `1px solid ${BDR}`, background: "transparent",
+            color: "rgba(255,255,255,0.4)", fontFamily: M,
+            fontSize: "0.4rem", fontWeight: 700, cursor: "pointer",
+          }}>✕</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "1.25rem 1.5rem" }}>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={label}>Business / Company Name *</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)}
+              placeholder="e.g. Acme Holdings LLC" style={input}/>
+          </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={label}>Estimated Valuation (USD)</label>
+            <input type="text" value={value} onChange={e => setValue(e.target.value)}
+              placeholder="e.g. 500000" style={input}/>
+          </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={label}>Wallet Address (for token receipt)</label>
+            <input type="text" value={wallet} onChange={e => setWallet(e.target.value)}
+              placeholder="Solana wallet address — optional, can add later"
+              style={input}/>
+          </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={label}>Short Description / Purpose</label>
+            <textarea value={desc} onChange={e => setDesc(e.target.value)}
+              placeholder="What does the business do? Optional but helpful for review."
+              rows={3} style={{...input, fontFamily: S, resize: "vertical"}}/>
+          </div>
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label style={label}>Jurisdiction</label>
+            <input type="text" defaultValue="Wyoming, USA" disabled
+              style={{...input, opacity: 0.6, cursor: "not-allowed"}}/>
+            <div style={{ fontFamily: M, fontSize: "0.28rem",
+                           color: "rgba(255,255,255,0.25)", marginTop: 4,
+                           letterSpacing: "0.05em" }}>
+              Formation documents can be uploaded via dashboard after submission.
+            </div>
+          </div>
+
+          {/* Pipeline preview */}
+          <div style={{ padding: "0.75rem 0.875rem", background: `${G}06`,
+                         border: `1px solid ${G}25`, borderRadius: 5,
+                         marginBottom: "1.25rem" }}>
+            <div style={{ fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
+                           color: G, letterSpacing: "0.12em",
+                           textTransform: "uppercase", marginBottom: 6 }}>
+              ON SUBMISSION
+            </div>
+            <div style={{ fontFamily: S, fontSize: "0.72rem",
+                           color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
+              Asset enters Abraxas V5 pipeline at <strong>SUBMITTED</strong> state.
+              Tracked through all 10 verification stages.
+              View progress on /dashboard or via terminal: <code>my assets</code>.
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: "flex", gap: "0.625rem" }}>
+            <button onClick={onClose} disabled={busy} style={{
+              flex: 1, padding: "0.875rem", borderRadius: 5,
+              border: `1px solid ${BDR}`, background: "transparent",
+              color: "rgba(255,255,255,0.5)", fontFamily: M,
+              fontSize: "0.42rem", fontWeight: 700, cursor: "pointer",
+              textTransform: "uppercase", letterSpacing: "0.08em",
+            }}>Cancel</button>
+            <button onClick={submit} disabled={busy || !name.trim()} style={{
+              flex: 2, padding: "0.875rem", borderRadius: 5, border: "none",
+              background: G, color: "#000", fontFamily: M,
+              fontSize: "0.5rem", fontWeight: 900,
+              cursor: busy || !name.trim() ? "not-allowed" : "pointer",
+              opacity: busy || !name.trim() ? 0.5 : 1,
+              letterSpacing: "0.04em", textTransform: "uppercase",
+            }}>
+              {busy ? "SUBMITTING..." : "SUBMIT TO V5 PIPELINE →"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -236,6 +297,7 @@ function ExplainerStrip() {
 function TerminalTab() {
   const [deep, setDeep] = useState<Deep>("main");
   const [scenario, setScenario] = useState<"small" | "large">("large");
+  const [wyOpen, setWyOpen] = useState(false);
   const SC: ScenarioData = scenario === "small" ? SMALL : LARGE;
 
   const ebitdaData: BarDataPoint[] = [
@@ -252,8 +314,135 @@ function TerminalTab() {
 
   return (
     <div>
+      {/* Wyoming LLC formation modal */}
+      <WyomingModal open={wyOpen} onClose={() => setWyOpen(false)} onSuccess={(id) => {
+        setWyOpen(false);
+        if (typeof window !== "undefined") window.location.href = "/dashboard";
+      }}/>
+
       {/* ── 0. INLINE EXPLAINER — first-visit context ─────────────── */}
-      <ExplainerStrip />
+      <ExplainerCarousel />
+      {/* ── 1. WYOMING LLC — primary revenue funnel ─────────────────── */}
+      <div style={{ maxWidth: 1060, margin: "0 auto",
+                     padding: "2rem clamp(1rem,3vw,2rem) 1rem" }}>
+        {/* ── WYOMING LLC ENGINE ─────────────────────────────────── */}
+        <div style={{ marginBottom: "2rem" }}>
+          <Label>Wyoming LLC Formation</Label>
+          <div style={{ padding: "2rem", borderRadius: 8,
+                         background: "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.05))",
+                         border: `1px solid ${B}30` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem",
+                           marginBottom: "0.875rem" }}>
+              <div style={{ padding: "0.4rem 0.875rem", borderRadius: 4,
+                             background: `${B}20`, border: `1px solid ${B}40`,
+                             fontFamily: M, fontSize: "0.3rem", fontWeight: 900,
+                             color: B, letterSpacing: "0.15em",
+                             textTransform: "uppercase" }}>
+                TOKENIZE YOUR BUSINESS
+              </div>
+            </div>
+            <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.75rem)",
+                          fontWeight: 800, color: W, margin: "0 0 0.625rem",
+                          letterSpacing: "-0.02em" }}>
+              Launch your business on-chain.
+            </h2>
+            <p style={{ fontFamily: S, fontSize: "clamp(0.74rem,1.5vw,0.88rem)",
+                         color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
+                         maxWidth: 580, margin: "0 0 1.5rem" }}>
+              Structure your business through a Wyoming LLC for full on-chain ownership,
+              governance, fundraising, and lending. Powered by Abraxas Protocol.
+            </p>
+            <div style={{ display: "grid",
+                           gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
+                           gap: "0.75rem", marginBottom: "1.5rem" }}>
+              {[
+                { tier: "STARTER",    price: "$1,499",  color: B,         items: ["Wyoming LLC Formation","Operating Agreement","On-chain Tokenization","Basic Verification"] },
+                { tier: "GROWTH",     price: "$2,999",  color: "#8B5CF6", items: ["Everything in Starter","Multi-sig Governance","Cap Table Management","Lending Eligibility"] },
+                { tier: "ENTERPRISE", price: "$4,999+", color: G,         items: ["Everything in Growth","Full Compliance Package","Priority Verification","Dedicated Verifier"] },
+              ].map(pkg => (
+                <div key={pkg.tier} style={{ padding: "1.25rem", borderRadius: 7,
+                                              background: CARD,
+                                              border: `1px solid ${pkg.color}30`,
+                                              borderTop: `3px solid ${pkg.color}` }}>
+                  <div style={{ fontFamily: M, fontSize: "0.32rem", fontWeight: 900,
+                                 color: pkg.color, letterSpacing: "0.12em",
+                                 marginBottom: "0.375rem" }}>
+                    {pkg.tier}
+                  </div>
+                  <div style={{ fontFamily: M, fontSize: "1.3rem", fontWeight: 900,
+                                 color: W, marginBottom: "0.75rem" }}>
+                    {pkg.price}
+                  </div>
+                  {pkg.items.map(item => (
+                    <div key={item} style={{ display: "flex", gap: "0.4rem",
+                                              alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ color: pkg.color, fontSize: "0.5rem" }}>◉</span>
+                      <span style={{ fontFamily: S, fontSize: "clamp(0.6rem,1.4vw,0.72rem)",
+                                      color: "rgba(255,255,255,0.5)" }}>
+                        {item}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+              <button onClick={() => setWyOpen(true)} style={{
+                padding: "0.875rem 1.75rem", borderRadius: 5, border: "none",
+                background: G, color: "#000", fontFamily: M, fontSize: "0.5rem",
+                fontWeight: 900, cursor: "pointer", letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                boxShadow: `0 0 12px ${G}40`,
+              }}>
+                START TOKENIZATION NOW &#8594;
+              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%",
+                               background: G, boxShadow: `0 0 5px ${G}90` }}/>
+                <span style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                                color: G, letterSpacing: "0.1em",
+                                textTransform: "uppercase" }}>
+                  Available now &middot; Powered by Abraxas V5
+                </span>
+              </div>
+            </div>
+            {/* Promotional value-prop block */}
+            <div style={{ marginTop: "1.5rem", padding: "1.125rem 1.25rem",
+                           background: `${G}06`, border: `1px solid ${G}25`,
+                           borderRadius: 7 }}>
+              <div style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                             color: G, textTransform: "uppercase",
+                             letterSpacing: "0.15em", marginBottom: "0.625rem" }}>
+                WHY TOKENIZE YOUR BUSINESS WITH ABRAXAS
+              </div>
+              <div style={{ display: "grid",
+                             gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
+                             gap: "0.75rem" }}>
+                {[
+                  { t: "Same-day initiation", d: "Wyoming LLC formation starts immediately on submission. Asset enters the V5 verification pipeline within minutes." },
+                  { t: "Full lifecycle visibility", d: "Track all 10 stages: identity, ownership, legal, due diligence, risk scoring, committee approval, mint, marketplace." },
+                  { t: "Native to Solana", d: "Token-2022 standard. Operating agreement anchored on-chain. Cap table maintained natively." },
+                  { t: "Lending eligible", d: "Once MARKETPLACE_LIVE, your business becomes financeable collateral at up to 60% LTV." },
+                ].map(b => (
+                  <div key={b.t} style={{ fontFamily: S }}>
+                    <div style={{ fontSize: "clamp(0.78rem,1.6vw,0.88rem)",
+                                   fontWeight: 700, color: W, marginBottom: 4 }}>
+                      &#10003; {b.t}
+                    </div>
+                    <div style={{ fontSize: "clamp(0.66rem,1.4vw,0.76rem)",
+                                   color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
+                      {b.d}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+
 
       {/* ── 1. COMMAND TERMINAL — primary entry point ──────────────── */}
       {/* Height-isolated wrapper: prevents inner scroll from bleeding into page */}
@@ -719,122 +908,6 @@ function TerminalTab() {
         </div>
 
 
-        <Divider/>
-
-        {/* ── WYOMING LLC ENGINE ─────────────────────────────────── */}
-        <div style={{ marginBottom: "2rem" }}>
-          <Label>Wyoming LLC Formation</Label>
-          <div style={{ padding: "2rem", borderRadius: 8,
-                         background: "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.05))",
-                         border: `1px solid ${B}30` }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem",
-                           marginBottom: "0.875rem" }}>
-              <div style={{ padding: "0.4rem 0.875rem", borderRadius: 4,
-                             background: `${B}20`, border: `1px solid ${B}40`,
-                             fontFamily: M, fontSize: "0.3rem", fontWeight: 900,
-                             color: B, letterSpacing: "0.15em",
-                             textTransform: "uppercase" }}>
-                TOKENIZE YOUR BUSINESS
-              </div>
-            </div>
-            <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.75rem)",
-                          fontWeight: 800, color: W, margin: "0 0 0.625rem",
-                          letterSpacing: "-0.02em" }}>
-              
-{/* ========== TOKENIZE YOUR BUSINESS — LIVE ON V5 ========== */}
-<div className="mb-10 rounded-2xl border border-white/10 bg-zinc-950/60 p-8">
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-    <div>
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono tracking-[2px] mb-3">
-        V5 • 10-STAGE LIFECYCLE • LIVE NOW
-      </div>
-      <h2 className="text-4xl font-semibold tracking-[-1.5px]">Tokenize your business today.</h2>
-      <p className="text-zinc-400 mt-2 max-w-md">
-        Launch a Wyoming LLC + enter the Abraxas 10-stage verification → tokenization pipeline in minutes. 
-        Real revenue starts the moment your first asset goes live on the marketplace.
-      </p>
-    </div>
-
-
-    <div className="flex flex-col gap-3 min-w-[220px]">
-      <button 
-        onClick={() => {
-          window.location.href = '/terminal?tab=submit';
-        }}
-        className="w-full px-8 py-3.5 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 active:scale-[0.985] transition-all flex items-center justify-center gap-2"
-      >
-        START TOKENIZATION NOW →
-      </button>
-      <button 
-        onClick={() => window.location.href = '/terminal?tab=wyoming'}
-        className="w-full px-6 py-3 rounded-xl border border-white/20 hover:bg-white/5 transition-all text-sm"
-      >
-        View Wyoming LLC Tiers
-      </button>
-    </div>
-  </div>
-</div>
-
-Launch your business on-chain.
-            </h2>
-            <p style={{ fontFamily: S, fontSize: "clamp(0.74rem,1.5vw,0.88rem)",
-                         color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
-                         maxWidth: 580, margin: "0 0 1.5rem" }}>
-              Structure your business through a Wyoming LLC for full on-chain ownership,
-              governance, fundraising, and lending. Powered by Abraxas Protocol.
-            </p>
-            <div style={{ display: "grid",
-                           gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
-                           gap: "0.75rem", marginBottom: "1.5rem" }}>
-              {[
-                { tier: "STARTER",    price: "$1,499",  color: B,         items: ["Wyoming LLC Formation","Operating Agreement","On-chain Tokenization","Basic Verification"] },
-                { tier: "GROWTH",     price: "$2,999",  color: "#8B5CF6", items: ["Everything in Starter","Multi-sig Governance","Cap Table Management","Lending Eligibility"] },
-                { tier: "ENTERPRISE", price: "$4,999+", color: G,         items: ["Everything in Growth","Full Compliance Package","Priority Verification","Dedicated Verifier"] },
-              ].map(pkg => (
-                <div key={pkg.tier} style={{ padding: "1.25rem", borderRadius: 7,
-                                              background: CARD,
-                                              border: `1px solid ${pkg.color}30`,
-                                              borderTop: `3px solid ${pkg.color}` }}>
-                  <div style={{ fontFamily: M, fontSize: "0.32rem", fontWeight: 900,
-                                 color: pkg.color, letterSpacing: "0.12em",
-                                 marginBottom: "0.375rem" }}>
-                    {pkg.tier}
-                  </div>
-                  <div style={{ fontFamily: M, fontSize: "1.3rem", fontWeight: 900,
-                                 color: W, marginBottom: "0.75rem" }}>
-                    {pkg.price}
-                  </div>
-                  {pkg.items.map(item => (
-                    <div key={item} style={{ display: "flex", gap: "0.4rem",
-                                              alignItems: "center", marginBottom: 4 }}>
-                      <span style={{ color: pkg.color, fontSize: "0.5rem" }}>◉</span>
-                      <span style={{ fontFamily: S, fontSize: "clamp(0.6rem,1.4vw,0.72rem)",
-                                      color: "rgba(255,255,255,0.5)" }}>
-                        {item}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <button style={{
-                padding: "0.875rem 1.75rem", borderRadius: 5, border: "none",
-                background: B, color: "#fff", fontFamily: M, fontSize: "0.5rem",
-                fontWeight: 900, cursor: "not-allowed", letterSpacing: "0.04em",
-                textTransform: "uppercase", opacity: 0.7,
-              }}>
-                START TOKENIZATION
-              </button>
-              <div style={{ fontFamily: M, fontSize: "0.3rem",
-                             color: "rgba(255,255,255,0.25)",
-                             display: "flex", alignItems: "center" }}>
-                Available now • Powered by Abraxas V5
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div style={{ height: "3rem" }}/>
       </div>
     </div>
@@ -999,34 +1072,3 @@ export default function TerminalPage() {
     </div>
   );
 }
-
-
-
-{/* ========== WYOMING LLC + TOKENIZATION — LIVE (at bottom of section) ========== */}
-<div className="mt-10 pt-8 border-t border-white/10">
-  <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-y-6">
-    <div className="max-w-lg">
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono tracking-[2px] mb-3">
-        V5 • LIVE PIPELINE
-      </div>
-      <h3 className="text-2xl font-semibold tracking-tight">Ready to tokenize your business?</h3>
-      <p className="text-zinc-400 mt-2">
-        Launch a Wyoming LLC and enter the 10-stage Abraxas verification → tokenization flow. 
-        Real on-chain collateral with real revenue potential.
-      </p>
-      <div className="mt-3 text-[10px] text-zinc-500 font-mono tracking-widest">
-        WE COLLECT: Business name • Valuation • Wallet • Formation docs • Description
-      </div>
-    </div>
-
-
-    <button
-      onClick={() => {
-        window.location.href = "/terminal?type=WYOMING_LLC&quickstart=true";
-      }}
-      className="px-8 py-3.5 rounded-2xl bg-white text-black font-semibold hover:bg-zinc-100 active:scale-[0.985] transition-all flex items-center gap-2"
-    >
-      START TOKENIZATION NOW →
-    </button>
-  </div>
-</div>

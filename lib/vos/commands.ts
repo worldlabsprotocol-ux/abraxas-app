@@ -1,4 +1,3 @@
-// V5 LifecycleState alignment applied by fix_v5_lifecycle.py — do not revert these state strings
 // FILE: lib/vos/commands.ts
 // All Verification OS commands. Register via commandRegistry.register().
 // Add new commands here; the terminal UI does NOT need to change.
@@ -650,7 +649,6 @@ commandRegistry.register({
       ctx.emit({ kind: "out",   text: "Demo assets (AAS-1) can't be advanced — only your submitted assets." });
       return;
     }
-    // V5 10-stage terminal states
     if (before.state === "MARKETPLACE_LIVE" || before.state === "REJECTED") {
       ctx.emit({ kind: "out", text: `Asset is already in terminal state: ${before.state}` });
       return;
@@ -671,10 +669,10 @@ commandRegistry.register({
       `Current:        ${updated.state}\n` +
       `Event Count:    ${updated.timeline.length}\n` +
       `Latest Note:    ${updated.timeline[updated.timeline.length-1].note ?? "—"}\n\n` +
-      (updated.state === "TOKENIZATION_AUTH" || updated.state === "MINTED"
-        ? "Asset is now collateral-eligible. Run 'tokenize " + id + "' to mint tokens."
+      (updated.state === "TOKENIZATION_AUTH"
+        ? "Asset reached TOKENIZATION_AUTH. Run 'tokenize " + id + "' to mint tokens."
         : updated.state === "MARKETPLACE_LIVE"
-          ? "Asset is fully on-chain. Run 'borrow " + id + " <amount>' to draw against collateral."
+          ? "Asset is MARKETPLACE_LIVE. Run 'borrow " + id + " <amount>' to draw against collateral."
           : "Run 'advance " + id + "' again to continue, or 'track " + id + "' to view the full event log.")
     });
   },
@@ -697,7 +695,7 @@ commandRegistry.register({
       ctx.emit({ kind: "error", text: `Asset not found in your session: ${id}` });
       return;
     }
-    const states = ["SUBMITTED","IDENTITY_REVIEW","TOKENIZATION_AUTH","MARKETPLACE_LIVE"];
+    const states = ["SUBMITTED","IDENTITY_REVIEW","OWNERSHIP_REVIEW","LEGAL_REVIEW","DUE_DILIGENCE","RISK_SCORING","APPROVAL_COMMITTEE","TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"];
     for (const s of states) {
       const cur = store.get(id);
       if (!cur || cur.state === "MARKETPLACE_LIVE" || cur.state === "REJECTED") break;
@@ -718,6 +716,66 @@ commandRegistry.register({
         `Next: tokenize ${id} 1000`
       });
     }
+  },
+});
+
+
+// ── WYOMING (LLC formation & tokenization) ───────────────────────
+commandRegistry.register({
+  name: "wyoming", aliases: ["llc", "incorporate"], category: "execution",
+  description: "Tokenize a Wyoming LLC — initiates V5 verification pipeline",
+  syntax: 'wyoming "Company Name" [valuation_usd]',
+  example: 'wyoming "Acme Holdings LLC" 500000',
+  handler: async (ctx) => {
+    const full = ctx.args.join(" ");
+    const m = full.match(/^"([^"]+)"\s*(\d+)?/);
+    if (!m) {
+      ctx.emit({ kind: "error", text: 'Syntax: wyoming "Company Name" [valuation_usd]' });
+      ctx.emit({ kind: "out",   text: 'Example: wyoming "Acme Holdings LLC" 500000' });
+      return;
+    }
+    const companyName = m[1];
+    const valuation   = m[2] ?? "1000000";
+
+    const userStore = await loadUserStore();
+
+    ctx.emit({ kind: "agent", text: `[Agent] Initiating Wyoming LLC formation for "${companyName}"...` });
+    await wait(200);
+    ctx.emit({ kind: "agent", text: "[Agent] Reserving entity name with Wyoming Secretary of State..." });
+    await wait(180);
+    ctx.emit({ kind: "agent", text: "[Agent] Drafting operating agreement..." });
+    await wait(180);
+    ctx.emit({ kind: "agent", text: "[Agent] Generating registered agent assignment..." });
+    await wait(160);
+    ctx.emit({ kind: "agent", text: "[Agent] Submitting to V5 verification pipeline..." });
+    await wait(160);
+
+    const asset = userStore.create({
+      assetType:      "wyoming_llc",
+      estimatedValue: valuation,
+      jurisdiction:   "Wyoming, USA",
+      hasLiens:       "no",
+      hasAppraisal:   "no",
+      hasCustody:     "yes",
+    });
+
+    ctx.emit({ kind: "agent", text: "[Agent] Asset submitted." });
+    ctx.emit({ kind: "report", text:
+      `── WYOMING LLC FORMATION INITIATED ──\n\n` +
+      `Company:         ${companyName}\n` +
+      `Asset ID:        ${asset.id}\n` +
+      `Asset Type:      Wyoming LLC\n` +
+      `Valuation:       $${parseInt(valuation).toLocaleString()}\n` +
+      `Jurisdiction:    Wyoming, USA\n` +
+      `State:           ${asset.state}\n` +
+      `Pipeline:        10-stage verification (SUBMITTED → MARKETPLACE_LIVE)\n` +
+      `Submitted:       ${new Date(asset.createdAt).toLocaleString()}\n\n` +
+      `Next steps:\n` +
+      `  > track ${asset.id}         View lifecycle\n` +
+      `  > advance ${asset.id}        Move to next verification stage\n` +
+      `  > demo ${asset.id}           Walk through full pipeline\n` +
+      `  /dashboard                  Full institutional view`
+    });
   },
 });
 
@@ -744,42 +802,6 @@ _originalRegister({
   handler: async (ctx) => {
     if (ctx.args.length === 0) {
       ctx.emit({ kind: "error", text: "Missing asset ID. Syntax: tokenize <asset_id> [supply]" });
-
-
-commandRegistry.register({
-  name: "wyoming",
-  aliases: ["business", "tokenize-business"],
-  category: "execution",
-  description: "Start Wyoming LLC + V5 tokenization flow",
-  syntax: "wyoming <business_name>",
-  example: "wyoming \"Retro World LLC\"",
-  handler: async (ctx) => {
-    if (!ctx.args.length) {
-      ctx.emit({ kind: "out", text: "Usage: wyoming <business_name>" });
-      return;
-    }
-    const name = ctx.args.join(" ");
-    const store = await loadUserStore();
-
-
-    const asset = store.create({
-      assetType: "WYOMING_LLC",
-      estimatedValue: "750000",
-      jurisdiction: "Wyoming",
-      hasLiens: "no",
-      hasAppraisal: "pending",
-      hasCustody: "pending",
-    });
-
-
-    store.advance(asset.id, "SUBMITTED", "user", `Wyoming LLC tokenization started: ${name}`);
-
-
-    ctx.emit({ kind: "out", text: `Started V5 pipeline for "${name}"` });
-    ctx.emit({ kind: "out", text: `Asset ID: ${asset.id} — Run 'advance ${asset.id}' to progress through the 10 stages.` });
-  },
-});
-
       ctx.emit({ kind: "out",   text: "Run 'my assets' to see your asset IDs." });
       return;
     }
@@ -797,7 +819,7 @@ commandRegistry.register({
       ctx.emit({ kind: "error", text: `Asset not found in your session: ${assetId}` });
       return;
     }
-    if (asset.state !== "TOKENIZATION_AUTH" && asset.state !== "MARKETPLACE_LIVE") {
+    if (asset.state !== "TOKENIZATION_AUTH" && asset.state !== "MINTED" && asset.state !== "MARKETPLACE_LIVE") {
       ctx.emit({ kind: "error", text: `Asset must be VERIFIED before tokenization. Current state: ${asset.state}` });
       ctx.emit({ kind: "out",   text: "Use /dashboard → SIMULATE NEXT STATE to advance the lifecycle, or wait for the verification network." });
       return;
@@ -821,7 +843,7 @@ commandRegistry.register({
     const pricePerTok  = valueUsd / supply;
     const mint = tokenStore.mint(assetId, supply, pricePerTok);
 
-    userStore.advance(assetId, "MARKETPLACE_LIVE", "system", `Tokenized: ${supply.toLocaleString()} ${mint.symbol} @ $${pricePerTok.toFixed(2)}/tok`);
+    userStore.advance(assetId, "MINTED", "system", `Tokenized: ${supply.toLocaleString()} ${mint.symbol} @ $${pricePerTok.toFixed(2)}/tok`);
 
     ctx.emit({ kind: "report", text:
       `── TOKENIZATION COMPLETE · ${assetId} ──\n\n` +
@@ -1139,8 +1161,8 @@ _originalRegister({
       `New State:         ${after.state}\n` +
       `Event Count:       ${after.timeline.length}\n` +
       `Latest Event:      ${after.timeline[after.timeline.length-1].note || "—"}\n\n` +
-      (after.state === "TOKENIZATION_AUTH" ? "Asset is now VERIFIED. Run 'tokenize ${id}' to mint tokens.\n" : "") +
-      (after.state === "MARKETPLACE_LIVE" ? "Asset is COMPLETED. Run 'borrow ${id} <amount>' to draw against collateral.\n" : "") +
+      (after.state === "TOKENIZATION_AUTH" ? "Asset reached TOKENIZATION_AUTH. Run 'tokenize " + id + "'.\n" : "") +
+      (after.state === "MARKETPLACE_LIVE" ? "Asset is MARKETPLACE_LIVE. Run 'borrow " + id + " <amount>'.\n" : "") +
       `Run 'track ${id}' to see the full event log.`
     });
   },

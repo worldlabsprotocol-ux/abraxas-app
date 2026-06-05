@@ -213,8 +213,13 @@ export const userAssetStore = {
 };
 
 export const ASSET_LABELS: Record<string, string> = {
-  real_estate:"Real Estate", minerals:"Mineral Rights", energy:"Energy Reserves",
-  metals:"Precious Metals", land:"Land & Timber", other:"Other Asset",
+  real_estate: "Real Estate",
+  minerals:    "Mineral Rights",
+  energy:      "Energy Reserves",
+  metals:      "Precious Metals",
+  land:        "Land & Timber",
+  other:       "Other Asset",
+  wyoming_llc: "Wyoming LLC",
 };
 
 export const STATE_COLORS: Record<LifecycleState, string> = Object.fromEntries(
