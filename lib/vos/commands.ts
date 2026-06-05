@@ -494,10 +494,7 @@ futureSpecs.forEach(spec => commandRegistry.register({
 }));
 
 // ── EXECUTION COMMANDS (tokenize → borrow → repay lifecycle) ─────────
-async function loadUserStore() {
-  const mod = await import("./userAssetStore");
-  return mod.userAssetStore;
-}
+// loadUserStore / loadSession already defined in USER ASSETS section above.
 async function loadTokenStore() {
   const mod = await import("./userTokenStore");
   return mod.userTokenStore;
