@@ -740,7 +740,42 @@ function TerminalTab() {
             <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.75rem)",
                           fontWeight: 800, color: W, margin: "0 0 0.625rem",
                           letterSpacing: "-0.02em" }}>
-              Launch your business on-chain.
+              
+{/* ========== TOKENIZE YOUR BUSINESS — LIVE ON V5 ========== */}
+<div className="mb-10 rounded-2xl border border-white/10 bg-zinc-950/60 p-8">
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div>
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono tracking-[2px] mb-3">
+        V5 • 10-STAGE LIFECYCLE • LIVE NOW
+      </div>
+      <h2 className="text-4xl font-semibold tracking-[-1.5px]">Tokenize your business today.</h2>
+      <p className="text-zinc-400 mt-2 max-w-md">
+        Launch a Wyoming LLC + enter the Abraxas 10-stage verification → tokenization pipeline in minutes. 
+        Real revenue starts the moment your first asset goes live on the marketplace.
+      </p>
+    </div>
+
+
+    <div className="flex flex-col gap-3 min-w-[220px]">
+      <button 
+        onClick={() => {
+          window.location.href = '/terminal?tab=submit';
+        }}
+        className="w-full px-8 py-3.5 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 active:scale-[0.985] transition-all flex items-center justify-center gap-2"
+      >
+        START TOKENIZATION NOW →
+      </button>
+      <button 
+        onClick={() => window.location.href = '/terminal?tab=wyoming'}
+        className="w-full px-6 py-3 rounded-xl border border-white/20 hover:bg-white/5 transition-all text-sm"
+      >
+        View Wyoming LLC Tiers
+      </button>
+    </div>
+  </div>
+</div>
+
+Launch your business on-chain. <span className="ml-3 text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 align-middle">LIVE</span>
             </h2>
             <p style={{ fontFamily: S, fontSize: "clamp(0.74rem,1.5vw,0.88rem)",
                          color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
@@ -789,12 +824,12 @@ function TerminalTab() {
                 fontWeight: 900, cursor: "not-allowed", letterSpacing: "0.04em",
                 textTransform: "uppercase", opacity: 0.7,
               }}>
-                START FORMATION — COMING SOON
+                START TOKENIZATION
               </button>
               <div style={{ fontFamily: M, fontSize: "0.3rem",
                              color: "rgba(255,255,255,0.25)",
                              display: "flex", alignItems: "center" }}>
-                Formation services launching Q3 2025
+                Available now • Powered by Abraxas V5
               </div>
             </div>
           </div>
