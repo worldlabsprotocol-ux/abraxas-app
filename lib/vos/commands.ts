@@ -493,6 +493,97 @@ futureSpecs.forEach(spec => commandRegistry.register({
   handler: () => { /* future flag handled by registry */ },
 }));
 
+
+// ── ADVANCE (simulate lifecycle transition from terminal) ────────────
+commandRegistry.register({
+  name: "advance", aliases: ["progress", "next-state"], category: "execution",
+  description: "Simulate next lifecycle state for one of your assets",
+  syntax: "advance <asset_id>",
+  example: "advance USR-XYZ123",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Syntax: advance <asset_id>" });
+      ctx.emit({ kind: "out",   text: "Run 'my assets' to see your asset IDs." });
+      return;
+    }
+    const store = await loadUserStore();
+    const id = ctx.args[0].toUpperCase();
+    const before = store.get(id);
+    if (!before) {
+      ctx.emit({ kind: "error", text: `Asset not found in your session: ${id}` });
+      ctx.emit({ kind: "out",   text: "Demo assets (AAS-1) can't be advanced — only your submitted assets." });
+      return;
+    }
+    if (before.state === "COMPLETED" || before.state === "REJECTED") {
+      ctx.emit({ kind: "out", text: `Asset is already in terminal state: ${before.state}` });
+      return;
+    }
+    ctx.emit({ kind: "agent", text: "[Agent] Triggering verification network..." });
+    await wait(180);
+    ctx.emit({ kind: "agent", text: "[Agent] Recording state transition..." });
+    await wait(140);
+    const updated = store.simulateAdvance(id);
+    if (!updated) {
+      ctx.emit({ kind: "error", text: "Transition failed." });
+      return;
+    }
+    ctx.emit({ kind: "agent", text: "[Agent] State transition confirmed." });
+    ctx.emit({ kind: "report", text:
+      `── STATE TRANSITION · ${id} ──\n\n` +
+      `Previous:       ${before.state}\n` +
+      `Current:        ${updated.state}\n` +
+      `Event Count:    ${updated.timeline.length}\n` +
+      `Latest Note:    ${updated.timeline[updated.timeline.length-1].note ?? "—"}\n\n` +
+      (updated.state === "VERIFIED"
+        ? "Asset is now collateral-eligible. Run 'tokenize " + id + "' to mint tokens."
+        : updated.state === "COMPLETED"
+          ? "Asset is fully on-chain. Run 'borrow " + id + " <amount>' to draw against collateral."
+          : "Run 'advance " + id + "' again to continue, or 'track " + id + "' to view the full event log.")
+    });
+  },
+});
+
+// ── DEMO (one-shot full lifecycle from terminal) ─────────────────────
+commandRegistry.register({
+  name: "demo", category: "execution",
+  description: "Walk an asset through the full verification lifecycle",
+  syntax: "demo <asset_id>",
+  example: "demo USR-XYZ123",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Syntax: demo <asset_id>" });
+      return;
+    }
+    const store = await loadUserStore();
+    const id = ctx.args[0].toUpperCase();
+    if (!store.get(id)) {
+      ctx.emit({ kind: "error", text: `Asset not found in your session: ${id}` });
+      return;
+    }
+    const states = ["SUBMITTED","IN_REVIEW","VERIFIED","COMPLETED"];
+    for (const s of states) {
+      const cur = store.get(id);
+      if (!cur || cur.state === "COMPLETED" || cur.state === "REJECTED") break;
+      ctx.emit({ kind: "agent", text: `[Agent] Advancing to next state...` });
+      await wait(280);
+      store.simulateAdvance(id);
+      const after = store.get(id);
+      if (after) {
+        ctx.emit({ kind: "out", text: `  → ${after.state}` });
+      }
+    }
+    const final = store.get(id);
+    if (final) {
+      ctx.emit({ kind: "report", text:
+        `── DEMO LIFECYCLE COMPLETE · ${id} ──\n\n` +
+        `Final State:    ${final.state}\n` +
+        `Total Events:   ${final.timeline.length}\n\n` +
+        `Next: tokenize ${id} 1000`
+      });
+    }
+  },
+});
+
 // ── EXECUTION COMMANDS (tokenize → borrow → repay lifecycle) ─────────
 // loadUserStore / loadSession already defined in USER ASSETS section above.
 async function loadTokenStore() {
@@ -830,6 +921,54 @@ _originalRegister({
       `Anchored:       ${new Date().toISOString()}\n` +
       `State:          ${asset.state} (unchanged)\n\n` +
       `Attestation appended to asset timeline. View with 'track ${id}'.`
+    });
+  },
+});
+
+// ── SIMULATE — advance asset lifecycle from within the terminal ──────
+_originalRegister({
+  name: "simulate", aliases: ["advance"], category: "execution",
+  description: "Advance one of your assets to the next lifecycle state",
+  syntax: "simulate <asset_id>",
+  example: "simulate USR-XYZ123",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Syntax: simulate <asset_id>" });
+      ctx.emit({ kind: "out",   text: "Run 'my assets' to see your asset IDs." });
+      return;
+    }
+    const userStore = await loadUserStore();
+    const id = ctx.args[0].toUpperCase();
+    const before = userStore.get(id);
+    if (!before) {
+      ctx.emit({ kind: "error", text: `Asset not found in your session: ${id}` });
+      return;
+    }
+    if (before.state === "COMPLETED" || before.state === "REJECTED") {
+      ctx.emit({ kind: "out", text: `Asset ${id} is already in terminal state: ${before.state}` });
+      return;
+    }
+    ctx.emit({ kind: "agent", text: `[Agent] Loading asset ${id}...` });
+    await wait(120);
+    ctx.emit({ kind: "agent", text: `[Agent] Current state: ${before.state}` });
+    await wait(100);
+    ctx.emit({ kind: "agent", text: "[Agent] Advancing verification network state..." });
+    await wait(220);
+    const after = userStore.simulateAdvance(id);
+    if (!after) {
+      ctx.emit({ kind: "error", text: "Advance failed." });
+      return;
+    }
+    ctx.emit({ kind: "agent", text: `[Agent] State transition complete.` });
+    ctx.emit({ kind: "report", text:
+      `── LIFECYCLE TRANSITION · ${id} ──\n\n` +
+      `Previous State:    ${before.state}\n` +
+      `New State:         ${after.state}\n` +
+      `Event Count:       ${after.timeline.length}\n` +
+      `Latest Event:      ${after.timeline[after.timeline.length-1].note || "—"}\n\n` +
+      (after.state === "VERIFIED" ? "Asset is now VERIFIED. Run 'tokenize ${id}' to mint tokens.\n" : "") +
+      (after.state === "COMPLETED" ? "Asset is COMPLETED. Run 'borrow ${id} <amount>' to draw against collateral.\n" : "") +
+      `Run 'track ${id}' to see the full event log.`
     });
   },
 });

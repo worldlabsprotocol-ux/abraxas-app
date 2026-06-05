@@ -125,6 +125,113 @@ function Divider() {
   return <div style={{ height:1, background:BDR, margin:"2.5rem 0" }}/>;
 }
 
+
+// ── INLINE EXPLAINER STRIP — horizontal carousel of /about slides ────
+function ExplainerStrip() {
+  const [open, setOpen] = useState(true);
+  const slides = [
+    { src: "/about/01_cover.png",     label: "What is Abraxas" },
+    { src: "/about/02_problem.png",   label: "The problem" },
+    { src: "/about/03_broken.png",    label: "Why RWA fails" },
+    { src: "/about/04_approach.png",  label: "Verify first" },
+    { src: "/about/05_pipeline.png",  label: "Pipeline" },
+    { src: "/about/06_genesis.png",   label: "Genesis asset" },
+    { src: "/about/07_verticals.png", label: "Verticals" },
+    { src: "/about/08_cta.png",       label: "Trust layer" },
+  ];
+
+  if (!open) {
+    return (
+      <div style={{ background: CARD, borderBottom: `1px solid ${BDR}`,
+                     padding: "0.5rem clamp(0.75rem,2.5vw,1.5rem)",
+                     display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+                        color: `${G}80`, letterSpacing: "0.1em",
+                        textTransform: "uppercase" }}>
+          NEW HERE? View the explainer
+        </span>
+        <button onClick={() => setOpen(true)} style={{
+          padding: "0.25rem 0.625rem", borderRadius: 3,
+          border: `1px solid ${G}40`, background: `${G}10`,
+          color: G, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+          cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
+        }}>
+          SHOW &#9662;
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: CARD, borderBottom: `1px solid ${BDR}` }}>
+      <div style={{ padding: "0.625rem clamp(0.75rem,2.5vw,1.5rem) 0.5rem",
+                     display: "flex", alignItems: "center",
+                     justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: G,
+                         boxShadow: `0 0 5px ${G}80` }}/>
+          <span style={{ fontFamily: M, fontSize: "0.34rem", fontWeight: 700,
+                          color: W, letterSpacing: "0.12em",
+                          textTransform: "uppercase" }}>
+            EXPLAINER · WHAT IS ABRAXAS
+          </span>
+          <span style={{ fontFamily: M, fontSize: "0.28rem",
+                          color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
+            8 SLIDES · TAP TO ENLARGE
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "0.375rem" }}>
+          <a href="/about" style={{
+            padding: "0.25rem 0.625rem", borderRadius: 3,
+            border: `1px solid ${B}40`, background: `${B}10`,
+            color: B, fontFamily: M, fontSize: "0.3rem", fontWeight: 700,
+            textDecoration: "none", textTransform: "uppercase",
+            letterSpacing: "0.08em", whiteSpace: "nowrap",
+          }}>
+            FULL PAGE &#8594;
+          </a>
+          <button onClick={() => setOpen(false)} style={{
+            padding: "0.25rem 0.625rem", borderRadius: 3,
+            border: `1px solid ${BDR}`, background: "transparent",
+            color: "rgba(255,255,255,0.4)", fontFamily: M, fontSize: "0.3rem",
+            fontWeight: 700, cursor: "pointer", textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}>
+            HIDE &#9652;
+          </button>
+        </div>
+      </div>
+      <div style={{ display: "flex", overflowX: "auto", gap: "0.5rem",
+                     padding: "0 clamp(0.75rem,2.5vw,1.5rem) 0.875rem",
+                     scrollSnapType: "x mandatory" }}>
+        {slides.map((s, i) => (
+          <a key={s.src} href={s.src} target="_blank" rel="noopener noreferrer"
+            style={{
+              flexShrink: 0, scrollSnapAlign: "start",
+              width: 180, height: 180, borderRadius: 6, overflow: "hidden",
+              border: `1px solid ${BDR}`, background: "#000",
+              position: "relative", display: "block",
+              textDecoration: "none",
+            }}>
+            <Image src={s.src} alt={s.label} fill sizes="180px"
+                    style={{ objectFit: "cover" }}/>
+            <div style={{
+              position: "absolute", left: 0, right: 0, bottom: 0,
+              padding: "0.5rem 0.625rem 0.4rem",
+              background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.85))",
+              fontFamily: M, fontSize: "0.28rem", fontWeight: 700,
+              color: W, letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}>
+              {(i+1).toString().padStart(2,"0")} · {s.label}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── TERMINAL — primary unified experience ────────────────────────────
 function TerminalTab() {
   const [deep, setDeep] = useState<Deep>("main");
@@ -145,6 +252,9 @@ function TerminalTab() {
 
   return (
     <div>
+      {/* ── 0. INLINE EXPLAINER — first-visit context ─────────────── */}
+      <ExplainerStrip />
+
       {/* ── 1. COMMAND TERMINAL — primary entry point ──────────────── */}
       {/* Height-isolated wrapper: prevents inner scroll from bleeding into page */}
       <div style={{
