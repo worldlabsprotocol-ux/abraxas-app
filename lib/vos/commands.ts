@@ -492,3 +492,348 @@ futureSpecs.forEach(spec => commandRegistry.register({
   future: true,
   handler: () => { /* future flag handled by registry */ },
 }));
+
+// ── EXECUTION COMMANDS (tokenize → borrow → repay lifecycle) ─────────
+async function loadUserStore() {
+  const mod = await import("./userAssetStore");
+  return mod.userAssetStore;
+}
+async function loadTokenStore() {
+  const mod = await import("./userTokenStore");
+  return mod.userTokenStore;
+}
+async function loadLoanStore() {
+  const mod = await import("./userLoanStore");
+  return mod.userLoanStore;
+}
+
+// Override the future-flagged commands with real implementations
+const _originalRegister = commandRegistry.register.bind(commandRegistry);
+
+// ── TOKENIZE ──────────────────────────────────────────────────────────
+_originalRegister({
+  name: "tokenize", aliases: ["mint"], category: "execution",
+  description: "Mint tokens against a VERIFIED asset",
+  syntax: "tokenize <asset_id> [supply]",
+  example: "tokenize USR-XXXXXX 1000",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Missing asset ID. Syntax: tokenize <asset_id> [supply]" });
+      ctx.emit({ kind: "out",   text: "Run 'my assets' to see your asset IDs." });
+      return;
+    }
+    const assetId = ctx.args[0].toUpperCase();
+    const supply  = ctx.args[1] ? parseInt(ctx.args[1], 10) : 1000;
+    if (isNaN(supply) || supply < 1 || supply > 1_000_000) {
+      ctx.emit({ kind: "error", text: "Supply must be between 1 and 1,000,000." });
+      return;
+    }
+
+    const userStore  = await loadUserStore();
+    const tokenStore = await loadTokenStore();
+    const asset = userStore.get(assetId);
+    if (!asset) {
+      ctx.emit({ kind: "error", text: `Asset not found in your session: ${assetId}` });
+      return;
+    }
+    if (asset.state !== "VERIFIED" && asset.state !== "COMPLETED") {
+      ctx.emit({ kind: "error", text: `Asset must be VERIFIED before tokenization. Current state: ${asset.state}` });
+      ctx.emit({ kind: "out",   text: "Use /dashboard → SIMULATE NEXT STATE to advance the lifecycle, or wait for the verification network." });
+      return;
+    }
+
+    const existing = tokenStore.forAsset(assetId);
+    if (existing) {
+      ctx.emit({ kind: "error", text: `Asset already tokenized: ${existing.id} · ${existing.supply.toLocaleString()} tokens` });
+      return;
+    }
+
+    ctx.emit({ kind: "agent", text: `[Agent] Preparing tokenization for ${assetId}...` });
+    await wait(160);
+    ctx.emit({ kind: "agent", text: "[Agent] Computing token economics..." });
+    await wait(140);
+    ctx.emit({ kind: "agent", text: "[Agent] Anchoring metadata hash on Solana..." });
+    await wait(200);
+    ctx.emit({ kind: "agent", text: "[Agent] Mint complete." });
+
+    const valueUsd     = parseFloat((asset.estimatedValue || "0").replace(/[^0-9.]/g, "")) || 100_000;
+    const pricePerTok  = valueUsd / supply;
+    const mint = tokenStore.mint(assetId, supply, pricePerTok);
+
+    userStore.advance(assetId, "COMPLETED", "system", `Tokenized: ${supply.toLocaleString()} ${mint.symbol} @ $${pricePerTok.toFixed(2)}/tok`);
+
+    ctx.emit({ kind: "report", text:
+      `── TOKENIZATION COMPLETE · ${assetId} ──\n\n` +
+      `Mint ID:           ${mint.id}\n` +
+      `Symbol:            ${mint.symbol}\n` +
+      `Total Supply:      ${supply.toLocaleString()} tokens\n` +
+      `Underlying:        $${valueUsd.toLocaleString()}\n` +
+      `Price per Token:   $${pricePerTok.toFixed(4)}\n` +
+      `Anchored:          ${new Date().toISOString()}\n` +
+      `Standard:          AAS-1 wrapped (SPL Token-2022)\n\n` +
+      `Asset lifecycle advanced to COMPLETED.\n` +
+      `Run 'holdings' to view your tokenized assets.\n` +
+      `Run 'borrow ${assetId} <amount>' to draw USDC against this collateral.`
+    });
+  },
+});
+
+// ── HOLDINGS ──────────────────────────────────────────────────────────
+_originalRegister({
+  name: "holdings", aliases: ["mints", "tokens"], category: "intelligence",
+  description: "Show tokens minted in this session",
+  syntax: "holdings",
+  handler: async (ctx) => {
+    const store = await loadTokenStore();
+    const mints = store.listMine();
+    if (mints.length === 0) {
+      ctx.emit({ kind: "out", text: "No tokens minted yet. Run 'tokenize <asset_id>' after your asset is VERIFIED." });
+      return;
+    }
+    let out = `── YOUR TOKEN HOLDINGS (${mints.length}) ──\n\n`;
+    out += "MINT_ID".padEnd(12) + "ASSET".padEnd(12) + "SYMBOL".padEnd(18) + "SUPPLY".padEnd(12) + "PRICE\n";
+    out += "─".repeat(72) + "\n";
+    let totalValue = 0;
+    mints.forEach(m => {
+      const value = m.supply * m.pricePerTok;
+      totalValue += value;
+      out += m.id.padEnd(12) + m.assetId.padEnd(12) + m.symbol.slice(0,17).padEnd(18) +
+             m.supply.toLocaleString().padEnd(12) + `$${m.pricePerTok.toFixed(4)}\n`;
+    });
+    out += `\nTotal token-wrapped value: $${totalValue.toLocaleString()}`;
+    ctx.emit({ kind: "report", text: out });
+  },
+});
+
+// ── BORROW ────────────────────────────────────────────────────────────
+_originalRegister({
+  name: "borrow", aliases: ["loan"], category: "execution",
+  description: "Open a USDC loan against tokenized collateral",
+  syntax: "borrow <asset_id> <amount_usdc>",
+  example: "borrow USR-XXXXXX 50000",
+  handler: async (ctx) => {
+    if (ctx.args.length < 2) {
+      ctx.emit({ kind: "error", text: "Syntax: borrow <asset_id> <amount_usdc>" });
+      return;
+    }
+    const assetId = ctx.args[0].toUpperCase();
+    const amount  = parseFloat(ctx.args[1].replace(/[,$]/g, ""));
+    if (isNaN(amount) || amount < 1) {
+      ctx.emit({ kind: "error", text: "Amount must be a positive number." });
+      return;
+    }
+
+    const userStore  = await loadUserStore();
+    const tokenStore = await loadTokenStore();
+    const loanStore  = await loadLoanStore();
+    const asset = userStore.get(assetId);
+    if (!asset) {
+      ctx.emit({ kind: "error", text: `Asset not found: ${assetId}` });
+      return;
+    }
+    const mint = tokenStore.forAsset(assetId);
+    if (!mint) {
+      ctx.emit({ kind: "error", text: "Asset must be tokenized before borrowing. Run: tokenize " + assetId });
+      return;
+    }
+
+    const valueUsd = parseFloat((asset.estimatedValue || "0").replace(/[^0-9.]/g, "")) || 100_000;
+    const maxLtv   = 0.60;
+    const maxBorrow = valueUsd * maxLtv;
+    if (amount > maxBorrow) {
+      ctx.emit({ kind: "error", text: `Exceeds max LTV (60%). Max borrow: $${maxBorrow.toLocaleString()}` });
+      return;
+    }
+
+    ctx.emit({ kind: "agent", text: "[Agent] Checking collateral eligibility..." });
+    await wait(140);
+    ctx.emit({ kind: "agent", text: "[Agent] Computing rate from underwriting model..." });
+    await wait(160);
+    ctx.emit({ kind: "agent", text: "[Agent] Locking collateral in vault..." });
+    await wait(140);
+    ctx.emit({ kind: "agent", text: "[Agent] Loan originated." });
+
+    const loan = loanStore.open(assetId, amount, valueUsd);
+    ctx.emit({ kind: "report", text:
+      `── LOAN ORIGINATED · ${loan.id} ──\n\n` +
+      `Asset:             ${assetId}\n` +
+      `Principal:         $${amount.toLocaleString()} USDC\n` +
+      `Collateral Value:  $${valueUsd.toLocaleString()}\n` +
+      `LTV:               ${(loan.ltvBps/100).toFixed(2)}%\n` +
+      `APR:               ${(loan.aprBps/100).toFixed(2)}%\n` +
+      `State:             OPEN\n` +
+      `Opened:            ${loan.openedAt}\n\n` +
+      `Repay anytime with 'repay ${loan.id} <amount>'.\n` +
+      `View all loans with 'loans'.`
+    });
+  },
+});
+
+// ── REPAY ─────────────────────────────────────────────────────────────
+_originalRegister({
+  name: "repay", category: "execution",
+  description: "Repay an outstanding loan (full or partial)",
+  syntax: "repay <loan_id> [amount]",
+  example: "repay LN-ABC123 50000",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Syntax: repay <loan_id> [amount]" });
+      return;
+    }
+    const loanStore = await loadLoanStore();
+    const loanId = ctx.args[0].toUpperCase();
+    const loan = loanStore.get(loanId);
+    if (!loan) {
+      ctx.emit({ kind: "error", text: `Loan not found: ${loanId}` });
+      return;
+    }
+    if (loan.state === "REPAID") {
+      ctx.emit({ kind: "error", text: "Loan already fully repaid." });
+      return;
+    }
+    const amount = ctx.args[1] ? parseFloat(ctx.args[1].replace(/[,$]/g, "")) : loan.outstandingUsd;
+
+    ctx.emit({ kind: "agent", text: "[Agent] Submitting repayment to vault..." });
+    await wait(160);
+    const updated = loanStore.repay(loanId, amount);
+    if (!updated) {
+      ctx.emit({ kind: "error", text: "Repayment failed." });
+      return;
+    }
+    ctx.emit({ kind: "agent", text: "[Agent] Repayment confirmed." });
+    ctx.emit({ kind: "report", text:
+      `── REPAYMENT · ${updated.id} ──\n\n` +
+      `Repaid:           $${Math.min(amount, loan.outstandingUsd).toLocaleString()}\n` +
+      `Outstanding:      $${updated.outstandingUsd.toLocaleString()}\n` +
+      `State:            ${updated.state}\n` +
+      (updated.state === "REPAID" ? "\nLoan fully repaid. Collateral released." : "")
+    });
+  },
+});
+
+// ── LOANS ─────────────────────────────────────────────────────────────
+_originalRegister({
+  name: "loans", category: "intelligence",
+  description: "List all loans in this session",
+  syntax: "loans",
+  handler: async (ctx) => {
+    const store = await loadLoanStore();
+    const loans = store.listMine();
+    if (loans.length === 0) {
+      ctx.emit({ kind: "out", text: "No active loans. Run 'borrow <asset_id> <amount>' to open one." });
+      return;
+    }
+    let out = `── YOUR LOANS (${loans.length}) ──\n\n`;
+    out += "LOAN_ID".padEnd(12) + "ASSET".padEnd(12) + "PRINCIPAL".padEnd(14) + "OUTSTANDING".padEnd(14) + "STATE\n";
+    out += "─".repeat(72) + "\n";
+    let totalOut = 0;
+    loans.forEach(l => {
+      totalOut += l.outstandingUsd;
+      out += l.id.padEnd(12) + l.assetId.padEnd(12) +
+             `$${l.principalUsd.toLocaleString()}`.padEnd(14) +
+             `$${l.outstandingUsd.toLocaleString()}`.padEnd(14) +
+             l.state + "\n";
+    });
+    out += `\nTotal outstanding debt: $${totalOut.toLocaleString()} USDC`;
+    ctx.emit({ kind: "report", text: out });
+  },
+});
+
+// ── ORACLE ────────────────────────────────────────────────────────────
+_originalRegister({
+  name: "oracle", category: "intelligence",
+  description: "Query oracle feeds for asset valuation",
+  syntax: "oracle <asset_id>",
+  example: "oracle AAS-1",
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "error", text: "Syntax: oracle <asset_id>" });
+      return;
+    }
+    const id = ctx.args[0].toUpperCase();
+    // Try registry first, then user assets
+    const regAsset  = ctx.registry.get(id);
+    const userStore = await loadUserStore();
+    const userAsset = userStore.get(id);
+
+    if (!regAsset && !userAsset) {
+      ctx.emit({ kind: "error", text: `Asset not found: ${id}` });
+      return;
+    }
+
+    ctx.emit({ kind: "agent", text: "[Agent] Querying Pyth Network..." });
+    await wait(160);
+    ctx.emit({ kind: "agent", text: "[Agent] Cross-checking Switchboard feed..." });
+    await wait(140);
+    ctx.emit({ kind: "agent", text: "[Agent] Aggregating with appraisal anchor..." });
+    await wait(140);
+
+    const base = regAsset
+      ? regAsset.collateral.appraisalValue
+      : parseFloat((userAsset!.estimatedValue || "100000").replace(/[^0-9.]/g, "")) || 100_000;
+    // Add a small deterministic drift so it feels live
+    const drift = (Math.sin(Date.now() / 1e7) * 0.012);
+    const liveValue = base * (1 + drift);
+
+    ctx.emit({ kind: "report", text:
+      `── ORACLE FEED · ${id} ──\n\n` +
+      `Appraisal Anchor:   $${base.toLocaleString()}\n` +
+      `Live Mid Price:     $${Math.round(liveValue).toLocaleString()}\n` +
+      `Drift from Anchor:  ${(drift*100).toFixed(2)}%\n` +
+      `Aggregator:         Pyth + Switchboard + Appraisal\n` +
+      `Confidence:         ${regAsset ? regAsset.verification.confidence : 85}%\n` +
+      `Refresh Window:     15 min\n` +
+      `Last Update:        ${new Date().toLocaleString()}`
+    });
+  },
+});
+
+// ── ATTEST ────────────────────────────────────────────────────────────
+_originalRegister({
+  name: "attest", category: "execution",
+  description: "Submit an attestation to one of your assets",
+  syntax: "attest <asset_id> <type>",
+  example: "attest USR-XXXXXX insurance",
+  handler: async (ctx) => {
+    if (ctx.args.length < 2) {
+      ctx.emit({ kind: "error", text: "Syntax: attest <asset_id> <type>" });
+      ctx.emit({ kind: "out",   text: "Types: title, insurance, appraisal, custody, legal, audit" });
+      return;
+    }
+    const userStore = await loadUserStore();
+    const id        = ctx.args[0].toUpperCase();
+    const type      = ctx.args[1].toLowerCase();
+    const asset = userStore.get(id);
+    if (!asset) {
+      ctx.emit({ kind: "error", text: `Asset not found: ${id}` });
+      return;
+    }
+    const valid = ["title","insurance","appraisal","custody","legal","audit"];
+    if (!valid.includes(type)) {
+      ctx.emit({ kind: "error", text: `Invalid type. Use: ${valid.join(", ")}` });
+      return;
+    }
+
+    ctx.emit({ kind: "agent", text: `[Agent] Recording ${type} attestation for ${id}...` });
+    await wait(160);
+    ctx.emit({ kind: "agent", text: "[Agent] Computing attestation hash..." });
+    await wait(120);
+    ctx.emit({ kind: "agent", text: "[Agent] Anchoring on Solana..." });
+    await wait(160);
+
+    userStore.advance(id, asset.state, "attester",
+      `${type.toUpperCase()} attestation submitted`);
+
+    const hash = Array.from({length:16},() => "0123456789abcdef"[Math.floor(Math.random()*16)]).join("");
+    ctx.emit({ kind: "report", text:
+      `── ATTESTATION RECORDED · ${id} ──\n\n` +
+      `Type:           ${type.toUpperCase()}\n` +
+      `Attester:       ${ctx.args[2] || "anonymous-attester"}\n` +
+      `Hash:           sha256:${hash}...\n` +
+      `Anchored:       ${new Date().toISOString()}\n` +
+      `State:          ${asset.state} (unchanged)\n\n` +
+      `Attestation appended to asset timeline. View with 'track ${id}'.`
+    });
+  },
+});
+

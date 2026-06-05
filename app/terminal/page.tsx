@@ -6,6 +6,7 @@
 // registry, verticals all unified in one cohesive surface.
 
 import { useState }             from "react";
+import Image                    from "next/image";
 import { FlagshipAssetPage }    from "@/components/assets/FlagshipAssetPage";
 import { TerminalLayout }       from "@/components/terminal/TerminalLayout";
 import { AssetOwnerOnboarding } from "@/components/onboarding/AssetOwnerOnboarding";
@@ -684,7 +685,8 @@ export default function TerminalPage() {
                      flexWrap: "nowrap", overflowX: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.375rem",
                        flexShrink: 0, marginRight: "clamp(0.375rem,1.5vw,1rem)" }}>
-          <span style={{ color: G, fontSize: "clamp(0.7rem,2vw,0.9rem)" }}>&#9672;</span>
+          <Image src="/icon-48.png" alt="Abraxas" width={24} height={24}
+                  priority style={{ display:"block", flexShrink:0 }}/>
           <div>
             <span style={{ fontFamily: M, fontSize: "clamp(0.5rem,1.5vw,0.7rem)",
                             fontWeight: 900, color: W, letterSpacing: "0.1em" }}>
@@ -715,6 +717,17 @@ export default function TerminalPage() {
             {t.label}
           </button>
         ))}
+
+        <a href="/about" style={{
+          padding: "0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius: 4,
+          border: `1px solid ${BDR}`, background: "transparent",
+          color: "rgba(255,255,255,0.4)", fontFamily: M,
+          fontSize: "clamp(0.28rem,0.85vw,0.36rem)", fontWeight: 700,
+          textDecoration: "none", textTransform: "uppercase",
+          letterSpacing: "0.1em", whiteSpace: "nowrap", flexShrink: 0,
+        }}>
+          ABOUT
+        </a>
 
         <a href="/dashboard" style={{
           padding: "0.25rem clamp(0.4rem,1.2vw,0.75rem)", borderRadius: 4,
