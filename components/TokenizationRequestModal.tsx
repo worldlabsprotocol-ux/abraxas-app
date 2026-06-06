@@ -5,6 +5,7 @@
 "use client";
 
 import { useState } from "react";
+import { WorldIDVerify } from "@/components/WorldIDVerify";
 import { tokenizationRequests } from "@/lib/supabase/client";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -53,6 +54,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
   const [busy,  setBusy]  = useState(false);
   const [err,   setErr]   = useState<string|null>(null);
   const [copied,setCopied]= useState(false);
+  const [worldIdHash, setWorldIdHash] = useState<string|null>(null);
 
   if (!open) return null;
 
@@ -299,10 +301,17 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
           {/* ── PAYMENT ──────────────────────────────────────────── */}
           {step === "payment" && (
             <div>
-              <p style={{ fontFamily:S, fontSize:"0.875rem", fontWeight:700, color:W,
-                           margin:"0 0 0.375rem" }}>
-                Send USDC to complete.
-              </p>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                             flexWrap:"wrap", gap:"0.5rem", marginBottom:"0.5rem" }}>
+                <p style={{ fontFamily:S, fontSize:"0.875rem", fontWeight:700, color:W, margin:0 }}>
+                  Send USDC to complete.
+                </p>
+                <WorldIDVerify
+                  mode="compact"
+                  signal={reqId ?? "abraxas"}
+                  onVerified={(hash) => setWorldIdHash(hash)}
+                />
+              </div>
               <p style={{ fontFamily:S, fontSize:"0.78rem",
                            color:"rgba(255,255,255,0.4)", lineHeight:1.7,
                            margin:"0 0 1rem" }}>

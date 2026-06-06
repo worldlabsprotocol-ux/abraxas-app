@@ -222,63 +222,71 @@ function TerminalTab() {
       <ExplainerCarousel />
       {/* ── 1. WYOMING LLC — primary revenue funnel ─────────────────── */}
       <div style={{ maxWidth: 1060, margin: "0 auto",
-                     padding: "2rem clamp(1rem,3vw,2rem) 1rem" }}>
+                     padding: "1rem clamp(0.75rem,2.5vw,1.5rem) 0.75rem" }}>
         {/* ── WYOMING LLC ENGINE ─────────────────────────────────── */}
-        <div style={{ marginBottom: "1.5rem" }}>
+        <div style={{ marginBottom: "1.25rem" }}>
           <Label>Wyoming LLC Formation</Label>
-          <div style={{ padding: "2rem", borderRadius: 8,
-                         background: "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.05))",
-                         border: `1px solid ${B}30` }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.7rem",
-                           marginBottom: "0.82rem" }}>
-              <div style={{ padding: "0.4rem 0.875rem", borderRadius: 4,
-                             background: `${B}20`, border: `1px solid ${B}40`,
-                             fontFamily: M, fontSize: "0.7rem", fontWeight: 900,
-                             color: B, letterSpacing: "0.15em",
+          <div style={{ padding: "1rem 1.125rem", borderRadius: 8,
+                         background: "linear-gradient(135deg, rgba(59,130,246,0.07), rgba(139,92,246,0.04))",
+                         border: `1px solid ${B}25` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem",
+                           marginBottom: "0.625rem" }}>
+              <div style={{ padding: "0.25rem 0.625rem", borderRadius: 3,
+                             background: `${B}18`, border: `1px solid ${B}35`,
+                             fontFamily: M, fontSize: "0.6rem", fontWeight: 900,
+                             color: B, letterSpacing: "0.12em",
                              textTransform: "uppercase" }}>
                 TOKENIZE YOUR BUSINESS
               </div>
             </div>
-            <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.75rem)",
-                          fontWeight: 800, color: W, margin: "0 0 0.625rem",
-                          letterSpacing: "-0.02em" }}>
+            <h2 style={{ fontFamily: S, fontSize: "clamp(0.95rem,2.5vw,1.35rem)",
+                          fontWeight: 800, color: W, margin: "0 0 0.375rem",
+                          letterSpacing: "-0.01em" }}>
               Launch your business on-chain.
             </h2>
-            <p style={{ fontFamily: S, fontSize: "clamp(0.9rem,1.5vw,1.05rem)",
-                         color: "rgba(255,255,255,0.4)", lineHeight: 1.75,
-                         maxWidth: 580, margin: "0 0 1.5rem" }}>
-              Structure your business through a Wyoming LLC for full on-chain ownership,
-              governance, fundraising, and lending. Powered by Abraxas Protocol.
+            <p style={{ fontFamily: S, fontSize: "0.78rem",
+                         color: "rgba(255,255,255,0.4)", lineHeight: 1.6,
+                         maxWidth: 560, margin: "0 0 1rem" }}>
+              Wyoming LLC for on-chain ownership, governance, fundraising, and lending.
             </p>
-            <div style={{ display: "grid",
-                           gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
-                           gap: "0.7rem", marginBottom: "1.5rem" }}>
+            {/* Horizontal scroll on mobile — no stacking */}
+            <div style={{
+              display: "flex", gap: "0.625rem", marginBottom: "1rem",
+              overflowX: "auto", paddingBottom: "0.25rem",
+              /* allow cards to scroll but not shrink below min width */
+              scrollSnapType: "x mandatory",
+            }}>
               {([
-                { id: "starter"    as const, tier: "STARTER",    price: "$1,499",  amount: 1499, color: B,         items: ["Wyoming LLC Formation","Operating Agreement","On-chain Tokenization","V5 Basic Verification"] },
-                { id: "growth"     as const, tier: "GROWTH",     price: "$2,999",  amount: 2999, color: "#8B5CF6", items: ["Everything in Starter","Multi-sig Governance","Cap Table Management","Lending Eligible (60% LTV)"] },
-                { id: "enterprise" as const, tier: "ENTERPRISE", price: "$4,999",  amount: 4999, color: G,         items: ["Everything in Growth","Full Compliance Package","Priority Verification (24h)","Dedicated Verifier"] },
+                { id: "starter"    as const, tier: "STARTER",    price: "$1,499",  color: B,         items: ["Wyoming LLC Formation","Operating Agreement","On-chain Token","V5 Verification"] },
+                { id: "growth"     as const, tier: "GROWTH",     price: "$2,999",  color: "#8B5CF6", items: ["Everything in Starter","Multi-sig Governance","Cap Table Mgmt","Lending Eligible"] },
+                { id: "enterprise" as const, tier: "ENTERPRISE", price: "$4,999",  color: G,         items: ["Everything in Growth","Compliance Package","Priority 24h","Dedicated Verifier"] },
               ]).map(pkg => (
-                <div key={pkg.tier} style={{ padding: "1.25rem", borderRadius: 7,
-                                              background: CARD,
-                                              border: `1px solid ${pkg.color}30`,
-                                              borderTop: `3px solid ${pkg.color}`,
-                                              display: "flex", flexDirection: "column" }}>
-                  <div style={{ fontFamily: M, fontSize: "0.72rem", fontWeight: 900,
-                                 color: pkg.color, letterSpacing: "0.12em",
-                                 marginBottom: "0.375rem" }}>
+                <div key={pkg.tier} style={{
+                  minWidth: 200, flex: "0 0 200px",
+                  padding: "0.875rem", borderRadius: 6,
+                  background: CARD,
+                  border: `1px solid ${pkg.color}25`,
+                  borderTop: `2px solid ${pkg.color}`,
+                  display: "flex", flexDirection: "column",
+                  scrollSnapAlign: "start",
+                }}>
+                  <div style={{ fontFamily: M, fontSize: "0.62rem", fontWeight: 900,
+                                 color: pkg.color, letterSpacing: "0.1em",
+                                 marginBottom: "0.2rem" }}>
                     {pkg.tier}
                   </div>
-                  <div style={{ fontFamily: M, fontSize: "1.3rem", fontWeight: 900,
-                                 color: W, marginBottom: "0.7rem" }}>
+                  <div style={{ fontFamily: M, fontSize: "1.05rem", fontWeight: 900,
+                                 color: W, marginBottom: "0.5rem" }}>
                     {pkg.price}
                   </div>
-                  <div style={{ flex: 1, marginBottom: "0.7rem" }}>
+                  <div style={{ flex: 1, marginBottom: "0.625rem" }}>
                     {pkg.items.map(item => (
-                      <div key={item} style={{ display: "flex", gap: "0.82rem",
-                                                alignItems: "center", marginBottom: 4 }}>
-                        <span style={{ color: pkg.color, fontSize: "0.92rem" }}>◉</span>
-                        <span style={{ fontFamily: S, fontSize: "clamp(1.1rem,1.4vw,1.2rem)",
-                                        color: "rgba(255,255,255,0.5)" }}>
+                      <div key={item} style={{ display: "flex", gap: "0.4rem",
+                                                alignItems: "flex-start", marginBottom: 3 }}>
+                        <span style={{ color: pkg.color, fontSize: "0.6rem",
+                                        flexShrink: 0, marginTop: 2 }}>◉</span>
+                        <span style={{ fontFamily: S, fontSize: "0.72rem",
+                                        color: "rgba(255,255,255,0.5)", lineHeight: 1.4 }}>
                           {item}
                         </span>
                       </div>
@@ -286,37 +294,34 @@ function TerminalTab() {
                   </div>
                   <button onClick={() => { setInitialTier(pkg.id); setWyOpen(true); }}
                     style={{
-                      width: "100%", padding: "0.875rem 1rem", borderRadius: 5,
-                      border: `2px solid ${pkg.color}`,
-                      background: `${pkg.color}20`,
-                      color: pkg.color, fontFamily: M, fontSize: "0.92rem",
+                      width: "100%", padding: "0.5rem 0.625rem", borderRadius: 4,
+                      border: `1px solid ${pkg.color}55`,
+                      background: `${pkg.color}12`,
+                      color: pkg.color, fontFamily: M, fontSize: "0.68rem",
                       fontWeight: 900, cursor: "pointer",
                       letterSpacing: "0.06em", textTransform: "uppercase",
-                      transition: "all 0.15s",
-                      boxShadow: `0 0 12px ${pkg.color}30`,
                     }}>
-                    SELECT {pkg.tier} →
+                    SELECT →
                   </button>
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", alignItems: "center" }}>
               <button onClick={() => { setInitialTier(null); setWyOpen(true); }} style={{
-                padding: "0.7rem 1.375rem", borderRadius: 5, border: "none",
-                background: G, color: "#000", fontFamily: M, fontSize: "0.92rem",
+                padding: "0.55rem 1.125rem", borderRadius: 5, border: "none",
+                background: G, color: "#000", fontFamily: M, fontSize: "0.78rem",
                 fontWeight: 900, cursor: "pointer", letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                boxShadow: `0 0 16px ${G}50`,
+                textTransform: "uppercase", boxShadow: `0 0 12px ${G}45`,
               }}>
-                START TOKENIZATION NOW &#8594;
+                START TOKENIZATION NOW →
               </button>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.82rem" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%",
-                               background: G, boxShadow: `0 0 5px ${G}90` }}/>
-                <span style={{ fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
-                                color: G, letterSpacing: "0.1em",
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%",
+                               background: G, boxShadow: `0 0 4px ${G}90` }}/>
+                <span style={{ fontFamily: M, fontSize: "0.6rem", fontWeight: 700,
+                                color: G, letterSpacing: "0.08em",
                                 textTransform: "uppercase" }}>
-                  Available now &middot; Powered by Abraxas V5
+                  Available now · Abraxas V5
                 </span>
               </div>
             </div>
@@ -339,12 +344,12 @@ function TerminalTab() {
                   { t: "Lending eligible", d: "Once MARKETPLACE_LIVE, your business becomes financeable collateral at up to 60% LTV." },
                 ].map(b => (
                   <div key={b.t} style={{ fontFamily: S }}>
-                    <div style={{ fontSize: "clamp(0.78rem,1.6vw,0.88rem)",
-                                   fontWeight: 700, color: W, marginBottom: 4 }}>
+                    <div style={{ fontSize: "0.72rem",
+                                   fontWeight: 700, color: W, marginBottom: 3 }}>
                       &#10003; {b.t}
                     </div>
-                    <div style={{ fontSize: "clamp(0.85rem,1.4vw,0.95rem)",
-                                   color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
+                    <div style={{ fontSize: "0.7rem",
+                                   color: "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>
                       {b.d}
                     </div>
                   </div>
