@@ -5,6 +5,8 @@
 "use client";
 
 import { useState } from "react";
+import { wyomingRequestStore } from "@/lib/vos/wyomingRequestStore";
+import { notificationService } from "@/lib/notifications";
 import { WorldIDVerify } from "@/components/WorldIDVerify";
 import { tokenizationRequests } from "@/lib/supabase/client";
 
@@ -79,7 +81,27 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
         sending_wallet: wallet.trim() || null,
         tier, amount_usdc: sel.price, status: "pending_payment",
       });
-      setReqId(r.id); setSrc(r.source); setStep("payment");
+      setReqId(r.id); setSrc(r.source);
+
+      // Persist locally for dashboard visibility + create notification
+      const wyReq = wyomingRequestStore.create({
+        companyName:        name.trim(),
+        estimatedValuation: wallet.trim() ? wallet.trim() : sel.price.toString(),
+        walletAddress:      wallet.trim() || undefined,
+        description:        undefined,
+        jurisdiction:       "Wyoming, USA",
+        tier,
+        assetId:            r.id,       // reuse request ID as asset ref until V5 asset is created
+        supabaseId:         r.source === "supabase" ? r.id : undefined,
+      });
+      notificationService.createNotification({
+        type:  "wyoming_request",
+        title: `New Request: ${name.trim()}`,
+        body:  `${sel.name} · $${sel.price.toLocaleString()} USDC`,
+        data:  { wyId: wyReq.id, tier, companyName: name.trim() },
+      });
+
+      setStep("payment");
     } catch(e: unknown) {
       const msg = e instanceof Error ? e.message : "Submission failed. Please try again.";
       setErr(msg);

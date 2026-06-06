@@ -19,19 +19,25 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 export interface TokenizationRequest {
-  id?:             string;
-  created_at?:     string;
-  updated_at?:     string;
-  business_name:   string;
-  contact_email?:  string | null;
-  contact_x?:      string | null;
-  sending_wallet?: string | null;
-  tier:            "starter" | "growth" | "enterprise";
-  amount_usdc:     number;
-  tx_signature?:   string | null;
-  status:          "pending_payment" | "paid" | "in_pipeline" | "completed" | "cancelled";
-  notes?:          string | null;
-  asset_id?:       string | null;
+  id?:                  string;
+  created_at?:          string;
+  updated_at?:          string;
+  business_name:        string;
+  contact_email?:       string | null;
+  contact_x?:           string | null;
+  sending_wallet?:      string | null;
+  tier:                 "starter" | "growth" | "enterprise";
+  amount_usdc:          number;
+  tx_signature?:        string | null;
+  status:               "pending_payment" | "paid" | "in_pipeline" | "completed" | "cancelled";
+  notes?:               string | null;
+  asset_id?:            string | null;
+  // Wyoming LLC extended fields (added in migration 003)
+  estimated_valuation?: string | null;
+  description?:         string | null;
+  jurisdiction?:        string | null;
+  asset_type?:          string | null;
+  lifecycle_state?:     string | null;
 }
 
 // ── Local fallback ────────────────────────────────────────────────────────────

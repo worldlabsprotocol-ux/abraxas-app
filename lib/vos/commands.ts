@@ -728,28 +728,33 @@ commandRegistry.register({
   example: 'wyoming "Acme Holdings LLC" 500000',
   handler: async (ctx) => {
     const full = ctx.args.join(" ");
-    const m = full.match(/^"([^"]+)"\s*(\d+)?/);
+    // Support single quotes, double quotes, or unquoted multi-word names
+    const m =
+      full.match(/^["']([^"']+)["']\s*(\d+)?/) ??
+      full.match(/^([^\d\s][^\d]*?)\s+(\d+)$/) ??
+      full.match(/^([^\d\s].+)$/);
     if (!m) {
       ctx.emit({ kind: "error", text: 'Syntax: wyoming "Company Name" [valuation_usd]' });
-      ctx.emit({ kind: "out",   text: 'Example: wyoming "Acme Holdings LLC" 500000' });
+      ctx.emit({ kind: "out",   text: "Example: wyoming \"Acme Holdings LLC\" 500000" });
       return;
     }
-    const companyName = m[1];
+    const companyName = m[1].trim();
     const valuation   = m[2] ?? "1000000";
 
     const userStore = await loadUserStore();
+    const { wyomingRequestStore } = await import("./wyomingRequestStore");
+    const { notificationService } = await import("../notifications");
 
     ctx.emit({ kind: "agent", text: `[Agent] Initiating Wyoming LLC formation for "${companyName}"...` });
-    await wait(200);
+    await wait(180);
     ctx.emit({ kind: "agent", text: "[Agent] Reserving entity name with Wyoming Secretary of State..." });
-    await wait(180);
+    await wait(160);
     ctx.emit({ kind: "agent", text: "[Agent] Drafting operating agreement..." });
-    await wait(180);
-    ctx.emit({ kind: "agent", text: "[Agent] Generating registered agent assignment..." });
     await wait(160);
     ctx.emit({ kind: "agent", text: "[Agent] Submitting to V5 verification pipeline..." });
     await wait(160);
 
+    // 1. Create V5 asset (appears in 'my assets' immediately)
     const asset = userStore.create({
       assetType:      "wyoming_llc",
       estimatedValue: valuation,
@@ -759,22 +764,59 @@ commandRegistry.register({
       hasCustody:     "yes",
     });
 
-    ctx.emit({ kind: "agent", text: "[Agent] Asset submitted." });
+    // 2. Persist to Wyoming request store (admin dashboard visibility)
+    const wyReq = wyomingRequestStore.create({
+      companyName,
+      estimatedValuation: valuation,
+      assetId:            asset.id,
+      jurisdiction:       "Wyoming, USA",
+      tier:               "starter",
+    });
+
+    // 3. Create in-app notification
+    notificationService.createNotification({
+      type:  "wyoming_request",
+      title: `Wyoming LLC: ${companyName}`,
+      body:  `Formation request submitted via terminal`,
+      data:  { assetId: asset.id, wyId: wyReq.id, valuation },
+    });
+
+    // 4. Try Supabase sync (non-blocking — never fails the command)
+    import("../supabase/client").then(({ tokenizationRequests }) => {
+      tokenizationRequests.insert({
+        business_name:       companyName,
+        tier:                "starter",
+        amount_usdc:         parseInt(valuation, 10),
+        status:              "pending_payment",
+        asset_id:            asset.id,
+        estimated_valuation: valuation,
+        jurisdiction:        "Wyoming, USA",
+        asset_type:          "WYOMING_LLC",
+        lifecycle_state:     "SUBMITTED",
+      }).then(result => {
+        if (result.source === "supabase") {
+          wyomingRequestStore.linkSupabaseId(wyReq.id, result.id);
+        }
+      }).catch(() => { /* Supabase unavailable — local store is the source of truth */ });
+    }).catch(() => { /* module load failed */ });
+
+    ctx.emit({ kind: "agent", text: "[Agent] Submitted." });
     ctx.emit({ kind: "report", text:
       `── WYOMING LLC FORMATION INITIATED ──\n\n` +
-      `Company:         ${companyName}\n` +
-      `Asset ID:        ${asset.id}\n` +
-      `Asset Type:      Wyoming LLC\n` +
-      `Valuation:       $${parseInt(valuation).toLocaleString()}\n` +
-      `Jurisdiction:    Wyoming, USA\n` +
-      `State:           ${asset.state}\n` +
-      `Pipeline:        10-stage verification (SUBMITTED → MARKETPLACE_LIVE)\n` +
-      `Submitted:       ${new Date(asset.createdAt).toLocaleString()}\n\n` +
+      `Company:        ${companyName}\n` +
+      `Asset ID:       ${asset.id}\n` +
+      `Request ID:     ${wyReq.id}\n` +
+      `Asset Type:     Wyoming LLC\n` +
+      `Valuation:      $${parseInt(valuation, 10).toLocaleString()}\n` +
+      `Jurisdiction:   Wyoming, USA\n` +
+      `State:          ${asset.state}\n` +
+      `Pipeline:       10-stage (SUBMITTED → MARKETPLACE_LIVE)\n` +
+      `Submitted:      ${new Date(asset.createdAt).toLocaleString()}\n\n` +
       `Next steps:\n` +
-      `  > track ${asset.id}         View lifecycle\n` +
-      `  > advance ${asset.id}        Move to next verification stage\n` +
-      `  > demo ${asset.id}           Walk through full pipeline\n` +
-      `  /dashboard                  Full institutional view`
+      `  > track ${asset.id}\n` +
+      `  > advance ${asset.id}\n` +
+      `  > demo ${asset.id}\n` +
+      `  /dashboard — full institutional view`
     });
   },
 });

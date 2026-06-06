@@ -11,6 +11,9 @@ import {
 import type { UserAsset, LifecycleState } from "@/lib/vos/userAssetStore";
 import { sessionStore } from "@/lib/vos/sessionStore";
 import type { Session } from "@/lib/vos/sessionStore";
+import { wyomingRequestStore } from "@/lib/vos/wyomingRequestStore";
+import type { WyomingRequest } from "@/lib/vos/wyomingRequestStore";
+import { notificationService } from "@/lib/notifications";
 import { CompactWallet }    from "@/components/CompactWallet";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
@@ -67,10 +70,13 @@ function scoreLabel(v: number, isRisk = false) {
 }
 
 export default function DashboardPage() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [assets,  setAssets]  = useState<UserAsset[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [tab, setTab] = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
+  const [session,         setSession]         = useState<Session | null>(null);
+  const [assets,          setAssets]          = useState<UserAsset[]>([]);
+  const [selected,        setSelected]        = useState<string | null>(null);
+  const [tab,             setTab]             = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
+  const [wyomingReqs,     setWyomingReqs]     = useState<WyomingRequest[]>([]);
+  const [unreadCount,     setUnreadCount]     = useState(0);
+  const [showWyoming,     setShowWyoming]     = useState(false);
 
   function refresh() {
     const s = sessionStore.get();
@@ -78,6 +84,8 @@ export default function DashboardPage() {
     const mine = userAssetStore.listMine();
     setAssets(mine);
     if (mine.length > 0 && !selected) setSelected(mine[0].id);
+    setWyomingReqs(wyomingRequestStore.listAll());
+    setUnreadCount(notificationService.getUnreadCount());
   }
 
   useEffect(() => { refresh(); }, []);
@@ -175,7 +183,115 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {assets.length === 0 && (
+        {/* Toggle between Assets and Wyoming Requests */}
+        <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem" }}>
+          <button onClick={() => setShowWyoming(false)} style={{
+            padding:"0.35rem 0.875rem", borderRadius:4, cursor:"pointer",
+            border:`1px solid ${!showWyoming ? `${G}50` : BDR}`,
+            background: !showWyoming ? `${G}10` : "transparent",
+            color: !showWyoming ? G : "rgba(255,255,255,0.4)",
+            fontFamily:M, fontSize:"0.62rem", fontWeight:700,
+            textTransform:"uppercase", letterSpacing:"0.08em",
+          }}>
+            ASSETS
+          </button>
+          <button onClick={() => { setShowWyoming(true); wyomingRequestStore.markAllViewed(); setUnreadCount(0); }} style={{
+            padding:"0.35rem 0.875rem", borderRadius:4, cursor:"pointer",
+            border:`1px solid ${showWyoming ? `${G}50` : BDR}`,
+            background: showWyoming ? `${G}10` : "transparent",
+            color: showWyoming ? G : "rgba(255,255,255,0.4)",
+            fontFamily:M, fontSize:"0.62rem", fontWeight:700,
+            textTransform:"uppercase", letterSpacing:"0.08em",
+            position:"relative",
+          }}>
+            WYOMING
+            {unreadCount > 0 && !showWyoming && (
+              <span style={{
+                position:"absolute", top:-4, right:-4,
+                width:15, height:15, borderRadius:"50%",
+                background:"#EF4444", color:"#fff",
+                fontFamily:M, fontSize:"0.5rem", fontWeight:900,
+                display:"flex", alignItems:"center", justifyContent:"center",
+              }}>
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* ── WYOMING TOKENIZATION REQUESTS ── */}
+        {showWyoming && (
+          <div>
+            <div style={{ fontFamily:M, fontSize:"0.58rem", color:"rgba(255,255,255,0.25)",
+                           textTransform:"uppercase", letterSpacing:"0.12em",
+                           marginBottom:"0.625rem" }}>
+              WYOMING TOKENIZATION REQUESTS ({wyomingReqs.length})
+            </div>
+            {wyomingReqs.length === 0 ? (
+              <div style={{ padding:"1.5rem", background:CARD,
+                             border:`1px solid ${BDR}`, borderRadius:6,
+                             textAlign:"center", fontFamily:M,
+                             fontSize:"0.6rem", color:"rgba(255,255,255,0.2)" }}>
+                No submissions yet. Use START TOKENIZATION NOW on the terminal.
+              </div>
+            ) : (
+              wyomingReqs.map(req => (
+                <div key={req.id} style={{
+                  padding:"0.75rem 0.875rem", background:CARD,
+                  border:`1px solid ${BDR}`, borderRadius:6,
+                  borderLeft:`3px solid ${G}`,
+                  marginBottom:"0.375rem",
+                }}>
+                  <div style={{ display:"flex", justifyContent:"space-between",
+                                 alignItems:"baseline", flexWrap:"wrap", gap:4,
+                                 marginBottom:3 }}>
+                    <span style={{ fontFamily:M, fontSize:"0.68rem",
+                                    fontWeight:700, color:W }}>
+                      {req.companyName}
+                    </span>
+                    <span style={{ fontFamily:M, fontSize:"0.58rem",
+                                    color:G, background:`${G}15`,
+                                    borderRadius:3, padding:"1px 6px",
+                                    letterSpacing:"0.06em",
+                                    textTransform:"uppercase" }}>
+                      {req.lifecycleState}
+                    </span>
+                  </div>
+                  <div style={{ display:"grid",
+                                 gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",
+                                 gap:"0.25rem" }}>
+                    {[
+                      ["Tier",       req.tier.toUpperCase()],
+                      ["Valuation",  `$${parseInt(req.estimatedValuation || "0", 10).toLocaleString()}`],
+                      ["Asset ID",   req.assetId],
+                      ["Request ID", req.id],
+                      ["Submitted",  new Date(req.createdAt).toLocaleString()],
+                      ...(req.walletAddress ? [["Wallet", `${req.walletAddress.slice(0,8)}…`]] : []),
+                      ...(req.supabaseId ? [["Supabase", "✓ synced"]] : [["Supabase", "local only"]]),
+                    ].map(([k, v]) => (
+                      <div key={k}>
+                        <span style={{ fontFamily:M, fontSize:"0.52rem",
+                                        color:"rgba(255,255,255,0.3)" }}>{k}: </span>
+                        <span style={{ fontFamily:M, fontSize:"0.58rem",
+                                        color:"rgba(255,255,255,0.7)" }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {req.timeline.length > 0 && (
+                    <div style={{ marginTop:"0.375rem", fontFamily:M,
+                                   fontSize:"0.52rem",
+                                   color:"rgba(255,255,255,0.25)",
+                                   fontStyle:"italic" }}>
+                      {req.timeline[req.timeline.length - 1].note}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {!showWyoming && assets.length === 0 && (
           <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 8,
                          padding: "3rem", textAlign: "center" }}>
             <div style={{ fontFamily: M, fontSize: "0.72rem", color: "rgba(255,255,255,0.25)",
@@ -201,7 +317,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {assets.length > 0 && (
+        {!showWyoming && assets.length > 0 && (
           <div style={{ display: "grid",
                          gridTemplateColumns: "min(280px,35%) 1fr",
                          gap: "0.92rem", alignItems: "start" }}>
