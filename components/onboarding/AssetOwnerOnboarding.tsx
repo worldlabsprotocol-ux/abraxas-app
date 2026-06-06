@@ -2,7 +2,7 @@
 // Door 1 — Asset Owner guided onboarding.
 // On completion: actually persists the asset to userAssetStore.
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { userAssetStore } from "@/lib/vos/userAssetStore";
 import type { UserAsset } from "@/lib/vos/userAssetStore";
 
@@ -66,6 +66,19 @@ export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: ()
     hasAppraisal:"no", jurisdiction:"", hasCustody:"no",
   });
   const [savedAsset, setSavedAsset] = useState<UserAsset | null>(null);
+
+  // Uncontrolled refs for text inputs in step "info".
+  // Prevents the Android keyboard from dismissing on each keystroke.
+  // Values are read from refs when advancing to the next step.
+  const valueRef = useRef<HTMLInputElement>(null);
+  const jurisRef = useRef<HTMLInputElement>(null);
+
+  function captureTextInputs() {
+    return {
+      estimatedValue: valueRef.current?.value ?? form.estimatedValue,
+      jurisdiction:   jurisRef.current?.value ?? form.jurisdiction,
+    };
+  }
 
   const T = form.assetType;
   const docs     = T ? DOCS_REQUIRED[T]  : [];
@@ -196,14 +209,20 @@ export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: ()
           </div>
           <Field label="Estimated Asset Value (USD)">
             <input type="text" placeholder="e.g. 1,200,000"
-              value={form.estimatedValue}
-              onChange={e => setForm(f => ({ ...f, estimatedValue:e.target.value }))}
+              ref={valueRef}
+              defaultValue={form.estimatedValue}
+              autoComplete="off"
+              inputMode="decimal"
+              enterKeyHint="next"
               style={inputStyle}/>
           </Field>
           <Field label="Jurisdiction / Location">
             <input type="text" placeholder="e.g. Texas, USA or Georgia, USA"
-              value={form.jurisdiction}
-              onChange={e => setForm(f => ({ ...f, jurisdiction:e.target.value }))}
+              ref={jurisRef}
+              defaultValue={form.jurisdiction}
+              autoComplete="off"
+              inputMode="text"
+              enterKeyHint="next"
               style={inputStyle}/>
           </Field>
           <Field label="Existing liens or encumbrances?">
@@ -237,7 +256,11 @@ export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: ()
             <button onClick={() => setStep("type")} style={{ flex:1, padding:"0.875rem", borderRadius:"5px",
               border:"1px solid " + BORDER, background:"transparent",
               color:"rgba(255,255,255,0.4)", fontFamily:M, fontSize:"0.44rem", cursor:"pointer" }}>← Back</button>
-            <button onClick={() => setStep("docs")} style={{ flex:2, padding:"0.875rem", borderRadius:"5px", border:"none",
+            <button onClick={() => {
+              const captured = captureTextInputs();
+              setForm(f => ({ ...f, ...captured }));
+              setStep("docs");
+            }} style={{ flex:2, padding:"0.875rem", borderRadius:"5px", border:"none",
               background: GREEN, color:"#000", fontFamily:M, fontSize:"0.52rem", fontWeight:900,
               cursor:"pointer", letterSpacing:"0.04em" }}>VIEW REQUIREMENTS →</button>
           </div>

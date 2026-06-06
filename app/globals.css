@@ -1,69 +1,93 @@
 /* FILE: app/globals.css */
-@import "@solana/wallet-adapter-react-ui/styles.css";
+/* Abraxas Protocol — Premium dark substrate */
 
-*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+  Base font-size: 13.5px (was 16px default)
+  This scales ALL rem units down ~15% without touching any component files.
+  Affects: nav buttons, section labels, body text, card text.
+  Does NOT affect: input/select (overridden below to stay 16px for iOS zoom prevention),
+  or any px-based sizes.
+*/
+html {
+  font-size: 13.5px;
+  scroll-behavior: smooth;
+}
+
 html, body {
-  margin: 0; padding: 0;
-  background: #0A0C10; color: #F8FAFC;
-  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #070a14;
+  color: #f0f0f0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: radial-gradient(
+    ellipse 80% 60% at 50% -10%,
+    rgba(16, 185, 129, 0.05) 0%,
+    transparent 60%
+  );
+  background-attachment: fixed;
   min-height: 100vh;
 }
-a { color: inherit; text-decoration: none; }
-button { cursor: pointer; font-family: inherit; }
-input, textarea, select { font-size: 16px; }
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 2px; }
 
-/* Wallet adapter modal */
+@supports (height: 100dvh) {
+  html, body { min-height: 100dvh; }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/*
+  Inputs stay at 16px to prevent iOS auto-zoom on focus.
+  Even though html base is 13.5px, we pin inputs explicitly.
+*/
+input, textarea, select {
+  font-size: 16px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar          { width: 4px; height: 4px; }
+::-webkit-scrollbar-track    { background: rgba(255,255,255,0.02); }
+::-webkit-scrollbar-thumb    { background: rgba(16,185,129,0.25); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.45); }
+
+/* Wallet adapter */
 .wallet-adapter-modal-wrapper {
-  background: rgba(10,12,16,0.98) !important;
-  border: 1px solid #1C2333 !important;
-  border-radius: 10px !important;
+  background: rgba(7, 10, 20, 0.98) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 12px !important;
 }
 .wallet-adapter-modal-title {
-  color: #F8FAFC !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  color: #f0f0f0 !important;
+  font-family: "JetBrains Mono", monospace !important;
   font-weight: 900 !important;
 }
 .wallet-adapter-button {
-  background: linear-gradient(135deg, #7c3aed, #10B981) !important;
-  color: #fff !important; border-radius: 6px !important; font-weight: 800 !important;
+  background: linear-gradient(135deg, #10B981, #059669) !important;
+  color: #000 !important;
+  border-radius: 7px !important;
+  font-weight: 800 !important;
+  border: none !important;
 }
-.wallet-adapter-modal-list .wallet-adapter-button {
-  background: rgba(255,255,255,0.04) !important;
-  border: 1px solid #1C2333 !important;
-  color: rgba(255,255,255,0.8) !important;
-}
-
-/* ── Google Translate — hide ALL injected UI completely ─────────────
-   Achieves clean institutional translation with no visible Google chrome.
-   Translation still works; only their UI is suppressed.           ── */
-.goog-te-banner-frame,
-.goog-te-ftab-float,
-.goog-te-menu-frame,
-#goog-gt-tt,
-.goog-tooltip,
-.goog-tooltip-content,
-.goog-te-balloon-frame,
-.goog-logo-link,
-.goog-te-gadget-icon,
-.VIpgJd-ZVi9od-aZ2wEe,
-.VIpgJd-yAWNEb-L7lbkb {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  overflow: hidden !important;
+.wallet-adapter-button:hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
 }
 
-/* Prevent GT from pushing body down */
-body {
-  top: 0 !important;
-  position: relative !important;
-}
-
-/* Hide the GT badge on translated elements */
-font[style*="vertical-align"] {
-  vertical-align: inherit !important;
+/* Safe area for iPhone notch */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  nav[style*="sticky"] {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
