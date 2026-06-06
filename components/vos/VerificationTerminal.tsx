@@ -95,7 +95,7 @@ const InputBar = memo(function InputBar({ onSubmit, busy, history }: InputBarPro
       gap: "0.625rem", flexShrink: 0,
       position: "sticky", bottom: 0, zIndex: 10,
     }}>
-      <span style={{ color: G, fontWeight: 900, fontSize: "1rem",
+      <span style={{ color: G, fontWeight: 900, fontSize: "0.92rem",
                       letterSpacing: "0.04em", flexShrink: 0 }}>vos&gt;</span>
       <input
         ref={ref}
@@ -119,7 +119,7 @@ const InputBar = memo(function InputBar({ onSubmit, busy, history }: InputBarPro
       <button onClick={submit} disabled={busy} aria-label="Run command" style={{
         padding: "0.5rem 1rem", borderRadius: 4, flexShrink: 0,
         border: `1px solid ${G}`, background: `${G}20`,
-        color: G, fontFamily: M, fontSize: "0.875rem", fontWeight: 900,
+        color: G, fontFamily: M, fontSize: "0.82rem", fontWeight: 900,
         cursor: busy ? "wait" : "pointer",
         opacity: busy ? 0.4 : 1,
         letterSpacing: "0.06em",
@@ -187,7 +187,7 @@ export function VerificationTerminal() {
         background: "#030508", borderBottom: `1px solid ${BDR}`,
         padding: "0.4rem 1rem",
         display: "flex", alignItems: "center", gap: "1.25rem",
-        fontSize: "0.7rem", color: DIM, flexShrink: 0, overflowX: "auto",
+        fontSize: "0.65rem", color: DIM, flexShrink: 0, overflowX: "auto",
       }}>
         <span style={{ color: G, fontWeight: 700 }}>● VOS ONLINE</span>
         <span>SOLANA MAINNET</span>
@@ -209,7 +209,7 @@ export function VerificationTerminal() {
           <button key={q.cmd} onClick={() => run(q.cmd)} disabled={busy} style={{
             padding: "0.4rem 0.875rem", borderRadius: 4, flexShrink: 0,
             border: `1px solid ${G}35`, background: `${G}08`,
-            color: G, fontFamily: M, fontSize: "0.8rem",
+            color: G, fontFamily: M, fontSize: "0.75rem",
             fontWeight: 700, cursor: busy ? "not-allowed" : "pointer",
             textTransform: "uppercase", letterSpacing: "0.07em",
             opacity: busy ? 0.5 : 1, whiteSpace: "nowrap",
@@ -223,18 +223,18 @@ export function VerificationTerminal() {
       <div ref={scrollRef} style={{
         flex: 1, minHeight: 0, overflowY: "auto",
         padding: "0.875rem 1rem",
-        fontSize: "0.875rem", lineHeight: 1.75,
+        fontSize: "0.82rem", lineHeight: 1.75,
       }}>
         {lines.map((l, i) => (
           <div key={i} style={{
             color: lineColor(l.kind),
             whiteSpace: "pre-wrap", wordBreak: "break-word",
-            marginBottom: l.kind === "report" ? "0.75rem" : "0.125rem",
-            paddingLeft: l.kind === "agent" ? "1rem" : 0,
+            marginBottom: l.kind === "report" ? "0.7rem" : "0.125rem",
+            paddingLeft: l.kind === "agent" ? "0.92rem" : 0,
             borderLeft: l.kind === "report" ? `2px solid ${G}35` : "none",
             paddingTop:    l.kind === "report" ? "0.625rem" : 0,
             paddingBottom: l.kind === "report" ? "0.625rem" : 0,
-            paddingRight:  l.kind === "report" ? "0.75rem"  : 0,
+            paddingRight:  l.kind === "report" ? "0.7rem"  : 0,
             background: l.kind === "report" ? `${G}04` : "transparent",
             borderRadius: l.kind === "report" ? 4 : 0,
           }}>
@@ -245,7 +245,7 @@ export function VerificationTerminal() {
           </div>
         ))}
         {busy && (
-          <div style={{ color: A, fontSize: "0.875rem", marginTop: "0.5rem",
+          <div style={{ color: A, fontSize: "0.82rem", marginTop: "0.5rem",
                          display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ animation: "abraxas-blink 1s steps(2) infinite" }}>▊</span>
             <span>processing…</span>
