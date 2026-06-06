@@ -131,7 +131,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 function Divider() {
-  return <div style={{ height:1, background:BDR, margin:"2.5rem 0" }}/>;
+  return <div style={{ height:1, background:BDR, margin:"1.5rem 0" }}/>;
 }
 
 
@@ -168,7 +168,7 @@ function TerminalTab() {
           Ownership Infrastructure for<br/>Real-World Assets.
         </div>
         <p style={{ fontSize: "0.84rem", color: "rgba(255,255,255,0.5)",
-                     lineHeight: 1.8, maxWidth: 560, marginBottom: "2rem" }}>
+                     lineHeight: 1.8, maxWidth: 560, marginBottom: "1.5rem" }}>
           Abraxas Protocol maintains an append-only registry of verified
           real-world assets. Each entry is backed by legal review, independent
           appraisal, and on-chain attestation.
@@ -224,7 +224,7 @@ function TerminalTab() {
       <div style={{ maxWidth: 1060, margin: "0 auto",
                      padding: "2rem clamp(1rem,3vw,2rem) 1rem" }}>
         {/* ── WYOMING LLC ENGINE ─────────────────────────────────── */}
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <Label>Wyoming LLC Formation</Label>
           <div style={{ padding: "2rem", borderRadius: 8,
                          background: "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.05))",
@@ -302,11 +302,11 @@ function TerminalTab() {
             </div>
             <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap", alignItems: "center" }}>
               <button onClick={() => { setInitialTier(null); setWyOpen(true); }} style={{
-                padding: "0.875rem 1.75rem", borderRadius: 5, border: "none",
-                background: G, color: "#000", fontFamily: M, fontSize: "1.125rem",
+                padding: "0.7rem 1.375rem", borderRadius: 5, border: "none",
+                background: G, color: "#000", fontFamily: M, fontSize: "0.92rem",
                 fontWeight: 900, cursor: "pointer", letterSpacing: "0.05em",
                 textTransform: "uppercase",
-                boxShadow: `0 0 20px ${G}60`,
+                boxShadow: `0 0 16px ${G}50`,
               }}>
                 START TOKENIZATION NOW &#8594;
               </button>
@@ -372,9 +372,9 @@ function TerminalTab() {
 
       {/* ── 2. POSITIONING ─────────────────────────────────────────── */}
       <div style={{ maxWidth: 1060, margin: "0 auto",
-                     padding: "3rem clamp(1rem,3vw,2rem) 0" }}>
+                     padding: "2rem clamp(0.875rem,2.5vw,1.5rem) 0" }}>
 
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <div style={{ fontFamily: M, fontSize: "0.7rem", color: `${G}80`,
                          textTransform: "uppercase", letterSpacing: "0.2em",
                          marginBottom: "0.7rem" }}>
@@ -395,7 +395,7 @@ function TerminalTab() {
             can underwrite and communities can actually own.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.92rem",
-                         marginBottom: "1.75rem" }}>
+                         marginBottom: "1.5rem" }}>
             {[
               { t: "Legal Review",         c: G },
               { t: "Custody Verified",     c: G },
@@ -432,7 +432,7 @@ function TerminalTab() {
         <Divider/>
 
         {/* ── 3. PROTOCOL STACK — 5 layers ─────────────────────────── */}
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <Label>Protocol Architecture</Label>
           <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.8rem)",
                         fontWeight: 800, color: W, margin: "0 0 0.75rem",
@@ -500,7 +500,7 @@ function TerminalTab() {
         <Divider/>
 
         {/* ── 4. ECONOMICS — compressed ────────────────────────────── */}
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "baseline",
                          justifyContent: "space-between",
                          flexWrap: "wrap", gap: "0.92rem", marginBottom: "1.25rem" }}>
@@ -634,7 +634,7 @@ function TerminalTab() {
         <Divider/>
 
         {/* ── 5. VERTICALS — ownership categories ──────────────────── */}
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <Label>Asset Verticals</Label>
           <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.8rem)",
                         fontWeight: 800, color: W, margin: "0 0 0.5rem",
@@ -722,7 +722,7 @@ function TerminalTab() {
         <Divider/>
 
         {/* ── 6. ASSET REGISTRY — inline preview ───────────────────── */}
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "baseline",
                          justifyContent: "space-between",
                          flexWrap: "wrap", gap: "0.92rem", marginBottom: "1.25rem" }}>
@@ -786,7 +786,7 @@ function TerminalTab() {
         {/* ── 7. SUBMIT CTA ─────────────────────────────────────── */}
         <div style={{ padding: "2rem", borderRadius: 8,
                        border: `1px solid ${B}25`, background: `${B}05`,
-                       textAlign: "center", marginBottom: "2rem" }}>
+                       textAlign: "center", marginBottom: "1.5rem" }}>
           <div style={{ fontFamily: M, fontSize: "0.7rem", color: `${B}80`,
                          textTransform: "uppercase", letterSpacing: "0.2em",
                          marginBottom: "0.625rem" }}>
