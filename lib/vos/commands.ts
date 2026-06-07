@@ -1222,9 +1222,10 @@ _originalRegister({
 });
 
 
-  {
+// ── TOKENIZE-LLC — guided LLC tokenization alias ─────────────────────
+commandRegistry.register({
   name: "tokenize-llc", aliases: ["start-tokenization"], category: "execution",
-  description: "Start Wyoming LLC tokenization with tier selection",
+  description: "Start Wyoming LLC tokenization — guided flow with tier selection",
   syntax: 'tokenize-llc "Company Name" [valuation] [starter|growth|enterprise]',
   example: 'tokenize-llc "Acme Holdings" 500000 growth',
   handler: async (ctx) => {
@@ -1245,15 +1246,14 @@ _originalRegister({
         "EXAMPLE:",
         '  tokenize-llc "Acme Holdings LLC" 1500000 growth',
         "",
-        "Or visit /terminal → START TOKENIZATION NOW for the guided UI flow.",
+        "Or: visit /terminal and click START TOKENIZATION NOW for the full UI flow.",
       ].join("\n") });
       return;
     }
-    // Delegate to wyoming handler (same pipeline)
-    const { commandRegistry } = await import("./commandRegistry");
+    // Delegate to wyoming handler — same V5 pipeline
     await commandRegistry.execute(
       "wyoming " + ctx.args.join(" "),
       ctx.registry, ctx.emit, []
     );
   },
-  },
+});

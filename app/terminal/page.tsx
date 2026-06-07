@@ -14,6 +14,7 @@ import { CompactWallet }        from "@/components/CompactWallet";
 import { LanguageSelector }     from "@/components/LanguageSelector";
 import { VerificationTerminal } from "@/components/vos/VerificationTerminal";
 import { ExplainerCarousel }    from "@/components/ExplainerCarousel";
+import { BecomeAPartner }           from "@/components/BecomeAPartner";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -510,7 +511,7 @@ function TerminalTab() {
                          justifyContent: "space-between",
                          flexWrap: "wrap", gap: "0.92rem", marginBottom: "1.25rem" }}>
             <div>
-              <Label>Platform Economics</Label>
+              <Label>Growth Roadmap</Label>
               <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.8rem)",
                             fontWeight: 800, color: W, margin: 0,
                             letterSpacing: "-0.02em" }}>
@@ -672,8 +673,8 @@ function TerminalTab() {
               {
                 n: "03", color: "#8B5CF6", badge: "Cultural Equity",
                 title: "Music & Creator Royalties",
-                desc: "Artist catalogs, publishing rights, and future royalty streams structured as regulated securities. The culture owns the catalog.",
-                tags: ["Master Recordings", "Publishing", "Sync Rights", "Catalog Funds"],
+                desc: "Artist catalogs, publishing rights, and future royalty streams structured as regulated securities. The culture owns the catalog. Publishing deals often leave money on the table — Abraxas clients retain equity in their catalog while accessing capital. We currently work with 80 clients holding active publishing deals, each being introduced to the Abraxas Protocol.",
+                tags: ["Master Recordings", "Publishing Rights", "Sync Licensing", "Catalog Funds", "80 Active Publishing Clients"],
               },
             ].map(v => (
               <div key={v.n} style={{ background: CARD,
@@ -732,7 +733,45 @@ function TerminalTab() {
                          justifyContent: "space-between",
                          flexWrap: "wrap", gap: "0.92rem", marginBottom: "1.25rem" }}>
             <div>
-              <Label>Asset Registry</Label>
+              <Label>Verification Partners</Label>
+          <div style={{ padding:"1rem 1.125rem", background:CARD, border:`1px solid ${BDR}`,
+                         borderRadius:8, marginBottom:"1.5rem" }}>
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
+                           flexWrap:"wrap", gap:"0.75rem", marginBottom:"0.875rem" }}>
+              <div>
+                <div style={{ fontFamily:S, fontSize:"clamp(0.92rem,2vw,1.15rem)",
+                               fontWeight:800, color:W, marginBottom:"0.25rem" }}>
+                  Join the verification network.
+                </div>
+                <p style={{ fontFamily:S, fontSize:"0.75rem", color:"rgba(255,255,255,0.45)",
+                             lineHeight:1.65, maxWidth:520, margin:0 }}>
+                  Abraxas partners are the trusted professionals behind every verified asset —
+                  appraisers, attorneys, title companies, and auditors who validate the claims
+                  that make on-chain collateral real. Approved partners receive referrals for
+                  every asset submission in their jurisdiction.
+                </p>
+              </div>
+              <BecomeAPartner />
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",
+                           gap:"0.5rem" }}>
+              {([
+                ["Appraisers",    "Asset valuation & certified appraisals"],
+                ["Attorneys",     "Real estate, corporate & compliance law"],
+                ["Title Companies","Title search, insurance & closing"],
+                ["Auditors",      "Financial audit & compliance review"],
+              ] as [string,string][]).map(([role, desc]) => (
+                <div key={role} style={{ padding:"0.75rem", background:"rgba(255,255,255,0.02)",
+                                          border:`1px solid ${BDR}`, borderRadius:5 }}>
+                  <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700, color:G,
+                                 marginBottom:"0.2rem", letterSpacing:"0.06em" }}>{role}</div>
+                  <div style={{ fontFamily:S, fontSize:"0.68rem",
+                                 color:"rgba(255,255,255,0.35)", lineHeight:1.5 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <Label>Asset Registry</Label>
               <h2 style={{ fontFamily: S, fontSize: "clamp(1.2rem,3vw,1.8rem)",
                             fontWeight: 800, color: W, margin: 0,
                             letterSpacing: "-0.02em" }}>
