@@ -69,6 +69,19 @@ function scoreLabel(v: number, isRisk = false) {
   return "DEVELOPING";
 }
 
+
+// ── Value display helpers ──────────────────────────────────────────────────
+function parseAssetValue(v: string | undefined): number {
+  if (!v || v === "Not specified" || v.trim() === "") return 0;
+  const n = parseFloat(v.replace(/[,$]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+function displayValue(v: string | undefined): string {
+  const n = parseAssetValue(v);
+  if (n === 0) return "—";
+  return n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${n.toLocaleString()}`;
+}
+
 export default function DashboardPage() {
   const [session,         setSession]         = useState<Session | null>(null);
   const [assets,          setAssets]          = useState<UserAsset[]>([]);
