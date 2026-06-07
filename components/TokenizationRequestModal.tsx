@@ -4,7 +4,7 @@
 // Supabase with localStorage fallback — never breaks the demo.
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { wyomingRequestStore } from "@/lib/vos/wyomingRequestStore";
 import { notificationService } from "@/lib/notifications";
 import { WorldIDVerify } from "@/components/WorldIDVerify";
@@ -57,6 +57,17 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
   const [err,   setErr]   = useState<string|null>(null);
   const [copied,setCopied]= useState(false);
   const [worldIdHash, setWorldIdHash] = useState<string|null>(null);
+
+  // Sync internal tier + step whenever the modal opens or initialTier changes.
+  // Without this, useState(initialTier) only runs once on mount —
+  // clicking GROWTH or ENTERPRISE never updates the internal tier state.
+  useEffect(() => {
+    if (!open) return;
+    setTier(initialTier ?? "growth");
+    setStep(initialTier ? "info" : "tier");
+    setName(""); setEmail(""); setX(""); setWallet("");
+    setReqId(null); setSrc(null); setTxSig(""); setErr(null); setBusy(false);
+  }, [open, initialTier]);
 
   if (!open) return null;
 

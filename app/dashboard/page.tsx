@@ -171,7 +171,7 @@ export default function DashboardPage() {
             { label: "Total Assets",   val: assets.length,   color: W },
             { label: "In Review",      val: assets.filter(a => ["IDENTITY_REVIEW","OWNERSHIP_REVIEW","LEGAL_REVIEW","DUE_DILIGENCE","RISK_SCORING","APPROVAL_COMMITTEE"].includes(a.state)).length, color: A },
             { label: "Authorized",     val: assets.filter(a => ["TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(a.state)).length, color: G },
-            { label: "Portfolio Value", val: "$" + (assets.reduce((s,a) => s + (parseFloat(a.estimatedValue?.replace(/[^0-9.]/g,"")) || 0), 0) / 1e6).toFixed(2) + "M", color: G },
+            { label: "Portfolio Value", val: assets.some(a => parseAssetValue(a.estimatedValue) > 0) ? "$" + (assets.reduce((s,a) => s + parseAssetValue(a.estimatedValue), 0) / 1_000_000).toFixed(2) + "M" : "—", color: G }
           ].map(s => (
             <div key={s.label} style={{ background: CARD, padding: "0.92rem" }}>
               <Mono size="0.65rem" color="rgba(255,255,255,0.25)">{s.label.toUpperCase()}</Mono>
@@ -412,7 +412,7 @@ export default function DashboardPage() {
                     <div style={{ fontFamily: S, fontSize: "0.75rem",
                                    color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
                       {ASSET_LABELS[sel.assetType] ?? sel.assetType}
-                      {sel.estimatedValue ? ` · $${sel.estimatedValue}` : ""}
+                      {sel.estimatedValue && sel.estimatedValue !== "Not specified" ? ` · ${displayValue(sel.estimatedValue)}` : ""}
                       {sel.jurisdiction ? ` · ${sel.jurisdiction}` : ""}
                     </div>
                   </div>
@@ -478,7 +478,7 @@ export default function DashboardPage() {
                       <div style={{ background: "#080B10", border: `1px solid ${BDR}`,
                                      borderRadius: 6, marginBottom: "0.92rem" }}>
                         {[
-                          ["Asset Value",      sel.estimatedValue ? `$${sel.estimatedValue}` : "Pending"],
+                          ["Asset Value",      displayValue(sel.estimatedValue)],
                           ["Jurisdiction",     sel.jurisdiction || "—"],
                           ["Verification Score", `${sel.scores.overall}/100 · ${scoreLabel(sel.scores.overall)}`],
                           ["Legal Review",     STAGE_META[sel.state]?.progressPct >= 42 ? "In Progress" : "Pending"],

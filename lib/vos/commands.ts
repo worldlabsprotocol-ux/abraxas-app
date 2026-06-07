@@ -724,8 +724,8 @@ commandRegistry.register({
 commandRegistry.register({
   name: "wyoming", aliases: ["llc", "incorporate"], category: "execution",
   description: "Tokenize a Wyoming LLC — initiates V5 verification pipeline",
-  syntax: 'wyoming "Company Name" [valuation_usd]',
-  example: 'wyoming "Acme Holdings LLC" 500000',
+  syntax: 'wyoming "Company Name" [valuation_usd] [starter|growth|enterprise]',
+  example: 'wyoming "Acme Holdings LLC" 500000 growth',
   handler: async (ctx) => {
     const full = ctx.args.join(" ");
     // Support single quotes, double quotes, or unquoted multi-word names
@@ -740,6 +740,13 @@ commandRegistry.register({
     }
     const companyName = m[1].trim();
     const valuation   = m[2] ?? "1000000";
+    // Optional third arg: tier (starter / growth / enterprise)
+    const tierArg     = ctx.args[ctx.args.length - 1]?.toLowerCase();
+    const tier: "starter" | "growth" | "enterprise" =
+      tierArg === "growth" ? "growth"
+      : tierArg === "enterprise" ? "enterprise"
+      : "starter";
+    const tierPrice = tier === "enterprise" ? 4999 : tier === "growth" ? 2999 : 1499;
 
     const userStore = await loadUserStore();
     const { wyomingRequestStore } = await import("./wyomingRequestStore");
@@ -770,7 +777,7 @@ commandRegistry.register({
       estimatedValuation: valuation,
       assetId:            asset.id,
       jurisdiction:       "Wyoming, USA",
-      tier:               "starter",
+      tier,
     });
 
     // 3. Create in-app notification
@@ -806,17 +813,21 @@ commandRegistry.register({
       `Company:        ${companyName}\n` +
       `Asset ID:       ${asset.id}\n` +
       `Request ID:     ${wyReq.id}\n` +
+      `Tier:           ${tier.toUpperCase()} · $${tierPrice.toLocaleString()} USDC\n` +
       `Asset Type:     Wyoming LLC\n` +
       `Valuation:      $${parseInt(valuation, 10).toLocaleString()}\n` +
       `Jurisdiction:   Wyoming, USA\n` +
       `State:          ${asset.state}\n` +
       `Pipeline:       10-stage (SUBMITTED → MARKETPLACE_LIVE)\n` +
       `Submitted:      ${new Date(asset.createdAt).toLocaleString()}\n\n` +
+      `Payment:\n` +
+      `  Send $${tierPrice.toLocaleString()} USDC to circuit.skr on Solana\n` +
+      `  Then run: confirm-payment ${wyReq.id}\n\n` +
       `Next steps:\n` +
       `  > track ${asset.id}\n` +
       `  > advance ${asset.id}\n` +
       `  > demo ${asset.id}\n` +
-      `  /dashboard — full institutional view`
+      `  > /dashboard — full institutional view`
     });
   },
 });
@@ -1210,3 +1221,39 @@ _originalRegister({
   },
 });
 
+
+  {
+  name: "tokenize-llc", aliases: ["start-tokenization"], category: "execution",
+  description: "Start Wyoming LLC tokenization with tier selection",
+  syntax: 'tokenize-llc "Company Name" [valuation] [starter|growth|enterprise]',
+  example: 'tokenize-llc "Acme Holdings" 500000 growth',
+  handler: async (ctx) => {
+    if (ctx.args.length === 0) {
+      ctx.emit({ kind: "report", text: [
+        "── ABRAXAS LLC TOKENIZATION ──",
+        "",
+        "Launch your business on-chain through Abraxas Protocol.",
+        "",
+        "TIERS:",
+        "  starter    $1,499 USDC  · LLC + Token-2022 + V5 basic verification",
+        "  growth     $2,999 USDC  · + multi-sig governance + lending eligible",
+        "  enterprise $4,999 USDC  · + compliance + priority 24h + dedicated verifier",
+        "",
+        "USAGE:",
+        '  tokenize-llc "Your Company LLC" [valuation] [tier]',
+        "",
+        "EXAMPLE:",
+        '  tokenize-llc "Acme Holdings LLC" 1500000 growth',
+        "",
+        "Or visit /terminal → START TOKENIZATION NOW for the guided UI flow.",
+      ].join("\n") });
+      return;
+    }
+    // Delegate to wyoming handler (same pipeline)
+    const { commandRegistry } = await import("./commandRegistry");
+    await commandRegistry.execute(
+      "wyoming " + ctx.args.join(" "),
+      ctx.registry, ctx.emit, []
+    );
+  },
+  },
