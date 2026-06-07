@@ -4,6 +4,8 @@
 "use client";
 import { useState, useRef } from "react";
 import { userAssetStore } from "@/lib/vos/userAssetStore";
+import { DocumentUpload } from "@/components/DocumentUpload";
+import type { UploadedFile } from "@/components/DocumentUpload";
 import type { UserAsset } from "@/lib/vos/userAssetStore";
 
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -65,7 +67,8 @@ export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: ()
     assetType: null, estimatedValue:"", hasLiens:"unknown",
     hasAppraisal:"no", jurisdiction:"", hasCustody:"no",
   });
-  const [savedAsset, setSavedAsset] = useState<UserAsset | null>(null);
+  const [savedAsset,     setSavedAsset]     = useState<UserAsset | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   // Uncontrolled refs for text inputs in step "info".
   // Prevents the Android keyboard from dismissing on each keystroke.
@@ -302,6 +305,14 @@ export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: ()
                              color:"rgba(255,255,255,0.3)" }}>{ltv.note}</div>
             </div>
           )}
+          {/* Document upload — optional at this stage */}
+          <div style={{ marginTop:"1rem", marginBottom:"0.75rem" }}>
+            <DocumentUpload
+              label="Attach documents now (optional — required before final minting)"
+              onUploaded={file => setUploadedFiles(prev => [...prev, file])}
+            />
+          </div>
+
           <div style={{ display:"flex", gap:"0.625rem", marginTop:"0.5rem" }}>
             <button onClick={() => setStep("info")} style={{ flex:1, padding:"0.875rem", borderRadius:"5px",
               border:"1px solid " + BORDER, background:"transparent",

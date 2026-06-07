@@ -83,6 +83,22 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
       });
       setReqId(r.id); setSrc(r.source);
 
+      // Fire-and-forget email notification — never blocks the form
+      fetch("/api/notify/tokenization", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          business_name:  name.trim(),
+          tier,
+          amount_usdc:    sel.price,
+          contact_email:  email.trim() || null,
+          contact_x:      x.trim()     || null,
+          sending_wallet: wallet.trim() || null,
+          request_id:     r.id,
+          source:         r.source,
+        }),
+      }).catch(() => null);
+
       // Persist locally for dashboard visibility + create notification
       const wyReq = wyomingRequestStore.create({
         companyName:        name.trim(),
@@ -101,6 +117,22 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
         data:  { wyId: wyReq.id, tier, companyName: name.trim() },
       });
 
+      // Fire-and-forget admin email — never blocks the user flow
+      fetch("/api/notify/tokenization", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: name.trim(),
+          tier,
+          amount:   sel.price,
+          email:    email.trim()  || undefined,
+          xHandle:  x.trim()     || undefined,
+          wallet:   wallet.trim()|| undefined,
+          requestId: r.id,
+          stage:    "submitted",
+        }),
+      }).catch(() => { /* notification failed — not critical */ });
+
       setStep("payment");
     } catch(e: unknown) {
       const msg = e instanceof Error ? e.message : "Submission failed. Please try again.";
@@ -114,6 +146,21 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
     try {
       if (txSig.trim()) await tokenizationRequests.confirmPayment(reqId, txSig.trim());
       else              await tokenizationRequests.markPaymentSent(reqId);
+      // Notify on payment confirmation too
+      fetch("/api/notify/tokenization", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: name.trim(),
+          tier, amount: sel.price,
+          email: email.trim() || undefined,
+          wallet: wallet.trim() || undefined,
+          requestId: reqId ?? undefined,
+          txSignature: txSig.trim() || undefined,
+          stage: "paid",
+        }),
+      }).catch(() => {});
+
       setStep("success");
     } catch(e: unknown) {
       setErr(e instanceof Error ? e.message : "Confirmation failed.");
