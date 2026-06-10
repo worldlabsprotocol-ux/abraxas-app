@@ -91,3 +91,8 @@ input, textarea, select {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Hide PROTOCOL OS text on small screens — prevents nav crowding */
+@media (max-width: 520px) {
+  .abraxas-nav-os { display: none !important; }
+}

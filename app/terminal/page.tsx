@@ -15,6 +15,7 @@ import { LanguageSelector }     from "@/components/LanguageSelector";
 import { VerificationTerminal } from "@/components/vos/VerificationTerminal";
 import { ExplainerCarousel }    from "@/components/ExplainerCarousel";
 import { BecomeAPartner }           from "@/components/BecomeAPartner";
+import { ArtistAuditForm }           from "@/components/music/ArtistAuditForm";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -27,7 +28,7 @@ const A    = "#F59E0B";
 const B    = "#3B82F6";
 const W    = "#F8FAFC";
 
-type Tab   = "terminal" | "lending";
+type Tab   = "terminal";
 type Deep  = "main" | "asset" | "registry" | "submit" | "trust";
 
 interface ScenarioData {
@@ -359,6 +360,84 @@ function TerminalTab() {
             </div>
           </div>
         </div>
+
+        <Divider/>
+
+        {/* ── ABRAXAS IDENTITY — featured ───────────────────────── */}
+        <div style={{ marginBottom:"1.5rem" }}>
+          <Label>Abraxas Identity · Unified KYC</Label>
+          <div style={{ padding:"1rem 1.125rem", background:CARD, border:`1px solid ${BDR}`,
+                         borderRadius:8 }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+                           alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem",
+                           marginBottom:"0.875rem" }}>
+              <div style={{ flex:1, minWidth:220 }}>
+                <h2 style={{ fontFamily:S, fontSize:"clamp(0.95rem,2.5vw,1.2rem)",
+                               fontWeight:800, color:W, margin:"0 0 0.375rem" }}>
+                  Verify once. Use everywhere.
+                </h2>
+                <p style={{ fontFamily:S, fontSize:"0.75rem",
+                             color:"rgba(255,255,255,0.45)", lineHeight:1.65, margin:0 }}>
+                  KYC once with Abraxas — World ID + government document + liveness check.
+                  Receive a W3C Verifiable Credential accepted by every integrated protocol.
+                  No re-KYC for Utila, Coinbase, or any partner platform. One credential across all of DeFi.
+                </p>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:"0.375rem",
+                             flexShrink:0 }}>
+                <div style={{ padding:"0.5rem 0.875rem", borderRadius:4,
+                               background:`${G}10`, border:`1px solid ${G}30`,
+                               fontFamily:M, fontSize:"0.62rem", color:G, fontWeight:700,
+                               letterSpacing:"0.1em", textTransform:"uppercase" }}>
+                  Backend Live · Frontend Q3
+                </div>
+                <a href="https://abraxas-app.vercel.app/identity" style={{
+                  display:"block", padding:"0.55rem 0.875rem", borderRadius:5,
+                  border:`1px solid ${G}`, background:`${G}15`,
+                  color:G, fontFamily:M, fontSize:"0.72rem", fontWeight:900,
+                  cursor:"pointer", letterSpacing:"0.06em", textTransform:"uppercase",
+                  textDecoration:"none", textAlign:"center",
+                }}>GET ABRAXAS ID →</a>
+              </div>
+            </div>
+            <div style={{ display:"grid",
+                           gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",
+                           gap:"0.5rem" }}>
+              {([
+                ["World ID","Zero-knowledge proof of humanity"],
+                ["Document Verify","Gov ID + liveness, single use"],
+                ["Signed VC","W3C Verifiable Credential on Solana"],
+                ["Cross-protocol","Any integrated platform accepts it"],
+              ] as [string,string][]).map(([k,v]) => (
+                <div key={k} style={{ padding:"0.625rem 0.75rem",
+                                       background:"rgba(255,255,255,0.02)",
+                                       border:`1px solid ${BDR}`, borderRadius:5 }}>
+                  <div style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
+                                 color:G, marginBottom:2, letterSpacing:"0.06em" }}>{k}</div>
+                  <div style={{ fontFamily:S, fontSize:"0.65rem",
+                                 color:"rgba(255,255,255,0.35)", lineHeight:1.5 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <Divider/>
+
+        {/* ── MUSIC ROYALTY AUDIT — featured ────────────────────── */}
+        <div style={{ marginBottom:"1.5rem" }}>
+          <Label>Music Royalty Audit</Label>
+          <p style={{ fontFamily:S, fontSize:"0.78rem",
+                       color:"rgba(255,255,255,0.45)", lineHeight:1.65,
+                       maxWidth:600, margin:"0 0 0.875rem" }}>
+            Publishing deals leave money on the table. Missing ISRCs, unregistered MLC works,
+            and split sheet gaps mean years of royalties sitting unclaimed. We work with
+            80+ publishing clients — our team knows where the money hides.
+          </p>
+          <ArtistAuditForm />
+        </div>
+
+        <Divider/>
 
 
       </div>
@@ -950,7 +1029,7 @@ export default function TerminalPage() {
                             fontWeight: 900, color: W, letterSpacing: "0.1em" }}>
               ABRAXAS
             </span>
-            <span style={{ fontFamily: M, fontSize: "1.1rem",
+            <span className="abraxas-nav-os" style={{ fontFamily: M, fontSize: "1.1rem",
                             color: "rgba(255,255,255,0.2)", letterSpacing: "0.15em",
                             marginLeft: "0.375rem", verticalAlign: "middle" }}>
               PROTOCOL OS
@@ -958,23 +1037,13 @@ export default function TerminalPage() {
           </div>
         </div>
 
-        {([
-          { id: "terminal" as Tab, label: "TERMINAL" },
-          { id: "lending"  as Tab, label: "LENDING"  },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+        <button style={{
             padding: "0.5rem clamp(0.75rem,1.5vw,1.125rem)", borderRadius: 5,
-            border: `1px solid ${tab === t.id ? `${G}50` : BDR}`,
-            background: tab === t.id ? `${G}10` : "transparent",
-            color: tab === t.id ? G : "rgba(255,255,255,0.28)",
-            fontFamily: M, fontSize: "clamp(0.7rem,0.85vw,0.85rem)",
-            fontWeight: 700, cursor: "pointer", textTransform: "uppercase",
+            border: `1px solid ${G}50`, background: `${G}10`,
+            color: G, fontFamily: M, fontSize: "clamp(0.7rem,0.85vw,0.85rem)",
+            fontWeight: 700, cursor: "default", textTransform: "uppercase",
             letterSpacing: "0.1em", whiteSpace: "nowrap", flexShrink: 0,
-            transition: "all 0.15s",
-          }}>
-            {t.label}
-          </button>
-        ))}
+          }}>TERMINAL</button>
 
 <a href="/dashboard" style={{
           padding: "0.5rem clamp(0.75rem,1.5vw,1.125rem)", borderRadius: 5,
@@ -995,7 +1064,7 @@ export default function TerminalPage() {
       {/* Content */}
       <div style={{ flex: 1 }}>
         {tab === "terminal" && <TerminalTab/>}
-        {tab === "lending"  && (
+        {false && (
           <div style={{ maxWidth: 1060, margin: "0 auto",
                          padding: "3rem clamp(1rem,3vw,2rem) 5rem",
                          textAlign: "center" }}>
