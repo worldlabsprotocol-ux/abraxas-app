@@ -20,6 +20,7 @@
     "@solana/wallet-adapter-wallets": "^0.19.36",
     "@solana/web3.js": "^1.95.4",
     "@supabase/supabase-js": "^2.105.4",
+    "jose": "^6.2.3",
     "next": "14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
