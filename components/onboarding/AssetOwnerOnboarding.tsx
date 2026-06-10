@@ -90,14 +90,30 @@ export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: ()
 
   function submitForReview() {
     if (!T) return;
+    const vals  = captureTextInputs();
     const asset = userAssetStore.create({
       assetType:      T,
-      estimatedValue: form.estimatedValue || "Not specified",
-      jurisdiction:   form.jurisdiction   || "Not specified",
+      estimatedValue: vals.estimatedValue || form.estimatedValue || "Not specified",
+      jurisdiction:   vals.jurisdiction   || form.jurisdiction   || "Not specified",
       hasLiens:       form.hasLiens,
       hasAppraisal:   form.hasAppraisal,
       hasCustody:     form.hasCustody,
     });
+    // Persist to Supabase — non-blocking, never breaks the UI
+    fetch("/api/assets/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id:     asset.sessionId,
+        local_asset_id: asset.id,
+        asset_type:     asset.assetType,
+        estimated_value: asset.estimatedValue,
+        jurisdiction:    asset.jurisdiction,
+        has_liens:       asset.hasLiens,
+        has_appraisal:   asset.hasAppraisal,
+        has_custody:     asset.hasCustody,
+      }),
+    }).catch(() => null);
     setSavedAsset(asset);
     setStep("submitted");
   }

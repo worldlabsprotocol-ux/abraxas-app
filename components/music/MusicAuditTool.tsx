@@ -176,7 +176,7 @@ export function MusicAuditTool({ clientName }: { clientName?: string }) {
             <div style={{ marginTop:"0.625rem", padding:"0.5rem 0.75rem", borderRadius:4,
                            background:`${R}10`, border:`1px solid ${R}30`,
                            fontSize:"0.65rem", color:R, lineHeight:1.6 }}>
-              ⚠ {criticalCount} critical issue{criticalCount>1?"s":""} found — streams may be untracked and royalties going to the unmatched pool. Fix these first.
+              {criticalCount} critical issue{criticalCount>1?"s":""} found — streams may be untracked and royalties going to the unmatched pool. Fix these first.
             </div>
           )}
         </div>

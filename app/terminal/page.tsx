@@ -13,7 +13,6 @@ import { TrustStack }           from "@/components/onboarding/TrustStack";
 import { CompactWallet }        from "@/components/CompactWallet";
 import { LanguageSelector }     from "@/components/LanguageSelector";
 import { VerificationTerminal } from "@/components/vos/VerificationTerminal";
-import { ExplainerCarousel }    from "@/components/ExplainerCarousel";
 import { BecomeAPartner }           from "@/components/BecomeAPartner";
 import { ArtistAuditForm }           from "@/components/music/ArtistAuditForm";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
@@ -221,7 +220,6 @@ function TerminalTab() {
       />
 
       {/* ── 0. INLINE EXPLAINER — first-visit context ─────────────── */}
-      <ExplainerCarousel />
       {/* ── 1. WYOMING LLC — primary revenue funnel ─────────────────── */}
       <div style={{ maxWidth: 1060, margin: "0 auto",
                      padding: "1rem clamp(0.75rem,2.5vw,1.5rem) 0.75rem" }}>
@@ -378,7 +376,7 @@ function TerminalTab() {
                 </h2>
                 <p style={{ fontFamily:S, fontSize:"0.75rem",
                              color:"rgba(255,255,255,0.45)", lineHeight:1.65, margin:0 }}>
-                  KYC once with Abraxas — World ID + government document + liveness check.
+                  KYC once with Abraxas — Government document + certified liveness check.
                   Receive a W3C Verifiable Credential accepted by every integrated protocol.
                   No re-KYC for Utila, Coinbase, or any partner platform. One credential across all of DeFi.
                 </p>
@@ -404,7 +402,7 @@ function TerminalTab() {
                            gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",
                            gap:"0.5rem" }}>
               {([
-                ["World ID","Zero-knowledge proof of humanity"],
+                ["Identity Verification","Government document + liveness check"],
                 ["Document Verify","Gov ID + liveness, single use"],
                 ["Signed VC","W3C Verifiable Credential on Solana"],
                 ["Cross-protocol","Any integrated platform accepts it"],
@@ -427,13 +425,23 @@ function TerminalTab() {
         {/* ── MUSIC ROYALTY AUDIT — featured ────────────────────── */}
         <div style={{ marginBottom:"1.5rem" }}>
           <Label>Music Royalty Audit</Label>
-          <p style={{ fontFamily:S, fontSize:"0.78rem",
-                       color:"rgba(255,255,255,0.45)", lineHeight:1.65,
-                       maxWidth:600, margin:"0 0 0.875rem" }}>
-            Publishing deals leave money on the table. Missing ISRCs, unregistered MLC works,
-            and split sheet gaps mean years of royalties sitting unclaimed. We work with
-            80+ publishing clients — our team knows where the money hides.
-          </p>
+          <div style={{ marginBottom:"1rem" }}>
+            <div style={{ fontFamily:"Georgia, 'Times New Roman', serif",
+                           fontSize:"clamp(1.5rem,4vw,2.5rem)", fontWeight:700,
+                           color:W, lineHeight:1.15, letterSpacing:"-0.02em",
+                           marginBottom:"0.625rem" }}>
+              Your catalog is<br/>
+              <span style={{ color:G }}>earning money<br/>you haven't seen.</span>
+            </div>
+            <p style={{ fontFamily:S, fontSize:"0.82rem",
+                         color:"rgba(255,255,255,0.5)", lineHeight:1.7,
+                         maxWidth:560, margin:0 }}>
+              Publishing deals routinely route royalties to the wrong party. Missing ISRCs,
+              unregistered compositions, and MLC gaps leave years of income in an unclaimed pool.
+              We work with 80+ publishing clients and have seen this pattern in every catalog
+              we have reviewed. Our team finds it. You keep it.
+            </p>
+          </div>
           <ArtistAuditForm />
         </div>
 

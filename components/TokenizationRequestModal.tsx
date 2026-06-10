@@ -94,7 +94,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
       });
       setReqId(r.id); setSrc(r.source);
 
-      // Fire-and-forget email notification — never blocks the form
+      // Email Pablo (admin notification — never blocks the form)
       fetch("/api/notify/tokenization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,6 +109,22 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
           source:         r.source,
         }),
       }).catch(() => null);
+
+      // Email the client a confirmation receipt
+      if (email.trim()) {
+        fetch("/api/notify/client-confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to:            email.trim(),
+            business_name: name.trim(),
+            tier,
+            amount_usdc:   sel.price,
+            request_id:    r.id,
+            treasury:      "circuit.skr",
+          }),
+        }).catch(() => null);
+      }
 
       // Persist locally for dashboard visibility + create notification
       const wyReq = wyomingRequestStore.create({

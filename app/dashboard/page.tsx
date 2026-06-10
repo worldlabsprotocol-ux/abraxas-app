@@ -1,76 +1,38 @@
+// FILE: app/dashboard/page.tsx
+// Abraxas Institutional Dashboard — clean, no tab switcher at top,
+// full-width Bloomberg-style layout.
 "use client";
-// FILE: app/dashboard/page.tsx — Institutional Bloomberg-style asset intelligence center
 
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useState, useEffect }       from "react";
+import Link                          from "next/link";
+import { CompactWallet }             from "@/components/CompactWallet";
+import { LanguageSelector }          from "@/components/LanguageSelector";
 import {
   userAssetStore, ASSET_LABELS, STATE_COLORS,
   STAGE_META, PIPELINE_STAGES,
 } from "@/lib/vos/userAssetStore";
 import type { UserAsset, LifecycleState } from "@/lib/vos/userAssetStore";
-import { sessionStore } from "@/lib/vos/sessionStore";
-import type { Session } from "@/lib/vos/sessionStore";
-import { wyomingRequestStore } from "@/lib/vos/wyomingRequestStore";
-import type { WyomingRequest } from "@/lib/vos/wyomingRequestStore";
-import { notificationService } from "@/lib/notifications";
-import { CompactWallet }    from "@/components/CompactWallet";
-import { LanguageSelector } from "@/components/LanguageSelector";
+import { sessionStore }              from "@/lib/vos/sessionStore";
+import type { Session }              from "@/lib/vos/sessionStore";
+import { wyomingRequestStore }       from "@/lib/vos/wyomingRequestStore";
+import type { WyomingRequest }       from "@/lib/vos/wyomingRequestStore";
+import { notificationService }       from "@/lib/notifications";
 
+/* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
-const BG   = "#070A0F";
-const CARD = "#0C0F14";
-const BDR  = "#1A2233";
+const BG   = "#060810";
+const CARD = "#0D1117";
+const BDR  = "#1C2333";
 const G    = "#10B981";
 const A    = "#F59E0B";
 const B    = "#3B82F6";
+const P    = "#8B5CF6";
 const R    = "#EF4444";
-const W    = "#F0F2F5";
+const W    = "#F8FAFC";
+const DIM  = "rgba(255,255,255,0.35)";
 
-function Mono({ children, color = W, size = "0.78rem" }: {
-  children: React.ReactNode; color?: string; size?: string;
-}) {
-  return <span style={{ fontFamily: M, fontSize: size, color }}>{children}</span>;
-}
-
-function ScoreCard({ label, value, color, sub }: {
-  label: string; value: number; color: string; sub?: string;
-}) {
-  return (
-    <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 6,
-                   borderTop: `3px solid ${color}`, padding: "0.75rem 1rem" }}>
-      <div style={{ fontFamily: M, fontSize: "0.65rem", color: "rgba(255,255,255,0.3)",
-                     textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>
-        {label}
-      </div>
-      <div style={{ fontFamily: M, fontSize: "1.4rem", fontWeight: 900, color,
-                     lineHeight: 1, marginBottom: 4 }}>
-        {value}<span style={{ fontSize: "0.92rem", fontWeight: 400 }}>/100</span>
-      </div>
-      {sub && <div style={{ fontFamily: M, fontSize: "0.6rem",
-                             color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
-        {sub}
-      </div>}
-    </div>
-  );
-}
-
-// Score label helper
-function scoreLabel(v: number, isRisk = false) {
-  if (isRisk) {
-    if (v >= 85) return "LOW RISK";
-    if (v >= 65) return "MODERATE";
-    return "ELEVATED";
-  }
-  if (v >= 85) return "STRONG";
-  if (v >= 70) return "GOOD";
-  if (v >= 55) return "MODERATE";
-  return "DEVELOPING";
-}
-
-
-// ── Value display helpers ──────────────────────────────────────────────────
+/* ── helpers ────────────────────────────────────────────────── */
 function parseAssetValue(v: string | undefined): number {
   if (!v || v === "Not specified" || v.trim() === "") return 0;
   const n = parseFloat(v.replace(/[,$]/g, ""));
@@ -81,15 +43,59 @@ function displayValue(v: string | undefined): string {
   if (n === 0) return "—";
   return n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${n.toLocaleString()}`;
 }
+function scoreLabel(v: number) {
+  if (v >= 90) return "ELEVATED";
+  if (v >= 85) return "STRONG";
+  if (v >= 70) return "GOOD";
+  if (v >= 55) return "MODERATE";
+  return "DEVELOPING";
+}
+function scoreColor(v: number) {
+  if (v >= 85) return G;
+  if (v >= 70) return B;
+  if (v >= 55) return A;
+  return R;
+}
 
+/* ── tiny reusable components ───────────────────────────────── */
+function Mono({ children, size = "0.72rem", color = W }:
+  { children: React.ReactNode; size?: string; color?: string }) {
+  return (
+    <span style={{ fontFamily: M, fontSize: size, color, letterSpacing: "0.04em" }}>
+      {children}
+    </span>
+  );
+}
+
+function ScoreCard({ label, value, suffix = "/100" }:
+  { label: string; value: number; suffix?: string }) {
+  const c = scoreColor(value);
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BDR}`,
+                   borderTop: `2px solid ${c}`, borderRadius: 7, padding: "0.875rem" }}>
+      <Mono size="0.58rem" color={DIM}>{label.toUpperCase()}</Mono>
+      <div style={{ display: "flex", alignItems: "baseline",
+                     gap: "0.25rem", margin: "0.375rem 0 0.2rem" }}>
+        <span style={{ fontFamily: M, fontSize: "1.75rem",
+                        fontWeight: 900, color: c }}>{value}</span>
+        <span style={{ fontFamily: M, fontSize: "0.65rem", color: DIM }}>{suffix}</span>
+      </div>
+      <Mono size="0.58rem" color={c}>{scoreLabel(value)}</Mono>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN DASHBOARD
+═══════════════════════════════════════════════════════════════ */
 export default function DashboardPage() {
-  const [session,         setSession]         = useState<Session | null>(null);
-  const [assets,          setAssets]          = useState<UserAsset[]>([]);
-  const [selected,        setSelected]        = useState<string | null>(null);
-  const [tab,             setTab]             = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
-  const [wyomingReqs,     setWyomingReqs]     = useState<WyomingRequest[]>([]);
-  const [unreadCount,     setUnreadCount]     = useState(0);
-  const [showWyoming,     setShowWyoming]     = useState(false);
+  const [session,     setSession]     = useState<Session | null>(null);
+  const [assets,      setAssets]      = useState<UserAsset[]>([]);
+  const [selected,    setSelected]    = useState<string | null>(null);
+  const [detailTab,   setDetailTab]   = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
+  const [wyomingReqs, setWyomingReqs] = useState<WyomingRequest[]>([]);
+  const [panelTab,    setPanelTab]    = useState<"assets"|"wyoming">("assets");
+  const [unread,      setUnread]      = useState(0);
 
   function refresh() {
     const s = sessionStore.get();
@@ -98,609 +104,568 @@ export default function DashboardPage() {
     setAssets(mine);
     if (mine.length > 0 && !selected) setSelected(mine[0].id);
     setWyomingReqs(wyomingRequestStore.listAll());
-    setUnreadCount(notificationService.getUnreadCount());
+    setUnread(notificationService.getUnreadCount());
   }
 
   useEffect(() => { refresh(); }, []);
 
-  const sel = assets.find(a => a.id === selected);
+  const sel = assets.find(a => a.id === selected) ?? null;
 
-  function advance(id: string) {
-    userAssetStore.simulateAdvance(id);
-    refresh();
-  }
-  function reset() {
-    if (!confirm("Reset all assets and session?")) return;
-    userAssetStore.clearMine();
-    sessionStore.reset();
-    setSelected(null);
-    refresh();
-  }
+  const portfolioValue = assets.reduce((s, a) => s + parseAssetValue(a.estimatedValue), 0);
+  const portfolioDisplay = portfolioValue > 0
+    ? (portfolioValue >= 1_000_000
+        ? `$${(portfolioValue / 1_000_000).toFixed(2)}M`
+        : `$${portfolioValue.toLocaleString()}`)
+    : "—";
 
-  const pipelineIndex = sel ? PIPELINE_STAGES.indexOf(sel.state) : -1;
+  const STAT_CARDS = [
+    { label: "Total Assets",  val: assets.length, color: W },
+    { label: "In Review",     val: assets.filter(a => ["IDENTITY_REVIEW","OWNERSHIP_REVIEW","LEGAL_REVIEW","DUE_DILIGENCE","RISK_SCORING","APPROVAL_COMMITTEE"].includes(a.state)).length, color: A },
+    { label: "Authorized",    val: assets.filter(a => ["TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(a.state)).length, color: G },
+    { label: "Portfolio",     val: portfolioDisplay, color: G },
+  ];
 
   return (
-    <div style={{ background: BG, minHeight: "100vh",
-                   display: "flex", flexDirection: "column", color: W }}>
+    <div style={{ minHeight: "100vh", background: BG, display: "flex",
+                   flexDirection: "column", fontFamily: M, color: W }}>
 
-      {/* Status strip */}
-      <div style={{ background: "#030507", borderBottom: "1px solid #0D1520",
-                     padding: "0 1.5rem", height: 28,
-                     display: "flex", alignItems: "center", gap: "1.5rem",
-                     overflowX: "auto", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: G,
-                         boxShadow: `0 0 5px ${G}80` }}/>
-          <Mono color="rgba(255,255,255,0.3)" size="0.6rem">
-            PORTFOLIO · SESSION {session?.label ?? "..."}
-          </Mono>
-        </div>
-        <Mono color="rgba(255,255,255,0.15)" size="0.6rem">
-          {assets.length} ASSET{assets.length !== 1 ? "S" : ""} · ABRAXAS OS BUILD 2025.1
-        </Mono>
-      </div>
-
-      {/* Nav */}
-      <nav style={{ position: "sticky", top: 28, zIndex: 200,
-                     background: "rgba(7,10,15,0.97)", backdropFilter: "blur(12px)",
-                     borderBottom: `1px solid ${BDR}`,
-                     display: "flex", alignItems: "center",
-                     padding: "0 clamp(0.75rem,2.5vw,1.5rem)",
-                     height: 52, gap: "0.92rem" }}>
-        <Link href="/terminal" style={{ display: "flex", alignItems: "center",
-                       gap: "0.375rem", textDecoration: "none", marginRight: "0.7rem" }}>
-          <Image src="/icon-48.png" alt="" width={22} height={22}/>
-          <Mono size="1.1rem" color={W}>ABRAXAS</Mono>
-          <Mono size="1.1rem" color="rgba(255,255,255,0.2)">PROTOCOL OS</Mono>
+      {/* ── NAV ─────────────────────────────────────────────── */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "rgba(6,8,16,0.95)", backdropFilter: "blur(12px)",
+        borderBottom: `1px solid ${BDR}`,
+        display: "flex", alignItems: "center",
+        padding: "0 clamp(0.875rem,2vw,1.5rem)",
+        height: 52, gap: "0.75rem",
+      }}>
+        <Link href="/terminal" style={{
+          display: "flex", alignItems: "center", gap: "0.5rem",
+          textDecoration: "none", flexShrink: 0,
+        }}>
+          <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
+            <polygon points="20,2 38,20 20,38 2,20"
+              stroke="#10B981" strokeWidth="2" fill="none"/>
+            <polygon points="20,8 32,20 20,32 8,20"
+              stroke="#10B981" strokeWidth="1.5" fill="rgba(16,185,129,0.1)"/>
+            <circle cx="20" cy="20" r="3" fill="#10B981"/>
+          </svg>
+          <span style={{ fontFamily: M, fontSize: "0.875rem",
+                          fontWeight: 900, color: W, letterSpacing: "0.08em" }}>
+            ABRAXAS
+          </span>
         </Link>
-        {["TERMINAL","LENDING","DASHBOARD"].map(t => (
-          <Link key={t} href={t === "TERMINAL" ? "/terminal" : t === "LENDING" ? "/lending" : "/dashboard"}
-            style={{
-              padding: "0.25rem 0.75rem", borderRadius: 4, textDecoration: "none",
-              border: `1px solid ${t === "DASHBOARD" ? `${G}50` : BDR}`,
-              background: t === "DASHBOARD" ? `${G}10` : "transparent",
-              color: t === "DASHBOARD" ? G : "rgba(255,255,255,0.3)",
-              fontFamily: M, fontSize: "0.72rem", fontWeight: 700,
-              textTransform: "uppercase", letterSpacing: "0.08em",
-              whiteSpace: "nowrap",
-            }}>
-            {t}
-          </Link>
-        ))}
+
+        <div style={{ width: 1, height: 20, background: BDR, flexShrink: 0 }}/>
+
+        <Link href="/terminal" style={{
+          fontFamily: M, fontSize: "0.72rem", fontWeight: 700,
+          color: DIM, textDecoration: "none", whiteSpace: "nowrap",
+          letterSpacing: "0.1em", textTransform: "uppercase",
+        }}>← Terminal</Link>
+
+        <span style={{ fontFamily: M, fontSize: "0.72rem", fontWeight: 700,
+                        color: G, letterSpacing: "0.1em",
+                        textTransform: "uppercase" }}>Dashboard</span>
+
         <div style={{ flex: 1 }}/>
+
+        {/* Notification badge */}
+        {unread > 0 && (
+          <div style={{
+            width: 20, height: 20, borderRadius: "50%",
+            background: R, color: "#fff",
+            fontFamily: M, fontSize: "0.55rem", fontWeight: 900,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            {unread > 9 ? "9+" : unread}
+          </div>
+        )}
+
         <LanguageSelector/>
         <CompactWallet/>
       </nav>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%",
-                     padding: "1.5rem clamp(1rem,3vw,2rem) 4rem" }}>
+      {/* ── STATUS STRIP ────────────────────────────────────── */}
+      <div style={{
+        background: "#030508", borderBottom: `1px solid ${BDR}`,
+        padding: "0.35rem clamp(0.875rem,2vw,1.5rem)",
+        display: "flex", alignItems: "center", gap: "1.25rem",
+        fontSize: "0.62rem", color: DIM, overflowX: "auto",
+      }}>
+        <span style={{ color: G, fontWeight: 700 }}>● PORTFOLIO ACTIVE</span>
+        <span>SESSION: {session?.label ?? "..."}</span>
+        <span style={{ color: A }}>{assets.length} ASSET{assets.length !== 1 ? "S" : ""}</span>
+        <span style={{ color: B }}>ABRAXAS OS BUILD 2025.1</span>
+        <span style={{ flex: 1 }}/>
+        <span style={{ color: "rgba(255,255,255,0.2)" }}>
+          {new Date().toISOString().split("T")[0]}
+        </span>
+      </div>
 
-        {/* ── Stat strip ── */}
-        <div style={{ display: "grid",
-                       gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))",
-                       gap: "1px", border: `1px solid ${BDR}`, borderRadius: 7,
-                       overflow: "hidden", marginBottom: "1.5rem" }}>
-          {[
-            { label: "Total Assets",   val: assets.length,   color: W },
-            { label: "In Review",      val: assets.filter(a => ["IDENTITY_REVIEW","OWNERSHIP_REVIEW","LEGAL_REVIEW","DUE_DILIGENCE","RISK_SCORING","APPROVAL_COMMITTEE"].includes(a.state)).length, color: A },
-            { label: "Authorized",     val: assets.filter(a => ["TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(a.state)).length, color: G },
-            { label: "Portfolio Value", val: assets.some(a => parseAssetValue(a.estimatedValue) > 0) ? "$" + (assets.reduce((s,a) => s + parseAssetValue(a.estimatedValue), 0) / 1_000_000).toFixed(2) + "M" : "—", color: G }
-          ].map(s => (
-            <div key={s.label} style={{ background: CARD, padding: "0.92rem" }}>
-              <Mono size="0.65rem" color="rgba(255,255,255,0.25)">{s.label.toUpperCase()}</Mono>
-              <div style={{ fontFamily: M, fontSize: "1.2rem", fontWeight: 900,
-                             color: s.color, marginTop: 4 }}>
-                {s.val}
-              </div>
+      {/* ── STAT CARDS ──────────────────────────────────────── */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
+        gap: "1px", background: BDR,
+        borderBottom: `1px solid ${BDR}`,
+      }}>
+        {STAT_CARDS.map(s => (
+          <div key={s.label} style={{ background: CARD, padding: "0.875rem 1rem" }}>
+            <Mono size="0.6rem" color={DIM}>{s.label.toUpperCase()}</Mono>
+            <div style={{ fontFamily: M, fontSize: "1.5rem", fontWeight: 900,
+                           color: s.color, marginTop: "0.25rem" }}>
+              {s.val}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
 
-        {/* Toggle between Assets and Wyoming Requests */}
-        <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem" }}>
-          <button onClick={() => setShowWyoming(false)} style={{
-            padding:"0.35rem 0.875rem", borderRadius:4, cursor:"pointer",
-            border:`1px solid ${!showWyoming ? `${G}50` : BDR}`,
-            background: !showWyoming ? `${G}10` : "transparent",
-            color: !showWyoming ? G : "rgba(255,255,255,0.4)",
-            fontFamily:M, fontSize:"0.62rem", fontWeight:700,
-            textTransform:"uppercase", letterSpacing:"0.08em",
-          }}>
-            ASSETS
-          </button>
-          <button onClick={() => { setShowWyoming(true); wyomingRequestStore.markAllViewed(); setUnreadCount(0); }} style={{
-            padding:"0.35rem 0.875rem", borderRadius:4, cursor:"pointer",
-            border:`1px solid ${showWyoming ? `${G}50` : BDR}`,
-            background: showWyoming ? `${G}10` : "transparent",
-            color: showWyoming ? G : "rgba(255,255,255,0.4)",
-            fontFamily:M, fontSize:"0.62rem", fontWeight:700,
-            textTransform:"uppercase", letterSpacing:"0.08em",
-            position:"relative",
-          }}>
-            WYOMING
-            {unreadCount > 0 && !showWyoming && (
-              <span style={{
-                position:"absolute", top:-4, right:-4,
-                width:15, height:15, borderRadius:"50%",
-                background:"#EF4444", color:"#fff",
-                fontFamily:M, fontSize:"0.5rem", fontWeight:900,
-                display:"flex", alignItems:"center", justifyContent:"center",
-              }}>
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
-        </div>
+      {/* ── MAIN BODY ────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden",
+                     minHeight: 0, flexDirection: "column" }}>
 
-        {/* ── WYOMING TOKENIZATION REQUESTS ── */}
-        {showWyoming && (
-          <div>
-            <div style={{ fontFamily:M, fontSize:"0.58rem", color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.625rem" }}>
-              WYOMING TOKENIZATION REQUESTS ({wyomingReqs.length})
+        <div style={{ flex: 1, display: "flex",
+                       overflow: "auto", minHeight: 0 }}>
+
+          {/* ── LEFT PANEL (asset list) ───────────────────── */}
+          <div style={{
+            width: "clamp(220px,28vw,300px)", flexShrink: 0,
+            borderRight: `1px solid ${BDR}`, background: "#07090E",
+            display: "flex", flexDirection: "column", overflowY: "auto",
+          }}>
+            {/* Panel tabs */}
+            <div style={{ display: "flex", borderBottom: `1px solid ${BDR}`,
+                           flexShrink: 0 }}>
+              {([["assets","ASSETS"],["wyoming","WYOMING"]] as const).map(([id, lbl]) => (
+                <button key={id} onClick={() => {
+                  setPanelTab(id);
+                  if (id === "wyoming") {
+                    wyomingRequestStore.markAllViewed();
+                    setUnread(0);
+                  }
+                }} style={{
+                  flex: 1, padding: "0.625rem", border: "none",
+                  borderBottom: `2px solid ${panelTab===id ? G : "transparent"}`,
+                  background: "transparent",
+                  color: panelTab===id ? G : DIM,
+                  fontFamily: M, fontSize: "0.62rem", fontWeight: 700,
+                  cursor: "pointer", letterSpacing: "0.1em",
+                  textTransform: "uppercase", position: "relative",
+                }}>
+                  {lbl}
+                  {id === "wyoming" && unread > 0 && panelTab !== "wyoming" && (
+                    <span style={{
+                      position: "absolute", top: 4, right: 4,
+                      width: 14, height: 14, borderRadius: "50%",
+                      background: R, color: "#fff",
+                      fontFamily: M, fontSize: "0.48rem", fontWeight: 900,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>{unread > 9 ? "9+" : unread}</span>
+                  )}
+                </button>
+              ))}
             </div>
-            {wyomingReqs.length === 0 ? (
-              <div style={{ padding:"1.5rem", background:CARD,
-                             border:`1px solid ${BDR}`, borderRadius:6,
-                             textAlign:"center", fontFamily:M,
-                             fontSize:"0.6rem", color:"rgba(255,255,255,0.2)" }}>
-                No submissions yet. Use START TOKENIZATION NOW on the terminal.
+
+            <div style={{ padding: "0.5rem", flex: 1, overflowY: "auto" }}>
+              {/* ASSETS tab */}
+              {panelTab === "assets" && (
+                <>
+                  <div style={{ padding: "0.375rem 0.5rem", marginBottom: "0.25rem" }}>
+                    <Mono size="0.55rem" color={DIM}>
+                      ASSET REGISTRY ({assets.length})
+                    </Mono>
+                  </div>
+                  {assets.length === 0 ? (
+                    <div style={{ padding: "1rem 0.5rem", textAlign: "center" }}>
+                      <Mono size="0.62rem" color={DIM}>No assets yet.</Mono>
+                      <div style={{ marginTop: "0.5rem" }}>
+                        <Link href="/terminal" style={{
+                          fontFamily: M, fontSize: "0.6rem", color: G,
+                          textDecoration: "none", textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                        }}>Submit asset →</Link>
+                      </div>
+                    </div>
+                  ) : (
+                    assets.map(a => (
+                      <button key={a.id} onClick={() => setSelected(a.id)} style={{
+                        width: "100%", padding: "0.625rem 0.5rem", borderRadius: 5,
+                        border: `1px solid ${selected===a.id ? `${G}50` : BDR}`,
+                        background: selected===a.id ? `${G}08` : "transparent",
+                        textAlign: "left", cursor: "pointer", marginBottom: "0.25rem",
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between",
+                                       alignItems: "baseline", gap: "0.25rem" }}>
+                          <Mono size="0.65rem" color={selected===a.id ? G : W}>
+                            {a.id.slice(0,10)}
+                          </Mono>
+                          <span style={{ fontFamily: M, fontSize: "0.52rem",
+                                          color: STATE_COLORS[a.state as LifecycleState] ?? A,
+                                          background: `${STATE_COLORS[a.state as LifecycleState] ?? A}15`,
+                                          borderRadius: 3, padding: "1px 5px",
+                                          textTransform: "uppercase", letterSpacing: "0.05em",
+                                          flexShrink: 0, whiteSpace: "nowrap" }}>
+                            {a.state.replace(/_/g," ").split(" ")[0]}
+                          </span>
+                        </div>
+                        <div style={{ fontFamily: S, fontSize: "0.68rem",
+                                       color: DIM, marginTop: 2 }}>
+                          {ASSET_LABELS[a.assetType as keyof typeof ASSET_LABELS] ?? a.assetType}
+                          {a.estimatedValue && a.estimatedValue !== "Not specified"
+                            ? ` · ${displayValue(a.estimatedValue)}` : ""}
+                        </div>
+                        <div style={{ marginTop: "0.375rem", height: 3, background: BDR,
+                                       borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ height: "100%", borderRadius: 2,
+                                         background: G, width: `${a.progressPct || 5}%` }}/>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                  <button onClick={refresh} style={{
+                    width: "100%", marginTop: "0.5rem", padding: "0.5rem",
+                    borderRadius: 4, border: `1px solid ${BDR}`,
+                    background: "transparent", color: DIM,
+                    fontFamily: M, fontSize: "0.6rem", cursor: "pointer",
+                    letterSpacing: "0.06em", textTransform: "uppercase",
+                  }}>RESET SESSION</button>
+                </>
+              )}
+
+              {/* WYOMING tab */}
+              {panelTab === "wyoming" && (
+                <>
+                  <div style={{ padding: "0.375rem 0.5rem", marginBottom: "0.25rem" }}>
+                    <Mono size="0.55rem" color={DIM}>
+                      WYOMING REQUESTS ({wyomingReqs.length})
+                    </Mono>
+                  </div>
+                  {wyomingReqs.length === 0 ? (
+                    <div style={{ padding: "1rem 0.5rem", textAlign: "center" }}>
+                      <Mono size="0.62rem" color={DIM}>No Wyoming requests yet.</Mono>
+                    </div>
+                  ) : (
+                    wyomingReqs.map(r => (
+                      <div key={r.id} style={{
+                        padding: "0.625rem 0.5rem", borderRadius: 5, marginBottom: "0.25rem",
+                        border: `1px solid ${BDR}`, borderLeft: `3px solid ${G}`,
+                        background: "rgba(255,255,255,0.01)",
+                      }}>
+                        <div style={{ fontFamily: M, fontSize: "0.65rem",
+                                       fontWeight: 700, color: W, marginBottom: 2 }}>
+                          {r.companyName}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between",
+                                       flexWrap: "wrap", gap: 2 }}>
+                          <Mono size="0.55rem" color={G}>
+                            {r.tier.toUpperCase()}
+                          </Mono>
+                          <Mono size="0.52rem" color={DIM}>
+                            {new Date(r.createdAt).toLocaleDateString()}
+                          </Mono>
+                        </div>
+                        <div style={{ marginTop: 3 }}>
+                          <span style={{
+                            fontFamily: M, fontSize: "0.5rem", fontWeight: 700,
+                            color: G, background: `${G}12`, borderRadius: 3,
+                            padding: "1px 5px", textTransform: "uppercase", letterSpacing: "0.06em",
+                          }}>{r.lifecycleState}</span>
+                        </div>
+                        {r.supabaseId && (
+                          <div style={{ marginTop: 2 }}>
+                            <Mono size="0.5rem" color={`${G}60`}>✓ Supabase synced</Mono>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* ── RIGHT PANEL (asset detail) ─────────────────── */}
+          <div style={{ flex: 1, minWidth: 0, overflowY: "auto",
+                         background: BG, padding: "0" }}>
+            {!sel ? (
+              <div style={{ display: "flex", alignItems: "center",
+                             justifyContent: "center", height: "100%",
+                             flexDirection: "column", gap: "0.75rem" }}>
+                <Mono size="0.65rem" color={DIM}>SELECT AN ASSET TO VIEW DETAILS</Mono>
+                <Link href="/terminal" style={{
+                  fontFamily: M, fontSize: "0.65rem", color: G,
+                  textDecoration: "none", textTransform: "uppercase",
+                  letterSpacing: "0.08em", border: `1px solid ${G}`,
+                  padding: "0.5rem 1rem", borderRadius: 4,
+                }}>← Back to Terminal</Link>
               </div>
             ) : (
-              wyomingReqs.map(req => (
-                <div key={req.id} style={{
-                  padding:"0.75rem 0.875rem", background:CARD,
-                  border:`1px solid ${BDR}`, borderRadius:6,
-                  borderLeft:`3px solid ${G}`,
-                  marginBottom:"0.375rem",
-                }}>
-                  <div style={{ display:"flex", justifyContent:"space-between",
-                                 alignItems:"baseline", flexWrap:"wrap", gap:4,
-                                 marginBottom:3 }}>
-                    <span style={{ fontFamily:M, fontSize:"0.68rem",
-                                    fontWeight:700, color:W }}>
-                      {req.companyName}
-                    </span>
-                    <span style={{ fontFamily:M, fontSize:"0.58rem",
-                                    color:G, background:`${G}15`,
-                                    borderRadius:3, padding:"1px 6px",
-                                    letterSpacing:"0.06em",
-                                    textTransform:"uppercase" }}>
-                      {req.lifecycleState}
-                    </span>
-                  </div>
-                  <div style={{ display:"grid",
-                                 gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",
-                                 gap:"0.25rem" }}>
-                    {[
-                      ["Tier",       req.tier.toUpperCase()],
-                      ["Valuation",  `$${parseInt(req.estimatedValuation || "0", 10).toLocaleString()}`],
-                      ["Asset ID",   req.assetId],
-                      ["Request ID", req.id],
-                      ["Submitted",  new Date(req.createdAt).toLocaleString()],
-                      ...(req.walletAddress ? [["Wallet", `${req.walletAddress.slice(0,8)}…`]] : []),
-                      ...(req.supabaseId ? [["Supabase", "✓ synced"]] : [["Supabase", "local only"]]),
-                    ].map(([k, v]) => (
-                      <div key={k}>
-                        <span style={{ fontFamily:M, fontSize:"0.52rem",
-                                        color:"rgba(255,255,255,0.3)" }}>{k}: </span>
-                        <span style={{ fontFamily:M, fontSize:"0.58rem",
-                                        color:"rgba(255,255,255,0.7)" }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {req.timeline.length > 0 && (
-                    <div style={{ marginTop:"0.375rem", fontFamily:M,
-                                   fontSize:"0.52rem",
-                                   color:"rgba(255,255,255,0.25)",
-                                   fontStyle:"italic" }}>
-                      {req.timeline[req.timeline.length - 1].note}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {!showWyoming && assets.length === 0 && (
-          <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 8,
-                         padding: "3rem", textAlign: "center" }}>
-            <div style={{ fontFamily: M, fontSize: "0.72rem", color: "rgba(255,255,255,0.25)",
-                           textTransform: "uppercase", letterSpacing: "0.2em",
-                           marginBottom: "0.92rem" }}>
-              EMPTY REGISTRY
-            </div>
-            <div style={{ fontFamily: S, fontSize: "1.4rem", fontWeight: 800,
-                           color: W, marginBottom: "0.625rem" }}>
-              No assets in verification pipeline.
-            </div>
-            <p style={{ fontFamily: S, fontSize: "0.86rem", color: "rgba(255,255,255,0.4)",
-                         lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.5rem" }}>
-              Submit your first asset through the terminal.
-            </p>
-            <Link href="/terminal" style={{
-              padding: "0.75rem 1.5rem", borderRadius: 5, background: G, color: "#000",
-              fontFamily: M, fontSize: "0.92rem", fontWeight: 900,
-              textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.04em",
-            }}>
-              OPEN TERMINAL →
-            </Link>
-          </div>
-        )}
-
-        {!showWyoming && assets.length > 0 && (
-          <div style={{ display: "grid",
-                         gridTemplateColumns: "min(280px,35%) 1fr",
-                         gap: "0.92rem", alignItems: "start" }}>
-
-            {/* ── Asset list ── */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-              <Mono size="0.7rem" color="rgba(255,255,255,0.25)">
-                ASSET REGISTRY ({assets.length})
-              </Mono>
-              {assets.map(a => {
-                const color = STATE_COLORS[a.state];
-                const isSel = a.id === selected;
-                return (
-                  <button key={a.id} onClick={() => { setSelected(a.id); setTab("overview"); }}
-                    style={{
-                      padding: "0.75rem 0.875rem", borderRadius: 6,
-                      textAlign: "left", cursor: "pointer",
-                      border: `1px solid ${isSel ? color : BDR}`,
-                      borderLeft: `3px solid ${color}`,
-                      background: isSel ? `${color}12` : CARD,
-                      transition: "all 0.15s",
-                    }}>
-                    <div style={{ display: "flex", justifyContent: "space-between",
-                                   alignItems: "baseline", marginBottom: 3 }}>
-                      <Mono size="0.78rem" color={W}>{a.id}</Mono>
-                      <span style={{ fontFamily: M, fontSize: "1.1rem", fontWeight: 700,
-                                      color, background: `${color}20`, borderRadius: 3,
-                                      padding: "1px 5px", letterSpacing: "0.06em" }}>
-                        {STAGE_META[a.state]?.shortLabel ?? a.state}
-                      </span>
-                    </div>
-                    <div style={{ fontFamily: S, fontSize: "0.76rem",
-                                   color: "rgba(255,255,255,0.55)", marginBottom: 2 }}>
-                      {ASSET_LABELS[a.assetType] ?? a.assetType}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ flex: 1, height: 3, background: `${color}20`, borderRadius: 2, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${a.progressPct}%`,
-                                       background: color, borderRadius: 2,
-                                       transition: "width 0.3s" }}/>
-                      </div>
-                      <Mono size="0.6rem" color={color}>{a.progressPct}%</Mono>
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Registry stats */}
-              <div style={{ background: CARD, border: `1px solid ${BDR}`,
-                             borderRadius: 6, padding: "0.7rem", marginTop: "0.92rem" }}>
-                <Mono size="0.65rem" color="rgba(255,255,255,0.25)">REGISTRY OVERVIEW</Mono>
-                {[
-                  { label: "Verified Properties",   val: 1, color: G },
-                  { label: "Pending Verification",   val: assets.filter(a => !["MINTED","MARKETPLACE_LIVE","REJECTED"].includes(a.state)).length, color: A },
-                  { label: "Total Verified",          val: 1 + assets.filter(a => ["MINTED","MARKETPLACE_LIVE"].includes(a.state)).length, color: B },
-                ].map(r => (
-                  <div key={r.label} style={{ display: "flex", justifyContent: "space-between",
-                                               padding: "0.35rem 0",
-                                               borderBottom: `1px solid ${BDR}40` }}>
-                    <Mono size="0.7rem" color="rgba(255,255,255,0.4)">{r.label}</Mono>
-                    <Mono size="0.7rem" color={r.color}>{r.val}</Mono>
-                  </div>
-                ))}
-              </div>
-
-              <button onClick={reset} style={{
-                marginTop: "0.92rem", padding: "0.4rem 0.75rem", borderRadius: 4,
-                border: `1px solid ${R}30`, background: "transparent",
-                color: `${R}60`, fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
-                cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
-              }}>
-                RESET SESSION
-              </button>
-            </div>
-
-            {/* ── Asset detail ── */}
-            {sel && (
-              <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 8 }}>
-
-                {/* Header */}
-                <div style={{ padding: "1.25rem 1.5rem",
+              <div>
+                {/* Asset header */}
+                <div style={{ padding: "1rem 1.25rem",
                                borderBottom: `1px solid ${BDR}`,
-                               display: "flex", justifyContent: "space-between",
-                               alignItems: "flex-start", flexWrap: "wrap", gap: "0.92rem" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.92rem",
-                                   marginBottom: 4 }}>
-                      <Mono size="0.7rem" color="rgba(255,255,255,0.3)">ASSET RECORD</Mono>
-                      <Mono size="0.84rem" color={STATE_COLORS[sel.state]}>●</Mono>
+                               background: CARD }}>
+                  <div style={{ display: "flex", alignItems: "flex-start",
+                                 justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center",
+                                     gap: "0.5rem", marginBottom: "0.25rem" }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%",
+                                       background: STATE_COLORS[sel.state as LifecycleState] ?? A }}/>
+                        <Mono size="0.65rem" color={DIM}>ASSET RECORD</Mono>
+                      </div>
+                      <div style={{ fontFamily: M, fontSize: "0.875rem",
+                                     fontWeight: 900, color: W, marginBottom: 2 }}>
+                        {sel.id}
+                      </div>
+                      <div style={{ fontFamily: S, fontSize: "0.72rem", color: DIM }}>
+                        {ASSET_LABELS[sel.assetType as keyof typeof ASSET_LABELS] ?? sel.assetType}
+                        {sel.estimatedValue && sel.estimatedValue !== "Not specified"
+                          ? ` · ${displayValue(sel.estimatedValue)}` : ""}
+                        {" · "}
+                        {sel.jurisdiction || "Not specified"}
+                      </div>
                     </div>
-                    <Mono size="0.84rem" color={W}>{sel.id}</Mono>
-                    <div style={{ fontFamily: S, fontSize: "0.75rem",
-                                   color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
-                      {ASSET_LABELS[sel.assetType] ?? sel.assetType}
-                      {sel.estimatedValue && sel.estimatedValue !== "Not specified" ? ` · ${displayValue(sel.estimatedValue)}` : ""}
-                      {sel.jurisdiction ? ` · ${sel.jurisdiction}` : ""}
+                    <div style={{ display: "flex", flexDirection: "column",
+                                   gap: "0.25rem", alignItems: "flex-end" }}>
+                      <span style={{
+                        fontFamily: M, fontSize: "0.6rem", fontWeight: 700,
+                        color: STATE_COLORS[sel.state as LifecycleState] ?? A,
+                        background: `${STATE_COLORS[sel.state as LifecycleState] ?? A}15`,
+                        border: `1px solid ${STATE_COLORS[sel.state as LifecycleState] ?? A}30`,
+                        borderRadius: 4, padding: "0.35rem 0.625rem",
+                        textTransform: "uppercase", letterSpacing: "0.08em",
+                      }}>
+                        {sel.state.replace(/_/g," ")}
+                      </span>
+                      {sel.assignedVerifier && (
+                        <Mono size="0.58rem" color={DIM}>
+                          Verifier: {sel.assignedVerifier}
+                        </Mono>
+                      )}
                     </div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <span style={{ fontFamily: M, fontSize: "0.75rem", fontWeight: 700,
-                                    color: STATE_COLORS[sel.state],
-                                    background: `${STATE_COLORS[sel.state]}20`,
-                                    border: `1px solid ${STATE_COLORS[sel.state]}40`,
-                                    borderRadius: 4, padding: "3px 10px",
-                                    textTransform: "uppercase", letterSpacing: "0.1em",
-                                    display: "block", marginBottom: 4 }}>
-                      {STAGE_META[sel.state]?.label ?? sel.state}
-                    </span>
-                    {sel.assignedVerifier && (
-                      <Mono size="0.65rem" color="rgba(255,255,255,0.3)">
-                        Verifier: {sel.assignedVerifier}
-                      </Mono>
-                    )}
                   </div>
                 </div>
 
-                {/* Sub-tabs */}
+                {/* Detail tabs */}
                 <div style={{ display: "flex", borderBottom: `1px solid ${BDR}`,
-                               padding: "0 1.5rem" }}>
+                               background: CARD }}>
                   {(["overview","lifecycle","documents","activity"] as const).map(t => (
-                    <button key={t} onClick={() => setTab(t)} style={{
-                      padding: "0.625rem 0.875rem", background: "transparent", border: "none",
-                      borderBottom: `2px solid ${tab === t ? G : "transparent"}`,
-                      color: tab === t ? G : "rgba(255,255,255,0.3)",
-                      fontFamily: M, fontSize: "0.72rem", fontWeight: 700,
-                      textTransform: "uppercase", letterSpacing: "0.08em",
-                      cursor: "pointer", marginBottom: -1,
-                    }}>
-                      {t}
-                    </button>
+                    <button key={t} onClick={() => setDetailTab(t)} style={{
+                      padding: "0.625rem 0.875rem", border: "none",
+                      borderBottom: `2px solid ${detailTab===t ? G : "transparent"}`,
+                      background: "transparent",
+                      color: detailTab===t ? G : DIM,
+                      fontFamily: M, fontSize: "0.62rem", fontWeight: 700,
+                      cursor: "pointer", letterSpacing: "0.1em",
+                      textTransform: "uppercase", whiteSpace: "nowrap",
+                    }}>{t.toUpperCase()}</button>
                   ))}
                 </div>
 
-                <div style={{ padding: "1.25rem 1.5rem" }}>
+                <div style={{ padding: "1rem 1.25rem" }}>
 
-                  {/* OVERVIEW TAB */}
-                  {tab === "overview" && (
+                  {/* ── OVERVIEW ── */}
+                  {detailTab === "overview" && (
                     <div>
-                      {/* 4-score grid */}
+                      {/* Score cards */}
                       <div style={{ display: "grid",
-                                     gridTemplateColumns: "repeat(auto-fill,minmax(120px,1fr))",
-                                     gap: "0.92rem", marginBottom: "1.25rem" }}>
-                        <ScoreCard label="Verification" value={sel.scores.verification}
-                                   color={sel.scores.verification >= 75 ? G : A}
-                                   sub={scoreLabel(sel.scores.verification)}/>
-                        <ScoreCard label="Liquidity"    value={sel.scores.liquidity}
-                                   color={sel.scores.liquidity >= 70 ? B : A}
-                                   sub={scoreLabel(sel.scores.liquidity)}/>
-                        <ScoreCard label="Fraud Shield" value={sel.scores.fraud}
-                                   color={sel.scores.fraud >= 80 ? G : sel.scores.fraud >= 60 ? A : R}
-                                   sub={scoreLabel(sel.scores.fraud, true)}/>
-                        <ScoreCard label="Marketability" value={sel.scores.marketability}
-                                   color={sel.scores.marketability >= 70 ? B : A}
-                                   sub={scoreLabel(sel.scores.marketability)}/>
+                                     gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))",
+                                     gap: "0.5rem", marginBottom: "1rem" }}>
+                        <ScoreCard label="Verification" value={sel.scores?.verification ?? 55} />
+                        <ScoreCard label="Liquidity"    value={sel.scores?.liquidity    ?? 62} />
+                        <ScoreCard label="Fraud Shield" value={sel.scores?.fraud        ?? 75} />
+                        <ScoreCard label="Marketability" value={sel.scores?.marketability ?? 65} />
                       </div>
 
-                      {/* Bloomberg-style data grid */}
-                      <div style={{ background: "#080B10", border: `1px solid ${BDR}`,
-                                     borderRadius: 6, marginBottom: "0.92rem" }}>
+                      {/* Data grid */}
+                      <div style={{ background: CARD, border: `1px solid ${BDR}`,
+                                     borderRadius: 7, overflow: "hidden",
+                                     marginBottom: "0.875rem" }}>
                         {[
-                          ["Asset Value",      displayValue(sel.estimatedValue)],
-                          ["Jurisdiction",     sel.jurisdiction || "—"],
-                          ["Verification Score", `${sel.scores.overall}/100 · ${scoreLabel(sel.scores.overall)}`],
-                          ["Legal Review",     STAGE_META[sel.state]?.progressPct >= 42 ? "In Progress" : "Pending"],
-                          ["Tokenization",     sel.state === "MINTED" || sel.state === "MARKETPLACE_LIVE" ? "Authorized" : sel.state === "TOKENIZATION_AUTH" ? "Authorized" : "Pending Approval"],
-                          ["Collateral Status",sel.state === "MARKETPLACE_LIVE" ? "ELIGIBLE" : "Pending Verification"],
-                          ["Lending Status",   sel.state === "MARKETPLACE_LIVE" ? "AVAILABLE" : "Not Yet Available"],
-                          ["Assigned Verifier",sel.assignedVerifier ?? "—"],
-                          ["Progress",         `${sel.progressPct}% · ${STAGE_META[sel.state]?.label}`],
-                          ["Submitted",        new Date(sel.createdAt).toLocaleString()],
+                          ["Asset Value",       displayValue(sel.estimatedValue)],
+                          ["Jurisdiction",      sel.jurisdiction  || "—"],
+                          ["Verification Score",`${(sel.scores ? Math.round((sel.scores.verification+sel.scores.fraud)/2) : 64)}/100 · ${scoreLabel(sel.scores ? Math.round((sel.scores.verification+sel.scores.fraud)/2) : 64)}`],
+                          ["Legal Review",      sel.state === "LEGAL_REVIEW" || ["RISK_SCORING","APPROVAL_COMMITTEE","TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(sel.state) ? "Complete" : "Pending"],
+                          ["Tokenization",      ["TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(sel.state) ? "Authorized" : "Pending Approval"],
+                          ["Collateral Status", ["MINTED","MARKETPLACE_LIVE"].includes(sel.state) ? "Eligible" : "Pending Verification"],
+                          ["Lending Status",    sel.state === "MARKETPLACE_LIVE" ? "Available (60% LTV)" : "Not Yet Available"],
+                          ["Assigned Verifier", sel.assignedVerifier ?? "—"],
+                          ["Progress",          `${sel.progressPct || 5}% · ${sel.state.replace(/_/g," ")}`],
+                          ["Submitted",         new Date(sel.createdAt).toLocaleString()],
                         ].map(([k,v]) => (
-                          <div key={k} style={{ display: "flex", justifyContent: "space-between",
-                                                 padding: "0.5rem 0.875rem",
-                                                 borderBottom: `1px solid ${BDR}30` }}>
-                            <Mono size="0.72rem" color="rgba(255,255,255,0.35)">{k}</Mono>
-                            <Mono size="0.78rem" color={
-                              v === "ELIGIBLE" || v === "AVAILABLE" || v === "Authorized" ? G :
-                              v === "Pending Approval" || v === "Pending Verification" ? A : W
+                          <div key={k} style={{
+                            display: "flex", justifyContent: "space-between",
+                            padding: "0.5rem 0.875rem",
+                            borderBottom: `1px solid ${BDR}40`,
+                            flexWrap: "wrap", gap: "0.25rem",
+                          }}>
+                            <Mono size="0.65rem" color={DIM}>{k}</Mono>
+                            <Mono size="0.65rem" color={
+                              v === "Pending Approval" ? A :
+                              v === "Pending Verification" ? A :
+                              v === "Authorized" ? G :
+                              v === "Complete" ? G : W
                             }>{v}</Mono>
                           </div>
                         ))}
                       </div>
 
-                      {/* AI Notes */}
+                      {/* AI Engine note */}
                       {sel.aiNotes && (
-                        <div style={{ padding: "0.875rem 1rem", background: `${B}08`,
-                                       border: `1px solid ${B}30`, borderRadius: 6,
-                                       marginBottom: "0.92rem" }}>
-                          <Mono size="0.65rem" color={B}>AI ENGINE · CURRENT ASSESSMENT</Mono>
-                          <div style={{ fontFamily: S, fontSize: "0.76rem",
-                                         color: "rgba(255,255,255,0.65)", lineHeight: 1.7,
-                                         marginTop: 6 }}>
+                        <div style={{ padding: "0.75rem 0.875rem", borderRadius: 6,
+                                       background: `${B}08`, border: `1px solid ${B}25` }}>
+                          <div style={{ fontFamily: M, fontSize: "0.58rem", color: B,
+                                         letterSpacing: "0.1em", textTransform: "uppercase",
+                                         marginBottom: "0.375rem" }}>
+                            AI ENGINE · CURRENT ASSESSMENT
+                          </div>
+                          <div style={{ fontFamily: S, fontSize: "0.72rem",
+                                         color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
                             {sel.aiNotes}
                           </div>
                         </div>
                       )}
 
-                      {/* Sim control */}
-                      {sel.state !== "MARKETPLACE_LIVE" && sel.state !== "REJECTED" && (
-                        <div style={{ display: "flex", gap: "0.92rem" }}>
-                          <button onClick={() => advance(sel.id)} style={{
-                            flex: 1, padding: "0.7rem", borderRadius: 5,
-                            background: `${G}10`, border: `1px solid ${G}40`,
-                            color: G, fontFamily: M, fontSize: "0.78rem", fontWeight: 700,
-                            cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
+                      {/* Simulate next stage */}
+                      {!["MARKETPLACE_LIVE","REJECTED"].includes(sel.state) && (
+                        <button
+                          onClick={() => {
+                            userAssetStore.simulateAdvance(sel.id);
+                            refresh();
+                          }}
+                          style={{
+                            marginTop: "1rem", width: "100%",
+                            padding: "0.75rem", borderRadius: 5, border: "none",
+                            background: G, color: "#000", fontFamily: M,
+                            fontSize: "0.78rem", fontWeight: 900,
+                            cursor: "pointer", letterSpacing: "0.04em",
+                            textTransform: "uppercase",
                           }}>
-                            SIMULATE NEXT STAGE →
-                          </button>
-                        </div>
-                      )}
-                      {sel.state === "MARKETPLACE_LIVE" && (
-                        <div style={{ padding: "0.75rem 1rem", background: `${G}10`,
-                                       border: `1px solid ${G}40`, borderRadius: 5,
-                                       textAlign: "center" }}>
-                          <Mono size="0.84rem" color={G}>● MARKETPLACE LIVE · LENDING ELIGIBLE</Mono>
-                        </div>
+                          SIMULATE NEXT STAGE →
+                        </button>
                       )}
                     </div>
                   )}
 
-                  {/* LIFECYCLE TAB */}
-                  {tab === "lifecycle" && (
+                  {/* ── LIFECYCLE ── */}
+                  {detailTab === "lifecycle" && (
                     <div>
-                      <div style={{ position: "relative" }}>
-                        {PIPELINE_STAGES.map((stage, i) => {
-                          const meta = STAGE_META[stage];
-                          const done = i <= pipelineIndex;
-                          const active = stage === sel.state;
-                          const color = done ? meta.color : "rgba(255,255,255,0.1)";
-                          const timelineEv = sel.timeline.find(e => e.state === stage);
-                          return (
-                            <div key={stage} style={{
-                              display: "grid", gridTemplateColumns: "28px 1fr",
-                              gap: "0.82rem", marginBottom: "0.7rem",
-                              opacity: done ? 1 : 0.4,
-                            }}>
-                              <div style={{ display: "flex", flexDirection: "column",
-                                             alignItems: "center" }}>
-                                <div style={{
-                                  width: 28, height: 28, borderRadius: "50%",
-                                  border: `2px solid ${color}`,
-                                  background: done ? `${color}20` : "transparent",
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  boxShadow: active ? `0 0 8px ${color}80` : "none",
-                                }}>
-                                  <Mono size="0.7rem" color={color}>{i+1}</Mono>
-                                </div>
-                                {i < PIPELINE_STAGES.length - 1 && (
-                                  <div style={{ width: 2, flex: 1, minHeight: 12,
-                                                 background: done && i < pipelineIndex ? `${color}60` : `${BDR}` }}/>
-                                )}
-                              </div>
-                              <div style={{ paddingBottom: "0.625rem" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between",
-                                               alignItems: "baseline", flexWrap: "wrap", gap: 4,
-                                               marginBottom: 2 }}>
-                                  <Mono size="0.78rem" color={done ? W : "rgba(255,255,255,0.3)"}>
-                                    {meta.label}
-                                  </Mono>
-                                  {timelineEv && (
-                                    <Mono size="0.6rem" color="rgba(255,255,255,0.25)">
-                                      {new Date(timelineEv.at).toLocaleString()}
-                                    </Mono>
-                                  )}
-                                </div>
-                                <div style={{ fontFamily: S, fontSize: "0.72rem",
-                                               color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>
-                                  {meta.description}
-                                </div>
-                                {active && (
-                                  <div style={{ fontFamily: S, fontSize: "0.72rem",
-                                                 color: `${color}90`, fontStyle: "italic" }}>
-                                    {meta.aiNote}
-                                  </div>
-                                )}
-                                <Mono size="0.6rem" color="rgba(255,255,255,0.2)">
-                                  Verifier: {meta.verifier}
+                      {PIPELINE_STAGES.map((stage, i) => {
+                        const meta   = STAGE_META[stage];
+                        const idx    = PIPELINE_STAGES.indexOf(sel.state as LifecycleState);
+                        const done   = i < idx;
+                        const active = i === idx;
+                        const c      = done ? G : active ? A : DIM;
+                        return (
+                          <div key={stage} style={{
+                            display: "flex", gap: "0.875rem",
+                            paddingBottom: "0.875rem", marginBottom: "0.875rem",
+                            borderBottom: `1px solid ${BDR}40`,
+                          }}>
+                            <div style={{ flexShrink: 0, display: "flex",
+                                           flexDirection: "column", alignItems: "center" }}>
+                              <div style={{
+                                width: 28, height: 28, borderRadius: "50%",
+                                border: `2px solid ${c}`,
+                                background: active ? `${c}20` : done ? `${c}10` : "transparent",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                              }}>
+                                <Mono size="0.6rem" color={c}>
+                                  {done ? "✓" : String(i+1).padStart(2,"0")}
                                 </Mono>
                               </div>
+                              {i < PIPELINE_STAGES.length-1 && (
+                                <div style={{ width: 1, flex: 1, minHeight: 12,
+                                               background: done ? G : BDR, marginTop: 3 }}/>
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* DOCUMENTS TAB */}
-                  {tab === "documents" && (
-                    <div>
-                      <Mono size="0.7rem" color="rgba(255,255,255,0.3)">
-                        VERIFICATION PACKAGE — REQUIRED DOCUMENTS
-                      </Mono>
-                      <div style={{ marginTop: "0.92rem" }}>
-                        {PIPELINE_STAGES.slice(0, pipelineIndex + 3).map(stage => {
-                          const meta = STAGE_META[stage];
-                          if (!meta.requiredDocs.length) return null;
-                          const done = PIPELINE_STAGES.indexOf(stage) <= pipelineIndex;
-                          return (
-                            <div key={stage} style={{ marginBottom: "0.92rem" }}>
-                              <Mono size="0.7rem" color={done ? G : A}>
-                                {done ? "✓ " : "● "}{meta.label.toUpperCase()}
-                              </Mono>
-                              {meta.requiredDocs.map(d => (
-                                <div key={d} style={{ display: "flex", gap: "0.92rem",
-                                                       alignItems: "center",
-                                                       padding: "0.35rem 0",
-                                                       borderBottom: `1px solid ${BDR}40` }}>
-                                  <Mono size="0.7rem" color={done ? G : "rgba(255,255,255,0.2)"}>
-                                    {done ? "✓" : "○"}
-                                  </Mono>
-                                  <span style={{ fontFamily: S, fontSize: "0.76rem",
-                                                  color: done ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.3)" }}>
-                                    {d}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontFamily: M, fontSize: "0.65rem",
+                                             fontWeight: 700, color: c, marginBottom: 2,
+                                             letterSpacing: "0.08em",
+                                             textTransform: "uppercase" }}>
+                                {stage.replace(/_/g," ")}
+                              </div>
+                              {meta && (
+                                <>
+                                  <div style={{ fontFamily: S, fontSize: "0.7rem",
+                                                 color: DIM, lineHeight: 1.55 }}>
+                                    {meta.description}
+                                  </div>
+                                  <div style={{ fontFamily: M, fontSize: "0.58rem",
+                                                 color: "rgba(255,255,255,0.25)",
+                                                 marginTop: 2 }}>
+                                    Verifier: {meta.verifier}
+                                  </div>
+                                </>
+                              )}
+                              {active && (
+                                <div style={{ marginTop: "0.25rem" }}>
+                                  <span style={{ fontFamily: M, fontSize: "0.55rem",
+                                                  fontWeight: 700, color: A,
+                                                  background: `${A}15`, borderRadius: 3,
+                                                  padding: "1px 6px", letterSpacing: "0.06em" }}>
+                                    CURRENT STAGE
                                   </span>
                                 </div>
-                              ))}
+                              )}
                             </div>
-                          );
-                        })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── DOCUMENTS ── */}
+                  {detailTab === "documents" && (
+                    <div>
+                      <Mono size="0.65rem" color={DIM}>
+                        Document upload available on the terminal page asset submission form.
+                      </Mono>
+                      <div style={{ marginTop: "0.75rem" }}>
+                        <Link href="/terminal" style={{
+                          fontFamily: M, fontSize: "0.65rem", color: G,
+                          textDecoration: "none", letterSpacing: "0.06em",
+                          textTransform: "uppercase", border: `1px solid ${G}`,
+                          padding: "0.5rem 0.875rem", borderRadius: 4,
+                          display: "inline-block",
+                        }}>Go to Terminal →</Link>
                       </div>
                     </div>
                   )}
 
-                  {/* ACTIVITY TAB */}
-                  {tab === "activity" && (
+                  {/* ── ACTIVITY ── */}
+                  {detailTab === "activity" && (
                     <div>
-                      <Mono size="0.7rem" color="rgba(255,255,255,0.3)">
-                        AUDIT LOG — APPEND-ONLY · {sel.timeline.length} EVENTS
-                      </Mono>
-                      <div style={{ marginTop: "0.92rem", position: "relative",
-                                     paddingLeft: "1.25rem" }}>
-                        <div style={{ position: "absolute", left: "0.25rem", top: 0, bottom: 0,
-                                       width: 1, background: `${G}20` }}/>
-                        {[...sel.timeline].reverse().map((ev, i) => {
-                          const color = STATE_COLORS[ev.state] ?? G;
-                          return (
-                            <div key={i} style={{ position: "relative", marginBottom: "0.92rem" }}>
-                              <div style={{ position: "absolute", left: "-1.15rem", top: 3,
-                                             width: 8, height: 8, borderRadius: "50%",
-                                             background: color, border: "2px solid #070A0F",
-                                             boxShadow: `0 0 4px ${color}60` }}/>
-                              <div style={{ display: "flex", justifyContent: "space-between",
-                                             flexWrap: "wrap", gap: 4, marginBottom: 2 }}>
-                                <Mono size="0.78rem" color={color}>
-                                  {STAGE_META[ev.state]?.label ?? ev.state}
-                                </Mono>
-                                <Mono size="0.65rem" color="rgba(255,255,255,0.25)">
-                                  {new Date(ev.at).toLocaleString()}
-                                </Mono>
-                              </div>
-                              {ev.note && (
-                                <div style={{ fontFamily: S, fontSize: "0.72rem",
-                                               color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
-                                  {ev.note}
-                                </div>
-                              )}
-                              <Mono size="0.6rem" color="rgba(255,255,255,0.2)">
-                                actor: {ev.actor} · progress: {ev.progress ?? 0}%
+                      {(sel.timeline ?? []).length === 0 ? (
+                        <Mono size="0.65rem" color={DIM}>No activity yet.</Mono>
+                      ) : (
+                        [...(sel.timeline ?? [])].reverse().map((e, i) => (
+                          <div key={i} style={{
+                            padding: "0.5rem 0", borderBottom: `1px solid ${BDR}40`,
+                            display: "flex", gap: "0.75rem", alignItems: "flex-start",
+                          }}>
+                            <div style={{ width: 6, height: 6, borderRadius: "50%",
+                                           background: G, flexShrink: 0, marginTop: 5 }}/>
+                            <div>
+                              <div style={{ fontFamily: S, fontSize: "0.7rem",
+                                             color: W, lineHeight: 1.5 }}>{e.note}</div>
+                              <Mono size="0.58rem" color={DIM}>
+                                {new Date(e.at).toLocaleString()} · {e.actor}
                               </Mono>
                             </div>
-                          );
-                        })}
-                      </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

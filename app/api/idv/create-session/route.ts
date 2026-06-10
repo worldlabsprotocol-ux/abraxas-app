@@ -1,0 +1,96 @@
+// FILE: app/api/idv/create-session/route.ts
+// Creates a Veriff identity verification session.
+// Returns a URL the user visits to complete their document scan + liveness.
+//
+// VERIFF SETUP (15 min, ~$1/verification):
+//   1. veriff.com → sign up → API Keys → copy API_KEY + SECRET
+//   2. Add to Vercel env vars:
+//        VERIFF_API_KEY=your_api_key
+//        VERIFF_SECRET=your_secret
+//   3. In Veriff dashboard → Webhooks → add:
+//        https://abraxas-app.vercel.app/api/idv/webhook
+//
+// PERSONA ALTERNATIVE (more flexible, usage-based):
+//   withpersona.com → same pattern but different API shape
+//   Swap out this file if you go with Persona
+
+import { NextRequest, NextResponse } from "next/server";
+import { createHmac }               from "crypto";
+import { createClient }             from "@supabase/supabase-js";
+
+const VERIFF_KEY    = process.env.VERIFF_API_KEY    ?? "";
+const VERIFF_BASE   = "https://stationapi.veriff.com/v1";
+const APP_URL       = process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
+const SB_URL        = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SB_SERVICE    = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+interface SessionBody {
+  wallet_address:  string;
+  document_type?:  string;  // PASSPORT | DRIVERS_LICENSE | ID_CARD
+  first_name?:     string;
+  last_name?:      string;
+}
+
+export async function POST(req: NextRequest) {
+  const body: SessionBody = await req.json().catch(() => ({}));
+  if (!body.wallet_address) {
+    return NextResponse.json({ error: "wallet_address required" }, { status: 400 });
+  }
+  if (!VERIFF_KEY) {
+    // Dev fallback: return a mock session so the UI still works without Veriff
+    return NextResponse.json({
+      session_id:    `mock-${Date.now()}`,
+      session_url:   null,
+      is_mock:       true,
+      message:       "VERIFF_API_KEY not configured — using mock session for development",
+    });
+  }
+
+  // Create Veriff session
+  const veriffPayload = {
+    verification: {
+      callback:   `${APP_URL}/api/idv/callback`,
+      person:     {
+        firstName: body.first_name ?? "",
+        lastName:  body.last_name  ?? "",
+      },
+      document:   {
+        type: (body.document_type ?? "PASSPORT").toUpperCase(),
+      },
+      vendorData: `wallet:${body.wallet_address}`,  // we get this back in the webhook
+    },
+  };
+
+  const res = await fetch(`${VERIFF_BASE}/sessions`, {
+    method:  "POST",
+    headers: {
+      "X-AUTH-CLIENT": VERIFF_KEY,
+      "Content-Type":  "application/json",
+    },
+    body: JSON.stringify(veriffPayload),
+  });
+
+  const data = await res.json() as {
+    status?: string;
+    verification?: { id: string; url: string; sessionToken: string; status: string };
+  };
+
+  if (!res.ok || data.status !== "success" || !data.verification) {
+    console.error("[idv] Veriff session creation failed:", data);
+    return NextResponse.json({ error: "Failed to create verification session" }, { status: 500 });
+  }
+
+  const { id: session_id, url: session_url } = data.verification;
+
+  // Track session in Supabase so webhook can match it to a wallet
+  if (SB_URL && SB_SERVICE) {
+    const sb = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
+    await sb.from("identity_verifications").upsert({
+      wallet_address:  body.wallet_address,
+      status:          "pending",
+      updated_at:      new Date().toISOString(),
+    }, { onConflict: "wallet_address" });
+  }
+
+  return NextResponse.json({ session_id, session_url, is_mock: false });
+}

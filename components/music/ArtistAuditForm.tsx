@@ -80,8 +80,10 @@ export function ArtistAuditForm() {
                          letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:4 }}>
             ABRAXAS MUSIC AUDIT
           </div>
-          <div style={{ fontFamily:S, fontSize:"clamp(0.95rem,2.5vw,1.2rem)",
-                         fontWeight:800, color:W, marginBottom:"0.5rem" }}>
+          <div style={{ fontFamily:"Georgia, 'Times New Roman', serif",
+                         fontSize:"clamp(1.3rem,3.5vw,2rem)",
+                         fontWeight:700, color:W, lineHeight:1.2,
+                         letterSpacing:"-0.01em", marginBottom:"0.5rem" }}>
             Are you missing royalties?
           </div>
           <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(255,255,255,0.45)",
@@ -94,14 +96,14 @@ export function ArtistAuditForm() {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
                          gap:"0.5rem", marginBottom:"1rem" }}>
             {[
-              { icon:"🔍", label:"Catalog scan",     desc:"Every track checked against PRO and MLC records" },
-              { icon:"💸", label:"Gap analysis",      desc:"Missing ISRCs, unregistered works, split sheet issues" },
-              { icon:"📋", label:"Action report",     desc:"Prioritized fix list with step-by-step instructions" },
-              { icon:"🤝", label:"Team support",      desc:"Our team guides you through the recovery process" },
+              { icon:"01", label:"Catalog Scan",     desc:"Every track checked against PRO and MLC records" },
+              { icon:"02", label:"Gap Analysis",      desc:"Missing ISRCs, unregistered works, split sheet issues" },
+              { icon:"03", label:"Action Report",     desc:"Prioritized fix list with step-by-step instructions" },
+              { icon:"04", label:"Team Support",      desc:"Our team guides you through the recovery process" },
             ].map(item => (
               <div key={item.label} style={{ padding:"0.625rem 0.75rem", background:"rgba(255,255,255,0.02)",
                                               border:`1px solid ${BDR}`, borderRadius:5 }}>
-                <div style={{ fontSize:"0.9rem", marginBottom:2 }}>{item.icon}</div>
+                <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700, color:G, letterSpacing:"0.15em", marginBottom:3 }}>{item.icon}</div>
                 <div style={{ fontSize:"0.65rem", fontWeight:700, color:W, marginBottom:1 }}>{item.label}</div>
                 <div style={{ fontFamily:S, fontSize:"0.6rem", color:"rgba(255,255,255,0.35)",
                                lineHeight:1.5 }}>{item.desc}</div>
@@ -208,7 +210,7 @@ export function ArtistAuditForm() {
       {step === "done" && (
         <div style={{ padding:"1.5rem", background:CARD, border:`1px solid ${G}35`,
                        borderRadius:8, textAlign:"center" }}>
-          <div style={{ fontSize:"2.5rem", color:G, marginBottom:"0.5rem" }}>✓</div>
+          <div style={{ fontFamily:"Georgia,serif", fontSize:"clamp(1.5rem,4vw,2.5rem)", fontWeight:700, color:G, marginBottom:"0.5rem" }}>Received.</div>
           <div style={{ fontFamily:S, fontSize:"1rem", fontWeight:800, color:W,
                          marginBottom:"0.375rem" }}>Audit request received.</div>
           {refId && (
