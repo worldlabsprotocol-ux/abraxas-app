@@ -203,6 +203,34 @@ export default function DashboardPage() {
         </span>
       </div>
 
+      {/* ── INSTITUTIONAL BANNER ──────────────────────────────── */}
+      <div style={{
+        padding: "0.875rem clamp(0.875rem,2vw,1.5rem)",
+        background: "linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(0,0,0,0) 60%)",
+        borderBottom: `1px solid ${BDR}`,
+        display: "flex", alignItems: "flex-start",
+        justifyContent: "space-between", flexWrap: "wrap", gap: "0.625rem",
+      }}>
+        <div>
+          <div style={{ fontFamily: M, fontSize: "0.55rem", fontWeight: 700,
+                         color: G, letterSpacing: "0.15em", textTransform: "uppercase",
+                         marginBottom: 3 }}>
+            ABRAXAS PROTOCOL · ASSET DASHBOARD
+          </div>
+          <div style={{ fontFamily: "Georgia, serif",
+                         fontSize: "clamp(0.95rem,2.5vw,1.25rem)",
+                         fontWeight: 700, color: W, lineHeight: 1.2 }}>
+            Your verified assets.{" "}
+            <span style={{ color: G }}>One credential. Every protocol.</span>
+          </div>
+        </div>
+        <div style={{ fontFamily: M, fontSize: "0.52rem",
+                       color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em",
+                       textAlign: "right" }}>
+          W3C VC · SOLANA MAINNET<br/>BUILD 2025.1
+        </div>
+      </div>
+
       {/* ── STAT CARDS ──────────────────────────────────────── */}
       <div style={{
         display: "grid",
@@ -278,12 +306,22 @@ export default function DashboardPage() {
                   </div>
                   {assets.length === 0 ? (
                     <div style={{ padding: "1rem 0.5rem", textAlign: "center" }}>
-                      <Mono size="0.62rem" color={DIM}>No assets yet.</Mono>
-                      <div style={{ marginTop: "0.5rem" }}>
+                      <div style={{ textAlign: "center" }}>
+                        <div style={{ fontFamily:"Georgia,serif", fontSize:"0.95rem",
+                                       fontWeight:700, color:"rgba(255,255,255,0.3)",
+                                       marginBottom:"0.5rem", lineHeight:1.4 }}>
+                          No verified assets yet.
+                        </div>
+                        <div style={{ fontFamily:S, fontSize:"0.65rem",
+                                       color:"rgba(255,255,255,0.2)", marginBottom:"0.75rem",
+                                       lineHeight:1.6 }}>
+                          Submit an asset on the terminal to begin V5 verification.
+                        </div>
                         <Link href="/terminal" style={{
                           fontFamily: M, fontSize: "0.6rem", color: G,
                           textDecoration: "none", textTransform: "uppercase",
-                          letterSpacing: "0.08em",
+                          letterSpacing: "0.08em", border: `1px solid rgba(16,185,129,0.3)`,
+                          padding: "0.4rem 0.75rem", borderRadius: 4, display:"inline-block",
                         }}>Submit asset →</Link>
                       </div>
                     </div>

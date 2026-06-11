@@ -223,6 +223,175 @@ function TerminalTab() {
       {/* ── 1. WYOMING LLC — primary revenue funnel ─────────────────── */}
       <div style={{ maxWidth: 1060, margin: "0 auto",
                      padding: "1rem clamp(0.75rem,2.5vw,1.5rem) 0.75rem" }}>
+
+        {/* ── HERO ─────────────────────────────────────────────────────── */}
+        <div style={{ marginBottom: "1.5rem", paddingBottom: "1.5rem",
+                       borderBottom: `1px solid ${BDR}` }}>
+          <div style={{ fontFamily: M, fontSize: "0.6rem", fontWeight: 700,
+                         color: G, letterSpacing: "0.2em", textTransform: "uppercase",
+                         marginBottom: "0.625rem" }}>
+            ABRAXAS PROTOCOL · SOLANA MAINNET · BUILD 2025.1
+          </div>
+          <h1 style={{ fontFamily: "Georgia, 'Times New Roman', serif",
+                        fontSize: "clamp(1.6rem,4.5vw,3rem)", fontWeight: 700,
+                        color: W, lineHeight: 1.1, letterSpacing: "-0.02em",
+                        margin: "0 0 0.75rem" }}>
+            The verification and<br/>
+            <span style={{ color: G }}>identity layer</span> for<br/>
+            real-world assets onchain.
+          </h1>
+          <p style={{ fontFamily: S, fontSize: "clamp(0.82rem,1.8vw,0.95rem)",
+                       color: "rgba(255,255,255,0.5)", lineHeight: 1.75,
+                       maxWidth: 540, margin: "0 0 1.25rem" }}>
+            Verify your identity and assets once on Abraxas.
+            Receive a portable credential every integrated protocol accepts.
+            No re-KYC. One passport. Every lender, marketplace, and payment rail.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap",
+                         alignItems: "center" }}>
+            <div style={{ padding: "0.35rem 0.75rem", borderRadius: 4,
+                           background: `${G}12`, border: `1px solid ${G}30`,
+                           fontFamily: M, fontSize: "0.6rem", fontWeight: 700,
+                           color: G, letterSpacing: "0.08em" }}>
+              ● 1 ASSET VERIFIED
+            </div>
+            <div style={{ padding: "0.35rem 0.75rem", borderRadius: 4,
+                           background: "rgba(255,255,255,0.04)", border: `1px solid ${BDR}`,
+                           fontFamily: M, fontSize: "0.6rem",
+                           color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em" }}>
+              $1.1M ATTESTED
+            </div>
+            <div style={{ padding: "0.35rem 0.75rem", borderRadius: 4,
+                           background: "rgba(255,255,255,0.04)", border: `1px solid ${BDR}`,
+                           fontFamily: M, fontSize: "0.6rem",
+                           color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em" }}>
+              W3C VC · SOLANA MAINNET
+            </div>
+          </div>
+        </div>
+
+        {/* ── AAS-1: CIELO SUNRISE — Genesis Asset (top of page) ──── */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <Label>Genesis Asset · AAS-1</Label>
+          {/* Visual photo treatment — mountain/forest gradient with property overlay */}
+          <div style={{ borderRadius: 8, overflow: "hidden",
+                         border: `1px solid ${G}35`, position: "relative" }}>
+            {/* Photo stand-in: atmospheric mountain gradient */}
+            <div style={{
+              height: "clamp(200px, 35vw, 320px)",
+              background: "linear-gradient(160deg, #0a1a0f 0%, #0d2318 25%, #112b1e 50%, #0a1a12 75%, #061008 100%)",
+              position: "relative", overflow: "hidden",
+            }}>
+              {/* Ridgeline silhouette */}
+              <svg viewBox="0 0 1200 320" style={{ position:"absolute", bottom:0,
+                                                     left:0, width:"100%", height:"100%",
+                                                     opacity:0.6 }} preserveAspectRatio="none">
+                <path d="M0,320 L0,200 L120,140 L200,160 L280,100 L380,130 L460,80
+                         L540,110 L620,60 L700,90 L780,50 L860,80 L940,40 L1020,70
+                         L1100,50 L1200,80 L1200,320 Z"
+                  fill="rgba(16,185,129,0.08)"/>
+                <path d="M0,320 L0,240 L100,190 L200,210 L300,160 L400,185 L500,140
+                         L600,165 L700,120 L800,150 L900,110 L1000,140 L1100,120
+                         L1200,140 L1200,320 Z"
+                  fill="rgba(16,185,129,0.12)"/>
+              </svg>
+              {/* Stars / atmosphere */}
+              {[...Array(18)].map((_,i) => (
+                <div key={i} style={{
+                  position:"absolute",
+                  top: `${8 + (i*17 % 55)}%`,
+                  left: `${(i*23+7) % 94}%`,
+                  width: i%3===0 ? 2 : 1, height: i%3===0 ? 2 : 1,
+                  borderRadius:"50%", background:"rgba(255,255,255,0.6)",
+                  boxShadow: i%5===0 ? "0 0 4px rgba(255,255,255,0.4)" : "none",
+                }}/>
+              ))}
+              {/* Property text overlay */}
+              <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                             background:"linear-gradient(transparent, rgba(4,6,8,0.95))",
+                             padding:"2rem 1.25rem 1rem" }}>
+                <div style={{ fontFamily: M, fontSize:"0.58rem", color:G,
+                               fontWeight:700, letterSpacing:"0.15em",
+                               textTransform:"uppercase", marginBottom:4 }}>
+                  AAS-1 · VERIFIED · COLLATERAL ELIGIBLE
+                </div>
+                <div style={{ fontFamily:"Georgia,serif", fontSize:"clamp(1.1rem,3vw,1.6rem)",
+                               fontWeight:700, color:W, lineHeight:1.2, marginBottom:4 }}>
+                  Cielo Sunrise
+                </div>
+                <div style={{ fontFamily:S, fontSize:"0.75rem",
+                               color:"rgba(255,255,255,0.5)" }}>
+                  Private Mountain Wellness Retreat · Mineral Bluff, Georgia ·
+                  12 guests · 4 bedrooms · 2,800-ft ridgeline
+                </div>
+              </div>
+              {/* Photo badge */}
+              <div style={{ position:"absolute", top:12, right:12 }}>
+                <a href="https://www.airbnb.com/rooms/1681387746169197852"
+                   target="_blank" rel="noopener noreferrer"
+                   style={{ display:"inline-block", padding:"0.3rem 0.625rem",
+                             borderRadius:4, background:"rgba(0,0,0,0.7)",
+                             backdropFilter:"blur(4px)", border:`1px solid rgba(255,255,255,0.15)`,
+                             fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                             color:W, textDecoration:"none", letterSpacing:"0.06em",
+                             textTransform:"uppercase" }}>
+                  VIEW PHOTOS ↗
+                </a>
+              </div>
+            </div>
+            {/* Stats row */}
+            <div style={{ display:"grid",
+                           gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",
+                           gap:"1px", background:BDR }}>
+              {[
+                ["Appraised Value", "$1,100,000"],
+                ["Annual NOI",      "$109,500"],
+                ["Cash Yield",      "14.6%"],
+                ["Collateral Score","89 / 100"],
+                ["Max Borrow",      "$660K USDC"],
+                ["Cap Rate",        "9.95%"],
+              ].map(([k,v]) => (
+                <div key={k} style={{ background:CARD, padding:"0.75rem 0.875rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.52rem",
+                                 color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                                 letterSpacing:"0.1em", marginBottom:3 }}>{k}</div>
+                  <div style={{ fontFamily:M, fontSize:"0.92rem",
+                                 fontWeight:900, color:G }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            {/* CTAs */}
+            <div style={{ padding:"0.875rem 1rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", flexWrap:"wrap",
+                           alignItems:"center" }}>
+              <a href="https://www.airbnb.com/rooms/1681387746169197852"
+                 target="_blank" rel="noopener noreferrer"
+                 style={{ padding:"0.5rem 0.875rem", borderRadius:5,
+                           border:`1px solid ${BDR}`, background:"transparent",
+                           color:"rgba(255,255,255,0.5)", fontFamily:M,
+                           fontSize:"0.65rem", fontWeight:700, cursor:"pointer",
+                           textDecoration:"none", textTransform:"uppercase",
+                           letterSpacing:"0.08em" }}>
+                VIEW ON AIRBNB ↗
+              </a>
+              <button onClick={() => setDeep("registry")}
+                style={{ padding:"0.5rem 0.875rem", borderRadius:5,
+                          border:`1px solid ${G}40`, background:`${G}10`,
+                          color:G, fontFamily:M, fontSize:"0.65rem", fontWeight:700,
+                          cursor:"pointer", textTransform:"uppercase",
+                          letterSpacing:"0.08em" }}>
+                VIEW ASSET RECORD
+              </button>
+              <span style={{ fontFamily:M, fontSize:"0.58rem",
+                              color:"rgba(255,255,255,0.2)", marginLeft:"auto" }}>
+                USDC BOOKING · COMING SOON
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <Divider/>
+
         {/* ── WYOMING LLC ENGINE ─────────────────────────────────── */}
         <div style={{ marginBottom: "1.25rem" }}>
           <Label>Wyoming LLC Formation</Label>
@@ -363,6 +532,7 @@ function TerminalTab() {
 
         {/* ── ABRAXAS IDENTITY — featured ───────────────────────── */}
         <div style={{ marginBottom:"1.5rem" }}>
+          <div id="abraxas-id"/>
           <Label>Abraxas Identity · Unified KYC</Label>
           <div style={{ padding:"1rem 1.125rem", background:CARD, border:`1px solid ${BDR}`,
                          borderRadius:8 }}>
@@ -389,7 +559,7 @@ function TerminalTab() {
                                letterSpacing:"0.1em", textTransform:"uppercase" }}>
                   Backend Live · Frontend Q3
                 </div>
-                <a href="https://abraxas-app.vercel.app/identity" style={{
+                <a href="#abraxas-id" style={{
                   display:"block", padding:"0.55rem 0.875rem", borderRadius:5,
                   border:`1px solid ${G}`, background:`${G}15`,
                   color:G, fontFamily:M, fontSize:"0.72rem", fontWeight:900,
