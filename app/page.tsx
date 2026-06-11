@@ -1,150 +1,138 @@
-// FILE: app/page.tsx — splash with real logo, refreshed slogan
+// FILE: app/page.tsx
+// Abraxas landing page — no auto-redirect.
+// Users see the brand, read the positioning, then choose to enter.
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter }           from "next/navigation";
-import Image                   from "next/image";
 
-const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const S = "system-ui,-apple-system,sans-serif";
+import { useState, useEffect } from "react";
+import { useRouter }          from "next/navigation";
+import Link                   from "next/link";
+
+const M  = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const S  = "system-ui,-apple-system,sans-serif";
+const G  = "#10B981";
 
 export default function Home() {
-  const router       = useRouter();
+  const router        = useRouter();
   const [pct, setPct] = useState(0);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const t = setInterval(() => setPct(p => Math.min(p + 2, 100)), 30);
-    const r = setTimeout(() => router.push("/terminal"), 2400);
-    return () => { clearInterval(t); clearTimeout(r); };
-  }, [router]);
+    const timer = setInterval(() => setPct(p => {
+      if (p >= 100) { clearInterval(timer); setReady(true); return 100; }
+      return Math.min(p + 3, 100);
+    }), 28);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#040608",
+      minHeight: "100vh", background: "#060810",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      fontFamily: M, padding: "2rem",
-      backgroundImage: "radial-gradient(ellipse at center, rgba(16,185,129,0.06) 0%, transparent 70%)",
+      fontFamily: M, userSelect: "none", padding: "2rem 1rem",
     }}>
-      {/* Logo mark */}
-      <div style={{
-        position: "relative", width: "clamp(200px, 40vw, 320px)",
-        height: "clamp(200px, 40vw, 320px)", marginBottom: "2rem",
-      }}>
-        <Image
-          src="/icon-512.png"
-          alt="Abraxas Protocol"
-          fill
-          priority
-          style={{ objectFit: "contain" }}
-        />
+      {/* Diamond logo */}
+      <div style={{ marginBottom: "2rem" }}>
+        <svg width={56} height={56} viewBox="0 0 40 40" fill="none">
+          <polygon points="20,2 38,20 20,38 2,20"
+            stroke={G} strokeWidth="1.5" fill="none"/>
+          <polygon points="20,8 32,20 20,32 8,20"
+            stroke={G} strokeWidth="1" fill={`${G}12`}/>
+          <circle cx="20" cy="20" r="3" fill={G}
+            style={{ filter: `drop-shadow(0 0 6px ${G})` }}/>
+        </svg>
       </div>
 
       {/* Wordmark */}
-      <div style={{
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: "clamp(2.5rem, 8vw, 5rem)",
-        fontWeight: 800,
-        color: "#F8FAFC", letterSpacing: "0.04em", lineHeight: 1,
-        marginBottom: "0.875rem",
-      }}>
-        ABRAXAS
-      </div>
-
-      {/* Underline accent */}
-      <div style={{
-        width: 80, height: 2, background: "#10B981",
-        marginBottom: "1.25rem",
-        boxShadow: "0 0 8px rgba(16,185,129,0.6)",
-      }}/>
-
-      {/* Slogan */}
-      <div style={{
-        fontFamily: S, fontSize: "clamp(0.85rem, 2vw, 1.15rem)",
-        fontWeight: 700, color: "rgba(255,255,255,0.9)",
-        textAlign: "center", marginBottom: "0.5rem",
-        letterSpacing: "0.02em",
-      }}>
-        Where assets become collateral.
-      </div>
-
-      {/* Sub-tag */}
-      <div style={{
-        fontSize: "clamp(0.32rem, 1.1vw, 0.42rem)", fontWeight: 700,
-        color: "rgba(16,185,129,0.7)", textTransform: "uppercase",
-        letterSpacing: "0.25em", marginBottom: "3rem", textAlign: "center",
-      }}>
-        VERIFICATION · COLLATERAL · OWNERSHIP
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ width: "clamp(240px, 60vw, 320px)", marginBottom: "1rem" }}>
+      <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
         <div style={{
-          height: 2, background: "rgba(255,255,255,0.06)",
-          borderRadius: 1, overflow: "hidden",
+          fontFamily: "Georgia, serif",
+          fontSize: "clamp(2.5rem,8vw,4.5rem)",
+          fontWeight: 700, color: "#F8FAFC",
+          letterSpacing: "-0.03em", lineHeight: 1,
+          marginBottom: "0.75rem",
         }}>
-          <div style={{
-            height: "100%", borderRadius: 1,
-            background: "linear-gradient(90deg, #10B981, #3182CE)",
-            width: `${pct}%`, transition: "width 0.05s linear",
-            boxShadow: "0 0 6px rgba(16,185,129,0.5)",
-          }}/>
+          ABRAXAS
+        </div>
+        <div style={{
+          fontFamily: S, fontSize: "clamp(0.78rem,2vw,1rem)",
+          fontWeight: 400, color: "rgba(255,255,255,0.45)",
+          lineHeight: 1.5, maxWidth: 420, margin: "0 auto",
+        }}>
+          The verification and identity layer<br/>
+          for real-world assets onchain.
         </div>
       </div>
 
-      <div style={{
-        fontSize: "0.32rem", color: "rgba(255,255,255,0.18)",
-        textTransform: "uppercase", letterSpacing: "0.25em",
-        marginBottom: "2rem",
-      }}>
-        INITIALIZING TERMINAL · {pct}%
+      {/* Tag line */}
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap",
+                     justifyContent: "center", marginBottom: "2.5rem" }}>
+        {["W3C Verifiable Credentials","Solana Mainnet","10-Stage V5 Pipeline"].map(t => (
+          <div key={t} style={{
+            padding: "0.25rem 0.625rem", borderRadius: 4,
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.03)",
+            fontFamily: M, fontSize: "0.58rem",
+            color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em",
+          }}>{t}</div>
+        ))}
       </div>
 
-      {/* CTA */}
-      <button
-        onClick={() => router.push("/terminal")}
-        style={{
-          padding: "0.75rem 2rem", borderRadius: 4,
-          border: "1px solid rgba(16,185,129,0.35)",
-          background: "rgba(16,185,129,0.06)",
-          color: "#10B981", fontFamily: M, fontSize: "0.42rem",
-          fontWeight: 800, cursor: "pointer", textTransform: "uppercase",
-          letterSpacing: "0.15em",
-          transition: "all 0.15s",
-        }}
-        onMouseOver={e => {
-          e.currentTarget.style.background = "rgba(16,185,129,0.12)";
-          e.currentTarget.style.borderColor = "rgba(16,185,129,0.6)";
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.background = "rgba(16,185,129,0.06)";
-          e.currentTarget.style.borderColor = "rgba(16,185,129,0.35)";
-        }}
-      >
-        ENTER TERMINAL →
-      </button>
+      {/* Progress bar */}
+      <div style={{ width: "min(280px,80vw)", marginBottom: "2rem" }}>
+        <div style={{ height: 2, background: "rgba(255,255,255,0.06)",
+                       borderRadius: 1, overflow: "hidden" }}>
+          <div style={{ height: "100%", borderRadius: 1,
+                         background: `linear-gradient(90deg,${G},#3B82F6)`,
+                         width: `${pct}%`, transition: "width 0.03s linear" }}/>
+        </div>
+        <div style={{ textAlign: "center", marginTop: "0.5rem",
+                       fontSize: "0.52rem", color: "rgba(255,255,255,0.2)",
+                       letterSpacing: "0.15em", textTransform: "uppercase" }}>
+          {ready ? "PROTOCOL READY" : `INITIALIZING · ${pct}%`}
+        </div>
+      </div>
 
-      {/* Status strip at bottom */}
+      {/* CTAs */}
+      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap",
+                     justifyContent: "center" }}>
+        <Link href="/terminal" style={{
+          padding: "0.75rem 1.75rem", borderRadius: 6, border: "none",
+          background: G, color: "#000", fontFamily: M,
+          fontSize: "0.82rem", fontWeight: 900, cursor: "pointer",
+          letterSpacing: "0.05em", textTransform: "uppercase",
+          textDecoration: "none", display: "inline-block",
+          boxShadow: `0 0 20px ${G}40`,
+          opacity: ready ? 1 : 0.5,
+          pointerEvents: ready ? "auto" : "none",
+          transition: "opacity 0.3s",
+        }}>
+          ENTER TERMINAL →
+        </Link>
+        <Link href="/dashboard" style={{
+          padding: "0.75rem 1.25rem", borderRadius: 6,
+          border: "1px solid rgba(255,255,255,0.12)",
+          background: "transparent", color: "rgba(255,255,255,0.4)",
+          fontFamily: M, fontSize: "0.78rem", fontWeight: 700,
+          cursor: "pointer", letterSpacing: "0.05em",
+          textTransform: "uppercase", textDecoration: "none",
+          display: "inline-block",
+          opacity: ready ? 1 : 0.3,
+          pointerEvents: ready ? "auto" : "none",
+          transition: "opacity 0.3s",
+        }}>
+          DASHBOARD
+        </Link>
+      </div>
+
+      {/* Footer */}
       <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        background: "#020406", borderTop: "1px solid #0F1929",
-        padding: "0.5rem 1.5rem", display: "flex",
-        alignItems: "center", gap: "1.25rem", flexWrap: "wrap",
-        fontSize: "0.28rem", color: "rgba(255,255,255,0.25)",
-        fontFamily: M, letterSpacing: "0.12em",
-        textTransform: "uppercase",
+        position: "fixed", bottom: "1.5rem",
+        fontFamily: M, fontSize: "0.52rem",
+        color: "rgba(255,255,255,0.12)",
+        letterSpacing: "0.12em", textAlign: "center",
       }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: "#10B981",
-            boxShadow: "0 0 4px rgba(16,185,129,0.6)",
-          }}/>
-          SOLANA MAINNET
-        </span>
-        <span>·</span>
-        <span>AAS-1 PROTOCOL</span>
-        <span>·</span>
-        <span>BUILD 2025.1</span>
+        ABRAXAS PROTOCOL · SOLANA MAINNET · BUILD 2025.1
       </div>
     </div>
   );

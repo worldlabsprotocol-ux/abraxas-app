@@ -1,184 +1,179 @@
 // FILE: components/onboarding/AssetOwnerOnboarding.tsx
-// Door 1 — Asset Owner guided onboarding.
-// On completion: actually persists the asset to userAssetStore.
+// Sophisticated asset intake — collects everything needed for V5 audit.
+// Uncontrolled text inputs prevent Android keyboard dismissal on each keystroke.
 "use client";
-import { useState, useRef } from "react";
-import { userAssetStore } from "@/lib/vos/userAssetStore";
-import { DocumentUpload } from "@/components/DocumentUpload";
-import type { UploadedFile } from "@/components/DocumentUpload";
-import type { UserAsset } from "@/lib/vos/userAssetStore";
 
-const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const S = "system-ui,-apple-system,sans-serif";
-const BG = "#0C0E12"; const CARD = "#0E1117"; const BORDER = "#1F2937";
-const GREEN = "#10B981"; const AMBER = "#ED8936"; const BLUE = "#3182CE";
+import { useState, useRef }          from "react";
+import { userAssetStore }            from "@/lib/vos/userAssetStore";
+import type { UserAsset }            from "@/lib/vos/userAssetStore";
+import { DocumentUpload }            from "@/components/DocumentUpload";
+import type { UploadedFile }         from "@/components/DocumentUpload";
+
+const M     = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const S     = "system-ui,-apple-system,sans-serif";
+const G     = "#10B981";
+const A     = "#F59E0B";
+const B     = "#3B82F6";
+const R     = "#EF4444";
+const BDR   = "#1C2333";
+const CARD  = "#0D1117";
+const W     = "#F8FAFC";
+const GREEN = "#10B981";
+const BLUE  = "#3B82F6";
+const BORDER = "#1C2333";
+
+type Step = "type"|"details"|"legal"|"docs"|"summary";
 
 const ASSET_TYPES = [
-  { id:"real_estate",    label:"Real Estate",       sub:"Residential, commercial, vacation, land",       icon:"⬛" },
-  { id:"minerals",       label:"Mineral Rights",    sub:"Oil, gas, coal, royalty interests",             icon:"◆" },
-  { id:"energy",         label:"Energy Reserves",   sub:"Producing wells, reserves, working interests",  icon:"◈" },
-  { id:"metals",         label:"Precious Metals",   sub:"Gold, silver, platinum, LBMA-grade bullion",    icon:"◎" },
-  { id:"land",           label:"Land & Timber",     sub:"Agricultural, timber, conservation easements",  icon:"◭" },
-  { id:"other",          label:"Other Asset",       sub:"Family office assets, structured instruments",  icon:"⬡" },
+  { id:"real_estate",       label:"Real Estate",             sub:"Residential or commercial property" },
+  { id:"mineral_rights",    label:"Mineral Rights",          sub:"Oil, gas, water, or mining rights" },
+  { id:"wyoming_llc",       label:"Wyoming LLC",             sub:"Business entity tokenization" },
+  { id:"music_royalties",   label:"Music / Royalties",       sub:"Catalog, publishing, or streaming income" },
+  { id:"equipment",         label:"Equipment / Machinery",   sub:"Industrial or commercial equipment" },
+  { id:"precious_metals",   label:"Precious Metals",         sub:"Gold, silver, platinum vault holdings" },
+  { id:"affordable_housing",label:"Affordable Housing",      sub:"Community land trust or Section 8" },
+  { id:"other",             label:"Other Asset",             sub:"Describe in details step" },
 ] as const;
-type AssetType = typeof ASSET_TYPES[number]["id"];
 
-const DOCS_REQUIRED: Record<AssetType, string[]> = {
-  real_estate:  ["Deed / title document", "Title insurance or commitment", "Appraisal report (< 12 months)", "Property tax certificate", "Lien search report", "Entity formation documents (if LLC)"],
-  minerals:     ["Division order", "Lease agreement", "Reserve report (independent engineer)", "Production history (12 months)", "Title opinion", "Operator authorization"],
-  energy:       ["Working interest documentation", "Engineering reserve report", "Production & revenue statements (12 months)", "Lease agreement", "Environmental compliance certificate"],
-  metals:       ["LBMA-certified assay report", "Chain of custody documentation", "Vault/custodian receipt", "Insurance certificate", "Purchase documentation"],
-  land:         ["Deed / survey", "Appraisal or timber valuation", "Environmental assessment", "Title report", "Zoning compliance letter"],
-  other:        ["Asset description & valuation", "Legal ownership documentation", "Third-party appraisal or audit", "Custody documentation", "Entity formation documents"],
+type AssetTypeId = typeof ASSET_TYPES[number]["id"];
+
+const inp: React.CSSProperties = {
+  width: "100%", padding: "0.55rem 0.75rem", borderRadius: 5,
+  border: `1px solid ${BDR}`, background: "rgba(255,255,255,0.03)",
+  color: W, fontFamily: S, fontSize: "16px", outline: "none",
+  boxSizing: "border-box",
+};
+const sel: React.CSSProperties = { ...inp };
+const lbl: React.CSSProperties = {
+  fontFamily: M, fontSize: "0.58rem", fontWeight: 700,
+  color: "rgba(255,255,255,0.35)", textTransform: "uppercase",
+  letterSpacing: "0.12em", marginBottom: "0.2rem", display: "block",
 };
 
-const TIMELINE: Record<AssetType, { stage: string; days: string }[]> = {
-  real_estate:  [{stage:"Document submission",days:"Day 1"},{stage:"Title & ownership review",days:"Days 2–5"},{stage:"Custodian verification",days:"Days 5–8"},{stage:"Legal attestation",days:"Days 8–12"},{stage:"Auditor sign-off",days:"Days 12–15"},{stage:"On-chain attestation",days:"Day 15"},{stage:"Collateral activation",days:"Day 16"}],
-  minerals:     [{stage:"Document submission",days:"Day 1"},{stage:"Title opinion review",days:"Days 2–6"},{stage:"Reserve report verification",days:"Days 6–12"},{stage:"Legal attestation",days:"Days 12–16"},{stage:"Auditor sign-off",days:"Days 16–20"},{stage:"On-chain attestation",days:"Day 20"},{stage:"Collateral activation",days:"Day 21"}],
-  energy:       [{stage:"Document submission",days:"Day 1"},{stage:"Engineering review",days:"Days 2–7"},{stage:"Production verification",days:"Days 7–12"},{stage:"Legal attestation",days:"Days 12–17"},{stage:"Auditor sign-off",days:"Days 17–22"},{stage:"On-chain attestation",days:"Day 22"},{stage:"Collateral activation",days:"Day 23"}],
-  metals:       [{stage:"Document submission",days:"Day 1"},{stage:"Assay & custody verification",days:"Days 2–4"},{stage:"Custodian confirmation",days:"Days 4–6"},{stage:"Insurance verification",days:"Days 6–8"},{stage:"Auditor sign-off",days:"Days 8–10"},{stage:"On-chain attestation",days:"Day 10"},{stage:"Collateral activation",days:"Day 11"}],
-  land:         [{stage:"Document submission",days:"Day 1"},{stage:"Title & survey review",days:"Days 2–6"},{stage:"Valuation verification",days:"Days 6–10"},{stage:"Legal attestation",days:"Days 10–14"},{stage:"Auditor sign-off",days:"Days 14–18"},{stage:"On-chain attestation",days:"Day 18"},{stage:"Collateral activation",days:"Day 19"}],
-  other:        [{stage:"Document submission",days:"Day 1"},{stage:"Asset classification",days:"Days 2–5"},{stage:"Ownership verification",days:"Days 5–10"},{stage:"Legal attestation",days:"Days 10–15"},{stage:"Auditor sign-off",days:"Days 15–20"},{stage:"On-chain attestation",days:"Day 20"},{stage:"Collateral activation",days:"Day 21"}],
+const STEPS: Step[] = ["type","details","legal","docs","summary"];
+const STEP_LABELS: Record<Step,string> = {
+  type: "Asset Type", details: "Details", legal: "Legal", docs: "Documents", summary: "Summary",
 };
 
-const LTV_GUIDE: Record<AssetType, { ltv: string; note: string }> = {
-  real_estate:  { ltv:"Up to 60–70%",   note:"Based on independent appraisal. Clear title required." },
-  minerals:     { ltv:"Up to 50–60%",   note:"Based on independent reserve report (P50 or better)." },
-  energy:       { ltv:"Up to 50–60%",   note:"Based on proved developed producing reserves." },
-  metals:       { ltv:"Up to 75–80%",   note:"LBMA-certified bullion in approved vault. Highest LTV class." },
-  land:         { ltv:"Up to 45–55%",   note:"Based on appraisal. Timber and conservation factors apply." },
-  other:        { ltv:"Case by case",   note:"Determined by asset class classification and review." },
-};
-
-type Step = "type" | "info" | "docs" | "summary" | "submitted";
-
-interface FormData {
-  assetType:      AssetType | null;
-  estimatedValue: string;
-  hasLiens:       string;
-  hasAppraisal:   string;
-  jurisdiction:   string;
-  hasCustody:     string;
-}
-
-export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: () => void }) {
-  const [step, setStep] = useState<Step>("type");
-  const [form, setForm] = useState<FormData>({
-    assetType: null, estimatedValue:"", hasLiens:"unknown",
-    hasAppraisal:"no", jurisdiction:"", hasCustody:"no",
+export function AssetOwnerOnboarding({
+  onEnterTerminal,
+}: { onEnterTerminal?: () => void }) {
+  const [step,  setStep]  = useState<Step>("type");
+  const [T,     setT]     = useState<AssetTypeId | "">("");
+  const [form,  setForm]  = useState({
+    // Details step
+    hasLiens:     "unknown" as "yes"|"no"|"unknown",
+    hasAppraisal: "no"      as "yes"|"no"|"in_progress",
+    hasCustody:   "no"      as "yes"|"no",
+    titleHeld:    "individual" as string,
+    currentUse:   "" as string,
+    ownershipYears: "" as string,
+    hasDisputes:  "no" as "yes"|"no",
+    annualIncome: "" as string,
+    // Legal step
+    lienAmount:   "" as string,
+    lienLender:   "" as string,
   });
-  const [savedAsset,     setSavedAsset]     = useState<UserAsset | null>(null);
+  const [savedAsset,    setSavedAsset]    = useState<UserAsset | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
-  // Uncontrolled refs for text inputs in step "info".
-  // Prevents the Android keyboard from dismissing on each keystroke.
-  // Values are read from refs when advancing to the next step.
-  const valueRef = useRef<HTMLInputElement>(null);
-  const jurisRef = useRef<HTMLInputElement>(null);
+  // Uncontrolled refs — prevents Android keyboard dismissal on each keystroke
+  const nameRef        = useRef<HTMLInputElement>(null);
+  const valueRef       = useRef<HTMLInputElement>(null);
+  const addressRef     = useRef<HTMLInputElement>(null);
+  const jurisRef       = useRef<HTMLInputElement>(null);
+  const descRef        = useRef<HTMLTextAreaElement>(null);
+  const emailRef       = useRef<HTMLInputElement>(null);
+  const walletRef      = useRef<HTMLInputElement>(null);
+  const incomeRef      = useRef<HTMLInputElement>(null);
+  const lienAmtRef     = useRef<HTMLInputElement>(null);
+  const lienLenderRef  = useRef<HTMLInputElement>(null);
 
-  function captureTextInputs() {
+  function captureRefs() {
     return {
-      estimatedValue: valueRef.current?.value ?? form.estimatedValue,
-      jurisdiction:   jurisRef.current?.value ?? form.jurisdiction,
+      assetName:    nameRef.current?.value       ?? "",
+      estimatedValue: valueRef.current?.value    ?? "",
+      address:      addressRef.current?.value    ?? "",
+      jurisdiction: jurisRef.current?.value      ?? "",
+      description:  descRef.current?.value       ?? "",
+      email:        emailRef.current?.value      ?? "",
+      wallet:       walletRef.current?.value     ?? "",
+      annualIncome: incomeRef.current?.value     ?? "",
+      lienAmount:   lienAmtRef.current?.value    ?? "",
+      lienLender:   lienLenderRef.current?.value ?? "",
     };
   }
 
-  const T = form.assetType;
-  const docs     = T ? DOCS_REQUIRED[T]  : [];
-  const timeline = T ? TIMELINE[T]       : [];
-  const ltv      = T ? LTV_GUIDE[T]      : null;
+  function advance() {
+    const idx = STEPS.indexOf(step);
+    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
+  }
+  function back() {
+    const idx = STEPS.indexOf(step);
+    if (idx > 0) setStep(STEPS[idx - 1]);
+  }
 
   function submitForReview() {
     if (!T) return;
-    const vals  = captureTextInputs();
+    const refs = captureRefs();
     const asset = userAssetStore.create({
       assetType:      T,
-      estimatedValue: vals.estimatedValue || form.estimatedValue || "Not specified",
-      jurisdiction:   vals.jurisdiction   || form.jurisdiction   || "Not specified",
+      estimatedValue: refs.estimatedValue || "Not specified",
+      jurisdiction:   refs.jurisdiction   || "Not specified",
       hasLiens:       form.hasLiens,
       hasAppraisal:   form.hasAppraisal,
       hasCustody:     form.hasCustody,
     });
-    // Persist to Supabase — non-blocking, never breaks the UI
+    setSavedAsset(asset);
+    // Persist to Supabase + email Pablo (non-blocking)
     fetch("/api/assets/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        session_id:     asset.sessionId,
-        local_asset_id: asset.id,
-        asset_type:     asset.assetType,
-        estimated_value: asset.estimatedValue,
-        jurisdiction:    asset.jurisdiction,
-        has_liens:       asset.hasLiens,
-        has_appraisal:   asset.hasAppraisal,
-        has_custody:     asset.hasCustody,
+        session_id:      asset.sessionId,
+        local_asset_id:  asset.id,
+        asset_type:      T,
+        asset_name:      refs.assetName,
+        estimated_value: refs.estimatedValue,
+        address:         refs.address,
+        jurisdiction:    refs.jurisdiction,
+        description:     refs.description,
+        annual_income:   refs.annualIncome,
+        has_liens:       form.hasLiens,
+        has_appraisal:   form.hasAppraisal,
+        has_custody:     form.hasCustody,
+        title_held:      form.titleHeld,
+        current_use:     form.currentUse,
+        has_disputes:    form.hasDisputes,
+        lien_amount:     refs.lienAmount,
+        lien_lender:     refs.lienLender,
+        contact_email:   refs.email,
+        contact_wallet:  refs.wallet,
       }),
     }).catch(() => null);
-    setSavedAsset(asset);
-    setStep("submitted");
+    setStep("summary");
   }
 
-  function Field({ label, children }: { label:string; children:React.ReactNode }) {
-    return (
-      <div style={{ marginBottom:"1rem" }}>
-        <div style={{ fontFamily:M, fontSize:"0.32rem", fontWeight:700,
-                       color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
-                       letterSpacing:"0.12em", marginBottom:"0.4rem" }}>
-          {label}
-        </div>
-        {children}
-      </div>
-    );
-  }
-
-  const inputStyle: React.CSSProperties = {
-    width:"100%", padding:"0.75rem 1rem", borderRadius:"5px",
-    border:"1px solid " + BORDER, background:"rgba(255,255,255,0.03)",
-    color:"#f0f0f0", fontSize:"16px", fontFamily:S, outline:"none",
-    boxSizing:"border-box",
-  };
+  const curIdx = STEPS.indexOf(step);
 
   return (
-    <div style={{ maxWidth:640, margin:"0 auto",
-                   padding:"clamp(1.5rem,4vw,3rem) clamp(1rem,3vw,1.5rem)" }}>
+    <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: M, color: W,
+                   padding: "1rem" }}>
 
-      <div style={{ marginBottom:"2.5rem" }}>
-        <div style={{ fontFamily:M, fontSize:"0.32rem", fontWeight:700,
-                       color:"rgba(16,185,129,0.5)", textTransform:"uppercase",
-                       letterSpacing:"0.2em", marginBottom:"0.75rem" }}>
-          ABRAXAS VERIFICATION PROTOCOL
-        </div>
-        <h1 style={{ fontFamily:S, fontSize:"clamp(1.4rem,4vw,2.2rem)",
-                      fontWeight:800, color:"#f0f0f0", margin:"0 0 0.75rem",
-                      lineHeight:1.15, letterSpacing:"-0.02em" }}>
-          Bring your asset<br/>into verifiable collateral.
-        </h1>
-        <p style={{ fontFamily:S, fontSize:"clamp(0.8rem,2vw,1rem)",
-                     color:"rgba(255,255,255,0.35)", lineHeight:1.75,
-                     margin:0, maxWidth:520 }}>
-          Verification before tokenization. No wallet required to begin.
-          Submit your asset for review — track progress on your dashboard.
-        </p>
-      </div>
-
-      {/* Progress */}
-      {step !== "submitted" && (
-        <div style={{ display:"flex", gap:"0.375rem", marginBottom:"2.5rem" }}>
-          {(["type","info","docs","summary"] as Step[]).map(s => {
-            const steps: Step[] = ["type","info","docs","summary"];
-            const idx = steps.indexOf(step);
-            const sIdx = steps.indexOf(s);
-            const done = sIdx < idx;
+      {/* Step indicator */}
+      {step !== "summary" && (
+        <div style={{ display: "flex", gap: "0.3rem", marginBottom: "1.25rem" }}>
+          {STEPS.filter(s => s !== "summary").map((s, i) => {
+            const done   = i < curIdx;
             const active = s === step;
-            const label = s === "type" ? "Asset Type" : s === "info" ? "Asset Details" : s === "docs" ? "Requirements" : "Summary";
             return (
-              <div key={s} style={{ flex:1 }}>
-                <div style={{ height:2, borderRadius:1, marginBottom:"0.3rem",
-                               background: active ? GREEN : done ? GREEN + "60" : BORDER }}/>
-                <div style={{ fontFamily:M, fontSize:"0.28rem",
-                               color: active ? GREEN : done ? GREEN + "80" : "rgba(255,255,255,0.2)",
-                               textTransform:"uppercase", letterSpacing:"0.08em" }}>
-                  {label}
+              <div key={s} style={{ flex: 1 }}>
+                <div style={{ height: 2, borderRadius: 1, marginBottom: 3,
+                               background: active ? G : done ? `${G}50` : BDR }}/>
+                <div style={{ fontFamily: M, fontSize: "0.5rem", fontWeight: 700,
+                               color: active ? G : done ? `${G}70` : "rgba(255,255,255,0.2)",
+                               textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {done ? "✓ " : ""}{STEP_LABELS[s]}
                 </div>
               </div>
             );
@@ -186,275 +181,332 @@ export function AssetOwnerOnboarding({ onEnterTerminal }: { onEnterTerminal?: ()
         </div>
       )}
 
-      {/* STEP 1 */}
+      {/* ── TYPE ── */}
       {step === "type" && (
         <div>
-          <div style={{ fontFamily:S, fontSize:"clamp(1rem,2.5vw,1.3rem)",
-                         fontWeight:700, color:"#f0f0f0", marginBottom:"1.25rem" }}>
-            What type of asset are you bringing?
+          <div style={{ fontFamily: "Georgia,serif",
+                         fontSize: "clamp(1rem,2.5vw,1.3rem)",
+                         fontWeight: 700, color: W, marginBottom: "0.375rem" }}>
+            What are you submitting?
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.625rem" }}>
-            {ASSET_TYPES.map(a => (
-              <button key={a.id} onClick={() => {
-                setForm(f => ({ ...f, assetType: a.id }));
-                setStep("info");
-              }} style={{
-                padding:"1rem", borderRadius:"6px", border:"1px solid",
-                borderColor: form.assetType === a.id ? GREEN : BORDER,
-                background: form.assetType === a.id ? GREEN + "10" : CARD,
-                cursor:"pointer", textAlign:"left", transition:"all 0.15s",
+          <p style={{ fontFamily: S, fontSize: "0.75rem",
+                       color: "rgba(255,255,255,0.4)", lineHeight: 1.65,
+                       margin: "0 0 1rem" }}>
+            Select the asset class. The verification requirements and
+            documentation checklist will be tailored to your selection.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem",
+                         marginBottom: "1rem" }}>
+            {ASSET_TYPES.map(at => (
+              <button key={at.id} onClick={() => setT(at.id)} style={{
+                padding: "0.75rem 0.875rem", borderRadius: 5, textAlign: "left",
+                cursor: "pointer",
+                border: `1px solid ${T === at.id ? G : BDR}`,
+                borderLeft: `3px solid ${T === at.id ? G : BDR}`,
+                background: T === at.id ? `${G}10` : "rgba(255,255,255,0.02)",
               }}>
-                <div style={{ fontSize:"1rem", marginBottom:"0.35rem" }}>{a.icon}</div>
-                <div style={{ fontFamily:S, fontSize:"clamp(0.75rem,2vw,0.9rem)",
-                               fontWeight:700, color:"#f0f0f0", marginBottom:"0.2rem" }}>
-                  {a.label}
+                <div style={{ fontFamily: M, fontSize: "0.68rem", fontWeight: 700,
+                               color: T === at.id ? G : W, marginBottom: 2 }}>
+                  {at.label}
                 </div>
-                <div style={{ fontFamily:S, fontSize:"clamp(0.6rem,1.5vw,0.72rem)",
-                               color:"rgba(255,255,255,0.3)", lineHeight:1.5 }}>
-                  {a.sub}
-                </div>
+                <div style={{ fontFamily: S, fontSize: "0.65rem",
+                               color: "rgba(255,255,255,0.35)" }}>{at.sub}</div>
               </button>
             ))}
           </div>
+          <button onClick={advance} disabled={!T} style={{
+            width: "100%", padding: "0.65rem", borderRadius: 5, border: "none",
+            background: T ? G : `${G}40`, color: "#000",
+            fontFamily: M, fontSize: "0.78rem", fontWeight: 900, cursor: "pointer",
+          }}>CONTINUE →</button>
         </div>
       )}
 
-      {/* STEP 2 */}
-      {step === "info" && (
+      {/* ── DETAILS ── */}
+      {step === "details" && (
         <div>
-          <div style={{ fontFamily:S, fontSize:"clamp(1rem,2.5vw,1.3rem)",
-                         fontWeight:700, color:"#f0f0f0", marginBottom:"1.5rem" }}>
+          <div style={{ fontFamily: "Georgia,serif", fontSize: "clamp(0.95rem,2vw,1.15rem)",
+                         fontWeight: 700, color: W, marginBottom: "0.875rem" }}>
             Tell us about the asset.
           </div>
-          <Field label="Estimated Asset Value (USD)">
-            <input type="text" placeholder="e.g. 1,200,000"
-              ref={valueRef}
-              defaultValue={form.estimatedValue}
-              autoComplete="off"
-              inputMode="decimal"
-              enterKeyHint="next"
-              style={inputStyle}/>
-          </Field>
-          <Field label="Jurisdiction / Location">
-            <input type="text" placeholder="e.g. Texas, USA or Georgia, USA"
-              ref={jurisRef}
-              defaultValue={form.jurisdiction}
-              autoComplete="off"
-              inputMode="text"
-              enterKeyHint="next"
-              style={inputStyle}/>
-          </Field>
-          <Field label="Existing liens or encumbrances?">
-            <select value={form.hasLiens}
-              onChange={e => setForm(f => ({ ...f, hasLiens:e.target.value }))}
-              style={{...inputStyle, cursor:"pointer"}}>
-              <option value="no">No known liens</option>
-              <option value="yes">Yes — mortgage, lien, or encumbrance exists</option>
-              <option value="unknown">Unsure — title search required</option>
-            </select>
-          </Field>
-          <Field label="Independent appraisal or reserve report?">
-            <select value={form.hasAppraisal}
-              onChange={e => setForm(f => ({ ...f, hasAppraisal:e.target.value }))}
-              style={{...inputStyle, cursor:"pointer"}}>
-              <option value="no">No — we can guide you to approved appraisers</option>
-              <option value="recent">Yes — within the last 12 months</option>
-              <option value="old">Yes — older than 12 months</option>
-            </select>
-          </Field>
-          <Field label="Asset in a custody arrangement?">
-            <select value={form.hasCustody}
-              onChange={e => setForm(f => ({ ...f, hasCustody:e.target.value }))}
-              style={{...inputStyle, cursor:"pointer"}}>
-              <option value="no">No — sole ownership or LLC</option>
-              <option value="yes">Yes — vault, escrow, or trust structure</option>
-              <option value="partial">Partial — some custody documentation exists</option>
-            </select>
-          </Field>
-          <div style={{ display:"flex", gap:"0.625rem", marginTop:"1.5rem" }}>
-            <button onClick={() => setStep("type")} style={{ flex:1, padding:"0.875rem", borderRadius:"5px",
-              border:"1px solid " + BORDER, background:"transparent",
-              color:"rgba(255,255,255,0.4)", fontFamily:M, fontSize:"0.44rem", cursor:"pointer" }}>← Back</button>
-            <button onClick={() => {
-              const captured = captureTextInputs();
-              setForm(f => ({ ...f, ...captured }));
-              setStep("docs");
-            }} style={{ flex:2, padding:"0.875rem", borderRadius:"5px", border:"none",
-              background: GREEN, color:"#000", fontFamily:M, fontSize:"0.52rem", fontWeight:900,
-              cursor:"pointer", letterSpacing:"0.04em" }}>VIEW REQUIREMENTS →</button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <div>
+              <label style={lbl}>Asset Name / Title *</label>
+              <input ref={nameRef} type="text" defaultValue=""
+                placeholder={T === "real_estate" ? "e.g. 1234 Main St Property" : T === "wyoming_llc" ? "e.g. Acme Holdings LLC" : "Asset name"}
+                style={inp} autoComplete="off"/>
+            </div>
+            <div>
+              <label style={lbl}>Estimated Value (USD) *</label>
+              <input ref={valueRef} type="text" defaultValue=""
+                placeholder="e.g. 1,200,000" inputMode="decimal"
+                style={inp} autoComplete="off"/>
+            </div>
+            {(T === "real_estate" || T === "mineral_rights" || T === "affordable_housing") && (
+              <div>
+                <label style={lbl}>Property Address</label>
+                <input ref={addressRef} type="text" defaultValue=""
+                  placeholder="Street address, city, state" style={inp} autoComplete="off"/>
+              </div>
+            )}
+            <div>
+              <label style={lbl}>Jurisdiction / State *</label>
+              <input ref={jurisRef} type="text" defaultValue=""
+                placeholder="e.g. Wyoming, USA or Georgia, USA"
+                style={inp} autoComplete="off"/>
+            </div>
+            {(T === "real_estate" || T === "equipment" || T === "affordable_housing") && (
+              <div>
+                <label style={lbl}>Current Use</label>
+                <select value={form.currentUse} style={sel}
+                  onChange={e => setForm(f => ({...f, currentUse: e.target.value}))}>
+                  <option value="">Select use</option>
+                  {["Residential rental","Short-term rental (Airbnb)","Commercial lease",
+                    "Owner-occupied","Vacant / development","Mixed-use","Industrial"].map(u => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {(T === "real_estate" || T === "music_royalties" || T === "mineral_rights") && (
+              <div>
+                <label style={lbl}>Annual Income / NOI (USD)</label>
+                <input ref={incomeRef} type="text" defaultValue=""
+                  placeholder="e.g. 109,500" inputMode="decimal"
+                  style={inp} autoComplete="off"/>
+              </div>
+            )}
+            <div>
+              <label style={lbl}>Brief Description</label>
+              <textarea ref={descRef} defaultValue="" rows={3}
+                placeholder="Key details about this asset — condition, history, any unique features..."
+                style={{ ...inp, resize: "vertical", lineHeight: 1.6 }}/>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+            <button onClick={back} style={{
+              flex: 1, padding: "0.65rem", borderRadius: 5,
+              border: `1px solid ${BDR}`, background: "transparent",
+              color: "rgba(255,255,255,0.4)", fontFamily: M,
+              fontSize: "0.7rem", fontWeight: 700, cursor: "pointer",
+            }}>← Back</button>
+            <button onClick={advance} style={{
+              flex: 2, padding: "0.65rem", borderRadius: 5, border: "none",
+              background: G, color: "#000", fontFamily: M,
+              fontSize: "0.78rem", fontWeight: 900, cursor: "pointer",
+            }}>CONTINUE →</button>
           </div>
         </div>
       )}
 
-      {/* STEP 3 */}
-      {step === "docs" && T && (
+      {/* ── LEGAL ── */}
+      {step === "legal" && (
         <div>
-          <div style={{ fontFamily:S, fontSize:"clamp(1rem,2.5vw,1.3rem)",
-                         fontWeight:700, color:"#f0f0f0", marginBottom:"1.5rem" }}>
-            Required documentation.
+          <div style={{ fontFamily: "Georgia,serif", fontSize: "clamp(0.95rem,2vw,1.15rem)",
+                         fontWeight: 700, color: W, marginBottom: "0.875rem" }}>
+            Legal & ownership details.
           </div>
-          <div style={{ padding:"1rem", background:CARD, border:"1px solid " + BORDER,
-                         borderRadius:"6px", marginBottom:"1.25rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.2)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.625rem" }}>REQUIRED DOCUMENTS</div>
-            {docs.map((d, i) => (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.5rem",
-                                     padding:"0.4rem 0",
-                                     borderBottom: i < docs.length-1 ? "1px solid rgba(31,41,55,0.4)" : "none" }}>
-                <span style={{ color:GREEN, flexShrink:0, fontSize:"0.5rem" }}>◉</span>
-                <span style={{ fontFamily:S, fontSize:"clamp(0.72rem,1.8vw,0.84rem)",
-                                color:"rgba(255,255,255,0.6)" }}>{d}</span>
-              </div>
-            ))}
+          <p style={{ fontFamily: S, fontSize: "0.72rem",
+                       color: "rgba(255,255,255,0.4)", lineHeight: 1.65,
+                       margin: "0 0 0.875rem" }}>
+            This information determines your verification tier and lender eligibility.
+            Be as accurate as possible — our team verifies every detail.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <div>
+              <label style={lbl}>How is title held?</label>
+              <select value={form.titleHeld} style={sel}
+                onChange={e => setForm(f => ({...f, titleHeld: e.target.value}))}>
+                {["individual","single_member_llc","multi_member_llc",
+                  "trust","corporation","partnership","other"].map(v => (
+                  <option key={v} value={v}>
+                    {v.replace(/_/g," ").replace(/\b\w/g, l => l.toUpperCase())}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Any existing liens or encumbrances?</label>
+              <select value={form.hasLiens} style={sel}
+                onChange={e => setForm(f => ({...f, hasLiens: e.target.value as "yes"|"no"|"unknown"}))}>
+                <option value="no">No — clear title</option>
+                <option value="yes">Yes — mortgage or lien exists</option>
+                <option value="unknown">Unknown / needs title search</option>
+              </select>
+            </div>
+            {form.hasLiens === "yes" && (
+              <>
+                <div>
+                  <label style={lbl}>Approximate lien amount (USD)</label>
+                  <input ref={lienAmtRef} type="text" defaultValue=""
+                    placeholder="e.g. 450,000" inputMode="decimal" style={inp}/>
+                </div>
+                <div>
+                  <label style={lbl}>Lender / lienholder</label>
+                  <input ref={lienLenderRef} type="text" defaultValue=""
+                    placeholder="Bank or institution name" style={inp} autoComplete="off"/>
+                </div>
+              </>
+            )}
+            <div>
+              <label style={lbl}>Independent appraisal status</label>
+              <select value={form.hasAppraisal} style={sel}
+                onChange={e => setForm(f => ({...f, hasAppraisal: e.target.value as "yes"|"no"|"in_progress"}))}>
+                <option value="no">No appraisal yet</option>
+                <option value="yes">Yes — have a recent appraisal</option>
+                <option value="in_progress">In progress</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Custody / control arrangement</label>
+              <select value={form.hasCustody} style={sel}
+                onChange={e => setForm(f => ({...f, hasCustody: e.target.value as "yes"|"no"}))}>
+                <option value="yes">Yes — I have direct custody/control</option>
+                <option value="no">No — managed by third party</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Any active legal disputes?</label>
+              <select value={form.hasDisputes} style={sel}
+                onChange={e => setForm(f => ({...f, hasDisputes: e.target.value as "yes"|"no"}))}>
+                <option value="no">No — no pending disputes</option>
+                <option value="yes">Yes — disclose in documents step</option>
+              </select>
+            </div>
+            <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: "0.625rem", marginTop: "0.25rem" }}>
+              <label style={lbl}>Your contact email</label>
+              <input ref={emailRef} type="email" defaultValue=""
+                placeholder="For verification follow-up" style={inp} inputMode="email"/>
+            </div>
+            <div>
+              <label style={lbl}>Solana wallet address (for token delivery)</label>
+              <input ref={walletRef} type="text" defaultValue=""
+                placeholder="Optional — tokens sent here after minting" style={inp} autoComplete="off"/>
+            </div>
           </div>
-          {ltv && (
-            <div style={{ padding:"1rem", background:"rgba(16,185,129,0.05)",
-                           border:"1px solid rgba(16,185,129,0.2)", borderRadius:"6px",
-                           marginBottom:"1.25rem" }}>
-              <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(16,185,129,0.5)",
-                             textTransform:"uppercase", letterSpacing:"0.12em",
-                             marginBottom:"0.4rem" }}>COLLATERAL CAPACITY ESTIMATE</div>
-              <div style={{ fontFamily:S, fontSize:"clamp(1rem,2.5vw,1.3rem)",
-                             fontWeight:800, color:GREEN, marginBottom:"0.25rem" }}>{ltv.ltv}</div>
-              <div style={{ fontFamily:S, fontSize:"clamp(0.68rem,1.6vw,0.8rem)",
-                             color:"rgba(255,255,255,0.3)" }}>{ltv.note}</div>
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+            <button onClick={back} style={{
+              flex: 1, padding: "0.65rem", borderRadius: 5,
+              border: `1px solid ${BDR}`, background: "transparent",
+              color: "rgba(255,255,255,0.4)", fontFamily: M,
+              fontSize: "0.7rem", fontWeight: 700, cursor: "pointer",
+            }}>← Back</button>
+            <button onClick={advance} style={{
+              flex: 2, padding: "0.65rem", borderRadius: 5, border: "none",
+              background: G, color: "#000", fontFamily: M,
+              fontSize: "0.78rem", fontWeight: 900, cursor: "pointer",
+            }}>CONTINUE →</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── DOCS ── */}
+      {step === "docs" && (
+        <div>
+          <div style={{ fontFamily: "Georgia,serif", fontSize: "clamp(0.95rem,2vw,1.15rem)",
+                         fontWeight: 700, color: W, marginBottom: "0.375rem" }}>
+            Upload supporting documents.
+          </div>
+          <p style={{ fontFamily: S, fontSize: "0.72rem",
+                       color: "rgba(255,255,255,0.4)", lineHeight: 1.65,
+                       margin: "0 0 0.875rem" }}>
+            Our verification team will review these against public records.
+            Documents are encrypted in transit and stored securely.
+            Accepted formats: PDF, JPG, PNG, DOC, DOCX — max 10MB each.
+          </p>
+          {/* Checklist of what to upload based on asset type */}
+          <div style={{ padding: "0.75rem 0.875rem", borderRadius: 6, marginBottom: "0.875rem",
+                         background: `${A}07`, border: `1px solid ${A}25` }}>
+            <div style={{ fontFamily: M, fontSize: "0.58rem", color: A,
+                           letterSpacing: "0.1em", textTransform: "uppercase",
+                           marginBottom: "0.375rem" }}>
+              RECOMMENDED FOR {T?.replace(/_/g," ").toUpperCase()}
+            </div>
+            <div style={{ fontFamily: S, fontSize: "0.7rem",
+                           color: "rgba(255,255,255,0.45)", lineHeight: 1.75 }}>
+              {T === "real_estate" && "Deed of trust · Recent appraisal · Title report · Survey · Income statements (if rental)"}
+              {T === "mineral_rights" && "Mineral deed · Production records · Lease agreements · County recorder filing"}
+              {T === "wyoming_llc" && "Articles of organization · Operating agreement · EIN confirmation · Bank statements"}
+              {T === "music_royalties" && "Publishing agreements · PRO registration · MLC registration · ISRC/ISWC codes · Royalty statements"}
+              {T === "equipment" && "Purchase receipts · Insurance certificate · Maintenance records · Appraisal"}
+              {T === "precious_metals" && "Assay certificate · Vault storage agreement · Insurance policy · Chain of custody"}
+              {T === "affordable_housing" && "Ground lease · Subsidy agreements · Inspection reports · Income verification"}
+              {T === "other" && "Any documents proving ownership, value, and clear title or rights"}
+            </div>
+          </div>
+          <DocumentUpload
+            label="Upload your documents"
+            onUploaded={f => setUploadedFiles(prev => [...prev, f])}
+            maxFiles={12}
+          />
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+            <button onClick={back} style={{
+              flex: 1, padding: "0.65rem", borderRadius: 5,
+              border: `1px solid ${BDR}`, background: "transparent",
+              color: "rgba(255,255,255,0.4)", fontFamily: M,
+              fontSize: "0.7rem", fontWeight: 700, cursor: "pointer",
+            }}>← Back</button>
+            <button onClick={submitForReview} style={{
+              flex: 2, padding: "0.65rem", borderRadius: 5, border: "none",
+              background: G, color: "#000", fontFamily: M,
+              fontSize: "0.78rem", fontWeight: 900, cursor: "pointer",
+            }}>SUBMIT FOR REVIEW →</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── SUMMARY ── */}
+      {step === "summary" && savedAsset && (
+        <div>
+          <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
+            <div style={{ fontFamily: "Georgia,serif", fontSize: "clamp(1.1rem,3vw,1.5rem)",
+                           fontWeight: 700, color: G, marginBottom: "0.375rem" }}>
+              Submitted for review.
+            </div>
+            <div style={{ fontFamily: M, fontSize: "0.62rem",
+                           color: "rgba(255,255,255,0.3)" }}>
+              Asset ID: {savedAsset.id}
+            </div>
+          </div>
+          <div style={{ padding: "0.875rem", background: CARD,
+                         border: `1px solid ${BDR}`, borderRadius: 7,
+                         marginBottom: "0.875rem" }}>
+            <div style={{ fontFamily: M, fontSize: "0.55rem",
+                           color: "rgba(255,255,255,0.25)", textTransform: "uppercase",
+                           letterSpacing: "0.12em", marginBottom: "0.5rem" }}>
+              WHAT HAPPENS NEXT
+            </div>
+            <ol style={{ fontFamily: S, fontSize: "0.72rem",
+                          color: "rgba(255,255,255,0.5)", lineHeight: 1.8,
+                          margin: 0, paddingLeft: "1.125rem" }}>
+              <li>Our team reviews your submission (24–48 hours)</li>
+              <li>You receive a verification assignment email</li>
+              <li>Asset moves through 10-stage V5 pipeline</li>
+              <li>Once verified: token minted, lending eligible</li>
+              <li>Track progress on the Dashboard tab</li>
+            </ol>
+          </div>
+          {uploadedFiles.length > 0 && (
+            <div style={{ fontFamily: M, fontSize: "0.6rem",
+                           color: G, marginBottom: "0.875rem" }}>
+              ✓ {uploadedFiles.length} document{uploadedFiles.length > 1 ? "s" : ""} attached
             </div>
           )}
-          {/* Document upload — optional at this stage */}
-          <div style={{ marginTop:"1rem", marginBottom:"0.75rem" }}>
-            <DocumentUpload
-              label="Attach documents now (optional — required before final minting)"
-              onUploaded={file => setUploadedFiles(prev => [...prev, file])}
-            />
-          </div>
-
-          <div style={{ display:"flex", gap:"0.625rem", marginTop:"0.5rem" }}>
-            <button onClick={() => setStep("info")} style={{ flex:1, padding:"0.875rem", borderRadius:"5px",
-              border:"1px solid " + BORDER, background:"transparent",
-              color:"rgba(255,255,255,0.4)", fontFamily:M, fontSize:"0.44rem", cursor:"pointer" }}>← Back</button>
-            <button onClick={() => setStep("summary")} style={{ flex:2, padding:"0.875rem", borderRadius:"5px", border:"none",
-              background:BLUE, color:"#fff", fontFamily:M, fontSize:"0.52rem", fontWeight:900,
-              cursor:"pointer", letterSpacing:"0.04em" }}>VIEW TIMELINE →</button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 4 */}
-      {step === "summary" && T && (
-        <div>
-          <div style={{ fontFamily:S, fontSize:"clamp(1rem,2.5vw,1.3rem)",
-                         fontWeight:700, color:"#f0f0f0", marginBottom:"1.5rem" }}>
-            Your verification pathway.
-          </div>
-          <div style={{ marginBottom:"1.5rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.2)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.75rem" }}>VERIFICATION TIMELINE</div>
-            <div style={{ position:"relative", paddingLeft:"1.25rem" }}>
-              <div style={{ position:"absolute", left:"0.25rem", top:0, bottom:0,
-                             width:1, background:"rgba(16,185,129,0.2)" }}/>
-              {timeline.map((t, i) => (
-                <div key={i} style={{ position:"relative", marginBottom:"0.75rem" }}>
-                  <div style={{ position:"absolute", left:"-1.15rem", top:3,
-                                 width:8, height:8, borderRadius:"50%",
-                                 background: i === 0 ? GREEN : i < 4 ? BLUE : AMBER,
-                                 border:"2px solid " + BG }}/>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                    <span style={{ fontFamily:S, fontSize:"clamp(0.72rem,1.8vw,0.84rem)",
-                                    fontWeight: i === 6 ? 700 : 400,
-                                    color: i === 6 ? GREEN : "rgba(255,255,255,0.6)" }}>{t.stage}</span>
-                    <span style={{ fontFamily:M, fontSize:"0.3rem",
-                                    color:"rgba(255,255,255,0.25)", flexShrink:0 }}>{t.days}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
-            <button onClick={submitForReview} style={{ flex:2, minWidth:200, padding:"1rem 1.5rem", borderRadius:"5px",
-              border:"none", background:GREEN, color:"#000",
-              fontFamily:M, fontSize:"0.56rem", fontWeight:900,
-              cursor:"pointer", letterSpacing:"0.04em", textTransform:"uppercase" }}>
-              SUBMIT FOR VERIFICATION →
-            </button>
-            <button onClick={() => setStep("type")} style={{ flex:1, padding:"1rem", borderRadius:"5px",
-              border:"1px solid " + BORDER, background:"transparent",
-              color:"rgba(255,255,255,0.4)", fontFamily:M, fontSize:"0.44rem", cursor:"pointer" }}>Start Over</button>
-          </div>
-          <p style={{ fontFamily:S, fontSize:"clamp(0.6rem,1.4vw,0.72rem)",
-                       color:"rgba(255,255,255,0.2)", marginTop:"0.875rem", lineHeight:1.7 }}>
-            Submitting creates a record on your dashboard. Track verification progress at any time.
-          </p>
-        </div>
-      )}
-
-      {/* STEP 5: SUBMITTED */}
-      {step === "submitted" && savedAsset && (
-        <div>
-          <div style={{ padding:"1.5rem", background:"rgba(16,185,129,0.06)",
-                         border:"1px solid rgba(16,185,129,0.3)", borderRadius:"8px",
-                         marginBottom:"1.5rem" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.75rem" }}>
-              <span style={{ color:GREEN, fontSize:"1rem" }}>✓</span>
-              <span style={{ fontFamily:M, fontSize:"0.4rem", fontWeight:900,
-                              color:GREEN, letterSpacing:"0.1em",
-                              textTransform:"uppercase" }}>ASSET SUBMITTED</span>
-            </div>
-            <div style={{ fontFamily:S, fontSize:"clamp(0.9rem,2.2vw,1.1rem)",
-                           fontWeight:700, color:"#f0f0f0", marginBottom:"0.5rem" }}>
-              Your asset is in the verification queue.
-            </div>
-            <div style={{ fontFamily:S, fontSize:"clamp(0.72rem,1.6vw,0.84rem)",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.7 }}>
-              We&apos;ve created a record on your dashboard.
-              Track verification progress, view your timeline, and see
-              state transitions in real time.
-            </div>
-          </div>
-
-          <div style={{ padding:"1rem", background:CARD, border:"1px solid " + BORDER,
-                         borderRadius:"6px", marginBottom:"1.5rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.12em",
-                           marginBottom:"0.625rem" }}>ASSET RECORD</div>
-            {[
-              ["Asset ID",      savedAsset.id],
-              ["Type",          savedAsset.assetType],
-              ["Estimated",     savedAsset.estimatedValue ? `$${savedAsset.estimatedValue}` : "—"],
-              ["Jurisdiction",  savedAsset.jurisdiction],
-              ["Current State", savedAsset.state],
-              ["Submitted",     new Date(savedAsset.createdAt).toLocaleString()],
-            ].map(([k, v]) => (
-              <div key={k} style={{ display:"flex", justifyContent:"space-between",
-                                     padding:"0.4rem 0",
-                                     borderBottom:"1px solid rgba(31,41,55,0.4)" }}>
-                <span style={{ fontFamily:M, fontSize:"0.34rem",
-                                color:"rgba(255,255,255,0.35)" }}>{k}</span>
-                <span style={{ fontFamily:M, fontSize:"0.38rem",
-                                color:"#f0f0f0", fontWeight:700,
-                                textAlign:"right", maxWidth:"60%" }}>{v}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
-            <a href="/dashboard" style={{ flex:2, minWidth:200, padding:"1rem 1.5rem", borderRadius:"5px",
-              border:"none", background:GREEN, color:"#000", textDecoration:"none",
-              fontFamily:M, fontSize:"0.5rem", fontWeight:900,
-              cursor:"pointer", letterSpacing:"0.04em", textTransform:"uppercase",
-              textAlign:"center" }}>
-              VIEW MY DASHBOARD →
-            </a>
-            <button onClick={() => {
-              setForm({ assetType: null, estimatedValue:"", hasLiens:"unknown",
-                        hasAppraisal:"no", jurisdiction:"", hasCustody:"no" });
-              setSavedAsset(null); setStep("type");
-            }} style={{ flex:1, padding:"1rem", borderRadius:"5px",
-              border:"1px solid " + BORDER, background:"transparent",
-              color:"rgba(255,255,255,0.4)", fontFamily:M, fontSize:"0.44rem", cursor:"pointer" }}>
-              Submit Another
-            </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <a href="/dashboard" style={{
+              flex: 1, display: "block", padding: "0.65rem",
+              borderRadius: 5, border: `1px solid ${BDR}`,
+              background: "transparent", color: "rgba(255,255,255,0.4)",
+              fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
+              cursor: "pointer", textDecoration: "none", textAlign: "center",
+              letterSpacing: "0.06em", textTransform: "uppercase",
+            }}>VIEW DASHBOARD</a>
+            <button onClick={onEnterTerminal} style={{
+              flex: 1, padding: "0.65rem", borderRadius: 5, border: "none",
+              background: G, color: "#000", fontFamily: M,
+              fontSize: "0.7rem", fontWeight: 900, cursor: "pointer",
+              letterSpacing: "0.06em", textTransform: "uppercase",
+            }}>OPEN TERMINAL</button>
           </div>
         </div>
       )}
