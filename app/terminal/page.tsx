@@ -13,6 +13,7 @@ import { VerificationTerminal }      from "@/components/vos/VerificationTerminal
 import { BecomeAPartner }            from "@/components/BecomeAPartner";
 import { ArtistAuditForm }           from "@/components/music/ArtistAuditForm";
 import { TokenizationRequestModal }  from "@/components/TokenizationRequestModal";
+import { PaymentButton }             from "@/components/payments/PaymentButton";
 import { AbraxasPassport }           from "@/components/identity/AbraxasPassport";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -345,14 +346,12 @@ function TerminalTab() {
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => { setInitialTier(pkg.id); setWyOpen(true); }} style={{
-                    width:"100%", padding:"0.5rem 0.625rem", borderRadius:4,
-                    border:`1px solid ${pkg.color}55`, background:`${pkg.color}12`,
-                    color:pkg.color, fontFamily:M, fontSize:"0.68rem",
-                    fontWeight:900, cursor:"pointer", letterSpacing:"0.06em",
-                    textTransform:"uppercase" }}>
-                    SELECT →
-                  </button>
+                  <PaymentButton
+                    product={`wyoming_${pkg.id}`}
+                    label="SELECT & PAY →"
+                    fullWidth
+                    variant="primary"
+                  />
                 </div>
               ))}
             </div>
@@ -362,7 +361,7 @@ function TerminalTab() {
               fontWeight:900, cursor:"pointer", letterSpacing:"0.05em",
               textTransform:"uppercase", boxShadow:`0 0 12px ${G}45`,
             }}>
-              START TOKENIZATION NOW →
+              BROWSE TIERS →
             </button>
           </div>
         </div>
