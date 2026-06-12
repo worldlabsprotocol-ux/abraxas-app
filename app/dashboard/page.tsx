@@ -96,6 +96,8 @@ export default function DashboardPage() {
   const [wyomingReqs, setWyomingReqs] = useState<WyomingRequest[]>([]);
   const [panelTab,    setPanelTab]    = useState<"assets"|"wyoming">("assets");
   const [unread,      setUnread]      = useState(0);
+  const [idvStatus, setIdvStatus] = useState<'idle'|'verified'|'unverified'>('idle');
+  const [credentialLevel, setCredentialLevel] = useState<string|null>(null);
 
   function refresh() {
     const s = sessionStore.get();
@@ -107,7 +109,23 @@ export default function DashboardPage() {
     setUnread(notificationService.getUnreadCount());
   }
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+    // Check credential status without importing the hook (avoids SSR issues)
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("abraxas_credential_v1");
+        if (stored) {
+          const cred = JSON.parse(stored);
+          const expired = new Date(cred.expires_at) < new Date();
+          setIdvStatus(expired ? "unverified" : "verified");
+          setCredentialLevel(cred.level ?? "BASIC");
+        } else {
+          setIdvStatus("unverified");
+        }
+      } catch { setIdvStatus("unverified"); }
+    }
+  }, []);
 
   const sel = assets.find(a => a.id === selected) ?? null;
 
@@ -228,6 +246,47 @@ export default function DashboardPage() {
                        color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em",
                        textAlign: "right" }}>
           W3C VC · SOLANA MAINNET<br/>BUILD 2025.1
+        </div>
+      </div>
+
+      {/* ── PASSPORT STATUS WIDGET ─────────────────────────────── */}
+      <div style={{
+        padding: "0.625rem clamp(0.875rem,2vw,1.5rem)",
+        borderBottom: `1px solid ${BDR}`,
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem",
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"0.625rem" }}>
+          {/* Passport status indicator */}
+          <div style={{
+            display:"flex", alignItems:"center", gap:"0.375rem",
+            padding:"0.3rem 0.75rem", borderRadius:4,
+            background: idvStatus === "verified" ? `${G}10` : "rgba(255,255,255,0.03)",
+            border: `1px solid ${idvStatus === "verified" ? G+"30" : BDR}`,
+          }}>
+            <div style={{ width:7, height:7, borderRadius:"50%",
+                           background: idvStatus === "verified" ? G : "rgba(255,255,255,0.2)",
+                           boxShadow: idvStatus === "verified" ? `0 0 5px ${G}` : "none" }}/>
+            <span style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+                            color: idvStatus === "verified" ? G : "rgba(255,255,255,0.3)",
+                            textTransform:"uppercase", letterSpacing:"0.1em" }}>
+              {idvStatus === "verified"
+                ? `PASSPORT ACTIVE · ${credentialLevel ?? "BASIC"}`
+                : "PASSPORT NOT VERIFIED"}
+            </span>
+          </div>
+          {idvStatus !== "verified" && (
+            <Link href="/identity" style={{
+              fontFamily:M, fontSize:"0.58rem", fontWeight:700, color:G,
+              textDecoration:"none", letterSpacing:"0.1em",
+              textTransform:"uppercase",
+            }}>GET VERIFIED →</Link>
+          )}
+        </div>
+        <div style={{ fontFamily:M, fontSize:"0.52rem",
+                       color:"rgba(255,255,255,0.15)", letterSpacing:"0.08em" }}>
+          {assets.length} ASSET{assets.length !== 1 ? "S" : ""} ·{" "}
+          {wyomingReqs.length} LLC REQUEST{wyomingReqs.length !== 1 ? "S" : ""}
         </div>
       </div>
 
