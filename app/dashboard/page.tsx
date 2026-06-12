@@ -17,6 +17,7 @@ import type { Session }              from "@/lib/vos/sessionStore";
 import { wyomingRequestStore }       from "@/lib/vos/wyomingRequestStore";
 import type { WyomingRequest }       from "@/lib/vos/wyomingRequestStore";
 import { notificationService }       from "@/lib/notifications";
+import { UserProfile }             from "@/components/profile/UserProfile";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -97,6 +98,8 @@ export default function DashboardPage() {
   const [panelTab,    setPanelTab]    = useState<"assets"|"wyoming">("assets");
   const [unread,      setUnread]      = useState(0);
   const [idvStatus, setIdvStatus] = useState<'idle'|'verified'|'unverified'>('idle');
+  const [walletAddr, setWalletAddr] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
   const [credentialLevel, setCredentialLevel] = useState<string|null>(null);
 
   function refresh() {
@@ -111,6 +114,20 @@ export default function DashboardPage() {
 
   useEffect(() => {
     refresh();
+    // Read wallet address from localStorage (set by wallet adapter on connect)
+    if (typeof window !== "undefined") {
+      try {
+        // Phantom / any Solana wallet stores last connected key
+        const stored = localStorage.getItem("abraxas_credential_v1");
+        if (stored) {
+          const c = JSON.parse(stored) as { wallet?: string };
+          if (c.wallet) setWalletAddr(c.wallet);
+        }
+        // Also try solana wallet standard
+        const phantomKey = localStorage.getItem("walletName");
+        if (!phantomKey) { /* no wallet connected yet */ }
+      } catch {}
+    }
     // Check credential status without importing the hook (avoids SSR issues)
     if (typeof window !== "undefined") {
       try {
@@ -275,6 +292,15 @@ export default function DashboardPage() {
                 : "PASSPORT NOT VERIFIED"}
             </span>
           </div>
+          <button onClick={() => setShowProfile(p => !p)} style={{
+            fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+            color:"rgba(255,255,255,0.35)", background:"transparent",
+            border:`1px solid ${BDR}`, borderRadius:3,
+            padding:"0.2rem 0.5rem", cursor:"pointer",
+            letterSpacing:"0.08em", textTransform:"uppercase",
+          }}>
+            {showProfile ? "HIDE PROFILE" : "MY PROFILE"}
+          </button>
           {idvStatus !== "verified" && (
             <Link href="/identity" style={{
               fontFamily:M, fontSize:"0.58rem", fontWeight:700, color:G,
@@ -289,6 +315,13 @@ export default function DashboardPage() {
           {wyomingReqs.length} LLC REQUEST{wyomingReqs.length !== 1 ? "S" : ""}
         </div>
       </div>
+
+      {/* ── USER PROFILE (collapsible) ─────────────────────────────── */}
+      {showProfile && (
+        <div style={{ padding:"0 clamp(0.875rem,2vw,1.5rem) 0.875rem" }}>
+          <UserProfile walletAddress={walletAddr} />
+        </div>
+      )}
 
       {/* ── STAT CARDS ──────────────────────────────────────── */}
       <div style={{
