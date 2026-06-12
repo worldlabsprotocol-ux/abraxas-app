@@ -64,20 +64,10 @@ function DeepView({ children, onBack }: { children: React.ReactNode; onBack(): v
   );
 }
 
-// ── TERMINAL TAB ─────────────────────────────────────────────────────────────
-function TerminalTab() {
-  const [deep, setDeep]               = useState<Deep>("main");
-  const [wyOpen, setWyOpen]           = useState(false);
-  const [initialTier, setInitialTier] = useState<"starter"|"growth"|"enterprise"|null>(null);
-
-  // Fix: VOS terminal input.focus() pulls the page down. Scroll to top on mount.
-  useEffect(() => { window.scrollTo({ top:0, behavior:"instant" }); }, []);
-
-  if (deep === "asset")    return <DeepView onBack={() => setDeep("main")}><FlagshipAssetPage /></DeepView>;
-  if (deep === "submit")   return <DeepView onBack={() => setDeep("main")}><AssetOwnerOnboarding onEnterTerminal={() => setDeep("main")} /></DeepView>;
-  if (deep === "trust")    return <DeepView onBack={() => setDeep("main")}><TrustStack /></DeepView>;
-  if (deep === "registry") return (
-    <DeepView onBack={() => setDeep("main")}>
+// ── REGISTRY DEEP VIEW (extracted: swc cannot parse inline in TerminalTab) ──
+function RegistryView({ onBack }: { onBack: () => void }) {
+  return (
+    <DeepView onBack={onBack}>
       <div style={{ padding:"2rem", fontFamily:M, color:W, maxWidth:800, margin:"0 auto" }}>
         <div style={{ fontSize:"0.7rem", color:G, fontWeight:700, textTransform:"uppercase",
                        letterSpacing:"0.2em", marginBottom:"1.5rem" }}>
@@ -91,9 +81,9 @@ function TerminalTab() {
                        gap:"1px", background:BDR, borderRadius:7, overflow:"hidden",
                        marginBottom:"1.5rem" }}>
           {[
-            {label:"Verified Properties", val:"3"},
+            {label:"Verified Properties", val:"4"},
             {label:"Pending Verification", val:"0"},
-            {label:"Total AUM",            val:"$2.2M+"},
+            {label:"Total AUM",            val:"$2.8M+"},
             {label:"Avg Collateral Score", val:"89/100"},
           ].map(s => (
             <div key={s.label} style={{ background:CARD, padding:"0.875rem" }}>
@@ -120,6 +110,21 @@ function TerminalTab() {
       </div>
     </DeepView>
   );
+}
+
+// ── TERMINAL TAB ─────────────────────────────────────────────────────────────
+function TerminalTab() {
+  const [deep, setDeep]               = useState<Deep>("main");
+  const [wyOpen, setWyOpen]           = useState(false);
+  const [initialTier, setInitialTier] = useState<"starter"|"growth"|"enterprise"|null>(null);
+
+  // Fix: VOS terminal input.focus() pulls the page down. Scroll to top on mount.
+  useEffect(() => { window.scrollTo({ top:0, behavior:"instant" }); }, []);
+
+  if (deep === "asset")    return <DeepView onBack={() => setDeep("main")}><FlagshipAssetPage /></DeepView>;
+  if (deep === "submit")   return <DeepView onBack={() => setDeep("main")}><AssetOwnerOnboarding onEnterTerminal={() => setDeep("main")} /></DeepView>;
+  if (deep === "trust")    return <DeepView onBack={() => setDeep("main")}><TrustStack /></DeepView>;
+  if (deep === "registry") return <RegistryView onBack={() => setDeep("main")} />;
 
   // ── MAIN VIEW ──────────────────────────────────────────────────────────────
   return (
