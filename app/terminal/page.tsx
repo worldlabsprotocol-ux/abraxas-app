@@ -89,18 +89,18 @@ function TerminalTab() {
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",
                        gap:"1px", background:BDR, borderRadius:7, overflow:"hidden",
                        marginBottom:"1.5rem" }}>
-          {([
-            ["Verified Properties","1"],
-            ["Pending Verification","0"],
-            ["Total AUM","$1.1M"],
-            ["Avg Collateral Score","89/100"],
-          ] as [string,string][]).map(([k,v]: [string,string]) => (
-            <div key={k} style={{ background:CARD, padding:"0.875rem" }}>
+          {[
+            {label:"Verified Properties", val:"3"},
+            {label:"Pending Verification", val:"0"},
+            {label:"Total AUM",            val:"$2.2M+"},
+            {label:"Avg Collateral Score", val:"89/100"},
+          ].map(s => (
+            <div key={s.label} style={{ background:CARD, padding:"0.875rem" }}>
               <div style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.3)",
                              textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:4 }}>
-                {k}
+                {s.label}
               </div>
-              <div style={{ fontSize:"1.25rem", fontWeight:900, color:G }}>{v}</div>
+              <div style={{ fontSize:"1.25rem", fontWeight:900, color:G }}>{s.val}</div>
             </div>
           ))}
         </div>
@@ -155,14 +155,14 @@ function TerminalTab() {
             Every lender, marketplace, and payment rail.
           </p>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap", alignItems:"center" }}>
-            {[["● 3 ASSETS VERIFIED",true],["$2.2M+ ATTESTED",false],["W3C VC · SOLANA MAINNET",false]].map(([t,hi]: [string,boolean]) => (
-              <div key={t as string} style={{ padding:"0.35rem 0.75rem", borderRadius:4,
+            {[["● 3 ASSETS VERIFIED",true],["$2.2M+ ATTESTED",false],["W3C VC · SOLANA MAINNET",false]].map((item: [string,boolean]) => (
+              <div key={item[0]} style={{ padding:"0.35rem 0.75rem", borderRadius:4,
                                background:hi ? `${G}12` : "rgba(255,255,255,0.04)",
                                border:`1px solid ${hi ? G+"30" : BDR}`,
                                fontFamily:M, fontSize:"0.6rem", fontWeight:700,
                                color:hi ? G : "rgba(255,255,255,0.4)",
                                letterSpacing:"0.08em" }}>
-                {t as string}
+                {item[0]}
               </div>
             ))}
           </div>
@@ -257,13 +257,13 @@ function TerminalTab() {
                            gap:"1px", background:BDR }}>
               {[["Appraised Value","$1,100,000"],["Annual NOI","$109,500"],
                 ["Cash Yield","14.6%"],["Collateral Score","89 / 100"],
-                ["Max Borrow","$660K USDC"],["Cap Rate","9.95%"]].map(([k,v]: [string,string]) => (
-                <div key={k} style={{ background:CARD, padding:"0.75rem 0.875rem" }}>
+                ["Max Borrow","$660K USDC"],["Cap Rate","9.95%"]].map((item: string[]) => (
+                <div key={item[0]} style={{ background:CARD, padding:"0.75rem 0.875rem" }}>
                   <div style={{ fontFamily:M, fontSize:"0.52rem",
                                  color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
-                                 letterSpacing:"0.1em", marginBottom:3 }}>{k}</div>
+                                 letterSpacing:"0.1em", marginBottom:3 }}>{item[0]}</div>
                   <div style={{ fontFamily:M, fontSize:"0.92rem",
-                                 fontWeight:900, color:G }}>{v}</div>
+                                 fontWeight:900, color:G }}>{item[1]}</div>
                 </div>
               ))}
             </div>
@@ -326,13 +326,13 @@ function TerminalTab() {
                            gap:"1px", background:"#1C2333" }}>
               {[["Asset Class","Literary IP"],["Revenue","KDP + Distributors"],
                 ["Rights","Publishing / Royalties"],["Status","PENDING VERIFICATION"]
-              ].map(([k,v]: [string,string]) => (
-                <div key={k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
+              ].map((item: string[]) => (
+                <div key={item[0]} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
                   <div style={{ fontFamily:M, fontSize:"0.48rem",
                                  color:"rgba(255,255,255,0.25)", textTransform:"uppercase",
-                                 letterSpacing:"0.1em", marginBottom:2 }}>{k}</div>
+                                 letterSpacing:"0.1em", marginBottom:2 }}>{item[0]}</div>
                   <div style={{ fontFamily:M, fontSize:"0.68rem",
-                                 fontWeight:700, color:"#6366F1" }}>{v}</div>
+                                 fontWeight:700, color:"#6366F1" }}>{item[1]}</div>
                 </div>
               ))}
             </div>
@@ -382,11 +382,11 @@ function TerminalTab() {
                            padding:"0.5rem 0.75rem",
                            background:"rgba(245,158,11,0.05)" }}>
               {[["TV / Film","IN TALKS"],["Anime","IN DEV"],
-                ["Live Play","IN PROGRESS"],["Funding","ACTIVE"]].map(([l,s]: [string,string]) => (
-                <div key={l} style={{ padding:"0.2rem 0.5rem", borderRadius:3,
+                ["Live Play","IN PROGRESS"],["Funding","ACTIVE"]].map((item: string[]) => (
+                <div key={item[0]} style={{ padding:"0.2rem 0.5rem", borderRadius:3,
                   background:`${A}10`, border:`1px solid ${A}30`,
                   fontFamily:M, fontSize:"0.48rem", color:W, letterSpacing:"0.04em" }}>
-                  {l} <span style={{ color:A }}>· {s}</span>
+                  {item[0]} <span style={{ color:A }}>· {item[1]}</span>
                 </div>
               ))}
             </div>
@@ -755,15 +755,15 @@ function TerminalTab() {
                 {[["Photography Studio","Commercial + editorial"],["Live Theatre","Original productions"],
                   ["Dance Studio","Classes + performances"],["Production Hub","Film, manga, animation"],
                   ["IP Catalog Home","World Labs protocols"],["Status","Scouting · In talks"]
-                ].map(([k,v]: [string,string]) => (
-                  <div key={k} style={{ padding:"0.625rem 0.75rem", borderRadius:5,
+                ].map((item: string[]) => (
+                  <div key={item[0]} style={{ padding:"0.625rem 0.75rem", borderRadius:5,
                                          background:"rgba(139,92,246,0.07)",
                                          border:"1px solid rgba(139,92,246,0.2)" }}>
                     <div style={{ fontFamily:M, fontSize:"0.5rem",
                                    color:"rgba(139,92,246,0.6)", textTransform:"uppercase",
-                                   letterSpacing:"0.1em", marginBottom:2 }}>{k}</div>
+                                   letterSpacing:"0.1em", marginBottom:2 }}>{item[0]}</div>
                     <div style={{ fontFamily:S, fontSize:"0.68rem",
-                                   color:"rgba(255,255,255,0.45)" }}>{v}</div>
+                                   color:"rgba(255,255,255,0.45)" }}>{item[1]}</div>
                   </div>
                 ))}
               </div>
