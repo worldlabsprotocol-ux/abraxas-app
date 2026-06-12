@@ -29,6 +29,8 @@ const ASSET_TYPES = [
   { id:"mineral_rights",    label:"Mineral Rights",          sub:"Oil, gas, water, or mining rights" },
   { id:"wyoming_llc",       label:"Wyoming LLC",             sub:"Business entity tokenization" },
   { id:"music_royalties",   label:"Music / Royalties",       sub:"Catalog, publishing, or streaming income" },
+  { id:"books_publishing",  label:"Books & Publishing Rights",sub:"Book catalog, royalty streams, publishing deals" },
+  { id:"intellectual_prop", label:"Intellectual Property",   sub:"Patents, trademarks, licensing revenue, digital catalogs" },
   { id:"equipment",         label:"Equipment / Machinery",   sub:"Industrial or commercial equipment" },
   { id:"precious_metals",   label:"Precious Metals",         sub:"Gold, silver, platinum vault holdings" },
   { id:"affordable_housing",label:"Affordable Housing",      sub:"Community land trust or Section 8" },
@@ -430,6 +432,8 @@ export function AssetOwnerOnboarding({
               {T === "music_royalties" && "Publishing agreements · PRO registration · MLC registration · ISRC/ISWC codes · Royalty statements"}
               {T === "equipment" && "Purchase receipts · Insurance certificate · Maintenance records · Appraisal"}
               {T === "precious_metals" && "Assay certificate · Vault storage agreement · Insurance policy · Chain of custody"}
+                  {T === "books_publishing" && "Publishing agreements · Royalty statements · ISBN list · Distributor statements · Copyright registrations · PRO registration (ASCAP/BMI)"}
+                  {T === "intellectual_prop" && "Patent certificates or filing records · Trademark registrations · License agreements · Revenue statements · Ownership chain"}
               {T === "affordable_housing" && "Ground lease · Subsidy agreements · Inspection reports · Income verification"}
               {T === "other" && "Any documents proving ownership, value, and clear title or rights"}
             </div>

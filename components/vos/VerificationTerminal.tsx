@@ -52,7 +52,7 @@ const InputBar = memo(function InputBar({
   const inp  = useRef<HTMLInputElement>(null);
   const hidx = useRef(-1);
 
-  useEffect(() => { if (!busy) inp.current?.focus(); }, [busy]);
+  useEffect(() => { if (!busy) inp.current?.focus({ preventScroll: true }); }, [busy]);
 
   const fire = useCallback(() => {
     const v = inp.current?.value?.trim() ?? "";
@@ -60,7 +60,7 @@ const InputBar = memo(function InputBar({
     onSubmit(v);
     if (inp.current) inp.current.value = "";
     hidx.current = -1;
-    requestAnimationFrame(() => inp.current?.focus());
+    requestAnimationFrame(() => inp.current?.focus({ preventScroll: true }));
   }, [busy, onSubmit]);
 
   const onKey = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
