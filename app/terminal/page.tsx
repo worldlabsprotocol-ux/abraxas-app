@@ -124,10 +124,17 @@ function TerminalTab() {
   // Fix: VOS terminal input.focus() pulls the page down. Scroll to top on mount.
   useEffect(() => { window.scrollTo({ top:0, behavior:"instant" }); }, []);
 
-  if (deep === "asset")    return <DeepView onBack={() => setDeep("main")}><FlagshipAssetPage /></DeepView>;
-  if (deep === "submit")   return <DeepView onBack={() => setDeep("main")}><AssetOwnerOnboarding onEnterTerminal={() => setDeep("main")} /></DeepView>;
-  if (deep === "trust")    return <DeepView onBack={() => setDeep("main")}><TrustStack /></DeepView>;
-  if (deep === "registry") return <RegistryView onBack={() => setDeep("main")} />;
+  // Single conditional return — eliminates early returns that confuse swc TSX
+  if (deep !== "main") {
+    return (
+      <DeepView onBack={() => setDeep("main")}>
+        {deep === "asset"    && <FlagshipAssetPage />}
+        {deep === "submit"   && <AssetOwnerOnboarding onEnterTerminal={() => setDeep("main")} />}
+        {deep === "trust"    && <TrustStack />}
+        {deep === "registry" && <RegistryView />}
+      </DeepView>
+    );
+  }
 
   // ── MAIN VIEW ──────────────────────────────────────────────────────────────
   return (
