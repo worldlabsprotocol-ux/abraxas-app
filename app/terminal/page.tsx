@@ -113,10 +113,13 @@ function RegistryView({ onBack }: { onBack: () => void }) {
 }
 
 // ── TERMINAL TAB ─────────────────────────────────────────────────────────────
+// Named type alias — swc TSX cannot parse string literals in useState<> generics
+type WyomingTier = "starter" | "growth" | "enterprise";
+
 function TerminalTab() {
   const [deep, setDeep]               = useState<Deep>("main");
   const [wyOpen, setWyOpen]           = useState(false);
-  const [initialTier, setInitialTier] = useState<"starter"|"growth"|"enterprise"|null>(null);
+  const [initialTier, setInitialTier] = useState<WyomingTier | null>(null);
 
   // Fix: VOS terminal input.focus() pulls the page down. Scroll to top on mount.
   useEffect(() => { window.scrollTo({ top:0, behavior:"instant" }); }, []);
