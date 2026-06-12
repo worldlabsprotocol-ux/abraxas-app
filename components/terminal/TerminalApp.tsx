@@ -44,7 +44,7 @@ function Label({ children }: { children: React.ReactNode }) {
 function Divider() { return <div style={{ height:1, background:BDR, margin:"1.5rem 0" }}/>; }
 
 // ── DEEP VIEW WRAPPER ────────────────────────────────────────────────────────
-function DeepView({ children, onBack }: { children: React.ReactNode; onBack(): void }) {
+function DeepView({ children, onBack }: { children: React.ReactNode; onBack: () => void }) {
   return (
     <div>
       <div style={{ padding:"0.75rem clamp(1rem,3vw,1.5rem)",
