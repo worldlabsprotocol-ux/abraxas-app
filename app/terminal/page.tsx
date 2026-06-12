@@ -559,48 +559,242 @@ function TerminalTab() {
             ))}
           </div>
 
-          {/* DeMarko Reddins sample IP showcase */}
-          <div style={{ marginTop:"1rem", padding:"1rem 1.125rem", borderRadius:7,
-                         background:"rgba(59,130,246,0.06)",
-                         border:"1px solid rgba(59,130,246,0.2)" }}>
-            <div style={{ fontFamily:M, fontSize:"0.55rem", color:B,
-                           letterSpacing:"0.14em", textTransform:"uppercase",
-                           marginBottom:"0.5rem" }}>
-              SAMPLE ASSET · BOOKS & PUBLISHING RIGHTS
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between",
-                           alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem" }}>
-              <div>
-                <div style={{ fontFamily:"Georgia,serif",
-                               fontSize:"clamp(0.9rem,2vw,1.1rem)",
-                               fontWeight:700, color:W, marginBottom:"0.25rem" }}>
-                  DeMarko Reddins — Published Catalog
+          {/* AAS-2 and AAS-3 — Literary IP assets */}
+          <div style={{ display:"flex", flexDirection:"column", gap:"1rem",
+                         marginTop:"1rem" }}>
+
+            {/* ── AAS-2: DeMarko Reddins ─────────────────────────────── */}
+            <div style={{ borderRadius:8, overflow:"hidden",
+                           border:"1px solid rgba(99,102,241,0.4)",
+                           background:"linear-gradient(135deg,#0D0F1F 0%,#080810 60%,#0A0C1A 100%)" }}>
+              {/* Visual header */}
+              <div style={{ height:"clamp(120px,18vw,180px)",
+                             background:"linear-gradient(160deg,#0D0F2B 0%,#111328 40%,#0A0C1A 100%)",
+                             position:"relative", overflow:"hidden" }}>
+                {/* Book-spine abstract lines */}
+                {[...Array(6)].map((_,i)=>(
+                  <div key={i} style={{ position:"absolute", top:0, bottom:0,
+                    left:`${12+i*16}%`, width:"1px",
+                    background:`linear-gradient(180deg,transparent,rgba(99,102,241,${0.08+i*0.04}),transparent)` }}/>
+                ))}
+                {[...Array(10)].map((_,i)=>(
+                  <div key={i} style={{ position:"absolute",
+                    top:`${10+(i*19%70)}%`, left:`${(i*31+5)%92}%`,
+                    width:i%4===0?2:1, height:i%4===0?2:1,
+                    borderRadius:"50%", background:"rgba(99,102,241,0.6)" }}/>
+                ))}
+                <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                               background:"linear-gradient(transparent,rgba(4,6,8,0.97))",
+                               padding:"1.5rem 1.125rem 0.875rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                                 color:"#6366F1", letterSpacing:"0.15em",
+                                 textTransform:"uppercase", marginBottom:3 }}>
+                    AAS-2 · LITERARY IP · PUBLISHING RIGHTS
+                  </div>
+                  <div style={{ fontFamily:"Georgia,serif",
+                                 fontSize:"clamp(1rem,2.5vw,1.35rem)",
+                                 fontWeight:700, color:W, lineHeight:1.2 }}>
+                    DeMarko Reddins — Published Catalog
+                  </div>
                 </div>
-                <div style={{ fontFamily:S, fontSize:"0.72rem",
-                               color:"rgba(255,255,255,0.4)", lineHeight:1.6,
-                               maxWidth:460 }}>
-                  Multi-title published author catalog. Royalty streams from Amazon KDP
-                  and global distributors. Eligible for tokenization as an IP-backed RWA —
-                  lending against future royalty income, catalog equity access.
+                <div style={{ position:"absolute", top:10, right:10 }}>
+                  <a href="https://www.amazon.com/stores/DeMarko-Reddins/author/B00JUA0U0G"
+                     target="_blank" rel="noopener noreferrer"
+                     style={{ display:"inline-block", padding:"0.28rem 0.575rem",
+                               borderRadius:4, background:"rgba(0,0,0,0.7)",
+                               border:"1px solid rgba(99,102,241,0.3)",
+                               fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                               color:W, textDecoration:"none", letterSpacing:"0.06em",
+                               textTransform:"uppercase" }}>
+                    VIEW CATALOG ↗
+                  </a>
                 </div>
               </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:"0.375rem",
-                             flexShrink:0 }}>
+              {/* Stats */}
+              <div style={{ display:"grid",
+                             gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",
+                             gap:"1px", background:"#1C2333" }}>
+                {[
+                  ["Asset Class",     "Literary IP"],
+                  ["Rights Type",     "Publishing / Royalties"],
+                  ["Revenue Stream",  "KDP + Distributors"],
+                  ["Collateral Type", "Future Royalty Income"],
+                  ["Status",          "PENDING VERIFICATION"],
+                  ["Max Borrow",      "To be determined"],
+                ].map(([k,v])=>(
+                  <div key={k} style={{ background:CARD, padding:"0.65rem 0.875rem" }}>
+                    <div style={{ fontFamily:M, fontSize:"0.5rem",
+                                   color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                                   letterSpacing:"0.1em", marginBottom:3 }}>{k}</div>
+                    <div style={{ fontFamily:M, fontSize:"0.78rem",
+                                   fontWeight:700, color:"#6366F1" }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding:"0.75rem 1rem", background:"#08090F",
+                             display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
                 <a href="https://www.amazon.com/stores/DeMarko-Reddins/author/B00JUA0U0G"
                    target="_blank" rel="noopener noreferrer"
                    style={{ padding:"0.45rem 0.875rem", borderRadius:4,
-                             border:"1px solid rgba(59,130,246,0.4)", background:"transparent",
-                             color:B, fontFamily:M, fontSize:"0.62rem", fontWeight:700,
-                             textDecoration:"none", letterSpacing:"0.06em",
-                             textTransform:"uppercase", display:"block", textAlign:"center" }}>
+                             border:"1px solid rgba(99,102,241,0.3)", background:"transparent",
+                             color:"#6366F1", fontFamily:M, fontSize:"0.62rem", fontWeight:700,
+                             textDecoration:"none", textTransform:"uppercase",
+                             letterSpacing:"0.08em" }}>
                   VIEW CATALOG ↗
                 </a>
                 <button onClick={() => setDeep("submit")} style={{
                   padding:"0.45rem 0.875rem", borderRadius:4, border:"none",
-                  background:B, color:"#000", fontFamily:M, fontSize:"0.62rem",
-                  fontWeight:900, cursor:"pointer", letterSpacing:"0.06em",
-                  textTransform:"uppercase",
-                }}>TOKENIZE THIS CATALOG →</button>
+                  background:"#6366F1", color:"#fff", fontFamily:M,
+                  fontSize:"0.62rem", fontWeight:900, cursor:"pointer",
+                  textTransform:"uppercase", letterSpacing:"0.08em",
+                }}>SUBMIT FOR TOKENIZATION →</button>
+              </div>
+            </div>
+
+            {/* ── AAS-3: Chancellor K. Jackson — headliner feature first ─── */}
+            {/* 14 Days in Beijing — billboard headliner */}
+            <div style={{ borderRadius:8, overflow:"hidden",
+                           border:"1px solid rgba(245,158,11,0.5)",
+                           background:"linear-gradient(135deg,#1A1200 0%,#0E0900 60%,#0A0800 100%)",
+                           boxShadow:"0 0 40px rgba(245,158,11,0.08)" }}>
+              {/* Billboard hero */}
+              <div style={{ padding:"1.5rem 1.375rem 1.125rem",
+                             borderBottom:"1px solid rgba(245,158,11,0.2)",
+                             background:"linear-gradient(135deg,rgba(245,158,11,0.1),rgba(0,0,0,0))" }}>
+                <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                               color:A, letterSpacing:"0.18em",
+                               textTransform:"uppercase", marginBottom:"0.5rem" }}>
+                  AAS-3 · FEATURED PROJECT · ACTIVE PRODUCTION PIPELINE
+                </div>
+                {/* Big title */}
+                <div style={{ fontFamily:"Georgia,'Times New Roman',serif",
+                               fontSize:"clamp(2rem,7vw,4rem)", fontWeight:700,
+                               color:W, lineHeight:1.0, letterSpacing:"-0.02em",
+                               marginBottom:"0.625rem" }}>
+                  14 Days in Beijing
+                </div>
+                <div style={{ fontFamily:S, fontSize:"clamp(0.78rem,1.8vw,0.92rem)",
+                               color:"rgba(255,255,255,0.5)", lineHeight:1.65,
+                               maxWidth:560, marginBottom:"1rem" }}>
+                  A multi-format IP in active development. Currently in talks with TV and
+                  short film production companies. Animation underway for a manga and anime
+                  series adaptation. Screenwriters engaged for a live theatrical production.
+                  Ongoing production funding in place.
+                </div>
+                {/* Production status badges */}
+                <div style={{ display:"flex", gap:"0.375rem", flexWrap:"wrap",
+                               marginBottom:"1rem" }}>
+                  {[
+                    ["TV / Short Film","IN TALKS",A],
+                    ["Anime Series","ANIMATION IN DEV","#F97316"],
+                    ["Manga","IN PRODUCTION","#EC4899"],
+                    ["Live Play","SCREENPLAY IN PROGRESS","#8B5CF6"],
+                    ["Funding","ACTIVE","#10B981"],
+                  ].map(([label, status, color])=>(
+                    <div key={label} style={{ padding:"0.25rem 0.625rem", borderRadius:3,
+                      background:`${color}12`, border:`1px solid ${color}35`,
+                      display:"flex", alignItems:"center", gap:"0.3rem" }}>
+                      <div style={{ width:5, height:5, borderRadius:"50%",
+                                     background:color, boxShadow:`0 0 4px ${color}` }}/>
+                      <span style={{ fontFamily:M, fontSize:"0.5rem", color:W,
+                                      fontWeight:700, letterSpacing:"0.06em",
+                                      textTransform:"uppercase" }}>
+                        {label}
+                      </span>
+                      <span style={{ fontFamily:M, fontSize:"0.48rem",
+                                      color:color, letterSpacing:"0.06em",
+                                      textTransform:"uppercase" }}>
+                        · {status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontFamily:M, fontSize:"0.6rem",
+                               color:"rgba(245,158,11,0.5)", letterSpacing:"0.1em",
+                               textTransform:"uppercase" }}>
+                  by Chancellor K. Jackson
+                </div>
+              </div>
+
+              {/* Chancellor K. Jackson full catalog section */}
+              <div style={{ borderBottom:"1px solid rgba(245,158,11,0.15)",
+                             overflow:"hidden" }}>
+                {/* Catalog visual header */}
+                <div style={{ height:"clamp(90px,12vw,130px)",
+                               background:"linear-gradient(160deg,#1A1000 0%,#0E0900 100%)",
+                               position:"relative", overflow:"hidden" }}>
+                  {[...Array(8)].map((_,i)=>(
+                    <div key={i} style={{ position:"absolute",
+                      top:`${5+(i*23%80)}%`, left:`${(i*29+3)%94}%`,
+                      width:i%3===0?2:1, height:i%3===0?2:1,
+                      borderRadius:"50%", background:"rgba(245,158,11,0.5)" }}/>
+                  ))}
+                  <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                                 background:"linear-gradient(transparent,rgba(4,4,0,0.97))",
+                                 padding:"1rem 1.125rem 0.75rem" }}>
+                    <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                                   color:A, letterSpacing:"0.15em",
+                                   textTransform:"uppercase", marginBottom:2 }}>
+                      FULL PUBLISHED CATALOG · WORLD LABS PROTOCOL
+                    </div>
+                    <div style={{ fontFamily:"Georgia,serif",
+                                   fontSize:"clamp(0.9rem,2vw,1.1rem)",
+                                   fontWeight:700, color:W }}>
+                      Chancellor K. Jackson — Author Catalog
+                    </div>
+                  </div>
+                  <div style={{ position:"absolute", top:8, right:8 }}>
+                    <a href="https://www.amazon.com/stores/Chancellor-K.-Jackson/author/B086YGY4BM"
+                       target="_blank" rel="noopener noreferrer"
+                       style={{ display:"inline-block", padding:"0.28rem 0.575rem",
+                                 borderRadius:4, background:"rgba(0,0,0,0.75)",
+                                 border:"1px solid rgba(245,158,11,0.3)",
+                                 fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                                 color:W, textDecoration:"none",
+                                 letterSpacing:"0.06em", textTransform:"uppercase" }}>
+                      VIEW CATALOG ↗
+                    </a>
+                  </div>
+                </div>
+                {/* Catalog stats */}
+                <div style={{ display:"grid",
+                               gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",
+                               gap:"1px", background:"#1C2333" }}>
+                  {[
+                    ["Asset Class",    "Literary IP"],
+                    ["Flagship Title", "14 Days in Beijing"],
+                    ["Adaptations",    "4 formats in dev"],
+                    ["Revenue Stream", "KDP + IP licensing"],
+                    ["Status",         "PENDING VERIFICATION"],
+                    ["IP Category",    "Multi-format IP"],
+                  ].map(([k,v])=>(
+                    <div key={k} style={{ background:CARD, padding:"0.65rem 0.875rem" }}>
+                      <div style={{ fontFamily:M, fontSize:"0.5rem",
+                                     color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                                     letterSpacing:"0.1em", marginBottom:3 }}>{k}</div>
+                      <div style={{ fontFamily:M, fontSize:"0.78rem",
+                                     fontWeight:700, color:A }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ padding:"0.75rem 1rem", background:"#08090F",
+                             display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+                <a href="https://www.amazon.com/stores/Chancellor-K.-Jackson/author/B086YGY4BM"
+                   target="_blank" rel="noopener noreferrer"
+                   style={{ padding:"0.45rem 0.875rem", borderRadius:4,
+                             border:`1px solid ${A}40`, background:"transparent",
+                             color:A, fontFamily:M, fontSize:"0.62rem", fontWeight:700,
+                             textDecoration:"none", textTransform:"uppercase",
+                             letterSpacing:"0.08em" }}>
+                  VIEW CATALOG ↗
+                </a>
+                <button onClick={() => setDeep("submit")} style={{
+                  padding:"0.45rem 0.875rem", borderRadius:4, border:"none",
+                  background:A, color:"#000", fontFamily:M, fontSize:"0.62rem",
+                  fontWeight:900, cursor:"pointer", textTransform:"uppercase",
+                  letterSpacing:"0.08em",
+                }}>SUBMIT FOR TOKENIZATION →</button>
               </div>
             </div>
           </div>
@@ -608,9 +802,116 @@ function TerminalTab() {
 
         <Divider/>
 
+        {/* ── WORLD LABS · CREATIVE IP INFRASTRUCTURE ──────────────── */}
+        <div style={{ marginBottom:"1.5rem" }}>
+          <Label>World Labs · Creative IP Infrastructure</Label>
+          {/* World Studios Kansas City */}
+          <div style={{ borderRadius:8, overflow:"hidden",
+                         border:"1px solid rgba(139,92,246,0.35)",
+                         background:"linear-gradient(135deg,#0D0A1A 0%,#080810 60%,#09070F 100%)",
+                         marginBottom:"0.875rem" }}>
+            <div style={{ padding:"1.25rem 1.375rem",
+                           borderBottom:"1px solid rgba(139,92,246,0.15)" }}>
+              <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                             color:"#8B5CF6", letterSpacing:"0.18em",
+                             textTransform:"uppercase", marginBottom:"0.5rem" }}>
+                WORLD LABS STUDIOS · KANSAS CITY, MO · IN DEVELOPMENT
+              </div>
+              <h3 style={{ fontFamily:"Georgia,serif",
+                            fontSize:"clamp(1.2rem,3vw,1.75rem)",
+                            fontWeight:700, color:W, lineHeight:1.2,
+                            letterSpacing:"-0.01em", margin:"0 0 0.625rem" }}>
+                World Studios
+              </h3>
+              <p style={{ fontFamily:S, fontSize:"0.78rem",
+                           color:"rgba(255,255,255,0.45)", lineHeight:1.72,
+                           maxWidth:560, margin:"0 0 1rem" }}>
+                A multi-disciplinary creative hub in Kansas City — photography, live theatre,
+                dance, and a full production studio under one roof. The foundational venue
+                for the World Labs catalog and a live events pipeline generating verifiable
+                IP revenue.
+              </p>
+              <div style={{ display:"grid",
+                             gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",
+                             gap:"0.5rem" }}>
+                {[["Photography Studio","Commercial + editorial"],["Live Theatre","Original productions"],
+                  ["Dance Studio","Classes + performances"],["Production Hub","Film, manga, animation"],
+                  ["IP Catalog Home","World Labs protocols"],["Status","Scouting · In talks"]
+                ].map(([k,v])=>(
+                  <div key={k} style={{ padding:"0.625rem 0.75rem", borderRadius:5,
+                                         background:"rgba(139,92,246,0.07)",
+                                         border:"1px solid rgba(139,92,246,0.2)" }}>
+                    <div style={{ fontFamily:M, fontSize:"0.5rem",
+                                   color:"rgba(139,92,246,0.6)", textTransform:"uppercase",
+                                   letterSpacing:"0.1em", marginBottom:2 }}>{k}</div>
+                    <div style={{ fontFamily:S, fontSize:"0.68rem",
+                                   color:"rgba(255,255,255,0.45)" }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ padding:"0.75rem 1rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", flexWrap:"wrap",
+                           alignItems:"center" }}>
+              <div style={{ fontFamily:M, fontSize:"0.58rem",
+                             color:"rgba(139,92,246,0.5)", letterSpacing:"0.1em",
+                             textTransform:"uppercase" }}>● STUDIO ACQUISITION IN PROGRESS</div>
+              <button onClick={() => setDeep("submit")} style={{
+                padding:"0.45rem 0.875rem", borderRadius:4, border:"none",
+                background:"#8B5CF6", color:"#fff", fontFamily:M, fontSize:"0.62rem",
+                fontWeight:900, cursor:"pointer", textTransform:"uppercase",
+                letterSpacing:"0.08em", marginLeft:"auto",
+              }}>BECOME A PARTNER →</button>
+            </div>
+          </div>
+          {/* LifeWay Live Show IP */}
+          <div style={{ borderRadius:8, padding:"1rem 1.125rem",
+                         border:`1px solid ${G}20`, background:`${G}04` }}>
+            <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                           color:G, letterSpacing:"0.18em", textTransform:"uppercase",
+                           marginBottom:"0.5rem" }}>
+              LIFEWAY · LIVE SHOW IP RIGHTS · IN DISCUSSIONS
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between",
+                           alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem" }}>
+              <div style={{ flex:1, minWidth:220 }}>
+                <div style={{ fontFamily:"Georgia,serif",
+                               fontSize:"clamp(0.9rem,2vw,1.1rem)",
+                               fontWeight:700, color:W, marginBottom:"0.375rem" }}>
+                  Live Show IP Catalog
+                </div>
+                <p style={{ fontFamily:S, fontSize:"0.72rem",
+                             color:"rgba(255,255,255,0.4)", lineHeight:1.65, margin:0 }}>
+                  Discussions underway with LifeWay to acquire live show IP rights and bring
+                  them into the World Labs protocol. Rights-verified performance IP becomes
+                  tokenizable revenue under the Abraxas framework — building catalog depth
+                  before the studio opens.
+                </p>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:"0.375rem", flexShrink:0 }}>
+                <div style={{ padding:"0.3rem 0.75rem", borderRadius:3,
+                               background:`${G}12`, border:`1px solid ${G}30`,
+                               fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                               color:G, letterSpacing:"0.08em", textTransform:"uppercase" }}>
+                  ● IN DISCUSSIONS
+                </div>
+                <button onClick={() => setDeep("submit")} style={{
+                  padding:"0.45rem 0.875rem", borderRadius:4, border:"none",
+                  background:G, color:"#000", fontFamily:M, fontSize:"0.62rem",
+                  fontWeight:900, cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.08em",
+                }}>SUBMIT IP ASSET →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Divider/>
+
+
         {/* ── ASSET REGISTRY ───────────────────────────────────────────────── */}
         <div style={{ marginBottom:"1.5rem" }}>
-          <div style={{ display:"flex", alignItems:"baseline",
+          {/* Registry shows all 3 verified/pending assets */}
+        <div style={{ display:"flex", alignItems:"baseline",
                          justifyContent:"space-between", flexWrap:"wrap",
                          gap:"0.92rem", marginBottom:"1.25rem" }}>
             <Label>Asset Registry</Label>
