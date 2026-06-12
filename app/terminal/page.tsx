@@ -20,6 +20,7 @@ const BG   = "#0A0C10";
 const CARD = "#0D1117";
 const BDR  = "#1C2333";
 const G    = "#10B981";
+const TEAL = "#06B6D4";
 const A    = "#F59E0B";
 const B    = "#3B82F6";
 const W    = "#F8FAFC";
@@ -666,6 +667,64 @@ function TerminalTab() {
               </button>
             </div>
           </div>
+          {/* AAS-4 Smyrna Townhome */}
+          <div style={{ borderRadius:8, overflow:"hidden",
+                         border:`1px solid ${TEAL}55`,
+                         background:"linear-gradient(145deg,#001820 0%,#000F16 100%)" }}>
+            <div style={{ padding:"0.875rem 1rem",
+                           borderBottom:`1px solid ${TEAL}20`,
+                           background:`linear-gradient(135deg,${TEAL}12,rgba(0,0,0,0))` }}>
+              <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                             color:TEAL, letterSpacing:"0.15em",
+                             textTransform:"uppercase", marginBottom:"0.375rem" }}>
+                AAS-4 · REAL ESTATE · INVESTOR PARTICIPATION OPEN
+              </div>
+              <div style={{ fontFamily:"Georgia,serif",
+                             fontSize:"clamp(1rem,2.5vw,1.25rem)",
+                             fontWeight:700, color:W, marginBottom:"0.25rem" }}>
+                Smyrna Townhome
+              </div>
+              <div style={{ fontFamily:S, fontSize:"0.7rem",
+                             color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
+                Smyrna, GA · 6 min from Truist Park / The Battery Atlanta
+                · Paid off · No liens · Chancellor K. Jackson, owner
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
+                           gap:"1px", background:"#1C2333" }}>
+              {[
+                {label:"Asset Class", val:"Residential RE"},
+                {label:"Lien Status", val:"CLEAR — Paid Off"},
+                {label:"Max Borrow",  val:"~60% LTV USDC"},
+                {label:"Status",      val:"PENDING VERIFICATION"},
+              ].map(s => (
+                <div key={s.label} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.48rem",
+                                 color:"rgba(255,255,255,0.25)", textTransform:"uppercase",
+                                 letterSpacing:"0.1em", marginBottom:2 }}>{s.label}</div>
+                  <div style={{ fontFamily:M, fontSize:"0.68rem",
+                                 fontWeight:700, color:TEAL }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", alignItems:"center" }}>
+              <div style={{ padding:"0.2rem 0.5rem", borderRadius:3,
+                             background:`${TEAL}12`, border:`1px solid ${TEAL}30`,
+                             fontFamily:M, fontSize:"0.5rem", fontWeight:700,
+                             color:TEAL, letterSpacing:"0.06em" }}>
+                ● INVESTOR OPEN
+              </div>
+              <button onClick={() => setDeep("submit")}
+                style={{ marginLeft:"auto", padding:"0.35rem 0.75rem", borderRadius:4,
+                          border:"none", background:TEAL, color:"#000",
+                          fontFamily:M, fontSize:"0.58rem", fontWeight:900,
+                          cursor:"pointer", textTransform:"uppercase",
+                          letterSpacing:"0.06em" }}>
+                TOKENIZE →
+              </button>
+            </div>
+          </div>
         </div>
 
         <Divider/>
@@ -974,6 +1033,202 @@ function TerminalTab() {
               </div>
             ))}
           </div>
+
+        <Divider/>
+
+        {/* ── AAS-4: SMYRNA TOWNHOME ──────────────────────────────────── */}
+        <div style={{ marginBottom:"1.5rem" }}>
+          <Label>AAS-4 · Real Estate · Investor Participation Open</Label>
+
+          <div style={{ borderRadius:8, overflow:"hidden",
+                         border:`1px solid ${TEAL}45`,
+                         background:"linear-gradient(135deg,#001F2E 0%,#000F16 60%,#001A24 100%)",
+                         boxShadow:`0 0 40px ${TEAL}08` }}>
+
+            {/* Property visual header */}
+            <div style={{ height:"clamp(160px,22vw,220px)", position:"relative",
+                           overflow:"hidden",
+                           background:"linear-gradient(160deg,#001F2E 0%,#001520 50%,#000C14 100%)" }}>
+              {/* City skyline silhouette */}
+              <svg viewBox="0 0 1200 220" style={{ position:"absolute", bottom:0,
+                left:0, width:"100%", height:"100%", opacity:0.5 }}
+                preserveAspectRatio="none">
+                <path d="M0,220 L0,120 L60,120 L60,80 L80,80 L80,60 L100,60 L100,80
+                         L120,80 L120,100 L160,100 L160,60 L180,60 L180,40 L200,40
+                         L200,60 L220,60 L220,100 L280,100 L280,70 L300,70 L300,50
+                         L320,50 L320,70 L340,70 L340,90 L400,90 L400,110 L480,110
+                         L480,75 L500,75 L500,55 L520,55 L520,75 L540,75 L540,95
+                         L600,95 L600,85 L640,85 L640,65 L660,65 L660,45 L680,45
+                         L680,65 L700,65 L700,85 L760,85 L760,110 L840,110 L840,80
+                         L860,80 L860,60 L880,60 L880,40 L900,40 L900,60 L920,60
+                         L920,80 L960,80 L960,110 L1060,110 L1060,130 L1200,130 L1200,220 Z"
+                  fill="rgba(6,182,212,0.08)"/>
+                <path d="M0,220 L0,155 L100,155 L100,135 L200,135 L200,150 L360,150
+                         L360,130 L460,130 L460,145 L600,145 L600,130 L720,130 L720,148
+                         L900,148 L900,135 L1060,135 L1060,155 L1200,155 L1200,220 Z"
+                  fill="rgba(6,182,212,0.12)"/>
+              </svg>
+              {[...Array(12)].map((_, i) => (
+                <div key={i} style={{ position:"absolute",
+                  top:`${8+(i*17%58)}%`, left:`${(i*29+4)%93}%`,
+                  width:i%3===0?2:1, height:i%3===0?2:1,
+                  borderRadius:"50%", background:`rgba(6,182,212,0.7)` }}/>
+              ))}
+              <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                             background:"linear-gradient(transparent,rgba(0,8,12,0.97))",
+                             padding:"1.5rem 1.25rem 1rem" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
+                               flexWrap:"wrap", marginBottom:"0.375rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                                 color:TEAL, letterSpacing:"0.15em",
+                                 textTransform:"uppercase" }}>
+                    AAS-4 · SMYRNA, GA · REAL ESTATE
+                  </div>
+                  <div style={{ padding:"0.18rem 0.5rem", borderRadius:3,
+                                 background:`${TEAL}18`, border:`1px solid ${TEAL}35`,
+                                 fontFamily:M, fontSize:"0.48rem", fontWeight:700,
+                                 color:TEAL, letterSpacing:"0.08em" }}>
+                    ● INVESTOR PARTICIPATION OPEN
+                  </div>
+                </div>
+                <div style={{ fontFamily:"Georgia,serif",
+                               fontSize:"clamp(1.1rem,3vw,1.6rem)",
+                               fontWeight:700, color:W, lineHeight:1.2 }}>
+                  Smyrna Townhome
+                </div>
+                <div style={{ fontFamily:S, fontSize:"0.72rem",
+                               color:"rgba(255,255,255,0.5)" }}>
+                  Smyrna, Georgia · 6 min from Truist Park / The Battery Atlanta
+                  · Chancellor K. Jackson, owner
+                </div>
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div style={{ display:"grid",
+                           gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",
+                           gap:"1px", background:"#1C2333" }}>
+              {[
+                {label:"Property Type",   val:"Townhome"},
+                {label:"Location",        val:"Smyrna, GA"},
+                {label:"Proximity",       val:"6 min · The Battery"},
+                {label:"Lien Status",     val:"PAID OFF — CLEAR"},
+                {label:"Collateral LTV",  val:"Up to 60%"},
+                {label:"Investor Access", val:"OPEN"},
+              ].map(s => (
+                <div key={s.label} style={{ background:CARD, padding:"0.7rem 0.875rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.5rem",
+                                 color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                                 letterSpacing:"0.1em", marginBottom:3 }}>{s.label}</div>
+                  <div style={{ fontFamily:M, fontSize:"0.78rem",
+                                 fontWeight:700, color:TEAL }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Investment options — since it's paid off, 3 clean paths */}
+            <div style={{ padding:"1.125rem 1.25rem",
+                           borderTop:"1px solid rgba(6,182,212,0.15)",
+                           borderBottom:"1px solid rgba(6,182,212,0.15)" }}>
+              <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                             color:TEAL, letterSpacing:"0.14em",
+                             textTransform:"uppercase", marginBottom:"0.875rem" }}>
+                INVESTMENT STRUCTURES AVAILABLE
+              </div>
+              <div style={{ display:"grid",
+                             gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",
+                             gap:"0.625rem" }}>
+                {[
+                  {
+                    title:"Collateral Loan",
+                    color:TEAL,
+                    badge:"RECOMMENDED",
+                    desc:"Property is paid off — borrow USDC against equity at up to 60% LTV. No sale required. Capital access without giving up ownership.",
+                    note:"~60% of appraised value available",
+                  },
+                  {
+                    title:"Fractional Equity",
+                    color:"#8B5CF6",
+                    badge:"INVESTOR OPTION",
+                    desc:"Tokenize a defined percentage of equity as a Reg D offering. Invite accredited investors. They earn proportional appreciation on exit or sale.",
+                    note:"Owner retains majority + management",
+                  },
+                  {
+                    title:"Rental Income Stream",
+                    color:"#F59E0B",
+                    badge:"STR POTENTIAL",
+                    desc:"Near The Battery Atlanta — strong short-term rental market. Tokenize future rental income. Investors receive monthly USDC distributions.",
+                    note:"Battery proximity = premium STR rates",
+                  },
+                ].map(opt => (
+                  <div key={opt.title} style={{ padding:"0.875rem",
+                    background:"rgba(255,255,255,0.03)",
+                    border:`1px solid ${opt.color}20`,
+                    borderTop:`2px solid ${opt.color}`,
+                    borderRadius:6 }}>
+                    <div style={{ display:"flex", alignItems:"center",
+                                   justifyContent:"space-between", marginBottom:"0.375rem" }}>
+                      <div style={{ fontFamily:M, fontSize:"0.65rem", fontWeight:700,
+                                     color:W }}>{opt.title}</div>
+                      <div style={{ fontFamily:M, fontSize:"0.45rem", fontWeight:700,
+                                     color:opt.color,
+                                     background:`${opt.color}12`,
+                                     border:`1px solid ${opt.color}25`,
+                                     borderRadius:2, padding:"1px 5px",
+                                     letterSpacing:"0.06em" }}>{opt.badge}</div>
+                    </div>
+                    <div style={{ fontFamily:S, fontSize:"0.68rem",
+                                   color:"rgba(255,255,255,0.45)",
+                                   lineHeight:1.6, marginBottom:"0.375rem" }}>
+                      {opt.desc}
+                    </div>
+                    <div style={{ fontFamily:M, fontSize:"0.52rem",
+                                   color:`${opt.color}80`, letterSpacing:"0.06em" }}>
+                      {opt.note}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Why Smyrna / The Battery context */}
+            <div style={{ padding:"0.875rem 1.25rem",
+                           background:"rgba(6,182,212,0.04)" }}>
+              <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                             color:TEAL, letterSpacing:"0.14em",
+                             textTransform:"uppercase", marginBottom:"0.5rem" }}>
+                LOCATION ADVANTAGE
+              </div>
+              <p style={{ fontFamily:S, fontSize:"0.72rem",
+                           color:"rgba(255,255,255,0.45)", lineHeight:1.7, margin:0 }}>
+                Smyrna, GA is one of metro Atlanta&apos;s fastest-appreciating markets.
+                Six minutes from Truist Park and The Battery Atlanta — a $1B+ mixed-use
+                entertainment district generating year-round foot traffic.
+                Strong short-term rental demand, rising long-term comps,
+                and a paid-off property combine to make this one of the cleanest
+                collateral profiles in the Abraxas registry.
+              </p>
+            </div>
+
+            {/* CTAs */}
+            <div style={{ padding:"0.875rem 1rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", flexWrap:"wrap",
+                           alignItems:"center" }}>
+              <button onClick={() => setDeep("submit")} style={{
+                padding:"0.55rem 1.125rem", borderRadius:5, border:"none",
+                background:TEAL, color:"#000", fontFamily:M, fontSize:"0.72rem",
+                fontWeight:900, cursor:"pointer", textTransform:"uppercase",
+                letterSpacing:"0.06em", boxShadow:`0 0 12px ${TEAL}40`,
+              }}>SUBMIT FOR VERIFICATION →</button>
+              <div style={{ fontFamily:M, fontSize:"0.55rem",
+                             color:`rgba(6,182,212,0.5)`,
+                             letterSpacing:"0.08em", textTransform:"uppercase",
+                             marginLeft:"auto" }}>
+                AAS-4 · ABRAXAS PROTOCOL
+              </div>
+            </div>
+          </div>
+        </div>
 
         <Divider/>
 

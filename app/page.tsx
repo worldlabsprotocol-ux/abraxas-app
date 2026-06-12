@@ -32,7 +32,7 @@ export default function Home() {
             stroke={G} strokeWidth="1.5" fill="none"/>
           <polygon points="20,8 32,20 20,32 8,20"
             stroke={G} strokeWidth="1" fill={`${G}12`}/>
-          <circle cx="20" cy="20" r="3" fill={G}
+          <circle cx="20" cy="20" r="4" fill={G}
             style={{ filter:`drop-shadow(0 0 6px ${G})` }}/>
         </svg>
       </div>
