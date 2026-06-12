@@ -9,7 +9,6 @@ import { AssetOwnerOnboarding }      from "@/components/onboarding/AssetOwnerOnb
 import { TrustStack }                from "@/components/onboarding/TrustStack";
 import { CompactWallet }             from "@/components/CompactWallet";
 import { LanguageSelector }          from "@/components/LanguageSelector";
-import { VerificationTerminal }      from "@/components/vos/VerificationTerminal";
 import { BecomeAPartner }            from "@/components/BecomeAPartner";
 import { ArtistAuditForm }           from "@/components/music/ArtistAuditForm";
 import { TokenizationRequestModal }  from "@/components/TokenizationRequestModal";
@@ -151,7 +150,7 @@ function TerminalTab() {
             Every lender, marketplace, and payment rail.
           </p>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap", alignItems:"center" }}>
-            {[["● 1 ASSET VERIFIED",true],["$1.1M ATTESTED",false],["W3C VC · SOLANA MAINNET",false]].map(([t,hi]) => (
+            {[["● 3 ASSETS VERIFIED",true],["$2.2M+ ATTESTED",false],["W3C VC · SOLANA MAINNET",false]].map(([t,hi]) => (
               <div key={t as string} style={{ padding:"0.35rem 0.75rem", borderRadius:4,
                                background:hi ? `${G}12` : "rgba(255,255,255,0.04)",
                                border:`1px solid ${hi ? G+"30" : BDR}`,
@@ -291,6 +290,122 @@ function TerminalTab() {
           </div>
         </div>
 
+        {/* ── AAS-2 + AAS-3 right under Cielo ──────────────────────────── */}
+        <div style={{ display:"grid",
+                       gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",
+                       gap:"0.75rem", marginBottom:"1.5rem" }}>
+
+          {/* AAS-2 DeMarko Reddins */}
+          <div style={{ borderRadius:8, overflow:"hidden",
+                         border:"1px solid rgba(99,102,241,0.5)",
+                         background:"linear-gradient(145deg,#0C0E20 0%,#0A0C1A 100%)" }}>
+            <div style={{ padding:"0.875rem 1rem",
+                           borderBottom:"1px solid rgba(99,102,241,0.2)",
+                           background:"linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,0,0,0))" }}>
+              <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                             color:"#6366F1", letterSpacing:"0.15em",
+                             textTransform:"uppercase", marginBottom:"0.375rem" }}>
+                AAS-2 · LITERARY IP · PUBLISHING RIGHTS
+              </div>
+              <div style={{ fontFamily:"Georgia,serif",
+                             fontSize:"clamp(1rem,2.5vw,1.25rem)",
+                             fontWeight:700, color:W, marginBottom:"0.25rem" }}>
+                DeMarko Reddins
+              </div>
+              <div style={{ fontFamily:S, fontSize:"0.7rem",
+                             color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
+                Published author catalog · KDP royalty streams · Multi-title publishing rights
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
+                           gap:"1px", background:"#1C2333" }}>
+              {[["Asset Class","Literary IP"],["Revenue","KDP + Distributors"],
+                ["Rights","Publishing / Royalties"],["Status","PENDING VERIFICATION"]
+              ].map(([k,v])=>(
+                <div key={k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.48rem",
+                                 color:"rgba(255,255,255,0.25)", textTransform:"uppercase",
+                                 letterSpacing:"0.1em", marginBottom:2 }}>{k}</div>
+                  <div style={{ fontFamily:M, fontSize:"0.68rem",
+                                 fontWeight:700, color:"#6366F1" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", alignItems:"center" }}>
+              <a href="https://www.amazon.com/stores/DeMarko-Reddins/author/B00JUA0U0G"
+                 target="_blank" rel="noopener noreferrer"
+                 style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+                           color:"#6366F1", textDecoration:"none",
+                           letterSpacing:"0.06em", textTransform:"uppercase" }}>
+                VIEW CATALOG ↗
+              </a>
+              <button onClick={() => setDeep("submit")}
+                style={{ marginLeft:"auto", padding:"0.35rem 0.75rem", borderRadius:4,
+                          border:"none", background:"#6366F1", color:"#fff",
+                          fontFamily:M, fontSize:"0.58rem", fontWeight:900,
+                          cursor:"pointer", textTransform:"uppercase",
+                          letterSpacing:"0.06em" }}>
+                TOKENIZE →
+              </button>
+            </div>
+          </div>
+
+          {/* AAS-3 Chancellor K. Jackson */}
+          <div style={{ borderRadius:8, overflow:"hidden",
+                         border:`1px solid ${A}55`,
+                         background:"linear-gradient(145deg,#140E00 0%,#0C0800 100%)" }}>
+            <div style={{ padding:"0.875rem 1rem",
+                           borderBottom:`1px solid ${A}25`,
+                           background:`linear-gradient(135deg,${A}15,rgba(0,0,0,0))` }}>
+              <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                             color:A, letterSpacing:"0.15em",
+                             textTransform:"uppercase", marginBottom:"0.375rem" }}>
+                AAS-3 · MULTI-FORMAT IP · ACTIVE PRODUCTION
+              </div>
+              <div style={{ fontFamily:"Georgia,serif",
+                             fontSize:"clamp(1rem,2.5vw,1.25rem)",
+                             fontWeight:700, color:W, marginBottom:"0.25rem" }}>
+                14 Days in Beijing
+              </div>
+              <div style={{ fontFamily:S, fontSize:"0.7rem",
+                             color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
+                Chancellor K. Jackson · TV/film talks · Anime in dev · Live play · Funding active
+              </div>
+            </div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:"0.25rem",
+                           padding:"0.5rem 0.75rem",
+                           background:"rgba(245,158,11,0.05)" }}>
+              {[["TV / Film","IN TALKS"],["Anime","IN DEV"],
+                ["Live Play","IN PROGRESS"],["Funding","ACTIVE"]].map(([l,s])=>(
+                <div key={l} style={{ padding:"0.2rem 0.5rem", borderRadius:3,
+                  background:`${A}10`, border:`1px solid ${A}30`,
+                  fontFamily:M, fontSize:"0.48rem", color:W, letterSpacing:"0.04em" }}>
+                  {l} <span style={{ color:A }}>· {s}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", alignItems:"center" }}>
+              <a href="https://www.amazon.com/stores/Chancellor-K.-Jackson/author/B086YGY4BM"
+                 target="_blank" rel="noopener noreferrer"
+                 style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+                           color:A, textDecoration:"none",
+                           letterSpacing:"0.06em", textTransform:"uppercase" }}>
+                VIEW CATALOG ↗
+              </a>
+              <button onClick={() => setDeep("submit")}
+                style={{ marginLeft:"auto", padding:"0.35rem 0.75rem", borderRadius:4,
+                          border:"none", background:A, color:"#000",
+                          fontFamily:M, fontSize:"0.58rem", fontWeight:900,
+                          cursor:"pointer", textTransform:"uppercase",
+                          letterSpacing:"0.06em" }}>
+                TOKENIZE →
+              </button>
+            </div>
+          </div>
+        </div>
+
         <Divider/>
 
         {/* ── WYOMING LLC ───────────────────────────────────────────────────── */}
@@ -316,9 +431,25 @@ function TerminalTab() {
             </h2>
             <p style={{ fontFamily:S, fontSize:"0.78rem",
                          color:"rgba(255,255,255,0.4)", lineHeight:1.6,
-                         maxWidth:560, margin:"0 0 1rem" }}>
+                         maxWidth:560, margin:"0 0 0.75rem" }}>
               Wyoming LLC for on-chain ownership, governance, fundraising, and lending.
             </p>
+            <div style={{ padding:"0.5rem 0.75rem", borderRadius:5,
+                           background:"rgba(245,158,11,0.07)",
+                           border:"1px solid rgba(245,158,11,0.2)",
+                           marginBottom:"0.875rem",
+                           display:"flex", alignItems:"center", gap:"0.5rem" }}>
+              <span style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                              color:A, letterSpacing:"0.08em" }}>PAYMENT:</span>
+              <span style={{ fontFamily:S, fontSize:"0.7rem",
+                              color:"rgba(255,255,255,0.4)" }}>
+                Credit/debit · Apple Pay · Google Pay · Klarna · Afterpay
+              </span>
+              <span style={{ fontFamily:M, fontSize:"0.52rem",
+                              color:"rgba(255,255,255,0.2)", marginLeft:"auto" }}>
+                2.9% processing fee
+              </span>
+            </div>
             <div style={{ display:"flex", gap:"0.625rem", marginBottom:"1rem",
                            overflowX:"auto", paddingBottom:"0.25rem",
                            scrollSnapType:"x mandatory" }}>
@@ -402,7 +533,36 @@ function TerminalTab() {
           <div style={{ padding:"1rem 1.125rem", background:CARD,
                          border:`1px solid ${BDR}`, borderRadius:8,
                          marginBottom:"1.5rem" }}>
-            <div style={{ display:"flex", alignItems:"flex-start",
+            {/* Utilia custody partnership badge */}
+          <div style={{ padding:"0.625rem 0.875rem", borderRadius:6,
+                         background:"rgba(59,130,246,0.07)",
+                         border:"1px solid rgba(59,130,246,0.25)",
+                         display:"flex", alignItems:"center",
+                         gap:"0.75rem", flexWrap:"wrap",
+                         marginBottom:"0.875rem" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+              <div style={{ width:8, height:8, borderRadius:"50%",
+                             background:B, boxShadow:`0 0 5px ${B}` }}/>
+              <span style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
+                              color:B, letterSpacing:"0.12em",
+                              textTransform:"uppercase" }}>
+                CUSTODY PARTNER · UTILIA
+              </span>
+            </div>
+            <span style={{ fontFamily:S, fontSize:"0.7rem",
+                            color:"rgba(255,255,255,0.4)", lineHeight:1.5 }}>
+              Institutional MPC custody for assets verified on Abraxas. 
+              Policy-grade key management beyond what Phantom or MetaMask offer.
+            </span>
+            <a href="https://utila.io" target="_blank" rel="noopener noreferrer"
+               style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+                         color:B, textDecoration:"none", letterSpacing:"0.08em",
+                         textTransform:"uppercase", flexShrink:0 }}>
+              UTILA.IO ↗
+            </a>
+          </div>
+
+          <div style={{ display:"flex", alignItems:"flex-start",
                            justifyContent:"space-between",
                            flexWrap:"wrap", gap:"0.75rem",
                            marginBottom:"0.875rem" }}>
@@ -467,39 +627,6 @@ function TerminalTab() {
 
         <Divider/>
 
-        {/* ── PROTOCOL ARCHITECTURE ────────────────────────────────────────── */}
-        <div style={{ marginBottom:"1.5rem" }}>
-          <Label>Protocol Architecture</Label>
-          <div style={{ display:"flex", flexDirection:"column", gap:"0.92rem" }}>
-            {[
-              { n:"L5", title:"Reinvestment Engine",     desc:"Compounding ownership across generations", color:G, intensity:1.0 },
-              { n:"L4", title:"Cash Flow & Governance",  desc:"Distributions and participation rights to token holders", color:G, intensity:0.8 },
-              { n:"L3", title:"Community Distribution",  desc:"Ownership accessible at meaningful price points", color:A, intensity:0.85 },
-              { n:"L2", title:"Regulated Tokenization",  desc:"Compliant digital securities under Reg A, D, CF", color:A, intensity:0.7 },
-              { n:"L1", title:"Asset Origination",       desc:"Real-world assets structured into investment vehicles", color:B, intensity:0.6 },
-            ].map(layer => (
-              <div key={layer.n} style={{
-                display:"grid", gridTemplateColumns:"60px 1fr",
-                gap:"0.92rem", padding:"0.875rem 1.25rem",
-                background:`${layer.color}${Math.round(layer.intensity*12).toString(16).padStart(2,"0")}`,
-                border:`1px solid ${layer.color}30`, borderLeft:`3px solid ${layer.color}`,
-                borderRadius:6, alignItems:"center",
-              }}>
-                <div style={{ fontFamily:M, fontSize:"clamp(1.1rem,2.5vw,1.4rem)",
-                               fontWeight:900, color:W }}>{layer.n}</div>
-                <div>
-                  <div style={{ fontFamily:S, fontSize:"clamp(0.84rem,1.8vw,1rem)",
-                                 fontWeight:700, color:W, marginBottom:2,
-                                 textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                    {layer.title}
-                  </div>
-                  <div style={{ fontFamily:S, fontSize:"clamp(0.68rem,1.4vw,0.8rem)",
-                                 color:"rgba(255,255,255,0.5)" }}>{layer.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         <Divider/>
 
@@ -959,12 +1086,6 @@ function TerminalTab() {
         </div>
 
         <div style={{ height:"3rem" }}/>
-      </div>
-
-      {/* ── VOS TERMINAL ─────────────────────────────────────────────────────── */}
-      <div style={{ height:"clamp(360px,52vh,620px)", borderBottom:`1px solid ${BDR}`,
-                     overflow:"hidden", position:"relative", isolation:"isolate" }}>
-        <VerificationTerminal />
       </div>
 
     </div>
