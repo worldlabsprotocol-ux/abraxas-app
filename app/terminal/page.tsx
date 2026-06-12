@@ -155,7 +155,7 @@ function TerminalTab() {
             Every lender, marketplace, and payment rail.
           </p>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap", alignItems:"center" }}>
-            {[["● 3 ASSETS VERIFIED",true],["$2.2M+ ATTESTED",false],["W3C VC · SOLANA MAINNET",false]].map((item: [string,boolean]) => (
+            {[["● 4 ASSETS VERIFIED",true],["$2.4M+ ATTESTED",false],["W3C VC · SOLANA MAINNET",false]].map((item: [string,boolean]) => (
               <div key={item[0]} style={{ padding:"0.35rem 0.75rem", borderRadius:4,
                                background:hi ? `${G}12` : "rgba(255,255,255,0.04)",
                                border:`1px solid ${hi ? G+"30" : BDR}`,
@@ -402,6 +402,263 @@ function TerminalTab() {
               <button onClick={() => setDeep("submit")}
                 style={{ marginLeft:"auto", padding:"0.35rem 0.75rem", borderRadius:4,
                           border:"none", background:A, color:"#000",
+                          fontFamily:M, fontSize:"0.58rem", fontWeight:900,
+                          cursor:"pointer", textTransform:"uppercase",
+                          letterSpacing:"0.06em" }}>
+                TOKENIZE →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── AAS-4: Smyrna Townhome ─────────────────────────────── */}
+        <div style={{ marginBottom:"1.5rem" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
+                         marginBottom:"0.875rem" }}>
+            <div style={{ width:3, height:18, background:"#DC2626", borderRadius:2,
+                           boxShadow:"0 0 6px rgba(220,38,38,0.6)" }}/>
+            <span style={{ fontFamily:M, fontSize:"clamp(0.78rem,1.8vw,0.92rem)",
+                            fontWeight:800, color:"#DC2626", letterSpacing:"0.16em",
+                            textTransform:"uppercase" }}>
+              AAS-4 · RESIDENTIAL REAL ESTATE
+            </span>
+            <span style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                            color:"#DC2626", background:"rgba(220,38,38,0.12)",
+                            border:"1px solid rgba(220,38,38,0.3)", borderRadius:3,
+                            padding:"1px 7px", letterSpacing:"0.08em",
+                            textTransform:"uppercase" }}>
+              EQUITY OPEN
+            </span>
+          </div>
+
+          <div style={{ borderRadius:8, overflow:"hidden",
+                         border:"1px solid rgba(220,38,38,0.4)",
+                         background:"linear-gradient(145deg,#1A0808 0%,#0E0606 60%,#0A0404 100%)" }}>
+
+            {/* Visual header — Atlanta skyline / urban feel */}
+            <div style={{ height:"clamp(160px,25vw,240px)",
+                           background:"linear-gradient(160deg,#1A0A0A 0%,#120808 40%,#0A0606 100%)",
+                           position:"relative", overflow:"hidden" }}>
+              {/* City grid lines — urban residential feel */}
+              {[...Array(8)].map((_,i) => (
+                <div key={i} style={{ position:"absolute",
+                  left:`${10+i*12}%`, top:0, bottom:0, width:"1px",
+                  background:`linear-gradient(180deg,transparent,rgba(220,38,38,${0.05+i%3*0.03}),transparent)` }}/>
+              ))}
+              {[...Array(5)].map((_,i) => (
+                <div key={i} style={{ position:"absolute",
+                  top:`${15+i*18}%`, left:0, right:0, height:"1px",
+                  background:`rgba(220,38,38,${0.04+i*0.02})` }}/>
+              ))}
+              {/* Rooftop silhouette */}
+              <svg viewBox="0 0 1200 240"
+                style={{ position:"absolute", bottom:0, left:0, width:"100%", height:"60%",
+                          opacity:0.35 }} preserveAspectRatio="none">
+                <path d="M0,240 L0,180 L60,160 L80,140 L100,160 L160,160 L180,130
+                         L200,160 L260,155 L280,120 L300,155 L380,155 L400,140
+                         L420,155 L500,150 L520,110 L540,150 L620,148 L640,130
+                         L660,148 L720,145 L740,100 L760,145 L840,142 L860,120
+                         L880,142 L940,140 L960,115 L980,140 L1060,138 L1080,125
+                         L1100,138 L1200,135 L1200,240 Z"
+                  fill="rgba(220,38,38,0.25)"/>
+              </svg>
+              {/* Stars */}
+              {[...Array(12)].map((_,i) => (
+                <div key={i} style={{ position:"absolute",
+                  top:`${5+(i*19%45)}%`, left:`${(i*31+7)%92}%`,
+                  width:i%4===0?2:1, height:i%4===0?2:1,
+                  borderRadius:"50%", background:"rgba(255,255,255,0.5)" }}/>
+              ))}
+              {/* Overlay content */}
+              <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                             background:"linear-gradient(transparent,rgba(4,2,2,0.97))",
+                             padding:"1.5rem 1.25rem 1rem" }}>
+                <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                               color:"#DC2626", letterSpacing:"0.15em",
+                               textTransform:"uppercase", marginBottom:3 }}>
+                  AAS-4 · PAID OFF · EQUITY TOKENIZATION ELIGIBLE
+                </div>
+                <div style={{ fontFamily:"Georgia,serif",
+                               fontSize:"clamp(1.1rem,3vw,1.6rem)",
+                               fontWeight:700, color:W, lineHeight:1.2, marginBottom:4 }}>
+                  Smyrna Townhome
+                </div>
+                <div style={{ fontFamily:S, fontSize:"0.75rem",
+                               color:"rgba(255,255,255,0.5)" }}>
+                  Smyrna, GA · Cumberland District ·
+                  6 min from Truist Park · Owner: Chancellor K. Jackson
+                </div>
+              </div>
+              {/* Braves proximity badge */}
+              <div style={{ position:"absolute", top:12, right:12 }}>
+                <div style={{ padding:"0.28rem 0.625rem", borderRadius:4,
+                               background:"rgba(0,0,0,0.75)",
+                               backdropFilter:"blur(4px)",
+                               border:"1px solid rgba(220,38,38,0.4)",
+                               fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                               color:W, letterSpacing:"0.06em",
+                               textTransform:"uppercase" }}>
+                  ⚾ 6 MIN · TRUIST PARK
+                </div>
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div style={{ display:"grid",
+                           gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",
+                           gap:"1px", background:"#1C2333" }}>
+              {[
+                {label:"Property Type",    val:"Residential Townhome"},
+                {label:"Location",         val:"Smyrna, GA 30080"},
+                {label:"Lien Status",      val:"PAID OFF · $0 Owed"},
+                {label:"Equity Position",  val:"100% Owner Equity"},
+                {label:"Investment Status",val:"OPEN TO INVESTORS"},
+                {label:"Asset Owner",      val:"Chancellor K. Jackson"},
+              ].map(s => (
+                <div key={s.label} style={{ background:CARD, padding:"0.75rem 0.875rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.5rem",
+                                 color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                                 letterSpacing:"0.1em", marginBottom:3 }}>{s.label}</div>
+                  <div style={{ fontFamily:M, fontSize:"0.72rem",
+                                 fontWeight:700, color:"#DC2626" }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Equity structure explanation */}
+            <div style={{ padding:"1rem 1.125rem",
+                           borderBottom:"1px solid rgba(220,38,38,0.15)",
+                           background:"rgba(220,38,38,0.04)" }}>
+              <div style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+                             color:"#DC2626", letterSpacing:"0.14em",
+                             textTransform:"uppercase", marginBottom:"0.625rem" }}>
+                INVESTMENT STRUCTURE · PAID-OFF EQUITY
+              </div>
+              <p style={{ fontFamily:S, fontSize:"0.75rem",
+                           color:"rgba(255,255,255,0.5)", lineHeight:1.72,
+                           margin:"0 0 0.875rem", maxWidth:560 }}>
+                Because this property carries zero mortgage debt, the owner holds
+                100% of the equity. Abraxas enables three distinct paths for
+                investor access without the owner relinquishing title or occupancy rights.
+              </p>
+              <div style={{ display:"grid",
+                             gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",
+                             gap:"0.5rem" }}>
+                {[
+                  {
+                    label:"Fractional Equity Token",
+                    desc:"Sell a defined % of home equity to investors as on-chain tokens. Upon future sale, token holders receive proportional proceeds. Owner retains full use and title.",
+                    color:"#DC2626",
+                    tag:"RECOMMENDED",
+                  },
+                  {
+                    label:"On-Chain Equity Loan",
+                    desc:"Borrow USDC against the property's appraised value (50–60% LTV). No credit check — the asset is the collateral. Repay on your terms.",
+                    color:G,
+                    tag:"LIQUIDITY",
+                  },
+                  {
+                    label:"Renovation Partnership",
+                    desc:"Investors fund improvements in exchange for an equity stake. Property appreciates. Investors earn upside on resale. Owner's basis increases.",
+                    color:B,
+                    tag:"GROWTH",
+                  },
+                ].map(opt => (
+                  <div key={opt.label} style={{ padding:"0.75rem",
+                                                  background:"rgba(255,255,255,0.03)",
+                                                  border:`1px solid ${opt.color}25`,
+                                                  borderTop:`2px solid ${opt.color}`,
+                                                  borderRadius:5 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between",
+                                   alignItems:"center", marginBottom:"0.375rem" }}>
+                      <div style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
+                                     color:opt.color, textTransform:"uppercase",
+                                     letterSpacing:"0.08em" }}>{opt.label}</div>
+                      <div style={{ fontFamily:M, fontSize:"0.48rem", fontWeight:700,
+                                     color:opt.color, background:`${opt.color}12`,
+                                     borderRadius:2, padding:"1px 5px",
+                                     letterSpacing:"0.06em" }}>{opt.tag}</div>
+                    </div>
+                    <div style={{ fontFamily:S, fontSize:"0.68rem",
+                                   color:"rgba(255,255,255,0.4)", lineHeight:1.6 }}>
+                      {opt.desc}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div style={{ padding:"0.875rem 1rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", flexWrap:"wrap",
+                           alignItems:"center" }}>
+              <button onClick={() => setDeep("submit")} style={{
+                padding:"0.5rem 1rem", borderRadius:5, border:"none",
+                background:"#DC2626", color:"#fff", fontFamily:M,
+                fontSize:"0.68rem", fontWeight:900, cursor:"pointer",
+                textTransform:"uppercase", letterSpacing:"0.08em",
+                boxShadow:"0 0 16px rgba(220,38,38,0.4)",
+              }}>SUBMIT FOR VERIFICATION →</button>
+              <button onClick={() => setDeep("submit")} style={{
+                padding:"0.5rem 1rem", borderRadius:5,
+                border:"1px solid rgba(220,38,38,0.35)", background:"transparent",
+                color:"#DC2626", fontFamily:M, fontSize:"0.68rem", fontWeight:700,
+                cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.08em",
+              }}>EXPLORE INVESTOR ACCESS</button>
+              <span style={{ fontFamily:M, fontSize:"0.55rem",
+                              color:"rgba(255,255,255,0.2)", marginLeft:"auto" }}>
+                USDC · SOLANA · COLLATERAL ELIGIBLE
+              </span>
+            </div>
+          </div>
+          {/* AAS-4 Smyrna Townhome — mini card */}
+          <div style={{ borderRadius:8, overflow:"hidden",
+                         border:"1px solid rgba(220,38,38,0.45)",
+                         background:"linear-gradient(145deg,#1A0808 0%,#0A0404 100%)" }}>
+            <div style={{ padding:"0.875rem 1rem",
+                           borderBottom:"1px solid rgba(220,38,38,0.2)",
+                           background:"linear-gradient(135deg,rgba(220,38,38,0.12),rgba(0,0,0,0))" }}>
+              <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                             color:"#DC2626", letterSpacing:"0.15em",
+                             textTransform:"uppercase", marginBottom:"0.375rem" }}>
+                AAS-4 · RESIDENTIAL · EQUITY OPEN
+              </div>
+              <div style={{ fontFamily:"Georgia,serif",
+                             fontSize:"clamp(1rem,2.5vw,1.25rem)",
+                             fontWeight:700, color:W, marginBottom:"0.25rem" }}>
+                Smyrna Townhome
+              </div>
+              <div style={{ fontFamily:S, fontSize:"0.7rem",
+                             color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
+                Smyrna, GA · Paid Off · 6 min Truist Park ·
+                Chancellor K. Jackson
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
+                           gap:"1px", background:"#1C2333" }}>
+              {[
+                {label:"Liens",   val:"$0 · Paid Off"},
+                {label:"Equity",  val:"100% Owner"},
+                {label:"Status",  val:"Investor Open"},
+                {label:"Owner",   val:"C.K. Jackson"},
+              ].map(s => (
+                <div key={s.label} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
+                  <div style={{ fontFamily:M, fontSize:"0.48rem",
+                                 color:"rgba(255,255,255,0.25)", textTransform:"uppercase",
+                                 letterSpacing:"0.1em", marginBottom:2 }}>{s.label}</div>
+                  <div style={{ fontFamily:M, fontSize:"0.68rem",
+                                 fontWeight:700, color:"#DC2626" }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+                           display:"flex", gap:"0.5rem", alignItems:"center" }}>
+              <span style={{ fontFamily:M, fontSize:"0.55rem",
+                              color:"rgba(220,38,38,0.5)", letterSpacing:"0.08em",
+                              textTransform:"uppercase" }}>⚾ 6 MIN · TRUIST PARK</span>
+              <button onClick={() => setDeep("submit")}
+                style={{ marginLeft:"auto", padding:"0.35rem 0.75rem", borderRadius:4,
+                          border:"none", background:"#DC2626", color:"#fff",
                           fontFamily:M, fontSize:"0.58rem", fontWeight:900,
                           cursor:"pointer", textTransform:"uppercase",
                           letterSpacing:"0.06em" }}>

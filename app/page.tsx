@@ -60,8 +60,8 @@ export default function Home() {
                      width:"min(380px,90vw)", marginBottom:"2rem",
                      border:"1px solid #1C2333" }}>
         {[
-          ["3",     "Assets Verified"],
-          ["$2.2M+","Value Attested"],
+          ["4",     "Assets Verified"],
+          ["$2.4M+","Value Attested"],
           ["W3C",   "VC Standard"],
         ].map(([val,label]) => (
           <div key={label} style={{ background:"#0D1117",
