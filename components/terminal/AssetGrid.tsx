@@ -179,48 +179,146 @@ export function AssetGrid({ onViewRegistry, onViewAsset, onSubmit }: AssetGridPr
           </div>
         </div>
 
-        {/* AAS-3 Chancellor K. Jackson */}
+        {/* AAS-3 Chancellor K. Jackson — 14 Days in Beijing */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${A}55`,
-                       background:"linear-gradient(145deg,#140E00 0%,#0C0800 100%)" }}>
-          <div style={{ padding:"0.875rem 1rem",
-                         borderBottom:`1px solid ${A}25`,
-                         background:`linear-gradient(135deg,${A}15,rgba(0,0,0,0))` }}>
-            <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
+                       background:"linear-gradient(145deg,#140E00 0%,#0C0800 100%)",
+                       gridColumn:"span 1" }}>
+          {/* Billboard header */}
+          <div style={{ padding:"1rem 1rem 0.75rem",
+                         borderBottom:`1px solid ${A}20`,
+                         background:`linear-gradient(135deg,${A}12,rgba(0,0,0,0))` }}>
+            <div style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
                            color:A, letterSpacing:"0.15em",
                            textTransform:"uppercase", marginBottom:"0.375rem" }}>
-              AAS-3 · MULTI-FORMAT IP · ACTIVE PRODUCTION
+              AAS-3 · CHANCELLOR K. JACKSON · MULTI-FORMAT IP
             </div>
             <div style={{ fontFamily:"Georgia,serif",
-                           fontSize:"clamp(1rem,2.5vw,1.25rem)",
-                           fontWeight:700, color:W, marginBottom:"0.25rem" }}>
+                           fontSize:"clamp(1.2rem,3vw,1.6rem)",
+                           fontWeight:700, color:W, lineHeight:1.1,
+                           marginBottom:"0.25rem" }}>
               14 Days in Beijing
             </div>
-            <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
-              Chancellor K. Jackson · TV/film talks · Anime in dev · Live play · Funding active
+            <div style={{ fontFamily:S, fontSize:"0.68rem",
+                           color:"rgba(255,255,255,0.4)", lineHeight:1.5,
+                           marginBottom:"0.625rem" }}>
+              Completed scripts across multiple formats.
+              Series acquisition discussions active with production partners.
+            </div>
+
+            {/* Script inventory */}
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.3rem",
+                           marginBottom:"0.625rem" }}>
+              {[
+                { label:"TV Pilot — Live Action", detail:"13 episodes · 1 hour per episode · Script complete", color:"#F97316" },
+                { label:"Anime Series", detail:"17 episodes · 25 minutes per episode · Script complete", color:"#EC4899" },
+              ].map(s => (
+                <div key={s.label}
+                  style={{ padding:"0.4rem 0.625rem", borderRadius:4,
+                            background:`${s.color}08`,
+                            border:`1px solid ${s.color}25`,
+                            display:"flex", justifyContent:"space-between",
+                            alignItems:"center", gap:"0.5rem" }}>
+                  <div>
+                    <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
+                                   color:s.color, letterSpacing:"0.06em" }}>
+                      {s.label}
+                    </div>
+                    <div style={{ fontFamily:S, fontSize:"0.6rem",
+                                   color:"rgba(255,255,255,0.35)" }}>
+                      {s.detail}
+                    </div>
+                  </div>
+                  <div style={{ padding:"0.15rem 0.4rem", borderRadius:2,
+                                 background:`${s.color}15`,
+                                 border:`1px solid ${s.color}30`,
+                                 fontFamily:M, fontSize:"0.44rem", fontWeight:700,
+                                 color:s.color, letterSpacing:"0.06em",
+                                 flexShrink:0, whiteSpace:"nowrap" }}>
+                    COMPLETE
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:"0.25rem",
-                         padding:"0.5rem 0.75rem",
-                         background:"rgba(245,158,11,0.05)" }}>
-            {["TV / Film · IN TALKS","Anime · IN DEV",
-              "Live Play · IN PROGRESS","Funding · ACTIVE"
-            ].map(tag => (
-              <div key={tag}
-                style={{ padding:"0.2rem 0.5rem", borderRadius:3,
-                          background:`${A}10`, border:`1px solid ${A}30`,
-                          fontFamily:M, fontSize:"0.48rem",
-                          color:W, letterSpacing:"0.04em" }}>
-                {tag}
-              </div>
-            ))}
+
+          {/* Animated production roadmap */}
+          <div style={{ padding:"0.625rem 0.875rem",
+                         background:"rgba(245,158,11,0.04)",
+                         borderBottom:`1px solid rgba(245,158,11,0.1)` }}>
+            <div style={{ fontFamily:M, fontSize:"0.48rem", color:`${A}60`,
+                           letterSpacing:"0.12em", textTransform:"uppercase",
+                           marginBottom:"0.5rem" }}>
+              PRODUCTION ROADMAP
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:0,
+                           overflowX:"auto", paddingBottom:"0.25rem" }}>
+              {[
+                { label:"Script",        status:"done",    color:A },
+                { label:"Pilot",         status:"active",  color:"#F97316" },
+                { label:"Acquisition",   status:"active",  color:"#F97316" },
+                { label:"Animation",     status:"active",  color:"#EC4899" },
+                { label:"Live Play",     status:"pending", color:"#8B5CF6" },
+                { label:"Distribution",  status:"pending", color:"#3B82F6" },
+              ].map((step, i, arr) => (
+                <div key={step.label}
+                  style={{ display:"flex", alignItems:"center", gap:0,
+                            flexShrink:0 }}>
+                  <div style={{ display:"flex", flexDirection:"column",
+                                 alignItems:"center", gap:"0.2rem" }}>
+                    {/* Animated dot */}
+                    <div style={{ position:"relative", width:10, height:10 }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%",
+                                     background: step.status === "done"
+                                       ? step.color
+                                       : step.status === "active"
+                                         ? `${step.color}40`
+                                         : "rgba(255,255,255,0.1)",
+                                     border: `1.5px solid ${step.status === "pending" ? "rgba(255,255,255,0.15)" : step.color}`,
+                                     boxShadow: step.status === "active"
+                                       ? `0 0 0 3px ${step.color}20`
+                                       : step.status === "done"
+                                         ? `0 0 6px ${step.color}60`
+                                         : "none",
+                                     position:"relative",
+                                     animation: step.status === "active"
+                                       ? "pulse-dot 1.8s ease-in-out infinite"
+                                       : "none" }}/>
+                    </div>
+                    <div style={{ fontFamily:M, fontSize:"0.42rem",
+                                   color: step.status === "pending"
+                                     ? "rgba(255,255,255,0.2)"
+                                     : step.color,
+                                   letterSpacing:"0.04em",
+                                   textAlign:"center", whiteSpace:"nowrap" }}>
+                      {step.label}
+                    </div>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div style={{ width:18, height:1, flexShrink:0,
+                                   background: i < 2
+                                     ? `${A}40`
+                                     : "rgba(255,255,255,0.08)",
+                                   margin:"0 0 1rem" }} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <style>{`
+              @keyframes pulse-dot {
+                0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,0.4)}
+                50%{box-shadow:0 0 0 5px rgba(249,115,22,0)}
+              }
+            `}</style>
           </div>
+
+          {/* CTA row */}
           <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
-                         display:"flex", gap:"0.5rem", alignItems:"center" }}>
+                         display:"flex", gap:"0.5rem", alignItems:"center",
+                         flexWrap:"wrap" }}>
             <a href="https://www.amazon.com/stores/Chancellor-K.-Jackson/author/B086YGY4BM"
                target="_blank" rel="noopener noreferrer"
-               style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+               style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
                          color:A, textDecoration:"none",
                          letterSpacing:"0.06em", textTransform:"uppercase" }}>
               VIEW CATALOG
@@ -229,9 +327,9 @@ export function AssetGrid({ onViewRegistry, onViewAsset, onSubmit }: AssetGridPr
               style={{ marginLeft:"auto", padding:"0.35rem 0.75rem",
                         borderRadius:4, border:"none",
                         background:A, color:"#000", fontFamily:M,
-                        fontSize:"0.58rem", fontWeight:900, cursor:"pointer",
+                        fontSize:"0.55rem", fontWeight:900, cursor:"pointer",
                         textTransform:"uppercase", letterSpacing:"0.06em" }}>
-              TOKENIZE
+              TOKENIZE IP
             </button>
           </div>
         </div>
