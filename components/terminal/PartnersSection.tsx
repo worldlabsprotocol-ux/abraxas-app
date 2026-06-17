@@ -3,11 +3,12 @@
 
 import { BecomeAPartner } from "@/components/BecomeAPartner";
 import { M, S, G, B, W, BDR, CARD } from "./tokens";
-import { Label } from "./ui";
+import { Label, Button, ScrollFade } from "./ui";
 
 export function PartnersSection() {
   return (
     <div style={{ marginBottom:"1.5rem" }}>
+      <ScrollFade>
       <Label>Verification Partners</Label>
       <div style={{ padding:"1rem 1.125rem", background:CARD,
                      border:`1px solid ${BDR}`, borderRadius:8,
@@ -33,13 +34,9 @@ export function PartnersSection() {
             Institutional MPC custody for assets verified on Abraxas.
             Policy-grade key management beyond Phantom or MetaMask.
           </span>
-          <a href="https://utila.io" target="_blank" rel="noopener noreferrer"
-             style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
-                       color:B, textDecoration:"none",
-                       letterSpacing:"0.08em", textTransform:"uppercase",
-                       flexShrink:0 }}>
+          <Button href="https://utila.io" variant="outline" color={B} size="sm">
             UTILA.IO
-          </a>
+          </Button>
         </div>
         <div style={{ display:"flex", alignItems:"flex-start",
                        justifyContent:"space-between",
@@ -52,7 +49,7 @@ export function PartnersSection() {
             <p style={{ fontFamily:S, fontSize:"0.75rem",
                          color:"rgba(255,255,255,0.45)", lineHeight:1.65,
                          maxWidth:520, margin:0 }}>
-              Abraxas partners are the trusted professionals behind every verified asset —
+              Abraxas partners are the trusted professionals behind every verified asset,
               appraisers, attorneys, title companies, and auditors who validate the
               claims that make on-chain collateral real.
             </p>
@@ -60,6 +57,7 @@ export function PartnersSection() {
           <BecomeAPartner />
         </div>
       </div>
+      </ScrollFade>
     </div>
   );
 }

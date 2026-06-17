@@ -3,7 +3,7 @@
 // Wyoming LLC formation tiers. Payment strip shows USDC primary, Stripe coming soon.
 
 import { M, S, G, B, W, BDR, CARD } from "./tokens";
-import { Label } from "./ui";
+import { Label, ScrollFade } from "./ui";
 
 type WyomingTier = "starter" | "growth" | "enterprise";
 
@@ -40,6 +40,7 @@ const COMING_SOON = ["CARD", "APPLE PAY", "GOOGLE PAY", "KLARNA"];
 export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) {
   return (
     <div style={{ marginBottom:"1.25rem" }}>
+    <ScrollFade>
       <Label>Wyoming LLC Formation</Label>
       <div style={{ padding:"1rem 1.125rem", borderRadius:8,
                      background:"linear-gradient(135deg,rgba(59,130,246,0.07),rgba(139,92,246,0.04))",
@@ -161,6 +162,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
           BROWSE TIERS
         </button>
       </div>
+      </ScrollFade>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 // FILE: components/terminal/RegistryView.tsx
-// Asset registry inspector panel — shown when deep === "registry".
+// Asset registry inspector panel. shown when deep === "registry".
 
 import { DeepViewShell } from "./DeepViewShell";
 import { M, S, G, W, BDR, CARD } from "./tokens";
+import { ScrollFade } from "./ui";
 
 interface RegistryViewProps {
   onBack: () => void;
@@ -19,6 +20,7 @@ const STATS = [
 export function RegistryView({ onBack }: RegistryViewProps) {
   return (
     <DeepViewShell onBack={onBack}>
+      <ScrollFade>
       <div style={{ padding:"2rem", fontFamily:M, color:W,
                      maxWidth:800, margin:"0 auto" }}>
         <div style={{ fontSize:"0.7rem", color:G, fontWeight:700,
@@ -55,7 +57,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
         </div>
         <div style={{ fontFamily:"Georgia,serif", fontSize:"1.1rem",
                        fontWeight:700, color:W, marginBottom:4 }}>
-          Cielo Sunrise — Mountain Wellness Retreat
+          Cielo Sunrise · Mountain Wellness Retreat
         </div>
         <div style={{ fontFamily:S, fontSize:"0.75rem",
                        color:"rgba(255,255,255,0.4)" }}>
@@ -64,6 +66,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
           $660K max borrow capacity
         </div>
       </div>
+      </ScrollFade>
     </DeepViewShell>
   );
 }

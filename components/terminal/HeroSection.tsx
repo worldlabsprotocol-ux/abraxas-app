@@ -4,6 +4,7 @@
 
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { M, S, G, W, BDR } from "./tokens";
+import { ScrollFade } from "./ui";
 
 interface HeroSectionProps {
   onGetVerified: () => void;
@@ -24,7 +25,7 @@ export function HeroSection({ onGetVerified }: HeroSectionProps) {
         <div style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700, color:G,
                        letterSpacing:"0.2em", textTransform:"uppercase",
                        marginBottom:"0.625rem" }}>
-          ABRAXAS PROTOCOL · SOLANA MAINNET · BUILD 2025.1
+          ABRAXAS PROTOCOL · SOLANA MAINNET · BUILD 2026.1
         </div>
         <h1 style={{ fontFamily:"Georgia,'Times New Roman',serif",
                       fontSize:"clamp(1.6rem,4.5vw,3rem)", fontWeight:700,
@@ -60,6 +61,7 @@ export function HeroSection({ onGetVerified }: HeroSectionProps) {
       </div>
 
       {/* Abraxas Passport */}
+      <ScrollFade>
       <div style={{ marginBottom:"1.75rem" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
                        marginBottom:"0.875rem" }}>
@@ -82,6 +84,7 @@ export function HeroSection({ onGetVerified }: HeroSectionProps) {
           earnedStamps={["identity", "compliance"]}
         />
       </div>
+      </ScrollFade>
     </div>
   );
 }

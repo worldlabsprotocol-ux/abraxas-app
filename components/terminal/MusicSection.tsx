@@ -3,11 +3,12 @@
 
 import { ArtistAuditForm } from "@/components/music/ArtistAuditForm";
 import { M, S, G, W } from "./tokens";
-import { Label } from "./ui";
+import { Label, ScrollFade } from "./ui";
 
 export function MusicSection() {
   return (
     <div style={{ marginBottom:"1.5rem" }}>
+      <ScrollFade>
       <Label>Music Royalty Audit</Label>
       <div style={{ marginBottom:"1rem" }}>
         <div style={{ fontFamily:"Georgia,'Times New Roman',serif",
@@ -27,6 +28,7 @@ export function MusicSection() {
         </p>
       </div>
       <ArtistAuditForm />
+      </ScrollFade>
     </div>
   );
 }

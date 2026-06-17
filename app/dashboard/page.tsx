@@ -1,5 +1,5 @@
 // FILE: app/dashboard/page.tsx
-// Abraxas Institutional Dashboard — clean, no tab switcher at top,
+// Abraxas Institutional Dashboard. clean, no tab switcher at top,
 // full-width Bloomberg-style layout.
 "use client";
 
@@ -231,7 +231,7 @@ export default function DashboardPage() {
         <span style={{ color: G, fontWeight: 700 }}>● PORTFOLIO ACTIVE</span>
         <span>SESSION: {session?.label ?? "..."}</span>
         <span style={{ color: A }}>{assets.length} ASSET{assets.length !== 1 ? "S" : ""}</span>
-        <span style={{ color: B }}>ABRAXAS OS BUILD 2025.1</span>
+        <span style={{ color: B }}>ABRAXAS OS BUILD 2026.1</span>
         <span style={{ flex: 1 }}/>
         <span style={{ color: "rgba(255,255,255,0.2)" }}>
           {new Date().toISOString().split("T")[0]}
@@ -262,7 +262,7 @@ export default function DashboardPage() {
         <div style={{ fontFamily: M, fontSize: "0.52rem",
                        color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em",
                        textAlign: "right" }}>
-          W3C VC · SOLANA MAINNET<br/>BUILD 2025.1
+          W3C VC · SOLANA MAINNET<br/>BUILD 2026.1
         </div>
       </div>
 
@@ -303,9 +303,11 @@ export default function DashboardPage() {
           </button>
           {idvStatus !== "verified" && (
             <Link href="/identity" style={{
-              fontFamily:M, fontSize:"0.58rem", fontWeight:700, color:G,
-              textDecoration:"none", letterSpacing:"0.1em",
-              textTransform:"uppercase",
+              fontFamily:M, fontSize:"0.58rem", fontWeight:900, color:"#000",
+              background:G, textDecoration:"none", letterSpacing:"0.08em",
+              textTransform:"uppercase", padding:"0.35rem 0.75rem",
+              borderRadius:4, display:"inline-block",
+              boxShadow:`0 0 10px ${G}40`,
             }}>GET VERIFIED →</Link>
           )}
         </div>
