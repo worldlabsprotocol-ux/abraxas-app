@@ -3,6 +3,7 @@
 // Submit CTA, asset verticals, World Labs, protocol milestones, asset registry card.
 
 import { M, S, G, A, B, W, BDR, CARD } from "./tokens";
+import { DealsProgress } from "./DealsProgress";
 import { Label, Divider } from "./ui";
 
 interface ContentSectionProps {
@@ -57,6 +58,11 @@ const MILESTONES = [
 export function ContentSection({ onSubmit, onTrust, onRegistry }: ContentSectionProps) {
   return (
     <div>
+      {/* Deal Pipeline Progress */}
+      <DealsProgress />
+
+      <Divider />
+
       {/* Submit CTA */}
       <div style={{ padding:"2rem", borderRadius:8,
                      border:`1px solid ${B}25`, background:`${B}05`,

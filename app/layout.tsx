@@ -1,6 +1,7 @@
 // FILE: app/layout.tsx
 // Full metadata + OG/Twitter cards + favicon. Branded green for social sharing.
 import { FloatingTerminal } from "@/components/FloatingTerminal";
+import { PrivyWrapper } from "@/components/PrivyWrapper";
 import type { Metadata } from "next";
 import Script            from "next/script";
 import "./globals.css";
@@ -100,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div id="gt_root" style={{ display:"none" }} />
         <SessionProvider>
           <SolanaProvider>
-            {children}
+            <PrivyWrapper>{children}</PrivyWrapper>
           </SolanaProvider>
         </SessionProvider>
         <FloatingTerminal />
