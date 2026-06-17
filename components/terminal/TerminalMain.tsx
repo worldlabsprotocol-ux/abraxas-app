@@ -9,18 +9,18 @@ import { AssetOwnerOnboarding }     from "@/components/onboarding/AssetOwnerOnbo
 import { TrustStack }               from "@/components/onboarding/TrustStack";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 
-import { DeepViewShell }   from "./DeepViewShell";
-import { RegistryView }    from "./RegistryView";
-import { HeroSection }     from "./HeroSection";
-import { AssetGrid }       from "./AssetGrid";
-import { WyomingSection }  from "./WyomingSection";
-import { MusicSection }    from "./MusicSection";
-import { PartnersSection } from "./PartnersSection";
-import { ContentSection }  from "./ContentSection";
-import { Divider }         from "./ui";
+import { DeepViewShell }      from "./DeepViewShell";
+import { RegistryView }       from "./RegistryView";
+import { HeroSection }        from "./HeroSection";
+import { AssetGrid }          from "./AssetGrid";
+import { WyomingSection }     from "./WyomingSection";
+import { MusicSection }       from "./MusicSection";
+import { PartnersSection }    from "./PartnersSection";
+import { ContentSection }     from "./ContentSection";
+import { InvestorPortalModal} from "./InvestorPortalModal";
+import { Divider, ScrollFade } from "./ui";
 
 import type { DeepView, WyomingTier } from "./types";
-import { BDR }             from "./tokens";
 
 const MAX_WIDTH: React.CSSProperties = {
   maxWidth: 1060,
@@ -32,6 +32,7 @@ export function TerminalMain() {
   const [deep,        setDeep]        = useState<DeepView>("main");
   const [wyOpen,      setWyOpen]      = useState(false);
   const [initialTier, setInitialTier] = useState<WyomingTier | null>(null);
+  const [investAsset, setInvestAsset] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -51,13 +52,18 @@ export function TerminalMain() {
     );
   }
 
-  // Main terminal view — single return, all sections composed
+  // Main terminal view — single return, all sections composed and fade-in animated
   return (
     <div>
       <TokenizationRequestModal
         open={wyOpen}
         initialTier={initialTier}
         onClose={() => { setWyOpen(false); setInitialTier(null); }}
+      />
+
+      <InvestorPortalModal
+        assetId={investAsset}
+        onClose={() => setInvestAsset(null)}
       />
 
       <div style={MAX_WIDTH}>
@@ -67,40 +73,49 @@ export function TerminalMain() {
 
         <div id="abraxas-id" />
 
-        <AssetGrid
-          onViewRegistry={() => setDeep("registry")}
-          onViewAsset={() => setDeep("asset")}
-          onSubmit={() => setDeep("submit")}
-        />
+        <ScrollFade>
+          <AssetGrid
+            onViewRegistry={() => setDeep("registry")}
+            onInvest={(assetId) => setInvestAsset(assetId)}
+          />
+        </ScrollFade>
 
         <Divider />
 
-        <WyomingSection
-          onSelectTier={(tier: WyomingTier) => {
-            setInitialTier(tier);
-            setWyOpen(true);
-          }}
-          onBrowse={() => {
-            setInitialTier(null);
-            setWyOpen(true);
-          }}
-        />
+        <ScrollFade>
+          <WyomingSection
+            onSelectTier={(tier: WyomingTier) => {
+              setInitialTier(tier);
+              setWyOpen(true);
+            }}
+            onBrowse={() => {
+              setInitialTier(null);
+              setWyOpen(true);
+            }}
+          />
+        </ScrollFade>
 
         <Divider />
 
-        <MusicSection />
+        <ScrollFade>
+          <MusicSection />
+        </ScrollFade>
 
         <Divider />
 
-        <PartnersSection />
+        <ScrollFade>
+          <PartnersSection />
+        </ScrollFade>
 
         <Divider />
 
-        <ContentSection
-          onSubmit={() => setDeep("submit")}
-          onTrust={() => setDeep("trust")}
-          onRegistry={() => setDeep("registry")}
-        />
+        <ScrollFade>
+          <ContentSection
+            onSubmit={() => setDeep("submit")}
+            onTrust={() => setDeep("trust")}
+            onRegistry={() => setDeep("registry")}
+          />
+        </ScrollFade>
       </div>
     </div>
   );
