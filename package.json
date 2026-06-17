@@ -27,8 +27,7 @@
     "recharts": "^3.8.1",
     "tweetnacl": "^1.0.3",
     "zustand": "^5.0.13",
-    "stripe": "^16.0.0",
-    "@privy-io/react-auth": "^1.80.0"
+    "stripe": "^16.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
