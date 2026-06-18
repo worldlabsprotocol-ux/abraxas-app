@@ -14,9 +14,6 @@ import {
 import type { UserAsset, LifecycleState } from "@/lib/vos/userAssetStore";
 import { sessionStore }              from "@/lib/vos/sessionStore";
 import type { Session }              from "@/lib/vos/sessionStore";
-import { wyomingRequestStore }       from "@/lib/vos/wyomingRequestStore";
-import type { WyomingRequest }       from "@/lib/vos/wyomingRequestStore";
-import { notificationService }       from "@/lib/notifications";
 import { UserProfile }             from "@/components/profile/UserProfile";
 import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
@@ -96,9 +93,6 @@ export default function DashboardPage() {
   const [assets,      setAssets]      = useState<UserAsset[]>([]);
   const [selected,    setSelected]    = useState<string | null>(null);
   const [detailTab,   setDetailTab]   = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
-  const [wyomingReqs, setWyomingReqs] = useState<WyomingRequest[]>([]);
-  const [panelTab,    setPanelTab]    = useState<"assets"|"wyoming">("assets");
-  const [unread,      setUnread]      = useState(0);
   const [idvStatus, setIdvStatus] = useState<'idle'|'verified'|'unverified'>('idle');
   const [walletAddr, setWalletAddr] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -110,8 +104,6 @@ export default function DashboardPage() {
     const mine = userAssetStore.listMine();
     setAssets(mine);
     if (mine.length > 0 && !selected) setSelected(mine[0].id);
-    setWyomingReqs(wyomingRequestStore.listAll());
-    setUnread(notificationService.getUnreadCount());
   }
 
   useEffect(() => {
@@ -207,17 +199,7 @@ export default function DashboardPage() {
         <div style={{ flex: 1 }}/>
 
         {/* Notification badge */}
-        {unread > 0 && (
-          <div style={{
-            width: 20, height: 20, borderRadius: "50%",
-            background: R, color: "#fff",
-            fontFamily: M, fontSize: "0.55rem", fontWeight: 900,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            {unread > 9 ? "9+" : unread}
-          </div>
-        )}
+        
 
         <LanguageSelector/>
         <CompactWallet/>
@@ -271,7 +253,6 @@ export default function DashboardPage() {
         <div style={{ fontFamily:M, fontSize:"0.52rem",
                        color:"rgba(255,255,255,0.15)", letterSpacing:"0.08em" }}>
           {assets.length} ASSET{assets.length !== 1 ? "S" : ""} ·{" "}
-          {wyomingReqs.length} LLC REQUEST{wyomingReqs.length !== 1 ? "S" : ""}
         </div>
       </div>
 
@@ -340,396 +321,56 @@ export default function DashboardPage() {
         {/* Full protocol asset registry, all 4 assets */}
         <AssetRegistryDashboard />
 
-        {/* Panel tabs */}
-        <div style={{ display:"flex", gap:"0.375rem", marginBottom:"1rem",
-                       borderBottom:`1px solid ${BDR}`, paddingBottom:"0.75rem",
-                       flexWrap:"wrap", alignItems:"center",
-                       justifyContent:"space-between" }}>
-          <div style={{ display:"flex", gap:"0.375rem" }}>
-            {([["assets","ASSETS"],["wyoming","WYOMING"]] as const).map(([id,lbl]) => (
-              <button key={id} onClick={() => {
-                setPanelTab(id);
-                if (id === "wyoming") {
-                  wyomingRequestStore.markAllViewed();
-                  setUnread(0);
-                }
-              }} style={{
-                padding:"0.4rem 0.875rem", borderRadius:4, border:"none",
-                borderBottom:`2px solid ${panelTab===id ? G : "transparent"}`,
-                background: panelTab===id ? `${G}10` : "transparent",
-                color: panelTab===id ? G : DIM,
-                fontFamily:M, fontSize:"0.65rem", fontWeight:700,
-                cursor:"pointer", letterSpacing:"0.1em",
-                textTransform:"uppercase", position:"relative",
-              }}>
-                {lbl}
-                {id==="wyoming" && unread > 0 && panelTab!=="wyoming" && (
-                  <span style={{ position:"absolute", top:2, right:2,
-                                  width:12, height:12, borderRadius:"50%",
-                                  background:R, color:"#fff",
-                                  fontFamily:M, fontSize:"0.45rem", fontWeight:900,
-                                  display:"flex", alignItems:"center", justifyContent:"center",
-                  }}>{unread>9?"9+":unread}</span>
-                )}
-              </button>
-            ))}
-          </div>
-          <button onClick={refresh} style={{
-            padding:"0.35rem 0.75rem", borderRadius:4,
-            border:`1px solid ${BDR}`, background:"transparent",
-            color:DIM, fontFamily:M, fontSize:"0.6rem",
-            cursor:"pointer", letterSpacing:"0.06em", textTransform:"uppercase",
-          }}>REFRESH</button>
-        </div>
-
-        {/* ── ASSETS GRID ── */}
-        {panelTab === "assets" && (
-          <div>
-            {assets.length === 0 ? (
-              <div style={{ textAlign:"center", padding:"3rem 1rem" }}>
-                <div style={{ fontFamily:"Georgia,serif", fontSize:"1.1rem",
-                               fontWeight:700, color:"rgba(255,255,255,0.25)",
-                               marginBottom:"0.625rem" }}>
-                  No verified assets yet.
-                </div>
-                <div style={{ fontFamily:S, fontSize:"0.72rem",
-                               color:"rgba(255,255,255,0.2)", marginBottom:"1rem",
-                               lineHeight:1.65 }}>
-                  Submit an asset on the terminal to begin the V5 verification pipeline.
-                </div>
-                <Link href="/terminal" style={{
-                  fontFamily:M, fontSize:"0.65rem", color:G,
-                  textDecoration:"none", textTransform:"uppercase",
-                  letterSpacing:"0.08em", border:`1px solid rgba(16,185,129,0.3)`,
-                  padding:"0.5rem 1rem", borderRadius:4, display:"inline-block",
-                }}>→ Submit Asset</Link>
+        {/* Passport status — links to the standalone /passport page, not inline here */}
+        <div style={{ marginBottom:"1.5rem", padding:"1.25rem",
+                       borderRadius:12, border:`1px solid ${G}25`,
+                       background:`${G}06` }}>
+          <div style={{ display:"flex", justifyContent:"space-between",
+                         alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
+            <div>
+              <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
+                             color:"#fff", marginBottom:"0.25rem" }}>
+                Abraxas Passport
               </div>
-            ) : (
-              <div style={{ display:"grid",
-                             gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",
-                             gap:"0.75rem" }}>
-                {assets.map(a => {
-                  const isSel = selected === a.id;
-                  const stateColor = STATE_COLORS[a.state as LifecycleState] ?? A;
-                  const pct = a.progressPct || 5;
-                  return (
-                    <div key={a.id}
-                      onClick={() => setSelected(isSel ? null : a.id)}
-                      style={{ background:CARD,
-                                border:`1px solid ${isSel ? G+"60" : BDR}`,
-                                borderRadius:8, padding:"1rem",
-                                cursor:"pointer", transition:"all 0.15s",
-                                boxShadow: isSel ? `0 0 20px ${G}18` : "none",
-                              }}>
-                      {/* Card header */}
-                      <div style={{ display:"flex", justifyContent:"space-between",
-                                     alignItems:"flex-start", marginBottom:"0.625rem" }}>
-                        <div>
-                          <div style={{ fontFamily:M, fontSize:"0.7rem",
-                                         fontWeight:700, color:W, marginBottom:2 }}>
-                            {a.id.slice(0,12)}
-                          </div>
-                          <div style={{ fontFamily:S, fontSize:"0.65rem", color:DIM }}>
-                            {ASSET_LABELS[a.assetType as keyof typeof ASSET_LABELS] ?? a.assetType}
-                          </div>
-                        </div>
-                        <span style={{
-                          fontFamily:M, fontSize:"0.55rem", fontWeight:700,
-                          color:stateColor,
-                          background:`${stateColor}15`,
-                          border:`1px solid ${stateColor}30`,
-                          borderRadius:3, padding:"2px 7px",
-                          textTransform:"uppercase", letterSpacing:"0.06em",
-                          whiteSpace:"nowrap",
-                        }}>
-                          {a.state.replace(/_/g," ").split(" ")[0]}
-                        </span>
-                      </div>
-
-                      {/* Score row */}
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)",
-                                     gap:"0.375rem", marginBottom:"0.625rem" }}>
-                        {[
-                          ["V",a.scores?.verification??55],
-                          ["L",a.scores?.liquidity??62],
-                          ["F",a.scores?.fraud??75],
-                          ["M",a.scores?.marketability??65],
-                        ].map(([k,v]) => (
-                          <div key={k as string} style={{
-                            textAlign:"center", padding:"0.3rem 0.2rem",
-                            background:"rgba(255,255,255,0.03)",
-                            borderRadius:4,
-                            border:`1px solid ${scoreColor(v as number)}25`,
-                          }}>
-                            <div style={{ fontFamily:M, fontSize:"0.5rem",
-                                           color:"rgba(255,255,255,0.25)",
-                                           marginBottom:1 }}>{k}</div>
-                            <div style={{ fontFamily:M, fontSize:"0.78rem",
-                                           fontWeight:900,
-                                           color:scoreColor(v as number) }}>
-                              {v}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Progress bar */}
-                      <div style={{ marginBottom:"0.5rem" }}>
-                        <div style={{ display:"flex", justifyContent:"space-between",
-                                       marginBottom:3 }}>
-                          <Mono size="0.55rem" color={DIM}>V5 PIPELINE</Mono>
-                          <Mono size="0.55rem" color={G}>{pct}%</Mono>
-                        </div>
-                        <div style={{ height:3, background:BDR,
-                                       borderRadius:2, overflow:"hidden" }}>
-                          <div style={{ height:"100%", borderRadius:2,
-                                         background:G, width:`${pct}%` }}/>
-                        </div>
-                      </div>
-
-                      {/* Value + actions */}
-                      <div style={{ display:"flex", justifyContent:"space-between",
-                                     alignItems:"center" }}>
-                        <div style={{ fontFamily:M, fontSize:"0.65rem",
-                                       color:G, fontWeight:700 }}>
-                          {displayValue(a.estimatedValue)}
-                        </div>
-                        {!["MARKETPLACE_LIVE","REJECTED"].includes(a.state) && (
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              userAssetStore.simulateAdvance(a.id);
-                              refresh();
-                            }}
-                            style={{ padding:"0.25rem 0.625rem", borderRadius:4,
-                                      border:`1px solid ${G}30`, background:`${G}10`,
-                                      color:G, fontFamily:M, fontSize:"0.58rem",
-                                      fontWeight:700, cursor:"pointer",
-                                      letterSpacing:"0.04em", textTransform:"uppercase" }}>
-                            ADVANCE →
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Expanded detail */}
-                      {isSel && (
-                        <div style={{ marginTop:"0.75rem", paddingTop:"0.75rem",
-                                       borderTop:`1px solid ${BDR}40` }}>
-                          {[
-                            ["Jurisdiction",      a.jurisdiction ?? "—"],
-                            ["Assigned Verifier", a.assignedVerifier ?? "—"],
-                            ["Submitted",         new Date(a.createdAt).toLocaleDateString()],
-                            ["Lending",           a.state==="MARKETPLACE_LIVE" ? "Available (60% LTV)" : "Not yet available"],
-                          ].map(([k,v]) => (
-                            <div key={k} style={{ display:"flex", justifyContent:"space-between",
-                                                   padding:"0.25rem 0",
-                                                   borderBottom:`1px solid ${BDR}30` }}>
-                              <Mono size="0.58rem" color={DIM}>{k}</Mono>
-                              <Mono size="0.58rem" color={W}>{v}</Mono>
-                            </div>
-                          ))}
-                          {a.aiNotes && (
-                            <div style={{ marginTop:"0.5rem", padding:"0.5rem 0.625rem",
-                                           borderRadius:4, background:`${B}08`,
-                                           border:`1px solid ${B}25` }}>
-                              <Mono size="0.55rem" color={B}>AI ASSESSMENT</Mono>
-                              <div style={{ fontFamily:S, fontSize:"0.65rem",
-                                             color:"rgba(255,255,255,0.5)",
-                                             lineHeight:1.55, marginTop:3 }}>
-                                {a.aiNotes}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Add new asset card */}
-                <Link href="/terminal" style={{
-                  background:"rgba(16,185,129,0.04)",
-                  border:`1px dashed ${G}30`, borderRadius:8,
-                  padding:"1.5rem 1rem", display:"flex",
-                  flexDirection:"column", alignItems:"center",
-                  justifyContent:"center", gap:"0.5rem",
-                  textDecoration:"none", minHeight:160,
-                }}>
-                  <div style={{ fontFamily:M, fontSize:"1.25rem", color:`${G}50` }}>+</div>
-                  <div style={{ fontFamily:M, fontSize:"0.65rem", fontWeight:700,
-                                 color:`${G}70`, letterSpacing:"0.08em",
-                                 textTransform:"uppercase" }}>
-                    Submit Asset
-                  </div>
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── WYOMING GRID ── */}
-        {panelTab === "wyoming" && (
-          <div>
-            {wyomingReqs.length === 0 ? (
-              <div style={{ textAlign:"center", padding:"3rem 1rem" }}>
-                <div style={{ fontFamily:"Georgia,serif", fontSize:"1rem",
-                               fontWeight:700, color:"rgba(255,255,255,0.25)",
-                               marginBottom:"0.625rem" }}>No Wyoming requests yet.</div>
-                <Link href="/terminal" style={{
-                  fontFamily:M, fontSize:"0.65rem", color:G,
-                  textDecoration:"none", textTransform:"uppercase",
-                  letterSpacing:"0.08em", border:`1px solid rgba(16,185,129,0.3)`,
-                  padding:"0.5rem 1rem", borderRadius:4, display:"inline-block",
-                }}>→ Tokenize a Business</Link>
-              </div>
-            ) : (
-              <div style={{ display:"grid",
-                             gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",
-                             gap:"0.75rem" }}>
-                {wyomingReqs.map(r => (
-                  <div key={r.id} style={{
-                    background:CARD, border:`1px solid ${G}25`,
-                    borderLeft:`3px solid ${G}`, borderRadius:8, padding:"1rem",
-                  }}>
-                    <div style={{ fontFamily:M, fontSize:"0.72rem",
-                                   fontWeight:700, color:W, marginBottom:"0.375rem" }}>
-                      {r.companyName}
-                    </div>
-                    <div style={{ display:"flex", gap:"0.375rem",
-                                   flexWrap:"wrap", marginBottom:"0.375rem" }}>
-                      <span style={{ fontFamily:M, fontSize:"0.58rem", color:G,
-                                      background:`${G}12`, borderRadius:3,
-                                      padding:"1px 6px", textTransform:"uppercase",
-                                      letterSpacing:"0.06em" }}>
-                        {r.tier.toUpperCase()}
-                      </span>
-                      <span style={{ fontFamily:M, fontSize:"0.55rem",
-                                      color:"rgba(255,255,255,0.3)" }}>
-                        {new Date(r.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
-                                      color:G, background:`${G}12`, borderRadius:3,
-                                      padding:"1px 5px", letterSpacing:"0.06em",
-                                      textTransform:"uppercase" }}>
-                        {r.lifecycleState}
-                      </span>
-                    </div>
-                    {r.supabaseId && (
-                      <div style={{ marginTop:"0.3rem" }}>
-                        <Mono size="0.5rem" color={`${G}60`}>✓ Supabase synced</Mono>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Lifecycle detail drawer (when asset selected) */}
-        {panelTab === "assets" && selected && (() => {
-          const sel = assets.find(a => a.id === selected);
-          if (!sel) return null;
-          return (
-            <div style={{ marginTop:"1.5rem", background:CARD,
-                           border:`1px solid ${G}25`, borderRadius:8,
-                           overflow:"hidden" }}>
-              <div style={{ padding:"0.875rem 1rem",
-                             borderBottom:`1px solid ${BDR}`,
-                             background:"#0A0D13",
-                             display:"flex", justifyContent:"space-between",
-                             alignItems:"center" }}>
-                <div>
-                  <Mono size="0.58rem" color={DIM}>ASSET DETAIL · {sel.id}</Mono>
-                </div>
-                <div style={{ display:"flex", gap:"0.5rem" }}>
-                  {(["overview","lifecycle","activity"] as const).map(t => (
-                    <button key={t} onClick={() => setDetailTab(t)} style={{
-                      padding:"0.25rem 0.625rem", borderRadius:3, border:"none",
-                      background: detailTab===t ? `${G}15` : "transparent",
-                      color: detailTab===t ? G : DIM,
-                      fontFamily:M, fontSize:"0.6rem", fontWeight:700,
-                      cursor:"pointer", textTransform:"uppercase",
-                      letterSpacing:"0.06em",
-                    }}>{t.toUpperCase()}</button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ padding:"1rem" }}>
-                {detailTab === "overview" && (
-                  <div style={{ display:"grid",
-                                 gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",
-                                 gap:"0.5rem" }}>
-                    {[
-                      ["State",          sel.state.replace(/_/g," ")],
-                      ["Asset Value",    displayValue(sel.estimatedValue)],
-                      ["Jurisdiction",   sel.jurisdiction ?? "—"],
-                      ["Verifier",       sel.assignedVerifier ?? "—"],
-                      ["Tokenization",   ["TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(sel.state) ? "Authorized" : "Pending"],
-                      ["Lending",        sel.state==="MARKETPLACE_LIVE" ? "60% LTV Available" : "Not Yet Available"],
-                    ].map(([k,v]) => (
-                      <div key={k} style={{ padding:"0.625rem 0.75rem",
-                                             background:"rgba(255,255,255,0.02)",
-                                             borderRadius:5,
-                                             border:`1px solid ${BDR}` }}>
-                        <Mono size="0.55rem" color={DIM}>{k}</Mono>
-                        <div style={{ fontFamily:M, fontSize:"0.72rem",
-                                       fontWeight:700, color:W, marginTop:3 }}>
-                          {v}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {detailTab === "lifecycle" && (
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:"0.25rem" }}>
-                    {PIPELINE_STAGES.map((stage, i) => {
-                      const idx = PIPELINE_STAGES.indexOf(sel.state as LifecycleState);
-                      const done = i < idx; const active = i === idx;
-                      const c = done ? G : active ? A : "rgba(255,255,255,0.15)";
-                      return (
-                        <div key={stage} style={{ padding:"0.35rem 0.625rem",
-                                                   borderRadius:4,
-                                                   border:`1px solid ${c}40`,
-                                                   background:`${c}08` }}>
-                          <Mono size="0.55rem" color={c}>
-                            {done?"✓ ":active?"▶ ":""}{stage.replace(/_/g," ")}
-                          </Mono>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {detailTab === "activity" && (
-                  <div>
-                    {(sel.timeline ?? []).length === 0
-                      ? <Mono size="0.65rem" color={DIM}>No activity yet.</Mono>
-                      : [...(sel.timeline??[])].reverse().map((e,i) => (
-                          <div key={i} style={{ padding:"0.4rem 0",
-                                                borderBottom:`1px solid ${BDR}30`,
-                                                display:"flex", gap:"0.625rem" }}>
-                            <div style={{ width:5, height:5, borderRadius:"50%",
-                                           background:G, flexShrink:0, marginTop:6 }}/>
-                            <div>
-                              <div style={{ fontFamily:S, fontSize:"0.68rem",
-                                             color:W }}>{e.note}</div>
-                              <Mono size="0.55rem" color={DIM}>
-                                {new Date(e.at).toLocaleString()} · {e.actor}
-                              </Mono>
-                            </div>
-                          </div>
-                        ))
-                    }
-                  </div>
-                )}
+              <div style={{ fontFamily:S, fontSize:"0.78rem",
+                             color:"rgba(255,255,255,0.5)", lineHeight:1.5 }}>
+                Get verified once — your credential travels across every Abraxas
+                integration so you never repeat paperwork.
               </div>
             </div>
-          );
-        })()}
+            <a href="/passport" style={{ padding:"0.625rem 1.25rem", borderRadius:8,
+                background:G, color:"#000", fontFamily:S, fontSize:"0.8rem",
+                fontWeight:700, textDecoration:"none", flexShrink:0 }}>
+              View Passport →
+            </a>
+          </div>
+        </div>
+
+        {/* Submit asset prompt for users with no submitted assets */}
+        {assets.length === 0 && (
+          <div style={{ textAlign:"center", padding:"2rem 1rem",
+                         borderRadius:12, border:`1px dashed ${BDR}`,
+                         marginBottom:"1.5rem" }}>
+            <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
+                           color:"rgba(255,255,255,0.35)", marginBottom:"0.5rem" }}>
+              No assets submitted yet
+            </div>
+            <div style={{ fontFamily:S, fontSize:"0.75rem",
+                           color:"rgba(255,255,255,0.2)", marginBottom:"1rem",
+                           lineHeight:1.65 }}>
+              Once you submit and verify an asset, it shows up here
+              with its verification status and investment structure.
+            </div>
+            <Link href="/terminal" style={{
+              fontFamily:S, fontSize:"0.8rem", fontWeight:700, color:G,
+              textDecoration:"none", border:`1px solid ${G}30`,
+              padding:"0.5rem 1.25rem", borderRadius:8, display:"inline-block",
+            }}>Submit an asset →</Link>
+          </div>
+        )}
 
       </div>
     </div>
   );
 }
+

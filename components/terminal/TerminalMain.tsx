@@ -76,20 +76,32 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
+        {/* 1. WHO WE ARE + GET VERIFIED (identity is the lead, not the marketplace) */}
         <div id="demo-hero">
           <HeroSection onGetVerified={() => setDeep("submit")} />
         </div>
 
         <Divider />
 
+        {/* 2. HOW IT WORKS — Verify Once, Transact Everywhere, stamps */}
         <div id="demo-milestones">
           <MilestonesSection />
         </div>
 
         <Divider />
 
-        <div id="abraxas-id" />
+        {/* 3. INLINE DEMO — what submitting an asset looks like */}
+        <div id="demo-deals">
+          <ContentSection
+            onSubmit={() => setDeep("submit")}
+            onTrust={() => setDeep("trust")}
+          />
+        </div>
 
+        <Divider />
+
+        {/* 4. VERIFIED ASSETS — genesis assets as proof the model works */}
+        <div id="abraxas-id" />
         <ScrollFade>
           <div id="demo-assets">
             <AssetGrid
@@ -102,6 +114,7 @@ export function TerminalMain() {
 
         <Divider />
 
+        {/* 5. FORM A BUSINESS — outcome of verification, not a pitch intro */}
         <ScrollFade>
           <div id="demo-wyoming">
             <WyomingSection
@@ -129,17 +142,6 @@ export function TerminalMain() {
 
         <ScrollFade>
           <PartnersSection />
-        </ScrollFade>
-
-        <Divider />
-
-        <ScrollFade>
-          <div id="demo-deals">
-            <ContentSection
-              onSubmit={() => setDeep("submit")}
-              onTrust={() => setDeep("trust")}
-            />
-          </div>
         </ScrollFade>
       </div>
     </div>

@@ -14,10 +14,23 @@ interface AssetGridProps {
   onBuyNow: (item: BuyItem) => void;
 }
 
-// Real photo paths go here once uploaded to /public/assets/. Empty for
-// now, see AssetGallery.tsx for exactly how to activate these.
-const CIELO_IMAGES: string[] = [];
-const DEMARKO_IMAGES: string[] = [];
+// ─── REAL PHOTO GALLERIES ──────────────────────────────────────────────
+// Files live in /public/assets/{folder}/. Add filenames below to add more.
+
+// Cielo Sunrise — 20 photos at /public/assets/cielo/01.jpg … 20.jpg
+const CIELO_IMAGES: string[] = Array.from({ length: 20 }, (_, i) =>
+  `/assets/cielo/${String(i + 1).padStart(2, "0")}.jpg`
+);
+
+// DeMarko Reddins book covers — 8 covers at /public/assets/demarko/001.jpg … 008.jpg
+const DEMARKO_IMAGES: string[] = Array.from({ length: 8 }, (_, i) =>
+  `/assets/demarko/${String(i + 1).padStart(3, "0")}.jpg`
+);
+
+// 14 Days in Beijing — 3 images at /public/assets/chancellor/0001.jpg … 0003.jpg
+const CHANCELLOR_IMAGES: string[] = Array.from({ length: 3 }, (_, i) =>
+  `/assets/chancellor/${String(i + 1).padStart(4, "0")}.jpg`
+);
 
 const CIELO_STATS = [
   { k:"Appraised Value", v:"$1,100,000" },
@@ -70,12 +83,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               Private Mountain Wellness Retreat · Mineral Bluff, Georgia
             </div>
           </div>
-          <div style={{ position:"absolute", top:12, right:12 }}>
-            <Button href="https://www.airbnb.com/rooms/1681387746169197852"
-                    variant="outline" color={W} size="sm">
-              VIEW PHOTOS
-            </Button>
-          </div>
+          <div style={{ position:"absolute", top:12, right:12 }} />
         </div>
         )}
         <div style={{ display:"grid",
@@ -96,29 +104,22 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
                        display:"flex", gap:"0.5rem", flexWrap:"wrap",
                        alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
-            <Button href="https://www.airbnb.com/rooms/1681387746169197852"
-                    variant="outline" color={W} size="md">
-              VIEW ON AIRBNB
-            </Button>
             <Button onClick={onViewRegistry} variant="outline" color={G} size="md">
               VIEW ASSET RECORD
             </Button>
-            <Button onClick={() => onBuyNow({
-                id: "cielo-stay",
-                name: "Cielo Sunrise · Direct Stay",
-                price: "From $240/night",
-                description: "Book a stay directly with USDC or USDT. Same property, paid in stablecoin instead of card.",
-                color: G,
-              })} color={G} size="md">
-              BUY NOW
-            </Button>
           </div>
-          <Button onClick={() => onInvest("aas-1")} color={G} size="md">
-            INVEST →
+          {/* Book Now — stablecoin booking. no investor positions open on Cielo currently */}
+          <Button onClick={() => onBuyNow({
+              id: "cielo-stay",
+              name: "Cielo Sunrise · Book a Stay",
+              price: "From $240/night",
+              description: "Book directly in USDC or USDT. Same property as the Airbnb listing, paid in stablecoin. Our team confirms your booking same day.",
+              color: G,
+            })} color={G} size="md">
+            BOOK NOW
           </Button>
         </div>
       </div>
-
       </ScrollFade>
 
       {/* AAS-2 + AAS-3 + AAS-4 mini cards */}
@@ -220,33 +221,11 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
                        border:`1px solid ${A}55`,
                        background:"linear-gradient(145deg,#140E00 0%,#0C0800 100%)",
                        gridColumn:"span 1" }}>
-          {/* Original illustrated header. abstract skyline silhouette,
-              no copyrighted material, since no official poster exists yet */}
-          <div style={{ height:120, position:"relative", overflow:"hidden",
-                         background:"linear-gradient(180deg,#1a1206 0%,#0c0800 100%)" }}>
-            <svg viewBox="0 0 1200 200" preserveAspectRatio="none"
-                 style={{ position:"absolute", bottom:0, left:0,
-                          width:"100%", height:"100%", opacity:0.55 }}>
-              <rect x="40"  y="90"  width="50" height="110" fill={`${A}20`} />
-              <rect x="100" y="60"  width="35" height="140" fill={`${A}28`} />
-              <rect x="145" y="100" width="60" height="100" fill={`${A}18`} />
-              <rect x="220" y="40"  width="40" height="160" fill={`${A}30`} />
-              <rect x="270" y="80"  width="45" height="120" fill={`${A}20`} />
-              <rect x="330" y="20"  width="30" height="180" fill={`${A}35`} />
-              <circle cx="345" cy="35" r="5" fill={`${A}50`} />
-              <rect x="900" y="50" width="38" height="150" fill={`${A}28`} />
-              <rect x="950" y="90" width="55" height="110" fill={`${A}18`} />
-              <rect x="1020" y="30" width="32" height="170" fill={`${A}32`} />
-              <rect x="1070" y="70" width="48" height="130" fill={`${A}20`} />
-              <rect x="1130" y="100" width="40" height="100" fill={`${A}15`} />
-            </svg>
-            <div style={{ position:"absolute", inset:0,
-                           background:"linear-gradient(transparent,rgba(12,8,0,0.9))" }} />
-            <div style={{ position:"absolute", bottom:8, left:14,
-                           fontFamily:S, fontSize:"0.62rem", fontWeight:600,
-                           color:`${A}90`, letterSpacing:"0.04em" }}>
-              In development · production talks active
-            </div>
+          {/* Real photos from /public/assets/chancellor/ */}
+          <div style={{ padding:"0.875rem 0.875rem 0" }}>
+            <AssetGallery images={CHANCELLOR_IMAGES}
+                          fallbackLabel="14 Days in Beijing"
+                          color={A} />
           </div>
 
           {/* Billboard header */}
@@ -390,36 +369,42 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           </div>
         </div>
 
-        {/* AAS-4 Smyrna Townhome */}
+        {/* AAS-4 Smyrna Townhome — Battery Atlanta area, 3x appreciation */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${TEAL}55`,
                        background:"linear-gradient(145deg,#001820 0%,#000F16 100%)" }}>
-          {/* Original illustration, representative style only. the actual
-              address is kept private, this is not a photo of the real unit */}
-          <div style={{ height:100, position:"relative", overflow:"hidden",
-                         background:"linear-gradient(180deg,#012228 0%,#000F16 100%)" }}>
-            <svg viewBox="0 0 400 130" preserveAspectRatio="xMidYMax slice"
-                 style={{ position:"absolute", bottom:0, left:"50%",
-                          transform:"translateX(-50%)", width:220, height:"100%",
-                          opacity:0.65 }}>
-              <rect x="20"  y="40" width="80" height="80" fill={`${TEAL}18`} stroke={`${TEAL}40`} strokeWidth="1.5" />
-              <rect x="100" y="20" width="90" height="100" fill={`${TEAL}22`} stroke={`${TEAL}45`} strokeWidth="1.5" />
-              <rect x="190" y="45" width="80" height="75" fill={`${TEAL}15`} stroke={`${TEAL}35`} strokeWidth="1.5" />
-              <rect x="35" y="60" width="14" height="18" fill={`${TEAL}50`} />
-              <rect x="60" y="60" width="14" height="18" fill={`${TEAL}50`} />
-              <rect x="120" y="40" width="14" height="18" fill={`${TEAL}55`} />
-              <rect x="150" y="40" width="14" height="18" fill={`${TEAL}55`} />
-              <rect x="120" y="70" width="14" height="18" fill={`${TEAL}55`} />
-              <rect x="150" y="70" width="14" height="18" fill={`${TEAL}55`} />
-              <rect x="205" y="65" width="14" height="18" fill={`${TEAL}45`} />
-              <rect x="230" y="65" width="14" height="18" fill={`${TEAL}45`} />
+          {/* Stock-style townhome visual. exact address kept private per privacy policy.
+              Drop a real stock photo at /public/assets/smyrna/01.jpg and the
+              AssetGallery will render it automatically without any further code. */}
+          <div style={{ height:90, position:"relative", overflow:"hidden",
+                         background:"linear-gradient(135deg,#001c2a 0%,#00141f 100%)" }}>
+            <svg viewBox="0 0 500 90" preserveAspectRatio="none"
+                 style={{ position:"absolute", inset:0, width:"100%", height:"100%",
+                          opacity:0.5 }}>
+              {/* Townhome row silhouette */}
+              <rect x="60"  y="22" width="70" height="68" fill={`${TEAL}18`} />
+              <polygon points="60,22 95,2 130,22" fill={`${TEAL}25`} />
+              <rect x="145" y="15" width="80" height="75" fill={`${TEAL}22`} />
+              <polygon points="145,15 185,0 225,15" fill={`${TEAL}30`} />
+              <rect x="240" y="28" width="65" height="62" fill={`${TEAL}16`} />
+              <polygon points="240,28 272,10 304,28" fill={`${TEAL}22`} />
+              <rect x="320" y="18" width="75" height="72" fill={`${TEAL}20`} />
+              <polygon points="320,18 357,1 394,18" fill={`${TEAL}28`} />
+              {/* Windows */}
+              {[72,88,160,182,201,252,268,335,355,372].map(x => (
+                <rect key={x} x={x} y="45" width="10" height="12" fill={`${TEAL}45`} />
+              ))}
+              {/* Doors */}
+              {[85,175,259,348].map(x => (
+                <rect key={x} x={x} y="70" width="12" height="20" fill={`${TEAL}35`} />
+              ))}
             </svg>
             <div style={{ position:"absolute", inset:0,
-                           background:"linear-gradient(transparent,rgba(0,15,22,0.92))" }} />
+                           background:"linear-gradient(transparent,rgba(0,15,22,0.95))" }} />
             <div style={{ position:"absolute", bottom:6, left:14,
-                           fontFamily:S, fontSize:"0.58rem", fontWeight:600,
-                           color:`${TEAL}80`, letterSpacing:"0.04em" }}>
-              Representative illustration · exact unit kept private
+                           fontFamily:S, fontSize:"0.56rem", fontWeight:600,
+                           color:`${TEAL}70` }}>
+              Smyrna, GA · Cumberland area · 6 min from Truist Park
             </div>
           </div>
 
@@ -428,43 +413,52 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
                          background:`linear-gradient(135deg,${TEAL}12,rgba(0,0,0,0))` }}>
             <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                            color:TEAL, marginBottom:"0.375rem" }}>
-              Real Estate · Open to Investors
+              Real Estate · Battery Atlanta Area · Open to Investors
             </div>
             <div style={{ fontFamily:"Georgia,serif",
                            fontSize:"clamp(1rem,2.5vw,1.25rem)",
-                           fontWeight:700, color:W, marginBottom:"0.25rem" }}>
+                           fontWeight:700, color:W, marginBottom:"0.375rem" }}>
               Smyrna Townhome
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
-              Cumberland Townhomes, Smyrna GA · 6 min from Truist Park · Paid off · Chancellor K. Jackson, owner
+                           color:"rgba(255,255,255,0.45)", lineHeight:1.65 }}>
+              Paid-off townhome sitting at 3x its original purchase price,
+              six minutes from The Battery Atlanta. Owner is not selling
+              and not refinancing through a traditional bank. Looking for
+              a verified capital partner to unlock the equity — rental
+              income or a structured note — while keeping long-term
+              ownership as the Battery corridor continues to build.
             </div>
           </div>
+
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
                          gap:"1px", background:BDR }}>
             {[
-              { k:"Unit",         v:"1,220 sqft · 2BD/1.5BA" },
-              { k:"Built",        v:"1984" },
-              { k:"Lien Status",  v:"CLEAR. Paid Off" },
-              { k:"Appreciation", v:"$76.2K \u2192 $208.2K" },
+              { k:"Unit",          v:"1,220 sqft · 2BD/2BA" },
+              { k:"Built",         v:"1984 · Condo/Townhouse" },
+              { k:"Lien status",   v:"Clear · Paid off" },
+              { k:"Appreciation",  v:"$76.2K \u2192 $228K+ (3x)" },
+              { k:"Rent estimate", v:"$1,702 / month" },
+              { k:"Location edge", v:"6 min · Truist Park" },
             ].map(s => (
               <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
-                <div style={{ fontFamily:M, fontSize:"0.48rem",
+                <div style={{ fontFamily:M, fontSize:"0.46rem",
                                color:"rgba(255,255,255,0.25)",
                                textTransform:"uppercase",
                                letterSpacing:"0.1em", marginBottom:2 }}>{s.k}</div>
-                <div style={{ fontFamily:M, fontSize:"0.68rem",
+                <div style={{ fontFamily:M, fontSize:"0.66rem",
                                fontWeight:700, color:TEAL }}>{s.v}</div>
               </div>
             ))}
           </div>
+
           <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
-                         display:"flex", gap:"0.5rem", alignItems:"center" }}>
-            <div style={{ padding:"0.2rem 0.5rem", borderRadius:3,
-                           background:`${TEAL}12`, border:`1px solid ${TEAL}30`,
-                           fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                           color:TEAL, letterSpacing:"0.06em" }}>
-              INVESTOR OPEN
+                         display:"flex", gap:"0.5rem", alignItems:"center",
+                         flexWrap:"wrap", justifyContent:"space-between" }}>
+            <div style={{ fontFamily:S, fontSize:"0.58rem",
+                           color:"rgba(255,255,255,0.3)", lineHeight:1.5,
+                           maxWidth:160 }}>
+              No bank route. Verified capital only. Long-term hold.
             </div>
             <Button onClick={() => onInvest("aas-4")} color={TEAL} size="sm">
               INVEST →

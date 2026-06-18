@@ -61,14 +61,14 @@ const DEALS: Deal[] = [
   {
     id: "world-studios",
     name: "World Studios Kansas City",
-    type: "REAL ESTATE · CREATIVE HUB",
+    type: "CREATIVE HUB · LIVE PRODUCTION",
     color: TEAL,
     stages: ["Concept","Site Identified","LOI","Under Contract","Acquired","Open"],
     current: 1,
-    note: "Site identified in Kansas City. LOI discussions next.",
+    note: "$20K+ in live performance equipment already deployed and operational. Active discussions with production companies that are winding down or retiring to acquire their rights catalog under World Studios. Site identification in Kansas City underway. LOI discussions next.",
     minInvestment: "$25,000",
     structure: "Reg D 506(c) · Fractional equity",
-    useOfProceeds: "Site acquisition, buildout, equipment",
+    useOfProceeds: "Site acquisition, buildout, equipment expansion, rights catalog acquisition",
   },
 ];
 

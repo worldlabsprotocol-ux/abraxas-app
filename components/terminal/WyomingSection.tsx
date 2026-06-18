@@ -35,7 +35,7 @@ const TIERS: TierDef[] = [
   },
 ];
 
-const COMING_SOON = ["CARD", "APPLE PAY", "GOOGLE PAY", "KLARNA"];
+const COMING_SOON: string[] = []; // removed — no "coming soon" on a financial product
 
 export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) {
   return (
@@ -48,15 +48,33 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
         <h2 style={{ fontFamily:S, fontSize:"clamp(0.95rem,2.5vw,1.35rem)",
                       fontWeight:800, color:W, margin:"0 0 0.375rem",
                       letterSpacing:"-0.01em" }}>
-          Start a real company, fully online.
+          Form a real company that can hold assets, raise money, and pay investors.
         </h2>
-        <p style={{ fontFamily:S, fontSize:"0.78rem",
-                     color:"rgba(255,255,255,0.4)", lineHeight:1.6,
-                     maxWidth:560, margin:"0 0 0.75rem" }}>
-          Form a Wyoming LLC, a legally recognized US company, without a
-          lawyer or a trip to an office. Ownership and records are also
-          kept on Solana, so they're easy to verify and hard to lose.
-        </p>
+
+        {/* Use case explainer — three reasons that actually close the "why bother" gap */}
+        <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem",
+                       marginBottom:"1rem" }}>
+          {[
+            { icon:"◎", title:"Hold assets legally",
+              body:"An LLC means the property, the IP, or the rights belong to an entity — not just you personally. That protects you and makes the ownership easy to verify." },
+            { icon:"◎", title:"Accept investment without a bank",
+              body:"Once formed, the LLC can issue membership units to investors as a Reg D offering. No traditional bank, no underwriter, no months of paperwork." },
+            { icon:"◎", title:"An on-chain record of who owns what",
+              body:"The ownership structure is recorded on Solana — any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
+          ].map(r => (
+            <div key={r.title} style={{ display:"flex", gap:"0.625rem",
+                                         alignItems:"flex-start" }}>
+              <span style={{ color:B, fontSize:"0.7rem", marginTop:2,
+                              flexShrink:0 }}>{r.icon}</span>
+              <div>
+                <span style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:700,
+                                color:W }}>{r.title}: </span>
+                <span style={{ fontFamily:S, fontSize:"0.78rem",
+                                color:"rgba(255,255,255,0.45)" }}>{r.body}</span>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Payment strip */}
         <div style={{ padding:"0.5rem 0.75rem", borderRadius:5,
@@ -75,20 +93,6 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
                           color:"rgba(255,255,255,0.4)" }}>
             Send to circuit.skr treasury wallet
           </span>
-          <div style={{ display:"flex", gap:"0.25rem", flexWrap:"wrap",
-                         marginLeft:"auto", opacity:0.4 }}>
-            {COMING_SOON.map(m => (
-              <div key={m}
-                style={{ padding:"1px 6px", borderRadius:2,
-                          background:"rgba(255,255,255,0.04)",
-                          border:"1px solid rgba(255,255,255,0.08)",
-                          fontFamily:M, fontSize:"0.44rem",
-                          color:"rgba(255,255,255,0.3)",
-                          letterSpacing:"0.04em" }}>
-                {m} · COMING SOON
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Tier cards */}

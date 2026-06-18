@@ -1,98 +1,42 @@
-/* FILE: app/globals.css */
-/* Abraxas Protocol — Premium dark substrate */
+/* FILE: app/globals.css — replace or merge with existing */
+/* Light mode is DEFAULT. Dark is opt-in via the toggle. */
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+:root,
+[data-theme="light"] {
+  --bg:             #FFFFFF;
+  --bg-secondary:   #F7F8FA;
+  --surface:        #FFFFFF;
+  --surface-raised: #F0F2F5;
+  --border:         #E2E8F0;
+  --text-primary:   #0A0C10;
+  --text-secondary: #4A5568;
+  --text-muted:     #A0ADB8;
+  --accent:         #10B981;
+  --accent-faint:   rgba(16,185,129,0.08);
+  --accent-border:  rgba(16,185,129,0.2);
 }
 
-/*
-  Base font-size: 13.5px (was 16px default)
-  This scales ALL rem units down ~15% without touching any component files.
-  Affects: nav buttons, section labels, body text, card text.
-  Does NOT affect: input/select (overridden below to stay 16px for iOS zoom prevention),
-  or any px-based sizes.
-*/
-html {
-  font-size: 12.5px;
-  scroll-behavior: smooth;
+[data-theme="dark"] {
+  --bg:             #0A0C10;
+  --bg-secondary:   #0D1117;
+  --surface:        #0D1117;
+  --surface-raised: #141922;
+  --border:         #1C2333;
+  --text-primary:   #F8FAFC;
+  --text-secondary: rgba(248,250,252,0.55);
+  --text-muted:     rgba(248,250,252,0.3);
+  --accent:         #10B981;
+  --accent-faint:   rgba(16,185,129,0.08);
+  --accent-border:  rgba(16,185,129,0.25);
 }
 
-html, body {
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
-  padding: 0;
-  background: #070a14;
-  color: #f0f0f0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-image: radial-gradient(
-    ellipse 80% 60% at 50% -10%,
-    rgba(16, 185, 129, 0.05) 0%,
-    transparent 60%
-  );
-  background-attachment: fixed;
-  min-height: 100vh;
 }
-
-@supports (height: 100dvh) {
-  html, body { min-height: 100dvh; }
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  cursor: pointer;
-  font-family: inherit;
-}
-
-/*
-  Inputs stay at 16px to prevent iOS auto-zoom on focus.
-  Even though html base is 13.5px, we pin inputs explicitly.
-*/
-input, textarea, select {
-  font-size: 16px;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar          { width: 4px; height: 4px; }
-::-webkit-scrollbar-track    { background: rgba(255,255,255,0.02); }
-::-webkit-scrollbar-thumb    { background: rgba(16,185,129,0.25); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.45); }
-
-/* Wallet adapter */
-.wallet-adapter-modal-wrapper {
-  background: rgba(7, 10, 20, 0.98) !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  border-radius: 12px !important;
-}
-.wallet-adapter-modal-title {
-  color: #f0f0f0 !important;
-  font-family: "JetBrains Mono", monospace !important;
-  font-weight: 900 !important;
-}
-.wallet-adapter-button {
-  background: linear-gradient(135deg, #10B981, #059669) !important;
-  color: #000 !important;
-  border-radius: 7px !important;
-  font-weight: 800 !important;
-  border: none !important;
-}
-.wallet-adapter-button:hover {
-  background: linear-gradient(135deg, #059669, #047857) !important;
-}
-
-/* Safe area for iPhone notch */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  nav[style*="sticky"] {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-/* Hide PROTOCOL OS text on small screens — prevents nav crowding */
-@media (max-width: 520px) {
-  .abraxas-nav-os { display: none !important; }
+*:not(img):not(svg):not(path) {
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
