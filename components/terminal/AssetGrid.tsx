@@ -324,16 +324,16 @@ export function AssetGrid({ onViewRegistry, onInvest }: AssetGridProps) {
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
                            color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
-              Smyrna, GA · 6 min from Truist Park · Paid off · Chancellor K. Jackson, owner
+              Cumberland Townhomes, Smyrna GA · 6 min from Truist Park · Paid off · Chancellor K. Jackson, owner
             </div>
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
                          gap:"1px", background:BDR }}>
             {[
-              { k:"Asset Class", v:"Residential RE" },
-              { k:"Lien Status", v:"CLEAR. Paid Off" },
-              { k:"Max Borrow",  v:"~60% LTV USDC" },
-              { k:"Status",      v:"PENDING VERIFICATION" },
+              { k:"Unit",         v:"1,220 sqft · 2BD/1.5BA" },
+              { k:"Built",        v:"1984" },
+              { k:"Lien Status",  v:"CLEAR. Paid Off" },
+              { k:"Appreciation", v:"$76.2K \u2192 $208.2K" },
             ].map(s => (
               <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
                 <div style={{ fontFamily:M, fontSize:"0.48rem",

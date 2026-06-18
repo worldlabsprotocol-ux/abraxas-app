@@ -221,51 +221,6 @@ export default function DashboardPage() {
         <CompactWallet/>
       </nav>
 
-      {/* ── STATUS STRIP ────────────────────────────────────── */}
-      <div style={{
-        background: "#030508", borderBottom: `1px solid ${BDR}`,
-        padding: "0.35rem clamp(0.875rem,2vw,1.5rem)",
-        display: "flex", alignItems: "center", gap: "1.25rem",
-        fontSize: "0.62rem", color: DIM, overflowX: "auto",
-      }}>
-        <span style={{ color: G, fontWeight: 700 }}>● PORTFOLIO ACTIVE</span>
-        <span>SESSION: {session?.label ?? "..."}</span>
-        <span style={{ color: A }}>{assets.length} ASSET{assets.length !== 1 ? "S" : ""}</span>
-        <span style={{ color: B }}>ABRAXAS OS BUILD 2026.1</span>
-        <span style={{ flex: 1 }}/>
-        <span style={{ color: "rgba(255,255,255,0.2)" }}>
-          {new Date().toISOString().split("T")[0]}
-        </span>
-      </div>
-
-      {/* ── INSTITUTIONAL BANNER ──────────────────────────────── */}
-      <div style={{
-        padding: "0.875rem clamp(0.875rem,2vw,1.5rem)",
-        background: "linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(0,0,0,0) 60%)",
-        borderBottom: `1px solid ${BDR}`,
-        display: "flex", alignItems: "flex-start",
-        justifyContent: "space-between", flexWrap: "wrap", gap: "0.625rem",
-      }}>
-        <div>
-          <div style={{ fontFamily: M, fontSize: "0.55rem", fontWeight: 700,
-                         color: G, letterSpacing: "0.15em", textTransform: "uppercase",
-                         marginBottom: 3 }}>
-            ABRAXAS PROTOCOL · ASSET DASHBOARD
-          </div>
-          <div style={{ fontFamily: "Georgia, serif",
-                         fontSize: "clamp(0.95rem,2.5vw,1.25rem)",
-                         fontWeight: 700, color: W, lineHeight: 1.2 }}>
-            Your verified assets.{" "}
-            <span style={{ color: G }}>One credential. Every protocol.</span>
-          </div>
-        </div>
-        <div style={{ fontFamily: M, fontSize: "0.52rem",
-                       color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em",
-                       textAlign: "right" }}>
-          W3C VC · SOLANA MAINNET<br/>BUILD 2026.1
-        </div>
-      </div>
-
       {/* ── PASSPORT STATUS WIDGET ─────────────────────────────── */}
       <div style={{
         padding: "0.625rem clamp(0.875rem,2vw,1.5rem)",

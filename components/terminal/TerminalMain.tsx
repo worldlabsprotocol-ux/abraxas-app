@@ -12,6 +12,7 @@ import { TokenizationRequestModal } from "@/components/TokenizationRequestModal"
 import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroSection }        from "./HeroSection";
+import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { WyomingSection }     from "./WyomingSection";
 import { MusicSection }       from "./MusicSection";
@@ -67,38 +68,52 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        <HeroSection onGetVerified={() => setDeep("submit")} />
+        <div id="demo-milestones">
+          <MilestonesSection />
+        </div>
+
+        <Divider />
+
+        <div id="demo-hero">
+          <HeroSection onGetVerified={() => setDeep("submit")} />
+        </div>
 
         <Divider />
 
         <div id="abraxas-id" />
 
         <ScrollFade>
-          <AssetGrid
-            onViewRegistry={() => setDeep("registry")}
-            onInvest={(assetId) => setInvestAsset(assetId)}
-          />
+          <div id="demo-assets">
+            <AssetGrid
+              onViewRegistry={() => setDeep("registry")}
+              onInvest={(assetId) => setInvestAsset(assetId)}
+            />
+          </div>
         </ScrollFade>
 
         <Divider />
 
         <ScrollFade>
-          <WyomingSection
-            onSelectTier={(tier: WyomingTier) => {
-              setInitialTier(tier);
-              setWyOpen(true);
-            }}
-            onBrowse={() => {
-              setInitialTier(null);
-              setWyOpen(true);
-            }}
-          />
+          <div id="demo-wyoming">
+            <WyomingSection
+              onSelectTier={(tier: WyomingTier) => {
+                setInitialTier(tier);
+                setWyOpen(true);
+              }}
+              onBrowse={() => {
+                setInitialTier(null);
+                setWyOpen(true);
+              }}
+            />
+          </div>
         </ScrollFade>
 
         <Divider />
 
         <ScrollFade>
-          <MusicSection />
+          <div id="demo-music">
+            <MusicSection />
+          </div>
         </ScrollFade>
 
         <Divider />
@@ -110,11 +125,13 @@ export function TerminalMain() {
         <Divider />
 
         <ScrollFade>
-          <ContentSection
-            onSubmit={() => setDeep("submit")}
-            onTrust={() => setDeep("trust")}
-            onRegistry={() => setDeep("registry")}
-          />
+          <div id="demo-deals">
+            <ContentSection
+              onSubmit={() => setDeep("submit")}
+              onTrust={() => setDeep("trust")}
+              onRegistry={() => setDeep("registry")}
+            />
+          </div>
         </ScrollFade>
       </div>
     </div>

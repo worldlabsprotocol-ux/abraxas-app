@@ -1,9 +1,12 @@
 "use client";
 // FILE: components/terminal/DealsProgress.tsx
 // Honest progress tracker for active land, mineral, and oil deal pipeline.
-// Shows where each deal actually is. no hype, no fake progress.
+// Investor-facing fields added: minimum participation, structure, use of
+// proceeds, and an inline express-interest form per deal.
 
+import { useState } from "react";
 import { M, S, G, A, B, W, BDR, CARD, TEAL } from "./tokens";
+import { Button } from "./ui";
 
 interface Deal {
   id: string;
@@ -13,6 +16,9 @@ interface Deal {
   stages: string[];
   current: number;
   note: string;
+  minInvestment: string;
+  structure: string;
+  useOfProceeds: string;
 }
 
 const DEALS: Deal[] = [
@@ -24,6 +30,9 @@ const DEALS: Deal[] = [
     stages: ["Introduced","Due Diligence","LOI Signed","Structured","On-Chain","Active"],
     current: 1,
     note: "Initial discussions active. Operator LOI in progress.",
+    minInvestment: "$25,000",
+    structure: "Reg D 506(c) · Royalty token",
+    useOfProceeds: "Operator LOI execution, lease structuring, legal",
   },
   {
     id: "oil-gas",
@@ -33,6 +42,9 @@ const DEALS: Deal[] = [
     stages: ["Introduced","Investor Ready","Deal Structured","Funded","Producing","On-Chain"],
     current: 1,
     note: "Deal materials prepared. Investor outreach underway.",
+    minInvestment: "$50,000",
+    structure: "Reg D 506(c) · Working interest",
+    useOfProceeds: "Drilling participation, completion costs",
   },
   {
     id: "lifeway-ip",
@@ -42,6 +54,9 @@ const DEALS: Deal[] = [
     stages: ["Introduced","Term Sheet","Negotiation","Acquired","Tokenized","Active"],
     current: 0,
     note: "Initial discussions. Rights valuation in progress.",
+    minInvestment: "$15,000",
+    structure: "Rights acquisition · Royalty share",
+    useOfProceeds: "Rights acquisition, production budget",
   },
   {
     id: "world-studios",
@@ -51,6 +66,9 @@ const DEALS: Deal[] = [
     stages: ["Concept","Site Identified","LOI","Under Contract","Acquired","Open"],
     current: 1,
     note: "Site identified in Kansas City. LOI discussions next.",
+    minInvestment: "$25,000",
+    structure: "Reg D 506(c) · Fractional equity",
+    useOfProceeds: "Site acquisition, buildout, equipment",
   },
 ];
 
@@ -105,6 +123,121 @@ function ProgressBar({ stages, current, color }: {
   );
 }
 
+function DealCard({ deal }: { deal: Deal }) {
+  const [expanded, setExpanded] = useState(false);
+  const [email,    setEmail]    = useState("");
+  const [sent,     setSent]     = useState(false);
+  const [sending,  setSending]  = useState(false);
+
+  async function expressInterest() {
+    if (!email) return;
+    setSending(true);
+    try {
+      await fetch("/api/invest/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          asset_id: deal.id,
+          asset_name: deal.name,
+          investment_option: "Deal Pipeline Interest",
+          email,
+          amount_interest: null,
+        }),
+      });
+    } catch { /* fail open */ }
+    setSent(true);
+    setSending(false);
+  }
+
+  return (
+    <div style={{ background:CARD, border:`1px solid ${BDR}`,
+                   borderLeft:`3px solid ${deal.color}`,
+                   borderRadius:7, padding:"1rem 1.125rem" }}>
+      <div style={{ display:"flex", justifyContent:"space-between",
+                     alignItems:"flex-start", marginBottom:"0.75rem",
+                     flexWrap:"wrap", gap:"0.5rem" }}>
+        <div>
+          <div style={{ fontFamily:S, fontSize:"clamp(0.85rem,1.8vw,1rem)",
+                         fontWeight:700, color:W, marginBottom:2 }}>
+            {deal.name}
+          </div>
+          <div style={{ fontFamily:M, fontSize:"0.5rem",
+                         color:"rgba(255,255,255,0.3)",
+                         letterSpacing:"0.1em",
+                         textTransform:"uppercase" }}>
+            {deal.type}
+          </div>
+        </div>
+        <div style={{ padding:"0.2rem 0.5rem", borderRadius:3,
+                       background:`${deal.color}12`,
+                       border:`1px solid ${deal.color}30`,
+                       fontFamily:M, fontSize:"0.48rem", fontWeight:700,
+                       color:deal.color, letterSpacing:"0.06em",
+                       textTransform:"uppercase", whiteSpace:"nowrap" }}>
+          {deal.stages[deal.current]}
+        </div>
+      </div>
+
+      <ProgressBar stages={deal.stages} current={deal.current} color={deal.color} />
+
+      <div style={{ fontFamily:S, fontSize:"0.68rem",
+                     color:"rgba(255,255,255,0.35)",
+                     marginTop:"0.625rem", marginBottom:"0.75rem",
+                     lineHeight:1.5 }}>
+        {deal.note}
+      </div>
+
+      {/* Investor fields */}
+      <div style={{ display:"grid",
+                     gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",
+                     gap:"1px", background:BDR, borderRadius:5,
+                     overflow:"hidden", marginBottom:"0.75rem" }}>
+        {[
+          { label:"Minimum",      val:deal.minInvestment },
+          { label:"Structure",    val:deal.structure },
+          { label:"Use of Funds", val:deal.useOfProceeds },
+        ].map(f => (
+          <div key={f.label} style={{ background:"#08090F", padding:"0.5rem 0.625rem" }}>
+            <div style={{ fontFamily:M, fontSize:"0.44rem",
+                           color:"rgba(255,255,255,0.25)",
+                           textTransform:"uppercase", letterSpacing:"0.08em",
+                           marginBottom:2 }}>{f.label}</div>
+            <div style={{ fontFamily:S, fontSize:"0.62rem",
+                           color:"rgba(255,255,255,0.55)", lineHeight:1.3 }}>{f.val}</div>
+          </div>
+        ))}
+      </div>
+
+      {sent ? (
+        <div style={{ fontFamily:M, fontSize:"0.62rem", color:deal.color,
+                       padding:"0.5rem 0", textAlign:"center" }}>
+          Interest received. Our team will follow up by email.
+        </div>
+      ) : expanded ? (
+        <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            type="email"
+            style={{ flex:1, minWidth:160, padding:"0.5rem 0.625rem",
+                      borderRadius:5, border:`1px solid ${BDR}`,
+                      background:"rgba(255,255,255,0.03)",
+                      color:W, fontFamily:S, fontSize:"16px" }}
+          />
+          <Button onClick={expressInterest} color={deal.color} size="sm">
+            {sending ? "..." : "SEND →"}
+          </Button>
+        </div>
+      ) : (
+        <Button onClick={() => setExpanded(true)} variant="outline" color={deal.color} size="sm">
+          EXPRESS INTEREST
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function DealsProgress() {
   return (
     <div style={{ marginBottom:"1.5rem" }}>
@@ -126,49 +259,7 @@ export function DealsProgress() {
       </div>
 
       <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
-        {DEALS.map(deal => (
-          <div key={deal.id}
-            style={{ background:CARD, border:`1px solid ${BDR}`,
-                      borderLeft:`3px solid ${deal.color}`,
-                      borderRadius:7, padding:"1rem 1.125rem" }}>
-            <div style={{ display:"flex", justifyContent:"space-between",
-                           alignItems:"flex-start", marginBottom:"0.75rem",
-                           flexWrap:"wrap", gap:"0.5rem" }}>
-              <div>
-                <div style={{ fontFamily:S, fontSize:"clamp(0.85rem,1.8vw,1rem)",
-                               fontWeight:700, color:W, marginBottom:2 }}>
-                  {deal.name}
-                </div>
-                <div style={{ fontFamily:M, fontSize:"0.5rem",
-                               color:"rgba(255,255,255,0.3)",
-                               letterSpacing:"0.1em",
-                               textTransform:"uppercase" }}>
-                  {deal.type}
-                </div>
-              </div>
-              <div style={{ padding:"0.2rem 0.5rem", borderRadius:3,
-                             background:`${deal.color}12`,
-                             border:`1px solid ${deal.color}30`,
-                             fontFamily:M, fontSize:"0.48rem", fontWeight:700,
-                             color:deal.color, letterSpacing:"0.06em",
-                             textTransform:"uppercase", whiteSpace:"nowrap" }}>
-                {deal.stages[deal.current]}
-              </div>
-            </div>
-
-            <ProgressBar
-              stages={deal.stages}
-              current={deal.current}
-              color={deal.color}
-            />
-
-            <div style={{ fontFamily:S, fontSize:"0.68rem",
-                           color:"rgba(255,255,255,0.35)",
-                           marginTop:"0.625rem", lineHeight:1.5 }}>
-              {deal.note}
-            </div>
-          </div>
-        ))}
+        {DEALS.map(deal => <DealCard key={deal.id} deal={deal} />)}
       </div>
 
       <div style={{ marginTop:"0.75rem", padding:"0.625rem 0.875rem",

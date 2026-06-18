@@ -140,14 +140,18 @@ export default function Home() {
                        gap:"1px", background:BDR, borderRadius:8,
                        overflow:"hidden", width:"min(360px,90vw)",
                        marginBottom:"2rem", border:`1px solid ${BDR}` }}>
-          {[["4","Assets Verified"],["$2.8M+","Value Attested"],["W3C","VC Standard"]].map(([v,l]) => (
-            <div key={l} style={{ background:"#0D1117",
+          {[
+            { val:"4",      label:"Assets Verified" },
+            { val:"$2.8M+", label:"Value Attested" },
+            { val:"W3C",    label:"VC Standard" },
+          ].map(stat => (
+            <div key={stat.label} style={{ background:"#0D1117",
                                     padding:"0.875rem 0.5rem", textAlign:"center" }}>
               <div style={{ fontFamily:M, fontSize:"clamp(1.1rem,3vw,1.5rem)",
-                             fontWeight:900, color:G, marginBottom:2 }}>{v}</div>
+                             fontWeight:900, color:G, marginBottom:2 }}>{stat.val}</div>
               <div style={{ fontFamily:M, fontSize:"0.5rem",
                              color:"rgba(255,255,255,0.25)",
-                             letterSpacing:"0.08em", textTransform:"uppercase" }}>{l}</div>
+                             letterSpacing:"0.08em", textTransform:"uppercase" }}>{stat.label}</div>
             </div>
           ))}
         </div>
@@ -181,6 +185,19 @@ export default function Home() {
             transition:"opacity 0.3s",
           }}>
             ENTER PROTOCOL
+          </Link>
+          <Link href="/terminal?signin=1" style={{
+            padding:"0.875rem 1.5rem", borderRadius:6,
+            border:`1px solid ${G}40`,
+            background:`${G}08`, color:G,
+            fontFamily:M, fontSize:"0.85rem", fontWeight:700,
+            letterSpacing:"0.05em", textTransform:"uppercase",
+            textDecoration:"none", display:"inline-block",
+            opacity: ready ? 1 : 0.3,
+            pointerEvents: ready ? "auto" : "none",
+            transition:"opacity 0.3s",
+          }}>
+            SIGN IN
           </Link>
           <Link href="/dashboard" style={{
             padding:"0.875rem 1.5rem", borderRadius:6,
@@ -555,13 +572,17 @@ export default function Home() {
           ABRAXAS PROTOCOL · SOLANA MAINNET · BUILD 2026.1
         </div>
         <div style={{ display:"flex", gap:"1rem" }}>
-          {[["TERMINAL","/terminal"],["DASHBOARD","/dashboard"],["IDENTITY","/identity"]].map(([l,h]) => (
-            <Link key={l} href={h} style={{ fontFamily:M, fontSize:"0.52rem",
+          {[
+            { label:"TERMINAL",  href:"/terminal" },
+            { label:"DASHBOARD", href:"/dashboard" },
+            { label:"IDENTITY",  href:"/identity" },
+          ].map(link => (
+            <Link key={link.label} href={link.href} style={{ fontFamily:M, fontSize:"0.52rem",
                                               color:"rgba(255,255,255,0.2)",
                                               textDecoration:"none",
                                               letterSpacing:"0.08em",
                                               textTransform:"uppercase" }}>
-              {l}
+              {link.label}
             </Link>
           ))}
         </div>

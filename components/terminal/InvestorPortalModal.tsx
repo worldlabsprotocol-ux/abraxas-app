@@ -85,6 +85,16 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
                            color:"rgba(255,255,255,0.4)", marginTop:2 }}>
               {config.subtitle}
             </div>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:"0.3rem",
+                           marginTop:"0.5rem", padding:"0.2rem 0.5rem",
+                           borderRadius:3, background:`${G}10`,
+                           border:`1px solid ${G}30` }}>
+              <div style={{ width:5, height:5, borderRadius:"50%", background:G }} />
+              <span style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
+                              color:G, letterSpacing:"0.06em" }}>
+                PAID IN USDC · SOLANA
+              </span>
+            </div>
           </div>
           <button onClick={handleClose}
             style={{ background:"transparent", border:"none",

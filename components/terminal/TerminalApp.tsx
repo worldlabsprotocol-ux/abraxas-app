@@ -4,12 +4,13 @@
 // Default export. imported by app/terminal/page.tsx.
 
 import Image             from "next/image";
-import { useState }      from "react";
+import { useState, useEffect } from "react";
 import { CompactWallet } from "@/components/CompactWallet";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { EmailWalletLogin } from "@/components/EmailWalletLogin";
 import { TerminalMain }  from "./TerminalMain";
-import { M, BG, BDR, G, A, B, W } from "./tokens";
+import { DemoMode }      from "./DemoMode";
+import { M, S, BG, BDR, G, A, B, W } from "./tokens";
 
 const STATUS_ITEMS = [
   { dot: G, text: "SOLANA MAINNET" },
@@ -18,9 +19,21 @@ const STATUS_ITEMS = [
   { dot: B, text: "OWNERSHIP INFRASTRUCTURE" },
 ];
 
+type SignInTab = "email" | "wallet";
+const SIGN_IN_TABS: SignInTab[] = ["email", "wallet"];
+
 export default function TerminalApp() {
   const [emailWallet, setEmailWallet] = useState<string | null>(null);
-  const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [signInTab, setSignInTab] = useState<SignInTab>("email");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("signin") === "1") {
+      setShowSignIn(true);
+    }
+  }, []);
 
   return (
     <div style={{ background: BG, minHeight: "100vh",
@@ -126,35 +139,84 @@ export default function TerminalApp() {
             {emailWallet.slice(0, 4)}...{emailWallet.slice(-4)}
           </div>
         ) : (
-          <div style={{ position:"relative" }}>
-            <button
-              onClick={() => setShowEmailLogin(s => !s)}
-              style={{ padding:"0.4rem 0.875rem", borderRadius:5,
-                        border:`1px solid ${BDR}`, background:"transparent",
-                        color:"rgba(255,255,255,0.5)", fontFamily:M,
-                        fontSize:"0.62rem", fontWeight:700, cursor:"pointer",
-                        letterSpacing:"0.06em", textTransform:"uppercase" }}>
-              SIGN IN
-            </button>
-            {showEmailLogin && (
-              <div style={{ position:"absolute", top:"100%", right:0,
-                             marginTop:8, width:280, padding:"1rem",
-                             background:"#0D1117", border:`1px solid ${BDR}`,
-                             borderRadius:8, zIndex:1000,
-                             boxShadow:"0 8px 24px rgba(0,0,0,0.5)" }}>
-                <EmailWalletLogin
-                  onWalletReady={(pk) => { setEmailWallet(pk); setShowEmailLogin(false); }}
-                />
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setShowSignIn(true)}
+            style={{ padding:"0.4rem 0.875rem", borderRadius:5,
+                      border:`1px solid ${G}40`, background:`${G}10`,
+                      color:G, fontFamily:M,
+                      fontSize:"0.62rem", fontWeight:700, cursor:"pointer",
+                      letterSpacing:"0.06em", textTransform:"uppercase" }}>
+            SIGN IN
+          </button>
         )}
-        <CompactWallet />
       </nav>
+
+      {/* Sign-in modal. centered and fixed, never clips at screen edges */}
+      {showSignIn && (
+        <div onClick={() => setShowSignIn(false)}
+          style={{ position:"fixed", inset:0, zIndex:3000,
+                    background:"rgba(0,0,0,0.75)", backdropFilter:"blur(4px)",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    padding:"1rem" }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:"#0A0C10", borderRadius:10,
+                      border:`1px solid ${BDR}`, maxWidth:360, width:"100%",
+                      boxShadow:"0 0 60px rgba(16,185,129,0.1)" }}>
+            <div style={{ padding:"1.125rem 1.25rem",
+                           borderBottom:`1px solid ${BDR}`,
+                           display:"flex", alignItems:"center",
+                           justifyContent:"space-between" }}>
+              <span style={{ fontFamily:M, fontSize:"0.85rem", fontWeight:900,
+                              color:W, letterSpacing:"0.05em" }}>
+                SIGN IN
+              </span>
+              <button onClick={() => setShowSignIn(false)}
+                style={{ background:"transparent", border:"none",
+                          color:"rgba(255,255,255,0.4)", fontSize:"1.4rem",
+                          cursor:"pointer", lineHeight:1, padding:0 }}>
+                ×
+              </button>
+            </div>
+            <div style={{ display:"flex", borderBottom:`1px solid ${BDR}` }}>
+              {SIGN_IN_TABS.map(tab => (
+                <button key={tab} onClick={() => setSignInTab(tab)}
+                  style={{ flex:1, padding:"0.625rem", border:"none",
+                            background: signInTab === tab ? `${G}10` : "transparent",
+                            borderBottom: signInTab === tab ? `2px solid ${G}` : "2px solid transparent",
+                            color: signInTab === tab ? G : "rgba(255,255,255,0.4)",
+                            fontFamily:M, fontSize:"0.65rem", fontWeight:700,
+                            cursor:"pointer", letterSpacing:"0.06em",
+                            textTransform:"uppercase" }}>
+                  {tab === "email" ? "EMAIL" : "CONNECT WALLET"}
+                </button>
+              ))}
+            </div>
+            <div style={{ padding:"1.25rem" }}>
+              {signInTab === "email" ? (
+                <EmailWalletLogin
+                  onWalletReady={(pk) => { setEmailWallet(pk); setShowSignIn(false); }}
+                />
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column",
+                               gap:"0.75rem", alignItems:"center" }}>
+                  <div style={{ fontFamily:S, fontSize:"0.72rem",
+                                 color:"rgba(255,255,255,0.45)",
+                                 textAlign:"center", lineHeight:1.6 }}>
+                    Connect Phantom, Solflare, or any Solana wallet.
+                  </div>
+                  <CompactWallet />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ flex: 1 }}>
         <TerminalMain />
       </div>
+
+      <DemoMode />
     </div>
   );
 }
