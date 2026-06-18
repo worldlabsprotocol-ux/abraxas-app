@@ -1,8 +1,10 @@
 // FILE: app/identity/page.tsx
-// Dedicated Abraxas Identity page — no more 404 on /identity
-// Explains the protocol identity layer, shows verification flow, CTAs.
+// Dedicated Abraxas Identity page. Real verification flow, not a link
+// to elsewhere. Clicking Start Verification calls the actual Veriff
+// session API and redirects to Veriff's hosted check.
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 
@@ -16,6 +18,36 @@ const BDR = "#1C2333";
 const BG  = "#060810";
 
 export default function IdentityPage() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function startVerification() {
+    if (!email.includes("@")) {
+      setError("Enter a valid email first");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/identity/veriff/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json() as { verificationUrl?: string; error?: string };
+      if (data.verificationUrl) {
+        window.location.href = data.verificationUrl;
+      } else {
+        setError(data.error ?? "Could not start verification. Try again shortly.");
+      }
+    } catch {
+      setError("Network error. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div style={{ background:BG, minHeight:"100vh", fontFamily:M, color:W }}>
       {/* Nav */}
@@ -60,7 +92,7 @@ export default function IdentityPage() {
                        color:"rgba(255,255,255,0.5)", lineHeight:1.75,
                        maxWidth:560, margin:0 }}>
             Abraxas ID is the universal KYC/KYB layer for real-world assets onchain.
-            Verify once. Receive a W3C Verifiable Credential. Present it everywhere —
+            Verify once. Receive a W3C Verifiable Credential. Present it everywhere.
             no re-KYC, no repeated uploads, no friction tax on every new integration.
           </p>
         </div>
@@ -79,9 +111,9 @@ export default function IdentityPage() {
                          gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",
                          gap:"0.75rem" }}>
             {[
-              { title:"KYC — Know Your Customer",    color:G,
+              { title:"KYC. Know Your Customer",    color:G,
                 points:["Government-issued ID verification","Liveness detection","Sanctions / PEP screening","Address verification"] },
-              { title:"KYB — Know Your Business",    color:B,
+              { title:"KYB. Know Your Business",    color:B,
                 points:["Entity existence check","Beneficial owner mapping","Wyoming LLC confirmation","Operating agreement validation"] },
               { title:"Asset Owner Profile",          color:A,
                 points:["Ownership claim attestation","Title chain verification","Custody confirmation","Collateral eligibility scoring"] },
@@ -122,26 +154,59 @@ export default function IdentityPage() {
             The blockchain stores <strong style={{ color:W }}>verification proofs and attestations</strong>,
             not personal records. Your government ID, biometrics, and sensitive documents
             remain with the certified identity provider (Veriff). Abraxas issues a
-            cryptographic proof that you passed — nothing more.
+            cryptographic proof that you passed. nothing more.
           </p>
         </div>
 
-        {/* CTA */}
-        <div style={{ marginTop:"2rem", display:"flex", gap:"0.75rem",
-                       flexWrap:"wrap" }}>
-          <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:6,
-              border:"none", background:G, color:"#000", fontFamily:M,
-              fontSize:"0.82rem", fontWeight:900, textDecoration:"none",
-              letterSpacing:"0.05em", textTransform:"uppercase",
-              boxShadow:`0 0 16px ${G}40` }}>
-            START VERIFICATION →
-          </Link>
-          <Link href="/dashboard" style={{ padding:"0.75rem 1.25rem", borderRadius:6,
-              border:`1px solid ${BDR}`, background:"transparent",
-              color:"rgba(255,255,255,0.4)", fontFamily:M, fontSize:"0.78rem",
-              fontWeight:700, textDecoration:"none", letterSpacing:"0.06em",
+        {/* Real verification CTA. calls the actual Veriff session API */}
+        <div style={{ marginTop:"2rem", padding:"1.25rem", borderRadius:8,
+                       background:"#0D1117", border:`1px solid ${BDR}` }}>
+          <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
+                         color:W, marginBottom:"0.75rem" }}>
+            Start your verification
+          </div>
+          <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap",
+                         marginBottom:"0.625rem" }}>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              style={{ flex:1, minWidth:200, padding:"0.7rem 0.875rem",
+                        borderRadius:6, border:`1px solid ${BDR}`,
+                        background:"rgba(255,255,255,0.03)",
+                        color:W, fontFamily:S, fontSize:"16px" }}
+            />
+            <button onClick={startVerification} disabled={loading}
+              style={{ padding:"0.7rem 1.5rem", borderRadius:6,
+                        border:"none", background:G, color:"#000", fontFamily:M,
+                        fontSize:"0.82rem", fontWeight:900, cursor:"pointer",
+                        letterSpacing:"0.05em", textTransform:"uppercase",
+                        boxShadow:`0 0 16px ${G}40`, opacity: loading ? 0.6 : 1 }}>
+              {loading ? "Starting..." : "Start Verification →"}
+            </button>
+          </div>
+          {error && (
+            <div style={{ fontFamily:S, fontSize:"0.72rem", color:"#EF4444",
+                           marginBottom:"0.5rem" }}>
+              {error}
+            </div>
+          )}
+          <div style={{ fontFamily:S, fontSize:"0.7rem",
+                         color:"rgba(255,255,255,0.35)", lineHeight:1.6 }}>
+            This opens a real identity check with Veriff, our certified
+            verification provider. It takes about two minutes: a photo ID
+            and a quick liveness check. Most people hear back within
+            minutes; some cases take up to one business day for manual review.
+          </div>
+        </div>
+
+        <div style={{ marginTop:"1rem" }}>
+          <Link href="/dashboard" style={{ fontFamily:M, fontSize:"0.78rem",
+              fontWeight:700, textDecoration:"none",
+              color:"rgba(255,255,255,0.4)", letterSpacing:"0.06em",
               textTransform:"uppercase" }}>
-            VIEW DASHBOARD
+            View Dashboard
           </Link>
         </div>
       </div>

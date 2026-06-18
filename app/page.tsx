@@ -88,7 +88,6 @@ const ASSET_TYPES = [
   { label:"Wyoming LLC",         color:B,  icon:"\u25a0" },
   { label:"Books & IP",          color:A,  icon:"\u25c6" },
   { label:"Mineral Rights",      color:G,  icon:"\u25c9" },
-  { label:"Affordable Housing",  color:B,  icon:"\u25cb" },
 ];
 
 export default function Home() {
@@ -226,19 +225,6 @@ export default function Home() {
             transition:"opacity 0.3s",
           }}>
             SIGN IN
-          </Link>
-          <Link href="/dashboard" style={{
-            padding:"0.875rem 1.5rem", borderRadius:6,
-            border:"1px solid rgba(255,255,255,0.15)",
-            background:"transparent", color:"rgba(255,255,255,0.5)",
-            fontFamily:M, fontSize:"0.85rem", fontWeight:700,
-            letterSpacing:"0.05em", textTransform:"uppercase",
-            textDecoration:"none", display:"inline-block",
-            opacity: ready ? 1 : 0.3,
-            pointerEvents: ready ? "auto" : "none",
-            transition:"opacity 0.3s",
-          }}>
-            DASHBOARD
           </Link>
         </div>
 

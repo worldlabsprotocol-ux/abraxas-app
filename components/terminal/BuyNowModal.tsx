@@ -174,8 +174,15 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                           borderRadius:10, border:`1px solid ${BDR}`,
                           background:"rgba(255,255,255,0.03)",
                           color:W, fontFamily:S, fontSize:"16px",
-                          marginBottom:"1rem", boxSizing:"border-box" }}
+                          marginBottom:"0.75rem", boxSizing:"border-box" }}
               />
+
+              <div style={{ fontFamily:S, fontSize:"0.68rem",
+                             color:"rgba(255,255,255,0.35)", lineHeight:1.5,
+                             marginBottom:"1rem" }}>
+                This is reviewed by our team, not settled automatically.
+                Typical confirmation time is same day, within 1 business day.
+              </div>
 
               <Button onClick={confirmPurchase} color={item.color} size="md" fullWidth>
                 {sending ? "Confirming..." : `I've sent the ${coin} →`}

@@ -41,28 +41,21 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
   return (
     <div style={{ marginBottom:"1.25rem" }}>
     <ScrollFade>
-      <Label>Wyoming LLC Formation</Label>
+      <Label>Form a Business</Label>
       <div style={{ padding:"1rem 1.125rem", borderRadius:8,
                      background:"linear-gradient(135deg,rgba(59,130,246,0.07),rgba(139,92,246,0.04))",
                      border:`1px solid ${B}25` }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
-                       marginBottom:"0.625rem" }}>
-          <div style={{ padding:"0.25rem 0.625rem", borderRadius:3,
-                         background:`${B}18`, border:`1px solid ${B}35`,
-                         fontFamily:M, fontSize:"0.6rem", fontWeight:900,
-                         color:B, letterSpacing:"0.12em", textTransform:"uppercase" }}>
-            TOKENIZE YOUR BUSINESS
-          </div>
-        </div>
         <h2 style={{ fontFamily:S, fontSize:"clamp(0.95rem,2.5vw,1.35rem)",
                       fontWeight:800, color:W, margin:"0 0 0.375rem",
                       letterSpacing:"-0.01em" }}>
-          Launch your business on-chain.
+          Start a real company, fully online.
         </h2>
         <p style={{ fontFamily:S, fontSize:"0.78rem",
                      color:"rgba(255,255,255,0.4)", lineHeight:1.6,
                      maxWidth:560, margin:"0 0 0.75rem" }}>
-          Wyoming LLC for on-chain ownership, governance, fundraising, and lending.
+          Form a Wyoming LLC, a legally recognized US company, without a
+          lawyer or a trip to an office. Ownership and records are also
+          kept on Solana, so they're easy to verify and hard to lose.
         </p>
 
         {/* Payment strip */}

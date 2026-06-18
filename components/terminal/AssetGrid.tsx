@@ -5,6 +5,7 @@
 
 import { M, S, G, A, B, W, BDR, CARD, TEAL, RED, IND } from "./tokens";
 import { Label, Button, ScrollFade } from "./ui";
+import { AssetGallery } from "./AssetGallery";
 import type { BuyItem } from "./BuyNowModal";
 
 interface AssetGridProps {
@@ -12,6 +13,11 @@ interface AssetGridProps {
   onInvest: (assetId: string) => void;
   onBuyNow: (item: BuyItem) => void;
 }
+
+// Real photo paths go here once uploaded to /public/assets/. Empty for
+// now, see AssetGallery.tsx for exactly how to activate these.
+const CIELO_IMAGES: string[] = [];
+const DEMARKO_IMAGES: string[] = [];
 
 const CIELO_STATS = [
   { k:"Appraised Value", v:"$1,100,000" },
@@ -27,9 +33,14 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
     <div style={{ marginBottom:"1.5rem" }}>
       {/* AAS-1: Cielo Sunrise */}
       <ScrollFade>
-      <Label>Genesis Asset · AAS-1</Label>
+      <Label>Featured Asset</Label>
       <div style={{ borderRadius:8, overflow:"hidden",
                      border:`1px solid ${G}35`, marginBottom:"1.5rem" }}>
+        {CIELO_IMAGES.length > 0 ? (
+          <div style={{ padding:"1rem 1rem 0" }}>
+            <AssetGallery images={CIELO_IMAGES} fallbackLabel="Cielo Sunrise" color={G} />
+          </div>
+        ) : (
         <div style={{ height:"clamp(200px,35vw,300px)",
                        background:"linear-gradient(160deg,#0a1a0f 0%,#0d2318 25%,#112b1e 50%,#0a1a12 75%,#061008 100%)",
                        position:"relative", overflow:"hidden" }}>
@@ -45,10 +56,9 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           <div style={{ position:"absolute", bottom:0, left:0, right:0,
                          background:"linear-gradient(transparent,rgba(4,6,8,0.95))",
                          padding:"2rem 1.25rem 1rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.58rem", color:G, fontWeight:700,
-                           letterSpacing:"0.15em", textTransform:"uppercase",
+            <div style={{ fontFamily:S, fontSize:"0.7rem", color:G, fontWeight:600,
                            marginBottom:4 }}>
-              AAS-1 · VERIFIED · COLLATERAL ELIGIBLE
+              Verified · you can borrow against this
             </div>
             <div style={{ fontFamily:"Georgia,serif",
                            fontSize:"clamp(1.1rem,3vw,1.6rem)",
@@ -67,6 +77,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             </Button>
           </div>
         </div>
+        )}
         <div style={{ display:"grid",
                        gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",
                        gap:"1px", background:BDR }}>
@@ -120,13 +131,37 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${IND}50`,
                        background:"linear-gradient(145deg,#0C0E20 0%,#0A0C1A 100%)" }}>
+          {DEMARKO_IMAGES.length > 0 ? (
+            <div style={{ padding:"0.875rem 1rem 0" }}>
+              <AssetGallery images={DEMARKO_IMAGES} fallbackLabel="DeMarko Reddins" color={IND} />
+            </div>
+          ) : (
+            <div style={{ height:80, position:"relative", overflow:"hidden",
+                           background:"linear-gradient(180deg,#131530 0%,#0A0C1A 100%)" }}>
+              {/* Original illustration. book-spine motif, no real cover art
+                  since that's the author's own copyrighted work and needs
+                  to come from a real upload, not be fabricated here */}
+              <svg viewBox="0 0 400 80" preserveAspectRatio="none"
+                   style={{ position:"absolute", bottom:0, left:0,
+                            width:"100%", height:"100%", opacity:0.6 }}>
+                <rect x="30"  y="10" width="26" height="70" fill={`${IND}25`} />
+                <rect x="60"  y="20" width="22" height="60" fill={`${IND}35`} />
+                <rect x="86"  y="5"  width="30" height="75" fill={`${IND}20`} />
+                <rect x="120" y="15" width="24" height="65" fill={`${IND}30`} />
+                <rect x="280" y="18" width="24" height="62" fill={`${IND}28`} />
+                <rect x="308" y="8"  width="28" height="72" fill={`${IND}22`} />
+                <rect x="340" y="22" width="20" height="58" fill={`${IND}32`} />
+              </svg>
+              <div style={{ position:"absolute", inset:0,
+                             background:"linear-gradient(transparent,rgba(10,12,26,0.9))" }} />
+            </div>
+          )}
           <div style={{ padding:"0.875rem 1rem",
                          borderBottom:`1px solid ${IND}20`,
                          background:`linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,0,0,0))` }}>
-            <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
-                           color:IND, letterSpacing:"0.15em",
-                           textTransform:"uppercase", marginBottom:"0.375rem" }}>
-              AAS-2 · LITERARY IP · PUBLISHING RIGHTS
+            <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
+                           color:IND, marginBottom:"0.375rem" }}>
+              Published Author · Book Royalties
             </div>
             <div style={{ fontFamily:"Georgia,serif",
                            fontSize:"clamp(1rem,2.5vw,1.25rem)",
@@ -185,14 +220,42 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
                        border:`1px solid ${A}55`,
                        background:"linear-gradient(145deg,#140E00 0%,#0C0800 100%)",
                        gridColumn:"span 1" }}>
+          {/* Original illustrated header. abstract skyline silhouette,
+              no copyrighted material, since no official poster exists yet */}
+          <div style={{ height:120, position:"relative", overflow:"hidden",
+                         background:"linear-gradient(180deg,#1a1206 0%,#0c0800 100%)" }}>
+            <svg viewBox="0 0 1200 200" preserveAspectRatio="none"
+                 style={{ position:"absolute", bottom:0, left:0,
+                          width:"100%", height:"100%", opacity:0.55 }}>
+              <rect x="40"  y="90"  width="50" height="110" fill={`${A}20`} />
+              <rect x="100" y="60"  width="35" height="140" fill={`${A}28`} />
+              <rect x="145" y="100" width="60" height="100" fill={`${A}18`} />
+              <rect x="220" y="40"  width="40" height="160" fill={`${A}30`} />
+              <rect x="270" y="80"  width="45" height="120" fill={`${A}20`} />
+              <rect x="330" y="20"  width="30" height="180" fill={`${A}35`} />
+              <circle cx="345" cy="35" r="5" fill={`${A}50`} />
+              <rect x="900" y="50" width="38" height="150" fill={`${A}28`} />
+              <rect x="950" y="90" width="55" height="110" fill={`${A}18`} />
+              <rect x="1020" y="30" width="32" height="170" fill={`${A}32`} />
+              <rect x="1070" y="70" width="48" height="130" fill={`${A}20`} />
+              <rect x="1130" y="100" width="40" height="100" fill={`${A}15`} />
+            </svg>
+            <div style={{ position:"absolute", inset:0,
+                           background:"linear-gradient(transparent,rgba(12,8,0,0.9))" }} />
+            <div style={{ position:"absolute", bottom:8, left:14,
+                           fontFamily:S, fontSize:"0.62rem", fontWeight:600,
+                           color:`${A}90`, letterSpacing:"0.04em" }}>
+              In development · production talks active
+            </div>
+          </div>
+
           {/* Billboard header */}
           <div style={{ padding:"1rem 1rem 0.75rem",
                          borderBottom:`1px solid ${A}20`,
                          background:`linear-gradient(135deg,${A}12,rgba(0,0,0,0))` }}>
-            <div style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                           color:A, letterSpacing:"0.15em",
-                           textTransform:"uppercase", marginBottom:"0.375rem" }}>
-              AAS-3 · CHANCELLOR K. JACKSON · MULTI-FORMAT IP
+            <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
+                           color:A, marginBottom:"0.375rem" }}>
+              By Chancellor K. Jackson · TV & Anime Project
             </div>
             <div style={{ fontFamily:"Georgia,serif",
                            fontSize:"clamp(1.2rem,3vw,1.6rem)",
@@ -331,13 +394,41 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${TEAL}55`,
                        background:"linear-gradient(145deg,#001820 0%,#000F16 100%)" }}>
+          {/* Original illustration, representative style only. the actual
+              address is kept private, this is not a photo of the real unit */}
+          <div style={{ height:100, position:"relative", overflow:"hidden",
+                         background:"linear-gradient(180deg,#012228 0%,#000F16 100%)" }}>
+            <svg viewBox="0 0 400 130" preserveAspectRatio="xMidYMax slice"
+                 style={{ position:"absolute", bottom:0, left:"50%",
+                          transform:"translateX(-50%)", width:220, height:"100%",
+                          opacity:0.65 }}>
+              <rect x="20"  y="40" width="80" height="80" fill={`${TEAL}18`} stroke={`${TEAL}40`} strokeWidth="1.5" />
+              <rect x="100" y="20" width="90" height="100" fill={`${TEAL}22`} stroke={`${TEAL}45`} strokeWidth="1.5" />
+              <rect x="190" y="45" width="80" height="75" fill={`${TEAL}15`} stroke={`${TEAL}35`} strokeWidth="1.5" />
+              <rect x="35" y="60" width="14" height="18" fill={`${TEAL}50`} />
+              <rect x="60" y="60" width="14" height="18" fill={`${TEAL}50`} />
+              <rect x="120" y="40" width="14" height="18" fill={`${TEAL}55`} />
+              <rect x="150" y="40" width="14" height="18" fill={`${TEAL}55`} />
+              <rect x="120" y="70" width="14" height="18" fill={`${TEAL}55`} />
+              <rect x="150" y="70" width="14" height="18" fill={`${TEAL}55`} />
+              <rect x="205" y="65" width="14" height="18" fill={`${TEAL}45`} />
+              <rect x="230" y="65" width="14" height="18" fill={`${TEAL}45`} />
+            </svg>
+            <div style={{ position:"absolute", inset:0,
+                           background:"linear-gradient(transparent,rgba(0,15,22,0.92))" }} />
+            <div style={{ position:"absolute", bottom:6, left:14,
+                           fontFamily:S, fontSize:"0.58rem", fontWeight:600,
+                           color:`${TEAL}80`, letterSpacing:"0.04em" }}>
+              Representative illustration · exact unit kept private
+            </div>
+          </div>
+
           <div style={{ padding:"0.875rem 1rem",
                          borderBottom:`1px solid ${TEAL}20`,
                          background:`linear-gradient(135deg,${TEAL}12,rgba(0,0,0,0))` }}>
-            <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
-                           color:TEAL, letterSpacing:"0.15em",
-                           textTransform:"uppercase", marginBottom:"0.375rem" }}>
-              AAS-4 · REAL ESTATE · INVESTOR PARTICIPATION OPEN
+            <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
+                           color:TEAL, marginBottom:"0.375rem" }}>
+              Real Estate · Open to Investors
             </div>
             <div style={{ fontFamily:"Georgia,serif",
                            fontSize:"clamp(1rem,2.5vw,1.25rem)",
