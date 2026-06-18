@@ -57,6 +57,39 @@ export function PartnersSection() {
           <BecomeAPartner />
         </div>
       </div>
+
+      {/* Disaster & relief fund auditing. positioning only, no client yet */}
+      <div style={{ padding:"1rem 1.125rem", background:CARD,
+                     border:`1px solid ${BDR}`, borderRadius:8 }}>
+        <div style={{ display:"flex", alignItems:"flex-start",
+                       justifyContent:"space-between",
+                       flexWrap:"wrap", gap:"0.75rem" }}>
+          <div>
+            <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
+                           color:"#F59E0B", marginBottom:"0.375rem" }}>
+              New verification vertical
+            </div>
+            <div style={{ fontFamily:S, fontSize:"clamp(0.9rem,1.9vw,1.05rem)",
+                           fontWeight:700, color:W, marginBottom:"0.375rem" }}>
+              Disaster and relief fund auditing.
+            </div>
+            <p style={{ fontFamily:S, fontSize:"0.75rem",
+                         color:"rgba(255,255,255,0.45)", lineHeight:1.65,
+                         maxWidth:520, margin:0 }}>
+              The same verification model applied to public and nonprofit
+              relief funds: an independent auditor confirms a disbursement
+              was used as intended, and Abraxas issues a portable
+              credential proving it. Built for organizations distributing
+              recovery funds after a disaster who need a verifiable,
+              public record of where the money actually went.
+            </p>
+          </div>
+          <Button href="mailto:partners@abraxas-app.vercel.app?subject=Relief%20Fund%20Auditing"
+                  variant="outline" color="#F59E0B" size="sm">
+            INQUIRE
+          </Button>
+        </div>
+      </div>
       </ScrollFade>
     </div>
   );

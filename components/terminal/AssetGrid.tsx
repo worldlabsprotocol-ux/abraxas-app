@@ -5,10 +5,12 @@
 
 import { M, S, G, A, B, W, BDR, CARD, TEAL, RED, IND } from "./tokens";
 import { Label, Button, ScrollFade } from "./ui";
+import type { BuyItem } from "./BuyNowModal";
 
 interface AssetGridProps {
   onViewRegistry: () => void;
   onInvest: (assetId: string) => void;
+  onBuyNow: (item: BuyItem) => void;
 }
 
 const CIELO_STATS = [
@@ -20,7 +22,7 @@ const CIELO_STATS = [
   { k:"Cap Rate",        v:"9.95%" },
 ];
 
-export function AssetGrid({ onViewRegistry, onInvest }: AssetGridProps) {
+export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps) {
   return (
     <div style={{ marginBottom:"1.5rem" }}>
       {/* AAS-1: Cielo Sunrise */}
@@ -90,6 +92,15 @@ export function AssetGrid({ onViewRegistry, onInvest }: AssetGridProps) {
             <Button onClick={onViewRegistry} variant="outline" color={G} size="md">
               VIEW ASSET RECORD
             </Button>
+            <Button onClick={() => onBuyNow({
+                id: "cielo-stay",
+                name: "Cielo Sunrise · Direct Stay",
+                price: "From $240/night",
+                description: "Book a stay directly with USDC or USDT. Same property, paid in stablecoin instead of card.",
+                color: G,
+              })} color={G} size="md">
+              BUY NOW
+            </Button>
           </div>
           <Button onClick={() => onInvest("aas-1")} color={G} size="md">
             INVEST →
@@ -147,14 +158,25 @@ export function AssetGrid({ onViewRegistry, onInvest }: AssetGridProps) {
           </div>
           <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
                          display:"flex", gap:"0.5rem", alignItems:"center",
-                         justifyContent:"space-between" }}>
+                         justifyContent:"space-between", flexWrap:"wrap" }}>
             <Button href="https://www.amazon.com/stores/DeMarko-Reddins/author/B00JUA0U0G"
                     variant="outline" color={IND} size="sm">
               VIEW CATALOG
             </Button>
-            <Button onClick={() => onInvest("aas-2")} color={IND} size="sm">
-              INVEST →
-            </Button>
+            <div style={{ display:"flex", gap:"0.5rem" }}>
+              <Button onClick={() => onBuyNow({
+                  id: "demarko-books",
+                  name: "DeMarko Reddins · Book Catalog",
+                  price: "From $14.99",
+                  description: "Buy directly with USDC or USDT. Same books, paid in stablecoin instead of card.",
+                  color: IND,
+                })} variant="outline" color={IND} size="sm">
+                BUY NOW
+              </Button>
+              <Button onClick={() => onInvest("aas-2")} color={IND} size="sm">
+                INVEST →
+              </Button>
+            </div>
           </div>
         </div>
 

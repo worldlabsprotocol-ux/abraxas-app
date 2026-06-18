@@ -18,6 +18,7 @@ export interface AssetInvestConfig {
   stats: Array<{ label: string; val: string }>;
   options: InvestmentOption[];
   historicalNote?: string;
+  confidenceChecks?: Array<{ source: string; status: "confirmed" | "pending" }>;
 }
 
 export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
@@ -41,6 +42,12 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
         desc: "Property-backed USDC loan against verified equity. Operating retreat with active Airbnb income servicing the position.",
         note: "Up to $660K available at current valuation",
       },
+    ],
+    confidenceChecks: [
+      { source: "Title search",              status: "confirmed" },
+      { source: "Appraisal",                 status: "confirmed" },
+      { source: "Active rental income record", status: "confirmed" },
+      { source: "Public record cross-check", status: "confirmed" },
     ],
   },
 
@@ -71,6 +78,12 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
         note: "Reg D framework, accredited investors",
       },
     ],
+    confidenceChecks: [
+      { source: "Copyright registration",  status: "confirmed" },
+      { source: "Platform sales record",   status: "confirmed" },
+      { source: "Royalty audit",           status: "pending" },
+      { source: "Rights chain verification", status: "pending" },
+    ],
   },
 
   "aas-3": {
@@ -99,6 +112,12 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
         desc: "Invest in a single format, TV/film or anime, rather than the full IP package. Lower entry, narrower upside tied to that format's deal outcome. Distributions paid in USDC.",
         note: "Choose TV pilot or anime track independently",
       },
+    ],
+    confidenceChecks: [
+      { source: "Script registration",         status: "confirmed" },
+      { source: "Production talks documented", status: "confirmed" },
+      { source: "Distribution rights audit",   status: "pending" },
+      { source: "Valuation appraisal",         status: "pending" },
     ],
   },
 
@@ -139,6 +158,12 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
         desc: "Six minutes from The Battery Atlanta, where short-term rental demand is strong. Tokenize future rental income for monthly USDC distributions.",
         note: "Battery Atlanta proximity supports premium STR rates",
       },
+    ],
+    confidenceChecks: [
+      { source: "Public sale record",    status: "confirmed" },
+      { source: "Lien search",           status: "confirmed" },
+      { source: "Comparable sales",      status: "confirmed" },
+      { source: "Independent appraisal", status: "pending" },
     ],
   },
 };

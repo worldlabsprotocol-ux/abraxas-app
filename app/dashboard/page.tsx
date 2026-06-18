@@ -19,6 +19,7 @@ import type { WyomingRequest }       from "@/lib/vos/wyomingRequestStore";
 import { notificationService }       from "@/lib/notifications";
 import { UserProfile }             from "@/components/profile/UserProfile";
 import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
+import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -332,6 +333,9 @@ export default function DashboardPage() {
             </Link>
           )}
         </div>
+
+        {/* Persistent identity + activity panel */}
+        <MyAbraxas identityLabel={walletAddr} />
 
         {/* Full protocol asset registry, all 4 assets */}
         <AssetRegistryDashboard />

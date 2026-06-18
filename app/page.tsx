@@ -51,6 +51,19 @@ function Fade({ children, delay = 0, style }: FadeProps) {
   );
 }
 
+// Hook: cursor-follow glow, subtle, desktop pointer only
+function useCursorGlow() {
+  const [pos, setPos] = useState({ x: -300, y: -300 });
+  useEffect(() => {
+    function handleMove(e: MouseEvent) {
+      setPos({ x: e.clientX, y: e.clientY });
+    }
+    window.addEventListener("mousemove", handleMove);
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, []);
+  return pos;
+}
+
 const STEPS = [
   {
     n:"01", color:G,
@@ -81,6 +94,7 @@ const ASSET_TYPES = [
 export default function Home() {
   const [pct, setPct] = useState(0);
   const [ready, setReady] = useState(false);
+  const cursor = useCursorGlow();
 
   useEffect(() => {
     const t = setInterval(() => setPct(p => {
@@ -91,7 +105,21 @@ export default function Home() {
   }, []);
 
   return (
-    <div style={{ background:"#060810", color:W, fontFamily:M, overflowX:"hidden" }}>
+    <div style={{ background:"#060810", color:W, fontFamily:M, overflowX:"hidden",
+                   position:"relative" }}>
+
+      {/* Cursor-follow glow. purely decorative, ignores pointer events */}
+      <div style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%",
+                     pointerEvents:"none", zIndex:0, overflow:"hidden" }}>
+        <div style={{
+          position:"absolute",
+          width:420, height:420,
+          left: cursor.x - 210, top: cursor.y - 210,
+          borderRadius:"50%",
+          background:`radial-gradient(circle, ${G}10 0%, transparent 70%)`,
+          transition:"left 0.15s ease-out, top 0.15s ease-out",
+        }} />
+      </div>
 
       {/* ── HERO ── */}
       <section style={{ minHeight:"100vh", display:"flex", flexDirection:"column",

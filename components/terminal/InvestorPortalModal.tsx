@@ -26,7 +26,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
   if (!config) return null;
 
   async function submitInterest() {
-    if (!email || !option) return;
+    if (!email || !option || !config) return;
     setSending(true);
     try {
       await fetch("/api/invest/submit", {
@@ -156,7 +156,47 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
               ))}
             </div>
 
-            {/* Historical note. Smyrna appreciation data */}
+            {/* Verification confidence breakdown. multiple independent
+                checks shown explicitly, not a single opaque score */}
+            {config.confidenceChecks && (
+              <div style={{ padding:"0.875rem", borderRadius:8,
+                             background:"rgba(255,255,255,0.02)",
+                             border:`1px solid ${BDR}`,
+                             marginBottom:"1.125rem" }}>
+                <div style={{ display:"flex", justifyContent:"space-between",
+                               alignItems:"baseline", marginBottom:"0.625rem" }}>
+                  <span style={{ fontFamily:S, fontSize:"0.74rem",
+                                  fontWeight:600, color:W }}>
+                    Verification confidence
+                  </span>
+                  <span style={{ fontFamily:S, fontSize:"0.66rem",
+                                  color:"rgba(255,255,255,0.35)" }}>
+                    {config.confidenceChecks.filter(c => c.status === "confirmed").length}
+                    {" "}of {config.confidenceChecks.length} confirmed
+                  </span>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:"0.4rem" }}>
+                  {config.confidenceChecks.map(c => (
+                    <div key={c.source} style={{ display:"flex",
+                                                  alignItems:"center", gap:"0.5rem" }}>
+                      <div style={{ width:6, height:6, borderRadius:"50%",
+                                     background: c.status === "confirmed" ? config.color : "rgba(255,255,255,0.15)",
+                                     flexShrink:0 }} />
+                      <span style={{ fontFamily:S, fontSize:"0.72rem",
+                                      color: c.status === "confirmed" ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)",
+                                      flex:1 }}>
+                        {c.source}
+                      </span>
+                      <span style={{ fontFamily:S, fontSize:"0.62rem", fontWeight:600,
+                                      color: c.status === "confirmed" ? config.color : "rgba(255,255,255,0.3)" }}>
+                        {c.status === "confirmed" ? "Confirmed" : "Pending"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {config.historicalNote && (
               <div style={{ padding:"0.75rem 0.875rem", borderRadius:6,
                              background:`${config.color}06`,

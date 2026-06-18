@@ -19,6 +19,8 @@ import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { ContentSection }     from "./ContentSection";
 import { InvestorPortalModal} from "./InvestorPortalModal";
+import { BuyNowModal }        from "./BuyNowModal";
+import type { BuyItem }       from "./BuyNowModal";
 import { Divider, ScrollFade } from "./ui";
 
 import type { DeepView, WyomingTier } from "./types";
@@ -34,6 +36,7 @@ export function TerminalMain() {
   const [wyOpen,      setWyOpen]      = useState(false);
   const [initialTier, setInitialTier] = useState<WyomingTier | null>(null);
   const [investAsset, setInvestAsset] = useState<string | null>(null);
+  const [buyItem,     setBuyItem]     = useState<BuyItem | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -67,6 +70,11 @@ export function TerminalMain() {
         onClose={() => setInvestAsset(null)}
       />
 
+      <BuyNowModal
+        item={buyItem}
+        onClose={() => setBuyItem(null)}
+      />
+
       <div style={MAX_WIDTH}>
         <div id="demo-hero">
           <HeroSection onGetVerified={() => setDeep("submit")} />
@@ -87,6 +95,7 @@ export function TerminalMain() {
             <AssetGrid
               onViewRegistry={() => setDeep("registry")}
               onInvest={(assetId) => setInvestAsset(assetId)}
+              onBuyNow={(item) => setBuyItem(item)}
             />
           </div>
         </ScrollFade>
