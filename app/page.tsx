@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/page.tsx
-// Abraxas landing page v2 — scroll animations, video section, social login CTA.
+// Abraxas landing page v2. scroll animations, video section, social login CTA.
 // Scroll animations via IntersectionObserver + CSS transitions.
 
 import { useState, useEffect, useRef } from "react";
@@ -55,7 +55,7 @@ const STEPS = [
   {
     n:"01", color:G,
     title:"Create Your Passport",
-    desc:"Sign in with Google or connect your wallet. Abraxas creates your identity profile in seconds — no seed phrases required for new users.",
+    desc:"Sign in with Google or connect your wallet. Abraxas creates your identity profile in seconds. no seed phrases required for new users.",
   },
   {
     n:"02", color:B,
@@ -65,7 +65,7 @@ const STEPS = [
   {
     n:"03", color:A,
     title:"Tokenize Everything",
-    desc:"Submit your asset — real estate, music catalog, minerals, IP, books. Our team runs the V5 verification pipeline. Token minted. Collateral eligible.",
+    desc:"Submit your asset. real estate, music catalog, minerals, IP, books. Our team runs the V5 verification pipeline. Token minted. Collateral eligible.",
   },
 ];
 
@@ -296,7 +296,7 @@ export default function Home() {
                            aspectRatio:"16/9",
                            display:"flex", alignItems:"center",
                            justifyContent:"center" }}>
-              {/* Video placeholder — replace src with YouTube embed when ready */}
+              {/* Video placeholder. replace src with YouTube embed when ready */}
               <div style={{ textAlign:"center" }}>
                 <div style={{ width:72, height:72, borderRadius:"50%",
                                background:`${G}15`, border:`2px solid ${G}30`,
@@ -401,7 +401,7 @@ export default function Home() {
                   No MetaMask. No seed phrases. No crypto knowledge required.
                   Sign in with your Google account and Abraxas creates a Solana
                   wallet for you silently. The same ZK Login experience SUI built
-                  — coming to Abraxas for every user who needs it.
+. coming to Abraxas for every user who needs it.
                 </p>
               </div>
               <div style={{ padding:"1.5rem", borderRadius:10,
@@ -470,7 +470,7 @@ export default function Home() {
                          maxWidth:540, margin:"0 auto" }}>
               Abraxas is building the universal identity and verification layer
               that sits between blockchains. Verify once on Abraxas. Present your
-              credential to any protocol on any chain — without re-KYC, without
+              credential to any protocol on any chain. without re-KYC, without
               re-uploading documents, without friction.
             </p>
           </div>
@@ -552,7 +552,7 @@ export default function Home() {
         <div style={{ fontFamily:M, fontSize:"0.52rem",
                        color:"rgba(255,255,255,0.15)",
                        letterSpacing:"0.1em" }}>
-          ABRAXAS PROTOCOL · SOLANA MAINNET · BUILD 2025.1
+          ABRAXAS PROTOCOL · SOLANA MAINNET · BUILD 2026.1
         </div>
         <div style={{ display:"flex", gap:"1rem" }}>
           {[["TERMINAL","/terminal"],["DASHBOARD","/dashboard"],["IDENTITY","/identity"]].map(([l,h]) => (

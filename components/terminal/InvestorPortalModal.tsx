@@ -42,7 +42,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
       });
       setSent(true);
     } catch {
-      setSent(true); // fail open — don't block the user on a network hiccup
+      setSent(true); // fail open. don't block the user on a network hiccup
     } finally {
       setSending(false);
     }
@@ -146,7 +146,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
               ))}
             </div>
 
-            {/* Historical note — Smyrna appreciation data */}
+            {/* Historical note. Smyrna appreciation data */}
             {config.historicalNote && (
               <div style={{ padding:"0.75rem 0.875rem", borderRadius:6,
                              background:`${config.color}06`,

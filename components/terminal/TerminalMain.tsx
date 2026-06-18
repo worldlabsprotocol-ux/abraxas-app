@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/terminal/TerminalMain.tsx
 // State machine + layout. Renders deep views or the main scrolling terminal.
-// Every sub-component is imported — no inline definitions, no nested functions.
+// Every sub-component is imported. No inline definitions, no nested functions.
 
 import { useState, useEffect }      from "react";
 import { FlagshipAssetPage }        from "@/components/assets/FlagshipAssetPage";
@@ -40,7 +40,7 @@ export function TerminalMain() {
 
   function goMain() { setDeep("main"); }
 
-  // Deep view routing — one conditional block, one return path
+  // Deep view routing. One conditional block, one return path
   if (deep !== "main") {
     return (
       <DeepViewShell onBack={goMain}>
@@ -52,7 +52,7 @@ export function TerminalMain() {
     );
   }
 
-  // Main terminal view — single return, all sections composed and fade-in animated
+  // Main terminal view. Single return, all sections composed and fade-in animated
   return (
     <div>
       <TokenizationRequestModal

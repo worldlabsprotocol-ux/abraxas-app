@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/terminal/DealsProgress.tsx
 // Honest progress tracker for active land, mineral, and oil deal pipeline.
-// Shows where each deal actually is — no hype, no fake progress.
+// Shows where each deal actually is. no hype, no fake progress.
 
 import { M, S, G, A, B, W, BDR, CARD, TEAL } from "./tokens";
 
@@ -49,8 +49,8 @@ const DEALS: Deal[] = [
     type: "REAL ESTATE · CREATIVE HUB",
     color: TEAL,
     stages: ["Concept","Site Identified","LOI","Under Contract","Acquired","Open"],
-    current: 0,
-    note: "Location scouting active. Kansas City market.",
+    current: 1,
+    note: "Site identified in Kansas City. LOI discussions next.",
   },
 ];
 

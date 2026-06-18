@@ -1,5 +1,5 @@
 // FILE: components/terminal/tokens.ts
-// Shared design tokens — import into every terminal sub-component.
+// Shared design tokens. import into every terminal sub-component.
 // No JSX. No side effects. Pure constants.
 
 export const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";

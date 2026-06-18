@@ -79,7 +79,7 @@ interface ButtonProps {
   fullWidth?: boolean;
 }
 
-// Real button — filled background, padding, rounded corners, clear tap target.
+// Real button. Filled background, padding, rounded corners, clear tap target.
 // Use for every actionable CTA. Never style a CTA as a plain text link.
 export function Button({
   children, onClick, href, variant = "filled",

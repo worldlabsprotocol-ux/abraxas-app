@@ -1,11 +1,13 @@
 "use client";
 // FILE: components/terminal/TerminalApp.tsx
 // Outer shell: status strip + sticky nav. Renders TerminalMain inside.
-// Default export — imported by app/terminal/page.tsx.
+// Default export. imported by app/terminal/page.tsx.
 
 import Image             from "next/image";
+import { useState }      from "react";
 import { CompactWallet } from "@/components/CompactWallet";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { EmailWalletLogin } from "@/components/EmailWalletLogin";
 import { TerminalMain }  from "./TerminalMain";
 import { M, BG, BDR, G, A, B, W } from "./tokens";
 
@@ -17,6 +19,9 @@ const STATUS_ITEMS = [
 ];
 
 export default function TerminalApp() {
+  const [emailWallet, setEmailWallet] = useState<string | null>(null);
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
+
   return (
     <div style={{ background: BG, minHeight: "100vh",
                    display: "flex", flexDirection: "column" }}>
@@ -46,7 +51,7 @@ export default function TerminalApp() {
         <span style={{ fontFamily: M, fontSize: "0.6rem",
                         color: "rgba(255,255,255,0.15)",
                         letterSpacing: "0.1em" }}>
-          ABRAXAS OS · BUILD 2025.1
+          ABRAXAS OS · BUILD 2026.1
         </span>
       </div>
 
@@ -113,6 +118,37 @@ export default function TerminalApp() {
 
         <div style={{ flex: 1 }} />
         <LanguageSelector />
+        {emailWallet ? (
+          <div style={{ padding:"0.4rem 0.75rem", borderRadius:5,
+                         border:`1px solid ${G}40`, background:`${G}10`,
+                         color:G, fontFamily:M, fontSize:"0.62rem",
+                         fontWeight:700, letterSpacing:"0.05em" }}>
+            {emailWallet.slice(0, 4)}...{emailWallet.slice(-4)}
+          </div>
+        ) : (
+          <div style={{ position:"relative" }}>
+            <button
+              onClick={() => setShowEmailLogin(s => !s)}
+              style={{ padding:"0.4rem 0.875rem", borderRadius:5,
+                        border:`1px solid ${BDR}`, background:"transparent",
+                        color:"rgba(255,255,255,0.5)", fontFamily:M,
+                        fontSize:"0.62rem", fontWeight:700, cursor:"pointer",
+                        letterSpacing:"0.06em", textTransform:"uppercase" }}>
+              SIGN IN
+            </button>
+            {showEmailLogin && (
+              <div style={{ position:"absolute", top:"100%", right:0,
+                             marginTop:8, width:280, padding:"1rem",
+                             background:"#0D1117", border:`1px solid ${BDR}`,
+                             borderRadius:8, zIndex:1000,
+                             boxShadow:"0 8px 24px rgba(0,0,0,0.5)" }}>
+                <EmailWalletLogin
+                  onWalletReady={(pk) => { setEmailWallet(pk); setShowEmailLogin(false); }}
+                />
+              </div>
+            )}
+          </div>
+        )}
         <CompactWallet />
       </nav>
 
