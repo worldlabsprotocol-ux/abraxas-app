@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/terminal/TerminalApp.tsx
-// Outer shell: status strip + sticky nav. Renders TerminalMain inside.
-// Default export. imported by app/terminal/page.tsx.
+// Outer shell: clean nav, no terminal/OS chrome. Renders TerminalMain inside.
+// Default export. Imported by app/terminal/page.tsx.
 
 import Image             from "next/image";
 import { useState, useEffect } from "react";
@@ -10,14 +10,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { EmailWalletLogin } from "@/components/EmailWalletLogin";
 import { TerminalMain }  from "./TerminalMain";
 import { DemoMode }      from "./DemoMode";
-import { M, S, BG, BDR, G, A, B, W } from "./tokens";
-
-const STATUS_ITEMS = [
-  { dot: G, text: "SOLANA MAINNET" },
-  { dot: G, text: "AAS-1 PROTOCOL ACTIVE" },
-  { dot: A, text: "REG A / D / CF READY" },
-  { dot: B, text: "OWNERSHIP INFRASTRUCTURE" },
-];
+import { M, S, BG, BDR, G, W } from "./tokens";
 
 type SignInTab = "email" | "wallet";
 const SIGN_IN_TABS: SignInTab[] = ["email", "wallet"];
@@ -39,114 +32,68 @@ export default function TerminalApp() {
     <div style={{ background: BG, minHeight: "100vh",
                    display: "flex", flexDirection: "column" }}>
 
-      {/* Protocol status strip */}
-      <div style={{ background: "#060810",
-                     borderBottom: "1px solid #0F1929",
-                     padding: "0 clamp(0.75rem,2.5vw,1.5rem)",
-                     height: 28, display: "flex", alignItems: "center",
-                     gap: "1.5rem", overflowX: "auto", flexShrink: 0 }}>
-        {STATUS_ITEMS.map(s => (
-          <div key={s.text}
-            style={{ display: "flex", alignItems: "center",
-                      gap: "0.35rem", flexShrink: 0 }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%",
-                           background: s.dot,
-                           boxShadow: `0 0 5px ${s.dot}80` }} />
-            <span style={{ fontFamily: M, fontSize: "0.6rem", fontWeight: 700,
-                            color: "rgba(255,255,255,0.25)",
-                            letterSpacing: "0.12em",
-                            textTransform: "uppercase" }}>
-              {s.text}
-            </span>
-          </div>
-        ))}
-        <div style={{ flex: 1 }} />
-        <span style={{ fontFamily: M, fontSize: "0.6rem",
-                        color: "rgba(255,255,255,0.15)",
-                        letterSpacing: "0.1em" }}>
-          ABRAXAS OS · BUILD 2026.1
-        </span>
-      </div>
-
-      {/* Sticky nav */}
-      <nav style={{ position: "sticky", top: 28, zIndex: 200,
+      {/* Clean nav. No terminal/OS framing, no status strip. */}
+      <nav style={{ position: "sticky", top: 0, zIndex: 200,
                      background: "rgba(10,12,16,0.97)",
                      backdropFilter: "blur(12px)",
                      borderBottom: `1px solid ${BDR}`,
                      display: "flex", alignItems: "center",
-                     padding: `0 clamp(0.75rem,2.5vw,1.5rem)`,
-                     height: "clamp(46px,6vw,54px)",
-                     gap: "clamp(0.25rem,1vw,0.5rem)",
+                     padding: `0 clamp(0.875rem,2.5vw,1.75rem)`,
+                     height: "clamp(54px,7vw,64px)",
+                     gap: "clamp(0.5rem,1.5vw,1rem)",
                      flexWrap: "nowrap", overflowX: "auto" }}>
         <div style={{ display: "flex", alignItems: "center",
-                       gap: "0.375rem", flexShrink: 0,
-                       marginRight: "clamp(0.375rem,1.5vw,1rem)" }}>
+                       gap: "0.5rem", flexShrink: 0,
+                       marginRight: "clamp(0.5rem,2vw,1.5rem)" }}>
           <Image src="/icon-48.png" alt="Abraxas"
-                 width={24} height={24} priority
-                 style={{ display: "block", flexShrink: 0 }} />
-          <div>
-            <span style={{ fontFamily: M,
-                            fontSize: "clamp(1rem,1.5vw,1.15rem)",
-                            fontWeight: 900, color: W,
-                            letterSpacing: "0.1em" }}>
-              ABRAXAS
-            </span>
-            <span className="abraxas-nav-os"
-              style={{ fontFamily: M, fontSize: "1.1rem",
-                        color: "rgba(255,255,255,0.2)",
-                        letterSpacing: "0.15em",
-                        marginLeft: "0.375rem",
-                        verticalAlign: "middle" }}>
-              PROTOCOL OS
-            </span>
-          </div>
+                 width={26} height={26} priority
+                 style={{ display: "block", flexShrink: 0, borderRadius: 6 }} />
+          <span style={{ fontFamily: S,
+                          fontSize: "clamp(1rem,1.5vw,1.15rem)",
+                          fontWeight: 700, color: W }}>
+            Abraxas
+          </span>
         </div>
 
-        <button style={{ padding: "0.5rem clamp(0.75rem,1.5vw,1.125rem)",
-                          borderRadius: 5,
-                          border: `1px solid ${G}50`,
-                          background: `${G}10`, color: G,
-                          fontFamily: M,
-                          fontSize: "clamp(0.7rem,0.85vw,0.85rem)",
-                          fontWeight: 700, cursor: "default",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.1em",
+        <button style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
+                          border: "none",
+                          background: `${G}15`, color: G,
+                          fontFamily: S,
+                          fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
+                          fontWeight: 600, cursor: "default",
                           whiteSpace: "nowrap", flexShrink: 0 }}>
-          TERMINAL
+          Marketplace
         </button>
 
         <a href="/dashboard"
-          style={{ padding: "0.5rem clamp(0.75rem,1.5vw,1.125rem)",
-                    borderRadius: 5, border: `1px solid ${BDR}`,
+          style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
+                    border: "none",
                     background: "transparent",
-                    color: "rgba(255,255,255,0.4)",
-                    fontFamily: M,
-                    fontSize: "clamp(0.7rem,0.85vw,0.85rem)",
-                    fontWeight: 700, textDecoration: "none",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
+                    color: "rgba(255,255,255,0.5)",
+                    fontFamily: S,
+                    fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
+                    fontWeight: 600, textDecoration: "none",
                     whiteSpace: "nowrap", flexShrink: 0 }}>
-          DASHBOARD
+          Dashboard
         </a>
 
         <div style={{ flex: 1 }} />
         <LanguageSelector />
         {emailWallet ? (
-          <div style={{ padding:"0.4rem 0.75rem", borderRadius:5,
-                         border:`1px solid ${G}40`, background:`${G}10`,
-                         color:G, fontFamily:M, fontSize:"0.62rem",
-                         fontWeight:700, letterSpacing:"0.05em" }}>
+          <div style={{ padding:"0.45rem 0.9rem", borderRadius:20,
+                         background:`${G}12`,
+                         color:G, fontFamily:M, fontSize:"0.7rem",
+                         fontWeight:600 }}>
             {emailWallet.slice(0, 4)}...{emailWallet.slice(-4)}
           </div>
         ) : (
           <button
             onClick={() => setShowSignIn(true)}
-            style={{ padding:"0.4rem 0.875rem", borderRadius:5,
-                      border:`1px solid ${G}40`, background:`${G}10`,
-                      color:G, fontFamily:M,
-                      fontSize:"0.62rem", fontWeight:700, cursor:"pointer",
-                      letterSpacing:"0.06em", textTransform:"uppercase" }}>
-            SIGN IN
+            style={{ padding:"0.5rem 1.25rem", borderRadius:20,
+                      border:"none", background:G,
+                      color:"#000", fontFamily:S,
+                      fontSize:"0.8rem", fontWeight:700, cursor:"pointer" }}>
+            Sign in
           </button>
         )}
       </nav>
@@ -155,20 +102,20 @@ export default function TerminalApp() {
       {showSignIn && (
         <div onClick={() => setShowSignIn(false)}
           style={{ position:"fixed", inset:0, zIndex:3000,
-                    background:"rgba(0,0,0,0.75)", backdropFilter:"blur(4px)",
+                    background:"rgba(0,0,0,0.6)", backdropFilter:"blur(6px)",
                     display:"flex", alignItems:"center", justifyContent:"center",
                     padding:"1rem" }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background:"#0A0C10", borderRadius:10,
-                      border:`1px solid ${BDR}`, maxWidth:360, width:"100%",
-                      boxShadow:"0 0 60px rgba(16,185,129,0.1)" }}>
-            <div style={{ padding:"1.125rem 1.25rem",
+            style={{ background:"#0D1117", borderRadius:16,
+                      border:`1px solid ${BDR}`, maxWidth:380, width:"100%",
+                      boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ padding:"1.25rem 1.5rem",
                            borderBottom:`1px solid ${BDR}`,
                            display:"flex", alignItems:"center",
                            justifyContent:"space-between" }}>
-              <span style={{ fontFamily:M, fontSize:"0.85rem", fontWeight:900,
-                              color:W, letterSpacing:"0.05em" }}>
-                SIGN IN
+              <span style={{ fontFamily:S, fontSize:"1rem", fontWeight:700,
+                              color:W }}>
+                Sign in to Abraxas
               </span>
               <button onClick={() => setShowSignIn(false)}
                 style={{ background:"transparent", border:"none",
@@ -177,21 +124,20 @@ export default function TerminalApp() {
                 ×
               </button>
             </div>
-            <div style={{ display:"flex", borderBottom:`1px solid ${BDR}` }}>
+            <div style={{ display:"flex", gap:"0.375rem", padding:"0.75rem 1rem 0" }}>
               {SIGN_IN_TABS.map(tab => (
                 <button key={tab} onClick={() => setSignInTab(tab)}
-                  style={{ flex:1, padding:"0.625rem", border:"none",
-                            background: signInTab === tab ? `${G}10` : "transparent",
-                            borderBottom: signInTab === tab ? `2px solid ${G}` : "2px solid transparent",
-                            color: signInTab === tab ? G : "rgba(255,255,255,0.4)",
-                            fontFamily:M, fontSize:"0.65rem", fontWeight:700,
-                            cursor:"pointer", letterSpacing:"0.06em",
-                            textTransform:"uppercase" }}>
-                  {tab === "email" ? "EMAIL" : "CONNECT WALLET"}
+                  style={{ flex:1, padding:"0.5rem", borderRadius:10,
+                            border:"none",
+                            background: signInTab === tab ? `${G}15` : "transparent",
+                            color: signInTab === tab ? G : "rgba(255,255,255,0.45)",
+                            fontFamily:S, fontSize:"0.78rem", fontWeight:600,
+                            cursor:"pointer" }}>
+                  {tab === "email" ? "Email" : "Wallet"}
                 </button>
               ))}
             </div>
-            <div style={{ padding:"1.25rem" }}>
+            <div style={{ padding:"1.25rem 1.5rem 1.5rem" }}>
               {signInTab === "email" ? (
                 <EmailWalletLogin
                   onWalletReady={(pk) => { setEmailWallet(pk); setShowSignIn(false); }}
@@ -199,8 +145,8 @@ export default function TerminalApp() {
               ) : (
                 <div style={{ display:"flex", flexDirection:"column",
                                gap:"0.75rem", alignItems:"center" }}>
-                  <div style={{ fontFamily:S, fontSize:"0.72rem",
-                                 color:"rgba(255,255,255,0.45)",
+                  <div style={{ fontFamily:S, fontSize:"0.8rem",
+                                 color:"rgba(255,255,255,0.5)",
                                  textAlign:"center", lineHeight:1.6 }}>
                     Connect Phantom, Solflare, or any Solana wallet.
                   </div>

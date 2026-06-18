@@ -68,14 +68,14 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        <div id="demo-milestones">
-          <MilestonesSection />
+        <div id="demo-hero">
+          <HeroSection onGetVerified={() => setDeep("submit")} />
         </div>
 
         <Divider />
 
-        <div id="demo-hero">
-          <HeroSection onGetVerified={() => setDeep("submit")} />
+        <div id="demo-milestones">
+          <MilestonesSection />
         </div>
 
         <Divider />
@@ -129,7 +129,6 @@ export function TerminalMain() {
             <ContentSection
               onSubmit={() => setDeep("submit")}
               onTrust={() => setDeep("trust")}
-              onRegistry={() => setDeep("registry")}
             />
           </div>
         </ScrollFade>

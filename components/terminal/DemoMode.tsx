@@ -15,13 +15,12 @@ interface DemoStep {
 }
 
 const STEPS: DemoStep[] = [
-  { selector: "#demo-milestones", caption: "Live protocol traction. Real verified assets, real progress.", duration: 4500 },
   { selector: "#demo-hero",       caption: "Verify your identity once. Use the credential everywhere.", duration: 4500 },
+  { selector: "#demo-milestones", caption: "Live protocol traction. Real verified assets, real progress.", duration: 4500 },
   { selector: "#demo-assets",     caption: "Real-world assets, verified and tokenized on Solana.", duration: 5000 },
   { selector: "#demo-wyoming",    caption: "Launch a Wyoming LLC on-chain in minutes.", duration: 4500 },
   { selector: "#demo-music",      caption: "Catalog audits for artists. 80+ publishing clients onboard.", duration: 4000 },
-  { selector: "#demo-deals",      caption: "Active deal pipeline. Mineral rights, oil & gas, IP, real estate.", duration: 5000 },
-  { selector: "#demo-registry",   caption: "Every verified asset, permanently on the registry.", duration: 4000 },
+  { selector: "#demo-deals",      caption: "Watch the live submission flow, then check the active deal pipeline.", duration: 5500 },
 ];
 
 export function DemoMode() {

@@ -18,6 +18,7 @@ import { wyomingRequestStore }       from "@/lib/vos/wyomingRequestStore";
 import type { WyomingRequest }       from "@/lib/vos/wyomingRequestStore";
 import { notificationService }       from "@/lib/notifications";
 import { UserProfile }             from "@/components/profile/UserProfile";
+import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -301,6 +302,39 @@ export default function DashboardPage() {
       {/* ── MAIN BODY ────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: "auto",
                      padding: "1rem clamp(0.875rem,2vw,1.5rem)" }}>
+
+        {/* Quick actions */}
+        <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap",
+                       marginBottom:"1.5rem" }}>
+          <Link href="/terminal" style={{
+            padding:"0.6rem 1.125rem", borderRadius:20, border:"none",
+            background:G, color:"#000", fontFamily:"'Inter',system-ui,sans-serif",
+            fontSize:"0.8rem", fontWeight:700, textDecoration:"none",
+          }}>
+            Submit an asset
+          </Link>
+          <Link href="/terminal" style={{
+            padding:"0.6rem 1.125rem", borderRadius:20,
+            border:`1px solid ${BDR}`, background:"transparent",
+            color:"rgba(255,255,255,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
+            fontSize:"0.8rem", fontWeight:600, textDecoration:"none",
+          }}>
+            Browse investment opportunities
+          </Link>
+          {idvStatus !== "verified" && (
+            <Link href="/identity" style={{
+              padding:"0.6rem 1.125rem", borderRadius:20,
+              border:`1px solid ${G}30`, background:`${G}08`,
+              color:G, fontFamily:"'Inter',system-ui,sans-serif",
+              fontSize:"0.8rem", fontWeight:600, textDecoration:"none",
+            }}>
+              Get verified
+            </Link>
+          )}
+        </div>
+
+        {/* Full protocol asset registry, all 4 assets */}
+        <AssetRegistryDashboard />
 
         {/* Panel tabs */}
         <div style={{ display:"flex", gap:"0.375rem", marginBottom:"1rem",
