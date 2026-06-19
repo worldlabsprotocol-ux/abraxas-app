@@ -183,7 +183,7 @@ export default function IdentityPage() {
                         fontSize:"0.82rem", fontWeight:900, cursor:"pointer",
                         letterSpacing:"0.05em", textTransform:"uppercase",
                         boxShadow:`0 0 16px ${G}40`, opacity: loading ? 0.6 : 1 }}>
-              {loading ? "Starting..." : "Start Verification →"}
+              {loading ? "Starting..." : "Start Abraxas Precheck →"}
             </button>
           </div>
           {error && (

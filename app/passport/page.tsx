@@ -40,17 +40,17 @@ const STAMPS: Stamp[] = [
     shortName: "ID",
     color: G,
     icon: "◉",
-    description: "Government-issued ID + biometric liveness check through Veriff, a certified identity verification provider.",
+    description: "Abraxas Precheck: a government-issued ID plus a biometric liveness check, processed through Veriff, a certified identity verification provider. Most people clear Precheck in minutes.",
     whatItProves: "You are a real person, the ID belongs to you, and you passed a sanctions and PEP screening.",
     requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera — liveness check takes about 60 seconds"],
     processSteps: [
-      "Enter your email to start a Veriff session",
+      "Enter your email to start Abraxas Precheck",
       "Photograph your ID front and back",
       "Complete a 60-second liveness check (look at camera, turn head)",
-      "Veriff returns a result, usually within minutes",
+      "Precheck returns a result, usually within minutes",
       "Abraxas issues your Identity Verified stamp",
     ],
-    timeEstimate: "Most approvals: under 5 minutes. Manual review cases: up to 1 business day.",
+    timeEstimate: "Most Precheck approvals: under 5 minutes. Manual review cases: up to 1 business day.",
     regulatoryBasis: "FATF-aligned KYC. Veriff is an eIDAS-certified provider, ISO 27001. Abraxas stores only the verification outcome, never raw document data.",
   },
   {
@@ -463,7 +463,7 @@ export default function PassportPage() {
                             background:G, color:"#000", fontFamily:S,
                             fontSize:"0.88rem", fontWeight:700, cursor:"pointer",
                             opacity: starting ? 0.6 : 1 }}>
-                  {starting ? "Starting..." : "Start Identity Verification →"}
+                  {starting ? "Starting..." : "Start Abraxas Precheck →"}
                 </button>
               )}
               {activeStamp.id !== "identity" && status !== "earned" && (

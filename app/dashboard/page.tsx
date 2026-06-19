@@ -17,6 +17,7 @@ import type { Session }              from "@/lib/vos/sessionStore";
 import { UserProfile }             from "@/components/profile/UserProfile";
 import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
+import { ThemeToggle }              from "@/components/ThemeContext";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -95,7 +96,6 @@ export default function DashboardPage() {
   const [detailTab,   setDetailTab]   = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
   const [idvStatus, setIdvStatus] = useState<'idle'|'verified'|'unverified'>('idle');
   const [walletAddr, setWalletAddr] = useState<string | null>(null);
-  const [showProfile, setShowProfile] = useState(false);
   const [credentialLevel, setCredentialLevel] = useState<string|null>(null);
 
   function refresh() {
@@ -155,13 +155,13 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, display: "flex",
-                   flexDirection: "column", fontFamily: M, color: W }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex",
+                   flexDirection: "column", fontFamily: M, color: "var(--text-primary)" }}>
 
       {/* ── NAV ─────────────────────────────────────────────── */}
       <nav style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(6,8,16,0.95)", backdropFilter: "blur(12px)",
+        background: "var(--nav-bg)", backdropFilter: "blur(12px)",
         borderBottom: `1px solid ${BDR}`,
         display: "flex", alignItems: "center",
         padding: "0 clamp(0.875rem,2vw,1.5rem)",
@@ -179,7 +179,7 @@ export default function DashboardPage() {
             <circle cx="20" cy="20" r="3" fill="#10B981"/>
           </svg>
           <span style={{ fontFamily: M, fontSize: "0.875rem",
-                          fontWeight: 900, color: W, letterSpacing: "0.08em" }}>
+                          fontWeight: 900, color: "var(--text-primary)", letterSpacing: "0.08em" }}>
             ABRAXAS
           </span>
         </Link>
@@ -198,9 +198,7 @@ export default function DashboardPage() {
 
         <div style={{ flex: 1 }}/>
 
-        {/* Notification badge */}
-        
-
+        <ThemeToggle />
         <LanguageSelector/>
         <CompactWallet/>
       </nav>
@@ -231,17 +229,8 @@ export default function DashboardPage() {
                 : "PASSPORT NOT VERIFIED"}
             </span>
           </div>
-          <button onClick={() => setShowProfile(p => !p)} style={{
-            fontFamily:M, fontSize:"0.58rem", fontWeight:700,
-            color:"rgba(255,255,255,0.35)", background:"transparent",
-            border:`1px solid ${BDR}`, borderRadius:3,
-            padding:"0.2rem 0.5rem", cursor:"pointer",
-            letterSpacing:"0.08em", textTransform:"uppercase",
-          }}>
-            {showProfile ? "HIDE PROFILE" : "MY PROFILE"}
-          </button>
           {idvStatus !== "verified" && (
-            <Link href="/identity" style={{
+            <Link href="/passport" style={{
               fontFamily:M, fontSize:"0.58rem", fontWeight:900, color:"#000",
               background:G, textDecoration:"none", letterSpacing:"0.08em",
               textTransform:"uppercase", padding:"0.35rem 0.75rem",
@@ -256,12 +245,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── USER PROFILE (collapsible) ─────────────────────────────── */}
-      {showProfile && (
-        <div style={{ padding:"0 clamp(0.875rem,2vw,1.5rem) 0.875rem" }}>
-          <UserProfile walletAddress={walletAddr} />
-        </div>
-      )}
+      {/* ── USER PROFILE — always visible, this is core to the dashboard now ── */}
+      <div style={{ padding:"0 clamp(0.875rem,2vw,1.5rem) 0.875rem" }}>
+        <UserProfile walletAddress={walletAddr} />
+      </div>
 
       {/* ── STAT CARDS ──────────────────────────────────────── */}
       <div style={{
@@ -295,7 +282,7 @@ export default function DashboardPage() {
           }}>
             Submit an asset
           </Link>
-          <Link href="/terminal" style={{
+          <Link href="/terminal#deal-pipeline" style={{
             padding:"0.6rem 1.125rem", borderRadius:20,
             border:`1px solid ${BDR}`, background:"transparent",
             color:"rgba(255,255,255,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
@@ -304,7 +291,7 @@ export default function DashboardPage() {
             Browse investment opportunities
           </Link>
           {idvStatus !== "verified" && (
-            <Link href="/identity" style={{
+            <Link href="/passport" style={{
               padding:"0.6rem 1.125rem", borderRadius:20,
               border:`1px solid ${G}30`, background:`${G}08`,
               color:G, fontFamily:"'Inter',system-ui,sans-serif",

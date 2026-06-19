@@ -6,7 +6,7 @@
 import { M, S, G, A, B, W, BDR, CARD, TEAL, RED, IND } from "./tokens";
 import { Label, Button, ScrollFade } from "./ui";
 import { AssetGallery } from "./AssetGallery";
-import type { BuyItem } from "./BuyNowModal";
+import type { BuyItem, PurchaseOption } from "./BuyNowModal";
 
 interface AssetGridProps {
   onViewRegistry: () => void;
@@ -31,6 +31,35 @@ const DEMARKO_IMAGES: string[] = Array.from({ length: 8 }, (_, i) =>
 const CHANCELLOR_IMAGES: string[] = Array.from({ length: 3 }, (_, i) =>
   `/assets/chancellor/${String(i + 1).padStart(4, "0")}.jpg`
 );
+
+// ─── BUY NOW SELECTABLE OPTIONS ─────────────────────────────────────
+// Generic, honest tiers since exact individual book titles aren't set
+// yet. Replace the `label` fields below with real titles whenever
+// ready, the picker UI and payment flow work unchanged either way.
+
+const DEMARKO_OPTIONS: PurchaseOption[] = [
+  {
+    id: "demarko-ebook-single",
+    label: "Any single ebook title",
+    price: "$1.99",
+    description: "Instant digital access to one title from the catalog. Tell us which title by email after payment.",
+  },
+  {
+    id: "demarko-print-bundle",
+    label: "Full print catalog bundle",
+    price: "$14.99",
+    description: "Physical copies of the full current catalog, shipped after payment confirms.",
+  },
+];
+
+const CHANCELLOR_OPTIONS: PurchaseOption[] = [
+  {
+    id: "chancellor-script-access",
+    label: "Script & Treatment Access",
+    price: "$1.99",
+    description: "Digital access to the current TV pilot script and anime series treatment for 14 Days in Beijing.",
+  },
+];
 
 const CIELO_STATS = [
   { k:"Appraised Value", v:"$1,100,000" },
@@ -203,9 +232,10 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               <Button onClick={() => onBuyNow({
                   id: "demarko-books",
                   name: "DeMarko Reddins · Book Catalog",
-                  price: "From $14.99",
-                  description: "Buy directly with USDC or USDT. Same books, paid in stablecoin instead of card.",
+                  price: "From $1.99",
+                  description: "Choose what you'd like below. Buy directly with USDC or USDT.",
                   color: IND,
+                  options: DEMARKO_OPTIONS,
                 })} variant="outline" color={IND} size="sm">
                 BUY NOW
               </Button>
@@ -363,9 +393,21 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
                     variant="outline" color={A} size="sm">
               VIEW CATALOG
             </Button>
-            <Button onClick={() => onInvest("aas-3")} color={A} size="sm">
-              INVEST →
-            </Button>
+            <div style={{ display:"flex", gap:"0.5rem" }}>
+              <Button onClick={() => onBuyNow({
+                  id: "chancellor-project",
+                  name: "14 Days in Beijing",
+                  price: "From $1.99",
+                  description: "Get digital access to current project materials. Paid in stablecoin.",
+                  color: A,
+                  options: CHANCELLOR_OPTIONS,
+                })} variant="outline" color={A} size="sm">
+                BUY NOW
+              </Button>
+              <Button onClick={() => onInvest("aas-3")} color={A} size="sm">
+                INVEST →
+              </Button>
+            </div>
           </div>
         </div>
 

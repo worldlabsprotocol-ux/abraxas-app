@@ -4,6 +4,7 @@
 
 import { M, S, G, B, W, BDR, CARD } from "./tokens";
 import { Label, ScrollFade } from "./ui";
+import { WorldLabsFeature } from "./WorldLabsFeature";
 
 type WyomingTier = "starter" | "growth" | "enterprise";
 
@@ -79,14 +80,14 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
         {/* Payment strip */}
         <div style={{ padding:"0.5rem 0.75rem", borderRadius:5,
                        background:`${G}07`, border:`1px solid ${G}20`,
-                       marginBottom:"0.875rem",
+                       marginBottom:"0.625rem",
                        display:"flex", alignItems:"center",
                        gap:"0.5rem", flexWrap:"wrap" }}>
           <div style={{ display:"flex", alignItems:"center", gap:"0.375rem" }}>
             <div style={{ width:6, height:6, borderRadius:"50%", background:G }} />
             <span style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
                             color:G, letterSpacing:"0.08em" }}>
-              USDC · SOLANA
+              USDT · SOLANA
             </span>
           </div>
           <span style={{ fontFamily:S, fontSize:"0.7rem",
@@ -94,6 +95,27 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
             Send to circuit.skr treasury wallet
           </span>
         </div>
+
+        {/* What is a stablecoin — for anyone who hasn't used one before */}
+        <details style={{ marginBottom:"1rem" }}>
+          <summary style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:600,
+                             color:"rgba(255,255,255,0.45)", cursor:"pointer",
+                             userSelect:"none" }}>
+            New to stablecoins? Here's what USDT actually is.
+          </summary>
+          <p style={{ fontFamily:S, fontSize:"0.74rem",
+                       color:"rgba(255,255,255,0.4)", lineHeight:1.7,
+                       margin:"0.625rem 0 0", maxWidth:540 }}>
+            USDT (Tether) is a digital dollar. One USDT is designed to always
+            equal one US dollar, it doesn't fluctuate in value like Bitcoin
+            or other crypto. It moves instantly over the internet instead of
+            through a bank wire, which is why Abraxas uses it for payment.
+            You'll need a digital wallet (like Phantom) to hold and send it,
+            the same way you'd need a bank account to send a wire.
+          </p>
+        </details>
+
+        <WorldLabsFeature />
 
         {/* Tier cards */}
         <div style={{ display:"flex", gap:"0.625rem", marginBottom:"1rem",

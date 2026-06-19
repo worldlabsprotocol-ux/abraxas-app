@@ -16,7 +16,9 @@ export function ContentSection({ onSubmit, onTrust }: ContentSectionProps) {
   return (
     <div>
       {/* Deal Pipeline Progress */}
-      <DealsProgress />
+      <div id="deal-pipeline">
+        <DealsProgress />
+      </div>
 
       <Divider />
 

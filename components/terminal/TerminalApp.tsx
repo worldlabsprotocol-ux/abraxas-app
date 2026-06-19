@@ -8,9 +8,10 @@ import { useState, useEffect } from "react";
 import { CompactWallet } from "@/components/CompactWallet";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { EmailWalletLogin } from "@/components/EmailWalletLogin";
+import { ThemeToggle } from "@/components/ThemeContext";
 import { TerminalMain }  from "./TerminalMain";
 import { DemoMode }      from "./DemoMode";
-import { M, S, BG, BDR, G, W } from "./tokens";
+import { M, S, BDR, G } from "./tokens";
 
 type SignInTab = "email" | "wallet";
 const SIGN_IN_TABS: SignInTab[] = ["email", "wallet"];
@@ -26,15 +27,31 @@ export default function TerminalApp() {
     if (params.get("signin") === "1") {
       setShowSignIn(true);
     }
+    // Deep-link scroll. content renders async (ScrollFade etc), so retry
+    // briefly instead of assuming the target exists on first paint.
+    if (window.location.hash) {
+      const id = window.location.hash.slice(1);
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else if (attempts < 10) {
+          attempts++;
+          setTimeout(tryScroll, 150);
+        }
+      };
+      tryScroll();
+    }
   }, []);
 
   return (
-    <div style={{ background: BG, minHeight: "100vh",
+    <div style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)",
                    display: "flex", flexDirection: "column" }}>
 
       {/* Clean nav. No terminal/OS framing, no status strip. */}
       <nav style={{ position: "sticky", top: 0, zIndex: 200,
-                     background: "rgba(10,12,16,0.97)",
+                     background: "var(--nav-bg)",
                      backdropFilter: "blur(12px)",
                      borderBottom: `1px solid ${BDR}`,
                      display: "flex", alignItems: "center",
@@ -50,7 +67,7 @@ export default function TerminalApp() {
                  style={{ display: "block", flexShrink: 0, borderRadius: 6 }} />
           <span style={{ fontFamily: S,
                           fontSize: "clamp(1rem,1.5vw,1.15rem)",
-                          fontWeight: 700, color: W }}>
+                          fontWeight: 700, color: "var(--text-primary)" }}>
             Abraxas
           </span>
         </div>
@@ -69,7 +86,7 @@ export default function TerminalApp() {
           style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
                     border: "none",
                     background: "transparent",
-                    color: "rgba(255,255,255,0.5)",
+                    color: "var(--text-secondary)",
                     fontFamily: S,
                     fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
                     fontWeight: 600, textDecoration: "none",
@@ -78,6 +95,7 @@ export default function TerminalApp() {
         </a>
 
         <div style={{ flex: 1 }} />
+        <ThemeToggle />
         <LanguageSelector />
         {emailWallet ? (
           <div style={{ padding:"0.45rem 0.9rem", borderRadius:20,
@@ -106,7 +124,7 @@ export default function TerminalApp() {
                     display:"flex", alignItems:"center", justifyContent:"center",
                     padding:"1rem" }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background:"#0D1117", borderRadius:16,
+            style={{ background:"var(--surface)", borderRadius:16,
                       border:`1px solid ${BDR}`, maxWidth:380, width:"100%",
                       boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
             <div style={{ padding:"1.25rem 1.5rem",
@@ -114,12 +132,12 @@ export default function TerminalApp() {
                            display:"flex", alignItems:"center",
                            justifyContent:"space-between" }}>
               <span style={{ fontFamily:S, fontSize:"1rem", fontWeight:700,
-                              color:W }}>
+                              color:"var(--text-primary)" }}>
                 Sign in to Abraxas
               </span>
               <button onClick={() => setShowSignIn(false)}
                 style={{ background:"transparent", border:"none",
-                          color:"rgba(255,255,255,0.4)", fontSize:"1.4rem",
+                          color:"var(--text-muted)", fontSize:"1.4rem",
                           cursor:"pointer", lineHeight:1, padding:0 }}>
                 ×
               </button>
@@ -130,7 +148,7 @@ export default function TerminalApp() {
                   style={{ flex:1, padding:"0.5rem", borderRadius:10,
                             border:"none",
                             background: signInTab === tab ? `${G}15` : "transparent",
-                            color: signInTab === tab ? G : "rgba(255,255,255,0.45)",
+                            color: signInTab === tab ? G : "var(--text-muted)",
                             fontFamily:S, fontSize:"0.78rem", fontWeight:600,
                             cursor:"pointer" }}>
                   {tab === "email" ? "Email" : "Wallet"}
@@ -146,7 +164,7 @@ export default function TerminalApp() {
                 <div style={{ display:"flex", flexDirection:"column",
                                gap:"0.75rem", alignItems:"center" }}>
                   <div style={{ fontFamily:S, fontSize:"0.8rem",
-                                 color:"rgba(255,255,255,0.5)",
+                                 color:"var(--text-secondary)",
                                  textAlign:"center", lineHeight:1.6 }}>
                     Connect Phantom, Solflare, or any Solana wallet.
                   </div>

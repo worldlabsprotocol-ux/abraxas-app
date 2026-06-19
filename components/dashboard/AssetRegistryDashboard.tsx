@@ -37,7 +37,7 @@ export function AssetRegistryDashboard() {
           return (
             <div key={asset.id}
               style={{ background:CARD, border:`1px solid ${BDR}`,
-                        borderLeft:`3px solid ${asset.color}`,
+                        borderLeft:`3px solid ${G}`,
                         borderRadius:10, overflow:"hidden" }}>
               <div
                 onClick={() => setOpenId(open ? null : asset.id)}
@@ -52,7 +52,7 @@ export function AssetRegistryDashboard() {
                       {asset.name}
                     </span>
                     <span style={{ fontFamily:S, fontSize:"0.65rem", fontWeight:600,
-                                    color:asset.color, background:`${asset.color}12`,
+                                    color:G, background:`${G}12`,
                                     borderRadius:20, padding:"0.15rem 0.6rem" }}>
                       Verified
                     </span>
@@ -63,7 +63,7 @@ export function AssetRegistryDashboard() {
                   </div>
                 </div>
                 <span style={{ fontFamily:M, fontSize:"0.75rem",
-                                color:asset.color }}>
+                                color:G }}>
                   {open ? "Hide" : "View"}
                 </span>
               </div>
@@ -82,7 +82,7 @@ export function AssetRegistryDashboard() {
                           {s.label}
                         </div>
                         <div style={{ fontFamily:M, fontSize:"0.82rem",
-                                       fontWeight:700, color:asset.color }}>
+                                       fontWeight:700, color:G }}>
                           {s.val}
                         </div>
                       </div>

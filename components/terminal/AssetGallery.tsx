@@ -37,19 +37,27 @@ export function AssetGallery({ images, fallbackLabel, color }: AssetGalleryProps
 
   return (
     <div>
-      <div style={{ height:220, borderRadius:8, overflow:"hidden",
-                     position:"relative", background:"#000" }}>
+      <div style={{ width:"100%", minHeight:320, maxHeight:520,
+                     borderRadius:8, overflow:"hidden", position:"relative",
+                     background:"#000", display:"flex",
+                     alignItems:"center", justifyContent:"center" }}>
+        {/* objectFit:contain guarantees the full image is always visible,
+            never cropped, important for collage-style images covering
+            multiple rooms in one frame */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={images[active]} alt={fallbackLabel}
-             style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+             style={{ width:"100%", height:"100%", maxHeight:520,
+                      objectFit:"contain" }} />
       </div>
       {images.length > 1 && (
-        <div style={{ display:"flex", gap:"0.375rem", marginTop:"0.5rem" }}>
+        <div style={{ display:"flex", gap:"0.375rem", marginTop:"0.5rem",
+                       overflowX:"auto", paddingBottom:"0.25rem" }}>
           {images.map((img, i) => (
             <button key={img} onClick={() => setActive(i)}
-              style={{ width:48, height:36, borderRadius:5, overflow:"hidden",
+              style={{ width:56, height:42, borderRadius:5, overflow:"hidden",
                         border: i === active ? `2px solid ${color}` : "2px solid transparent",
-                        padding:0, cursor:"pointer", background:"#000" }}>
+                        padding:0, cursor:"pointer", background:"#000",
+                        flexShrink:0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
             </button>

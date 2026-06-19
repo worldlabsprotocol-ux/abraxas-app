@@ -77,13 +77,14 @@ interface ButtonProps {
   color?: string;
   size?: "sm" | "md";
   fullWidth?: boolean;
+  disabled?: boolean;
 }
 
 // Real button. Filled background, padding, rounded corners, clear tap target.
 // Use for every actionable CTA. Never style a CTA as a plain text link.
 export function Button({
   children, onClick, href, variant = "filled",
-  color = G, size = "md", fullWidth = false,
+  color = G, size = "md", fullWidth = false, disabled = false,
 }: ButtonProps) {
   const pad = size === "sm" ? "0.45rem 0.875rem" : "0.65rem 1.25rem";
   const fontSize = size === "sm" ? "0.62rem" : "0.72rem";
@@ -97,12 +98,13 @@ export function Button({
     color: variant === "filled" ? "#000" : color,
     fontFamily:M, fontSize, fontWeight:800,
     textTransform:"uppercase", letterSpacing:"0.05em",
-    textDecoration:"none", cursor:"pointer",
-    boxShadow: variant === "filled" ? `0 0 14px ${color}35` : "none",
+    textDecoration:"none", cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.45 : 1,
+    boxShadow: variant === "filled" && !disabled ? `0 0 14px ${color}35` : "none",
     transition:"transform 0.12s, box-shadow 0.12s",
   };
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" style={style}>
         {children}
@@ -110,7 +112,7 @@ export function Button({
     );
   }
   return (
-    <button onClick={onClick} style={style}>
+    <button onClick={disabled ? undefined : onClick} disabled={disabled} style={style}>
       {children}
     </button>
   );
