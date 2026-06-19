@@ -6,14 +6,10 @@
 // signal to other business owners considering the same thing.
 //
 // STILL NEEDED FROM YOU:
-//   1. Real artwork filename(s) — placeholder below assumes
-//      /public/assets/worldlabs/01.jpg. Confirm or rename to match
-//      whatever you actually uploaded.
-//   2. LinkedIn URL — for the credibility/proof-of-work link
-//   3. OpenSea URL — for the existing 2023 Ethereum NFT mint
-//   Once you send these, one more small edit wires them in. Until
-//   then the LinkedIn/OpenSea buttons are simply not rendered, never
-//   shown as broken or fake links.
+//   Real artwork filename(s) — placeholder below assumes
+//   /public/assets/worldlabs/01.jpg. Confirm or rename to match
+//   whatever you actually uploaded.
+//   LinkedIn and OpenSea links are wired in below.
 
 import { S, G, W, BDR } from "./tokens";
 
@@ -22,8 +18,8 @@ const WORLDLABS_IMAGE = "/assets/worldlabs/01.jpg";
 
 // Fill these in once you send them — leave null until then, the
 // component honestly hides the button rather than link to nothing.
-const LINKEDIN_URL: string | null = null;
-const OPENSEA_URL: string | null = null;
+const LINKEDIN_URL: string | null = "https://www.linkedin.com/company/worldlabsprotocol/";
+const OPENSEA_URL: string | null = "https://opensea.io/collection/world-labs";
 
 export function WorldLabsFeature() {
   return (
