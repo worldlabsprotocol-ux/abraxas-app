@@ -228,6 +228,15 @@ export default function Home() {
           </Link>
         </div>
 
+        <div style={{ marginTop:"0.75rem", opacity: ready ? 0.55 : 0,
+                       transition:"opacity 0.4s" }}>
+          <span style={{ fontFamily:S, fontSize:"0.66rem",
+                          color:"rgba(255,255,255,0.4)" }}>
+            You may see a quick "I'm not a robot" check, that's normal
+            security, not something we're trying to slow you down with.
+          </span>
+        </div>
+
         {/* Scroll indicator */}
         {ready && (
           <div style={{ position:"absolute", bottom:"2rem",

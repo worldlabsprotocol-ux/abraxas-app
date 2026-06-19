@@ -311,7 +311,7 @@ export default function DashboardPage() {
         {/* Passport status — links to the standalone /passport page, not inline here */}
         <div style={{ marginBottom:"1.5rem", padding:"1.25rem",
                        borderRadius:12, border:`1px solid ${G}25`,
-                       background:`${G}06` }}>
+                       background:"#0A0C10" }}>
           <div style={{ display:"flex", justifyContent:"space-between",
                          alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
             <div>

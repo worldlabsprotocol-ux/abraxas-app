@@ -32,11 +32,12 @@ const CHANCELLOR_IMAGES: string[] = Array.from({ length: 3 }, (_, i) =>
   `/assets/chancellor/${String(i + 1).padStart(4, "0")}.jpg`
 );
 
-// Smyrna — empty until you source a licensed photo of The Battery Atlanta
-// area (the actual investment thesis is the neighborhood, not the private
-// unit). Battery Atlanta's press kit or a licensed stock photo both work.
-// Drop it in /public/assets/smyrna/01.jpg and add the filename here.
-const SMYRNA_IMAGES: string[] = [];
+// Smyrna — real photos of the actual property, uploaded as 011.webp
+// through 033.webp. If your actual filenames don't match this exact
+// range, adjust the numbers below, everything else works unchanged.
+const SMYRNA_IMAGES: string[] = Array.from({ length: 23 }, (_, i) =>
+  `/assets/smyrna/${String(i + 11).padStart(3, "0")}.webp`
+);
 
 // ─── BUY NOW SELECTABLE OPTIONS ─────────────────────────────────────
 // Generic, honest tiers since exact individual book titles aren't set

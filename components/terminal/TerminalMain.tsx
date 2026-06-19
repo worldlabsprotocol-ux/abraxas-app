@@ -31,6 +31,24 @@ const MAX_WIDTH: React.CSSProperties = {
   padding: "1rem clamp(0.75rem,2.5vw,1.5rem) 0.75rem",
 };
 
+// Fixed-dark wrapper, deliberately NOT theme-aware. Every section below
+// was built with white/light text on a dark background. Rather than
+// retrofit dozens of individual color references across multiple files
+// (the exact kind of sweeping edit that has caused real bugs before),
+// each section gets wrapped in a guaranteed-dark panel so its existing
+// text stays readable in both light and dark page mode. This is the
+// same "dark card floating on a light canvas" pattern fintech apps use
+// deliberately, not a workaround, an actual design choice.
+function DarkPanel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ background:"#0A0C10", borderRadius:16,
+                   padding:"1.25rem clamp(0.875rem,3vw,1.5rem)",
+                   border:"1px solid #1C2333" }}>
+      {children}
+    </div>
+  );
+}
+
 export function TerminalMain() {
   const [deep,        setDeep]        = useState<DeepView>("main");
   const [wyOpen,      setWyOpen]      = useState(false);
@@ -77,6 +95,7 @@ export function TerminalMain() {
 
       <div style={MAX_WIDTH}>
         {/* 1. INTRO + PROOF STATS (4 verified assets, $2.8M attested) */}
+        {/* Theme-aware already, no DarkPanel needed */}
         <div id="demo-hero">
           <HeroIntro />
         </div>
@@ -85,34 +104,40 @@ export function TerminalMain() {
         <div id="abraxas-id" />
         <ScrollFade>
           <div id="demo-assets">
-            <AssetGrid
-              onViewRegistry={() => setDeep("registry")}
-              onInvest={(assetId) => setInvestAsset(assetId)}
-              onBuyNow={(item) => setBuyItem(item)}
-            />
+            <DarkPanel>
+              <AssetGrid
+                onViewRegistry={() => setDeep("registry")}
+                onInvest={(assetId) => setInvestAsset(assetId)}
+                onBuyNow={(item) => setBuyItem(item)}
+              />
+            </DarkPanel>
           </div>
         </ScrollFade>
 
         <Divider />
 
-        {/* 3. ABRAXAS PASSPORT TEASER — after assets, leads into Get Verified */}
-        <HeroPassportTeaser onGetVerified={() => setDeep("submit")} />
+        {/* 3. ABRAXAS PASSPORT TEASER — theme-aware already */}
+        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
 
         <Divider />
 
         {/* 4. HOW IT WORKS — Verify Once, Transact Everywhere, stamps */}
         <div id="demo-milestones">
-          <MilestonesSection />
+          <DarkPanel>
+            <MilestonesSection />
+          </DarkPanel>
         </div>
 
         <Divider />
 
         {/* 5. INLINE DEMO — what submitting an asset looks like */}
         <div id="demo-deals">
-          <ContentSection
-            onSubmit={() => setDeep("submit")}
-            onTrust={() => setDeep("trust")}
-          />
+          <DarkPanel>
+            <ContentSection
+              onSubmit={() => setDeep("submit")}
+              onTrust={() => setDeep("trust")}
+            />
+          </DarkPanel>
         </div>
 
         <Divider />
@@ -120,16 +145,18 @@ export function TerminalMain() {
         {/* 6. FORM A BUSINESS — outcome of verification, not a pitch intro */}
         <ScrollFade>
           <div id="demo-wyoming">
-            <WyomingSection
-              onSelectTier={(tier: WyomingTier) => {
-                setInitialTier(tier);
-                setWyOpen(true);
-              }}
-              onBrowse={() => {
-                setInitialTier(null);
-                setWyOpen(true);
-              }}
-            />
+            <DarkPanel>
+              <WyomingSection
+                onSelectTier={(tier: WyomingTier) => {
+                  setInitialTier(tier);
+                  setWyOpen(true);
+                }}
+                onBrowse={() => {
+                  setInitialTier(null);
+                  setWyOpen(true);
+                }}
+              />
+            </DarkPanel>
           </div>
         </ScrollFade>
 
@@ -137,14 +164,18 @@ export function TerminalMain() {
 
         <ScrollFade>
           <div id="demo-music">
-            <MusicSection />
+            <DarkPanel>
+              <MusicSection />
+            </DarkPanel>
           </div>
         </ScrollFade>
 
         <Divider />
 
         <ScrollFade>
-          <PartnersSection />
+          <DarkPanel>
+            <PartnersSection />
+          </DarkPanel>
         </ScrollFade>
       </div>
     </div>

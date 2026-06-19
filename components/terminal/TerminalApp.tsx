@@ -168,6 +168,13 @@ export default function TerminalApp() {
                                  textAlign:"center", lineHeight:1.6 }}>
                     Connect Phantom, Solflare, or any Solana wallet.
                   </div>
+                  <div style={{ fontFamily:S, fontSize:"0.7rem",
+                                 color:"#F59E0B", background:"#F59E0B12",
+                                 borderRadius:8, padding:"0.5rem 0.75rem",
+                                 textAlign:"center" }}>
+                    Wallet sign-in is being fixed right now. Email sign-in
+                    works and creates your profile the same way.
+                  </div>
                   <CompactWallet />
                 </div>
               )}

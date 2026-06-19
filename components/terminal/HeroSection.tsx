@@ -26,14 +26,14 @@ export function HeroIntro() {
       </div>
       <h1 style={{ fontFamily:S,
                     fontSize:"clamp(1.7rem,4.2vw,2.75rem)", fontWeight:700,
-                    color:W, lineHeight:1.15, letterSpacing:"-0.02em",
+                    color:"var(--text-primary)", lineHeight:1.15, letterSpacing:"-0.02em",
                     margin:"0 0 0.875rem" }}>
         Turn real-world assets into
         <br />
         verifiable, investable capital.
       </h1>
       <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
-                   color:"rgba(255,255,255,0.55)", lineHeight:1.7,
+                   color:"var(--text-secondary)", lineHeight:1.7,
                    maxWidth:540, margin:"0 0 1.5rem" }}>
         Verify your identity and your assets once. Get a credential that
         every lender, marketplace, and investor on the network already
@@ -43,14 +43,14 @@ export function HeroIntro() {
         {STATS.map(s => (
           <div key={s.label}
             style={{ padding:"0.625rem 1rem", borderRadius:10,
-                      background:"rgba(255,255,255,0.03)",
+                      background:"var(--surface-raised)",
                       border:`1px solid ${BDR}` }}>
             <div style={{ fontFamily:M, fontSize:"1.1rem",
-                           fontWeight:700, color:W }}>
+                           fontWeight:700, color:"var(--text-primary)" }}>
               {s.value}
             </div>
             <div style={{ fontFamily:S, fontSize:"0.68rem",
-                           color:"rgba(255,255,255,0.4)", marginTop:2 }}>
+                           color:"var(--text-muted)", marginTop:2 }}>
               {s.label}
             </div>
           </div>
@@ -71,7 +71,7 @@ export function HeroPassportTeaser({ onGetVerified }: HeroPassportTeaserProps) {
         <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
                        marginBottom:"0.875rem" }}>
           <span style={{ fontFamily:S, fontSize:"0.95rem",
-                          fontWeight:700, color:W }}>
+                          fontWeight:700, color:"var(--text-primary)" }}>
             Your Abraxas Passport
           </span>
           <span style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:500,
