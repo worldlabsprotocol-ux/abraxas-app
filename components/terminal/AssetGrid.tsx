@@ -32,6 +32,12 @@ const CHANCELLOR_IMAGES: string[] = Array.from({ length: 3 }, (_, i) =>
   `/assets/chancellor/${String(i + 1).padStart(4, "0")}.jpg`
 );
 
+// Smyrna — empty until you source a licensed photo of The Battery Atlanta
+// area (the actual investment thesis is the neighborhood, not the private
+// unit). Battery Atlanta's press kit or a licensed stock photo both work.
+// Drop it in /public/assets/smyrna/01.jpg and add the filename here.
+const SMYRNA_IMAGES: string[] = [];
+
 // ─── BUY NOW SELECTABLE OPTIONS ─────────────────────────────────────
 // Generic, honest tiers since exact individual book titles aren't set
 // yet. Replace the `label` fields below with real titles whenever
@@ -141,7 +147,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           <Button onClick={() => onBuyNow({
               id: "cielo-stay",
               name: "Cielo Sunrise · Book a Stay",
-              price: "From $240/night",
+              price: "$597.50/night",
               description: "Book directly in USDC or USDT. Same property as the Airbnb listing, paid in stablecoin. Our team confirms your booking same day.",
               color: G,
             })} color={G} size="md">
@@ -418,6 +424,11 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           {/* Stock-style townhome visual. exact address kept private per privacy policy.
               Drop a real stock photo at /public/assets/smyrna/01.jpg and the
               AssetGallery will render it automatically without any further code. */}
+          {SMYRNA_IMAGES.length > 0 ? (
+            <div style={{ padding:"0.875rem 1rem 0" }}>
+              <AssetGallery images={SMYRNA_IMAGES} fallbackLabel="Battery Atlanta area" color={TEAL} />
+            </div>
+          ) : (
           <div style={{ height:90, position:"relative", overflow:"hidden",
                          background:"linear-gradient(135deg,#001c2a 0%,#00141f 100%)" }}>
             <svg viewBox="0 0 500 90" preserveAspectRatio="none"
@@ -449,6 +460,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               Smyrna, GA · Cumberland area · 6 min from Truist Park
             </div>
           </div>
+          )}
 
           <div style={{ padding:"0.875rem 1rem",
                          borderBottom:`1px solid ${TEAL}20`,

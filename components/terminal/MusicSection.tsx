@@ -140,8 +140,10 @@ export function MusicSection() {
         </div>
         <div style={{ fontFamily:S, fontSize:"0.62rem",
                        color:"rgba(255,255,255,0.25)", marginTop:"0.5rem" }}>
-          A starting estimate based on catalog size and years active. Your free
-          audit gives you the real number.
+          A starting estimate based on catalog size and years active. No
+          upfront cost: if we find unclaimed royalties, our fee is 20% of
+          what's recovered, you keep the other 80%, paid only after funds
+          actually come in.
         </div>
       </div>
 

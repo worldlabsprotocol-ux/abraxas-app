@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeContext";
+import { DocumentUpload } from "@/components/passport/DocumentUpload";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -458,23 +459,34 @@ export default function PassportPage() {
 
               {/* Action */}
               {activeStamp.id === "identity" && status !== "earned" && (
-                <button onClick={startIdentityVerification} disabled={starting}
-                  style={{ padding:"0.75rem 2rem", borderRadius:8, border:"none",
-                            background:G, color:"#000", fontFamily:S,
-                            fontSize:"0.88rem", fontWeight:700, cursor:"pointer",
-                            opacity: starting ? 0.6 : 1 }}>
-                  {starting ? "Starting..." : "Start Abraxas Precheck →"}
-                </button>
+                <div>
+                  <button onClick={startIdentityVerification} disabled={starting}
+                    style={{ padding:"0.75rem 2rem", borderRadius:8, border:"none",
+                              background:G, color:"#000", fontFamily:S,
+                              fontSize:"0.88rem", fontWeight:700, cursor:"pointer",
+                              opacity: starting ? 0.6 : 1 }}>
+                    {starting ? "Starting..." : "Start Abraxas Precheck →"}
+                  </button>
+                  {error && (
+                    <div style={{ fontFamily:S, fontSize:"0.76rem", color:"#EF4444",
+                                   marginTop:"0.625rem", maxWidth:420, lineHeight:1.5 }}>
+                      {error}
+                    </div>
+                  )}
+                </div>
               )}
               {activeStamp.id !== "identity" && status !== "earned" && (
-                <Link href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"
-                  style={{ display:"inline-block", padding:"0.75rem 2rem",
-                            borderRadius:8, border:`1.5px solid ${activeStamp.color}`,
-                            background:"transparent", color:activeStamp.color,
-                            fontFamily:S, fontSize:"0.88rem", fontWeight:700,
-                            textDecoration:"none" }}>
-                  Request this verification →
-                </Link>
+                <div>
+                  <DocumentUpload email={email} stampId={activeStamp.id} color={activeStamp.color} />
+                  <Link href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"
+                    style={{ display:"inline-block", padding:"0.75rem 2rem",
+                              borderRadius:8, border:`1.5px solid ${activeStamp.color}`,
+                              background:"transparent", color:activeStamp.color,
+                              fontFamily:S, fontSize:"0.88rem", fontWeight:700,
+                              textDecoration:"none" }}>
+                    Already uploaded? Let us know you're ready for review →
+                  </Link>
+                </div>
               )}
               {status === "earned" && (
                 <div style={{ padding:"0.75rem 1.5rem", borderRadius:8,

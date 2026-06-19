@@ -1,9 +1,65 @@
 "use client";
 // FILE: components/terminal/PartnersSection.tsx
 
+import { useState } from "react";
 import { BecomeAPartner } from "@/components/BecomeAPartner";
+import { ContactForm } from "@/components/ContactForm";
 import { M, S, G, B, W, BDR, CARD } from "./tokens";
 import { Label, Button, ScrollFade } from "./ui";
+
+function DisasterReliefCard() {
+  const [showForm, setShowForm] = useState(false);
+
+  return (
+    <div style={{ padding:"1rem 1.125rem", background:CARD,
+                   border:`1px solid ${BDR}`, borderRadius:8 }}>
+      <div style={{ display:"flex", alignItems:"flex-start",
+                     justifyContent:"space-between",
+                     flexWrap:"wrap", gap:"0.75rem", marginBottom: showForm ? "1.25rem" : 0 }}>
+        <div>
+          <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
+                         color:"#F59E0B", marginBottom:"0.375rem" }}>
+            New verification vertical
+          </div>
+          <div style={{ fontFamily:S, fontSize:"clamp(0.9rem,1.9vw,1.05rem)",
+                         fontWeight:700, color:W, marginBottom:"0.375rem" }}>
+            Disaster and relief fund auditing.
+          </div>
+          <p style={{ fontFamily:S, fontSize:"0.75rem",
+                       color:"rgba(255,255,255,0.45)", lineHeight:1.65,
+                       maxWidth:520, margin:"0 0 0.625rem" }}>
+            The same verification model applied to public and nonprofit
+            relief funds: an independent auditor confirms a disbursement
+            was used as intended, and Abraxas issues a portable
+            credential proving it. Built for organizations distributing
+            recovery funds after a disaster who need a verifiable,
+            public record of where the money actually went.
+          </p>
+          <p style={{ fontFamily:S, fontSize:"0.72rem",
+                       color:"rgba(255,255,255,0.35)", lineHeight:1.6,
+                       maxWidth:520, margin:0 }}>
+            If your organization has a relief fund disbursement contract,
+            submit it for review below. Treated with the same rigor as
+            any other contract, the funds need a clear, verifiable record
+            of where they actually went.
+          </p>
+        </div>
+        <Button onClick={() => setShowForm(s => !s)}
+                variant="outline" color="#F59E0B" size="sm">
+          {showForm ? "CLOSE" : "SUBMIT FOR REVIEW"}
+        </Button>
+      </div>
+      {showForm && (
+        <ContactForm
+          category="relief-audit"
+          color="#F59E0B"
+          organizationLabel="Organization or fund name"
+          placeholder="Describe the fund, the disbursement plan, and what you need reviewed"
+        />
+      )}
+    </div>
+  );
+}
 
 export function PartnersSection() {
   return (
@@ -58,38 +114,8 @@ export function PartnersSection() {
         </div>
       </div>
 
-      {/* Disaster & relief fund auditing. positioning only, no client yet */}
-      <div style={{ padding:"1rem 1.125rem", background:CARD,
-                     border:`1px solid ${BDR}`, borderRadius:8 }}>
-        <div style={{ display:"flex", alignItems:"flex-start",
-                       justifyContent:"space-between",
-                       flexWrap:"wrap", gap:"0.75rem" }}>
-          <div>
-            <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
-                           color:"#F59E0B", marginBottom:"0.375rem" }}>
-              New verification vertical
-            </div>
-            <div style={{ fontFamily:S, fontSize:"clamp(0.9rem,1.9vw,1.05rem)",
-                           fontWeight:700, color:W, marginBottom:"0.375rem" }}>
-              Disaster and relief fund auditing.
-            </div>
-            <p style={{ fontFamily:S, fontSize:"0.75rem",
-                         color:"rgba(255,255,255,0.45)", lineHeight:1.65,
-                         maxWidth:520, margin:0 }}>
-              The same verification model applied to public and nonprofit
-              relief funds: an independent auditor confirms a disbursement
-              was used as intended, and Abraxas issues a portable
-              credential proving it. Built for organizations distributing
-              recovery funds after a disaster who need a verifiable,
-              public record of where the money actually went.
-            </p>
-          </div>
-          <Button href="mailto:partners@abraxas-app.vercel.app?subject=Relief%20Fund%20Auditing"
-                  variant="outline" color="#F59E0B" size="sm">
-            INQUIRE
-          </Button>
-        </div>
-      </div>
+      {/* Disaster & relief fund auditing. positioning + real intake, no client yet */}
+      <DisasterReliefCard />
       </ScrollFade>
     </div>
   );

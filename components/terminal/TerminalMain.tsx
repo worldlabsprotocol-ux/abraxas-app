@@ -11,7 +11,7 @@ import { TokenizationRequestModal } from "@/components/TokenizationRequestModal"
 
 import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
-import { HeroSection }        from "./HeroSection";
+import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { WyomingSection }     from "./WyomingSection";
@@ -76,31 +76,12 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        {/* 1. WHO WE ARE + GET VERIFIED (identity is the lead, not the marketplace) */}
+        {/* 1. INTRO + PROOF STATS (4 verified assets, $2.8M attested) */}
         <div id="demo-hero">
-          <HeroSection onGetVerified={() => setDeep("submit")} />
+          <HeroIntro />
         </div>
 
-        <Divider />
-
-        {/* 2. HOW IT WORKS — Verify Once, Transact Everywhere, stamps */}
-        <div id="demo-milestones">
-          <MilestonesSection />
-        </div>
-
-        <Divider />
-
-        {/* 3. INLINE DEMO — what submitting an asset looks like */}
-        <div id="demo-deals">
-          <ContentSection
-            onSubmit={() => setDeep("submit")}
-            onTrust={() => setDeep("trust")}
-          />
-        </div>
-
-        <Divider />
-
-        {/* 4. VERIFIED ASSETS — genesis assets as proof the model works */}
+        {/* 2. VERIFIED ASSETS — right under the stats that back them up */}
         <div id="abraxas-id" />
         <ScrollFade>
           <div id="demo-assets">
@@ -114,7 +95,29 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 5. FORM A BUSINESS — outcome of verification, not a pitch intro */}
+        {/* 3. ABRAXAS PASSPORT TEASER — after assets, leads into Get Verified */}
+        <HeroPassportTeaser onGetVerified={() => setDeep("submit")} />
+
+        <Divider />
+
+        {/* 4. HOW IT WORKS — Verify Once, Transact Everywhere, stamps */}
+        <div id="demo-milestones">
+          <MilestonesSection />
+        </div>
+
+        <Divider />
+
+        {/* 5. INLINE DEMO — what submitting an asset looks like */}
+        <div id="demo-deals">
+          <ContentSection
+            onSubmit={() => setDeep("submit")}
+            onTrust={() => setDeep("trust")}
+          />
+        </div>
+
+        <Divider />
+
+        {/* 6. FORM A BUSINESS — outcome of verification, not a pitch intro */}
         <ScrollFade>
           <div id="demo-wyoming">
             <WyomingSection

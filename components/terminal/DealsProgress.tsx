@@ -7,6 +7,11 @@
 import { useState } from "react";
 import { M, S, G, A, B, W, BDR, CARD, TEAL } from "./tokens";
 import { Button } from "./ui";
+import { ContactForm } from "@/components/ContactForm";
+
+// Fill in once you create a Calendly link. Until then, the button is
+// honestly hidden rather than linking to nothing.
+const CALENDLY_URL: string | null = null;
 
 interface Deal {
   id: string;
@@ -65,7 +70,7 @@ const DEALS: Deal[] = [
     color: TEAL,
     stages: ["Concept","Site Identified","LOI","Under Contract","Acquired","Open"],
     current: 1,
-    note: "$20K+ in live performance equipment already deployed and operational. Active discussions with production companies that are winding down or retiring to acquire their rights catalog under World Studios. Site identification in Kansas City underway. LOI discussions next.",
+    note: "$20K+ in live performance equipment already deployed and operational. Co-founded with a creative partner who graduated from the University of Kansas theatre program and has toured nonstop with a prominent live play company across the US and internationally since graduating, real production experience behind the project, not just capital. Active discussions with production companies that are winding down or retiring to acquire their rights catalog under World Studios. Site identification in Kansas City underway. LOI discussions next.",
     minInvestment: "$25,000",
     structure: "Reg D 506(c) · Fractional equity",
     useOfProceeds: "Site acquisition, buildout, equipment expansion, rights catalog acquisition",
@@ -270,6 +275,67 @@ export function DealsProgress() {
           Deal pipeline reflects active development. Stages advance as milestones
           are verified and documented on Abraxas Protocol.
         </div>
+      </div>
+
+      <InvestorInquiry />
+    </div>
+  );
+}
+
+function InvestorInquiry() {
+  const [showForm, setShowForm] = useState(false);
+
+  return (
+    <div style={{ marginTop:"1rem", padding:"1rem 1.125rem",
+                   borderRadius:8, background:CARD,
+                   border:`1px solid ${BDR}` }}>
+      <div style={{ display:"flex", alignItems:"flex-start",
+                     justifyContent:"space-between", flexWrap:"wrap",
+                     gap:"0.75rem", marginBottom: showForm ? "1.25rem" : 0 }}>
+        <div>
+          <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
+                         color:W, marginBottom:"0.375rem" }}>
+            Interested in one of these deals?
+          </div>
+          <p style={{ fontFamily:S, fontSize:"0.76rem",
+                       color:"rgba(255,255,255,0.45)", lineHeight:1.6,
+                       maxWidth:480, margin:0 }}>
+            Reach out directly, no need to wait for an asset to open
+            formally. Tell us which deal interests you.
+          </p>
+        </div>
+        <Button onClick={() => setShowForm(s => !s)} color={G} size="sm">
+          {showForm ? "CLOSE" : "CONTACT US"}
+        </Button>
+      </div>
+      {showForm && (
+        <ContactForm
+          category="investor-inquiry"
+          color={G}
+          organizationLabel="Fund or company (optional)"
+          placeholder="Which deal interests you, and what would you like to know?"
+        />
+      )}
+
+      {/* Live support — book time directly with the founder */}
+      <div style={{ marginTop:"1rem", paddingTop:"1rem",
+                     borderTop:`1px solid ${BDR}`,
+                     display:"flex", alignItems:"center", justifyContent:"space-between",
+                     flexWrap:"wrap", gap:"0.625rem" }}>
+        <div style={{ fontFamily:S, fontSize:"0.76rem",
+                       color:"rgba(255,255,255,0.4)" }}>
+          Prefer to talk it through? Book a call directly.
+        </div>
+        {CALENDLY_URL ? (
+          <Button href={CALENDLY_URL} color={B} size="sm">
+            BOOK A CALL
+          </Button>
+        ) : (
+          <span style={{ fontFamily:S, fontSize:"0.68rem",
+                          color:"rgba(255,255,255,0.25)" }}>
+            Calendly link coming soon
+          </span>
+        )}
       </div>
     </div>
   );

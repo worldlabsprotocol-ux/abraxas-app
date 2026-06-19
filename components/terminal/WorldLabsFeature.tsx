@@ -14,7 +14,7 @@
 import { S, G, W, BDR } from "./tokens";
 
 // Adjust this filename to match exactly what you uploaded.
-const WORLDLABS_IMAGE = "/assets/worldlabs/01.jpg";
+const WORLDLABS_IMAGE = "/assets/worldlabs/00001.jpg";
 
 // Fill these in once you send them — leave null until then, the
 // component honestly hides the button rather than link to nothing.
@@ -48,12 +48,13 @@ export function WorldLabsFeature() {
           <p style={{ fontFamily:S, fontSize:"0.8rem",
                        color:"rgba(255,255,255,0.5)", lineHeight:1.7,
                        margin:"0 0 1rem" }}>
-            World Labs is the founder's own company, put through the
-            Abraxas formation process first. Its IP was already minted
-            on Ethereum in 2023 using smart contracts, this isn't a new
-            idea for the founder, it's a continuation of work already
-            proven on-chain. World Labs going through Abraxas is the
-            real-world proof of concept before any outside business does.
+            World Labs is the blueprint Abraxas is built on. Its IP was
+            minted on Ethereum in 2023, using smart contracts, before
+            "tokenize your business" was a phrase most people had heard.
+            Putting World Labs through Abraxas first isn't a marketing
+            exercise, it's the same standard every other business on the
+            platform will be held to, proven on the founder's own company
+            before anyone else's.
           </p>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
             {LINKEDIN_URL && (
