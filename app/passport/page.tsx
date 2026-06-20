@@ -8,7 +8,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/ThemeContext";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
@@ -233,7 +232,6 @@ export default function PassportPage() {
                         color:"var(--text-primary)", flex:1 }}>
           Abraxas Passport
         </span>
-        <ThemeToggle />
       </nav>
 
       <div style={{ maxWidth:860, margin:"0 auto",

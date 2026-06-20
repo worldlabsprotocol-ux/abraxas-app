@@ -17,7 +17,6 @@ import type { Session }              from "@/lib/vos/sessionStore";
 import { UserProfile }             from "@/components/profile/UserProfile";
 import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
-import { ThemeToggle }              from "@/components/ThemeContext";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -198,7 +197,6 @@ export default function DashboardPage() {
 
         <div style={{ flex: 1 }}/>
 
-        <ThemeToggle />
         <LanguageSelector/>
         <CompactWallet/>
       </nav>

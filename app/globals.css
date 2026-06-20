@@ -1,22 +1,9 @@
-/* FILE: app/globals.css — replace or merge with existing */
-/* Light mode is DEFAULT. Dark is opt-in via the toggle. */
+/* FILE: app/globals.css, replace or merge with existing */
+/* Dark only for now. Light mode removed after repeated contrast bugs. */
 
 :root,
+[data-theme="dark"],
 [data-theme="light"] {
-  --bg:             #FFFFFF;
-  --bg-secondary:   #F7F8FA;
-  --surface:        #FFFFFF;
-  --surface-raised: #F0F2F5;
-  --border:         #E2E8F0;
-  --text-primary:   #0A0C10;
-  --text-secondary: #4A5568;
-  --text-muted:     #A0ADB8;
-  --accent:         #10B981;
-  --accent-faint:   rgba(16,185,129,0.08);
-  --accent-border:  rgba(16,185,129,0.2);
-}
-
-[data-theme="dark"] {
   --bg:             #0A0C10;
   --bg-secondary:   #0D1117;
   --surface:        #0D1117;
@@ -28,6 +15,7 @@
   --accent:         #10B981;
   --accent-faint:   rgba(16,185,129,0.08);
   --accent-border:  rgba(16,185,129,0.25);
+  --nav-bg:         rgba(10,12,16,0.97);
 }
 
 * { box-sizing: border-box; }

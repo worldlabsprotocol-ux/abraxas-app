@@ -8,7 +8,6 @@ import { useState, useEffect } from "react";
 import { CompactWallet } from "@/components/CompactWallet";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { EmailWalletLogin } from "@/components/EmailWalletLogin";
-import { ThemeToggle } from "@/components/ThemeContext";
 import { TerminalMain }  from "./TerminalMain";
 import { DemoMode }      from "./DemoMode";
 import { M, S, BDR, G } from "./tokens";
@@ -95,7 +94,6 @@ export default function TerminalApp() {
         </a>
 
         <div style={{ flex: 1 }} />
-        <ThemeToggle />
         <LanguageSelector />
         {emailWallet ? (
           <div style={{ padding:"0.45rem 0.9rem", borderRadius:20,
