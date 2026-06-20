@@ -25,6 +25,8 @@ export interface BuyItem {
   description: string;
   color: string;
   options?: PurchaseOption[]; // if present, user picks one (or "all")
+  requiresShipping?: boolean; // true for physical goods like apparel
+  sizes?: string[];           // e.g. ["S","M","L","XL"], shown if present
 }
 
 interface BuyNowModalProps {
@@ -38,6 +40,8 @@ const TREASURY = "circuit.skr";
 export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
   const [coin, setCoin] = useState<Stablecoin>("USDC");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [size, setSize] = useState<string | null>(null);
+  const [shippingAddress, setShippingAddress] = useState("");
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -45,6 +49,10 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
   const [showStableInfo, setShowStableInfo] = useState(false);
 
   if (!item) return null;
+
+  const needsShipping = !!item.requiresShipping;
+  const needsSize = !!item.sizes && item.sizes.length > 0;
+  const readyToShip = !needsShipping || (shippingAddress.trim().length > 8 && (!needsSize || size));
 
   const hasOptions = !!item.options && item.options.length > 0;
   const chosen = hasOptions
@@ -65,7 +73,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
   const readyToPay = hasOptions ? (selectedOption !== null) : true;
 
   async function confirmPurchase() {
-    if (!item || !email || !readyToPay) return;
+    if (!item || !email || !readyToPay || !readyToShip) return;
     setSending(true);
     try {
       await fetch("/api/purchase/submit", {
@@ -78,6 +86,8 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
           price: displayPrice,
           stablecoin: coin,
           email,
+          size: size ?? null,
+          shipping_address: needsShipping ? shippingAddress : null,
         }),
       });
     } catch { /* fail open, do not block the user on a network hiccup */ }
@@ -263,6 +273,56 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                 </button>
               </div>
 
+              <div style={{ marginBottom:"1rem" }}>
+                <a href="/swap" target="_blank" rel="noopener noreferrer"
+                  style={{ fontFamily:S, fontSize:"0.68rem", color:item.color,
+                            textDecoration:"underline" }}>
+                  Don't have {coin} yet? Swap for it here →
+                </a>
+              </div>
+
+              {needsSize && (
+                <div style={{ marginBottom:"1rem" }}>
+                  <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
+                                 color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>
+                    Size
+                  </div>
+                  <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+                    {item.sizes!.map(s => (
+                      <button key={s} onClick={() => setSize(s)}
+                        style={{ padding:"0.45rem 0.9rem", borderRadius:8,
+                                  border: size === s ? `1.5px solid ${item.color}` : `1px solid ${BDR}`,
+                                  background: size === s ? `${item.color}12` : "transparent",
+                                  color: size === s ? item.color : "rgba(255,255,255,0.5)",
+                                  fontFamily:S, fontSize:"0.78rem", fontWeight:600,
+                                  cursor:"pointer" }}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {needsShipping && (
+                <div style={{ marginBottom:"1rem" }}>
+                  <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
+                                 color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>
+                    Shipping address
+                  </div>
+                  <textarea
+                    value={shippingAddress}
+                    onChange={e => setShippingAddress(e.target.value)}
+                    placeholder="Full name, street address, city, state, zip, country"
+                    rows={3}
+                    style={{ width:"100%", padding:"0.7rem 0.875rem",
+                              borderRadius:10, border:`1px solid ${BDR}`,
+                              background:"rgba(255,255,255,0.03)",
+                              color:W, fontFamily:S, fontSize:"16px",
+                              resize:"vertical", boxSizing:"border-box" }}
+                  />
+                </div>
+              )}
+
               <input
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -285,9 +345,10 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
               <Button
                 onClick={confirmPurchase}
                 color={item.color} size="md" fullWidth
-                disabled={(hasOptions && !readyToPay) || sending}
+                disabled={(hasOptions && !readyToPay) || !readyToShip || sending}
               >
                 {!readyToPay ? "Select an item above"
+                  : !readyToShip ? (needsSize && !size ? "Select a size" : "Add a shipping address")
                   : sending ? "Confirming..."
                   : `I've sent the ${coin} →`}
               </Button>

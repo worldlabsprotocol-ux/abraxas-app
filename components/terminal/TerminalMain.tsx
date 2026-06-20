@@ -19,7 +19,8 @@ import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { WyomingSection }     from "./WyomingSection";
-import { WorldLabsSection, WorldWearablesSection } from "./WorldLabsFeature";
+import { WorldLabsSection } from "./WorldLabsFeature";
+import { WorldWearablesShop } from "./WorldWearablesShop";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { ContentSection }     from "./ContentSection";
@@ -168,7 +169,7 @@ export function TerminalMain() {
             no longer nested under World Labs */}
         <ScrollFade>
           <DarkPanel>
-            <WorldWearablesSection onBuyNow={(item) => setBuyItem(item)} />
+            <WorldWearablesShop onBuyNow={(item) => setBuyItem(item)} />
           </DarkPanel>
         </ScrollFade>
 

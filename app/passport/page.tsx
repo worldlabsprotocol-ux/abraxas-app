@@ -164,7 +164,7 @@ export default function PassportPage() {
 
   async function checkStatus(e: string) {
     try {
-      const res = await fetch(`/api/identity/veriff/status?email=${encodeURIComponent(e)}`);
+      const res = await fetch(`/api/identity/status?email=${encodeURIComponent(e)}`);
       const { status } = await res.json() as { status?: string };
       if (status === "approved") {
         setPassportState(p => ({ ...p, identity: "earned" }));
@@ -471,6 +471,15 @@ export default function PassportPage() {
                       {error}
                     </div>
                   )}
+                  <div style={{ marginTop:"1.25rem", paddingTop:"1.25rem",
+                                 borderTop:"1px solid var(--border)" }}>
+                    <div style={{ fontFamily:S, fontSize:"0.72rem",
+                                   color:"var(--text-muted)", marginBottom:"0.75rem" }}>
+                      Precheck unavailable, or you'd rather not wait? Upload your ID
+                      directly and our team verifies it by hand.
+                    </div>
+                    <DocumentUpload email={email} stampId="identity" color={activeStamp.color} />
+                  </div>
                 </div>
               )}
               {activeStamp.id !== "identity" && status !== "earned" && (
