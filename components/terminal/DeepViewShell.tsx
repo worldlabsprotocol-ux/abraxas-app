@@ -11,7 +11,7 @@ interface DeepViewShellProps {
 
 export function DeepViewShell({ children, onBack }: DeepViewShellProps) {
   return (
-    <div>
+    <div style={{ background:"#0A0C10", minHeight:"100vh" }}>
       <div style={{ padding:"0.75rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:`1px solid ${BDR}`, background:CARD,
                      display:"flex", alignItems:"center", gap:"0.7rem" }}>

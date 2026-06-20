@@ -9,6 +9,12 @@ import { useState } from "react";
 import { M, S, G, W, BDR, CARD } from "./tokens";
 import { INVEST_CONFIGS } from "./investorConfigs";
 
+// Fill in once you have a Calendly link. Placed here, post-verification
+// in the investor flow, rather than the public homepage, talking to an
+// engaged investor reads as access, the same button on the homepage
+// reads as a small operation needing hand-holding.
+const CALENDLY_URL: string | null = null;
+
 interface InvestorPortalModalProps {
   assetId: string | null;
   onClose: () => void;
@@ -302,6 +308,15 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
                   No payment is collected here. Our team follows up with
                   verification and USDC routing details.
                 </div>
+                {CALENDLY_URL && (
+                  <div style={{ textAlign:"center", marginTop:"0.625rem" }}>
+                    <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+                      style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
+                                color:G, textDecoration:"underline" }}>
+                      Prefer to talk it through first? Book a call →
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -155,6 +155,7 @@ export function TerminalMain() {
                   setInitialTier(null);
                   setWyOpen(true);
                 }}
+                onBuyNow={(item) => setBuyItem(item)}
               />
             </DarkPanel>
           </div>

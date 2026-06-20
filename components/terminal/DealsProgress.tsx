@@ -25,6 +25,8 @@ interface Deal {
   structure: string;
   useOfProceeds: string;
   closedDate?: string; // set this when express interest closes for a deal
+  amountRaised?: string;  // shown instead of the open-deal fields once closed
+  investorCount?: string;
 }
 
 const DEALS: Deal[] = [
@@ -40,6 +42,8 @@ const DEALS: Deal[] = [
     structure: "Reg D 506(c) · Royalty token",
     useOfProceeds: "Operator LOI execution, lease structuring, legal",
     closedDate: "2026-06-19",
+    amountRaised: "Add real figure",
+    investorCount: "Add real figure",
   },
   {
     id: "oil-gas",
@@ -53,6 +57,8 @@ const DEALS: Deal[] = [
     structure: "Reg D 506(c) · Working interest",
     useOfProceeds: "Drilling participation, completion costs",
     closedDate: "2026-06-19",
+    amountRaised: "Add real figure",
+    investorCount: "Add real figure",
   },
   {
     id: "entertainment-ip",
@@ -133,6 +139,7 @@ function ProgressBar({ stages, current, color }: {
 
 function DealCard({ deal }: { deal: Deal }) {
   const [expanded, setExpanded] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [email,    setEmail]    = useState("");
   const [sent,     setSent]     = useState(false);
   const [sending,  setSending]  = useState(false);
@@ -188,32 +195,59 @@ function DealCard({ deal }: { deal: Deal }) {
 
       <ProgressBar stages={deal.stages} current={deal.current} color={deal.color} />
 
-      <div style={{ fontFamily:S, fontSize:"0.68rem",
-                     color:"rgba(255,255,255,0.35)",
-                     marginTop:"0.625rem", marginBottom:"0.75rem",
-                     lineHeight:1.5 }}>
-        {deal.note}
-      </div>
+      <button onClick={() => setShowDetails(d => !d)}
+        style={{ background:"none", border:"none", padding:0,
+                  marginTop:"0.625rem", cursor:"pointer",
+                  display:"flex", alignItems:"center", gap:"0.375rem" }}>
+        <span style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
+                        color:deal.color, letterSpacing:"0.06em",
+                        textTransform:"uppercase" }}>
+          {showDetails ? "Hide details" : "Show details"}
+        </span>
+        <span style={{ color:deal.color, fontSize:"0.6rem",
+                        transform: showDetails ? "rotate(180deg)" : "rotate(0deg)",
+                        transition:"transform 0.25s ease" }}>
+          ▾
+        </span>
+      </button>
 
-      {/* Investor fields */}
-      <div style={{ display:"grid",
-                     gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",
-                     gap:"1px", background:BDR, borderRadius:5,
-                     overflow:"hidden", marginBottom:"0.75rem" }}>
-        {[
-          { label:"Minimum",      val:deal.minInvestment },
-          { label:"Structure",    val:deal.structure },
-          { label:"Use of Funds", val:deal.useOfProceeds },
-        ].map(f => (
-          <div key={f.label} style={{ background:"#08090F", padding:"0.5rem 0.625rem" }}>
-            <div style={{ fontFamily:M, fontSize:"0.44rem",
-                           color:"rgba(255,255,255,0.25)",
-                           textTransform:"uppercase", letterSpacing:"0.08em",
-                           marginBottom:2 }}>{f.label}</div>
-            <div style={{ fontFamily:S, fontSize:"0.62rem",
-                           color:"rgba(255,255,255,0.55)", lineHeight:1.3 }}>{f.val}</div>
-          </div>
-        ))}
+      <div style={{ maxHeight: showDetails ? 600 : 0, opacity: showDetails ? 1 : 0,
+                     overflow:"hidden", transition:"max-height 0.35s ease, opacity 0.25s ease",
+                     marginTop: showDetails ? "0.625rem" : 0 }}>
+        <div style={{ fontFamily:S, fontSize:"0.68rem",
+                       color:"rgba(255,255,255,0.35)",
+                       marginBottom:"0.75rem", lineHeight:1.5 }}>
+          {deal.note}
+        </div>
+
+        {/* Investor fields. closed deals show the raise outcome instead
+            of open-deal terms, those don't make sense once it's closed */}
+        <div style={{ display:"grid",
+                       gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",
+                       gap:"1px", background:BDR, borderRadius:5,
+                       overflow:"hidden", marginBottom:"0.75rem" }}>
+          {(deal.closedDate
+            ? [
+                { label:"Amount Raised", val: deal.amountRaised ?? "Add real figure" },
+                { label:"Investors",     val: deal.investorCount ?? "Add real figure" },
+                { label:"Structure",     val: deal.structure },
+              ]
+            : [
+                { label:"Minimum",      val:deal.minInvestment },
+                { label:"Structure",    val:deal.structure },
+                { label:"Use of Funds", val:deal.useOfProceeds },
+              ]
+          ).map(f => (
+            <div key={f.label} style={{ background:"#08090F", padding:"0.5rem 0.625rem" }}>
+              <div style={{ fontFamily:M, fontSize:"0.44rem",
+                             color:"rgba(255,255,255,0.25)",
+                             textTransform:"uppercase", letterSpacing:"0.08em",
+                             marginBottom:2 }}>{f.label}</div>
+              <div style={{ fontFamily:S, fontSize:"0.62rem",
+                             color:"rgba(255,255,255,0.55)", lineHeight:1.3 }}>{f.val}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {deal.closedDate ? (

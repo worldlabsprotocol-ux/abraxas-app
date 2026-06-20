@@ -608,6 +608,15 @@ export default function Home() {
               {link.label}
             </Link>
           ))}
+          <a href="https://github.com/worldlabsprotocol-ux/abraxas-app"
+             target="_blank" rel="noopener noreferrer"
+             style={{ fontFamily:M, fontSize:"0.52rem",
+                       color:"rgba(255,255,255,0.2)",
+                       textDecoration:"none",
+                       letterSpacing:"0.08em",
+                       textTransform:"uppercase" }}>
+            GITHUB
+          </a>
         </div>
       </footer>
     </div>

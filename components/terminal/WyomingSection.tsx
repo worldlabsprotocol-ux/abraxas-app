@@ -5,12 +5,14 @@
 import { M, S, G, B, W, BDR, CARD } from "./tokens";
 import { Label, ScrollFade } from "./ui";
 import { WorldLabsFeature } from "./WorldLabsFeature";
+import type { BuyItem } from "./BuyNowModal";
 
 type WyomingTier = "starter" | "growth" | "enterprise";
 
 interface WyomingSectionProps {
   onSelectTier: (tier: WyomingTier) => void;
   onBrowse: () => void;
+  onBuyNow: (item: BuyItem) => void;
 }
 
 interface TierDef {
@@ -36,9 +38,9 @@ const TIERS: TierDef[] = [
   },
 ];
 
-const COMING_SOON: string[] = []; // removed — no "coming soon" on a financial product
+const COMING_SOON: string[] = []; // removed, no "coming soon" on a financial product
 
-export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) {
+export function WyomingSection({ onSelectTier, onBrowse, onBuyNow }: WyomingSectionProps) {
   return (
     <div style={{ marginBottom:"1.25rem" }}>
     <ScrollFade>
@@ -52,16 +54,16 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
           Form a real company that can hold assets, raise money, and pay investors.
         </h2>
 
-        {/* Use case explainer — three reasons that actually close the "why bother" gap */}
+        {/* Use case explainer, three reasons that actually close the "why bother" gap */}
         <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem",
                        marginBottom:"1rem" }}>
           {[
             { icon:"◎", title:"Hold assets legally",
-              body:"An LLC means the property, the IP, or the rights belong to an entity — not just you personally. That protects you and makes the ownership easy to verify." },
+              body:"An LLC means the property, the IP, or the rights belong to an entity, not just you personally. That protects you and makes the ownership easy to verify." },
             { icon:"◎", title:"Accept investment without a bank",
               body:"Once formed, the LLC can issue membership units to investors as a Reg D offering. No traditional bank, no underwriter, no months of paperwork." },
             { icon:"◎", title:"An on-chain record of who owns what",
-              body:"The ownership structure is recorded on Solana — any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
+              body:"The ownership structure is recorded on Solana, any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
           ].map(r => (
             <div key={r.title} style={{ display:"flex", gap:"0.625rem",
                                          alignItems:"flex-start" }}>
@@ -96,7 +98,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
           </span>
         </div>
 
-        {/* What is a stablecoin — for anyone who hasn't used one before */}
+        {/* What is a stablecoin, for anyone who hasn't used one before */}
         <details style={{ marginBottom:"1rem" }}>
           <summary style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:600,
                              color:"rgba(255,255,255,0.45)", cursor:"pointer",
@@ -115,7 +117,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
           </p>
         </details>
 
-        <WorldLabsFeature />
+        <WorldLabsFeature onBuyNow={onBuyNow} />
 
         {/* Tier cards */}
         <div style={{ display:"flex", gap:"0.625rem", marginBottom:"1rem",

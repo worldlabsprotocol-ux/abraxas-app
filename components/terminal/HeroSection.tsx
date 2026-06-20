@@ -28,16 +28,18 @@ export function HeroIntro() {
                     fontSize:"clamp(1.7rem,4.2vw,2.75rem)", fontWeight:700,
                     color:"var(--text-primary)", lineHeight:1.15, letterSpacing:"-0.02em",
                     margin:"0 0 0.875rem" }}>
-        Turn real-world assets into
+        Verify once.
         <br />
-        verifiable, investable capital.
+        Transact everywhere.
       </h1>
       <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                    color:"var(--text-secondary)", lineHeight:1.7,
                    maxWidth:540, margin:"0 0 1.5rem" }}>
-        Verify your identity and your assets once. Get a credential that
-        every lender, marketplace, and investor on the network already
-        trusts. No re-verification, no repeated paperwork.
+        Real estate, royalties, mineral rights, a business, anything real
+        gets verified once on Abraxas, then that proof travels. Invest in
+        it, borrow against it, or buy it directly with stablecoins.
+        No re-verification, no repeated paperwork, no starting over with
+        every new platform.
       </p>
       <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
         {STATS.map(s => (
