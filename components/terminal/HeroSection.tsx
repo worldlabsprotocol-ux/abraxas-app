@@ -34,13 +34,41 @@ export function HeroIntro() {
       </h1>
       <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                    color:"var(--text-secondary)", lineHeight:1.7,
-                   maxWidth:540, margin:"0 0 1.5rem" }}>
+                   maxWidth:540, margin:"0 0 1.25rem" }}>
         Real estate, royalties, mineral rights, a business, anything real
         gets verified once on Abraxas, then that proof travels. Invest in
         it, borrow against it, or buy it directly with stablecoins.
         No re-verification, no repeated paperwork, no starting over with
         every new platform.
       </p>
+
+      {/* These used to live only on the old loading page, signed-in
+          CTA and the demo walkthrough trigger, both now front and
+          center where people actually are */}
+      <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap",
+                     marginBottom:"0.625rem" }}>
+        <button onClick={() => { window.location.href = "/terminal?signin=1"; }}
+          style={{ padding:"0.7rem 1.5rem", borderRadius:8, border:"none",
+                    background:G, color:"#000", fontFamily:S,
+                    fontSize:"0.85rem", fontWeight:700, cursor:"pointer" }}>
+          Sign in with email →
+        </button>
+        <button onClick={() => { window.location.href = "/terminal?demo=1"; }}
+          style={{ padding:"0.7rem 1.5rem", borderRadius:8,
+                    border:`1.5px solid ${G}`, background:"transparent",
+                    color:G, fontFamily:S, fontSize:"0.85rem", fontWeight:700,
+                    cursor:"pointer" }}>
+          ▶ Watch the 60-second demo
+        </button>
+      </div>
+      <div style={{ marginBottom:"1.5rem" }}>
+        <span style={{ fontFamily:S, fontSize:"0.66rem",
+                        color:"var(--text-muted)" }}>
+          You may see a quick "I'm not a robot" check when signing in,
+          that's normal security, not something meant to slow you down.
+        </span>
+      </div>
+
       <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
         {STATS.map(s => (
           <div key={s.label}
