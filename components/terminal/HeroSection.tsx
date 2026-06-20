@@ -12,7 +12,7 @@ import { ScrollFade } from "./ui";
 
 const STATS: Array<{ label: string; value: string }> = [
   { label: "Verified assets",  value: "4" },
-  { label: "Value attested",   value: "$2.8M+" },
+  { label: "Value attested",   value: "$1.6M+" },
   { label: "Credential standard", value: "W3C" },
 ];
 
