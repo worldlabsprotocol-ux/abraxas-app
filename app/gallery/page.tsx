@@ -53,38 +53,19 @@ export default function GalleryPage() {
           the same way every other asset on Abraxas is.
         </p>
 
-        {error && (
-          <div style={{ padding:"1rem", borderRadius:10, border:"1px dashed #1C2333",
-                         fontSize:"0.8rem", color:"rgba(255,255,255,0.4)",
-                         marginBottom:"1.5rem" }}>
-            {error}
+        {error ? (
+          <div style={{ padding:"3rem 1.5rem", borderRadius:14,
+                         border:"1px dashed #1C2333", textAlign:"center",
+                         opacity:0.55 }}>
+            <div style={{ fontSize:"0.95rem", fontWeight:700, marginBottom:"0.5rem" }}>
+              Gallery coming soon
+            </div>
+            <div style={{ fontSize:"0.8rem", color:"rgba(255,255,255,0.4)",
+                           maxWidth:380, margin:"0 auto", lineHeight:1.6 }}>
+              Live collection data activates once OpenSea API access is connected.
+            </div>
           </div>
-        )}
-
-        {stats && (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",
-                         gap:"1px", background:"#1C2333", borderRadius:10,
-                         overflow:"hidden", marginBottom:"2rem" }}>
-            {[
-              { label:"Floor Price", val: stats.floorPrice != null ? `${stats.floorPrice} ETH` : "N/A" },
-              { label:"Volume",      val: stats.volume != null ? `${stats.volume.toFixed(2)} ETH` : "N/A" },
-              { label:"Owners",      val: stats.owners ?? "N/A" },
-              { label:"Supply",      val: stats.supply ?? "N/A" },
-            ].map(s => (
-              <div key={s.label} style={{ background:"#0D1117", padding:"0.875rem" }}>
-                <div style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.3)",
-                               textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                  {s.label}
-                </div>
-                <div style={{ fontSize:"1.1rem", fontWeight:700, color:"#10B981" }}>
-                  {s.val}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {nfts && nfts.length > 0 ? (
+        ) : nfts && nfts.length > 0 ? (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",
                          gap:"1rem" }}>
             {nfts.map(nft => (
@@ -103,7 +84,7 @@ export default function GalleryPage() {
               </a>
             ))}
           </div>
-        ) : !error && (
+        ) : (
           <div style={{ fontSize:"0.8rem", color:"rgba(255,255,255,0.35)" }}>
             Loading collection...
           </div>

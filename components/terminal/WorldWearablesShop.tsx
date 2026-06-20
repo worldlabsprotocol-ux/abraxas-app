@@ -7,11 +7,16 @@ import { useState, useEffect } from "react";
 import { S, G, W, BDR } from "./tokens";
 import type { BuyItem } from "./BuyNowModal";
 
-// All numbered files in the pattern you described: 11,22,33...1313.
-const WEARABLES_IMAGES: string[] = Array.from({ length: 12 }, (_, i) => {
-  const n = (i + 1) * 11;
-  return `/assets/worldwearables/${n}.jpg`;
-});
+// Correct pattern: n written twice as a string, n=2 -> "22", n=16 -> "1616".
+// 1616.jpg is D-9 Musick's photo, deliberately excluded here even though
+// the file lives in this same folder, it belongs in the Music section only.
+const EXCLUDED_FILES = new Set(["1616.jpg"]);
+
+const WEARABLES_IMAGES: string[] = Array.from({ length: 25 }, (_, i) => {
+  const n = i + 1;
+  return `${n}${n}.jpg`;
+}).filter(name => !EXCLUDED_FILES.has(name))
+  .map(name => `/assets/worldwearables/${name}`);
 
 function checkImage(src: string): Promise<boolean> {
   return new Promise(resolve => {

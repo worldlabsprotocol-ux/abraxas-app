@@ -115,6 +115,22 @@ export function TerminalMain() {
 
         <Divider />
 
+        {/* 2b. FEATURED ASSETS, moved up right after How It Works, the
+            real proof should come early, not after eight other sections */}
+        <ScrollFade>
+          <div id="demo-assets">
+            <DarkPanel>
+              <AssetGrid
+                onViewRegistry={() => setDeep("registry")}
+                onInvest={(assetId) => setInvestAsset(assetId)}
+                onBuyNow={(item) => setBuyItem(item)}
+              />
+            </DarkPanel>
+          </div>
+        </ScrollFade>
+
+        <Divider />
+
         {/* 3. SEE IT IN ACTION, demo video placeholder */}
         <DarkPanel>
           <DemoVideoSection />
@@ -193,21 +209,6 @@ export function TerminalMain() {
             />
           </DarkPanel>
         </div>
-
-        <Divider />
-
-        {/* 9. FEATURED ASSETS, moved to the end per the requested flow */}
-        <ScrollFade>
-          <div id="demo-assets">
-            <DarkPanel>
-              <AssetGrid
-                onViewRegistry={() => setDeep("registry")}
-                onInvest={(assetId) => setInvestAsset(assetId)}
-                onBuyNow={(item) => setBuyItem(item)}
-              />
-            </DarkPanel>
-          </div>
-        </ScrollFade>
 
         <Divider />
 
