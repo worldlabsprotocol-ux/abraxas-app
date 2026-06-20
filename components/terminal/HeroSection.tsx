@@ -128,7 +128,7 @@ export function HeroPassportTeaser({ onGetVerified }: HeroPassportTeaserProps) {
                        marginBottom:"0.875rem" }}>
           <span style={{ fontFamily:S, fontSize:"0.95rem",
                           fontWeight:700, color:"var(--text-primary)" }}>
-            Your Abraxas Passport
+            The Abraxas Passport
           </span>
           <span style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:500,
                           color:G, background:`${G}12`,
@@ -136,11 +136,16 @@ export function HeroPassportTeaser({ onGetVerified }: HeroPassportTeaserProps) {
             Verify once, use everywhere
           </span>
         </div>
+        <div style={{ fontFamily:S, fontSize:"0.72rem",
+                       color:"var(--text-muted)", marginBottom:"0.875rem" }}>
+          Every stamp shown below, this is what a fully verified Passport
+          looks like. Yours starts empty and fills in as you complete each step.
+        </div>
         <div style={{ borderRadius:14, overflow:"hidden",
                        boxShadow:softShadow(G) }}>
           <AbraxasPassport
             onGetVerified={onGetVerified}
-            earnedStamps={["identity", "compliance"]}
+            earnedStamps={["identity", "biometric", "business", "investor", "owner", "royalty", "property", "tribal", "compliance", "lending"]}
           />
         </div>
       </div>

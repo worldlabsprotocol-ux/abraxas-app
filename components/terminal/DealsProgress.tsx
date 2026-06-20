@@ -77,6 +77,7 @@ const DEALS: Deal[] = [
     minInvestment: "$25,000",
     structure: "Reg D 506(c) · Fractional equity",
     useOfProceeds: "Site acquisition, buildout, equipment expansion, rights catalog acquisition",
+    closedDate: "2026-06-20",
   },
 ];
 
