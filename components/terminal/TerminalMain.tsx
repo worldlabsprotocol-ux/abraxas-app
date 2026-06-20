@@ -13,6 +13,9 @@ import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
 import { HowItWorksSteps } from "./HowItWorksSteps";
+import { DemoVideoSection } from "./DemoVideoSection";
+import { ZkLoginPreview } from "./ZkLoginPreview";
+import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { WyomingSection }     from "./WyomingSection";
@@ -95,7 +98,7 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        {/* 1. INTRO + PROOF STATS (4 verified assets, $2.8M attested) */}
+        {/* 1. INTRO + PROOF STATS (4 verified assets, $1.6M attested) */}
         {/* Theme-aware already, no DarkPanel needed */}
         <div id="demo-hero">
           <HeroIntro />
@@ -107,6 +110,15 @@ export function TerminalMain() {
             almost nobody scrolled past to actually see this */}
         <DarkPanel>
           <HowItWorksSteps />
+        </DarkPanel>
+
+        <Divider />
+
+        {/* 1c. SEE IT IN ACTION, demo video section restored from the
+            loading page, this is the literal video placeholder, not
+            the auto-scroll walkthrough */}
+        <DarkPanel>
+          <DemoVideoSection />
         </DarkPanel>
 
         <Divider />
@@ -141,6 +153,11 @@ export function TerminalMain() {
 
         {/* 4. ABRAXAS PASSPORT TEASER, theme-aware already */}
         <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
+
+        <Divider />
+
+        {/* 4b. ZK LOGIN COMING SOON, restored from the loading page */}
+        <ZkLoginPreview />
 
         <Divider />
 
@@ -189,6 +206,16 @@ export function TerminalMain() {
             <PartnersSection />
           </DarkPanel>
         </ScrollFade>
+
+        <Divider />
+
+        {/* 7. PROTOCOL VISION + READY TO START, restored from the
+            loading page, the closing section of the original flow */}
+        <DarkPanel>
+          <ProtocolVisionSection
+            onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
+          />
+        </DarkPanel>
       </div>
     </div>
   );

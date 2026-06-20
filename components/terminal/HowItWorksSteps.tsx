@@ -36,8 +36,12 @@ export function HowItWorksSteps() {
   return (
     <div>
       <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
-                     color:W, marginBottom:"1rem" }}>
+                     color:W, marginBottom:"0.375rem" }}>
         How it works
+      </div>
+      <div style={{ fontFamily:S, fontSize:"0.78rem",
+                     color:"rgba(255,255,255,0.45)", marginBottom:"1.25rem" }}>
+        Three steps to verified, collateral-eligible assets.
       </div>
       <div style={{ display:"grid",
                      gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
@@ -60,6 +64,14 @@ export function HowItWorksSteps() {
             </div>
           </div>
         ))}
+      </div>
+      <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:700,
+                     color:W, marginBottom:"0.25rem" }}>
+        Supported asset classes
+      </div>
+      <div style={{ fontFamily:S, fontSize:"0.72rem",
+                     color:"rgba(255,255,255,0.4)", marginBottom:"0.75rem" }}>
+        Any asset. One credential.
       </div>
       <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
         {ASSET_TYPES.map(a => (

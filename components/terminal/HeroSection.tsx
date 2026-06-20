@@ -20,17 +20,30 @@ export function HeroIntro() {
   return (
     <div style={{ marginBottom:"1.5rem", paddingBottom:"1.5rem",
                    borderBottom:`1px solid ${BDR}` }}>
-      <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:600, color:G,
+      <div style={{ display:"flex", alignItems:"center", gap:"0.625rem",
                      marginBottom:"0.75rem" }}>
-        Abraxas
+        <span style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:600, color:G }}>
+          Abraxas
+        </span>
+        <span style={{ display:"flex", alignItems:"center", gap:"0.3rem",
+                        padding:"0.2rem 0.625rem", borderRadius:20,
+                        background:`${G}12` }}>
+          <span style={{ width:6, height:6, borderRadius:"50%",
+                          background:G, animation:"abraxasPulse 2s infinite" }} />
+          <span style={{ fontFamily:S, fontSize:"0.62rem", fontWeight:700,
+                          color:G, letterSpacing:"0.04em" }}>
+            PROTOCOL READY
+          </span>
+        </span>
       </div>
+      <style>{`@keyframes abraxasPulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }`}</style>
       <h1 style={{ fontFamily:S,
                     fontSize:"clamp(1.7rem,4.2vw,2.75rem)", fontWeight:700,
                     color:"var(--text-primary)", lineHeight:1.15, letterSpacing:"-0.02em",
                     margin:"0 0 0.875rem" }}>
-        Verify once.
+        The verification and identity layer
         <br />
-        Transact everywhere.
+        for real-world assets onchain.
       </h1>
       <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                    color:"var(--text-secondary)", lineHeight:1.7,
@@ -42,23 +55,23 @@ export function HeroIntro() {
         every new platform.
       </p>
 
-      {/* These used to live only on the old loading page, signed-in
-          CTA and the demo walkthrough trigger, both now front and
-          center where people actually are */}
+      {/* The original two buttons, restored exactly, not my invented
+          demo-walkthrough trigger from last time */}
       <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap",
                      marginBottom:"0.625rem" }}>
-        <button onClick={() => { window.location.href = "/terminal?signin=1"; }}
+        <a href="/terminal#demo-assets"
           style={{ padding:"0.7rem 1.5rem", borderRadius:8, border:"none",
                     background:G, color:"#000", fontFamily:S,
-                    fontSize:"0.85rem", fontWeight:700, cursor:"pointer" }}>
-          Sign in with email →
-        </button>
-        <button onClick={() => { window.location.href = "/terminal?demo=1"; }}
+                    fontSize:"0.85rem", fontWeight:700, cursor:"pointer",
+                    textDecoration:"none", display:"inline-block" }}>
+          Enter Protocol
+        </a>
+        <button onClick={() => { window.location.href = "/terminal?signin=1"; }}
           style={{ padding:"0.7rem 1.5rem", borderRadius:8,
                     border:`1.5px solid ${G}`, background:"transparent",
                     color:G, fontFamily:S, fontSize:"0.85rem", fontWeight:700,
                     cursor:"pointer" }}>
-          ▶ Watch the 60-second demo
+          Sign in
         </button>
       </div>
       <div style={{ marginBottom:"1.5rem" }}>
@@ -86,6 +99,19 @@ export function HeroIntro() {
           </div>
         ))}
       </div>
+      <div style={{ display:"flex", justifyContent:"center",
+                     marginTop:"1.5rem" }}>
+        <div style={{ display:"flex", flexDirection:"column",
+                       alignItems:"center", gap:"0.3rem",
+                       animation:"abraxasBounce 2s infinite" }}>
+          <span style={{ fontFamily:S, fontSize:"0.6rem", fontWeight:600,
+                          color:"var(--text-muted)", letterSpacing:"0.1em" }}>
+            SCROLL
+          </span>
+          <span style={{ color:G, fontSize:"0.85rem" }}>▾</span>
+        </div>
+      </div>
+      <style>{`@keyframes abraxasBounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(5px); } }`}</style>
     </div>
   );
 }
