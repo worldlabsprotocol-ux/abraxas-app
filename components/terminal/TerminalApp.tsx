@@ -93,6 +93,18 @@ export default function TerminalApp() {
           Dashboard
         </a>
 
+        <a href="/swap"
+          style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
+                    border: "none",
+                    background: "transparent",
+                    color: "var(--text-secondary)",
+                    fontFamily: S,
+                    fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
+                    fontWeight: 600, textDecoration: "none",
+                    whiteSpace: "nowrap", flexShrink: 0 }}>
+          Swap
+        </a>
+
         <div style={{ flex: 1 }} />
         <LanguageSelector />
         {emailWallet ? (

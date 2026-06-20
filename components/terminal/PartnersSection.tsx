@@ -94,6 +94,32 @@ export function PartnersSection() {
             UTILA.IO
           </Button>
         </div>
+
+        {/* HeroSwap partnership badge */}
+        <div style={{ padding:"0.625rem 0.875rem", borderRadius:6,
+                       background:"rgba(16,185,129,0.07)",
+                       border:"1px solid rgba(16,185,129,0.25)",
+                       display:"flex", alignItems:"center",
+                       gap:"0.75rem", flexWrap:"wrap",
+                       marginBottom:"0.875rem" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+            <div style={{ width:8, height:8, borderRadius:"50%",
+                           background:G, boxShadow:`0 0 5px ${G}` }} />
+            <span style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
+                            color:G, letterSpacing:"0.12em",
+                            textTransform:"uppercase" }}>
+              SWAP PARTNER · HEROSWAP
+            </span>
+          </div>
+          <span style={{ fontFamily:S, fontSize:"0.7rem",
+                          color:"rgba(255,255,255,0.4)", lineHeight:1.5 }}>
+            Instant cross-chain swaps, no signup required. A general
+            crypto utility, separate from Abraxas's verified asset investing.
+          </span>
+          <Button href="/swap" variant="outline" color={G} size="sm">
+            TRY SWAP
+          </Button>
+        </div>
         <div style={{ display:"flex", alignItems:"flex-start",
                        justifyContent:"space-between",
                        flexWrap:"wrap", gap:"0.75rem" }}>
