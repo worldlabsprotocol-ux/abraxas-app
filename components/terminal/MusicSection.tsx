@@ -7,28 +7,7 @@ import { useState } from "react";
 import { ArtistAuditForm } from "@/components/music/ArtistAuditForm";
 import { M, S, G, A, B, W, BDR, CARD } from "./tokens";
 import { Label, ScrollFade } from "./ui";
-
-// D-9 Musick, files at /public/assets/d0/ as specified, 1414.jpg through 1717.jpg
-const D9_CANDIDATES = [
-  "/assets/d0/1414.jpg", "/assets/d0/1515.jpg",
-  "/assets/d0/1616.jpg", "/assets/d0/1717.jpg",
-];
-
-function D9Image() {
-  const [idx, setIdx] = useState(0);
-  const [exhausted, setExhausted] = useState(false);
-  if (exhausted) return null;
-  return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img src={D9_CANDIDATES[idx]} alt="D-9 Musick"
-         style={{ width:"100%", height:"100%", objectFit:"cover",
-                   position:"absolute", inset:0 }}
-         onError={() => {
-           if (idx + 1 < D9_CANDIDATES.length) setIdx(i => i + 1);
-           else setExhausted(true);
-         }} />
-  );
-}
+import { D9Gallery } from "./D9Gallery";
 
 const PROOF_STATS = [
   { val:"80+",   label:"Publishing Clients" },
@@ -99,10 +78,7 @@ export function MusicSection() {
                      background:"linear-gradient(135deg,rgba(16,185,129,0.07),rgba(0,0,0,0))",
                      border:`1px solid ${G}30`, marginBottom:"1.25rem",
                      display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center" }}>
-        <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
-                       position:"relative", background:"#08090F", flexShrink:0 }}>
-          <D9Image />
-        </div>
+        <D9Gallery />
         <div>
           <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                          color:G, marginBottom:"0.25rem" }}>

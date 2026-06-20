@@ -1,66 +1,25 @@
 "use client";
 // FILE: components/terminal/WorldWearablesShop.tsx
-// Full shop for the expanded World Wearables collection. I don't know
-// which of your new photos shows which specific product, so this sets
-// up a few product slots with candidate filenames drawn from your
-// numbering pattern. Adjust PRODUCTS below: real name, real price,
-// real size list, and the actual filename for each item, the shop UI
-// and checkout (size + shipping address + stablecoin payment) all
-// work unchanged once you do.
+// Full photo gallery of the collection, one priced item (the hoodie,
+// $65), no prices on anything else until ready.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { S, G, W, BDR } from "./tokens";
 import type { BuyItem } from "./BuyNowModal";
 
-interface WearableProduct {
-  id: string;
-  name: string;
-  price: string;
-  sizes: string[];
-  imageCandidates: string[];
-}
+// All numbered files in the pattern you described: 11,22,33...1313.
+const WEARABLES_IMAGES: string[] = Array.from({ length: 12 }, (_, i) => {
+  const n = (i + 1) * 11;
+  return `/assets/worldwearables/${n}.jpg`;
+});
 
-// Adjust this list to match your real products. Filenames below guess
-// from your numbering pattern (11, 22, 33 ... 1313), swap in the exact
-// ones once you know which photo is which item.
-const PRODUCTS: WearableProduct[] = [
-  {
-    id: "wearables-hoodie",
-    name: "World Labs Hoodie",
-    price: "$65.00",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    imageCandidates: ["/assets/worldwearables/1313.jpg", "/assets/worldwearables/1212.jpg"],
-  },
-  {
-    id: "wearables-tee",
-    name: "World Labs Tee",
-    price: "$35.00",
-    sizes: ["S", "M", "L", "XL"],
-    imageCandidates: ["/assets/worldwearables/1111.jpg", "/assets/worldwearables/1010.jpg"],
-  },
-  {
-    id: "wearables-cap",
-    name: "World Labs Cap",
-    price: "$28.00",
-    sizes: ["One Size"],
-    imageCandidates: ["/assets/worldwearables/99.jpg", "/assets/worldwearables/88.jpg"],
-  },
-];
-
-function CascadingImage({ candidates, alt }: { candidates: string[]; alt: string }) {
-  const [idx, setIdx] = useState(0);
-  const [exhausted, setExhausted] = useState(false);
-  if (exhausted) return null;
-  return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img src={candidates[idx]} alt={alt}
-         style={{ width:"100%", height:"100%", objectFit:"cover",
-                   position:"absolute", inset:0 }}
-         onError={() => {
-           if (idx + 1 < candidates.length) setIdx(i => i + 1);
-           else setExhausted(true);
-         }} />
-  );
+function checkImage(src: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
 }
 
 interface WorldWearablesShopProps {
@@ -68,6 +27,16 @@ interface WorldWearablesShopProps {
 }
 
 export function WorldWearablesShop({ onBuyNow }: WorldWearablesShopProps) {
+  const [validImages, setValidImages] = useState<string[] | null>(null);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    Promise.all(WEARABLES_IMAGES.map(async src => (await checkImage(src)) ? src : null))
+      .then(results => setValidImages(results.filter((r): r is string => r !== null)));
+  }, []);
+
+  const images = validImages ?? [];
+
   return (
     <div>
       <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
@@ -76,47 +45,62 @@ export function WorldWearablesShop({ onBuyNow }: WorldWearablesShopProps) {
       </div>
       <div style={{ fontFamily:S, fontSize:"0.78rem",
                      color:"rgba(255,255,255,0.45)", marginBottom:"1.25rem" }}>
-        Real apparel, one physical item per purchase, with an on-chain
-        record proving authenticity and ownership. Pay in stablecoin,
-        we ship the actual item.
+        Real apparel, with an on-chain record proving authenticity and
+        ownership. The hoodie ships today, the rest of this collection
+        is coming.
       </div>
-      <div style={{ display:"grid",
-                     gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",
-                     gap:"0.875rem" }}>
-        {PRODUCTS.map(p => (
-          <div key={p.id} style={{ borderRadius:10, overflow:"hidden",
-                                     border:`1px solid ${BDR}`, background:"#0A0C10" }}>
-            <div style={{ height:180, position:"relative", background:"#08090F" }}>
-              <CascadingImage candidates={p.imageCandidates} alt={p.name} />
-            </div>
-            <div style={{ padding:"0.875rem" }}>
-              <div style={{ display:"flex", justifyContent:"space-between",
-                             alignItems:"baseline", marginBottom:"0.625rem" }}>
-                <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700, color:W }}>
-                  {p.name}
-                </span>
-                <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700, color:G }}>
-                  {p.price}
-                </span>
-              </div>
-              <button onClick={() => onBuyNow({
-                  id: p.id,
-                  name: p.name,
-                  price: p.price,
-                  description: `One physical ${p.name}, shipped to you, with an on-chain record of authenticity and ownership tied to this specific item.`,
-                  color: G,
-                  requiresShipping: true,
-                  sizes: p.sizes,
-                })}
-                style={{ width:"100%", padding:"0.55rem", borderRadius:8,
-                          border:"none", background:G, color:"#000",
-                          fontFamily:S, fontSize:"0.78rem", fontWeight:700,
-                          cursor:"pointer" }}>
-                Shop now →
-              </button>
-            </div>
+
+      {images.length > 0 && (
+        <div style={{ marginBottom:"1.25rem" }}>
+          <div style={{ width:"100%", minHeight:280, maxHeight:480,
+                         borderRadius:10, overflow:"hidden", background:"#000",
+                         display:"flex", alignItems:"center", justifyContent:"center" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={images[active]} alt="World Wearables"
+                 style={{ width:"100%", height:"100%", maxHeight:480, objectFit:"contain" }} />
           </div>
-        ))}
+          {images.length > 1 && (
+            <div style={{ display:"flex", gap:"0.375rem", marginTop:"0.5rem",
+                           overflowX:"auto" }}>
+              {images.map((img, i) => (
+                <button key={img} onClick={() => setActive(i)}
+                  style={{ width:56, height:42, borderRadius:5, overflow:"hidden",
+                            border: i === active ? `2px solid ${G}` : "2px solid transparent",
+                            padding:0, cursor:"pointer", background:"#000", flexShrink:0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ padding:"1rem", borderRadius:10, border:`1px solid ${BDR}`,
+                     background:"#0A0C10", display:"flex", justifyContent:"space-between",
+                     alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
+        <div>
+          <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700, color:W }}>
+            World Labs Hoodie
+          </div>
+          <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700, color:G }}>
+            $65.00
+          </div>
+        </div>
+        <button onClick={() => onBuyNow({
+            id: "world-wearables-hoodie",
+            name: "World Labs Hoodie",
+            price: "$65.00",
+            description: "One physical hoodie, shipped to you, with an on-chain record of authenticity and ownership tied to this specific item.",
+            color: G,
+            requiresShipping: true,
+            sizes: ["S", "M", "L", "XL", "XXL"],
+          })}
+          style={{ padding:"0.6rem 1.5rem", borderRadius:8, border:"none",
+                    background:G, color:"#000", fontFamily:S,
+                    fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>
+          Buy the Hoodie →
+        </button>
       </div>
     </div>
   );
