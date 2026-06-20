@@ -68,10 +68,10 @@ export function UserProfile({
         localStorage.setItem(`abraxas_profile_${wallet}`, JSON.stringify(data.profile));
         onProfileLoaded?.(data.profile);
       } else {
-        // First time — auto-create minimal profile
+        // First time, auto-create minimal profile
         await createProfile(wallet);
       }
-    } catch { /* network error — cached data still shown */ }
+    } catch { /* network error, cached data still shown */ }
     finally { setLoading(false); }
   }, [onProfileLoaded]);
 
@@ -112,7 +112,7 @@ export function UserProfile({
         onProfileLoaded?.(data.profile);
         setEditing(false);
       }
-    } catch { setError("Network error — try again"); }
+    } catch { setError("Network error, try again"); }
     finally { setSaving(false); }
   }
 
@@ -142,7 +142,7 @@ export function UserProfile({
     : profile?.passport_level === "BASIC"    ? A
     : "rgba(255,255,255,0.2)";
 
-  // No wallet — prompt to connect
+  // No wallet, prompt to connect
   if (!walletAddress) {
     return (
       <div style={{ padding:"1.25rem", background:BG, border:`1px solid ${BDR}`,
@@ -314,7 +314,7 @@ export function UserProfile({
                          color:"rgba(255,255,255,0.15)",
                          letterSpacing:"0.06em", paddingTop:"0.375rem" }}>
             MEMBER SINCE {profile ? new Date(profile.created_at).toLocaleDateString("en-US",
-              { month:"long", year:"numeric" }) : "—"}
+              { month:"long", year:"numeric" }) : "N/A"}
           </div>
         </div>
       )}

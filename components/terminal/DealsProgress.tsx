@@ -24,6 +24,7 @@ interface Deal {
   minInvestment: string;
   structure: string;
   useOfProceeds: string;
+  closedDate?: string; // set this when express interest closes for a deal
 }
 
 const DEALS: Deal[] = [
@@ -33,11 +34,12 @@ const DEALS: Deal[] = [
     type: "MINERAL RIGHTS · SOVEREIGN LAND",
     color: A,
     stages: ["Introduced","Due Diligence","LOI Signed","Structured","On-Chain","Active"],
-    current: 1,
-    note: "Initial discussions active. Operator LOI in progress.",
+    current: 3,
+    note: "Deal terms structured. Operator agreement finalized.",
     minInvestment: "$25,000",
     structure: "Reg D 506(c) · Royalty token",
     useOfProceeds: "Operator LOI execution, lease structuring, legal",
+    closedDate: "2026-06-19",
   },
   {
     id: "oil-gas",
@@ -45,20 +47,21 @@ const DEALS: Deal[] = [
     type: "OIL & GAS · WORKING INTEREST",
     color: "#F97316",
     stages: ["Introduced","Investor Ready","Deal Structured","Funded","Producing","On-Chain"],
-    current: 1,
-    note: "Deal materials prepared. Investor outreach underway.",
+    current: 3,
+    note: "Fully funded. Moving toward production phase.",
     minInvestment: "$50,000",
     structure: "Reg D 506(c) · Working interest",
     useOfProceeds: "Drilling participation, completion costs",
+    closedDate: "2026-06-19",
   },
   {
-    id: "lifeway-ip",
-    name: "LifeWay Live Show IP",
+    id: "entertainment-ip",
+    name: "Entertainment IP Acquisition",
     type: "INTELLECTUAL PROPERTY · LIVE SHOWS",
     color: B,
     stages: ["Introduced","Term Sheet","Negotiation","Acquired","Tokenized","Active"],
-    current: 0,
-    note: "Initial discussions. Rights valuation in progress.",
+    current: 2,
+    note: "In active negotiation. Specific rights and terms confidential until signed, details will be shared once the deal closes.",
     minInvestment: "$15,000",
     structure: "Rights acquisition · Royalty share",
     useOfProceeds: "Rights acquisition, production budget",
@@ -213,7 +216,14 @@ function DealCard({ deal }: { deal: Deal }) {
         ))}
       </div>
 
-      {sent ? (
+      {deal.closedDate ? (
+        <div style={{ fontFamily:M, fontSize:"0.62rem",
+                       color:"rgba(255,255,255,0.35)",
+                       padding:"0.5rem 0", textAlign:"center",
+                       border:`1px dashed ${BDR}`, borderRadius:5 }}>
+          Express interest closed {new Date(deal.closedDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })}
+        </div>
+      ) : sent ? (
         <div style={{ fontFamily:M, fontSize:"0.62rem", color:deal.color,
                        padding:"0.5rem 0", textAlign:"center" }}>
           Interest received. Our team will follow up by email.
@@ -317,7 +327,7 @@ function InvestorInquiry() {
         />
       )}
 
-      {/* Live support — book time directly with the founder */}
+      {/* Live support, book time directly with the founder */}
       <div style={{ marginTop:"1rem", paddingTop:"1rem",
                      borderTop:`1px solid ${BDR}`,
                      display:"flex", alignItems:"center", justifyContent:"space-between",

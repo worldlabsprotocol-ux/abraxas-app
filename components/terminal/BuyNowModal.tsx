@@ -3,7 +3,7 @@
 // Real checkout experience for direct-purchase items. Supports multiple
 // selectable sub-items per asset (individual books, ebook tier, full
 // catalog, "buy all") since a single bundled item wasn't enough for
-// real sales — crypto-native buyers expect to pick exactly what they
+// real sales, crypto-native buyers expect to pick exactly what they
 // want before sending payment.
 
 import { useState } from "react";
@@ -145,7 +145,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
             </div>
           ) : (
             <>
-              {/* Item picker — choose exactly what you want, or buy all */}
+              {/* Item picker, choose exactly what you want, or buy all */}
               {hasOptions && (
                 <div style={{ marginBottom:"1.25rem" }}>
                   <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,

@@ -30,7 +30,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
     color: "#10B981",
     stats: [
       { label: "Appraised Value",  val: "$1,100,000" },
-      { label: "Collateral Score", val: "89 / 100" },
+      { label: "Collateral Score", val: "94 / 100" },
       { label: "Cash Yield",       val: "14.6%" },
       { label: "Cap Rate",        val: "9.95%" },
     ],
@@ -139,14 +139,14 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
       { label: "Appreciation",     val: "~3x since purchase" },
     ],
     historicalNote:
-      "Purchased March 1999 for $76,200 (public record confirmed). Current estimated value $208,200+, approximately 3x appreciation over 25 years without a traditional bank refinance. Located in Smyrna's 30080 corridor, six minutes from Truist Park and The Battery Atlanta — a $1B+ mixed-use development that has fundamentally repriced the surrounding residential market. Construction and commercial investment in the Smyrna/Cumberland area has continued accelerating since The Battery opened in 2017, making this area one of metro Atlanta's most defensible holds. The owner has chosen not to take the traditional bank loan route, positioning this asset for a structured on-chain solution that better fits the long-term thesis: hold the equity, access liquidity on favorable terms, and continue benefiting from the ongoing commercial development in the immediate area.",
+      "Purchased March 1999 for $76,200 (public record confirmed). Current estimated value $208,200+, approximately 3x appreciation over 25 years without a traditional bank refinance. Located in Smyrna's 30080 corridor, six minutes from Truist Park and The Battery Atlanta, a $1B+ mixed-use development that has fundamentally repriced the surrounding residential market. Construction and commercial investment in the Smyrna/Cumberland area has continued accelerating since The Battery opened in 2017, making this area one of metro Atlanta's most defensible holds. The owner has chosen not to take the traditional bank loan route, positioning this asset for a structured on-chain solution that better fits the long-term thesis: hold the equity, access liquidity on favorable terms, and continue benefiting from the ongoing commercial development in the immediate area.",
     options: [
       {
         title: "On-Chain Equity Loan",
         badge: "PREFERRED STRUCTURE",
         color: "#06B6D4",
         desc: "Property is paid off and clear. Borrow USDC against the verified equity without selling, without a bank, and without a refinance. Owner keeps full ownership, occupancy, and future appreciation.",
-        note: "Up to 60% of appraised value — zero existing debt on the property",
+        note: "Up to 60% of appraised value, zero existing debt on the property",
       },
       {
         title: "Fractional Appreciation Share",
@@ -160,12 +160,12 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
         badge: "STR POTENTIAL",
         color: "#F59E0B",
         desc: "6 minutes from Truist Park puts this in one of Atlanta's strongest short-term rental demand zones on game days, concerts, and Braves season. Tokenized rental income distributed monthly in USDC.",
-        note: "The Battery Atlanta draws 3M+ visitors annually — STR premium supported",
+        note: "The Battery Atlanta draws 3M+ visitors annually, STR premium supported",
       },
     ],
     confidenceChecks: [
       { source: "Public sale record (March 1999)",  status: "confirmed" },
-      { source: "Lien search — clear title",        status: "confirmed" },
+      { source: "Lien search, clear title",        status: "confirmed" },
       { source: "Comparable sales analysis",        status: "confirmed" },
       { source: "Independent appraisal",            status: "pending" },
     ],

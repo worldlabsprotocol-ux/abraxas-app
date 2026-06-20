@@ -10,16 +10,21 @@ import { ScrollFade } from "./ui";
 const MILESTONES = [
   {
     phase:"Live now", color:G,
-    items:["W3C VC credential infrastructure","Wyoming LLC formation flow","V5 10-stage asset pipeline",
-           "Music royalty audit intake","Cielo Sunrise AAS-1 verified","AbraxasPassport UI","Stripe payment rails"],
+    items:["W3C VC credential infrastructure","Wyoming LLC formation flow","Asset verification pipeline",
+           "Music royalty audit intake","Cielo Sunrise verified, producing monthly yield",
+           "Abraxas Precheck, real identity verification via Veriff","Real photo galleries on verified assets",
+           "Email sign-in with automatic wallet and profile creation","Stablecoin checkout (Buy Now / Book Now)",
+           "Light and dark mode"],
   },
   {
     phase:"In progress", color:A,
-    items:["Veriff biometric IDV activation","Live credential issuance","World Studios KC site identified","LifeWay IP rights negotiation"],
+    items:["Wallet sign-in (Phantom, Solflare)","Document review for Business, Accredited, and Asset Owner stamps",
+           "World Studios KC site identification","Entertainment IP acquisition, in negotiation"],
   },
   {
     phase:"Up next", color:B,
-    items:["Utilia MPC custody integration","OID4VP passport portability","DocuSign LLC automation","First external protocol integration"],
+    items:["Utila MPC custody integration","OID4VP passport portability","DocuSign LLC automation",
+           "First external protocol integration","Automated on-chain payment verification"],
   },
 ];
 

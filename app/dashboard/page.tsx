@@ -41,7 +41,7 @@ function parseAssetValue(v: string | undefined): number {
 }
 function displayValue(v: string | undefined): string {
   const n = parseAssetValue(v);
-  if (n === 0) return "—";
+  if (n === 0) return "N/A";
   return n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${n.toLocaleString()}`;
 }
 function scoreLabel(v: number) {
@@ -145,7 +145,7 @@ export default function DashboardPage() {
     ? (portfolioValue >= 1_000_000
         ? `$${(portfolioValue / 1_000_000).toFixed(2)}M`
         : `$${portfolioValue.toLocaleString()}`)
-    : "—";
+    : "N/A";
 
   const STAT_CARDS = [
     { label: "Total Assets",  val: assets.length, color: W },
@@ -245,7 +245,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── USER PROFILE — always visible, this is core to the dashboard now ── */}
+      {/* ── USER PROFILE, always visible, this is core to the dashboard now ── */}
       <div style={{ padding:"0 clamp(0.875rem,2vw,1.5rem) 0.875rem" }}>
         <UserProfile walletAddress={walletAddr} />
       </div>
@@ -308,7 +308,7 @@ export default function DashboardPage() {
         {/* Full protocol asset registry, all 4 assets */}
         <AssetRegistryDashboard />
 
-        {/* Passport status — links to the standalone /passport page, not inline here */}
+        {/* Passport status, links to the standalone /passport page, not inline here */}
         <div style={{ marginBottom:"1.5rem", padding:"1.25rem",
                        borderRadius:12, border:`1px solid ${G}25`,
                        background:"#0A0C10" }}>
@@ -321,7 +321,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ fontFamily:S, fontSize:"0.78rem",
                              color:"rgba(255,255,255,0.5)", lineHeight:1.5 }}>
-                Get verified once — your credential travels across every Abraxas
+                Get verified once, your credential travels across every Abraxas
                 integration so you never repeat paperwork.
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/passport/page.tsx
-// Abraxas Passport — STANDALONE identity experience, completely separate
+// Abraxas Passport, STANDALONE identity experience, completely separate
 // from the tokenize/asset flow. This is the verification moat.
 // Biometric ID → Business Verified → Accredited Investor → Asset Owner.
 // Each stamp is earned through a real process, stored on Supabase,
@@ -43,7 +43,7 @@ const STAMPS: Stamp[] = [
     icon: "◉",
     description: "Abraxas Precheck: a government-issued ID plus a biometric liveness check, processed through Veriff, a certified identity verification provider. Most people clear Precheck in minutes.",
     whatItProves: "You are a real person, the ID belongs to you, and you passed a sanctions and PEP screening.",
-    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera — liveness check takes about 60 seconds"],
+    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera, liveness check takes about 60 seconds"],
     processSteps: [
       "Enter your email to start Abraxas Precheck",
       "Photograph your ID front and back",
@@ -203,7 +203,7 @@ export default function PassportPage() {
   const statusColor: Record<StampStatus, string> = {
     earned:       G,
     in_progress:  A,
-    not_started:  "rgba(0,0,0,0.15)",
+    not_started:  "var(--text-muted)",
   };
 
   const statusLabel: Record<StampStatus, string> = {
@@ -343,7 +343,7 @@ export default function PassportPage() {
           </div>
         </div>
 
-        {/* Expanded stamp detail — shows real process steps */}
+        {/* Expanded stamp detail, shows real process steps */}
         {activeStamp && (() => {
           const status = passportState[activeStamp.id as keyof PassportState];
           return (

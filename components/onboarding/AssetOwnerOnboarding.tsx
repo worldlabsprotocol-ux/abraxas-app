@@ -1,5 +1,5 @@
 // FILE: components/onboarding/AssetOwnerOnboarding.tsx
-// Sophisticated asset intake — collects everything needed for V5 audit.
+// Sophisticated asset intake, collects everything needed for V5 audit.
 // Uncontrolled text inputs prevent Android keyboard dismissal on each keystroke.
 "use client";
 
@@ -79,7 +79,7 @@ export function AssetOwnerOnboarding({
   const [savedAsset,    setSavedAsset]    = useState<UserAsset | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
-  // Uncontrolled refs — prevents Android keyboard dismissal on each keystroke
+  // Uncontrolled refs, prevents Android keyboard dismissal on each keystroke
   const nameRef        = useRef<HTMLInputElement>(null);
   const valueRef       = useRef<HTMLInputElement>(null);
   const addressRef     = useRef<HTMLInputElement>(null);
@@ -281,7 +281,7 @@ export function AssetOwnerOnboarding({
             <div>
               <label style={lbl}>Brief Description</label>
               <textarea ref={descRef} defaultValue="" rows={3}
-                placeholder="Key details about this asset — condition, history, any unique features..."
+                placeholder="Key details about this asset, condition, history, any unique features..."
                 style={{ ...inp, resize: "vertical", lineHeight: 1.6 }}/>
             </div>
           </div>
@@ -312,7 +312,7 @@ export function AssetOwnerOnboarding({
                        color: "rgba(255,255,255,0.4)", lineHeight: 1.65,
                        margin: "0 0 0.875rem" }}>
             This information determines your verification tier and lender eligibility.
-            Be as accurate as possible — our team verifies every detail.
+            Be as accurate as possible, our team verifies every detail.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
             <div>
@@ -331,8 +331,8 @@ export function AssetOwnerOnboarding({
               <label style={lbl}>Any existing liens or encumbrances?</label>
               <select value={form.hasLiens} style={sel}
                 onChange={e => setForm(f => ({...f, hasLiens: e.target.value as "yes"|"no"|"unknown"}))}>
-                <option value="no">No — clear title</option>
-                <option value="yes">Yes — mortgage or lien exists</option>
+                <option value="no">No, clear title</option>
+                <option value="yes">Yes, mortgage or lien exists</option>
                 <option value="unknown">Unknown / needs title search</option>
               </select>
             </div>
@@ -355,7 +355,7 @@ export function AssetOwnerOnboarding({
               <select value={form.hasAppraisal} style={sel}
                 onChange={e => setForm(f => ({...f, hasAppraisal: e.target.value as "yes"|"no"|"in_progress"}))}>
                 <option value="no">No appraisal yet</option>
-                <option value="yes">Yes — have a recent appraisal</option>
+                <option value="yes">Yes, have a recent appraisal</option>
                 <option value="in_progress">In progress</option>
               </select>
             </div>
@@ -363,16 +363,16 @@ export function AssetOwnerOnboarding({
               <label style={lbl}>Custody / control arrangement</label>
               <select value={form.hasCustody} style={sel}
                 onChange={e => setForm(f => ({...f, hasCustody: e.target.value as "yes"|"no"}))}>
-                <option value="yes">Yes — I have direct custody/control</option>
-                <option value="no">No — managed by third party</option>
+                <option value="yes">Yes, I have direct custody/control</option>
+                <option value="no">No, managed by third party</option>
               </select>
             </div>
             <div>
               <label style={lbl}>Any active legal disputes?</label>
               <select value={form.hasDisputes} style={sel}
                 onChange={e => setForm(f => ({...f, hasDisputes: e.target.value as "yes"|"no"}))}>
-                <option value="no">No — no pending disputes</option>
-                <option value="yes">Yes — disclose in documents step</option>
+                <option value="no">No, no pending disputes</option>
+                <option value="yes">Yes, disclose in documents step</option>
               </select>
             </div>
             <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: "0.625rem", marginTop: "0.25rem" }}>
@@ -383,7 +383,7 @@ export function AssetOwnerOnboarding({
             <div>
               <label style={lbl}>Solana wallet address (for token delivery)</label>
               <input ref={walletRef} type="text" defaultValue=""
-                placeholder="Optional — tokens sent here after minting" style={inp} autoComplete="off"/>
+                placeholder="Optional, tokens sent here after minting" style={inp} autoComplete="off"/>
             </div>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
@@ -414,7 +414,7 @@ export function AssetOwnerOnboarding({
                        margin: "0 0 0.875rem" }}>
             Our verification team will review these against public records.
             Documents are encrypted in transit and stored securely.
-            Accepted formats: PDF, JPG, PNG, DOC, DOCX — max 10MB each.
+            Accepted formats: PDF, JPG, PNG, DOC, DOCX, max 10MB each.
           </p>
           {/* Checklist of what to upload based on asset type */}
           <div style={{ padding: "0.75rem 0.875rem", borderRadius: 6, marginBottom: "0.875rem",

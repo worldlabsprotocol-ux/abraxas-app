@@ -17,22 +17,22 @@ interface AssetGridProps {
 // ─── REAL PHOTO GALLERIES ──────────────────────────────────────────────
 // Files live in /public/assets/{folder}/. Add filenames below to add more.
 
-// Cielo Sunrise — 20 photos at /public/assets/cielo/01.jpg … 20.jpg
+// Cielo Sunrise, 20 photos at /public/assets/cielo/01.jpg … 20.jpg
 const CIELO_IMAGES: string[] = Array.from({ length: 20 }, (_, i) =>
   `/assets/cielo/${String(i + 1).padStart(2, "0")}.jpg`
 );
 
-// DeMarko Reddins book covers — 8 covers at /public/assets/demarko/001.jpg … 008.jpg
+// DeMarko Reddins book covers, 8 covers at /public/assets/demarko/001.jpg … 008.jpg
 const DEMARKO_IMAGES: string[] = Array.from({ length: 8 }, (_, i) =>
   `/assets/demarko/${String(i + 1).padStart(3, "0")}.jpg`
 );
 
-// 14 Days in Beijing — 3 images at /public/assets/chancellor/0001.jpg … 0003.jpg
+// 14 Days in Beijing, 3 images at /public/assets/chancellor/0001.jpg … 0003.jpg
 const CHANCELLOR_IMAGES: string[] = Array.from({ length: 3 }, (_, i) =>
   `/assets/chancellor/${String(i + 1).padStart(4, "0")}.jpg`
 );
 
-// Smyrna — real photos of the actual property, uploaded as 011.webp
+// Smyrna, real photos of the actual property, uploaded as 011.webp
 // through 033.webp. If your actual filenames don't match this exact
 // range, adjust the numbers below, everything else works unchanged.
 const SMYRNA_IMAGES: string[] = Array.from({ length: 23 }, (_, i) =>
@@ -72,7 +72,7 @@ const CIELO_STATS = [
   { k:"Appraised Value", v:"$1,100,000" },
   { k:"Annual NOI",      v:"$109,500" },
   { k:"Cash Yield",      v:"14.6%" },
-  { k:"Collateral Score",v:"89 / 100" },
+  { k:"Collateral Score",v:"94 / 100" },
   { k:"Max Borrow",      v:"$660K USDC" },
   { k:"Cap Rate",        v:"9.95%" },
 ];
@@ -144,7 +144,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               VIEW ASSET RECORD
             </Button>
           </div>
-          {/* Book Now — stablecoin booking. no investor positions open on Cielo currently */}
+          {/* Book Now, stablecoin booking. no investor positions open on Cielo currently */}
           <Button onClick={() => onBuyNow({
               id: "cielo-stay",
               name: "Cielo Sunrise · Book a Stay",
@@ -418,7 +418,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           </div>
         </div>
 
-        {/* AAS-4 Smyrna Townhome — Battery Atlanta area, 3x appreciation */}
+        {/* AAS-4 Smyrna Townhome, Battery Atlanta area, 3x appreciation */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${TEAL}55`,
                        background:"linear-gradient(145deg,#001820 0%,#000F16 100%)" }}>
@@ -480,8 +480,8 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               Paid-off townhome sitting at 3x its original purchase price,
               six minutes from The Battery Atlanta. Owner is not selling
               and not refinancing through a traditional bank. Looking for
-              a verified capital partner to unlock the equity — rental
-              income or a structured note — while keeping long-term
+              a verified capital partner to unlock the equity, rental
+              income or a structured note, while keeping long-term
               ownership as the Battery corridor continues to build.
             </div>
           </div>
@@ -493,7 +493,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               { k:"Built",         v:"1984 · Condo/Townhouse" },
               { k:"Lien status",   v:"Clear · Paid off" },
               { k:"Appreciation",  v:"$76.2K \u2192 $228K+ (3x)" },
-              { k:"Rent estimate", v:"$1,702 / month" },
+              { k:"Rent estimate", v:"$1,850 / month" },
               { k:"Location edge", v:"6 min · Truist Park" },
             ].map(s => (
               <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>

@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/passport/DocumentUpload.tsx
 // Real file upload for Passport stamps that require documents (Business
-// KYB, Accredited Investor, Asset Owner). Identity doesn't use this —
+// KYB, Accredited Investor, Asset Owner). Identity doesn't use this , 
 // Veriff collects documents directly in its own hosted flow.
 
 import { useState } from "react";

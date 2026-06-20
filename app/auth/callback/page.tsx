@@ -1,10 +1,10 @@
 "use client";
 // FILE: app/auth/callback/page.tsx
-// THE MISSING PIECE — Supabase sends the magic link, but nothing was
+// THE MISSING PIECE, Supabase sends the magic link, but nothing was
 // ever built to receive it. This page completes the loop: verify the
 // session Supabase just created from the email link, create (or fetch)
 // the user's Solana wallet, store the session locally, and land them
-// in the dashboard. This is the zkLogin-style behavior — click the
+// in the dashboard. This is the zkLogin-style behavior, click the
 // email link, land with a real wallet and profile, no separate signup.
 
 import { useEffect, useState } from "react";
@@ -34,7 +34,7 @@ export default function AuthCallbackPage() {
         const email = data.session.user.email;
         localStorage.setItem("abraxas_email", email);
 
-        // Create or fetch the wallet tied to this email — idempotent,
+        // Create or fetch the wallet tied to this email, idempotent,
         // safe to call every time someone logs in.
         const walletRes = await fetch("/api/auth/wallet/create", {
           method: "POST",

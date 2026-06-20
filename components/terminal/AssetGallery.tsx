@@ -1,16 +1,13 @@
 "use client";
 // FILE: components/terminal/AssetGallery.tsx
-// Photo gallery for assets where real images exist. Ready to receive
-// real files, currently empty for Cielo and DeMarko's catalog since
-// those photos are not safe to pull automatically (real Airbnb listing
-// photos and real book cover art are both copyrighted, even though
-// you own the underlying property and the books, the photo files
-// themselves need to come from you directly, drop them in
-// /public/assets/cielo/ or /public/assets/demarko/ and list the
-// filenames in the `images` array below, then this component just
-// works, no other code changes needed).
+// Photo gallery for assets where real images exist. Automatically
+// detects which filenames in the `images` array actually load, and
+// only shows those, so a guessed filename range that's slightly off
+// doesn't produce broken-image icons, it just quietly shows whatever
+// actually exists. Drop new files in /public/assets/{folder}/ and list
+// filenames in the array, this works either way.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface AssetGalleryProps {
   images: string[]; // paths like "/assets/cielo/01.jpg"
@@ -20,8 +17,41 @@ interface AssetGalleryProps {
 
 export function AssetGallery({ images, fallbackLabel, color }: AssetGalleryProps) {
   const [active, setActive] = useState(0);
+  const [validImages, setValidImages] = useState<string[] | null>(null);
 
-  if (images.length === 0) {
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      images.map(
+        src =>
+          new Promise<string | null>(resolve => {
+            const img = new Image();
+            img.onload = () => resolve(src);
+            img.onerror = () => resolve(null);
+            img.src = src;
+          })
+      )
+    ).then(results => {
+      if (!cancelled) setValidImages(results.filter((r): r is string => r !== null));
+    });
+    return () => { cancelled = true; };
+  }, [images]);
+
+  // Still checking which files actually exist
+  if (validImages === null) {
+    return (
+      <div style={{ height:180, display:"flex", alignItems:"center",
+                     justifyContent:"center", background:"rgba(255,255,255,0.02)",
+                     borderRadius:8 }}>
+        <span style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.72rem",
+                        color:"rgba(255,255,255,0.25)" }}>
+          Loading...
+        </span>
+      </div>
+    );
+  }
+
+  if (validImages.length === 0) {
     // Honest empty state, not a broken image icon
     return (
       <div style={{ height:180, display:"flex", alignItems:"center",
@@ -35,6 +65,8 @@ export function AssetGallery({ images, fallbackLabel, color }: AssetGalleryProps
     );
   }
 
+  const safeActive = Math.min(active, validImages.length - 1);
+
   return (
     <div>
       <div style={{ width:"100%", minHeight:320, maxHeight:520,
@@ -45,17 +77,17 @@ export function AssetGallery({ images, fallbackLabel, color }: AssetGalleryProps
             never cropped, important for collage-style images covering
             multiple rooms in one frame */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={images[active]} alt={fallbackLabel}
+        <img src={validImages[safeActive]} alt={fallbackLabel}
              style={{ width:"100%", height:"100%", maxHeight:520,
                       objectFit:"contain" }} />
       </div>
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <div style={{ display:"flex", gap:"0.375rem", marginTop:"0.5rem",
                        overflowX:"auto", paddingBottom:"0.25rem" }}>
-          {images.map((img, i) => (
+          {validImages.map((img, i) => (
             <button key={img} onClick={() => setActive(i)}
               style={{ width:56, height:42, borderRadius:5, overflow:"hidden",
-                        border: i === active ? `2px solid ${color}` : "2px solid transparent",
+                        border: i === safeActive ? `2px solid ${color}` : "2px solid transparent",
                         padding:0, cursor:"pointer", background:"#000",
                         flexShrink:0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}

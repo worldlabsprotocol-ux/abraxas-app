@@ -5,14 +5,18 @@
 export const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 export const S    = "'Inter',system-ui,-apple-system,sans-serif";
 export const DISPLAY = "'Inter',system-ui,-apple-system,sans-serif";
-export const BG   = "#0A0C10";
-export const CARD = "#0D1117";
-export const BDR  = "#1C2333";
+// Structural neutrals now read from CSS variables (see app/globals.css),
+// so every component using these automatically responds to the
+// light/dark toggle with zero per-file changes.
+export const BG   = "var(--bg)";
+export const CARD = "var(--surface)";
+export const BDR  = "var(--border)";
+export const W    = "var(--text-primary)";
+// Brand/accent colors stay fixed across both themes on purpose.
 export const G    = "#10B981";
 export const TEAL = "#06B6D4";
 export const A    = "#F59E0B";
 export const B    = "#3B82F6";
-export const W    = "#F8FAFC";
 export const RED  = "#DC2626";
 export const IND  = "#6366F1";
 export const PUR  = "#8B5CF6";

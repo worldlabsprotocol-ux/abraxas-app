@@ -100,7 +100,7 @@ export function TerminalMain() {
           <HeroIntro />
         </div>
 
-        {/* 2. VERIFIED ASSETS — right under the stats that back them up */}
+        {/* 2. VERIFIED ASSETS, right under the stats that back them up */}
         <div id="abraxas-id" />
         <ScrollFade>
           <div id="demo-assets">
@@ -116,21 +116,7 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 3. ABRAXAS PASSPORT TEASER — theme-aware already */}
-        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
-
-        <Divider />
-
-        {/* 4. HOW IT WORKS — Verify Once, Transact Everywhere, stamps */}
-        <div id="demo-milestones">
-          <DarkPanel>
-            <MilestonesSection />
-          </DarkPanel>
-        </div>
-
-        <Divider />
-
-        {/* 5. INLINE DEMO — what submitting an asset looks like */}
+        {/* 3. ACTIVE DEAL PIPELINE, right after the assets that prove the model works */}
         <div id="demo-deals">
           <DarkPanel>
             <ContentSection
@@ -142,7 +128,21 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 6. FORM A BUSINESS — outcome of verification, not a pitch intro */}
+        {/* 4. ABRAXAS PASSPORT TEASER, theme-aware already */}
+        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
+
+        <Divider />
+
+        {/* 5. HOW IT WORKS, Verify Once, Transact Everywhere, stamps */}
+        <div id="demo-milestones">
+          <DarkPanel>
+            <MilestonesSection />
+          </DarkPanel>
+        </div>
+
+        <Divider />
+
+        {/* 6. FORM A BUSINESS, outcome of verification, not a pitch intro */}
         <ScrollFade>
           <div id="demo-wyoming">
             <DarkPanel>
