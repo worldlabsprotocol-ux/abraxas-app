@@ -36,10 +36,10 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
     ],
     options: [
       {
-        title: "Collateral Loan",
+        title: "Borrow Against This Property",
         badge: "ACTIVE STRUCTURE",
         color: "#10B981",
-        desc: "Property-backed USDC loan against verified equity. Operating retreat with active Airbnb income servicing the position.",
+        desc: "Get USDC against the property's verified equity, no sale needed. Structured as a collateral loan, the active Airbnb income services the position.",
         note: "Up to $660K available at current valuation",
       },
     ],

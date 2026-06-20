@@ -13,6 +13,8 @@ import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
 import { HowItWorksSteps } from "./HowItWorksSteps";
+import { OnboardingChoice } from "./OnboardingChoice";
+import { WhyVerificationStory } from "./WhyVerificationStory";
 import { DemoVideoSection } from "./DemoVideoSection";
 import { ZkLoginPreview } from "./ZkLoginPreview";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
@@ -106,6 +108,31 @@ export function TerminalMain() {
         <div id="demo-hero">
           <HeroIntro />
         </div>
+
+        <Divider />
+
+        {/* 1b. WHAT DO YOU WANT TO DO, plain branching choice, no jargon,
+            from the original audit, never built until now */}
+        <DarkPanel>
+          <OnboardingChoice
+            onInvest={() => {
+              const el = document.getElementById("demo-assets");
+              el?.scrollIntoView({ behavior:"smooth" });
+            }}
+            onSubmitAsset={() => setDeep("submit")}
+            onLookAround={() => {
+              const el = document.getElementById("demo-assets");
+              el?.scrollIntoView({ behavior:"smooth" });
+            }}
+          />
+        </DarkPanel>
+
+        <Divider />
+
+        {/* 1c. WHY VERIFICATION MATTERS, told as a story, never built until now */}
+        <DarkPanel>
+          <WhyVerificationStory />
+        </DarkPanel>
 
         <Divider />
 

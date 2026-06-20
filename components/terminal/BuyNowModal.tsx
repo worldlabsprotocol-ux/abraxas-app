@@ -27,6 +27,7 @@ export interface BuyItem {
   options?: PurchaseOption[]; // if present, user picks one (or "all")
   requiresShipping?: boolean; // true for physical goods like apparel
   sizes?: string[];           // e.g. ["S","M","L","XL"], shown if present
+  requiresDates?: boolean;    // true for bookings like Cielo's stay
 }
 
 interface BuyNowModalProps {
@@ -42,6 +43,8 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
   const [shippingAddress, setShippingAddress] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -52,7 +55,9 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
 
   const needsShipping = !!item.requiresShipping;
   const needsSize = !!item.sizes && item.sizes.length > 0;
+  const needsDates = !!item.requiresDates;
   const readyToShip = !needsShipping || (shippingAddress.trim().length > 8 && (!needsSize || size));
+  const readyWithDates = !needsDates || (checkIn !== "" && checkOut !== "" && checkOut > checkIn);
 
   const hasOptions = !!item.options && item.options.length > 0;
   const chosen = hasOptions
@@ -73,7 +78,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
   const readyToPay = hasOptions ? (selectedOption !== null) : true;
 
   async function confirmPurchase() {
-    if (!item || !email || !readyToPay || !readyToShip) return;
+    if (!item || !email || !readyToPay || !readyToShip || !readyWithDates) return;
     setSending(true);
     try {
       await fetch("/api/purchase/submit", {
@@ -88,6 +93,8 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
           email,
           size: size ?? null,
           shipping_address: needsShipping ? shippingAddress : null,
+          check_in: needsDates ? checkIn : null,
+          check_out: needsDates ? checkOut : null,
         }),
       });
     } catch { /* fail open, do not block the user on a network hiccup */ }
@@ -281,6 +288,44 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                 </a>
               </div>
 
+              {needsDates && (
+                <div style={{ marginBottom:"1rem" }}>
+                  <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
+                                 color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>
+                    Check-in and check-out
+                  </div>
+                  <div style={{ display:"flex", gap:"0.5rem" }}>
+                    <input
+                      type="date"
+                      value={checkIn}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={e => setCheckIn(e.target.value)}
+                      style={{ flex:1, padding:"0.65rem", borderRadius:8,
+                                border:`1px solid ${BDR}`,
+                                background:"rgba(255,255,255,0.03)",
+                                color:W, fontFamily:S, fontSize:"15px" }}
+                    />
+                    <input
+                      type="date"
+                      value={checkOut}
+                      min={checkIn || new Date().toISOString().slice(0, 10)}
+                      onChange={e => setCheckOut(e.target.value)}
+                      style={{ flex:1, padding:"0.65rem", borderRadius:8,
+                                border:`1px solid ${BDR}`,
+                                background:"rgba(255,255,255,0.03)",
+                                color:W, fontFamily:S, fontSize:"15px" }}
+                    />
+                  </div>
+                  <div style={{ fontFamily:S, fontSize:"0.66rem",
+                                 color:"rgba(255,255,255,0.35)", marginTop:"0.5rem",
+                                 lineHeight:1.5 }}>
+                    These dates are a request, not a confirmed booking yet.
+                    Our team confirms availability on Airbnb directly and
+                    follows up by email.
+                  </div>
+                </div>
+              )}
+
               {needsSize && (
                 <div style={{ marginBottom:"1rem" }}>
                   <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
@@ -345,9 +390,10 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
               <Button
                 onClick={confirmPurchase}
                 color={item.color} size="md" fullWidth
-                disabled={(hasOptions && !readyToPay) || !readyToShip || sending}
+                disabled={(hasOptions && !readyToPay) || !readyToShip || !readyWithDates || sending}
               >
                 {!readyToPay ? "Select an item above"
+                  : !readyWithDates ? "Select your dates"
                   : !readyToShip ? (needsSize && !size ? "Select a size" : "Add a shipping address")
                   : sending ? "Confirming..."
                   : `I've sent the ${coin} →`}

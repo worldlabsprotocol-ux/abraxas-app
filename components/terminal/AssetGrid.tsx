@@ -151,6 +151,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               price: "$597.50/night",
               description: "Book directly in USDC or USDT. Same property as the Airbnb listing, paid in stablecoin. Our team confirms your booking same day.",
               color: G,
+              requiresDates: true,
             })} color={G} size="md">
             BOOK NOW
           </Button>
