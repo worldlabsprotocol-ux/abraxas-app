@@ -134,10 +134,11 @@ function ProgressBar({ stages, current, color }: {
 
 function DealCard({ deal }: { deal: Deal }) {
   const [expanded, setExpanded] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
   const [email,    setEmail]    = useState("");
   const [sent,     setSent]     = useState(false);
   const [sending,  setSending]  = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifySent,  setNotifySent]  = useState(false);
 
   async function expressInterest() {
     if (!email) return;
@@ -159,10 +160,32 @@ function DealCard({ deal }: { deal: Deal }) {
     setSending(false);
   }
 
+  async function notifyNextDeal() {
+    if (!notifyEmail) return;
+    try {
+      await fetch("/api/invest/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          asset_id: deal.id,
+          asset_name: `${deal.name} (next opportunity)`,
+          investment_option: "Notify on next deal",
+          email: notifyEmail,
+          amount_interest: null,
+        }),
+      });
+    } catch { /* fail open */ }
+    setNotifySent(true);
+  }
+
+  const isClosed = !!deal.closedDate;
+
   return (
-    <div style={{ background:CARD, border:`1px solid ${BDR}`,
+    <div style={{ background:CARD,
+                   border: isClosed ? `1px solid ${BDR}` : `1px solid ${deal.color}35`,
                    borderLeft:`3px solid ${deal.color}`,
-                   borderRadius:7, padding:"1rem 1.125rem" }}>
+                   borderRadius:7, padding:"1rem 1.125rem",
+                   opacity: isClosed ? 0.85 : 1 }}>
       <div style={{ display:"flex", justifyContent:"space-between",
                      alignItems:"flex-start", marginBottom:"0.75rem",
                      flexWrap:"wrap", gap:"0.5rem" }}>
@@ -190,38 +213,19 @@ function DealCard({ deal }: { deal: Deal }) {
 
       <ProgressBar stages={deal.stages} current={deal.current} color={deal.color} />
 
-      <button onClick={() => setShowDetails(d => !d)}
-        style={{ background:"none", border:"none", padding:0,
-                  marginTop:"0.625rem", cursor:"pointer",
-                  display:"flex", alignItems:"center", gap:"0.375rem" }}>
-        <span style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
-                        color:deal.color, letterSpacing:"0.06em",
-                        textTransform:"uppercase" }}>
-          {showDetails ? "Hide details" : "Show details"}
-        </span>
-        <span style={{ color:deal.color, fontSize:"0.6rem",
-                        transform: showDetails ? "rotate(180deg)" : "rotate(0deg)",
-                        transition:"transform 0.25s ease" }}>
-          ▾
-        </span>
-      </button>
-
-      <div style={{ maxHeight: showDetails ? 600 : 0, opacity: showDetails ? 1 : 0,
-                     overflow:"hidden", transition:"max-height 0.35s ease, opacity 0.25s ease",
-                     marginTop: showDetails ? "0.625rem" : 0 }}>
+      {/* Details now always visible, no hidden toggle to miss */}
+      <div style={{ marginTop:"0.75rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.68rem",
-                       color:"rgba(255,255,255,0.35)",
+                       color:"rgba(255,255,255,0.4)",
                        marginBottom:"0.75rem", lineHeight:1.5 }}>
           {deal.note}
         </div>
 
-        {/* Investor fields. closed deals show the raise outcome instead
-            of open-deal terms, those don't make sense once it's closed */}
         <div style={{ display:"grid",
                        gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",
                        gap:"1px", background:BDR, borderRadius:5,
                        overflow:"hidden", marginBottom:"0.75rem" }}>
-          {(deal.closedDate
+          {(isClosed
             ? [
                 { label:"Status",    val: deal.stages[deal.current] },
                 { label:"Structure", val: deal.structure },
@@ -245,15 +249,48 @@ function DealCard({ deal }: { deal: Deal }) {
         </div>
       </div>
 
-      {deal.closedDate ? (
-        <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
-                       color:deal.color, background:`${deal.color}10`,
-                       padding:"0.6rem 0", textAlign:"center",
-                       borderRadius:6, display:"flex", alignItems:"center",
-                       justifyContent:"center", gap:"0.4rem" }}>
-          <span>✓</span>
-          <span>Closed to new investors, {new Date(deal.closedDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })}</span>
-        </div>
+      {isClosed ? (
+        notifySent ? (
+          <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:600, color:deal.color,
+                         padding:"0.6rem 0", textAlign:"center" }}>
+            You're on the list. We'll reach out when the next one opens.
+          </div>
+        ) : (
+          <div style={{ padding:"0.75rem", borderRadius:8,
+                         background:`${deal.color}0D`,
+                         border:`1px solid ${deal.color}30` }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"0.4rem",
+                           marginBottom:"0.5rem" }}>
+              <span style={{ color:deal.color, fontSize:"0.75rem" }}>✓</span>
+              <span style={{ fontFamily:S, fontSize:"0.74rem", fontWeight:700,
+                              color:deal.color }}>
+                Closed to new investors, {new Date(deal.closedDate!).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })}
+              </span>
+            </div>
+            <div style={{ fontFamily:S, fontSize:"0.7rem",
+                           color:"rgba(255,255,255,0.5)", lineHeight:1.5,
+                           marginBottom:"0.625rem" }}>
+              This window passed. Investors who acted early are already in.
+              Get notified the moment a similar opportunity opens, or check
+              what's active right now below.
+            </div>
+            <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+              <input
+                value={notifyEmail}
+                onChange={e => setNotifyEmail(e.target.value)}
+                placeholder="your@email.com"
+                type="email"
+                style={{ flex:1, minWidth:160, padding:"0.5rem 0.625rem",
+                          borderRadius:5, border:`1px solid ${BDR}`,
+                          background:"rgba(255,255,255,0.03)",
+                          color:W, fontFamily:S, fontSize:"16px" }}
+              />
+              <Button onClick={notifyNextDeal} color={deal.color} size="sm">
+                NOTIFY ME →
+              </Button>
+            </div>
+          </div>
+        )
       ) : sent ? (
         <div style={{ fontFamily:M, fontSize:"0.62rem", color:deal.color,
                        padding:"0.5rem 0", textAlign:"center" }}>
@@ -276,8 +313,8 @@ function DealCard({ deal }: { deal: Deal }) {
           </Button>
         </div>
       ) : (
-        <Button onClick={() => setExpanded(true)} variant="outline" color={deal.color} size="sm">
-          EXPRESS INTEREST
+        <Button onClick={() => setExpanded(true)} color={deal.color} size="sm">
+          EXPRESS INTEREST →
         </Button>
       )}
     </div>

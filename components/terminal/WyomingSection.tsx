@@ -4,15 +4,12 @@
 
 import { M, S, G, B, W, BDR, CARD } from "./tokens";
 import { Label, ScrollFade } from "./ui";
-import { WorldLabsFeature } from "./WorldLabsFeature";
-import type { BuyItem } from "./BuyNowModal";
 
 type WyomingTier = "starter" | "growth" | "enterprise";
 
 interface WyomingSectionProps {
   onSelectTier: (tier: WyomingTier) => void;
   onBrowse: () => void;
-  onBuyNow: (item: BuyItem) => void;
 }
 
 interface TierDef {
@@ -40,7 +37,7 @@ const TIERS: TierDef[] = [
 
 const COMING_SOON: string[] = []; // removed, no "coming soon" on a financial product
 
-export function WyomingSection({ onSelectTier, onBrowse, onBuyNow }: WyomingSectionProps) {
+export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) {
   return (
     <div style={{ marginBottom:"1.25rem" }}>
     <ScrollFade>
@@ -116,8 +113,6 @@ export function WyomingSection({ onSelectTier, onBrowse, onBuyNow }: WyomingSect
             the same way you'd need a bank account to send a wire.
           </p>
         </details>
-
-        <WorldLabsFeature onBuyNow={onBuyNow} />
 
         {/* Tier cards */}
         <div style={{ display:"flex", gap:"0.625rem", marginBottom:"1rem",

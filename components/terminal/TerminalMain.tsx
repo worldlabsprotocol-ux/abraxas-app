@@ -19,6 +19,7 @@ import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { WyomingSection }     from "./WyomingSection";
+import { WorldLabsSection, WorldWearablesSection } from "./WorldLabsFeature";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { ContentSection }     from "./ContentSection";
@@ -132,8 +133,8 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 6. FORM A BUSINESS, World Labs, World Wearables, and the
-            three pricing tiers all live inside WyomingSection */}
+        {/* 6. FORM A BUSINESS, generic explainer + pricing tiers, no
+            longer bundled with World Labs */}
         <ScrollFade>
           <div id="demo-wyoming">
             <DarkPanel>
@@ -146,10 +147,29 @@ export function TerminalMain() {
                   setInitialTier(null);
                   setWyOpen(true);
                 }}
-                onBuyNow={(item) => setBuyItem(item)}
               />
             </DarkPanel>
           </div>
+        </ScrollFade>
+
+        <Divider />
+
+        {/* 6b. WORLD LABS, standalone proof-of-concept, the actual
+            business case study, separate from the generic explainer above */}
+        <ScrollFade>
+          <DarkPanel>
+            <WorldLabsSection />
+          </DarkPanel>
+        </ScrollFade>
+
+        <Divider />
+
+        {/* 6c. WORLD WEARABLES, completely standalone product line,
+            no longer nested under World Labs */}
+        <ScrollFade>
+          <DarkPanel>
+            <WorldWearablesSection onBuyNow={(item) => setBuyItem(item)} />
+          </DarkPanel>
         </ScrollFade>
 
         <Divider />
