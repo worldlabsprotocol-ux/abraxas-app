@@ -11,8 +11,9 @@ import { useState } from "react";
 import { S, G, W, BDR } from "./tokens";
 import type { BuyItem } from "./BuyNowModal";
 
-// Official World Labs logo, confirmed working filename.
+// Official World Labs logo, latest filename.
 const LOGO_CANDIDATES = [
+  "/assets/worldwearables/world.jpg", "/assets/worldwearables/world.png",
   "/assets/worldwearables/00001.jpg", "/assets/worldwearables/00001.png",
 ];
 

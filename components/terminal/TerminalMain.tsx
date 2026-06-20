@@ -106,71 +106,34 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 1b. HOW IT WORKS, moved here from the loading page, which
-            almost nobody scrolled past to actually see this */}
+        {/* 2. HOW IT WORKS */}
         <DarkPanel>
           <HowItWorksSteps />
         </DarkPanel>
 
         <Divider />
 
-        {/* 1c. SEE IT IN ACTION, demo video section restored from the
-            loading page, this is the literal video placeholder, not
-            the auto-scroll walkthrough */}
+        {/* 3. SEE IT IN ACTION, demo video placeholder */}
         <DarkPanel>
           <DemoVideoSection />
         </DarkPanel>
 
         <Divider />
 
-        {/* 2. VERIFIED ASSETS, right under the stats that back them up */}
+        {/* 4. ABRAXAS PASSPORT, theme-aware already, moved up right after
+            the demo video per the requested flow */}
         <div id="abraxas-id" />
-        <ScrollFade>
-          <div id="demo-assets">
-            <DarkPanel>
-              <AssetGrid
-                onViewRegistry={() => setDeep("registry")}
-                onInvest={(assetId) => setInvestAsset(assetId)}
-                onBuyNow={(item) => setBuyItem(item)}
-              />
-            </DarkPanel>
-          </div>
-        </ScrollFade>
-
-        <Divider />
-
-        {/* 3. ACTIVE DEAL PIPELINE, right after the assets that prove the model works */}
-        <div id="demo-deals">
-          <DarkPanel>
-            <ContentSection
-              onSubmit={() => setDeep("submit")}
-              onTrust={() => setDeep("trust")}
-            />
-          </DarkPanel>
-        </div>
-
-        <Divider />
-
-        {/* 4. ABRAXAS PASSPORT TEASER, theme-aware already */}
         <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
 
         <Divider />
 
-        {/* 4b. ZK LOGIN COMING SOON, restored from the loading page */}
+        {/* 5. ZK LOGIN COMING SOON */}
         <ZkLoginPreview />
 
         <Divider />
 
-        {/* 5. HOW IT WORKS, Verify Once, Transact Everywhere, stamps */}
-        <div id="demo-milestones">
-          <DarkPanel>
-            <MilestonesSection />
-          </DarkPanel>
-        </div>
-
-        <Divider />
-
-        {/* 6. FORM A BUSINESS, outcome of verification, not a pitch intro */}
+        {/* 6. FORM A BUSINESS, World Labs, World Wearables, and the
+            three pricing tiers all live inside WyomingSection */}
         <ScrollFade>
           <div id="demo-wyoming">
             <DarkPanel>
@@ -191,6 +154,51 @@ export function TerminalMain() {
 
         <Divider />
 
+        {/* 7. PROTOCOL VISION + READY TO START */}
+        <DarkPanel>
+          <ProtocolVisionSection
+            onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
+          />
+        </DarkPanel>
+
+        <Divider />
+
+        {/* 8. ACTIVE DEAL PIPELINE, moved to the end per the requested flow */}
+        <div id="demo-deals">
+          <DarkPanel>
+            <ContentSection
+              onSubmit={() => setDeep("submit")}
+              onTrust={() => setDeep("trust")}
+            />
+          </DarkPanel>
+        </div>
+
+        <Divider />
+
+        {/* 9. FEATURED ASSETS, moved to the end per the requested flow */}
+        <ScrollFade>
+          <div id="demo-assets">
+            <DarkPanel>
+              <AssetGrid
+                onViewRegistry={() => setDeep("registry")}
+                onInvest={(assetId) => setInvestAsset(assetId)}
+                onBuyNow={(item) => setBuyItem(item)}
+              />
+            </DarkPanel>
+          </div>
+        </ScrollFade>
+
+        <Divider />
+
+        {/* 10. PROTOCOL MILESTONES */}
+        <div id="demo-milestones">
+          <DarkPanel>
+            <MilestonesSection />
+          </DarkPanel>
+        </div>
+
+        <Divider />
+
         <ScrollFade>
           <div id="demo-music">
             <DarkPanel>
@@ -206,16 +214,6 @@ export function TerminalMain() {
             <PartnersSection />
           </DarkPanel>
         </ScrollFade>
-
-        <Divider />
-
-        {/* 7. PROTOCOL VISION + READY TO START, restored from the
-            loading page, the closing section of the original flow */}
-        <DarkPanel>
-          <ProtocolVisionSection
-            onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
-          />
-        </DarkPanel>
       </div>
     </div>
   );
