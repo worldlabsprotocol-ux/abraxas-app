@@ -23,6 +23,7 @@ import { WorldLabsSection } from "./WorldLabsFeature";
 import { WorldWearablesShop } from "./WorldWearablesShop";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
+import { FAQSection }         from "./FAQSection";
 import { ContentSection }     from "./ContentSection";
 import { InvestorPortalModal} from "./InvestorPortalModal";
 import { BuyNowModal }        from "./BuyNowModal";
@@ -131,6 +132,19 @@ export function TerminalMain() {
 
         <Divider />
 
+        {/* 2c. MUSIC ROYALTY AUDITS, moved up next to Featured Assets,
+            D-9 as the first real artist deserves to be seen early, not
+            buried after eight other sections */}
+        <ScrollFade>
+          <div id="demo-music">
+            <DarkPanel>
+              <MusicSection />
+            </DarkPanel>
+          </div>
+        </ScrollFade>
+
+        <Divider />
+
         {/* 3. SEE IT IN ACTION, demo video placeholder */}
         <DarkPanel>
           <DemoVideoSection />
@@ -222,20 +236,16 @@ export function TerminalMain() {
         <Divider />
 
         <ScrollFade>
-          <div id="demo-music">
-            <DarkPanel>
-              <MusicSection />
-            </DarkPanel>
-          </div>
-        </ScrollFade>
-
-        <Divider />
-
-        <ScrollFade>
           <DarkPanel>
             <PartnersSection />
           </DarkPanel>
         </ScrollFade>
+
+        <Divider />
+
+        <DarkPanel>
+          <FAQSection />
+        </DarkPanel>
       </div>
     </div>
   );

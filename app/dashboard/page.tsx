@@ -17,6 +17,7 @@ import type { Session }              from "@/lib/vos/sessionStore";
 import { UserProfile }             from "@/components/profile/UserProfile";
 import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
+import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -304,6 +305,8 @@ export default function DashboardPage() {
         <MyAbraxas identityLabel={walletAddr} />
 
         {/* Full protocol asset registry, all 4 assets */}
+        <SophiaCircuit />
+
         <AssetRegistryDashboard />
 
         {/* Passport status, links to the standalone /passport page, not inline here */}

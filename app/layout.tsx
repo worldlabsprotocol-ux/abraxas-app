@@ -5,8 +5,22 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "Abraxas Protocol",
-  description: "Verify once. Transact everywhere.",
+  title: "Abraxas, Verify Once. Transact Everywhere.",
+  description: "The verification and identity layer for real-world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
+  openGraph: {
+    title: "Abraxas, Verify Once. Transact Everywhere.",
+    description: "The verification and identity layer for real-world assets onchain.",
+    url: "https://abraxas-app.vercel.app",
+    siteName: "Abraxas",
+    images: ["/og-image.jpg"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Abraxas, Verify Once. Transact Everywhere.",
+    description: "The verification and identity layer for real-world assets onchain.",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
