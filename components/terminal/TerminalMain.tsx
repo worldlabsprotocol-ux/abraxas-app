@@ -12,6 +12,7 @@ import { TokenizationRequestModal } from "@/components/TokenizationRequestModal"
 import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
+import { HowItWorksSteps } from "./HowItWorksSteps";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { WyomingSection }     from "./WyomingSection";
@@ -99,6 +100,16 @@ export function TerminalMain() {
         <div id="demo-hero">
           <HeroIntro />
         </div>
+
+        <Divider />
+
+        {/* 1b. HOW IT WORKS, moved here from the loading page, which
+            almost nobody scrolled past to actually see this */}
+        <DarkPanel>
+          <HowItWorksSteps />
+        </DarkPanel>
+
+        <Divider />
 
         {/* 2. VERIFIED ASSETS, right under the stats that back them up */}
         <div id="abraxas-id" />

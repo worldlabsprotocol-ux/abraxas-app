@@ -25,8 +25,6 @@ interface Deal {
   structure: string;
   useOfProceeds: string;
   closedDate?: string; // set this when express interest closes for a deal
-  amountRaised?: string;  // shown instead of the open-deal fields once closed
-  investorCount?: string;
 }
 
 const DEALS: Deal[] = [
@@ -42,8 +40,6 @@ const DEALS: Deal[] = [
     structure: "Reg D 506(c) · Royalty token",
     useOfProceeds: "Operator LOI execution, lease structuring, legal",
     closedDate: "2026-06-19",
-    amountRaised: "Add real figure",
-    investorCount: "Add real figure",
   },
   {
     id: "oil-gas",
@@ -57,8 +53,6 @@ const DEALS: Deal[] = [
     structure: "Reg D 506(c) · Working interest",
     useOfProceeds: "Drilling participation, completion costs",
     closedDate: "2026-06-19",
-    amountRaised: "Add real figure",
-    investorCount: "Add real figure",
   },
   {
     id: "entertainment-ip",
@@ -228,9 +222,9 @@ function DealCard({ deal }: { deal: Deal }) {
                        overflow:"hidden", marginBottom:"0.75rem" }}>
           {(deal.closedDate
             ? [
-                { label:"Amount Raised", val: deal.amountRaised ?? "Add real figure" },
-                { label:"Investors",     val: deal.investorCount ?? "Add real figure" },
-                { label:"Structure",     val: deal.structure },
+                { label:"Status",    val: deal.stages[deal.current] },
+                { label:"Structure", val: deal.structure },
+                { label:"Next Step", val: deal.stages[Math.min(deal.current + 1, deal.stages.length - 1)] },
               ]
             : [
                 { label:"Minimum",      val:deal.minInvestment },
@@ -251,11 +245,13 @@ function DealCard({ deal }: { deal: Deal }) {
       </div>
 
       {deal.closedDate ? (
-        <div style={{ fontFamily:M, fontSize:"0.62rem",
-                       color:"rgba(255,255,255,0.35)",
-                       padding:"0.5rem 0", textAlign:"center",
-                       border:`1px dashed ${BDR}`, borderRadius:5 }}>
-          Express interest closed {new Date(deal.closedDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })}
+        <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
+                       color:deal.color, background:`${deal.color}10`,
+                       padding:"0.6rem 0", textAlign:"center",
+                       borderRadius:6, display:"flex", alignItems:"center",
+                       justifyContent:"center", gap:"0.4rem" }}>
+          <span>✓</span>
+          <span>Closed to new investors, {new Date(deal.closedDate).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })}</span>
         </div>
       ) : sent ? (
         <div style={{ fontFamily:M, fontSize:"0.62rem", color:deal.color,
