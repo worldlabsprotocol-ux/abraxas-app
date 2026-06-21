@@ -170,4 +170,43 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
       { source: "Independent appraisal",            status: "pending" },
     ],
   },
+
+  "aas-5": {
+    id: "aas-5",
+    name: "Naj Tulum",
+    subtitle: "Aldea Zama, Tulum, Mexico · Condo-Hotel Unit",
+    color: "#F59E0B",
+    stats: [
+      { label: "Location",        val: "Aldea Zama, Tulum, MX" },
+      { label: "Purchased",       val: "2023" },
+      { label: "Ownership",       val: "Owned outright" },
+      { label: "Title structure", val: "Fideicomiso (bank trust)" },
+      { label: "Monthly income",  val: "$1,500 / month" },
+      { label: "Lien Status",     val: "Clear · No debt" },
+    ],
+    historicalNote:
+      "Purchased in 2023, owned outright with no existing debt. Naj Tulum is a boutique condo-hotel in Aldea Zama, one of Tulum's most established planned communities, with paved infrastructure and strong rental demand from international tourism. Foreign ownership of coastal Mexican real estate is held through a fideicomiso, a bank trust structure, which Abraxas verifies as part of confirming clear title, the same rigor applied to any US-based asset on the platform.",
+    options: [
+      {
+        title: "Borrow Against This Property",
+        badge: "OWNED OUTRIGHT",
+        color: "#F59E0B",
+        desc: "Get USDC against the unit's verified equity, no sale needed. The property is debt-free, the existing monthly rental income can service the position.",
+        note: "No existing debt, full equity available as collateral",
+      },
+      {
+        title: "Rental Income Share",
+        badge: "INVESTOR OPTION",
+        color: "#8B5CF6",
+        desc: "Participate in the unit's recurring rental income, distributed monthly in USDC, from an international tourism market with strong, consistent demand.",
+        note: "Current monthly income: $1,500",
+      },
+    ],
+    confidenceChecks: [
+      { source: "Fideicomiso (bank trust) title verification", status: "confirmed" },
+      { source: "Purchase record (2023)",                      status: "confirmed" },
+      { source: "Lien search, clear title",                    status: "confirmed" },
+      { source: "Independent appraisal",                       status: "pending" },
+    ],
+  },
 };

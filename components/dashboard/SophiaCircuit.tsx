@@ -63,7 +63,7 @@ export function SophiaCircuit() {
             // founder before listing, that review is the actual risk
             // mitigation right now. Computed risk levels below kick in
             // once outside users start submitting their own assets.
-            const FOUNDER_VETTED = new Set(["aas-1", "aas-2", "aas-3", "aas-4"]);
+            const FOUNDER_VETTED = new Set(["aas-1", "aas-2", "aas-3", "aas-4", "aas-5"]);
             const riskLevel = FOUNDER_VETTED.has(asset.id)
               ? "Low"
               : confirmed === checks.length ? "Low" : confirmed >= checks.length / 2 ? "Moderate" : "Elevated";

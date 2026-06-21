@@ -42,7 +42,7 @@ export default function GalleryPage() {
 
       <div style={{ maxWidth:1000, margin:"0 auto", padding:"2.5rem clamp(1rem,3vw,1.5rem)" }}>
         <div style={{ fontSize:"0.72rem", fontWeight:600, color:"#10B981", marginBottom:"0.5rem" }}>
-          AAS-5 · Genesis Creative Collection
+          AAS-6 · Genesis Creative Collection
         </div>
         <h1 style={{ fontSize:"clamp(1.5rem,4vw,2.2rem)", fontWeight:700, margin:"0 0 0.75rem" }}>
           La Casa Distortion

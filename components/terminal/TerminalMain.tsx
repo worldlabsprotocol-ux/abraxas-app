@@ -102,7 +102,7 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        {/* 1. INTRO + PROOF STATS (4 verified assets, $1.6M attested) */}
+        {/* 1. INTRO + PROOF STATS (5 verified assets, $1.6M attested (Naj Tulum pending appraisal)) */}
         {/* Theme-aware already, no DarkPanel needed */}
         <div id="demo-hero">
           <HeroIntro />

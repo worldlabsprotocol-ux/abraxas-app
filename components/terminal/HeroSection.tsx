@@ -11,7 +11,7 @@ import { M, S, G, W, BDR, softShadow } from "./tokens";
 import { ScrollFade } from "./ui";
 
 const STATS: Array<{ label: string; value: string }> = [
-  { label: "Verified assets",  value: "4" },
+  { label: "Verified assets",  value: "5" },
   { label: "Value attested",   value: "$1.6M+" },
   { label: "Credential standard", value: "W3C" },
 ];

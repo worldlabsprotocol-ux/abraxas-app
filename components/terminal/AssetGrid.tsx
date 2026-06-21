@@ -39,6 +39,15 @@ const SMYRNA_IMAGES: string[] = Array.from({ length: 23 }, (_, i) =>
   `/assets/smyrna/${String(i + 11).padStart(3, "0")}.webp`
 );
 
+// Naj Tulum, a unit at a condo-hotel in Aldea Zama, Tulum, Mexico,
+// purchased 2023, owned outright. Four photos, naj.jpg through naj4.jpg.
+const NAJ_TULUM_IMAGES: string[] = [
+  "/assets/worldwearables/naj.jpg",
+  "/assets/worldwearables/naj2.jpg",
+  "/assets/worldwearables/naj3.jpg",
+  "/assets/worldwearables/naj4.jpg",
+];
+
 // ─── BUY NOW SELECTABLE OPTIONS ─────────────────────────────────────
 // Generic, honest tiers since exact individual book titles aren't set
 // yet. Replace the `label` fields below with real titles whenever
@@ -539,6 +548,71 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               No bank route. Verified capital only. Long-term hold.
             </div>
             <Button onClick={() => onInvest("aas-4")} color={TEAL} size="sm">
+              INVEST →
+            </Button>
+          </div>
+        </div>
+
+        {/* AAS-5 Naj Tulum, unit at a condo-hotel in Aldea Zama, Tulum, Mexico */}
+        <div style={{ borderRadius:8, overflow:"hidden",
+                       border:"1px solid #F59E0B55",
+                       background:"linear-gradient(145deg,#1c1206 0%,#100b03 100%)" }}>
+          <div style={{ padding:"0.875rem 1rem 0" }}>
+            <AssetGallery images={NAJ_TULUM_IMAGES} fallbackLabel="Naj Tulum" color={A} />
+          </div>
+
+          <div style={{ padding:"0.875rem 1rem",
+                         borderBottom:"1px solid #F59E0B20",
+                         background:"linear-gradient(135deg,rgba(245,158,11,0.12),rgba(0,0,0,0))" }}>
+            <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
+                           color:A, marginBottom:"0.375rem" }}>
+              Real Estate · Tulum, Mexico · International Asset
+            </div>
+            <div style={{ fontFamily:"Georgia,serif",
+                           fontSize:"clamp(1rem,2.5vw,1.25rem)",
+                           fontWeight:700, color:W, marginBottom:"0.375rem" }}>
+              Naj Tulum
+            </div>
+            <div style={{ fontFamily:S, fontSize:"0.7rem",
+                           color:"rgba(255,255,255,0.45)", lineHeight:1.65 }}>
+              A unit at Naj Tulum, a boutique condo-hotel in Aldea Zama,
+              purchased in 2023 and owned outright. Foreign ownership of
+              coastal Mexican real estate like this is held through a
+              fideicomiso, a bank trust structure, which Abraxas verifies
+              as part of confirming clear title.
+            </div>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
+                         gap:"1px", background:BDR }}>
+            {[
+              { k:"Location",       v:"Aldea Zama, Tulum, MX" },
+              { k:"Purchased",      v:"2023" },
+              { k:"Ownership",      v:"Owned outright" },
+              { k:"Title structure", v:"Fideicomiso (bank trust)" },
+              { k:"Monthly income", v:"$1,500 / month" },
+              { k:"Lien status",    v:"Clear · No debt" },
+            ].map(s => (
+              <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
+                <div style={{ fontFamily:M, fontSize:"0.46rem",
+                               color:"rgba(255,255,255,0.25)",
+                               textTransform:"uppercase",
+                               letterSpacing:"0.1em", marginBottom:2 }}>{s.k}</div>
+                <div style={{ fontFamily:M, fontSize:"0.66rem",
+                               fontWeight:700, color:A }}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+                         display:"flex", gap:"0.5rem", alignItems:"center",
+                         flexWrap:"wrap", justifyContent:"space-between" }}>
+            <div style={{ fontFamily:S, fontSize:"0.58rem",
+                           color:"rgba(255,255,255,0.3)", lineHeight:1.5,
+                           maxWidth:160 }}>
+              Owned outright. No bank route. Verified capital only.
+            </div>
+            <Button onClick={() => onInvest("aas-5")} color={A} size="sm">
               INVEST →
             </Button>
           </div>
