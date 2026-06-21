@@ -17,6 +17,11 @@ const B = "#3B82F6";
 const A = "#F59E0B";
 const V = "#8B5CF6";
 
+// This is Veriff's public/publishable API key, not the secret key, it's
+// designed to be exposed client-side, same model as a Stripe publishable
+// key. If you regenerate it in your Veriff dashboard, swap it in here.
+const VERIFF_PUBLIC_API_KEY = "271e98bb-881f-40b9-bf21-94aecff4a846";
+
 // Each stamp is a real verification step with a real process behind it.
 // The color of the stamp, the check items, and the CTA all differ per tier.
 interface Stamp {
@@ -174,29 +179,61 @@ export default function PassportPage() {
     } catch { /* silent, status is best-effort */ }
   }
 
-  async function startIdentityVerification() {
+  function startIdentityVerification() {
     if (!email.includes("@")) { setError("Enter a valid email first"); return; }
     localStorage.setItem("abraxas_email", email);
     setStarting(true);
     setError(null);
-    try {
-      const res = await fetch("/api/identity/veriff/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+
+    // Load Veriff's two SDK scripts if they're not already on the page,
+    // this is the In-Context flow: it mounts an embedded verification
+    // frame right here, no redirect away from Abraxas, and no server
+    // env vars needed to trigger it, only the public API key below,
+    // which is safe to expose client-side, same model as a Stripe
+    // publishable key.
+    function loadScript(src: string): Promise<void> {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.body.appendChild(s);
       });
-      const data = await res.json() as { verificationUrl?: string; error?: string };
-      if (data.verificationUrl) {
-        setPassportState(p => ({ ...p, identity: "in_progress" }));
-        window.location.href = data.verificationUrl;
-      } else {
-        setError(data.error ?? "Could not start verification. Try again shortly.");
-      }
-    } catch {
-      setError("Network error. Check your connection and try again.");
-    } finally {
-      setStarting(false);
     }
+
+    Promise.all([
+      loadScript("https://cdn.veriff.me/sdk/js/1.5/veriff.min.js"),
+      loadScript("https://cdn.veriff.me/incontext/js/v1/veriff.js"),
+    ])
+      .then(() => {
+        // Veriff and window.veriffSDK are loaded onto window by the two
+        // scripts above, there's no type definition for them, so this
+        // reads from window as any rather than fight the global type
+        const w = window as unknown as {
+          Veriff: (config: Record<string, unknown>) => { mount: (opts: Record<string, unknown>) => void };
+          veriffSDK: { createVeriffFrame: (opts: { url: string }) => void };
+        };
+        const veriff = w.Veriff({
+          host: "https://stationapi.veriff.com",
+          apiKey: VERIFF_PUBLIC_API_KEY,
+          parentId: "veriff-root",
+          onSession: function (err: unknown, response: { verification?: { url?: string } }) {
+            setStarting(false);
+            if (err || !response?.verification?.url) {
+              setError("Could not start verification. Try again shortly.");
+              return;
+            }
+            setPassportState(p => ({ ...p, identity: "in_progress" }));
+            w.veriffSDK.createVeriffFrame({ url: response.verification!.url! });
+          },
+        });
+        veriff.mount({ formLabel: { vendorData: email } });
+      })
+      .catch(() => {
+        setStarting(false);
+        setError("Could not load the verification widget. Check your connection and try again.");
+      });
   }
 
   const statusColor: Record<StampStatus, string> = {
@@ -214,6 +251,9 @@ export default function PassportPage() {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100vh",
                    color:"var(--text-primary)" }}>
+
+      {/* Veriff's in-context frame mounts here when verification starts */}
+      <div id="veriff-root" />
 
       {/* Nav */}
       <nav style={{ position:"sticky", top:0, zIndex:200,
