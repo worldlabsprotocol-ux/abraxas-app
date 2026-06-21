@@ -200,6 +200,15 @@ export default function TerminalApp() {
                   <CompactWallet />
                 </div>
               )}
+              <div style={{ marginTop:"1rem", paddingTop:"1rem",
+                             borderTop:"1px solid var(--border)",
+                             textAlign:"center" }}>
+                <a href="/passport" style={{ fontFamily:S, fontSize:"0.72rem",
+                                              color:G, textDecoration:"underline" }}>
+                  Signing in creates your account. Identity verification
+                  is separate, check your Passport status →
+                </a>
+              </div>
             </div>
           </div>
         </div>

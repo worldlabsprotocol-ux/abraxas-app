@@ -95,6 +95,29 @@ export function PartnersSection() {
           </Button>
         </div>
 
+        {/* CV5 Capital, fund structuring partnership */}
+        <div style={{ padding:"0.625rem 0.875rem", borderRadius:6,
+                       background:"rgba(139,92,246,0.07)",
+                       border:"1px solid rgba(139,92,246,0.25)",
+                       display:"flex", alignItems:"center",
+                       gap:"0.75rem", flexWrap:"wrap",
+                       marginBottom:"0.875rem" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+            <div style={{ width:8, height:8, borderRadius:"50%",
+                           background:"#8B5CF6", boxShadow:"0 0 5px #8B5CF6" }} />
+            <span style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
+                            color:"#8B5CF6", letterSpacing:"0.12em",
+                            textTransform:"uppercase" }}>
+              FUND STRUCTURE PARTNER · CV5 CAPITAL
+            </span>
+          </div>
+          <span style={{ fontFamily:S, fontSize:"0.7rem",
+                          color:"rgba(255,255,255,0.4)", lineHeight:1.5 }}>
+            CIMA-regulated fund structuring, supporting Abraxas's
+            institutional-grade verification standard.
+          </span>
+        </div>
+
         {/* HeroSwap partnership badge */}
         <div style={{ padding:"0.625rem 0.875rem", borderRadius:6,
                        background:"rgba(16,185,129,0.07)",

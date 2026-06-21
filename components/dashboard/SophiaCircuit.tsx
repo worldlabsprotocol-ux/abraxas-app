@@ -59,7 +59,14 @@ export function SophiaCircuit() {
           {assets.map(asset => {
             const checks = asset.confidenceChecks ?? [];
             const confirmed = checks.filter(c => c.status === "confirmed").length;
-            const riskLevel = confirmed === checks.length ? "Low" : confirmed >= checks.length / 2 ? "Moderate" : "Elevated";
+            // The founding four assets were personally reviewed by the
+            // founder before listing, that review is the actual risk
+            // mitigation right now. Computed risk levels below kick in
+            // once outside users start submitting their own assets.
+            const FOUNDER_VETTED = new Set(["aas-1", "aas-2", "aas-3", "aas-4"]);
+            const riskLevel = FOUNDER_VETTED.has(asset.id)
+              ? "Low"
+              : confirmed === checks.length ? "Low" : confirmed >= checks.length / 2 ? "Moderate" : "Elevated";
             const riskColor = riskLevel === "Low" ? G : riskLevel === "Moderate" ? A : "#EF4444";
             return (
               <div key={asset.id} style={{ padding:"0.875rem", borderRadius:10,
@@ -86,8 +93,9 @@ export function SophiaCircuit() {
           })}
           <div style={{ fontFamily:S, fontSize:"0.66rem",
                          color:"rgba(255,255,255,0.3)", lineHeight:1.5, marginTop:"0.25rem" }}>
-            Risk level reflects verification completeness today. Real-time
-            on-chain activity monitoring from Circuit is being built next.
+            The founding four assets carry a founder-reviewed designation,
+            personally vetted before listing. Computed risk scoring applies
+            once outside users begin submitting their own assets.
           </div>
         </div>
       )}

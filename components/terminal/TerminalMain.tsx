@@ -15,7 +15,6 @@ import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
 import { HowItWorksSteps } from "./HowItWorksSteps";
 import { OnboardingChoice } from "./OnboardingChoice";
 import { WhyVerificationStory } from "./WhyVerificationStory";
-import { DemoVideoSection } from "./DemoVideoSection";
 import { ZkLoginPreview } from "./ZkLoginPreview";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
@@ -159,40 +158,8 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 2c. MUSIC ROYALTY AUDITS, moved up next to Featured Assets,
-            D-9 as the first real artist deserves to be seen early, not
-            buried after eight other sections */}
-        <ScrollFade>
-          <div id="demo-music">
-            <DarkPanel>
-              <MusicSection />
-            </DarkPanel>
-          </div>
-        </ScrollFade>
-
-        <Divider />
-
-        {/* 3. SEE IT IN ACTION, demo video placeholder */}
-        <DarkPanel>
-          <DemoVideoSection />
-        </DarkPanel>
-
-        <Divider />
-
-        {/* 4. ABRAXAS PASSPORT, theme-aware already, moved up right after
-            the demo video per the requested flow */}
-        <div id="abraxas-id" />
-        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
-
-        <Divider />
-
-        {/* 5. ZK LOGIN COMING SOON */}
-        <ZkLoginPreview />
-
-        <Divider />
-
-        {/* 6. FORM A BUSINESS, generic explainer + pricing tiers, no
-            longer bundled with World Labs */}
+        {/* 2d. FORM A BUSINESS, moved right under Cielo/Featured Assets,
+            World Labs and World Wearables follow right after it */}
         <ScrollFade>
           <div id="demo-wyoming">
             <DarkPanel>
@@ -212,8 +179,6 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 6b. WORLD LABS, standalone proof-of-concept, the actual
-            business case study, separate from the generic explainer above */}
         <ScrollFade>
           <DarkPanel>
             <WorldLabsSection />
@@ -222,13 +187,34 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 6c. WORLD WEARABLES, completely standalone product line,
-            no longer nested under World Labs */}
         <ScrollFade>
           <DarkPanel>
             <WorldWearablesShop onBuyNow={(item) => setBuyItem(item)} />
           </DarkPanel>
         </ScrollFade>
+
+        <Divider />
+
+        {/* 2c. MUSIC ROYALTY AUDITS */}
+        <ScrollFade>
+          <div id="demo-music">
+            <DarkPanel>
+              <MusicSection />
+            </DarkPanel>
+          </div>
+        </ScrollFade>
+
+        <Divider />
+
+        {/* 4. ABRAXAS PASSPORT, theme-aware already, demo video section
+            removed entirely, wasn't ready yet */}
+        <div id="abraxas-id" />
+        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
+
+        <Divider />
+
+        {/* 5. ZK LOGIN COMING SOON */}
+        <ZkLoginPreview />
 
         <Divider />
 

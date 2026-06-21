@@ -42,9 +42,11 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
     <div style={{ marginBottom:"1.25rem" }}>
     <ScrollFade>
       <Label>Form a Business</Label>
-      <div style={{ padding:"1rem 1.125rem", borderRadius:8,
-                     background:"linear-gradient(135deg,rgba(59,130,246,0.07),rgba(139,92,246,0.04))",
-                     border:`1px solid ${B}25` }}>
+      <div style={{ padding:"1.25rem", borderRadius:14,
+                     background:"linear-gradient(135deg,rgba(59,130,246,0.1),rgba(139,92,246,0.06))",
+                     backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)",
+                     border:"1px solid rgba(255,255,255,0.1)",
+                     boxShadow:"inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <h2 style={{ fontFamily:S, fontSize:"clamp(0.95rem,2.5vw,1.35rem)",
                       fontWeight:800, color:W, margin:"0 0 0.375rem",
                       letterSpacing:"-0.01em" }}>

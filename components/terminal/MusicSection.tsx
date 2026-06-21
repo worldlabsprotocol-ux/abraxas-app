@@ -52,7 +52,8 @@ export function MusicSection() {
                      maxWidth:560, margin:"0 0 0.875rem" }}>
           Publishing deals routinely route royalties to the wrong party. Missing ISRCs,
           unregistered compositions, and MLC gaps leave years of income unclaimed.
-          We work with 80+ publishing clients. Our team finds it. You keep it.
+          Our partner network already represents 80+ publishing clients, D-9 Musick
+          below is the first to go through Abraxas's own audit process directly.
         </p>
 
         {/* Proof stats strip */}
@@ -88,10 +89,16 @@ export function MusicSection() {
             D-9 Musick
           </div>
           <div style={{ fontFamily:S, fontSize:"0.74rem",
-                         color:"rgba(255,255,255,0.45)", marginTop:2 }}>
+                         color:"rgba(255,255,255,0.45)", marginTop:2, marginBottom:"0.5rem" }}>
             Atlanta-based producer, active since 2008. First catalog
             through the Abraxas royalty audit.
           </div>
+          <a href="https://music.apple.com/us/artist/d-9-musick/1449871408"
+             target="_blank" rel="noopener noreferrer"
+             style={{ fontFamily:S, fontSize:"0.7rem", color:G,
+                       textDecoration:"underline" }}>
+            Listen on Apple Music →
+          </a>
         </div>
       </div>
 

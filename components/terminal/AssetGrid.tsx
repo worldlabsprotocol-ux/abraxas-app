@@ -82,6 +82,18 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
     <div style={{ marginBottom:"1.5rem" }}>
       {/* AAS-1: Cielo Sunrise */}
       <ScrollFade>
+      <div style={{ display:"flex", alignItems:"center", gap:"0.625rem",
+                     marginBottom:"0.625rem" }}>
+        <div style={{ width:28, height:28, borderRadius:6, background:`${G}15`,
+                       display:"flex", alignItems:"center", justifyContent:"center",
+                       fontSize:"0.95rem", color:G }}>
+          ⌂
+        </div>
+        <span style={{ fontFamily:M, fontSize:"0.78rem", fontWeight:900,
+                        color:G, letterSpacing:"0.08em", textTransform:"uppercase" }}>
+          Real Estate
+        </span>
+      </div>
       <Label>Featured Asset</Label>
       <div style={{ borderRadius:8, overflow:"hidden",
                      border:`1px solid ${G}35`, marginBottom:"1.5rem" }}>
@@ -161,6 +173,16 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
 
       {/* AAS-2 + AAS-3 + AAS-4 mini cards */}
       <ScrollFade delay={0.1}>
+      <div style={{ display:"flex", alignItems:"center", gap:"0.625rem",
+                     margin:"1.75rem 0 0.875rem" }}>
+        <div style={{ flex:1, height:1, background:BDR }} />
+        <span style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
+                        color:"rgba(255,255,255,0.35)", letterSpacing:"0.1em",
+                        textTransform:"uppercase" }}>
+          More Asset Classes
+        </span>
+        <div style={{ flex:1, height:1, background:BDR }} />
+      </div>
       <div style={{ display:"grid",
                      gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",
                      gap:"0.75rem" }}>
