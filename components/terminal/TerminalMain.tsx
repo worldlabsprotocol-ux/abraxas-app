@@ -19,6 +19,9 @@ import { ZkLoginPreview } from "./ZkLoginPreview";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
+import { IPAssetGrid }        from "./IPAssetGrid";
+import { WorldByHandSection } from "./WorldByHandSection";
+import { CoffeeFarmSection }  from "./CoffeeFarmSection";
 import { WyomingSection }     from "./WyomingSection";
 import { WorldLabsSection } from "./WorldLabsFeature";
 import { WorldWearablesShop } from "./WorldWearablesShop";
@@ -142,8 +145,8 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 2b. FEATURED ASSETS, moved up right after How It Works, the
-            real proof should come early, not after eight other sections */}
+        {/* 2b. FEATURED ASSETS, real estate cluster, Naj Tulum and The
+            Clove grouped here per the requested ordering */}
         <ScrollFade>
           <div id="demo-assets">
             <DarkPanel>
@@ -155,6 +158,21 @@ export function TerminalMain() {
             </DarkPanel>
           </div>
         </ScrollFade>
+
+        <Divider />
+
+        {/* 2b2. WORLD BY HAND, second business in tokenization review */}
+        <DarkPanel>
+          <WorldByHandSection />
+        </DarkPanel>
+
+        <Divider />
+
+        {/* 2b3. COFFEE FARM, pending real details before it becomes a
+            full listing */}
+        <DarkPanel>
+          <CoffeeFarmSection />
+        </DarkPanel>
 
         <Divider />
 
@@ -202,6 +220,19 @@ export function TerminalMain() {
               <MusicSection />
             </DarkPanel>
           </div>
+        </ScrollFade>
+
+        <Divider />
+
+        {/* 2e. IP ASSETS, literary and entertainment, separated from
+            real estate by Music, real estate stays grouped together above */}
+        <ScrollFade>
+          <DarkPanel>
+            <IPAssetGrid
+              onInvest={(assetId) => setInvestAsset(assetId)}
+              onBuyNow={(item) => setBuyItem(item)}
+            />
+          </DarkPanel>
         </ScrollFade>
 
         <Divider />

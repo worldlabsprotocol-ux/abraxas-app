@@ -11,7 +11,7 @@ interface RegistryViewProps {
 }
 
 const STATS = [
-  { label: "Verified Properties", val: "5" },
+  { label: "Verified Properties", val: "6" },
   { label: "Pending Verification", val: "0" },
   { label: "Total AUM",            val: "$1.6M+" },
   { label: "Avg Collateral Score", val: "89/100" },
