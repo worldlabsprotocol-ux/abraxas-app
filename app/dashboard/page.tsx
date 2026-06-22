@@ -18,6 +18,7 @@ import { UserProfile }             from "@/components/profile/UserProfile";
 import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
+import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -305,6 +306,8 @@ export default function DashboardPage() {
         <MyAbraxas identityLabel={walletAddr} />
 
         {/* Full protocol asset registry, all 4 assets */}
+        <PurchaseLifecycleAdmin />
+
         <SophiaCircuit />
 
         <AssetRegistryDashboard />
