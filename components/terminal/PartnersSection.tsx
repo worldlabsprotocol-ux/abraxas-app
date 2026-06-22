@@ -66,6 +66,20 @@ export function PartnersSection() {
     <div style={{ marginBottom:"1.5rem" }}>
       <ScrollFade>
       <Label>Verification Partners</Label>
+
+      {/* Market validation, real third-party proof the category is real */}
+      <div style={{ padding:"0.875rem 1.125rem", borderRadius:8,
+                     border:`1px solid ${G}30`,
+                     background:`${G}08`, marginBottom:"1rem" }}>
+        <div style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(255,255,255,0.6)" }}>
+          Tokenized real-world assets on Solana hit{" "}
+          <span style={{ color:G, fontWeight:700 }}>$213M</span> in daily
+          trading volume this week, more than Coinbase or Kraken moved in
+          the same period. This isn't a niche idea, the category is real
+          and it's already proving itself at scale.
+        </div>
+      </div>
+
       <div style={{ padding:"1rem 1.125rem", background:CARD,
                      border:`1px solid ${BDR}`, borderRadius:8,
                      marginBottom:"1.5rem" }}>
@@ -87,8 +101,8 @@ export function PartnersSection() {
           </div>
           <span style={{ fontFamily:S, fontSize:"0.7rem",
                           color:"rgba(255,255,255,0.4)", lineHeight:1.5 }}>
-            Institutional MPC custody for assets verified on Abraxas.
-            Policy-grade key management beyond Phantom or MetaMask.
+            Bank-grade secure storage for assets verified on Abraxas.
+            Stronger protection than a typical Phantom or MetaMask wallet.
           </span>
           <Button href="https://utila.io" variant="outline" color={B} size="sm">
             UTILA.IO

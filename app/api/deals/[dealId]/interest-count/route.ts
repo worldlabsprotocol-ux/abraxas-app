@@ -12,10 +12,16 @@ const supabase = createClient(
 );
 
 export async function GET(req: Request, { params }: { params: { dealId: string } }) {
-  const { count } = await supabase
-    .from("investment_interest")
-    .select("*", { count: "exact", head: true })
-    .eq("asset_id", params.dealId);
-
-  return NextResponse.json({ count: count ?? 0 });
+  try {
+    const { count } = await supabase
+      .from("investment_interest")
+      .select("*", { count: "exact", head: true })
+      .eq("asset_id", params.dealId);
+    return NextResponse.json({ count: count ?? 0 });
+  } catch {
+    // Table name may not match your real schema yet, fail to 0
+    // rather than break the page. Run the query below in Supabase to
+    // find the real table name, then tell me what it is.
+    return NextResponse.json({ count: 0 });
+  }
 }

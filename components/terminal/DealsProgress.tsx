@@ -134,6 +134,8 @@ function ProgressBar({ stages, current, color }: {
 
 function DealCard({ deal }: { deal: Deal }) {
   const [expanded, setExpanded] = useState(false);
+  const [rfqOpen, setRfqOpen] = useState(false);
+  const [rfqNote, setRfqNote] = useState("");
   const [email,    setEmail]    = useState("");
   const [sent,     setSent]     = useState(false);
   const [sending,  setSending]  = useState(false);
@@ -150,9 +152,9 @@ function DealCard({ deal }: { deal: Deal }) {
         body: JSON.stringify({
           asset_id: deal.id,
           asset_name: deal.name,
-          investment_option: "Deal Pipeline Interest",
+          investment_option: rfqOpen ? "Custom Terms Request" : "Deal Pipeline Interest",
           email,
-          amount_interest: null,
+          amount_interest: rfqOpen && rfqNote ? rfqNote : null,
         }),
       });
     } catch { /* fail open */ }
@@ -312,10 +314,39 @@ function DealCard({ deal }: { deal: Deal }) {
             {sending ? "..." : "SEND →"}
           </Button>
         </div>
+      ) : rfqOpen ? (
+        <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            type="email"
+            style={{ padding:"0.5rem 0.625rem", borderRadius:5,
+                      border:`1px solid ${BDR}`, background:"rgba(255,255,255,0.03)",
+                      color:W, fontFamily:S, fontSize:"16px" }}
+          />
+          <textarea
+            value={rfqNote}
+            onChange={e => setRfqNote(e.target.value)}
+            placeholder="Size, timeline, or terms you'd want, our team will follow up directly"
+            rows={2}
+            style={{ padding:"0.5rem 0.625rem", borderRadius:5,
+                      border:`1px solid ${BDR}`, background:"rgba(255,255,255,0.03)",
+                      color:W, fontFamily:S, fontSize:"16px", resize:"vertical" }}
+          />
+          <Button onClick={expressInterest} color={deal.color} size="sm">
+            {sending ? "..." : "SEND REQUEST →"}
+          </Button>
+        </div>
       ) : (
-        <Button onClick={() => setExpanded(true)} color={deal.color} size="sm">
-          EXPRESS INTEREST →
-        </Button>
+        <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+          <Button onClick={() => setExpanded(true)} color={deal.color} size="sm">
+            EXPRESS INTEREST →
+          </Button>
+          <Button onClick={() => setRfqOpen(true)} variant="outline" color={deal.color} size="sm">
+            REQUEST CUSTOM TERMS
+          </Button>
+        </div>
       )}
     </div>
   );

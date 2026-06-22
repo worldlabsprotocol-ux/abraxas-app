@@ -30,6 +30,7 @@ const ASSET_TYPES = [
   { label:"Wyoming LLC",      color:B,  icon:"\u25a0" },
   { label:"Books & IP",       color:A,  icon:"\u25c6" },
   { label:"Mineral Rights",   color:G,  icon:"\u25c9" },
+  { label:"Collectibles",     color:"#06B6D4", icon:"\u25c7" },
 ];
 
 export function HowItWorksSteps() {
