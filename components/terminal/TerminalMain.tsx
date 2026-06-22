@@ -4,6 +4,7 @@
 // Every sub-component is imported. No inline definitions, no nested functions.
 
 import { useState, useEffect }      from "react";
+import { M, S, G } from "./tokens";
 import { FlagshipAssetPage }        from "@/components/assets/FlagshipAssetPage";
 import { AssetOwnerOnboarding }     from "@/components/onboarding/AssetOwnerOnboarding";
 import { TrustStack }               from "@/components/onboarding/TrustStack";
@@ -13,6 +14,7 @@ import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
 import { HowItWorksSteps } from "./HowItWorksSteps";
+import { CloveCaseStudy } from "./CloveCaseStudy";
 import { OnboardingChoice } from "./OnboardingChoice";
 import { WhyVerificationStory } from "./WhyVerificationStory";
 import { ZkLoginPreview } from "./ZkLoginPreview";
@@ -105,14 +107,57 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        {/* 1. INTRO + PROOF STATS (5 verified assets, $1.6M attested (Naj Tulum pending appraisal)) */}
-        {/* Theme-aware already, no DarkPanel needed */}
+        {/* ACT 1: the compressed story. Hero, how it works, one real
+            example, then a clear invitation to keep exploring. This is
+            the entrance sign, not the whole museum. */}
         <div id="demo-hero">
           <HeroIntro />
         </div>
 
         <Divider />
 
+        {/* 2. HOW IT WORKS */}
+        <DarkPanel>
+          <HowItWorksSteps />
+        </DarkPanel>
+
+        <Divider />
+
+        {/* THE FLAGSHIP CASE STUDY, one real asset, before/after, instead
+            of leading with six asset classes competing for attention */}
+        <DarkPanel>
+          <CloveCaseStudy />
+        </DarkPanel>
+
+        <Divider />
+
+        {/* ACT DIVIDER: the bridge from "I get it" into the full registry */}
+        <div style={{ textAlign:"center", padding:"2rem 1rem" }}>
+          <div style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
+                         color:"var(--text-muted)", letterSpacing:"0.1em",
+                         textTransform:"uppercase", marginBottom:"0.75rem" }}>
+            That's the whole idea
+          </div>
+          <div style={{ fontFamily:S, fontSize:"clamp(1rem,2.2vw,1.25rem)",
+                         fontWeight:700, color:"var(--text-primary)",
+                         marginBottom:"1rem" }}>
+            Everything past here is the same idea, applied to five more
+            real things.
+          </div>
+          <button onClick={() => {
+              const el = document.getElementById("demo-assets");
+              el?.scrollIntoView({ behavior:"smooth" });
+            }}
+            style={{ padding:"0.7rem 1.75rem", borderRadius:8, border:"none",
+                      background:G, color:"#000", fontFamily:S,
+                      fontSize:"0.85rem", fontWeight:700, cursor:"pointer" }}>
+            See everything verified →
+          </button>
+        </div>
+
+        <Divider />
+
+        {/* ACT 2: the fuller registry, for anyone who wants to keep going */}
         {/* 1b. WHAT DO YOU WANT TO DO, plain branching choice, no jargon,
             from the original audit, never built until now */}
         <DarkPanel>
@@ -134,13 +179,6 @@ export function TerminalMain() {
         {/* 1c. WHY VERIFICATION MATTERS, told as a story, never built until now */}
         <DarkPanel>
           <WhyVerificationStory />
-        </DarkPanel>
-
-        <Divider />
-
-        {/* 2. HOW IT WORKS */}
-        <DarkPanel>
-          <HowItWorksSteps />
         </DarkPanel>
 
         <Divider />
@@ -244,12 +282,13 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 5. ZK LOGIN COMING SOON */}
+        {/* ZK LOGIN COMING SOON and PROTOCOL VISION grouped together now,
+            both are forward-looking, neither is live today, they shouldn't
+            interrupt the live, working proof in the middle of the page */}
         <ZkLoginPreview />
 
         <Divider />
 
-        {/* 7. PROTOCOL VISION + READY TO START */}
         <DarkPanel>
           <ProtocolVisionSection
             onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}

@@ -59,18 +59,16 @@ export function HeroIntro() {
                     fontSize:"clamp(1.7rem,4.2vw,2.75rem)", fontWeight:700,
                     color:"var(--text-primary)", lineHeight:1.15, letterSpacing:"-0.02em",
                     margin:"0 0 0.875rem" }}>
-        The verification and identity layer
+        Know what's real
         <br />
-        for real-world assets onchain.
+        before you trust it.
       </h1>
       <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                    color:"var(--text-secondary)", lineHeight:1.7,
                    maxWidth:540, margin:"0 0 1.25rem" }}>
-        Real estate, royalties, mineral rights, a business, anything real
-        gets verified once on Abraxas, then that proof travels. Invest in
-        it, borrow against it, or buy it directly with stablecoins.
-        No re-verification, no repeated paperwork, no starting over with
-        every new platform.
+        Land, businesses, royalties, mineral rights, anything real. See
+        what's actually verified before you put money or trust behind it,
+        not just a listing and someone's word.
       </p>
 
       {/* The original two buttons, restored exactly, not my invented
