@@ -19,12 +19,18 @@ export interface AssetInvestConfig {
   options: InvestmentOption[];
   historicalNote?: string;
   confidenceChecks?: Array<{ source: string; status: "confirmed" | "pending" }>;
+  // True for assets the founder personally reviewed before listing.
+  // This is the single source of truth for that designation, read it
+  // here, don't maintain a separate list of asset IDs anywhere else,
+  // that's exactly how this drifts out of sync when a new asset ships.
+  founderVetted?: boolean;
 }
 
 export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
 
   "aas-1": {
     id: "aas-1",
+    founderVetted: true,
     name: "Cielo Sunrise",
     subtitle: "Mineral Bluff, Georgia · Mountain Wellness Retreat",
     color: "#10B981",
@@ -53,6 +59,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
 
   "aas-2": {
     id: "aas-2",
+    founderVetted: true,
     name: "DeMarko Reddins",
     subtitle: "Published Author Catalog · Literary IP",
     color: "#6366F1",
@@ -88,6 +95,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
 
   "aas-3": {
     id: "aas-3",
+    founderVetted: true,
     name: "14 Days in Beijing",
     subtitle: "Chancellor K. Jackson · Multi-Format IP",
     color: "#F59E0B",
@@ -123,6 +131,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
 
   "aas-4": {
     id: "aas-4",
+    founderVetted: true,
     name: "Smyrna Townhome",
     subtitle: "Smyrna, GA 30080 · 2BD/2BA Townhome · 6 min from Truist Park / The Battery Atlanta",
     color: "#06B6D4",
@@ -173,6 +182,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
 
   "aas-5": {
     id: "aas-5",
+    founderVetted: true,
     name: "Naj Tulum",
     subtitle: "Aldea Zama, Tulum, Mexico · Condo-Hotel Unit",
     color: "#F59E0B",
@@ -212,6 +222,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
 
   "aas-6": {
     id: "aas-6",
+    founderVetted: true,
     name: "The Clove",
     subtitle: "Blu Pearl Development, Zanzibar · Sold Out, Track Record",
     color: "#06B6D4",

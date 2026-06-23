@@ -7,35 +7,40 @@
 import { useState, useEffect } from "react";
 import { S, G, BDR } from "./tokens";
 import type { BuyItem } from "./BuyNowModal";
+import { discoverImages, selfConcatFilenames } from "@/lib/discoverImages";
 
 const EXCLUDED_FILES = new Set(["1616.jpg"]); // D-9's photo, lives in this folder but shown only in Music
 
-const WEARABLES_IMAGES: string[] = Array.from({ length: 25 }, (_, i) => {
-  const n = i + 1;
-  return `${n}${n}.jpg`;
-}).filter(name => !EXCLUDED_FILES.has(name))
-  .map(name => `/assets/worldwearables/${name}`);
-
-function checkImage(src: string): Promise<boolean> {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
-    img.src = src;
-  });
-}
+const WEARABLES_IMAGES: string[] = selfConcatFilenames("/assets/worldwearables", 25)
+  .filter(path => !EXCLUDED_FILES.has(path.split("/").pop()!));
 
 // STANDALONE: just the photo collection, no pricing.
 export function WorldWearablesGallery() {
-  const [validImages, setValidImages] = useState<string[] | null>(null);
+  const [images, setImages] = useState<string[] | null>(null);
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    Promise.all(WEARABLES_IMAGES.map(async src => (await checkImage(src)) ? src : null))
-      .then(results => setValidImages(results.filter((r): r is string => r !== null)));
+    discoverImages("world-wearables-gallery", WEARABLES_IMAGES).then(setImages);
   }, []);
 
-  const images = validImages ?? [];
+  if (images === null) {
+    return (
+      <div>
+        <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
+                       color:"#F8FAFC", marginBottom:"0.375rem" }}>
+          World Wearables
+        </div>
+        <div style={{ width:"100%", height:280, borderRadius:10,
+                       background:"#08090F", border:`1px solid ${BDR}`,
+                       display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <span style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(255,255,255,0.3)" }}>
+            Loading the collection…
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   if (images.length === 0) return null;
 
   return (

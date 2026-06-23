@@ -59,12 +59,11 @@ export function SophiaCircuit() {
           {assets.map(asset => {
             const checks = asset.confidenceChecks ?? [];
             const confirmed = checks.filter(c => c.status === "confirmed").length;
-            // The founding four assets were personally reviewed by the
-            // founder before listing, that review is the actual risk
-            // mitigation right now. Computed risk levels below kick in
-            // once outside users start submitting their own assets.
-            const FOUNDER_VETTED = new Set(["aas-1", "aas-2", "aas-3", "aas-4", "aas-5", "aas-6"]);
-            const riskLevel = FOUNDER_VETTED.has(asset.id)
+            // Reads founderVetted directly off the asset config, the
+            // single source of truth in investorConfigs.ts. No separate
+            // list to keep in sync here anymore, add a new asset there
+            // and this picks it up automatically.
+            const riskLevel = asset.founderVetted
               ? "Low"
               : confirmed === checks.length ? "Low" : confirmed >= checks.length / 2 ? "Moderate" : "Elevated";
             const riskColor = riskLevel === "Low" ? G : riskLevel === "Moderate" ? A : "#EF4444";
@@ -79,7 +78,7 @@ export function SophiaCircuit() {
                   </div>
                   <div style={{ fontFamily:S, fontSize:"0.68rem",
                                  color:"rgba(255,255,255,0.4)", marginTop:2 }}>
-                    {FOUNDER_VETTED.has(asset.id)
+                    {asset.founderVetted
                       ? "Sophia: Founder-reviewed before listing"
                       : `Sophia: ${confirmed}/${checks.length} verification checks confirmed`}
                   </div>

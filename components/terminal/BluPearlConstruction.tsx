@@ -1,50 +1,46 @@
 "use client";
 // FILE: components/terminal/BluPearlConstruction.tsx
 // Construction progress gallery for The Clove, monthly collages dating
-// back to construction start in 2023. Only a few exact filenames were
-// confirmed (dec23, jan24, feb26), so this casts a wide net across
-// every plausible month-year combination and shows whatever actually
-// loads, same self-healing pattern used elsewhere on the site.
+// back to construction start in 2023. Casts a wide net across every
+// plausible month-year filename and shows whatever actually loads.
+// Uses the shared, cached discoverImages utility instead of its own
+// copy of the same probing logic, and shows a real loading skeleton
+// instead of blank space while it works.
 
 import { useState, useEffect } from "react";
-import { S, A } from "./tokens";
+import { S, A, BDR } from "./tokens";
+import { discoverImages, monthYearFilenames } from "@/lib/discoverImages";
 
-const MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
-
-function buildCandidates(): string[] {
-  const out: string[] = [];
-  for (let year = 23; year <= 26; year++) {
-    for (const m of MONTHS) {
-      out.push(`/assets/worldwearables/${m}${year}.jpg`);
-      out.push(`/assets/worldwearables/${m}${year}.webp`);
-      out.push(`/assets/worldwearables/${m}${year}.png`);
-    }
-  }
-  return out;
-}
-
-const CANDIDATES = buildCandidates();
-
-function checkImage(src: string): Promise<string | null> {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(src);
-    img.onerror = () => resolve(null);
-    img.src = src;
-  });
-}
+const CANDIDATES = monthYearFilenames("/assets/worldwearables", 23, 26);
 
 export function BluPearlConstruction() {
   const [images, setImages] = useState<string[] | null>(null);
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    Promise.all(CANDIDATES.map(checkImage)).then(results => {
-      setImages(results.filter((r): r is string => r !== null));
-    });
+    discoverImages("blu-pearl-construction", CANDIDATES).then(setImages);
   }, []);
 
-  if (images === null || images.length === 0) return null;
+  // Loading: a real skeleton, not blank space indistinguishable from "nothing found"
+  if (images === null) {
+    return (
+      <div style={{ marginTop:"0.875rem" }}>
+        <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:600,
+                       color:A, marginBottom:"0.5rem" }}>
+          Construction journey, 2023 to present
+        </div>
+        <div style={{ width:"100%", height:200, borderRadius:8,
+                       background:"#08090F", border:`1px solid ${BDR}`,
+                       display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <span style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(255,255,255,0.3)" }}>
+            Loading photos…
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (images.length === 0) return null;
 
   return (
     <div style={{ marginTop:"0.875rem" }}>
