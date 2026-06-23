@@ -22,8 +22,16 @@ export function HeroIntro() {
                    borderBottom:`1px solid ${BDR}` }}>
       <div style={{ display:"flex", alignItems:"center", gap:"0.625rem",
                      marginBottom:"0.75rem" }}>
-        <span style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:600, color:G }}>
-          Abraxas
+        <svg width={28} height={28} viewBox="0 0 40 40" fill="none">
+          <polygon points="20,2 38,20 20,38 2,20"
+            stroke={G} strokeWidth="2" fill="none"/>
+          <polygon points="20,8 32,20 20,32 8,20"
+            stroke={G} strokeWidth="1.5" fill={`${G}1A`}/>
+          <circle cx="20" cy="20" r="3" fill={G}/>
+        </svg>
+        <span style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:900,
+                        letterSpacing:"0.06em", color:G }}>
+          ABRAXAS
         </span>
         <span style={{ display:"flex", alignItems:"center", gap:"0.3rem",
                         padding:"0.2rem 0.625rem", borderRadius:20,

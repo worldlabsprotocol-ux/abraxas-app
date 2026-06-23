@@ -11,27 +11,26 @@
 // default embed, which still works, you just won't earn the 50% fee
 // share on swaps until you register.
 
-import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
 
 const AFFILIATE_NAME = "heroswap"; // replace with your real affiliate name once registered
 
 export default function SwapPage() {
   return (
     <div style={{ minHeight:"100vh", background:"#0A0C10", color:"#F8FAFC" }}>
-      <nav style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
+      <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:"1px solid #1C2333",
-                     display:"flex", alignItems:"center", gap:"1rem" }}>
-        <Link href="/terminal" style={{ fontFamily:"'Inter',system-ui,sans-serif",
-                                         fontSize:"0.78rem", fontWeight:600,
-                                         color:"rgba(255,255,255,0.5)",
-                                         textDecoration:"none" }}>
-          ← Terminal
-        </Link>
+                     display:"flex", alignItems:"center", gap:"0.5rem" }}>
+        <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
+          <polygon points="20,2 38,20 20,38 2,20" stroke="#10B981" strokeWidth="2" fill="none"/>
+          <polygon points="20,8 32,20 20,32 8,20" stroke="#10B981" strokeWidth="1.5" fill="rgba(16,185,129,0.1)"/>
+          <circle cx="20" cy="20" r="3" fill="#10B981"/>
+        </svg>
         <span style={{ fontFamily:"'Inter',system-ui,sans-serif",
                         fontSize:"0.85rem", fontWeight:700 }}>
           Swap
         </span>
-      </nav>
+      </div>
 
       <div style={{ maxWidth:480, margin:"0 auto", padding:"2rem clamp(1rem,3vw,1.5rem)" }}>
         <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.72rem",
@@ -68,6 +67,7 @@ export default function SwapPage() {
           tool, it's a separate utility from the rest of the platform.
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

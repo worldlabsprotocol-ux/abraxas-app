@@ -6,7 +6,7 @@
 // else on Abraxas.
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
 
 interface GalleryNft { id: string; name: string; image: string; url: string; }
 interface GalleryStats { floorPrice: number | null; volume: number | null; owners: number | null; supply: number | null; }
@@ -29,16 +29,16 @@ export default function GalleryPage() {
   return (
     <div style={{ minHeight:"100vh", background:"#060810", color:"#fff",
                    fontFamily:"'Inter',system-ui,sans-serif" }}>
-      <nav style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
+      <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:"1px solid #1C2333",
-                     display:"flex", alignItems:"center", gap:"1rem" }}>
-        <Link href="/terminal" style={{ fontSize:"0.78rem", fontWeight:600,
-                                         color:"rgba(255,255,255,0.5)",
-                                         textDecoration:"none" }}>
-          ← Terminal
-        </Link>
+                     display:"flex", alignItems:"center", gap:"0.5rem" }}>
+        <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
+          <polygon points="20,2 38,20 20,38 2,20" stroke="#10B981" strokeWidth="2" fill="none"/>
+          <polygon points="20,8 32,20 20,32 8,20" stroke="#10B981" strokeWidth="1.5" fill="rgba(16,185,129,0.1)"/>
+          <circle cx="20" cy="20" r="3" fill="#10B981"/>
+        </svg>
         <span style={{ fontSize:"0.85rem", fontWeight:700 }}>Gallery</span>
-      </nav>
+      </div>
 
       <div style={{ maxWidth:1000, margin:"0 auto", padding:"2.5rem clamp(1rem,3vw,1.5rem)" }}>
         <div style={{ fontSize:"0.72rem", fontWeight:600, color:"#10B981", marginBottom:"0.5rem" }}>
@@ -90,6 +90,7 @@ export default function GalleryPage() {
           </div>
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }

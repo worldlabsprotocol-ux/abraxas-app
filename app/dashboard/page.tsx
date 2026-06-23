@@ -19,6 +19,7 @@ import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDas
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
+import { BottomNav }               from "@/components/BottomNav";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -141,18 +142,16 @@ export default function DashboardPage() {
 
   const sel = assets.find(a => a.id === selected) ?? null;
 
-  const portfolioValue = assets.reduce((s, a) => s + parseAssetValue(a.estimatedValue), 0);
-  const portfolioDisplay = portfolioValue > 0
-    ? (portfolioValue >= 1_000_000
-        ? `$${(portfolioValue / 1_000_000).toFixed(2)}M`
-        : `$${portfolioValue.toLocaleString()}`)
-    : "N/A";
+  // Platform-wide verified asset value, not a per-user computation,
+  // that's a different, future feature. Hardcoded until live
+  // portfolio calculations across all verified assets are wired in.
+  const platformVerifiedValue = "Just Under $2M Verified Assets";
 
   const STAT_CARDS = [
     { label: "Total Assets",  val: assets.length, color: W },
     { label: "In Review",     val: assets.filter(a => ["IDENTITY_REVIEW","OWNERSHIP_REVIEW","LEGAL_REVIEW","DUE_DILIGENCE","RISK_SCORING","APPROVAL_COMMITTEE"].includes(a.state)).length, color: A },
     { label: "Authorized",    val: assets.filter(a => ["TOKENIZATION_AUTH","MINTED","MARKETPLACE_LIVE"].includes(a.state)).length, color: G },
-    { label: "Portfolio",     val: portfolioDisplay, color: G },
+    { label: "Platform Verified Value", val: platformVerifiedValue, color: G },
   ];
 
   return (
@@ -186,12 +185,6 @@ export default function DashboardPage() {
         </Link>
 
         <div style={{ width: 1, height: 20, background: BDR, flexShrink: 0 }}/>
-
-        <Link href="/terminal" style={{
-          fontFamily: M, fontSize: "0.72rem", fontWeight: 700,
-          color: DIM, textDecoration: "none", whiteSpace: "nowrap",
-          letterSpacing: "0.1em", textTransform: "uppercase",
-        }}>← Terminal</Link>
 
         <span style={{ fontFamily: M, fontSize: "0.72rem", fontWeight: 700,
                         color: G, letterSpacing: "0.1em",
@@ -257,15 +250,19 @@ export default function DashboardPage() {
         gap: "1px", background: BDR,
         borderBottom: `1px solid ${BDR}`,
       }}>
-        {STAT_CARDS.map(s => (
-          <div key={s.label} style={{ background: CARD, padding: "0.875rem 1rem" }}>
-            <Mono size="0.6rem" color={DIM}>{s.label.toUpperCase()}</Mono>
-            <div style={{ fontFamily: M, fontSize: "1.5rem", fontWeight: 900,
-                           color: s.color, marginTop: "0.25rem" }}>
-              {s.val}
+        {STAT_CARDS.map(s => {
+          const isLongText = typeof s.val === "string" && s.val.length > 8;
+          return (
+            <div key={s.label} style={{ background: CARD, padding: "0.875rem 1rem" }}>
+              <Mono size="0.6rem" color={DIM}>{s.label.toUpperCase()}</Mono>
+              <div style={{ fontFamily: M, fontSize: isLongText ? "0.92rem" : "1.5rem",
+                             fontWeight: 900, lineHeight: 1.3,
+                             color: s.color, marginTop: "0.25rem" }}>
+                {s.val}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── MAIN BODY ────────────────────────────────────────── */}
@@ -305,7 +302,7 @@ export default function DashboardPage() {
         {/* Persistent identity + activity panel */}
         <MyAbraxas identityLabel={walletAddr} />
 
-        {/* Full protocol asset registry, all 4 assets */}
+        {/* Full protocol asset registry, all 6 verified assets */}
         <PurchaseLifecycleAdmin />
 
         <SophiaCircuit />
@@ -361,6 +358,7 @@ export default function DashboardPage() {
         )}
 
       </div>
+      <BottomNav />
     </div>
   );
 }

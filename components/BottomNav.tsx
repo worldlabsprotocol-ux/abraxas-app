@@ -1,135 +1,56 @@
-// FILE: components/BottomNav.tsx
 "use client";
+// FILE: components/BottomNav.tsx
+// The ONE persistent navigation system for the app. Used by every
+// primary screen: Marketplace, Dashboard, Swap, Gallery, Registry.
+// Active state is now genuinely dynamic (reads the real URL), fixing
+// a real bug where "Market" was hardcoded as active everywhere,
+// including on pages that aren't the marketplace at all.
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
 
-type TabId = "studio" | "markets" | "vaults";
+const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const S = "'Inter',system-ui,-apple-system,sans-serif";
+const G = "#10B981";
+const BDR = "#1C2333";
 
-const TABS = [
-  {
-    key: "studio" as TabId,
-    label: "III · Studio",
-    sublabel: "Tokenize · Issue",
-    isInPage: "studio",
-    color: "#14F195",
-    icon: (active: boolean, color: string) => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.25)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-      </svg>
-    ),
-  },
-  {
-    key: "markets" as TabId,
-    label: "II · Markets",
-    sublabel: "Listings · Activity",
-    isInPage: "markets",
-    color: "#6b8cff",
-    icon: (active: boolean, color: string) => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.25)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-    ),
-  },
-  {
-    key: "vaults" as TabId,
-    label: "I · Capital",
-    sublabel: "Vaults · Borrow",
-    href: "/protect",
-    color: "#C8A96E",
-    icon: (active: boolean, color: string) => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? color : "rgba(255,255,255,0.25)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
-      </svg>
-    ),
-  },
+const NAV_ITEMS = [
+  { href: "/terminal",  label: "Market",    icon: "\u25c8" },
+  { href: "/dashboard", label: "Dashboard", icon: "\u25a3" },
+  { href: "/swap",      label: "Swap",      icon: "\u21c6" },
+  { href: "/gallery",   label: "Gallery",   icon: "\u25c6" },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState("markets");
-
-  useEffect(() => {
-    const handleTabEvent = (e: any) => setActiveTab(e.detail);
-    window.addEventListener("abraxas-tab", handleTabEvent);
-    return () => window.removeEventListener("abraxas-tab", handleTabEvent);
-  }, []);
-
-  const isVaultsPage = pathname?.startsWith("/protect");
 
   return (
-    <nav style={{
-      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
-      height: "72px", display: "flex", alignItems: "stretch",
-      background: "rgba(2,3,10,0.96)", backdropFilter: "blur(24px)",
-      borderTop: "1px solid rgba(255,255,255,0.06)",
-      paddingBottom: "env(safe-area-inset-bottom, 0px)",
-    }}>
-      {TABS.map((tab) => {
-        const isActive = isVaultsPage 
-          ? tab.key === "vaults" 
-          : activeTab === tab.isInPage;
-
-        return (
-          <div
-            key={tab.key}
-            onClick={() => {
-              if (tab.key === "vaults" && tab.href) {
-                window.location.href = tab.href;
-              } else if (tab.isInPage) {
-                setActiveTab(tab.isInPage);
-                window.dispatchEvent(new CustomEvent("abraxas-tab", { 
-                  detail: tab.isInPage 
-                }));
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }
-            }}
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.22rem",
-              position: "relative",
-              padding: "0.375rem 0",
-              cursor: "pointer",
-              background: isActive ? `${tab.color}07` : "transparent",
-              borderRight: "1px solid rgba(255,255,255,0.03)",
-            }}
-          >
-            {isActive && (
-              <div style={{
-                position: "absolute", top: 0, left: "20%", right: "20%", height: "2px",
-                background: tab.color,
-                boxShadow: `0 0 10px ${tab.color}, 0 0 20px ${tab.color}55`,
-                borderRadius: "0 0 2px 2px"
-              }} />
-            )}
-
-            <div style={{ filter: isActive ? `drop-shadow(0 0 6px ${tab.color})` : "none", transition: "filter 0.2s" }}>
-              {tab.icon(isActive, tab.color)}
-            </div>
-
-            <span style={{
-              fontSize: "0.5rem", fontWeight: isActive ? 800 : 400,
-              color: isActive ? tab.color : "rgba(255,255,255,0.25)",
-              fontFamily: "'JetBrains Mono', monospace",
-            }}>
-              {tab.label}
-            </span>
-            <span style={{
-              fontSize: "0.36rem",
-              color: isActive ? `${tab.color}70` : "rgba(255,255,255,0.15)",
-              fontFamily: "'JetBrains Mono', monospace",
-            }}>
-              {tab.sublabel}
-            </span>
-          </div>
-        );
-      })}
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
-    </nav>
+    <>
+      <nav style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:200,
+                     background:"var(--nav-bg)",
+                     borderTop:`1px solid ${BDR}`,
+                     display:"flex", justifyContent:"space-around",
+                     padding:"0.5rem clamp(0.5rem,2vw,1rem)",
+                     paddingBottom:"max(0.5rem, env(safe-area-inset-bottom))" }}>
+        {NAV_ITEMS.map(item => {
+          const active = pathname?.startsWith(item.href);
+          return (
+            <a key={item.label} href={item.href}
+              style={{ display:"flex", flexDirection:"column", alignItems:"center",
+                        gap:"0.2rem", padding:"0.4rem 0.75rem", borderRadius:10,
+                        textDecoration:"none",
+                        color: active ? G : "var(--text-secondary)",
+                        background: active ? `${G}14` : "transparent",
+                        minWidth:60 }}>
+              <span style={{ fontSize:"1.05rem" }}>{item.icon}</span>
+              <span style={{ fontFamily:S, fontSize:"0.62rem", fontWeight:600 }}>
+                {item.label}
+              </span>
+            </a>
+          );
+        })}
+      </nav>
+      {/* Spacer so fixed nav never overlaps page content */}
+      <div style={{ height:"4.25rem" }} aria-hidden="true" />
+    </>
   );
 }
