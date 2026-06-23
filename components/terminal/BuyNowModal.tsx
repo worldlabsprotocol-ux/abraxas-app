@@ -111,7 +111,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
   return (
     <div onClick={onClose}
       style={{ position:"fixed", inset:0, zIndex:3000,
-                background:"rgba(0,0,0,0.6)", backdropFilter:"blur(6px)",
+                background:"rgba(0,0,0,0.75)",
                 display:"flex", alignItems:"center", justifyContent:"center",
                 padding:"1rem", overflowY:"auto" }}>
       <div onClick={e => e.stopPropagation()}

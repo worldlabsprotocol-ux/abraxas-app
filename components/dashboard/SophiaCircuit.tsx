@@ -25,7 +25,7 @@ export function SophiaCircuit() {
   return (
     <div style={{ marginBottom:"1.5rem", borderRadius:14,
                    border:`1px solid ${V}30`,
-                   background:`linear-gradient(135deg,${V}0A,rgba(0,0,0,0))`,
+                   background:`${V}0A`,
                    overflow:"hidden" }}>
       <div style={{ padding:"1.25rem", display:"flex", justifyContent:"space-between",
                      alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem" }}>

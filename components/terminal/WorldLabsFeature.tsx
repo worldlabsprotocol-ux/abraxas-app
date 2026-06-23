@@ -52,7 +52,7 @@ export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
   return (
     <div style={{ borderRadius:12, overflow:"hidden",
                    border:`1px solid ${G}40`,
-                   background:"linear-gradient(135deg,rgba(16,185,129,0.08),rgba(0,0,0,0))" }}>
+                   background:"rgba(16,185,129,0.08)" }}>
       <div style={{ display:"flex", flexWrap:"wrap" }}>
         <div style={{ flex:"1 1 240px", minHeight:220, position:"relative",
                        background:"#08090F" }}>

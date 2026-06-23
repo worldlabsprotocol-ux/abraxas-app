@@ -62,7 +62,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
   return (
     <div onClick={handleClose}
       style={{ position:"fixed", inset:0, zIndex:2000,
-                background:"rgba(0,0,0,0.75)", backdropFilter:"blur(4px)",
+                background:"rgba(0,0,0,0.85)",
                 display:"flex", alignItems:"center", justifyContent:"center",
                 padding:"1rem", overflowY:"auto" }}>
       <div onClick={e => e.stopPropagation()}
@@ -74,7 +74,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
         {/* Header */}
         <div style={{ padding:"1.25rem 1.5rem",
                        borderBottom:`1px solid ${BDR}`,
-                       background:`linear-gradient(135deg,${config.color}10,rgba(0,0,0,0))`,
+                       background:`${config.color}10`,
                        display:"flex", justifyContent:"space-between",
                        alignItems:"flex-start" }}>
           <div>

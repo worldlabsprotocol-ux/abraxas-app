@@ -51,7 +51,7 @@ export function CloveCaseStudy() {
           </div>
           <div style={{ padding:"1.25rem", borderRadius:12,
                          border:`1px solid ${G}40`,
-                         background:"linear-gradient(135deg,rgba(16,185,129,0.08),rgba(0,0,0,0))" }}>
+                         background:"rgba(16,185,129,0.08)" }}>
             <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700,
                            color:G, letterSpacing:"0.06em",
                            textTransform:"uppercase", marginBottom:"0.75rem" }}>
@@ -76,13 +76,13 @@ export function CloveCaseStudy() {
         {/* THE FULL ASSET, complete, not a preview */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:"1px solid #06B6D455",
-                       background:"linear-gradient(145deg,#021c1f 0%,#011115 100%)" }}>
+                       background:"#021c1f" }}>
           <div style={{ padding:"0.875rem 1rem 0" }}>
             <AssetGallery images={CLOVE_IMAGES} fallbackLabel="The Clove" color="#06B6D4" />
           </div>
           <div style={{ padding:"0.875rem 1rem",
                          borderBottom:"1px solid #06B6D420",
-                         background:"linear-gradient(135deg,rgba(6,182,212,0.12),rgba(0,0,0,0))" }}>
+                         background:"rgba(6,182,212,0.12)" }}>
             <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
                            marginBottom:"0.375rem", flexWrap:"wrap" }}>
               <span style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600, color:"#06B6D4" }}>

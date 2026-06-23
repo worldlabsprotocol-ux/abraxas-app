@@ -51,7 +51,7 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
       <div style={{ width:64, height:64, borderRadius:"50%",
                      border:`2px solid ${earned ? stamp.color : "rgba(255,255,255,0.1)"}`,
                      background: earned
-                       ? `radial-gradient(circle at 40% 40%, ${stamp.color}20, ${stamp.color}08)`
+                       ? `${stamp.color}20`
                        : "rgba(255,255,255,0.02)",
                      display:"flex", alignItems:"center", justifyContent:"center",
                      position:"relative",
@@ -165,7 +165,7 @@ export function AbraxasPassport({
       {/* Passport card */}
       <div style={{ borderRadius:12, overflow:"hidden",
                      border:`1px solid ${G}40`,
-                     background:"linear-gradient(135deg,#0A1A0F 0%,#060810 60%,#0A0C10 100%)",
+                     background:"#0A1A0F",
                      boxShadow:`0 0 40px ${G}12, 0 24px 48px rgba(0,0,0,0.6)`,
                      position:"relative" }}>
         <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%",
@@ -231,7 +231,7 @@ export function AbraxasPassport({
               <div style={{ height:4, background:"rgba(255,255,255,0.07)",
                              borderRadius:2, overflow:"hidden" }}>
                 <div style={{ height:"100%", borderRadius:2,
-                               background:`linear-gradient(90deg,${G},${trustColor})`,
+                               background:`${G}`,
                                width:`${Math.max(trustPct,4)}%`,
                                transition:"width 0.5s ease" }}/>
               </div>

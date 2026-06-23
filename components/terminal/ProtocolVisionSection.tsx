@@ -61,7 +61,7 @@ export function ProtocolVisionSection({ onGetStarted }: ProtocolVisionSectionPro
       <ScrollFade>
         <div style={{ textAlign:"center", padding:"2.5rem 1.5rem",
                        borderRadius:16,
-                       background:"linear-gradient(135deg,rgba(16,185,129,0.08),rgba(0,0,0,0))",
+                       background:"rgba(16,185,129,0.08)",
                        border:`1px solid ${G}30` }}>
           <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
                          color:G, marginBottom:"0.5rem" }}>

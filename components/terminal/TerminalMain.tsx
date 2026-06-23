@@ -54,11 +54,9 @@ const MAX_WIDTH: React.CSSProperties = {
 // deliberately, not a workaround, an actual design choice.
 function DarkPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background:"rgba(13,17,23,0.55)", borderRadius:16,
+    <div style={{ background:"#0A0C10", borderRadius:16,
                    padding:"1.25rem clamp(0.875rem,3vw,1.5rem)",
-                   border:"1px solid rgba(255,255,255,0.08)",
-                   backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
-                   boxShadow:"inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)" }}>
+                   border:"1px solid #1C2333" }}>
       {children}
     </div>
   );

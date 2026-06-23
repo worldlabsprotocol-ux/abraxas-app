@@ -184,14 +184,14 @@ export function UserProfile({
                    overflow:"hidden" }}>
       {/* Header */}
       <div style={{ padding:"0.875rem 1rem",
-                     background:`linear-gradient(135deg,${G}08,rgba(0,0,0,0))`,
+                     background:`${G}08`,
                      borderBottom:`1px solid ${BDR}`,
                      display:"flex", alignItems:"center",
                      justifyContent:"space-between", gap:"0.75rem" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"0.75rem" }}>
           {/* Avatar placeholder */}
           <div style={{ width:40, height:40, borderRadius:"50%",
-                         background:`linear-gradient(135deg,${G}25,${B}15)`,
+                         background:`${G}25`,
                          border:`1.5px solid ${G}40`,
                          display:"flex", alignItems:"center", justifyContent:"center",
                          flexShrink:0 }}>

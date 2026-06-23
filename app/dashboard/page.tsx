@@ -162,7 +162,7 @@ export default function DashboardPage() {
       {/* ── NAV ─────────────────────────────────────────────── */}
       <nav style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "var(--nav-bg)", backdropFilter: "blur(12px)",
+        background: "var(--nav-bg)",
         borderBottom: `1px solid ${BDR}`,
         display: "flex", alignItems: "center",
         padding: "0 clamp(0.875rem,2vw,1.5rem)",

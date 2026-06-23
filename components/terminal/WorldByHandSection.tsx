@@ -16,7 +16,7 @@ export function WorldByHandSection() {
     <ScrollFade>
       <div style={{ borderRadius:12, overflow:"hidden",
                      border:`1px solid ${G}30`,
-                     background:"linear-gradient(135deg,rgba(16,185,129,0.06),rgba(0,0,0,0))",
+                     background:"rgba(16,185,129,0.06)",
                      padding:"1.25rem 1.5rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
                        color:G, marginBottom:"0.5rem" }}>

@@ -52,6 +52,11 @@ const CIELO_STATS = [
   { k:"Yearly Return Rate", v:"9.95%" },
 ];
 
+// Marketplace simplified to two flagship assets for now (Cielo, The
+// Clove). Smyrna and Naj Tulum stay fully built, just not rendered,
+// flip this back to true to bring them back without rebuilding anything.
+const SHOW_ADDITIONAL_REAL_ESTATE = false;
+
 export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps) {
   return (
     <div style={{ marginBottom:"1.5rem" }}>
@@ -78,7 +83,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           </div>
         ) : (
         <div style={{ height:"clamp(200px,35vw,300px)",
-                       background:"linear-gradient(160deg,#0a1a0f 0%,#0d2318 25%,#112b1e 50%,#0a1a12 75%,#061008 100%)",
+                       background:"#0a1a0f",
                        position:"relative", overflow:"hidden" }}>
           <svg viewBox="0 0 1200 320"
             style={{ position:"absolute", bottom:0, left:0,
@@ -90,7 +95,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               fill="rgba(16,185,129,0.12)" />
           </svg>
           <div style={{ position:"absolute", bottom:0, left:0, right:0,
-                         background:"linear-gradient(transparent,rgba(4,6,8,0.95))",
+                         background:"rgba(4,6,8,0.95)",
                          padding:"2rem 1.25rem 1rem" }}>
             <div style={{ fontFamily:S, fontSize:"0.7rem", color:G, fontWeight:600,
                            marginBottom:4 }}>
@@ -148,6 +153,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
 
       {/* AAS-4, AAS-5, real estate mini cards */}
       <ScrollFade delay={0.1}>
+      {SHOW_ADDITIONAL_REAL_ESTATE && (
       <div style={{ display:"flex", alignItems:"center", gap:"0.625rem",
                      margin:"1.75rem 0 0.875rem" }}>
         <div style={{ flex:1, height:1, background:BDR }} />
@@ -158,14 +164,16 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
         </span>
         <div style={{ flex:1, height:1, background:BDR }} />
       </div>
+      )}
       <div style={{ display:"grid",
                      gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",
                      gap:"0.75rem" }}>
 
+        {SHOW_ADDITIONAL_REAL_ESTATE && (<>
         {/* AAS-4 Smyrna Townhome, Battery Atlanta area, 3x appreciation */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${TEAL}55`,
-                       background:"linear-gradient(145deg,#001820 0%,#000F16 100%)" }}>
+                       background:"#001820" }}>
           {/* Stock-style townhome visual. exact address kept private per privacy policy.
               Drop a real stock photo at /public/assets/smyrna/01.jpg and the
               AssetGallery will render it automatically without any further code. */}
@@ -175,7 +183,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             </div>
           ) : (
           <div style={{ height:90, position:"relative", overflow:"hidden",
-                         background:"linear-gradient(135deg,#001c2a 0%,#00141f 100%)" }}>
+                         background:"#001c2a" }}>
             <svg viewBox="0 0 500 90" preserveAspectRatio="none"
                  style={{ position:"absolute", inset:0, width:"100%", height:"100%",
                           opacity:0.5 }}>
@@ -198,7 +206,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               ))}
             </svg>
             <div style={{ position:"absolute", inset:0,
-                           background:"linear-gradient(transparent,rgba(0,15,22,0.95))" }} />
+                           background:"rgba(0,15,22,0.95)" }} />
             <div style={{ position:"absolute", bottom:6, left:14,
                            fontFamily:S, fontSize:"0.56rem", fontWeight:600,
                            color:`${TEAL}70` }}>
@@ -209,7 +217,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
 
           <div style={{ padding:"0.875rem 1rem",
                          borderBottom:`1px solid ${TEAL}20`,
-                         background:`linear-gradient(135deg,${TEAL}12,rgba(0,0,0,0))` }}>
+                         background:`${TEAL}12` }}>
             <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                            color:TEAL, marginBottom:"0.375rem" }}>
               Real Estate · Battery Atlanta Area · Open to Investors
@@ -268,14 +276,14 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
         {/* AAS-5 Naj Tulum, unit at a condo-hotel in Aldea Zama, Tulum, Mexico */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:"1px solid #F59E0B55",
-                       background:"linear-gradient(145deg,#1c1206 0%,#100b03 100%)" }}>
+                       background:"#1c1206" }}>
           <div style={{ padding:"0.875rem 1rem 0" }}>
             <AssetGallery images={NAJ_TULUM_IMAGES} fallbackLabel="Naj Tulum" color={A} />
           </div>
 
           <div style={{ padding:"0.875rem 1rem",
                          borderBottom:"1px solid #F59E0B20",
-                         background:"linear-gradient(135deg,rgba(245,158,11,0.12),rgba(0,0,0,0))" }}>
+                         background:"rgba(245,158,11,0.12)" }}>
             <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                            color:A, marginBottom:"0.375rem" }}>
               Real Estate · Tulum, Mexico · International Asset
@@ -326,6 +334,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             </span>
           </div>
         </div>
+        </>)}
 
         {/* The Clove, shown in full as the Act 1 flagship example above,
             not repeated here, just pointed back to */}

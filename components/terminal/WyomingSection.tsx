@@ -23,11 +23,11 @@ interface TierDef {
 const TIERS: TierDef[] = [
   {
     id:"starter", tier:"STARTER", price:"$1,499", color:B,
-    items:["Wyoming LLC Formation","Operating Agreement","On-chain Token","V5 Verification"],
+    items:["Wyoming LLC Formation","Operating Agreement","On-chain Token","Full Verification"],
   },
   {
     id:"growth", tier:"GROWTH", price:"$2,999", color:"#8B5CF6",
-    items:["Everything in Starter","Multi-sig Governance","Cap Table Mgmt","Lending Eligible"],
+    items:["Everything in Starter","Shared Account Control","Ownership Records","Lending Eligible"],
   },
   {
     id:"enterprise", tier:"ENTERPRISE", price:"$4,999", color:G,
@@ -43,10 +43,8 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
     <ScrollFade>
       <Label>Form a Business</Label>
       <div style={{ padding:"1.25rem", borderRadius:14,
-                     background:"linear-gradient(135deg,rgba(59,130,246,0.1),rgba(139,92,246,0.06))",
-                     backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)",
-                     border:"1px solid rgba(255,255,255,0.1)",
-                     boxShadow:"inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+                     background:"rgba(59,130,246,0.1)",
+                     border:"1px solid rgba(255,255,255,0.1)" }}>
         <h2 style={{ fontFamily:S, fontSize:"clamp(0.95rem,2.5vw,1.35rem)",
                       fontWeight:800, color:W, margin:"0 0 0.375rem",
                       letterSpacing:"-0.01em" }}>

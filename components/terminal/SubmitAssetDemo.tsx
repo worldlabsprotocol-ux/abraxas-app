@@ -27,7 +27,7 @@ const STEPS = [
     mock: { field: "Verification", value: "In review · 2-5 business days" },
   },
   {
-    title: "Get a collateral score",
+    title: "Get a lending score",
     detail: "A transparent score investors and lenders can actually rely on.",
     color: A,
     mock: { field: "Collateral score", value: "89 / 100" },
@@ -52,7 +52,7 @@ export function SubmitAssetDemo({ onStart }: SubmitAssetDemoProps) {
 
   return (
     <div style={{ borderRadius:16, overflow:"hidden",
-                   background:"linear-gradient(135deg,rgba(16,185,129,0.06),rgba(0,0,0,0))",
+                   background:"rgba(16,185,129,0.06)",
                    border:`1px solid ${BDR}` }}>
       <div style={{ padding:"1.5rem 1.5rem 1.25rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,

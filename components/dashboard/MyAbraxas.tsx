@@ -53,7 +53,7 @@ export function MyAbraxas({ identityLabel }: MyAbraxasProps) {
 
   return (
     <div style={{ padding:"1.25rem 1.5rem", borderRadius:14,
-                   background:`linear-gradient(135deg,${G}08,rgba(0,0,0,0))`,
+                   background:`${G}08`,
                    border:`1px solid ${BDR}`, marginBottom:"1.5rem" }}>
       <div style={{ display:"flex", justifyContent:"space-between",
                      alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem" }}>

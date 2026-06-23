@@ -12,7 +12,7 @@ export function ZkLoginPreview() {
   return (
     <ScrollFade>
       <div style={{ padding:"1.5rem", borderRadius:14,
-                     background:"linear-gradient(135deg,rgba(16,185,129,0.06),rgba(0,0,0,0))",
+                     background:"rgba(16,185,129,0.06)",
                      border:`1px solid ${G}30` }}>
         <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
                        color:"#F59E0B", marginBottom:"0.5rem" }}>

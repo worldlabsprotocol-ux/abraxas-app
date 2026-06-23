@@ -52,7 +52,6 @@ export default function TerminalApp() {
           lives at the bottom, app-style, not website-style */}
       <nav style={{ position: "sticky", top: 0, zIndex: 200,
                      background: "var(--nav-bg)",
-                     backdropFilter: "blur(12px)",
                      borderBottom: `1px solid ${BDR}`,
                      display: "flex", alignItems: "center",
                      padding: `0 clamp(0.875rem,2.5vw,1.75rem)`,
@@ -92,7 +91,7 @@ export default function TerminalApp() {
       {/* Bottom tab bar, app-style navigation, fixed to the bottom of
           the viewport */}
       <nav style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:200,
-                     background:"var(--nav-bg)", backdropFilter:"blur(16px)",
+                     background:"var(--nav-bg)",
                      borderTop:`1px solid ${BDR}`,
                      display:"flex", justifyContent:"space-around",
                      padding:"0.5rem clamp(0.5rem,2vw,1rem)",
@@ -123,7 +122,7 @@ export default function TerminalApp() {
       {showSignIn && (
         <div onClick={() => setShowSignIn(false)}
           style={{ position:"fixed", inset:0, zIndex:3000,
-                    background:"rgba(0,0,0,0.6)", backdropFilter:"blur(6px)",
+                    background:"rgba(0,0,0,0.75)",
                     display:"flex", alignItems:"center", justifyContent:"center",
                     padding:"1rem" }}>
           <div onClick={e => e.stopPropagation()}

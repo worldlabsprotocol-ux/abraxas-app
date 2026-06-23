@@ -50,7 +50,7 @@ export function MusicSection() {
 
       {/* First artist on Abraxas, real consent confirmed before publishing this */}
       <div style={{ padding:"1.125rem", borderRadius:10,
-                     background:"linear-gradient(135deg,rgba(16,185,129,0.07),rgba(0,0,0,0))",
+                     background:"rgba(16,185,129,0.07)",
                      border:`1px solid ${G}30`, marginBottom:"1.25rem",
                      display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center" }}>
         <D9Gallery />

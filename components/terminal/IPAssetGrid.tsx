@@ -70,14 +70,14 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
         {/* AAS-2 DeMarko Reddins */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${IND}50`,
-                       background:"linear-gradient(145deg,#0C0E20 0%,#0A0C1A 100%)" }}>
+                       background:"#0C0E20" }}>
           {DEMARKO_IMAGES.length > 0 ? (
             <div style={{ padding:"0.875rem 1rem 0" }}>
               <AssetGallery images={DEMARKO_IMAGES} fallbackLabel="DeMarko Reddins" color={IND} />
             </div>
           ) : (
             <div style={{ height:80, position:"relative", overflow:"hidden",
-                           background:"linear-gradient(180deg,#131530 0%,#0A0C1A 100%)" }}>
+                           background:"#131530" }}>
               {/* Original illustration. book-spine motif, no real cover art
                   since that's the author's own copyrighted work and needs
                   to come from a real upload, not be fabricated here */}
@@ -93,12 +93,12 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
                 <rect x="340" y="22" width="20" height="58" fill={`${IND}32`} />
               </svg>
               <div style={{ position:"absolute", inset:0,
-                             background:"linear-gradient(transparent,rgba(10,12,26,0.9))" }} />
+                             background:"rgba(10,12,26,0.9)" }} />
             </div>
           )}
           <div style={{ padding:"0.875rem 1rem",
                          borderBottom:`1px solid ${IND}20`,
-                         background:`linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,0,0,0))` }}>
+                         background:`rgba(99,102,241,0.12)` }}>
             <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                            color:IND, marginBottom:"0.375rem" }}>
               Published Author · Book Royalties
@@ -159,7 +159,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
         {/* AAS-3 Chancellor K. Jackson. 14 Days in Beijing */}
         <div style={{ borderRadius:8, overflow:"hidden",
                        border:`1px solid ${A}55`,
-                       background:"linear-gradient(145deg,#140E00 0%,#0C0800 100%)",
+                       background:"#140E00",
                        gridColumn:"span 1" }}>
           {/* Real photos from /public/assets/chancellor/ */}
           <div style={{ padding:"0.875rem 0.875rem 0" }}>
@@ -171,7 +171,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
           {/* Billboard header */}
           <div style={{ padding:"1rem 1rem 0.75rem",
                          borderBottom:`1px solid ${A}20`,
-                         background:`linear-gradient(135deg,${A}12,rgba(0,0,0,0))` }}>
+                         background:`${A}12` }}>
             <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                            color:A, marginBottom:"0.375rem" }}>
               By Chancellor K. Jackson · TV & Anime Project

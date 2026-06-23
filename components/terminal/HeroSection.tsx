@@ -18,26 +18,8 @@ const STATS: Array<{ label: string; value: string }> = [
 
 export function HeroIntro() {
   return (
-    <div style={{ position:"relative", marginBottom:"1.5rem", paddingBottom:"1.5rem",
-                   borderBottom:`1px solid ${BDR}`, overflow:"hidden",
-                   borderRadius:16 }}>
-      {/* Animated gradient mesh, slow, non-repeating drift */}
-      <div style={{ position:"absolute", inset:0, zIndex:0, opacity:0.5,
-                     background:`
-                       radial-gradient(circle at 15% 20%, ${G}26 0%, transparent 45%),
-                       radial-gradient(circle at 85% 15%, #8B5CF626 0%, transparent 40%),
-                       radial-gradient(circle at 60% 80%, ${G}1A 0%, transparent 50%)`,
-                     animation:"abraxasMeshDrift 18s ease-in-out infinite",
-                     pointerEvents:"none" }} />
-      <style>{`
-        @keyframes abraxasMeshDrift {
-          0%, 100% { transform: translate(0,0) scale(1); }
-          33% { transform: translate(3%,-4%) scale(1.08); }
-          66% { transform: translate(-3%,3%) scale(1.04); }
-        }
-      `}</style>
-
-      <div style={{ position:"relative", zIndex:1, padding:"1.5rem 1.5rem 0" }}>
+    <div style={{ marginBottom:"1.5rem", paddingBottom:"1.5rem",
+                   borderBottom:`1px solid ${BDR}` }}>
       <div style={{ display:"flex", alignItems:"center", gap:"0.625rem",
                      marginBottom:"0.75rem" }}>
         <span style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:600, color:G }}>
@@ -102,11 +84,8 @@ export function HeroIntro() {
         {STATS.map(s => (
           <div key={s.label}
             style={{ padding:"0.625rem 1rem", borderRadius:10,
-                      background:"rgba(255,255,255,0.04)",
-                      backdropFilter:"blur(12px)",
-                      WebkitBackdropFilter:"blur(12px)",
-                      border:"1px solid rgba(255,255,255,0.08)",
-                      boxShadow:"inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                      background:"var(--surface-raised)",
+                      border:`1px solid ${BDR}` }}>
             <div style={{ fontFamily:M, fontSize:"1.1rem",
                            fontWeight:700, color:"var(--text-primary)" }}>
               {s.value}
@@ -129,7 +108,6 @@ export function HeroIntro() {
           </span>
           <span style={{ color:G, fontSize:"0.85rem" }}>▾</span>
         </div>
-      </div>
       </div>
       <style>{`@keyframes abraxasBounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(5px); } }`}</style>
     </div>
