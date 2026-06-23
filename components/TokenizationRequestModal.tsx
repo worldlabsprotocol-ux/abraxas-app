@@ -1,7 +1,7 @@
 // FILE: components/TokenizationRequestModal.tsx
 // Multi-step tokenization request + USDC payment flow.
 // Steps: tier → info → payment → confirm → success
-// Supabase with localStorage fallback — never breaks the demo.
+// Supabase with localStorage fallback, never breaks the demo.
 "use client";
 
 import { useState, useEffect } from "react";
@@ -59,7 +59,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
   const [worldIdHash, setWorldIdHash] = useState<string|null>(null);
 
   // Sync internal tier + step whenever the modal opens or initialTier changes.
-  // Without this, useState(initialTier) only runs once on mount —
+  // Without this, useState(initialTier) only runs once on mount,
   // clicking GROWTH or ENTERPRISE never updates the internal tier state.
   useEffect(() => {
     if (!open) return;
@@ -94,7 +94,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
       });
       setReqId(r.id); setSrc(r.source);
 
-      // Email Pablo (admin notification — never blocks the form)
+      // Email Pablo (admin notification, never blocks the form)
       fetch("/api/notify/tokenization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,7 +144,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
         data:  { wyId: wyReq.id, tier, companyName: name.trim() },
       });
 
-      // Fire-and-forget admin email — never blocks the user flow
+      // Fire-and-forget admin email, never blocks the user flow
       fetch("/api/notify/tokenization", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -158,7 +158,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
           requestId: r.id,
           stage:    "submitted",
         }),
-      }).catch(() => { /* notification failed — not critical */ });
+      }).catch(() => { /* notification failed, not critical */ });
 
       setStep("payment");
     } catch(e: unknown) {
@@ -371,7 +371,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                   placeholder="@handle" style={input} autoComplete="off"/>
               </div>
               <div style={{ marginBottom:"1rem" }}>
-                <label style={lbl}>Sending Wallet (Solana — optional)</label>
+                <label style={lbl}>Sending Wallet (Solana, optional)</label>
                 <input type="text" value={wallet} onChange={e=>setWallet(e.target.value)}
                   placeholder="Tokens sent here after minting" style={input} autoComplete="off"/>
               </div>
@@ -505,7 +505,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                            margin:"0 0 0.375rem" }}>Confirm payment.</p>
               <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(255,255,255,0.4)",
                            lineHeight:1.7, margin:"0 0 1rem" }}>
-                Paste your Solana transaction signature (optional — we can reconcile without it).
+                Paste your Solana transaction signature, optional, we can reconcile without it.
               </p>
               <div style={{ marginBottom:"0.875rem" }}>
                 <label style={lbl}>Transaction Signature (optional)</label>

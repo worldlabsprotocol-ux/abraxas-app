@@ -8,7 +8,6 @@ import { M, S, G } from "./tokens";
 import { FlagshipAssetPage }        from "@/components/assets/FlagshipAssetPage";
 import { AssetOwnerOnboarding }     from "@/components/onboarding/AssetOwnerOnboarding";
 import { TrustStack }               from "@/components/onboarding/TrustStack";
-import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 
 import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
@@ -22,11 +21,6 @@ import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { IPAssetGrid }        from "./IPAssetGrid";
-import { WorldByHandSection } from "./WorldByHandSection";
-import { CoffeeFarmSection }  from "./CoffeeFarmSection";
-import { WyomingSection }     from "./WyomingSection";
-import { WorldLabsSection } from "./WorldLabsFeature";
-import { WorldWearablesGallery, WorldWearablesHoodie } from "./WorldWearablesShop";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { FAQSection }         from "./FAQSection";
@@ -36,7 +30,7 @@ import { BuyNowModal }        from "./BuyNowModal";
 import type { BuyItem }       from "./BuyNowModal";
 import { Divider, ScrollFade } from "./ui";
 
-import type { DeepView, WyomingTier } from "./types";
+import type { DeepView } from "./types";
 
 const MAX_WIDTH: React.CSSProperties = {
   maxWidth: 1060,
@@ -64,8 +58,6 @@ function DarkPanel({ children }: { children: React.ReactNode }) {
 
 export function TerminalMain() {
   const [deep,        setDeep]        = useState<DeepView>("main");
-  const [wyOpen,      setWyOpen]      = useState(false);
-  const [initialTier, setInitialTier] = useState<WyomingTier | null>(null);
   const [investAsset, setInvestAsset] = useState<string | null>(null);
   const [buyItem,     setBuyItem]     = useState<BuyItem | null>(null);
 
@@ -90,12 +82,6 @@ export function TerminalMain() {
   // Main terminal view. Single return, all sections composed and fade-in animated
   return (
     <div>
-      <TokenizationRequestModal
-        open={wyOpen}
-        initialTier={initialTier}
-        onClose={() => { setWyOpen(false); setInitialTier(null); }}
-      />
-
       <InvestorPortalModal
         assetId={investAsset}
         onClose={() => setInvestAsset(null)}
@@ -199,60 +185,30 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 2b2. WORLD BY HAND, second business in tokenization review */}
+        {/* "Build on Abraxas" moved to its own page entirely, a buyer
+            browsing verified assets doesn't need six sections about
+            becoming a seller in the middle of that flow */}
         <DarkPanel>
-          <WorldByHandSection />
-        </DarkPanel>
-
-        <Divider />
-
-        {/* 2b3. COFFEE FARM, pending real details before it becomes a
-            full listing */}
-        <DarkPanel>
-          <CoffeeFarmSection />
-        </DarkPanel>
-
-        <Divider />
-
-        {/* 2d. FORM A BUSINESS, moved right under Cielo/Featured Assets,
-            World Labs and World Wearables follow right after it */}
-        <ScrollFade>
-          <div id="demo-wyoming">
-            <DarkPanel>
-              <WyomingSection
-                onSelectTier={(tier: WyomingTier) => {
-                  setInitialTier(tier);
-                  setWyOpen(true);
-                }}
-                onBrowse={() => {
-                  setInitialTier(null);
-                  setWyOpen(true);
-                }}
-              />
-            </DarkPanel>
+          <div style={{ display:"flex", justifyContent:"space-between",
+                         alignItems:"center", flexWrap:"wrap", gap:"0.875rem" }}>
+            <div>
+              <div style={{ fontFamily:M, fontSize:"0.95rem", fontWeight:700 }}>
+                Have something to tokenize?
+              </div>
+              <div style={{ fontFamily:S, fontSize:"0.76rem",
+                             color:"rgba(255,255,255,0.45)", marginTop:"0.25rem" }}>
+                Form a business, see World Labs's case study, or browse
+                World Wearables.
+              </div>
+            </div>
+            <a href="/build"
+              style={{ padding:"0.6rem 1.25rem", borderRadius:8, border:"none",
+                        background:G, color:"#000", fontFamily:S,
+                        fontSize:"0.8rem", fontWeight:700, textDecoration:"none",
+                        whiteSpace:"nowrap" }}>
+              Build on Abraxas →
+            </a>
           </div>
-        </ScrollFade>
-
-        <Divider />
-
-        <ScrollFade>
-          <DarkPanel>
-            <WorldLabsSection onBuyNow={(item) => setBuyItem(item)} />
-          </DarkPanel>
-        </ScrollFade>
-
-        <Divider />
-
-        <ScrollFade>
-          <DarkPanel>
-            <WorldWearablesGallery />
-          </DarkPanel>
-        </ScrollFade>
-
-        <Divider />
-
-        <DarkPanel>
-          <WorldWearablesHoodie onBuyNow={(item) => setBuyItem(item)} />
         </DarkPanel>
 
         <Divider />
