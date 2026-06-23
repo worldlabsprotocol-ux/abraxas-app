@@ -26,7 +26,7 @@ import { WorldByHandSection } from "./WorldByHandSection";
 import { CoffeeFarmSection }  from "./CoffeeFarmSection";
 import { WyomingSection }     from "./WyomingSection";
 import { WorldLabsSection } from "./WorldLabsFeature";
-import { WorldWearablesShop } from "./WorldWearablesShop";
+import { WorldWearablesGallery, WorldWearablesHoodie } from "./WorldWearablesShop";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { FAQSection }         from "./FAQSection";
@@ -239,7 +239,7 @@ export function TerminalMain() {
 
         <ScrollFade>
           <DarkPanel>
-            <WorldLabsSection />
+            <WorldLabsSection onBuyNow={(item) => setBuyItem(item)} />
           </DarkPanel>
         </ScrollFade>
 
@@ -247,9 +247,15 @@ export function TerminalMain() {
 
         <ScrollFade>
           <DarkPanel>
-            <WorldWearablesShop onBuyNow={(item) => setBuyItem(item)} />
+            <WorldWearablesGallery />
           </DarkPanel>
         </ScrollFade>
+
+        <Divider />
+
+        <DarkPanel>
+          <WorldWearablesHoodie onBuyNow={(item) => setBuyItem(item)} />
+        </DarkPanel>
 
         <Divider />
 

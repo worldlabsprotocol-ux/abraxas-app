@@ -44,7 +44,11 @@ function CascadingImage({ candidates, alt }: { candidates: string[]; alt: string
 }
 
 // STANDALONE: World Labs, the first tokenized business, proof of concept.
-export function WorldLabsSection() {
+interface WorldLabsSectionProps {
+  onBuyNow: (item: BuyItem) => void;
+}
+
+export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
   return (
     <div style={{ borderRadius:12, overflow:"hidden",
                    border:`1px solid ${G}40`,
@@ -97,8 +101,7 @@ export function WorldLabsSection() {
         </div>
       </div>
 
-      {/* World Book, literary IP under World Labs. Title/price/description
-          are placeholders, swap in the real details whenever ready. */}
+      {/* World Book, literary IP under World Labs, live and buyable in USDT */}
       <div style={{ padding:"1.125rem 1.5rem", borderTop:`1px solid ${BDR}`,
                      display:"flex", gap:"1rem", flexWrap:"wrap",
                      alignItems:"center" }}>
@@ -107,19 +110,35 @@ export function WorldLabsSection() {
                        flexShrink:0 }}>
           <CascadingImage candidates={WORLDBOOK_CANDIDATES} alt="World Book" />
         </div>
-        <div>
+        <div style={{ flex:1 }}>
           <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                          color:G, marginBottom:"0.2rem" }}>
             World Labs · Literary IP
           </div>
-          <div style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700,
-                         color:W }}>
-            The World Book
+          <div style={{ display:"flex", alignItems:"baseline", gap:"0.5rem", flexWrap:"wrap" }}>
+            <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700, color:W }}>
+              The World Book
+            </span>
+            <span style={{ fontFamily:S, fontSize:"0.8rem", fontWeight:700, color:G }}>
+              $1.99
+            </span>
           </div>
           <div style={{ fontFamily:S, fontSize:"0.7rem",
-                         color:"rgba(255,255,255,0.4)", marginTop:2 }}>
-            Part of the World Labs IP portfolio, full details coming soon.
+                         color:"rgba(255,255,255,0.4)", marginTop:2, marginBottom:"0.625rem" }}>
+            Part of the World Labs IP portfolio. Instant digital access after payment.
           </div>
+          <button onClick={() => onBuyNow({
+              id: "world-book",
+              name: "The World Book",
+              price: "$1.99",
+              description: "Instant digital access to The World Book, part of the World Labs IP portfolio.",
+              color: G,
+            })}
+            style={{ padding:"0.45rem 1.1rem", borderRadius:7, border:"none",
+                      background:G, color:"#000", fontFamily:S,
+                      fontSize:"0.74rem", fontWeight:700, cursor:"pointer" }}>
+            Buy in USDT →
+          </button>
         </div>
       </div>
     </div>

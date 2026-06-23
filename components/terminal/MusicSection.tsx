@@ -5,15 +5,9 @@
 
 import { useState } from "react";
 import { ArtistAuditForm } from "@/components/music/ArtistAuditForm";
-import { M, S, G, A, B, W, BDR, CARD } from "./tokens";
+import { M, S, G, A, B, W, BDR } from "./tokens";
 import { Label, ScrollFade } from "./ui";
 import { D9Gallery } from "./D9Gallery";
-
-const PROOF_STATS = [
-  { val:"80+",   label:"Publishing Clients" },
-  { val:"3",     label:"Common Gap Types" },
-  { val:"$0",    label:"Cost To Audit" },
-];
 
 const ISSUE_TYPES = [
   { label:"Missing ISRCs",          color:A, desc:"Tracks not registered with a unique identifier never get matched to royalty payouts." },
@@ -43,35 +37,15 @@ export function MusicSection() {
                        fontSize:"clamp(1.5rem,4vw,2.5rem)", fontWeight:700,
                        color:W, lineHeight:1.15, letterSpacing:"-0.02em",
                        marginBottom:"0.625rem" }}>
-          Your catalog is earning money
-          <br />
-          <span style={{ color:G }}>you have not seen.</span>
+          Are you missing royalties?
         </div>
         <p style={{ fontFamily:S, fontSize:"0.82rem",
                      color:"rgba(255,255,255,0.5)", lineHeight:1.7,
-                     maxWidth:560, margin:"0 0 0.875rem" }}>
+                     maxWidth:560, margin:"0 0 1.125rem" }}>
           Publishing deals routinely route royalties to the wrong party. Missing ISRCs,
           unregistered compositions, and MLC gaps leave years of income unclaimed.
-          Our partner network already represents 80+ publishing clients, D-9 Musick
-          below is the first to go through Abraxas's own audit process directly.
+          Our team finds it, you keep it, no cost to find out.
         </p>
-
-        {/* Proof stats strip */}
-        <div style={{ display:"grid",
-                       gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",
-                       gap:"1px", background:BDR, borderRadius:6,
-                       overflow:"hidden" }}>
-          {PROOF_STATS.map(s => (
-            <div key={s.label} style={{ background:CARD, padding:"0.7rem 0.875rem" }}>
-              <div style={{ fontFamily:M, fontSize:"1.1rem",
-                             fontWeight:900, color:G }}>{s.val}</div>
-              <div style={{ fontFamily:M, fontSize:"0.5rem",
-                             color:"rgba(255,255,255,0.3)",
-                             textTransform:"uppercase",
-                             letterSpacing:"0.08em" }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* First artist on Abraxas, real consent confirmed before publishing this */}

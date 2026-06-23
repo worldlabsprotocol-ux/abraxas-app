@@ -48,19 +48,16 @@ export default function TerminalApp() {
     <div style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)",
                    display: "flex", flexDirection: "column" }}>
 
-      {/* Clean nav. No terminal/OS framing, no status strip. */}
+      {/* Slim top bar, just branding and account status now, navigation
+          lives at the bottom, app-style, not website-style */}
       <nav style={{ position: "sticky", top: 0, zIndex: 200,
                      background: "var(--nav-bg)",
                      backdropFilter: "blur(12px)",
                      borderBottom: `1px solid ${BDR}`,
                      display: "flex", alignItems: "center",
                      padding: `0 clamp(0.875rem,2.5vw,1.75rem)`,
-                     height: "clamp(54px,7vw,64px)",
-                     gap: "clamp(0.5rem,1.5vw,1rem)",
-                     flexWrap: "nowrap", overflowX: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center",
-                       gap: "0.5rem", flexShrink: 0,
-                       marginRight: "clamp(0.5rem,2vw,1.5rem)" }}>
+                     height: "clamp(54px,7vw,64px)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <Image src="/icon-48.png" alt="Abraxas"
                  width={26} height={26} priority
                  style={{ display: "block", flexShrink: 0, borderRadius: 6 }} />
@@ -70,52 +67,6 @@ export default function TerminalApp() {
             Abraxas
           </span>
         </div>
-
-        <button style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
-                          border: "none",
-                          background: `${G}15`, color: G,
-                          fontFamily: S,
-                          fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
-                          fontWeight: 600, cursor: "default",
-                          whiteSpace: "nowrap", flexShrink: 0 }}>
-          Marketplace
-        </button>
-
-        <a href="/dashboard"
-          style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
-                    border: "none",
-                    background: "transparent",
-                    color: "var(--text-secondary)",
-                    fontFamily: S,
-                    fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
-                    fontWeight: 600, textDecoration: "none",
-                    whiteSpace: "nowrap", flexShrink: 0 }}>
-          Dashboard
-        </a>
-
-        <a href="/swap"
-          style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
-                    border: "none",
-                    background: "transparent",
-                    color: "var(--text-secondary)",
-                    fontFamily: S,
-                    fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
-                    fontWeight: 600, textDecoration: "none",
-                    whiteSpace: "nowrap", flexShrink: 0 }}>
-          Swap
-        </a>
-
-        <a href="/gallery"
-          style={{ padding: "0.5rem 1.125rem", borderRadius: 20,
-                    border: "none",
-                    background: "transparent",
-                    color: "var(--text-secondary)",
-                    fontFamily: S,
-                    fontSize: "clamp(0.78rem,0.9vw,0.86rem)",
-                    fontWeight: 600, textDecoration: "none",
-                    whiteSpace: "nowrap", flexShrink: 0 }}>
-          Gallery
-        </a>
 
         <div style={{ flex: 1 }} />
         <LanguageSelector />
@@ -137,6 +88,36 @@ export default function TerminalApp() {
           </button>
         )}
       </nav>
+
+      {/* Bottom tab bar, app-style navigation, fixed to the bottom of
+          the viewport */}
+      <nav style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:200,
+                     background:"var(--nav-bg)", backdropFilter:"blur(16px)",
+                     borderTop:`1px solid ${BDR}`,
+                     display:"flex", justifyContent:"space-around",
+                     padding:"0.5rem clamp(0.5rem,2vw,1rem)",
+                     paddingBottom:"max(0.5rem, env(safe-area-inset-bottom))" }}>
+        {[
+          { href:"#", label:"Market", icon:"\u25c8", active:true },
+          { href:"/dashboard", label:"Dashboard", icon:"\u25a3" },
+          { href:"/swap", label:"Swap", icon:"\u21c6" },
+          { href:"/gallery", label:"Gallery", icon:"\u25c6" },
+        ].map(item => (
+          <a key={item.label} href={item.href}
+            style={{ display:"flex", flexDirection:"column", alignItems:"center",
+                      gap:"0.2rem", padding:"0.4rem 0.75rem", borderRadius:10,
+                      textDecoration:"none",
+                      color: item.active ? G : "var(--text-secondary)",
+                      background: item.active ? `${G}14` : "transparent",
+                      minWidth:60 }}>
+            <span style={{ fontSize:"1.05rem" }}>{item.icon}</span>
+            <span style={{ fontFamily:S, fontSize:"0.62rem", fontWeight:600 }}>
+              {item.label}
+            </span>
+          </a>
+        ))}
+      </nav>
+      <div style={{ height:"4.25rem" }} aria-hidden="true" />
 
       {/* Sign-in modal. centered and fixed, never clips at screen edges */}
       {showSignIn && (

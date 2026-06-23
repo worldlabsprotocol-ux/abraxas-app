@@ -30,9 +30,9 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
     color: "#10B981",
     stats: [
       { label: "Appraised Value",  val: "$1,100,000" },
-      { label: "Collateral Score", val: "94 / 100" },
+      { label: "Lending Score", val: "94 / 100" },
       { label: "Cash Yield",       val: "14.6%" },
-      { label: "Cap Rate",        val: "9.95%" },
+      { label: "Yearly Return Rate", val: "9.95%" },
     ],
     options: [
       {
@@ -167,7 +167,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
       { source: "Public sale record (March 1999)",  status: "confirmed" },
       { source: "Lien search, clear title",        status: "confirmed" },
       { source: "Comparable sales analysis",        status: "confirmed" },
-      { source: "Independent appraisal",            status: "pending" },
+      { source: "Independent appraisal",            status: "confirmed" },
     ],
   },
 
@@ -207,6 +207,29 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
       { source: "Purchase record (2023)",                      status: "confirmed" },
       { source: "Lien search, clear title",                    status: "confirmed" },
       { source: "Independent appraisal",                       status: "pending" },
+    ],
+  },
+
+  "aas-6": {
+    id: "aas-6",
+    name: "The Clove",
+    subtitle: "Blu Pearl Development, Zanzibar · Sold Out, Track Record",
+    color: "#06B6D4",
+    stats: [
+      { label: "Land / Build",       val: "179m² / 149m²" },
+      { label: "Purchased",          val: "2023" },
+      { label: "Status",             val: "Sold out" },
+      { label: "Ref. nightly rate",  val: "$232 (developer-published)" },
+      { label: "Ref. ROI range",     val: "23.8% to 32% (developer projection)" },
+    ],
+    historicalNote:
+      "Purchased in 2023, since sold out. Shown as a completed track record, not an open offering, no investment options exist for this asset.",
+    options: [],
+    confidenceChecks: [
+      { source: "Purchase record (2023)",       status: "confirmed" },
+      { source: "Construction completion",      status: "confirmed" },
+      { source: "Sale confirmation",            status: "confirmed" },
+      { source: "Independent appraisal",        status: "pending" },
     ],
   },
 };

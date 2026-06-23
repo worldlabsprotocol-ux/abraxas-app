@@ -1,5 +1,5 @@
 // FILE: components/identity/AbraxasPassport.tsx
-// Abraxas Digital Passport — live credential lookup via useAbraxasID hook.
+// Abraxas Digital Passport. live credential lookup via useAbraxasID hook.
 // Stamps are driven by real Supabase credential data when Veriff is active.
 // Falls back gracefully to demo state when wallet is not connected.
 "use client";
@@ -215,7 +215,7 @@ export function AbraxasPassport({
                          color:"rgba(255,255,255,0.45)", lineHeight:1.7,
                          maxWidth:420, margin:"0 0 1rem" }}>
               One verification. Every integrated protocol, lender, marketplace,
-              and registry accepts it. TSA PreCheck — but for real-world assets onchain.
+              and registry accepts it, recognized everywhere onchain.
             </p>
             {/* Trust bar */}
             <div style={{ marginBottom:"1rem" }}>
@@ -282,9 +282,27 @@ export function AbraxasPassport({
               </div>
               <div style={{ fontFamily:M, fontSize:"0.52rem",
                              color:"rgba(255,255,255,0.2)" }}>
-                SOLANA MAINNET · W3C VC 2.0
+                SOLANA MAINNET · VERIFIED CREDENTIAL
               </div>
             </div>
+            <button onClick={() => {
+                const credential = {
+                  protocol: "abraxas",
+                  wallet: walletStr ?? null,
+                  credentials_active: earnedCount,
+                  stamps: earned,
+                  level: trustLabel,
+                  issued: new Date().toISOString(),
+                };
+                navigator.clipboard.writeText(JSON.stringify(credential, null, 2));
+              }}
+              style={{ width:"100%", padding:"0.45rem", borderRadius:6,
+                        border:`1px solid ${BDR}`, background:"transparent",
+                        color:"rgba(255,255,255,0.45)", fontFamily:M,
+                        fontSize:"0.56rem", fontWeight:700, cursor:"pointer",
+                        marginBottom:"0.625rem", letterSpacing:"0.04em" }}>
+              COPY CREDENTIAL JSON
+            </button>
             <div style={{ fontFamily:M, fontSize:"0.52rem",
                            color: earnedCount > 0 ? G : "rgba(255,255,255,0.2)",
                            letterSpacing:"0.08em", textAlign:"right" }}>
@@ -297,7 +315,7 @@ export function AbraxasPassport({
         {/* Bottom strip */}
         <div style={{ background:"rgba(0,0,0,0.3)", borderTop:"1px solid rgba(255,255,255,0.05)",
                        padding:"0.4rem 1.375rem", display:"flex", gap:"1.5rem" }}>
-          {["ABRAXAS PROTOCOL","SOLANA MAINNET","W3C VC 2.0","BUILD 2025.1"].map(t => (
+          {["ABRAXAS PROTOCOL","SOLANA MAINNET","VERIFIED CREDENTIAL","BUILD 2026.1"].map(t => (
             <span key={t} style={{ fontFamily:M, fontSize:"0.48rem",
                                     color:"rgba(255,255,255,0.12)",
                                     letterSpacing:"0.1em" }}>{t}</span>
@@ -340,8 +358,8 @@ export function AbraxasPassport({
         <p style={{ fontFamily:S, fontSize:"0.72rem",
                      color:"rgba(255,255,255,0.4)", lineHeight:1.7, margin:0 }}>
           Today, people carry passports between countries. Tomorrow, they carry
-          Abraxas Passports between protocols. Verify once — identity, business,
-          asset ownership, accreditation — and carry that trust across every lender,
+          Abraxas Passports between protocols. Verify once. identity, business,
+          asset ownership, accreditation. and carry that trust across every lender,
           marketplace, registry, and payment rail you ever touch. No re-KYC.
           No redundant uploads. One credential. Every ecosystem.
         </p>

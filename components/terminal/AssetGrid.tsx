@@ -6,7 +6,6 @@
 import { M, S, G, A, B, W, BDR, CARD, TEAL, RED, IND } from "./tokens";
 import { Label, Button, ScrollFade } from "./ui";
 import { AssetGallery } from "./AssetGallery";
-import { BluPearlConstruction } from "./BluPearlConstruction";
 import type { BuyItem } from "./BuyNowModal";
 
 interface AssetGridProps {
@@ -39,14 +38,6 @@ const NAJ_TULUM_IMAGES: string[] = [
   "/assets/worldwearables/naj4.jpg",
 ];
 
-// The Clove, Blu Pearl development, Zanzibar. Sold out, track record only.
-const CLOVE_IMAGES: string[] = [
-  "/assets/worldwearables/theclove.webp",
-  "/assets/worldwearables/theclove2.webp",
-  "/assets/worldwearables/theclove3.png",
-  "/assets/worldwearables/theclove4.png",
-];
-
 // BUY NOW SELECTABLE OPTIONS
 // Generic, honest tiers since exact individual book titles aren't set
 // yet. Replace the `label` fields below with real titles whenever
@@ -54,11 +45,11 @@ const CLOVE_IMAGES: string[] = [
 
 const CIELO_STATS = [
   { k:"Appraised Value", v:"$1,100,000" },
-  { k:"Annual NOI",      v:"$109,500" },
+  { k:"Yearly Profit",   v:"$109,500" },
   { k:"Cash Yield",      v:"14.6%" },
-  { k:"Collateral Score",v:"94 / 100" },
+  { k:"Lending Score",v:"94 / 100" },
   { k:"Max Borrow",      v:"$660K USDC" },
-  { k:"Cap Rate",        v:"9.95%" },
+  { k:"Yearly Return Rate", v:"9.95%" },
 ];
 
 export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps) {
@@ -326,88 +317,40 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           </div>
 
           <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
-                         display:"flex", gap:"0.5rem", alignItems:"center",
-                         flexWrap:"wrap", justifyContent:"space-between" }}>
-            <div style={{ fontFamily:S, fontSize:"0.58rem",
-                           color:"rgba(255,255,255,0.3)", lineHeight:1.5,
-                           maxWidth:160 }}>
-              Owned outright. No bank route. Verified capital only.
-            </div>
-            <Button onClick={() => onInvest("aas-5")} color={A} size="sm">
-              INVEST →
-            </Button>
+                         display:"flex", alignItems:"center",
+                         gap:"0.4rem" }}>
+            <span style={{ color:A, fontSize:"0.7rem" }}>✓</span>
+            <span style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
+                            color:A }}>
+              Owned outright, not open to outside investors
+            </span>
           </div>
         </div>
 
-        {/* AAS-6 The Clove, Blu Pearl development, Zanzibar. Sold out,
-            track record only, no investor CTA, this isn't an open offering */}
-        <div style={{ borderRadius:8, overflow:"hidden",
-                       border:"1px solid #06B6D455",
-                       background:"linear-gradient(145deg,#021c1f 0%,#011115 100%)" }}>
-          <div style={{ padding:"0.875rem 1rem 0" }}>
-            <AssetGallery images={CLOVE_IMAGES} fallbackLabel="The Clove" color="#06B6D4" />
-          </div>
-
-          <div style={{ padding:"0.875rem 1rem",
-                         borderBottom:"1px solid #06B6D420",
-                         background:"linear-gradient(135deg,rgba(6,182,212,0.12),rgba(0,0,0,0))" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
-                           marginBottom:"0.375rem", flexWrap:"wrap" }}>
-              <span style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
-                              color:"#06B6D4" }}>
-                Real Estate · Zanzibar · Track Record
-              </span>
-              <span style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700,
-                              color:"#06B6D4", background:"#06B6D418",
-                              padding:"0.1rem 0.5rem", borderRadius:10,
-                              letterSpacing:"0.06em" }}>
-                SOLD OUT
-              </span>
-            </div>
-            <div style={{ fontFamily:"Georgia,serif",
-                           fontSize:"clamp(1rem,2.5vw,1.25rem)",
-                           fontWeight:700, color:W, marginBottom:"0.375rem" }}>
-              The Clove
-            </div>
-            <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.45)", lineHeight:1.65 }}>
-              A 2-bedroom villa in the Blu Pearl development, purchased in
-              2023 as a personal investment, since sold out. Shown here as
-              a track record, not an open offering, proof of a completed
-              international real estate cycle from purchase through build-out.
-            </div>
-            <BluPearlConstruction />
-          </div>
-
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
-                         gap:"1px", background:BDR }}>
-            {[
-              { k:"Land / Build",   v:"179m² / 149m²" },
-              { k:"Purchased",      v:"2023" },
-              { k:"Amenities",      v:"Pool, solar A/C, rainwater" },
-              { k:"Status",         v:"Sold out" },
-              { k:"Ref. nightly rate", v:"$232 (developer-published)" },
-              { k:"Ref. ROI range", v:"23.8% to 32% (developer projection)" },
-            ].map(s => (
-              <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
-                <div style={{ fontFamily:M, fontSize:"0.46rem",
-                               color:"rgba(255,255,255,0.25)",
-                               textTransform:"uppercase",
-                               letterSpacing:"0.1em", marginBottom:2 }}>{s.k}</div>
-                <div style={{ fontFamily:M, fontSize:"0.66rem",
-                               fontWeight:700, color:"#06B6D4" }}>{s.v}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ padding:"0.625rem 0.875rem", background:"#08090F" }}>
-            <div style={{ fontFamily:S, fontSize:"0.58rem",
-                           color:"rgba(255,255,255,0.3)", lineHeight:1.5 }}>
-              ROI figures are the development's own published projections
-              at the time of purchase, not independently verified by
-              Abraxas. Shown as reference, not a guarantee.
-            </div>
-          </div>
+        {/* The Clove, shown in full as the Act 1 flagship example above,
+            not repeated here, just pointed back to */}
+        <div style={{ borderRadius:8, border:"1px solid #06B6D440",
+                       background:"rgba(6,182,212,0.04)", padding:"0.875rem 1rem",
+                       display:"flex", alignItems:"center", gap:"0.75rem",
+                       flexWrap:"wrap" }}>
+          <span style={{ fontFamily:"Georgia,serif", fontSize:"0.95rem",
+                          fontWeight:700, color:W }}>
+            The Clove
+          </span>
+          <span style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
+                          color:"#06B6D4", background:"#06B6D418",
+                          padding:"0.1rem 0.5rem", borderRadius:10 }}>
+            SOLD OUT · TRACK RECORD
+          </span>
+          <button onClick={() => {
+              const el = document.getElementById("demo-hero");
+              el?.scrollIntoView({ behavior:"smooth" });
+            }}
+            style={{ marginLeft:"auto", background:"none", border:"none",
+                      color:"#06B6D4", fontFamily:S, fontSize:"0.74rem",
+                      fontWeight:600, cursor:"pointer", textDecoration:"underline" }}>
+            See the full story above ↑
+          </button>
         </div>
       </div>
       </ScrollFade>
