@@ -22,7 +22,7 @@ import type { BuyItem } from "@/components/terminal/BuyNowModal";
 
 function DarkPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background:"#0A0C10", borderRadius:16,
+    <div style={{ background:"#FAFAF8", borderRadius:16,
                    padding:"1.25rem clamp(0.875rem,3vw,1.5rem)",
                    border:`1px solid ${BDR}` }}>
       {children}
@@ -40,7 +40,7 @@ export default function BuildPage() {
   const [buyItem, setBuyItem] = useState<BuyItem | null>(null);
 
   return (
-    <div style={{ minHeight:"100vh", background:"#060810", color:"#F8FAFC" }}>
+    <div style={{ minHeight:"100vh", background:"#FAFAF8", color:"#15151A" }}>
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:`1px solid ${BDR}`,
                      display:"flex", alignItems:"center", gap:"0.5rem" }}>
@@ -55,7 +55,7 @@ export default function BuildPage() {
       </div>
 
       <div style={{ maxWidth:860, margin:"0 auto", padding:"1.5rem clamp(0.875rem,3vw,1.5rem)" }}>
-        <p style={{ fontFamily:S, fontSize:"0.82rem", color:"rgba(255,255,255,0.5)",
+        <p style={{ fontFamily:S, fontSize:"0.82rem", color:"rgba(21,21,26,0.5)",
                      lineHeight:1.7, marginBottom:"1.5rem", maxWidth:560 }}>
           For asset owners and operators: form a business, tokenize what
           you own, or see how existing businesses on Abraxas got verified.

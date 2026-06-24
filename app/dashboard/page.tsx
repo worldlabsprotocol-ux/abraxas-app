@@ -26,15 +26,15 @@ import { BottomNav }               from "@/components/BottomNav";
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
-const BG   = "#060810";
-const CARD = "#0D1117";
-const BDR  = "#1C2333";
+const BG   = "#FAFAF8";
+const CARD = "#FFFFFF";
+const BDR  = "#E5E5E0";
 const G    = "#10B981";
 const A    = "#F59E0B";
 const B    = "#3B82F6";
 const P    = "#8B5CF6";
 const R    = "#EF4444";
-const W    = "#F8FAFC";
+const W    = "#15151A";
 const DIM  = "rgba(255,255,255,0.35)";
 
 /* ── helpers ────────────────────────────────────────────────── */
@@ -235,7 +235,7 @@ export default function DashboardPage() {
           )}
         </div>
         <div style={{ fontFamily:M, fontSize:"0.52rem",
-                       color:"rgba(255,255,255,0.15)", letterSpacing:"0.08em" }}>
+                       color:"rgba(21,21,26,0.15)", letterSpacing:"0.08em" }}>
           {assets.length} ASSET{assets.length !== 1 ? "S" : ""} ·{" "}
         </div>
       </div>
@@ -284,7 +284,7 @@ export default function DashboardPage() {
           <Link href="/terminal#deal-pipeline" style={{
             padding:"0.6rem 1.125rem", borderRadius:20,
             border:`1px solid ${BDR}`, background:"transparent",
-            color:"rgba(255,255,255,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
+            color:"rgba(21,21,26,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
             fontSize:"0.8rem", fontWeight:600, textDecoration:"none",
           }}>
             Browse investment opportunities
@@ -322,16 +322,16 @@ export default function DashboardPage() {
         {/* Passport status, links to the standalone /passport page, not inline here */}
         <div style={{ marginBottom:"1.5rem", padding:"1.25rem",
                        borderRadius:12, border:`1px solid ${G}25`,
-                       background:"#0A0C10" }}>
+                       background:"#FAFAF8" }}>
           <div style={{ display:"flex", justifyContent:"space-between",
                          alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
             <div>
               <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                             color:"#fff", marginBottom:"0.25rem" }}>
+                             color:"#15151A", marginBottom:"0.25rem" }}>
                 Abraxas Passport
               </div>
               <div style={{ fontFamily:S, fontSize:"0.78rem",
-                             color:"rgba(255,255,255,0.5)", lineHeight:1.5 }}>
+                             color:"rgba(21,21,26,0.5)", lineHeight:1.5 }}>
                 Get verified once, your credential travels across every Abraxas
                 integration so you never repeat paperwork.
               </div>
@@ -350,11 +350,11 @@ export default function DashboardPage() {
                          borderRadius:12, border:`1px dashed ${BDR}`,
                          marginBottom:"1.5rem" }}>
             <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                           color:"rgba(255,255,255,0.35)", marginBottom:"0.5rem" }}>
+                           color:"rgba(21,21,26,0.35)", marginBottom:"0.5rem" }}>
               No assets submitted yet
             </div>
             <div style={{ fontFamily:S, fontSize:"0.75rem",
-                           color:"rgba(255,255,255,0.2)", marginBottom:"1rem",
+                           color:"rgba(21,21,26,0.2)", marginBottom:"1rem",
                            lineHeight:1.65 }}>
               Once you submit and verify an asset, it shows up here
               with its verification status and investment structure.

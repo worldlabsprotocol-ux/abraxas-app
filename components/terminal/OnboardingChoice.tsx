@@ -50,7 +50,7 @@ export function OnboardingChoice({ onInvest, onSubmitAsset, onLookAround }: Onbo
         What do you want to do?
       </div>
       <div style={{ fontFamily:S, fontSize:"0.78rem",
-                     color:"rgba(255,255,255,0.45)", marginBottom:"1.25rem" }}>
+                     color:"rgba(21,21,26,0.45)", marginBottom:"1.25rem" }}>
         Pick one, no account needed yet.
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
@@ -68,7 +68,7 @@ export function OnboardingChoice({ onInvest, onSubmitAsset, onLookAround }: Onbo
               {p.title}
             </div>
             <div style={{ fontFamily:S, fontSize:"0.76rem",
-                           color:"rgba(255,255,255,0.45)", lineHeight:1.6,
+                           color:"rgba(21,21,26,0.45)", lineHeight:1.6,
                            marginBottom:"0.875rem" }}>
               {p.desc}
             </div>
@@ -80,7 +80,7 @@ export function OnboardingChoice({ onInvest, onSubmitAsset, onLookAround }: Onbo
                     {i + 1}
                   </span>
                   <span style={{ fontFamily:S, fontSize:"0.72rem",
-                                  color:"rgba(255,255,255,0.5)" }}>
+                                  color:"rgba(21,21,26,0.5)" }}>
                     {step}
                   </span>
                 </div>

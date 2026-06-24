@@ -17,7 +17,7 @@ const AFFILIATE_NAME = "heroswap"; // replace with your real affiliate name once
 
 export default function SwapPage() {
   return (
-    <div style={{ minHeight:"100vh", background:"#0A0C10", color:"#F8FAFC" }}>
+    <div style={{ minHeight:"100vh", background:"#FAFAF8", color:"#15151A" }}>
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:"1px solid #1C2333",
                      display:"flex", alignItems:"center", gap:"0.5rem" }}>
@@ -42,7 +42,7 @@ export default function SwapPage() {
           Swap any crypto, instantly.
         </h1>
         <p style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.82rem",
-                     color:"rgba(255,255,255,0.5)", lineHeight:1.65,
+                     color:"rgba(21,21,26,0.5)", lineHeight:1.65,
                      margin:"0 0 1.5rem" }}>
           Cross-chain swaps, no signup, no login required. This is a
           general-purpose tool powered by HeroSwap, separate from
@@ -60,7 +60,7 @@ export default function SwapPage() {
         </div>
 
         <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.66rem",
-                       color:"rgba(255,255,255,0.3)", marginTop:"1rem",
+                       color:"rgba(21,21,26,0.3)", marginTop:"1rem",
                        lineHeight:1.6 }}>
           Powered by HeroSwap, a third-party service. Abraxas doesn't hold
           your funds during a swap and doesn't verify identity for this

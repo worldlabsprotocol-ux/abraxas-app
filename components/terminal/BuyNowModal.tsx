@@ -115,7 +115,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                 display:"flex", alignItems:"center", justifyContent:"center",
                 padding:"1rem", overflowY:"auto" }}>
       <div onClick={e => e.stopPropagation()}
-        style={{ background:"#0D1117", borderRadius:16,
+        style={{ background:"#FFFFFF", borderRadius:16,
                   border:`1px solid ${BDR}`, maxWidth:440, width:"100%",
                   boxShadow:"0 20px 60px rgba(0,0,0,0.5)",
                   maxHeight:"90vh", overflowY:"auto" }}>
@@ -134,7 +134,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
           </div>
           <button onClick={onClose}
             style={{ background:"transparent", border:"none",
-                      color:"rgba(255,255,255,0.4)", fontSize:"1.4rem",
+                      color:"rgba(21,21,26,0.4)", fontSize:"1.4rem",
                       cursor:"pointer", lineHeight:1, padding:0 }}>
             ×
           </button>
@@ -142,7 +142,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
 
         <div style={{ padding:"1.5rem" }}>
           <div style={{ fontFamily:S, fontSize:"0.82rem",
-                         color:"rgba(255,255,255,0.5)", lineHeight:1.6,
+                         color:"rgba(21,21,26,0.5)", lineHeight:1.6,
                          marginBottom:"1.25rem" }}>
             {item.description}
           </div>
@@ -154,7 +154,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                 Order recorded
               </div>
               <div style={{ fontFamily:S, fontSize:"0.78rem",
-                             color:"rgba(255,255,255,0.5)", lineHeight:1.6 }}>
+                             color:"rgba(21,21,26,0.5)", lineHeight:1.6 }}>
                 {isAll ? "All items" : (chosen?.label ?? item.name)}, once your{" "}
                 {coin} transfer confirms on-chain, we will email{" "}
                 {email} to complete delivery.
@@ -166,7 +166,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
               {hasOptions && (
                 <div style={{ marginBottom:"1.25rem" }}>
                   <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
-                                 color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>
+                                 color:"rgba(21,21,26,0.5)", marginBottom:"0.5rem" }}>
                     What would you like?
                   </div>
                   <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
@@ -183,7 +183,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                                          color:W }}>{opt.label}</div>
                           {opt.description && (
                             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                                           color:"rgba(255,255,255,0.4)", marginTop:2 }}>
+                                           color:"rgba(21,21,26,0.4)", marginTop:2 }}>
                               {opt.description}
                             </div>
                           )}
@@ -222,7 +222,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                 <div style={{ display:"flex", justifyContent:"space-between",
                                alignItems:"center" }}>
                   <span style={{ fontFamily:S, fontSize:"0.78rem",
-                                  color:"rgba(255,255,255,0.5)" }}>
+                                  color:"rgba(21,21,26,0.5)" }}>
                     {hasOptions ? "Total" : "Price"}
                   </span>
                   <span style={{ fontFamily:S, fontSize:"1.3rem", fontWeight:700,
@@ -246,7 +246,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
 
               <button onClick={() => setShowStableInfo(s => !s)}
                 style={{ background:"none", border:"none", padding:0,
-                          color:"rgba(255,255,255,0.35)", fontFamily:S,
+                          color:"rgba(21,21,26,0.35)", fontFamily:S,
                           fontSize:"0.68rem", cursor:"pointer",
                           marginBottom: showStableInfo ? "0.625rem" : "1rem",
                           textDecoration:"underline" }}>
@@ -261,7 +261,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                              justifyContent:"space-between", gap:"0.5rem" }}>
                 <div style={{ minWidth:0 }}>
                   <div style={{ fontFamily:S, fontSize:"0.62rem",
-                                 color:"rgba(255,255,255,0.4)", marginBottom:2 }}>
+                                 color:"rgba(21,21,26,0.4)", marginBottom:2 }}>
                     Send {coin} to
                   </div>
                   <div style={{ fontFamily:"monospace", fontSize:"0.85rem",
@@ -291,7 +291,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
               {needsDates && (
                 <div style={{ marginBottom:"1rem" }}>
                   <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
-                                 color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>
+                                 color:"rgba(21,21,26,0.5)", marginBottom:"0.5rem" }}>
                     Check-in and check-out
                   </div>
                   <div style={{ display:"flex", gap:"0.5rem" }}>
@@ -317,7 +317,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
                     />
                   </div>
                   <div style={{ fontFamily:S, fontSize:"0.66rem",
-                                 color:"rgba(255,255,255,0.35)", marginTop:"0.5rem",
+                                 color:"rgba(21,21,26,0.35)", marginTop:"0.5rem",
                                  lineHeight:1.5 }}>
                     These dates are a request, not a confirmed booking yet.
                     Our team confirms availability on Airbnb directly and
@@ -329,7 +329,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
               {needsSize && (
                 <div style={{ marginBottom:"1rem" }}>
                   <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
-                                 color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>
+                                 color:"rgba(21,21,26,0.5)", marginBottom:"0.5rem" }}>
                     Size
                   </div>
                   <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
@@ -351,7 +351,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
               {needsShipping && (
                 <div style={{ marginBottom:"1rem" }}>
                   <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
-                                 color:"rgba(255,255,255,0.5)", marginBottom:"0.5rem" }}>
+                                 color:"rgba(21,21,26,0.5)", marginBottom:"0.5rem" }}>
                     Shipping address
                   </div>
                   <textarea
@@ -381,7 +381,7 @@ export function BuyNowModal({ item, onClose }: BuyNowModalProps) {
               />
 
               <div style={{ fontFamily:S, fontSize:"0.68rem",
-                             color:"rgba(255,255,255,0.35)", lineHeight:1.5,
+                             color:"rgba(21,21,26,0.35)", lineHeight:1.5,
                              marginBottom:"1rem" }}>
                 This is reviewed by our team, not settled automatically.
                 Typical confirmation time is same day, within 1 business day.

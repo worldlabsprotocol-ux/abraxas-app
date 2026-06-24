@@ -40,7 +40,7 @@ export function MusicSection() {
           Are you missing royalties?
         </div>
         <p style={{ fontFamily:S, fontSize:"0.82rem",
-                     color:"rgba(255,255,255,0.5)", lineHeight:1.7,
+                     color:"rgba(21,21,26,0.5)", lineHeight:1.7,
                      maxWidth:560, margin:"0 0 1.125rem" }}>
           Publishing deals routinely route royalties to the wrong party. Missing ISRCs,
           unregistered compositions, and MLC gaps leave years of income unclaimed.
@@ -63,7 +63,7 @@ export function MusicSection() {
             D-9 Musick
           </div>
           <div style={{ fontFamily:S, fontSize:"0.74rem",
-                         color:"rgba(255,255,255,0.45)", marginTop:2, marginBottom:"0.5rem" }}>
+                         color:"rgba(21,21,26,0.45)", marginTop:2, marginBottom:"0.5rem" }}>
             Atlanta-based producer, active since 2008. First catalog
             through the Abraxas royalty audit.
           </div>
@@ -91,7 +91,7 @@ export function MusicSection() {
               {issue.label}
             </div>
             <div style={{ fontFamily:S, fontSize:"0.68rem",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
+                           color:"rgba(21,21,26,0.4)", lineHeight:1.55 }}>
               {issue.desc}
             </div>
           </div>
@@ -112,7 +112,7 @@ export function MusicSection() {
                        marginBottom:"0.875rem" }}>
           <div>
             <label style={{ fontFamily:S, fontSize:"0.68rem",
-                             color:"rgba(255,255,255,0.45)",
+                             color:"rgba(21,21,26,0.45)",
                              display:"block", marginBottom:"0.3rem" }}>
               Tracks released: {tracks}
             </label>
@@ -122,7 +122,7 @@ export function MusicSection() {
           </div>
           <div>
             <label style={{ fontFamily:S, fontSize:"0.68rem",
-                             color:"rgba(255,255,255,0.45)",
+                             color:"rgba(21,21,26,0.45)",
                              display:"block", marginBottom:"0.3rem" }}>
               Years active: {years}
             </label>
@@ -138,12 +138,12 @@ export function MusicSection() {
             {fmt(lowEstimate)} {"\u2013"} {fmt(highEstimate)}
           </span>
           <span style={{ fontFamily:S, fontSize:"0.68rem",
-                          color:"rgba(255,255,255,0.3)" }}>
+                          color:"rgba(21,21,26,0.3)" }}>
             estimated unclaimed range
           </span>
         </div>
         <div style={{ fontFamily:S, fontSize:"0.62rem",
-                       color:"rgba(255,255,255,0.25)", marginTop:"0.5rem" }}>
+                       color:"rgba(21,21,26,0.25)", marginTop:"0.5rem" }}>
           A starting estimate based on catalog size and years active. No
           upfront cost: if we find unclaimed royalties, our fee is 20% of
           what's recovered, you keep the other 80%, paid only after funds

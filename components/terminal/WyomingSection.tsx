@@ -70,7 +70,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
                 <span style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:700,
                                 color:W }}>{r.title}: </span>
                 <span style={{ fontFamily:S, fontSize:"0.78rem",
-                                color:"rgba(255,255,255,0.45)" }}>{r.body}</span>
+                                color:"rgba(21,21,26,0.45)" }}>{r.body}</span>
               </div>
             </div>
           ))}
@@ -90,7 +90,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
             </span>
           </div>
           <span style={{ fontFamily:S, fontSize:"0.7rem",
-                          color:"rgba(255,255,255,0.4)" }}>
+                          color:"rgba(21,21,26,0.4)" }}>
             Send to circuit.skr treasury wallet
           </span>
         </div>
@@ -98,12 +98,12 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
         {/* What is a stablecoin, for anyone who hasn't used one before */}
         <details style={{ marginBottom:"1rem" }}>
           <summary style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:600,
-                             color:"rgba(255,255,255,0.45)", cursor:"pointer",
+                             color:"rgba(21,21,26,0.45)", cursor:"pointer",
                              userSelect:"none" }}>
             New to stablecoins? Here's what USDT actually is.
           </summary>
           <p style={{ fontFamily:S, fontSize:"0.74rem",
-                       color:"rgba(255,255,255,0.4)", lineHeight:1.7,
+                       color:"rgba(21,21,26,0.4)", lineHeight:1.7,
                        margin:"0.625rem 0 0", maxWidth:540 }}>
             USDT (Tether) is a digital dollar. One USDT is designed to always
             equal one US dollar, it doesn't fluctuate in value like Bitcoin
@@ -146,7 +146,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
                       {"\u25c9"}
                     </span>
                     <span style={{ fontFamily:S, fontSize:"0.72rem",
-                                    color:"rgba(255,255,255,0.5)",
+                                    color:"rgba(21,21,26,0.5)",
                                     lineHeight:1.4 }}>
                       {item}
                     </span>

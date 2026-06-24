@@ -10,11 +10,11 @@ import { ScrollFade } from "./ui";
 const MILESTONES = [
   {
     phase:"Live now", color:G,
-    items:["W3C VC credential infrastructure","Wyoming LLC formation flow","Asset verification pipeline",
+    items:["Verified credential system","Wyoming LLC formation flow","Asset verification pipeline",
            "Music royalty audit intake","Cielo Sunrise verified, producing monthly yield",
            "Abraxas Precheck, real identity verification via Veriff","Real photo galleries on verified assets",
            "Email sign-in with automatic wallet and profile creation","Stablecoin checkout (Buy Now / Book Now)",
-           "Light and dark mode"],
+           "Dark mode"],
   },
   {
     phase:"In progress", color:A,
@@ -23,7 +23,7 @@ const MILESTONES = [
   },
   {
     phase:"Up next", color:B,
-    items:["Utila MPC custody integration","OID4VP passport portability","DocuSign LLC automation",
+    items:["Institutional-grade secure storage (with Utila)","A passport that works across other platforms","Automatic LLC paperwork signing",
            "First external protocol integration","Automated on-chain payment verification"],
   },
 ];
@@ -33,7 +33,7 @@ export function MilestonesSection() {
     <ScrollFade>
       <div style={{ marginBottom:"1.5rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
-                       color:"#fff", marginBottom:"1rem" }}>
+                       color:"#15151A", marginBottom:"1rem" }}>
           Where the protocol stands today
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
@@ -58,7 +58,7 @@ export function MilestonesSection() {
                       style={{ padding:"0.3rem 0.7rem", borderRadius:20,
                                 background:`${ms.color}08`,
                                 fontFamily:S, fontSize:"0.72rem",
-                                color:"rgba(255,255,255,0.55)",
+                                color:"rgba(21,21,26,0.55)",
                                 lineHeight:1.4 }}>
                       {ms.phase === "Live now" ? "\u2713 " : ""}{item}
                     </div>

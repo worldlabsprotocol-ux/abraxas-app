@@ -19,7 +19,7 @@ export function DemoVideoSection() {
           From submission to verified asset in under 5 minutes.
         </div>
         <div style={{ aspectRatio:"16/9", borderRadius:12, overflow:"hidden",
-                       background:"#0D1117",
+                       background:"#FFFFFF",
                        border:`1px solid ${BDR}`, display:"flex",
                        flexDirection:"column", alignItems:"center",
                        justifyContent:"center", gap:"0.75rem" }}>

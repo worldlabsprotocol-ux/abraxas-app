@@ -12,7 +12,7 @@ const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
 const W = "#F8FAFC";
 const BDR = "#1C2333";
-const CARD = "#0D1117";
+const CARD = "#FFFFFF";
 
 export function AssetRegistryDashboard() {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export function AssetRegistryDashboard() {
                                  gap:"1px", background:BDR, borderRadius:8,
                                  overflow:"hidden" }}>
                     {asset.stats.map(s => (
-                      <div key={s.label} style={{ background:"#08090F",
+                      <div key={s.label} style={{ background:"#F4F4F1",
                                                     padding:"0.625rem 0.75rem" }}>
                         <div style={{ fontFamily:S, fontSize:"0.6rem",
                                        color:"rgba(255,255,255,0.3)", marginBottom:2 }}>

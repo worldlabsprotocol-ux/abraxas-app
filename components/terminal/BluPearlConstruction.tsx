@@ -30,7 +30,7 @@ export function BluPearlConstruction() {
           Construction journey, 2023 to present
         </div>
         <div style={{ width:"100%", height:200, borderRadius:8,
-                       background:"#08090F", border:`1px solid ${BDR}`,
+                       background:"#F4F4F1", border:`1px solid ${BDR}`,
                        display:"flex", alignItems:"center", justifyContent:"center" }}>
           <span style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(255,255,255,0.3)" }}>
             Loading photos…

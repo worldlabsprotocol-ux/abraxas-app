@@ -13,9 +13,9 @@ const G   = "#10B981";
 const A   = "#F59E0B";
 const B   = "#3B82F6";
 const P   = "#8B5CF6";
-const W   = "#F8FAFC";
-const BDR = "#1C2333";
-const BG  = "#0D1117";
+const W   = "#15151A";
+const BDR = "#E5E5E0";
+const BG  = "#FFFFFF";
 
 const ALL_STAMPS = [
   { id:"identity",   label:"Identity Verified",        icon:"◈", color:G,  desc:"Gov ID + liveness confirmed" },
@@ -79,9 +79,9 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
       {tip && earned && (
         <div style={{ position:"absolute", bottom:"110%", left:"50%",
                        transform:"translateX(-50%)", zIndex:20,
-                       background:"#0A0C10", border:`1px solid ${stamp.color}40`,
+                       background:"#FAFAF8", border:`1px solid ${stamp.color}40`,
                        borderRadius:5, padding:"0.375rem 0.625rem",
-                       fontFamily:S, fontSize:"0.62rem", color:"rgba(255,255,255,0.6)",
+                       fontFamily:S, fontSize:"0.62rem", color:"rgba(21,21,26,0.6)",
                        whiteSpace:"nowrap", pointerEvents:"none",
                        boxShadow:"0 4px 16px rgba(0,0,0,0.7)" }}>
           {stamp.desc}
@@ -189,7 +189,7 @@ export function AbraxasPassport({
           <div style={{ display:"flex", gap:"0.375rem", alignItems:"center" }}>
             {status === "checking" && (
               <span style={{ fontFamily:M, fontSize:"0.55rem",
-                              color:"rgba(255,255,255,0.3)" }}>CHECKING…</span>
+                              color:"rgba(21,21,26,0.3)" }}>CHECKING…</span>
             )}
             <div style={{ width:6, height:6, borderRadius:"50%",
                            background: status === "verified" ? G : "rgba(255,255,255,0.2)",
@@ -212,7 +212,7 @@ export function AbraxasPassport({
               <span style={{ color:G }}>Transact Everywhere.</span>
             </h2>
             <p style={{ fontFamily:S, fontSize:"0.78rem",
-                         color:"rgba(255,255,255,0.45)", lineHeight:1.7,
+                         color:"rgba(21,21,26,0.45)", lineHeight:1.7,
                          maxWidth:420, margin:"0 0 1rem" }}>
               One verification. Every integrated protocol, lender, marketplace,
               and registry accepts it, recognized everywhere onchain.
@@ -221,7 +221,7 @@ export function AbraxasPassport({
             <div style={{ marginBottom:"1rem" }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
                 <span style={{ fontFamily:M, fontSize:"0.55rem",
-                                color:"rgba(255,255,255,0.3)", letterSpacing:"0.1em",
+                                color:"rgba(21,21,26,0.3)", letterSpacing:"0.1em",
                                 textTransform:"uppercase" }}>TRUST LEVEL</span>
                 <span style={{ fontFamily:M, fontSize:"0.55rem",
                                 fontWeight:700, color:trustColor }}>
@@ -258,7 +258,7 @@ export function AbraxasPassport({
               )}
               <a href="/identity" style={{ padding:"0.625rem 1rem", borderRadius:5,
                   border:`1px solid ${BDR}`, background:"transparent",
-                  color:"rgba(255,255,255,0.4)", fontFamily:M, fontSize:"0.72rem",
+                  color:"rgba(21,21,26,0.4)", fontFamily:M, fontSize:"0.72rem",
                   fontWeight:700, textDecoration:"none", display:"inline-block",
                   letterSpacing:"0.06em", textTransform:"uppercase" }}>
                 LEARN MORE
@@ -271,21 +271,21 @@ export function AbraxasPassport({
                            background:"rgba(255,255,255,0.03)",
                            border:`1px solid ${BDR}`, marginBottom:"0.625rem" }}>
               <div style={{ fontFamily:M, fontSize:"0.52rem",
-                             color:"rgba(255,255,255,0.25)", letterSpacing:"0.1em",
+                             color:"rgba(21,21,26,0.25)", letterSpacing:"0.1em",
                              textTransform:"uppercase", marginBottom:"0.375rem" }}>
                 DOCUMENT NO.
               </div>
               <div style={{ fontFamily:M, fontSize:"0.65rem", fontWeight:700,
-                             color:"rgba(255,255,255,0.4)", letterSpacing:"0.06em",
+                             color:"rgba(21,21,26,0.4)", letterSpacing:"0.06em",
                              marginBottom:"0.5rem" }}>
                 {walletStr ? walletStr.slice(0,8)+"…"+walletStr.slice(-5) : "NOT CONNECTED"}
               </div>
               <div style={{ fontFamily:M, fontSize:"0.52rem",
-                             color:"rgba(255,255,255,0.2)" }}>
+                             color:"rgba(21,21,26,0.2)" }}>
                 SOLANA MAINNET · VERIFIED CREDENTIAL
               </div>
               <div style={{ fontFamily:S, fontSize:"0.6rem",
-                             color:"rgba(255,255,255,0.3)", marginTop:"0.4rem",
+                             color:"rgba(21,21,26,0.3)", marginTop:"0.4rem",
                              lineHeight:1.5 }}>
                 No documents stored on-chain, only cryptographic proof.
               </div>
@@ -303,7 +303,7 @@ export function AbraxasPassport({
               }}
               style={{ width:"100%", padding:"0.45rem", borderRadius:6,
                         border:`1px solid ${BDR}`, background:"transparent",
-                        color:"rgba(255,255,255,0.45)", fontFamily:M,
+                        color:"rgba(21,21,26,0.45)", fontFamily:M,
                         fontSize:"0.56rem", fontWeight:700, cursor:"pointer",
                         marginBottom:"0.625rem", letterSpacing:"0.04em" }}>
               COPY CREDENTIAL JSON
@@ -322,7 +322,7 @@ export function AbraxasPassport({
                        padding:"0.4rem 1.375rem", display:"flex", gap:"1.5rem" }}>
           {["ABRAXAS PROTOCOL","SOLANA MAINNET","VERIFIED CREDENTIAL","BUILD 2026.1"].map(t => (
             <span key={t} style={{ fontFamily:M, fontSize:"0.48rem",
-                                    color:"rgba(255,255,255,0.12)",
+                                    color:"rgba(21,21,26,0.12)",
                                     letterSpacing:"0.1em" }}>{t}</span>
           ))}
         </div>
@@ -333,7 +333,7 @@ export function AbraxasPassport({
         <div style={{ display:"flex", justifyContent:"space-between",
                        alignItems:"center", marginBottom:"0.75rem" }}>
           <span style={{ fontFamily:M, fontSize:"0.58rem",
-                          color:"rgba(255,255,255,0.3)",
+                          color:"rgba(21,21,26,0.3)",
                           letterSpacing:"0.14em", textTransform:"uppercase" }}>
             VERIFICATION STAMPS
           </span>
@@ -361,7 +361,7 @@ export function AbraxasPassport({
           THE PASSPORT VISION
         </div>
         <p style={{ fontFamily:S, fontSize:"0.72rem",
-                     color:"rgba(255,255,255,0.4)", lineHeight:1.7, margin:0 }}>
+                     color:"rgba(21,21,26,0.4)", lineHeight:1.7, margin:0 }}>
           Today, people carry passports between countries. Tomorrow, they carry
           Abraxas Passports between protocols. Verify once. identity, business,
           asset ownership, accreditation. and carry that trust across every lender,

@@ -197,7 +197,7 @@ function DealCard({ deal }: { deal: Deal }) {
             {deal.name}
           </div>
           <div style={{ fontFamily:M, fontSize:"0.5rem",
-                         color:"rgba(255,255,255,0.3)",
+                         color:"rgba(21,21,26,0.3)",
                          letterSpacing:"0.1em",
                          textTransform:"uppercase" }}>
             {deal.type}
@@ -218,7 +218,7 @@ function DealCard({ deal }: { deal: Deal }) {
       {/* Details now always visible, no hidden toggle to miss */}
       <div style={{ marginTop:"0.75rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.68rem",
-                       color:"rgba(255,255,255,0.4)",
+                       color:"rgba(21,21,26,0.4)",
                        marginBottom:"0.75rem", lineHeight:1.5 }}>
           {deal.note}
         </div>
@@ -239,13 +239,13 @@ function DealCard({ deal }: { deal: Deal }) {
                 { label:"Use of Funds", val:deal.useOfProceeds },
               ]
           ).map(f => (
-            <div key={f.label} style={{ background:"#08090F", padding:"0.5rem 0.625rem" }}>
+            <div key={f.label} style={{ background:"#F4F4F1", padding:"0.5rem 0.625rem" }}>
               <div style={{ fontFamily:M, fontSize:"0.44rem",
-                             color:"rgba(255,255,255,0.25)",
+                             color:"rgba(21,21,26,0.25)",
                              textTransform:"uppercase", letterSpacing:"0.08em",
                              marginBottom:2 }}>{f.label}</div>
               <div style={{ fontFamily:S, fontSize:"0.62rem",
-                             color:"rgba(255,255,255,0.55)", lineHeight:1.3 }}>{f.val}</div>
+                             color:"rgba(21,21,26,0.55)", lineHeight:1.3 }}>{f.val}</div>
             </div>
           ))}
         </div>
@@ -270,7 +270,7 @@ function DealCard({ deal }: { deal: Deal }) {
               </span>
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.5)", lineHeight:1.5,
+                           color:"rgba(21,21,26,0.5)", lineHeight:1.5,
                            marginBottom:"0.625rem" }}>
               This window passed. Investors who acted early are already in.
               Get notified the moment a similar opportunity opens, or check
@@ -380,7 +380,7 @@ export function DealsProgress() {
                      borderRadius:5, background:"rgba(255,255,255,0.02)",
                      border:"1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ fontFamily:S, fontSize:"0.68rem",
-                       color:"rgba(255,255,255,0.3)", lineHeight:1.6 }}>
+                       color:"rgba(21,21,26,0.3)", lineHeight:1.6 }}>
           Deal pipeline reflects active development. Stages advance as milestones
           are verified and documented on Abraxas Protocol.
         </div>
@@ -407,7 +407,7 @@ function InvestorInquiry() {
             Interested in one of these deals?
           </div>
           <p style={{ fontFamily:S, fontSize:"0.76rem",
-                       color:"rgba(255,255,255,0.45)", lineHeight:1.6,
+                       color:"rgba(21,21,26,0.45)", lineHeight:1.6,
                        maxWidth:480, margin:0 }}>
             Reach out directly, no need to wait for an asset to open
             formally. Tell us which deal interests you.
@@ -432,7 +432,7 @@ function InvestorInquiry() {
                      display:"flex", alignItems:"center", justifyContent:"space-between",
                      flexWrap:"wrap", gap:"0.625rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.76rem",
-                       color:"rgba(255,255,255,0.4)" }}>
+                       color:"rgba(21,21,26,0.4)" }}>
           Prefer to talk it through? Book a call directly.
         </div>
         {CALENDLY_URL ? (
@@ -441,7 +441,7 @@ function InvestorInquiry() {
           </Button>
         ) : (
           <span style={{ fontFamily:S, fontSize:"0.68rem",
-                          color:"rgba(255,255,255,0.25)" }}>
+                          color:"rgba(21,21,26,0.25)" }}>
             Calendly link coming soon
           </span>
         )}

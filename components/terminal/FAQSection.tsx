@@ -1,33 +1,33 @@
 "use client";
 // FILE: components/terminal/FAQSection.tsx
-// From my very first audit, this was recommended and never actually
-// built: a short FAQ addressing the obvious skeptical questions. This
-// closes that gap for real.
+// Replaces the generic FAQ with a "why" Q&A format, the questions a
+// genuinely skeptical person actually asks before trusting any of
+// this, not a generic terms-of-service-style FAQ list.
 
 import { useState } from "react";
-import { S, G, W, BDR } from "./tokens";
+import { S, G, BDR } from "./tokens";
 import { ScrollFade } from "./ui";
 
 const FAQS = [
   {
-    q: "Is this legal?",
-    a: "Yes. Investment offerings follow a specific SEC rule for accredited-investor offerings (Reg D 506(c)). Abraxas isn't a bank or a broker, it's a verification layer, and each asset's paperwork spells out the exact legal structure behind it.",
+    q: "Why tokenization?",
+    a: "Because right now, proving you own something real, and proving it's actually worth what you say, takes paperwork, phone calls, and trust in a stranger's word. Tokenization turns that proof into something portable, checked once, then carried with the asset everywhere it goes.",
+  },
+  {
+    q: "Why not just buy the asset normally?",
+    a: "You still can. Abraxas doesn't replace a deed or a title, it sits on top of it. What it adds is a verified record anyone can check before they commit money, and a way to invest in or borrow against that asset using stablecoins instead of waiting on a bank.",
+  },
+  {
+    q: "Why blockchain?",
+    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified record on Solana doesn't depend on trusting Abraxas forever, it's checkable by anyone, anytime, without calling us first.",
+  },
+  {
+    q: "Why Abraxas?",
+    a: "World Labs, the founder's own company, went through the exact same verification process before anyone else's asset did. That's not a slogan, it's the actual first thing that happened. Every asset since has been held to that same standard.",
   },
   {
     q: "What happens to my money?",
-    a: "For investments and purchases, you send stablecoin directly to the treasury wallet, our team confirms the transfer on-chain and follows up by email, typically within one business day. Nothing is automated yet, every transaction is reviewed by a person before anything is finalized.",
-  },
-  {
-    q: "Who's behind this?",
-    a: "A solo founder with a decade in crypto, real estate, and asset structuring. World Labs, the founder's own company, was the first business put through Abraxas's full verification process, same standard, no exceptions.",
-  },
-  {
-    q: "What if I send money and never hear back?",
-    a: "That shouldn't happen, typical confirmation time is same day to one business day. If it does, every action on the platform records your email, so there's always a paper trail to follow up on.",
-  },
-  {
-    q: "Do I need to know anything about crypto to use this?",
-    a: "No. Sign in with email, Abraxas creates a wallet for you behind the scenes. The word \"wallet\" only matters if you choose to connect one yourself.",
+    a: "You send stablecoin directly to the treasury wallet, our team confirms the transfer on-chain and follows up by email, typically within one business day. Nothing is automated yet, every transaction is reviewed by a person before anything is finalized.",
   },
 ];
 
@@ -38,19 +38,20 @@ export function FAQSection() {
     <ScrollFade>
       <div>
         <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
-                       color:W, marginBottom:"1rem" }}>
-          Common questions
+                       color:"var(--text-primary)", marginBottom:"1rem" }}>
+          Why this, why now
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
           {FAQS.map((item, i) => (
             <div key={item.q} style={{ borderRadius:10, border:`1px solid ${BDR}`,
-                                         background:"rgba(255,255,255,0.02)",
+                                         background:"var(--bg)",
                                          overflow:"hidden" }}>
               <button onClick={() => setOpen(open === i ? null : i)}
                 style={{ width:"100%", padding:"0.875rem 1rem", background:"none",
                           border:"none", display:"flex", justifyContent:"space-between",
                           alignItems:"center", cursor:"pointer", textAlign:"left" }}>
-                <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:600, color:W }}>
+                <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:600,
+                                color:"var(--text-primary)" }}>
                   {item.q}
                 </span>
                 <span style={{ color:G, fontSize:"0.7rem",
@@ -62,7 +63,7 @@ export function FAQSection() {
               <div style={{ maxHeight: open === i ? 200 : 0, opacity: open === i ? 1 : 0,
                              overflow:"hidden", transition:"max-height 0.3s, opacity 0.2s" }}>
                 <div style={{ padding:"0 1rem 1rem", fontFamily:S, fontSize:"0.8rem",
-                               color:"rgba(255,255,255,0.5)", lineHeight:1.65 }}>
+                               color:"var(--text-secondary)", lineHeight:1.65 }}>
                   {item.a}
                 </div>
               </div>

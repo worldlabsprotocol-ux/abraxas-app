@@ -107,7 +107,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               Cielo Sunrise
             </div>
             <div style={{ fontFamily:S, fontSize:"0.75rem",
-                           color:"rgba(255,255,255,0.5)" }}>
+                           color:"rgba(21,21,26,0.5)" }}>
               Private Mountain Wellness Retreat · Mineral Bluff, Georgia
             </div>
           </div>
@@ -120,7 +120,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
           {CIELO_STATS.map(s => (
             <div key={s.k} style={{ background:CARD, padding:"0.75rem 0.875rem" }}>
               <div style={{ fontFamily:M, fontSize:"0.52rem",
-                             color:"rgba(255,255,255,0.3)",
+                             color:"rgba(21,21,26,0.3)",
                              textTransform:"uppercase",
                              letterSpacing:"0.1em", marginBottom:3 }}>{s.k}</div>
               <div style={{ fontFamily:M, fontSize:"0.92rem",
@@ -128,7 +128,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             </div>
           ))}
         </div>
-        <div style={{ padding:"0.875rem 1rem", background:"#08090F",
+        <div style={{ padding:"0.875rem 1rem", background:"#F4F4F1",
                        display:"flex", gap:"0.5rem", flexWrap:"wrap",
                        alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
@@ -158,7 +158,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
                      margin:"1.75rem 0 0.875rem" }}>
         <div style={{ flex:1, height:1, background:BDR }} />
         <span style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
-                        color:"rgba(255,255,255,0.35)", letterSpacing:"0.1em",
+                        color:"rgba(21,21,26,0.35)", letterSpacing:"0.1em",
                         textTransform:"uppercase" }}>
           More Asset Classes
         </span>
@@ -228,7 +228,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               Smyrna Townhome
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.45)", lineHeight:1.65 }}>
+                           color:"rgba(21,21,26,0.45)", lineHeight:1.65 }}>
               Paid-off townhome sitting at 3x its original purchase price,
               six minutes from The Battery Atlanta. Owner is not selling
               and not refinancing through a traditional bank. Looking for
@@ -250,7 +250,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             ].map(s => (
               <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
                 <div style={{ fontFamily:M, fontSize:"0.46rem",
-                               color:"rgba(255,255,255,0.25)",
+                               color:"rgba(21,21,26,0.25)",
                                textTransform:"uppercase",
                                letterSpacing:"0.1em", marginBottom:2 }}>{s.k}</div>
                 <div style={{ fontFamily:M, fontSize:"0.66rem",
@@ -259,11 +259,11 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             ))}
           </div>
 
-          <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+          <div style={{ padding:"0.625rem 0.875rem", background:"#F4F4F1",
                          display:"flex", gap:"0.5rem", alignItems:"center",
                          flexWrap:"wrap", justifyContent:"space-between" }}>
             <div style={{ fontFamily:S, fontSize:"0.58rem",
-                           color:"rgba(255,255,255,0.3)", lineHeight:1.5,
+                           color:"rgba(21,21,26,0.3)", lineHeight:1.5,
                            maxWidth:160 }}>
               No bank route. Verified capital only. Long-term hold.
             </div>
@@ -294,7 +294,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
               Naj Tulum
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.45)", lineHeight:1.65 }}>
+                           color:"rgba(21,21,26,0.45)", lineHeight:1.65 }}>
               A unit at Naj Tulum, a boutique condo-hotel in Aldea Zama,
               purchased in 2023 and owned outright. Foreign ownership of
               coastal Mexican real estate like this is held through a
@@ -315,7 +315,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             ].map(s => (
               <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
                 <div style={{ fontFamily:M, fontSize:"0.46rem",
-                               color:"rgba(255,255,255,0.25)",
+                               color:"rgba(21,21,26,0.25)",
                                textTransform:"uppercase",
                                letterSpacing:"0.1em", marginBottom:2 }}>{s.k}</div>
                 <div style={{ fontFamily:M, fontSize:"0.66rem",
@@ -324,7 +324,7 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             ))}
           </div>
 
-          <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+          <div style={{ padding:"0.625rem 0.875rem", background:"#F4F4F1",
                          display:"flex", alignItems:"center",
                          gap:"0.4rem" }}>
             <span style={{ color:A, fontSize:"0.7rem" }}>✓</span>

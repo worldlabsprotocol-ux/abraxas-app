@@ -1,21 +1,22 @@
 /* FILE: app/globals.css, replace or merge with existing */
-/* Dark only for now. Light mode removed after repeated contrast bugs. */
+/* Light, premium theme. Single theme, no toggle, that architecture
+   decision stays the same as before, only the actual values changed. */
 
 :root,
 [data-theme="dark"],
 [data-theme="light"] {
-  --bg:             #0A0C10;
-  --bg-secondary:   #0D1117;
-  --surface:        #0D1117;
-  --surface-raised: #141922;
-  --border:         #1C2333;
-  --text-primary:   #F8FAFC;
-  --text-secondary: rgba(248,250,252,0.55);
-  --text-muted:     rgba(248,250,252,0.3);
-  --accent:         #10B981;
-  --accent-faint:   rgba(16,185,129,0.08);
-  --accent-border:  rgba(16,185,129,0.25);
-  --nav-bg:         rgba(10,12,16,0.97);
+  --bg:             #FAFAF8;
+  --bg-secondary:   #FFFFFF;
+  --surface:        #FFFFFF;
+  --surface-raised: #F4F4F1;
+  --border:         #E5E5E0;
+  --text-primary:   #15151A;
+  --text-secondary: rgba(21,21,26,0.62);
+  --text-muted:     rgba(21,21,26,0.4);
+  --accent:         #0E9A6E;
+  --accent-faint:   rgba(14,154,110,0.08);
+  --accent-border:  rgba(14,154,110,0.25);
+  --nav-bg:         rgba(255,255,255,0.97);
 }
 
 * { box-sizing: border-box; }

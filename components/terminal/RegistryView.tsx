@@ -39,7 +39,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
                        overflow:"hidden", marginBottom:"1.5rem" }}>
           {STATS.map(s => (
             <div key={s.label} style={{ background:CARD, padding:"0.875rem" }}>
-              <div style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.3)",
+              <div style={{ fontSize:"0.6rem", color:"rgba(21,21,26,0.3)",
                              textTransform:"uppercase", letterSpacing:"0.12em",
                              marginBottom:4 }}>
                 {s.label}
@@ -50,7 +50,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
             </div>
           ))}
         </div>
-        <div style={{ fontSize:"0.75rem", color:"rgba(255,255,255,0.4)",
+        <div style={{ fontSize:"0.75rem", color:"rgba(21,21,26,0.4)",
                        marginBottom:"0.7rem", letterSpacing:"0.1em",
                        textTransform:"uppercase" }}>
           First Verified Asset
@@ -60,7 +60,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
           Cielo Sunrise · Mountain Wellness Retreat
         </div>
         <div style={{ fontFamily:S, fontSize:"0.75rem",
-                       color:"rgba(255,255,255,0.4)" }}>
+                       color:"rgba(21,21,26,0.4)" }}>
           Mineral Bluff, Georgia · $1,100,000 appraised ·
           89/100 lending score · 96% verification confidence ·
           $660K max borrow capacity

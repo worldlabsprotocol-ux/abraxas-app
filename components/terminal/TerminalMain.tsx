@@ -48,9 +48,10 @@ const MAX_WIDTH: React.CSSProperties = {
 // deliberately, not a workaround, an actual design choice.
 function DarkPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background:"#0A0C10", borderRadius:16,
+    <div style={{ background:"var(--surface)", borderRadius:16,
                    padding:"1.25rem clamp(0.875rem,3vw,1.5rem)",
-                   border:"1px solid #1C2333" }}>
+                   border:"1px solid var(--border)",
+                   boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
       {children}
     </div>
   );
@@ -204,7 +205,7 @@ export function TerminalMain() {
                 Have something to tokenize?
               </div>
               <div style={{ fontFamily:S, fontSize:"0.76rem",
-                             color:"rgba(255,255,255,0.45)", marginTop:"0.25rem" }}>
+                             color:"rgba(21,21,26,0.45)", marginTop:"0.25rem" }}>
                 Form a business, see World Labs's case study, or browse
                 World Wearables.
               </div>

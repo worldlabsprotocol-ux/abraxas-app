@@ -23,7 +23,7 @@ export function ZkLoginPreview() {
           Sign in with Google. Wallet created automatically.
         </div>
         <p style={{ fontFamily:S, fontSize:"0.82rem",
-                     color:"rgba(255,255,255,0.5)", lineHeight:1.7,
+                     color:"rgba(21,21,26,0.5)", lineHeight:1.7,
                      maxWidth:560, margin:"0 0 1.25rem" }}>
           No MetaMask. No seed phrases. No crypto knowledge required. Sign
           in with your Google account and Abraxas creates a Solana wallet
@@ -48,18 +48,18 @@ export function ZkLoginPreview() {
                               display:"flex", alignItems:"center",
                               justifyContent:"center", fontFamily:S,
                               fontSize:"0.65rem", fontWeight:700,
-                              color:"rgba(255,255,255,0.5)" }}>
+                              color:"rgba(21,21,26,0.5)" }}>
                 {btn.icon}
               </span>
               <span style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:600,
-                              color:"rgba(255,255,255,0.5)" }}>
+                              color:"rgba(21,21,26,0.5)" }}>
                 {btn.label}
               </span>
             </div>
           ))}
         </div>
         <div style={{ fontFamily:S, fontSize:"0.62rem",
-                       color:"rgba(255,255,255,0.3)", letterSpacing:"0.04em" }}>
+                       color:"rgba(21,21,26,0.3)", letterSpacing:"0.04em" }}>
           POWERED BY ZK PROOFS, SOLANA MAINNET
         </div>
       </div>

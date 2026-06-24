@@ -25,7 +25,7 @@ export function WhyVerificationStory() {
               The missed royalty check
             </div>
             <p style={{ fontFamily:S, fontSize:"0.78rem",
-                         color:"rgba(255,255,255,0.5)", lineHeight:1.7, margin:0 }}>
+                         color:"rgba(21,21,26,0.5)", lineHeight:1.7, margin:0 }}>
               An artist's catalog sat for years generating royalties nobody
               was tracking. No platform had ever verified who owned what, so
               nobody could prove a claim worth chasing. Once it's verified
@@ -39,7 +39,7 @@ export function WhyVerificationStory() {
               The property that couldn't get a loan
             </div>
             <p style={{ fontFamily:S, fontSize:"0.78rem",
-                         color:"rgba(255,255,255,0.5)", lineHeight:1.7, margin:0 }}>
+                         color:"rgba(21,21,26,0.5)", lineHeight:1.7, margin:0 }}>
               A paid-off property with real income still has to prove its
               value from scratch to every bank it approaches. Verify it once,
               and that proof becomes something any lender can actually trust,

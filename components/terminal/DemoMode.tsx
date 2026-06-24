@@ -78,14 +78,14 @@ export function DemoMode() {
                 transform:"translateX(-50%)", zIndex:5000,
                 cursor:"pointer", maxWidth:"min(420px,90vw)" }}
     >
-      <div style={{ background:"#0A0C10", border:`1px solid ${G}40`,
+      <div style={{ background:"#FAFAF8", border:`1px solid ${G}40`,
                      borderRadius:10, padding:"0.875rem 1.125rem",
                      boxShadow:`0 0 30px ${G}25`,
                      display:"flex", alignItems:"center", gap:"0.75rem" }}>
         <div style={{ width:8, height:8, borderRadius:"50%",
                        background:G, flexShrink:0,
                        animation:"demo-pulse 1.4s ease-in-out infinite" }} />
-        <div style={{ fontFamily:S, fontSize:"0.78rem", color:"#fff",
+        <div style={{ fontFamily:S, fontSize:"0.78rem", color:"#15151A",
                        lineHeight:1.4 }}>
           {step.caption}
         </div>

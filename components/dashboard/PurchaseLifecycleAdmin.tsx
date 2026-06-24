@@ -12,8 +12,8 @@ const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const G = "#10B981";
 const A = "#F59E0B";
 const RED = "#EF4444";
-const W = "#F8FAFC";
-const BDR = "#1C2333";
+const W = "#15151A";
+const BDR = "#E5E5E0";
 
 interface PurchaseRow {
   id: string;
@@ -69,20 +69,20 @@ export function PurchaseLifecycleAdmin() {
                      marginBottom:"0.25rem" }}>
         Purchase Lifecycle
       </div>
-      <div style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(255,255,255,0.4)",
+      <div style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(21,21,26,0.4)",
                      marginBottom:"1rem" }}>
         {open.length} open, authorized but not yet settled
       </div>
 
       {open.length === 0 ? (
-        <div style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(255,255,255,0.35)" }}>
+        <div style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(21,21,26,0.35)" }}>
           Nothing waiting on you right now.
         </div>
       ) : (
         <div style={{ display:"flex", flexDirection:"column", gap:"0.625rem" }}>
           {open.map(p => (
             <div key={p.id} style={{ padding:"0.75rem", borderRadius:10,
-                                       background:"#0A0C10", border:`1px solid ${BDR}`,
+                                       background:"#FAFAF8", border:`1px solid ${BDR}`,
                                        display:"flex", justifyContent:"space-between",
                                        alignItems:"center", flexWrap:"wrap", gap:"0.625rem" }}>
               <div>
@@ -97,7 +97,7 @@ export function PurchaseLifecycleAdmin() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(255,255,255,0.4)" }}>
+                <div style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(21,21,26,0.4)" }}>
                   {p.price} · {p.email}
                 </div>
               </div>

@@ -8,7 +8,7 @@
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const G = "#10B981";
-const BDR = "#1C2333";
+const BDR = "#E5E5E0";
 
 const LINKS = {
   product: [
@@ -32,7 +32,7 @@ function Column({ title, items }: { title: string; items: { label: string; href:
   return (
     <div>
       <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700,
-                     color:"rgba(255,255,255,0.3)", letterSpacing:"0.1em",
+                     color:"rgba(21,21,26,0.3)", letterSpacing:"0.1em",
                      textTransform:"uppercase", marginBottom:"0.75rem" }}>
         {title}
       </div>
@@ -42,7 +42,7 @@ function Column({ title, items }: { title: string; items: { label: string; href:
             target={item.href.startsWith("http") ? "_blank" : undefined}
             rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
             style={{ fontFamily:S, fontSize:"0.78rem",
-                      color:"rgba(255,255,255,0.55)", textDecoration:"none" }}>
+                      color:"rgba(21,21,26,0.55)", textDecoration:"none" }}>
             {item.label}
           </a>
         ))}
@@ -72,7 +72,7 @@ export function SiteFooter() {
               </span>
             </div>
             <p style={{ fontFamily:S, fontSize:"0.74rem",
-                         color:"rgba(255,255,255,0.4)", lineHeight:1.6, maxWidth:200 }}>
+                         color:"rgba(21,21,26,0.4)", lineHeight:1.6, maxWidth:200 }}>
               The verification layer for real-world assets on Solana.
             </p>
           </div>
@@ -82,7 +82,7 @@ export function SiteFooter() {
         </div>
         <div style={{ paddingTop:"1.25rem", borderTop:`1px solid ${BDR}`,
                        fontFamily:S, fontSize:"0.68rem",
-                       color:"rgba(255,255,255,0.3)" }}>
+                       color:"rgba(21,21,26,0.3)" }}>
           © {new Date().getFullYear()} Abraxas Protocol, World Labs Protocol.
         </div>
       </div>

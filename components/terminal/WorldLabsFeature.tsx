@@ -55,7 +55,7 @@ export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
                    background:"rgba(16,185,129,0.08)" }}>
       <div style={{ display:"flex", flexWrap:"wrap" }}>
         <div style={{ flex:"1 1 240px", minHeight:220, position:"relative",
-                       background:"#08090F" }}>
+                       background:"#F4F4F1" }}>
           <CascadingImage candidates={LOGO_CANDIDATES} alt="World Labs" />
         </div>
         <div style={{ flex:"2 1 320px", padding:"1.25rem 1.5rem" }}>
@@ -68,7 +68,7 @@ export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
             World Labs
           </div>
           <p style={{ fontFamily:S, fontSize:"0.8rem",
-                       color:"rgba(255,255,255,0.5)", lineHeight:1.7,
+                       color:"rgba(21,21,26,0.5)", lineHeight:1.7,
                        margin:"0 0 1rem" }}>
             World Labs is the blueprint Abraxas is built on. Its IP was
             minted on Ethereum in 2023, using smart contracts, before
@@ -82,7 +82,7 @@ export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
             {LINKEDIN_URL && (
               <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer"
                 style={{ padding:"0.5rem 1rem", borderRadius:8,
-                          border:`1px solid ${BDR}`, color:"rgba(255,255,255,0.6)",
+                          border:`1px solid ${BDR}`, color:"rgba(21,21,26,0.6)",
                           fontFamily:S, fontSize:"0.76rem", fontWeight:600,
                           textDecoration:"none" }}>
                 View LinkedIn
@@ -91,7 +91,7 @@ export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
             {OPENSEA_URL && (
               <a href={OPENSEA_URL} target="_blank" rel="noopener noreferrer"
                 style={{ padding:"0.5rem 1rem", borderRadius:8,
-                          border:`1px solid ${BDR}`, color:"rgba(255,255,255,0.6)",
+                          border:`1px solid ${BDR}`, color:"rgba(21,21,26,0.6)",
                           fontFamily:S, fontSize:"0.76rem", fontWeight:600,
                           textDecoration:"none" }}>
                 View 2023 Ethereum Mint
@@ -106,7 +106,7 @@ export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
                      display:"flex", gap:"1rem", flexWrap:"wrap",
                      alignItems:"center" }}>
         <div style={{ width:56, height:72, borderRadius:6, overflow:"hidden",
-                       position:"relative", background:"#08090F",
+                       position:"relative", background:"#F4F4F1",
                        flexShrink:0 }}>
           <CascadingImage candidates={WORLDBOOK_CANDIDATES} alt="World Book" />
         </div>
@@ -124,7 +124,7 @@ export function WorldLabsSection({ onBuyNow }: WorldLabsSectionProps) {
             </span>
           </div>
           <div style={{ fontFamily:S, fontSize:"0.7rem",
-                         color:"rgba(255,255,255,0.4)", marginTop:2, marginBottom:"0.625rem" }}>
+                         color:"rgba(21,21,26,0.4)", marginTop:2, marginBottom:"0.625rem" }}>
             Part of the World Labs IP portfolio. Instant digital access after payment.
           </div>
           <button onClick={() => onBuyNow({
@@ -154,10 +154,10 @@ interface WorldWearablesSectionProps {
 export function WorldWearablesSection({ onBuyNow }: WorldWearablesSectionProps) {
   return (
     <div style={{ borderRadius:12, overflow:"hidden",
-                   border:`1px solid ${BDR}`, background:"#0A0C10",
+                   border:`1px solid ${BDR}`, background:"#FAFAF8",
                    display:"flex", flexWrap:"wrap" }}>
       <div style={{ flex:"1 1 140px", minHeight:140, maxWidth:180,
-                     position:"relative", background:"#08090F" }}>
+                     position:"relative", background:"#F4F4F1" }}>
         <CascadingImage candidates={HOODIE_CANDIDATES} alt="World Labs Hoodie" />
       </div>
       <div style={{ flex:"2 1 240px", padding:"1.125rem 1.25rem",
@@ -177,7 +177,7 @@ export function WorldWearablesSection({ onBuyNow }: WorldWearablesSectionProps) 
           </span>
         </div>
         <p style={{ fontFamily:S, fontSize:"0.74rem",
-                     color:"rgba(255,255,255,0.45)", lineHeight:1.6,
+                     color:"rgba(21,21,26,0.45)", lineHeight:1.6,
                      margin:"0 0 0.875rem", maxWidth:420 }}>
           Real apparel, one physical item per purchase, with an on-chain
           record proving authenticity and ownership. Pay in USDT, we

@@ -109,7 +109,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
               DeMarko Reddins
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.55 }}>
+                           color:"rgba(21,21,26,0.4)", lineHeight:1.55 }}>
               Published author catalog · KDP royalty streams · Multi-title publishing rights
             </div>
           </div>
@@ -123,7 +123,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
             ].map(s => (
               <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
                 <div style={{ fontFamily:M, fontSize:"0.48rem",
-                               color:"rgba(255,255,255,0.25)",
+                               color:"rgba(21,21,26,0.25)",
                                textTransform:"uppercase",
                                letterSpacing:"0.1em", marginBottom:2 }}>{s.k}</div>
                 <div style={{ fontFamily:M, fontSize:"0.68rem",
@@ -131,7 +131,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
               </div>
             ))}
           </div>
-          <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+          <div style={{ padding:"0.625rem 0.875rem", background:"#F4F4F1",
                          display:"flex", gap:"0.5rem", alignItems:"center",
                          justifyContent:"space-between", flexWrap:"wrap" }}>
             <Button href="https://www.amazon.com/stores/DeMarko-Reddins/author/B00JUA0U0G"
@@ -183,7 +183,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
               14 Days in Beijing
             </div>
             <div style={{ fontFamily:S, fontSize:"0.68rem",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.5,
+                           color:"rgba(21,21,26,0.4)", lineHeight:1.5,
                            marginBottom:"0.625rem" }}>
               Completed scripts across multiple formats.
               Series acquisition discussions active with production partners.
@@ -208,7 +208,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
                       {s.label}
                     </div>
                     <div style={{ fontFamily:S, fontSize:"0.6rem",
-                                   color:"rgba(255,255,255,0.35)" }}>
+                                   color:"rgba(21,21,26,0.35)" }}>
                       {s.detail}
                     </div>
                   </div>
@@ -296,7 +296,7 @@ export function IPAssetGrid({ onInvest, onBuyNow }: IPAssetGridProps) {
           </div>
 
           {/* CTA row */}
-          <div style={{ padding:"0.625rem 0.875rem", background:"#08090F",
+          <div style={{ padding:"0.625rem 0.875rem", background:"#F4F4F1",
                          display:"flex", gap:"0.5rem", alignItems:"center",
                          flexWrap:"wrap", justifyContent:"space-between" }}>
             <Button href="https://www.amazon.com/stores/Chancellor-K.-Jackson/author/B086YGY4BM"

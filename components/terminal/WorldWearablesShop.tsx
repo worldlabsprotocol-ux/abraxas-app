@@ -27,13 +27,13 @@ export function WorldWearablesGallery() {
     return (
       <div>
         <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
-                       color:"#F8FAFC", marginBottom:"0.375rem" }}>
+                       color:"#15151A", marginBottom:"0.375rem" }}>
           World Wearables
         </div>
         <div style={{ width:"100%", height:280, borderRadius:10,
-                       background:"#08090F", border:`1px solid ${BDR}`,
+                       background:"#F4F4F1", border:`1px solid ${BDR}`,
                        display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <span style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(255,255,255,0.3)" }}>
+          <span style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(21,21,26,0.3)" }}>
             Loading the collection…
           </span>
         </div>
@@ -46,11 +46,11 @@ export function WorldWearablesGallery() {
   return (
     <div>
       <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
-                     color:"#F8FAFC", marginBottom:"0.375rem" }}>
+                     color:"#15151A", marginBottom:"0.375rem" }}>
         World Wearables
       </div>
       <div style={{ fontFamily:S, fontSize:"0.78rem",
-                     color:"rgba(255,255,255,0.45)", marginBottom:"1.25rem" }}>
+                     color:"rgba(21,21,26,0.45)", marginBottom:"1.25rem" }}>
         The collection so far.
       </div>
       <div style={{ width:"100%", minHeight:280, maxHeight:480,
@@ -86,13 +86,13 @@ interface WorldWearablesHoodieProps {
 export function WorldWearablesHoodie({ onBuyNow }: WorldWearablesHoodieProps) {
   return (
     <div style={{ padding:"1rem", borderRadius:10, border:`1px solid ${BDR}`,
-                   background:"#0A0C10", display:"flex", justifyContent:"space-between",
+                   background:"#FAFAF8", display:"flex", justifyContent:"space-between",
                    alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
       <div>
         <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600, color:G, marginBottom:2 }}>
           World Wearables
         </div>
-        <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700, color:"#F8FAFC" }}>
+        <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700, color:"#15151A" }}>
           World Labs Hoodie
         </div>
         <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700, color:G }}>

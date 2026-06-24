@@ -27,7 +27,7 @@ export default function GalleryPage() {
   }, []);
 
   return (
-    <div style={{ minHeight:"100vh", background:"#060810", color:"#fff",
+    <div style={{ minHeight:"100vh", background:"#FAFAF8", color:"#15151A",
                    fontFamily:"'Inter',system-ui,sans-serif" }}>
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:"1px solid #1C2333",
@@ -47,7 +47,7 @@ export default function GalleryPage() {
         <h1 style={{ fontSize:"clamp(1.5rem,4vw,2.2rem)", fontWeight:700, margin:"0 0 0.75rem" }}>
           La Casa Distortion
         </h1>
-        <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.5)",
+        <p style={{ fontSize:"0.88rem", color:"rgba(21,21,26,0.5)",
                      lineHeight:1.7, maxWidth:600, margin:"0 0 1.5rem" }}>
           A real, owned, tokenized creative collection on Ethereum, verified
           the same way every other asset on Abraxas is.
@@ -60,7 +60,7 @@ export default function GalleryPage() {
             <div style={{ fontSize:"0.95rem", fontWeight:700, marginBottom:"0.5rem" }}>
               Gallery coming soon
             </div>
-            <div style={{ fontSize:"0.8rem", color:"rgba(255,255,255,0.4)",
+            <div style={{ fontSize:"0.8rem", color:"rgba(21,21,26,0.4)",
                            maxWidth:380, margin:"0 auto", lineHeight:1.6 }}>
               Live collection data activates once OpenSea API access is connected.
             </div>
@@ -72,7 +72,7 @@ export default function GalleryPage() {
               <a key={nft.id} href={nft.url} target="_blank" rel="noopener noreferrer"
                 style={{ textDecoration:"none", color:"inherit" }}>
                 <div style={{ borderRadius:10, overflow:"hidden", border:"1px solid #1C2333" }}>
-                  <div style={{ aspectRatio:"1", background:"#0D1117" }}>
+                  <div style={{ aspectRatio:"1", background:"#FFFFFF" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={nft.image} alt={nft.name}
                          style={{ width:"100%", height:"100%", objectFit:"cover" }} />
@@ -85,7 +85,7 @@ export default function GalleryPage() {
             ))}
           </div>
         ) : (
-          <div style={{ fontSize:"0.8rem", color:"rgba(255,255,255,0.35)" }}>
+          <div style={{ fontSize:"0.8rem", color:"rgba(21,21,26,0.35)" }}>
             Loading collection...
           </div>
         )}

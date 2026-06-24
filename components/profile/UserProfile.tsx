@@ -12,7 +12,7 @@ const A   = "#F59E0B";
 const B   = "#3B82F6";
 const W   = "#F8FAFC";
 const BDR = "#1C2333";
-const BG  = "#0D1117";
+const BG  = "#FFFFFF";
 
 interface Profile {
   wallet_address: string;

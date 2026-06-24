@@ -66,7 +66,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
                 display:"flex", alignItems:"center", justifyContent:"center",
                 padding:"1rem", overflowY:"auto" }}>
       <div onClick={e => e.stopPropagation()}
-        style={{ background:"#0A0C10", borderRadius:10,
+        style={{ background:"#FAFAF8", borderRadius:10,
                   border:`1px solid ${config.color}40`,
                   maxWidth:560, width:"100%", maxHeight:"90vh",
                   overflowY:"auto", boxShadow:`0 0 60px ${config.color}15` }}>
@@ -88,7 +88,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
               {config.name}
             </div>
             <div style={{ fontFamily:S, fontSize:"0.75rem",
-                           color:"rgba(255,255,255,0.4)", marginTop:2 }}>
+                           color:"rgba(21,21,26,0.4)", marginTop:2 }}>
               {config.subtitle}
             </div>
             <div style={{ display:"inline-flex", alignItems:"center", gap:"0.3rem",
@@ -104,7 +104,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
           </div>
           <button onClick={handleClose}
             style={{ background:"transparent", border:"none",
-                      color:"rgba(255,255,255,0.4)", fontSize:"1.5rem",
+                      color:"rgba(21,21,26,0.4)", fontSize:"1.5rem",
                       cursor:"pointer", lineHeight:1, padding:0 }}>
             ×
           </button>
@@ -124,7 +124,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
               Interest submitted.
             </div>
             <div style={{ fontFamily:S, fontSize:"0.78rem",
-                           color:"rgba(255,255,255,0.45)", lineHeight:1.6,
+                           color:"rgba(21,21,26,0.45)", lineHeight:1.6,
                            maxWidth:380, margin:"0 auto 1.5rem" }}>
               Our team will follow up by email with next steps for this
               investment structure, including verification requirements
@@ -149,7 +149,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
               {config.stats.map(s => (
                 <div key={s.label} style={{ background:CARD, padding:"0.625rem 0.75rem" }}>
                   <div style={{ fontFamily:M, fontSize:"0.46rem",
-                                 color:"rgba(255,255,255,0.3)",
+                                 color:"rgba(21,21,26,0.3)",
                                  textTransform:"uppercase",
                                  letterSpacing:"0.1em", marginBottom:2 }}>
                     {s.label}
@@ -176,7 +176,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
                     Verification confidence
                   </span>
                   <span style={{ fontFamily:S, fontSize:"0.66rem",
-                                  color:"rgba(255,255,255,0.35)" }}>
+                                  color:"rgba(21,21,26,0.35)" }}>
                     {config.confidenceChecks.filter(c => c.status === "confirmed").length}
                     {" "}of {config.confidenceChecks.length} confirmed
                   </span>
@@ -214,7 +214,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
                   APPRECIATION HISTORY
                 </div>
                 <div style={{ fontFamily:S, fontSize:"0.72rem",
-                               color:"rgba(255,255,255,0.5)", lineHeight:1.65 }}>
+                               color:"rgba(21,21,26,0.5)", lineHeight:1.65 }}>
                   {config.historicalNote}
                 </div>
               </div>
@@ -252,7 +252,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
                     </span>
                   </div>
                   <div style={{ fontFamily:S, fontSize:"0.68rem",
-                                 color:"rgba(255,255,255,0.45)",
+                                 color:"rgba(21,21,26,0.45)",
                                  lineHeight:1.55, marginBottom:"0.3rem" }}>
                     {opt.desc}
                   </div>
@@ -303,7 +303,7 @@ export function InvestorPortalModal({ assetId, onClose }: InvestorPortalModalPro
                   {sending ? "SUBMITTING…" : "SUBMIT INVESTMENT INTEREST →"}
                 </button>
                 <div style={{ fontFamily:S, fontSize:"0.6rem",
-                               color:"rgba(255,255,255,0.25)",
+                               color:"rgba(21,21,26,0.25)",
                                textAlign:"center", marginTop:"0.5rem" }}>
                   No payment is collected here. Our team follows up with
                   verification and USDC routing details.
