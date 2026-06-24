@@ -12,8 +12,8 @@ import { userAssetStore } from "@/lib/vos/userAssetStore";
 const S   = "'Inter',system-ui,-apple-system,sans-serif";
 const M   = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const G   = "#10B981";
-const W   = "#F8FAFC";
-const BDR = "#1C2333";
+const W   = "#15151A";
+const BDR = "#E5E5E0";
 const CARD = "#FFFFFF";
 
 interface MyAbraxasProps {

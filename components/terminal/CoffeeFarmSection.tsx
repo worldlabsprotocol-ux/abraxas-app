@@ -30,7 +30,7 @@ export function CoffeeFarmSection() {
           Coffee Farm, Central Mexico
         </div>
         <p style={{ fontFamily:S, fontSize:"0.76rem",
-                     color:"rgba(255,255,255,0.45)", lineHeight:1.65,
+                     color:"rgba(21,21,26,0.45)", lineHeight:1.65,
                      margin:0, maxWidth:480 }}>
           Purchased outright in 2020 for $15,000, currently producing and
           selling coffee locally. Being positioned for investors interested

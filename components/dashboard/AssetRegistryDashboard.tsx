@@ -10,8 +10,8 @@ import { INVEST_CONFIGS } from "@/components/terminal/investorConfigs";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
-const W = "#F8FAFC";
-const BDR = "#1C2333";
+const W = "#15151A";
+const BDR = "#E5E5E0";
 const CARD = "#FFFFFF";
 
 export function AssetRegistryDashboard() {
@@ -26,7 +26,7 @@ export function AssetRegistryDashboard() {
           Asset registry
         </div>
         <div style={{ fontFamily:S, fontSize:"0.72rem",
-                       color:"rgba(255,255,255,0.35)" }}>
+                       color:"rgba(21,21,26,0.35)" }}>
           {assets.length} verified assets
         </div>
       </div>
@@ -58,7 +58,7 @@ export function AssetRegistryDashboard() {
                     </span>
                   </div>
                   <div style={{ fontFamily:S, fontSize:"0.75rem",
-                                 color:"rgba(255,255,255,0.4)" }}>
+                                 color:"rgba(21,21,26,0.4)" }}>
                     {asset.subtitle}
                   </div>
                 </div>
@@ -78,7 +78,7 @@ export function AssetRegistryDashboard() {
                       <div key={s.label} style={{ background:"#F4F4F1",
                                                     padding:"0.625rem 0.75rem" }}>
                         <div style={{ fontFamily:S, fontSize:"0.6rem",
-                                       color:"rgba(255,255,255,0.3)", marginBottom:2 }}>
+                                       color:"rgba(21,21,26,0.3)", marginBottom:2 }}>
                           {s.label}
                         </div>
                         <div style={{ fontFamily:M, fontSize:"0.82rem",
@@ -91,7 +91,7 @@ export function AssetRegistryDashboard() {
                   {asset.historicalNote && (
                     <div style={{ marginTop:"0.75rem", fontFamily:S,
                                    fontSize:"0.74rem",
-                                   color:"rgba(255,255,255,0.4)", lineHeight:1.6 }}>
+                                   color:"rgba(21,21,26,0.4)", lineHeight:1.6 }}>
                       {asset.historicalNote}
                     </div>
                   )}

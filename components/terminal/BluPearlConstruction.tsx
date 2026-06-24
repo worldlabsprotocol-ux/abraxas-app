@@ -32,7 +32,7 @@ export function BluPearlConstruction() {
         <div style={{ width:"100%", height:200, borderRadius:8,
                        background:"#F4F4F1", border:`1px solid ${BDR}`,
                        display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <span style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(255,255,255,0.3)" }}>
+          <span style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(21,21,26,0.3)" }}>
             Loading photos…
           </span>
         </div>

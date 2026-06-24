@@ -17,7 +17,7 @@ export function StablecoinExplainer({ compact = false }: StablecoinExplainerProp
       <div style={{ padding:"0.875rem", borderRadius:10,
                      background:"rgba(255,255,255,0.03)",
                      border:`1px solid ${BDR}`, marginBottom:"1rem" }}>
-        <div style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(255,255,255,0.6)",
+        <div style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(21,21,26,0.6)",
                        lineHeight:1.65 }}>
           <strong style={{ color:W }}>USDC and USDT are digital dollars.</strong>{" "}
           Each one is designed to always equal $1, backed by real cash and
@@ -51,7 +51,7 @@ export function StablecoinExplainer({ compact = false }: StablecoinExplainerProp
               {item.q}
             </div>
             <div style={{ fontFamily:S, fontSize:"0.78rem",
-                           color:"rgba(255,255,255,0.5)", lineHeight:1.6 }}>
+                           color:"rgba(21,21,26,0.5)", lineHeight:1.6 }}>
               {item.a}
             </div>
           </div>

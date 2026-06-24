@@ -10,8 +10,8 @@ const S   = "system-ui,-apple-system,sans-serif";
 const G   = "#10B981";
 const A   = "#F59E0B";
 const B   = "#3B82F6";
-const W   = "#F8FAFC";
-const BDR = "#1C2333";
+const W   = "#15151A";
+const BDR = "#E5E5E0";
 const BG  = "#FFFFFF";
 
 interface Profile {
@@ -148,7 +148,7 @@ export function UserProfile({
       <div style={{ padding:"1.25rem", background:BG, border:`1px solid ${BDR}`,
                      borderRadius:8, textAlign:"center" }}>
         <div style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
-                       color:"rgba(255,255,255,0.3)", letterSpacing:"0.15em",
+                       color:"rgba(21,21,26,0.3)", letterSpacing:"0.15em",
                        textTransform:"uppercase", marginBottom:"0.5rem" }}>
           ABRAXAS PROFILE
         </div>
@@ -157,7 +157,7 @@ export function UserProfile({
           Connect your wallet to create a profile.
         </div>
         <div style={{ fontFamily:S, fontSize:"0.72rem",
-                       color:"rgba(255,255,255,0.35)", lineHeight:1.6,
+                       color:"rgba(21,21,26,0.35)", lineHeight:1.6,
                        maxWidth:300, margin:"0 auto" }}>
           Your wallet address is your identity on Abraxas. Connect once and your
           profile, assets, and passport are always retrievable.
@@ -171,7 +171,7 @@ export function UserProfile({
       <div style={{ padding:"1.25rem", background:BG, border:`1px solid ${BDR}`,
                      borderRadius:8, textAlign:"center" }}>
         <div style={{ fontFamily:M, fontSize:"0.6rem",
-                       color:"rgba(255,255,255,0.25)", letterSpacing:"0.15em",
+                       color:"rgba(21,21,26,0.25)", letterSpacing:"0.15em",
                        textTransform:"uppercase" }}>
           LOADING PROFILE…
         </div>
@@ -204,7 +204,7 @@ export function UserProfile({
               {profile?.display_name ?? profile?.username ?? "Unnamed User"}
             </div>
             <div style={{ fontFamily:M, fontSize:"0.52rem",
-                           color:"rgba(255,255,255,0.3)", letterSpacing:"0.06em" }}>
+                           color:"rgba(21,21,26,0.3)", letterSpacing:"0.06em" }}>
               {walletAddress.slice(0,8)}…{walletAddress.slice(-5)}
             </div>
           </div>
@@ -221,7 +221,7 @@ export function UserProfile({
           <button onClick={() => setEditing(e => !e)} style={{
             padding:"0.3rem 0.75rem", borderRadius:4,
             border:`1px solid ${BDR}`, background:"transparent",
-            color:"rgba(255,255,255,0.5)", fontFamily:M,
+            color:"rgba(21,21,26,0.5)", fontFamily:M,
             fontSize:"0.6rem", fontWeight:700, cursor:"pointer",
             letterSpacing:"0.06em", textTransform:"uppercase",
           }}>
@@ -236,7 +236,7 @@ export function UserProfile({
                        flexDirection:"column", gap:"0.625rem" }}>
           <div>
             <label style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
-                             color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                             color:"rgba(21,21,26,0.3)", textTransform:"uppercase",
                              letterSpacing:"0.12em", display:"block", marginBottom:3 }}>
               Display Name
             </label>
@@ -245,7 +245,7 @@ export function UserProfile({
           </div>
           <div>
             <label style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
-                             color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                             color:"rgba(21,21,26,0.3)", textTransform:"uppercase",
                              letterSpacing:"0.12em", display:"block", marginBottom:3 }}>
               Username
             </label>
@@ -254,7 +254,7 @@ export function UserProfile({
           </div>
           <div>
             <label style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
-                             color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                             color:"rgba(21,21,26,0.3)", textTransform:"uppercase",
                              letterSpacing:"0.12em", display:"block", marginBottom:3 }}>
               Email (for verification updates)
             </label>
@@ -263,7 +263,7 @@ export function UserProfile({
           </div>
           <div>
             <label style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
-                             color:"rgba(255,255,255,0.3)", textTransform:"uppercase",
+                             color:"rgba(21,21,26,0.3)", textTransform:"uppercase",
                              letterSpacing:"0.12em", display:"block", marginBottom:3 }}>
               Bio
             </label>
@@ -290,28 +290,28 @@ export function UserProfile({
           {profile?.email && (
             <div style={{ display:"flex", justifyContent:"space-between" }}>
               <span style={{ fontFamily:M, fontSize:"0.55rem",
-                              color:"rgba(255,255,255,0.25)",
+                              color:"rgba(21,21,26,0.25)",
                               textTransform:"uppercase", letterSpacing:"0.1em" }}>EMAIL</span>
               <span style={{ fontFamily:S, fontSize:"0.7rem",
-                              color:"rgba(255,255,255,0.5)" }}>{profile.email}</span>
+                              color:"rgba(21,21,26,0.5)" }}>{profile.email}</span>
             </div>
           )}
           {profile?.bio && (
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.6,
+                           color:"rgba(21,21,26,0.4)", lineHeight:1.6,
                            paddingTop:"0.25rem" }}>
               {profile.bio}
             </div>
           )}
           {!profile?.display_name && !profile?.email && (
             <div style={{ fontFamily:S, fontSize:"0.72rem",
-                           color:"rgba(255,255,255,0.25)", textAlign:"center",
+                           color:"rgba(21,21,26,0.25)", textAlign:"center",
                            padding:"0.5rem 0" }}>
               Add your name and email to personalize your profile.
             </div>
           )}
           <div style={{ fontFamily:M, fontSize:"0.52rem",
-                         color:"rgba(255,255,255,0.15)",
+                         color:"rgba(21,21,26,0.15)",
                          letterSpacing:"0.06em", paddingTop:"0.375rem" }}>
             MEMBER SINCE {profile ? new Date(profile.created_at).toLocaleDateString("en-US",
               { month:"long", year:"numeric" }) : "N/A"}

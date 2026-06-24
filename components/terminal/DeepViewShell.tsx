@@ -19,7 +19,7 @@ export function DeepViewShell({ children, onBack }: DeepViewShellProps) {
           onClick={onBack}
           style={{ padding:"0.3rem 0.75rem", borderRadius:4,
                     border:`1px solid ${BDR}`, background:"transparent",
-                    color:"rgba(255,255,255,0.5)", fontFamily:M,
+                    color:"rgba(21,21,26,0.5)", fontFamily:M,
                     fontSize:"0.75rem", fontWeight:700, cursor:"pointer",
                     textTransform:"uppercase", letterSpacing:"0.08em" }}
         >

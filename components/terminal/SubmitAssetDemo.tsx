@@ -64,7 +64,7 @@ export function SubmitAssetDemo({ onStart }: SubmitAssetDemoProps) {
           Submitting an asset takes four steps.
         </div>
         <div style={{ fontFamily:S, fontSize:"0.85rem",
-                       color:"rgba(255,255,255,0.5)", lineHeight:1.6,
+                       color:"rgba(21,21,26,0.5)", lineHeight:1.6,
                        maxWidth:480 }}>
           This is a live preview, not a video. Watch it cycle, or jump straight
           into the real thing.
@@ -97,7 +97,7 @@ export function SubmitAssetDemo({ onStart }: SubmitAssetDemoProps) {
                 {current.title}
               </div>
               <div style={{ fontFamily:S, fontSize:"0.8rem",
-                             color:"rgba(255,255,255,0.5)", lineHeight:1.6 }}>
+                             color:"rgba(21,21,26,0.5)", lineHeight:1.6 }}>
                 {current.detail}
               </div>
             </div>
@@ -107,7 +107,7 @@ export function SubmitAssetDemo({ onStart }: SubmitAssetDemoProps) {
                            background:"rgba(255,255,255,0.03)",
                            border:`1px solid ${current.color}25` }}>
               <div style={{ fontFamily:S, fontSize:"0.62rem",
-                             color:"rgba(255,255,255,0.35)", marginBottom:"0.3rem" }}>
+                             color:"rgba(21,21,26,0.35)", marginBottom:"0.3rem" }}>
                 {current.mock.field}
               </div>
               <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:600,

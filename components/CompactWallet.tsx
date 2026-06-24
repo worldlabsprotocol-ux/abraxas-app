@@ -1,6 +1,6 @@
 // FILE: components/CompactWallet.tsx
 // Wallet is identity. Session is secondary context.
-// Single connect surface — no duplicate auth links.
+// Single connect surface, no duplicate auth links.
 // Wallet-first: connect → linked identity, not "sign in to dapp."
 "use client";
 
@@ -89,7 +89,7 @@ export function CompactWallet() {
           <div style={{ padding:"0.75rem 1rem",
                          borderBottom:"1px solid #1F2937" }}>
             <div style={{ fontFamily:M, fontSize:"0.3rem",
-                           color:"rgba(255,255,255,0.2)",
+                           color:"rgba(21,21,26,0.2)",
                            textTransform:"uppercase", letterSpacing:"0.1em",
                            marginBottom:"0.25rem" }}>
               CONNECTED NODE
@@ -100,7 +100,7 @@ export function CompactWallet() {
             </div>
             {wallet?.adapter.name && (
               <div style={{ fontFamily:M, fontSize:"0.3rem",
-                             color:"rgba(255,255,255,0.25)", marginTop:"0.15rem" }}>
+                             color:"rgba(21,21,26,0.25)", marginTop:"0.15rem" }}>
                 via {wallet.adapter.name}
               </div>
             )}
@@ -110,7 +110,7 @@ export function CompactWallet() {
             <div style={{ padding:"0.625rem 1rem",
                            borderBottom:"1px solid #1F2937" }}>
               <div style={{ fontFamily:M, fontSize:"0.3rem",
-                             color:"rgba(255,255,255,0.2)",
+                             color:"rgba(21,21,26,0.2)",
                              textTransform:"uppercase", letterSpacing:"0.1em",
                              marginBottom:"0.2rem" }}>
                 $ABRA BALANCE

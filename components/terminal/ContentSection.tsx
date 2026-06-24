@@ -41,7 +41,7 @@ export function ContentSection({ onSubmit, onTrust }: ContentSectionProps) {
             Verification before tokenization.
           </h2>
           <p style={{ fontFamily:S, fontSize:"clamp(0.78rem,1.5vw,0.88rem)",
-                       color:"rgba(255,255,255,0.45)", lineHeight:1.75,
+                       color:"rgba(21,21,26,0.45)", lineHeight:1.75,
                        maxWidth:540, margin:"0 auto 1.25rem" }}>
             Every asset on Abraxas is checked by our team before it is ever
             tokenized. Real estate, mineral rights, royalty streams, books,

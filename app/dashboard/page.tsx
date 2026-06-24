@@ -20,6 +20,10 @@ import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
 import { ContentSection }          from "@/components/terminal/ContentSection";
+import { IPAssetGrid }             from "@/components/terminal/IPAssetGrid";
+import { InvestorPortalModal }     from "@/components/terminal/InvestorPortalModal";
+import { BuyNowModal }             from "@/components/terminal/BuyNowModal";
+import type { BuyItem }            from "@/components/terminal/BuyNowModal";
 import { SiteFooter }              from "@/components/SiteFooter";
 import { BottomNav }               from "@/components/BottomNav";
 
@@ -97,6 +101,8 @@ export default function DashboardPage() {
   const [session,     setSession]     = useState<Session | null>(null);
   const [assets,      setAssets]      = useState<UserAsset[]>([]);
   const [selected,    setSelected]    = useState<string | null>(null);
+  const [investAsset, setInvestAsset] = useState<string | null>(null);
+  const [buyItem,     setBuyItem]     = useState<BuyItem | null>(null);
   const [detailTab,   setDetailTab]   = useState<"overview"|"lifecycle"|"documents"|"activity">("overview");
   const [idvStatus, setIdvStatus] = useState<'idle'|'verified'|'unverified'>('idle');
   const [walletAddr, setWalletAddr] = useState<string | null>(null);
@@ -307,6 +313,14 @@ export default function DashboardPage() {
         {/* Full protocol asset registry, all 6 verified assets */}
         <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius:10,
                        padding:"1.25rem clamp(0.875rem,3vw,1.5rem)", marginBottom:"1.5rem" }}>
+          <IPAssetGrid
+            onInvest={(assetId) => setInvestAsset(assetId)}
+            onBuyNow={(item) => setBuyItem(item)}
+          />
+        </div>
+
+        <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius:10,
+                       padding:"1.25rem clamp(0.875rem,3vw,1.5rem)", marginBottom:"1.5rem" }}>
           <ContentSection
             onSubmit={() => { window.location.href = "/build"; }}
             onTrust={() => { window.location.href = "/terminal"; }}
@@ -370,6 +384,8 @@ export default function DashboardPage() {
       </div>
       <SiteFooter />
       <BottomNav />
+      <InvestorPortalModal assetId={investAsset} onClose={() => setInvestAsset(null)} />
+      <BuyNowModal item={buyItem} onClose={() => setBuyItem(null)} />
     </div>
   );
 }

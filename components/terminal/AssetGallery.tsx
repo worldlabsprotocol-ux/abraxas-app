@@ -44,7 +44,7 @@ export function AssetGallery({ images, fallbackLabel, color }: AssetGalleryProps
                      justifyContent:"center", background:"rgba(255,255,255,0.02)",
                      borderRadius:8 }}>
         <span style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.72rem",
-                        color:"rgba(255,255,255,0.25)" }}>
+                        color:"rgba(21,21,26,0.25)" }}>
           Loading...
         </span>
       </div>
@@ -58,7 +58,7 @@ export function AssetGallery({ images, fallbackLabel, color }: AssetGalleryProps
                      justifyContent:"center", background:"rgba(255,255,255,0.02)",
                      border:`1px dashed ${color}30`, borderRadius:8 }}>
         <span style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.75rem",
-                        color:"rgba(255,255,255,0.3)" }}>
+                        color:"rgba(21,21,26,0.3)" }}>
           {fallbackLabel}
         </span>
       </div>

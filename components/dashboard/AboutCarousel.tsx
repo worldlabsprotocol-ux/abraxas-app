@@ -74,7 +74,7 @@ export function AboutCarousel() {
           ⊕ WHAT IS ABRAXAS?
         </button>
         <span style={{ fontFamily: M, fontSize: "0.3rem",
-                        color: "rgba(255,255,255,0.3)",
+                        color:"rgba(21,21,26,0.3)",
                         letterSpacing: "0.1em" }}>
           Click to view the 60-second explainer
         </span>
@@ -108,7 +108,7 @@ export function AboutCarousel() {
         <span style={{ flex: 1 }} />
         <Link href="/about" style={{
           fontFamily: M, fontSize: "0.3rem",
-          color: "rgba(255,255,255,0.4)",
+          color:"rgba(21,21,26,0.4)",
           textDecoration: "none", letterSpacing: "0.1em",
           textTransform: "uppercase",
         }}>
@@ -117,7 +117,7 @@ export function AboutCarousel() {
         <button onClick={dismiss} style={{
           padding: "0.2rem 0.5rem", borderRadius: 3,
           border: "1px solid #1C2333", background: "transparent",
-          color: "rgba(255,255,255,0.4)", fontFamily: M,
+          color:"rgba(21,21,26,0.4)", fontFamily: M,
           fontSize: "0.3rem", fontWeight: 700,
           cursor: "pointer", letterSpacing: "0.08em",
           textTransform: "uppercase",

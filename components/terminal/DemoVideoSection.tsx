@@ -32,7 +32,7 @@ export function DemoVideoSection() {
                            borderLeft:`16px solid ${G}`, marginLeft:4 }} />
           </div>
           <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:600,
-                         color:"rgba(255,255,255,0.4)", letterSpacing:"0.05em" }}>
+                         color:"rgba(21,21,26,0.4)", letterSpacing:"0.05em" }}>
             DEMO VIDEO, COMING SOON
           </div>
           <div style={{ fontFamily:S, fontSize:"0.7rem", color:G }}>
@@ -40,7 +40,7 @@ export function DemoVideoSection() {
           </div>
         </div>
         <div style={{ fontFamily:S, fontSize:"0.62rem",
-                       color:"rgba(255,255,255,0.25)", marginTop:"0.5rem",
+                       color:"rgba(21,21,26,0.25)", marginTop:"0.5rem",
                        textAlign:"center" }}>
           ABRAXAS, PROTOCOL DEMO
         </div>

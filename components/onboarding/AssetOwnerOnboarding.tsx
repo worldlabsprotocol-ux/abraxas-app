@@ -15,9 +15,9 @@ const G     = "#10B981";
 const A     = "#F59E0B";
 const B     = "#3B82F6";
 const R     = "#EF4444";
-const BDR   = "#1C2333";
+const BDR   = "#E5E5E0";
 const CARD  = "#FFFFFF";
-const W     = "#F8FAFC";
+const W     = "#15151A";
 const GREEN = "#10B981";
 const BLUE  = "#3B82F6";
 const BORDER = "#1C2333";
@@ -48,7 +48,7 @@ const inp: React.CSSProperties = {
 const sel: React.CSSProperties = { ...inp };
 const lbl: React.CSSProperties = {
   fontFamily: M, fontSize: "0.58rem", fontWeight: 700,
-  color: "rgba(255,255,255,0.35)", textTransform: "uppercase",
+  color:"rgba(21,21,26,0.35)", textTransform: "uppercase",
   letterSpacing: "0.12em", marginBottom: "0.2rem", display: "block",
 };
 
@@ -192,7 +192,7 @@ export function AssetOwnerOnboarding({
             What are you submitting?
           </div>
           <p style={{ fontFamily: S, fontSize: "0.75rem",
-                       color: "rgba(255,255,255,0.4)", lineHeight: 1.65,
+                       color:"rgba(21,21,26,0.4)", lineHeight: 1.65,
                        margin: "0 0 1rem" }}>
             Select the asset class. The verification requirements and
             documentation checklist will be tailored to your selection.
@@ -212,7 +212,7 @@ export function AssetOwnerOnboarding({
                   {at.label}
                 </div>
                 <div style={{ fontFamily: S, fontSize: "0.65rem",
-                               color: "rgba(255,255,255,0.35)" }}>{at.sub}</div>
+                               color:"rgba(21,21,26,0.35)" }}>{at.sub}</div>
               </button>
             ))}
           </div>
@@ -289,7 +289,7 @@ export function AssetOwnerOnboarding({
             <button onClick={back} style={{
               flex: 1, padding: "0.65rem", borderRadius: 5,
               border: `1px solid ${BDR}`, background: "transparent",
-              color: "rgba(255,255,255,0.4)", fontFamily: M,
+              color:"rgba(21,21,26,0.4)", fontFamily: M,
               fontSize: "0.7rem", fontWeight: 700, cursor: "pointer",
             }}>← Back</button>
             <button onClick={advance} style={{
@@ -309,7 +309,7 @@ export function AssetOwnerOnboarding({
             Legal & ownership details.
           </div>
           <p style={{ fontFamily: S, fontSize: "0.72rem",
-                       color: "rgba(255,255,255,0.4)", lineHeight: 1.65,
+                       color:"rgba(21,21,26,0.4)", lineHeight: 1.65,
                        margin: "0 0 0.875rem" }}>
             This information determines your verification tier and lender eligibility.
             Be as accurate as possible, our team verifies every detail.
@@ -390,7 +390,7 @@ export function AssetOwnerOnboarding({
             <button onClick={back} style={{
               flex: 1, padding: "0.65rem", borderRadius: 5,
               border: `1px solid ${BDR}`, background: "transparent",
-              color: "rgba(255,255,255,0.4)", fontFamily: M,
+              color:"rgba(21,21,26,0.4)", fontFamily: M,
               fontSize: "0.7rem", fontWeight: 700, cursor: "pointer",
             }}>← Back</button>
             <button onClick={advance} style={{
@@ -410,7 +410,7 @@ export function AssetOwnerOnboarding({
             Upload supporting documents.
           </div>
           <p style={{ fontFamily: S, fontSize: "0.72rem",
-                       color: "rgba(255,255,255,0.4)", lineHeight: 1.65,
+                       color:"rgba(21,21,26,0.4)", lineHeight: 1.65,
                        margin: "0 0 0.875rem" }}>
             Our verification team will review these against public records.
             Documents are encrypted in transit and stored securely.
@@ -425,7 +425,7 @@ export function AssetOwnerOnboarding({
               RECOMMENDED FOR {T?.replace(/_/g," ").toUpperCase()}
             </div>
             <div style={{ fontFamily: S, fontSize: "0.7rem",
-                           color: "rgba(255,255,255,0.45)", lineHeight: 1.75 }}>
+                           color:"rgba(21,21,26,0.45)", lineHeight: 1.75 }}>
               {T === "real_estate" && "Deed of trust · Recent appraisal · Title report · Survey · Income statements (if rental)"}
               {T === "mineral_rights" && "Mineral deed · Production records · Lease agreements · County recorder filing"}
               {T === "wyoming_llc" && "Articles of organization · Operating agreement · EIN confirmation · Bank statements"}
@@ -447,7 +447,7 @@ export function AssetOwnerOnboarding({
             <button onClick={back} style={{
               flex: 1, padding: "0.65rem", borderRadius: 5,
               border: `1px solid ${BDR}`, background: "transparent",
-              color: "rgba(255,255,255,0.4)", fontFamily: M,
+              color:"rgba(21,21,26,0.4)", fontFamily: M,
               fontSize: "0.7rem", fontWeight: 700, cursor: "pointer",
             }}>← Back</button>
             <button onClick={submitForReview} style={{
@@ -468,7 +468,7 @@ export function AssetOwnerOnboarding({
               Submitted for review.
             </div>
             <div style={{ fontFamily: M, fontSize: "0.62rem",
-                           color: "rgba(255,255,255,0.3)" }}>
+                           color:"rgba(21,21,26,0.3)" }}>
               Asset ID: {savedAsset.id}
             </div>
           </div>
@@ -476,12 +476,12 @@ export function AssetOwnerOnboarding({
                          border: `1px solid ${BDR}`, borderRadius: 7,
                          marginBottom: "0.875rem" }}>
             <div style={{ fontFamily: M, fontSize: "0.55rem",
-                           color: "rgba(255,255,255,0.25)", textTransform: "uppercase",
+                           color:"rgba(21,21,26,0.25)", textTransform: "uppercase",
                            letterSpacing: "0.12em", marginBottom: "0.5rem" }}>
               WHAT HAPPENS NEXT
             </div>
             <ol style={{ fontFamily: S, fontSize: "0.72rem",
-                          color: "rgba(255,255,255,0.5)", lineHeight: 1.8,
+                          color:"rgba(21,21,26,0.5)", lineHeight: 1.8,
                           margin: 0, paddingLeft: "1.125rem" }}>
               <li>Our team reviews your submission (24–48 hours)</li>
               <li>You receive a verification assignment email</li>
@@ -500,7 +500,7 @@ export function AssetOwnerOnboarding({
             <a href="/dashboard" style={{
               flex: 1, display: "block", padding: "0.65rem",
               borderRadius: 5, border: `1px solid ${BDR}`,
-              background: "transparent", color: "rgba(255,255,255,0.4)",
+              background: "transparent", color:"rgba(21,21,26,0.4)",
               fontFamily: M, fontSize: "0.7rem", fontWeight: 700,
               cursor: "pointer", textDecoration: "none", textAlign: "center",
               letterSpacing: "0.06em", textTransform: "uppercase",

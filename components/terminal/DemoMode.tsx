@@ -101,7 +101,7 @@ export function DemoMode() {
       </div>
       <div style={{ textAlign:"center", marginTop:"0.5rem",
                      fontFamily:M, fontSize:"0.5rem",
-                     color:"rgba(255,255,255,0.25)",
+                     color:"rgba(21,21,26,0.25)",
                      letterSpacing:"0.08em" }}>
         CLICK OR ESC TO STOP
       </div>

@@ -27,7 +27,7 @@ export function WorldByHandSection() {
           World by Hand
         </div>
         <p style={{ fontFamily:S, fontSize:"0.8rem",
-                     color:"rgba(255,255,255,0.5)", lineHeight:1.7,
+                     color:"rgba(21,21,26,0.5)", lineHeight:1.7,
                      margin:"0 0 1rem", maxWidth:560 }}>
           A real, operating retail business, handcrafted fair-trade goods
           from artisans worldwide, currently selling in roughly 140
@@ -43,7 +43,7 @@ export function WorldByHandSection() {
               Stablecoin checkout
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.45)", lineHeight:1.6 }}>
+                           color:"rgba(21,21,26,0.45)", lineHeight:1.6 }}>
               Adding USDC/USDT as a payment option at checkout. Coming
               soon, real product and pricing data isn't wired in yet.
             </div>
@@ -55,7 +55,7 @@ export function WorldByHandSection() {
               Tokenizing the business
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(255,255,255,0.45)", lineHeight:1.6 }}>
+                           color:"rgba(21,21,26,0.45)", lineHeight:1.6 }}>
               Opening this to outside investors is a heavier lift than
               checkout. Under legal review before anything public.
             </div>
