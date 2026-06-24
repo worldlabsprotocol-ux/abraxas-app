@@ -20,7 +20,6 @@ import { ZkLoginPreview } from "./ZkLoginPreview";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
-import { IPAssetGrid }        from "./IPAssetGrid";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { FAQSection }         from "./FAQSection";
@@ -144,7 +143,24 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* ACT 2: the fuller registry, for anyone who wants to keep going */}
+        {/* ACT 2: the fuller registry, for anyone who wants to keep going.
+            Featured Assets comes first, the divider promised "five more
+            real things," so that's what shows up immediately, not three
+            other sections first */}
+        <ScrollFade>
+          <div id="demo-assets">
+            <DarkPanel>
+              <AssetGrid
+                onViewRegistry={() => setDeep("registry")}
+                onInvest={(assetId) => setInvestAsset(assetId)}
+                onBuyNow={(item) => setBuyItem(item)}
+              />
+            </DarkPanel>
+          </div>
+        </ScrollFade>
+
+        <Divider />
+
         {/* 1b. WHAT DO YOU WANT TO DO, plain branching choice, no jargon,
             from the original audit, never built until now */}
         <DarkPanel>
@@ -175,22 +191,6 @@ export function TerminalMain() {
             seen here, not buried after assets, music, and IP */}
         <div id="abraxas-id" />
         <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
-
-        <Divider />
-
-        {/* 2b. FEATURED ASSETS, real estate cluster, Naj Tulum and The
-            Clove grouped here per the requested ordering */}
-        <ScrollFade>
-          <div id="demo-assets">
-            <DarkPanel>
-              <AssetGrid
-                onViewRegistry={() => setDeep("registry")}
-                onInvest={(assetId) => setInvestAsset(assetId)}
-                onBuyNow={(item) => setBuyItem(item)}
-              />
-            </DarkPanel>
-          </div>
-        </ScrollFade>
 
         <Divider />
 
@@ -229,19 +229,6 @@ export function TerminalMain() {
               <MusicSection />
             </DarkPanel>
           </div>
-        </ScrollFade>
-
-        <Divider />
-
-        {/* 2e. IP ASSETS, literary and entertainment, separated from
-            real estate by Music, real estate stays grouped together above */}
-        <ScrollFade>
-          <DarkPanel>
-            <IPAssetGrid
-              onInvest={(assetId) => setInvestAsset(assetId)}
-              onBuyNow={(item) => setBuyItem(item)}
-            />
-          </DarkPanel>
         </ScrollFade>
 
         <Divider />

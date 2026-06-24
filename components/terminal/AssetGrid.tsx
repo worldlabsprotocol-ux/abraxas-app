@@ -147,6 +147,15 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
             })} color={G} size="md">
             BOOK NOW
           </Button>
+          <a href="https://www.airbnb.com/rooms/1681387746169197852"
+             target="_blank" rel="noopener noreferrer"
+             style={{ display:"inline-block", marginLeft:"0.5rem",
+                       padding:"0.45rem 0.875rem", borderRadius:6,
+                       border:`1px solid ${BDR}`, color:"rgba(21,21,26,0.4)",
+                       fontFamily:S, fontSize:"0.68rem", fontWeight:600,
+                       textDecoration:"none" }}>
+            Or book on Airbnb →
+          </a>
         </div>
       </div>
       </ScrollFade>

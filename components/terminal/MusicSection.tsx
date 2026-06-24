@@ -3,11 +3,57 @@
 // Music royalty audit. Stats strip for credibility + a lightweight
 // interactive estimator to give artists a reason to fill out the form.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArtistAuditForm } from "@/components/music/ArtistAuditForm";
 import { M, S, G, A, B, W, BDR } from "./tokens";
 import { Label, ScrollFade } from "./ui";
 import { D9Gallery } from "./D9Gallery";
+import { discoverImages } from "@/lib/discoverImages";
+
+// DeMarko's 8 known book-cover photos, tries each, shows whichever
+// actually loads instead of hardcoding one file that might be broken
+// while the others work fine.
+function DeMarkoPhoto() {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    const candidates = Array.from({ length: 8 }, (_, i) =>
+      `/assets/demarko/${String(i + 1).padStart(3, "0")}.jpg`);
+    discoverImages("demarko-music-thumb", candidates).then(found => {
+      if (found.length > 0) setSrc(found[0]);
+    });
+  }, []);
+  return (
+    <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
+                   background:"#08090F", flexShrink:0 }}>
+      {src && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={src} alt="DeMarko Reddins"
+             style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+      )}
+    </div>
+  );
+}
+
+function ChancellorPhoto() {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    const candidates = Array.from({ length: 3 }, (_, i) =>
+      `/assets/chancellor/${String(i + 1).padStart(4, "0")}.jpg`);
+    discoverImages("chancellor-music-thumb", candidates).then(found => {
+      if (found.length > 0) setSrc(found[0]);
+    });
+  }, []);
+  return (
+    <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
+                   background:"#08090F", flexShrink:0 }}>
+      {src && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={src} alt="Chancellor K. Jackson"
+             style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+      )}
+    </div>
+  );
+}
 
 const ISSUE_TYPES = [
   { label:"Missing ISRCs",          color:A, desc:"Tracks not registered with a unique identifier never get matched to royalty payouts." },
@@ -82,13 +128,7 @@ export function MusicSection() {
                      background:"rgba(139,92,246,0.06)",
                      border:"1px solid rgba(139,92,246,0.3)", marginBottom:"0.875rem",
                      display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center" }}>
-        <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
-                       background:"#08090F", flexShrink:0 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/demarko/001.jpg" alt="DeMarko Reddins"
-               style={{ width:"100%", height:"100%", objectFit:"cover" }}
-               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-        </div>
+        <DeMarkoPhoto />
         <div>
           <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                          color:"#8B5CF6", marginBottom:"0.25rem" }}>
@@ -115,13 +155,7 @@ export function MusicSection() {
                      background:"rgba(245,158,11,0.06)",
                      border:"1px solid rgba(245,158,11,0.3)", marginBottom:"1.25rem",
                      display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center" }}>
-        <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
-                       background:"#08090F", flexShrink:0 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/chancellor/0001.jpg" alt="Chancellor K. Jackson"
-               style={{ width:"100%", height:"100%", objectFit:"cover" }}
-               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-        </div>
+        <ChancellorPhoto />
         <div>
           <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
                          color:"#F59E0B", marginBottom:"0.25rem" }}>
