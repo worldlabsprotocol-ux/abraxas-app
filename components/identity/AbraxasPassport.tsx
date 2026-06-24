@@ -49,17 +49,17 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
       style={{ display:"flex", flexDirection:"column", alignItems:"center",
                 gap:"0.375rem", cursor:"default", position:"relative" }}>
       <div style={{ width:64, height:64, borderRadius:"50%",
-                     border:`2px solid ${earned ? stamp.color : "rgba(255,255,255,0.1)"}`,
+                     border:`2px solid ${earned ? stamp.color : "rgba(21,21,26,0.12)"}`,
                      background: earned
                        ? `${stamp.color}20`
-                       : "rgba(255,255,255,0.02)",
+                       : "rgba(21,21,26,0.03)",
                      display:"flex", alignItems:"center", justifyContent:"center",
                      position:"relative",
                      boxShadow: earned ? `0 0 12px ${stamp.color}30` : "none",
-                     transition:"all 0.2s", opacity: earned ? 1 : 0.3,
+                     transition:"all 0.2s", opacity: earned ? 1 : 0.5,
                      transform: tip && earned ? "scale(1.08)" : "scale(1)" }}>
         <span style={{ fontFamily:M, fontSize:"1.1rem",
-                        color: earned ? stamp.color : "rgba(255,255,255,0.2)" }}>
+                        color: earned ? stamp.color : "rgba(21,21,26,0.25)" }}>
           {stamp.icon}
         </span>
         {earned && (
@@ -71,7 +71,7 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
         )}
       </div>
       <div style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                     color: earned ? stamp.color : "rgba(255,255,255,0.2)",
+                     color: earned ? stamp.color : "rgba(21,21,26,0.25)",
                      textTransform:"uppercase", letterSpacing:"0.06em",
                      textAlign:"center", maxWidth:72, lineHeight:1.3 }}>
         {stamp.label}
@@ -134,7 +134,7 @@ export function AbraxasPassport({
     : earnedCount <= 8 ? "TRUSTED"
     : "ELITE";
   const trustColor  =
-    trustLabel === "UNVERIFIED" ? "rgba(255,255,255,0.2)"
+    trustLabel === "UNVERIFIED" ? "rgba(21,21,26,0.25)"
     : trustLabel === "BASIC"    ? A
     : trustLabel === "VERIFIED" ? G
     : trustLabel === "TRUSTED"  ? B : G;
@@ -165,8 +165,8 @@ export function AbraxasPassport({
       {/* Passport card */}
       <div style={{ borderRadius:12, overflow:"hidden",
                      border:`1px solid ${G}40`,
-                     background:"#0A1A0F",
-                     boxShadow:`0 0 40px ${G}12, 0 24px 48px rgba(0,0,0,0.6)`,
+                     background:"#FFFFFF",
+                     boxShadow:`0 0 24px ${G}10, 0 8px 24px rgba(0,0,0,0.08)`,
                      position:"relative" }}>
         <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%",
                        pointerEvents:"none" }} viewBox="0 0 800 200" preserveAspectRatio="none">
@@ -184,7 +184,7 @@ export function AbraxasPassport({
               <circle cx="20" cy="20" r="3" fill={G}/>
             </svg>
             <span style={{ fontFamily:M, fontSize:"0.72rem", fontWeight:900,
-                            color:W, letterSpacing:"0.15em" }}>ABRAXAS PASSPORT</span>
+                            color:G, letterSpacing:"0.15em" }}>ABRAXAS PASSPORT</span>
           </div>
           <div style={{ display:"flex", gap:"0.375rem", alignItems:"center" }}>
             {status === "checking" && (
@@ -192,7 +192,7 @@ export function AbraxasPassport({
                               color:"rgba(21,21,26,0.3)" }}>CHECKING…</span>
             )}
             <div style={{ width:6, height:6, borderRadius:"50%",
-                           background: status === "verified" ? G : "rgba(255,255,255,0.2)",
+                           background: status === "verified" ? G : "rgba(21,21,26,0.18)",
                            boxShadow: status === "verified" ? `0 0 5px ${G}` : "none" }}/>
             <span style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
                             color:trustColor, letterSpacing:"0.1em",
@@ -228,7 +228,7 @@ export function AbraxasPassport({
                   {earnedCount}/{total} CREDENTIALS
                 </span>
               </div>
-              <div style={{ height:4, background:"rgba(255,255,255,0.07)",
+              <div style={{ height:4, background:"rgba(21,21,26,0.08)",
                              borderRadius:2, overflow:"hidden" }}>
                 <div style={{ height:"100%", borderRadius:2,
                                background:`${G}`,
@@ -268,7 +268,7 @@ export function AbraxasPassport({
           {/* Right: wallet info */}
           <div style={{ flexShrink:0, minWidth:160 }}>
             <div style={{ padding:"0.875rem", borderRadius:8,
-                           background:"rgba(255,255,255,0.03)",
+                           background:"rgba(21,21,26,0.03)",
                            border:`1px solid ${BDR}`, marginBottom:"0.625rem" }}>
               <div style={{ fontFamily:M, fontSize:"0.52rem",
                              color:"rgba(21,21,26,0.25)", letterSpacing:"0.1em",
@@ -309,7 +309,7 @@ export function AbraxasPassport({
               COPY CREDENTIAL JSON
             </button>
             <div style={{ fontFamily:M, fontSize:"0.52rem",
-                           color: earnedCount > 0 ? G : "rgba(255,255,255,0.2)",
+                           color: earnedCount > 0 ? G : "rgba(21,21,26,0.25)",
                            letterSpacing:"0.08em", textAlign:"right" }}>
               {earnedCount > 0
                 ? `✓ ${earnedCount} CREDENTIAL${earnedCount>1?"S":""} ACTIVE`
@@ -318,11 +318,11 @@ export function AbraxasPassport({
           </div>
         </div>
         {/* Bottom strip */}
-        <div style={{ background:"rgba(0,0,0,0.3)", borderTop:"1px solid rgba(255,255,255,0.05)",
+        <div style={{ background:"rgba(21,21,26,0.04)", borderTop:`1px solid ${BDR}`,
                        padding:"0.4rem 1.375rem", display:"flex", gap:"1.5rem" }}>
           {["ABRAXAS PROTOCOL","SOLANA MAINNET","VERIFIED CREDENTIAL","BUILD 2026.1"].map(t => (
             <span key={t} style={{ fontFamily:M, fontSize:"0.48rem",
-                                    color:"rgba(21,21,26,0.12)",
+                                    color:"rgba(21,21,26,0.3)",
                                     letterSpacing:"0.1em" }}>{t}</span>
           ))}
         </div>

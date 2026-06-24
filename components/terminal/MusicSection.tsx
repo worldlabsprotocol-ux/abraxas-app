@@ -51,7 +51,7 @@ export function MusicSection() {
       {/* First artist on Abraxas, real consent confirmed before publishing this */}
       <div style={{ padding:"1.125rem", borderRadius:10,
                      background:"rgba(16,185,129,0.07)",
-                     border:`1px solid ${G}30`, marginBottom:"1.25rem",
+                     border:`1px solid ${G}30`, marginBottom:"0.875rem",
                      display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center" }}>
         <D9Gallery />
         <div>
@@ -72,6 +72,73 @@ export function MusicSection() {
              style={{ fontFamily:S, fontSize:"0.7rem", color:G,
                        textDecoration:"underline" }}>
             Listen on Apple Music →
+          </a>
+        </div>
+      </div>
+
+      {/* DeMarko Reddins, literary IP, featured alongside the music audit
+          since this section's presentation carries the story better */}
+      <div style={{ padding:"1.125rem", borderRadius:10,
+                     background:"rgba(139,92,246,0.06)",
+                     border:"1px solid rgba(139,92,246,0.3)", marginBottom:"0.875rem",
+                     display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center" }}>
+        <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
+                       background:"#08090F", flexShrink:0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/demarko/001.jpg" alt="DeMarko Reddins"
+               style={{ width:"100%", height:"100%", objectFit:"cover" }}
+               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        </div>
+        <div>
+          <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
+                         color:"#8B5CF6", marginBottom:"0.25rem" }}>
+            Literary IP, Catalog Verified
+          </div>
+          <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700, color:W }}>
+            DeMarko Reddins
+          </div>
+          <div style={{ fontFamily:S, fontSize:"0.74rem",
+                         color:"rgba(21,21,26,0.45)", marginTop:2, marginBottom:"0.5rem" }}>
+            Published author, full catalog verified and available through
+            Abraxas, ebook and print bundle options.
+          </div>
+          <a href="/terminal#demo-assets"
+             style={{ fontFamily:S, fontSize:"0.7rem", color:"#8B5CF6",
+                       textDecoration:"underline" }}>
+            View catalog →
+          </a>
+        </div>
+      </div>
+
+      {/* Chancellor K. Jackson, entertainment IP */}
+      <div style={{ padding:"1.125rem", borderRadius:10,
+                     background:"rgba(245,158,11,0.06)",
+                     border:"1px solid rgba(245,158,11,0.3)", marginBottom:"1.25rem",
+                     display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center" }}>
+        <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
+                       background:"#08090F", flexShrink:0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/chancellor/0001.jpg" alt="Chancellor K. Jackson"
+               style={{ width:"100%", height:"100%", objectFit:"cover" }}
+               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        </div>
+        <div>
+          <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600,
+                         color:"#F59E0B", marginBottom:"0.25rem" }}>
+            Entertainment IP, Multi-Format Verified
+          </div>
+          <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700, color:W }}>
+            Chancellor K. Jackson
+          </div>
+          <div style={{ fontFamily:S, fontSize:"0.74rem",
+                         color:"rgba(21,21,26,0.45)", marginTop:2, marginBottom:"0.5rem" }}>
+            "14 Days in Beijing," a 13-episode TV pilot and 17-episode anime
+            treatment, script and rights access available through Abraxas.
+          </div>
+          <a href="/terminal#demo-assets"
+             style={{ fontFamily:S, fontSize:"0.7rem", color:"#F59E0B",
+                       textDecoration:"underline" }}>
+            View project →
           </a>
         </div>
       </div>

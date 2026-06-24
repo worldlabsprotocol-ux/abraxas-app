@@ -79,6 +79,30 @@ const DEALS: Deal[] = [
     useOfProceeds: "Site acquisition, buildout, equipment expansion, rights catalog acquisition",
     closedDate: "2026-06-20",
   },
+  {
+    id: "demarko-catalog-expansion",
+    name: "DeMarko Reddins, Catalog Rights Audit",
+    type: "LITERARY IP · ROYALTY RECOVERY",
+    color: "#8B5CF6",
+    stages: ["Catalog Submitted","Rights Audit","Discrepancies Found","Recovery Filed","Royalties Recovered","Ongoing Monitoring"],
+    current: 1,
+    note: "Full published catalog submitted for rights and royalty audit. Verified and live as a purchasable asset on Abraxas already, this tracks the ongoing royalty recovery work specifically.",
+    minInvestment: "N/A",
+    structure: "Royalty audit · 80/20 recovery split",
+    useOfProceeds: "Audit costs, rights filing",
+  },
+  {
+    id: "chancellor-ip-audit",
+    name: "Chancellor K. Jackson, 14 Days in Beijing",
+    type: "ENTERTAINMENT IP · RIGHTS AUDIT",
+    color: "#F59E0B",
+    stages: ["Project Submitted","Rights Audit","Discrepancies Found","Recovery Filed","Royalties Recovered","Ongoing Monitoring"],
+    current: 1,
+    note: "13-episode TV pilot and 17-episode anime treatment submitted for rights audit. Verified and live as a purchasable asset on Abraxas already, this tracks the ongoing rights recovery work specifically.",
+    minInvestment: "N/A",
+    structure: "Rights audit · 80/20 recovery split",
+    useOfProceeds: "Audit costs, rights filing",
+  },
 ];
 
 function ProgressBar({ stages, current, color }: {

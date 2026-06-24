@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/BottomNav.tsx
 // The ONE persistent navigation system for the app. Used by every
-// primary screen: Marketplace, Dashboard, Swap, Gallery, Registry.
+// primary screen: Marketplace, Dashboard, Swap, Registry.
 // Active state is now genuinely dynamic (reads the real URL), fixing
 // a real bug where "Market" was hardcoded as active everywhere,
 // including on pages that aren't the marketplace at all.
@@ -17,7 +17,6 @@ const NAV_ITEMS = [
   { href: "/terminal",  label: "Market",    icon: "\u25c8" },
   { href: "/dashboard", label: "Dashboard", icon: "\u25a3" },
   { href: "/swap",      label: "Swap",      icon: "\u21c6" },
-  { href: "/gallery",   label: "Gallery",   icon: "\u25c6" },
 ];
 
 export function BottomNav() {
