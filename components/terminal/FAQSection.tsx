@@ -11,7 +11,7 @@ import { ScrollFade } from "./ui";
 const FAQS = [
   {
     q: "Is this legal?",
-    a: "Abraxas's investment offerings are structured under Reg D 506(c), a real SEC exemption for accredited-investor offerings. The platform itself isn't a broker-dealer or bank, it's a verification and credential layer. Each individual asset's offering documents specify the exact legal structure.",
+    a: "Yes. Investment offerings follow a specific SEC rule for accredited-investor offerings (Reg D 506(c)). Abraxas isn't a bank or a broker, it's a verification layer, and each asset's paperwork spells out the exact legal structure behind it.",
   },
   {
     q: "What happens to my money?",
@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: "Who's behind this?",
-    a: "Abraxas is built by a solo founder with a decade in crypto, real estate, and asset structuring. World Labs, the founder's own company, was the first business put through the platform's full verification process, the same standard every other business and asset is held to.",
+    a: "A solo founder with a decade in crypto, real estate, and asset structuring. World Labs, the founder's own company, was the first business put through Abraxas's full verification process, same standard, no exceptions.",
   },
   {
     q: "What if I send money and never hear back?",

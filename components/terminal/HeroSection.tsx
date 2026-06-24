@@ -12,7 +12,7 @@ import { ScrollFade } from "./ui";
 
 const STATS: Array<{ label: string; value: string }> = [
   { label: "Verified assets",  value: "6" },
-  { label: "Value attested",   value: "$1.6M+" },
+  { label: "Value attested",   value: "Just Under $2M" },
   { label: "Credential standard", value: "W3C" },
 ];
 
@@ -56,8 +56,8 @@ export function HeroIntro() {
       <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                    color:"var(--text-secondary)", lineHeight:1.7,
                    maxWidth:540, margin:"0 0 1.25rem" }}>
-        Land, businesses, royalties, mineral rights, anything real. See
-        what's actually verified before you put money or trust behind it,
+        Real estate. Royalties. Mineral rights. Businesses. Anything real.
+        See what's actually verified before you put money or trust behind it,
         not just a listing and someone's word.
       </p>
 

@@ -13,8 +13,8 @@ interface RegistryViewProps {
 const STATS = [
   { label: "Verified Properties", val: "6" },
   { label: "Pending Verification", val: "0" },
-  { label: "Total AUM",            val: "$1.6M+" },
-  { label: "Avg Collateral Score", val: "89/100" },
+  { label: "Total Value",          val: "Just Under $2M" },
+  { label: "Avg Lending Score",    val: "89/100" },
 ];
 
 export function RegistryView({ onBack }: RegistryViewProps) {
@@ -53,7 +53,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
         <div style={{ fontSize:"0.75rem", color:"rgba(255,255,255,0.4)",
                        marginBottom:"0.7rem", letterSpacing:"0.1em",
                        textTransform:"uppercase" }}>
-          AAS-1 · GENESIS ASSET
+          First Verified Asset
         </div>
         <div style={{ fontFamily:"Georgia,serif", fontSize:"1.1rem",
                        fontWeight:700, color:W, marginBottom:4 }}>
@@ -62,7 +62,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
         <div style={{ fontFamily:S, fontSize:"0.75rem",
                        color:"rgba(255,255,255,0.4)" }}>
           Mineral Bluff, Georgia · $1,100,000 appraised ·
-          89/100 collateral score · 96% verification confidence ·
+          89/100 lending score · 96% verification confidence ·
           $660K max borrow capacity
         </div>
       </div>

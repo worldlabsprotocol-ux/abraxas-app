@@ -336,31 +336,6 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
         </div>
         </>)}
 
-        {/* The Clove, shown in full as the Act 1 flagship example above,
-            not repeated here, just pointed back to */}
-        <div style={{ borderRadius:8, border:"1px solid #06B6D440",
-                       background:"rgba(6,182,212,0.04)", padding:"0.875rem 1rem",
-                       display:"flex", alignItems:"center", gap:"0.75rem",
-                       flexWrap:"wrap" }}>
-          <span style={{ fontFamily:"Georgia,serif", fontSize:"0.95rem",
-                          fontWeight:700, color:W }}>
-            The Clove
-          </span>
-          <span style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                          color:"#06B6D4", background:"#06B6D418",
-                          padding:"0.1rem 0.5rem", borderRadius:10 }}>
-            SOLD OUT · TRACK RECORD
-          </span>
-          <button onClick={() => {
-              const el = document.getElementById("demo-hero");
-              el?.scrollIntoView({ behavior:"smooth" });
-            }}
-            style={{ marginLeft:"auto", background:"none", border:"none",
-                      color:"#06B6D4", fontFamily:S, fontSize:"0.74rem",
-                      fontWeight:600, cursor:"pointer", textDecoration:"underline" }}>
-            See the full story above ↑
-          </button>
-        </div>
       </div>
       </ScrollFade>
     </div>

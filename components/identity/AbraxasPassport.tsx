@@ -137,7 +137,7 @@ export function AbraxasPassport({
     trustLabel === "UNVERIFIED" ? "rgba(255,255,255,0.2)"
     : trustLabel === "BASIC"    ? A
     : trustLabel === "VERIFIED" ? G
-    : trustLabel === "TRUSTED"  ? B : P;
+    : trustLabel === "TRUSTED"  ? B : G;
 
   async function handleGetVerified() {
     setLaunching(true);
@@ -283,6 +283,11 @@ export function AbraxasPassport({
               <div style={{ fontFamily:M, fontSize:"0.52rem",
                              color:"rgba(255,255,255,0.2)" }}>
                 SOLANA MAINNET · VERIFIED CREDENTIAL
+              </div>
+              <div style={{ fontFamily:S, fontSize:"0.6rem",
+                             color:"rgba(255,255,255,0.3)", marginTop:"0.4rem",
+                             lineHeight:1.5 }}>
+                No documents stored on-chain, only cryptographic proof.
               </div>
             </div>
             <button onClick={() => {

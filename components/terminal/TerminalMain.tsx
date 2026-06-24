@@ -169,6 +169,14 @@ export function TerminalMain() {
 
         <Divider />
 
+        {/* ABRAXAS PASSPORT, moved up right after the emotional case for
+            verification, this is the differentiator, it deserves to be
+            seen here, not buried after assets, music, and IP */}
+        <div id="abraxas-id" />
+        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
+
+        <Divider />
+
         {/* 2b. FEATURED ASSETS, real estate cluster, Naj Tulum and The
             Clove grouped here per the requested ordering */}
         <ScrollFade>
@@ -234,13 +242,6 @@ export function TerminalMain() {
             />
           </DarkPanel>
         </ScrollFade>
-
-        <Divider />
-
-        {/* 4. ABRAXAS PASSPORT, theme-aware already, demo video section
-            removed entirely, wasn't ready yet */}
-        <div id="abraxas-id" />
-        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
 
         <Divider />
 
