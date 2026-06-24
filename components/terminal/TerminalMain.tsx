@@ -12,7 +12,6 @@ import { TrustStack }               from "@/components/onboarding/TrustStack";
 import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
-import { HowItWorksSteps } from "./HowItWorksSteps";
 import { CloveCaseStudy } from "./CloveCaseStudy";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
@@ -90,19 +89,13 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        {/* ACT 1: the compressed story. Hero, how it works, one real
-            example, then a clear invitation to keep exploring. This is
-            the entrance sign, not the whole museum. */}
+        {/* ACT 1: the compressed story. Hero, one real example, then a
+            clear invitation to keep exploring. How It Works removed,
+            the Passport now does that job better, visually, not as a
+            text explainer. */}
         <div id="demo-hero">
           <HeroIntro />
         </div>
-
-        <Divider />
-
-        {/* 2. HOW IT WORKS */}
-        <DarkPanel>
-          <HowItWorksSteps />
-        </DarkPanel>
 
         <Divider />
 
@@ -140,10 +133,14 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* ACT 2: the fuller registry, for anyone who wants to keep going.
-            Featured Assets comes first, the divider promised "five more
-            real things," so that's what shows up immediately, not three
-            other sections first */}
+        {/* ABRAXAS PASSPORT, leads Act 2 now, this IS how it works,
+            shown as a real product instead of a text explainer */}
+        <div id="abraxas-id" />
+        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
+
+        <Divider />
+
+        {/* ACT 2: the fuller registry, for anyone who wants to keep going. */}
         <ScrollFade>
           <div id="demo-assets">
             <DarkPanel>
@@ -155,14 +152,6 @@ export function TerminalMain() {
             </DarkPanel>
           </div>
         </ScrollFade>
-
-        <Divider />
-
-        {/* ABRAXAS PASSPORT, moved up right after the emotional case for
-            verification, this is the differentiator, it deserves to be
-            seen here, not buried after assets, music, and IP */}
-        <div id="abraxas-id" />
-        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
 
         <Divider />
 

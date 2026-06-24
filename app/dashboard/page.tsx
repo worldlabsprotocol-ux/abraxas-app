@@ -14,13 +14,13 @@ import {
 import type { UserAsset, LifecycleState } from "@/lib/vos/userAssetStore";
 import { sessionStore }              from "@/lib/vos/sessionStore";
 import type { Session }              from "@/lib/vos/sessionStore";
-import { UserProfile }             from "@/components/profile/UserProfile";
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
 import { ContentSection }          from "@/components/terminal/ContentSection";
 import { SiteFooter }              from "@/components/SiteFooter";
 import { BottomNav }               from "@/components/BottomNav";
+import { LiveBackground } from "@/components/LiveBackground";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -158,6 +158,7 @@ export default function DashboardPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex",
                    flexDirection: "column", fontFamily: M, color: "var(--text-primary)" }}>
+      <LiveBackground />
 
       {/* ── NAV ─────────────────────────────────────────────── */}
       <nav style={{
@@ -237,11 +238,6 @@ export default function DashboardPage() {
                        color:"rgba(21,21,26,0.15)", letterSpacing:"0.08em" }}>
           {assets.length} ASSET{assets.length !== 1 ? "S" : ""} ·{" "}
         </div>
-      </div>
-
-      {/* ── USER PROFILE, always visible, this is core to the dashboard now ── */}
-      <div style={{ padding:"0 clamp(0.875rem,2vw,1.5rem) 0.875rem" }}>
-        <UserProfile walletAddress={walletAddr} />
       </div>
 
       {/* ── STAT CARDS ──────────────────────────────────────── */}

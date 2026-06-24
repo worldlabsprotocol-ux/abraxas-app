@@ -6,24 +6,21 @@
 import Image             from "next/image";
 import { useState, useEffect } from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { EmailWalletLogin } from "@/components/EmailWalletLogin";
 import { TerminalMain }  from "./TerminalMain";
+import { LiveBackground } from "@/components/LiveBackground";
 import { BottomNav }     from "@/components/BottomNav";
+import { WaitlistForm }  from "@/components/WaitlistForm";
 import { DemoMode }      from "./DemoMode";
 import { M, S, BDR, G } from "./tokens";
 
-type SignInTab = "email";
-const SIGN_IN_TABS: SignInTab[] = ["email"];
-
 export default function TerminalApp() {
-  const [emailWallet, setEmailWallet] = useState<string | null>(null);
-  const [showSignIn, setShowSignIn] = useState(false);
+  const [showWaitlist, setShowWaitlist] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("signin") === "1") {
-      setShowSignIn(true);
+      setShowWaitlist(true);
     }
     // Deep-link scroll. content renders async (ScrollFade etc), so retry
     // briefly instead of assuming the target exists on first paint.
@@ -46,6 +43,7 @@ export default function TerminalApp() {
   return (
     <div style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)",
                    display: "flex", flexDirection: "column" }}>
+      <LiveBackground />
 
       {/* Slim top bar, just branding and account status now, navigation
           lives at the bottom, app-style, not website-style */}
@@ -67,41 +65,27 @@ export default function TerminalApp() {
         </div>
 
         <div style={{ flex: 1 }} />
-        <div style={{ display:"flex", alignItems:"center", gap:"0.3rem",
-                       padding:"0.3rem 0.6rem", borderRadius:14,
-                       background:"#8B5CF612", border:"1px solid #8B5CF635" }}>
+        <button onClick={() => setShowWaitlist(true)}
+          style={{ display:"flex", alignItems:"center", gap:"0.4rem",
+                    padding:"0.4rem 0.75rem", borderRadius:14, cursor:"pointer",
+                    background:"#8B5CF612", border:"1px solid #8B5CF635" }}>
           <span style={{ width:5, height:5, borderRadius:"50%", background:"#8B5CF6" }} />
-          <span style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+          <span style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
                           color:"#8B5CF6", letterSpacing:"0.04em" }}>
             ZK LOGIN, COMING SOON
           </span>
-        </div>
+        </button>
         <LanguageSelector />
-        {emailWallet ? (
-          <div style={{ padding:"0.45rem 0.9rem", borderRadius:20,
-                         background:`${G}12`,
-                         color:G, fontFamily:M, fontSize:"0.7rem",
-                         fontWeight:600 }}>
-            {emailWallet.slice(0, 4)}...{emailWallet.slice(-4)}
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowSignIn(true)}
-            style={{ padding:"0.5rem 1.25rem", borderRadius:20,
-                      border:"none", background:G,
-                      color:"#000", fontFamily:S,
-                      fontSize:"0.8rem", fontWeight:700, cursor:"pointer" }}>
-            Sign in
-          </button>
-        )}
       </nav>
 
       {/* The one persistent navigation system, shared across every page */}
       <BottomNav />
 
-      {/* Sign-in modal. centered and fixed, never clips at screen edges */}
-      {showSignIn && (
-        <div onClick={() => setShowSignIn(false)}
+      {/* Waitlist modal, replaces the old sign-in flow entirely while
+          ZK Login is being built. Honest positioning: nothing creates a
+          real account right now, this just gets you notified at launch. */}
+      {showWaitlist && (
+        <div onClick={() => setShowWaitlist(false)}
           style={{ position:"fixed", inset:0, zIndex:3000,
                     background:"rgba(0,0,0,0.75)",
                     display:"flex", alignItems:"center", justifyContent:"center",
@@ -116,9 +100,9 @@ export default function TerminalApp() {
                            justifyContent:"space-between" }}>
               <span style={{ fontFamily:S, fontSize:"1rem", fontWeight:700,
                               color:"var(--text-primary)" }}>
-                Sign in to Abraxas
+                ZK Login, coming soon
               </span>
-              <button onClick={() => setShowSignIn(false)}
+              <button onClick={() => setShowWaitlist(false)}
                 style={{ background:"transparent", border:"none",
                           color:"var(--text-muted)", fontSize:"1.4rem",
                           cursor:"pointer", lineHeight:1, padding:0 }}>
@@ -126,16 +110,13 @@ export default function TerminalApp() {
               </button>
             </div>
             <div style={{ padding:"1.25rem 1.5rem 1.5rem" }}>
-              <EmailWalletLogin
-                onWalletReady={(pk) => { setEmailWallet(pk); setShowSignIn(false); }}
-              />
+              <WaitlistForm onJoined={() => setShowWaitlist(false)} />
               <div style={{ marginTop:"1rem", paddingTop:"1rem",
                              borderTop:"1px solid var(--border)",
                              textAlign:"center" }}>
                 <a href="/passport" style={{ fontFamily:S, fontSize:"0.72rem",
                                               color:G, textDecoration:"underline" }}>
-                  Signing in creates your account. Identity verification
-                  is separate, check your Passport status →
+                  Already verifying? Check your Passport status →
                 </a>
               </div>
             </div>

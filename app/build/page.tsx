@@ -16,6 +16,7 @@ import { WorldWearablesGallery, WorldWearablesHoodie } from "@/components/termin
 import { WorldByHandSection } from "@/components/terminal/WorldByHandSection";
 import { CoffeeFarmSection } from "@/components/terminal/CoffeeFarmSection";
 import { BottomNav } from "@/components/BottomNav";
+import { LiveBackground } from "@/components/LiveBackground";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 import { BuyNowModal } from "@/components/terminal/BuyNowModal";
 import type { BuyItem } from "@/components/terminal/BuyNowModal";
@@ -41,6 +42,7 @@ export default function BuildPage() {
 
   return (
     <div style={{ minHeight:"100vh", background:"#FAFAF8", color:"#15151A" }}>
+      <LiveBackground />
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:`1px solid ${BDR}`,
                      display:"flex", alignItems:"center", gap:"0.5rem" }}>

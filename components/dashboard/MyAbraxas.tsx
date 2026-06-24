@@ -40,7 +40,7 @@ export function MyAbraxas({ identityLabel }: MyAbraxasProps) {
                      marginBottom:"1.5rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:600,
                        color:"rgba(21,21,26,0.5)" }}>
-          Sign in to see your saved activity here next time
+          Saved activity arrives with ZK Login
         </div>
       </div>
     );

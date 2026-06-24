@@ -77,7 +77,7 @@ export function HeroIntro() {
                     border:`1.5px solid ${G}`, background:"transparent",
                     color:G, fontFamily:S, fontSize:"0.85rem", fontWeight:700,
                     cursor:"pointer" }}>
-          Sign in
+          Join Waitlist
         </button>
       </div>
       <div style={{ marginBottom:"1.5rem" }}>

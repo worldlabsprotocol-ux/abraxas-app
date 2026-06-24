@@ -12,12 +12,14 @@
 // share on swaps until you register.
 
 import { BottomNav } from "@/components/BottomNav";
+import { LiveBackground } from "@/components/LiveBackground";
 
 const AFFILIATE_NAME = "heroswap"; // replace with your real affiliate name once registered
 
 export default function SwapPage() {
   return (
     <div style={{ minHeight:"100vh", background:"#FAFAF8", color:"#15151A" }}>
+      <LiveBackground />
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:"1px solid #E5E5E0",
                      display:"flex", alignItems:"center", gap:"0.5rem" }}>

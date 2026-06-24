@@ -6,6 +6,7 @@
 // identity verification, third-party Swap integration).
 
 import { BottomNav } from "@/components/BottomNav";
+import { LiveBackground } from "@/components/LiveBackground";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const BDR = "var(--border)";
@@ -28,6 +29,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function TermsPage() {
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text-primary)" }}>
+      <LiveBackground />
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)", borderBottom:`1px solid ${BDR}` }}>
         <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700 }}>Terms of Service</span>
       </div>
