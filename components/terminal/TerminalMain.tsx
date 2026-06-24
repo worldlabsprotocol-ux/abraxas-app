@@ -24,7 +24,7 @@ import { IPAssetGrid }        from "./IPAssetGrid";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { FAQSection }         from "./FAQSection";
-import { ContentSection }     from "./ContentSection";
+import { SiteFooter }         from "@/components/SiteFooter";
 import { InvestorPortalModal} from "./InvestorPortalModal";
 import { BuyNowModal }        from "./BuyNowModal";
 import type { BuyItem }       from "./BuyNowModal";
@@ -260,18 +260,6 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 8. ACTIVE DEAL PIPELINE, moved to the end per the requested flow */}
-        <div id="demo-deals">
-          <DarkPanel>
-            <ContentSection
-              onSubmit={() => setDeep("submit")}
-              onTrust={() => setDeep("trust")}
-            />
-          </DarkPanel>
-        </div>
-
-        <Divider />
-
         {/* 10. PROTOCOL MILESTONES */}
         <div id="demo-milestones">
           <DarkPanel>
@@ -293,6 +281,7 @@ export function TerminalMain() {
           <FAQSection />
         </DarkPanel>
       </div>
+      <SiteFooter />
     </div>
   );
 }

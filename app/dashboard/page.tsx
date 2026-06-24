@@ -19,6 +19,8 @@ import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDas
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
+import { ContentSection }          from "@/components/terminal/ContentSection";
+import { SiteFooter }              from "@/components/SiteFooter";
 import { BottomNav }               from "@/components/BottomNav";
 
 /* ── design tokens ─────────────────────────────────────────── */
@@ -303,6 +305,14 @@ export default function DashboardPage() {
         <MyAbraxas identityLabel={walletAddr} />
 
         {/* Full protocol asset registry, all 6 verified assets */}
+        <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius:10,
+                       padding:"1.25rem clamp(0.875rem,3vw,1.5rem)", marginBottom:"1.5rem" }}>
+          <ContentSection
+            onSubmit={() => { window.location.href = "/build"; }}
+            onTrust={() => { window.location.href = "/terminal"; }}
+          />
+        </div>
+
         <PurchaseLifecycleAdmin />
 
         <SophiaCircuit />
@@ -358,6 +368,7 @@ export default function DashboardPage() {
         )}
 
       </div>
+      <SiteFooter />
       <BottomNav />
     </div>
   );
