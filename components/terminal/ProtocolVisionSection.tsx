@@ -6,15 +6,6 @@
 import { S, G, W, BDR } from "./tokens";
 import { ScrollFade } from "./ui";
 
-const CHAINS = [
-  { name:"Solana",   live:true },
-  { name:"Ethereum", live:false },
-  { name:"SUI",      live:false },
-  { name:"Polygon",  live:false },
-  { name:"Arbitrum", live:false },
-  { name:"Base",     live:false },
-];
-
 interface ProtocolVisionSectionProps {
   onGetStarted: () => void;
 }
@@ -40,20 +31,13 @@ export function ProtocolVisionSection({ onGetStarted }: ProtocolVisionSectionPro
             Present your credential to any protocol on any chain, without
             re-KYC, without re-uploading documents, without friction.
           </p>
-          <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
-            {CHAINS.map(c => (
-              <div key={c.name}
-                style={{ display:"flex", alignItems:"center", gap:"0.375rem",
+          <div style={{ display:"inline-flex", alignItems:"center", gap:"0.375rem",
                           padding:"0.4rem 0.75rem", borderRadius:20,
-                          background: c.live ? `${G}12` : "rgba(255,255,255,0.03)",
-                          border: c.live ? `1px solid ${G}35` : `1px solid ${BDR}` }}>
-                {c.live && <span style={{ color:G, fontSize:"0.7rem" }}>✓</span>}
-                <span style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
-                                color: c.live ? G : "rgba(255,255,255,0.4)" }}>
-                  {c.name}
-                </span>
-              </div>
-            ))}
+                          background:`${G}12`, border:`1px solid ${G}35` }}>
+            <span style={{ color:G, fontSize:"0.7rem" }}>✓</span>
+            <span style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600, color:G }}>
+              Live on Solana today
+            </span>
           </div>
         </div>
       </ScrollFade>

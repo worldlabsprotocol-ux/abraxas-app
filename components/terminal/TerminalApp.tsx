@@ -5,7 +5,6 @@
 
 import Image             from "next/image";
 import { useState, useEffect } from "react";
-import { CompactWallet } from "@/components/CompactWallet";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { EmailWalletLogin } from "@/components/EmailWalletLogin";
 import { TerminalMain }  from "./TerminalMain";
@@ -13,13 +12,12 @@ import { BottomNav }     from "@/components/BottomNav";
 import { DemoMode }      from "./DemoMode";
 import { M, S, BDR, G } from "./tokens";
 
-type SignInTab = "email" | "wallet";
-const SIGN_IN_TABS: SignInTab[] = ["email", "wallet"];
+type SignInTab = "email";
+const SIGN_IN_TABS: SignInTab[] = ["email"];
 
 export default function TerminalApp() {
   const [emailWallet, setEmailWallet] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
-  const [signInTab, setSignInTab] = useState<SignInTab>("email");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -69,6 +67,15 @@ export default function TerminalApp() {
         </div>
 
         <div style={{ flex: 1 }} />
+        <div style={{ display:"flex", alignItems:"center", gap:"0.3rem",
+                       padding:"0.3rem 0.6rem", borderRadius:14,
+                       background:"#8B5CF612", border:"1px solid #8B5CF635" }}>
+          <span style={{ width:5, height:5, borderRadius:"50%", background:"#8B5CF6" }} />
+          <span style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
+                          color:"#8B5CF6", letterSpacing:"0.04em" }}>
+            ZK LOGIN, COMING SOON
+          </span>
+        </div>
         <LanguageSelector />
         {emailWallet ? (
           <div style={{ padding:"0.45rem 0.9rem", borderRadius:20,
@@ -118,42 +125,10 @@ export default function TerminalApp() {
                 ×
               </button>
             </div>
-            <div style={{ display:"flex", gap:"0.375rem", padding:"0.75rem 1rem 0" }}>
-              {SIGN_IN_TABS.map(tab => (
-                <button key={tab} onClick={() => setSignInTab(tab)}
-                  style={{ flex:1, padding:"0.5rem", borderRadius:10,
-                            border:"none",
-                            background: signInTab === tab ? `${G}15` : "transparent",
-                            color: signInTab === tab ? G : "var(--text-muted)",
-                            fontFamily:S, fontSize:"0.78rem", fontWeight:600,
-                            cursor:"pointer" }}>
-                  {tab === "email" ? "Email" : "Wallet"}
-                </button>
-              ))}
-            </div>
             <div style={{ padding:"1.25rem 1.5rem 1.5rem" }}>
-              {signInTab === "email" ? (
-                <EmailWalletLogin
-                  onWalletReady={(pk) => { setEmailWallet(pk); setShowSignIn(false); }}
-                />
-              ) : (
-                <div style={{ display:"flex", flexDirection:"column",
-                               gap:"0.75rem", alignItems:"center" }}>
-                  <div style={{ fontFamily:S, fontSize:"0.8rem",
-                                 color:"var(--text-secondary)",
-                                 textAlign:"center", lineHeight:1.6 }}>
-                    Connect Phantom, Solflare, or any Solana wallet.
-                  </div>
-                  <div style={{ fontFamily:S, fontSize:"0.7rem",
-                                 color:"#F59E0B", background:"#F59E0B12",
-                                 borderRadius:8, padding:"0.5rem 0.75rem",
-                                 textAlign:"center" }}>
-                    Wallet sign-in is being fixed right now. Email sign-in
-                    works and creates your profile the same way.
-                  </div>
-                  <CompactWallet />
-                </div>
-              )}
+              <EmailWalletLogin
+                onWalletReady={(pk) => { setEmailWallet(pk); setShowSignIn(false); }}
+              />
               <div style={{ marginTop:"1rem", paddingTop:"1rem",
                              borderTop:"1px solid var(--border)",
                              textAlign:"center" }}>

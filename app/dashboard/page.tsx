@@ -15,7 +15,6 @@ import type { UserAsset, LifecycleState } from "@/lib/vos/userAssetStore";
 import { sessionStore }              from "@/lib/vos/sessionStore";
 import type { Session }              from "@/lib/vos/sessionStore";
 import { UserProfile }             from "@/components/profile/UserProfile";
-import { AssetRegistryDashboard }  from "@/components/dashboard/AssetRegistryDashboard";
 import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
@@ -312,36 +311,12 @@ export default function DashboardPage() {
           />
         </div>
 
-        <PurchaseLifecycleAdmin />
-
+        {/* Sophia and Circuit clustered right here, the official
+            auditor layer for everything in the pipeline above,
+            this pairing is the point, not separated by other content */}
         <SophiaCircuit />
 
-        <AssetRegistryDashboard />
-
-        {/* Passport status, links to the standalone /passport page, not inline here */}
-        <div style={{ marginBottom:"1.5rem", padding:"1.25rem",
-                       borderRadius:12, border:`1px solid ${G}25`,
-                       background:"#FAFAF8" }}>
-          <div style={{ display:"flex", justifyContent:"space-between",
-                         alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
-            <div>
-              <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                             color:"#15151A", marginBottom:"0.25rem" }}>
-                Abraxas Passport
-              </div>
-              <div style={{ fontFamily:S, fontSize:"0.78rem",
-                             color:"rgba(21,21,26,0.5)", lineHeight:1.5 }}>
-                Get verified once, your credential travels across every Abraxas
-                integration so you never repeat paperwork.
-              </div>
-            </div>
-            <a href="/passport" style={{ padding:"0.625rem 1.25rem", borderRadius:8,
-                background:G, color:"#000", fontFamily:S, fontSize:"0.8rem",
-                fontWeight:700, textDecoration:"none", flexShrink:0 }}>
-              View Passport →
-            </a>
-          </div>
-        </div>
+        <PurchaseLifecycleAdmin />
 
         {/* Submit asset prompt for users with no submitted assets */}
         {assets.length === 0 && (

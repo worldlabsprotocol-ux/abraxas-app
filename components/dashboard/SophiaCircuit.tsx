@@ -32,7 +32,7 @@ export function SophiaCircuit() {
         <div>
           <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
                          color:V, marginBottom:"0.375rem" }}>
-            AI Intelligence & Monitoring
+            Official Auditor, Verified Asset Classes
           </div>
           <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700, color:W }}>
             Sophia & Circuit
@@ -40,9 +40,12 @@ export function SophiaCircuit() {
           <div style={{ fontFamily:S, fontSize:"0.74rem",
                          color:"rgba(21,21,26,0.45)", marginTop:"0.25rem",
                          maxWidth:480, lineHeight:1.6 }}>
-            Sophia analyzes verification confidence and risk across your
-            assets. Circuit watches for unusual activity and alerts you.
-            Neither moves your funds, every decision stays yours.
+            Sophia analyzes verification confidence and risk across every
+            asset class on Abraxas, real estate, royalties, minerals,
+            environmental and reforestation projects included. Circuit
+            watches for unusual activity and flags it. Neither moves your
+            funds, every decision stays yours, this is the measurement
+            layer that keeps the protocol's pipeline a trusted one.
           </div>
         </div>
         <button onClick={() => setExpanded(e => !e)}

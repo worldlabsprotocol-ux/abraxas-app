@@ -1,5 +1,5 @@
 // FILE: components/music/ArtistAuditForm.tsx
-// Self-service entry point — artists come to Abraxas, fill this out,
+// Self-service entry point, artists come to Abraxas, fill this out,
 // get an instant gap analysis, and their request goes to Pablo's team.
 "use client";
 
@@ -9,19 +9,19 @@ const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
 const G    = "#10B981";
 const A    = "#F59E0B";
-const BDR  = "#1C2333";
-const CARD = "#0D1117";
-const W    = "#F8FAFC";
+const BDR  = "#E5E5E0";
+const CARD = "#FFFFFF";
+const W    = "#15151A";
 const R    = "#EF4444";
 const B    = "#3B82F6";
 
 const lbl: React.CSSProperties = {
-  fontFamily:M, fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.35)",
+  fontFamily:M, fontSize:"0.6rem", fontWeight:700, color:"rgba(21,21,26,0.35)",
   textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:"0.25rem", display:"block",
 };
 const inp: React.CSSProperties = {
   width:"100%", padding:"0.5rem 0.625rem", borderRadius:4,
-  border:`1px solid ${BDR}`, background:"rgba(255,255,255,0.03)",
+  border:`1px solid ${BDR}`, background:"rgba(21,21,26,0.03)",
   color:W, fontFamily:S, fontSize:"16px", outline:"none", boxSizing:"border-box",
 };
 const sel: React.CSSProperties = { ...inp };
@@ -84,14 +84,13 @@ export function ArtistAuditForm() {
                          fontSize:"clamp(1.3rem,3.5vw,2rem)",
                          fontWeight:700, color:W, lineHeight:1.2,
                          letterSpacing:"-0.01em", marginBottom:"0.5rem" }}>
-            Are you missing royalties?
+            Submit your catalog
           </div>
-          <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(255,255,255,0.45)",
+          <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(21,21,26,0.45)",
                        lineHeight:1.7, margin:"0 0 1rem" }}>
             Publishing deals often leave money uncollected. Missing ISRC codes, unregistered
             compositions, and MLC gaps can mean years of royalties sitting in an
-            unclaimed pool. Our team has worked with 80+ publishing clients and
-            knows where the money hides.
+            unclaimed pool. Our team knows where to look.
           </p>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
                          gap:"0.5rem", marginBottom:"1rem" }}>
@@ -101,11 +100,11 @@ export function ArtistAuditForm() {
               { icon:"03", label:"Action Report",     desc:"Prioritized fix list with step-by-step instructions" },
               { icon:"04", label:"Team Support",      desc:"Our team guides you through the recovery process" },
             ].map(item => (
-              <div key={item.label} style={{ padding:"0.625rem 0.75rem", background:"rgba(255,255,255,0.02)",
+              <div key={item.label} style={{ padding:"0.625rem 0.75rem", background:"rgba(21,21,26,0.02)",
                                               border:`1px solid ${BDR}`, borderRadius:5 }}>
                 <div style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700, color:G, letterSpacing:"0.15em", marginBottom:3 }}>{item.icon}</div>
                 <div style={{ fontSize:"0.65rem", fontWeight:700, color:W, marginBottom:1 }}>{item.label}</div>
-                <div style={{ fontFamily:S, fontSize:"0.6rem", color:"rgba(255,255,255,0.35)",
+                <div style={{ fontFamily:S, fontSize:"0.6rem", color:"rgba(21,21,26,0.35)",
                                lineHeight:1.5 }}>{item.desc}</div>
               </div>
             ))}
@@ -127,7 +126,7 @@ export function ArtistAuditForm() {
                          letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:4 }}>
             TELL US ABOUT YOUR CATALOG
           </div>
-          <p style={{ fontFamily:S, fontSize:"0.72rem", color:"rgba(255,255,255,0.4)",
+          <p style={{ fontFamily:S, fontSize:"0.72rem", color:"rgba(21,21,26,0.4)",
                        lineHeight:1.65, margin:"0 0 0.875rem" }}>
             Our team reviews every submission within 48 hours. If you have active publishing
             deals, we can cross-reference your catalog against PRO and MLC records to find
@@ -194,7 +193,7 @@ export function ArtistAuditForm() {
           <div style={{ display:"flex", gap:"0.5rem", marginTop:"0.875rem" }}>
             <button onClick={() => setStep("intro")} style={{
               flex:1, padding:"0.6rem", borderRadius:5, border:`1px solid ${BDR}`,
-              background:"transparent", color:"rgba(255,255,255,0.4)",
+              background:"transparent", color:"rgba(21,21,26,0.4)",
               fontFamily:M, fontSize:"0.68rem", fontWeight:700, cursor:"pointer",
             }}>← Back</button>
             <button onClick={submit} disabled={busy||!artistName.trim()||!email.trim()} style={{
@@ -214,10 +213,10 @@ export function ArtistAuditForm() {
           <div style={{ fontFamily:S, fontSize:"1rem", fontWeight:800, color:W,
                          marginBottom:"0.375rem" }}>Audit request received.</div>
           {refId && (
-            <div style={{ fontFamily:M, fontSize:"0.62rem", color:"rgba(255,255,255,0.3)",
+            <div style={{ fontFamily:M, fontSize:"0.62rem", color:"rgba(21,21,26,0.3)",
                            marginBottom:"0.625rem" }}>Ref: {refId}</div>
           )}
-          <p style={{ fontFamily:S, fontSize:"0.75rem", color:"rgba(255,255,255,0.45)",
+          <p style={{ fontFamily:S, fontSize:"0.75rem", color:"rgba(21,21,26,0.45)",
                        lineHeight:1.7, margin:"0 0 1rem" }}>
             Our team will review your catalog within 48 hours and reach out with
             a full gap analysis report. If we find critical issues, we will contact
@@ -225,7 +224,7 @@ export function ArtistAuditForm() {
           </p>
           <div style={{ padding:"0.75rem", borderRadius:5, background:`${B}08`,
                          border:`1px solid ${B}25`, fontFamily:S, fontSize:"0.7rem",
-                         color:"rgba(255,255,255,0.4)", lineHeight:1.65, textAlign:"left" }}>
+                         color:"rgba(21,21,26,0.4)", lineHeight:1.65, textAlign:"left" }}>
             <div style={{ fontFamily:M, fontSize:"0.58rem", color:B,
                            textTransform:"uppercase", letterSpacing:"0.1em",
                            marginBottom:"0.375rem" }}>WHILE YOU WAIT</div>

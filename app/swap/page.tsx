@@ -19,7 +19,7 @@ export default function SwapPage() {
   return (
     <div style={{ minHeight:"100vh", background:"#FAFAF8", color:"#15151A" }}>
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
-                     borderBottom:"1px solid #1C2333",
+                     borderBottom:"1px solid #E5E5E0",
                      display:"flex", alignItems:"center", gap:"0.5rem" }}>
         <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
           <polygon points="20,2 38,20 20,38 2,20" stroke="#10B981" strokeWidth="2" fill="none"/>
@@ -43,15 +43,24 @@ export default function SwapPage() {
         </h1>
         <p style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.82rem",
                      color:"rgba(21,21,26,0.5)", lineHeight:1.65,
-                     margin:"0 0 1.5rem" }}>
+                     margin:"0 0 1rem" }}>
           Cross-chain swaps, no signup, no login required. This is a
           general-purpose tool powered by HeroSwap, separate from
           Abraxas's verified asset investing, those still go through
           identity verification, this doesn't.
         </p>
+        <p style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.78rem",
+                     color:"rgba(21,21,26,0.45)", lineHeight:1.65,
+                     margin:"0 0 1.5rem" }}>
+          Why it's here: every network has its own token, and moving
+          between them usually means a separate app, a separate
+          balance, a separate headache. This swap moves across chains
+          in one place, no juggling five wallets just to hold what you
+          actually want.
+        </p>
 
         <div style={{ borderRadius:14, overflow:"hidden",
-                       border:"1px solid #1C2333", minHeight:560 }}>
+                       border:"1px solid #E5E5E0", minHeight:560 }}>
           <iframe
             src={`https://heroswap.com/?affiliateName=${AFFILIATE_NAME}&theme=dark-black`}
             style={{ width:"100%", height:560, border:"none" }}

@@ -14,9 +14,6 @@ import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
 import { HowItWorksSteps } from "./HowItWorksSteps";
 import { CloveCaseStudy } from "./CloveCaseStudy";
-import { OnboardingChoice } from "./OnboardingChoice";
-import { WhyVerificationStory } from "./WhyVerificationStory";
-import { ZkLoginPreview } from "./ZkLoginPreview";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
@@ -161,31 +158,6 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 1b. WHAT DO YOU WANT TO DO, plain branching choice, no jargon,
-            from the original audit, never built until now */}
-        <DarkPanel>
-          <OnboardingChoice
-            onInvest={() => {
-              const el = document.getElementById("demo-assets");
-              el?.scrollIntoView({ behavior:"smooth" });
-            }}
-            onSubmitAsset={() => setDeep("submit")}
-            onLookAround={() => {
-              const el = document.getElementById("demo-assets");
-              el?.scrollIntoView({ behavior:"smooth" });
-            }}
-          />
-        </DarkPanel>
-
-        <Divider />
-
-        {/* 1c. WHY VERIFICATION MATTERS, told as a story, never built until now */}
-        <DarkPanel>
-          <WhyVerificationStory />
-        </DarkPanel>
-
-        <Divider />
-
         {/* ABRAXAS PASSPORT, moved up right after the emotional case for
             verification, this is the differentiator, it deserves to be
             seen here, not buried after assets, music, and IP */}
@@ -233,13 +205,8 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* ZK LOGIN COMING SOON and PROTOCOL VISION grouped together now,
-            both are forward-looking, neither is live today, they shouldn't
-            interrupt the live, working proof in the middle of the page */}
-        <ZkLoginPreview />
-
-        <Divider />
-
+        {/* PROTOCOL VISION, ZK Login moved to the nav near Sign In
+            instead of its own section, see TerminalApp.tsx */}
         <DarkPanel>
           <ProtocolVisionSection
             onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
@@ -248,20 +215,22 @@ export function TerminalMain() {
 
         <Divider />
 
-        {/* 10. PROTOCOL MILESTONES */}
-        <div id="demo-milestones">
-          <DarkPanel>
-            <MilestonesSection />
-          </DarkPanel>
-        </div>
-
-        <Divider />
-
         <ScrollFade>
           <DarkPanel>
             <PartnersSection />
           </DarkPanel>
         </ScrollFade>
+
+        <Divider />
+
+        {/* PROTOCOL MILESTONES, moved here next to the FAQ, this is the
+            whitepaper-depth content for anyone who wants it, not
+            something a first-time visitor needs mid-scroll */}
+        <div id="demo-milestones">
+          <DarkPanel>
+            <MilestonesSection />
+          </DarkPanel>
+        </div>
 
         <Divider />
 
