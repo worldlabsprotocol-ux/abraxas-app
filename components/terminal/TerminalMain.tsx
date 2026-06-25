@@ -18,6 +18,7 @@ import { MilestonesSection }  from "./MilestonesSection";
 import { AssetGrid }          from "./AssetGrid";
 import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
+import { VerificationPackages } from "./VerificationPackages";
 import { FAQSection }         from "./FAQSection";
 import { SiteFooter }         from "@/components/SiteFooter";
 import { InvestorPortalModal} from "./InvestorPortalModal";
@@ -109,6 +110,14 @@ export function TerminalMain() {
             <PartnersSection />
           </DarkPanel>
         </ScrollFade>
+
+        <Divider />
+
+        {/* VERIFICATION PACKAGES, the new revenue line, leads ahead of
+            any asset content per the verification-first repositioning */}
+        <DarkPanel>
+          <VerificationPackages />
+        </DarkPanel>
 
         <Divider />
 
