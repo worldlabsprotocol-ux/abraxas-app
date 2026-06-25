@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
+import { ReclaimVerifyButton } from "@/components/ReclaimVerifyButton";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -131,6 +132,25 @@ const STAMPS: Stamp[] = [
     ],
     timeEstimate: "3–7 business days. Complex title chains take longer.",
     regulatoryBasis: "Asset attestation aligned with UCC Article 9 (personal property) and applicable state recording statutes for real property.",
+  },
+  {
+    id: "social",
+    name: "Social Verified",
+    shortName: "Social",
+    color: B,
+    icon: "@",
+    description: "Cryptographically prove a real account on LinkedIn, X, GitHub, or Gmail belongs to you, without handing Abraxas your password. Powered by Reclaim Protocol's zkTLS proofs.",
+    whatItProves: "The social account you're claiming is real, active, and actually yours, verified through a cryptographic proof rather than a simple login.",
+    requiredDocs: ["An active LinkedIn, X, GitHub, or Gmail account you can log into during the check"],
+    processSteps: [
+      "Choose which account to verify (LinkedIn, X, GitHub, or Gmail)",
+      "A secure verification portal opens in a new tab",
+      "Log in normally on that platform's own site, nothing is shared with Abraxas",
+      "A cryptographic proof is generated and sent back automatically",
+      "Social Verified stamp issued on confirmation",
+    ],
+    timeEstimate: "Usually under 2 minutes.",
+    regulatoryBasis: "Not a regulatory requirement, this is a trust signal layered on top of required verification, not a substitute for it.",
   },
 ];
 
@@ -496,6 +516,22 @@ export default function PassportPage() {
               </div>
 
               {/* Action */}
+              {activeStamp.id === "social" && status !== "earned" && (
+                <div>
+                  <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
+                    <ReclaimVerifyButton provider="linkedin" label="LinkedIn" userId={email} />
+                    <ReclaimVerifyButton provider="twitter" label="X" userId={email} />
+                    <ReclaimVerifyButton provider="github" label="GitHub" userId={email} />
+                    <ReclaimVerifyButton provider="gmail" label="Gmail" userId={email} />
+                  </div>
+                  <div style={{ fontFamily:S, fontSize:"0.72rem",
+                                 color:"var(--text-muted)", marginTop:"0.75rem", maxWidth:420 }}>
+                    Each opens that platform's own login page in a new tab.
+                    Abraxas never sees your password, only a cryptographic
+                    proof that the account is real and active.
+                  </div>
+                </div>
+              )}
               {activeStamp.id === "identity" && status !== "earned" && (
                 <div>
                   <button onClick={startIdentityVerification} disabled={starting}
@@ -522,7 +558,7 @@ export default function PassportPage() {
                   </div>
                 </div>
               )}
-              {activeStamp.id !== "identity" && status !== "earned" && (
+              {activeStamp.id !== "identity" && activeStamp.id !== "social" && status !== "earned" && (
                 <div>
                   <DocumentUpload email={email} stampId={activeStamp.id} color={activeStamp.color} />
                   <Link href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"

@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { useAbraxasID }        from "@/lib/credentials/useAbraxasID";
+import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
 
 const M   = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S   = "system-ui,-apple-system,sans-serif";
@@ -28,6 +29,7 @@ const ALL_STAMPS = [
   { id:"tribal",     label:"Tribal Partner Verified",  icon:"◈", color:G,  desc:"Sovereign land / mineral rights" },
   { id:"compliance", label:"Compliance Cleared",       icon:"✓", color:G,  desc:"AML / OFAC screening passed" },
   { id:"lending",    label:"Lending Eligible",         icon:"$", color:G,  desc:"Collateral credit verified" },
+  { id:"social",     label:"Social Verified",          icon:"@", color:B,  desc:"LinkedIn, X, GitHub, or Gmail cryptographically proven via Reclaim" },
 ] as const;
 
 type StampId = typeof ALL_STAMPS[number]["id"];
@@ -115,14 +117,20 @@ export function AbraxasPassport({
   }, []);
 
   const { credential, status } = useAbraxasID();
+  const hasSocialStamp = useReclaimSocialStamp(walletAddress ?? walletPubkey);
 
   // walletStr declared before any function that uses it
   const walletStr = walletAddress ?? walletPubkey;
 
-  // Derive earned stamps from live credential or prop override
-  const earned: StampId[] = propStamps
+  // Derive earned stamps from live credential or prop override, plus
+  // the real Reclaim social stamp check, merged in regardless of which
+  // path above is active
+  const baseEarned: StampId[] = propStamps
     ?? stampsFromCredential(credential?.level)
     ?? (status === "verified" ? ["identity", "compliance"] : []);
+  const earned: StampId[] = hasSocialStamp && !baseEarned.includes("social")
+    ? [...baseEarned, "social"]
+    : baseEarned;
 
   const total       = ALL_STAMPS.length;
   const earnedCount = earned.length;

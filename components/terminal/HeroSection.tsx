@@ -151,7 +151,7 @@ export function HeroPassportTeaser({ onGetVerified }: HeroPassportTeaserProps) {
                        boxShadow:softShadow(G) }}>
           <AbraxasPassport
             onGetVerified={onGetVerified}
-            earnedStamps={["identity", "biometric", "business", "investor", "owner", "royalty", "property", "tribal", "compliance", "lending"]}
+            earnedStamps={["identity", "biometric", "business", "investor", "owner", "royalty", "property", "tribal", "compliance", "lending", "social"]}
           />
         </div>
       </div>

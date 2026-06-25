@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
+    "@reclaimprotocol/js-sdk": "^5.5.0",
     "@solana/spl-token": "^0.4.8",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-phantom": "^0.9.29",
@@ -25,9 +26,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^3.8.1",
+    "stripe": "^16.0.0",
     "tweetnacl": "^1.0.3",
-    "zustand": "^5.0.13",
-    "stripe": "^16.0.0"
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

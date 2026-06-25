@@ -89,13 +89,26 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        {/* ACT 1: the compressed story. Hero, one real example, then a
-            clear invitation to keep exploring. How It Works removed,
-            the Passport now does that job better, visually, not as a
-            text explainer. */}
+        {/* ACT 1: Hero, then the Abraxas Passport leads immediately,
+            this IS the verification story, shown as a real product
+            instead of explained in text first. Partners clustered
+            right here too, it strengthens the same verification point. */}
         <div id="demo-hero">
           <HeroIntro />
         </div>
+
+        <Divider />
+
+        <div id="abraxas-id" />
+        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
+
+        <Divider />
+
+        <ScrollFade>
+          <DarkPanel>
+            <PartnersSection />
+          </DarkPanel>
+        </ScrollFade>
 
         <Divider />
 
@@ -130,13 +143,6 @@ export function TerminalMain() {
             See everything verified →
           </button>
         </div>
-
-        <Divider />
-
-        {/* ABRAXAS PASSPORT, leads Act 2 now, this IS how it works,
-            shown as a real product instead of a text explainer */}
-        <div id="abraxas-id" />
-        <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
 
         <Divider />
 
@@ -201,14 +207,6 @@ export function TerminalMain() {
             onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
           />
         </DarkPanel>
-
-        <Divider />
-
-        <ScrollFade>
-          <DarkPanel>
-            <PartnersSection />
-          </DarkPanel>
-        </ScrollFade>
 
         <Divider />
 
