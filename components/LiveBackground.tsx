@@ -6,11 +6,12 @@
 // walking back the institutional clarity work from earlier rounds.
 // Pure CSS animation, no canvas, so it's cheap to render on every page.
 //
-// Made meaningfully more visible than the first version, the light
-// theme is mostly filled with opaque white cards, so anything too
-// subtle just disappears in the thin gaps between them.
+// Tuned down from the previous version, that one was visible but
+// competed with text contrast in the un-carded areas (headlines, the
+// act divider, page margins). This keeps the "alive" quality in
+// peripheral vision without fighting readability anywhere.
 
-const DOT_COUNT = 36;
+const DOT_COUNT = 30;
 
 // Deterministic pseudo-random positions, same on every render, no
 // hydration mismatch between server and client.
@@ -61,13 +62,13 @@ export function LiveBackground() {
         {LINES.map((l, i) => (
           <line key={`l${i}`}
             x1={`${l.x1}%`} y1={`${l.y1}%`} x2={`${l.x2}%`} y2={`${l.y2}%`}
-            stroke="#10B981" strokeWidth="1" opacity="0.15" />
+            stroke="#10B981" strokeWidth="1" opacity="0.06" />
         ))}
         {DOTS.map((d, i) => (
           <circle key={i}
-            cx={`${d.x}%`} cy={`${d.y}%`} r="3.5"
+            cx={`${d.x}%`} cy={`${d.y}%`} r="3"
             fill="#10B981"
-            opacity="0.35"
+            opacity="0.14"
             style={{
               animation: `abraxasDrift${i % 3} ${d.duration}s ease-in-out infinite`,
               animationDelay: `${d.delay}s`,

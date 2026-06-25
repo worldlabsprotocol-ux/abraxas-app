@@ -41,6 +41,25 @@ interface Stamp {
 
 const STAMPS: Stamp[] = [
   {
+    id: "social",
+    name: "Social Verified",
+    shortName: "Social",
+    color: B,
+    icon: "@",
+    description: "Cryptographically prove a real account on LinkedIn, X, GitHub, or Gmail belongs to you, without handing Abraxas your password. Powered by Reclaim Protocol's zkTLS proofs.",
+    whatItProves: "The social account you're claiming is real, active, and actually yours, verified through a cryptographic proof rather than a simple login.",
+    requiredDocs: ["An active LinkedIn, X, GitHub, or Gmail account you can log into during the check"],
+    processSteps: [
+      "Choose which account to verify (LinkedIn, X, GitHub, or Gmail)",
+      "A secure verification portal opens in a new tab",
+      "Log in normally on that platform's own site, nothing is shared with Abraxas",
+      "A cryptographic proof is generated and sent back automatically",
+      "Social Verified stamp issued on confirmation",
+    ],
+    timeEstimate: "Usually under 2 minutes.",
+    regulatoryBasis: "Not a regulatory requirement, this is a trust signal layered on top of required verification, not a substitute for it.",
+  },
+  {
     id: "identity",
     name: "Identity Verified",
     shortName: "ID",
@@ -133,25 +152,6 @@ const STAMPS: Stamp[] = [
     timeEstimate: "3–7 business days. Complex title chains take longer.",
     regulatoryBasis: "Asset attestation aligned with UCC Article 9 (personal property) and applicable state recording statutes for real property.",
   },
-  {
-    id: "social",
-    name: "Social Verified",
-    shortName: "Social",
-    color: B,
-    icon: "@",
-    description: "Cryptographically prove a real account on LinkedIn, X, GitHub, or Gmail belongs to you, without handing Abraxas your password. Powered by Reclaim Protocol's zkTLS proofs.",
-    whatItProves: "The social account you're claiming is real, active, and actually yours, verified through a cryptographic proof rather than a simple login.",
-    requiredDocs: ["An active LinkedIn, X, GitHub, or Gmail account you can log into during the check"],
-    processSteps: [
-      "Choose which account to verify (LinkedIn, X, GitHub, or Gmail)",
-      "A secure verification portal opens in a new tab",
-      "Log in normally on that platform's own site, nothing is shared with Abraxas",
-      "A cryptographic proof is generated and sent back automatically",
-      "Social Verified stamp issued on confirmation",
-    ],
-    timeEstimate: "Usually under 2 minutes.",
-    regulatoryBasis: "Not a regulatory requirement, this is a trust signal layered on top of required verification, not a substitute for it.",
-  },
 ];
 
 type StampStatus = "earned" | "in_progress" | "not_started";
@@ -165,7 +165,7 @@ interface PassportState {
 
 export default function PassportPage() {
   const [email, setEmail]   = useState("");
-  const [active, setActive] = useState<string | null>(null);
+  const [active, setActive] = useState<string | null>("social");
   const [starting, setStarting] = useState(false);
   const [error, setError]   = useState<string | null>(null);
   const [passportState, setPassportState] = useState<PassportState>({

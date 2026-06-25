@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       true
     );
 
-    const contextAddress = userId ?? `anon-${Date.now()}`;
+    const contextAddress = (userId && userId.trim().length > 0) ? userId : `anon-${Date.now()}`;
     await reclaimProofRequest.setContext(contextAddress, provider ?? "");
 
     // Store the provider version now, the callback needs this exact
