@@ -1,22 +1,20 @@
 "use client";
 // FILE: components/LiveBackground.tsx
-// A subtle, fixed, animated dot-network background, rendered once
-// behind every page. Deliberately monochrome and low-opacity, no
-// gradients, no glow, this is the "feels alive" quality without
-// walking back the institutional clarity work from earlier rounds.
-// Pure CSS animation, no canvas, so it's cheap to render on every page.
-//
-// Tuned down from the previous version, that one was visible but
-// competed with text contrast in the un-carded areas (headlines, the
-// act divider, page margins). This keeps the "alive" quality in
-// peripheral vision without fighting readability anywhere.
+// A subtle, animated dot-network background, confined entirely to
+// the side margins outside the main 1060px content column. Two
+// rounds of opacity tuning didn't solve the readability complaint
+// because the real problem wasn't visibility, it was that dots and
+// lines could land directly behind headline text and un-carded
+// content. This fixes it structurally: the animation physically
+// can't overlap reading content on any screen wide enough to have
+// real margin space. On narrow/mobile screens, where there's no
+// margin to speak of, it naturally fades to nothing, which is the
+// correct fallback, not a bug.
 
-const DOT_COUNT = 30;
+const DOT_COUNT = 20; // 10 per side
 
-// Deterministic pseudo-random positions, same on every render, no
-// hydration mismatch between server and client.
 function seededPositions(count: number) {
-  const positions: { x: number; y: number; delay: number; duration: number }[] = [];
+  const positions: { side: "left" | "right"; xPct: number; y: number; delay: number; duration: number }[] = [];
   let seed = 42;
   const rand = () => {
     seed = (seed * 9301 + 49297) % 233280;
@@ -24,10 +22,11 @@ function seededPositions(count: number) {
   };
   for (let i = 0; i < count; i++) {
     positions.push({
-      x: rand() * 100,
+      side: i % 2 === 0 ? "left" : "right",
+      xPct: rand() * 7, // 0-7% from the edge, well clear of the centered content column
       y: rand() * 100,
       delay: rand() * 8,
-      duration: 14 + rand() * 10,
+      duration: 16 + rand() * 10,
     });
   }
   return positions;
@@ -35,60 +34,47 @@ function seededPositions(count: number) {
 
 const DOTS = seededPositions(DOT_COUNT);
 
-// Connect nearby dots with thin lines for a real network feel
-function buildLines(dots: typeof DOTS) {
-  const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
-  for (let i = 0; i < dots.length; i++) {
-    for (let j = i + 1; j < dots.length; j++) {
-      const dx = dots[i].x - dots[j].x;
-      const dy = dots[i].y - dots[j].y;
-      if (Math.sqrt(dx * dx + dy * dy) < 16) {
-        lines.push({ x1: dots[i].x, y1: dots[i].y, x2: dots[j].x, y2: dots[j].y });
-      }
-    }
-  }
-  return lines;
-}
-const LINES = buildLines(DOTS);
-
 export function LiveBackground() {
   return (
-    <div aria-hidden="true" style={{
+    <div aria-hidden="true" className="abraxas-live-bg" style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       zIndex: 0, overflow: "hidden", pointerEvents: "none",
     }}>
-      <svg width="100%" height="100%" style={{ position: "absolute", inset: 0 }}
-           preserveAspectRatio="none">
-        {LINES.map((l, i) => (
-          <line key={`l${i}`}
-            x1={`${l.x1}%`} y1={`${l.y1}%`} x2={`${l.x2}%`} y2={`${l.y2}%`}
-            stroke="#10B981" strokeWidth="1" opacity="0.06" />
-        ))}
-        {DOTS.map((d, i) => (
-          <circle key={i}
-            cx={`${d.x}%`} cy={`${d.y}%`} r="3"
-            fill="#10B981"
-            opacity="0.14"
-            style={{
-              animation: `abraxasDrift${i % 3} ${d.duration}s ease-in-out infinite`,
-              animationDelay: `${d.delay}s`,
-              transformOrigin: "center",
-            }}
-          />
-        ))}
-      </svg>
+      {DOTS.map((d, i) => {
+        const positionStyle: React.CSSProperties = d.side === "left"
+          ? { left: `${d.xPct}%` }
+          : { right: `${d.xPct}%` };
+        return (
+          <div key={i} style={{
+            position: "absolute",
+            ...positionStyle,
+            top: `${d.y}%`,
+            width: 6, height: 6, borderRadius: "50%",
+            background: "#10B981",
+            opacity: 0.18,
+            animation: `abraxasDrift${i % 3} ${d.duration}s ease-in-out infinite`,
+            animationDelay: `${d.delay}s`,
+          }} />
+        );
+      })}
       <style>{`
         @keyframes abraxasDrift0 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(18px, -22px); }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-24px); }
         }
         @keyframes abraxasDrift1 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(-20px, 14px); }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(18px); }
         }
         @keyframes abraxasDrift2 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(12px, 20px); }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-12px); }
+        }
+        /* On viewports narrower than the content column plus a safe
+           margin, there's no guaranteed empty space, hide entirely
+           rather than risk overlapping content. */
+        @media (max-width: 1180px) {
+          .abraxas-live-bg { display: none; }
         }
       `}</style>
     </div>
