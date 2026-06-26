@@ -161,6 +161,7 @@ export function TerminalMain() {
             <DarkPanel>
               <AssetGrid
                 onViewRegistry={() => setDeep("registry")}
+                onViewFlagship={() => setDeep("asset")}
                 onInvest={(assetId) => setInvestAsset(assetId)}
                 onBuyNow={(item) => setBuyItem(item)}
               />

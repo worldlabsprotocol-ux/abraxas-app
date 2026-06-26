@@ -10,6 +10,7 @@ import type { BuyItem } from "./BuyNowModal";
 
 interface AssetGridProps {
   onViewRegistry: () => void;
+  onViewFlagship: () => void;
   onInvest: (assetId: string) => void;
   onBuyNow: (item: BuyItem) => void;
 }
@@ -57,7 +58,7 @@ const CIELO_STATS = [
 // flip this back to true to bring them back without rebuilding anything.
 const SHOW_ADDITIONAL_REAL_ESTATE = false;
 
-export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps) {
+export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }: AssetGridProps) {
   return (
     <div style={{ marginBottom:"1.5rem" }}>
       {/* AAS-1: Cielo Sunrise */}
@@ -132,6 +133,9 @@ export function AssetGrid({ onViewRegistry, onInvest, onBuyNow }: AssetGridProps
                        display:"flex", gap:"0.5rem", flexWrap:"wrap",
                        alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+            <Button onClick={onViewFlagship} color={G} size="md">
+              VIEW FULL PROFILE
+            </Button>
             <Button onClick={onViewRegistry} variant="outline" color={G} size="md">
               VIEW ASSET RECORD
             </Button>

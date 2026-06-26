@@ -1,5 +1,5 @@
 // FILE: lib/data/flagshipProperty.ts
-// CIELO SUNRISE — Genesis Asset · ABX-RE-HOSP-001
+// CIELO SUNRISE, Genesis Asset · ABX-RE-HOSP-001
 // Source: https://www.airbnb.com/rooms/1681387746169197852
 // Mineral Bluff, Georgia · $1,100,000
 
@@ -26,7 +26,7 @@ export const FLAGSHIP_PROPERTY = {
     jurisdiction: "Fannin County, Georgia, United States",
     zoning:       "Residential / Short-Term Rental Permitted",
     ridgeline:    "2,800-foot private ridgeline",
-    views:        "Long-range tri-state views — Georgia, Tennessee, North Carolina",
+    views:        "Long-range tri-state views, Georgia, Tennessee, North Carolina",
     lat:           34.85,
     lng:          -84.26,
     driveTimes: {
@@ -38,7 +38,7 @@ export const FLAGSHIP_PROPERTY = {
   },
 
   property: {
-    type:           "Entire cabin — Private Luxury Wellness Retreat",
+    type:           "Entire cabin, Private Luxury Wellness Retreat",
     bedrooms:       4,
     bathrooms:      3.5,
     beds:           5,
@@ -52,9 +52,9 @@ export const FLAGSHIP_PROPERTY = {
     checkIn:        "4:00 PM",
     checkOut:       "10:00 AM",
     longTermStays:  true,
-    evCharger:      "Level 2 — 220V, 12–35 mph charge rate",
+    evCharger:      "Level 2, 220V, 12-35 mph charge rate",
 
-    signatureFeature: "Mirrored Geodesic Wellness Dome — lay-down infrared sauna, red light therapy, tri-state views",
+    signatureFeature: "Mirrored Geodesic Wellness Dome, lay-down infrared sauna, red light therapy, tri-state views",
 
     rooms: [
       { name:"🍃 The Earth Room",     type:"Primary King Suite",  guests:2, beds:"1 king", desc:"Main-level king suite. Ensuite with dual vanities, glass shower & jetted soaking tub. Walk-out patio. Custom WFH desk. Limewashed walls, grounding design." },
@@ -62,12 +62,12 @@ export const FLAGSHIP_PROPERTY = {
       { name:"🔥 The Fire Room",      type:"Upper King Bedroom",  guests:2, beds:"1 king", desc:"Upper king bedroom." },
       { name:"💧 The Water Room",     type:"Lower Double Bedroom", guests:4, beds:"2 full", desc:"Two full beds. Direct access to terrace amenities: hot tub, cold plunge, wellness dome, fire pit." },
       { name:"🌌 The Sauna Solarium", type:"Wellness Dome",       guests:2, beds:"1 queen sleeper", desc:"Climate-controlled mirrored geodesic dome. Queen sleeper sofa. Infrared sauna, red light therapy, ridgeline views." },
-      { name:"Lower-Level Lounge",    type:"Flex Sleeping",       guests:3, beds:"2 couches + futon", desc:"Additional flex sleeping — 2 couches and a futon." },
+      { name:"Lower-Level Lounge",    type:"Flex Sleeping",       guests:3, beds:"2 couches + futon", desc:"Additional flex sleeping, 2 couches and a futon." },
     ],
 
     bathrooms_detail: [
-      "Primary ensuite (Earth Room) — jetted soaking tub, dual vanities, glass shower",
-      "Upper-level full bath — double vanity",
+      "Primary ensuite (Earth Room), jetted soaking tub, dual vanities, glass shower",
+      "Upper-level full bath, double vanity",
       "Lower-level full bath",
       "Main-level half bath",
     ],
@@ -78,14 +78,14 @@ export const FLAGSHIP_PROPERTY = {
         "Public Goods shampoo & conditioner", "Body soap", "Hot water", "Shower gel",
       ],
       bedroomLaundry: [
-        "Washer", "Free dryer — in unit", "Hangers",
+        "Washer", "Free dryer, in unit", "Hangers",
         "Cotton Standard Textile bed linens", "Room-darkening shades",
         "Iron", "Clothing storage: closet and dresser",
       ],
       entertainment: [
         "TV", "Sonos sound system", "Exercise equipment",
         "Pool table", "Books and reading material",
-        "85\" movie theater — Dolby Atmos surround sound",
+        "85\" movie theater, Dolby Atmos surround sound",
       ],
       heatingCooling: [
         "Air conditioning", "Indoor stone fireplace", "Ceiling fan",
@@ -112,7 +112,7 @@ export const FLAGSHIP_PROPERTY = {
         "Wraparound multi-level deck system", "Private patio/balcony",
         "Private backyard", "Outdoor dining area", "BBQ grill",
         "Outdoor furniture", "EV charger Level 2",
-        "6+ vehicle parking — free",
+        "6+ vehicle parking, free",
       ],
       wellness: [
         "Lay-down infrared sauna", "Red light therapy",
@@ -135,8 +135,8 @@ export const FLAGSHIP_PROPERTY = {
     manager:       "World Labs Protocol",
     host:          "Sae'Von",
     coHost:        "Haley",
-    titleStatus:   "CLEAR — LENDER CONFIRMED",
-    insurance:     "Short-Term Rental Insurance — $1.1M structure coverage",
+    titleStatus:   "CLEAR, LENDER CONFIRMED",
+    insurance:     "Short-Term Rental Insurance, $1.1M structure coverage",
     propertyMgmt:  "Owner-managed (Sae'Von + Haley)",
     custodian:     "Certified Title & Deed Verification Network",
     responseRate:  "100%",
@@ -204,17 +204,17 @@ export const FLAGSHIP_PROPERTY = {
     metaHash:      "sha256:a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8",
     anchoredTx:    "5CiEL0SuNR1sEGaB2luEr3iDge4GA5mesh6TxHash7Solana8Mainnet9Anchor0",
     provenanceTimeline: [
-      { date:"2023-06-01", event:"Entity Formation — Cielo Sunrise Hospitality LLC",  actor:"Sae'Von / World Labs Protocol",    status:"COMPLETE" },
-      { date:"2023-09-15", event:"Property Acquisition — Mineral Bluff, GA",           actor:"Cielo Sunrise Hospitality LLC",    status:"COMPLETE" },
-      { date:"2024-01-20", event:"Title Search & Clear — Fannin County",               actor:"First American Title",              status:"COMPLETE" },
+      { date:"2023-06-01", event:"Entity Formation, Cielo Sunrise Hospitality LLC",  actor:"Sae'Von / World Labs Protocol",    status:"COMPLETE" },
+      { date:"2023-09-15", event:"Property Acquisition, Mineral Bluff, GA",           actor:"Cielo Sunrise Hospitality LLC",    status:"COMPLETE" },
+      { date:"2024-01-20", event:"Title Search and Clear, Fannin County",               actor:"First American Title",              status:"COMPLETE" },
       { date:"2024-03-10", event:"Short-Term Rental Insurance Placed",                 actor:"STR Insurance Group",               status:"COMPLETE" },
       { date:"2024-05-01", event:"Mirrored Wellness Dome Installation Complete",       actor:"Geodesic Dome Builders LLC",        status:"COMPLETE" },
-      { date:"2024-06-15", event:"Airbnb Listing Activation — Cielo Sunrise",         actor:"Sae'Von",                           status:"COMPLETE" },
-      { date:"2024-10-01", event:"Superhost Status Achieved — 5.0 Rating",            actor:"Airbnb Platform",                   status:"COMPLETE" },
-      { date:"2025-05-01", event:"Independent Appraisal — $1,100,000",                actor:"Blue Ridge Highlands Appraisal",    status:"COMPLETE" },
+      { date:"2024-06-15", event:"Airbnb Listing Activation, Cielo Sunrise",         actor:"Sae'Von",                           status:"COMPLETE" },
+      { date:"2024-10-01", event:"Superhost Status Achieved, 5.0 Rating",            actor:"Airbnb Platform",                   status:"COMPLETE" },
+      { date:"2025-05-01", event:"Independent Appraisal, $1,100,000",                actor:"Blue Ridge Highlands Appraisal",    status:"COMPLETE" },
       { date:"2025-05-10", event:"AAS-1 Verification Application Submitted",           actor:"World Labs Protocol",               status:"COMPLETE" },
       { date:"2025-05-15", event:"AAS-1 Certificate Issued",                          actor:"Abraxas Verification Network",      status:"COMPLETE" },
-      { date:"2025-05-15", event:"Certificate Anchored On-Chain — Solana Mainnet",    actor:"Abraxas Protocol",                  status:"COMPLETE" },
+      { date:"2025-05-15", event:"Certificate Anchored On-Chain, Solana Mainnet",    actor:"Abraxas Protocol",                  status:"COMPLETE" },
     ],
     custodyLedger: {
       custodian:    "Certified Title & Deed Verification Network",
@@ -224,7 +224,7 @@ export const FLAGSHIP_PROPERTY = {
       signatories: [
         { id:"KEY-001", role:"Primary Owner (Sae'Von)",     hash:"c1e1...0500", status:"ACTIVE" },
         { id:"KEY-002", role:"Protocol Custodian (WLP)",    hash:"a9b8...a9b8", status:"ACTIVE" },
-        { id:"KEY-003", role:"Legal Trustee — GA Counsel",  hash:"f7e2...3d1c", status:"ACTIVE" },
+        { id:"KEY-003", role:"Legal Trustee, GA Counsel",  hash:"f7e2...3d1c", status:"ACTIVE" },
       ],
     },
   },
@@ -238,7 +238,7 @@ export const FLAGSHIP_PROPERTY = {
     metadataUri:       "ipfs://QmCielo5unrise1Genesis001/metadata.json",
     totalSupply:       1,
     status:            "COLLATERAL_ELIGIBLE",
-    stablecoinBooking: "USDC booking integration — coming soon",
+    stablecoinBooking: "USDC booking integration, coming soon",
   },
 
   guestProfile: {
@@ -255,9 +255,9 @@ export const FLAGSHIP_PROPERTY = {
     responseTime:  "Within an hour",
     highlightedAmenities: ["Hot tub", "View", "Decor"],
     reviews: [
-      { name:"Amanda",      location:"Suwanee, Georgia",  when:"1 week ago",  stars:5, highlight:"Perfect location for a short self care trip. The wellness setup is unreal — hot tub, cold plunge, sauna dome. A beautiful and healing environment." },
+      { name:"Amanda",      location:"Suwanee, Georgia",  when:"1 week ago",  stars:5, highlight:"Perfect location for a short self care trip. The wellness setup is unreal, hot tub, cold plunge, sauna dome. A beautiful and healing environment." },
       { name:"Justin",      location:"",                  when:"1 week ago",  stars:5, highlight:"Top tier stay. Everything feels elevated, clean, and thoughtful. The sauna, cold plunge, red light therapy made it feel like a true retreat. My only regret is only waking up for one sunrise." },
-      { name:"Lorraine",    location:"Atlanta, Georgia",  when:"1 week ago",  stars:5, highlight:"This space didn't just host me — it held me. The dome view touches your soul. You're lifted just above the treeline, suspended between earth and sky." },
+      { name:"Lorraine",    location:"Atlanta, Georgia",  when:"1 week ago",  stars:5, highlight:"This space didn't just host me, it held me. The dome view touches your soul. You're lifted just above the treeline, suspended between earth and sky." },
       { name:"Walter",      location:"",                  when:"1 week ago",  stars:5, highlight:"EXACTLY the reset we were hoping for. First time trying red light therapy and lie-down sauna. Pairing the two was far more relaxing than I expected. 10/10." },
       { name:"Christopher", location:"",                  when:"1 day ago",   stars:5, highlight:"A gem. Thankful for the place." },
     ],
