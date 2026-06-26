@@ -38,12 +38,23 @@ function extractContextAddress(raw: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const proofs = await req.json();
+  let proofs: unknown;
+  let contextAddress: string | null = null;
+  let succeeded = false;
+  let errorMessage: string | null = null;
 
-    const contextAddress = extractContextAddress(proofs);
+  try {
+    try {
+      proofs = await req.json();
+    } catch {
+      proofs = null;
+      errorMessage = "Body was not valid JSON";
+    }
+
+    contextAddress = extractContextAddress(proofs);
     if (!contextAddress) {
-      return NextResponse.json({ error: "Could not identify session from proof" }, { status: 400 });
+      errorMessage = "Could not identify session from proof";
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
     const { data: session } = await supabase
@@ -55,16 +66,18 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!session) {
-      return NextResponse.json({ error: "No matching verification session found" }, { status: 400 });
+      errorMessage = "No matching verification session found";
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    const { isVerified, data, error } = await verifyProof(proofs, {
+    const { isVerified, data, error } = await verifyProof(proofs as Parameters<typeof verifyProof>[0], {
       providerId: session.provider_id,
       providerVersion: session.provider_version,
     });
 
     if (!isVerified || !data || data.length === 0) {
-      return NextResponse.json({ error: error ?? "Verification failed" }, { status: 400 });
+      errorMessage = error instanceof Error ? error.message : (error ? String(error) : "Verification failed");
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
     const { context, extractedParameters } = data[0];
@@ -76,8 +89,24 @@ export async function POST(req: NextRequest) {
       verified_at: new Date().toISOString(),
     });
 
+    succeeded = true;
     return NextResponse.json({ verified: true });
-  } catch {
+  } catch (err) {
+    errorMessage = err instanceof Error ? err.message : "Could not process verification";
     return NextResponse.json({ error: "Could not process verification" }, { status: 500 });
+  } finally {
+    // Always logged, success or failure, this is the actual record
+    // of what Reclaim sent, the real source of truth instead of
+    // guessing at the payload shape from documentation alone.
+    try {
+      await supabase.from("reclaim_raw_callbacks").insert({
+        raw_body: proofs as object,
+        extracted_context: contextAddress,
+        verification_succeeded: succeeded,
+        error_message: errorMessage,
+      });
+    } catch {
+      // never let logging itself break the response already sent above
+    }
   }
 }

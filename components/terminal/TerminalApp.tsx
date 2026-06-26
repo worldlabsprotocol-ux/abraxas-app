@@ -8,6 +8,8 @@ import { useState, useEffect } from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { TerminalMain }  from "./TerminalMain";
 import { LiveBackground } from "@/components/LiveBackground";
+import { WalletContextProvider } from "@/components/WalletContextProvider";
+import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { BottomNav }     from "@/components/BottomNav";
 import { WaitlistForm }  from "@/components/WaitlistForm";
 import { DemoMode }      from "./DemoMode";
@@ -41,6 +43,7 @@ export default function TerminalApp() {
   }, []);
 
   return (
+    <WalletContextProvider>
     <div style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)",
                    display: "flex", flexDirection: "column" }}>
       <LiveBackground />
@@ -75,6 +78,7 @@ export default function TerminalApp() {
             ZK LOGIN, COMING SOON
           </span>
         </button>
+        <WalletConnectButton />
         <LanguageSelector />
       </nav>
 
@@ -130,5 +134,6 @@ export default function TerminalApp() {
 
       <DemoMode />
     </div>
+    </WalletContextProvider>
   );
 }
