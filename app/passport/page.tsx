@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { ReclaimVerifyButton } from "@/components/ReclaimVerifyButton";
+import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
+import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -157,9 +159,10 @@ const STAMPS: Stamp[] = [
 type StampStatus = "earned" | "in_progress" | "not_started";
 
 interface PassportState {
-  identity:   StampStatus;
-  business:   StampStatus;
-  accredited: StampStatus;
+  social:      StampStatus;
+  identity:    StampStatus;
+  business:    StampStatus;
+  accredited:  StampStatus;
   asset_owner: StampStatus;
 }
 
@@ -169,11 +172,22 @@ export default function PassportPage() {
   const [starting, setStarting] = useState(false);
   const [error, setError]   = useState<string | null>(null);
   const [passportState, setPassportState] = useState<PassportState>({
+    social: "not_started",
     identity: "not_started",
     business: "not_started",
     accredited: "not_started",
     asset_owner: "not_started",
   });
+
+  // Real check against the database, not optimistic UI alone, this
+  // is the actual source of truth for whether a Reclaim verification
+  // genuinely completed.
+  const socialVerified = useReclaimSocialStamp(email || null);
+  useEffect(() => {
+    if (socialVerified) {
+      setPassportState(prev => ({ ...prev, social: "earned" }));
+    }
+  }, [socialVerified]);
 
   const earned = Object.values(passportState).filter(s => s === "earned").length;
   const activeStamp = STAMPS.find(s => s.id === active) ?? null;
@@ -353,7 +367,7 @@ export default function PassportPage() {
           <div style={{ display:"flex", alignItems:"center", gap:"0.75rem",
                          flexWrap:"wrap" }}>
             <div style={{ fontFamily:M, fontSize:"1.6rem", fontWeight:700, color:G }}>
-              {earned}/4
+              {earned}/{STAMPS.length}
             </div>
             <div>
               <div style={{ fontFamily:S, fontSize:"0.88rem", fontWeight:600,
@@ -366,6 +380,12 @@ export default function PassportPage() {
               </div>
             </div>
           </div>
+
+          <FoundingVerifiedCard
+            walletOrContext={email || "anon"}
+            hasSocial={passportState.social === "earned"}
+            hasIdentity={passportState.identity === "earned"}
+          />
 
           {/* Stamps row */}
           <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>

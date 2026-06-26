@@ -172,6 +172,11 @@ export function PartnersSection() {
               appraisers, attorneys, title companies, and auditors who validate the
               claims that make on-chain collateral real.
             </p>
+            <a href="/partners" style={{ fontFamily:S, fontSize:"0.78rem", color:G,
+                                           textDecoration:"underline", display:"inline-block",
+                                           marginTop:"0.5rem" }}>
+              View full partner directory →
+            </a>
           </div>
           <BecomeAPartner />
         </div>
