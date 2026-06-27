@@ -1,7 +1,17 @@
 // FILE: components/AssetCard.tsx
 // Production AssetCard — the universal card component for every asset type.
 // Pokemon, One Piece, RWAs, luxury assets, NFTs — all go through this.
-// Uses tailwind classNames (now wired via globals.css) + CSS vars.
+//
+// LIGHT MODE PASS (June 2026)
+// — Layout/props/exports unchanged. Re-themed to match the white-card,
+//   soft-shadow marketplace cards seen in the reference screenshots.
+// — Colors now read through var(--abx-*, fallback) tokens (see
+//   styles/abraxas-theme-tokens.css). Drop that file in and this works in
+//   both data-theme="light" and data-theme="dark" with zero further edits.
+// — Badges that sit ON TOP of the artwork (rarity, grade, status pill) keep
+//   the dark glass-chip treatment from the original — that pattern reads
+//   fine over a photo regardless of page theme, same as every screenshot
+//   reference (image badges stay dark-on-photo even on light pages).
 // No framer-motion — CSS transitions only. Renders fast on mobile.
 "use client";
 
@@ -40,12 +50,14 @@ interface AssetCardProps {
   compact?:  boolean;
 }
 
+// Deepened brand palette — same hues as the original, shifted so text/badges
+// keep enough contrast sitting on white instead of glowing on near-black.
 const STATUS_CONFIG: Record<AssetStatus, { label: string; bg: string; text: string; dot: string }> = {
-  PROTECTED:        { label: "PROTECTED",        bg: "rgba(61,214,140,0.15)",   text: "#3dd68c", dot: "#3dd68c" },
-  AT_RISK:          { label: "AT RISK",           bg: "rgba(242,107,107,0.15)", text: "#f26b6b", dot: "#f26b6b" },
-  CIRCUIT_TRIGGERED:{ label: "TRIGGERED",         bg: "rgba(242,107,107,0.2)",  text: "#f26b6b", dot: "#f26b6b" },
-  UNPROTECTED:      { label: "UNPROTECTED",       bg: "rgba(251,191,36,0.12)",  text: "#FBBF24", dot: "#FBBF24" },
-  STAKED:           { label: "STAKED",            bg: "rgba(107,140,255,0.15)", text: "#6b8cff", dot: "#3dd68c" },
+  PROTECTED:        { label: "PROTECTED",  bg: "rgba(31,174,107,0.16)",  text: "#1FAE6B", dot: "#1FAE6B" },
+  AT_RISK:          { label: "AT RISK",    bg: "rgba(224,82,79,0.18)",   text: "#E0524F", dot: "#E0524F" },
+  CIRCUIT_TRIGGERED:{ label: "TRIGGERED",  bg: "rgba(224,82,79,0.22)",   text: "#E0524F", dot: "#E0524F" },
+  UNPROTECTED:      { label: "UNPROTECTED",bg: "rgba(217,119,6,0.16)",   text: "#D97706", dot: "#D97706" },
+  STAKED:           { label: "STAKED",     bg: "rgba(76,111,255,0.18)",  text: "#4C6FFF", dot: "#1FAE6B" },
 };
 
 // Card art — image if available, gradient + icon fallback
@@ -57,8 +69,10 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
 
   return (
     <div style={{
-      height, position: "relative", overflow: "hidden", borderRadius: "10px",
-      background: showImage ? "transparent" : `linear-gradient(135deg, ${asset.color}28, ${asset.color}08)`,
+      height, position: "relative", overflow: "hidden", borderRadius: "12px",
+      // Lighter, airier placeholder gradient than the original (which was
+      // tuned to glow on a near-black card background).
+      background: showImage ? "transparent" : `linear-gradient(135deg, ${asset.color}1A, ${asset.color}06)`,
     }}>
       {showImage ? (
         <img
@@ -69,17 +83,17 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         />
       ) : (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
-          <span style={{ fontSize: "3rem", filter: `drop-shadow(0 0 10px ${asset.color}88)` }}>
+          <span style={{ fontSize: "3rem", filter: `drop-shadow(0 2px 8px ${asset.color}40)` }}>
             {asset.icon ?? "◈"}
           </span>
         </div>
       )}
 
-      {/* Status badge */}
+      {/* Status badge — glass chip over the artwork, theme-independent */}
       <div style={{
         position: "absolute", top: "0.5rem", right: "0.5rem",
         display: "flex", alignItems: "center", gap: "0.25rem",
-        padding: "0.15rem 0.45rem", borderRadius: "4px",
+        padding: "0.15rem 0.45rem", borderRadius: "999px",
         background: sc.bg, backdropFilter: "blur(8px)",
       }}>
         <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: sc.dot,
@@ -94,8 +108,8 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         <div style={{
           position: "absolute", top: "0.5rem", left: "0.5rem",
           padding: "0.12rem 0.4rem", borderRadius: "4px", fontSize: "0.48rem", fontWeight: 700,
-          background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",
-          color: asset.rarity === "Legendary" ? "#FFD700" : asset.rarity === "Ultra Rare" ? "#C8A96E" : "#60A5FA",
+          background: "rgba(20,23,31,0.72)", backdropFilter: "blur(4px)",
+          color: asset.rarity === "Legendary" ? "#FFD700" : asset.rarity === "Ultra Rare" ? "#D9B878" : "#7C9CFF",
           letterSpacing: "0.06em",
         }}>
           {asset.rarity.toUpperCase()}
@@ -107,7 +121,7 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         <div style={{
           position: "absolute", bottom: "0.5rem", right: "0.5rem",
           padding: "0.12rem 0.4rem", borderRadius: "3px", fontSize: "0.48rem", fontWeight: 700,
-          background: "rgba(0,0,0,0.65)", color: "#FBBF24", letterSpacing: "0.04em",
+          background: "rgba(20,23,31,0.72)", color: "#E8A93C", letterSpacing: "0.04em",
         }}>
           {asset.grade}
         </div>
@@ -118,7 +132,7 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         <div style={{
           position: "absolute", bottom: "0.5rem", left: "0.5rem",
           padding: "0.15rem 0.4rem", borderRadius: "3px", fontSize: "0.5rem", fontWeight: 700,
-          background: "rgba(61,214,140,0.15)", color: "#3dd68c", fontFamily: "'JetBrains Mono',monospace",
+          background: "rgba(31,174,107,0.18)", color: "#1FAE6B", fontFamily: "'JetBrains Mono',monospace",
         }}>
           +{asset.accrued.toFixed(4)} $ABRA
         </div>
@@ -128,16 +142,16 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
 }
 
 // Circuit defense mini-bar
-function CircuitBar({ score, color }: { score: number; color: string }) {
-  const c = score > 65 ? "#f26b6b" : score > 40 ? "#FBBF24" : "#3dd68c";
+function CircuitBar({ score }: { score: number; color: string }) {
+  const c = score > 65 ? "#E0524F" : score > 40 ? "#D97706" : "#1FAE6B";
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-        <span style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.3)", letterSpacing: "0.06em" }}>CIRCUIT RISK</span>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+        <span style={{ fontSize: "0.5rem", color: "var(--abx-text-tertiary, #9AA1AE)", letterSpacing: "0.06em" }}>CIRCUIT RISK</span>
         <span style={{ fontSize: "0.5rem", fontWeight: 700, color: c }}>{score}</span>
       </div>
-      <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "2px", height: "2px" }}>
-        <div style={{ width: `${score}%`, height: "100%", background: c, borderRadius: "2px", transition: "width 0.5s" }} />
+      <div style={{ background: "var(--abx-border-subtle, #E7E9EE)", borderRadius: "3px", height: "3px" }}>
+        <div style={{ width: `${score}%`, height: "100%", background: c, borderRadius: "3px", transition: "width 0.5s" }} />
       </div>
     </div>
   );
@@ -151,18 +165,30 @@ export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selecte
       onClick={() => onSelect?.(asset)}
       style={{
         background: selected
-          ? `linear-gradient(135deg, ${asset.color}18, ${asset.color}06)`
-          : "rgba(13,18,32,0.95)",
-        border: `1px solid ${selected ? asset.color + "66" : asset.color + "20"}`,
-        borderRadius: "14px",
+          ? `linear-gradient(135deg, ${asset.color}14, ${asset.color}05)`
+          : "var(--abx-bg-surface, #FFFFFF)",
+        border: `1px solid ${selected ? asset.color + "55" : "var(--abx-border-subtle, #E7E9EE)"}`,
+        borderRadius: "16px",
         overflow: "hidden",
         cursor: onSelect ? "pointer" : "default",
-        boxShadow: selected ? `0 0 24px ${asset.color}18` : "none",
+        boxShadow: selected
+          ? `0 10px 24px ${asset.color}22`
+          : "var(--abx-shadow-card, 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06))",
         transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s",
         transform: selected ? "translateY(-2px)" : "translateY(0)",
       }}
-      onMouseEnter={(e) => { if (!selected) (e.currentTarget as HTMLDivElement).style.borderColor = `${asset.color}40`; }}
-      onMouseLeave={(e) => { if (!selected) (e.currentTarget as HTMLDivElement).style.borderColor = `${asset.color}20`; }}
+      onMouseEnter={(e) => {
+        if (!selected) {
+          (e.currentTarget as HTMLDivElement).style.borderColor = `${asset.color}55`;
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--abx-shadow-card-hover, 0 8px 20px rgba(16,24,40,0.10))";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!selected) {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "var(--abx-border-subtle, #E7E9EE)";
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--abx-shadow-card, 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06))";
+        }
+      }}
     >
       <div style={{ padding: "0.625rem" }}>
         <CardArt asset={asset} height={compact ? 100 : 140} />
@@ -171,20 +197,24 @@ export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selecte
           {/* Name + price */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.25rem" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.82rem", lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{asset.name}</div>
-              <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.35)", marginTop: "1px" }}>{asset.type}</div>
+              <div style={{
+                fontWeight: 700, fontSize: "0.82rem", lineHeight: 1.25,
+                color: "var(--abx-text-primary, #14171F)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{asset.name}</div>
+              <div style={{ fontSize: "0.58rem", color: "var(--abx-text-tertiary, #9AA1AE)", marginTop: "1px" }}>{asset.type}</div>
             </div>
             {asset.priceSol !== undefined && (
               <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "0.5rem" }}>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>{asset.priceSol.toFixed(1)}</div>
-                <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.3)" }}>SOL</div>
+                <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--abx-text-primary, #14171F)" }}>{asset.priceSol.toFixed(1)}</div>
+                <div style={{ fontSize: "0.5rem", color: "var(--abx-text-tertiary, #9AA1AE)" }}>SOL</div>
               </div>
             )}
           </div>
 
           {/* 24h change */}
           {asset.change24h !== undefined && (
-            <div style={{ fontSize: "0.62rem", fontWeight: 600, color: positive ? "#3dd68c" : "#f26b6b", marginBottom: "0.375rem" }}>
+            <div style={{ fontSize: "0.62rem", fontWeight: 600, color: positive ? "#1FAE6B" : "#E0524F", marginBottom: "0.375rem" }}>
               {positive ? "+" : ""}{asset.change24h.toFixed(1)}% 24h
             </div>
           )}
@@ -196,27 +226,35 @@ export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selecte
             </div>
           )}
 
-          {/* Actions */}
+          {/* Actions — primary action solid-filled (matches the "Invest" /
+              "Buy Now" pill CTAs in the reference shots), secondary actions
+              stay as tinted pills so three buttons don't compete visually. */}
           {!compact && (
             <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.4rem" }}>
               {onProtect && asset.status === "UNPROTECTED" && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onProtect(asset); }}
-                  style={{ flex: 1, background: "rgba(61,214,140,0.12)", border: "1px solid rgba(61,214,140,0.25)", borderRadius: "7px", padding: "0.35rem 0.4rem", fontSize: "0.62rem", fontWeight: 700, color: "#3dd68c", cursor: "pointer" }}>
+                  style={{ flex: 1, background: "#1FAE6B", border: "1px solid #1FAE6B", borderRadius: "8px", padding: "0.35rem 0.4rem", fontSize: "0.62rem", fontWeight: 700, color: "#FFFFFF", cursor: "pointer" }}>
                   Protect
                 </button>
               )}
               {onDuel && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDuel(asset); }}
-                  style={{ flex: 1, background: "rgba(107,140,255,0.12)", border: "1px solid rgba(107,140,255,0.25)", borderRadius: "7px", padding: "0.35rem 0.4rem", fontSize: "0.62rem", fontWeight: 700, color: "#6b8cff", cursor: "pointer" }}>
+                  style={{ flex: 1, background: "rgba(76,111,255,0.10)", border: "1px solid rgba(76,111,255,0.28)", borderRadius: "8px", padding: "0.35rem 0.4rem", fontSize: "0.62rem", fontWeight: 700, color: "#4C6FFF", cursor: "pointer" }}>
                   Duel
                 </button>
               )}
               {onStake && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onStake(asset); }}
-                  style={{ flex: 1, background: asset.status === "STAKED" ? "rgba(242,107,107,0.1)" : "rgba(200,169,110,0.12)", border: `1px solid ${asset.status === "STAKED" ? "rgba(242,107,107,0.25)" : "rgba(200,169,110,0.25)"}`, borderRadius: "7px", padding: "0.35rem 0.4rem", fontSize: "0.62rem", fontWeight: 700, color: asset.status === "STAKED" ? "#f26b6b" : "#c8a96e", cursor: "pointer" }}>
+                  style={{
+                    flex: 1,
+                    background: asset.status === "STAKED" ? "rgba(224,82,79,0.08)" : "rgba(182,138,78,0.10)",
+                    border: `1px solid ${asset.status === "STAKED" ? "rgba(224,82,79,0.3)" : "rgba(182,138,78,0.3)"}`,
+                    borderRadius: "8px", padding: "0.35rem 0.4rem", fontSize: "0.62rem", fontWeight: 700,
+                    color: asset.status === "STAKED" ? "#E0524F" : "#B68A4E", cursor: "pointer",
+                  }}>
                   {asset.status === "STAKED" ? "Unstake" : `${asset.stakeApy ?? 10}%`}
                 </button>
               )}

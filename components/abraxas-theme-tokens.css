@@ -1,0 +1,89 @@
+/*
+  FILE: styles/abraxas-theme-tokens.css
+  ---------------------------------------------------------------------------
+  Drop-in token layer for AssetCard.tsx and VerificationPanel.tsx.
+
+  WHY THIS FILE EXISTS
+  The original components had "wired via globals.css + CSS vars" in their
+  header comment, but the actual styles were hardcoded white-on-dark
+  (rgba(255,255,255,x) text, rgba(13,18,32,x) card backgrounds). That meant
+  there was no real light mode — just one dark theme baked into the markup.
+
+  This file makes that comment true. Every color in the two components now
+  reads through a var(--abx-..., fallback) pair, themed off the existing
+  `data-theme` attribute on <html> (already set in app/layout.tsx).
+
+  HOW TO WIRE IT UP
+  1. Import this file once, e.g. at the top of app/globals.css:
+       @import "../styles/abraxas-theme-tokens.css";
+  2. If you already have tokens with different names in globals.css for the
+     same colors, you have two options: (a) keep both — these are namespaced
+     with an `--abx-` prefix specifically so they won't collide, or
+     (b) point these variables at your existing ones instead of the raw hex
+     values below. Happy to merge them directly if you share globals.css /
+     ThemeContext.tsx.
+  3. layout.tsx now defaults to data-theme="light". Flip the attribute (or
+     however ThemeContext toggles it) to "dark" and everything reverts to
+     the original dark look — nothing was deleted, just made switchable.
+*/
+
+:root,
+[data-theme="light"] {
+  /* Surfaces */
+  --abx-bg-app:            #F7F8FA;
+  --abx-bg-surface:        #FFFFFF;
+  --abx-bg-surface-alt:    #F3F4F7;
+
+  /* Borders */
+  --abx-border-subtle:     #E7E9EE;
+  --abx-border-default:    #DDE1E8;
+
+  /* Text */
+  --abx-text-primary:      #14171F;
+  --abx-text-secondary:    #5B6270;
+  --abx-text-tertiary:     #9AA1AE;
+
+  /* Status / accent — same brand hues as before, deepened so they hold
+     contrast on white instead of glowing on near-black */
+  --abx-success:           #1FAE6B;
+  --abx-success-bg:        rgba(31, 174, 107, 0.10);
+  --abx-danger:            #E0524F;
+  --abx-danger-bg:         rgba(224, 82, 79, 0.10);
+  --abx-warning:           #D97706;
+  --abx-warning-bg:        rgba(217, 119, 6, 0.10);
+  --abx-info:              #4C6FFF;
+  --abx-info-bg:           rgba(76, 111, 255, 0.10);
+  --abx-gold:              #B68A4E;
+  --abx-gold-bg:           rgba(182, 138, 78, 0.08);
+
+  /* Elevation */
+  --abx-shadow-card:       0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+  --abx-shadow-card-hover: 0 8px 20px rgba(16,24,40,0.10);
+}
+
+[data-theme="dark"] {
+  --abx-bg-app:            #0a0e1a;
+  --abx-bg-surface:        rgba(13,18,32,0.95);
+  --abx-bg-surface-alt:    rgba(255,255,255,0.04);
+
+  --abx-border-subtle:     rgba(255,255,255,0.07);
+  --abx-border-default:    rgba(255,255,255,0.18);
+
+  --abx-text-primary:      #F5F6F8;
+  --abx-text-secondary:    rgba(255,255,255,0.45);
+  --abx-text-tertiary:     rgba(255,255,255,0.3);
+
+  --abx-success:           #3dd68c;
+  --abx-success-bg:        rgba(61,214,140,0.15);
+  --abx-danger:            #f26b6b;
+  --abx-danger-bg:         rgba(242,107,107,0.15);
+  --abx-warning:           #FBBF24;
+  --abx-warning-bg:        rgba(251,191,36,0.12);
+  --abx-info:              #6b8cff;
+  --abx-info-bg:           rgba(107,140,255,0.15);
+  --abx-gold:              #c8a96e;
+  --abx-gold-bg:           rgba(200,169,110,0.12);
+
+  --abx-shadow-card:       none;
+  --abx-shadow-card-hover: 0 0 24px rgba(255,255,255,0.06);
+}

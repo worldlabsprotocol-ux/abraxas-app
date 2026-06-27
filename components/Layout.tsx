@@ -1,38 +1,42 @@
-import { ReactNode } from "react";
+// FILE: app/layout.tsx
+// Root layout. Now defaults to LIGHT mode.
+// (Previously hardcoded data-theme="dark" with a comment pointing at
+// ThemeContext.tsx — flipped here. If ThemeContext also sets/overrides
+// this attribute on mount, e.g. from localStorage or a toggle, check it
+// still defaults new users to "light" rather than re-forcing "dark."
+// Share ThemeContext.tsx if you want that reconciled directly.)
+import type { Metadata } from "next";
+import "./globals.css";
+import "@/styles/abraxas-theme-tokens.css";
+import { ThemeProvider } from "@/components/ThemeContext";
 
-interface LayoutProps {
-  children: ReactNode;
-  /** Max width tier — defaults to 'md' (4xl ~ 56rem) */
-  size?: "sm" | "md" | "lg" | "full";
-  /** Vertical padding — defaults to 'md' */
-  padding?: "sm" | "md" | "lg";
-}
-
-const sizes: Record<NonNullable<LayoutProps["size"]>, string> = {
-  sm: "max-w-2xl",
-  md: "max-w-4xl",
-  lg: "max-w-6xl",
-  full: "max-w-7xl",
+export const metadata: Metadata = {
+  title: "Abraxas, Verify Once. Transact Everywhere.",
+  description: "The verification and identity layer for real-world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
+  openGraph: {
+    title: "Abraxas, Verify Once. Transact Everywhere.",
+    description: "The verification and identity layer for real-world assets onchain.",
+    url: "https://abraxas-app.vercel.app",
+    siteName: "Abraxas",
+    images: ["/og-image.jpg"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Abraxas, Verify Once. Transact Everywhere.",
+    description: "The verification and identity layer for real-world assets onchain.",
+    images: ["/og-image.jpg"],
+  },
 };
 
-const paddings: Record<NonNullable<LayoutProps["padding"]>, string> = {
-  sm: "py-6",
-  md: "py-8 md:py-10",
-  lg: "py-12 md:py-16",
-};
-
-/**
- * Standard page wrapper. Provides consistent
- * horizontal padding, max-width, and vertical spacing.
- */
-export function Layout({
-  children,
-  size = "md",
-  padding = "md",
-}: LayoutProps) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`mx-auto px-4 md:px-6 ${sizes[size]} ${paddings[padding]}`}>
-      {children}
-    </div>
+    <html lang="en" data-theme="light">
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
