@@ -1,81 +1,31 @@
-@import 'tailwindcss';
+/* FILE: app/globals.css, replace or merge with existing */
+/* Light, premium theme. Single theme, no toggle, that architecture
+   decision stays the same as before, only the actual values changed. */
 
-/* FILE: app/globals.css
-   Tailwind v4 foundation for Abraxas. Every color below is the REAL
-   token already established across this build, not v0's generic
-   template greens. No .glass, no .ambient-glow, no backdrop-blur
-   utilities, those were explicitly removed in earlier rounds and
-   this migration does not bring them back. Light theme only, no
-   dark-mode block, that's also a deliberate prior decision (an
-   earlier dual-theme setup caused real contrast bugs). */
-
-@theme inline {
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
-
-  --color-background:        #FAFAF8;
-  --color-foreground:        #15151A;
-  --color-card:               #FFFFFF;
-  --color-card-foreground:    #15151A;
-  --color-popover:            #FFFFFF;
-  --color-popover-foreground: #15151A;
-
-  /* The one canonical brand green. Fixes a real small inconsistency
-     found during this migration: the old CSS variable said #0E9A6E
-     but every single component actually used #10B981 directly. This
-     is the value used everywhere in practice, so it's the one that
-     becomes canonical here, not the unused variable. */
-  --color-primary:            #10B981;
-  --color-primary-foreground: #000000;
-
-  --color-secondary:            #F4F4F1;
-  --color-secondary-foreground: #15151A;
-  --color-muted:                 #F4F4F1;
-  --color-muted-foreground:      rgba(21,21,26,0.62);
-  --color-accent:                rgba(16,185,129,0.08);
-  --color-accent-foreground:     #15151A;
-  --color-destructive:           #EF4444;
-  --color-border:                #E5E5E0;
-  --color-input:                 #E5E5E0;
-  --color-ring:                  #10B981;
-
-  --color-blue:   #3B82F6;
-  --color-amber:  #F59E0B;
-  --color-violet: #8B5CF6;
-  --color-cyan:   #06B6D4;
-
-  --radius: 0.625rem;
-  --radius-sm: calc(var(--radius) * 0.7);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) * 1.4);
-  --radius-xl: calc(var(--radius) * 1.8);
-
-  /* The two real animations already used across the site, moved here
-     once instead of a separate inline <style> tag duplicated in every
-     component that needs one. */
-  --animate-pulse-dot: abraxas-pulse 2s infinite;
-  --animate-scroll-bounce: abraxas-bounce 2s infinite;
-}
-
-@keyframes abraxas-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-@keyframes abraxas-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(5px); }
+:root,
+[data-theme="dark"],
+[data-theme="light"] {
+  --bg:             #FAFAF8;
+  --bg-secondary:   #FFFFFF;
+  --surface:        #FFFFFF;
+  --surface-raised: #F4F4F1;
+  --border:         #E5E5E0;
+  --text-primary:   #15151A;
+  --text-secondary: rgba(21,21,26,0.62);
+  --text-muted:     rgba(21,21,26,0.4);
+  --accent:         #0E9A6E;
+  --accent-faint:   rgba(14,154,110,0.08);
+  --accent-border:  rgba(14,154,110,0.25);
+  --nav-bg:         rgba(255,255,255,0.97);
 }
 
 * { box-sizing: border-box; }
-
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
-  font-family: var(--font-sans);
 }
-
-/* The live background dot-network keeps working unmodified, it
-   already lives outside the content column entirely, see
-   components/LiveBackground.tsx, nothing about this migration
-   changes that component. */
+*:not(img):not(svg):not(path) {
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
