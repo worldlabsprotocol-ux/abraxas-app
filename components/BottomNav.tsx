@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
-const BDR = "#E5E5E0";
+const BDR = "var(--border)";
 
 const NAV_ITEMS = [
   { href: "/terminal",  label: "Market",    icon: "\u25c8" },

@@ -1,7 +1,6 @@
 "use client";
 // FILE: components/terminal/TerminalMain.tsx
 // State machine + layout. Renders deep views or the main scrolling terminal.
-// Every sub-component is imported. No inline definitions, no nested functions.
 
 import { useState, useEffect }      from "react";
 import { M, S, G } from "./tokens";
@@ -20,11 +19,12 @@ import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { VerificationPackages } from "./VerificationPackages";
 import { FAQSection }         from "./FAQSection";
+import { MarketplaceFilterBar } from "./MarketplaceFilterBar";
 import { SiteFooter }         from "@/components/SiteFooter";
 import { InvestorPortalModal} from "./InvestorPortalModal";
 import { BuyNowModal }        from "./BuyNowModal";
 import type { BuyItem }       from "./BuyNowModal";
-import { Divider, ScrollFade } from "./ui";
+import { Divider, ScrollFade, Panel } from "./ui";
 
 import type { DeepView } from "./types";
 
@@ -33,25 +33,6 @@ const MAX_WIDTH: React.CSSProperties = {
   margin: "0 auto",
   padding: "1rem clamp(0.75rem,2.5vw,1.5rem) 0.75rem",
 };
-
-// Fixed-dark wrapper, deliberately NOT theme-aware. Every section below
-// was built with white/light text on a dark background. Rather than
-// retrofit dozens of individual color references across multiple files
-// (the exact kind of sweeping edit that has caused real bugs before),
-// each section gets wrapped in a guaranteed-dark panel so its existing
-// text stays readable in both light and dark page mode. This is the
-// same "dark card floating on a light canvas" pattern fintech apps use
-// deliberately, not a workaround, an actual design choice.
-function DarkPanel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ background:"var(--surface)", borderRadius:16,
-                   padding:"1.25rem clamp(0.875rem,3vw,1.5rem)",
-                   border:"1px solid var(--border)",
-                   boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
-      {children}
-    </div>
-  );
-}
 
 export function TerminalMain() {
   const [deep,        setDeep]        = useState<DeepView>("main");
@@ -64,7 +45,6 @@ export function TerminalMain() {
 
   function goMain() { setDeep("main"); }
 
-  // Deep view routing. One conditional block, one return path
   if (deep !== "main") {
     return (
       <DeepViewShell onBack={goMain}>
@@ -76,7 +56,6 @@ export function TerminalMain() {
     );
   }
 
-  // Main terminal view. Single return, all sections composed and fade-in animated
   return (
     <div>
       <InvestorPortalModal
@@ -90,10 +69,6 @@ export function TerminalMain() {
       />
 
       <div style={MAX_WIDTH}>
-        {/* ACT 1: Hero, then the Abraxas Passport leads immediately,
-            this IS the verification story, shown as a real product
-            instead of explained in text first. Partners clustered
-            right here too, it strengthens the same verification point. */}
         <div id="demo-hero">
           <HeroIntro />
         </div>
@@ -106,30 +81,25 @@ export function TerminalMain() {
         <Divider />
 
         <ScrollFade>
-          <DarkPanel>
+          <Panel>
             <PartnersSection />
-          </DarkPanel>
+          </Panel>
         </ScrollFade>
 
         <Divider />
 
-        {/* VERIFICATION PACKAGES, the new revenue line, leads ahead of
-            any asset content per the verification-first repositioning */}
-        <DarkPanel>
+        <Panel glow>
           <VerificationPackages />
-        </DarkPanel>
+        </Panel>
 
         <Divider />
 
-        {/* THE FLAGSHIP CASE STUDY, one real asset, before/after, instead
-            of leading with six asset classes competing for attention */}
-        <DarkPanel>
+        <Panel>
           <CloveCaseStudy />
-        </DarkPanel>
+        </Panel>
 
         <Divider />
 
-        {/* ACT DIVIDER: the bridge from "I get it" into the full registry */}
         <div style={{ textAlign:"center", padding:"2rem 1rem" }}>
           <div style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
                          color:"var(--text-muted)", letterSpacing:"0.1em",
@@ -146,94 +116,92 @@ export function TerminalMain() {
               const el = document.getElementById("demo-assets");
               el?.scrollIntoView({ behavior:"smooth" });
             }}
-            style={{ padding:"0.7rem 1.75rem", borderRadius:8, border:"none",
-                      background:G, color:"#000", fontFamily:S,
-                      fontSize:"0.85rem", fontWeight:700, cursor:"pointer" }}>
+            style={{
+              padding:"0.75rem 1.75rem", borderRadius:999, border:"none",
+              background:G, color:"#000", fontFamily:S,
+              fontSize:"0.85rem", fontWeight:700, cursor:"pointer",
+              boxShadow:`0 0 0 1px ${G}55, 0 0 24px ${G}30`,
+            }}>
             See everything verified →
           </button>
         </div>
 
         <Divider />
 
-        {/* ACT 2: the fuller registry, for anyone who wants to keep going. */}
         <ScrollFade>
           <div id="demo-assets">
-            <DarkPanel>
+            <MarketplaceFilterBar />
+            <Panel>
               <AssetGrid
                 onViewRegistry={() => setDeep("registry")}
                 onViewFlagship={() => setDeep("asset")}
                 onInvest={(assetId) => setInvestAsset(assetId)}
                 onBuyNow={(item) => setBuyItem(item)}
               />
-            </DarkPanel>
+            </Panel>
           </div>
         </ScrollFade>
 
         <Divider />
 
-        {/* "Build on Abraxas" moved to its own page entirely, a buyer
-            browsing verified assets doesn't need six sections about
-            becoming a seller in the middle of that flow */}
-        <DarkPanel>
+        <Panel>
           <div style={{ display:"flex", justifyContent:"space-between",
                          alignItems:"center", flexWrap:"wrap", gap:"0.875rem" }}>
             <div>
-              <div style={{ fontFamily:M, fontSize:"0.95rem", fontWeight:700 }}>
+              <div style={{ fontFamily:M, fontSize:"0.95rem", fontWeight:700,
+                             color:"var(--text-primary)" }}>
                 Have something to tokenize?
               </div>
               <div style={{ fontFamily:S, fontSize:"0.76rem",
-                             color:"rgba(21,21,26,0.45)", marginTop:"0.25rem" }}>
+                             color:"var(--text-muted)", marginTop:"0.25rem" }}>
                 Form a business, see World Labs's case study, or browse
                 World Wearables.
               </div>
             </div>
             <a href="/build"
-              style={{ padding:"0.6rem 1.25rem", borderRadius:8, border:"none",
-                        background:G, color:"#000", fontFamily:S,
-                        fontSize:"0.8rem", fontWeight:700, textDecoration:"none",
-                        whiteSpace:"nowrap" }}>
+              style={{
+                padding:"0.65rem 1.35rem", borderRadius:999, border:"none",
+                background:G, color:"#000", fontFamily:S,
+                fontSize:"0.8rem", fontWeight:700, textDecoration:"none",
+                whiteSpace:"nowrap",
+                boxShadow:`0 0 20px ${G}28`,
+              }}>
               Build on Abraxas →
             </a>
           </div>
-        </DarkPanel>
+        </Panel>
 
         <Divider />
 
-        {/* 2c. MUSIC ROYALTY AUDITS */}
         <ScrollFade>
           <div id="demo-music">
-            <DarkPanel>
+            <Panel>
               <MusicSection />
-            </DarkPanel>
+            </Panel>
           </div>
         </ScrollFade>
 
         <Divider />
 
-        {/* PROTOCOL VISION, ZK Login moved to the nav near Sign In
-            instead of its own section, see TerminalApp.tsx */}
-        <DarkPanel>
+        <Panel>
           <ProtocolVisionSection
             onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
           />
-        </DarkPanel>
+        </Panel>
 
         <Divider />
 
-        {/* PROTOCOL MILESTONES, moved here next to the FAQ, this is the
-            whitepaper-depth content for anyone who wants it, not
-            something a first-time visitor needs mid-scroll */}
         <div id="demo-milestones">
-          <DarkPanel>
+          <Panel>
             <MilestonesSection />
-          </DarkPanel>
+          </Panel>
         </div>
 
         <Divider />
 
-        <DarkPanel>
+        <Panel>
           <FAQSection />
-        </DarkPanel>
+        </Panel>
       </div>
       <SiteFooter />
     </div>

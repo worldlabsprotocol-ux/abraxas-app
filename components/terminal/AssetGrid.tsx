@@ -76,8 +76,9 @@ export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }
         </span>
       </div>
       <Label>Featured Asset</Label>
-      <div style={{ borderRadius:8, overflow:"hidden",
-                     border:`1px solid ${G}35`, marginBottom:"1.5rem" }}>
+      <div style={{ borderRadius:14, overflow:"hidden",
+                     border:`1px solid ${G}35`, marginBottom:"1.5rem",
+                     boxShadow:"var(--shadow-card)" }}>
         {CIELO_IMAGES.length > 0 ? (
           <div style={{ padding:"1rem 1rem 0" }}>
             <AssetGallery images={CIELO_IMAGES} fallbackLabel="Cielo Sunrise" color={G} />
@@ -129,7 +130,7 @@ export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }
             </div>
           ))}
         </div>
-        <div style={{ padding:"0.875rem 1rem", background:"#F4F4F1",
+        <div style={{ padding:"0.875rem 1rem", background:"var(--surface-raised)",
                        display:"flex", gap:"0.5rem", flexWrap:"wrap",
                        alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
@@ -272,7 +273,7 @@ export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }
             ))}
           </div>
 
-          <div style={{ padding:"0.625rem 0.875rem", background:"#F4F4F1",
+          <div style={{ padding:"0.625rem 0.875rem", background:"var(--surface-raised)",
                          display:"flex", gap:"0.5rem", alignItems:"center",
                          flexWrap:"wrap", justifyContent:"space-between" }}>
             <div style={{ fontFamily:S, fontSize:"0.58rem",
@@ -337,7 +338,7 @@ export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }
             ))}
           </div>
 
-          <div style={{ padding:"0.625rem 0.875rem", background:"#F4F4F1",
+          <div style={{ padding:"0.625rem 0.875rem", background:"var(--surface-raised)",
                          display:"flex", alignItems:"center",
                          gap:"0.4rem" }}>
             <span style={{ color:A, fontSize:"0.7rem" }}>✓</span>

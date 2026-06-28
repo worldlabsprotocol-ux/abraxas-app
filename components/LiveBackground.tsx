@@ -1,17 +1,8 @@
 "use client";
 // FILE: components/LiveBackground.tsx
-// A subtle, animated dot-network background, confined entirely to
-// the side margins outside the main 1060px content column. Two
-// rounds of opacity tuning didn't solve the readability complaint
-// because the real problem wasn't visibility, it was that dots and
-// lines could land directly behind headline text and un-carded
-// content. This fixes it structurally: the animation physically
-// can't overlap reading content on any screen wide enough to have
-// real margin space. On narrow/mobile screens, where there's no
-// margin to speak of, it naturally fades to nothing, which is the
-// correct fallback, not a bug.
+// Subtle animated dot-network in page margins only. Theme-aware accent.
 
-const DOT_COUNT = 20; // 10 per side
+const DOT_COUNT = 20;
 
 function seededPositions(count: number) {
   const positions: { side: "left" | "right"; xPct: number; y: number; delay: number; duration: number }[] = [];
@@ -23,7 +14,7 @@ function seededPositions(count: number) {
   for (let i = 0; i < count; i++) {
     positions.push({
       side: i % 2 === 0 ? "left" : "right",
-      xPct: rand() * 7, // 0-7% from the edge, well clear of the centered content column
+      xPct: rand() * 7,
       y: rand() * 100,
       delay: rand() * 8,
       duration: 16 + rand() * 10,
@@ -40,12 +31,22 @@ export function LiveBackground() {
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       zIndex: 0, overflow: "hidden", pointerEvents: "none",
     }}>
+      <div className="abraxas-live-streak" style={{
+        position: "absolute",
+        top: "38%",
+        left: "-10%",
+        right: "-10%",
+        height: 2,
+        background: "#10B981",
+        opacity: 0.12,
+        transform: "rotate(-8deg)",
+      }} />
       {DOTS.map((d, i) => {
         const positionStyle: React.CSSProperties = d.side === "left"
           ? { left: `${d.xPct}%` }
           : { right: `${d.xPct}%` };
         return (
-          <div key={i} style={{
+          <div key={i} className="abraxas-live-dot" style={{
             position: "absolute",
             ...positionStyle,
             top: `${d.y}%`,
@@ -70,9 +71,8 @@ export function LiveBackground() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-12px); }
         }
-        /* On viewports narrower than the content column plus a safe
-           margin, there's no guaranteed empty space, hide entirely
-           rather than risk overlapping content. */
+        [data-theme="dark"] .abraxas-live-dot { opacity: 0.28; }
+        [data-theme="dark"] .abraxas-live-streak { opacity: 0.22; }
         @media (max-width: 1180px) {
           .abraxas-live-bg { display: none; }
         }

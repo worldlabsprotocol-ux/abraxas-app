@@ -20,21 +20,22 @@ import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycl
 import { ContentSection }          from "@/components/terminal/ContentSection";
 import { SiteFooter }              from "@/components/SiteFooter";
 import { BottomNav }               from "@/components/BottomNav";
+import { ThemeToggle }             from "@/components/ThemeToggle";
 import { LiveBackground } from "@/components/LiveBackground";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
-const BG   = "#FAFAF8";
-const CARD = "#FFFFFF";
-const BDR  = "#E5E5E0";
+const BG   = "var(--bg)";
+const CARD = "var(--surface)";
+const BDR  = "var(--border)";
 const G    = "#10B981";
 const A    = "#F59E0B";
 const B    = "#3B82F6";
 const P    = "#8B5CF6";
 const R    = "#EF4444";
-const W    = "#15151A";
-const DIM  = "rgba(255,255,255,0.35)";
+const W    = "var(--text-primary)";
+const DIM  = "var(--text-muted)";
 
 /* ── helpers ────────────────────────────────────────────────── */
 function parseAssetValue(v: string | undefined): number {
@@ -195,6 +196,7 @@ export default function DashboardPage() {
         <div style={{ flex: 1 }}/>
 
         <LanguageSelector/>
+        <ThemeToggle />
         <CompactWallet/>
       </nav>
 

@@ -1,27 +1,55 @@
 "use client";
 // FILE: components/ThemeContext.tsx
-// Light mode is removed for now, dark only, after repeated contrast
-// bugs that weren't worth the risk to keep chasing. This file is kept
-// (rather than deleted) so the CSS variables every component already
-// references still resolve to something, removing it entirely would
-// require touching every file that uses var(--text-primary) etc.
-// Forces dark unconditionally, including for anyone who previously
-// toggled to light and has that saved in their browser already.
+// Light default, dark optional. Persists to localStorage.
 
-import { createContext, useContext, useEffect, ReactNode } from "react";
+import {
+  createContext, useContext, useEffect, useState, ReactNode, useCallback,
+} from "react";
 
-interface ThemeCtx { theme: "dark"; }
-const ThemeContext = createContext<ThemeCtx>({ theme: "dark" });
+export type Theme = "light" | "dark";
+
+interface ThemeCtx {
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+  toggleTheme: () => void;
+}
+
+const STORAGE_KEY = "abraxas_theme";
+
+const ThemeContext = createContext<ThemeCtx>({
+  theme: "light",
+  setTheme: () => {},
+  toggleTheme: () => {},
+});
+
+function readStoredTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === "dark" || stored === "light") return stored;
+  return "light";
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>("light");
+
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", "dark");
-    // Clear any previously stored light preference so it can't override this
-    localStorage.removeItem("abraxas_theme");
+    const initial = readStoredTheme();
+    setThemeState(initial);
+    document.documentElement.setAttribute("data-theme", initial);
   }, []);
 
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem(STORAGE_KEY, next);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === "light" ? "dark" : "light");
+  }, [theme, setTheme]);
+
   return (
-    <ThemeContext.Provider value={{ theme: "dark" }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

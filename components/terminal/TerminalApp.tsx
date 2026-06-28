@@ -11,6 +11,7 @@ import { LiveBackground } from "@/components/LiveBackground";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { BottomNav }     from "@/components/BottomNav";
+import { ThemeToggle }   from "@/components/ThemeToggle";
 import { WaitlistForm }  from "@/components/WaitlistForm";
 import { DemoMode }      from "./DemoMode";
 import { M, S, BDR, G } from "./tokens";
@@ -79,6 +80,7 @@ export default function TerminalApp() {
           </span>
         </button>
         <WalletConnectButton />
+        <ThemeToggle />
         <LanguageSelector />
       </nav>
 
@@ -91,7 +93,7 @@ export default function TerminalApp() {
       {showWaitlist && (
         <div onClick={() => setShowWaitlist(false)}
           style={{ position:"fixed", inset:0, zIndex:3000,
-                    background:"rgba(0,0,0,0.75)",
+                    background:"var(--overlay)",
                     display:"flex", alignItems:"center", justifyContent:"center",
                     padding:"1rem" }}>
           <div onClick={e => e.stopPropagation()}

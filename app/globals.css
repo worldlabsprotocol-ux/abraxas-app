@@ -1,9 +1,7 @@
-/* FILE: app/globals.css, replace or merge with existing */
-/* Light, premium theme. Single theme, no toggle, that architecture
-   decision stays the same as before, only the actual values changed. */
+/* FILE: app/globals.css
+   Light default, dark optional. Structural tokens only, no gradients. */
 
 :root,
-[data-theme="dark"],
 [data-theme="light"] {
   --bg:             #FAFAF8;
   --bg-secondary:   #FFFFFF;
@@ -11,21 +9,48 @@
   --surface-raised: #F4F4F1;
   --border:         #E5E5E0;
   --text-primary:   #15151A;
-  --text-secondary: rgba(21,21,26,0.62);
-  --text-muted:     rgba(21,21,26,0.4);
-  --accent:         #0E9A6E;
-  --accent-faint:   rgba(14,154,110,0.08);
-  --accent-border:  rgba(14,154,110,0.25);
-  --nav-bg:         rgba(255,255,255,0.97);
+  --text-secondary: rgba(21, 21, 26, 0.62);
+  --text-muted:     rgba(21, 21, 26, 0.4);
+  --accent:         #10B981;
+  --accent-faint:   rgba(16, 185, 129, 0.08);
+  --accent-border:  rgba(16, 185, 129, 0.28);
+  --nav-bg:         rgba(255, 255, 255, 0.97);
+  --shadow-soft:    0 4px 24px rgba(0, 0, 0, 0.06);
+  --shadow-card:    0 2px 16px rgba(0, 0, 0, 0.05);
+  --shadow-glow:    0 0 0 1px rgba(16, 185, 129, 0.35), 0 0 24px rgba(16, 185, 129, 0.18);
+  --hero-accent:    rgba(16, 185, 129, 0.06);
+  --overlay:        rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="dark"] {
+  --bg:             #0A0A0B;
+  --bg-secondary:   #0E0E10;
+  --surface:        #141418;
+  --surface-raised: #1A1A20;
+  --border:         rgba(255, 255, 255, 0.08);
+  --text-primary:   #F5F5F7;
+  --text-secondary: rgba(245, 245, 247, 0.62);
+  --text-muted:     rgba(245, 245, 247, 0.38);
+  --accent:         #10B981;
+  --accent-faint:   rgba(16, 185, 129, 0.1);
+  --accent-border:  rgba(16, 185, 129, 0.35);
+  --nav-bg:         rgba(10, 10, 11, 0.96);
+  --shadow-soft:    0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-card:    0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-glow:    0 0 0 1px rgba(16, 185, 129, 0.45), 0 0 32px rgba(16, 185, 129, 0.22);
+  --hero-accent:    rgba(16, 185, 129, 0.08);
+  --overlay:        rgba(0, 0, 0, 0.78);
 }
 
 * { box-sizing: border-box; }
+
 body {
   background: var(--bg);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   margin: 0;
 }
+
 *:not(img):not(svg):not(path) {
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }

@@ -16,6 +16,7 @@ import { WorldWearablesGallery, WorldWearablesHoodie } from "@/components/termin
 import { WorldByHandSection } from "@/components/terminal/WorldByHandSection";
 import { CoffeeFarmSection } from "@/components/terminal/CoffeeFarmSection";
 import { BottomNav } from "@/components/BottomNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { LiveBackground } from "@/components/LiveBackground";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 import { BuyNowModal } from "@/components/terminal/BuyNowModal";
@@ -23,9 +24,10 @@ import type { BuyItem } from "@/components/terminal/BuyNowModal";
 
 function DarkPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background:"#FAFAF8", borderRadius:16,
+    <div style={{ background:"var(--surface)", borderRadius:16,
                    padding:"1.25rem clamp(0.875rem,3vw,1.5rem)",
-                   border:`1px solid ${BDR}` }}>
+                   border:`1px solid ${BDR}`,
+                   boxShadow:"var(--shadow-card)" }}>
       {children}
     </div>
   );
@@ -41,7 +43,7 @@ export default function BuildPage() {
   const [buyItem, setBuyItem] = useState<BuyItem | null>(null);
 
   return (
-    <div style={{ minHeight:"100vh", background:"#FAFAF8", color:"#15151A" }}>
+    <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text-primary)" }}>
       <LiveBackground />
       <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
                      borderBottom:`1px solid ${BDR}`,
@@ -51,13 +53,14 @@ export default function BuildPage() {
           <polygon points="20,8 32,20 20,32 8,20" stroke="#10B981" strokeWidth="1.5" fill="rgba(16,185,129,0.1)"/>
           <circle cx="20" cy="20" r="3" fill="#10B981"/>
         </svg>
-        <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700 }}>
+        <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700, flex:1 }}>
           Build on Abraxas
         </span>
+        <ThemeToggle />
       </div>
 
       <div style={{ maxWidth:860, margin:"0 auto", padding:"1.5rem clamp(0.875rem,3vw,1.5rem)" }}>
-        <p style={{ fontFamily:S, fontSize:"0.82rem", color:"rgba(21,21,26,0.5)",
+        <p style={{ fontFamily:S, fontSize:"0.82rem", color:"var(--text-secondary)",
                      lineHeight:1.7, marginBottom:"1.5rem", maxWidth:560 }}>
           For asset owners and operators: form a business, tokenize what
           you own, or see how existing businesses on Abraxas got verified.

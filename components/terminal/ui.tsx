@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/terminal/ui.tsx
-// Shared micro-components: Label, Divider, Button, ScrollFade.
+// Shared micro-components: Label, Divider, Button, ScrollFade, GlowButton.
 
 import { useState, useEffect, useRef } from "react";
 import { M, G, BDR } from "./tokens";
@@ -10,8 +10,6 @@ interface ScrollFadeProps {
   delay?: number;
 }
 
-// Fades a section in as it enters the viewport. Wrap any section with this
-// for the same scroll-triggered animation used on the landing page.
 export function ScrollFade({ children, delay = 0 }: ScrollFadeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -53,7 +51,7 @@ export function Label({ children }: LabelProps) {
     <div style={{ display:"flex", alignItems:"center", gap:"0.625rem",
                    marginBottom:"1.125rem" }}>
       <div style={{ width:3, height:15, background:G, borderRadius:2,
-                     boxShadow:`0 0 6px ${G}60` }} />
+                     boxShadow:`0 0 8px ${G}50` }} />
       <span style={{ fontFamily:M, fontSize:"clamp(0.78rem,1.8vw,0.92rem)",
                       fontWeight:800, color:G, letterSpacing:"0.16em",
                       textTransform:"uppercase" }}>
@@ -73,34 +71,46 @@ interface ButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
   href?: string;
-  variant?: "filled" | "outline";
+  variant?: "filled" | "outline" | "glow";
   color?: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   disabled?: boolean;
 }
 
-// Real button. Filled background, padding, rounded corners, clear tap target.
-// Use for every actionable CTA. Never style a CTA as a plain text link.
 export function Button({
   children, onClick, href, variant = "filled",
   color = G, size = "md", fullWidth = false, disabled = false,
 }: ButtonProps) {
-  const pad = size === "sm" ? "0.45rem 0.875rem" : "0.65rem 1.25rem";
-  const fontSize = size === "sm" ? "0.62rem" : "0.72rem";
+  const pad = size === "sm" ? "0.45rem 0.875rem"
+    : size === "lg" ? "0.8rem 1.75rem"
+    : "0.65rem 1.25rem";
+  const fontSize = size === "sm" ? "0.62rem"
+    : size === "lg" ? "0.82rem"
+    : "0.72rem";
+  const radius = size === "lg" ? 999 : 10;
+
+  const isGlow = variant === "glow";
+  const isFilled = variant === "filled" || isGlow;
 
   const style: React.CSSProperties = {
     display:"inline-flex", alignItems:"center", justifyContent:"center",
     width: fullWidth ? "100%" : undefined,
-    padding:pad, borderRadius:6,
-    border: variant === "filled" ? "none" : `1.5px solid ${color}`,
-    background: variant === "filled" ? color : `${color}10`,
-    color: variant === "filled" ? "#000" : color,
-    fontFamily:M, fontSize, fontWeight:800,
-    textTransform:"uppercase", letterSpacing:"0.05em",
+    padding:pad, borderRadius:radius,
+    border: isGlow ? `1.5px solid ${color}` :
+            variant === "filled" ? "none" : `1.5px solid ${color}`,
+    background: isGlow ? "var(--surface)" :
+                variant === "filled" ? color : `${color}10`,
+    color: isFilled && !isGlow ? "#000" : isGlow ? color : color,
+    fontFamily: size === "lg" ? "'Inter',system-ui,sans-serif" : M,
+    fontSize,
+    fontWeight: size === "lg" ? 700 : 800,
+    textTransform: size === "lg" ? "none" : "uppercase",
+    letterSpacing: size === "lg" ? "-0.01em" : "0.05em",
     textDecoration:"none", cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.45 : 1,
-    boxShadow: variant === "filled" && !disabled ? `0 0 14px ${color}35` : "none",
+    boxShadow: isGlow && !disabled ? `0 0 0 1px ${color}55, 0 0 28px ${color}30` :
+               variant === "filled" && !disabled ? `0 0 16px ${color}28` : "none",
     transition:"transform 0.12s, box-shadow 0.12s",
   };
 
@@ -115,5 +125,24 @@ export function Button({
     <button onClick={disabled ? undefined : onClick} disabled={disabled} style={style}>
       {children}
     </button>
+  );
+}
+
+interface PanelProps {
+  children: React.ReactNode;
+  glow?: boolean;
+}
+
+export function Panel({ children, glow = false }: PanelProps) {
+  return (
+    <div style={{
+      background: "var(--surface)",
+      borderRadius: 18,
+      padding: "1.25rem clamp(0.875rem, 3vw, 1.5rem)",
+      border: `1px solid ${BDR}`,
+      boxShadow: glow ? "var(--shadow-glow)" : "var(--shadow-card)",
+    }}>
+      {children}
+    </div>
   );
 }

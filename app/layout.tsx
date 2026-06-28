@@ -1,5 +1,5 @@
 // FILE: app/layout.tsx
-// Root layout. Dark only for now, see ThemeContext.tsx for why.
+// Root layout. Light default, dark via ThemeContext toggle.
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeContext";
@@ -23,9 +23,23 @@ export const metadata: Metadata = {
   },
 };
 
+const themeInitScript = `
+(function(){
+  try {
+    var t = localStorage.getItem("abraxas_theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch (e) {
+    document.documentElement.setAttribute("data-theme", "light");
+  }
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <ThemeProvider>
           {children}
