@@ -3,6 +3,27 @@
 // Steps: tier → info → payment → confirm → success
 // Supabase with localStorage fallback, never breaks the demo.
 "use client";
+//
+// LIGHT-MODE FIX (June 2026): this whole modal was a self-contained
+// leftover dark theme — CARD/CARD2 were near-black, W was near-white
+// text, and every secondary/muted label was rgba(255,255,255,X). None
+// of that reads from the site's actual --surface/--text-primary
+// tokens, so while it was internally consistent (light text correctly
+// paired with dark backgrounds), it never got migrated when the rest
+// of the app standardized on one light theme — this is the one modal
+// that would still pop up dark over an otherwise all-light page.
+// Flipped CARD/CARD2/BDR/W to the light tokens and every
+// rgba(255,255,255,X) text/border instance to its rgba(21,21,26,X)
+// equivalent at the same opacity (the rest of the codebase already
+// uses that exact convention for muted/secondary text on light cards).
+// Also swapped the old neon-style `0 0 48px` glow for the softShadow
+// pattern tokens.ts already established elsewhere.
+//
+// SEPARATE ISSUE, NOT TOUCHED HERE: this file imports WorldIDVerify
+// from "@/components/WorldIDVerify". Worth double-checking that still
+// exists in the repo — flagging since a missing import would break
+// the whole build, not just the styling, and is a bigger problem than
+// anything theme-related.
 
 import { useState, useEffect } from "react";
 import { wyomingRequestStore } from "@/lib/vos/wyomingRequestStore";
@@ -12,16 +33,16 @@ import { tokenizationRequests } from "@/lib/supabase/client";
 
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S    = "system-ui,-apple-system,sans-serif";
-const CARD = "#0D1117";
-const CARD2 = "#0A0D13";
-const BDR  = "#1C2333";
+const CARD = "var(--surface, #FFFFFF)";
+const CARD2 = "var(--surface-raised, #F4F4F1)";
+const BDR  = "var(--border, #E5E5E0)";
 const G    = "#10B981";
 const GB   = "#20DCA5";
 const A    = "#F59E0B";
 const B    = "#3B82F6";
 const P    = "#8B5CF6";
 const R    = "#EF4444";
-const W    = "#F8FAFC";
+const W    = "var(--text-primary, #15151A)";
 const TREASURY = "circuit.skr";
 const TREASURY_LABEL = "ABRAXAS SECURE TREASURY";
 
@@ -201,12 +222,12 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
   // ── Shared styles ───────────────────────────────────────────────────────────
   const input: React.CSSProperties = {
     width:"100%", padding:"0.625rem 0.75rem", borderRadius:5,
-    border:`1px solid ${BDR}`, background:"rgba(255,255,255,0.03)",
+    border:`1px solid ${BDR}`, background:"var(--surface-raised, #F4F4F1)",
     color:W, fontFamily:S, fontSize:"16px", outline:"none", boxSizing:"border-box",
   };
   const lbl: React.CSSProperties = {
     fontFamily:M, fontSize:"0.65rem", fontWeight:700,
-    color:"rgba(255,255,255,0.4)", textTransform:"uppercase",
+    color:"rgba(21,21,26,0.45)", textTransform:"uppercase",
     letterSpacing:"0.12em", marginBottom:"0.3rem", display:"block",
   };
 
@@ -225,7 +246,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
               <div style={{ height:2, borderRadius:1, marginBottom:3,
                              background: active ? G : done ? `${G}50` : BDR }}/>
               <span style={{ fontFamily:M, fontSize:"0.58rem", fontWeight:700,
-                              color: active ? G : done ? `${G}70` : "rgba(255,255,255,0.2)",
+                              color: active ? G : done ? `${G}70` : "rgba(21,21,26,0.25)",
                               textTransform:"uppercase", letterSpacing:"0.08em" }}>
                 {LABELS[i]}
               </span>
@@ -253,7 +274,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
       <button onClick={onClick} style={{
         flex:1, padding:"0.75rem 1rem", borderRadius:5,
         border:`1px solid ${BDR}`, background:"transparent",
-        color:"rgba(255,255,255,0.45)", fontFamily:M, fontSize:"0.8rem",
+        color:"rgba(21,21,26,0.5)", fontFamily:M, fontSize:"0.8rem",
         fontWeight:700, cursor:"pointer", letterSpacing:"0.06em",
         textTransform:"uppercase",
       }}>{children}</button>
@@ -263,13 +284,13 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
   return (
     <div onClick={close} style={{
       position:"fixed", inset:0, zIndex:1000,
-      background:"rgba(2,4,8,0.88)", backdropFilter:"blur(8px)",
+      background:"rgba(2,4,8,0.6)", backdropFilter:"blur(8px)",
       display:"flex", alignItems:"flex-start", justifyContent:"center",
       padding:"1.5rem 1rem", overflowY:"auto",
     }}>
       <div onClick={e=>e.stopPropagation()} style={{
         background:CARD, border:`1px solid ${G}35`, borderRadius:10,
-        width:"100%", maxWidth:540, boxShadow:`0 0 48px ${G}18`,
+        width:"100%", maxWidth:540, boxShadow:`0 4px 24px ${G}18`,
       }}>
         {/* Header */}
         <div style={{ padding:"1rem 1.25rem", borderBottom:`1px solid ${BDR}`,
@@ -287,7 +308,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
           </div>
           <button onClick={close} style={{ padding:"0.35rem 0.625rem", borderRadius:4,
                                             border:`1px solid ${BDR}`, background:"transparent",
-                                            color:"rgba(255,255,255,0.4)", fontFamily:M,
+                                            color:"rgba(21,21,26,0.4)", fontFamily:M,
                                             fontSize:"0.75rem", fontWeight:700, cursor:"pointer" }}>✕</button>
         </div>
 
@@ -317,7 +338,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                       </span>
                     </div>
                     <div style={{ fontFamily:S, fontSize:"0.78rem",
-                                   color:"rgba(255,255,255,0.45)" }}>{t.tagline}</div>
+                                   color:"rgba(21,21,26,0.5)" }}>{t.tagline}</div>
                   </button>
                 ))}
               </div>
@@ -409,7 +430,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                 />
               </div>
               <p style={{ fontFamily:S, fontSize:"0.78rem",
-                           color:"rgba(255,255,255,0.4)", lineHeight:1.7,
+                           color:"rgba(21,21,26,0.45)", lineHeight:1.7,
                            margin:"0 0 1rem" }}>
                 Send the exact amount on Solana. We activate your tokenization within 24 hours of receipt.
               </p>
@@ -443,7 +464,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                              background:CARD2, border:`1px solid ${BDR}`,
                              borderLeft:`3px solid ${GB}` }}>
                 <div style={{ fontFamily:M, fontSize:"0.58rem",
-                               color:"rgba(255,255,255,0.3)", letterSpacing:"0.12em",
+                               color:"rgba(21,21,26,0.35)", letterSpacing:"0.12em",
                                textTransform:"uppercase", marginBottom:4 }}>
                   {TREASURY_LABEL}
                 </div>
@@ -457,13 +478,13 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                     padding:"0.3rem 0.625rem", borderRadius:4, cursor:"pointer",
                     border:`1px solid ${copied?G:BDR}`,
                     background: copied?`${G}15`:"transparent",
-                    color: copied?G:"rgba(255,255,255,0.55)",
+                    color: copied?G:"rgba(21,21,26,0.55)",
                     fontFamily:M, fontSize:"0.62rem", fontWeight:700,
                     letterSpacing:"0.06em", textTransform:"uppercase",
                   }}>{copied?"✓ COPIED":"COPY"}</button>
                 </div>
                 <div style={{ fontFamily:S, fontSize:"0.72rem",
-                               color:"rgba(255,255,255,0.35)", lineHeight:1.6 }}>
+                               color:"rgba(21,21,26,0.4)", lineHeight:1.6 }}>
                   Solana Name Service domain. Resolves automatically in most wallets.
                 </div>
               </div>
@@ -474,7 +495,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                 <div style={{ fontFamily:M, fontSize:"0.6rem", color:A, letterSpacing:"0.1em",
                                textTransform:"uppercase", marginBottom:4 }}>INSTRUCTIONS</div>
                 <ol style={{ fontFamily:S, fontSize:"0.75rem",
-                              color:"rgba(255,255,255,0.5)", lineHeight:1.8,
+                              color:"rgba(21,21,26,0.55)", lineHeight:1.8,
                               margin:0, paddingLeft:"1.125rem" }}>
                   <li>Open Phantom / Solflare / Backpack</li>
                   <li>Send <strong>${sel.price.toLocaleString()} USDC</strong> to <strong>{TREASURY}</strong></li>
@@ -484,7 +505,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
               </div>
 
               {reqId && (
-                <div style={{ fontFamily:M, fontSize:"0.58rem", color:"rgba(255,255,255,0.2)",
+                <div style={{ fontFamily:M, fontSize:"0.58rem", color:"rgba(21,21,26,0.25)",
                                marginBottom:"0.75rem", wordBreak:"break-all" }}>
                   Request: {reqId}{src==="local" ? " · (local)" : ""}
                 </div>
@@ -503,7 +524,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
             <div>
               <p style={{ fontFamily:S, fontSize:"0.875rem", fontWeight:700, color:W,
                            margin:"0 0 0.375rem" }}>Confirm payment.</p>
-              <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(255,255,255,0.4)",
+              <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(21,21,26,0.45)",
                            lineHeight:1.7, margin:"0 0 1rem" }}>
                 Paste your Solana transaction signature, optional, we can reconcile without it.
               </p>
@@ -537,7 +558,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                 <div style={{ fontFamily:S, fontSize:"1.1rem", fontWeight:800, color:W,
                                marginBottom:"0.375rem" }}>Payment recorded.</div>
                 <div style={{ fontFamily:S, fontSize:"0.78rem",
-                               color:"rgba(255,255,255,0.45)", lineHeight:1.7 }}>
+                               color:"rgba(21,21,26,0.45)", lineHeight:1.7 }}>
                   Verification activates within 24 hours of payment confirmation.
                 </div>
               </div>
@@ -545,7 +566,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
               {/* Receipt */}
               <div style={{ padding:"0.875rem", background:CARD2,
                              border:`1px solid ${BDR}`, borderRadius:6, marginBottom:"0.875rem" }}>
-                <div style={{ fontFamily:M, fontSize:"0.58rem", color:"rgba(255,255,255,0.3)",
+                <div style={{ fontFamily:M, fontSize:"0.58rem", color:"rgba(21,21,26,0.35)",
                                textTransform:"uppercase", letterSpacing:"0.12em",
                                marginBottom:6 }}>RECEIPT</div>
                 {[["Business",name],["Tier",sel.name],
@@ -555,9 +576,9 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                   ["Status","PAID · Activating"]].map(([k,v])=>(
                   <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                          padding:"0.3rem 0",
-                                         borderBottom:`1px solid ${BDR}40`, gap:"0.5rem" }}>
+                                         borderBottom:`1px solid ${BDR}`, gap:"0.5rem" }}>
                     <span style={{ fontFamily:M, fontSize:"0.62rem",
-                                    color:"rgba(255,255,255,0.35)" }}>{k}</span>
+                                    color:"rgba(21,21,26,0.4)" }}>{k}</span>
                     <span style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
                                     color:W, textAlign:"right", wordBreak:"break-all",
                                     maxWidth:"60%" }}>{v}</span>
@@ -572,7 +593,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                                letterSpacing:"0.1em", textTransform:"uppercase",
                                marginBottom:4 }}>WHAT HAPPENS NEXT</div>
                 <ol style={{ fontFamily:S, fontSize:"0.75rem",
-                              color:"rgba(255,255,255,0.5)", lineHeight:1.8,
+                              color:"rgba(21,21,26,0.55)", lineHeight:1.8,
                               margin:0, paddingLeft:"1.125rem" }}>
                   <li>Treasury confirms USDC receipt</li>
                   <li>Asset created in V5 pipeline (SUBMITTED state)</li>
