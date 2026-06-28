@@ -3,6 +3,10 @@
 // Two fully separate exports now: the photo gallery (no pricing, just
 // the collection) and the hoodie (the one priced, buyable item), no
 // longer nested together in one component.
+//
+// LIGHT-MODE FIX (June 2026): swapped the #000 photo letterbox for the
+// same light neutral used in AssetGallery/BluPearlConstruction, for
+// consistency across every photo component on the site.
 
 import { useState, useEffect } from "react";
 import { S, G, BDR } from "./tokens";
@@ -33,7 +37,7 @@ export function WorldWearablesGallery() {
         <div style={{ width:"100%", height:280, borderRadius:10,
                        background:"#F4F4F1", border:`1px solid ${BDR}`,
                        display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <span style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(21,21,26,0.3)" }}>
+          <span style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(21,21,26,0.4)" }}>
             Loading the collection…
           </span>
         </div>
@@ -54,7 +58,8 @@ export function WorldWearablesGallery() {
         The collection so far.
       </div>
       <div style={{ width:"100%", minHeight:280, maxHeight:480,
-                     borderRadius:10, overflow:"hidden", background:"#000",
+                     borderRadius:10, overflow:"hidden",
+                     background:"var(--surface-raised, #F4F4F1)",
                      display:"flex", alignItems:"center", justifyContent:"center" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={images[active]} alt="World Wearables"
@@ -66,7 +71,8 @@ export function WorldWearablesGallery() {
             <button key={img} onClick={() => setActive(i)}
               style={{ width:56, height:42, borderRadius:5, overflow:"hidden",
                         border: i === active ? `2px solid ${G}` : "2px solid transparent",
-                        padding:0, cursor:"pointer", background:"#000", flexShrink:0 }}>
+                        padding:0, cursor:"pointer",
+                        background:"var(--surface-raised, #F4F4F1)", flexShrink:0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
             </button>
@@ -86,7 +92,7 @@ interface WorldWearablesHoodieProps {
 export function WorldWearablesHoodie({ onBuyNow }: WorldWearablesHoodieProps) {
   return (
     <div style={{ padding:"1rem", borderRadius:10, border:`1px solid ${BDR}`,
-                   background:"#FAFAF8", display:"flex", justifyContent:"space-between",
+                   background:"var(--surface, #FFFFFF)", display:"flex", justifyContent:"space-between",
                    alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
       <div>
         <div style={{ fontFamily:S, fontSize:"0.66rem", fontWeight:600, color:G, marginBottom:2 }}>

@@ -4,8 +4,16 @@
 // gallery, the construction journey, all the real numbers, not a
 // preview that gets repeated again later. AssetGrid's real estate
 // cluster links back here instead of duplicating it.
+//
+// LIGHT-MODE FIX (June 2026): the "Without Abraxas" card used
+// `rgba(255,255,255,0.02)`, a leftover dark-theme "subtle panel" tint
+// that's invisible on the current light page, it had no visible card
+// presence next to the green-tinted "On Abraxas" card beside it. Gave
+// it a light red tint instead, using the same RED already used for the
+// ✕ marks inside it, so the before/after comparison actually reads as
+// two distinct cards again.
 
-import { S, G, W, M, BDR, CARD } from "./tokens";
+import { S, G, W, M, BDR, CARD, RED } from "./tokens";
 import { ScrollFade } from "./ui";
 import { AssetGallery } from "./AssetGallery";
 import { BluPearlConstruction } from "./BluPearlConstruction";
@@ -30,7 +38,7 @@ export function CloveCaseStudy() {
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",
                        gap:"1.25rem", marginBottom:"1.25rem" }}>
           <div style={{ padding:"1.25rem", borderRadius:12,
-                         border:`1px solid ${BDR}`, background:"rgba(255,255,255,0.02)" }}>
+                         border:`1px solid ${RED}30`, background:`${RED}0A` }}>
             <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700,
                            color:"rgba(21,21,26,0.4)", letterSpacing:"0.06em",
                            textTransform:"uppercase", marginBottom:"0.75rem" }}>
@@ -44,7 +52,7 @@ export function CloveCaseStudy() {
                 <li key={line} style={{ fontFamily:S, fontSize:"0.8rem",
                                           color:"rgba(21,21,26,0.5)",
                                           display:"flex", gap:"0.5rem" }}>
-                  <span style={{ color:"#EF4444" }}>✕</span>{line}
+                  <span style={{ color:RED }}>✕</span>{line}
                 </li>
               ))}
             </ul>

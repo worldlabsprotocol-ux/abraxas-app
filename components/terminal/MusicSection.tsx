@@ -2,6 +2,14 @@
 // FILE: components/terminal/MusicSection.tsx
 // Music royalty audit. Stats strip for credibility + a lightweight
 // interactive estimator to give artists a reason to fill out the form.
+//
+// LIGHT-MODE FIX (June 2026): DeMarkoPhoto and ChancellorPhoto used
+// background:"#08090F" (leftover near-black avatar placeholder), a
+// stark black square sitting inside the pastel green/purple/amber
+// cards below. D9Gallery, the third avatar component in this same
+// file, already correctly uses the light neutral, made the other two
+// match it. Also gave the issue-type cards a touch of visible fill
+// instead of the near-invisible rgba(255,255,255,0.02).
 
 import { useState, useEffect } from "react";
 import { ArtistAuditForm } from "@/components/music/ArtistAuditForm";
@@ -24,7 +32,7 @@ function DeMarkoPhoto() {
   }, []);
   return (
     <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
-                   background:"#08090F", flexShrink:0 }}>
+                   background:"var(--surface-raised, #F4F4F1)", flexShrink:0 }}>
       {src && (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img src={src} alt="DeMarko Reddins"
@@ -45,7 +53,7 @@ function ChancellorPhoto() {
   }, []);
   return (
     <div style={{ width:64, height:64, borderRadius:8, overflow:"hidden",
-                   background:"#08090F", flexShrink:0 }}>
+                   background:"var(--surface-raised, #F4F4F1)", flexShrink:0 }}>
       {src && (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img src={src} alt="Chancellor K. Jackson"
@@ -184,7 +192,7 @@ export function MusicSection() {
         {ISSUE_TYPES.map(issue => (
           <div key={issue.label}
             style={{ padding:"0.75rem 0.875rem", borderRadius:6,
-                      background:"rgba(255,255,255,0.02)",
+                      background:"var(--surface-raised, #F4F4F1)",
                       border:`1px solid ${issue.color}20`,
                       borderTop:`2px solid ${issue.color}` }}>
             <div style={{ fontFamily:M, fontSize:"0.68rem", fontWeight:700,

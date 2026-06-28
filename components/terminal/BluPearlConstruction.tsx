@@ -6,6 +6,11 @@
 // Uses the shared, cached discoverImages utility instead of its own
 // copy of the same probing logic, and shows a real loading skeleton
 // instead of blank space while it works.
+//
+// LIGHT-MODE FIX (June 2026): swapped the pure-#000 image letterbox
+// for var(--surface-raised), matching the AssetGallery fix, keeps
+// every photo component on the site using the same light neutral
+// instead of a leftover black box from the dark theme.
 
 import { useState, useEffect } from "react";
 import { S, A, BDR } from "./tokens";
@@ -32,7 +37,7 @@ export function BluPearlConstruction() {
         <div style={{ width:"100%", height:200, borderRadius:8,
                        background:"#F4F4F1", border:`1px solid ${BDR}`,
                        display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <span style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(21,21,26,0.3)" }}>
+          <span style={{ fontFamily:S, fontSize:"0.7rem", color:"rgba(21,21,26,0.4)" }}>
             Loading photos…
           </span>
         </div>
@@ -49,7 +54,7 @@ export function BluPearlConstruction() {
         Construction journey, 2023 to present
       </div>
       <div style={{ width:"100%", minHeight:200, maxHeight:360,
-                     borderRadius:8, overflow:"hidden", background:"#000",
+                     borderRadius:8, overflow:"hidden", background:"var(--surface-raised, #F4F4F1)",
                      display:"flex", alignItems:"center", justifyContent:"center" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={images[active]} alt="Construction progress"
@@ -61,7 +66,8 @@ export function BluPearlConstruction() {
             <button key={img} onClick={() => setActive(i)}
               style={{ width:44, height:32, borderRadius:4, overflow:"hidden",
                         border: i === active ? `2px solid ${A}` : "2px solid transparent",
-                        padding:0, cursor:"pointer", background:"#000", flexShrink:0 }}>
+                        padding:0, cursor:"pointer",
+                        background:"var(--surface-raised, #F4F4F1)", flexShrink:0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
             </button>

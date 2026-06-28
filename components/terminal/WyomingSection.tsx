@@ -1,6 +1,11 @@
 "use client";
 // FILE: components/terminal/WyomingSection.tsx
 // Wyoming LLC formation tiers. Payment strip shows USDC primary, Stripe coming soon.
+//
+// LIGHT-MODE FIX (June 2026): the hero card's border was
+// rgba(255,255,255,0.1), invisible on light backgrounds, leaving the
+// card with no defined edge beyond its blue fill. Matched the border
+// pattern already used on the tier cards below it.
 
 import { M, S, G, B, W, BDR, CARD } from "./tokens";
 import { Label, ScrollFade } from "./ui";
@@ -44,7 +49,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
       <Label>Form a Business</Label>
       <div style={{ padding:"1.25rem", borderRadius:14,
                      background:"rgba(59,130,246,0.1)",
-                     border:"1px solid rgba(255,255,255,0.1)" }}>
+                     border:`1px solid ${B}25` }}>
         <h2 style={{ fontFamily:S, fontSize:"clamp(0.95rem,2.5vw,1.35rem)",
                       fontWeight:800, color:W, margin:"0 0 0.375rem",
                       letterSpacing:"-0.01em" }}>
@@ -174,7 +179,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
                     background:G, color:"#000", fontFamily:M, fontSize:"0.78rem",
                     fontWeight:900, cursor:"pointer", letterSpacing:"0.05em",
                     textTransform:"uppercase",
-                    boxShadow:`0 0 12px ${G}45` }}>
+                    boxShadow:`0 4px 16px ${G}30` }}>
           BROWSE TIERS
         </button>
       </div>

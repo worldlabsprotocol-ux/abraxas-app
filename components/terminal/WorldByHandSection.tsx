@@ -7,6 +7,10 @@
 // and "tokenize the business for outside investors," which is a much
 // heavier lift, no investor CTA exists here, that needs legal review
 // on securities treatment before going anywhere near the public site.
+//
+// LIGHT-MODE FIX (June 2026): both sub-cards used the same invisible
+// rgba(255,255,255,0.02) leftover background as the other fixes in
+// this build, swapped for var(--surface-raised).
 
 import { S, G, W, BDR } from "./tokens";
 import { ScrollFade } from "./ui";
@@ -37,7 +41,7 @@ export function WorldByHandSection() {
 
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
           <div style={{ flex:"1 1 220px", padding:"0.875rem", borderRadius:10,
-                         border:`1px solid ${BDR}`, background:"rgba(255,255,255,0.02)" }}>
+                         border:`1px solid ${BDR}`, background:"var(--surface-raised, #F4F4F1)" }}>
             <div style={{ fontFamily:S, fontSize:"0.76rem", fontWeight:700,
                            color:W, marginBottom:"0.375rem" }}>
               Stablecoin checkout
@@ -49,7 +53,7 @@ export function WorldByHandSection() {
             </div>
           </div>
           <div style={{ flex:"1 1 220px", padding:"0.875rem", borderRadius:10,
-                         border:`1px solid ${BDR}`, background:"rgba(255,255,255,0.02)" }}>
+                         border:`1px solid ${BDR}`, background:"var(--surface-raised, #F4F4F1)" }}>
             <div style={{ fontFamily:S, fontSize:"0.76rem", fontWeight:700,
                            color:W, marginBottom:"0.375rem" }}>
               Tokenizing the business
