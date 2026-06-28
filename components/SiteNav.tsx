@@ -4,6 +4,8 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
+import { springSnappy } from "@/lib/motion/variants";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -25,6 +27,7 @@ interface SiteNavProps {
 
 export function SiteNav({ onWaitlistClick }: SiteNavProps) {
   const pathname = usePathname();
+  const reduce = useReducedMotion();
 
   return (
     <nav style={{
@@ -71,8 +74,12 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
         {NAV_LINKS.map(link => {
           const active = pathname?.startsWith(link.href);
           return (
-            <a key={link.href} href={link.href}
+            <motion.a key={link.href} href={link.href}
+              whileHover={reduce ? undefined : { scale: 1.06 }}
+              whileTap={reduce ? undefined : { scale: 0.95 }}
+              transition={springSnappy}
               style={{
+                position: "relative",
                 padding: "0.45rem 0.9rem",
                 borderRadius: 999,
                 textDecoration: "none",
@@ -80,11 +87,23 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
                 fontSize: "0.82rem",
                 fontWeight: active ? 700 : 500,
                 color: active ? G : "var(--text-secondary)",
-                background: active ? "rgba(16,185,129,0.12)" : "transparent",
-                border: active ? "1px solid rgba(16,185,129,0.25)" : "1px solid transparent",
               }}>
+              {active && (
+                <motion.span
+                  layoutId="siteNavActivePill"
+                  transition={springSnappy}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: 999,
+                    background: "rgba(16,185,129,0.12)",
+                    border: "1px solid rgba(16,185,129,0.25)",
+                    zIndex: -1,
+                  }}
+                />
+              )}
               {link.label}
-            </a>
+            </motion.a>
           );
         })}
       </div>

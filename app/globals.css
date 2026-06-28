@@ -68,3 +68,25 @@ body {
 *:not(img):not(svg):not(path) {
   transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
+
+/* ── Motion system: shimmer skeletons + helpers ─────────────────── */
+@keyframes abxShimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+
+.abx-skeleton {
+  background: linear-gradient(
+    100deg,
+    var(--surface-raised) 30%,
+    var(--accent-faint) 50%,
+    var(--surface-raised) 70%
+  );
+  background-size: 250% 100%;
+  animation: abxShimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-skeleton { animation: none; }
+  *:not(img):not(svg):not(path) { transition-duration: 0.01ms !important; }
+}

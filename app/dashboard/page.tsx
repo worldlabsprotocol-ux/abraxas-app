@@ -5,6 +5,9 @@
 
 import { useState, useEffect }       from "react";
 import Link                          from "next/link";
+import { motion }                    from "framer-motion";
+import { AnimatedCounter }           from "@/lib/motion/AnimatedCounter";
+import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 import {
   userAssetStore, ASSET_LABELS, STATE_COLORS,
   STAGE_META, PIPELINE_STAGES,
@@ -78,7 +81,7 @@ function ScoreCard({ label, value, suffix = "/100" }:
       <div style={{ display: "flex", alignItems: "baseline",
                      gap: "0.25rem", margin: "0.375rem 0 0.2rem" }}>
         <span style={{ fontFamily: M, fontSize: "1.75rem",
-                        fontWeight: 900, color: c }}>{value}</span>
+                        fontWeight: 900, color: c }}><AnimatedCounter value={value} /></span>
         <span style={{ fontFamily: M, fontSize: "0.65rem", color: DIM }}>{suffix}</span>
       </div>
       <Mono size="0.58rem" color={c}>{scoreLabel(value)}</Mono>
@@ -199,26 +202,32 @@ export default function DashboardPage() {
       </div>
 
       {/* ── STAT CARDS ──────────────────────────────────────── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
-        gap: "1px", background: BDR,
-        borderBottom: `1px solid ${BDR}`,
-      }}>
+      <motion.div
+        variants={staggerContainer(0.08, 0.05)}
+        initial="hidden"
+        animate="show"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
+          gap: "1px", background: BDR,
+          borderBottom: `1px solid ${BDR}`,
+        }}>
         {STAT_CARDS.map(s => {
           const isLongText = typeof s.val === "string" && s.val.length > 8;
           return (
-            <div key={s.label} style={{ background: CARD, padding: "0.875rem 1rem" }}>
+            <motion.div key={s.label} variants={staggerItem}
+              whileHover={{ background: "var(--surface-raised)" }}
+              style={{ background: CARD, padding: "0.875rem 1rem" }}>
               <Mono size="0.6rem" color={DIM}>{s.label.toUpperCase()}</Mono>
               <div style={{ fontFamily: M, fontSize: isLongText ? "0.92rem" : "1.5rem",
                              fontWeight: 900, lineHeight: 1.3,
                              color: s.color, marginTop: "0.25rem" }}>
-                {s.val}
+                <AnimatedCounter value={s.val} />
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* ── MAIN BODY ────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: "auto",

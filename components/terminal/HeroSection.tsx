@@ -2,11 +2,14 @@
 // FILE: components/terminal/HeroSection.tsx
 // Full hero zone: split layout + integrated filter bar, reference RWA style.
 
+import { motion } from "framer-motion";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { M, S, G, softShadow } from "./tokens";
 import { ScrollFade } from "./ui";
 import { HeroVisual } from "./HeroVisual";
 import { MarketplaceFilterBar } from "./MarketplaceFilterBar";
+import { AnimatedCounter } from "@/lib/motion/AnimatedCounter";
+import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 
 const STATS = [
   { label: "Verified assets", value: "6" },
@@ -53,8 +56,13 @@ export function HeroIntro() {
           pointerEvents: "none",
         }} />
 
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{
+        <motion.div
+          style={{ position: "relative", zIndex: 1 }}
+          variants={staggerContainer(0.1, 0.05)}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div variants={staggerItem} style={{
             display: "inline-flex",
             alignItems: "center",
             gap: "0.4rem",
@@ -81,9 +89,9 @@ export function HeroIntro() {
             }}>
               Verification layer for real-world assets
             </span>
-          </div>
+          </motion.div>
 
-          <h1 style={{
+          <motion.h1 variants={staggerItem} style={{
             fontFamily: S,
             fontSize: "clamp(2rem, 5vw, 3.2rem)",
             fontWeight: 700,
@@ -95,9 +103,9 @@ export function HeroIntro() {
             Invest in real assets
             <br />
             <span style={{ color: G }}>through verified Web3</span>
-          </h1>
+          </motion.h1>
 
-          <p style={{
+          <motion.p variants={staggerItem} style={{
             fontFamily: S,
             fontSize: "clamp(0.92rem, 1.9vw, 1.05rem)",
             color: "var(--text-secondary)",
@@ -107,10 +115,12 @@ export function HeroIntro() {
           }}>
             Full control, transparency, and profitability with verified issuers.
             Know what's real before you trust it, not just a listing and someone's word.
-          </p>
+          </motion.p>
 
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-            <a href="/passport"
+          <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+            <motion.a href="/passport"
+              whileHover={{ scale: 1.04, boxShadow: "0 0 34px rgba(16,185,129,0.5)" }}
+              whileTap={{ scale: 0.96 }}
               style={{
                 padding: "0.85rem 1.85rem",
                 borderRadius: 999,
@@ -124,8 +134,10 @@ export function HeroIntro() {
                 boxShadow: "var(--shadow-glow)",
               }}>
               Start verifying
-            </a>
-            <a href="/terminal#demo-assets"
+            </motion.a>
+            <motion.a href="/terminal#demo-assets"
+              whileHover={{ scale: 1.04, boxShadow: "0 0 30px rgba(16,185,129,0.3)" }}
+              whileTap={{ scale: 0.96 }}
               style={{
                 padding: "0.85rem 1.85rem",
                 borderRadius: 999,
@@ -139,25 +151,29 @@ export function HeroIntro() {
                 boxShadow: `0 0 24px rgba(16,185,129,0.15)`,
               }}>
               Browse verified assets
-            </a>
-          </div>
+            </motion.a>
+          </motion.div>
 
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             {STATS.map(s => (
-              <div key={s.label} style={{
-                padding: "0.75rem 1.1rem",
-                borderRadius: 16,
-                background: "var(--surface-raised)",
-                border: "1px solid var(--border)",
-                minWidth: 130,
-              }}>
+              <motion.div key={s.label}
+                whileHover={{ y: -4, scale: 1.02, boxShadow: "var(--shadow-card)" }}
+                transition={{ type: "spring", stiffness: 460, damping: 26 }}
+                style={{
+                  padding: "0.75rem 1.1rem",
+                  borderRadius: 16,
+                  background: "var(--surface-raised)",
+                  border: "1px solid var(--border)",
+                  minWidth: 130,
+                  willChange: "transform",
+                }}>
                 <div style={{
                   fontFamily: M,
                   fontSize: "1.1rem",
                   fontWeight: 700,
                   color: "var(--text-primary)",
                 }}>
-                  {s.value}
+                  <AnimatedCounter value={s.value} />
                 </div>
                 <div style={{
                   fontFamily: S,
@@ -167,10 +183,10 @@ export function HeroIntro() {
                 }}>
                   {s.label}
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         <div style={{ position: "relative", zIndex: 1, minHeight: 240 }}>
           <HeroVisual />
@@ -237,18 +253,36 @@ export function HeroPassportTeaser({ onGetVerified }: HeroPassportTeaserProps) {
           }}>
             The Abraxas Passport
           </span>
-          <span style={{
-            fontFamily: S,
-            fontSize: "0.68rem",
-            fontWeight: 600,
-            color: G,
-            background: "rgba(16,185,129,0.12)",
-            borderRadius: 999,
-            padding: "0.25rem 0.75rem",
-            border: "1px solid rgba(16,185,129,0.28)",
+          <motion.span
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ type: "spring", stiffness: 380, damping: 18, delay: 0.15 }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.3rem",
+              fontFamily: S,
+              fontSize: "0.68rem",
+              fontWeight: 600,
+              color: G,
+              background: "rgba(16,185,129,0.12)",
+              borderRadius: 999,
+              padding: "0.25rem 0.75rem",
+              border: "1px solid rgba(16,185,129,0.28)",
           }}>
+            <motion.svg width={12} height={12} viewBox="0 0 24 24" fill="none"
+              style={{ display: "block" }}>
+              <motion.path d="M4 12.5l5 5 11-12" stroke={G} strokeWidth={3}
+                strokeLinecap="round" strokeLinejoin="round"
+                initial={{ pathLength: 0 }}
+                whileInView={{ pathLength: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, ease: "easeInOut", delay: 0.3 }}
+              />
+            </motion.svg>
             Verify once, use everywhere
-          </span>
+          </motion.span>
         </div>
         <div style={{
           fontFamily: S,
