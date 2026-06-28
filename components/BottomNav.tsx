@@ -2,9 +2,12 @@
 // FILE: components/BottomNav.tsx
 // Mobile-first bottom nav. Desktop uses SiteNav top links.
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { springSnappy } from "@/lib/motion/variants";
+
+const MotionLink = motion.create(Link);
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
@@ -35,7 +38,7 @@ export function BottomNav() {
         {NAV_ITEMS.map(item => {
           const active = pathname?.startsWith(item.href);
           return (
-            <motion.a key={item.label} href={item.href}
+            <MotionLink key={item.label} href={item.href}
               whileTap={reduce ? undefined : { scale: 0.9 }}
               transition={springSnappy}
               style={{
@@ -66,7 +69,7 @@ export function BottomNav() {
               <span style={{ fontFamily:S, fontSize:"0.6rem", fontWeight:600 }}>
                 {item.label}
               </span>
-            </motion.a>
+            </MotionLink>
           );
         })}
       </nav>

@@ -3,10 +3,15 @@
 // Top navigation matching premium RWA protocol layouts (ZentraTech-style).
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { springSnappy } from "@/lib/motion/variants";
 import { ThemeToggle } from "@/components/ThemeToggle";
+
+// Client-side navigation so page transitions (app/template.tsx) play
+// smoothly instead of triggering a full reload.
+const MotionLink = motion.create(Link);
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
@@ -44,7 +49,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
       height: "clamp(58px, 8vw, 68px)",
       gap: "0.75rem",
     }}>
-      <a href="/terminal" style={{
+      <Link href="/terminal" style={{
         display: "flex",
         alignItems: "center",
         gap: "0.55rem",
@@ -63,7 +68,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
         }}>
           Abraxas
         </span>
-      </a>
+      </Link>
 
       <div className="abr-site-nav-links" style={{
         display: "none",
@@ -74,7 +79,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
         {NAV_LINKS.map(link => {
           const active = pathname?.startsWith(link.href);
           return (
-            <motion.a key={link.href} href={link.href}
+            <MotionLink key={link.href} href={link.href}
               whileHover={reduce ? undefined : { scale: 1.06 }}
               whileTap={reduce ? undefined : { scale: 0.95 }}
               transition={springSnappy}
@@ -103,7 +108,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
                 />
               )}
               {link.label}
-            </motion.a>
+            </MotionLink>
           );
         })}
       </div>
