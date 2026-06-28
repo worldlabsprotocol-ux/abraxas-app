@@ -157,7 +157,7 @@ export function HeroIntro() {
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             {STATS.map(s => (
               <motion.div key={s.label}
-                whileHover={{ y: -4, scale: 1.02, boxShadow: "var(--shadow-card)" }}
+                whileHover={{ y: -5, scale: 1.04, boxShadow: "0 16px 40px rgba(16,185,129,0.22), 0 0 0 1px rgba(16,185,129,0.3)" }}
                 transition={{ type: "spring", stiffness: 460, damping: 26 }}
                 style={{
                   padding: "0.75rem 1.1rem",

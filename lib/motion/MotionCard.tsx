@@ -43,8 +43,8 @@ export function MotionCard({
         interactive
           ? {
               y: -lift,
-              scale: 1.012,
-              boxShadow: `0 18px 48px ${glowColor}, 0 0 0 1px ${glowColor}`,
+              scale: 1.02,
+              boxShadow: `0 22px 54px ${glowColor}, 0 0 0 1px ${glowColor}`,
               transition: springSnappy,
             }
           : undefined

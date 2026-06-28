@@ -35,7 +35,7 @@ function parse(value: string) {
   };
 }
 
-export function AnimatedCounter({ value, duration = 1.2, style, className }: AnimatedCounterProps) {
+export function AnimatedCounter({ value, duration = 1.6, style, className }: AnimatedCounterProps) {
   const str = typeof value === "number" ? String(value) : value;
   const parsed = parse(str);
   const reduce = useReducedMotion();

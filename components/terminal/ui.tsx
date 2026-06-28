@@ -100,7 +100,7 @@ export function Button({
 
   const interactive = !disabled;
   const hover = interactive
-    ? { scale: 1.04, boxShadow: `0 0 30px ${color}55`, transition: springSnappy }
+    ? { scale: 1.06, boxShadow: `0 0 32px ${color}66`, transition: springSnappy }
     : undefined;
   const tap = interactive ? { scale: 0.96, transition: easeOutFast } : undefined;
 
