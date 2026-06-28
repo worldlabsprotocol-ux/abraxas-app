@@ -1,20 +1,16 @@
 "use client";
 // FILE: components/terminal/TerminalApp.tsx
-// Outer shell: clean nav, no terminal/OS chrome. Renders TerminalMain inside.
-// Default export. Imported by app/terminal/page.tsx.
+// Outer shell with premium top nav and marketplace content.
 
-import Image             from "next/image";
 import { useState, useEffect } from "react";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { TerminalMain }  from "./TerminalMain";
 import { LiveBackground } from "@/components/LiveBackground";
+import { SiteNav } from "@/components/SiteNav";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
-import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { BottomNav }     from "@/components/BottomNav";
-import { ThemeToggle }   from "@/components/ThemeToggle";
 import { WaitlistForm }  from "@/components/WaitlistForm";
 import { DemoMode }      from "./DemoMode";
-import { M, S, BDR, G } from "./tokens";
+import { S, BDR, G } from "./tokens";
 
 export default function TerminalApp() {
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -25,8 +21,6 @@ export default function TerminalApp() {
     if (params.get("signin") === "1") {
       setShowWaitlist(true);
     }
-    // Deep-link scroll. content renders async (ScrollFade etc), so retry
-    // briefly instead of assuming the target exists on first paint.
     if (window.location.hash) {
       const id = window.location.hash.slice(1);
       let attempts = 0;
@@ -45,83 +39,65 @@ export default function TerminalApp() {
 
   return (
     <WalletContextProvider>
-    <div style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)",
-                   display: "flex", flexDirection: "column" }}>
+    <div style={{
+      background: "var(--bg)",
+      minHeight: "100vh",
+      color: "var(--text-primary)",
+      display: "flex",
+      flexDirection: "column",
+      position: "relative",
+    }}>
       <LiveBackground />
-
-      {/* Slim top bar, just branding and account status now, navigation
-          lives at the bottom, app-style, not website-style */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 200,
-                     background: "var(--nav-bg)",
-                     borderBottom: `1px solid ${BDR}`,
-                     display: "flex", alignItems: "center",
-                     padding: `0 clamp(0.875rem,2.5vw,1.75rem)`,
-                     height: "clamp(54px,7vw,64px)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Image src="/icon-48.png" alt="Abraxas"
-                 width={26} height={26} priority
-                 style={{ display: "block", flexShrink: 0, borderRadius: 6 }} />
-          <span style={{ fontFamily: S,
-                          fontSize: "clamp(1rem,1.5vw,1.15rem)",
-                          fontWeight: 700, color: "var(--text-primary)" }}>
-            Abraxas
-          </span>
-        </div>
-
-        <div style={{ flex: 1 }} />
-        <button onClick={() => setShowWaitlist(true)}
-          style={{ display:"flex", alignItems:"center", gap:"0.4rem",
-                    padding:"0.4rem 0.75rem", borderRadius:14, cursor:"pointer",
-                    background:"#8B5CF612", border:"1px solid #8B5CF635" }}>
-          <span style={{ width:5, height:5, borderRadius:"50%", background:"#8B5CF6" }} />
-          <span style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700,
-                          color:"#8B5CF6", letterSpacing:"0.04em" }}>
-            ZK LOGIN, COMING SOON
-          </span>
-        </button>
-        <WalletConnectButton />
-        <ThemeToggle />
-        <LanguageSelector />
-      </nav>
-
-      {/* The one persistent navigation system, shared across every page */}
+      <SiteNav onWaitlistClick={() => setShowWaitlist(true)} />
       <BottomNav />
 
-      {/* Waitlist modal, replaces the old sign-in flow entirely while
-          ZK Login is being built. Honest positioning: nothing creates a
-          real account right now, this just gets you notified at launch. */}
       {showWaitlist && (
         <div onClick={() => setShowWaitlist(false)}
-          style={{ position:"fixed", inset:0, zIndex:3000,
-                    background:"var(--overlay)",
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    padding:"1rem" }}>
+          style={{
+            position:"fixed", inset:0, zIndex:3000,
+            background:"var(--overlay)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            padding:"1rem",
+          }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background:"var(--surface)", borderRadius:16,
-                      border:`1px solid ${BDR}`, maxWidth:380, width:"100%",
-                      boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
-            <div style={{ padding:"1.25rem 1.5rem",
-                           borderBottom:`1px solid ${BDR}`,
-                           display:"flex", alignItems:"center",
-                           justifyContent:"space-between" }}>
-              <span style={{ fontFamily:S, fontSize:"1rem", fontWeight:700,
-                              color:"var(--text-primary)" }}>
+            style={{
+              background:"var(--surface-raised)",
+              borderRadius:20,
+              border:`1px solid ${BDR}`,
+              maxWidth:400, width:"100%",
+              boxShadow:"var(--shadow-glow)",
+            }}>
+            <div style={{
+              padding:"1.25rem 1.5rem",
+              borderBottom:`1px solid ${BDR}`,
+              display:"flex", alignItems:"center", justifyContent:"space-between",
+            }}>
+              <span style={{
+                fontFamily:S, fontSize:"1.05rem", fontWeight:700,
+                color:"var(--text-primary)",
+              }}>
                 ZK Login, coming soon
               </span>
               <button onClick={() => setShowWaitlist(false)}
-                style={{ background:"transparent", border:"none",
-                          color:"var(--text-muted)", fontSize:"1.4rem",
-                          cursor:"pointer", lineHeight:1, padding:0 }}>
+                style={{
+                  background:"transparent", border:"none",
+                  color:"var(--text-muted)", fontSize:"1.4rem",
+                  cursor:"pointer", lineHeight:1, padding:0,
+                }}>
                 ×
               </button>
             </div>
             <div style={{ padding:"1.25rem 1.5rem 1.5rem" }}>
               <WaitlistForm onJoined={() => setShowWaitlist(false)} />
-              <div style={{ marginTop:"1rem", paddingTop:"1rem",
-                             borderTop:"1px solid var(--border)",
-                             textAlign:"center" }}>
-                <a href="/passport" style={{ fontFamily:S, fontSize:"0.72rem",
-                                              color:G, textDecoration:"underline" }}>
+              <div style={{
+                marginTop:"1rem", paddingTop:"1rem",
+                borderTop:"1px solid var(--border)",
+                textAlign:"center",
+              }}>
+                <a href="/passport" style={{
+                  fontFamily:S, fontSize:"0.72rem",
+                  color:G, textDecoration:"underline",
+                }}>
                   Already verifying? Check your Passport status →
                 </a>
               </div>
@@ -130,7 +106,7 @@ export default function TerminalApp() {
         </div>
       )}
 
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
         <TerminalMain />
       </div>
 

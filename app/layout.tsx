@@ -3,14 +3,16 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeContext";
+import { SITE_URL } from "@/lib/siteUrl";
 
 export const metadata: Metadata = {
   title: "Abraxas, Verify Once. Transact Everywhere.",
   description: "The verification and identity layer for real-world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     title: "Abraxas, Verify Once. Transact Everywhere.",
     description: "The verification and identity layer for real-world assets onchain.",
-    url: "https://abraxas-app.vercel.app",
+    url: SITE_URL,
     siteName: "Abraxas",
     images: ["/og-image.jpg"],
     type: "website",

@@ -28,7 +28,7 @@ export function ThemeToggle() {
         color: "var(--text-secondary)",
         cursor: "pointer",
         flexShrink: 0,
-        marginLeft: "0.5rem",
+        marginLeft: "0.25rem",
       }}
     >
       <span style={{ fontSize: "1rem", lineHeight: 1 }}>

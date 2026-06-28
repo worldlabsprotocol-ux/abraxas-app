@@ -15,9 +15,7 @@ import { WorldLabsSection } from "@/components/terminal/WorldLabsFeature";
 import { WorldWearablesGallery, WorldWearablesHoodie } from "@/components/terminal/WorldWearablesShop";
 import { WorldByHandSection } from "@/components/terminal/WorldByHandSection";
 import { CoffeeFarmSection } from "@/components/terminal/CoffeeFarmSection";
-import { BottomNav } from "@/components/BottomNav";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { LiveBackground } from "@/components/LiveBackground";
+import { PageShell } from "@/components/PageShell";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 import { BuyNowModal } from "@/components/terminal/BuyNowModal";
 import type { BuyItem } from "@/components/terminal/BuyNowModal";
@@ -43,22 +41,7 @@ export default function BuildPage() {
   const [buyItem, setBuyItem] = useState<BuyItem | null>(null);
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text-primary)" }}>
-      <LiveBackground />
-      <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
-                     borderBottom:`1px solid ${BDR}`,
-                     display:"flex", alignItems:"center", gap:"0.5rem" }}>
-        <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
-          <polygon points="20,2 38,20 20,38 2,20" stroke="#10B981" strokeWidth="2" fill="none"/>
-          <polygon points="20,8 32,20 20,32 8,20" stroke="#10B981" strokeWidth="1.5" fill="rgba(16,185,129,0.1)"/>
-          <circle cx="20" cy="20" r="3" fill="#10B981"/>
-        </svg>
-        <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700, flex:1 }}>
-          Build on Abraxas
-        </span>
-        <ThemeToggle />
-      </div>
-
+    <PageShell>
       <div style={{ maxWidth:860, margin:"0 auto", padding:"1.5rem clamp(0.875rem,3vw,1.5rem)" }}>
         <p style={{ fontFamily:S, fontSize:"0.82rem", color:"var(--text-secondary)",
                      lineHeight:1.7, marginBottom:"1.5rem", maxWidth:560 }}>
@@ -114,14 +97,12 @@ export default function BuildPage() {
         </DarkPanel>
       </div>
 
-      <BottomNav />
-
       <TokenizationRequestModal
         open={wyOpen}
         initialTier={initialTier}
         onClose={() => { setWyOpen(false); setInitialTier(null); }}
       />
       <BuyNowModal item={buyItem} onClose={() => setBuyItem(null)} />
-    </div>
+    </PageShell>
   );
 }

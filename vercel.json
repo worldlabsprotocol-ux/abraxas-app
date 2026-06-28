@@ -3,6 +3,7 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
+  "alias": ["abraxas-app.vercel.app"],
   "crons": [
     {
       "path": "/api/cron/bags-sync",

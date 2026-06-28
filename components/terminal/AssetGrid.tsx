@@ -76,9 +76,9 @@ export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }
         </span>
       </div>
       <Label>Featured Asset</Label>
-      <div style={{ borderRadius:14, overflow:"hidden",
-                     border:`1px solid ${G}35`, marginBottom:"1.5rem",
-                     boxShadow:"var(--shadow-card)" }}>
+      <div style={{ borderRadius:20, overflow:"hidden",
+                     border:`1px solid ${G}40`, marginBottom:"1.5rem",
+                     boxShadow:"var(--shadow-glow)", background:"var(--surface-glass)" }}>
         {CIELO_IMAGES.length > 0 ? (
           <div style={{ padding:"1rem 1rem 0" }}>
             <AssetGallery images={CIELO_IMAGES} fallbackLabel="Cielo Sunrise" color={G} />

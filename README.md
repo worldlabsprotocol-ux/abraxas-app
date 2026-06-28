@@ -10,7 +10,7 @@ Verify your identity once. Verify your asset once. Receive a portable W3C Verifi
 
 > "One verification. Every protocol."
 
-Live: **[abraxas-app.vercel.app](https://abraxas-app.vercel.app/terminal)**  
+Live: **[https://abraxas-app.vercel.app/](https://abraxas-app.vercel.app/)**  
 Token: **$ABRA** | Treasury: **circuit.skr** | IG: **@abraxasxyz**
 
 ---

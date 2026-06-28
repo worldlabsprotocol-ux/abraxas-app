@@ -1,45 +1,59 @@
 /* FILE: app/globals.css
-   Light default, dark optional. Structural tokens only, no gradients. */
+   Premium RWA/DeFi design tokens. Light default, dark optional. */
 
 :root,
 [data-theme="light"] {
-  --bg:             #FAFAF8;
+  --bg:             #F5F5F2;
   --bg-secondary:   #FFFFFF;
-  --surface:        #FFFFFF;
-  --surface-raised: #F4F4F1;
-  --border:         #E5E5E0;
-  --text-primary:   #15151A;
-  --text-secondary: rgba(21, 21, 26, 0.62);
-  --text-muted:     rgba(21, 21, 26, 0.4);
+  --surface:        rgba(255, 255, 255, 0.92);
+  --surface-raised: #FFFFFF;
+  --surface-glass:  rgba(255, 255, 255, 0.72);
+  --border:         rgba(21, 21, 26, 0.1);
+  --border-strong:  rgba(16, 185, 129, 0.35);
+  --text-primary:   #0A0A0B;
+  --text-secondary: rgba(10, 10, 11, 0.62);
+  --text-muted:     rgba(10, 10, 11, 0.42);
   --accent:         #10B981;
-  --accent-faint:   rgba(16, 185, 129, 0.08);
-  --accent-border:  rgba(16, 185, 129, 0.28);
-  --nav-bg:         rgba(255, 255, 255, 0.97);
-  --shadow-soft:    0 4px 24px rgba(0, 0, 0, 0.06);
-  --shadow-card:    0 2px 16px rgba(0, 0, 0, 0.05);
-  --shadow-glow:    0 0 0 1px rgba(16, 185, 129, 0.35), 0 0 24px rgba(16, 185, 129, 0.18);
-  --hero-accent:    rgba(16, 185, 129, 0.06);
-  --overlay:        rgba(0, 0, 0, 0.55);
+  --accent-bright:  #00FF88;
+  --accent-faint:   rgba(16, 185, 129, 0.1);
+  --accent-border:  rgba(16, 185, 129, 0.4);
+  --nav-bg:         rgba(245, 245, 242, 0.92);
+  --shadow-soft:    0 8px 40px rgba(0, 0, 0, 0.08);
+  --shadow-card:    0 12px 40px rgba(0, 0, 0, 0.1);
+  --shadow-glow:    0 0 0 1px rgba(16, 185, 129, 0.45), 0 0 40px rgba(16, 185, 129, 0.25);
+  --hero-accent:    rgba(16, 185, 129, 0.12);
+  --hero-glow:      rgba(16, 185, 129, 0.18);
+  --overlay:        rgba(0, 0, 0, 0.6);
+  --glass-blur:     16px;
+  --radius-lg:      20px;
+  --radius-pill:    999px;
 }
 
 [data-theme="dark"] {
-  --bg:             #0A0A0B;
-  --bg-secondary:   #0E0E10;
-  --surface:        #141418;
-  --surface-raised: #1A1A20;
+  --bg:             #050506;
+  --bg-secondary:   #0A0A0B;
+  --surface:        rgba(20, 20, 24, 0.82);
+  --surface-raised: rgba(26, 26, 32, 0.95);
+  --surface-glass:  rgba(255, 255, 255, 0.04);
   --border:         rgba(255, 255, 255, 0.08);
-  --text-primary:   #F5F5F7;
-  --text-secondary: rgba(245, 245, 247, 0.62);
-  --text-muted:     rgba(245, 245, 247, 0.38);
+  --border-strong:  rgba(16, 185, 129, 0.45);
+  --text-primary:   #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.68);
+  --text-muted:     rgba(255, 255, 255, 0.42);
   --accent:         #10B981;
-  --accent-faint:   rgba(16, 185, 129, 0.1);
-  --accent-border:  rgba(16, 185, 129, 0.35);
-  --nav-bg:         rgba(10, 10, 11, 0.96);
-  --shadow-soft:    0 8px 32px rgba(0, 0, 0, 0.45);
-  --shadow-card:    0 4px 24px rgba(0, 0, 0, 0.35);
-  --shadow-glow:    0 0 0 1px rgba(16, 185, 129, 0.45), 0 0 32px rgba(16, 185, 129, 0.22);
-  --hero-accent:    rgba(16, 185, 129, 0.08);
-  --overlay:        rgba(0, 0, 0, 0.78);
+  --accent-bright:  #00FF88;
+  --accent-faint:   rgba(16, 185, 129, 0.12);
+  --accent-border:  rgba(0, 255, 136, 0.45);
+  --nav-bg:         rgba(5, 5, 6, 0.88);
+  --shadow-soft:    0 12px 48px rgba(0, 0, 0, 0.55);
+  --shadow-card:    0 16px 48px rgba(0, 0, 0, 0.45);
+  --shadow-glow:    0 0 0 1px rgba(0, 255, 136, 0.5), 0 0 48px rgba(16, 185, 129, 0.35);
+  --hero-accent:    rgba(16, 185, 129, 0.15);
+  --hero-glow:      rgba(0, 255, 136, 0.22);
+  --overlay:        rgba(0, 0, 0, 0.82);
+  --glass-blur:     20px;
+  --radius-lg:      22px;
+  --radius-pill:    999px;
 }
 
 * { box-sizing: border-box; }

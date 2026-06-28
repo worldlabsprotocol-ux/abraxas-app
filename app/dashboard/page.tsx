@@ -5,8 +5,6 @@
 
 import { useState, useEffect }       from "react";
 import Link                          from "next/link";
-import { CompactWallet }             from "@/components/CompactWallet";
-import { LanguageSelector }          from "@/components/LanguageSelector";
 import {
   userAssetStore, ASSET_LABELS, STATE_COLORS,
   STAGE_META, PIPELINE_STAGES,
@@ -19,9 +17,7 @@ import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
 import { ContentSection }          from "@/components/terminal/ContentSection";
 import { SiteFooter }              from "@/components/SiteFooter";
-import { BottomNav }               from "@/components/BottomNav";
-import { ThemeToggle }             from "@/components/ThemeToggle";
-import { LiveBackground } from "@/components/LiveBackground";
+import { PageShell }               from "@/components/PageShell";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -157,48 +153,8 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex",
-                   flexDirection: "column", fontFamily: M, color: "var(--text-primary)" }}>
-      <LiveBackground />
-
-      {/* ── NAV ─────────────────────────────────────────────── */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "var(--nav-bg)",
-        borderBottom: `1px solid ${BDR}`,
-        display: "flex", alignItems: "center",
-        padding: "0 clamp(0.875rem,2vw,1.5rem)",
-        height: 52, gap: "0.75rem",
-      }}>
-        <Link href="/terminal" style={{
-          display: "flex", alignItems: "center", gap: "0.5rem",
-          textDecoration: "none", flexShrink: 0,
-        }}>
-          <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
-            <polygon points="20,2 38,20 20,38 2,20"
-              stroke="#10B981" strokeWidth="2" fill="none"/>
-            <polygon points="20,8 32,20 20,32 8,20"
-              stroke="#10B981" strokeWidth="1.5" fill="rgba(16,185,129,0.1)"/>
-            <circle cx="20" cy="20" r="3" fill="#10B981"/>
-          </svg>
-          <span style={{ fontFamily: M, fontSize: "0.875rem",
-                          fontWeight: 900, color: "var(--text-primary)", letterSpacing: "0.08em" }}>
-            ABRAXAS
-          </span>
-        </Link>
-
-        <div style={{ width: 1, height: 20, background: BDR, flexShrink: 0 }}/>
-
-        <span style={{ fontFamily: M, fontSize: "0.72rem", fontWeight: 700,
-                        color: G, letterSpacing: "0.1em",
-                        textTransform: "uppercase" }}>Dashboard</span>
-
-        <div style={{ flex: 1 }}/>
-
-        <LanguageSelector/>
-        <ThemeToggle />
-        <CompactWallet/>
-      </nav>
+    <PageShell>
+    <div style={{ display: "flex", flexDirection: "column", fontFamily: M, color: "var(--text-primary)" }}>
 
       {/* ── PASSPORT STATUS WIDGET ─────────────────────────────── */}
       <div style={{
@@ -341,8 +297,8 @@ export default function DashboardPage() {
 
       </div>
       <SiteFooter />
-      <BottomNav />
     </div>
+    </PageShell>
   );
 }
 

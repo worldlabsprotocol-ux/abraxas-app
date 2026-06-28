@@ -19,7 +19,6 @@ import { MusicSection }       from "./MusicSection";
 import { PartnersSection }    from "./PartnersSection";
 import { VerificationPackages } from "./VerificationPackages";
 import { FAQSection }         from "./FAQSection";
-import { MarketplaceFilterBar } from "./MarketplaceFilterBar";
 import { SiteFooter }         from "@/components/SiteFooter";
 import { InvestorPortalModal} from "./InvestorPortalModal";
 import { BuyNowModal }        from "./BuyNowModal";
@@ -130,8 +129,7 @@ export function TerminalMain() {
 
         <ScrollFade>
           <div id="demo-assets">
-            <MarketplaceFilterBar />
-            <Panel>
+            <Panel glow>
               <AssetGrid
                 onViewRegistry={() => setDeep("registry")}
                 onViewFlagship={() => setDeep("asset")}

@@ -11,31 +11,13 @@
 // default embed, which still works, you just won't earn the 50% fee
 // share on swaps until you register.
 
-import { BottomNav } from "@/components/BottomNav";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { LiveBackground } from "@/components/LiveBackground";
+import { PageShell } from "@/components/PageShell";
 
 const AFFILIATE_NAME = "heroswap"; // replace with your real affiliate name once registered
 
 export default function SwapPage() {
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text-primary)" }}>
-      <LiveBackground />
-      <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)",
-                     borderBottom:"1px solid var(--border)",
-                     display:"flex", alignItems:"center", gap:"0.5rem" }}>
-        <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
-          <polygon points="20,2 38,20 20,38 2,20" stroke="#10B981" strokeWidth="2" fill="none"/>
-          <polygon points="20,8 32,20 20,32 8,20" stroke="#10B981" strokeWidth="1.5" fill="rgba(16,185,129,0.1)"/>
-          <circle cx="20" cy="20" r="3" fill="#10B981"/>
-        </svg>
-        <span style={{ fontFamily:"'Inter',system-ui,sans-serif",
-                        fontSize:"0.85rem", fontWeight:700, flex:1 }}>
-          Swap
-        </span>
-        <ThemeToggle />
-      </div>
-
+    <PageShell>
       <div style={{ maxWidth:480, margin:"0 auto", padding:"2rem clamp(1rem,3vw,1.5rem)" }}>
         <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.72rem",
                        color:"#10B981", marginBottom:"0.5rem" }}>
@@ -80,7 +62,6 @@ export default function SwapPage() {
           tool, it's a separate utility from the rest of the platform.
         </div>
       </div>
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }
