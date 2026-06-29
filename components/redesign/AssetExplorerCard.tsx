@@ -106,7 +106,7 @@ export function AssetExplorerCard({ asset }: { asset: ExploreAsset }) {
         <div style={{ marginTop: "auto", display: "flex", gap: "0.5rem" }}>
           <Btn
             href={asset.href}
-            newTab={!!asset.href}
+            newTab={!!asset.external}
             onClick={asset.href ? undefined : () => { window.location.href = "/passport"; }}
             variant={asset.state === "verified" ? "primary" : "secondary"}
             size="sm"

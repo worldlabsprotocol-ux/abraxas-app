@@ -19,7 +19,8 @@ export interface ExploreAsset {
   score?: string;           // collateral score "89"
   state: VerifyState;
   note?: string;            // honesty caveat
-  href?: string;            // real external reference when one exists
+  href?: string;            // detail/reference link
+  external?: boolean;       // open href in a new tab
   cta: string;
 }
 
@@ -36,7 +37,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryValue: "14.6%",
     score: "89",
     state: "verified",
-    href: "https://www.airbnb.com/rooms/1681387746169197852",
+    href: "/flagship",
     cta: "View asset",
   },
   {
@@ -65,7 +66,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryValue: "$1,500 / mo",
     state: "owned",
     note: "Held via fideicomiso. Not open to outside investors.",
-    cta: "View asset",
+    cta: "Verify to view",
   },
   {
     id: "the-clove",
@@ -79,7 +80,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryValue: "23.8–32%",
     state: "reference",
     note: "Completed cycle, sold out. ROI is the developer's projection, not Abraxas-verified.",
-    cta: "View case study",
+    cta: "Verify to view",
   },
 ];
 

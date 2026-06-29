@@ -47,6 +47,8 @@
   --accent-bright:  #00FF88;
   --accent-faint:   rgba(16, 185, 129, 0.12);
   --accent-border:  rgba(0, 255, 136, 0.45);
+  --accent-2:       #8B5CF6;
+  --accent-2-faint: rgba(139, 92, 246, 0.14);
   --nav-bg:         rgba(6, 9, 11, 0.85);
   --nav-bg-solid:   #070B0A;
   --shadow-soft:    0 18px 60px rgba(0, 0, 0, 0.6);

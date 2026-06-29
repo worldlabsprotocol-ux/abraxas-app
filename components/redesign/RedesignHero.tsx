@@ -10,6 +10,7 @@ import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
+const VIOLET = "#8B5CF6";
 
 const STAMP_CHIPS = [
   { icon: "◈", label: "Identity" },
@@ -50,8 +51,13 @@ function CredentialCard() {
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
           <span style={{ fontFamily: FONT, fontSize: "0.6rem", letterSpacing: "0.1em",
                           textTransform: "uppercase", color: "var(--text-muted)" }}>Trust level</span>
-          <span style={{ fontFamily: FONT, fontSize: "0.6rem", fontWeight: 800, color: ACCENT,
-                          letterSpacing: "0.08em" }}>ELITE · 9/11</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem",
+                          fontFamily: FONT, fontSize: "0.6rem", fontWeight: 800,
+                          color: VIOLET, letterSpacing: "0.08em",
+                          padding: "0.15rem 0.5rem", borderRadius: 999,
+                          background: `${VIOLET}1A`, border: `1px solid ${VIOLET}40` }}>
+            ◆ ELITE · 9/11
+          </span>
         </div>
         <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,0.08)",
                        overflow: "hidden", marginBottom: "1.1rem" }}>

@@ -36,13 +36,17 @@ export function AmbientGlow() {
           filter: "blur(30px)",
         }}
       />
-      {/* faint top-right cool balance */}
-      <div style={{
-        position: "absolute", top: "8%", right: "-14%",
-        width: 520, height: 420,
-        background: "radial-gradient(50% 50% at 50% 50%, rgba(59,130,246,0.06) 0%, rgba(6,9,11,0) 70%)",
-        filter: "blur(30px)",
-      }} />
+      {/* faint top-right violet balance — secondary accent */}
+      <motion.div
+        initial={false}
+        animate={reduce ? undefined : { opacity: [0.5, 0.72, 0.5] }}
+        transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+        style={{
+          position: "absolute", top: "6%", right: "-14%",
+          width: 540, height: 440,
+          background: "radial-gradient(50% 50% at 50% 50%, rgba(139,92,246,0.14) 0%, rgba(139,92,246,0.05) 45%, rgba(6,9,11,0) 72%)",
+          filter: "blur(34px)",
+        }} />
     </div>
   );
 }
