@@ -4,6 +4,8 @@
 // CloveCaseStudy, AssetGrid). No fabricated figures. Verification state
 // is honest per asset.
 
+import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
+
 export type VerifyState = "verified" | "reference" | "open" | "owned";
 
 export interface ExploreAsset {
@@ -21,6 +23,7 @@ export interface ExploreAsset {
   note?: string;            // honesty caveat
   href?: string;            // detail/reference link
   external?: boolean;       // open href in a new tab
+  liveProof?: { label: string; url: string };  // e.g. Airbnb listing
   cta: string;
 }
 
@@ -38,6 +41,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     score: "96",
     state: "verified",
     href: "/flagship",
+    liveProof: { label: "Live on Airbnb", url: CIELO_AIRBNB_URL },
     cta: "View asset",
   },
   {

@@ -31,6 +31,9 @@ export const ROADMAP = [
     phase: "Up next",
     color: "#3B82F6",
     items: [
+      "x402 HTTP payment path for verification packages and /build intake",
+      "Technical architecture page (/docs/architecture) with live vs roadmap stack",
+      "Passport PDA + on-chain verify CPI instruction",
       "Institutional-grade secure storage integration (Utila)",
       "Passport accepted on external protocols",
       "First external protocol integration",
@@ -99,7 +102,7 @@ export const DOCS_SECTIONS = [
   },
   {
     title: "Developer resources",
-    body: "Open-source app: github.com/worldlabsprotocol-ux/abraxas-app. Certificate spec reference: docs.abraxas.xyz/certificates. SDK and Anchor program addresses will be published after the first external integration ships.",
+    body: "Open-source app: github.com/worldlabsprotocol-ux/abraxas-app. Technical architecture (live vs roadmap stack, x402 payment path, Passport PDA spec): /docs/architecture. SDK and Anchor program addresses publish after the first external integration ships.",
   },
 ] as const;
 

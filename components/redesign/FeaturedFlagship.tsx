@@ -47,8 +47,22 @@ export function FeaturedFlagship() {
             background: "linear-gradient(to top, rgba(6,9,11,0.85) 0%, transparent 50%)",
             pointerEvents: "none",
           }} />
-          <div style={{ position: "absolute", top: 16, left: 16 }}>
+          <div style={{ position: "absolute", top: 16, left: 16, display: "flex", flexDirection: "column", gap: "0.4rem", alignItems: "flex-start" }}>
             <VerificationBadge label="AAS-1 Verified · Genesis Asset" color={ACCENT} check />
+            <a
+              href={D.airbnbUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.35rem",
+                padding: "0.35rem 0.65rem", borderRadius: 999,
+                background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.25)",
+                fontFamily: FONT, fontSize: "0.65rem", fontWeight: 700,
+                color: "#fff", textDecoration: "none", backdropFilter: "blur(8px)",
+              }}
+            >
+              ● Live on Airbnb · Superhost
+            </a>
           </div>
           <div style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}>
             <div style={{
@@ -73,9 +87,9 @@ export function FeaturedFlagship() {
             fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
             lineHeight: 1.7, margin: "0 0 1.25rem",
           }}>
-            {D.tagline}. Mineral Bluff, Georgia. This is what a fully verified asset
-            looks like on Abraxas: real title, real revenue history, real collateral score,
-            and stablecoin booking when you are verified.
+            {D.tagline}. Mineral Bluff, Georgia. Real property — bookable today on Airbnb.
+            This is what a fully verified asset looks like on Abraxas: real title, real revenue
+            history, real collateral score, and stablecoin booking when you are verified.
           </p>
 
           <div style={{
@@ -127,13 +141,17 @@ export function FeaturedFlagship() {
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem" }}>
             <Btn href="/flagship" size="lg">View full verification →</Btn>
-            <Btn href="/passport" variant="secondary" size="lg">Get verified to book</Btn>
+            <Btn href={D.airbnbUrl} newTab variant="secondary" size="lg">
+              View live Airbnb listing →
+            </Btn>
+            <Btn href="/passport" variant="ghost" size="lg">Get verified to book</Btn>
           </div>
           <p style={{
             fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
             margin: "0.75rem 0 0", lineHeight: 1.55,
           }}>
-            Verification required before stablecoin checkout. No wallet needed to browse.
+            Active Superhost listing in Mineral Bluff, GA — not a render or mock.
+            Verification required before stablecoin checkout on Abraxas.
           </p>
         </div>
       </div>

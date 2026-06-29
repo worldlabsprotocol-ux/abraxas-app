@@ -19,6 +19,7 @@ const LINKS = {
   ],
   learn: [
     { label: "Documentation", href: "/docs" },
+    { label: "Architecture", href: "/docs/architecture" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "Tokenomics", href: "/tokenomics" },
     { label: "Music audit", href: "/music-audit" },

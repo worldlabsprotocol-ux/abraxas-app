@@ -113,6 +113,7 @@ export function FlagshipAssetPage() {
             { label:"AAS-1 VERIFIED",             color:BLUE },
             { label:"COLLATERAL ELIGIBLE",         color:AMBER },
             { label:"⬡ ACTIVE NOW",               color:GREEN },
+            { label:"● LIVE ON AIRBNB",            color:GREEN },
           ].map(b => (
             <span key={b.label} style={{
               padding:"3px 10px", borderRadius:"3px",
@@ -158,15 +159,19 @@ export function FlagshipAssetPage() {
         </div>
 
         {/* CTAs */}
-        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
+        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", alignItems:"center" }}>
           <a href={D.airbnbUrl} target="_blank" rel="noopener noreferrer"
             style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",
-                      border:"1px solid " + BORDER, background:CARD,
+                      border:"1px solid " + GREEN + "50", background:GREEN + "18",
                       fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                      color:"rgba(242,246,243,0.6)", textDecoration:"none",
-                      letterSpacing:"0.06em" }}>
-            VIEW ON AIRBNB →
+                      color:GREEN, textDecoration:"none",
+                      letterSpacing:"0.06em", boxShadow:"0 0 20px " + GREEN + "25" }}>
+            VIEW LIVE AIRBNB LISTING →
           </a>
+          <span style={{ fontFamily:M, fontSize:"0.38rem", color:"rgba(242,246,243,0.35)",
+                         letterSpacing:"0.06em", maxWidth:280, lineHeight:1.5 }}>
+            Real Superhost property in Mineral Bluff, GA — bookable today. Not a mock asset.
+          </span>
           <a href={D.instagramUrl} target="_blank" rel="noopener noreferrer"
             style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",
                       border:"1px solid rgba(168,85,247,0.3)",

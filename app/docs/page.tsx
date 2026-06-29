@@ -40,6 +40,7 @@ export default function DocsPage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
+            { label: "Architecture", href: "/docs/architecture" },
             { label: "Roadmap", href: "/roadmap" },
             { label: "Security", href: "/security" },
             { label: "Tokenomics", href: "/tokenomics" },

@@ -333,7 +333,7 @@ export function AbraxasPassport({
                   {launching ? "Launching…" : "Get verified →"}
                 </Btn>
               )}
-              <Btn href="/docs" variant="secondary" size="md">Credential spec</Btn>
+              <Btn href="/docs/architecture" variant="secondary" size="md">Architecture spec</Btn>
             </div>
           </div>
 

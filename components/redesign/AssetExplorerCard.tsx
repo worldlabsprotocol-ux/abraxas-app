@@ -103,7 +103,7 @@ export function AssetExplorerCard({ asset }: { asset: ExploreAsset }) {
           </div>
         )}
 
-        <div style={{ marginTop: "auto", display: "flex", gap: "0.5rem" }}>
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <Btn
             href={asset.href}
             newTab={!!asset.external}
@@ -114,6 +114,11 @@ export function AssetExplorerCard({ asset }: { asset: ExploreAsset }) {
           >
             {asset.cta} →
           </Btn>
+          {asset.liveProof && (
+            <Btn href={asset.liveProof.url} newTab variant="ghost" size="sm" fullWidth>
+              {asset.liveProof.label} →
+            </Btn>
+          )}
         </div>
       </div>
     </MotionCard>

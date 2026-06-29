@@ -623,10 +623,10 @@ export default function PassportPage() {
             ))}
           </div>
           <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
-            <Link href="/docs" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
+            <Link href="/docs/architecture" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
                 background:G, color:"#000", fontFamily:S, fontSize:"0.82rem",
                 fontWeight:700, textDecoration:"none" }}>
-              Read credential spec →
+              Read architecture spec →
             </Link>
             <Link href="/security" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
                 border:"1px solid var(--border)", background:"var(--surface)",

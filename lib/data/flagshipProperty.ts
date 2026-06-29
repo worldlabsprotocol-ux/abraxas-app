@@ -263,3 +263,6 @@ export const FLAGSHIP_PROPERTY = {
     ],
   },
 };
+
+/** Public Airbnb listing — proof Cielo Sunrise is a live, bookable asset */
+export const CIELO_AIRBNB_URL = FLAGSHIP_PROPERTY.airbnbUrl;
