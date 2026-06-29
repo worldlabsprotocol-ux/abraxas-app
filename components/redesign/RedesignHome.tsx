@@ -12,6 +12,11 @@ import { AssetsExplorer } from "./AssetsExplorer";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { VerifiedNetworkSection } from "@/components/terminal/VerifiedNetworkSection";
 import { VerificationPackages } from "@/components/terminal/VerificationPackages";
+import { PartnersSection } from "@/components/terminal/PartnersSection";
+import { CloveCaseStudy } from "@/components/terminal/CloveCaseStudy";
+import { MusicSection } from "@/components/terminal/MusicSection";
+import { MilestonesSection } from "@/components/terminal/MilestonesSection";
+import { ProtocolVisionSection } from "@/components/terminal/ProtocolVisionSection";
 import { RedesignFAQ } from "./RedesignFAQ";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -75,9 +80,34 @@ export function RedesignHome() {
             <VerifiedNetworkSection />
           </div>
 
+          {/* Verification Partners */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <PartnersSection />
+          </div>
+
+          {/* The Clove — completed-cycle proof */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <CloveCaseStudy />
+          </div>
+
+          {/* Music & royalties vertical */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <MusicSection />
+          </div>
+
           {/* Verification Packages */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationPackages />
+          </div>
+
+          {/* Milestones */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <MilestonesSection />
+          </div>
+
+          {/* Protocol vision */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <ProtocolVisionSection onGetStarted={() => { window.location.href = "/passport"; }} />
           </div>
 
           {/* FAQ */}

@@ -58,7 +58,7 @@ export function MilestonesSection() {
                       style={{ padding:"0.3rem 0.7rem", borderRadius:20,
                                 background:`${ms.color}08`,
                                 fontFamily:S, fontSize:"0.72rem",
-                                color:"rgba(21,21,26,0.55)",
+                                color:"rgba(242,246,243,0.55)",
                                 lineHeight:1.4 }}>
                       {ms.phase === "Live now" ? "\u2713 " : ""}{item}
                     </div>

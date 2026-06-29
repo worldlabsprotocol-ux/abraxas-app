@@ -20,7 +20,9 @@ import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
 import { ContentSection }          from "@/components/terminal/ContentSection";
 import { SiteFooter }              from "@/components/SiteFooter";
-import { PageShell }               from "@/components/PageShell";
+import { WalletContextProvider }   from "@/components/WalletContextProvider";
+import { AmbientGlow }             from "@/components/redesign/AmbientGlow";
+import { RedesignNav }             from "@/components/redesign/RedesignNav";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -156,8 +158,13 @@ export default function DashboardPage() {
   ];
 
   return (
-    <PageShell>
-    <div style={{ display: "flex", flexDirection: "column", fontFamily: M, color: "var(--text-primary)" }}>
+    <WalletContextProvider>
+    <div data-theme="dark" style={{ background: "var(--bg)", minHeight: "100vh",
+                  color: "var(--text-primary)", position: "relative", overflowX: "hidden" }}>
+    <AmbientGlow />
+    <RedesignNav />
+    <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column",
+                  fontFamily: M, color: "var(--text-primary)", maxWidth: 1180, margin: "0 auto" }}>
 
       {/* ── PASSPORT STATUS WIDGET ─────────────────────────────── */}
       <div style={{
@@ -196,7 +203,7 @@ export default function DashboardPage() {
           )}
         </div>
         <div style={{ fontFamily:M, fontSize:"0.52rem",
-                       color:"rgba(21,21,26,0.15)", letterSpacing:"0.08em" }}>
+                       color:"rgba(242,246,243,0.15)", letterSpacing:"0.08em" }}>
           {assets.length} ASSET{assets.length !== 1 ? "S" : ""} ·{" "}
         </div>
       </div>
@@ -246,7 +253,7 @@ export default function DashboardPage() {
           <Link href="/terminal#deal-pipeline" style={{
             padding:"0.6rem 1.125rem", borderRadius:20,
             border:`1px solid ${BDR}`, background:"transparent",
-            color:"rgba(21,21,26,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
+            color:"rgba(242,246,243,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
             fontSize:"0.8rem", fontWeight:600, textDecoration:"none",
           }}>
             Browse investment opportunities
@@ -287,11 +294,11 @@ export default function DashboardPage() {
                          borderRadius:12, border:`1px dashed ${BDR}`,
                          marginBottom:"1.5rem" }}>
             <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                           color:"rgba(21,21,26,0.35)", marginBottom:"0.5rem" }}>
+                           color:"rgba(242,246,243,0.35)", marginBottom:"0.5rem" }}>
               No assets submitted yet
             </div>
             <div style={{ fontFamily:S, fontSize:"0.75rem",
-                           color:"rgba(21,21,26,0.2)", marginBottom:"1rem",
+                           color:"rgba(242,246,243,0.2)", marginBottom:"1rem",
                            lineHeight:1.65 }}>
               Once you submit and verify an asset, it shows up here
               with its verification status and investment structure.
@@ -307,7 +314,8 @@ export default function DashboardPage() {
       </div>
       <SiteFooter />
     </div>
-    </PageShell>
+    </div>
+    </WalletContextProvider>
   );
 }
 

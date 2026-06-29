@@ -40,7 +40,7 @@ export function CloveCaseStudy() {
           <div style={{ padding:"1.25rem", borderRadius:12,
                          border:`1px solid ${RED}30`, background:`${RED}0A` }}>
             <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700,
-                           color:"rgba(21,21,26,0.4)", letterSpacing:"0.06em",
+                           color:"rgba(242,246,243,0.4)", letterSpacing:"0.06em",
                            textTransform:"uppercase", marginBottom:"0.75rem" }}>
               Without Abraxas
             </div>
@@ -50,7 +50,7 @@ export function CloveCaseStudy() {
                 "No way to check what's actually verified",
                 "You decide based on someone's word"].map(line => (
                 <li key={line} style={{ fontFamily:S, fontSize:"0.8rem",
-                                          color:"rgba(21,21,26,0.5)",
+                                          color:"rgba(242,246,243,0.5)",
                                           display:"flex", gap:"0.5rem" }}>
                   <span style={{ color:RED }}>✕</span>{line}
                 </li>
@@ -72,7 +72,7 @@ export function CloveCaseStudy() {
                 "What's verified marked clearly, what isn't too",
                 "You decide based on actual evidence"].map(line => (
                 <li key={line} style={{ fontFamily:S, fontSize:"0.8rem",
-                                          color:"rgba(21,21,26,0.7)",
+                                          color:"rgba(242,246,243,0.7)",
                                           display:"flex", gap:"0.5rem" }}>
                   <span style={{ color:G }}>✓</span>{line}
                 </li>
@@ -107,7 +107,7 @@ export function CloveCaseStudy() {
               The Clove
             </div>
             <div style={{ fontFamily:S, fontSize:"0.7rem",
-                           color:"rgba(21,21,26,0.45)", lineHeight:1.65 }}>
+                           color:"rgba(242,246,243,0.45)", lineHeight:1.65 }}>
               A 2-bedroom villa in the Blu Pearl development, purchased in
               2023, since sold out. Not a pitch deck, an actual asset with
               an actual paper trail, shown here as proof of a completed
@@ -126,7 +126,7 @@ export function CloveCaseStudy() {
               { k:"Ref. ROI range", v:"23.8% to 32% (developer projection)" },
             ].map(s => (
               <div key={s.k} style={{ background:CARD, padding:"0.55rem 0.75rem" }}>
-                <div style={{ fontFamily:M, fontSize:"0.46rem", color:"rgba(21,21,26,0.25)",
+                <div style={{ fontFamily:M, fontSize:"0.46rem", color:"rgba(242,246,243,0.25)",
                                textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2 }}>
                   {s.k}
                 </div>
@@ -136,8 +136,8 @@ export function CloveCaseStudy() {
               </div>
             ))}
           </div>
-          <div style={{ padding:"0.625rem 0.875rem", background:"#F4F4F1" }}>
-            <div style={{ fontFamily:S, fontSize:"0.58rem", color:"rgba(21,21,26,0.3)", lineHeight:1.5 }}>
+          <div style={{ padding:"0.625rem 0.875rem", background:"var(--surface)" }}>
+            <div style={{ fontFamily:S, fontSize:"0.58rem", color:"rgba(242,246,243,0.3)", lineHeight:1.5 }}>
               ROI figures are the development's own published projections
               at the time of purchase, not independently verified by
               Abraxas. Shown as reference, not a guarantee.
