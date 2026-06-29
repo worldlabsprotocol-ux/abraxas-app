@@ -1,109 +1,118 @@
 // FILE: components/identity/AbraxasPassport.tsx
-// Abraxas Digital Passport. live credential lookup via useAbraxasID hook.
-// Stamps are driven by real Supabase credential data when Veriff is active.
-// Falls back gracefully to demo state when wallet is not connected.
+// Abraxas Digital Passport — dark premium credential card + 11-stamp grid.
+// Live credential lookup via useAbraxasID; Reclaim social stamp when active.
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { useAbraxasID }        from "@/lib/credentials/useAbraxasID";
+import { useAbraxasID } from "@/lib/credentials/useAbraxasID";
 import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
 import { PassportStampIcon, type PassportStampKind } from "./PassportStampIcon";
+import { VerificationBadge } from "@/components/redesign/VerificationBadge";
+import { Btn } from "@/components/redesign/ui";
 
-const M   = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const S   = "system-ui,-apple-system,sans-serif";
-const G   = "#10B981";
-const A   = "#F59E0B";
-const B   = "#3B82F6";
-const P   = "#8B5CF6";
-const W   = "#15151A";
-const BDR = "#E5E5E0";
-const BG  = "#FFFFFF";
+const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const ACCENT = "#10B981";
+const AMBER = "#F59E0B";
+const BLUE = "#3B82F6";
+const VIOLET = "#8B5CF6";
 
 const ALL_STAMPS = [
-  { id:"identity",   label:"Identity Verified",        kind:"identity" as PassportStampKind,   color:G,  desc:"Gov ID + liveness confirmed" },
-  { id:"biometric",  label:"Biometrics Confirmed",     kind:"biometric" as PassportStampKind,  color:G,  desc:"Liveness match · face verification" },
-  { id:"business",   label:"Business Verified",        kind:"business" as PassportStampKind,   color:B,  desc:"KYB complete · entity confirmed" },
-  { id:"investor",   label:"Accredited Investor",      kind:"investor" as PassportStampKind,  color:P,  desc:"Meets SEC accreditation criteria" },
-  { id:"owner",      label:"Asset Owner Verified",     kind:"owner" as PassportStampKind,      color:A,  desc:"Ownership claim attested on-chain" },
-  { id:"royalty",    label:"Royalty Rights Verified",  kind:"royalty" as PassportStampKind,    color:P,  desc:"Publishing / royalty claim confirmed" },
-  { id:"property",   label:"Property Owner Verified",  kind:"property" as PassportStampKind,  color:A,  desc:"Real estate title chain verified" },
-  { id:"tribal",     label:"Tribal Partner Verified",  kind:"tribal" as PassportStampKind,    color:G,  desc:"Sovereign land / mineral rights" },
-  { id:"compliance", label:"Compliance Cleared",       kind:"compliance" as PassportStampKind,color:G,  desc:"AML / OFAC screening passed" },
-  { id:"lending",    label:"Lending Eligible",         kind:"lending" as PassportStampKind,   color:G,  desc:"Collateral credit verified" },
-  { id:"social",     label:"Social Verified",          kind:"social" as PassportStampKind,    color:B,  desc:"LinkedIn, X, GitHub, or Gmail cryptographically proven via Reclaim" },
+  { id: "identity",   label: "Identity",        kind: "identity" as PassportStampKind,   color: ACCENT, desc: "Gov ID + liveness confirmed" },
+  { id: "biometric",  label: "Biometric",       kind: "biometric" as PassportStampKind,  color: ACCENT, desc: "Liveness match · face verification" },
+  { id: "business",   label: "Business",        kind: "business" as PassportStampKind,   color: BLUE,   desc: "KYB complete · entity confirmed" },
+  { id: "investor",   label: "Accredited",      kind: "investor" as PassportStampKind,  color: VIOLET, desc: "Meets SEC accreditation criteria" },
+  { id: "owner",      label: "Asset Owner",     kind: "owner" as PassportStampKind,      color: AMBER,  desc: "Ownership claim attested on-chain" },
+  { id: "royalty",    label: "Royalty",         kind: "royalty" as PassportStampKind,    color: VIOLET, desc: "Publishing / royalty claim confirmed" },
+  { id: "property",   label: "Property",        kind: "property" as PassportStampKind,  color: AMBER,  desc: "Real estate title chain verified" },
+  { id: "tribal",     label: "Tribal",          kind: "tribal" as PassportStampKind,    color: ACCENT, desc: "Sovereign land / mineral rights" },
+  { id: "compliance", label: "Compliance",      kind: "compliance" as PassportStampKind,color: ACCENT, desc: "AML / OFAC screening passed" },
+  { id: "lending",    label: "Lending",         kind: "lending" as PassportStampKind,   color: ACCENT, desc: "Collateral credit verified" },
+  { id: "social",     label: "Social",          kind: "social" as PassportStampKind,    color: BLUE,   desc: "LinkedIn, X, GitHub, or Gmail via Reclaim zkTLS" },
 ] as const;
 
-type StampId = typeof ALL_STAMPS[number]["id"];
+export type StampId = typeof ALL_STAMPS[number]["id"];
 
-// Map credential level → earned stamps
 function stampsFromCredential(level: string | undefined): StampId[] {
   if (!level) return [];
-  if (level === "BASIC")    return ["identity","compliance"];
-  if (level === "STANDARD") return ["identity","compliance","biometric"];
-  if (level === "ENHANCED") return ["identity","compliance","biometric","owner","business"];
-  if (level === "ELITE")    return ["identity","compliance","biometric","owner","business","investor","lending"];
-  return ["identity","compliance"];
+  if (level === "BASIC")    return ["identity", "compliance"];
+  if (level === "STANDARD") return ["identity", "compliance", "biometric"];
+  if (level === "ENHANCED") return ["identity", "compliance", "biometric", "owner", "business"];
+  if (level === "ELITE")    return ["identity", "compliance", "biometric", "owner", "business", "investor", "lending"];
+  return ["identity", "compliance"];
 }
 
-function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: boolean }) {
+function Stamp({
+  stamp, earned, onClick, active,
+}: {
+  stamp: typeof ALL_STAMPS[number];
+  earned: boolean;
+  onClick?: () => void;
+  active?: boolean;
+}) {
   const [tip, setTip] = useState(false);
   const reduce = useReducedMotion();
+  const Tag = onClick ? "button" : "div";
+
   return (
-    <div onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}
-      style={{ display:"flex", flexDirection:"column", alignItems:"center",
-                gap:"0.375rem", cursor:"default", position:"relative" }}>
-      {/* When a stamp flips to earned, the badge pops in (scale + fade)
-          instead of snapping. `key={earned}` replays the entrance on the
-          not-started → earned transition. Honors reduced motion. */}
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      onMouseEnter={() => setTip(true)}
+      onMouseLeave={() => setTip(false)}
+      style={{
+        display: "flex", flexDirection: "column", alignItems: "center",
+        gap: "0.375rem", cursor: onClick ? "pointer" : "default",
+        position: "relative", background: "none", border: "none", padding: 0,
+      }}
+    >
       <motion.div
         key={String(earned)}
         initial={reduce ? false : (earned ? { scale: 0.55, opacity: 0 } : false)}
-        animate={{
-          scale: tip && earned ? 1.08 : 1,
-          opacity: earned ? 1 : 0.5,
-        }}
+        animate={{ scale: tip && earned ? 1.06 : 1, opacity: earned ? 1 : 0.45 }}
         transition={{ type: "spring", stiffness: 420, damping: 18 }}
-        style={{ width:64, height:64, borderRadius:"50%",
-                     border:`2px solid ${earned ? stamp.color : "rgba(21,21,26,0.12)"}`,
-                     background: earned
-                       ? `${stamp.color}20`
-                       : "rgba(21,21,26,0.03)",
-                     display:"flex", alignItems:"center", justifyContent:"center",
-                     position:"relative",
-                     boxShadow: earned ? `0 0 12px ${stamp.color}30` : "none",
-                     willChange:"transform" }}>
-        <span style={{ display:"flex", alignItems:"center", justifyContent:"center",
-                        color: earned ? stamp.color : "rgba(21,21,26,0.25)" }}>
-          <PassportStampIcon kind={stamp.kind} size={26}
-            color={earned ? stamp.color : "rgba(21,21,26,0.25)"} />
-        </span>
+        style={{
+          width: 56, height: 56, borderRadius: "50%",
+          border: `2px solid ${active ? stamp.color : earned ? stamp.color : "var(--border)"}`,
+          background: earned ? `${stamp.color}18` : "var(--surface)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          position: "relative",
+          boxShadow: earned ? `0 0 14px ${stamp.color}35` : "none",
+          outline: active ? `2px solid ${stamp.color}60` : "none",
+          outlineOffset: 2,
+        }}
+      >
+        <PassportStampIcon kind={stamp.kind} size={22}
+          color={earned ? stamp.color : "var(--text-muted)"} />
         {earned && (
-          <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} viewBox="0 0 64 64">
-            <circle cx="32" cy="32" r="30" fill="none"
-              stroke={stamp.color} strokeWidth="1" strokeOpacity="0.3"
-              strokeDasharray="4 3"/>
+          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="26" fill="none"
+              stroke={stamp.color} strokeWidth="1" strokeOpacity="0.35" strokeDasharray="4 3" />
           </svg>
         )}
       </motion.div>
-      <div style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                     color: earned ? stamp.color : "rgba(21,21,26,0.25)",
-                     textTransform:"uppercase", letterSpacing:"0.06em",
-                     textAlign:"center", maxWidth:72, lineHeight:1.3 }}>
+      <div style={{
+        fontFamily: FONT, fontSize: "0.52rem", fontWeight: 700,
+        color: earned ? stamp.color : "var(--text-muted)",
+        letterSpacing: "0.05em", textTransform: "uppercase",
+        textAlign: "center", maxWidth: 72, lineHeight: 1.3,
+      }}>
         {stamp.label}
       </div>
       {tip && earned && (
-        <div style={{ position:"absolute", bottom:"110%", left:"50%",
-                       transform:"translateX(-50%)", zIndex:20,
-                       background:"#FAFAF8", border:`1px solid ${stamp.color}40`,
-                       borderRadius:5, padding:"0.375rem 0.625rem",
-                       fontFamily:S, fontSize:"0.62rem", color:"rgba(21,21,26,0.6)",
-                       whiteSpace:"nowrap", pointerEvents:"none",
-                       boxShadow:"0 4px 16px rgba(0,0,0,0.7)" }}>
+        <div style={{
+          position: "absolute", bottom: "108%", left: "50%", transform: "translateX(-50%)",
+          zIndex: 20, background: "var(--surface-raised)", border: `1px solid ${stamp.color}40`,
+          borderRadius: 8, padding: "0.4rem 0.65rem",
+          fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-secondary)",
+          whiteSpace: "nowrap", pointerEvents: "none",
+          boxShadow: "var(--shadow-card)",
+        }}>
           {stamp.desc}
         </div>
       )}
-    </div>
+    </Tag>
   );
 }
 
@@ -111,15 +120,25 @@ export function AbraxasPassport({
   onGetVerified,
   walletAddress,
   earnedStamps: propStamps,
+  onStampClick,
+  activeStamp,
+  showVision = true,
+  showHeadline = true,
+  didHint,
 }: {
   onGetVerified?: () => void;
   walletAddress?: string;
   earnedStamps?: StampId[];
+  onStampClick?: (id: StampId) => void;
+  activeStamp?: string | null;
+  showVision?: boolean;
+  showHeadline?: boolean;
+  didHint?: string;
 }) {
   const [walletPubkey, setWalletPubkey] = useState<string | null>(null);
-  const [launching, setLaunching]       = useState(false);
+  const [launching, setLaunching] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Read wallet from localStorage credential if not passed as prop
   useEffect(() => {
     try {
       const stored = localStorage.getItem("abraxas_credential_v1");
@@ -127,18 +146,13 @@ export function AbraxasPassport({
         const c = JSON.parse(stored) as { wallet?: string };
         setWalletPubkey(c.wallet ?? null);
       }
-    } catch {}
+    } catch { /* ignore */ }
   }, []);
 
   const { credential, status } = useAbraxasID();
   const hasSocialStamp = useReclaimSocialStamp(walletAddress ?? walletPubkey);
 
-  // walletStr declared before any function that uses it
   const walletStr = walletAddress ?? walletPubkey;
-
-  // Derive earned stamps from live credential or prop override, plus
-  // the real Reclaim social stamp check, merged in regardless of which
-  // path above is active
   const baseEarned: StampId[] = propStamps
     ?? stampsFromCredential(credential?.level)
     ?? (status === "verified" ? ["identity", "compliance"] : []);
@@ -146,20 +160,24 @@ export function AbraxasPassport({
     ? [...baseEarned, "social"]
     : baseEarned;
 
-  const total       = ALL_STAMPS.length;
+  const total = ALL_STAMPS.length;
   const earnedCount = earned.length;
-  const trustPct    = Math.round((earnedCount / total) * 100);
-  const trustLabel  =
+  const trustPct = Math.round((earnedCount / total) * 100);
+  const trustLabel =
     earnedCount === 0 ? "UNVERIFIED"
     : earnedCount <= 2 ? "BASIC"
     : earnedCount <= 5 ? "VERIFIED"
     : earnedCount <= 8 ? "TRUSTED"
     : "ELITE";
-  const trustColor  =
-    trustLabel === "UNVERIFIED" ? "rgba(21,21,26,0.25)"
-    : trustLabel === "BASIC"    ? A
-    : trustLabel === "VERIFIED" ? G
-    : trustLabel === "TRUSTED"  ? B : G;
+  const trustColor =
+    trustLabel === "UNVERIFIED" ? "var(--text-muted)"
+    : trustLabel === "BASIC"    ? AMBER
+    : trustLabel === "VERIFIED" ? ACCENT
+    : trustLabel === "TRUSTED"  ? BLUE
+    : VIOLET;
+
+  const didDisplay = didHint
+    ?? (walletStr ? `did:sol:${walletStr.slice(0, 4)}…${walletStr.slice(-3)}` : "did:sol:7xKX…AsU");
 
   async function handleGetVerified() {
     setLaunching(true);
@@ -182,215 +200,335 @@ export function AbraxasPassport({
     }
   }
 
+  function copyCredential() {
+    const payload = {
+      "@context": ["https://www.w3.org/ns/credentials/v2"],
+      type: ["VerifiableCredential", "AbraxasPassportCredential"],
+      issuer: "did:web:abraxas-app.vercel.app",
+      credentialSubject: {
+        id: didDisplay.startsWith("did:") ? didDisplay : `did:sol:${walletStr ?? "unlinked"}`,
+        protocol: "abraxas",
+        stamps: earned,
+        level: trustLabel,
+        stampBitmap: earned.length,
+      },
+      proof: {
+        type: "Ed25519Signature2020",
+        created: new Date().toISOString(),
+        verificationMethod: "did:web:abraxas-app.vercel.app#issuer",
+      },
+    };
+    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
   return (
-    <div style={{ fontFamily:M }}>
-      {/* Passport card */}
-      <div style={{ borderRadius:12, overflow:"hidden",
-                     border:`1px solid ${G}40`,
-                     background:"#FFFFFF",
-                     boxShadow:`0 0 24px ${G}10, 0 8px 24px rgba(0,0,0,0.08)`,
-                     position:"relative" }}>
-        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%",
-                       pointerEvents:"none" }} viewBox="0 0 800 200" preserveAspectRatio="none">
-          <line x1="0" y1="200" x2="800" y2="0" stroke={G} strokeWidth="0.5" strokeOpacity="0.12"/>
-        </svg>
+    <div style={{ fontFamily: FONT }}>
+      {/* Credential card */}
+      <div style={{
+        borderRadius: 20, overflow: "hidden",
+        border: "1px solid var(--border-strong)",
+        background: "var(--surface-raised)",
+        boxShadow: "var(--shadow-glow)",
+        position: "relative",
+      }}>
         {/* Header */}
-        <div style={{ background:`${G}12`, borderBottom:`1px solid ${G}25`,
-                       padding:"0.625rem 1.25rem",
-                       display:"flex", alignItems:"center",
-                       justifyContent:"space-between", flexWrap:"wrap", gap:"0.5rem" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"0.625rem" }}>
-            <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
-              <polygon points="20,2 38,20 20,38 2,20" stroke={G} strokeWidth="2" fill="none"/>
-              <polygon points="20,8 32,20 20,32 8,20" stroke={G} strokeWidth="1.5" fill={`${G}15`}/>
-              <circle cx="20" cy="20" r="3" fill={G}/>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0.9rem 1.25rem", borderBottom: "1px solid var(--border)",
+          background: `${ACCENT}0A`, flexWrap: "wrap", gap: "0.5rem",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <svg width={22} height={22} viewBox="0 0 40 40" fill="none">
+              <polygon points="20,2 38,20 20,38 2,20" stroke={ACCENT} strokeWidth="2" fill="none" />
+              <polygon points="20,8 32,20 20,32 8,20" stroke={ACCENT} strokeWidth="1.5" fill={`${ACCENT}22`} />
+              <circle cx="20" cy="20" r="3" fill={ACCENT} />
             </svg>
-            <span style={{ fontFamily:M, fontSize:"0.72rem", fontWeight:900,
-                            color:G, letterSpacing:"0.15em" }}>ABRAXAS PASSPORT</span>
+            <span style={{
+              fontFamily: MONO, fontSize: "0.68rem", fontWeight: 900,
+              color: ACCENT, letterSpacing: "0.14em",
+            }}>
+              ABRAXAS PASSPORT
+            </span>
           </div>
-          <div style={{ display:"flex", gap:"0.375rem", alignItems:"center" }}>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
             {status === "checking" && (
-              <span style={{ fontFamily:M, fontSize:"0.55rem",
-                              color:"rgba(21,21,26,0.3)" }}>CHECKING…</span>
+              <span style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)" }}>
+                CHECKING…
+              </span>
             )}
-            <div style={{ width:6, height:6, borderRadius:"50%",
-                           background: status === "verified" ? G : "rgba(21,21,26,0.18)",
-                           boxShadow: status === "verified" ? `0 0 5px ${G}` : "none" }}/>
-            <span style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
-                            color:trustColor, letterSpacing:"0.1em",
-                            textTransform:"uppercase" }}>{trustLabel}</span>
+            <VerificationBadge
+              label={`${trustLabel} · ${earnedCount}/${total}`}
+              color={trustColor}
+              check={earnedCount > 0}
+            />
           </div>
         </div>
+
         {/* Body */}
-        <div style={{ padding:"1.25rem 1.375rem",
-                       display:"flex", justifyContent:"space-between",
-                       alignItems:"flex-start", flexWrap:"wrap", gap:"1rem" }}>
-          <div style={{ flex:1, minWidth:200 }}>
-            <h2 style={{ fontFamily:"Georgia,serif",
-                          fontSize:"clamp(1.4rem,3.5vw,2rem)",
-                          fontWeight:700, color:W, lineHeight:1.15,
-                          letterSpacing:"-0.01em", margin:"0 0 0.625rem" }}>
-              Verify Once.<br/>
-              <span style={{ color:G }}>Transact Everywhere.</span>
-            </h2>
-            <p style={{ fontFamily:S, fontSize:"0.78rem",
-                         color:"rgba(21,21,26,0.45)", lineHeight:1.7,
-                         maxWidth:420, margin:"0 0 1rem" }}>
-              One verification. Every integrated protocol, lender, marketplace,
-              and registry accepts it, recognized everywhere onchain.
-            </p>
+        <div style={{
+          padding: "clamp(1.15rem, 3vw, 1.5rem)",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+          gap: "1.25rem",
+          alignItems: "start",
+        }}>
+          <div>
+            {showHeadline && (
+              <>
+                <h2 style={{
+                  fontFamily: FONT, fontSize: "clamp(1.35rem, 3vw, 1.85rem)",
+                  fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.1,
+                  letterSpacing: "-0.03em", margin: "0 0 0.625rem",
+                }}>
+                  Verify once.<br />
+                  <span style={{ color: ACCENT }}>Transact everywhere.</span>
+                </h2>
+                <p style={{
+                  fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
+                  lineHeight: 1.7, maxWidth: 440, margin: "0 0 1.1rem",
+                }}>
+                  One W3C credential anchored on Solana. Documents stay off-chain —
+                  only cryptographic proof of each stamp is portable across protocols.
+                </p>
+              </>
+            )}
+
             {/* Trust bar */}
-            <div style={{ marginBottom:"1rem" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                <span style={{ fontFamily:M, fontSize:"0.55rem",
-                                color:"rgba(21,21,26,0.3)", letterSpacing:"0.1em",
-                                textTransform:"uppercase" }}>TRUST LEVEL</span>
-                <span style={{ fontFamily:M, fontSize:"0.55rem",
-                                fontWeight:700, color:trustColor }}>
-                  {earnedCount}/{total} CREDENTIALS
+            <div style={{ marginBottom: "1.1rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{
+                  fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)",
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                }}>
+                  Trust level
+                </span>
+                <span style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, color: trustColor }}>
+                  {earnedCount}/{total} stamps
                 </span>
               </div>
-              <div style={{ height:4, background:"rgba(21,21,26,0.08)",
-                             borderRadius:2, overflow:"hidden" }}>
-                <div style={{ height:"100%", borderRadius:2,
-                               background:`${G}`,
-                               width:`${Math.max(trustPct,4)}%`,
-                               transition:"width 0.5s ease" }}/>
+              <div style={{ height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.max(trustPct, earnedCount > 0 ? 4 : 0)}%` }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ height: "100%", background: ACCENT, borderRadius: 3 }}
+                />
               </div>
             </div>
+
             {/* CTAs */}
-            <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
+            <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap" }}>
               {status === "verified" ? (
-                <div style={{ padding:"0.625rem 1.25rem", borderRadius:5,
-                               background:`${G}15`, border:`1px solid ${G}40`,
-                               fontFamily:M, fontSize:"0.75rem", fontWeight:900,
-                               color:G, letterSpacing:"0.05em" }}>
-                  ✓ PASSPORT ACTIVE
+                <div style={{
+                  padding: "0.65rem 1.25rem", borderRadius: 999,
+                  background: `${ACCENT}18`, border: `1px solid ${ACCENT}40`,
+                  fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: ACCENT,
+                }}>
+                  ✓ Passport active
                 </div>
               ) : (
-                <button onClick={handleGetVerified} disabled={launching}
-                  style={{ padding:"0.625rem 1.25rem", borderRadius:5, border:"none",
-                            background:G, color:"#000", fontFamily:M,
-                            fontSize:"0.78rem", fontWeight:900, cursor:"pointer",
-                            letterSpacing:"0.05em", textTransform:"uppercase",
-                            boxShadow:`0 0 16px ${G}40`,
-                            opacity: launching ? 0.7 : 1 }}>
-                  {launching ? "LAUNCHING…" : "GET VERIFIED →"}
-                </button>
+                <Btn onClick={handleGetVerified} size="md">
+                  {launching ? "Launching…" : "Get verified →"}
+                </Btn>
               )}
-              <a href="/identity" style={{ padding:"0.625rem 1rem", borderRadius:5,
-                  border:`1px solid ${BDR}`, background:"transparent",
-                  color:"rgba(21,21,26,0.4)", fontFamily:M, fontSize:"0.72rem",
-                  fontWeight:700, textDecoration:"none", display:"inline-block",
-                  letterSpacing:"0.06em", textTransform:"uppercase" }}>
-                LEARN MORE
-              </a>
+              <Btn href="/docs" variant="secondary" size="md">Credential spec</Btn>
             </div>
           </div>
-          {/* Right: wallet info */}
-          <div style={{ flexShrink:0, minWidth:160 }}>
-            <div style={{ padding:"0.875rem", borderRadius:8,
-                           background:"rgba(21,21,26,0.03)",
-                           border:`1px solid ${BDR}`, marginBottom:"0.625rem" }}>
-              <div style={{ fontFamily:M, fontSize:"0.52rem",
-                             color:"rgba(21,21,26,0.25)", letterSpacing:"0.1em",
-                             textTransform:"uppercase", marginBottom:"0.375rem" }}>
-                DOCUMENT NO.
+
+          {/* Right: credential metadata */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <div style={{
+              padding: "0.875rem 1rem", borderRadius: 12,
+              background: "var(--surface)", border: "1px solid var(--border)",
+            }}>
+              <div style={{
+                fontFamily: MONO, fontSize: "0.52rem", color: "var(--text-muted)",
+                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem",
+              }}>
+                Credential subject
               </div>
-              <div style={{ fontFamily:M, fontSize:"0.65rem", fontWeight:700,
-                             color:"rgba(21,21,26,0.4)", letterSpacing:"0.06em",
-                             marginBottom:"0.5rem" }}>
-                {walletStr ? walletStr.slice(0,8)+"…"+walletStr.slice(-5) : "NOT CONNECTED"}
+              <div style={{
+                fontFamily: MONO, fontSize: "0.78rem", fontWeight: 700,
+                color: "var(--text-secondary)", marginBottom: "0.5rem",
+              }}>
+                {didDisplay}
               </div>
-              <div style={{ fontFamily:M, fontSize:"0.52rem",
-                             color:"rgba(21,21,26,0.2)" }}>
-                SOLANA MAINNET · VERIFIED CREDENTIAL
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                {["W3C VC v2.0", "Ed25519", "Solana Mainnet"].map(tag => (
+                  <span key={tag} style={{
+                    fontFamily: MONO, fontSize: "0.5rem", fontWeight: 700,
+                    color: ACCENT, letterSpacing: "0.06em",
+                    padding: "0.2rem 0.45rem", borderRadius: 4,
+                    background: `${ACCENT}12`, border: `1px solid ${ACCENT}30`,
+                  }}>
+                    {tag}
+                  </span>
+                ))}
               </div>
-              <div style={{ fontFamily:S, fontSize:"0.6rem",
-                             color:"rgba(21,21,26,0.3)", marginTop:"0.4rem",
-                             lineHeight:1.5 }}>
-                No documents stored on-chain, only cryptographic proof.
-              </div>
+              <p style={{
+                fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
+                lineHeight: 1.55, margin: "0.625rem 0 0",
+              }}>
+                No documents stored on-chain — only cryptographic proof of verification.
+              </p>
             </div>
-            <button onClick={() => {
-                const credential = {
-                  protocol: "abraxas",
-                  wallet: walletStr ?? null,
-                  credentials_active: earnedCount,
-                  stamps: earned,
-                  level: trustLabel,
-                  issued: new Date().toISOString(),
-                };
-                navigator.clipboard.writeText(JSON.stringify(credential, null, 2));
+
+            <button
+              onClick={copyCredential}
+              style={{
+                width: "100%", padding: "0.55rem 0.75rem", borderRadius: 10,
+                border: "1px solid var(--border)", background: "var(--surface)",
+                color: copied ? ACCENT : "var(--text-secondary)",
+                fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700,
+                cursor: "pointer", letterSpacing: "0.04em",
               }}
-              style={{ width:"100%", padding:"0.45rem", borderRadius:6,
-                        border:`1px solid ${BDR}`, background:"transparent",
-                        color:"rgba(21,21,26,0.45)", fontFamily:M,
-                        fontSize:"0.56rem", fontWeight:700, cursor:"pointer",
-                        marginBottom:"0.625rem", letterSpacing:"0.04em" }}>
-              COPY CREDENTIAL JSON
+            >
+              {copied ? "✓ COPIED" : "COPY CREDENTIAL JSON"}
             </button>
-            <div style={{ fontFamily:M, fontSize:"0.52rem",
-                           color: earnedCount > 0 ? G : "rgba(21,21,26,0.25)",
-                           letterSpacing:"0.08em", textAlign:"right" }}>
+
+            <div style={{
+              fontFamily: MONO, fontSize: "0.52rem", textAlign: "right",
+              color: earnedCount > 0 ? ACCENT : "var(--text-muted)",
+              letterSpacing: "0.06em",
+            }}>
               {earnedCount > 0
-                ? `✓ ${earnedCount} CREDENTIAL${earnedCount>1?"S":""} ACTIVE`
-                : "NO CREDENTIALS YET"}
+                ? `✓ ${earnedCount} stamp${earnedCount > 1 ? "s" : ""} active`
+                : "No stamps yet — start with Social or Precheck"}
             </div>
           </div>
         </div>
-        {/* Bottom strip */}
-        <div style={{ background:"rgba(21,21,26,0.04)", borderTop:`1px solid ${BDR}`,
-                       padding:"0.4rem 1.375rem", display:"flex", gap:"1.5rem" }}>
-          {["ABRAXAS PROTOCOL","SOLANA MAINNET","VERIFIED CREDENTIAL","BUILD 2026.1"].map(t => (
-            <span key={t} style={{ fontFamily:M, fontSize:"0.48rem",
-                                    color:"rgba(21,21,26,0.3)",
-                                    letterSpacing:"0.1em" }}>{t}</span>
+
+        {/* Technical strip */}
+        <div style={{
+          borderTop: "1px solid var(--border)",
+          padding: "0.55rem 1.25rem",
+          display: "flex", flexWrap: "wrap", gap: "1rem 1.5rem",
+          background: "var(--surface)",
+        }}>
+          {[
+            { k: "Standard", v: "W3C VC Data Model v2.0" },
+            { k: "Signature", v: "Ed25519 · Abraxas issuer key" },
+            { k: "Anchor", v: "Solana Mainnet attestation hash" },
+            { k: "Privacy", v: "Documents off-chain · proof on-chain" },
+          ].map(row => (
+            <div key={row.k} style={{ display: "flex", gap: "0.4rem", alignItems: "baseline" }}>
+              <span style={{
+                fontFamily: MONO, fontSize: "0.48rem", fontWeight: 700,
+                color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase",
+              }}>
+                {row.k}
+              </span>
+              <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-secondary)" }}>
+                {row.v}
+              </span>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Stamps grid */}
-      <div style={{ marginTop:"1.25rem" }}>
-        <div style={{ display:"flex", justifyContent:"space-between",
-                       alignItems:"center", marginBottom:"0.75rem" }}>
-          <span style={{ fontFamily:M, fontSize:"0.58rem",
-                          color:"rgba(21,21,26,0.3)",
-                          letterSpacing:"0.14em", textTransform:"uppercase" }}>
-            VERIFICATION STAMPS
+      <div style={{ marginTop: "1.25rem" }}>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          marginBottom: "0.75rem",
+        }}>
+          <span style={{
+            fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
+            letterSpacing: "0.14em", textTransform: "uppercase",
+          }}>
+            Verification stamps
           </span>
-          <span style={{ fontFamily:M, fontSize:"0.52rem",
-                          color:`${G}60`, letterSpacing:"0.08em" }}>
-            {earnedCount}/{total} EARNED
+          <span style={{ fontFamily: MONO, fontSize: "0.52rem", color: `${ACCENT}99`, letterSpacing: "0.06em" }}>
+            {earnedCount}/{total} earned
           </span>
         </div>
-        <div style={{ display:"grid",
-                       gridTemplateColumns:"repeat(auto-fill,minmax(80px,1fr))",
-                       gap:"0.75rem" }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))",
+          gap: "0.75rem",
+        }}>
           {ALL_STAMPS.map(s => (
-            <Stamp key={s.id} stamp={s} earned={earned.includes(s.id)}/>
+            <Stamp
+              key={s.id}
+              stamp={s}
+              earned={earned.includes(s.id)}
+              active={activeStamp === s.id}
+              onClick={onStampClick ? () => onStampClick(s.id) : undefined}
+            />
           ))}
         </div>
       </div>
 
       {/* Vision note */}
-      <div style={{ marginTop:"1.25rem", padding:"0.875rem 1rem", borderRadius:7,
-                     background:"rgba(16,185,129,0.04)",
-                     border:"1px solid rgba(16,185,129,0.15)" }}>
-        <div style={{ fontFamily:M, fontSize:"0.55rem", color:G,
-                       letterSpacing:"0.14em", textTransform:"uppercase",
-                       marginBottom:"0.5rem" }}>
-          THE PASSPORT VISION
+      {showVision && (
+        <div style={{
+          marginTop: "1.25rem", padding: "1rem 1.15rem", borderRadius: 14,
+          background: `${ACCENT}08`, border: `1px solid ${ACCENT}22`,
+        }}>
+          <div style={{
+            fontFamily: MONO, fontSize: "0.55rem", color: ACCENT,
+            letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.45rem",
+          }}>
+            Portable by design
+          </div>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+            lineHeight: 1.7, margin: 0,
+          }}>
+            Each stamp is a verifiable gate — identity, business, property, lending eligibility.
+            External protocols will verify via CPI or signed presentation against the on-chain
+            passport root. Integration SDK and program IDL are on the roadmap; credential
+            structure is live today.
+          </p>
         </div>
-        <p style={{ fontFamily:S, fontSize:"0.72rem",
-                     color:"rgba(21,21,26,0.4)", lineHeight:1.7, margin:0 }}>
-          Today, people carry passports between countries. Tomorrow, they carry
-          Abraxas Passports between protocols. Verify once. identity, business,
-          asset ownership, accreditation. and carry that trust across every lender,
-          marketplace, registry, and payment rail you ever touch. No re-KYC.
-          No redundant uploads. One credential. Every ecosystem.
-        </p>
-      </div>
+      )}
     </div>
   );
+}
+
+/** Map /passport page stamp state → AbraxasPassport stamp IDs */
+export function passportStateToStampIds(
+  state: { social?: "earned" | "in_progress" | "not_started"; identity?: "earned" | "in_progress" | "not_started"; business?: "earned" | "in_progress" | "not_started"; accredited?: "earned" | "in_progress" | "not_started"; asset_owner?: "earned" | "in_progress" | "not_started" },
+): StampId[] {
+  const earned: StampId[] = [];
+  if (state.social === "earned") earned.push("social");
+  if (state.identity === "earned") {
+    earned.push("identity", "biometric", "compliance");
+  }
+  if (state.business === "earned") earned.push("business");
+  if (state.accredited === "earned") earned.push("investor");
+  if (state.asset_owner === "earned") earned.push("owner");
+  return earned;
+}
+
+/** Map /passport wizard stamp id → AbraxasPassport StampId for highlight */
+export function passportWizardToStampId(wizardId: string): StampId | null {
+  const map: Record<string, StampId> = {
+    social: "social",
+    identity: "identity",
+    business: "business",
+    accredited: "investor",
+    asset_owner: "owner",
+  };
+  return map[wizardId] ?? null;
+}
+
+/** Map AbraxasPassport stamp click → /passport wizard stamp id */
+export function stampIdToPassportWizard(id: StampId): string {
+  const map: Partial<Record<StampId, string>> = {
+    social: "social",
+    identity: "identity",
+    biometric: "identity",
+    business: "business",
+    investor: "accredited",
+    owner: "asset_owner",
+    compliance: "identity",
+    royalty: "asset_owner",
+    property: "asset_owner",
+    tribal: "asset_owner",
+    lending: "asset_owner",
+  };
+  return map[id] ?? "social";
 }

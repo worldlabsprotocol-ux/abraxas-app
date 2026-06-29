@@ -16,7 +16,14 @@ import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
-import { PassportStampIcon, type PassportStampKind } from "@/components/identity/PassportStampIcon";
+import { type PassportStampKind } from "@/components/identity/PassportStampIcon";
+import {
+  AbraxasPassport,
+  passportStateToStampIds,
+  passportWizardToStampId,
+  stampIdToPassportWizard,
+  type StampId,
+} from "@/components/identity/AbraxasPassport";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -299,7 +306,7 @@ export default function PassportPage() {
 
       <RedesignNav />
 
-      <div style={{ position:"relative", zIndex:1, maxWidth:860, margin:"0 auto",
+      <div style={{ position:"relative", zIndex:1, maxWidth:960, margin:"0 auto",
                      padding:"clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)" }}>
 
         {/* Header */}
@@ -325,7 +332,20 @@ export default function PassportPage() {
           </p>
         </div>
 
-        {/* Passport card */}
+        {/* Live passport preview — same component as homepage, reflects earned stamps */}
+        <div style={{ marginBottom: "2rem" }}>
+          <AbraxasPassport
+            earnedStamps={passportStateToStampIds(passportState)}
+            activeStamp={active ? passportWizardToStampId(active) : null}
+            onStampClick={(id) => setActive(stampIdToPassportWizard(id))}
+            onGetVerified={() => setActive("identity")}
+            showHeadline={false}
+            showVision={false}
+            didHint={email.includes("@") ? `did:email:${email.split("@")[0].slice(0, 6)}…` : undefined}
+          />
+        </div>
+
+        {/* Stamp wizard */}
         <div style={{ background:"var(--surface-raised)",
                        border:"1px solid var(--border)", borderRadius:16,
                        padding:"1.5rem", marginBottom:"2rem",
@@ -377,41 +397,6 @@ export default function PassportPage() {
             hasSocial={passportState.social === "earned"}
             hasIdentity={passportState.identity === "earned"}
           />
-
-          {/* Stamps row */}
-          <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
-            {STAMPS.map(stamp => {
-              const status = passportState[stamp.id as keyof PassportState];
-              return (
-                <button key={stamp.id}
-                  onClick={() => setActive(active === stamp.id ? null : stamp.id)}
-                  style={{ display:"flex", flexDirection:"column",
-                            alignItems:"center", gap:"0.3rem",
-                            padding:"0.875rem 1rem", borderRadius:12,
-                            border: active === stamp.id ? `2px solid ${stamp.color}`
-                                                         : "2px solid var(--border)",
-                            background: status === "earned" ? `${stamp.color}10`
-                                      : "var(--surface)",
-                            cursor:"pointer", minWidth:80 }}>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
-                                 color: statusColor[status] }}>
-                    <PassportStampIcon kind={stamp.kind} size={22}
-                      color={status === "earned" ? stamp.color : "var(--text-muted)"} />
-                  </div>
-                  <div style={{ fontFamily:S, fontSize:"0.62rem", fontWeight:700,
-                                 color: status === "earned" ? stamp.color
-                                        : "var(--text-muted)" }}>
-                    {stamp.shortName}
-                  </div>
-                  <div style={{ fontFamily:S, fontSize:"0.55rem",
-                                 color: status === "earned" ? stamp.color
-                                        : "var(--text-muted)" }}>
-                    {statusLabel[status]}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         {/* Expanded stamp detail, shows real process steps */}
@@ -600,6 +585,57 @@ export default function PassportPage() {
             </div>
           );
         })()}
+
+        {/* Credential architecture — honest technical surface for integrators */}
+        <div style={{ background:"var(--surface-raised)",
+                       border:"1px solid var(--border)", borderRadius:16,
+                       padding:"1.5rem", marginBottom:"2rem" }}>
+          <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700,
+                         color:G, letterSpacing:"0.12em", textTransform:"uppercase",
+                         marginBottom:"0.5rem" }}>
+            Credential architecture
+          </div>
+          <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
+                         color:"var(--text-primary)", marginBottom:"1rem" }}>
+            How the passport works under the hood
+          </div>
+          <div style={{ display:"grid",
+                         gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",
+                         gap:"0.75rem", marginBottom:"1rem" }}>
+            {[
+              { title:"Issuance", body:"W3C Verifiable Credential v2.0, signed Ed25519 by Abraxas issuer key. Raw documents stay with Veriff or manual review — only verification outcome is credentialized." },
+              { title:"On-chain anchor", body:"Attestation hash anchored on Solana Mainnet. Planned: Passport PDA per holder with compact stamp bitmap or Merkle root for CPI-friendly verification by external programs." },
+              { title:"Stamp model", body:"11 gates map to verifiable facts: identity, KYB, property title, lending eligibility, etc. Each stamp updates the passport root when earned — not a UI checkbox." },
+              { title:"Portability", body:"Third parties verify via signed presentation today; on-chain CPI instruction + published IDL on roadmap. No re-KYC, no document re-upload." },
+            ].map(c => (
+              <div key={c.title} style={{ background:"var(--surface)",
+                                           border:"1px solid var(--border)",
+                                           borderRadius:10, padding:"1rem" }}>
+                <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:700,
+                               color:"var(--text-primary)", marginBottom:"0.375rem" }}>
+                  {c.title}
+                </div>
+                <p style={{ fontFamily:S, fontSize:"0.72rem",
+                             color:"var(--text-secondary)", lineHeight:1.65, margin:0 }}>
+                  {c.body}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
+            <Link href="/docs" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
+                background:G, color:"#000", fontFamily:S, fontSize:"0.82rem",
+                fontWeight:700, textDecoration:"none" }}>
+              Read credential spec →
+            </Link>
+            <Link href="/security" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
+                border:"1px solid var(--border)", background:"var(--surface)",
+                color:"var(--text-secondary)", fontFamily:S, fontSize:"0.82rem",
+                fontWeight:600, textDecoration:"none" }}>
+              Security & key management
+            </Link>
+          </div>
+        </div>
 
         {/* What happens to your credential */}
         <div style={{ background:"var(--surface-raised)",
