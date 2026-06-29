@@ -11,6 +11,7 @@ import { TrustStack }               from "@/components/onboarding/TrustStack";
 import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
+import { VerifiedNetworkSection } from "./VerifiedNetworkSection";
 import { CloveCaseStudy } from "./CloveCaseStudy";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
@@ -76,6 +77,14 @@ export function TerminalMain() {
 
         <div id="abraxas-id" />
         <HeroPassportTeaser onGetVerified={() => { window.location.href = "/passport"; }} />
+
+        <Divider />
+
+        <ScrollFade>
+          <Panel>
+            <VerifiedNetworkSection />
+          </Panel>
+        </ScrollFade>
 
         <Divider />
 
