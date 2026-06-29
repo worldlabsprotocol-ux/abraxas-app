@@ -30,8 +30,9 @@ const MORE_LINKS = [
   { href: "/dashboard",   label: "Dashboard" },
   { href: "/swap",        label: "Swap" },
   { href: "/roadmap",     label: "Roadmap" },
-  { href: "/tokenomics",  label: "Tokenomics" },
-  { href: "/faq",         label: "FAQ" },
+    { href: "/tokenomics",  label: "Tokenomics" },
+    { href: "/music-audit", label: "Music audit" },
+    { href: "/faq",         label: "FAQ" },
   { href: "/security",    label: "Security" },
   { href: "/about",       label: "About" },
 ];

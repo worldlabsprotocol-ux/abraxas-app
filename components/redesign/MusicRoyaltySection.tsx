@@ -99,7 +99,7 @@ function CatalogThumb({ kind }: { kind: "d9" | "demarko" | "chancellor" }) {
   );
 }
 
-export function MusicRoyaltySection() {
+export function MusicRoyaltySection({ hideHeader = false }: { hideHeader?: boolean }) {
   const [tracks, setTracks] = useState(50);
   const [years, setYears] = useState(3);
 
@@ -114,6 +114,7 @@ export function MusicRoyaltySection() {
       <motion.div variants={staggerContainer(0.08, 0.05)} initial="hidden"
         whileInView="show" viewport={{ once: true, margin: "-60px" }}>
         {/* Header */}
+        {!hideHeader && (
         <motion.div variants={staggerItem} style={{ marginBottom: "2rem" }}>
           <div style={{
             fontFamily: MONO, fontSize: "0.62rem", fontWeight: 700,
@@ -138,6 +139,7 @@ export function MusicRoyaltySection() {
             Fee is 20% only on what we actually recover.
           </p>
         </motion.div>
+        )}
 
         {/* Issue chips */}
         <motion.div variants={staggerItem}

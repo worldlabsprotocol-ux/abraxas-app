@@ -21,6 +21,7 @@ const LINKS = {
     { label: "Documentation", href: "/docs" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "Tokenomics", href: "/tokenomics" },
+    { label: "Music audit", href: "/music-audit" },
     { label: "FAQ", href: "/faq" },
     { label: "Security", href: "/security" },
     { label: "Partners", href: "/partners" },

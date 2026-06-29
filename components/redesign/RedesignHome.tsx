@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Dark premium homepage. Assets-first flow, verification moat, then verticals.
+// Verification-first homepage for mass adoption. Cielo flagship, then credential moat.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "./AmbientGlow";
@@ -8,17 +8,15 @@ import { RedesignNav } from "./RedesignNav";
 import { RedesignHero } from "./RedesignHero";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { TrustMetricsStrip } from "./TrustMetricsStrip";
+import { FeaturedFlagship } from "./FeaturedFlagship";
+import { VerificationFlow } from "./VerificationFlow";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
-import { VerifiedNetworkSection } from "@/components/terminal/VerifiedNetworkSection";
 import { VerificationPackages } from "@/components/terminal/VerificationPackages";
-import { PartnersSection } from "@/components/terminal/PartnersSection";
-import { CloveCaseStudy } from "@/components/terminal/CloveCaseStudy";
-import { MusicRoyaltySection } from "./MusicRoyaltySection";
-import { ProtocolVisionSection } from "@/components/terminal/ProtocolVisionSection";
+import { HomeFAQTeaser } from "./HomeFAQTeaser";
 import { RoadmapCTA } from "./RoadmapCTA";
-import { RedesignFAQ } from "./RedesignFAQ";
 import { RedesignFooter } from "./RedesignFooter";
+import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -26,16 +24,6 @@ const MAXW: React.CSSProperties = {
   maxWidth: 1180, margin: "0 auto",
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
-                   letterSpacing: "0.14em", textTransform: "uppercase",
-                   color: "#10B981", marginBottom: "0.75rem" }}>
-      {children}
-    </div>
-  );
-}
 
 export function RedesignHome() {
   return (
@@ -49,38 +37,48 @@ export function RedesignHome() {
         <RedesignNav />
 
         <main style={{ position: "relative", zIndex: 1 }}>
-          {/* 1 · Hero + primary CTA */}
+          {/* Hero: verification value prop */}
           <div style={MAXW}>
             <RedesignHero />
           </div>
 
-          {/* 2 · Trust metrics */}
+          {/* Trust strip */}
           <div style={{ ...MAXW, paddingTop: "0.5rem" }}>
             <TrustMetricsStrip />
           </div>
 
-          {/* 3 · Verified assets (the product) */}
-          <div id="assets" style={{ ...MAXW, paddingTop: "0.5rem" }}>
-            <AssetsExplorer />
+          {/* Flagship: Cielo Sunrise (cash-yielding proof) */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <FeaturedFlagship />
           </div>
 
-          {/* 4 · Proof: completed cycle */}
+          {/* How verification works — 3 steps */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <CloveCaseStudy />
+            <VerificationFlow />
           </div>
 
-          {/* 5 · Passport moat */}
+          {/* Passport demo */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <SectionLabel>The Abraxas Passport</SectionLabel>
-            <h2 style={{ fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
-                          letterSpacing: "-0.03em", lineHeight: 1.05,
-                          color: "var(--text-primary)", margin: "0 0 0.75rem", maxWidth: 720 }}>
-              One credential. Every door it opens.
+            <div style={{
+              fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              color: "#10B981", marginBottom: "0.75rem",
+            }}>
+              Your credential
+            </div>
+            <h2 style={{
+              fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
+              letterSpacing: "-0.03em", lineHeight: 1.05,
+              color: "var(--text-primary)", margin: "0 0 0.75rem", maxWidth: 640,
+            }}>
+              This is what verified looks like.
             </h2>
-            <p style={{ fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
-                         lineHeight: 1.7, maxWidth: 620, margin: "0 0 1.75rem" }}>
-              Your verification lives as a portable, soul-bound credential. Below is a fully
-              verified Passport, yours starts empty and fills in as you complete each stamp.
+            <p style={{
+              fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
+              lineHeight: 1.7, maxWidth: 560, margin: "0 0 1.5rem",
+            }}>
+              Yours starts empty. Each stamp is earned through a real process — not bought,
+              not faked. Get verified to unlock booking, investing, and asset submission.
             </p>
             <AbraxasPassport
               onGetVerified={() => { window.location.href = "/passport"; }}
@@ -88,37 +86,49 @@ export function RedesignHome() {
             />
           </div>
 
-          {/* 6 · Network effect */}
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <VerifiedNetworkSection />
+          {/* Other verified assets (Cielo excluded — featured above) */}
+          <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <AssetsExplorer excludeIds={["genesis-asset"]} title="More on the network" />
           </div>
 
-          {/* 7 · Verification pricing */}
+          {/* Verification pricing */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationPackages />
           </div>
 
-          {/* 8 · Music & IP vertical */}
+          {/* FAQ teaser + roadmap */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <MusicRoyaltySection />
-          </div>
-
-          {/* 9 · Partners */}
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <PartnersSection />
-          </div>
-
-          {/* 10 · Vision + roadmap link (no duplicate milestone timeline) */}
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <ProtocolVisionSection onGetStarted={() => { window.location.href = "/passport"; }} />
+            <HomeFAQTeaser />
             <div style={{ marginTop: "1.5rem" }}>
               <RoadmapCTA />
             </div>
           </div>
 
-          {/* 11 · FAQ */}
+          {/* Final CTA */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)", paddingBottom: "var(--section-gap)" }}>
-            <RedesignFAQ />
+            <div style={{
+              textAlign: "center", padding: "2.5rem 1.5rem",
+              borderRadius: 20, background: "rgba(16,185,129,0.08)",
+              border: "1px solid rgba(16,185,129,0.25)",
+            }}>
+              <h2 style={{
+                fontFamily: FONT, fontSize: "clamp(1.2rem, 3vw, 1.6rem)",
+                fontWeight: 800, color: "var(--text-primary)",
+                margin: "0 0 0.75rem", letterSpacing: "-0.02em",
+              }}>
+                Start with verification. Everything else follows.
+              </h2>
+              <p style={{
+                fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
+                lineHeight: 1.7, maxWidth: 440, margin: "0 auto 1.25rem",
+              }}>
+                No wallet required. Most people finish Precheck in under five minutes.
+              </p>
+              <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap" }}>
+                <Btn href="/passport" size="lg">Get verified →</Btn>
+                <Btn href="/flagship" variant="secondary" size="lg">See Cielo Sunrise</Btn>
+              </div>
+            </div>
           </div>
         </main>
 

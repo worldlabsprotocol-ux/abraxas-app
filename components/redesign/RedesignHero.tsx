@@ -128,9 +128,8 @@ export function RedesignHero() {
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            One identity check. One asset attestation. A portable, on-chain credential
-            that every protocol, lender, and marketplace accepts, no re-KYC, no redundant
-            uploads, no re-proving who you are.
+            Prove who you are once. Prove what you own once. Carry that proof across
+            every verified asset, lender, and marketplace — without repeating KYC.
           </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",

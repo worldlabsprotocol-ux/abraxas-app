@@ -20,15 +20,24 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "reference", label: "Reference" },
 ];
 
-export function AssetsExplorer() {
+export function AssetsExplorer({
+  excludeIds = [],
+  title = "Real assets. Proven on-chain.",
+  eyebrow = "Verified Assets",
+}: {
+  excludeIds?: string[];
+  title?: string;
+  eyebrow?: string;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
   const reduce = useReducedMotion();
+  const pool = EXPLORE_ASSETS.filter(a => !excludeIds.includes(a.id));
   const assets = filter === "all"
-    ? [...EXPLORE_ASSETS].sort((a, b) => {
+    ? [...pool].sort((a, b) => {
         const order: Record<VerifyState, number> = { verified: 0, open: 1, owned: 2, reference: 3 };
         return order[a.state] - order[b.state];
       })
-    : EXPLORE_ASSETS.filter(a => a.state === filter);
+    : pool.filter(a => a.state === filter);
 
   return (
     <section style={{ position: "relative", zIndex: 1 }}>
@@ -38,12 +47,12 @@ export function AssetsExplorer() {
           <div style={{ fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
                          letterSpacing: "0.14em", textTransform: "uppercase",
                          color: ACCENT, marginBottom: "0.5rem" }}>
-            Verified Assets
+            {eyebrow}
           </div>
           <h2 style={{ fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
                         letterSpacing: "-0.03em", lineHeight: 1.05,
                         color: "var(--text-primary)", margin: 0 }}>
-            Real assets. Proven on-chain.
+            {title}
           </h2>
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
@@ -62,8 +71,7 @@ export function AssetsExplorer() {
       }}>
         <Btn href="/passport" size="sm">Get verified</Btn>
         <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
-        <Btn href="/flagship" variant="secondary" size="sm">View flagship</Btn>
-        <Btn href="/roadmap" variant="ghost" size="sm">Roadmap</Btn>
+        <Btn href="/music-audit" variant="ghost" size="sm">Music audit</Btn>
       </div>
 
       {/* Filters */}
