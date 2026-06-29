@@ -1,22 +1,22 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Installment 1 of the from-scratch redesign. Dark premium theme scoped
-// to this page via data-theme="dark" so legacy routes are untouched.
-// Reuses real content components (Passport, Verified Network, Packages).
+// Dark premium homepage. Assets-first flow, verification moat, then verticals.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignHero } from "./RedesignHero";
+import { AbraxasBootScreen } from "./AbraxasBootScreen";
+import { TrustMetricsStrip } from "./TrustMetricsStrip";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { VerifiedNetworkSection } from "@/components/terminal/VerifiedNetworkSection";
 import { VerificationPackages } from "@/components/terminal/VerificationPackages";
 import { PartnersSection } from "@/components/terminal/PartnersSection";
 import { CloveCaseStudy } from "@/components/terminal/CloveCaseStudy";
-import { MusicSection } from "@/components/terminal/MusicSection";
-import { MilestonesSection } from "@/components/terminal/MilestonesSection";
+import { MusicRoyaltySection } from "./MusicRoyaltySection";
 import { ProtocolVisionSection } from "@/components/terminal/ProtocolVisionSection";
+import { RoadmapCTA } from "./RoadmapCTA";
 import { RedesignFAQ } from "./RedesignFAQ";
 import { RedesignFooter } from "./RedesignFooter";
 
@@ -40,6 +40,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export function RedesignHome() {
   return (
     <WalletContextProvider>
+      <AbraxasBootScreen />
       <div data-theme="dark" style={{
         background: "var(--bg)", color: "var(--text-primary)",
         minHeight: "100vh", position: "relative", overflowX: "hidden",
@@ -48,16 +49,27 @@ export function RedesignHome() {
         <RedesignNav />
 
         <main style={{ position: "relative", zIndex: 1 }}>
+          {/* 1 · Hero + primary CTA */}
           <div style={MAXW}>
             <RedesignHero />
           </div>
 
-          {/* Verified Assets Explorer */}
-          <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+          {/* 2 · Trust metrics */}
+          <div style={{ ...MAXW, paddingTop: "0.5rem" }}>
+            <TrustMetricsStrip />
+          </div>
+
+          {/* 3 · Verified assets (the product) */}
+          <div id="assets" style={{ ...MAXW, paddingTop: "0.5rem" }}>
             <AssetsExplorer />
           </div>
 
-          {/* The Passport */}
+          {/* 4 · Proof: completed cycle */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <CloveCaseStudy />
+          </div>
+
+          {/* 5 · Passport moat */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <SectionLabel>The Abraxas Passport</SectionLabel>
             <h2 style={{ fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
@@ -76,42 +88,35 @@ export function RedesignHome() {
             />
           </div>
 
-          {/* The Verified Network */}
+          {/* 6 · Network effect */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerifiedNetworkSection />
           </div>
 
-          {/* Verification Partners */}
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <PartnersSection />
-          </div>
-
-          {/* The Clove — completed-cycle proof */}
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <CloveCaseStudy />
-          </div>
-
-          {/* Music & royalties vertical */}
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <MusicSection />
-          </div>
-
-          {/* Verification Packages */}
+          {/* 7 · Verification pricing */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationPackages />
           </div>
 
-          {/* Milestones */}
+          {/* 8 · Music & IP vertical */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <MilestonesSection />
+            <MusicRoyaltySection />
           </div>
 
-          {/* Protocol vision */}
+          {/* 9 · Partners */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <PartnersSection />
+          </div>
+
+          {/* 10 · Vision + roadmap link (no duplicate milestone timeline) */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <ProtocolVisionSection onGetStarted={() => { window.location.href = "/passport"; }} />
+            <div style={{ marginTop: "1.5rem" }}>
+              <RoadmapCTA />
+            </div>
           </div>
 
-          {/* FAQ */}
+          {/* 11 · FAQ */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)", paddingBottom: "var(--section-gap)" }}>
             <RedesignFAQ />
           </div>

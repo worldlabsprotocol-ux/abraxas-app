@@ -4,7 +4,7 @@
 // "credential" visual on the right. Sits over the global ambient glow.
 
 import { motion } from "framer-motion";
-import { Btn, StatTile } from "./ui";
+import { Btn } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 import { PassportStampIcon, type PassportStampKind } from "@/components/identity/PassportStampIcon";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
@@ -141,16 +141,10 @@ export function RedesignHero() {
           </motion.div>
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-            margin: "0 0 1.5rem", maxWidth: 480,
+            margin: "0", maxWidth: 480,
           }}>
             No wallet required to browse or verify. Connect in the nav when you are ready to pay in stablecoin.
           </motion.p>
-
-          <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <StatTile value="6" label="Verified assets" />
-            <StatTile value="~$2M" label="Value attested" accent />
-            <StatTile value="11" label="Credential stamps" />
-          </motion.div>
         </motion.div>
 
         <div style={{ position: "relative" }}>

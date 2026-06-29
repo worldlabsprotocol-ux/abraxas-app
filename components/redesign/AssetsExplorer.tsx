@@ -1,14 +1,15 @@
 "use client";
 // FILE: components/redesign/AssetsExplorer.tsx
-// Verified Assets Explorer: elegant filter bar + responsive grid of
-// premium asset cards, built from real asset data.
+// Verified Assets Explorer with quick actions and premium asset grid.
 
 import { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
 import { AssetExplorerCard } from "./AssetExplorerCard";
+import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const ACCENT = "#10B981";
 
 type Filter = "all" | VerifyState;
 const FILTERS: { id: Filter; label: string }[] = [
@@ -22,17 +23,21 @@ const FILTERS: { id: Filter; label: string }[] = [
 export function AssetsExplorer() {
   const [filter, setFilter] = useState<Filter>("all");
   const reduce = useReducedMotion();
-  const assets = filter === "all" ? EXPLORE_ASSETS : EXPLORE_ASSETS.filter(a => a.state === filter);
+  const assets = filter === "all"
+    ? [...EXPLORE_ASSETS].sort((a, b) => {
+        const order: Record<VerifyState, number> = { verified: 0, open: 1, owned: 2, reference: 3 };
+        return order[a.state] - order[b.state];
+      })
+    : EXPLORE_ASSETS.filter(a => a.state === filter);
 
   return (
     <section style={{ position: "relative", zIndex: 1 }}>
-      {/* Heading row */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-                     flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
+                     flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
         <div>
           <div style={{ fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
                          letterSpacing: "0.14em", textTransform: "uppercase",
-                         color: "#10B981", marginBottom: "0.5rem" }}>
+                         color: ACCENT, marginBottom: "0.5rem" }}>
             Verified Assets
           </div>
           <h2 style={{ fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
@@ -41,14 +46,27 @@ export function AssetsExplorer() {
             Real assets. Proven on-chain.
           </h2>
         </div>
-        <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
-                       maxWidth: 320, lineHeight: 1.6 }}>
-          Every listing carries its verification state up front, what is confirmed,
-          what is owned, and what is shown only for reference.
-        </div>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
+                     maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
+          Verification state up front. What is confirmed, what is owned,
+          and what is reference only.
+        </p>
       </div>
 
-      {/* Filter chips */}
+      {/* Quick actions */}
+      <div style={{
+        display: "flex", flexWrap: "wrap", gap: "0.5rem",
+        marginBottom: "1.25rem", padding: "0.75rem",
+        borderRadius: 14, background: "var(--surface-raised)",
+        border: "1px solid var(--border)",
+      }}>
+        <Btn href="/passport" size="sm">Get verified</Btn>
+        <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
+        <Btn href="/flagship" variant="secondary" size="sm">View flagship</Btn>
+        <Btn href="/roadmap" variant="ghost" size="sm">Roadmap</Btn>
+      </div>
+
+      {/* Filters */}
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
         {FILTERS.map(f => {
           const active = filter === f.id;
@@ -57,7 +75,7 @@ export function AssetsExplorer() {
               style={{ position: "relative", padding: "0.5rem 1rem", borderRadius: 999,
                        border: `1px solid ${active ? "var(--border-strong)" : "var(--border)"}`,
                        background: active ? "rgba(16,185,129,0.12)" : "transparent",
-                       color: active ? "#10B981" : "var(--text-secondary)",
+                       color: active ? ACCENT : "var(--text-secondary)",
                        fontFamily: FONT, fontSize: "0.8rem", fontWeight: active ? 700 : 500,
                        cursor: "pointer", letterSpacing: "-0.01em" }}>
               {f.label}
@@ -66,7 +84,6 @@ export function AssetsExplorer() {
         })}
       </div>
 
-      {/* Grid */}
       <motion.div layout={!reduce}
         style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
                  gap: "1.1rem" }}>
