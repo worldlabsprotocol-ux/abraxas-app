@@ -12,6 +12,9 @@ import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { ReclaimVerifyButton } from "@/components/ReclaimVerifyButton";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
 import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
+import { WalletContextProvider } from "@/components/WalletContextProvider";
+import { AmbientGlow } from "@/components/redesign/AmbientGlow";
+import { RedesignNav } from "@/components/redesign/RedesignNav";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -283,32 +286,19 @@ export default function PassportPage() {
   };
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh",
-                   color:"var(--text-primary)" }}>
+    <WalletContextProvider>
+    <div data-theme="dark" style={{ background:"var(--bg)", minHeight:"100vh",
+                   color:"var(--text-primary)", position:"relative", overflowX:"hidden" }}>
+
+      <AmbientGlow />
 
       {/* Veriff's in-context frame mounts here when verification starts */}
       <div id="veriff-root" />
 
-      {/* Nav */}
-      <nav style={{ position:"sticky", top:0, zIndex:200,
-                     background:"var(--bg)",
-                     borderBottom:"1px solid var(--border)",
-                     display:"flex", alignItems:"center",
-                     padding:"0 clamp(1rem,3vw,2rem)",
-                     height:56, gap:"0.75rem" }}>
-        <Link href="/terminal" style={{ fontFamily:S, fontSize:"0.78rem",
-                                         fontWeight:600, color:"var(--text-muted)",
-                                         textDecoration:"none" }}>
-          ← Back
-        </Link>
-        <span style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                        color:"var(--text-primary)", flex:1 }}>
-          Abraxas Passport
-        </span>
-      </nav>
+      <RedesignNav />
 
-      <div style={{ maxWidth:860, margin:"0 auto",
-                     padding:"2rem clamp(1rem,4vw,2.5rem)" }}>
+      <div style={{ position:"relative", zIndex:1, maxWidth:860, margin:"0 auto",
+                     padding:"clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)" }}>
 
         {/* Header */}
         <div style={{ marginBottom:"2.5rem" }}>
@@ -316,10 +306,10 @@ export default function PassportPage() {
                          color:G, marginBottom:"0.625rem" }}>
             One credential. Every protocol.
           </div>
-          <h1 style={{ fontFamily:S, fontSize:"clamp(1.8rem,5vw,3rem)",
-                        fontWeight:800, lineHeight:1.1,
+          <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)",
+                        fontWeight:800, lineHeight:1.0,
                         color:"var(--text-primary)",
-                        letterSpacing:"-0.03em", margin:"0 0 1rem" }}>
+                        letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
             Get verified once.<br/>
             <span style={{ color:G }}>Use your credential everywhere.</span>
           </h1>
@@ -662,5 +652,6 @@ export default function PassportPage() {
         </div>
       </div>
     </div>
+    </WalletContextProvider>
   );
 }
