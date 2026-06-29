@@ -2,7 +2,7 @@
 // FILE: app/legal/terms/page.tsx
 // Comprehensive terms, matching the depth of an established
 // platform's terms of service, written for what Abraxas actually
-// does (Reg D securities offerings, manual transaction review,
+// does (verification, credential issuance, manual transaction review,
 // identity verification, third-party Swap integration).
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -40,11 +40,10 @@ export default function TermsPage() {
         <Section title="1. What Abraxas is">
           <p>Abraxas is a verification and credential layer for real-world assets. We
           are not a bank, broker-dealer, or registered investment adviser. Where
-          investment opportunities are presented on the Services, each is structured
-          under a specific securities exemption, most commonly Reg D 506(c) for
-          accredited investors, with its own offering documents that govern that
-          specific transaction. Nothing in these Terms should be read as an offer to
-          sell securities in any jurisdiction where such an offer would be unlawful.</p>
+          specific transactions involve securities or regulated activity, separate
+          offering documents and applicable law govern those transactions. Nothing
+          in these Terms should be read as an offer to sell securities in any
+          jurisdiction where such an offer would be unlawful.</p>
         </Section>
 
         <Section title="2. Eligibility">

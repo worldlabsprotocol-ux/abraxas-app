@@ -57,7 +57,7 @@ function CredentialCard() {
                           color: VIOLET, letterSpacing: "0.08em",
                           padding: "0.15rem 0.5rem", borderRadius: 999,
                           background: `${VIOLET}1A`, border: `1px solid ${VIOLET}40` }}>
-            ◆ ELITE · 9/11
+            ◆ ELITE · 10/10
           </span>
         </div>
         <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,0.08)",

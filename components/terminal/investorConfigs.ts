@@ -82,7 +82,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
         badge: "LONG-TERM",
         color: "#8B5CF6",
         desc: "Fractional ownership in the catalog itself, including future titles. Appreciation tied to author's continued output and audience growth, settled in USDC on exit.",
-        note: "Reg D framework, accredited investors",
+        note: "Verified asset · tokenized membership structure",
       },
     ],
     confidenceChecks: [

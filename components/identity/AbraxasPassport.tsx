@@ -1,5 +1,5 @@
 // FILE: components/identity/AbraxasPassport.tsx
-// Abraxas Digital Passport — dark premium credential card + 11-stamp grid.
+// Abraxas Digital Passport — dark premium credential card + 10-stamp grid.
 // Live credential lookup via useAbraxasID; Reclaim social stamp when active.
 "use client";
 
@@ -22,7 +22,6 @@ const ALL_STAMPS = [
   { id: "identity",   label: "Identity",        kind: "identity" as PassportStampKind,   color: ACCENT, desc: "Gov ID + liveness confirmed" },
   { id: "biometric",  label: "Biometric",       kind: "biometric" as PassportStampKind,  color: ACCENT, desc: "Liveness match · face verification" },
   { id: "business",   label: "Business",        kind: "business" as PassportStampKind,   color: BLUE,   desc: "KYB complete · entity confirmed" },
-  { id: "investor",   label: "Accredited",      kind: "investor" as PassportStampKind,  color: VIOLET, desc: "Meets SEC accreditation criteria" },
   { id: "owner",      label: "Asset Owner",     kind: "owner" as PassportStampKind,      color: AMBER,  desc: "Ownership claim attested on-chain" },
   { id: "royalty",    label: "Royalty",         kind: "royalty" as PassportStampKind,    color: VIOLET, desc: "Publishing / royalty claim confirmed" },
   { id: "property",   label: "Property",        kind: "property" as PassportStampKind,  color: AMBER,  desc: "Real estate title chain verified" },
@@ -39,7 +38,7 @@ function stampsFromCredential(level: string | undefined): StampId[] {
   if (level === "BASIC")    return ["identity", "compliance"];
   if (level === "STANDARD") return ["identity", "compliance", "biometric"];
   if (level === "ENHANCED") return ["identity", "compliance", "biometric", "owner", "business"];
-  if (level === "ELITE")    return ["identity", "compliance", "biometric", "owner", "business", "investor", "lending"];
+  if (level === "ELITE")    return ["identity", "compliance", "biometric", "owner", "business", "lending"];
   return ["identity", "compliance"];
 }
 
@@ -490,7 +489,7 @@ export function AbraxasPassport({
 
 /** Map /passport page stamp state → AbraxasPassport stamp IDs */
 export function passportStateToStampIds(
-  state: { social?: "earned" | "in_progress" | "not_started"; identity?: "earned" | "in_progress" | "not_started"; business?: "earned" | "in_progress" | "not_started"; accredited?: "earned" | "in_progress" | "not_started"; asset_owner?: "earned" | "in_progress" | "not_started" },
+  state: { social?: "earned" | "in_progress" | "not_started"; identity?: "earned" | "in_progress" | "not_started"; business?: "earned" | "in_progress" | "not_started"; asset_owner?: "earned" | "in_progress" | "not_started" },
 ): StampId[] {
   const earned: StampId[] = [];
   if (state.social === "earned") earned.push("social");
@@ -498,7 +497,6 @@ export function passportStateToStampIds(
     earned.push("identity", "biometric", "compliance");
   }
   if (state.business === "earned") earned.push("business");
-  if (state.accredited === "earned") earned.push("investor");
   if (state.asset_owner === "earned") earned.push("owner");
   return earned;
 }
@@ -509,7 +507,6 @@ export function passportWizardToStampId(wizardId: string): StampId | null {
     social: "social",
     identity: "identity",
     business: "business",
-    accredited: "investor",
     asset_owner: "owner",
   };
   return map[wizardId] ?? null;
@@ -522,7 +519,6 @@ export function stampIdToPassportWizard(id: StampId): string {
     identity: "identity",
     biometric: "identity",
     business: "business",
-    investor: "accredited",
     owner: "asset_owner",
     compliance: "identity",
     royalty: "asset_owner",

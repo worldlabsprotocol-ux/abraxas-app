@@ -23,7 +23,7 @@ const STEPS = [
   {
     n: "02",
     title: "Earn the stamps you need",
-    body: "Social, business, accredited investor, or asset owner — each stamp is a real credential backed by documentation, not a checkbox.",
+    body: "Social, business, property, or asset owner — each stamp is a real credential backed by documentation, not a checkbox.",
     kind: "business" as const,
     href: "/passport",
     cta: "See all stamps",

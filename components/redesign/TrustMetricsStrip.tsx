@@ -13,7 +13,7 @@ const METRICS = [
   { value: "6", label: "Verified assets", sub: "Live on Abraxas" },
   { value: "~$2M", label: "Value attested", sub: "Real appraisals" },
   { value: "W3C", label: "Credential standard", sub: "Portable proof" },
-  { value: "11", label: "Passport stamps", sub: "Verification depth" },
+  { value: "10", label: "Passport stamps", sub: "Verification depth" },
 ];
 
 export function TrustMetricsStrip() {

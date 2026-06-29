@@ -2,7 +2,7 @@
 // FILE: app/passport/page.tsx
 // Abraxas Passport, STANDALONE identity experience, completely separate
 // from the tokenize/asset flow. This is the verification moat.
-// Biometric ID → Business Verified → Accredited Investor → Asset Owner.
+// Biometric ID → Business Verified → Asset Owner.
 // Each stamp is earned through a real process, stored on Supabase,
 // and eventually issued as a W3C Verifiable Credential signed by Abraxas.
 
@@ -118,30 +118,6 @@ const STAMPS: Stamp[] = [
     regulatoryBasis: "FinCEN CDD Rule (31 CFR §1010.230). Wyoming LLCs are fully supported and processed fastest.",
   },
   {
-    id: "accredited",
-    name: "Accredited Investor",
-    shortName: "AI",
-    color: A,
-    kind: "accredited",
-    description: "Self-certification supported by document verification. Qualifies you for Reg D 506(c) investment opportunities on Abraxas.",
-    whatItProves: "You meet SEC accreditation standards: either income-based ($200K+ individual / $300K+ joint) or net worth-based ($1M+ excluding primary residence).",
-    requiredDocs: [
-      "Option 1 (Income): Two years of tax returns or W-2s showing qualifying income",
-      "Option 2 (Net Worth): Bank/brokerage statements, property appraisals",
-      "Option 3 (Professional): Series 7, 65, or 82 license (active)",
-      "Option 4 (Entity): Most entity types with $5M+ in investments",
-    ],
-    processSteps: [
-      "Select your qualification basis",
-      "Upload supporting documents",
-      "Abraxas or a licensed third-party verifier reviews (CPA/attorney letter accepted)",
-      "Accredited Investor stamp issued",
-      "Stamp is valid for 90 days per SEC guidance, renewable",
-    ],
-    timeEstimate: "2–5 business days. CPA/attorney letter speeds this up significantly.",
-    regulatoryBasis: "SEC Rule 501(a) of Regulation D. Required for all Reg D 506(c) investment opportunities.",
-  },
-  {
     id: "asset_owner",
     name: "Asset Owner",
     shortName: "AO",
@@ -174,7 +150,6 @@ interface PassportState {
   social:      StampStatus;
   identity:    StampStatus;
   business:    StampStatus;
-  accredited:  StampStatus;
   asset_owner: StampStatus;
 }
 
@@ -187,7 +162,6 @@ export default function PassportPage() {
     social: "not_started",
     identity: "not_started",
     business: "not_started",
-    accredited: "not_started",
     asset_owner: "not_started",
   });
 
@@ -605,7 +579,7 @@ export default function PassportPage() {
             {[
               { title:"Issuance", body:"W3C Verifiable Credential v2.0, signed Ed25519 by Abraxas issuer key. Raw documents stay with Veriff or manual review — only verification outcome is credentialized." },
               { title:"On-chain anchor", body:"Attestation hash anchored on Solana Mainnet. Planned: Passport PDA per holder with compact stamp bitmap or Merkle root for CPI-friendly verification by external programs." },
-              { title:"Stamp model", body:"11 gates map to verifiable facts: identity, KYB, property title, lending eligibility, etc. Each stamp updates the passport root when earned — not a UI checkbox." },
+              { title:"Stamp model", body:"10 gates map to verifiable facts: identity, KYB, property title, lending eligibility, etc. Each stamp updates the passport root when earned — not a UI checkbox." },
               { title:"Portability", body:"Third parties verify via signed presentation today; on-chain CPI instruction + published IDL on roadmap. No re-KYC, no document re-upload." },
             ].map(c => (
               <div key={c.title} style={{ background:"var(--surface)",
@@ -654,7 +628,7 @@ export default function PassportPage() {
               { title:"Stamps are non-transferable",
                 body:"A Passport stamp cannot be sold, assigned, or used by another person. It's cryptographically linked to your email and biometric data." },
               { title:"Verification expires only when standards change",
-                body:"Identity stamps don't expire unless Abraxas upgrades its verification standard. Accredited Investor stamps follow SEC guidance (90 days for self-certification)." },
+                body:"Identity stamps don't expire unless Abraxas upgrades its verification standard." },
               { title:"Your credential can travel",
                 body:"A future Abraxas integration means other platforms can check your stamps instead of running their own KYC. You present a proof, not your raw data." },
             ].map(c => (

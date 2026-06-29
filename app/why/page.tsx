@@ -18,7 +18,7 @@ const GAPS = [
     icon: "⬡",
     problem: "Institutional-only access.",
     stat: "Most RWA protocols",
-    statSub: "require accredited investor status",
+    statSub: "gate access behind institutional minimums",
     solution: "abraSOUND and abraYIELD pools start at $50 USDC. No KYC. No accreditation. If you can connect a wallet, you can earn from real-world assets.",
     color: "rgba(61,214,140,0.06)",
     border: "rgba(61,214,140,0.2)",
@@ -58,7 +58,7 @@ const LANDSCAPE = [
   },
   {
     layer: "Layer 3", role: "Tokenized Treasuries & Institutions",
-    what: "Wraps government bonds and money markets as on-chain tokens. Institutional access. Accredited investors only.",
+    what: "Wraps government bonds and money markets as on-chain tokens. Institutional access with high minimum thresholds.",
     gap: "Traditional assets only. Excludes independent creators. Minimum investment thresholds block retail participants.",
     icon: "⬡", color: "rgba(61,214,140,0.04)", border: "rgba(61,214,140,0.14)",
   },

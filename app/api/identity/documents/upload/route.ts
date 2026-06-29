@@ -1,6 +1,6 @@
 // FILE: app/api/identity/documents/upload/route.ts
 // Receives a document for a non-Identity Passport stamp (Business KYB,
-// Accredited Investor, Asset Owner), stores it in a private Supabase
+// Business, Property, Asset Owner), stores it in a private Supabase
 // Storage bucket, and records it for manual review. These three stamps
 // genuinely require a human to look at the document, that part isn't
 // being faked as automated.

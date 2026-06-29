@@ -1,8 +1,6 @@
 "use client";
 // FILE: components/terminal/VerificationPackages.tsx
-// New section, leads the verification-first repositioning. Accredited
-// Investor is deliberately NOT a self-serve tier, see the note inline,
-// that one has a real Rule 506(c) verification-method requirement.
+// Verification-first package grid. Live tiers vs manual review tiers.
 
 import { S, M, G, BDR } from "./tokens";
 import { MotionCard } from "@/lib/motion/MotionCard";
@@ -63,15 +61,6 @@ export function VerificationPackages() {
             </div>
           </MotionCard>
         ))}
-      </div>
-      <div style={{ marginTop:"0.875rem", padding:"0.75rem", borderRadius:8,
-                     background:"rgba(245,158,11,0.08)", border:"1px solid rgba(245,158,11,0.25)" }}>
-        <span style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-secondary)", lineHeight:1.6 }}>
-          Accredited Investor verification isn&rsquo;t listed as a self-serve tier on purpose.
-          SEC Rule 506(c) requires specific verification methods (tax documents or a
-          letter from a licensed attorney, CPA, or broker-dealer), it's handled as a
-          manual review, the same as the other document-based stamps.
-        </span>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export const ROADMAP = [
     color: "#F59E0B",
     items: [
       "Wallet sign-in (Phantom, Solflare)",
-      "Document review for Business, Accredited, and Asset Owner stamps",
+      "Document review for Business, Property, and Asset Owner stamps",
       "Self-serve purchase lifecycle status for buyers",
       "Reclaim callback confirmation against real production payloads",
     ],
@@ -94,7 +94,7 @@ export const DOCS_SECTIONS = [
   },
   {
     title: "Identity providers",
-    body: "Veriff: government ID + liveness, embedded in-context on /passport. Reclaim Protocol: LinkedIn, X, GitHub, Gmail via zkTLS proofs. Accredited Investor: manual review only under SEC Rule 506(c), not self-serve.",
+    body: "Veriff: government ID + liveness, embedded in-context on /passport. Reclaim Protocol: LinkedIn, X, GitHub, Gmail via zkTLS proofs. Business, Property, and Asset Owner tiers use manual document review.",
   },
   {
     title: "Treasury and payments",
@@ -114,7 +114,7 @@ export const SECURITY_ITEMS = [
       "W3C VC credentials: proof on-chain, documents off-chain with certified providers",
       "Veriff handles ID storage, Abraxas stores verification status only",
       "Ed25519 signed JWTs for credential issuance",
-      "Manual review for high-risk stamps (Accredited Investor, Business, Property)",
+      "Manual review for high-risk stamps (Business, Property, Asset Owner)",
       "Purchase lifecycle with dispute and refund states",
     ],
   },

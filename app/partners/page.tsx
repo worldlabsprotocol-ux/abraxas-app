@@ -33,7 +33,7 @@ const PARTNERS: Partner[] = [
     name: "CV5 Capital",
     category: "Fund Structure",
     description: "CIMA-regulated fund structure partner, advises on the legal structure behind investment offerings.",
-    appliesTo: "Reg D 506(c) offerings",
+    appliesTo: "Fund structure and compliance advisory",
     url: "#",
     isVerificationPartner: true,
   },

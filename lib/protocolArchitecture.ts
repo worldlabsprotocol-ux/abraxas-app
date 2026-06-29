@@ -27,7 +27,7 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
     status: "in_progress",
     detail: "The product intent is portable verification — not DeFi intent solvers. A holder presents a credential (or future on-chain passport root) instead of re-uploading documents at every protocol.",
     items: [
-      "Passport stamp wizard on /passport (Social, Identity, Business, Accredited, Asset Owner)",
+      "Passport stamp wizard on /passport (Social, Identity, Business, Asset Owner)",
       "Signed presentation via POST /api/credentials/verify (live API)",
       "On-chain CPI verify instruction — planned after Passport PDA ships",
     ],
@@ -43,7 +43,7 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
       "Ed25519 signed JWT issuance (POST /api/credentials/issue)",
       "Veriff: government ID + liveness (/passport)",
       "Reclaim Protocol: LinkedIn, X, GitHub, Gmail (zkTLS)",
-      "11-stamp passport model (UI + credential mapping live; full stamp set earned per tier)",
+      "10-stamp passport model (UI + credential mapping live; full stamp set earned per tier)",
       "Planned: Passport PDA per holder with compact stamp bitmap or Merkle root",
     ],
   },
@@ -80,7 +80,7 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
     status: "roadmap",
     detail: "Agents coordinate verification → review → stamp issuance → credential delivery. Not a generic “agentic modular” marketing layer — scoped to the Abraxas verification and tokenization pipeline.",
     items: [
-      "Live: Human verifier review queue for Business, Property, Accredited tiers",
+      "Live: Human verifier review queue for Business, Property, and Asset Owner tiers",
       "Roadmap: Agent-assisted document intake and status updates",
       "Roadmap: Automated stamp issuance trigger after review approval",
     ],
@@ -125,7 +125,7 @@ export const PASSPORT_ONCHAIN_SPEC = {
   accountLayout: [
     { field: "authority", desc: "Abraxas issuance multisig (upgradeable via governed instruction)" },
     { field: "subject", desc: "did:sol:<wallet> or linked email hash" },
-    { field: "stamp_bitmap", desc: "Compact u64 or u128 bitmap for 11 gates" },
+    { field: "stamp_bitmap", desc: "Compact u64 bitmap for 10 gates" },
     { field: "merkle_root", desc: "Optional upgrade path for compressed stamp sets at scale" },
     { field: "credential_version", desc: "Incremented on re-issuance or revocation" },
     { field: "issued_at", desc: "Unix timestamp of last root update" },

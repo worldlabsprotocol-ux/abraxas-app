@@ -5,7 +5,7 @@
 // privacy, state-specific rights, do-not-track, service providers,
 // and contact information, all written for what Abraxas actually
 // does (Veriff biometric verification, Supabase storage, Solana
-// wallets, stablecoin transactions, Reg D securities offerings).
+// wallets, stablecoin transactions, verification documents).
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
@@ -49,7 +49,7 @@ export default function PrivacyPolicyPage() {
           If you complete Abraxas Precheck, our certified partner Veriff collects your
           government ID and a liveness check directly. We receive a verification
           result from Veriff, not your underlying ID images or biometric data. If you
-          submit documents for Business, Accredited Investor, or Asset Owner
+          submit documents for Business, Property, or Asset Owner
           verification, those documents are stored securely and reviewed by our team.</p>
           <p style={{ marginBottom:"0.5rem" }}><strong>Transaction information.</strong> When you
           make a purchase, book a stay, or express investment interest, we collect your

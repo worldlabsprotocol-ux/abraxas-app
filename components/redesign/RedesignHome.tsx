@@ -82,7 +82,7 @@ export function RedesignHome() {
             </p>
             <AbraxasPassport
               onGetVerified={() => { window.location.href = "/passport"; }}
-              earnedStamps={["identity","biometric","business","investor","owner","royalty","property","tribal","compliance","lending","social"]}
+              earnedStamps={["identity","biometric","business","owner","royalty","property","tribal","compliance","lending","social"]}
             />
           </div>
 
