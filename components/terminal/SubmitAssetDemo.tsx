@@ -30,7 +30,7 @@ const STEPS = [
     title: "Get a lending score",
     detail: "A transparent score investors and lenders can actually rely on.",
     color: A,
-    mock: { field: "Collateral score", value: "89 / 100" },
+    mock: { field: "Collateral score", value: "96 / 100" },
   },
   {
     title: "Open to investors",

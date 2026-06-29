@@ -11,10 +11,10 @@ const ACCENT = "#10B981";
 
 const LINKS = {
   product: [
+    { label: "Verify", href: "/passport" },
     { label: "Assets", href: "/terminal" },
-    { label: "Passport", href: "/passport" },
-    { label: "Dashboard", href: "/dashboard" },
     { label: "Build", href: "/build" },
+    { label: "Dashboard", href: "/dashboard" },
     { label: "Swap", href: "/swap" },
   ],
   learn: [

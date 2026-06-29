@@ -528,7 +528,7 @@ commandRegistry.register({
     const base = regAsset
       ? regAsset.collateral.appraisalValue
       : parseFloat((userAsset!.estimatedValue || "0").replace(/[^0-9.]/g,"")) || 100_000;
-    const verScore = regAsset ? 89 : (userAsset?.scores?.verification ?? 62);
+    const verScore = regAsset ? 96 : (userAsset?.scores?.verification ?? 62);
     const liqScore = regAsset ? 84 : (userAsset?.scores?.liquidity ?? 58);
     const fraud    = regAsset ? 95 : (userAsset?.scores?.fraud ?? 72);
     const mkt      = regAsset ? 88 : (userAsset?.scores?.marketability ?? 65);

@@ -179,7 +179,7 @@ export const FLAGSHIP_PROPERTY = {
   collateral: {
     ltv:                 60,
     maxBorrow:           660_000,
-    collateralScore:     89,
+    collateralScore:     96,
     liquidityScore:      75,
     volatilityProfile:   "LOW-MEDIUM",
     fraudRisk:           2,

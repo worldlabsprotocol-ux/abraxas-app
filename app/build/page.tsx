@@ -1,10 +1,7 @@
 "use client";
 // FILE: app/build/page.tsx
-// "Build on Abraxas", everything for asset owners who want to form a
-// business, tokenize, or sell, moved out of the Marketplace entirely.
-// This content was sitting inline in the buyer-facing investment
-// scroll, which doesn't make sense, a buyer browsing verified assets
-// doesn't need six sections about how to BECOME a seller in between.
+// Build on Abraxas — Wyoming LLC packages + World Labs blueprint.
+// Slimmed to the core owner funnel: form → verify → tokenize.
 
 import { useState } from "react";
 import { S, BDR } from "@/components/terminal/tokens";
@@ -12,9 +9,6 @@ import { ScrollFade } from "@/components/terminal/ui";
 import { WyomingSection } from "@/components/terminal/WyomingSection";
 import type { WyomingTier } from "@/components/terminal/types";
 import { WorldLabsSection } from "@/components/terminal/WorldLabsFeature";
-import { WorldWearablesGallery, WorldWearablesHoodie } from "@/components/terminal/WorldWearablesShop";
-import { WorldByHandSection } from "@/components/terminal/WorldByHandSection";
-import { CoffeeFarmSection } from "@/components/terminal/CoffeeFarmSection";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
@@ -46,10 +40,9 @@ export default function BuildPage() {
       <div style={{ maxWidth:860, margin:"0 auto", padding:"1.5rem clamp(0.875rem,3vw,1.5rem)" }}>
         <p style={{ fontFamily:S, fontSize:"0.82rem", color:"var(--text-secondary)",
                      lineHeight:1.7, marginBottom:"1.5rem", maxWidth:560 }}>
-          For asset owners and operators: form a business, tokenize what
-          you own, or see how existing businesses on Abraxas got verified.
-          If you're looking to invest in something instead, head back to
-          the Marketplace.
+          Form a Wyoming LLC, get fully verified, and tokenize what you own on Solana.
+          World Labs is the blueprint — Cielo Sunrise is the proof asset.
+          Investors browse verified assets on the Marketplace.
         </p>
 
         <ScrollFade>
@@ -70,32 +63,6 @@ export default function BuildPage() {
             <WorldLabsSection onBuyNow={(item) => setBuyItem(item)} />
           </DarkPanel>
         </ScrollFade>
-
-        <Divider />
-
-        <ScrollFade>
-          <DarkPanel>
-            <WorldWearablesGallery />
-          </DarkPanel>
-        </ScrollFade>
-
-        <Divider />
-
-        <DarkPanel>
-          <WorldWearablesHoodie onBuyNow={(item) => setBuyItem(item)} />
-        </DarkPanel>
-
-        <Divider />
-
-        <DarkPanel>
-          <WorldByHandSection />
-        </DarkPanel>
-
-        <Divider />
-
-        <DarkPanel>
-          <CoffeeFarmSection />
-        </DarkPanel>
       </div>
 
       <TokenizationRequestModal

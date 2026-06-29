@@ -13,6 +13,7 @@ const ACCENT = "#10B981";
 
 const D = FLAGSHIP_PROPERTY;
 const yieldPct = `${(D.financials.cashYield * 100).toFixed(1)}%`;
+const collateralScore = `${D.collateral.collateralScore}/100`;
 
 export function FeaturedFlagship() {
   return (
@@ -86,7 +87,7 @@ export function FeaturedFlagship() {
             {[
               { l: "Appraised", v: "$1.1M" },
               { l: "Cash yield", v: yieldPct, accent: true },
-              { l: "Collateral", v: "89/100" },
+              { l: "Collateral", v: collateralScore },
             ].map(m => (
               <div key={m.l} style={{
                 padding: "0.75rem", borderRadius: 12,

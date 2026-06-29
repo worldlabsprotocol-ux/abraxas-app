@@ -36,7 +36,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
     color: "#10B981",
     stats: [
       { label: "Appraised Value",  val: "$1,100,000" },
-      { label: "Lending Score", val: "94 / 100" },
+      { label: "Lending Score", val: "96 / 100" },
       { label: "Cash Yield",       val: "14.6%" },
       { label: "Yearly Return Rate", val: "9.95%" },
     ],

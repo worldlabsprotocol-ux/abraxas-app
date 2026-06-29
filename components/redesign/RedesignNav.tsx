@@ -19,14 +19,14 @@ const ACCENT = "#10B981";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
+  { href: "/passport",   label: "Verify" },
   { href: "/terminal",   label: "Assets" },
-  { href: "/passport",   label: "Passport" },
-  { href: "/partners",   label: "Partners" },
   { href: "/build",      label: "Build" },
-  { href: "/docs",       label: "Docs" },
 ];
 
 const MORE_LINKS = [
+  { href: "/partners",    label: "Partners" },
+  { href: "/docs",        label: "Docs" },
   { href: "/dashboard",   label: "Dashboard" },
   { href: "/swap",        label: "Swap" },
   { href: "/roadmap",     label: "Roadmap" },

@@ -154,7 +154,7 @@ export function FlagshipAssetPage() {
           <Metric label="Cash Yield"           value="14.6%"             sub="On purchase price" color={GREEN}  />
           <Metric label="Avg Occupancy"        value="75%"               sub="Annual average"    color={BLUE}   />
           <Metric label="Max Borrow Capacity"  value="$660,000 USDC"     sub="60% LTV"           color={BLUE}   />
-          <Metric label="Collateral Score"     value="89 / 100"          sub="AAA Institutional" color={AMBER}  />
+          <Metric label="Collateral Score"     value={`${C.collateralScore} / 100`} sub="AAA Institutional" color={AMBER}  />
         </div>
 
         {/* CTAs */}
@@ -538,7 +538,7 @@ export function FlagshipAssetPage() {
                   { label:"Appraised Value",   value:"$1,100,000", color:"#F2F6F3" },
                   { label:"Max LTV",           value:"60%",         color:GREEN     },
                   { label:"Max Borrow",        value:"$660K USDC",  color:GREEN     },
-                  { label:"Collateral Score",  value:"89 / 100",    color:GREEN     },
+                  { label:"Collateral Score",  value:`${C.collateralScore} / 100`, color:GREEN },
                   { label:"Liquidity Score",   value:"75 / 100",    color:BLUE      },
                   { label:"Fraud Risk",        value:"2 / 100",     color:GREEN     },
                   { label:"DSCR",              value:"2.4x",        color:GREEN     },

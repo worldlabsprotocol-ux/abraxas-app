@@ -43,7 +43,7 @@ const CIELO_SUNRISE: AssetRecord = {
 
   collateral: {
     status:            "ELIGIBLE",
-    score:             89,
+    score:             96,
     liquidityRating:   "A",
     fraudRisk:         "Low",
     fraudScore:        2,

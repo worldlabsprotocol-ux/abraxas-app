@@ -16,7 +16,7 @@ export interface ExploreAsset {
   primaryValue: string;     // e.g. "$1,100,000"
   secondaryLabel: string;   // e.g. "Cash yield"
   secondaryValue: string;   // e.g. "14.6%"
-  score?: string;           // collateral score "89"
+  score?: string;           // collateral score "96"
   state: VerifyState;
   note?: string;            // honesty caveat
   href?: string;            // detail/reference link
@@ -35,7 +35,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     primaryValue: "$1,100,000",
     secondaryLabel: "Cash yield",
     secondaryValue: "14.6%",
-    score: "89",
+    score: "96",
     state: "verified",
     href: "/flagship",
     cta: "View asset",

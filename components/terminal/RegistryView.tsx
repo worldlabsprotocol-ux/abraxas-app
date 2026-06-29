@@ -14,7 +14,7 @@ const STATS = [
   { label: "Verified Properties", val: "6" },
   { label: "Pending Verification", val: "0" },
   { label: "Total Value",          val: "Just Under $2M" },
-  { label: "Avg Lending Score",    val: "89/100" },
+  { label: "Avg Lending Score",    val: "96/100" },
 ];
 
 export function RegistryView({ onBack }: RegistryViewProps) {
@@ -62,7 +62,7 @@ export function RegistryView({ onBack }: RegistryViewProps) {
         <div style={{ fontFamily:S, fontSize:"0.75rem",
                        color:"rgba(21,21,26,0.4)" }}>
           Mineral Bluff, Georgia · $1,100,000 appraised ·
-          89/100 lending score · 96% verification confidence ·
+          96/100 lending score · 96% verification confidence ·
           $660K max borrow capacity
         </div>
       </div>

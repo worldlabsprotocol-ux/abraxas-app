@@ -51,7 +51,7 @@ const CIELO_STATS = [
   { k:"Appraised Value", v:"$1,100,000" },
   { k:"Yearly Profit",   v:"$109,500" },
   { k:"Cash Yield",      v:"14.6%" },
-  { k:"Lending Score",v:"94 / 100" },
+  { k:"Lending Score",v:"96 / 100" },
   { k:"Max Borrow",      v:"$660K USDC" },
   { k:"Yearly Return Rate", v:"9.95%" },
 ];
