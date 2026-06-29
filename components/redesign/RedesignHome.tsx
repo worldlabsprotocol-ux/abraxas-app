@@ -12,6 +12,7 @@ import { AssetsExplorer } from "./AssetsExplorer";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { VerifiedNetworkSection } from "@/components/terminal/VerifiedNetworkSection";
 import { VerificationPackages } from "@/components/terminal/VerificationPackages";
+import { RedesignFAQ } from "./RedesignFAQ";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -75,8 +76,13 @@ export function RedesignHome() {
           </div>
 
           {/* Verification Packages */}
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)", paddingBottom: "var(--section-gap)" }}>
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationPackages />
+          </div>
+
+          {/* FAQ */}
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)", paddingBottom: "var(--section-gap)" }}>
+            <RedesignFAQ />
           </div>
         </main>
 
