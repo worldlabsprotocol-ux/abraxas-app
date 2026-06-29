@@ -1,14 +1,15 @@
 "use client";
 // FILE: app/terminal/page.tsx
-// Thin wrapper. All content in components/terminal/TerminalApp.tsx.
-// Suspense boundary required because TerminalApp uses useSearchParams().
+// Homepage. Installment 1 of the from-scratch redesign (dark premium).
+// The legacy experience remains in components/terminal/TerminalApp.tsx
+// for section-by-section migration in the next installments.
 import { Suspense } from "react";
-import TerminalApp from "@/components/terminal/TerminalApp";
+import { RedesignHome } from "@/components/redesign/RedesignHome";
 
 export default function TerminalPage() {
   return (
     <Suspense fallback={null}>
-      <TerminalApp />
+      <RedesignHome />
     </Suspense>
   );
 }
