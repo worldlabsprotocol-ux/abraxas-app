@@ -41,7 +41,7 @@ export const ASSET_TYPES = [
   { key: "realestate",  icon: "◻", name: "Real Estate",          howItEarns: "Rental income flows monthly. Agents optimize yield between cycles.", apy: 6.2,  vaultId: "492" },
   { key: "receivables", icon: "◈", name: "Receivables",          howItEarns: "Outstanding invoices become capital. Agent finances and collects.",  apy: 9.1,  vaultId: "493" },
   { key: "abrasound",   icon: "◎", name: "abraSOUND",            howItEarns: "Permissionless music IP yield pool. Deposit any amount, earn daily.", apy: 12.8, vaultId: "490" },
-  { key: "abrayield",   icon: "⬡", name: "abraYIELD",            howItEarns: "Diversified RWA pool. Capital spread across all active asset types.", apy: 9.4,  vaultId: "493" },
+  { key: "abrayield",   icon: "⬡", name: "abraYIELD",            howItEarns: "Diversified RWA pool. Capital spread across verified assets and collateral-backed lending.", apy: 9.4,  vaultId: "493" },
 ];
 
 export interface NFTCollection {
