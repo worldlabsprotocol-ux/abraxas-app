@@ -5,8 +5,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useAbraxasID }        from "@/lib/credentials/useAbraxasID";
 import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
+import { PassportStampIcon, type PassportStampKind } from "./PassportStampIcon";
 
 const M   = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S   = "system-ui,-apple-system,sans-serif";
@@ -19,17 +21,17 @@ const BDR = "#E5E5E0";
 const BG  = "#FFFFFF";
 
 const ALL_STAMPS = [
-  { id:"identity",   label:"Identity Verified",        icon:"◈", color:G,  desc:"Gov ID + liveness confirmed" },
-  { id:"biometric",  label:"Biometrics Confirmed",     icon:"⬡", color:G,  desc:"Liveness match · face verification" },
-  { id:"business",   label:"Business Verified",        icon:"⬛", color:B,  desc:"KYB complete · entity confirmed" },
-  { id:"investor",   label:"Accredited Investor",      icon:"◆", color:P,  desc:"Meets SEC accreditation criteria" },
-  { id:"owner",      label:"Asset Owner Verified",     icon:"◉", color:A,  desc:"Ownership claim attested on-chain" },
-  { id:"royalty",    label:"Royalty Rights Verified",  icon:"♪", color:P,  desc:"Publishing / royalty claim confirmed" },
-  { id:"property",   label:"Property Owner Verified",  icon:"⌂", color:A,  desc:"Real estate title chain verified" },
-  { id:"tribal",     label:"Tribal Partner Verified",  icon:"◈", color:G,  desc:"Sovereign land / mineral rights" },
-  { id:"compliance", label:"Compliance Cleared",       icon:"✓", color:G,  desc:"AML / OFAC screening passed" },
-  { id:"lending",    label:"Lending Eligible",         icon:"$", color:G,  desc:"Collateral credit verified" },
-  { id:"social",     label:"Social Verified",          icon:"@", color:B,  desc:"LinkedIn, X, GitHub, or Gmail cryptographically proven via Reclaim" },
+  { id:"identity",   label:"Identity Verified",        kind:"identity" as PassportStampKind,   color:G,  desc:"Gov ID + liveness confirmed" },
+  { id:"biometric",  label:"Biometrics Confirmed",     kind:"biometric" as PassportStampKind,  color:G,  desc:"Liveness match · face verification" },
+  { id:"business",   label:"Business Verified",        kind:"business" as PassportStampKind,   color:B,  desc:"KYB complete · entity confirmed" },
+  { id:"investor",   label:"Accredited Investor",      kind:"investor" as PassportStampKind,  color:P,  desc:"Meets SEC accreditation criteria" },
+  { id:"owner",      label:"Asset Owner Verified",     kind:"owner" as PassportStampKind,      color:A,  desc:"Ownership claim attested on-chain" },
+  { id:"royalty",    label:"Royalty Rights Verified",  kind:"royalty" as PassportStampKind,    color:P,  desc:"Publishing / royalty claim confirmed" },
+  { id:"property",   label:"Property Owner Verified",  kind:"property" as PassportStampKind,  color:A,  desc:"Real estate title chain verified" },
+  { id:"tribal",     label:"Tribal Partner Verified",  kind:"tribal" as PassportStampKind,    color:G,  desc:"Sovereign land / mineral rights" },
+  { id:"compliance", label:"Compliance Cleared",       kind:"compliance" as PassportStampKind,color:G,  desc:"AML / OFAC screening passed" },
+  { id:"lending",    label:"Lending Eligible",         kind:"lending" as PassportStampKind,   color:G,  desc:"Collateral credit verified" },
+  { id:"social",     label:"Social Verified",          kind:"social" as PassportStampKind,    color:B,  desc:"LinkedIn, X, GitHub, or Gmail cryptographically proven via Reclaim" },
 ] as const;
 
 type StampId = typeof ALL_STAMPS[number]["id"];
@@ -46,11 +48,23 @@ function stampsFromCredential(level: string | undefined): StampId[] {
 
 function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: boolean }) {
   const [tip, setTip] = useState(false);
+  const reduce = useReducedMotion();
   return (
     <div onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}
       style={{ display:"flex", flexDirection:"column", alignItems:"center",
                 gap:"0.375rem", cursor:"default", position:"relative" }}>
-      <div style={{ width:64, height:64, borderRadius:"50%",
+      {/* When a stamp flips to earned, the badge pops in (scale + fade)
+          instead of snapping. `key={earned}` replays the entrance on the
+          not-started → earned transition. Honors reduced motion. */}
+      <motion.div
+        key={String(earned)}
+        initial={reduce ? false : (earned ? { scale: 0.55, opacity: 0 } : false)}
+        animate={{
+          scale: tip && earned ? 1.08 : 1,
+          opacity: earned ? 1 : 0.5,
+        }}
+        transition={{ type: "spring", stiffness: 420, damping: 18 }}
+        style={{ width:64, height:64, borderRadius:"50%",
                      border:`2px solid ${earned ? stamp.color : "rgba(21,21,26,0.12)"}`,
                      background: earned
                        ? `${stamp.color}20`
@@ -58,11 +72,11 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
                      display:"flex", alignItems:"center", justifyContent:"center",
                      position:"relative",
                      boxShadow: earned ? `0 0 12px ${stamp.color}30` : "none",
-                     transition:"all 0.2s", opacity: earned ? 1 : 0.5,
-                     transform: tip && earned ? "scale(1.08)" : "scale(1)" }}>
-        <span style={{ fontFamily:M, fontSize:"1.1rem",
+                     willChange:"transform" }}>
+        <span style={{ display:"flex", alignItems:"center", justifyContent:"center",
                         color: earned ? stamp.color : "rgba(21,21,26,0.25)" }}>
-          {stamp.icon}
+          <PassportStampIcon kind={stamp.kind} size={26}
+            color={earned ? stamp.color : "rgba(21,21,26,0.25)"} />
         </span>
         {earned && (
           <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} viewBox="0 0 64 64">
@@ -71,7 +85,7 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
               strokeDasharray="4 3"/>
           </svg>
         )}
-      </div>
+      </motion.div>
       <div style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
                      color: earned ? stamp.color : "rgba(21,21,26,0.25)",
                      textTransform:"uppercase", letterSpacing:"0.06em",

@@ -38,7 +38,7 @@ export function SophiaCircuit() {
             Sophia & Circuit
           </div>
           <div style={{ fontFamily:S, fontSize:"0.74rem",
-                         color:"rgba(21,21,26,0.45)", marginTop:"0.25rem",
+                         color:"rgba(242,246,243,0.45)", marginTop:"0.25rem",
                          maxWidth:480, lineHeight:1.6 }}>
             Sophia analyzes verification confidence and risk across every
             asset class on Abraxas, real estate, royalties, minerals,
@@ -72,7 +72,7 @@ export function SophiaCircuit() {
             const riskColor = riskLevel === "Low" ? G : riskLevel === "Moderate" ? A : "#EF4444";
             return (
               <div key={asset.id} style={{ padding:"0.875rem", borderRadius:10,
-                                            background:"#FAFAF8", border:`1px solid ${BDR}`,
+                                            background:"var(--surface)", border:`1px solid ${BDR}`,
                                             display:"flex", justifyContent:"space-between",
                                             alignItems:"center", flexWrap:"wrap", gap:"0.625rem" }}>
                 <div>
@@ -80,7 +80,7 @@ export function SophiaCircuit() {
                     {asset.name}
                   </div>
                   <div style={{ fontFamily:S, fontSize:"0.68rem",
-                                 color:"rgba(21,21,26,0.4)", marginTop:2 }}>
+                                 color:"rgba(242,246,243,0.4)", marginTop:2 }}>
                     {asset.founderVetted
                       ? "Sophia: Founder-reviewed before listing"
                       : `Sophia: ${confirmed}/${checks.length} verification checks confirmed`}
@@ -96,7 +96,7 @@ export function SophiaCircuit() {
             );
           })}
           <div style={{ fontFamily:S, fontSize:"0.66rem",
-                         color:"rgba(21,21,26,0.3)", lineHeight:1.5, marginTop:"0.25rem" }}>
+                         color:"rgba(242,246,243,0.3)", lineHeight:1.5, marginTop:"0.25rem" }}>
             The founding four assets carry a founder-reviewed designation,
             personally vetted before listing. Computed risk scoring applies
             once outside users begin submitting their own assets.

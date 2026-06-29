@@ -8,15 +8,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { WalletContextProvider } from "@/components/WalletContextProvider";
-import { SiteNav } from "@/components/SiteNav";
-import { BottomNav } from "@/components/BottomNav";
-import { SiteFooter } from "@/components/SiteFooter";
-import { LiveBackground } from "@/components/LiveBackground";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { ReclaimVerifyButton } from "@/components/ReclaimVerifyButton";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
 import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
+import { WalletContextProvider } from "@/components/WalletContextProvider";
+import { AmbientGlow } from "@/components/redesign/AmbientGlow";
+import { RedesignNav } from "@/components/redesign/RedesignNav";
+import { RedesignFooter } from "@/components/redesign/RedesignFooter";
+import { PassportStampIcon, type PassportStampKind } from "@/components/identity/PassportStampIcon";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -37,7 +37,7 @@ interface Stamp {
   name: string;
   shortName: string;
   color: string;
-  icon: string;
+  kind: PassportStampKind;
   description: string;
   whatItProves: string;
   requiredDocs: string[];
@@ -52,7 +52,7 @@ const STAMPS: Stamp[] = [
     name: "Social Verified",
     shortName: "Social",
     color: B,
-    icon: "@",
+    kind: "social",
     description: "Cryptographically prove a real account on LinkedIn, X, GitHub, or Gmail belongs to you, without handing Abraxas your password. Powered by Reclaim Protocol's zkTLS proofs.",
     whatItProves: "The social account you're claiming is real, active, and actually yours, verified through a cryptographic proof rather than a simple login.",
     requiredDocs: ["An active LinkedIn, X, GitHub, or Gmail account you can log into during the check"],
@@ -71,7 +71,7 @@ const STAMPS: Stamp[] = [
     name: "Identity Verified",
     shortName: "ID",
     color: G,
-    icon: "◉",
+    kind: "identity",
     description: "Abraxas Precheck: a government-issued ID plus a biometric liveness check, processed through Veriff, a certified identity verification provider. Most people clear Precheck in minutes.",
     whatItProves: "You are a real person, the ID belongs to you, and you passed a sanctions and PEP screening.",
     requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera, liveness check takes about 60 seconds"],
@@ -90,7 +90,7 @@ const STAMPS: Stamp[] = [
     name: "Business Verified",
     shortName: "KYB",
     color: B,
-    icon: "▣",
+    kind: "business",
     description: "Entity existence, beneficial ownership mapping, and operating agreement validation. Required for any business asset submission.",
     whatItProves: "Your company is legally registered, you have authority to act for it, and beneficial ownership is disclosed to Abraxas.",
     requiredDocs: [
@@ -115,7 +115,7 @@ const STAMPS: Stamp[] = [
     name: "Accredited Investor",
     shortName: "AI",
     color: A,
-    icon: "◈",
+    kind: "accredited",
     description: "Self-certification supported by document verification. Qualifies you for Reg D 506(c) investment opportunities on Abraxas.",
     whatItProves: "You meet SEC accreditation standards: either income-based ($200K+ individual / $300K+ joint) or net worth-based ($1M+ excluding primary residence).",
     requiredDocs: [
@@ -139,7 +139,7 @@ const STAMPS: Stamp[] = [
     name: "Asset Owner",
     shortName: "AO",
     color: V,
-    icon: "◆",
+    kind: "asset_owner",
     description: "Ownership of a specific asset is verified: title, deed, rights chain, or registration confirmed by Abraxas's review team.",
     whatItProves: "You own or have legal authority over the specific asset you've submitted, with a clear chain of title and no undisclosed encumbrances.",
     requiredDocs: [
@@ -289,16 +289,18 @@ export default function PassportPage() {
 
   return (
     <WalletContextProvider>
-    <div style={{ background:"var(--bg)", minHeight:"100vh",
-                   color:"var(--text-primary)" }}>
-      <LiveBackground />
-      <SiteNav />
+    <div data-theme="dark" style={{ background:"var(--bg)", minHeight:"100vh",
+                   color:"var(--text-primary)", position:"relative", overflowX:"hidden" }}>
+
+      <AmbientGlow />
 
       {/* Veriff's in-context frame mounts here when verification starts */}
       <div id="veriff-root" />
 
-      <div style={{ maxWidth:860, margin:"0 auto",
-                     padding:"2rem clamp(1rem,4vw,2.5rem)", position:"relative", zIndex:1 }}>
+      <RedesignNav />
+
+      <div style={{ position:"relative", zIndex:1, maxWidth:860, margin:"0 auto",
+                     padding:"clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)" }}>
 
         {/* Header */}
         <div style={{ marginBottom:"2.5rem" }}>
@@ -306,10 +308,10 @@ export default function PassportPage() {
                          color:G, marginBottom:"0.625rem" }}>
             One credential. Every protocol.
           </div>
-          <h1 style={{ fontFamily:S, fontSize:"clamp(1.8rem,5vw,3rem)",
-                        fontWeight:800, lineHeight:1.1,
+          <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)",
+                        fontWeight:800, lineHeight:1.0,
                         color:"var(--text-primary)",
-                        letterSpacing:"-0.03em", margin:"0 0 1rem" }}>
+                        letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
             Get verified once.<br/>
             <span style={{ color:G }}>Use your credential everywhere.</span>
           </h1>
@@ -391,8 +393,10 @@ export default function PassportPage() {
                             background: status === "earned" ? `${stamp.color}10`
                                       : "var(--surface)",
                             cursor:"pointer", minWidth:80 }}>
-                  <div style={{ fontSize:"1.4rem", color:statusColor[status] }}>
-                    {stamp.icon}
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
+                                 color: statusColor[status] }}>
+                    <PassportStampIcon kind={stamp.kind} size={22}
+                      color={status === "earned" ? stamp.color : "var(--text-muted)"} />
                   </div>
                   <div style={{ fontFamily:S, fontSize:"0.62rem", fontWeight:700,
                                  color: status === "earned" ? stamp.color
@@ -651,8 +655,7 @@ export default function PassportPage() {
           </Link>
         </div>
       </div>
-      <SiteFooter />
-      <BottomNav />
+      <RedesignFooter />
     </div>
     </WalletContextProvider>
   );

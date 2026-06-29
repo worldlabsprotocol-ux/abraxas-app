@@ -12,10 +12,13 @@
 //   the dark glass-chip treatment from the original — that pattern reads
 //   fine over a photo regardless of page theme, same as every screenshot
 //   reference (image badges stay dark-on-photo even on light pages).
-// No framer-motion — CSS transitions only. Renders fast on mobile.
+// Framer Motion adds a subtle hover lift + press; border/shadow accents
+// still use the original inline handlers. Renders fast on mobile.
 "use client";
 
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { springSnappy, easeOutFast } from "@/lib/motion/variants";
 
 export type AssetStatus = "PROTECTED" | "AT_RISK" | "CIRCUIT_TRIGGERED" | "UNPROTECTED" | "STAKED";
 export type AssetType   = "pokemon" | "onepiece" | "luxury" | "nft" | "rwa";
@@ -94,7 +97,7 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         position: "absolute", top: "0.5rem", right: "0.5rem",
         display: "flex", alignItems: "center", gap: "0.25rem",
         padding: "0.15rem 0.45rem", borderRadius: "999px",
-        background: sc.bg, backdropFilter: "blur(8px)",
+        background: "rgba(15,18,24,0.82)",
       }}>
         <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: sc.dot,
           animation: asset.status !== "UNPROTECTED" ? "pulse 1.5s ease-in-out infinite" : "none" }} />
@@ -108,7 +111,7 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         <div style={{
           position: "absolute", top: "0.5rem", left: "0.5rem",
           padding: "0.12rem 0.4rem", borderRadius: "4px", fontSize: "0.48rem", fontWeight: 700,
-          background: "rgba(20,23,31,0.72)", backdropFilter: "blur(4px)",
+          background: "rgba(20,23,31,0.9)",
           color: asset.rarity === "Legendary" ? "#FFD700" : asset.rarity === "Ultra Rare" ? "#D9B878" : "#7C9CFF",
           letterSpacing: "0.06em",
         }}>
@@ -159,13 +162,18 @@ function CircuitBar({ score }: { score: number; color: string }) {
 
 export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selected, compact }: AssetCardProps) {
   const positive = (asset.change24h ?? 0) >= 0;
+  const reduce = useReducedMotion();
+  const canLift = !reduce && !!onSelect;
 
   return (
-    <div
+    <motion.div
       onClick={() => onSelect?.(asset)}
+      animate={{ y: selected ? -2 : 0 }}
+      whileHover={canLift ? { y: -6, scale: 1.012, transition: springSnappy } : undefined}
+      whileTap={canLift ? { scale: 0.985, transition: easeOutFast } : undefined}
       style={{
         background: selected
-          ? `linear-gradient(135deg, ${asset.color}14, ${asset.color}05)`
+          ? `${asset.color}12`
           : "var(--abx-bg-surface, #FFFFFF)",
         border: `1px solid ${selected ? asset.color + "55" : "var(--abx-border-subtle, #E7E9EE)"}`,
         borderRadius: "16px",
@@ -174,8 +182,8 @@ export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selecte
         boxShadow: selected
           ? `0 10px 24px ${asset.color}22`
           : "var(--abx-shadow-card, 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06))",
-        transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s",
-        transform: selected ? "translateY(-2px)" : "translateY(0)",
+        transition: "border-color 0.2s, box-shadow 0.2s",
+        willChange: "transform",
       }}
       onMouseEnter={(e) => {
         if (!selected) {
@@ -262,6 +270,6 @@ export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selecte
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

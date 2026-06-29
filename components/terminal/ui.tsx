@@ -2,45 +2,29 @@
 // FILE: components/terminal/ui.tsx
 // Shared UI: Label, Divider, Button, ScrollFade, GlassPanel.
 
-import { useState, useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { M, G, BDR } from "./tokens";
+import { springSnappy, easeOutFast } from "@/lib/motion/variants";
 
 interface ScrollFadeProps {
   children: React.ReactNode;
   delay?: number;
 }
 
+// Scroll-triggered fade + rise. Now backed by Framer Motion's
+// whileInView (spring-smooth, GPU-friendly) while keeping the original
+// { children, delay } API so every existing call site is unchanged.
 export function ScrollFade({ children, delay = 0 }: ScrollFadeProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
+  const reduce = useReducedMotion();
   return (
-    <div
-      ref={ref}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(24px)",
-        transition: `opacity 0.65s ease ${delay}s, transform 0.65s ease ${delay}s`,
-      }}
+    <motion.div
+      initial={{ opacity: 0, y: reduce ? 0 : 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.1, margin: "0px 0px -6% 0px" }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -62,8 +46,12 @@ export function Label({ children }: LabelProps) {
 }
 
 export function Divider() {
+  // More vertical breathing room between sections (design-director pass):
+  // the rule is whitespace first; the hairline is secondary and faint.
   return (
-    <div style={{ height:1, background:BDR, margin:"1.75rem 0" }} />
+    <div style={{ height:1, background:BDR,
+                   margin:"clamp(2.5rem, 6vw, 4.5rem) 0",
+                   opacity:0.6 }} />
   );
 }
 
@@ -111,20 +99,39 @@ export function Button({
     opacity: disabled ? 0.45 : 1,
     boxShadow: isGlow && !disabled ? "var(--shadow-glow)" :
                variant === "filled" && !disabled ? `0 0 24px ${color}35` : "none",
-    transition:"transform 0.12s, box-shadow 0.12s",
+    willChange: "transform",
   };
+
+  const interactive = !disabled;
+  const hover = interactive
+    ? { scale: 1.06, boxShadow: `0 0 32px ${color}66`, transition: springSnappy }
+    : undefined;
+  const tap = interactive ? { scale: 0.96, transition: easeOutFast } : undefined;
 
   if (href && !disabled) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" style={style}>
+      <motion.a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={style}
+        whileHover={hover}
+        whileTap={tap}
+      >
         {children}
-      </a>
+      </motion.a>
     );
   }
   return (
-    <button onClick={disabled ? undefined : onClick} disabled={disabled} style={style}>
+    <motion.button
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      style={style}
+      whileHover={hover}
+      whileTap={tap}
+    >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
@@ -134,18 +141,21 @@ interface PanelProps {
 }
 
 export function Panel({ children, glow = false }: PanelProps) {
+  const reduce = useReducedMotion();
   return (
-    <div style={{
-      background: "var(--surface-glass)",
-      backdropFilter: "blur(var(--glass-blur))",
-      WebkitBackdropFilter: "blur(var(--glass-blur))",
-      borderRadius: "var(--radius-lg)",
-      padding: "1.35rem clamp(0.875rem, 3vw, 1.65rem)",
-      border: glow ? "1px solid var(--border-strong)" : "1px solid var(--border)",
-      boxShadow: glow ? "var(--shadow-glow)" : "var(--shadow-card)",
-    }}>
+    <motion.div
+      style={{
+        background: "var(--surface-raised)",
+        borderRadius: "var(--radius-lg)",
+        padding: "1.35rem clamp(0.875rem, 3vw, 1.65rem)",
+        border: glow ? "1px solid var(--border-strong)" : "1px solid var(--border)",
+        boxShadow: glow ? "var(--shadow-glow)" : "var(--shadow-card)",
+        willChange: "transform",
+      }}
+      whileHover={reduce ? undefined : { y: -3, transition: springSnappy }}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }
 

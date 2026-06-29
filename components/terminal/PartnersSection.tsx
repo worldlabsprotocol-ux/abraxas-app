@@ -26,7 +26,7 @@ function DisasterReliefCard() {
             Disaster and relief fund auditing.
           </div>
           <p style={{ fontFamily:S, fontSize:"0.75rem",
-                       color:"rgba(21,21,26,0.45)", lineHeight:1.65,
+                       color:"rgba(242,246,243,0.45)", lineHeight:1.65,
                        maxWidth:520, margin:"0 0 0.625rem" }}>
             The same verification model applied to public and nonprofit
             relief funds: an independent auditor confirms a disbursement
@@ -36,7 +36,7 @@ function DisasterReliefCard() {
             public record of where the money actually went.
           </p>
           <p style={{ fontFamily:S, fontSize:"0.72rem",
-                       color:"rgba(21,21,26,0.35)", lineHeight:1.6,
+                       color:"rgba(242,246,243,0.35)", lineHeight:1.6,
                        maxWidth:520, margin:0 }}>
             If your organization has a relief fund disbursement contract,
             submit it for review below. Treated with the same rigor as
@@ -71,7 +71,7 @@ export function PartnersSection() {
       <div style={{ padding:"0.875rem 1.125rem", borderRadius:8,
                      border:`1px solid ${G}30`,
                      background:`${G}08`, marginBottom:"1rem" }}>
-        <div style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(21,21,26,0.6)" }}>
+        <div style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(242,246,243,0.6)" }}>
           Tokenized real-world assets on Solana hit{" "}
           <span style={{ color:G, fontWeight:700 }}>$213M</span> in daily
           trading volume this week, more than Coinbase or Kraken moved in
@@ -100,7 +100,7 @@ export function PartnersSection() {
             </span>
           </div>
           <span style={{ fontFamily:S, fontSize:"0.7rem",
-                          color:"rgba(21,21,26,0.4)", lineHeight:1.5 }}>
+                          color:"rgba(242,246,243,0.4)", lineHeight:1.5 }}>
             Bank-grade secure storage for assets verified on Abraxas.
             Stronger protection than a typical Phantom or MetaMask wallet.
           </span>
@@ -126,7 +126,7 @@ export function PartnersSection() {
             </span>
           </div>
           <span style={{ fontFamily:S, fontSize:"0.7rem",
-                          color:"rgba(21,21,26,0.4)", lineHeight:1.5 }}>
+                          color:"rgba(242,246,243,0.4)", lineHeight:1.5 }}>
             CIMA-regulated fund structuring, supporting Abraxas's
             institutional-grade verification standard.
           </span>
@@ -149,7 +149,7 @@ export function PartnersSection() {
             </span>
           </div>
           <span style={{ fontFamily:S, fontSize:"0.7rem",
-                          color:"rgba(21,21,26,0.4)", lineHeight:1.5 }}>
+                          color:"rgba(242,246,243,0.4)", lineHeight:1.5 }}>
             Instant cross-chain swaps, no signup required. A general
             crypto utility, separate from Abraxas's verified asset investing.
           </span>
@@ -166,7 +166,7 @@ export function PartnersSection() {
               Join the verification network.
             </div>
             <p style={{ fontFamily:S, fontSize:"0.75rem",
-                         color:"rgba(21,21,26,0.45)", lineHeight:1.65,
+                         color:"rgba(242,246,243,0.45)", lineHeight:1.65,
                          maxWidth:520, margin:0 }}>
               Abraxas partners are the trusted professionals behind every verified asset,
               appraisers, attorneys, title companies, and auditors who validate the

@@ -7,11 +7,10 @@
 // does (Veriff biometric verification, Supabase storage, Solana
 // wallets, stablecoin transactions, Reg D securities offerings).
 
-import { ProtocolPage } from "@/components/ProtocolPage";
-import { PageHeader } from "@/components/content/ProtocolSection";
+import { RedesignPage } from "@/components/redesign/RedesignPage";
+import { PageHeader } from "@/components/redesign/RedesignContent";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
-const BDR = "var(--border)";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -30,11 +29,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function PrivacyPolicyPage() {
   return (
-    <ProtocolPage maxWidth={680}>
+    <RedesignPage maxWidth={680}>
       <PageHeader title="Privacy Policy" />
-      <div>
-        <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
-                     marginBottom:"2rem" }}>
+      <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
+                   marginBottom:"2rem" }}>
           Last updated: June 2026. This Privacy Policy describes how Abraxas Protocol,
           operated under World Labs Protocol ("Abraxas," "we," "us," or "our"),
           collects, uses, and discloses information when you use our website and
@@ -130,7 +128,6 @@ export default function PrivacyPolicyPage() {
           of this page reflects the most recent revision. Continued use of the
           Services after a change is posted constitutes acceptance of the update.</p>
         </Section>
-      </div>
-    </ProtocolPage>
+    </RedesignPage>
   );
 }

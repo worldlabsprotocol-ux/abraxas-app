@@ -14,7 +14,7 @@ const M   = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const G   = "#10B981";
 const W   = "#15151A";
 const BDR = "#E5E5E0";
-const CARD = "#FFFFFF";
+const CARD = "var(--surface-raised)";
 
 interface MyAbraxasProps {
   identityLabel: string | null; // email or truncated wallet address
@@ -39,7 +39,7 @@ export function MyAbraxas({ identityLabel }: MyAbraxasProps) {
                      border:`1px dashed ${BDR}`, textAlign:"center",
                      marginBottom:"1.5rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:600,
-                       color:"rgba(21,21,26,0.5)" }}>
+                       color:"rgba(242,246,243,0.5)" }}>
           Saved activity arrives with ZK Login
         </div>
       </div>
@@ -59,7 +59,7 @@ export function MyAbraxas({ identityLabel }: MyAbraxasProps) {
                      alignItems:"flex-start", flexWrap:"wrap", gap:"0.75rem" }}>
         <div>
           <div style={{ fontFamily:S, fontSize:"0.68rem",
-                         color:"rgba(21,21,26,0.4)", marginBottom:"0.25rem" }}>
+                         color:"rgba(242,246,243,0.4)", marginBottom:"0.25rem" }}>
             Signed in as
           </div>
           <div style={{ fontFamily:M, fontSize:"0.92rem", fontWeight:700, color:W }}>
@@ -82,14 +82,14 @@ export function MyAbraxas({ identityLabel }: MyAbraxasProps) {
             {assetCount}
           </div>
           <div style={{ fontFamily:S, fontSize:"0.68rem",
-                         color:"rgba(21,21,26,0.4)" }}>
+                         color:"rgba(242,246,243,0.4)" }}>
             Assets submitted
           </div>
         </div>
       </div>
 
       <div style={{ fontFamily:S, fontSize:"0.72rem",
-                     color:"rgba(21,21,26,0.3)", marginTop:"0.875rem",
+                     color:"rgba(242,246,243,0.3)", marginTop:"0.875rem",
                      lineHeight:1.5 }}>
         This stays attached to {identityLabel}. Disconnect and come back
         anytime, your progress is still here.

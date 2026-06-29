@@ -1,12 +1,17 @@
 "use client";
 // FILE: components/SiteNav.tsx
-// Persistent top navigation across all protocol pages.
+// Persistent top navigation for legacy routes still on PageShell.
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
+import { springSnappy } from "@/lib/motion/variants";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
+
+const MotionLink = motion.create(Link);
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
@@ -31,6 +36,47 @@ interface SiteNavProps {
   onWaitlistClick?: () => void;
 }
 
+function NavLink({ href, label, active, small }: {
+  href: string;
+  label: string;
+  active: boolean;
+  small?: boolean;
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <MotionLink href={href}
+      whileHover={reduce ? undefined : { scale: 1.06 }}
+      whileTap={reduce ? undefined : { scale: 0.95 }}
+      transition={springSnappy}
+      style={{
+        position: "relative",
+        padding: "0.45rem 0.9rem",
+        borderRadius: 999,
+        textDecoration: "none",
+        fontFamily: S,
+        fontSize: small ? "0.76rem" : "0.82rem",
+        fontWeight: active ? 700 : 500,
+        color: active ? G : "var(--text-secondary)",
+      }}>
+      {active && (
+        <motion.span
+          layoutId="siteNavActivePill"
+          transition={springSnappy}
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: 999,
+            background: "rgba(16,185,129,0.12)",
+            border: "1px solid rgba(16,185,129,0.25)",
+            zIndex: -1,
+          }}
+        />
+      )}
+      {label}
+    </MotionLink>
+  );
+}
+
 export function SiteNav({ onWaitlistClick }: SiteNavProps) {
   const pathname = usePathname();
 
@@ -39,9 +85,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
       position: "sticky",
       top: 0,
       zIndex: 200,
-      background: "var(--nav-bg)",
-      backdropFilter: "blur(var(--glass-blur))",
-      WebkitBackdropFilter: "blur(var(--glass-blur))",
+      background: "var(--nav-bg-solid)",
       borderBottom: "1px solid var(--border)",
       display: "flex",
       alignItems: "center",
@@ -49,7 +93,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
       height: "clamp(58px, 8vw, 68px)",
       gap: "0.5rem",
     }}>
-      <a href="/terminal" style={{
+      <Link href="/terminal" style={{
         display: "flex",
         alignItems: "center",
         gap: "0.55rem",
@@ -68,7 +112,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
         }}>
           Abraxas
         </span>
-      </a>
+      </Link>
 
       <div className="abr-site-nav-links" style={{
         display: "none",
@@ -77,25 +121,15 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
         gap: "0.2rem",
         flexWrap: "wrap",
       }}>
-        {PRIMARY_LINKS.map(link => {
-          const active = pathname?.startsWith(link.href);
-          return (
-            <a key={link.href} href={link.href}
-              style={navLinkStyle(active)}>
-              {link.label}
-            </a>
-          );
-        })}
+        {PRIMARY_LINKS.map(link => (
+          <NavLink key={link.href} href={link.href} label={link.label}
+            active={!!pathname?.startsWith(link.href)} />
+        ))}
         <span style={{ color: "var(--border)", padding: "0 0.15rem" }}>|</span>
-        {RESOURCE_LINKS.map(link => {
-          const active = pathname?.startsWith(link.href);
-          return (
-            <a key={link.href} href={link.href}
-              style={{ ...navLinkStyle(active), fontSize: "0.76rem" }}>
-              {link.label}
-            </a>
-          );
-        })}
+        {RESOURCE_LINKS.map(link => (
+          <NavLink key={link.href} href={link.href} label={link.label}
+            active={!!pathname?.startsWith(link.href)} small />
+        ))}
       </div>
 
       <div style={{ flex: 1, display: "block" }} className="abr-site-nav-spacer" />
@@ -148,18 +182,4 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
       `}</style>
     </nav>
   );
-}
-
-function navLinkStyle(active: boolean): React.CSSProperties {
-  return {
-    padding: "0.4rem 0.75rem",
-    borderRadius: 999,
-    textDecoration: "none",
-    fontFamily: S,
-    fontSize: "0.8rem",
-    fontWeight: active ? 700 : 500,
-    color: active ? G : "var(--text-secondary)",
-    background: active ? "rgba(16,185,129,0.12)" : "transparent",
-    border: active ? "1px solid rgba(16,185,129,0.25)" : "1px solid transparent",
-  };
 }

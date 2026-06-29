@@ -1,8 +1,13 @@
 "use client";
 // FILE: components/BottomNav.tsx
-// Mobile bottom nav. Desktop uses SiteNav.
+// Mobile bottom nav. Desktop uses SiteNav / RedesignNav.
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
+import { springSnappy } from "@/lib/motion/variants";
+
+const MotionLink = motion.create(Link);
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
@@ -17,6 +22,7 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const reduce = useReducedMotion();
 
   return (
     <>
@@ -26,36 +32,55 @@ export function BottomNav() {
         left: 0,
         right: 0,
         zIndex: 200,
-        background: "var(--nav-bg)",
-        backdropFilter: "blur(var(--glass-blur))",
-        WebkitBackdropFilter: "blur(var(--glass-blur))",
+        background: "var(--nav-bg-solid)",
         borderTop: "1px solid var(--border)",
         display: "flex",
         justifyContent: "space-around",
-        padding: "0.45rem 0.25rem",
-        paddingBottom: "max(0.45rem, env(safe-area-inset-bottom))",
+        padding: "0.5rem clamp(0.5rem, 2vw, 1rem)",
+        paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
       }}>
         {NAV_ITEMS.map(item => {
           const active = pathname?.startsWith(item.href);
           return (
-            <a key={item.label} href={item.href}
+            <MotionLink key={item.label} href={item.href}
+              whileTap={reduce ? undefined : { scale: 0.9 }}
+              transition={springSnappy}
               style={{
+                position: "relative",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: "0.15rem",
-                padding: "0.35rem 0.4rem",
-                borderRadius: 10,
+                gap: "0.2rem",
+                padding: "0.4rem 0.65rem",
+                borderRadius: 12,
                 textDecoration: "none",
                 color: active ? G : "var(--text-secondary)",
-                background: active ? "rgba(16,185,129,0.14)" : "transparent",
-                minWidth: 52,
+                minWidth: 58,
               }}>
-              <span style={{ fontSize: "0.95rem" }}>{item.icon}</span>
-              <span style={{ fontFamily: S, fontSize: "0.55rem", fontWeight: 600 }}>
+              {active && (
+                <motion.span
+                  layoutId="bottomNavActivePill"
+                  transition={springSnappy}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: 12,
+                    background: "rgba(16,185,129,0.14)",
+                    zIndex: -1,
+                  }}
+                />
+              )}
+              <motion.span
+                style={{ fontSize: "1.05rem" }}
+                animate={reduce ? undefined : { scale: active ? 1.15 : 1 }}
+                transition={springSnappy}
+              >
+                {item.icon}
+              </motion.span>
+              <span style={{ fontFamily: S, fontSize: "0.6rem", fontWeight: 600 }}>
                 {item.label}
               </span>
-            </a>
+            </MotionLink>
           );
         })}
       </nav>

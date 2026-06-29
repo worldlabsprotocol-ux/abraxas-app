@@ -3,10 +3,13 @@
 // All four registered assets: AAS-1 Cielo, AAS-2 DeMarko, AAS-3 Chancellor, AAS-4 Smyrna.
 // One canonical rendering. no duplicates.
 
+import { motion } from "framer-motion";
 import { M, S, G, A, B, W, BDR, CARD, TEAL, RED, IND } from "./tokens";
 import { Label, Button, ScrollFade } from "./ui";
 import { AssetGallery } from "./AssetGallery";
 import type { BuyItem } from "./BuyNowModal";
+import { AnimatedCounter } from "@/lib/motion/AnimatedCounter";
+import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 
 interface AssetGridProps {
   onViewRegistry: () => void;
@@ -78,7 +81,7 @@ export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }
       <Label>Featured Asset</Label>
       <div style={{ borderRadius:20, overflow:"hidden",
                      border:`1px solid ${G}40`, marginBottom:"1.5rem",
-                     boxShadow:"var(--shadow-glow)", background:"var(--surface-glass)" }}>
+                     boxShadow:"var(--shadow-glow)", background:"var(--surface-raised)" }}>
         {CIELO_IMAGES.length > 0 ? (
           <div style={{ padding:"1rem 1rem 0" }}>
             <AssetGallery images={CIELO_IMAGES} fallbackLabel="Cielo Sunrise" color={G} />
@@ -116,20 +119,29 @@ export function AssetGrid({ onViewRegistry, onViewFlagship, onInvest, onBuyNow }
           <div style={{ position:"absolute", top:12, right:12 }} />
         </div>
         )}
-        <div style={{ display:"grid",
+        <motion.div
+          variants={staggerContainer(0.08, 0.05)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+          style={{ display:"grid",
                        gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",
                        gap:"1px", background:BDR }}>
           {CIELO_STATS.map(s => (
-            <div key={s.k} style={{ background:CARD, padding:"0.75rem 0.875rem" }}>
+            <motion.div key={s.k} variants={staggerItem}
+              whileHover={{ background:"var(--surface-raised)" }}
+              style={{ background:CARD, padding:"0.75rem 0.875rem" }}>
               <div style={{ fontFamily:M, fontSize:"0.52rem",
                              color:"rgba(21,21,26,0.3)",
                              textTransform:"uppercase",
                              letterSpacing:"0.1em", marginBottom:3 }}>{s.k}</div>
               <div style={{ fontFamily:M, fontSize:"0.92rem",
-                             fontWeight:900, color:G }}>{s.v}</div>
-            </div>
+                             fontWeight:900, color:G }}>
+                <AnimatedCounter value={s.v} />
+              </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         <div style={{ padding:"0.875rem 1rem", background:"var(--surface-raised)",
                        display:"flex", gap:"0.5rem", flexWrap:"wrap",
                        alignItems:"center", justifyContent:"space-between" }}>

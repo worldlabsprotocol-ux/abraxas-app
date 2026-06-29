@@ -5,6 +5,7 @@
 // that one has a real Rule 506(c) verification-method requirement.
 
 import { S, M, G, BDR } from "./tokens";
+import { MotionCard } from "@/lib/motion/MotionCard";
 
 const PACKAGES = [
   { name:"Social Verification", price:"Free", desc:"LinkedIn, X, GitHub, or Gmail, cryptographically proven", color:G, live:true, status:"Live" },
@@ -30,21 +31,21 @@ export function VerificationPackages() {
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",
                      gap:"0.75rem" }}>
         {PACKAGES.map(p => (
-          <div key={p.name} style={{ padding:"0.875rem", borderRadius:10,
-                                       border:`1px solid ${BDR}`, background:"var(--surface)" }}>
+          <MotionCard key={p.name} glowColor={`${p.color}40`}
+            style={{ padding:"0.875rem", borderRadius:10,
+                     border:`1px solid ${BDR}`, background:"var(--surface-raised)" }}>
             <div style={{ display:"flex", justifyContent:"space-between",
                            alignItems:"flex-start", marginBottom:"0.4rem" }}>
               <span style={{ fontFamily:S, fontSize:"0.82rem", fontWeight:700,
                               color:"var(--text-primary)" }}>{p.name}</span>
-              {!p.live && (
+              {!p.live ? (
                 <span style={{ fontFamily:M, fontSize:"0.48rem", fontWeight:700,
                                 color:"#F59E0B", background:"rgba(245,158,11,0.1)",
                                 padding:"0.1rem 0.4rem", borderRadius:8,
                                 border:"1px solid rgba(245,158,11,0.25)" }}>
                   {p.status}
                 </span>
-              )}
-              {p.live && (
+              ) : (
                 <span style={{ fontFamily:M, fontSize:"0.48rem", fontWeight:700,
                                 color:G, background:"rgba(16,185,129,0.1)",
                                 padding:"0.1rem 0.4rem", borderRadius:8 }}>
@@ -60,7 +61,7 @@ export function VerificationPackages() {
                            color:"var(--text-muted)", lineHeight:1.5 }}>
               {p.desc}
             </div>
-          </div>
+          </MotionCard>
         ))}
       </div>
       <div style={{ marginTop:"0.875rem", padding:"0.75rem", borderRadius:8,

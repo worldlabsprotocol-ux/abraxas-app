@@ -11,6 +11,7 @@ import { TrustStack }               from "@/components/onboarding/TrustStack";
 import { DeepViewShell }      from "./DeepViewShell";
 import { RegistryView }       from "./RegistryView";
 import { HeroIntro, HeroPassportTeaser } from "./HeroSection";
+import { VerifiedNetworkSection } from "./VerifiedNetworkSection";
 import { CloveCaseStudy } from "./CloveCaseStudy";
 import { ProtocolVisionSection } from "./ProtocolVisionSection";
 import { MilestonesSection }  from "./MilestonesSection";
@@ -81,24 +82,37 @@ export function TerminalMain() {
 
         <ScrollFade>
           <Panel>
+            <VerifiedNetworkSection />
+          </Panel>
+        </ScrollFade>
+
+        <Divider />
+
+        <ScrollFade>
+          <Panel>
             <PartnersSection />
           </Panel>
         </ScrollFade>
 
         <Divider />
 
-        <Panel glow>
-          <VerificationPackages />
-        </Panel>
+        <ScrollFade>
+          <Panel glow>
+            <VerificationPackages />
+          </Panel>
+        </ScrollFade>
 
         <Divider />
 
-        <Panel>
-          <CloveCaseStudy />
-        </Panel>
+        <ScrollFade>
+          <Panel>
+            <CloveCaseStudy />
+          </Panel>
+        </ScrollFade>
 
         <Divider />
 
+        <ScrollFade>
         <div style={{ textAlign:"center", padding:"2rem 1rem" }}>
           <div style={{ fontFamily:M, fontSize:"0.7rem", fontWeight:700,
                          color:"var(--text-muted)", letterSpacing:"0.1em",
@@ -124,6 +138,7 @@ export function TerminalMain() {
             See everything verified →
           </button>
         </div>
+        </ScrollFade>
 
         <Divider />
 
@@ -142,6 +157,7 @@ export function TerminalMain() {
 
         <Divider />
 
+        <ScrollFade>
         <Panel>
           <div style={{ display:"flex", justifyContent:"space-between",
                          alignItems:"center", flexWrap:"wrap", gap:"0.875rem" }}>
@@ -168,6 +184,7 @@ export function TerminalMain() {
             </a>
           </div>
         </Panel>
+        </ScrollFade>
 
         <Divider />
 
@@ -181,25 +198,31 @@ export function TerminalMain() {
 
         <Divider />
 
-        <Panel>
-          <ProtocolVisionSection
-            onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
-          />
-        </Panel>
+        <ScrollFade>
+          <Panel>
+            <ProtocolVisionSection
+              onGetStarted={() => { window.location.href = "/terminal?signin=1"; }}
+            />
+          </Panel>
+        </ScrollFade>
 
         <Divider />
 
+        <ScrollFade>
         <div id="demo-milestones">
           <Panel>
             <MilestonesSection />
           </Panel>
         </div>
+        </ScrollFade>
 
         <Divider />
 
-        <Panel>
-          <FAQSection />
-        </Panel>
+        <ScrollFade>
+          <Panel>
+            <FAQSection />
+          </Panel>
+        </ScrollFade>
       </div>
       <SiteFooter />
     </div>

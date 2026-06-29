@@ -24,7 +24,7 @@ export function ProtocolVisionSection({ onGetStarted }: ProtocolVisionSectionPro
             One passport. Every blockchain.
           </div>
           <p style={{ fontFamily:S, fontSize:"0.85rem",
-                       color:"rgba(21,21,26,0.5)", lineHeight:1.75,
+                       color:"rgba(242,246,243,0.5)", lineHeight:1.75,
                        maxWidth:600, margin:"0 0 1.25rem" }}>
             Abraxas is building the universal identity and verification
             layer that sits between blockchains. Verify once on Abraxas.
@@ -56,7 +56,7 @@ export function ProtocolVisionSection({ onGetStarted }: ProtocolVisionSectionPro
             Verify once. Deploy everywhere.
           </div>
           <p style={{ fontFamily:S, fontSize:"0.85rem",
-                       color:"rgba(21,21,26,0.5)", lineHeight:1.7,
+                       color:"rgba(242,246,243,0.5)", lineHeight:1.7,
                        maxWidth:480, margin:"0 auto 1.5rem" }}>
             Join the asset owners, artists, and builders already building
             on the Abraxas Protocol.

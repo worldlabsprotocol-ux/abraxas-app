@@ -5,11 +5,10 @@
 // does (Reg D securities offerings, manual transaction review,
 // identity verification, third-party Swap integration).
 
-import { ProtocolPage } from "@/components/ProtocolPage";
-import { PageHeader } from "@/components/content/ProtocolSection";
+import { RedesignPage } from "@/components/redesign/RedesignPage";
+import { PageHeader } from "@/components/redesign/RedesignContent";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
-const BDR = "var(--border)";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -28,11 +27,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function TermsPage() {
   return (
-    <ProtocolPage maxWidth={680}>
+    <RedesignPage maxWidth={680}>
       <PageHeader title="Terms of Service" />
-      <div>
-        <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
-                     marginBottom:"2rem" }}>
+      <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
+                   marginBottom:"2rem" }}>
           Last updated: June 2026. These Terms of Service govern your use of Abraxas
           Protocol, operated under World Labs Protocol ("Abraxas," "we," "us," or
           "our"). By using our website and services (the "Services"), you agree to
@@ -155,7 +153,6 @@ export default function TermsPage() {
           <p>Questions about these Terms can be sent through the contact form on our
           website.</p>
         </Section>
-      </div>
-    </ProtocolPage>
+    </RedesignPage>
   );
 }

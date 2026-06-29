@@ -5,6 +5,9 @@
 
 import { useState, useEffect }       from "react";
 import Link                          from "next/link";
+import { motion }                    from "framer-motion";
+import { AnimatedCounter }           from "@/lib/motion/AnimatedCounter";
+import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 import {
   userAssetStore, ASSET_LABELS, STATE_COLORS,
   STAGE_META, PIPELINE_STAGES,
@@ -16,8 +19,10 @@ import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
 import { ContentSection }          from "@/components/terminal/ContentSection";
-import { SiteFooter }              from "@/components/SiteFooter";
-import { PageShell }               from "@/components/PageShell";
+import { RedesignFooter }          from "@/components/redesign/RedesignFooter";
+import { WalletContextProvider }   from "@/components/WalletContextProvider";
+import { AmbientGlow }             from "@/components/redesign/AmbientGlow";
+import { RedesignNav }             from "@/components/redesign/RedesignNav";
 
 /* ── design tokens ─────────────────────────────────────────── */
 const M    = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -78,7 +83,7 @@ function ScoreCard({ label, value, suffix = "/100" }:
       <div style={{ display: "flex", alignItems: "baseline",
                      gap: "0.25rem", margin: "0.375rem 0 0.2rem" }}>
         <span style={{ fontFamily: M, fontSize: "1.75rem",
-                        fontWeight: 900, color: c }}>{value}</span>
+                        fontWeight: 900, color: c }}><AnimatedCounter value={value} /></span>
         <span style={{ fontFamily: M, fontSize: "0.65rem", color: DIM }}>{suffix}</span>
       </div>
       <Mono size="0.58rem" color={c}>{scoreLabel(value)}</Mono>
@@ -153,8 +158,13 @@ export default function DashboardPage() {
   ];
 
   return (
-    <PageShell>
-    <div style={{ display: "flex", flexDirection: "column", fontFamily: M, color: "var(--text-primary)" }}>
+    <WalletContextProvider>
+    <div data-theme="dark" style={{ background: "var(--bg)", minHeight: "100vh",
+                  color: "var(--text-primary)", position: "relative", overflowX: "hidden" }}>
+    <AmbientGlow />
+    <RedesignNav />
+    <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column",
+                  fontFamily: M, color: "var(--text-primary)", maxWidth: 1180, margin: "0 auto" }}>
 
       {/* ── PASSPORT STATUS WIDGET ─────────────────────────────── */}
       <div style={{
@@ -193,32 +203,38 @@ export default function DashboardPage() {
           )}
         </div>
         <div style={{ fontFamily:M, fontSize:"0.52rem",
-                       color:"rgba(21,21,26,0.15)", letterSpacing:"0.08em" }}>
+                       color:"rgba(242,246,243,0.15)", letterSpacing:"0.08em" }}>
           {assets.length} ASSET{assets.length !== 1 ? "S" : ""} ·{" "}
         </div>
       </div>
 
       {/* ── STAT CARDS ──────────────────────────────────────── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
-        gap: "1px", background: BDR,
-        borderBottom: `1px solid ${BDR}`,
-      }}>
+      <motion.div
+        variants={staggerContainer(0.08, 0.05)}
+        initial="hidden"
+        animate="show"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
+          gap: "1px", background: BDR,
+          borderBottom: `1px solid ${BDR}`,
+        }}>
         {STAT_CARDS.map(s => {
           const isLongText = typeof s.val === "string" && s.val.length > 8;
           return (
-            <div key={s.label} style={{ background: CARD, padding: "0.875rem 1rem" }}>
+            <motion.div key={s.label} variants={staggerItem}
+              whileHover={{ background: "var(--surface-raised)" }}
+              style={{ background: CARD, padding: "0.875rem 1rem" }}>
               <Mono size="0.6rem" color={DIM}>{s.label.toUpperCase()}</Mono>
               <div style={{ fontFamily: M, fontSize: isLongText ? "0.92rem" : "1.5rem",
                              fontWeight: 900, lineHeight: 1.3,
                              color: s.color, marginTop: "0.25rem" }}>
-                {s.val}
+                <AnimatedCounter value={s.val} />
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* ── MAIN BODY ────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: "auto",
@@ -237,7 +253,7 @@ export default function DashboardPage() {
           <Link href="/terminal#deal-pipeline" style={{
             padding:"0.6rem 1.125rem", borderRadius:20,
             border:`1px solid ${BDR}`, background:"transparent",
-            color:"rgba(21,21,26,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
+            color:"rgba(242,246,243,0.6)", fontFamily:"'Inter',system-ui,sans-serif",
             fontSize:"0.8rem", fontWeight:600, textDecoration:"none",
           }}>
             Browse investment opportunities
@@ -278,11 +294,11 @@ export default function DashboardPage() {
                          borderRadius:12, border:`1px dashed ${BDR}`,
                          marginBottom:"1.5rem" }}>
             <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                           color:"rgba(21,21,26,0.35)", marginBottom:"0.5rem" }}>
+                           color:"rgba(242,246,243,0.35)", marginBottom:"0.5rem" }}>
               No assets submitted yet
             </div>
             <div style={{ fontFamily:S, fontSize:"0.75rem",
-                           color:"rgba(21,21,26,0.2)", marginBottom:"1rem",
+                           color:"rgba(242,246,243,0.2)", marginBottom:"1rem",
                            lineHeight:1.65 }}>
               Once you submit and verify an asset, it shows up here
               with its verification status and investment structure.
@@ -296,9 +312,10 @@ export default function DashboardPage() {
         )}
 
       </div>
-      <SiteFooter />
+      <RedesignFooter />
     </div>
-    </PageShell>
+    </div>
+    </WalletContextProvider>
   );
 }
 

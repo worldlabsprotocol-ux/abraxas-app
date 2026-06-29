@@ -35,9 +35,9 @@ export function WorldWearablesGallery() {
           World Wearables
         </div>
         <div style={{ width:"100%", height:280, borderRadius:10,
-                       background:"#F4F4F1", border:`1px solid ${BDR}`,
+                       background:"var(--surface-raised)", border:`1px solid ${BDR}`,
                        display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <span style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(21,21,26,0.4)" }}>
+          <span style={{ fontFamily:S, fontSize:"0.74rem", color:"rgba(242,246,243,0.4)" }}>
             Loading the collection…
           </span>
         </div>
@@ -54,7 +54,7 @@ export function WorldWearablesGallery() {
         World Wearables
       </div>
       <div style={{ fontFamily:S, fontSize:"0.78rem",
-                     color:"rgba(21,21,26,0.45)", marginBottom:"1.25rem" }}>
+                     color:"rgba(242,246,243,0.45)", marginBottom:"1.25rem" }}>
         The collection so far.
       </div>
       <div style={{ width:"100%", minHeight:280, maxHeight:480,

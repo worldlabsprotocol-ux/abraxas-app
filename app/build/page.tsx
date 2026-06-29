@@ -15,7 +15,8 @@ import { WorldLabsSection } from "@/components/terminal/WorldLabsFeature";
 import { WorldWearablesGallery, WorldWearablesHoodie } from "@/components/terminal/WorldWearablesShop";
 import { WorldByHandSection } from "@/components/terminal/WorldByHandSection";
 import { CoffeeFarmSection } from "@/components/terminal/CoffeeFarmSection";
-import { PageShell } from "@/components/PageShell";
+import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 import { BuyNowModal } from "@/components/terminal/BuyNowModal";
 import type { BuyItem } from "@/components/terminal/BuyNowModal";
@@ -41,7 +42,7 @@ export default function BuildPage() {
   const [buyItem, setBuyItem] = useState<BuyItem | null>(null);
 
   return (
-    <PageShell>
+    <RedesignShell>
       <div style={{ maxWidth:860, margin:"0 auto", padding:"1.5rem clamp(0.875rem,3vw,1.5rem)" }}>
         <p style={{ fontFamily:S, fontSize:"0.82rem", color:"var(--text-secondary)",
                      lineHeight:1.7, marginBottom:"1.5rem", maxWidth:560 }}>
@@ -103,6 +104,7 @@ export default function BuildPage() {
         onClose={() => { setWyOpen(false); setInitialTier(null); }}
       />
       <BuyNowModal item={buyItem} onClose={() => setBuyItem(null)} />
-    </PageShell>
+      <RedesignFooter />
+    </RedesignShell>
   );
 }

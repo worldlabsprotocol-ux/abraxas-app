@@ -2,17 +2,14 @@
 // FILE: app/partners/page.tsx
 // Real verification partner directory, using the actual three
 // partners that exist (Utila, CV5 Capital, HeroSwap), honestly
-// categorized. HeroSwap is a general utility integration, not a
-// verification partner, and is labeled as such rather than lumped in
-// to make the directory look bigger than it is.
+// categorized.
 
-import { ProtocolPage } from "@/components/ProtocolPage";
-import { PageHeader } from "@/components/content/ProtocolSection";
+import { RedesignPage } from "@/components/redesign/RedesignPage";
+import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 
-const S = "system-ui,-apple-system,sans-serif";
-const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const G = "#10B981";
-const BDR = "var(--border)";
+const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const ACCENT = "#10B981";
 
 interface Partner {
   name: string;
@@ -50,69 +47,71 @@ const PARTNERS: Partner[] = [
   },
 ];
 
+function PartnerCard({ partner }: { partner: Partner }) {
+  return (
+    <div style={{ padding: "1.125rem", borderRadius: 12,
+                   border: "1px solid var(--border)",
+                   background: partner.isVerificationPartner ? "var(--surface)" : "var(--surface-raised)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between",
+                     alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
+        <div>
+          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700,
+                         color: "var(--text-primary)" }}>
+            {partner.name}
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: "0.6rem", fontWeight: 700,
+                          color: partner.isVerificationPartner ? ACCENT : "var(--text-muted)",
+                          letterSpacing: "0.06em", marginTop: "0.2rem" }}>
+            {partner.category.toUpperCase()}
+          </div>
+        </div>
+        {partner.url !== "#" && (
+          <a href={partner.url} target="_blank" rel="noopener noreferrer"
+             style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, textDecoration: "underline" }}>
+            Visit site →
+          </a>
+        )}
+      </div>
+      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+                   lineHeight: 1.6, margin: "0.625rem 0 0.375rem" }}>
+        {partner.description}
+      </p>
+      {partner.isVerificationPartner && (
+        <div style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)" }}>
+          Applies to: {partner.appliesTo}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PartnersPage() {
   const verificationPartners = PARTNERS.filter(p => p.isVerificationPartner);
   const utilityPartners = PARTNERS.filter(p => !p.isVerificationPartner);
 
   return (
-    <ProtocolPage maxWidth={760}>
+    <RedesignPage maxWidth={760}>
       <PageHeader
         eyebrow="Partners"
         title="Who actually backs the verification"
-        subtitle="A short, honest list. Abraxas works with a small number of real partners today, not a directory padded to look bigger than it is."
+        subtitle="A short, honest list. Abraxas works with a small number of real partners today, not a directory padded to look bigger than it is. This page grows as real relationships are added, not before."
       />
 
-        <div style={{ fontFamily:M, fontSize:"0.68rem", fontWeight:700,
-                       color:G, letterSpacing:"0.08em", marginBottom:"0.75rem" }}>
-          VERIFICATION & TRUST PARTNERS
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem", marginBottom:"2rem" }}>
+      <ContentCard title="Verification and trust partners">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {verificationPartners.map(p => (
-            <div key={p.name} style={{ padding:"1.125rem", borderRadius:10,
-                                          border:`1px solid ${BDR}`, background:"var(--surface)" }}>
-              <div style={{ display:"flex", justifyContent:"space-between",
-                             alignItems:"flex-start", flexWrap:"wrap", gap:"0.5rem" }}>
-                <div>
-                  <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700 }}>{p.name}</div>
-                  <div style={{ fontFamily:M, fontSize:"0.6rem", fontWeight:700, color:G,
-                                  letterSpacing:"0.06em", marginTop:"0.2rem" }}>
-                    {p.category.toUpperCase()}
-                  </div>
-                </div>
-                {p.url !== "#" && (
-                  <a href={p.url} target="_blank" rel="noopener noreferrer"
-                     style={{ fontFamily:S, fontSize:"0.72rem", color:G, textDecoration:"underline" }}>
-                    Visit site →
-                  </a>
-                )}
-              </div>
-              <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
-                           lineHeight:1.6, margin:"0.625rem 0 0.375rem" }}>
-                {p.description}
-              </p>
-              <div style={{ fontFamily:S, fontSize:"0.7rem", color:"var(--text-muted)" }}>
-                Applies to: {p.appliesTo}
-              </div>
-            </div>
+            <PartnerCard key={p.name} partner={p} />
           ))}
         </div>
+      </ContentCard>
 
-        <div style={{ fontFamily:M, fontSize:"0.68rem", fontWeight:700,
-                       color:"var(--text-muted)", letterSpacing:"0.08em", marginBottom:"0.75rem" }}>
-          GENERAL UTILITY, NOT VERIFICATION
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+      <ContentCard title="General utility, not verification">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {utilityPartners.map(p => (
-            <div key={p.name} style={{ padding:"1.125rem", borderRadius:10,
-                                          border:`1px solid ${BDR}`, background:"var(--surface-raised)" }}>
-              <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700 }}>{p.name}</div>
-              <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
-                           lineHeight:1.6, margin:"0.5rem 0 0" }}>
-                {p.description}
-              </p>
-            </div>
+            <PartnerCard key={p.name} partner={p} />
           ))}
         </div>
-    </ProtocolPage>
+      </ContentCard>
+    </RedesignPage>
   );
 }

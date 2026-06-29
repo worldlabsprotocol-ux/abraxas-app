@@ -14,7 +14,7 @@ export const ROADMAP = [
       "Music royalty audit intake",
       "Cielo Sunrise verified asset with real gallery and stablecoin booking",
       "Stablecoin checkout (Buy Now / Book Now)",
-      "Light and dark mode",
+      "Dark premium homepage redesign",
     ],
   },
   {
@@ -154,10 +154,3 @@ export const TOKENOMICS = {
     { name: "Sovereign", amount: "1,000,000 $ABRA", benefit: "50% fee reduction, governance weight (when live)" },
   ],
 } as const;
-
-export const METRICS = [
-  { label: "Verified assets", value: "6" },
-  { label: "Value attested", value: "Just Under $2M" },
-  { label: "Live verification paths", value: "2 (Social + Identity)" },
-  { label: "Credential standard", value: "W3C VC" },
-] as const;

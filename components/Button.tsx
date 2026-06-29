@@ -1,16 +1,19 @@
 "use client";
 
 import { ButtonHTMLAttributes, ReactNode } from "react";
+import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
+import { springSnappy, easeOutFast } from "@/lib/motion/variants";
 
 type Variant = "primary" | "ghost" | "secondary";
 type Size = "sm" | "md" | "lg";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: Size;
-  children: ReactNode;
-  fullWidth?: boolean;
-}
+type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof HTMLMotionProps<"button">> &
+  HTMLMotionProps<"button"> & {
+    variant?: Variant;
+    size?: Size;
+    children: ReactNode;
+    fullWidth?: boolean;
+  };
 
 const base = "inline-flex items-center justify-center gap-2 cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 uppercase tracking-widest";
 
@@ -35,7 +38,7 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
-  const inlineStyle: React.CSSProperties = variant === "primary"
+  const inlineStyle = variant === "primary"
     ? {
         background: "var(--gold)",
         border: "none",
@@ -57,13 +60,18 @@ export function Button({
     ? "hover:opacity-85"
     : "hover:border-gold hover:text-gold";
 
+  const reduce = useReducedMotion();
+  const enabled = !reduce && !props.disabled;
+
   return (
-    <button
+    <motion.button
       className={`${base} ${variants[variant]} ${sizes[size]} ${hoverClass} ${fullWidth ? "w-full" : ""} ${className}`}
-      style={inlineStyle}
+      style={{ willChange: "transform", ...inlineStyle }}
+      whileHover={enabled ? { scale: 1.035, transition: springSnappy } : undefined}
+      whileTap={enabled ? { scale: 0.96, transition: easeOutFast } : undefined}
       {...props}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
