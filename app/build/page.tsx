@@ -16,6 +16,7 @@ import { WorldWearablesGallery, WorldWearablesHoodie } from "@/components/termin
 import { WorldByHandSection } from "@/components/terminal/WorldByHandSection";
 import { CoffeeFarmSection } from "@/components/terminal/CoffeeFarmSection";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { TokenizationRequestModal } from "@/components/TokenizationRequestModal";
 import { BuyNowModal } from "@/components/terminal/BuyNowModal";
 import type { BuyItem } from "@/components/terminal/BuyNowModal";
@@ -103,6 +104,7 @@ export default function BuildPage() {
         onClose={() => { setWyOpen(false); setInitialTier(null); }}
       />
       <BuyNowModal item={buyItem} onClose={() => setBuyItem(null)} />
+      <RedesignFooter />
     </RedesignShell>
   );
 }

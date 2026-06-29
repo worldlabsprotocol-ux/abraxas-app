@@ -12,6 +12,7 @@
 // share on swaps until you register.
 
 import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 
 const AFFILIATE_NAME = "heroswap"; // replace with your real affiliate name once registered
 
@@ -62,6 +63,7 @@ export default function SwapPage() {
           tool, it's a separate utility from the rest of the platform.
         </div>
       </div>
+      <RedesignFooter />
     </RedesignShell>
   );
 }

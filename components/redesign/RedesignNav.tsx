@@ -19,11 +19,21 @@ const ACCENT = "#10B981";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
-  { href: "/terminal",  label: "Assets" },
-  { href: "/passport",  label: "Passport" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/build",     label: "Build" },
-  { href: "/swap",      label: "Swap" },
+  { href: "/terminal",   label: "Assets" },
+  { href: "/passport",   label: "Passport" },
+  { href: "/partners",   label: "Partners" },
+  { href: "/build",      label: "Build" },
+  { href: "/docs",       label: "Docs" },
+];
+
+const MORE_LINKS = [
+  { href: "/dashboard",   label: "Dashboard" },
+  { href: "/swap",        label: "Swap" },
+  { href: "/roadmap",     label: "Roadmap" },
+  { href: "/tokenomics",  label: "Tokenomics" },
+  { href: "/faq",         label: "FAQ" },
+  { href: "/security",    label: "Security" },
+  { href: "/about",       label: "About" },
 ];
 
 export function RedesignNav() {
@@ -111,6 +121,15 @@ export function RedesignNav() {
                 style={{ padding: "0.7rem 0.5rem", borderRadius: 10, textDecoration: "none",
                          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 600,
                          color: pathname?.startsWith(l.href) ? ACCENT : "var(--text-primary)" }}>
+                {l.label}
+              </Link>
+            ))}
+            <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
+            {MORE_LINKS.map(l => (
+              <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
+                style={{ padding: "0.55rem 0.5rem", borderRadius: 10, textDecoration: "none",
+                         fontFamily: FONT, fontSize: "0.85rem", fontWeight: 500,
+                         color: pathname?.startsWith(l.href) ? ACCENT : "var(--text-secondary)" }}>
                 {l.label}
               </Link>
             ))}

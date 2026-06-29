@@ -15,6 +15,7 @@ import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
+import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -651,6 +652,7 @@ export default function PassportPage() {
           </Link>
         </div>
       </div>
+      <RedesignFooter />
     </div>
     </WalletContextProvider>
   );

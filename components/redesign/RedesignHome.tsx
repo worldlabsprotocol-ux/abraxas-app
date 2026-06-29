@@ -18,6 +18,7 @@ import { MusicSection } from "@/components/terminal/MusicSection";
 import { MilestonesSection } from "@/components/terminal/MilestonesSection";
 import { ProtocolVisionSection } from "@/components/terminal/ProtocolVisionSection";
 import { RedesignFAQ } from "./RedesignFAQ";
+import { RedesignFooter } from "./RedesignFooter";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -116,20 +117,7 @@ export function RedesignHome() {
           </div>
         </main>
 
-        {/* Footer */}
-        <footer style={{ borderTop: "1px solid var(--border)", position: "relative", zIndex: 1 }}>
-          <div style={{ ...MAXW, paddingTop: "2rem", paddingBottom: "2.5rem",
-                         display: "flex", justifyContent: "space-between", alignItems: "center",
-                         flexWrap: "wrap", gap: "1rem" }}>
-            <div style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-muted)" }}>
-              Abraxas, the verification and identity layer for real-world assets onchain.
-            </div>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.6rem",
-                           color: "var(--text-muted)", letterSpacing: "0.1em" }}>
-              VERIFY ONCE · TRANSACT EVERYWHERE
-            </div>
-          </div>
-        </footer>
+        <RedesignFooter />
       </div>
     </WalletContextProvider>
   );

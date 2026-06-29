@@ -19,7 +19,7 @@ import { MyAbraxas }               from "@/components/dashboard/MyAbraxas";
 import { SophiaCircuit }           from "@/components/dashboard/SophiaCircuit";
 import { PurchaseLifecycleAdmin }  from "@/components/dashboard/PurchaseLifecycleAdmin";
 import { ContentSection }          from "@/components/terminal/ContentSection";
-import { SiteFooter }              from "@/components/SiteFooter";
+import { RedesignFooter }          from "@/components/redesign/RedesignFooter";
 import { WalletContextProvider }   from "@/components/WalletContextProvider";
 import { AmbientGlow }             from "@/components/redesign/AmbientGlow";
 import { RedesignNav }             from "@/components/redesign/RedesignNav";
@@ -312,7 +312,7 @@ export default function DashboardPage() {
         )}
 
       </div>
-      <SiteFooter />
+      <RedesignFooter />
     </div>
     </div>
     </WalletContextProvider>

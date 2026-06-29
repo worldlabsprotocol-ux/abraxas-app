@@ -136,7 +136,14 @@ export function RedesignHero() {
                                                        flexWrap: "wrap", marginBottom: "2rem" }}>
             <Btn href="/passport" size="lg">Get verified →</Btn>
             <Btn href="#assets" variant="secondary" size="lg">Explore verified assets</Btn>
+            <Btn href="/terminal?demo=1" variant="ghost" size="lg">Take a tour</Btn>
           </motion.div>
+          <motion.p variants={staggerItem} style={{
+            fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+            margin: "0 0 1.5rem", maxWidth: 480,
+          }}>
+            No wallet required to browse or verify. Connect in the nav when you are ready to pay in stablecoin.
+          </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <StatTile value="6" label="Verified assets" />
