@@ -8,6 +8,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { WalletContextProvider } from "@/components/WalletContextProvider";
+import { SiteNav } from "@/components/SiteNav";
+import { BottomNav } from "@/components/BottomNav";
+import { SiteFooter } from "@/components/SiteFooter";
+import { LiveBackground } from "@/components/LiveBackground";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { ReclaimVerifyButton } from "@/components/ReclaimVerifyButton";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
@@ -283,33 +288,17 @@ export default function PassportPage() {
   };
 
   return (
+    <WalletContextProvider>
     <div style={{ background:"var(--bg)", minHeight:"100vh",
                    color:"var(--text-primary)" }}>
+      <LiveBackground />
+      <SiteNav />
 
       {/* Veriff's in-context frame mounts here when verification starts */}
       <div id="veriff-root" />
 
-      {/* Nav */}
-      <nav style={{ position:"sticky", top:0, zIndex:200,
-                     background:"var(--bg)",
-                     borderBottom:"1px solid var(--border)",
-                     backdropFilter:"blur(12px)",
-                     display:"flex", alignItems:"center",
-                     padding:"0 clamp(1rem,3vw,2rem)",
-                     height:56, gap:"0.75rem" }}>
-        <Link href="/terminal" style={{ fontFamily:S, fontSize:"0.78rem",
-                                         fontWeight:600, color:"var(--text-muted)",
-                                         textDecoration:"none" }}>
-          ← Back
-        </Link>
-        <span style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                        color:"var(--text-primary)", flex:1 }}>
-          Abraxas Passport
-        </span>
-      </nav>
-
       <div style={{ maxWidth:860, margin:"0 auto",
-                     padding:"2rem clamp(1rem,4vw,2.5rem)" }}>
+                     padding:"2rem clamp(1rem,4vw,2.5rem)", position:"relative", zIndex:1 }}>
 
         {/* Header */}
         <div style={{ marginBottom:"2.5rem" }}>
@@ -662,6 +651,9 @@ export default function PassportPage() {
           </Link>
         </div>
       </div>
+      <SiteFooter />
+      <BottomNav />
     </div>
+    </WalletContextProvider>
   );
 }

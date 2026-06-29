@@ -1,9 +1,12 @@
 "use client";
-export const dynamic = "force-dynamic";
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-export default function P() {
-  const r = useRouter();
-  useEffect(() => { r.replace("/"); }, [r]);
+
+export default function StakePage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/tokenomics#tiers");
+  }, [router]);
   return null;
 }

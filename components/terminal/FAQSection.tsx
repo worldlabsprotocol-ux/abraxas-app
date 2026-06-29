@@ -37,9 +37,18 @@ export function FAQSection() {
   return (
     <ScrollFade>
       <div>
-        <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
-                       color:"var(--text-primary)", marginBottom:"1rem" }}>
-          Why this, why now
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                       flexWrap:"wrap", gap:"0.5rem", marginBottom:"1rem" }}>
+          <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
+                         color:"var(--text-primary)" }}>
+            Why this, why now
+          </div>
+          <a href="/faq" style={{
+            fontFamily:S, fontSize:"0.72rem", fontWeight:600,
+            color:G, textDecoration:"none",
+          }}>
+            Full FAQ →
+          </a>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
           {FAQS.map((item, i) => (

@@ -140,6 +140,29 @@ export function HeroIntro() {
               }}>
               Browse verified assets
             </a>
+            <a href="/terminal?demo=1"
+              style={{
+                padding: "0.85rem 1.85rem",
+                borderRadius: 999,
+                border: "1px solid var(--border)",
+                background: "var(--surface-raised)",
+                color: "var(--text-secondary)",
+                fontFamily: S,
+                fontSize: "0.92rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}>
+              Take a tour
+            </a>
+          </div>
+          <div style={{ marginBottom: "1.25rem" }}>
+            <span style={{
+              fontFamily: S,
+              fontSize: "0.68rem",
+              color: "var(--text-muted)",
+            }}>
+              No wallet required to browse or verify. Connect in the top nav when you are ready to pay in stablecoin.
+            </span>
           </div>
 
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>

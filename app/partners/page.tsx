@@ -6,8 +6,8 @@
 // verification partner, and is labeled as such rather than lumped in
 // to make the directory look bigger than it is.
 
-import { BottomNav } from "@/components/BottomNav";
-import { LiveBackground } from "@/components/LiveBackground";
+import { ProtocolPage } from "@/components/ProtocolPage";
+import { PageHeader } from "@/components/content/ProtocolSection";
 
 const S = "system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -55,29 +55,12 @@ export default function PartnersPage() {
   const utilityPartners = PARTNERS.filter(p => !p.isVerificationPartner);
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text-primary)" }}>
-      <LiveBackground />
-      <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)", borderBottom:`1px solid ${BDR}`,
-                     display:"flex", alignItems:"center", gap:"0.5rem" }}>
-        <svg width={20} height={20} viewBox="0 0 40 40" fill="none">
-          <polygon points="20,2 38,20 20,38 2,20" stroke={G} strokeWidth="2" fill="none"/>
-          <polygon points="20,8 32,20 20,32 8,20" stroke={G} strokeWidth="1.5" fill={`${G}15`}/>
-          <circle cx="20" cy="20" r="3" fill={G}/>
-        </svg>
-        <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700 }}>Partners</span>
-      </div>
-
-      <div style={{ maxWidth:760, margin:"0 auto", padding:"2rem clamp(1rem,3vw,1.5rem)" }}>
-        <h1 style={{ fontFamily:S, fontSize:"1.6rem", fontWeight:800,
-                      margin:"0 0 0.5rem" }}>
-          Who actually backs the verification
-        </h1>
-        <p style={{ fontFamily:S, fontSize:"0.85rem", color:"var(--text-secondary)",
-                     lineHeight:1.7, marginBottom:"2rem", maxWidth:560 }}>
-          A short, honest list. Abraxas works with a small number of real
-          partners today, not a directory padded to look bigger than it is.
-          This page grows as real relationships are added, not before.
-        </p>
+    <ProtocolPage maxWidth={760}>
+      <PageHeader
+        eyebrow="Partners"
+        title="Who actually backs the verification"
+        subtitle="A short, honest list. Abraxas works with a small number of real partners today, not a directory padded to look bigger than it is."
+      />
 
         <div style={{ fontFamily:M, fontSize:"0.68rem", fontWeight:700,
                        color:G, letterSpacing:"0.08em", marginBottom:"0.75rem" }}>
@@ -130,8 +113,6 @@ export default function PartnersPage() {
             </div>
           ))}
         </div>
-      </div>
-      <BottomNav />
-    </div>
+    </ProtocolPage>
   );
 }

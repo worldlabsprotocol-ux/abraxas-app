@@ -7,12 +7,12 @@
 import { S, M, G, BDR } from "./tokens";
 
 const PACKAGES = [
-  { name:"Social Verification", price:"Free", desc:"LinkedIn, X, GitHub, or Gmail, cryptographically proven", color:G, live:true },
-  { name:"Identity Verification", price:"$29", desc:"Government ID + liveness check", color:G, live:true },
-  { name:"Business Verification", price:"$199", desc:"KYB review, entity validation, document review", color:"#3B82F6", live:false },
-  { name:"Property Verification", price:"$499", desc:"Ownership review, title chain, supporting documentation", color:"#F59E0B", live:false },
-  { name:"Royalty Verification", price:"$499", desc:"Publishing review, rights validation, ownership review", color:"#8B5CF6", live:false },
-  { name:"Enterprise Asset Verification", price:"Custom", desc:"Real estate, mineral rights, film IP, music catalogs, private businesses", color:G, live:false },
+  { name:"Social Verification", price:"Free", desc:"LinkedIn, X, GitHub, or Gmail, cryptographically proven", color:G, live:true, status:"Live" },
+  { name:"Identity Verification", price:"$29", desc:"Government ID + liveness check via Veriff", color:G, live:true, status:"Live" },
+  { name:"Business Verification", price:"$199", desc:"KYB review, entity validation, document review", color:"#3B82F6", live:false, status:"Manual review" },
+  { name:"Property Verification", price:"$499", desc:"Ownership review, title chain, supporting documentation", color:"#F59E0B", live:false, status:"Manual review" },
+  { name:"Royalty Verification", price:"$499", desc:"Publishing review, rights validation, ownership review", color:"#8B5CF6", live:false, status:"Manual review" },
+  { name:"Enterprise Asset Verification", price:"Custom", desc:"Real estate, mineral rights, film IP, music catalogs, private businesses", color:G, live:false, status:"Manual review" },
 ];
 
 export function VerificationPackages() {
@@ -37,10 +37,18 @@ export function VerificationPackages() {
               <span style={{ fontFamily:S, fontSize:"0.82rem", fontWeight:700,
                               color:"var(--text-primary)" }}>{p.name}</span>
               {!p.live && (
-                <span style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                                color:"var(--text-muted)", background:"var(--surface-raised)",
+                <span style={{ fontFamily:M, fontSize:"0.48rem", fontWeight:700,
+                                color:"#F59E0B", background:"rgba(245,158,11,0.1)",
+                                padding:"0.1rem 0.4rem", borderRadius:8,
+                                border:"1px solid rgba(245,158,11,0.25)" }}>
+                  {p.status}
+                </span>
+              )}
+              {p.live && (
+                <span style={{ fontFamily:M, fontSize:"0.48rem", fontWeight:700,
+                                color:G, background:"rgba(16,185,129,0.1)",
                                 padding:"0.1rem 0.4rem", borderRadius:8 }}>
-                  COMING SOON
+                  {p.status}
                 </span>
               )}
             </div>

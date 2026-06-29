@@ -7,8 +7,8 @@
 // does (Veriff biometric verification, Supabase storage, Solana
 // wallets, stablecoin transactions, Reg D securities offerings).
 
-import { BottomNav } from "@/components/BottomNav";
-import { LiveBackground } from "@/components/LiveBackground";
+import { ProtocolPage } from "@/components/ProtocolPage";
+import { PageHeader } from "@/components/content/ProtocolSection";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const BDR = "var(--border)";
@@ -30,12 +30,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function PrivacyPolicyPage() {
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text-primary)" }}>
-      <LiveBackground />
-      <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)", borderBottom:`1px solid ${BDR}` }}>
-        <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700 }}>Privacy Policy</span>
-      </div>
-      <div style={{ maxWidth:680, margin:"0 auto", padding:"2rem clamp(1rem,3vw,1.5rem)" }}>
+    <ProtocolPage maxWidth={680}>
+      <PageHeader title="Privacy Policy" />
+      <div>
         <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
                      marginBottom:"2rem" }}>
           Last updated: June 2026. This Privacy Policy describes how Abraxas Protocol,
@@ -134,7 +131,6 @@ export default function PrivacyPolicyPage() {
           Services after a change is posted constitutes acceptance of the update.</p>
         </Section>
       </div>
-      <BottomNav />
-    </div>
+    </ProtocolPage>
   );
 }

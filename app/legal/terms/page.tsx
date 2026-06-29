@@ -5,8 +5,8 @@
 // does (Reg D securities offerings, manual transaction review,
 // identity verification, third-party Swap integration).
 
-import { BottomNav } from "@/components/BottomNav";
-import { LiveBackground } from "@/components/LiveBackground";
+import { ProtocolPage } from "@/components/ProtocolPage";
+import { PageHeader } from "@/components/content/ProtocolSection";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const BDR = "var(--border)";
@@ -28,12 +28,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function TermsPage() {
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text-primary)" }}>
-      <LiveBackground />
-      <div style={{ padding:"1rem clamp(1rem,3vw,1.5rem)", borderBottom:`1px solid ${BDR}` }}>
-        <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:700 }}>Terms of Service</span>
-      </div>
-      <div style={{ maxWidth:680, margin:"0 auto", padding:"2rem clamp(1rem,3vw,1.5rem)" }}>
+    <ProtocolPage maxWidth={680}>
+      <PageHeader title="Terms of Service" />
+      <div>
         <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
                      marginBottom:"2rem" }}>
           Last updated: June 2026. These Terms of Service govern your use of Abraxas
@@ -159,7 +156,6 @@ export default function TermsPage() {
           website.</p>
         </Section>
       </div>
-      <BottomNav />
-    </div>
+    </ProtocolPage>
   );
 }

@@ -1,43 +1,30 @@
 "use client";
 // FILE: components/terminal/MilestonesSection.tsx
-// Protocol progress timeline. Extracted from ContentSection so it can be
-// shown at the top of the terminal tab, ahead of the hero and asset grid,
-// as the first trust signal a visitor or investor sees.
+// Protocol progress timeline on /terminal. Full page at /roadmap.
 
-import { M, S, G, A, B } from "./tokens";
+import { S } from "./tokens";
 import { ScrollFade } from "./ui";
-
-const MILESTONES = [
-  {
-    phase:"Live now", color:G,
-    items:["Verified credential system","Wyoming LLC formation flow","Asset verification pipeline",
-           "Music royalty audit intake","Cielo Sunrise verified, producing monthly yield",
-           "Abraxas Precheck, real identity verification via Veriff","Real photo galleries on verified assets",
-           "Email sign-in with automatic wallet and profile creation","Stablecoin checkout (Buy Now / Book Now)",
-           "Dark mode"],
-  },
-  {
-    phase:"In progress", color:A,
-    items:["Wallet sign-in (Phantom, Solflare)","Document review for Business, Accredited, and Asset Owner stamps",
-           "World Studios KC site identification","Entertainment IP acquisition, in negotiation"],
-  },
-  {
-    phase:"Up next", color:B,
-    items:["Institutional-grade secure storage (with Utila)","A passport that works across other platforms","Automatic LLC paperwork signing",
-           "First external protocol integration","Automated on-chain payment verification"],
-  },
-];
+import { ROADMAP } from "@/lib/protocolContent";
 
 export function MilestonesSection() {
   return (
     <ScrollFade>
       <div style={{ marginBottom:"1.5rem" }}>
-        <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
-                       color:"#15151A", marginBottom:"1rem" }}>
-          Where the protocol stands today
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                       flexWrap:"wrap", gap:"0.5rem", marginBottom:"1rem" }}>
+          <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
+                         color:"var(--text-primary)" }}>
+            Where the protocol stands today
+          </div>
+          <a href="/roadmap" style={{
+            fontFamily:S, fontSize:"0.72rem", fontWeight:600,
+            color:"#10B981", textDecoration:"none",
+          }}>
+            Full roadmap →
+          </a>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-          {MILESTONES.map(ms => (
+          {ROADMAP.map(ms => (
             <div key={ms.phase} style={{ display:"flex", gap:0 }}>
               <div style={{ width:2, background:`${ms.color}25`,
                              flexShrink:0, position:"relative" }}>
@@ -45,8 +32,7 @@ export function MilestonesSection() {
                                background:ms.color,
                                position:"absolute", top:12, left:-3.5 }} />
               </div>
-              <div style={{ paddingLeft:"1.25rem", paddingBottom:"1.25rem",
-                             flex:1 }}>
+              <div style={{ paddingLeft:"1.25rem", paddingBottom:"1.25rem", flex:1 }}>
                 <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
                                color:ms.color,
                                marginBottom:"0.5rem", marginTop:"0.125rem" }}>
@@ -58,7 +44,7 @@ export function MilestonesSection() {
                       style={{ padding:"0.3rem 0.7rem", borderRadius:20,
                                 background:`${ms.color}08`,
                                 fontFamily:S, fontSize:"0.72rem",
-                                color:"rgba(21,21,26,0.55)",
+                                color:"var(--text-secondary)",
                                 lineHeight:1.4 }}>
                       {ms.phase === "Live now" ? "\u2713 " : ""}{item}
                     </div>

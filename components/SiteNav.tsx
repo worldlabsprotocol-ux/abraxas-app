@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/SiteNav.tsx
-// Top navigation matching premium RWA protocol layouts (ZentraTech-style).
+// Persistent top navigation across all protocol pages.
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -11,12 +11,20 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
 
-const NAV_LINKS = [
+const PRIMARY_LINKS = [
   { href: "/terminal",  label: "Marketplace" },
   { href: "/passport",  label: "Passport" },
-  { href: "/dashboard", label: "Dashboard" },
   { href: "/build",     label: "Build" },
-  { href: "/swap",      label: "Swap" },
+  { href: "/partners",  label: "Partners" },
+  { href: "/docs",      label: "Docs" },
+];
+
+const RESOURCE_LINKS = [
+  { href: "/roadmap",     label: "Roadmap" },
+  { href: "/tokenomics",  label: "Tokenomics" },
+  { href: "/faq",         label: "FAQ" },
+  { href: "/security",    label: "Security" },
+  { href: "/about",       label: "About" },
 ];
 
 interface SiteNavProps {
@@ -39,7 +47,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
       alignItems: "center",
       padding: "0 clamp(0.75rem, 2.5vw, 1.75rem)",
       height: "clamp(58px, 8vw, 68px)",
-      gap: "0.75rem",
+      gap: "0.5rem",
     }}>
       <a href="/terminal" style={{
         display: "flex",
@@ -66,23 +74,24 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
         display: "none",
         flex: 1,
         justifyContent: "center",
-        gap: "0.35rem",
+        gap: "0.2rem",
+        flexWrap: "wrap",
       }}>
-        {NAV_LINKS.map(link => {
+        {PRIMARY_LINKS.map(link => {
           const active = pathname?.startsWith(link.href);
           return (
             <a key={link.href} href={link.href}
-              style={{
-                padding: "0.45rem 0.9rem",
-                borderRadius: 999,
-                textDecoration: "none",
-                fontFamily: S,
-                fontSize: "0.82rem",
-                fontWeight: active ? 700 : 500,
-                color: active ? G : "var(--text-secondary)",
-                background: active ? "rgba(16,185,129,0.12)" : "transparent",
-                border: active ? "1px solid rgba(16,185,129,0.25)" : "1px solid transparent",
-              }}>
+              style={navLinkStyle(active)}>
+              {link.label}
+            </a>
+          );
+        })}
+        <span style={{ color: "var(--border)", padding: "0 0.15rem" }}>|</span>
+        {RESOURCE_LINKS.map(link => {
+          const active = pathname?.startsWith(link.href);
+          return (
+            <a key={link.href} href={link.href}
+              style={{ ...navLinkStyle(active), fontSize: "0.76rem" }}>
               {link.label}
             </a>
           );
@@ -91,27 +100,36 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
 
       <div style={{ flex: 1, display: "block" }} className="abr-site-nav-spacer" />
 
-      <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+        <a href="/terminal?demo=1" className="abr-demo-link"
+          style={{
+            display: "none",
+            padding: "0.4rem 0.75rem",
+            borderRadius: 999,
+            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
+            fontFamily: S,
+            fontSize: "0.68rem",
+            fontWeight: 600,
+            textDecoration: "none",
+          }}>
+          Tour
+        </a>
         {onWaitlistClick && (
           <button type="button" onClick={onWaitlistClick}
+            className="abr-waitlist-btn"
             style={{
               display: "none",
               alignItems: "center",
               gap: "0.35rem",
-              padding: "0.45rem 0.85rem",
+              padding: "0.4rem 0.75rem",
               borderRadius: 999,
               cursor: "pointer",
               background: "rgba(139,92,246,0.12)",
               border: "1px solid rgba(139,92,246,0.35)",
-            }}
-            className="abr-waitlist-btn">
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#8B5CF6" }} />
-            <span style={{
-              fontFamily: S,
-              fontSize: "0.68rem",
-              fontWeight: 700,
-              color: "#8B5CF6",
             }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#8B5CF6" }} />
+            <span style={{ fontFamily: S, fontSize: "0.65rem", fontWeight: 700, color: "#8B5CF6" }}>
               ZK Login
             </span>
           </button>
@@ -122,12 +140,26 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
       </div>
 
       <style>{`
-        @media (min-width: 900px) {
+        @media (min-width: 1100px) {
           .abr-site-nav-links { display: flex !important; }
           .abr-site-nav-spacer { display: none !important; }
-          .abr-waitlist-btn { display: flex !important; }
+          .abr-waitlist-btn, .abr-demo-link { display: inline-flex !important; }
         }
       `}</style>
     </nav>
   );
+}
+
+function navLinkStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: "0.4rem 0.75rem",
+    borderRadius: 999,
+    textDecoration: "none",
+    fontFamily: S,
+    fontSize: "0.8rem",
+    fontWeight: active ? 700 : 500,
+    color: active ? G : "var(--text-secondary)",
+    background: active ? "rgba(16,185,129,0.12)" : "transparent",
+    border: active ? "1px solid rgba(16,185,129,0.25)" : "1px solid transparent",
+  };
 }
