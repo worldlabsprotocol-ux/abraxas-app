@@ -18,9 +18,7 @@ export function MarketplaceFilterBar({ embedded = false }: { embedded?: boolean 
     <div style={{
       borderRadius: embedded ? 18 : "var(--radius-lg)",
       border: "1px solid var(--border)",
-      background: "var(--surface-glass)",
-      backdropFilter: "blur(var(--glass-blur))",
-      WebkitBackdropFilter: "blur(var(--glass-blur))",
+      background: "var(--surface-raised)",
       boxShadow: embedded ? "none" : "var(--shadow-soft)",
       padding: "1rem clamp(0.75rem, 2vw, 1.25rem)",
       marginBottom: embedded ? 0 : "1.5rem",

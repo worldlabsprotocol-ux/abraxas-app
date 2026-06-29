@@ -5,6 +5,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useAbraxasID }        from "@/lib/credentials/useAbraxasID";
 import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
 
@@ -46,11 +47,23 @@ function stampsFromCredential(level: string | undefined): StampId[] {
 
 function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: boolean }) {
   const [tip, setTip] = useState(false);
+  const reduce = useReducedMotion();
   return (
     <div onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}
       style={{ display:"flex", flexDirection:"column", alignItems:"center",
                 gap:"0.375rem", cursor:"default", position:"relative" }}>
-      <div style={{ width:64, height:64, borderRadius:"50%",
+      {/* When a stamp flips to earned, the badge pops in (scale + fade)
+          instead of snapping. `key={earned}` replays the entrance on the
+          not-started → earned transition. Honors reduced motion. */}
+      <motion.div
+        key={String(earned)}
+        initial={reduce ? false : (earned ? { scale: 0.55, opacity: 0 } : false)}
+        animate={{
+          scale: tip && earned ? 1.08 : 1,
+          opacity: earned ? 1 : 0.5,
+        }}
+        transition={{ type: "spring", stiffness: 420, damping: 18 }}
+        style={{ width:64, height:64, borderRadius:"50%",
                      border:`2px solid ${earned ? stamp.color : "rgba(21,21,26,0.12)"}`,
                      background: earned
                        ? `${stamp.color}20`
@@ -58,8 +71,7 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
                      display:"flex", alignItems:"center", justifyContent:"center",
                      position:"relative",
                      boxShadow: earned ? `0 0 12px ${stamp.color}30` : "none",
-                     transition:"all 0.2s", opacity: earned ? 1 : 0.5,
-                     transform: tip && earned ? "scale(1.08)" : "scale(1)" }}>
+                     willChange:"transform" }}>
         <span style={{ fontFamily:M, fontSize:"1.1rem",
                         color: earned ? stamp.color : "rgba(21,21,26,0.25)" }}>
           {stamp.icon}
@@ -71,7 +83,7 @@ function Stamp({ stamp, earned }: { stamp: typeof ALL_STAMPS[number]; earned: bo
               strokeDasharray="4 3"/>
           </svg>
         )}
-      </div>
+      </motion.div>
       <div style={{ fontFamily:M, fontSize:"0.5rem", fontWeight:700,
                      color: earned ? stamp.color : "rgba(21,21,26,0.25)",
                      textTransform:"uppercase", letterSpacing:"0.06em",

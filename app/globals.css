@@ -18,6 +18,7 @@
   --accent-faint:   rgba(16, 185, 129, 0.1);
   --accent-border:  rgba(16, 185, 129, 0.4);
   --nav-bg:         rgba(245, 245, 242, 0.92);
+  --nav-bg-solid:   #F6F6F3;
   --shadow-soft:    0 8px 40px rgba(0, 0, 0, 0.08);
   --shadow-card:    0 12px 40px rgba(0, 0, 0, 0.1);
   --shadow-glow:    0 0 0 1px rgba(16, 185, 129, 0.45), 0 0 40px rgba(16, 185, 129, 0.25);
@@ -45,6 +46,7 @@
   --accent-faint:   rgba(16, 185, 129, 0.12);
   --accent-border:  rgba(0, 255, 136, 0.45);
   --nav-bg:         rgba(5, 5, 6, 0.88);
+  --nav-bg-solid:   #0A0A0C;
   --shadow-soft:    0 12px 48px rgba(0, 0, 0, 0.55);
   --shadow-card:    0 16px 48px rgba(0, 0, 0, 0.45);
   --shadow-glow:    0 0 0 1px rgba(0, 255, 136, 0.5), 0 0 48px rgba(16, 185, 129, 0.35);
@@ -54,6 +56,25 @@
   --glass-blur:     20px;
   --radius-lg:      22px;
   --radius-pill:    999px;
+}
+
+/* ── Type scale (theme-independent) ─────────────────────────────
+   One intentional scale used across the site. The hero/display size
+   should dominate; everything else reads quieter by comparison. */
+:root {
+  --fs-display: clamp(2.6rem, 6vw, 4.25rem);
+  --fs-h1:      clamp(1.9rem, 4vw, 2.6rem);
+  --fs-h2:      clamp(1.25rem, 2.4vw, 1.6rem);
+  --fs-body:    clamp(0.95rem, 1.4vw, 1.02rem);
+  --fs-small:   0.8rem;
+  --fs-micro:   0.62rem;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-bold:    700;
+  --fw-black:   800;
+
+  --section-gap: clamp(3.25rem, 7vw, 6rem);
 }
 
 * { box-sizing: border-box; }
@@ -69,24 +90,19 @@ body {
   transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
-/* ── Motion system: shimmer skeletons + helpers ─────────────────── */
-@keyframes abxShimmer {
-  0%   { background-position: -150% 0; }
-  100% { background-position: 250% 0; }
+/* ── Motion system: skeleton loaders + helpers ──────────────────
+   Solid base with an opacity pulse (no gradient fill, per design rules). */
+@keyframes abxPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
 }
 
 .abx-skeleton {
-  background: linear-gradient(
-    100deg,
-    var(--surface-raised) 30%,
-    var(--accent-faint) 50%,
-    var(--surface-raised) 70%
-  );
-  background-size: 250% 100%;
-  animation: abxShimmer 1.6s ease-in-out infinite;
+  background: var(--surface-raised);
+  animation: abxPulse 1.5s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .abx-skeleton { animation: none; }
-  *:not(img):not(svg):not(path) { transition-duration: 0.01ms !important; }
+  *:not(img):not(svg):not(path) { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

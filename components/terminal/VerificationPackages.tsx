@@ -5,6 +5,7 @@
 // that one has a real Rule 506(c) verification-method requirement.
 
 import { S, M, G, BDR } from "./tokens";
+import { MotionCard } from "@/lib/motion/MotionCard";
 
 const PACKAGES = [
   { name:"Social Verification", price:"Free", desc:"LinkedIn, X, GitHub, or Gmail, cryptographically proven", color:G, live:true },
@@ -30,8 +31,9 @@ export function VerificationPackages() {
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",
                      gap:"0.75rem" }}>
         {PACKAGES.map(p => (
-          <div key={p.name} style={{ padding:"0.875rem", borderRadius:10,
-                                       border:`1px solid ${BDR}`, background:"var(--surface)" }}>
+          <MotionCard key={p.name} glowColor={`${p.color}40`}
+            style={{ padding:"0.875rem", borderRadius:10,
+                     border:`1px solid ${BDR}`, background:"var(--surface-raised)" }}>
             <div style={{ display:"flex", justifyContent:"space-between",
                            alignItems:"flex-start", marginBottom:"0.4rem" }}>
               <span style={{ fontFamily:S, fontSize:"0.82rem", fontWeight:700,
@@ -52,7 +54,7 @@ export function VerificationPackages() {
                            color:"var(--text-muted)", lineHeight:1.5 }}>
               {p.desc}
             </div>
-          </div>
+          </MotionCard>
         ))}
       </div>
       <div style={{ marginTop:"0.875rem", padding:"0.75rem", borderRadius:8,

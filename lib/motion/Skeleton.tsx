@@ -42,7 +42,7 @@ export function SkeletonCard({ lines = 3, style }: SkeletonCardProps) {
         padding: "1rem",
         borderRadius: "var(--radius-lg)",
         border: "1px solid var(--border)",
-        background: "var(--surface-glass)",
+        background: "var(--surface-raised)",
         display: "flex",
         flexDirection: "column",
         gap: "0.65rem",

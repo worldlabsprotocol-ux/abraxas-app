@@ -31,9 +31,7 @@ export function HeroIntro() {
           padding: clamp(1.25rem, 3vw, 2rem);
           border-radius: var(--radius-lg);
           border: 1px solid var(--border);
-          background: var(--surface-glass);
-          backdrop-filter: blur(var(--glass-blur));
-          -webkit-backdrop-filter: blur(var(--glass-blur));
+          background: var(--surface-raised);
           box-shadow: var(--shadow-soft);
           position: relative;
           overflow: hidden;
@@ -93,12 +91,12 @@ export function HeroIntro() {
 
           <motion.h1 variants={staggerItem} style={{
             fontFamily: S,
-            fontSize: "clamp(2rem, 5vw, 3.2rem)",
-            fontWeight: 700,
+            fontSize: "var(--fs-display)",
+            fontWeight: 800,
             color: "var(--text-primary)",
-            lineHeight: 1.08,
-            letterSpacing: "-0.035em",
-            margin: "0 0 1rem",
+            lineHeight: 1.02,
+            letterSpacing: "-0.04em",
+            margin: "0 0 1.15rem",
           }}>
             Invest in real assets
             <br />
@@ -233,9 +231,7 @@ export function HeroPassportTeaser({ onGetVerified }: HeroPassportTeaserProps) {
         padding: "1.25rem",
         borderRadius: "var(--radius-lg)",
         border: "1px solid var(--border-strong)",
-        background: "var(--surface-glass)",
-        backdropFilter: "blur(var(--glass-blur))",
-        WebkitBackdropFilter: "blur(var(--glass-blur))",
+        background: "var(--surface-raised)",
         boxShadow: "var(--shadow-glow)",
       }}>
         <div style={{

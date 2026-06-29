@@ -3,6 +3,7 @@
 "use client";
 
 import { useState }             from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { FLAGSHIP_PROPERTY }    from "@/lib/data/flagshipProperty";
 
 const M      = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -84,6 +85,7 @@ function HashRow({ label, value, link }: { label:string; value:string; link?:str
 
 export function FlagshipAssetPage() {
   const [tab, setTab] = useState<Tab>("overview");
+  const reduce = useReducedMotion();
 
   const tabs: { id: Tab; label: string }[] = [
     { id:"overview",     label:"OVERVIEW"      },
@@ -392,9 +394,13 @@ export function FlagshipAssetPage() {
                       <div style={{ fontFamily:M, fontSize:"0.28rem", color:GREEN }}>
                         ${(m.rev / 1000).toFixed(0)}k
                       </div>
-                      <div style={{ width:"100%", minHeight:4, height:h + "%",
-                                     background: GREEN,
-                                     borderRadius:"2px 2px 0 0", transition:"height 0.3s ease" }}/>
+                      <motion.div
+                        initial={reduce ? false : { height: "0%" }}
+                        animate={{ height: h + "%" }}
+                        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: i * 0.05 }}
+                        style={{ width:"100%", minHeight:4,
+                                 background: GREEN,
+                                 borderRadius:"2px 2px 0 0" }}/>
                       <div style={{ fontFamily:M, fontSize:"0.24rem",
                                      color:"rgba(21,21,26,0.2)",
                                      transform:"rotate(-45deg)", whiteSpace:"nowrap" }}>

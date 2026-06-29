@@ -293,7 +293,6 @@ export default function PassportPage() {
       <nav style={{ position:"sticky", top:0, zIndex:200,
                      background:"var(--bg)",
                      borderBottom:"1px solid var(--border)",
-                     backdropFilter:"blur(12px)",
                      display:"flex", alignItems:"center",
                      padding:"0 clamp(1rem,3vw,2rem)",
                      height:56, gap:"0.75rem" }}>

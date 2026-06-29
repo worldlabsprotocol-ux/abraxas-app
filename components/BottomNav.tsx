@@ -27,9 +27,7 @@ export function BottomNav() {
     <>
       <nav className="abr-bottom-nav" style={{
         position:"fixed", bottom:0, left:0, right:0, zIndex:200,
-        background:"var(--nav-bg)",
-        backdropFilter:"blur(var(--glass-blur))",
-        WebkitBackdropFilter:"blur(var(--glass-blur))",
+        background:"var(--nav-bg-solid)",
         borderTop:"1px solid var(--border)",
         display:"flex", justifyContent:"space-around",
         padding:"0.5rem clamp(0.5rem,2vw,1rem)",

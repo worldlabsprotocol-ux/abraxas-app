@@ -46,8 +46,12 @@ export function Label({ children }: LabelProps) {
 }
 
 export function Divider() {
+  // More vertical breathing room between sections (design-director pass):
+  // the rule is whitespace first; the hairline is secondary and faint.
   return (
-    <div style={{ height:1, background:BDR, margin:"1.75rem 0" }} />
+    <div style={{ height:1, background:BDR,
+                   margin:"clamp(2.5rem, 6vw, 4.5rem) 0",
+                   opacity:0.6 }} />
   );
 }
 
@@ -141,9 +145,7 @@ export function Panel({ children, glow = false }: PanelProps) {
   return (
     <motion.div
       style={{
-        background: "var(--surface-glass)",
-        backdropFilter: "blur(var(--glass-blur))",
-        WebkitBackdropFilter: "blur(var(--glass-blur))",
+        background: "var(--surface-raised)",
         borderRadius: "var(--radius-lg)",
         padding: "1.35rem clamp(0.875rem, 3vw, 1.65rem)",
         border: glow ? "1px solid var(--border-strong)" : "1px solid var(--border)",

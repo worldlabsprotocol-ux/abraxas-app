@@ -97,7 +97,7 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         position: "absolute", top: "0.5rem", right: "0.5rem",
         display: "flex", alignItems: "center", gap: "0.25rem",
         padding: "0.15rem 0.45rem", borderRadius: "999px",
-        background: sc.bg, backdropFilter: "blur(8px)",
+        background: "rgba(15,18,24,0.82)",
       }}>
         <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: sc.dot,
           animation: asset.status !== "UNPROTECTED" ? "pulse 1.5s ease-in-out infinite" : "none" }} />
@@ -111,7 +111,7 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         <div style={{
           position: "absolute", top: "0.5rem", left: "0.5rem",
           padding: "0.12rem 0.4rem", borderRadius: "4px", fontSize: "0.48rem", fontWeight: 700,
-          background: "rgba(20,23,31,0.72)", backdropFilter: "blur(4px)",
+          background: "rgba(20,23,31,0.9)",
           color: asset.rarity === "Legendary" ? "#FFD700" : asset.rarity === "Ultra Rare" ? "#D9B878" : "#7C9CFF",
           letterSpacing: "0.06em",
         }}>
@@ -173,7 +173,7 @@ export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selecte
       whileTap={canLift ? { scale: 0.985, transition: easeOutFast } : undefined}
       style={{
         background: selected
-          ? `linear-gradient(135deg, ${asset.color}14, ${asset.color}05)`
+          ? `${asset.color}12`
           : "var(--abx-bg-surface, #FFFFFF)",
         border: `1px solid ${selected ? asset.color + "55" : "var(--abx-border-subtle, #E7E9EE)"}`,
         borderRadius: "16px",
