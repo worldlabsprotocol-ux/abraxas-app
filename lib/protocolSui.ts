@@ -27,9 +27,9 @@ export const SUI_FEATURES = [
     title: "On-chain Passport (Move)",
     status: "devnet" as const,
     summary:
-      "52-byte stamp bitmask on a Sui Passport object — identity, biometric, social, and seven other gates. Readable via GET /api/sui/passport.",
+      "52-byte stamp bitmask on a Sui Passport object — identity, biometric, business, and seven other gates. Readable via GET /api/sui/passport.",
     userSteps: [
-      "Earn stamps off-chain (Veriff, Reclaim, manual review)",
+      "Earn stamps off-chain (Veriff, manual review)",
       "Backend issues stamps on Sui after approval (Step 6 in setup guide)",
       "Anyone can verify bitmask on-chain without trusting Abraxas UI",
     ],

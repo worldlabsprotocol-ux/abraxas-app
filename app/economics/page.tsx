@@ -278,7 +278,7 @@ export default function EconomicsPage() {
               {
                 icon: "◈", color: "#8B5CF6", title: "Tokenization Fees",
                 badge: "One-time · 0.25% of asset value",
-                desc: "Charged at issuance when the Token-2022 certificate is minted on Solana mainnet. Scales linearly with the value of each asset brought on-chain.",
+                desc: "Charged at issuance when the certificate is anchored on Sui. Scales linearly with the value of each asset brought on-chain.",
                 y3Small: "$3.13M", y3Large: "$9.38M",
               },
               {

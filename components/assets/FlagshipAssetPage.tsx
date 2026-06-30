@@ -468,7 +468,7 @@ export function FlagshipAssetPage() {
               <HashRow label="Document SHA-256 Hash"  value={V.documentHash} />
               <HashRow label="Metadata Hash"           value={V.metaHash} />
               <HashRow label="Anchored Transaction"    value={V.anchoredTx}
-                link={"https://explorer.solana.com/tx/" + V.anchoredTx} />
+                link={"https://suiscan.xyz/devnet/object/" + V.anchoredTx} />
             </Section>
 
             <Section title="Provenance Timeline" icon="◈">

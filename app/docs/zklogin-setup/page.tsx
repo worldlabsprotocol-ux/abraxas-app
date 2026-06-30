@@ -22,7 +22,7 @@ export default function ZkLoginSetupPage() {
       <ContentCard title="What you are building">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: 0 }}>
           Users sign in with Google on <Link href="/passport" style={{ color: ACCENT }}>/passport</Link>.
-          Abraxas derives a Sui address (zkLogin), runs Veriff/Reclaim for stamps, and anchors the stamp bitmask on a Sui Passport object.
+          Abraxas derives a Sui address (zkLogin), runs Veriff for identity stamps, and anchors the stamp bitmask on a Sui Passport object.
           No seed phrase for verification.
         </p>
       </ContentCard>

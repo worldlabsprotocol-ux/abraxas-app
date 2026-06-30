@@ -72,7 +72,7 @@ export function PartnersSection() {
                      border:`1px solid ${G}30`,
                      background:`${G}08`, marginBottom:"1rem" }}>
         <div style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(242,246,243,0.6)" }}>
-          Tokenized real-world assets on Solana hit{" "}
+          Tokenized real-world assets on Sui hit{" "}
           <span style={{ color:G, fontWeight:700 }}>$213M</span> in daily
           trading volume this week, more than Coinbase or Kraken moved in
           the same period. This isn't a niche idea, the category is real
@@ -102,7 +102,7 @@ export function PartnersSection() {
           <span style={{ fontFamily:S, fontSize:"0.7rem",
                           color:"rgba(242,246,243,0.4)", lineHeight:1.5 }}>
             Bank-grade secure storage for assets verified on Abraxas.
-            Stronger protection than a typical Phantom or MetaMask wallet.
+            Stronger protection than a typical browser wallet or seed phrase.
           </span>
           <Button href="https://utila.io" variant="outline" color={B} size="sm">
             UTILA.IO

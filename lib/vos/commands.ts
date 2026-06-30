@@ -73,7 +73,7 @@ commandRegistry.register({
   description: "Show protocol network status and registry health",
   syntax: "status",
   handler: async (ctx) => {
-    ctx.emit({ kind: "agent", text: "[Agent] Pinging Solana mainnet..." });
+    ctx.emit({ kind: "agent", text: "[Agent] Pinging Sui devnet..." });
     await wait(140);
     ctx.emit({ kind: "agent", text: "[Agent] Querying verification network..." });
     await wait(120);
@@ -88,7 +88,7 @@ commandRegistry.register({
 
     ctx.emit({ kind: "report", text:
       `── ABRAXAS PROTOCOL STATUS ──\n\n` +
-      `Network:                Solana Mainnet · ONLINE\n` +
+      `Network:                Sui Devnet · ONLINE\n` +
       `Verification Standard:  AAS-1 · ACTIVE\n` +
       `Registry Size:          ${assets.length} asset${assets.length === 1 ? "" : "s"}\n` +
       `Verified Assets:        ${verified} / ${assets.length}\n` +
@@ -549,7 +549,7 @@ commandRegistry.register({
       `  Marketability:         ${mkt}/100 · ${mkt >= 75 ? "HIGH" : mkt >= 55 ? "MEDIUM" : "DEVELOPING"}\n\n` +
       `TOKENIZATION READINESS\n` +
       `  Status:  ${tokenizationReady ? "ELIGIBLE — asset meets tokenization criteria" : "PENDING — verification pipeline must complete first"}\n` +
-      `  Standard: AAS-1 (Token-2022, Solana Mainnet)\n` +
+      `  Standard: AAS-1 (Sui Move Passport, Devnet)\n` +
       `  Suggested Supply: ${Math.round(base / 100).toLocaleString()} tokens @ $100/token\n\n` +
       `MISSING REQUIREMENTS (if any)\n` +
       (!regAsset && userAsset?.hasAppraisal === "no"
@@ -821,7 +821,7 @@ commandRegistry.register({
       `Pipeline:       10-stage (SUBMITTED → MARKETPLACE_LIVE)\n` +
       `Submitted:      ${new Date(asset.createdAt).toLocaleString()}\n\n` +
       `Payment:\n` +
-      `  Send $${tierPrice.toLocaleString()} USDC to circuit.skr on Solana\n` +
+      `  Send $${tierPrice.toLocaleString()} USDC to Abraxas treasury on Sui\n` +
       `  Then run: confirm-payment ${wyReq.id}\n\n` +
       `Next steps:\n` +
       `  > track ${asset.id}\n` +
@@ -888,7 +888,7 @@ _originalRegister({
     await wait(160);
     ctx.emit({ kind: "agent", text: "[Agent] Computing token economics..." });
     await wait(140);
-    ctx.emit({ kind: "agent", text: "[Agent] Anchoring metadata hash on Solana..." });
+    ctx.emit({ kind: "agent", text: "[Agent] Anchoring metadata hash on Sui..." });
     await wait(200);
     ctx.emit({ kind: "agent", text: "[Agent] Mint complete." });
 
@@ -1154,7 +1154,7 @@ _originalRegister({
     await wait(160);
     ctx.emit({ kind: "agent", text: "[Agent] Computing attestation hash..." });
     await wait(120);
-    ctx.emit({ kind: "agent", text: "[Agent] Anchoring on Solana..." });
+    ctx.emit({ kind: "agent", text: "[Agent] Anchoring on Sui..." });
     await wait(160);
 
     userStore.advance(id, asset.state, "attester",

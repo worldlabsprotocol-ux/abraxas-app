@@ -30,7 +30,7 @@ const ITEMS = [
   },
   {
     metric: "Token-2022 Position",
-    definition: "Each deposit mints one Token-2022 position token to the depositor's wallet. The token name and symbol are visible in Phantom and Solflare and match the on-screen UI exactly.",
+    definition: "Each deposit mints one position token to the depositor's Sui wallet. The token name and symbol match the on-screen UI exactly.",
     calc: "1 token minted per deposit. Burned on withdraw.",
     source: "On-chain Solscan verifiable via the deposit success screen.",
   },

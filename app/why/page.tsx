@@ -28,7 +28,7 @@ const GAPS = [
     problem: "Cross-chain fragmentation.",
     stat: "1–3% pricing gaps",
     statSub: "for identical assets across chains",
-    solution: "Abraxas is Solana-native. Token-2022, sub-cent transactions, and no bridge risk. One chain. One standard. No slippage from fragmentation.",
+    solution: "Abraxas verification is Sui-native. zkLogin sign-in, low-cost transactions, sponsored gas for verified tiers, and Move Passport objects on-chain. One verification layer. One credential.",
     color: "rgba(107,140,255,0.07)",
     border: "rgba(107,140,255,0.2)",
   },
@@ -80,8 +80,8 @@ const FAQS = [
     a: "Holding a tokenized asset passively is identical to holding the original asset — you wait for distributions, you receive them quarterly, you do nothing in between. Abraxas operates the position: distributions are reinvested immediately, income-stream velocity is monitored continuously, and circuit defense triggers if risk crosses a threshold. Over 12 months, the difference between passive holding and active operation at 8–12% APY is compounding — not speculation.",
   },
   {
-    q: "Why does Solana matter for this use case?",
-    a: "Token-2022 on Solana has the InterestBearingMint extension — yield rate is encoded directly in the token itself, on-chain, verifiable by anyone. Transactions cost fractions of a cent, which means agent micro-actions (reinvesting a $12 royalty distribution) are economically viable. On Ethereum, a $12 reinvestment would be consumed by gas. Solana's throughput also means the agent can execute continuously without queuing. This isn't a chain preference — it's the only chain where the mechanics work at this scale.",
+    q: "Why does Sui matter for this use case?",
+    a: "zkLogin lets users sign in with Google — no seed phrase, no browser extension — while still getting a real on-chain Sui address for their Passport. Sui's object model fits the Passport stamp bitmask natively, and transaction costs stay low enough that verification anchoring and sponsored actions for verified tiers are economically viable at scale.",
   },
   {
     q: "What stops the system from collapsing in a down market?",

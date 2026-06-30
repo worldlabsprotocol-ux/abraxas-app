@@ -77,7 +77,7 @@ export function CryptographicProof({ asset }: { asset?: Asset }) {
     ? new Date(asset.createdAt).toISOString()
     : "PENDING";
   const explorerUrl = txSig
-    ? `https://explorer.solana.com/tx/${txSig}`
+    ? `https://suiscan.xyz/devnet/object/${txSig}`
     : undefined;
 
   return (

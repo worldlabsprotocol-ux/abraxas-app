@@ -41,7 +41,7 @@ const REASONS: Reason[] = [
   {
     n: "03",
     title: "Trust that actually travels",
-    punch: "A PDF is a claim. A W3C credential anchored on Solana is proof. You read as institutional-ready the second you connect.",
+    punch: "A PDF is a claim. A W3C credential anchored on Sui is proof. You read as institutional-ready the second you connect.",
     points: [
       "Cryptographic, portable, verifiable in a single call",
       "Investors, partners, and protocols confirm you without re-running KYC",

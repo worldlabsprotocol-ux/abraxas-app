@@ -75,7 +75,7 @@ export default function AboutPage() {
                      color: "rgba(255,255,255,0.5)", lineHeight: 1.75,
                      margin: "1rem auto", maxWidth: 620 }}>
           Plain-English explainer of how Abraxas verifies real-world assets
-          before they become programmable collateral on Solana. Eight sections.
+          before they become programmable collateral on Sui. Eight sections.
           Scroll or swipe.
         </p>
       </div>

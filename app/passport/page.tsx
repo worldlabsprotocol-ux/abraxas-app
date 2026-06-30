@@ -1,17 +1,13 @@
 "use client";
 // FILE: app/passport/page.tsx
-// Abraxas Passport, STANDALONE identity experience, completely separate
-// from the tokenize/asset flow. This is the verification moat.
-// Biometric ID → Business Verified → Asset Owner.
-// Each stamp is earned through a real process, stored on Supabase,
-// and eventually issued as a W3C Verifiable Credential signed by Abraxas.
+// Abraxas Passport — Sui-native verification via zkLogin + Veriff stamps.
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
-import { ReclaimVerifyButton } from "@/components/ReclaimVerifyButton";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
-import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
+import { SuiWalletCreatedCard } from "@/components/passport/SuiWalletCreatedCard";
+import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
@@ -23,7 +19,6 @@ import {
   passportStateToStampIds,
   passportWizardToStampId,
   stampIdToPassportWizard,
-  type StampId,
 } from "@/components/identity/AbraxasPassport";
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
@@ -35,13 +30,8 @@ const B = "#3B82F6";
 const A = "#F59E0B";
 const V = "#8B5CF6";
 
-// This is Veriff's public/publishable API key, not the secret key, it's
-// designed to be exposed client-side, same model as a Stripe publishable
-// key. If you regenerate it in your Veriff dashboard, swap it in here.
 const VERIFF_PUBLIC_API_KEY = "271e98bb-881f-40b9-bf21-94aecff4a846";
 
-// Each stamp is a real verification step with a real process behind it.
-// The color of the stamp, the check items, and the CTA all differ per tier.
 interface Stamp {
   id: string;
   name: string;
@@ -58,42 +48,24 @@ interface Stamp {
 
 const STAMPS: Stamp[] = [
   {
-    id: "social",
-    name: "Social Verified",
-    shortName: "Social",
-    color: B,
-    kind: "social",
-    description: "Cryptographically prove a real account on LinkedIn, X, GitHub, or Gmail belongs to you, without handing Abraxas your password. Powered by Reclaim Protocol's zkTLS proofs.",
-    whatItProves: "The social account you're claiming is real, active, and actually yours, verified through a cryptographic proof rather than a simple login.",
-    requiredDocs: ["An active LinkedIn, X, GitHub, or Gmail account you can log into during the check"],
-    processSteps: [
-      "Choose which account to verify (LinkedIn, X, GitHub, or Gmail)",
-      "A secure verification portal opens in a new tab",
-      "Log in normally on that platform's own site, nothing is shared with Abraxas",
-      "A cryptographic proof is generated and sent back automatically",
-      "Social Verified stamp issued on confirmation",
-    ],
-    timeEstimate: "Usually under 2 minutes.",
-    regulatoryBasis: "Not a regulatory requirement, this is a trust signal layered on top of required verification, not a substitute for it.",
-  },
-  {
     id: "identity",
     name: "Identity Verified",
     shortName: "ID",
     color: G,
     kind: "identity",
-    description: "Abraxas Precheck: a government-issued ID plus a biometric liveness check, processed through Veriff, a certified identity verification provider. Most people clear Precheck in minutes.",
-    whatItProves: "You are a real person, the ID belongs to you, and you passed a sanctions and PEP screening.",
-    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera, liveness check takes about 60 seconds"],
+    description: "Abraxas Precheck: government ID plus biometric liveness through Veriff. Your stamp is tied to the Sui wallet created when you signed in with Google.",
+    whatItProves: "You are a real person, the ID belongs to you, and you passed sanctions and PEP screening — all linked to your zkLogin Sui address.",
+    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera — liveness check takes about 60 seconds"],
     processSteps: [
-      "Enter your email to start Abraxas Precheck",
+      "Sign in with Google to create your Sui wallet (zkLogin)",
+      "Start Abraxas Precheck — your Sui address is passed to Veriff automatically",
       "Photograph your ID front and back",
-      "Complete a 60-second liveness check (look at camera, turn head)",
+      "Complete a 60-second liveness check",
       "Precheck returns a result, usually within minutes",
-      "Abraxas issues your Identity Verified stamp",
+      "Abraxas issues your Identity Verified stamp on your Passport",
     ],
-    timeEstimate: "Most Precheck approvals: under 5 minutes. Manual review cases: up to 1 business day.",
-    regulatoryBasis: "FATF-aligned KYC. Veriff is an eIDAS-certified provider, ISO 27001. Abraxas stores only the verification outcome, never raw document data.",
+    timeEstimate: "Most Precheck approvals: under 5 minutes. Manual review: up to 1 business day.",
+    regulatoryBasis: "FATF-aligned KYC. Veriff is eIDAS-certified, ISO 27001. Abraxas stores only the verification outcome — never raw document data.",
   },
   {
     id: "business",
@@ -110,10 +82,11 @@ const STAMPS: Stamp[] = [
       "Government ID for each beneficial owner",
     ],
     processSteps: [
+      "Complete Identity Verified first (Google sign-in + Precheck)",
       "Submit your entity name and jurisdiction",
       "Upload formation documents",
       "List all beneficial owners (25%+ stake)",
-      "Each owner completes Identity Verified step",
+      "Each owner completes Identity Verified",
       "Abraxas reviews entity documents (1–3 business days)",
       "Business Verified stamp issued on confirmation",
     ],
@@ -135,12 +108,12 @@ const STAMPS: Stamp[] = [
       "Business interest: shareholder agreement or membership certificate",
     ],
     processSteps: [
+      "Complete Identity Verified (and Business Verified if applicable)",
       "Submit your asset through the marketplace",
       "Upload ownership documentation",
       "Abraxas team reviews title chain (3–7 business days)",
       "Independent appraisal or verification check completed",
       "Asset Owner stamp issued per verified asset",
-      "Collateral score assigned based on verification depth",
     ],
     timeEstimate: "3–7 business days. Complex title chains take longer.",
     regulatoryBasis: "Asset attestation aligned with UCC Article 9 (personal property) and applicable state recording statutes for real property.",
@@ -150,9 +123,8 @@ const STAMPS: Stamp[] = [
 type StampStatus = "earned" | "in_progress" | "not_started";
 
 interface PassportState {
-  social:      StampStatus;
-  identity:    StampStatus;
-  business:    StampStatus;
+  identity: StampStatus;
+  business: StampStatus;
   asset_owner: StampStatus;
 }
 
@@ -166,66 +138,59 @@ export default function PassportPage() {
 
 function PassportPageInner() {
   const { suiAddress, session } = useSuiAuth();
-  const [email, setEmail]   = useState("");
-  const [active, setActive] = useState<string | null>("social");
+  const email = session?.email ?? "";
+  const [active, setActive] = useState<string | null>(suiAddress ? "identity" : "wallet");
   const [starting, setStarting] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [passportState, setPassportState] = useState<PassportState>({
-    social: "not_started",
     identity: "not_started",
     business: "not_started",
     asset_owner: "not_started",
   });
 
-  // Real check against the database, not optimistic UI alone, this
-  // is the actual source of truth for whether a Reclaim verification
-  // genuinely completed.
-  const socialVerified = useReclaimSocialStamp(email || null);
-  useEffect(() => {
-    if (socialVerified) {
-      setPassportState(prev => ({ ...prev, social: "earned" }));
-    }
-  }, [socialVerified]);
-
+  const walletDone = Boolean(suiAddress);
   const earned = Object.values(passportState).filter(s => s === "earned").length;
-  const activeStamp = STAMPS.find(s => s.id === active) ?? null;
+  const activeStamp = active === "wallet" ? null : STAMPS.find(s => s.id === active) ?? null;
 
-  // Check real verification status on mount if email is stored
   useEffect(() => {
-    const stored = localStorage.getItem("abraxas_email");
-    if (stored) {
-      setEmail(stored);
-      checkStatus(stored);
-    } else if (session?.email) {
-      setEmail(session.email);
-      checkStatus(session.email);
-    }
-  }, [session?.email]);
+    if (suiAddress && active === "wallet") setActive("identity");
+  }, [suiAddress, active]);
 
-  async function checkStatus(e: string) {
+  useEffect(() => {
+    if (!email && !suiAddress) return;
+    checkStatus(email, suiAddress);
+  }, [email, suiAddress]);
+
+  async function checkStatus(e: string, addr: string | null) {
     try {
-      const res = await fetch(`/api/identity/status?email=${encodeURIComponent(e)}`);
+      const params = new URLSearchParams();
+      if (e) params.set("email", e);
+      if (addr) params.set("sui_address", addr);
+      const res = await fetch(`/api/identity/status?${params}`);
       const { status } = await res.json() as { status?: string };
       if (status === "approved") {
         setPassportState(p => ({ ...p, identity: "earned" }));
       } else if (status === "pending") {
         setPassportState(p => ({ ...p, identity: "in_progress" }));
       }
-    } catch { /* silent, status is best-effort */ }
+    } catch { /* best-effort */ }
   }
 
   function startIdentityVerification() {
-    if (!email.includes("@")) { setError("Enter a valid email first"); return; }
-    localStorage.setItem("abraxas_email", email);
+    if (!suiAddress) {
+      setError("Sign in with Google first — that creates your Sui wallet.");
+      setActive("wallet");
+      return;
+    }
+    if (!email.includes("@")) {
+      setError("Your Google account must include an email for Veriff.");
+      return;
+    }
     setStarting(true);
     setError(null);
 
-    // Load Veriff's two SDK scripts if they're not already on the page,
-    // this is the In-Context flow: it mounts an embedded verification
-    // frame right here, no redirect away from Abraxas, and no server
-    // env vars needed to trigger it, only the public API key below,
-    // which is safe to expose client-side, same model as a Stripe
-    // publishable key.
+    const vendorData = `sui:${suiAddress}`;
+
     function loadScript(src: string): Promise<void> {
       return new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
@@ -242,9 +207,6 @@ function PassportPageInner() {
       loadScript("https://cdn.veriff.me/incontext/js/v1/veriff.js"),
     ])
       .then(() => {
-        // Veriff and window.veriffSDK are loaded onto window by the two
-        // scripts above, there's no type definition for them, so this
-        // reads from window as any rather than fight the global type
         const w = window as unknown as {
           Veriff: (config: Record<string, unknown>) => { mount: (opts: Record<string, unknown>) => void };
           veriffSDK: { createVeriffFrame: (opts: { url: string }) => void };
@@ -263,7 +225,7 @@ function PassportPageInner() {
             w.veriffSDK.createVeriffFrame({ url: response.verification!.url! });
           },
         });
-        veriff.mount({ formLabel: { vendorData: email } });
+        veriff.mount({ formLabel: { vendorData } });
       })
       .catch(() => {
         setStarting(false);
@@ -272,15 +234,21 @@ function PassportPageInner() {
   }
 
   const statusColor: Record<StampStatus, string> = {
-    earned:       G,
-    in_progress:  A,
-    not_started:  "var(--text-muted)",
+    earned: G,
+    in_progress: A,
+    not_started: "var(--text-muted)",
   };
 
   const statusLabel: Record<StampStatus, string> = {
-    earned:       "Earned",
-    in_progress:  "In review",
-    not_started:  "Not started",
+    earned: "Earned",
+    in_progress: "In review",
+    not_started: "Not started",
+  };
+
+  const railEarned: Record<string, StampStatus> = {
+    identity: passportState.identity,
+    business: passportState.business,
+    asset_owner: passportState.asset_owner,
   };
 
   return (
@@ -288,287 +256,250 @@ function PassportPageInner() {
                    color:"var(--text-primary)", position:"relative", overflowX:"hidden" }}>
 
       <AmbientGlow />
-
-      {/* Veriff's in-context frame mounts here when verification starts */}
       <div id="veriff-root" />
-
       <RedesignNav />
 
       <div style={{ position:"relative", zIndex:1, maxWidth:960, margin:"0 auto",
                      padding:"clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)" }}>
 
-        {/* Header */}
         <div style={{ marginBottom:"2.5rem" }}>
-          <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600,
-                         color:G, marginBottom:"0.625rem" }}>
+          <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600, color:G, marginBottom:"0.625rem" }}>
             One credential. Every protocol.
           </div>
-          <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)",
-                        fontWeight:800, lineHeight:1.0,
-                        color:"var(--text-primary)",
-                        letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
-            Get verified once.<br/>
-            <span style={{ color:G }}>Use your credential everywhere.</span>
+          <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)", fontWeight:800, lineHeight:1.0,
+                        color:"var(--text-primary)", letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
+            Sign in once.<br/>
+            <span style={{ color:G }}>Get a wallet. Get verified.</span>
           </h1>
           <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
-                       color:"var(--text-secondary)", lineHeight:1.75,
-                       maxWidth:560, margin:0 }}>
-            Your Abraxas Passport lives on Sui. Sign in with Google (zkLogin), complete
-            verification stamps, and reuse your credential across integrated platforms —
-            no wallet extension required.
+                       color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:0 }}>
+            Google sign-in creates your Sui wallet instantly — no seed phrase, no extension.
+            Complete verification stamps on your Passport and reuse your credential everywhere.
           </p>
         </div>
 
-        <div style={{ marginBottom: "1.5rem" }}>
-          <ZkLoginSignIn />
-        </div>
+        <VerifyStepRail walletDone={walletDone} active={active} earned={railEarned} />
 
-        {/* Live passport preview */}
-        <div style={{ marginBottom: "2rem" }}>
+        {!walletDone ? (
+          <div style={{ marginBottom:"2rem" }}>
+            <div style={{ fontFamily:S, fontSize:"0.88rem", fontWeight:700,
+                           color:"var(--text-primary)", marginBottom:"0.75rem" }}>
+              Step 1 — Create your Sui wallet
+            </div>
+            <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
+                         lineHeight:1.65, margin:"0 0 1rem", maxWidth:520 }}>
+              Sign in with Google. Abraxas uses zkLogin to derive a Sui address from your account.
+              That address holds your Passport — you never manage a seed phrase.
+            </p>
+            <ZkLoginSignIn />
+          </div>
+        ) : (
+          <div style={{ marginBottom:"2rem" }}>
+            <SuiWalletCreatedCard suiAddress={suiAddress!} email={email} />
+          </div>
+        )}
+
+        <div style={{ marginBottom:"2rem" }}>
           <AbraxasPassport
             suiAddress={suiAddress}
             earnedStamps={passportStateToStampIds(passportState)}
-            activeStamp={active ? passportWizardToStampId(active) : null}
+            activeStamp={active && active !== "wallet" ? passportWizardToStampId(active) : null}
             onStampClick={(id) => setActive(stampIdToPassportWizard(id))}
-            onGetVerified={() => setActive("identity")}
+            onGetVerified={() => walletDone ? setActive("identity") : setActive("wallet")}
             showHeadline={false}
             showVision={false}
           />
         </div>
 
-        {/* Stamp wizard */}
-        <div style={{ background:"var(--surface-raised)",
-                       border:"1px solid var(--border)", borderRadius:16,
-                       padding:"1.5rem", marginBottom:"2rem",
+        <div style={{ background:"var(--surface-raised)", border:"1px solid var(--border)",
+                       borderRadius:16, padding:"1.5rem", marginBottom:"2rem",
                        display:"flex", flexDirection:"column", gap:"1.25rem" }}>
-          {/* Email for Veriff / Reclaim context (optional if zkLogin provides email) */}
-          <div>
-            <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:600,
-                           color:"var(--text-primary)", marginBottom:"0.5rem" }}>
-              Contact email for verification providers
-            </div>
-            <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
-              <input
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                type="email"
-                placeholder="your@email.com"
-                style={{ flex:1, minWidth:200, padding:"0.65rem 0.875rem",
-                          borderRadius:8, border:"1px solid var(--border)",
-                          background:"var(--surface)", color:"var(--text-primary)",
-                          fontFamily:S, fontSize:"16px" }}
-              />
-            </div>
-            {error && <div style={{ fontFamily:S, fontSize:"0.72rem",
-                                     color:"#EF4444", marginTop:"0.375rem" }}>
-              {error}
-            </div>}
-          </div>
 
-          {/* Progress summary */}
-          <div style={{ display:"flex", alignItems:"center", gap:"0.75rem",
-                         flexWrap:"wrap" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", flexWrap:"wrap" }}>
             <div style={{ fontFamily:M, fontSize:"1.6rem", fontWeight:700, color:G }}>
               {earned}/{STAMPS.length}
             </div>
             <div>
-              <div style={{ fontFamily:S, fontSize:"0.88rem", fontWeight:600,
-                             color:"var(--text-primary)" }}>
+              <div style={{ fontFamily:S, fontSize:"0.88rem", fontWeight:600, color:"var(--text-primary)" }}>
                 Stamps earned
               </div>
-              <div style={{ fontFamily:S, fontSize:"0.72rem",
-                             color:"var(--text-secondary)" }}>
-                Each stamp is a verified credential backed by documentation.
+              <div style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-secondary)" }}>
+                Identity → Business → Asset Owner. Each stamp is a verified credential.
               </div>
             </div>
           </div>
 
+          <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+            {STAMPS.map(stamp => {
+              const status = passportState[stamp.id as keyof PassportState];
+              const isActive = active === stamp.id;
+              return (
+                <button key={stamp.id} onClick={() => setActive(stamp.id)}
+                  style={{
+                    padding:"0.5rem 0.875rem", borderRadius:999, cursor:"pointer",
+                    border:`1.5px solid ${isActive ? stamp.color : "var(--border)"}`,
+                    background: isActive ? `${stamp.color}15` : "var(--surface)",
+                    color: status === "earned" ? stamp.color : "var(--text-secondary)",
+                    fontFamily:S, fontSize:"0.78rem", fontWeight:600,
+                  }}>
+                  {stamp.shortName}
+                  {status === "earned" && " ✓"}
+                </button>
+              );
+            })}
+          </div>
+
+          {error && (
+            <div style={{ fontFamily:S, fontSize:"0.72rem", color:"#EF4444" }}>{error}</div>
+          )}
+
           <FoundingVerifiedCard
-            walletOrContext={email || "anon"}
-            hasSocial={passportState.social === "earned"}
+            walletOrContext={(suiAddress ?? email) || "anon"}
+            hasWallet={walletDone}
             hasIdentity={passportState.identity === "earned"}
           />
         </div>
 
-        {/* Expanded stamp detail, shows real process steps */}
+        {active === "wallet" && !walletDone && (
+          <div style={{ background:"var(--surface-raised)", border:"1px solid var(--border)",
+                         borderRadius:16, padding:"1.5rem", marginBottom:"2rem" }}>
+            <div style={{ fontFamily:S, fontSize:"1.1rem", fontWeight:700, marginBottom:"0.75rem" }}>
+              Your wallet is one sign-in away
+            </div>
+            <p style={{ fontFamily:S, fontSize:"0.85rem", color:"var(--text-secondary)", lineHeight:1.7, margin:0 }}>
+              Abraxas does not use browser wallet extensions for verification. Google OAuth + zkLogin
+              creates a deterministic Sui address tied to your account. That address is your Passport holder.
+            </p>
+          </div>
+        )}
+
         {activeStamp && (() => {
           const status = passportState[activeStamp.id as keyof PassportState];
           return (
             <div style={{ background:"var(--surface-raised)",
                            border:`1.5px solid ${activeStamp.color}40`,
-                           borderRadius:16, padding:"1.5rem",
-                           marginBottom:"2rem" }}>
+                           borderRadius:16, padding:"1.5rem", marginBottom:"2rem" }}>
               <div style={{ display:"flex", justifyContent:"space-between",
-                             alignItems:"flex-start", marginBottom:"1.25rem",
-                             flexWrap:"wrap", gap:"0.75rem" }}>
+                             alignItems:"flex-start", marginBottom:"1.25rem", flexWrap:"wrap", gap:"0.75rem" }}>
                 <div>
                   <div style={{ fontFamily:S, fontSize:"0.68rem", fontWeight:600,
-                                 color:activeStamp.color, marginBottom:"0.25rem" }}>
+                                 color:statusColor[status], marginBottom:"0.25rem" }}>
                     {statusLabel[status]}
                   </div>
-                  <div style={{ fontFamily:S, fontSize:"1.25rem", fontWeight:700,
-                                 color:"var(--text-primary)" }}>
+                  <div style={{ fontFamily:S, fontSize:"1.25rem", fontWeight:700, color:"var(--text-primary)" }}>
                     {activeStamp.name}
                   </div>
                 </div>
-                <div style={{ fontFamily:S, fontSize:"0.68rem",
-                               color:"var(--text-muted)",
-                               background:"var(--surface-raised)",
-                               padding:"0.375rem 0.75rem", borderRadius:20,
-                               border:"1px solid var(--border)" }}>
+                <div style={{ fontFamily:S, fontSize:"0.68rem", color:"var(--text-muted)",
+                               background:"var(--surface-raised)", padding:"0.375rem 0.75rem",
+                               borderRadius:20, border:"1px solid var(--border)" }}>
                   ⏱ {activeStamp.timeEstimate}
                 </div>
               </div>
 
-              <p style={{ fontFamily:S, fontSize:"0.85rem",
-                           color:"var(--text-secondary)", lineHeight:1.7,
-                           margin:"0 0 1.25rem" }}>
+              <p style={{ fontFamily:S, fontSize:"0.85rem", color:"var(--text-secondary)",
+                           lineHeight:1.7, margin:"0 0 1.25rem" }}>
                 {activeStamp.description}
               </p>
 
-              <div style={{ display:"grid",
-                             gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",
                              gap:"1rem", marginBottom:"1.25rem" }}>
-                {/* What it proves */}
-                <div style={{ background:"var(--surface)", borderRadius:10,
-                               padding:"1rem", border:"1px solid var(--border)" }}>
-                  <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700,
-                                 color:"var(--text-primary)", marginBottom:"0.5rem" }}>
+                <div style={{ background:"var(--surface)", borderRadius:10, padding:"1rem", border:"1px solid var(--border)" }}>
+                  <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700, color:"var(--text-primary)", marginBottom:"0.5rem" }}>
                     What this proves
                   </div>
-                  <p style={{ fontFamily:S, fontSize:"0.78rem",
-                               color:"var(--text-secondary)", lineHeight:1.65,
-                               margin:0 }}>
+                  <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)", lineHeight:1.65, margin:0 }}>
                     {activeStamp.whatItProves}
                   </p>
                 </div>
-
-                {/* Required docs */}
-                <div style={{ background:"var(--surface)", borderRadius:10,
-                               padding:"1rem", border:"1px solid var(--border)" }}>
-                  <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700,
-                                 color:"var(--text-primary)", marginBottom:"0.5rem" }}>
+                <div style={{ background:"var(--surface)", borderRadius:10, padding:"1rem", border:"1px solid var(--border)" }}>
+                  <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700, color:"var(--text-primary)", marginBottom:"0.5rem" }}>
                     What you'll need
                   </div>
                   <div style={{ display:"flex", flexDirection:"column", gap:"0.3rem" }}>
                     {activeStamp.requiredDocs.map(d => (
-                      <div key={d} style={{ display:"flex", gap:"0.375rem",
-                                             alignItems:"flex-start" }}>
-                        <span style={{ color:activeStamp.color, flexShrink:0,
-                                        marginTop:2 }}>·</span>
-                        <span style={{ fontFamily:S, fontSize:"0.72rem",
-                                        color:"var(--text-secondary)",
-                                        lineHeight:1.5 }}>{d}</span>
+                      <div key={d} style={{ display:"flex", gap:"0.375rem", alignItems:"flex-start" }}>
+                        <span style={{ color:activeStamp.color, flexShrink:0, marginTop:2 }}>·</span>
+                        <span style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-secondary)", lineHeight:1.5 }}>{d}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Process steps */}
-              <div style={{ background:"var(--surface)", borderRadius:10,
-                             padding:"1rem", border:"1px solid var(--border)",
-                             marginBottom:"1rem" }}>
-                <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700,
-                               color:"var(--text-primary)", marginBottom:"0.75rem" }}>
+              <div style={{ background:"var(--surface)", borderRadius:10, padding:"1rem",
+                             border:"1px solid var(--border)", marginBottom:"1rem" }}>
+                <div style={{ fontFamily:S, fontSize:"0.7rem", fontWeight:700, color:"var(--text-primary)", marginBottom:"0.75rem" }}>
                   How it works, step by step
                 </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-                  {activeStamp.processSteps.map((step, i) => (
-                    <div key={step} style={{ display:"flex", gap:"0.75rem",
-                                             paddingBottom: i < activeStamp.processSteps.length - 1 ? "0.625rem" : 0 }}>
-                      <div style={{ width:22, height:22, borderRadius:"50%",
-                                     background:`${activeStamp.color}15`,
-                                     border:`1.5px solid ${activeStamp.color}40`,
-                                     display:"flex", alignItems:"center",
-                                     justifyContent:"center", flexShrink:0,
-                                     fontFamily:M, fontSize:"0.6rem",
-                                     fontWeight:700, color:activeStamp.color }}>
-                        {i + 1}
-                      </div>
-                      <span style={{ fontFamily:S, fontSize:"0.78rem",
-                                      color:"var(--text-secondary)",
-                                      lineHeight:1.6, paddingTop:2 }}>
-                        {step}
-                      </span>
+                {activeStamp.processSteps.map((step, i) => (
+                  <div key={step} style={{ display:"flex", gap:"0.75rem",
+                                           paddingBottom: i < activeStamp.processSteps.length - 1 ? "0.625rem" : 0 }}>
+                    <div style={{ width:22, height:22, borderRadius:"50%",
+                                   background:`${activeStamp.color}15`, border:`1.5px solid ${activeStamp.color}40`,
+                                   display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+                                   fontFamily:M, fontSize:"0.6rem", fontWeight:700, color:activeStamp.color }}>
+                      {i + 1}
                     </div>
-                  ))}
-                </div>
+                    <span style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)", lineHeight:1.6, paddingTop:2 }}>
+                      {step}
+                    </span>
+                  </div>
+                ))}
               </div>
 
-              {/* Regulatory basis */}
-              <div style={{ fontFamily:S, fontSize:"0.7rem",
-                             color:"var(--text-muted)", lineHeight:1.6,
-                             marginBottom:"1.25rem" }}>
+              <div style={{ fontFamily:S, fontSize:"0.7rem", color:"var(--text-muted)", lineHeight:1.6, marginBottom:"1.25rem" }}>
                 <strong style={{ color:"var(--text-secondary)" }}>Regulatory basis:</strong>{" "}
                 {activeStamp.regulatoryBasis}
               </div>
 
-              {/* Action */}
-              {activeStamp.id === "social" && status !== "earned" && (
-                <div>
-                  <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
-                    <ReclaimVerifyButton provider="linkedin" label="LinkedIn" userId={email} />
-                    <ReclaimVerifyButton provider="twitter" label="X" userId={email} />
-                    <ReclaimVerifyButton provider="github" label="GitHub" userId={email} />
-                    <ReclaimVerifyButton provider="gmail" label="Gmail" userId={email} />
-                  </div>
-                  <div style={{ fontFamily:S, fontSize:"0.72rem",
-                                 color:"var(--text-muted)", marginTop:"0.75rem", maxWidth:420 }}>
-                    Each opens that platform's own login page in a new tab.
-                    Abraxas never sees your password, only a cryptographic
-                    proof that the account is real and active.
-                  </div>
-                </div>
-              )}
               {activeStamp.id === "identity" && status !== "earned" && (
                 <div>
-                  <button onClick={startIdentityVerification} disabled={starting}
-                    style={{ padding:"0.75rem 2rem", borderRadius:8, border:"none",
-                              background:G, color:"#000", fontFamily:S,
-                              fontSize:"0.88rem", fontWeight:700, cursor:"pointer",
-                              opacity: starting ? 0.6 : 1 }}>
-                    {starting ? "Starting..." : "Start Abraxas Precheck →"}
-                  </button>
-                  {error && (
-                    <div style={{ fontFamily:S, fontSize:"0.76rem", color:"#EF4444",
-                                   marginTop:"0.625rem", maxWidth:420, lineHeight:1.5 }}>
-                      {error}
+                  {!walletDone && (
+                    <div style={{ fontFamily:S, fontSize:"0.78rem", color:A, marginBottom:"0.75rem" }}>
+                      Sign in with Google above first — Precheck links to your Sui wallet.
                     </div>
                   )}
-                  <div style={{ marginTop:"1.25rem", paddingTop:"1.25rem",
-                                 borderTop:"1px solid var(--border)" }}>
-                    <div style={{ fontFamily:S, fontSize:"0.72rem",
-                                   color:"var(--text-muted)", marginBottom:"0.75rem" }}>
-                      Precheck unavailable, or you'd rather not wait? Upload your ID
-                      directly and our team verifies it by hand.
+                  <button onClick={startIdentityVerification} disabled={starting || !walletDone}
+                    style={{ padding:"0.75rem 2rem", borderRadius:8, border:"none",
+                              background: walletDone ? G : "var(--surface-raised)",
+                              color: walletDone ? "#000" : "var(--text-muted)",
+                              fontFamily:S, fontSize:"0.88rem", fontWeight:700,
+                              cursor: walletDone ? "pointer" : "not-allowed",
+                              opacity: starting ? 0.6 : 1 }}>
+                    {starting ? "Starting..." : walletDone ? "Start Abraxas Precheck →" : "Sign in to continue"}
+                  </button>
+                  <div style={{ marginTop:"1.25rem", paddingTop:"1.25rem", borderTop:"1px solid var(--border)" }}>
+                    <div style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-muted)", marginBottom:"0.75rem" }}>
+                      Precheck unavailable? Upload your ID directly for manual review.
                     </div>
-                    <DocumentUpload email={email} stampId="identity" color={activeStamp.color} />
+                    <DocumentUpload email={email || suiAddress || ""} stampId="identity" color={activeStamp.color} />
                   </div>
                 </div>
               )}
-              {activeStamp.id !== "identity" && activeStamp.id !== "social" && status !== "earned" && (
+              {activeStamp.id !== "identity" && status !== "earned" && (
                 <div>
-                  <DocumentUpload email={email} stampId={activeStamp.id} color={activeStamp.color} />
+                  {!walletDone && (
+                    <div style={{ fontFamily:S, fontSize:"0.78rem", color:A, marginBottom:"0.75rem" }}>
+                      Complete Google sign-in and Identity Verified first.
+                    </div>
+                  )}
+                  <DocumentUpload email={email || suiAddress || ""} stampId={activeStamp.id} color={activeStamp.color} />
                   <Link href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"
-                    style={{ display:"inline-block", padding:"0.75rem 2rem",
+                    style={{ display:"inline-block", marginTop:"0.75rem", padding:"0.75rem 2rem",
                               borderRadius:8, border:`1.5px solid ${activeStamp.color}`,
                               background:"transparent", color:activeStamp.color,
-                              fontFamily:S, fontSize:"0.88rem", fontWeight:700,
-                              textDecoration:"none" }}>
-                    Already uploaded? Let us know you're ready for review →
+                              fontFamily:S, fontSize:"0.88rem", fontWeight:700, textDecoration:"none" }}>
+                    Already uploaded? Notify us for review →
                   </Link>
                 </div>
               )}
               {status === "earned" && (
                 <div style={{ padding:"0.75rem 1.5rem", borderRadius:8,
-                               background:`${activeStamp.color}12`,
-                               border:`1.5px solid ${activeStamp.color}40`,
-                               display:"inline-flex", alignItems:"center",
-                               gap:"0.5rem" }}>
+                               background:`${activeStamp.color}12`, border:`1.5px solid ${activeStamp.color}40`,
+                               display:"inline-flex", alignItems:"center", gap:"0.5rem" }}>
                   <span style={{ color:activeStamp.color, fontSize:"1rem" }}>✓</span>
-                  <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:600,
-                                  color:activeStamp.color }}>
+                  <span style={{ fontFamily:S, fontSize:"0.85rem", fontWeight:600, color:activeStamp.color }}>
                     This credential is on your Passport.
                   </span>
                 </div>
@@ -577,123 +508,43 @@ function PassportPageInner() {
           );
         })()}
 
-        {/* Credential architecture — honest technical surface for integrators */}
-        <div style={{ background:"var(--surface-raised)",
-                       border:"1px solid var(--border)", borderRadius:16,
-                       padding:"1.5rem", marginBottom:"2rem" }}>
-          <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700,
-                         color:G, letterSpacing:"0.12em", textTransform:"uppercase",
-                         marginBottom:"0.5rem" }}>
+        <div style={{ background:"var(--surface-raised)", border:"1px solid var(--border)",
+                       borderRadius:16, padding:"1.5rem", marginBottom:"2rem" }}>
+          <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700, color:G,
+                         letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"0.5rem" }}>
             Credential architecture
           </div>
-          <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                         color:"var(--text-primary)", marginBottom:"1rem" }}>
-            How the passport works under the hood
-          </div>
-          <div style={{ display:"grid",
-                         gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",
-                         gap:"0.75rem", marginBottom:"1rem" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:"0.75rem", marginBottom:"1rem" }}>
             {[
-              { title:"Issuance", body:"W3C Verifiable Credential v2.0, signed Ed25519 by Abraxas issuer key. Raw documents stay with Veriff or manual review — only verification outcome is credentialized." },
-              { title:"On-chain anchor", body:"Passport stamp bitmask on Sui Move object — one object per holder. zkLogin gives you the address; Abraxas issues stamps after Veriff/Reclaim review." },
-              { title:"Stamp model", body:"10 gates map to verifiable facts: identity, KYB, property title, lending eligibility, etc. Each stamp updates the on-chain passport root when earned." },
-              { title:"Portability", body:"Third parties verify via W3C credential or on-chain Sui object read. zkLogin holders sign with OAuth — no seed phrase." },
+              { title:"Wallet", body:"Google OAuth → zkLogin → deterministic Sui address. No seed phrase. Your Passport object lives at this address." },
+              { title:"Issuance", body:"W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Documents stay with Veriff — only verification outcome is credentialized." },
+              { title:"On-chain anchor", body:"Stamp bitmask on Sui Move Passport object. Abraxas issues stamps after Veriff approve + manual review." },
+              { title:"Portability", body:"Third parties verify via W3C credential or GET /api/sui/passport. Sponsored transactions for verified tiers (roadmap)." },
             ].map(c => (
-              <div key={c.title} style={{ background:"var(--surface)",
-                                           border:"1px solid var(--border)",
-                                           borderRadius:10, padding:"1rem" }}>
-                <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:700,
-                               color:"var(--text-primary)", marginBottom:"0.375rem" }}>
-                  {c.title}
-                </div>
-                <p style={{ fontFamily:S, fontSize:"0.72rem",
-                             color:"var(--text-secondary)", lineHeight:1.65, margin:0 }}>
-                  {c.body}
-                </p>
+              <div key={c.title} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:10, padding:"1rem" }}>
+                <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:700, color:"var(--text-primary)", marginBottom:"0.375rem" }}>{c.title}</div>
+                <p style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-secondary)", lineHeight:1.65, margin:0 }}>{c.body}</p>
               </div>
             ))}
           </div>
           <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
+            <Link href="/docs/sui" style={{ padding:"0.6rem 1.1rem", borderRadius:999, background:G, color:"#000",
+                fontFamily:S, fontSize:"0.82rem", fontWeight:700, textDecoration:"none" }}>Sui integration hub →</Link>
             <Link href="/docs/passport-spec" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
-                background:G, color:"#000", fontFamily:S, fontSize:"0.82rem",
-                fontWeight:700, textDecoration:"none" }}>
-              Read passport spec →
-            </Link>
-            <Link href="/docs/architecture" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
-                border:"1px solid var(--border)", background:"var(--surface)",
-                color:"var(--text-secondary)", fontFamily:S, fontSize:"0.82rem",
-                fontWeight:600, textDecoration:"none" }}>
-              Architecture overview →
-            </Link>
-            <Link href="/security" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
-                border:"1px solid var(--border)", background:"var(--surface)",
-                color:"var(--text-secondary)", fontFamily:S, fontSize:"0.82rem",
-                fontWeight:600, textDecoration:"none" }}>
-              Security & key management
-            </Link>
+                border:"1px solid var(--border)", background:"var(--surface)", color:"var(--text-secondary)",
+                fontFamily:S, fontSize:"0.82rem", fontWeight:600, textDecoration:"none" }}>Passport spec →</Link>
           </div>
         </div>
 
-        <div style={{ marginBottom:"2rem" }}>
-          <SuiIntegrationsPanel showSetup />
-        </div>
+        <div style={{ marginBottom:"2rem" }}><SuiIntegrationsPanel showSetup /></div>
+        <div style={{ marginBottom:"2rem" }}><SuiDevnetPassportPanel compact /></div>
 
-        <div style={{ marginBottom:"2rem" }}>
-          <SuiDevnetPassportPanel compact />
-        </div>
-
-        {/* What happens to your credential */}
-        <div style={{ background:"var(--surface-raised)",
-                       border:"1px solid var(--border)", borderRadius:16,
-                       padding:"1.5rem", marginBottom:"2rem" }}>
-          <div style={{ fontFamily:S, fontSize:"0.92rem", fontWeight:700,
-                         color:"var(--text-primary)", marginBottom:"1rem" }}>
-            What Abraxas does with your credential
-          </div>
-          <div style={{ display:"grid",
-                         gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",
-                         gap:"0.75rem" }}>
-            {[
-              { title:"We store proof, not documents",
-                body:"Your Passport contains a cryptographic stamp showing you passed. Your ID photos and documents are held by Veriff (a certified provider) and never exposed on a blockchain or to investors." },
-              { title:"Stamps are non-transferable",
-                body:"A Passport stamp cannot be sold, assigned, or used by another person. It's cryptographically linked to your email and biometric data." },
-              { title:"Verification expires only when standards change",
-                body:"Identity stamps don't expire unless Abraxas upgrades its verification standard." },
-              { title:"Your credential can travel",
-                body:"A future Abraxas integration means other platforms can check your stamps instead of running their own KYC. You present a proof, not your raw data." },
-            ].map(c => (
-              <div key={c.title} style={{ background:"var(--surface)",
-                                           border:"1px solid var(--border)",
-                                           borderRadius:10, padding:"1rem" }}>
-                <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:700,
-                               color:"var(--text-primary)", marginBottom:"0.375rem" }}>
-                  {c.title}
-                </div>
-                <p style={{ fontFamily:S, fontSize:"0.72rem",
-                             color:"var(--text-secondary)", lineHeight:1.65,
-                             margin:0 }}>
-                  {c.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Clear CTA back to marketplace, not forced into it */}
-        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap",
-                       paddingBottom:"3rem" }}>
-          <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:8,
-              background:G, color:"#000", fontFamily:S, fontSize:"0.88rem",
-              fontWeight:700, textDecoration:"none" }}>
-            View marketplace →
-          </Link>
-          <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:8,
-              border:"1px solid var(--border)", background:"var(--surface)",
-              color:"var(--text-secondary)", fontFamily:S, fontSize:"0.88rem",
-              fontWeight:600, textDecoration:"none" }}>
-            Submit an asset
-          </Link>
+        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", paddingBottom:"3rem" }}>
+          <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:8, background:G, color:"#000",
+              fontFamily:S, fontSize:"0.88rem", fontWeight:700, textDecoration:"none" }}>View marketplace →</Link>
+          <Link href="/build" style={{ padding:"0.75rem 1.5rem", borderRadius:8, border:"1px solid var(--border)",
+              background:"var(--surface)", color:"var(--text-secondary)", fontFamily:S,
+              fontSize:"0.88rem", fontWeight:600, textDecoration:"none" }}>Submit an asset →</Link>
         </div>
       </div>
       <RedesignFooter />

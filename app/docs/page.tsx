@@ -31,9 +31,7 @@ export default function DocsPage() {
           "GET /api/credentials/public-key",
           "POST /api/auth/zklogin/register",
           "GET /api/sui/passport",
-          "POST /api/identity/veriff/create-session",
-          "POST /api/reclaim/start",
-          "POST /api/reclaim/callback",
+          "POST /api/idv/create-session",
           "POST /api/purchase/submit",
           "POST /api/waitlist/join",
         ]} />

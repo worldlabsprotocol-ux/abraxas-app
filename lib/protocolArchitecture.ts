@@ -37,11 +37,11 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
     layer: "Verification & credentials",
     role: "Trust primitive",
     status: "live",
-    detail: "Hybrid model: Veriff/Reclaim/manual review off-chain; W3C credentials (did:sui) and Sui Move Passport object on-chain. Documents never stored on-chain.",
+    detail: "Hybrid model: Veriff/manual review off-chain; W3C credentials (did:sui) and Sui Move Passport object on-chain. Documents never stored on-chain.",
     items: [
       "W3C Verifiable Credentials (did:sui:0x…)",
       "Ed25519 signed JWT issuance (POST /api/credentials/issue)",
-      "Veriff + Reclaim on /passport",
+      "Veriff Precheck on /passport (linked to zkLogin address)",
       "Sui Passport Move module — devnet live (GET /api/sui/passport)",
       "10-stamp bitmask model",
     ],

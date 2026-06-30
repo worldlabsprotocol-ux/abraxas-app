@@ -102,7 +102,7 @@ export default function AbraPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: "2.5rem" }}>
         <div>
           <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>
-            Participation Token · Solana
+            Participation Token
           </p>
           <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.02em" }}>
             $ABRA
@@ -177,7 +177,7 @@ export default function AbraPage() {
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.75rem" }}>Token Details</p>
         {[
           { label: "Contract",    value: ABRA.ca,    mono: true, link: ABRA.solscan },
-          { label: "Chain",       value: "Solana" },
+          { label: "Verification", value: "Sui Passport" },
           { label: "Platform",    value: "Bags",     link: ABRA.bags },
           { label: "Allocation",  value: "No private sale · No VC" },
           { label: "Earned by",   value: "Vault participation & asset activation" },

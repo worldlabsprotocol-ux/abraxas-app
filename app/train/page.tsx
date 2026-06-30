@@ -179,7 +179,7 @@ export default function TrainPage() {
             <span style={{ fontSize:"0.44rem", fontWeight:700,
                            color:"rgba(20,241,149,0.7)", fontFamily:MONO,
                            letterSpacing:"0.2em", textTransform:"uppercase" }}>
-              AI Guardian Protocol · Solana
+              AI Guardian Protocol · Sui
             </span>
           </div>
           <h1 style={{ fontWeight:900,
@@ -191,7 +191,7 @@ export default function TrainPage() {
           </h1>
           <p style={{ fontSize:"0.68rem", color:"rgba(255,255,255,0.38)",
                       lineHeight:1.8, maxWidth:560, margin:0 }}>
-            Abraxas is an AI-powered guardian protocol for Real-World Assets on Solana.
+            Abraxas is an AI-powered guardian protocol for Real-World Assets on Sui.
             It turns passive tokenized assets into actively managed, hedged, and protected
             holdings using autonomous Sophia AI agents and the Circuit on-chain safety agent.
           </p>

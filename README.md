@@ -34,7 +34,7 @@ User-facing docs:
 
 ### Abraxas Passport (`/passport`)
 - Sign in with Google (zkLogin)
-- Stamp wizard: Identity (Veriff), Social (Reclaim), Business, Asset Owner, …
+- Stamp wizard: Identity (Veriff), Business, Asset Owner, …
 - Live Sui devnet object lookup
 - Public share URL: `/passport/[id]`
 
@@ -52,7 +52,7 @@ Entity formation packages with verified ownership record.
 |-------|------------|
 | Framework | Next.js 14 (App Router) |
 | Verification chain | **Sui** · Move · zkLogin |
-| Identity | W3C VC · Ed25519 · Veriff · Reclaim zkTLS |
+| Identity | W3C VC · Ed25519 · Veriff · zkLogin |
 | Database | Supabase (PostgreSQL) |
 | Deployment | Vercel |
 

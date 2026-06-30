@@ -21,15 +21,18 @@ import { AuthProvider } from "@/lib/authState";
 import { ToastProvider } from "@/lib/toastState";
 import { SolanaProvider } from "@/components/SolanaProvider";
 import { EvmProvider } from "@/components/EvmProvider";
+import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
       <EvmProvider>
         <SolanaProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <SuiAuthProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </SuiAuthProvider>
         </SolanaProvider>
       </EvmProvider>
     </ToastProvider>

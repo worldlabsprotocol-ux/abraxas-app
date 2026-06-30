@@ -22,7 +22,7 @@ const W   = "#F8FAFC";
 const DIM = "rgba(255,255,255,0.38)";
 
 const BANNER =
-  "ABRAXAS VERIFICATION OS  ·  Build 2025.1  ·  Solana Mainnet\n" +
+  "ABRAXAS VERIFICATION OS  ·  Build 2025.1  ·  Sui Devnet\n" +
   "─────────────────────────────────────────────────────────────\n" +
   "Type 'help' to list commands.  Try: inspect AAS-1  ·  my assets  ·  demo";
 

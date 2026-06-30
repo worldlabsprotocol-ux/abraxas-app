@@ -95,10 +95,10 @@ function CredentialCard() {
                            letterSpacing: "0.1em", textTransform: "uppercase",
                            color: "var(--text-muted)" }}>Credential</div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem",
-                           fontWeight: 700, color: "var(--text-secondary)" }}>did:sol:7xKX…AsU</div>
+                           fontWeight: 700, color: "var(--text-secondary)" }}>did:sui:0x8c77…eb29</div>
           </div>
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
-                          color: ACCENT, letterSpacing: "0.06em" }}>W3C · SOLANA</span>
+                          color: ACCENT, letterSpacing: "0.06em" }}>W3C · SUI · zkLogin</span>
         </div>
       </div>
     </motion.div>

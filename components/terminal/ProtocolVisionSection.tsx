@@ -36,7 +36,7 @@ export function ProtocolVisionSection({ onGetStarted }: ProtocolVisionSectionPro
                           background:`${G}12`, border:`1px solid ${G}35` }}>
             <span style={{ color:G, fontSize:"0.7rem" }}>✓</span>
             <span style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600, color:G }}>
-              Live on Solana today
+              Live on Sui — zkLogin verification
             </span>
           </div>
         </div>

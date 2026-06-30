@@ -1,8 +1,9 @@
-// FILE: components/terminal/TerminalHeader.tsx
-// Network rail — node status, credit health, auth anchor.
 "use client";
-import { useWallet }    from "@solana/wallet-adapter-react";
-import { useAbraBalance } from "@/lib/hooks/useAbraBalance";
+// FILE: components/terminal/TerminalHeader.tsx
+// Network rail — Sui zkLogin status + protocol health.
+
+import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
+import { truncateSuiAddress } from "@/lib/sui/identity";
 
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
@@ -18,9 +19,11 @@ function Dot({ ok }: { ok: boolean }) {
 }
 
 export function TerminalHeader() {
-  const { publicKey, connected } = useWallet();
-  const { balance } = useAbraBalance();
-  const short = publicKey ? `${publicKey.toBase58().slice(0,4)}…${publicKey.toBase58().slice(-4)}` : "—";
+  const suiAuth = useSuiAuthOptional();
+  const connected = Boolean(suiAuth?.suiAddress);
+  const short = suiAuth?.suiAddress
+    ? truncateSuiAddress(suiAuth.suiAddress, 4, 4)
+    : "—";
 
   return (
     <div style={{
@@ -32,7 +35,6 @@ export function TerminalHeader() {
       color:"rgba(255,255,255,0.35)",
       flexShrink:0, overflowX:"auto",
     }}>
-      {/* Brand */}
       <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
                      color:"#f0f0f0", fontWeight:900, fontSize:"0.56rem",
                      letterSpacing:"0.15em", flexShrink:0 }}>
@@ -45,20 +47,14 @@ export function TerminalHeader() {
 
       <div style={{ flex:1 }}/>
 
-      {/* Status nodes */}
       <div style={{ display:"flex", alignItems:"center", gap:"1rem", flexShrink:0 }}>
         <span style={{ display:"flex", alignItems:"center" }}>
-          <Dot ok={true}/>SOLANA MAINNET
+          <Dot ok={true}/>SUI DEVNET
         </span>
         <span style={{ display:"flex", alignItems:"center" }}>
           <Dot ok={connected}/>
-          {connected ? `NODE ${short}` : "NODE UNLINKED"}
+          {connected ? `WALLET ${short}` : "SIGN IN FOR PASSPORT"}
         </span>
-        {connected && (
-          <span style={{ color:"#10B981", fontWeight:700 }}>
-            {balance.toLocaleString()} ABRA
-          </span>
-        )}
         <span style={{ display:"flex", alignItems:"center" }}>
           <Dot ok={true}/> AAS-1 PROTOCOL
         </span>

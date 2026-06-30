@@ -1,12 +1,10 @@
 // FILE: components/identity/AbraxasPassport.tsx
-// Abraxas Digital Passport — dark premium credential card + 10-stamp grid.
-// Live credential lookup via useAbraxasID; Reclaim social stamp when active.
+// Abraxas Digital Passport — dark premium credential card + stamp grid.
 "use client";
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAbraxasID } from "@/lib/credentials/useAbraxasID";
-import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { truncateDid, toSuiDid } from "@/lib/sui/identity";
 import { PassportStampIcon, type PassportStampKind } from "./PassportStampIcon";
@@ -30,7 +28,6 @@ const ALL_STAMPS = [
   { id: "tribal",     label: "Tribal",          kind: "tribal" as PassportStampKind,    color: ACCENT, desc: "Sovereign land / mineral rights" },
   { id: "compliance", label: "Compliance",      kind: "compliance" as PassportStampKind,color: ACCENT, desc: "AML / OFAC screening passed" },
   { id: "lending",    label: "Lending",         kind: "lending" as PassportStampKind,   color: ACCENT, desc: "Collateral credit verified" },
-  { id: "social",     label: "Social",          kind: "social" as PassportStampKind,    color: BLUE,   desc: "LinkedIn, X, GitHub, or Gmail via Reclaim zkTLS" },
 ] as const;
 
 export type StampId = typeof ALL_STAMPS[number]["id"];
@@ -146,13 +143,9 @@ export function AbraxasPassport({
   const holderAddress = propSuiAddress ?? suiAuth?.suiAddress ?? walletAddress ?? null;
 
   const { credential, status } = useAbraxasID(holderAddress);
-  const hasSocialStamp = useReclaimSocialStamp(holderAddress ?? undefined);
-  const baseEarned: StampId[] = propStamps
+  const earned: StampId[] = propStamps
     ?? stampsFromCredential(credential?.level)
     ?? (status === "verified" ? ["identity", "compliance"] : []);
-  const earned: StampId[] = hasSocialStamp && !baseEarned.includes("social")
-    ? [...baseEarned, "social"]
-    : baseEarned;
 
   const total = ALL_STAMPS.length;
   const earnedCount = earned.length;
@@ -395,7 +388,7 @@ export function AbraxasPassport({
             }}>
               {earnedCount > 0
                 ? `✓ ${earnedCount} stamp${earnedCount > 1 ? "s" : ""} active`
-                : "No stamps yet — start with Social or Precheck"}
+                : "Sign in with Google, then start Precheck"}
             </div>
           </div>
         </div>
@@ -490,10 +483,9 @@ export function AbraxasPassport({
 
 /** Map /passport page stamp state → AbraxasPassport stamp IDs */
 export function passportStateToStampIds(
-  state: { social?: "earned" | "in_progress" | "not_started"; identity?: "earned" | "in_progress" | "not_started"; business?: "earned" | "in_progress" | "not_started"; asset_owner?: "earned" | "in_progress" | "not_started" },
+  state: { identity?: "earned" | "in_progress" | "not_started"; business?: "earned" | "in_progress" | "not_started"; asset_owner?: "earned" | "in_progress" | "not_started" },
 ): StampId[] {
   const earned: StampId[] = [];
-  if (state.social === "earned") earned.push("social");
   if (state.identity === "earned") {
     earned.push("identity", "biometric", "compliance");
   }
@@ -505,7 +497,6 @@ export function passportStateToStampIds(
 /** Map /passport wizard stamp id → AbraxasPassport StampId for highlight */
 export function passportWizardToStampId(wizardId: string): StampId | null {
   const map: Record<string, StampId> = {
-    social: "social",
     identity: "identity",
     business: "business",
     asset_owner: "owner",
@@ -516,7 +507,6 @@ export function passportWizardToStampId(wizardId: string): StampId | null {
 /** Map AbraxasPassport stamp click → /passport wizard stamp id */
 export function stampIdToPassportWizard(id: StampId): string {
   const map: Partial<Record<StampId, string>> = {
-    social: "social",
     identity: "identity",
     biometric: "identity",
     business: "business",
@@ -527,5 +517,5 @@ export function stampIdToPassportWizard(id: StampId): string {
     tribal: "asset_owner",
     lending: "asset_owner",
   };
-  return map[id] ?? "social";
+  return map[id] ?? "identity";
 }

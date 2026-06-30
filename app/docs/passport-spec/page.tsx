@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/docs/passport-spec/page.tsx
-// Chain-agnostic Passport root specification (Solana + Sui + zkLogin).
+// Sui-native Passport root specification (zkLogin + Move).
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";

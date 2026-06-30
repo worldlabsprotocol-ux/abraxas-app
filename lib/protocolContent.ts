@@ -8,8 +8,7 @@ export const ROADMAP = [
     items: [
       "Sui zkLogin sign-in on /passport (Google → Sui address)",
       "Verified credential system (W3C VC, did:sui, Ed25519 signed JWT)",
-      "Social verification via Reclaim Protocol (LinkedIn, X, GitHub, Gmail)",
-      "Identity verification via Veriff in-context SDK",
+      "Identity verification via Veriff in-context SDK (linked to zkLogin Sui address)",
       "Sui Passport Move module on devnet + live object panel",
       "Wyoming LLC formation flow",
       "Asset verification pipeline (10-stage V5 lifecycle)",
@@ -84,7 +83,7 @@ export const FAQ_ITEMS = [
 export const DOCS_SECTIONS = [
   {
     title: "Architecture overview",
-    body: "Abraxas verification is Sui-native. Identity: zkLogin (Google) → Sui address. Stamps: Veriff + Reclaim + manual review. Credentials: W3C VC with did:sui. On-chain: Move Passport object with 52-byte root semantics. See /docs/sui for the full feature map.",
+    body: "Abraxas verification is Sui-native. Identity: zkLogin (Google) → Sui address. Stamps: Veriff + manual review. Credentials: W3C VC with did:sui. On-chain: Move Passport object with 52-byte root semantics. See /docs/sui for the full feature map.",
   },
   {
     title: "Credential verification API",
@@ -96,7 +95,7 @@ export const DOCS_SECTIONS = [
   },
   {
     title: "Identity providers",
-    body: "Veriff: government ID + liveness on /passport. Reclaim Protocol: LinkedIn, X, GitHub, Gmail via zkTLS. Business, Property, and Asset Owner tiers use manual document review. All tied to Sui holder address after zkLogin.",
+    body: "Veriff: government ID + liveness on /passport (vendorData links to your Sui address). Business, Property, and Asset Owner tiers use manual document review. All tied to Sui holder address after zkLogin.",
   },
   {
     title: "Sponsored transactions (roadmap)",

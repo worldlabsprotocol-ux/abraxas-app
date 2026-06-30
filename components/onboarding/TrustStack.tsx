@@ -52,10 +52,10 @@ const TRUST_LAYERS = [
   {
     layer: "06",
     title: "On-Chain Attestation",
-    desc:  "The verified asset record is anchored to Solana via a Token-2022 certificate. Every attestation is a SHA-256 hash committed to a public, permanent ledger.",
+    desc:  "The verified asset record is anchored to Sui via a Move Passport object. Every attestation is a SHA-256 hash committed to a public, permanent ledger.",
     status:"REQUIRED", color:BLUE,
     icon: "◈",
-    items: ["SHA-256 document hash", "Solana mainnet anchor", "Tamper-evident provenance", "Public verification"],
+    items: ["SHA-256 document hash", "Sui devnet anchor", "Tamper-evident provenance", "Public verification"],
   },
   {
     layer: "07",

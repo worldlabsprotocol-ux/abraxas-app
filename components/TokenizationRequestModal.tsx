@@ -392,7 +392,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                   placeholder="@handle" style={input} autoComplete="off"/>
               </div>
               <div style={{ marginBottom:"1rem" }}>
-                <label style={lbl}>Sending Wallet (Solana, optional)</label>
+                <label style={lbl}>Sui wallet address (optional — or sign in on /passport)</label>
                 <input type="text" value={wallet} onChange={e=>setWallet(e.target.value)}
                   placeholder="Tokens sent here after minting" style={input} autoComplete="off"/>
               </div>
@@ -432,7 +432,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
               <p style={{ fontFamily:S, fontSize:"0.78rem",
                            color:"rgba(21,21,26,0.45)", lineHeight:1.7,
                            margin:"0 0 1rem" }}>
-                Send the exact amount on Solana. We activate your tokenization within 24 hours of receipt.
+                Send the exact amount in USDC/USDT. We activate your tokenization within 24 hours of receipt.
               </p>
 
               {/* Amount */}
@@ -485,7 +485,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                 </div>
                 <div style={{ fontFamily:S, fontSize:"0.72rem",
                                color:"rgba(21,21,26,0.4)", lineHeight:1.6 }}>
-                  Solana Name Service domain. Resolves automatically in most wallets.
+                  Abraxas treasury address on Sui. Resolves in Sui-compatible wallets.
                 </div>
               </div>
 
@@ -497,7 +497,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                 <ol style={{ fontFamily:S, fontSize:"0.75rem",
                               color:"rgba(21,21,26,0.55)", lineHeight:1.8,
                               margin:0, paddingLeft:"1.125rem" }}>
-                  <li>Open Phantom / Solflare / Backpack</li>
+                  <li>Sign in on /passport with Google (creates Sui wallet), or use any Sui wallet</li>
                   <li>Send <strong>${sel.price.toLocaleString()} USDC</strong> to <strong>{TREASURY}</strong></li>
                   <li>Copy the tx signature from your wallet history</li>
                   <li>Return here and continue</li>
@@ -526,7 +526,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                            margin:"0 0 0.375rem" }}>Confirm payment.</p>
               <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(21,21,26,0.45)",
                            lineHeight:1.7, margin:"0 0 1rem" }}>
-                Paste your Solana transaction signature, optional, we can reconcile without it.
+                Paste your Sui transaction digest (optional) — we can reconcile without it.
               </p>
               <div style={{ marginBottom:"0.875rem" }}>
                 <label style={lbl}>Transaction Signature (optional)</label>

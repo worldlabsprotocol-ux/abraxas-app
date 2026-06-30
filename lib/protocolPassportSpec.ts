@@ -14,12 +14,12 @@ export const STAMP_BIT_TABLE = [
   { bit: 6, id: "tribal", label: "Tribal Partner Verified" },
   { bit: 7, id: "compliance", label: "Compliance Cleared" },
   { bit: 8, id: "lending", label: "Lending Eligible" },
-  { bit: 9, id: "social", label: "Social Verified" },
+  { bit: 9, id: "social", label: "Social Verified (deprecated — not used)" },
 ] as const;
 
 export const IMPLEMENTATION_ORDER = [
   "zkLogin sign-in on /passport (Google OAuth → Sui address)",
-  "Veriff / Reclaim off-chain review → W3C credential with did:sui",
+  "Veriff off-chain review → W3C credential with did:sui",
   "issue_stamps on Sui Passport object after each approved stamp",
   "Sponsored transactions + proving service for user-initiated on-chain updates",
   "Mainnet deployment + public verify API for integrators",

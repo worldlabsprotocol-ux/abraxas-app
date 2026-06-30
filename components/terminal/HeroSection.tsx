@@ -323,7 +323,7 @@ export function HeroPassportTeaser({ onGetVerified }: HeroPassportTeaserProps) {
         }}>
           <AbraxasPassport
             onGetVerified={onGetVerified}
-            earnedStamps={["identity", "biometric", "business", "owner", "royalty", "property", "tribal", "compliance", "lending", "social"]}
+            earnedStamps={["identity", "biometric", "business", "owner", "royalty", "property", "tribal", "compliance", "lending"]}
           />
         </div>
       </div>

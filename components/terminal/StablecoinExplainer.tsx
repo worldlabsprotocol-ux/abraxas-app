@@ -41,9 +41,9 @@ export function StablecoinExplainer({ compact = false }: StablecoinExplainerProp
       <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
         {[
           { q:"What is it?", a:"A digital dollar. USDC and USDT are both designed to always be worth exactly $1, no price swings like Bitcoin or other crypto." },
-          { q:"Why not just use a card?", a:"Stablecoins settle directly, often in seconds, with no card network fees and no chargebacks. For a platform built on Solana, it's also the native way value moves." },
+          { q:"Why not just use a card?", a:"Stablecoins settle directly, often in seconds, with no card network fees and no chargebacks. For a platform built on Sui, it's also the native way value moves." },
           { q:"Is it safe?", a:"Both USDC and USDT are backed by real reserves (cash and short-term US treasuries) held by their issuers, and are among the most widely used digital assets in the world." },
-          { q:"How do I get some?", a:"Any major exchange (Coinbase, Kraken, Binance) lets you buy USDC or USDT with a card or bank transfer, then send it to a wallet like Phantom." },
+          { q:"How do I get some?", a:"Any major exchange (Coinbase, Kraken, Binance) lets you buy USDC or USDT with a card or bank transfer, then send it to your Sui address." },
         ].map(item => (
           <div key={item.q}>
             <div style={{ fontFamily:S, fontSize:"0.8rem", fontWeight:600,

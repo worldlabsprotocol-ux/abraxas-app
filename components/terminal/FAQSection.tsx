@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: "Why blockchain?",
-    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified record on Solana doesn't depend on trusting Abraxas forever, it's checkable by anyone, anytime, without calling us first.",
+    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified Passport on Sui doesn't depend on trusting Abraxas forever — it's checkable by anyone, anytime, without calling us first.",
   },
   {
     q: "Why Abraxas?",

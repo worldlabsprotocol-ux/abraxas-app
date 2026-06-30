@@ -22,7 +22,7 @@ const PARTNER_PROTOCOLS = [
   { name: "Utila",          category: "FX / Off-ramp",     status: "coming",  flag: "🇨🇦" },
   { name: "Civic Pass",     category: "DeFi Access",       status: "planned",  flag: "🛡" },
   { name: "Polygon ID",     category: "Cross-chain",       status: "planned",  flag: "🔷" },
-  { name: "Sanctum",        category: "Solana DeFi",       status: "planned",  flag: "◎" },
+  { name: "Aftermath",        category: "Sui DeFi",          status: "planned",  flag: "◎" },
   { name: "Credix",         category: "RWA Credit",        status: "planned",  flag: "🏦" },
 ];
 
@@ -277,7 +277,7 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
                 ["Document",       state.documentType.replace("_"," ").toUpperCase()],
                 ["Issued",         state.issuedAt ? new Date(state.issuedAt).toLocaleDateString() : "—"],
                 ["Standard",       "W3C VC Data Model v2.0"],
-                ["Chain",          "Solana (soul-bound)"],
+                ["Chain",          "Sui (Passport object)"],
               ].map(([k,v]) => (
                 <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                        padding:"0.3rem 0",
@@ -349,7 +349,7 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
                            border:`1px solid ${B}25`,
                            fontFamily:S, fontSize:"0.7rem",
                            color:"rgba(255,255,255,0.45)", lineHeight:1.65 }}>
-              Your Abraxas ID credential is a soul-bound token on Solana. It cannot be
+              Your Abraxas ID credential is anchored to your Sui Passport. It cannot be
               transferred, sold, or forged. Partner protocols verify it cryptographically
               in milliseconds. If regulations require re-verification, the credential auto-refreshes
               per W3C VC Refresh specification.
