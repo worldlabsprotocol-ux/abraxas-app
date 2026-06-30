@@ -30,8 +30,7 @@ export default function PassportSpecPage() {
 
       <ContentCard title="Status">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
-          <strong style={{ color: ACCENT }}>Pre-mainnet on Solana.</strong> Sui Move module is live on devnet with a demo Passport object (identity + biometric + social stamps).
-          Solana mainnet PDAs are not deployed yet — this spec is the single logical model both chains implement.
+          <strong style={{ color: ACCENT }}>Sui-native verification.</strong> zkLogin (Google) derives your holder address. Move module is live on devnet; mainnet follows after sponsor wallet + stamp issuance API.
         </p>
         <Link href="/api/passport/spec" style={{ fontFamily: MONO, fontSize: "0.72rem", color: ACCENT }}>
           GET /api/passport/spec →
@@ -100,10 +99,10 @@ export default function PassportSpecPage() {
       <ContentCard title="Chain implementations">
         <KeyValueTable rows={[
           { k: "TypeScript", v: "lib/passport/ — serialize, verify, stamp bits", mono: true },
-          { k: "Solana", v: "abraxas-program/programs/abraxas-passport/ — PDA + issue_stamps + verify_passport CPI", mono: true },
-          { k: "Sui Move", v: "sui/abraxas_passport/sources/passport.move — deployed devnet, thin verifier + issuance cap", mono: true },
-          { k: "Primary chain", v: "Solana (authoritative root at launch)", mono: false },
-          { k: "Secondary", v: "Sui mirror or light-client verify (roadmap)", mono: false },
+          { k: "Solana", v: "Legacy — not used for verification (deprecated)", mono: true },
+          { k: "Sui Move", v: "sui/abraxas_passport/ — primary verification anchor (devnet live)", mono: true },
+          { k: "Primary chain", v: "Sui (zkLogin holder + Move Passport object)", mono: false },
+          { k: "Sign-in", v: "Google OAuth → zkLogin Sui address", mono: false },
         ]} />
       </ContentCard>
 

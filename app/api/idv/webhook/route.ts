@@ -58,12 +58,13 @@ export async function POST(req: NextRequest) {
   const v = event.verification;
   if (!v) return NextResponse.json({ ok: true }); // ignore non-verification events
 
-  // Extract wallet from vendorData
-  const walletMatch = v.vendorData?.match(/^wallet:(.+)$/);
-  const wallet      = walletMatch?.[1];
+  // Extract Sui holder from vendorData (sui:0x... or legacy wallet:...)
+  const suiMatch = v.vendorData?.match(/^sui:(.+)$/);
+  const legacyMatch = v.vendorData?.match(/^wallet:(.+)$/);
+  const holder = suiMatch?.[1] ?? legacyMatch?.[1];
 
-  if (!wallet) {
-    console.error("[webhook] No wallet in vendorData:", v.vendorData);
+  if (!holder) {
+    console.error("[webhook] No holder in vendorData:", v.vendorData);
     return NextResponse.json({ ok: true });
   }
 
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
     if (sb) {
       await sb.from("identity_verifications")
         .update({ status: v.status === "declined" ? "revoked" : "pending", updated_at: new Date().toISOString() })
-        .eq("wallet_address", wallet);
+        .eq("wallet_address", holder);
     }
     return NextResponse.json({ ok: true });
   }
@@ -111,14 +112,15 @@ export async function POST(req: NextRequest) {
     expirationDate: expiresAt.toISOString(),
     id:             jti,
     credentialSubject: {
-      id:                 `did:sol:${wallet}`,
-      wallet,
+      id:                 `did:sui:${holder}`,
+      sui_address:        holder,
       jurisdiction:       juris,
       document_type:      docType,
       verification_level: "standard" as const,
-      world_id_verified:  false,  // upgraded if they also complete World ID
+      world_id_verified:  false,
       verified_at:        now.toISOString(),
-      veriff_session_id:  v.id,   // audit reference
+      chain:              "sui" as const,
+      veriff_session_id:  v.id,
       permissions: {
         fiat_offramp: true,
         defi_access:  true,
@@ -132,7 +134,7 @@ export async function POST(req: NextRequest) {
     .setProtectedHeader({ alg: "EdDSA", typ: "JWT" })
     .setJti(jti)
     .setIssuer(ISSUER)
-    .setSubject(`did:sol:${wallet}`)
+    .setSubject(`did:sui:${holder}`)
     .setIssuedAt(now)
     .setExpirationTime(expiresAt)
     .sign(signingKey);
@@ -140,7 +142,8 @@ export async function POST(req: NextRequest) {
   if (sb) {
     // Update identity_verification to approved
     await sb.from("identity_verifications").upsert({
-      wallet_address:    wallet,
+      wallet_address:    holder,
+      sui_address:       holder,
       document_type:     docType,
       document_country:  country.toUpperCase(),
       document_state:    state.toUpperCase() || null,
@@ -155,7 +158,8 @@ export async function POST(req: NextRequest) {
     // Store credential
     await sb.from("abraxas_credentials").insert({
       jti,
-      holder_wallet:      wallet,
+      holder_wallet:      holder,
+      sui_address:        holder,
       jurisdiction:       juris,
       document_type:      docType,
       verification_level: "standard",
@@ -166,6 +170,6 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  console.log(`[webhook] ✓ Credential issued for ${wallet} → ${jti}`);
+  console.log(`[webhook] ✓ Credential issued for ${holder} → ${jti}`);
   return NextResponse.json({ ok: true, jti });
 }

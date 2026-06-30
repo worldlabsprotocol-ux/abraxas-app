@@ -38,7 +38,7 @@ const STEPS = [
   },
 ];
 
-const TRUST = ["Veriff KYC", "W3C credentials", "Wyoming LLC support", "Solana anchored"];
+const TRUST = ["Veriff KYC", "W3C credentials", "Wyoming LLC support", "Sui · zkLogin"];
 
 export function VerificationFlow() {
   return (

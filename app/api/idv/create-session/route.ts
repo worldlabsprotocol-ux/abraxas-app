@@ -25,16 +25,18 @@ const SB_URL        = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_SERVICE    = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 interface SessionBody {
-  wallet_address:  string;
-  document_type?:  string;  // PASSPORT | DRIVERS_LICENSE | ID_CARD
+  sui_address?:    string;
+  wallet_address?: string;
+  document_type?:  string;
   first_name?:     string;
   last_name?:      string;
 }
 
 export async function POST(req: NextRequest) {
   const body: SessionBody = await req.json().catch(() => ({}));
-  if (!body.wallet_address) {
-    return NextResponse.json({ error: "wallet_address required" }, { status: 400 });
+  const holder = body.sui_address ?? body.wallet_address;
+  if (!holder) {
+    return NextResponse.json({ error: "sui_address required" }, { status: 400 });
   }
   if (!VERIFF_KEY) {
     // Dev fallback: return a mock session so the UI still works without Veriff
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
       document:   {
         type: (body.document_type ?? "PASSPORT").toUpperCase(),
       },
-      vendorData: `wallet:${body.wallet_address}`,  // we get this back in the webhook
+      vendorData: `sui:${holder}`,
     },
   };
 
@@ -86,7 +88,8 @@ export async function POST(req: NextRequest) {
   if (SB_URL && SB_SERVICE) {
     const sb = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
     await sb.from("identity_verifications").upsert({
-      wallet_address:  body.wallet_address,
+      wallet_address:  holder,
+      sui_address:     holder,
       status:          "pending",
       updated_at:      new Date().toISOString(),
     }, { onConflict: "wallet_address" });

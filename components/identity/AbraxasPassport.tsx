@@ -3,10 +3,12 @@
 // Live credential lookup via useAbraxasID; Reclaim social stamp when active.
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAbraxasID } from "@/lib/credentials/useAbraxasID";
 import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
+import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
+import { truncateDid, toSuiDid } from "@/lib/sui/identity";
 import { PassportStampIcon, type PassportStampKind } from "./PassportStampIcon";
 import { VerificationBadge } from "@/components/redesign/VerificationBadge";
 import { Btn } from "@/components/redesign/ui";
@@ -117,6 +119,8 @@ function Stamp({
 
 export function AbraxasPassport({
   onGetVerified,
+  suiAddress: propSuiAddress,
+  /** @deprecated use suiAddress */
   walletAddress,
   earnedStamps: propStamps,
   onStampClick,
@@ -126,6 +130,7 @@ export function AbraxasPassport({
   didHint,
 }: {
   onGetVerified?: () => void;
+  suiAddress?: string | null;
   walletAddress?: string;
   earnedStamps?: StampId[];
   onStampClick?: (id: StampId) => void;
@@ -134,24 +139,14 @@ export function AbraxasPassport({
   showHeadline?: boolean;
   didHint?: string;
 }) {
-  const [walletPubkey, setWalletPubkey] = useState<string | null>(null);
+  const suiAuth = useSuiAuthOptional();
   const [launching, setLaunching] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("abraxas_credential_v1");
-      if (stored) {
-        const c = JSON.parse(stored) as { wallet?: string };
-        setWalletPubkey(c.wallet ?? null);
-      }
-    } catch { /* ignore */ }
-  }, []);
+  const holderAddress = propSuiAddress ?? suiAuth?.suiAddress ?? walletAddress ?? null;
 
-  const { credential, status } = useAbraxasID();
-  const hasSocialStamp = useReclaimSocialStamp(walletAddress ?? walletPubkey);
-
-  const walletStr = walletAddress ?? walletPubkey;
+  const { credential, status } = useAbraxasID(holderAddress);
+  const hasSocialStamp = useReclaimSocialStamp(holderAddress ?? undefined);
   const baseEarned: StampId[] = propStamps
     ?? stampsFromCredential(credential?.level)
     ?? (status === "verified" ? ["identity", "compliance"] : []);
@@ -176,15 +171,19 @@ export function AbraxasPassport({
     : VIOLET;
 
   const didDisplay = didHint
-    ?? (walletStr ? `did:sol:${walletStr.slice(0, 4)}…${walletStr.slice(-3)}` : "did:sol:7xKX…AsU");
+    ?? (holderAddress ? truncateDid(holderAddress) : "did:sui:…sign in");
 
   async function handleGetVerified() {
+    if (!holderAddress) {
+      onGetVerified?.();
+      return;
+    }
     setLaunching(true);
     try {
       const res = await fetch("/api/idv/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: walletStr ?? "anon", level: "STANDARD" }),
+        body: JSON.stringify({ sui_address: holderAddress, document_type: "PASSPORT" }),
       });
       const data = await res.json() as { session_url?: string };
       if (data.session_url) {
@@ -205,7 +204,9 @@ export function AbraxasPassport({
       type: ["VerifiableCredential", "AbraxasPassportCredential"],
       issuer: "did:web:abraxas-app.vercel.app",
       credentialSubject: {
-        id: didDisplay.startsWith("did:") ? didDisplay : `did:sol:${walletStr ?? "unlinked"}`,
+        id: holderAddress ? toSuiDid(holderAddress) : "did:sui:unlinked",
+        chain: "sui",
+        sui_address: holderAddress,
         protocol: "abraxas",
         stamps: earned,
         level: trustLabel,
@@ -288,8 +289,8 @@ export function AbraxasPassport({
                   fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
                   lineHeight: 1.7, maxWidth: 440, margin: "0 0 1.1rem",
                 }}>
-                  One W3C credential anchored on Solana. Documents stay off-chain —
-                  only cryptographic proof of each stamp is portable across protocols.
+                  One W3C credential anchored on Sui. Sign in with Google via zkLogin —
+                  documents stay off-chain, only stamp proofs are on-chain.
                 </p>
               </>
             )}
@@ -355,7 +356,7 @@ export function AbraxasPassport({
                 {didDisplay}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-                {["W3C VC v2.0", "Ed25519", "Solana Mainnet"].map(tag => (
+                {["W3C VC v2.0", "Ed25519", "Sui · zkLogin"].map(tag => (
                   <span key={tag} style={{
                     fontFamily: MONO, fontSize: "0.5rem", fontWeight: 700,
                     color: ACCENT, letterSpacing: "0.06em",
@@ -409,7 +410,7 @@ export function AbraxasPassport({
           {[
             { k: "Standard", v: "W3C VC Data Model v2.0" },
             { k: "Signature", v: "Ed25519 · Abraxas issuer key" },
-            { k: "Anchor", v: "Solana Mainnet attestation hash" },
+            { k: "Anchor", v: "Sui Passport object (devnet → mainnet)" },
             { k: "Privacy", v: "Documents off-chain · proof on-chain" },
           ].map(row => (
             <div key={row.k} style={{ display: "flex", gap: "0.4rem", alignItems: "baseline" }}>

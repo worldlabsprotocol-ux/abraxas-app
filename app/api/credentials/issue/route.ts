@@ -15,6 +15,8 @@ import { SignJWT, importJWK }          from "jose";
 import { createClient }                from "@supabase/supabase-js";
 import { randomUUID }                  from "crypto";
 import type { IssueCredentialInput, AbraxasCredentialClaims } from "@/lib/credentials/types";
+import { resolveHolderAddress } from "@/lib/credentials/types";
+import { toSuiDid } from "@/lib/sui/identity";
 
 const ISSUER  = process.env.ABRAXAS_ISSUER_URL      ?? "https://abraxas-app.vercel.app";
 const SB_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -48,8 +50,9 @@ function buildLevel(input: IssueCredentialInput): "basic" | "standard" | "enhanc
 export async function POST(req: NextRequest) {
   const body: IssueCredentialInput = await req.json().catch(() => null);
 
-  if (!body?.wallet_address || !body?.document_type || !body?.document_country) {
-    return NextResponse.json({ error: "wallet_address, document_type, document_country required" }, { status: 400 });
+  const holderAddress = resolveHolderAddress(body);
+  if (!holderAddress || !body?.document_type || !body?.document_country) {
+    return NextResponse.json({ error: "sui_address (or wallet_address), document_type, document_country required" }, { status: 400 });
   }
 
   const signingKeyJson = process.env.ABRAXAS_SIGNING_KEY;
@@ -84,13 +87,14 @@ export async function POST(req: NextRequest) {
     expirationDate: expiresAt.toISOString(),
     id:             jti,
     credentialSubject: {
-      id:                 `did:sol:${body.wallet_address}`,
-      wallet:             body.wallet_address,
+      id:                 toSuiDid(holderAddress),
+      sui_address:        holderAddress,
       jurisdiction:       juris,
       document_type:      body.document_type,
       verification_level: level,
       world_id_verified:  !!body.world_id_nullifier,
       verified_at:        now.toISOString(),
+      chain:              "sui",
       permissions:        perms,
     },
   };
@@ -100,7 +104,7 @@ export async function POST(req: NextRequest) {
     .setProtectedHeader({ alg: "EdDSA", typ: "JWT" })
     .setJti(jti)
     .setIssuer(ISSUER)
-    .setSubject(`did:sol:${body.wallet_address}`)
+    .setSubject(toSuiDid(holderAddress))
     .setIssuedAt(now)
     .setExpirationTime(expiresAt)
     .sign(signingKey);
@@ -111,7 +115,8 @@ export async function POST(req: NextRequest) {
 
     // Upsert verification record
     await sb.from("identity_verifications").upsert({
-      wallet_address:     body.wallet_address,
+      wallet_address:     holderAddress,
+      sui_address:        holderAddress,
       world_id_nullifier: body.world_id_nullifier ?? null,
       world_id_verified:  !!body.world_id_nullifier,
       document_type:      body.document_type,
@@ -125,10 +130,10 @@ export async function POST(req: NextRequest) {
       updated_at:         now.toISOString(),
     }, { onConflict: "wallet_address" });
 
-    // Store credential
     await sb.from("abraxas_credentials").insert({
       jti,
-      holder_wallet:      body.wallet_address,
+      holder_wallet:      holderAddress,
+      sui_address:        holderAddress,
       jurisdiction:       juris,
       document_type:      body.document_type,
       verification_level: level,

@@ -97,7 +97,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<VerificationR
   const result: VerificationResult = {
     verified:           true,
     credential_jti:     jti,
-    holder_wallet:      sub.wallet as string,
+    holder_address:     (sub.sui_address ?? sub.wallet) as string,
+    sui_address:        (sub.sui_address ?? sub.wallet) as string,
+    holder_wallet:      (sub.sui_address ?? sub.wallet) as string,
     jurisdiction:       sub.jurisdiction as string,
     verification_level: sub.verification_level as "basic" | "standard" | "enhanced",
     world_id_verified:  sub.world_id_verified as boolean,
@@ -113,10 +115,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<VerificationR
   return NextResponse.json(result);
 }
 
-// Check credential status by wallet address (for dashboard display)
+// Check credential status by Sui address (for dashboard display)
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const wallet = req.nextUrl.searchParams.get("wallet");
-  if (!wallet) return NextResponse.json({ error: "wallet param required" }, { status: 400 });
+  const address = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("wallet");
+  if (!address) return NextResponse.json({ error: "sui or wallet param required" }, { status: 400 });
 
   if (!SB_URL || !SB_KEY) return NextResponse.json({ error: "DB not configured" }, { status: 500 });
 
@@ -124,7 +126,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const { data } = await sb
     .from("identity_verifications")
     .select("status, credential_jti, document_type, document_country, world_id_verified")
-    .eq("wallet_address", wallet)
+    .eq("wallet_address", address)
     .single();
 
   if (!data) return NextResponse.json({ verified: false, status: "not_found" });

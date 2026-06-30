@@ -12,7 +12,8 @@ import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { ReclaimVerifyButton } from "@/components/ReclaimVerifyButton";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
 import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
-import { WalletContextProvider } from "@/components/WalletContextProvider";
+import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
@@ -155,6 +156,15 @@ interface PassportState {
 }
 
 export default function PassportPage() {
+  return (
+    <SuiAuthProvider>
+      <PassportPageInner />
+    </SuiAuthProvider>
+  );
+}
+
+function PassportPageInner() {
+  const { suiAddress, session } = useSuiAuth();
   const [email, setEmail]   = useState("");
   const [active, setActive] = useState<string | null>("social");
   const [starting, setStarting] = useState(false);
@@ -185,8 +195,11 @@ export default function PassportPage() {
     if (stored) {
       setEmail(stored);
       checkStatus(stored);
+    } else if (session?.email) {
+      setEmail(session.email);
+      checkStatus(session.email);
     }
-  }, []);
+  }, [session?.email]);
 
   async function checkStatus(e: string) {
     try {
@@ -270,7 +283,6 @@ export default function PassportPage() {
   };
 
   return (
-    <WalletContextProvider>
     <div data-theme="dark" style={{ background:"var(--bg)", minHeight:"100vh",
                    color:"var(--text-primary)", position:"relative", overflowX:"hidden" }}>
 
@@ -300,23 +312,26 @@ export default function PassportPage() {
           <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                        color:"var(--text-secondary)", lineHeight:1.75,
                        maxWidth:560, margin:0 }}>
-            Your Abraxas Passport is a verifiable record of who you are, what
-            you own, and whether you qualify to invest. Once any stamp is
-            earned, you never repeat that verification on Abraxas or any
-            integrated platform.
+            Your Abraxas Passport lives on Sui. Sign in with Google (zkLogin), complete
+            verification stamps, and reuse your credential across integrated platforms —
+            no wallet extension required.
           </p>
         </div>
 
-        {/* Live passport preview — same component as homepage, reflects earned stamps */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <ZkLoginSignIn />
+        </div>
+
+        {/* Live passport preview */}
         <div style={{ marginBottom: "2rem" }}>
           <AbraxasPassport
+            suiAddress={suiAddress}
             earnedStamps={passportStateToStampIds(passportState)}
             activeStamp={active ? passportWizardToStampId(active) : null}
             onStampClick={(id) => setActive(stampIdToPassportWizard(id))}
             onGetVerified={() => setActive("identity")}
             showHeadline={false}
             showVision={false}
-            didHint={email.includes("@") ? `did:email:${email.split("@")[0].slice(0, 6)}…` : undefined}
           />
         </div>
 
@@ -325,11 +340,11 @@ export default function PassportPage() {
                        border:"1px solid var(--border)", borderRadius:16,
                        padding:"1.5rem", marginBottom:"2rem",
                        display:"flex", flexDirection:"column", gap:"1.25rem" }}>
-          {/* Email / identity anchor */}
+          {/* Email for Veriff / Reclaim context (optional if zkLogin provides email) */}
           <div>
             <div style={{ fontFamily:S, fontSize:"0.78rem", fontWeight:600,
                            color:"var(--text-primary)", marginBottom:"0.5rem" }}>
-              Your Passport is tied to your email
+              Contact email for verification providers
             </div>
             <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
               <input
@@ -579,9 +594,9 @@ export default function PassportPage() {
                          gap:"0.75rem", marginBottom:"1rem" }}>
             {[
               { title:"Issuance", body:"W3C Verifiable Credential v2.0, signed Ed25519 by Abraxas issuer key. Raw documents stay with Veriff or manual review — only verification outcome is credentialized." },
-              { title:"On-chain anchor", body:"Attestation hash anchored on Solana Mainnet. Planned: Passport PDA per holder with compact stamp bitmap or Merkle root for CPI-friendly verification by external programs." },
-              { title:"Stamp model", body:"10 gates map to verifiable facts: identity, KYB, property title, lending eligibility, etc. Each stamp updates the passport root when earned — not a UI checkbox." },
-              { title:"Portability", body:"Third parties verify via signed presentation today; on-chain CPI instruction + published IDL on roadmap. No re-KYC, no document re-upload." },
+              { title:"On-chain anchor", body:"Passport stamp bitmask on Sui Move object — one object per holder. zkLogin gives you the address; Abraxas issues stamps after Veriff/Reclaim review." },
+              { title:"Stamp model", body:"10 gates map to verifiable facts: identity, KYB, property title, lending eligibility, etc. Each stamp updates the on-chain passport root when earned." },
+              { title:"Portability", body:"Third parties verify via W3C credential or on-chain Sui object read. zkLogin holders sign with OAuth — no seed phrase." },
             ].map(c => (
               <div key={c.title} style={{ background:"var(--surface)",
                                            border:"1px solid var(--border)",
@@ -678,6 +693,5 @@ export default function PassportPage() {
       </div>
       <RedesignFooter />
     </div>
-    </WalletContextProvider>
   );
 }

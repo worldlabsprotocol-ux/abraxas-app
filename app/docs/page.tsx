@@ -29,7 +29,8 @@ export default function DocsPage() {
         <BulletList items={[
           "POST /api/credentials/verify",
           "GET /api/credentials/public-key",
-          "POST /api/credentials/issue",
+          "POST /api/auth/zklogin/register",
+          "GET /api/sui/passport",
           "POST /api/identity/veriff/create-session",
           "POST /api/reclaim/start",
           "POST /api/reclaim/callback",
@@ -41,6 +42,7 @@ export default function DocsPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
             { label: "Passport spec", href: "/docs/passport-spec" },
+            { label: "zkLogin setup", href: "/docs/zklogin-setup" },
             { label: "Architecture", href: "/docs/architecture" },
             { label: "Roadmap", href: "/roadmap" },
             { label: "Security", href: "/security" },
