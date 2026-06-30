@@ -146,7 +146,7 @@ export default async function PassportPage({ params }: { params: { id: string } 
                 ["Issued",   data.issuance_date   ? new Date(data.issuance_date).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}) : "—"],
                 ["Expires",  data.expiration_date ? new Date(data.expiration_date).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}) : "—"],
                 ["Standard", "W3C Verifiable Credential v2.0"],
-                ["Chain",    "Solana Mainnet"],
+                ["Chain",    "Sui (zkLogin)"],
               ] as [string,string][]).map(([k,v]) => (
                 <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                        padding:"0.5rem 0.75rem",

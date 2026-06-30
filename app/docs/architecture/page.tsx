@@ -41,7 +41,7 @@ export default function ArchitecturePage() {
       <PageHeader
         eyebrow="Technical architecture"
         title="How Abraxas is built"
-        subtitle="Verification-first infrastructure on Solana. This page separates what is live today from what is in progress and on the roadmap — no vapor, no undifferentiated DeFi stack claims."
+        subtitle="Sui-native verification infrastructure. zkLogin identity, Move Passport, sponsored transactions for tiers — live vs roadmap labeled honestly."
       />
 
       <ContentCard title="Design principle">

@@ -11,7 +11,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { WalletConnectButton } from "@/components/WalletConnectButton";
+import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -26,7 +26,7 @@ const LINKS = [
 
 const MORE_LINKS = [
   { href: "/partners",    label: "Partners" },
-  { href: "/docs",        label: "Docs" },
+  { href: "/docs/sui",       label: "Sui" },
   { href: "/dashboard",   label: "Dashboard" },
   { href: "/swap",        label: "Swap" },
   { href: "/roadmap",     label: "Roadmap" },
@@ -90,7 +90,7 @@ export function RedesignNav() {
       <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem",
                                               flexShrink: 0 }}>
         <LanguageSelector />
-        <WalletConnectButton />
+        <SuiSignInNavButton />
         <Btn href="/passport" size="sm">Get Verified</Btn>
       </div>
 
@@ -135,7 +135,7 @@ export function RedesignNav() {
               </Link>
             ))}
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center" }}>
-              <WalletConnectButton />
+              <SuiSignInNavButton />
               <Btn href="/passport" size="sm" fullWidth>Get Verified</Btn>
             </div>
           </motion.div>

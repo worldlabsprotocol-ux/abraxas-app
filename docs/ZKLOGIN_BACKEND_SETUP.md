@@ -47,4 +47,18 @@ Webhook: `https://abraxas-app.vercel.app/api/idv/webhook`
 
 `NEXT_PUBLIC_ZKLOGIN_PROVER_URL=https://prover-dev.mystenlabs.com/v1`
 
-See also `/docs/zklogin-setup` in the app.
+See also `/docs/sui` in the app.
+
+## Continue from Step 5 (signing keys)
+
+If `node scripts/generate-abraxas-key.js` failed with **non-extractable CryptoKey**, pull latest main/PR — the script now uses `extractable: true`.
+
+Then paste both JSON lines into Vercel → redeploy.
+
+## Step 6 — on-chain stamps (next backend build)
+
+After Veriff approves, call Sui `issue_stamps_entry` and save object ID in `sui_passport_objects` (table included in full SQL in Part A of setup doc).
+
+## Step 7 — prover URL (skip until users send txs)
+
+`NEXT_PUBLIC_ZKLOGIN_PROVER_URL=https://prover-dev.mystenlabs.com/v1`

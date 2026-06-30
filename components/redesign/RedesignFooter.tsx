@@ -18,8 +18,10 @@ const LINKS = {
     { label: "Swap", href: "/swap" },
   ],
   learn: [
-    { label: "Documentation", href: "/docs" },
+    { label: "Sui hub", href: "/docs/sui" },
+    { label: "zkLogin setup", href: "/docs/zklogin-setup" },
     { label: "Passport spec", href: "/docs/passport-spec" },
+    { label: "Documentation", href: "/docs" },
     { label: "Architecture", href: "/docs/architecture" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "Tokenomics", href: "/tokenomics" },
@@ -105,7 +107,7 @@ export function RedesignFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. The verification layer for real-world assets on Solana.
+              Verify once. Transact everywhere. Sui-native verification for real-world assets — zkLogin, on-chain Passport, sponsored transactions for verified tiers.
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
               Live at{" "}

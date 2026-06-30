@@ -25,6 +25,7 @@ import {
   stampIdToPassportWizard,
   type StampId,
 } from "@/components/identity/AbraxasPassport";
+import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
@@ -631,6 +632,10 @@ function PassportPageInner() {
               Security & key management
             </Link>
           </div>
+        </div>
+
+        <div style={{ marginBottom:"2rem" }}>
+          <SuiIntegrationsPanel showSetup />
         </div>
 
         <div style={{ marginBottom:"2rem" }}>

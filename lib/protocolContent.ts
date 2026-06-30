@@ -6,14 +6,15 @@ export const ROADMAP = [
     phase: "Live now",
     color: "#10B981",
     items: [
-      "Verified credential system (W3C VC, Ed25519 signed JWT)",
+      "Sui zkLogin sign-in on /passport (Google → Sui address)",
+      "Verified credential system (W3C VC, did:sui, Ed25519 signed JWT)",
       "Social verification via Reclaim Protocol (LinkedIn, X, GitHub, Gmail)",
       "Identity verification via Veriff in-context SDK",
+      "Sui Passport Move module on devnet + live object panel",
       "Wyoming LLC formation flow",
       "Asset verification pipeline (10-stage V5 lifecycle)",
       "Music royalty audit intake",
       "Cielo Sunrise verified asset with real gallery and stablecoin booking",
-      "Stablecoin checkout (Buy Now / Book Now)",
       "Dark premium homepage redesign",
     ],
   },
@@ -21,24 +22,21 @@ export const ROADMAP = [
     phase: "In progress",
     color: "#F59E0B",
     items: [
-      "Wallet sign-in (Phantom, Solflare)",
       "Document review for Business, Property, and Asset Owner stamps",
       "Self-serve purchase lifecycle status for buyers",
-      "Reclaim callback confirmation against real production payloads",
+      "On-chain stamp issuance after Veriff approve (sui_passport_objects)",
+      "Sponsored transaction treasury + tier allowances",
     ],
   },
   {
     phase: "Up next",
     color: "#3B82F6",
     items: [
-      "x402 HTTP payment path for verification packages and /build intake",
-      "Technical architecture page (/docs/architecture) with live vs roadmap stack",
-      "Passport root spec (52-byte cross-chain, Solana + Sui + zkLogin roadmap)",
+      "Sui mainnet Passport deployment",
+      "Intent message signing for integrators (gas-free proofs)",
+      "x402 HTTP payment path for verification packages",
       "Institutional-grade secure storage integration (Utila)",
       "Passport accepted on external protocols",
-      "First external protocol integration",
-      "Automated on-chain payment verification",
-      "Smart contract audit publication",
       "Public bug bounty program",
     ],
   },
@@ -55,7 +53,11 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Why blockchain?",
-    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified record on Solana doesn't depend on trusting Abraxas forever, it's checkable by anyone, anytime, without calling us first.",
+    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified Passport on Sui doesn't depend on trusting Abraxas forever — stamp bitmask and credentials are checkable by anyone.",
+  },
+  {
+    q: "Why Sui and zkLogin?",
+    a: "You sign in with Google — no seed phrase, no browser wallet extension for verification. Sui gives low-cost transactions, sponsored gas for verified tiers, and personal-message proofs integrators can verify off-chain.",
   },
   {
     q: "Why Abraxas?",
@@ -63,11 +65,11 @@ export const FAQ_ITEMS = [
   },
   {
     q: "What happens to my money?",
-    a: "You send stablecoin directly to the treasury wallet. Internally, your transaction moves through real stages: Authorized when you confirm you've sent it, Captured once our team verifies the transfer on-chain (typically within one business day), Settled once everything is wrapped up. A self-serve status check is in progress, for now we follow up directly by email at each stage.",
+    a: "Stablecoin payments route to the Abraxas treasury. Internally, your transaction moves through real stages: Authorized when you confirm you've sent it, Captured once our team verifies the transfer, Settled once everything is wrapped up.",
   },
   {
     q: "Do I need $ABRA to use Abraxas?",
-    a: "No. You can verify identity, browse verified assets, and complete stablecoin bookings without holding $ABRA. The token is an optional participation layer for fee reductions and future governance, not a gate to verification.",
+    a: "No. You can verify identity, browse verified assets, and complete bookings without holding $ABRA. The token is an optional participation layer for fee reductions and future governance, not a gate to verification.",
   },
   {
     q: "Are projected yields guaranteed?",
@@ -75,18 +77,18 @@ export const FAQ_ITEMS = [
   },
   {
     q: "How do partners integrate the Passport?",
-    a: "Integrators call POST /api/credentials/verify with a presentation proof. Public keys are at /api/credentials/public-key. Full integration notes are on the Docs page. First external live integration is still on the roadmap.",
+    a: "Integrators call POST /api/credentials/verify with a presentation proof, or read stamp bitmask via GET /api/sui/passport. Public keys at /api/credentials/public-key. Full Sui hub at /docs/sui.",
   },
 ] as const;
 
 export const DOCS_SECTIONS = [
   {
     title: "Architecture overview",
-    body: "Abraxas is a verification and credential layer on Solana. Identity flows through Veriff. Social proofs use Reclaim Protocol zkTLS. Credentials follow W3C Verifiable Credentials Data Model v2.0, signed with Ed25519. Raw documents are not stored on-chain, only cryptographic attestations.",
+    body: "Abraxas verification is Sui-native. Identity: zkLogin (Google) → Sui address. Stamps: Veriff + Reclaim + manual review. Credentials: W3C VC with did:sui. On-chain: Move Passport object with 52-byte root semantics. See /docs/sui for the full feature map.",
   },
   {
     title: "Credential verification API",
-    body: "POST /api/credentials/verify accepts a presentation JWT and returns verification status. GET /api/credentials/public-key publishes the issuer public key for independent verification. Issuer URL: https://abraxas-app.vercel.app",
+    body: "POST /api/credentials/verify accepts a presentation JWT and returns verification status. GET /api/credentials/public-key publishes the issuer public key. GET /api/sui/passport reads on-chain stamp bitmask by object ID or owner.",
   },
   {
     title: "Asset verification pipeline (V5)",
@@ -94,15 +96,15 @@ export const DOCS_SECTIONS = [
   },
   {
     title: "Identity providers",
-    body: "Veriff: government ID + liveness, embedded in-context on /passport. Reclaim Protocol: LinkedIn, X, GitHub, Gmail via zkTLS proofs. Business, Property, and Asset Owner tiers use manual document review.",
+    body: "Veriff: government ID + liveness on /passport. Reclaim Protocol: LinkedIn, X, GitHub, Gmail via zkTLS. Business, Property, and Asset Owner tiers use manual document review. All tied to Sui holder address after zkLogin.",
   },
   {
-    title: "Treasury and payments",
-    body: "Stablecoin payments route to treasury wallet circuit.skr on Solana mainnet. Purchase lifecycle: Authorized → Captured → Disputed → Settled. Large amounts may be flagged for manual review.",
+    title: "Sponsored transactions (roadmap)",
+    body: "Verified Passport tiers receive a monthly allowance of gas-sponsored Sui actions (stamp updates, credential anchoring). Funded by a micro-fee on verification growth into SUI_SPONSOR_TREASURY_ADDRESS. Tier table at /docs/sui#sponsored.",
   },
   {
     title: "Developer resources",
-    body: "Open-source app: github.com/worldlabsprotocol-ux/abraxas-app. Passport root spec (52-byte cross-chain layout): /docs/passport-spec. Architecture stack: /docs/architecture. SDK and deployed program IDs publish with devnet launch.",
+    body: "GitHub: github.com/worldlabsprotocol-ux/abraxas-app. Sui hub: /docs/sui. Operator setup: /docs/zklogin-setup. Passport spec: /docs/passport-spec. Machine-readable: GET /api/passport/spec.",
   },
 ] as const;
 
@@ -111,47 +113,51 @@ export const SECURITY_ITEMS = [
     title: "What we do today",
     items: [
       "Supabase Row Level Security on every table",
-      "W3C VC credentials: proof on-chain, documents off-chain with certified providers",
+      "W3C VC credentials: proof portable, documents off-chain with certified providers",
       "Veriff handles ID storage, Abraxas stores verification status only",
-      "Ed25519 signed JWTs for credential issuance",
+      "Ed25519 signed JWTs for credential issuance (did:sui)",
+      "zkLogin user salt stored server-side only",
       "Manual review for high-risk stamps (Business, Property, Asset Owner)",
-      "Purchase lifecycle with dispute and refund states",
     ],
   },
   {
     title: "In progress",
     items: [
-      "Smart contract audit before first external protocol integration",
+      "Sui mainnet Passport audit before external CPI integrations",
       "Formal security review of credential verification API",
+      "Sponsor treasury multisig for production",
       "Public bug bounty program (planned post-audit)",
     ],
   },
   {
-    title: "Custody partners",
+    title: "Key management & custody",
     items: [
+      "ABRAXAS_SIGNING_KEY in Vercel env only — never in client code",
+      "Service role key server-side only for Supabase writes",
+      "OAuth via Google; no passwords stored for zkLogin users",
       "Utila MPC custody for verified assets requiring institutional storage",
-      "Self-custody via Phantom/Solflare for user-initiated stablecoin payments",
+      "zkLogin for verification identity — no browser wallet required on /passport",
     ],
   },
 ] as const;
 
 export const TOKENOMICS = {
   symbol: "$ABRA",
-  chain: "Solana (SPL)",
+  chain: "Sui (verification) · SPL treasury token",
   contract: "5c1FHZj36pkA3cpXcyZxDhRmQyxzUqMNQn8K5neDBAGS",
   treasury: "circuit.skr",
   distribution: "Launched via Bags.fm fair launch. Bonding curve. No pre-mine ahead of public.",
-  holdersNote: "47 holders as of April 2026 (verify live on Solscan before relying on this figure).",
-  notRequired: "$ABRA is not required to verify identity, browse assets, or pay in stablecoin. It is an optional layer for fee benefits and future governance.",
+  holdersNote: "Verify holder count on-chain before relying on marketing figures.",
+  notRequired: "$ABRA is not required to verify identity (zkLogin on Sui), browse assets, or pay in stablecoin. Verification is Sui-native; $ABRA is optional for fee tiers.",
   utility: [
     { role: "Access tiers", desc: "Hold $ABRA for Initiate → Operator → Architect → Sovereign tiers. Higher tiers unlock fee reductions.", active: true },
+    { role: "Sponsor pool", desc: "Share of verification growth fees funds Sui sponsored transactions for Passport tiers (roadmap).", active: false },
     { role: "Fee reduction", desc: "Operator (10k+): 10% off. Architect (100k+): 25% off. Sovereign (1M+): 50% off platform fees.", active: true },
-    { role: "Verification revenue", desc: "Protocol earns from verification packages ($29 identity, $199+ business/property tiers). Token does not gate verification today.", active: true },
-    { role: "Revenue sharing", desc: "At graduation from beta: 25% of vault fees to buy-and-distribute for holders. Not live yet.", active: false },
-    { role: "Governance", desc: "Sovereign-tier input on vault parameters and fee structure. Not live yet.", active: false },
+    { role: "Verification revenue", desc: "Protocol earns from verification packages. Token does not gate /passport verification.", active: true },
+    { role: "Governance", desc: "Sovereign-tier input on vault parameters and sponsor treasury policy. Not live yet.", active: false },
   ],
   tiers: [
-    { name: "Initiate", amount: "0", benefit: "Full platform access, no token required" },
+    { name: "Initiate", amount: "0", benefit: "Full platform access, zkLogin verification" },
     { name: "Operator", amount: "10,000 $ABRA", benefit: "10% fee reduction" },
     { name: "Architect", amount: "100,000 $ABRA", benefit: "25% fee reduction, priority support" },
     { name: "Sovereign", amount: "1,000,000 $ABRA", benefit: "50% fee reduction, governance weight (when live)" },

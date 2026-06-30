@@ -113,7 +113,7 @@ export function SiteFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. The verification layer for real-world assets on Solana.
+              Verify once. Transact everywhere. Sui-native verification for real-world assets.
             </p>
             <p style={{
               fontFamily: S,

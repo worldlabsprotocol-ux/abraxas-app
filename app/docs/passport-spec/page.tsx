@@ -107,7 +107,9 @@ export default function PassportSpecPage() {
       </ContentCard>
 
       <ContentCard title="Sui devnet (live)">
-        <SuiDevnetPassportPanel />
+        <div id="sui-devnet">
+          <SuiDevnetPassportPanel />
+        </div>
       </ContentCard>
 
       <ContentCard title="Sui zkLogin integration (roadmap)">
@@ -139,7 +141,7 @@ export default function PassportSpecPage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
-            { label: "Architecture overview", href: "/docs/architecture" },
+            { label: "Sui hub", href: "/docs/sui" },
             { label: "Get verified", href: "/passport" },
             { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app" },
           ].map(l => (
