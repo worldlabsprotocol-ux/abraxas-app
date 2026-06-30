@@ -15,8 +15,14 @@ export default function DocsPage() {
       <PageHeader
         eyebrow="Documentation"
         title="Technical overview"
-        subtitle="Litepaper-style reference for credentials, asset verification, and integration. Full SDK docs ship with the first external integration."
+        subtitle="Abraxas Identity Layer (AIL) — trust orchestration, not KYC. Licensed providers verify; Abraxas distributes cryptographic proof."
       />
+      <ContentCard title="Start here">
+        <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
+          Read the full product specification:{" "}
+          <Link href="/docs/ail" style={{ color: ACCENT, fontWeight: 600 }}>Abraxas Identity Layer (AIL) →</Link>
+        </p>
+      </ContentCard>
       {DOCS_SECTIONS.map(section => (
         <ContentCard key={section.title} title={section.title}>
           <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
@@ -39,6 +45,7 @@ export default function DocsPage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
+            { label: "AIL specification", href: "/docs/ail" },
             { label: "Passport spec", href: "/docs/passport-spec" },
             { label: "zkLogin setup", href: "/docs/zklogin-setup" },
             { label: "Architecture", href: "/docs/architecture" },

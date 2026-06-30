@@ -264,17 +264,18 @@ function PassportPageInner() {
 
         <div style={{ marginBottom:"2.5rem" }}>
           <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600, color:G, marginBottom:"0.625rem" }}>
-            One credential. Every protocol.
+            Abraxas Identity Layer
           </div>
           <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)", fontWeight:800, lineHeight:1.0,
                         color:"var(--text-primary)", letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
-            Sign in once.<br/>
-            <span style={{ color:G }}>Get a wallet. Get verified.</span>
+            Verify once.<br/>
+            <span style={{ color:G }}>Transact everywhere.</span>
           </h1>
           <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                        color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:0 }}>
-            Google sign-in creates your Sui wallet instantly — no seed phrase, no extension.
-            Complete verification stamps on your Passport and reuse your credential everywhere.
+            Not a KYC vendor — a trust registry. Veriff verifies your identity; Abraxas issues
+            cryptographic proof bound to your Sui wallet. Protocols ask us if you&apos;re verified —
+            you never upload the same documents twice.
           </p>
         </div>
 

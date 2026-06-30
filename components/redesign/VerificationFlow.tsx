@@ -14,31 +14,31 @@ const ACCENT = "#10B981";
 const STEPS = [
   {
     n: "01",
-    title: "Verify who you are",
-    body: "Abraxas Precheck: government ID and a 60-second liveness check through Veriff. Most people finish in under five minutes.",
+    title: "Sign in — get your wallet",
+    body: "Google sign-in via zkLogin creates your Sui address instantly. No seed phrase. This wallet holds your Passport.",
     kind: "identity" as const,
+    href: "/passport",
+    cta: "Continue with Google",
+  },
+  {
+    n: "02",
+    title: "Verify once with a trusted provider",
+    body: "Veriff performs KYC — government ID and liveness. Abraxas records only the signed credential hash, issuer, and sanctions outcome. Never your passport.",
+    kind: "biometric" as const,
     href: "/passport",
     cta: "Start Precheck",
   },
   {
-    n: "02",
-    title: "Earn the stamps you need",
-    body: "Social, business, property, or asset owner — each stamp is a real credential backed by documentation, not a checkbox.",
-    kind: "business" as const,
-    href: "/passport",
-    cta: "See all stamps",
-  },
-  {
     n: "03",
-    title: "Access verified assets",
-    body: "Your Passport travels with you. Book stays, express investment interest, or submit your own asset — without repeating KYC everywhere.",
+    title: "Reuse proof everywhere",
+    body: "Protocols ask Abraxas: Is this wallet verified? Is AML clear? You approve consent — they receive a signed proof, not your documents.",
     kind: "compliance" as const,
-    href: "/terminal#assets",
-    cta: "Browse assets",
+    href: "/docs/ail",
+    cta: "Read AIL spec",
   },
 ];
 
-const TRUST = ["Veriff KYC", "W3C credentials", "Wyoming LLC support", "Sui · zkLogin"];
+const TRUST = ["W3C Verifiable Credentials", "Veriff KYC", "Trust registry", "Sui · zkLogin"];
 
 export function VerificationFlow() {
   return (
@@ -56,14 +56,14 @@ export function VerificationFlow() {
           letterSpacing: "-0.03em", lineHeight: 1.05,
           color: "var(--text-primary)", margin: "0 0 0.5rem", maxWidth: 520,
         }}>
-          Verify once. That is the whole product.
+          Verify once. That is the trust layer.
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
           lineHeight: 1.7, maxWidth: 560, margin: 0,
         }}>
-          Abraxas is not a marketplace with verification bolted on. Verification is
-          the marketplace. Everything else follows from a credential you actually earned.
+          Abraxas is not another KYC vendor. It is the trust registry — licensed providers verify;
+          Abraxas standardizes, secures, and distributes proof with your consent.
         </p>
       </div>
 

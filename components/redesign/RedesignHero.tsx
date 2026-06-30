@@ -112,7 +112,7 @@ export function RedesignHero() {
                                               gap: "clamp(2rem, 5vw, 3.5rem)", alignItems: "center" }}>
         <motion.div variants={staggerContainer(0.1, 0.05)} initial="hidden" animate="show">
           <motion.div variants={staggerItem} style={{ marginBottom: "1.25rem" }}>
-            <VerificationBadge label="The verification layer for real-world assets" color={ACCENT} />
+            <VerificationBadge label="Universal trust infrastructure" color={ACCENT} />
           </motion.div>
 
           <motion.h1 variants={staggerItem} style={{
@@ -128,8 +128,9 @@ export function RedesignHero() {
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            Prove who you are once. Prove what you own once. Carry that proof across
-            every verified asset, lender, and marketplace — without repeating KYC.
+            Prove who you are once. Prove what you own once. Licensed verifiers perform KYC —
+            Abraxas orchestrates cryptographic proof so exchanges, lenders, and RWA platforms
+            never make you upload the same documents twice.
           </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",
@@ -142,7 +143,7 @@ export function RedesignHero() {
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
             margin: "0", maxWidth: 480,
           }}>
-            No wallet required to browse or verify. Connect in the nav when you are ready to pay in stablecoin.
+            Sign in with Google on /passport to create your Sui wallet. No seed phrase required.
           </motion.p>
         </motion.div>
 

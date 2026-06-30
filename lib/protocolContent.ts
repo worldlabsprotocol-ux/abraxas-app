@@ -83,7 +83,7 @@ export const FAQ_ITEMS = [
 export const DOCS_SECTIONS = [
   {
     title: "Architecture overview",
-    body: "Abraxas verification is Sui-native. Identity: zkLogin (Google) → Sui address. Stamps: Veriff + manual review. Credentials: W3C VC with did:sui. On-chain: Move Passport object with 52-byte root semantics. See /docs/sui for the full feature map.",
+    body: "Abraxas Identity Layer (AIL): trust orchestration, not KYC. Layer 1: licensed providers (Veriff). Layer 2: credential engine (W3C VC, did:sui). Layer 3: trust registry. Layer 4: compliance engine. Layer 5: Identity Passport (Sui + zkLogin). Full spec: /docs/ail",
   },
   {
     title: "Credential verification API",

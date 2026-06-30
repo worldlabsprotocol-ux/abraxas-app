@@ -41,17 +41,20 @@ export default function ArchitecturePage() {
       <PageHeader
         eyebrow="Technical architecture"
         title="How Abraxas is built"
-        subtitle="Sui-native verification infrastructure. zkLogin identity, Move Passport, sponsored transactions for tiers — live vs roadmap labeled honestly."
+        subtitle="Abraxas Identity Layer (AIL) — five-layer trust infrastructure. Live vs roadmap labeled honestly."
       />
 
       <ContentCard title="Design principle">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
-                     lineHeight: 1.75, margin: 0 }}>
-          Abraxas is a <strong style={{ color: "var(--text-primary)" }}>trust primitive</strong>, not a tokenized
-          asset marketplace with KYC bolted on. Documents stay off-chain with certified providers;
-          only cryptographic proof of verification is portable. External protocols integrate one
-          verification surface — API today, on-chain CPI tomorrow — instead of rebuilding KYC stacks.
+                     lineHeight: 1.75, margin: "0 0 0.75rem" }}>
+          Abraxas is a <strong style={{ color: "var(--text-primary)" }}>trust orchestration layer</strong>, not a KYC
+          vendor. Licensed providers perform verification; Abraxas stores only credential hashes, issuer, expiration,
+          sanctions status, and wallet binding. External protocols integrate one API —{" "}
+          <em>Is this wallet verified?</em> — instead of five different KYC stacks.
         </p>
+        <Link href="/docs/ail" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, fontWeight: 600 }}>
+          Read full AIL specification →
+        </Link>
       </ContentCard>
 
       {/* Stack layers */}
@@ -188,6 +191,7 @@ export default function ArchitecturePage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
+            { label: "AIL specification", href: "/docs/ail" },
             { label: "Docs overview", href: "/docs" },
             { label: "Security", href: "/security" },
             { label: "Roadmap", href: "/roadmap" },

@@ -1,15 +1,13 @@
-# Abraxas Protocol
+# Abraxas Identity Layer (AIL)
 
-**Sui-native verification and identity for real-world assets.**
+**Universal Trust Infrastructure for Tokenized Assets and Digital Identity**
 
-One KYC. One Passport. Every protocol.
+> Verify Once. Transact Everywhere.
 
-Abraxas ends verification debt: lenders, marketplaces, and payment rails no longer re-run KYC on the same owner and the same documents. Verify once on **Sui** with **zkLogin** (Google sign-in, no seed phrase), earn Passport stamps, and carry a portable **W3C credential** (`did:sui:0x…`).
-
-> "Verify once. Transact everywhere."
+Abraxas is **not a KYC provider**. It is a **trust and credential orchestration layer**. Licensed verifiers (Veriff, manual review) perform identity checks; Abraxas records only cryptographic proof — credential hash, issuer, expiration, sanctions status, wallet binding — and lets any participating protocol ask *"Is this wallet verified?"* instead of re-running KYC.
 
 Live: **[https://abraxas-app.vercel.app/](https://abraxas-app.vercel.app/)**  
-Verification: **`/passport`** · Sui hub: **`/docs/sui`**
+Passport: **`/passport`** · AIL spec: **`/docs/ail`** · Sui hub: **`/docs/sui`**
 
 ---
 

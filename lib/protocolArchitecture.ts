@@ -34,10 +34,10 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
   },
   {
     id: "verification",
-    layer: "Verification & credentials",
-    role: "Trust primitive",
+    layer: "Credential engine (AIL L2)",
+    role: "Trust orchestration",
     status: "live",
-    detail: "Hybrid model: Veriff/manual review off-chain; W3C credentials (did:sui) and Sui Move Passport object on-chain. Documents never stored on-chain.",
+    detail: "Licensed providers verify off-chain; Abraxas issues W3C credentials (did:sui) and records only hashes, issuer, expiration, sanctions status, wallet binding. Sui Move Passport anchors stamp bitmask on-chain.",
     items: [
       "W3C Verifiable Credentials (did:sui:0x…)",
       "Ed25519 signed JWT issuance (POST /api/credentials/issue)",
