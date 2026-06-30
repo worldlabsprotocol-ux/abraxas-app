@@ -192,6 +192,7 @@ export default function ArchitecturePage() {
             { label: "Security", href: "/security" },
             { label: "Roadmap", href: "/roadmap" },
             { label: "Get verified", href: "/passport" },
+            { label: "Passport spec (52-byte root)", href: "/docs/passport-spec" },
             { label: "Cielo Sunrise (proof asset)", href: "/flagship" },
             { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app" },
           ].map(link => (

@@ -120,20 +120,21 @@ export const X402_ARCHITECTURE = {
 } as const;
 
 export const PASSPORT_ONCHAIN_SPEC = {
-  title: "On-chain passport model (planned)",
-  summary: "Single Passport PDA per holder — minimizes rent and CPI cost vs. per-stamp accounts. Solana-native builders recommended this pattern; Abraxas is implementing toward it.",
+  title: "Passport root spec (pre-mainnet)",
+  summary: "Chain-agnostic 52-byte Passport root — u16 stamp bitmask, single issuance authority, revocation + expiration. Identical serialization on Solana Anchor PDA and Sui Move object. Full spec: /docs/passport-spec.",
   accountLayout: [
-    { field: "authority", desc: "Abraxas issuance multisig (upgradeable via governed instruction)" },
-    { field: "subject", desc: "did:sol:<wallet> or linked email hash" },
-    { field: "stamp_bitmap", desc: "Compact u64 bitmap for 10 gates" },
-    { field: "merkle_root", desc: "Optional upgrade path for compressed stamp sets at scale" },
-    { field: "credential_version", desc: "Incremented on re-issuance or revocation" },
-    { field: "issued_at", desc: "Unix timestamp of last root update" },
+    { field: "version", desc: "u8 — format version (1)" },
+    { field: "stamps", desc: "u16 bitmask — 10 gates (see /docs/passport-spec)" },
+    { field: "authority", desc: "32 bytes — issuance authority (PDA on Solana, cap on Sui)" },
+    { field: "expires_at", desc: "u64 unix seconds — 0 = no expiration" },
+    { field: "revoked", desc: "u8 — 0 active, 1 irreversible" },
+    { field: "nonce", desc: "u64 — anti-replay, increments on update" },
   ],
   verifyInstruction: [
-    "verify_passport(stamp_id) → returns stamp set + version + timestamp",
-    "verify_single_stamp(stamp_id, proof) → cheaper path for simple gates",
-    "Side-effect free — safe for any program to CPI",
+    "verify_passport(required_stamps) on Solana — CPI-friendly",
+    "verify(passport, required_stamps, timestamp) on Sui Move",
+    "Type 0: Ed25519 over abraxas-passport-v1 || serialized root (off-chain, no gas)",
+    "Type 1: Sui zkLogin ZK presentation (roadmap)",
   ],
   privacy: "Still no documents on-chain. Only cryptographic facts of verification update the passport root.",
 } as const;

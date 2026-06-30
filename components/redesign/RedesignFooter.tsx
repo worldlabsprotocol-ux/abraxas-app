@@ -19,6 +19,7 @@ const LINKS = {
   ],
   learn: [
     { label: "Documentation", href: "/docs" },
+    { label: "Passport spec", href: "/docs/passport-spec" },
     { label: "Architecture", href: "/docs/architecture" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "Tokenomics", href: "/tokenomics" },

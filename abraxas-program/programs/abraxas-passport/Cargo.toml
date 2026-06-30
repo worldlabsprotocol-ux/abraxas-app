@@ -1,0 +1,19 @@
+[package]
+name = "abraxas-passport"
+version = "0.1.0"
+description = "Chain-agnostic Abraxas Passport root — pre-mainnet skeleton"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "abraxas_passport"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
