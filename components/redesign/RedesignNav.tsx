@@ -90,8 +90,8 @@ export function RedesignNav() {
       <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem",
                                               flexShrink: 0 }}>
         <LanguageSelector />
-        <SuiSignInNavButton />
-        <Btn href="/passport" size="sm">Get Verified</Btn>
+        <SuiSignInNavButton prominent />
+        <Btn href="/passport" size="sm" variant="secondary">Get Verified</Btn>
       </div>
 
       {/* Mobile: language + hamburger */}
@@ -134,9 +134,9 @@ export function RedesignNav() {
                 {l.label}
               </Link>
             ))}
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center" }}>
-              <SuiSignInNavButton />
-              <Btn href="/passport" size="sm" fullWidth>Get Verified</Btn>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+              <SuiSignInNavButton prominent />
+              <Btn href="/passport" size="sm" fullWidth variant="secondary">Get Verified</Btn>
             </div>
           </motion.div>
         )}

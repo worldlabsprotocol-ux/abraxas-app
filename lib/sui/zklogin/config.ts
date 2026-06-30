@@ -17,7 +17,20 @@ const APP_ORIGIN =
     : process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
 
 export const ZKLOGIN_CALLBACK_PATH = "/auth/zklogin/callback";
-export const ZKLOGIN_CALLBACK_URI = `${APP_ORIGIN}${ZKLOGIN_CALLBACK_PATH}`;
+
+/** Pin redirect in Google Console via NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI, or it follows the current origin (each Vercel preview URL must be registered). */
+export function getZkLoginRedirectUri(): string {
+  const pinned = process.env.NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI?.trim();
+  if (pinned) return pinned.replace(/\/$/, "");
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
+  }
+  const base = (process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app").replace(/\/$/, "");
+  return `${base}${ZKLOGIN_CALLBACK_PATH}`;
+}
+
+/** @deprecated use getZkLoginRedirectUri() */
+export const ZKLOGIN_CALLBACK_URI = getZkLoginRedirectUri();
 
 export const ZKLOGIN_SESSION_KEY = "abraxas_zklogin_session_v1";
 export const ZKLOGIN_PENDING_KEY = "abraxas_zklogin_pending_v1";
@@ -32,7 +45,7 @@ export function getGoogleOAuthConfig(): ZkLoginOAuthConfig | null {
   if (!clientId) return null;
   return {
     clientId,
-    redirectUri: ZKLOGIN_CALLBACK_URI,
+    redirectUri: getZkLoginRedirectUri(),
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     responseType: "id_token",
     scope: "openid",

@@ -28,11 +28,15 @@ export default function ZkLoginSetupPage() {
       </ContentCard>
 
       <ContentCard title="Step 1 — Google OAuth app">
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
+          If Google says <strong style={{ color: "var(--text-primary)" }}>doesn&apos;t comply with OAuth 2.0 policy</strong>, the redirect URI in the error must be added exactly in Google Cloud Console → Credentials → your Web client → <strong>Authorized redirect URIs</strong>.
+        </p>
         <BulletList items={[
-          "Go to Google Cloud Console → APIs & Services → Credentials",
-          "Create OAuth client (Web application)",
-          "Origins: http://localhost:3000 and https://abraxas-app.vercel.app",
-          "Redirect URIs: …/auth/zklogin/callback (same hosts)",
+          "Google Cloud Console → APIs & Services → Credentials → OAuth Web client",
+          "Authorized JavaScript origins: http://localhost:3000, https://abraxas-app.vercel.app, plus each Vercel preview origin you test on",
+          "Authorized redirect URIs: {origin}/auth/zklogin/callback for each origin above",
+          "Production redirect: https://abraxas-app.vercel.app/auth/zklogin/callback",
+          "Optional pin: NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI=https://abraxas-app.vercel.app/auth/zklogin/callback (only prod URI needed in Google)",
           "Set NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID in Vercel",
         ]} />
       </ContentCard>

@@ -12,12 +12,47 @@ This guide is for wiring **Abraxas verification on Sui** when you have never set
 
 ## Step 1 — Google OAuth
 
-**Where:** [Google Cloud Console](https://console.cloud.google.com/) → Credentials
+**Where:** [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → your OAuth 2.0 Web client
 
-- Create OAuth Web client
-- Origins: `http://localhost:3000`, `https://abraxas-app.vercel.app`
-- Redirect: `…/auth/zklogin/callback`
-- Env: `NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID`
+### Authorized JavaScript origins (exact origins, no path)
+
+Add every domain where users open the app:
+
+```
+http://localhost:3000
+https://abraxas-app.vercel.app
+https://abraxas-app-git-cursor-su-6b45a9-worldlabsprotocol-uxs-projects.vercel.app
+```
+
+For **each new Vercel preview URL**, add that origin too — or test sign-in only on production.
+
+### Authorized redirect URIs (exact path)
+
+Google rejects sign-in if the redirect URI is missing. Add **all** of these:
+
+```
+http://localhost:3000/auth/zklogin/callback
+https://abraxas-app.vercel.app/auth/zklogin/callback
+https://abraxas-app-git-cursor-su-6b45a9-worldlabsprotocol-uxs-projects.vercel.app/auth/zklogin/callback
+```
+
+The app sends `redirect_uri={current-origin}/auth/zklogin/callback`. On a Vercel preview deploy, that origin is the long `git-cursor-…vercel.app` URL — it must match a row above **character for character**.
+
+**Optional — pin production callback (preview deploys redirect to prod after Google):**
+
+In Vercel → Environment Variables:
+
+```
+NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI=https://abraxas-app.vercel.app/auth/zklogin/callback
+```
+
+Then only the production redirect URI needs to be in Google Console. Users on preview branches land on production after OAuth.
+
+### Env
+
+```
+NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```
 
 ## Step 2 — Supabase
 
