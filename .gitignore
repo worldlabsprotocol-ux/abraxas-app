@@ -35,3 +35,9 @@ next-env.d.ts
 
 # Local Claude fix scripts
 fix_*.py
+
+# Sui CLI + build artifacts
+/.sui-bin/
+/sui/**/build/
+/sui/**/Pub.devnet.toml
+/sui/**/Move.lock

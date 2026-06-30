@@ -24,6 +24,7 @@ import {
   stampIdToPassportWizard,
   type StampId,
 } from "@/components/identity/AbraxasPassport";
+import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -615,6 +616,10 @@ export default function PassportPage() {
               Security & key management
             </Link>
           </div>
+        </div>
+
+        <div style={{ marginBottom:"2rem" }}>
+          <SuiDevnetPassportPanel compact />
         </div>
 
         {/* What happens to your credential */}

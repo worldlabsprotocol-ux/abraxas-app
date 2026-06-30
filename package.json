@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts"
+    "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts",
+    "sui:build": "sui move build --path sui/abraxas_passport",
+    "sui:deploy:devnet": "bash scripts/sui/deploy-devnet.sh"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
+    "@mysten/sui": "^1.45.2",
     "@reclaimprotocol/js-sdk": "^5.5.0",
     "@solana/spl-token": "^0.4.8",
     "@solana/wallet-adapter-base": "^0.9.27",

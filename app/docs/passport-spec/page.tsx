@@ -13,6 +13,7 @@ import {
   PROOF_TYPES,
 } from "@/lib/protocolPassportSpec";
 import { PASSPORT_SERIALIZED_SIZE } from "@/lib/passport/stamps";
+import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -29,8 +30,8 @@ export default function PassportSpecPage() {
 
       <ContentCard title="Status">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
-          <strong style={{ color: ACCENT }}>Pre-mainnet.</strong> No production Passport PDAs or live credentials on Solana mainnet yet.
-          This spec is the single logical model both chains will implement before deployment.
+          <strong style={{ color: ACCENT }}>Pre-mainnet on Solana.</strong> Sui Move module is live on devnet with a demo Passport object (identity + biometric + social stamps).
+          Solana mainnet PDAs are not deployed yet — this spec is the single logical model both chains implement.
         </p>
         <Link href="/api/passport/spec" style={{ fontFamily: MONO, fontSize: "0.72rem", color: ACCENT }}>
           GET /api/passport/spec →
@@ -100,10 +101,14 @@ export default function PassportSpecPage() {
         <KeyValueTable rows={[
           { k: "TypeScript", v: "lib/passport/ — serialize, verify, stamp bits", mono: true },
           { k: "Solana", v: "abraxas-program/programs/abraxas-passport/ — PDA + issue_stamps + verify_passport CPI", mono: true },
-          { k: "Sui Move", v: "sui/abraxas_passport/sources/passport.move — thin verifier + issuance cap", mono: true },
+          { k: "Sui Move", v: "sui/abraxas_passport/sources/passport.move — deployed devnet, thin verifier + issuance cap", mono: true },
           { k: "Primary chain", v: "Solana (authoritative root at launch)", mono: false },
           { k: "Secondary", v: "Sui mirror or light-client verify (roadmap)", mono: false },
         ]} />
+      </ContentCard>
+
+      <ContentCard title="Sui devnet (live)">
+        <SuiDevnetPassportPanel />
       </ContentCard>
 
       <ContentCard title="Sui zkLogin integration (roadmap)">

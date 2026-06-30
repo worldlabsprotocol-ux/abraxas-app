@@ -8,6 +8,7 @@ import {
   STAMP_BIT_ORDER,
   STAMP_BITS,
 } from "@/lib/passport/stamps";
+import { SUI_DEVNET } from "@/lib/sui/config";
 
 export const dynamic = "force-static";
 
@@ -40,10 +41,16 @@ export async function GET() {
         account: "Passport PDA per subject",
       },
       sui: {
-        status: "skeleton",
+        status: "devnet",
         module_path: "sui/abraxas_passport/sources/passport.move",
         object: "Passport shared/owned object per subject",
         zklogin: "https://docs.sui.io/concepts/cryptography/zklogin",
+        devnet: {
+          rpc: SUI_DEVNET.rpcUrl,
+          package_id: SUI_DEVNET.packageId,
+          demo_passport_object_id: SUI_DEVNET.demoPassportObjectId,
+          api: "/api/sui/passport",
+        },
       },
     },
     docs: "/docs/passport-spec",
