@@ -80,9 +80,11 @@ Run migration `supabase/migrations/010_sui_passport_objects.sql`
 Env (sponsor wallet that owns the Move `IssuanceCap`):
 
 ```
-SUI_SPONSOR_SECRET_KEY=suiprivkey1…
-SUI_ISSUANCE_CAP_OBJECT_ID=0xee6c6f7e8729e7eb2c07dd79fe94308fe31869f29d205d9e1c29b923f76d27d7
+SUI_SPONSOR_SECRET_KEY=suiprivkey1…          # export from YOUR wallet (e.g. 0xa4d1…)
+SUI_ISSUANCE_CAP_OBJECT_ID=0x…               # from npm run sui:mint-cap — NOT the old demo cap
 ```
+
+Verify after deploy: `GET /api/sui/passport/sponsor` — should show your wallet address and `cap_owner_matches_sponsor: true`. The old `0xcf8fa9…06ee` deploy wallet is never used when env vars are set.
 
 After Veriff approves, the webhook automatically calls `create_passport` + `issue_stamps_entry` and saves the object ID in `sui_passport_objects`. The `/passport` page shows on-chain status — no manual steps.
 

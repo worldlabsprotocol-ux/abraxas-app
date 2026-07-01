@@ -31,7 +31,40 @@ function getIssuerKeypair(): Ed25519Keypair {
 }
 
 function getCapId(): string {
-  return process.env.SUI_ISSUANCE_CAP_OBJECT_ID ?? SUI_DEVNET.demoIssuanceCapObjectId;
+  const cap = process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim();
+  if (cap) return cap;
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    throw new Error("SUI_ISSUANCE_CAP_OBJECT_ID must be set in Vercel (do not use legacy demo cap)");
+  }
+  return SUI_DEVNET.demoIssuanceCapObjectId;
+}
+
+/** Derive sponsor address from env key — for config verification only. */
+export function getSponsorAddressFromEnv(): string | null {
+  try {
+    const secret = process.env.SUI_SPONSOR_SECRET_KEY ?? process.env.SUI_ISSUER_SECRET_KEY;
+    if (!secret) return null;
+    const { scheme, secretKey } = decodeSuiPrivateKey(secret.trim());
+    if (scheme !== "ED25519") return null;
+    return Ed25519Keypair.fromSecretKey(secretKey).getPublicKey().toSuiAddress();
+  } catch {
+    return null;
+  }
+}
+
+export function getSponsorConfig() {
+  const sponsorAddress = getSponsorAddressFromEnv();
+  const capFromEnv = process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim() ?? null;
+  const isProduction = Boolean(process.env.VERCEL || process.env.NODE_ENV === "production");
+  return {
+    sponsor_address: sponsorAddress,
+    issuance_cap_object_id: capFromEnv ?? (isProduction ? null : SUI_DEVNET.demoIssuanceCapObjectId),
+    cap_from_env: Boolean(capFromEnv),
+    using_legacy_demo_cap: !capFromEnv && !isProduction,
+    legacy_demo_owner: SUI_DEVNET.demoOwnerAddress,
+    legacy_demo_cap: SUI_DEVNET.demoIssuanceCapObjectId,
+    configured: Boolean(sponsorAddress && (capFromEnv || !isProduction)),
+  };
 }
 
 function addressToAuthorityBytes(addr: string): number[] {
@@ -95,10 +128,11 @@ async function sendTx(tx: Transaction, keypair: Ed25519Keypair): Promise<SuiTran
 }
 
 export function isPassportIssuerConfigured(): boolean {
-  return Boolean(
-    (process.env.SUI_SPONSOR_SECRET_KEY ?? process.env.SUI_ISSUER_SECRET_KEY) &&
-    (process.env.SUI_ISSUANCE_CAP_OBJECT_ID ?? SUI_DEVNET.demoIssuanceCapObjectId),
-  );
+  const hasKey = Boolean(process.env.SUI_SPONSOR_SECRET_KEY ?? process.env.SUI_ISSUER_SECRET_KEY);
+  const hasCap = Boolean(process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim());
+  const isProduction = Boolean(process.env.VERCEL || process.env.NODE_ENV === "production");
+  if (isProduction) return hasKey && hasCap;
+  return hasKey && (hasCap || Boolean(SUI_DEVNET.demoIssuanceCapObjectId));
 }
 
 /** Idempotent: create passport if missing, then issue Veriff stamps. */

@@ -9,5 +9,6 @@
   "demoPassportObjectId": "0x8c77ae709b8da7fb8ae9a5713cf597e5493846a5204d4df0eaf672bde94ceb29",
   "demoIssuanceCapObjectId": "0xee6c6f7e8729e7eb2c07dd79fe94308fe31869f29d205d9e1c29b923f76d27d7",
   "demoOwnerAddress": "0xcf8fa905f43668cd9c1afa59e95020e5a61cfda7090b9f8fb48f5bd6936c06ee",
+  "_readme": "demoOwnerAddress/demoIssuanceCapObjectId are legacy deploy artifacts only. Production MUST set SUI_SPONSOR_SECRET_KEY + SUI_ISSUANCE_CAP_OBJECT_ID in Vercel (your wallet, e.g. 0xa4d1…). Verify: GET /api/sui/passport/sponsor",
   "demoBootstrapTxDigest": "5KKNsEzZkkvx1sDq2JEVAZ2szCizgA5Lmq6zHn3DmEj6"
 }
