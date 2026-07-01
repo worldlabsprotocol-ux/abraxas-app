@@ -9,7 +9,8 @@
     "lint": "next lint",
     "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts",
     "sui:build": "sui move build --path sui/abraxas_passport",
-    "sui:deploy:devnet": "bash scripts/sui/deploy-devnet.sh"
+    "sui:deploy:devnet": "bash scripts/sui/deploy-devnet.sh",
+    "sui:mint-cap": "bash scripts/sui/mint-issuance-cap.sh"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
