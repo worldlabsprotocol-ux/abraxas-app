@@ -2,14 +2,17 @@
 // FILE: app/passport/page.tsx
 // Abraxas Passport — Sui-native verification via zkLogin + Veriff stamps.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
 import { SuiWalletCreatedCard } from "@/components/passport/SuiWalletCreatedCard";
 import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
+import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
@@ -131,12 +134,15 @@ interface PassportState {
 export default function PassportPage() {
   return (
     <SuiAuthProvider>
-      <PassportPageInner />
+      <Suspense fallback={null}>
+        <PassportPageInner />
+      </Suspense>
     </SuiAuthProvider>
   );
 }
 
 function PassportPageInner() {
+  const searchParams = useSearchParams();
   const { suiAddress, session } = useSuiAuth();
   const email = session?.email ?? "";
   const [active, setActive] = useState<string | null>(suiAddress ? "identity" : "wallet");
@@ -148,6 +154,30 @@ function PassportPageInner() {
     asset_owner: "not_started",
   });
 
+  const {
+    identityStatus,
+    via,
+    credential,
+    isRefreshing,
+    isPolling,
+    refresh,
+  } = usePassportVerification(suiAddress, email || null);
+
+  useEffect(() => {
+    setPassportState(prev => ({
+      ...prev,
+      identity:
+        identityStatus === "earned" ? "earned"
+        : identityStatus === "pending" ? "in_progress"
+        : identityStatus === "declined" ? "not_started"
+        : prev.identity === "earned" ? "earned" : "not_started",
+    }));
+  }, [identityStatus]);
+
+  useEffect(() => {
+    if (searchParams.get("signed_in") === "1") refresh();
+  }, [searchParams, refresh]);
+
   const walletDone = Boolean(suiAddress);
   const earned = Object.values(passportState).filter(s => s === "earned").length;
   const activeStamp = active === "wallet" ? null : STAMPS.find(s => s.id === active) ?? null;
@@ -156,27 +186,7 @@ function PassportPageInner() {
     if (suiAddress && active === "wallet") setActive("identity");
   }, [suiAddress, active]);
 
-  useEffect(() => {
-    if (!email && !suiAddress) return;
-    checkStatus(email, suiAddress);
-  }, [email, suiAddress]);
-
-  async function checkStatus(e: string, addr: string | null) {
-    try {
-      const params = new URLSearchParams();
-      if (e) params.set("email", e);
-      if (addr) params.set("sui_address", addr);
-      const res = await fetch(`/api/identity/status?${params}`);
-      const { status } = await res.json() as { status?: string };
-      if (status === "approved") {
-        setPassportState(p => ({ ...p, identity: "earned" }));
-      } else if (status === "pending") {
-        setPassportState(p => ({ ...p, identity: "in_progress" }));
-      }
-    } catch { /* best-effort */ }
-  }
-
-  function startIdentityVerification() {
+  async function startIdentityVerification() {
     if (!suiAddress) {
       setError("Sign in with Google first — that creates your Sui wallet.");
       setActive("wallet");
@@ -222,6 +232,7 @@ function PassportPageInner() {
               return;
             }
             setPassportState(p => ({ ...p, identity: "in_progress" }));
+            refresh();
             w.veriffSDK.createVeriffFrame({ url: response.verification!.url! });
           },
         });
@@ -299,6 +310,15 @@ function PassportPageInner() {
             <SuiWalletCreatedCard suiAddress={suiAddress!} email={email} />
           </div>
         )}
+
+        <PassportCredentialBanner
+          identityStatus={identityStatus}
+          via={via}
+          credential={credential}
+          isRefreshing={isRefreshing}
+          isPolling={isPolling}
+          onRefresh={refresh}
+        />
 
         <div style={{ marginBottom:"2rem" }}>
           <AbraxasPassport

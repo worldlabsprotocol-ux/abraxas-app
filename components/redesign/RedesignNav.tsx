@@ -52,7 +52,7 @@ export function RedesignNav() {
       padding: "0 clamp(0.9rem, 2.5vw, 1.9rem)",
       height: "clamp(60px, 8vw, 72px)", gap: "0.85rem",
     }}>
-      <Link href="/terminal" style={{ display: "flex", alignItems: "center", gap: "0.55rem",
+      <Link href="/passport" style={{ display: "flex", alignItems: "center", gap: "0.55rem",
                                        textDecoration: "none", flexShrink: 0 }}>
         <Image src="/icon-48.png" alt="Abraxas" width={30} height={30} priority
           style={{ display: "block", borderRadius: 8 }} />

@@ -126,8 +126,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const { data } = await sb
     .from("identity_verifications")
     .select("status, credential_jti, document_type, document_country, world_id_verified")
-    .eq("wallet_address", address)
-    .single();
+    .or(`wallet_address.eq.${address},sui_address.eq.${address}`)
+    .maybeSingle();
 
   if (!data) return NextResponse.json({ verified: false, status: "not_found" });
 

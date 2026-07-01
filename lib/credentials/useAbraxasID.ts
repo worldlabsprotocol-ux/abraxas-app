@@ -1,22 +1,16 @@
 // FILE: lib/credentials/useAbraxasID.ts
-// React hook — credential state keyed by Sui address (zkLogin holder).
+// React hook — credential state keyed by Sui address (syncs from server + local cache).
 
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import type { VerificationResult, IssueCredentialInput } from "./types";
 import { resolveHolderAddress } from "./types";
-
-const STORAGE_KEY = "abraxas_credential_v1";
-
-interface StoredCredential {
-  jwt:         string;
-  jti:         string;
-  expires_at:  string;
-  jurisdiction: string;
-  level:       string;
-  sui_address: string;
-}
+import {
+  loadStoredCredential,
+  saveStoredCredential,
+  type StoredCredential,
+} from "./storage";
 
 interface UseAbraxasIDReturn {
   credential:        StoredCredential | null;
@@ -24,6 +18,7 @@ interface UseAbraxasIDReturn {
   issue:             (input: IssueCredentialInput) => Promise<boolean>;
   verify:            () => Promise<VerificationResult | null>;
   revoke:            () => void;
+  refreshFromServer: () => Promise<void>;
   isLoading:         boolean;
   error:             string | null;
 }
@@ -34,26 +29,71 @@ export function useAbraxasID(suiAddress?: string | null): UseAbraxasIDReturn {
   const [isLoading,  setIsLoading]  = useState(false);
   const [error,      setError]      = useState<string | null>(null);
 
+  const refreshFromServer = useCallback(async () => {
+    if (!suiAddress) {
+      setStatus("unverified");
+      setCredential(null);
+      return;
+    }
+    setStatus("checking");
+    try {
+      const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`);
+      const data = await res.json() as {
+        verified?: boolean;
+        credential_jwt?: string;
+        credential_jti?: string;
+        expires_at?: string;
+        jurisdiction?: string;
+        verification_level?: string;
+        document_type?: string;
+      };
+      if (data.verified && data.credential_jwt && data.credential_jti && data.expires_at) {
+        const stored: StoredCredential = {
+          jwt: data.credential_jwt,
+          jti: data.credential_jti,
+          expires_at: data.expires_at,
+          jurisdiction: data.jurisdiction ?? "",
+          level: data.verification_level ?? "standard",
+          sui_address: suiAddress,
+          document_type: data.document_type,
+        };
+        saveStoredCredential(stored);
+        setCredential(stored);
+        setStatus("verified");
+        return;
+      }
+      const cached = loadStoredCredential(suiAddress);
+      if (cached) {
+        setCredential(cached);
+        setStatus("verified");
+      } else {
+        setCredential(null);
+        setStatus("unverified");
+      }
+    } catch {
+      const cached = loadStoredCredential(suiAddress);
+      if (cached) {
+        setCredential(cached);
+        setStatus("verified");
+      } else {
+        setStatus("unverified");
+      }
+    }
+  }, [suiAddress]);
+
   useEffect(() => {
     if (!suiAddress) {
       setStatus("unverified");
       setCredential(null);
       return;
     }
-    const stored = localStorage.getItem(`${STORAGE_KEY}_${suiAddress}`);
-    if (!stored) { setStatus("unverified"); return; }
-    try {
-      const cred: StoredCredential = JSON.parse(stored);
-      if (new Date(cred.expires_at) < new Date()) {
-        setStatus("expired");
-        return;
-      }
-      setCredential(cred);
+    const cached = loadStoredCredential(suiAddress);
+    if (cached) {
+      setCredential(cached);
       setStatus("verified");
-    } catch {
-      setStatus("unverified");
     }
-  }, [suiAddress]);
+    refreshFromServer();
+  }, [suiAddress, refreshFromServer]);
 
   const issue = useCallback(async (input: IssueCredentialInput): Promise<boolean> => {
     setIsLoading(true);
@@ -84,7 +124,7 @@ export function useAbraxasID(suiAddress?: string | null): UseAbraxasIDReturn {
         level:        data.level!,
         sui_address:  holder,
       };
-      localStorage.setItem(`${STORAGE_KEY}_${holder}`, JSON.stringify(stored));
+      saveStoredCredential(stored);
       setCredential(stored);
       setStatus("verified");
       return true;
@@ -115,10 +155,12 @@ export function useAbraxasID(suiAddress?: string | null): UseAbraxasIDReturn {
   }, [credential]);
 
   const revoke = useCallback(() => {
-    if (suiAddress) localStorage.removeItem(`${STORAGE_KEY}_${suiAddress}`);
+    if (suiAddress) {
+      localStorage.removeItem(`abraxas_credential_v1_${suiAddress}`);
+    }
     setCredential(null);
     setStatus("unverified");
   }, [suiAddress]);
 
-  return { credential, status, issue, verify, revoke, isLoading, error };
+  return { credential, status, issue, verify, revoke, refreshFromServer, isLoading, error };
 }

@@ -7,7 +7,7 @@
 Abraxas is **not a KYC provider**. It is a **trust and credential orchestration layer**. Licensed verifiers (Veriff, manual review) perform identity checks; Abraxas records only cryptographic proof — credential hash, issuer, expiration, sanctions status, wallet binding — and lets any participating protocol ask *"Is this wallet verified?"* instead of re-running KYC.
 
 Live: **[https://abraxas-app.vercel.app/](https://abraxas-app.vercel.app/)**  
-Passport: **`/passport`** · AIL spec: **`/docs/ail`** · Sui hub: **`/docs/sui`**
+Home / verify: **`/passport`** · AIL spec: **`/docs/ail`** · Sui hub: **`/docs/sui`**
 
 ---
 

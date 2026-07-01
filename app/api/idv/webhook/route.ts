@@ -140,10 +140,18 @@ export async function POST(req: NextRequest) {
     .sign(signingKey);
 
   if (sb) {
-    // Update identity_verification to approved
+    let userEmail: string | null = null;
+    const { data: zkRow } = await sb
+      .from("sui_zklogin_identities")
+      .select("email")
+      .eq("sui_address", holder)
+      .maybeSingle();
+    if (zkRow?.email) userEmail = zkRow.email;
+
     await sb.from("identity_verifications").upsert({
       wallet_address:    holder,
       sui_address:       holder,
+      user_email:        userEmail,
       document_type:     docType,
       document_country:  country.toUpperCase(),
       document_state:    state.toUpperCase() || null,
