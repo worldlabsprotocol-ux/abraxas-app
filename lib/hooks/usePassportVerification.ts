@@ -1,6 +1,6 @@
 "use client";
 // FILE: lib/hooks/usePassportVerification.ts
-// Polls identity status + syncs W3C credential + auto-verifies after Veriff approve.
+// Polls identity status + syncs W3C credential + auto-verifies + auto-provisions on-chain.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -34,6 +34,8 @@ export interface OnChainPassportStatus {
   stamp_ids: string[];
   stamps_complete: boolean;
   issuer_configured: boolean;
+  eligible_for_provision?: boolean;
+  needs_provision?: boolean;
   explorer_object: string | null;
   create_tx_digest: string | null;
   stamps_tx_digest: string | null;
@@ -52,9 +54,12 @@ export function usePassportVerification(
   const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null);
   const [onChain, setOnChain] = useState<OnChainPassportStatus | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const verifiedJtiRef = useRef<string | null>(null);
+  const provisioningRef = useRef(false);
 
   const syncCredential = useCallback(async (addr: string): Promise<StoredCredential | null> => {
     const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(addr)}`);
@@ -95,16 +100,51 @@ export function usePassportVerification(
     }
   }, [verifyState]);
 
+  const fetchOnChainStatus = useCallback(async (addr: string): Promise<OnChainPassportStatus | null> => {
+    const res = await fetch(`/api/sui/passport/provision?sui=${encodeURIComponent(addr)}`);
+    if (!res.ok) return null;
+    return res.json() as Promise<OnChainPassportStatus>;
+  }, []);
+
+  const autoProvision = useCallback(async (addr: string, status: OnChainPassportStatus) => {
+    if (!status.needs_provision || provisioningRef.current) return status;
+    provisioningRef.current = true;
+    setIsProvisioning(true);
+    setProvisionError(null);
+    try {
+      const res = await fetch("/api/sui/passport/provision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sui_address: addr }),
+      });
+      const data = await res.json() as OnChainPassportStatus & { error?: string };
+      if (!res.ok) {
+        setProvisionError(data.error ?? "On-chain provision failed");
+        return status;
+      }
+      setOnChain(data);
+      return data;
+    } catch {
+      setProvisionError("On-chain provision failed");
+      return status;
+    } finally {
+      provisioningRef.current = false;
+      setIsProvisioning(false);
+    }
+  }, []);
+
   const syncOnChain = useCallback(async (addr: string) => {
     try {
-      const res = await fetch(`/api/sui/passport/provision?sui=${encodeURIComponent(addr)}`);
-      if (!res.ok) return;
-      const data = await res.json() as OnChainPassportStatus;
-      setOnChain(data);
+      let status = await fetchOnChainStatus(addr);
+      if (!status) return;
+      if (status.needs_provision) {
+        status = await autoProvision(addr, status) ?? status;
+      }
+      setOnChain(status);
     } catch {
       /* best-effort */
     }
-  }, []);
+  }, [fetchOnChainStatus, autoProvision]);
 
   const refresh = useCallback(async () => {
     if (!suiAddress && !email) {
@@ -113,6 +153,7 @@ export function usePassportVerification(
       setVerifyState("idle");
       setVerifyResult(null);
       setOnChain(null);
+      setProvisionError(null);
       return;
     }
 
@@ -173,13 +214,23 @@ export function usePassportVerification(
 
   useEffect(() => {
     if (pollRef.current) clearInterval(pollRef.current);
-    if (identityStatus === "pending" && (suiAddress || email)) {
+    const shouldPoll =
+      (identityStatus === "pending" || (identityStatus === "earned" && onChain?.needs_provision)) &&
+      (suiAddress || email);
+    if (shouldPoll) {
       pollRef.current = setInterval(refresh, POLL_MS);
     }
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [identityStatus, suiAddress, email, refresh]);
+  }, [identityStatus, suiAddress, email, onChain?.needs_provision, refresh]);
+
+  const retryProvision = useCallback(async () => {
+    if (!suiAddress) return;
+    const status = await fetchOnChainStatus(suiAddress);
+    if (status) await autoProvision(suiAddress, { ...status, needs_provision: true });
+    await syncOnChain(suiAddress);
+  }, [suiAddress, fetchOnChainStatus, autoProvision, syncOnChain]);
 
   return {
     identityStatus,
@@ -189,8 +240,11 @@ export function usePassportVerification(
     verifyResult,
     onChain,
     isRefreshing,
+    isProvisioning,
+    provisionError,
     lastChecked,
     refresh,
-    isPolling: identityStatus === "pending",
+    retryProvision,
+    isPolling: identityStatus === "pending" || Boolean(onChain?.needs_provision),
   };
 }

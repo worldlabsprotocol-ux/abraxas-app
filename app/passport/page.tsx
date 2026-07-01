@@ -162,20 +162,28 @@ function PassportPageInner() {
     verifyResult,
     onChain,
     isRefreshing,
+    isProvisioning,
+    provisionError,
     isPolling,
     refresh,
+    retryProvision,
   } = usePassportVerification(suiAddress, email || null);
 
   useEffect(() => {
     setPassportState(prev => ({
       ...prev,
       identity:
-        identityStatus === "earned" ? "earned"
-        : identityStatus === "pending" ? "in_progress"
-        : identityStatus === "declined" ? "not_started"
-        : prev.identity === "earned" ? "earned" : "not_started",
+        identityStatus === "earned" && (onChain?.stamps_complete || !onChain?.issuer_configured)
+          ? "earned"
+          : identityStatus === "earned" && isProvisioning
+            ? "in_progress"
+            : identityStatus === "earned"
+              ? "earned"
+              : identityStatus === "pending" ? "in_progress"
+              : identityStatus === "declined" ? "not_started"
+              : prev.identity === "earned" ? "earned" : "not_started",
     }));
-  }, [identityStatus]);
+  }, [identityStatus, onChain?.stamps_complete, onChain?.issuer_configured, isProvisioning]);
 
   useEffect(() => {
     if (searchParams.get("signed_in") === "1") refresh();
@@ -321,6 +329,9 @@ function PassportPageInner() {
           verifyState={verifyState}
           verifyResult={verifyResult}
           onChain={onChain}
+          isProvisioning={isProvisioning}
+          provisionError={provisionError}
+          onRetryProvision={retryProvision}
           isRefreshing={isRefreshing}
           isPolling={isPolling}
           onRefresh={refresh}
@@ -564,7 +575,13 @@ function PassportPageInner() {
         </div>
 
         <div style={{ marginBottom:"2rem" }}><SuiIntegrationsPanel showSetup /></div>
-        <div style={{ marginBottom:"2rem" }}><SuiDevnetPassportPanel compact /></div>
+        <div style={{ marginBottom:"2rem" }}>
+          <SuiDevnetPassportPanel
+            compact
+            ownerAddress={onChain?.provisioned ? suiAddress : undefined}
+            objectId={onChain?.object_id ?? undefined}
+          />
+        </div>
 
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", paddingBottom:"3rem" }}>
           <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:8, background:G, color:"#000",

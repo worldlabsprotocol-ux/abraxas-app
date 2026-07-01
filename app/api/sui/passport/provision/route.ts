@@ -27,6 +27,18 @@ async function loadDbRecord(sui: string) {
   return data;
 }
 
+async function holderIsVerified(sui: string): Promise<boolean> {
+  if (!SB_URL || !SB_KEY) return false;
+  const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+  const { data } = await sb
+    .from("identity_verifications")
+    .select("status")
+    .or(`sui_address.eq.${sui},wallet_address.eq.${sui}`)
+    .eq("status", "approved")
+    .maybeSingle();
+  return Boolean(data);
+}
+
 async function saveDbRecord(
   sui: string,
   result: Awaited<ReturnType<typeof provisionOnChainPassport>>,
@@ -45,6 +57,67 @@ async function saveDbRecord(
   }, { onConflict: "sui_address" });
 }
 
+async function readOnChainPassport(
+  sui: string,
+  db: Awaited<ReturnType<typeof loadDbRecord>>,
+) {
+  const client = getSuiDevnetClient();
+  if (db?.object_id) {
+    const obj = await client.getObject({ id: db.object_id, options: { showContent: true, showType: true } });
+    if (obj.data) {
+      return parseSuiPassportObject(db.object_id, {
+        ...obj.data,
+        objType: obj.data.type,
+        content: obj.data.content,
+      });
+    }
+  }
+  const owned = await client.getOwnedObjects({
+    owner: sui,
+    filter: { StructType: passportTypeFilter() },
+    options: { showContent: true, showType: true },
+  });
+  const first = owned.data[0]?.data;
+  if (!first) return null;
+  return parseSuiPassportObject(first.objectId, {
+    ...first,
+    objType: first.type,
+    content: first.content,
+  });
+}
+
+function statusPayload(
+  sui: string,
+  db: Awaited<ReturnType<typeof loadDbRecord>>,
+  onChain: ReturnType<typeof parseSuiPassportObject> | null,
+  issuerConfigured: boolean,
+  eligibleForProvision: boolean,
+) {
+  const stampsComplete = onChain
+    ? (onChain.stampBitmask & VERIFF_PASSPORT_STAMPS) === VERIFF_PASSPORT_STAMPS
+    : false;
+
+  return {
+    network: SUI_DEVNET.network,
+    sui_address: sui,
+    issuer_configured: issuerConfigured,
+    eligible_for_provision: eligibleForProvision,
+    provisioned: Boolean(db?.object_id || onChain),
+    object_id: db?.object_id ?? onChain?.objectId ?? null,
+    stamp_bitmask: onChain?.stampBitmask ?? db?.stamp_bitmask ?? 0,
+    stamp_ids: onChain?.stampIds ?? [],
+    stamps_complete: stampsComplete,
+    needs_provision: eligibleForProvision && issuerConfigured && !stampsComplete,
+    create_tx_digest: db?.create_tx_digest ?? null,
+    stamps_tx_digest: db?.stamps_tx_digest ?? null,
+    explorer_object: (db?.object_id ?? onChain?.objectId)
+      ? suiExplorerObject(db?.object_id ?? onChain!.objectId)
+      : null,
+    explorer_create_tx: db?.create_tx_digest ? suiExplorerTx(db.create_tx_digest) : null,
+    explorer_stamps_tx: db?.stamps_tx_digest ? suiExplorerTx(db.stamps_tx_digest) : null,
+  };
+}
+
 export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get("sui");
   if (!raw) {
@@ -54,59 +127,18 @@ export async function GET(req: NextRequest) {
   const sui = normalizeSuiAddress(raw);
   const db = await loadDbRecord(sui);
   const issuerConfigured = isPassportIssuerConfigured();
+  const eligibleForProvision = await holderIsVerified(sui);
 
   let onChain: ReturnType<typeof parseSuiPassportObject> | null = null;
   try {
-    const client = getSuiDevnetClient();
-    if (db?.object_id) {
-      const obj = await client.getObject({ id: db.object_id, options: { showContent: true, showType: true } });
-      if (obj.data) {
-        onChain = parseSuiPassportObject(db.object_id, {
-          ...obj.data,
-          objType: obj.data.type,
-          content: obj.data.content,
-        });
-      }
-    } else {
-      const owned = await client.getOwnedObjects({
-        owner: sui,
-        filter: { StructType: passportTypeFilter() },
-        options: { showContent: true, showType: true },
-      });
-      const first = owned.data[0]?.data;
-      if (first) {
-        onChain = parseSuiPassportObject(first.objectId, {
-          ...first,
-          objType: first.type,
-          content: first.content,
-        });
-      }
-    }
+    onChain = await readOnChainPassport(sui, db);
   } catch {
     /* best-effort chain read */
   }
 
-  const stampsComplete = onChain
-    ? (onChain.stampBitmask & VERIFF_PASSPORT_STAMPS) === VERIFF_PASSPORT_STAMPS
-    : false;
-
-  return NextResponse.json({
-    network: SUI_DEVNET.network,
-    sui_address: sui,
-    issuer_configured: issuerConfigured,
-    provisioned: Boolean(db?.object_id || onChain),
-    object_id: db?.object_id ?? onChain?.objectId ?? null,
-    stamp_bitmask: onChain?.stampBitmask ?? db?.stamp_bitmask ?? 0,
-    stamp_ids: onChain?.stampIds ?? [],
-    stamps_complete: stampsComplete,
-    create_tx_digest: db?.create_tx_digest ?? null,
-    stamps_tx_digest: db?.stamps_tx_digest ?? null,
-    explorer_object: (db?.object_id ?? onChain?.objectId)
-      ? suiExplorerObject(db?.object_id ?? onChain!.objectId)
-      : null,
-    explorer_create_tx: db?.create_tx_digest ? suiExplorerTx(db.create_tx_digest) : null,
-    explorer_stamps_tx: db?.stamps_tx_digest ? suiExplorerTx(db.stamps_tx_digest) : null,
-  });
+  return NextResponse.json(
+    statusPayload(sui, db, onChain, issuerConfigured, eligibleForProvision),
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -125,22 +157,23 @@ export async function POST(req: NextRequest) {
 
   const sui = normalizeSuiAddress(raw);
 
+  if (!(await holderIsVerified(sui))) {
+    return NextResponse.json(
+      { error: "Holder must complete Veriff approval before on-chain provision" },
+      { status: 403 },
+    );
+  }
+
   try {
     const result = await provisionOnChainPassport(sui);
     await saveDbRecord(sui, result);
+    const db = await loadDbRecord(sui);
+    const onChain = await readOnChainPassport(sui, db);
 
     return NextResponse.json({
       ok: true,
-      network: SUI_DEVNET.network,
-      sui_address: sui,
-      object_id: result.objectId,
-      stamp_bitmask: result.stampBitmask,
       already_existed: result.alreadyExisted,
-      create_tx_digest: result.createTxDigest ?? null,
-      stamps_tx_digest: result.stampsTxDigest ?? null,
-      explorer_object: suiExplorerObject(result.objectId),
-      explorer_create_tx: result.createTxDigest ? suiExplorerTx(result.createTxDigest) : null,
-      explorer_stamps_tx: result.stampsTxDigest ? suiExplorerTx(result.stampsTxDigest) : null,
+      ...statusPayload(sui, db, onChain, true, true),
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Provision failed";

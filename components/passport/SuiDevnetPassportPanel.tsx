@@ -112,17 +112,30 @@ function PassportCard({ passport }: { passport: ParsedSuiPassport }) {
   );
 }
 
-export function SuiDevnetPassportPanel({ compact = false }: { compact?: boolean }) {
-  const [objectId, setObjectId] = useState(SUI_DEVNET.demoPassportObjectId);
+export function SuiDevnetPassportPanel({
+  compact = false,
+  ownerAddress,
+  objectId: initialObjectId,
+}: {
+  compact?: boolean;
+  /** When set, load this holder's passport instead of the demo object */
+  ownerAddress?: string | null;
+  objectId?: string | null;
+}) {
+  const [objectId, setObjectId] = useState(initialObjectId ?? SUI_DEVNET.demoPassportObjectId);
   const [passport, setPassport] = useState<ParsedSuiPassport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isUserPassport = Boolean(ownerAddress || initialObjectId);
 
-  const fetchPassport = useCallback(async (id?: string) => {
+  const fetchPassport = useCallback(async (opts?: { objectId?: string; owner?: string }) => {
     setLoading(true);
     setError(null);
     try {
-      const q = id ? `?objectId=${encodeURIComponent(id)}` : "";
+      const params = new URLSearchParams();
+      if (opts?.objectId) params.set("objectId", opts.objectId);
+      else if (opts?.owner) params.set("owner", opts.owner);
+      const q = params.toString() ? `?${params}` : "";
       const res = await fetch(`/api/sui/passport${q}`);
       const data = (await res.json()) as ApiPassportResponse;
       if (!res.ok) {
@@ -132,6 +145,7 @@ export function SuiDevnetPassportPanel({ compact = false }: { compact?: boolean 
       }
       const p = data.passport ?? data.passports?.[0] ?? null;
       setPassport(p);
+      if (p) setObjectId(p.objectId);
       if (!p) setError("No passport found");
     } catch (e) {
       setPassport(null);
@@ -142,8 +156,16 @@ export function SuiDevnetPassportPanel({ compact = false }: { compact?: boolean 
   }, []);
 
   useEffect(() => {
-    fetchPassport(SUI_DEVNET.demoPassportObjectId);
-  }, [fetchPassport]);
+    if (initialObjectId) {
+      setObjectId(initialObjectId);
+      fetchPassport({ objectId: initialObjectId });
+    } else if (ownerAddress) {
+      fetchPassport({ owner: ownerAddress });
+    } else {
+      setObjectId(SUI_DEVNET.demoPassportObjectId);
+      fetchPassport({ objectId: SUI_DEVNET.demoPassportObjectId });
+    }
+  }, [fetchPassport, ownerAddress, initialObjectId]);
 
   return (
     <div style={{
@@ -158,11 +180,13 @@ export function SuiDevnetPassportPanel({ compact = false }: { compact?: boolean 
             Sui devnet · live object
           </div>
           <div style={{ fontFamily: FONT, fontSize: compact ? "0.88rem" : "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            View devnet passport
+            {isUserPassport ? "Your on-chain Passport" : "View devnet passport"}
           </div>
           {!compact && (
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.65, maxWidth: 520 }}>
-              Abraxas Passport Move module deployed on Sui devnet. Query any Passport object ID or load the demo bootstrap passport.
+              {isUserPassport
+                ? "Live Abraxas Passport object on Sui devnet — stamps issued after Veriff approve."
+                : "Abraxas Passport Move module deployed on Sui devnet. Query any Passport object ID or load the demo bootstrap passport."}
             </p>
           )}
         </div>
@@ -188,7 +212,7 @@ export function SuiDevnetPassportPanel({ compact = false }: { compact?: boolean 
         />
         <button
           type="button"
-          onClick={() => fetchPassport(objectId.trim())}
+          onClick={() => fetchPassport({ objectId: objectId.trim() })}
           disabled={loading || !objectId.trim()}
           style={{
             padding: "0.55rem 1rem", borderRadius: 999, border: "none",
@@ -199,11 +223,12 @@ export function SuiDevnetPassportPanel({ compact = false }: { compact?: boolean 
         >
           {loading ? "Loading…" : "Lookup"}
         </button>
+        {!isUserPassport && (
         <button
           type="button"
           onClick={() => {
             setObjectId(SUI_DEVNET.demoPassportObjectId);
-            fetchPassport(SUI_DEVNET.demoPassportObjectId);
+            fetchPassport({ objectId: SUI_DEVNET.demoPassportObjectId });
           }}
           disabled={loading}
           style={{
@@ -215,6 +240,7 @@ export function SuiDevnetPassportPanel({ compact = false }: { compact?: boolean 
         >
           Demo passport
         </button>
+        )}
       </div>
 
       <div style={{ fontFamily: MONO, fontSize: "0.65rem", color: "var(--text-muted)", marginBottom: "1rem", lineHeight: 1.6 }}>

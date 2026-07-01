@@ -30,6 +30,9 @@ export function PassportCredentialBanner({
   verifyState,
   verifyResult,
   onChain,
+  isProvisioning,
+  provisionError,
+  onRetryProvision,
   isRefreshing,
   isPolling,
   onRefresh,
@@ -40,6 +43,9 @@ export function PassportCredentialBanner({
   verifyState: CredentialVerifyState;
   verifyResult: VerificationResult | null;
   onChain: OnChainPassportStatus | null;
+  isProvisioning: boolean;
+  provisionError: string | null;
+  onRetryProvision: () => void;
   isRefreshing: boolean;
   isPolling: boolean;
   onRefresh: () => void;
@@ -172,7 +178,18 @@ export function PassportCredentialBanner({
           </div>
         )}
 
-        {onChain?.provisioned && onChain.object_id && (
+        {isProvisioning && (
+          <div style={{
+            background: `${ACCENT}10`, border: `1px solid ${ACCENT}33`, borderRadius: 10,
+            padding: "0.75rem 0.9rem", marginBottom: "0.85rem",
+          }}>
+            <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
+              Creating your on-chain Passport on Sui devnet — sponsor wallet is paying gas…
+            </div>
+          </div>
+        )}
+
+        {onChain?.provisioned && onChain.stamps_complete && onChain.object_id && (
           <div style={{
             background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
             padding: "0.75rem 0.9rem", marginBottom: "0.85rem",
@@ -203,16 +220,28 @@ export function PassportCredentialBanner({
           </div>
         )}
 
-        {onChain && !onChain.provisioned && identityStatus === "earned" && (
+        {onChain && !onChain.provisioned && identityStatus === "earned" && !isProvisioning && (
           <div style={{
             background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
             padding: "0.75rem 0.9rem", marginBottom: "0.85rem",
           }}>
-            <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
-              {onChain.issuer_configured
-                ? "On-chain passport is being provisioned — refresh in a moment."
-                : "Off-chain credential is active. On-chain stamps will appear once the sponsor wallet is configured."}
+            <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
+              {provisionError
+                ? provisionError
+                : onChain.issuer_configured
+                  ? "Queuing on-chain passport — this page will update automatically."
+                  : "Off-chain credential is active. On-chain stamps appear once sponsor wallet env is set in Vercel."}
             </div>
+            {provisionError && (
+              <button type="button" onClick={onRetryProvision}
+                style={{
+                  padding: "0.45rem 0.9rem", borderRadius: 999, border: `1px solid ${ACCENT}55`,
+                  background: "transparent", color: ACCENT, fontFamily: FONT, fontSize: "0.75rem",
+                  fontWeight: 600, cursor: "pointer",
+                }}>
+                Retry on-chain provision
+              </button>
+            )}
           </div>
         )}
 
