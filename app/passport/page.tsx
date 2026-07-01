@@ -158,6 +158,9 @@ function PassportPageInner() {
     identityStatus,
     via,
     credential,
+    verifyState,
+    verifyResult,
+    onChain,
     isRefreshing,
     isPolling,
     refresh,
@@ -315,6 +318,9 @@ function PassportPageInner() {
           identityStatus={identityStatus}
           via={via}
           credential={credential}
+          verifyState={verifyState}
+          verifyResult={verifyResult}
+          onChain={onChain}
           isRefreshing={isRefreshing}
           isPolling={isPolling}
           onRefresh={refresh}

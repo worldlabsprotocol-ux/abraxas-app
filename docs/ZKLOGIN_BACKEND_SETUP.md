@@ -73,10 +73,20 @@ Webhook: `https://abraxas-app.vercel.app/api/idv/webhook`
 
 `node scripts/generate-abraxas-key.js` → `ABRAXAS_SIGNING_KEY`, `ABRAXAS_PUBLIC_KEY`
 
-## Step 6 — On-chain stamps (you build next)
+## Step 6 — On-chain stamps (Phase 2)
 
-- `npm run sui:deploy:devnet`
-- After Veriff: call Move `issue_stamps_entry`, store object ID per `sui_address`
+Run migration `supabase/migrations/010_sui_passport_objects.sql`
+
+Env (sponsor wallet that owns the Move `IssuanceCap`):
+
+```
+SUI_SPONSOR_SECRET_KEY=suiprivkey1…
+SUI_ISSUANCE_CAP_OBJECT_ID=0xee6c6f7e8729e7eb2c07dd79fe94308fe31869f29d205d9e1c29b923f76d27d7
+```
+
+After Veriff approves, the webhook automatically calls `create_passport` + `issue_stamps_entry` and saves the object ID in `sui_passport_objects`. The `/passport` page shows on-chain status — no manual steps.
+
+Fund the sponsor wallet with devnet SUI: `sui client faucet` (or transfer from your deploy wallet).
 
 ## Step 7 — Prover (transactions only)
 
@@ -90,9 +100,9 @@ If `node scripts/generate-abraxas-key.js` failed with **non-extractable CryptoKe
 
 Then paste both JSON lines into Vercel → redeploy.
 
-## Step 6 — on-chain stamps (next backend build)
+## Step 6 — on-chain stamps (Phase 2 — live)
 
-After Veriff approves, call Sui `issue_stamps_entry` and save object ID in `sui_passport_objects` (table included in full SQL in Part A of setup doc).
+Run `010_sui_passport_objects.sql`. Set `SUI_SPONSOR_SECRET_KEY` + `SUI_ISSUANCE_CAP_OBJECT_ID`. Veriff webhook provisions on-chain automatically; `/passport` auto-verifies credentials — no JWT paste.
 
 ## Step 7 — prover URL (skip until users send txs)
 

@@ -179,5 +179,27 @@ export async function POST(req: NextRequest) {
   }
 
   console.log(`[webhook] ✓ Credential issued for ${holder} → ${jti}`);
+
+  // Phase 2 — on-chain passport (best-effort; JWT already issued)
+  try {
+    const { isPassportIssuerConfigured, provisionOnChainPassport } = await import("@/lib/sui/passportIssuer");
+    if (isPassportIssuerConfigured() && sb) {
+      const onChain = await provisionOnChainPassport(holder);
+      await sb.from("sui_passport_objects").upsert({
+        sui_address:       holder,
+        object_id:         onChain.objectId,
+        network:           "devnet",
+        stamp_bitmask:     onChain.stampBitmask,
+        create_tx_digest:  onChain.createTxDigest ?? null,
+        stamps_tx_digest:  onChain.stampsTxDigest ?? null,
+        provisioned_at:    now.toISOString(),
+        updated_at:        now.toISOString(),
+      }, { onConflict: "sui_address" });
+      console.log(`[webhook] ✓ On-chain passport for ${holder} → ${onChain.objectId}`);
+    }
+  } catch (e: unknown) {
+    console.error("[webhook] On-chain provision failed (credential still valid):", e);
+  }
+
   return NextResponse.json({ ok: true, jti });
 }
