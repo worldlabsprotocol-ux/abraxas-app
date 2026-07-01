@@ -35,8 +35,8 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    configured,
     ...config,
+    configured,
     cap_owner: capOwner,
     cap_owner_matches_sponsor: capOwnerMatchesSponsor,
     note: config.cap_from_env
