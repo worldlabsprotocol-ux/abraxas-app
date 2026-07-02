@@ -11,6 +11,7 @@ import { SuiWalletCreatedCard } from "@/components/passport/SuiWalletCreatedCard
 import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
+import { PassportTrustCard } from "@/components/passport/PassportTrustCard";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
@@ -35,7 +36,7 @@ const B = "#3B82F6";
 const A = "#F59E0B";
 const V = "#8B5CF6";
 
-const VERIFF_PUBLIC_API_KEY = "271e98bb-881f-40b9-bf21-94aecff4a846";
+const VERIFF_PUBLIC_API_KEY = "271e98bb-881f-40b9-bf21-94aecff4a846"; // legacy; server create-session preferred
 
 interface Stamp {
   id: string;
@@ -169,6 +170,7 @@ function PassportPageInner() {
     isPolling,
     refresh,
     retryProvision,
+    syncMessage,
   } = usePassportVerification(suiAddress, email || null);
 
   useEffect(() => {
@@ -201,6 +203,16 @@ function PassportPageInner() {
 
   const showVeriffHint = identityStatus === "pending" || passportState.identity === "in_progress" || starting;
 
+  const loadVeriffScript = (src: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.body.appendChild(s);
+    });
+
   async function startIdentityVerification() {
     if (!suiAddress) {
       setError("Sign in with Google first. That creates your Sui wallet.");
@@ -214,60 +226,40 @@ function PassportPageInner() {
     setStarting(true);
     setError(null);
 
-    const vendorData = `sui:${suiAddress}`;
-
-    function loadScript(src: string): Promise<void> {
-      return new Promise((resolve, reject) => {
-        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-        const s = document.createElement("script");
-        s.src = src;
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error(`Failed to load ${src}`));
-        document.body.appendChild(s);
+    try {
+      const sessionRes = await fetch("/api/idv/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sui_address: suiAddress,
+          document_type: "PASSPORT",
+        }),
       });
+      const sessionData = await sessionRes.json() as {
+        session_url?: string | null;
+        session_id?: string;
+        error?: string;
+        is_mock?: boolean;
+      };
+
+      if (!sessionRes.ok || !sessionData.session_url) {
+        setError(sessionData.error ?? "Could not start verification. Check Veriff env vars.");
+        return;
+      }
+
+      setPassportState(p => ({ ...p, identity: "in_progress" }));
+      refresh();
+
+      await loadVeriffScript("https://cdn.veriff.me/incontext/js/v1/veriff.js");
+      const w = window as unknown as {
+        veriffSDK: { createVeriffFrame: (opts: { url: string }) => void };
+      };
+      w.veriffSDK.createVeriffFrame({ url: sessionData.session_url });
+    } catch {
+      setError("Could not load the verification widget. Check your connection and try again.");
+    } finally {
+      setStarting(false);
     }
-
-    Promise.all([
-      loadScript("https://cdn.veriff.me/sdk/js/1.5/veriff.min.js"),
-      loadScript("https://cdn.veriff.me/incontext/js/v1/veriff.js"),
-    ])
-      .then(() => {
-        const w = window as unknown as {
-          Veriff: (config: Record<string, unknown>) => { mount: (opts: Record<string, unknown>) => void };
-          veriffSDK: { createVeriffFrame: (opts: { url: string }) => void };
-        };
-        const veriff = w.Veriff({
-          host: "https://stationapi.veriff.com",
-          apiKey: VERIFF_PUBLIC_API_KEY,
-          parentId: "veriff-root",
-          onSession: function (err: unknown, response: { verification?: { url?: string; id?: string } }) {
-            setStarting(false);
-            if (err || !response?.verification?.url) {
-              setError("Could not start verification. Try again shortly.");
-              return;
-            }
-            setPassportState(p => ({ ...p, identity: "in_progress" }));
-            if (response.verification?.id && suiAddress) {
-              fetch("/api/idv/register-session", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  sui_address: suiAddress,
-                  session_id: response.verification.id,
-                  email,
-                }),
-              }).catch(() => undefined);
-            }
-            refresh();
-            w.veriffSDK.createVeriffFrame({ url: response.verification!.url! });
-          },
-        });
-        veriff.mount({ formLabel: { vendorData } });
-      })
-      .catch(() => {
-        setStarting(false);
-        setError("Could not load the verification widget. Check your connection and try again.");
-      });
   }
 
   const statusColor: Record<StampStatus, string> = {
@@ -338,6 +330,8 @@ function PassportPageInner() {
           </div>
         )}
 
+        <PassportTrustCard suiAddress={suiAddress} />
+
         <PassportCredentialBanner
           identityStatus={identityStatus}
           via={via}
@@ -351,6 +345,7 @@ function PassportPageInner() {
           isRefreshing={isRefreshing}
           isPolling={isPolling}
           onRefresh={refresh}
+          syncMessage={syncMessage}
         />
 
         <PassportIntentCard

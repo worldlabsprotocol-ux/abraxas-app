@@ -40,8 +40,11 @@ function parseHolder(vendorData?: string): string | null {
   return suiMatch?.[1] ?? legacyMatch?.[1] ?? null;
 }
 
-export async function processVeriffDecision(v: VeriffDecisionInput): Promise<ProcessDecisionResult> {
-  const holder = parseHolder(v.vendorData);
+export async function processVeriffDecision(
+  v: VeriffDecisionInput,
+  holderOverride?: string,
+): Promise<ProcessDecisionResult> {
+  const holder = parseHolder(v.vendorData) ?? holderOverride ?? null;
   if (!holder) {
     return { ok: true, status: "ignored", message: "No holder in vendorData" };
   }

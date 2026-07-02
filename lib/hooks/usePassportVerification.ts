@@ -56,6 +56,7 @@ export function usePassportVerification(
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const verifiedJtiRef = useRef<string | null>(null);
@@ -149,10 +150,15 @@ export function usePassportVerification(
   const syncVeriffDecision = useCallback(async (addr: string): Promise<boolean> => {
     try {
       const res = await fetch(`/api/idv/sync-decision?sui=${encodeURIComponent(addr)}`);
-      if (!res.ok) return false;
-      const data = await res.json() as { status?: string; synced?: boolean };
+      const data = await res.json() as {
+        status?: string;
+        synced?: boolean;
+        message?: string;
+      };
+      setSyncMessage(data.message ?? null);
       return data.status === "approved" || data.synced === true;
     } catch {
+      setSyncMessage("Could not reach Veriff sync endpoint");
       return false;
     }
   }, []);
@@ -259,6 +265,7 @@ export function usePassportVerification(
     isRefreshing,
     isProvisioning,
     provisionError,
+    syncMessage,
     lastChecked,
     refresh,
     retryProvision,

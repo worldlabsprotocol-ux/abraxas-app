@@ -36,6 +36,7 @@ export function PassportCredentialBanner({
   isRefreshing,
   isPolling,
   onRefresh,
+  syncMessage,
 }: {
   identityStatus: IdentityStampStatus;
   via: string | null;
@@ -49,6 +50,7 @@ export function PassportCredentialBanner({
   isRefreshing: boolean;
   isPolling: boolean;
   onRefresh: () => void;
+  syncMessage?: string | null;
 }) {
   const [copied, setCopied] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -70,8 +72,13 @@ export function PassportCredentialBanner({
           Veriff Precheck in review
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-          Your documents are being reviewed{via ? ` (${via})` : ""}. This page polls Veriff automatically and updates when approved, usually under 5 minutes.
+          Your documents are being reviewed{via ? ` (${via})` : ""}. This page polls Veriff every 5 seconds and issues your credential automatically when approved.
         </p>
+        {syncMessage && (
+          <p style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
+            {syncMessage}
+          </p>
+        )}
         <button type="button" onClick={onRefresh} disabled={isRefreshing}
           style={{
             padding: "0.45rem 0.9rem", borderRadius: 999, border: `1px solid ${AMBER}55`,

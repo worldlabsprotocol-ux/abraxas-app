@@ -84,16 +84,25 @@ export async function POST(req: NextRequest) {
 
   const { id: session_id, url: session_url } = data.verification;
 
-  // Track session in Supabase so webhook can match it to a wallet
+  // Track session in Supabase so webhook + polling can match it to a wallet
   if (SB_URL && SB_SERVICE) {
     const sb = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
+    let userEmail: string | null = null;
+    const { data: zkRow } = await sb
+      .from("sui_zklogin_identities")
+      .select("email")
+      .eq("sui_address", holder)
+      .maybeSingle();
+    if (zkRow?.email) userEmail = zkRow.email;
+
     await sb.from("identity_verifications").upsert({
-      wallet_address:  holder,
-      sui_address:     holder,
-      veriff_session_id: session_id,
-      status:          "pending",
-      liveness_provider: "veriff",
-      updated_at:      new Date().toISOString(),
+      wallet_address:      holder,
+      sui_address:         holder,
+      user_email:          userEmail,
+      veriff_session_id:   session_id,
+      status:              "pending",
+      liveness_provider:   "veriff",
+      updated_at:          new Date().toISOString(),
     }, { onConflict: "wallet_address" });
   }
 
