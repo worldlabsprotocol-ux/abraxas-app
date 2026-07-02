@@ -27,15 +27,26 @@ interface AvailabilityResponse {
 export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean }) {
   const [blocked, setBlocked] = useState<BlockedDate[] | null>(null);
   const [meta, setMeta] = useState<AvailabilityResponse["sources"] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     fetch("/api/cielo/availability")
       .then(r => r.json())
-      .then((data: AvailabilityResponse) => {
+      .then((data: AvailabilityResponse & { error?: string }) => {
+        if (data.error && !data.blocked) {
+          throw new Error(data.error);
+        }
         setBlocked(data.blocked ?? []);
         setMeta(data.sources ?? null);
       })
-      .catch(() => setBlocked([]));
+      .catch(() => {
+        setBlocked(null);
+        setError("Could not load Protocol Calendar. Try again or book on /flagship.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const today = new Date();
@@ -53,8 +64,33 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
     return `${BLOCKED}88`;
   }
 
+  if (loading) {
+    return (
+      <div id="protocol-calendar" style={{
+        padding: compact ? "0.85rem" : "1rem 1.1rem", borderRadius: 14,
+        background: "var(--surface-raised)", border: "1px solid var(--border)",
+        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
+      }}>
+        Loading Abraxas Protocol Calendar…
+      </div>
+    );
+  }
+
+  if (error || blocked === null) {
+    return (
+      <div id="protocol-calendar" style={{
+        padding: compact ? "0.85rem" : "1rem 1.1rem", borderRadius: 14,
+        background: "var(--surface-raised)", border: "1px dashed var(--border)",
+        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6,
+      }}>
+        {error ?? "Calendar unavailable."}{" "}
+        <Link href="/cielo/status" style={{ color: ACCENT }}>Track a booking</Link>
+      </div>
+    );
+  }
+
   return (
-    <div style={{
+    <div id="protocol-calendar" style={{
       padding: compact ? "0.85rem" : "1rem 1.1rem",
       borderRadius: 14,
       background: "var(--surface-raised)",

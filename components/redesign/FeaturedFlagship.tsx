@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { VerificationBadge } from "./VerificationBadge";
 import { Btn } from "./ui";
-import { CieloAvailabilityPanel } from "@/components/cielo/CieloAvailabilityPanel";
 import { CieloBookingPanel } from "@/components/cielo/CieloBookingPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -87,11 +86,10 @@ export function FeaturedFlagship() {
             ))}
           </div>
 
-          <CieloAvailabilityPanel compact />
-
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem" }}>
-            <Btn href="/flagship" size="lg">Full verification dossier →</Btn>
-            <Btn href={D.airbnbUrl} newTab variant="secondary" size="lg">Airbnb listing</Btn>
+            <Btn href="/flagship#protocol-calendar" size="lg">Protocol Calendar →</Btn>
+            <Btn href="/flagship" variant="secondary" size="lg">Full dossier</Btn>
+            <Btn href={D.airbnbUrl} newTab variant="ghost" size="lg">Airbnb listing</Btn>
           </div>
 
           <CieloBookingPanel variant="inline" />
