@@ -4,7 +4,7 @@
 import { Transaction } from "@mysten/sui/transactions";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeJwt, genAddressSeed, getZkLoginSignature } from "@mysten/sui/zklogin";
-import { getSuiDevnetClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/client";
 import { fetchZkLoginProof } from "./fetchZkProof";
 import {
   getEphemeralSecretKey,
@@ -28,7 +28,7 @@ export async function signAndExecuteZkLoginTransaction(
     throw new Error("Sign in with Google again to pay from your zkLogin wallet.");
   }
 
-  const client = getSuiDevnetClient();
+  const client = getSuiClient();
   const { epoch } = await client.getLatestSuiSystemState();
   const currentEpoch = Number(epoch);
   if (currentEpoch >= signing.maxEpoch) {

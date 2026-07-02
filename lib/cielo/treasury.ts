@@ -15,12 +15,12 @@ export function getCieloTreasuryLabel(): string {
 
 export function getUsdcCoinType(): string | null {
   const t = process.env.SUI_USDC_COIN_TYPE?.trim();
-  return t || null;
+  if (!t) return null;
+  if (t.includes("::")) return t;
+  return `${t}::usdc::USDC`;
 }
 
-export function getSuiNetwork(): string {
-  return process.env.SUI_NETWORK ?? "devnet";
-}
+export { getSuiNetwork } from "@/lib/sui/network";
 
 export function usdcBaseUnits(humanAmount: number): bigint {
   return BigInt(Math.round(humanAmount * 1_000_000));

@@ -7,6 +7,7 @@ import { verifyCieloPayment } from "@/lib/cielo/paymentVerify";
 import { confirmBookingHold } from "@/lib/cielo/calendar";
 import { getCieloTreasuryAddress } from "@/lib/cielo/treasury";
 import { estimateUsdc } from "@/lib/cielo/bookingValidation";
+import { emailPaymentCaptured } from "@/lib/cielo/notifications";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -69,6 +70,19 @@ export async function POST(req: NextRequest) {
   }).eq("booking_id", bookingId);
 
   await confirmBookingHold(bookingId);
+
+  if (stay.email) {
+    await emailPaymentCaptured({
+      booking_id: bookingId,
+      guest_name: stay.guest_name,
+      email: stay.email,
+      check_in: stay.check_in,
+      check_out: stay.check_out,
+      est_usdc: expected,
+      payment_tx_digest: txDigest,
+      paid_amount_usdc: verification.amount_human,
+    });
+  }
 
   return NextResponse.json({
     ok: true,

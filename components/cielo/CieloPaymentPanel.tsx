@@ -31,6 +31,7 @@ interface PaymentInfo {
   asset: string;
   payable: boolean;
   usdc_coin_type: string | null;
+  network: string;
 }
 
 export function CieloPaymentPanel({
@@ -177,7 +178,7 @@ export function CieloPaymentPanel({
     }}>
       <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: AMBER,
                      letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-        Phase 3 · Pay from zkLogin wallet
+        Phase 3 · Pay from zkLogin · {payment.network ?? "sui"}
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, marginBottom: "0.5rem" }}>
         {payment.amount_usdc} {payment.asset} to {payment.treasury_label}
@@ -210,8 +211,8 @@ export function CieloPaymentPanel({
             {payLabel}
           </button>
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.5 }}>
-            One tap: Abraxas signs with your zkLogin session, submits to Sui, and verifies payment automatically.
-            {!payment.usdc_coin_type && " Devnet mode sends 0.01 SUI as a test payment."}
+            One tap: Abraxas signs with your zkLogin session, submits USDC on Sui {payment.network ?? "mainnet"}, and verifies automatically.
+            {!payment.usdc_coin_type && " Devnet fallback sends 0.01 SUI when USDC coin type is not set."}
           </p>
         </>
       )}

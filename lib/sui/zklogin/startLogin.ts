@@ -3,7 +3,7 @@
 
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { generateNonce, generateRandomness } from "@mysten/sui/zklogin";
-import { getSuiDevnetClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/client";
 import { buildGoogleOAuthUrl, isZkLoginConfigured } from "./config";
 import { savePendingSession } from "./session";
 
@@ -17,7 +17,7 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
     };
   }
 
-  const sui = getSuiDevnetClient();
+  const sui = getSuiClient();
   const { epoch } = await sui.getLatestSuiSystemState();
   const maxEpoch = Number(epoch) + EPOCH_BUFFER;
 

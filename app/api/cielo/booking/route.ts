@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getCieloTreasuryAddress, getCieloTreasuryLabel, getUsdcCoinType } from "@/lib/cielo/treasury";
 import { estimateUsdc } from "@/lib/cielo/bookingValidation";
+import { getPublicSuiConfig } from "@/lib/sui/network";
 
 export async function GET(req: NextRequest) {
   const bookingId = req.nextUrl.searchParams.get("booking_id") ?? req.nextUrl.searchParams.get("id");
@@ -32,9 +33,11 @@ export async function GET(req: NextRequest) {
   const amount = stay.est_usdc ?? estimateUsdc(stay.check_in, stay.check_out);
   const treasuryAddress = getCieloTreasuryAddress();
   const payable = ["confirmed", "authorized", "pending"].includes(stay.status);
+  const sui = getPublicSuiConfig();
 
   return NextResponse.json({
     ok: true,
+    sui,
     booking: {
       booking_id: stay.booking_id,
       status: stay.status,
@@ -50,6 +53,7 @@ export async function GET(req: NextRequest) {
     },
     payment: {
       chain: "sui",
+      network: sui.network,
       asset: getUsdcCoinType() ? "USDC" : "SUI (devnet test)",
       amount_usdc: amount,
       treasury_address: treasuryAddress,

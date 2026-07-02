@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_PROVING_SERVICE_URL } from "@/lib/sui/zklogin/config";
+import { getZkLoginProverUrl } from "@/lib/sui/network";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
@@ -12,10 +13,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "jwt required" }, { status: 400 });
   }
 
-  const proverUrl =
-    process.env.ZKLOGIN_PROVER_URL ??
-    process.env.NEXT_PUBLIC_ZKLOGIN_PROVER_URL ??
-    DEFAULT_PROVING_SERVICE_URL;
+  const proverUrl = getZkLoginProverUrl() || DEFAULT_PROVING_SERVICE_URL;
 
   try {
     const upstream = await fetch(proverUrl, {

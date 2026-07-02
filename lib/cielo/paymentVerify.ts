@@ -2,7 +2,8 @@
 // Verify USDC (or devnet SUI) payment to Cielo treasury on Sui.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { getSuiDevnetClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/client";
+import { suiExplorerTxUrl } from "@/lib/sui/network";
 import { getCieloTreasuryAddress, getUsdcCoinType, humanUsdcFromBaseUnits, usdcBaseUnits } from "@/lib/cielo/treasury";
 
 export interface PaymentVerification {
@@ -35,7 +36,7 @@ export async function verifyCieloPayment(
     };
   }
 
-  const client = getSuiDevnetClient();
+  const client = getSuiClient();
   const usdcType = getUsdcCoinType();
   const minBase = usdcType
     ? usdcBaseUnits(expectedUsdc * 0.98)
@@ -137,7 +138,6 @@ export async function verifyCieloPayment(
     };
   }
 
-  const explorerBase = process.env.SUI_EXPLORER_TX_BASE ?? "https://suiscan.xyz/devnet/tx";
   return {
     ok: true,
     tx_digest: txDigest,
@@ -145,6 +145,6 @@ export async function verifyCieloPayment(
     sender,
     amount_human: amountHuman,
     coin_type: matchedCoin,
-    explorer_url: `${explorerBase}/${txDigest}`,
+    explorer_url: suiExplorerTxUrl(txDigest),
   };
 }

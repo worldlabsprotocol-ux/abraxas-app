@@ -30,7 +30,7 @@ export async function buildCieloPaymentTransaction(
     });
 
     if (coins.data.length === 0) {
-      throw new Error("No USDC in your wallet. Fund your zkLogin address with USDC on Sui devnet.");
+      throw new Error(`No USDC in your wallet. Fund your zkLogin address with USDC on Sui.`);
     }
 
     const coinIds = coins.data.map(c => c.coinObjectId);

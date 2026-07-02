@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { confirmBookingHold, releaseBookingHold } from "@/lib/cielo/calendar";
+import { emailGuestPaymentLink } from "@/lib/cielo/notifications";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -48,6 +49,13 @@ export async function POST(req: NextRequest) {
   }
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+
+  const { data: before } = await sb
+    .from("stay_requests")
+    .select("*")
+    .eq("booking_id", bookingId)
+    .maybeSingle();
+
   await sb.from("stay_requests").update({ status }).eq("booking_id", bookingId);
 
   if (status === "confirmed" || status === "authorized" || status === "captured") {
@@ -55,6 +63,23 @@ export async function POST(req: NextRequest) {
   }
   if (status === "cancelled" || status === "declined") {
     await releaseBookingHold(bookingId);
+  }
+
+  if (
+    before &&
+    before.status !== status &&
+    (status === "confirmed" || status === "authorized") &&
+    before.email
+  ) {
+    await emailGuestPaymentLink({
+      booking_id: before.booking_id,
+      guest_name: before.guest_name,
+      email: before.email,
+      check_in: before.check_in,
+      check_out: before.check_out,
+      est_usdc: before.est_usdc,
+      nights: before.nights,
+    });
   }
 
   return NextResponse.json({ ok: true, booking_id: bookingId, status });

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { estimateUsdc } from "@/lib/cielo/bookingValidation";
 import { getCieloTreasuryAddress, getCieloTreasuryLabel, getUsdcCoinType } from "@/lib/cielo/treasury";
+import { getPublicSuiConfig } from "@/lib/sui/network";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
   const treasuryAddress = getCieloTreasuryAddress();
   const treasuryLabel = getCieloTreasuryLabel();
   const usdcType = getUsdcCoinType();
+  const sui = getPublicSuiConfig();
 
   if (suiAddress) {
     await sb.from("stay_requests").update({
@@ -50,12 +52,14 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    phase: 2,
+    phase: 4,
     booking_id: bookingId,
     status: stay.status,
     pay_url: payUrl,
+    sui,
     payment: {
       chain: "sui",
+      network: sui.network,
       asset: usdcType ? "USDC" : "SUI (devnet test until USDC configured)",
       amount_usdc: amount,
       treasury_address: treasuryAddress,
@@ -67,7 +71,7 @@ export async function POST(req: NextRequest) {
         treasuryAddress
           ? `Send ${amount} USDC to ${treasuryAddress}`
           : `Configure SUI_TREASURY_ADDRESS on server — label ${treasuryLabel}`,
-        `Paste transaction digest on pay page for instant on-chain verification`,
+        `One-click pay from zkLogin wallet on ${sui.network}`,
       ],
     },
     stay: {

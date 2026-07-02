@@ -1,7 +1,7 @@
 // FILE: lib/cielo/payFromWallet.ts
 // Phase 3: one-click Cielo payment from zkLogin wallet.
 
-import { getSuiDevnetClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/client";
 import { signAndExecuteZkLoginTransaction } from "@/lib/sui/zklogin/signAndExecuteTransaction";
 import { buildCieloPaymentTransaction } from "@/lib/cielo/buildPaymentTransaction";
 
@@ -23,7 +23,7 @@ export async function payCieloFromWallet(
     throw new Error("Treasury address not configured");
   }
 
-  const client = getSuiDevnetClient();
+  const client = getSuiClient();
   const tx = await buildCieloPaymentTransaction(client, {
     sender: params.senderAddress,
     treasury: params.treasuryAddress,
