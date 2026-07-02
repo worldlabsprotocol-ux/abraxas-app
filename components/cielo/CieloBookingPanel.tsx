@@ -38,6 +38,7 @@ export function CieloBookingPanel({
   const [refId, setRefId] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<BlockedDate[]>([]);
   const [checkoutInfo, setCheckoutInfo] = useState<string[]>([]);
+  const [payUrl, setPayUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setWallet(suiAddress ?? "");
@@ -98,7 +99,10 @@ export function CieloBookingPanel({
           body: JSON.stringify({ booking_id: data.booking_id, sui_address: wallet.trim() || null }),
         })
           .then(r => r.json())
-          .then(c => setCheckoutInfo((c.payment?.instructions ?? []) as string[]))
+          .then(c => {
+            setCheckoutInfo((c.payment?.instructions ?? []) as string[]);
+            setPayUrl((c as { pay_url?: string }).pay_url ?? null);
+          })
           .catch(() => setCheckoutInfo([]));
       }
       setStep("done");
@@ -242,6 +246,15 @@ export function CieloBookingPanel({
               Your dates are on the Abraxas Protocol Calendar. We confirm within 24 hours, then you pay USDC on Sui to{" "}
               <strong style={{ color: AMBER }}>{TREASURY_LABEL}</strong>.
             </p>
+            {payUrl && (
+              <a href={payUrl} style={{
+                display: "inline-block", marginBottom: "1rem", padding: "0.65rem 1.25rem",
+                borderRadius: 999, background: AMBER, color: "#000",
+                fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
+              }}>
+                Pay with USDC on Sui →
+              </a>
+            )}
             {checkoutInfo.length > 0 && (
               <ul style={{ textAlign: "left", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
                             lineHeight: 1.65, margin: "0 0 1rem", paddingLeft: "1.1rem" }}>

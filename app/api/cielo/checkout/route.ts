@@ -1,14 +1,12 @@
 // FILE: app/api/cielo/checkout/route.ts
-// Phase 2: payment instructions for a confirmed Abraxas booking.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { estimateUsdc } from "@/lib/cielo/bookingValidation";
+import { getCieloTreasuryAddress, getCieloTreasuryLabel, getUsdcCoinType } from "@/lib/cielo/treasury";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-const TREASURY = process.env.NEXT_PUBLIC_CIRCUIT_WALLET ?? "circuit.skr";
-const SUI_USDC_TYPE = process.env.SUI_USDC_COIN_TYPE ?? "0x2::sui::SUI"; // replace with mainnet USDC type in prod
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -36,6 +34,9 @@ export async function POST(req: NextRequest) {
 
   const amount = stay.est_usdc ?? estimateUsdc(stay.check_in, stay.check_out);
   const memo = `CIELO:${bookingId}`;
+  const treasuryAddress = getCieloTreasuryAddress();
+  const treasuryLabel = getCieloTreasuryLabel();
+  const usdcType = getUsdcCoinType();
 
   if (suiAddress) {
     await sb.from("stay_requests").update({
@@ -45,22 +46,28 @@ export async function POST(req: NextRequest) {
     }).eq("booking_id", bookingId);
   }
 
+  const payUrl = `/cielo/pay?booking_id=${encodeURIComponent(bookingId)}`;
+
   return NextResponse.json({
     ok: true,
     phase: 2,
     booking_id: bookingId,
     status: stay.status,
+    pay_url: payUrl,
     payment: {
       chain: "sui",
-      asset: "USDC",
+      asset: usdcType ? "USDC" : "SUI (devnet test until USDC configured)",
       amount_usdc: amount,
-      treasury_label: TREASURY,
-      sui_usdc_coin_type: SUI_USDC_TYPE,
+      treasury_address: treasuryAddress,
+      treasury_label: treasuryLabel,
+      sui_usdc_coin_type: usdcType,
       memo,
       instructions: [
-        `Send ${amount} USDC on Sui to treasury ${TREASURY}`,
-        `Include memo ${memo} in transaction notes if your wallet supports it`,
-        "Team verifies on-chain receipt, then confirms your stay",
+        `Open ${payUrl} to complete payment`,
+        treasuryAddress
+          ? `Send ${amount} USDC to ${treasuryAddress}`
+          : `Configure SUI_TREASURY_ADDRESS on server — label ${treasuryLabel}`,
+        `Paste transaction digest on pay page for instant on-chain verification`,
       ],
     },
     stay: {

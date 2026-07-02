@@ -159,6 +159,10 @@ export default function CieloAdminPage() {
                   <button key={s} type="button" onClick={() => updateBooking(b.booking_id, s)}
                     style={{ ...btn, padding: "0.25rem 0.5rem", fontSize: "0.65rem" }}>{s}</button>
                 ))}
+                <a href={`/cielo/pay?booking_id=${encodeURIComponent(b.booking_id)}`}
+                  style={{ ...btn, padding: "0.25rem 0.5rem", fontSize: "0.65rem", textDecoration: "none", display: "inline-block" }}>
+                  Pay page
+                </a>
               </div>
             </div>
           ))}
