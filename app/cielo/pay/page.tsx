@@ -3,6 +3,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { CieloPaymentPanel } from "@/components/cielo/CieloPaymentPanel";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
@@ -30,6 +31,10 @@ function PayInner() {
       </h1>
       <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
         Booking {bookingId} · USDC on Sui · verified on-chain
+        {" · "}
+        <Link href={`/cielo/status?booking_id=${encodeURIComponent(bookingId)}`} style={{ color: "#10B981" }}>
+          Track status
+        </Link>
       </p>
       <CieloPaymentPanel bookingId={bookingId} suiAddress={suiAddress} />
     </div>

@@ -36,6 +36,7 @@ export async function emailGuestPaymentLink(stay: {
   nights?: number | null;
 }): Promise<void> {
   const payUrl = `${appOrigin()}/cielo/pay?booking_id=${encodeURIComponent(stay.booking_id)}`;
+  const statusUrl = `${appOrigin()}/cielo/status?booking_id=${encodeURIComponent(stay.booking_id)}`;
   const amount = stay.est_usdc ?? 0;
   const network = getSuiNetwork();
   const treasury = getCieloTreasuryLabel();
@@ -50,6 +51,7 @@ export async function emailGuestPaymentLink(stay: {
     <a href="${payUrl}" style="display:inline-block;margin:16px 0;padding:12px 20px;background:#10B981;color:#000;font-weight:800;border-radius:999px;text-decoration:none">
       Pay now →
     </a>
+    <p style="color:#6B7280;font-size:12px"><a href="${statusUrl}" style="color:#9CA3AF">Track booking status</a></p>
     <div style="background:#0D1117;border:1px solid #1C2333;border-radius:6px;padding:16px;margin:16px 0;font-size:13px">
       <p style="margin:0 0 6px;color:#6B7280;font-size:11px">STAY</p>
       <p style="margin:0 0 4px">${stay.check_in} → ${stay.check_out}</p>
@@ -75,6 +77,7 @@ export async function emailPaymentCaptured(stay: {
   if (!key) return;
 
   const explorer = suiExplorerTxUrl(stay.payment_tx_digest);
+  const receiptUrl = `${appOrigin()}/cielo/receipt?booking_id=${encodeURIComponent(stay.booking_id)}`;
   const paid = stay.paid_amount_usdc ?? stay.est_usdc ?? 0;
   const network = getSuiNetwork();
 
@@ -86,8 +89,9 @@ export async function emailPaymentCaptured(stay: {
     </p>
     <div style="background:#0D1117;border:1px solid #1C2333;border-radius:6px;padding:16px;margin:16px 0;font-size:13px">
       <p style="margin:0 0 4px">${stay.check_in} → ${stay.check_out}</p>
-      <p style="margin:0 0 4px">Booking ${stay.booking_id}</p>
-      <a href="${explorer}" style="color:#10B981;font-size:12px">View on-chain receipt →</a>
+      <p style="margin:0 0 8px">Booking ${stay.booking_id}</p>
+      <a href="${receiptUrl}" style="display:inline-block;margin-right:12px;color:#10B981;font-size:12px;font-weight:700">On-chain receipt →</a>
+      <a href="${explorer}" style="color:#6B7280;font-size:12px">Suiscan</a>
     </div>
   </div>`;
 
@@ -111,7 +115,7 @@ export async function emailPaymentCaptured(stay: {
         <p>Booking ${stay.booking_id} captured on Sui ${network}.</p>
         <p>Guest: ${stay.guest_name} · ${stay.email}</p>
         <p>Amount: ${paid} USDC</p>
-        <p><a href="${explorer}">${stay.payment_tx_digest}</a></p>
+        <p><a href="${receiptUrl}">Receipt</a> · <a href="${explorer}">${stay.payment_tx_digest}</a></p>
       </div>`,
     }),
   }).catch(() => null);

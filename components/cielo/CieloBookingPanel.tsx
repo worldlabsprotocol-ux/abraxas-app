@@ -238,9 +238,18 @@ export function CieloBookingPanel({
               Request received
             </div>
             {refId && (
-              <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
-                Ref: {refId}
-              </div>
+              <>
+                <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
+                  Ref: {refId}
+                </div>
+                <a href={`/cielo/status?booking_id=${encodeURIComponent(refId)}`} style={{
+                  display: "inline-block", marginBottom: "0.75rem", padding: "0.5rem 1rem",
+                  borderRadius: 999, border: "1px solid var(--border)", color: "var(--text-secondary)",
+                  fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, textDecoration: "none",
+                }}>
+                  Track booking status →
+                </a>
+              </>
             )}
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
               Your dates are on the Abraxas Protocol Calendar. We confirm within 24 hours, then you pay USDC on Sui to{" "}

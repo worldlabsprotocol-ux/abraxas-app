@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
               <p style="margin:0;color:#F59E0B;font-weight:700">Est. ${estUsdc} USDC on Sui</p>
             </div>
             <p style="color:#4B5563;font-size:11px">Booking ID: ${booking_id}</p>
+            <p style="margin-top:12px"><a href="${process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app"}/cielo/status?booking_id=${encodeURIComponent(booking_id)}" style="color:#10B981">Track your booking →</a></p>
           </div>`,
         }),
       }).catch(() => null);

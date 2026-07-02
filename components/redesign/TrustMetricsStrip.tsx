@@ -18,6 +18,8 @@ interface PublicMetrics {
   passport_stamps: number;
   credential_standard: string;
   sponsor_configured: boolean;
+  captured_cielo_bookings?: number;
+  cielo_revenue_label?: string;
 }
 
 const FALLBACK: PublicMetrics = {
@@ -28,6 +30,8 @@ const FALLBACK: PublicMetrics = {
   passport_stamps: 10,
   credential_standard: "W3C VC",
   sponsor_configured: false,
+  captured_cielo_bookings: 0,
+  cielo_revenue_label: "Live on Sui",
 };
 
 export function TrustMetricsStrip() {
@@ -42,8 +46,14 @@ export function TrustMetricsStrip() {
 
   const METRICS = [
     { value: String(m.verified_assets), label: "Verified assets", sub: "Live on Abraxas" },
+    {
+      value: m.cielo_revenue_label ?? "Live on Sui",
+      label: "Cielo on Sui",
+      sub: m.captured_cielo_bookings
+        ? `${m.captured_cielo_bookings} captured stay${m.captured_cielo_bookings === 1 ? "" : "s"}`
+        : "USDC revenue loop",
+    },
     { value: m.attested_value_label, label: "Value attested", sub: "Cielo appraisal" },
-    { value: m.credential_standard, label: "Credential standard", sub: "Portable proof" },
     {
       value: String(m.passport_stamps),
       label: "Passport stamps",
@@ -78,7 +88,7 @@ export function TrustMetricsStrip() {
             fontSize: "1.45rem",
             fontWeight: 700,
             letterSpacing: "-0.02em",
-            color: metric.label.includes("attested") ? ACCENT : "var(--text-primary)",
+            color: metric.label.includes("attested") || metric.label.includes("Cielo") ? ACCENT : "var(--text-primary)",
             lineHeight: 1.05,
           }}>
             <AnimatedCounter value={metric.value} />

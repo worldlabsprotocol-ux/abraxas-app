@@ -11,7 +11,8 @@ export async function GET() {
 
   return NextResponse.json({
     ok: true,
-    phase: 4,
+    phase: 6,
+    loop_complete: true,
     sui,
     payment: {
       chain: "sui",

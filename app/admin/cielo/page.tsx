@@ -27,6 +27,7 @@ interface Booking {
   check_out: string;
   status: string;
   est_usdc: number;
+  payment_tx_digest?: string | null;
 }
 
 export default function CieloAdminPage() {
@@ -153,6 +154,7 @@ export default function CieloAdminPage() {
               <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 600 }}>{b.guest_name} · {b.booking_id}</div>
               <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "#888" }}>
                 {b.check_in} → {b.check_out} · ~{b.est_usdc} USDC · {b.status}
+                {b.payment_tx_digest && ` · tx ${b.payment_tx_digest.slice(0, 10)}…`}
               </div>
               <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.35rem", flexWrap: "wrap" }}>
                 {["confirmed", "authorized", "captured", "cancelled"].map(s => (
@@ -163,6 +165,16 @@ export default function CieloAdminPage() {
                   style={{ ...btn, padding: "0.25rem 0.5rem", fontSize: "0.65rem", textDecoration: "none", display: "inline-block" }}>
                   Pay page
                 </a>
+                <a href={`/cielo/status?booking_id=${encodeURIComponent(b.booking_id)}`}
+                  style={{ ...btn, padding: "0.25rem 0.5rem", fontSize: "0.65rem", textDecoration: "none", display: "inline-block", background: "transparent", color: ACCENT, border: `1px solid ${ACCENT}` }}>
+                  Status
+                </a>
+                {b.status === "captured" && (
+                  <a href={`/cielo/receipt?booking_id=${encodeURIComponent(b.booking_id)}`}
+                    style={{ ...btn, padding: "0.25rem 0.5rem", fontSize: "0.65rem", textDecoration: "none", display: "inline-block", background: "transparent", color: ACCENT, border: `1px solid ${ACCENT}` }}>
+                    Receipt
+                  </a>
+                )}
               </div>
             </div>
           ))}

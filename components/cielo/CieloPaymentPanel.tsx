@@ -157,10 +157,14 @@ export function CieloPaymentPanel({
         </p>
         {success?.explorer && (
           <a href={success.explorer} target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: MONO, fontSize: "0.68rem", color: ACCENT }}>
+            style={{ fontFamily: MONO, fontSize: "0.68rem", color: ACCENT, marginRight: "0.75rem" }}>
             View transaction →
           </a>
         )}
+        <a href={`/cielo/receipt?booking_id=${encodeURIComponent(booking.booking_id)}`}
+          style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: ACCENT, textDecoration: "none" }}>
+          View on-chain receipt →
+        </a>
       </div>
     );
   }

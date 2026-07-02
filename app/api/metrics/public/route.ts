@@ -18,19 +18,28 @@ export async function GET() {
   let onChainPassports = 0;
   let sponsoredReady = isPassportIssuerConfigured();
   let pendingBookings = 0;
+  let capturedBookings = 0;
+  let cieloRevenueUsdc = 0;
 
   if (SB_URL && SB_KEY) {
     const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-    const [w, c, p, b] = await Promise.all([
+    const [w, c, p, bPending, bCaptured, revenueRows] = await Promise.all([
       sb.from("sui_zklogin_identities").select("id", { count: "exact", head: true }),
       sb.from("abraxas_credentials").select("id", { count: "exact", head: true }).is("revoked_at", null),
       sb.from("sui_passport_objects").select("id", { count: "exact", head: true }),
       sb.from("stay_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      sb.from("stay_requests").select("id", { count: "exact", head: true }).eq("status", "captured"),
+      sb.from("stay_requests").select("paid_amount_usdc, est_usdc").eq("status", "captured"),
     ]);
     verifiedWallets = w.count ?? 0;
     credentials = c.count ?? 0;
     onChainPassports = p.count ?? 0;
-    pendingBookings = b.count ?? 0;
+    pendingBookings = bPending.count ?? 0;
+    capturedBookings = bCaptured.count ?? 0;
+    cieloRevenueUsdc = (revenueRows.data ?? []).reduce((sum, row) => {
+      const amt = row.paid_amount_usdc ?? row.est_usdc ?? 0;
+      return sum + Number(amt);
+    }, 0);
   }
 
   const verifiedAssets = EXPLORE_ASSETS.filter(a => a.state === "verified").length;
@@ -47,6 +56,9 @@ export async function GET() {
       on_chain_passports: onChainPassports,
       sponsor_configured: sponsoredReady,
       pending_cielo_bookings: pendingBookings,
+      captured_cielo_bookings: capturedBookings,
+      cielo_revenue_usdc: cieloRevenueUsdc,
+      cielo_revenue_label: cieloRevenueUsdc > 0 ? `$${cieloRevenueUsdc.toLocaleString()} USDC` : "Live on Sui",
       passport_stamps: 10,
       credential_standard: "W3C VC",
     },
