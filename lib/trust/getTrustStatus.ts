@@ -37,6 +37,8 @@ export interface TrustStatus {
     sponsor_address: string | null;
   };
   ready_to_transact: boolean;
+  enhanced_trust: boolean;
+  wallet_registered: boolean;
 }
 
 export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | null> {
@@ -45,6 +47,12 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
   const sui = normalizeSuiAddress(rawAddress);
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
   const sponsor = getSponsorConfig();
+
+  const { data: walletRow } = await sb
+    .from("sui_zklogin_identities")
+    .select("sui_address")
+    .eq("sui_address", sui)
+    .maybeSingle();
 
   const { data: idv } = await sb
     .from("identity_verifications")
@@ -82,12 +90,14 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
     .limit(1)
     .maybeSingle();
 
+  const walletRegistered = Boolean(walletRow?.sui_address);
   const identityApproved = idv?.status === "approved";
   const credentialActive = Boolean(
     cred?.jti && cred.expiration_date && new Date(cred.expiration_date) > new Date(),
   );
   const onChainReady = Boolean(chain?.object_id);
   const stampsComplete = (chain?.stamp_bitmask ?? 0) >= 131;
+  const enhancedTrust = identityApproved && credentialActive;
 
   return {
     sui_address: sui,
@@ -117,6 +127,8 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
       sponsor_configured: isPassportIssuerConfigured(),
       sponsor_address: sponsor.sponsor_address,
     },
-    ready_to_transact: identityApproved && credentialActive,
+    wallet_registered: walletRegistered,
+    ready_to_transact: walletRegistered,
+    enhanced_trust: enhancedTrust,
   };
 }

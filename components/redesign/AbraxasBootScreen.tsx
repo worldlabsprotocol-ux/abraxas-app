@@ -7,12 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
-const SESSION_KEY = "abraxas_boot_v2";
+const SESSION_KEY = "abraxas_boot_v3";
 
 const LINES = [
-  "Verification infrastructure",
-  "Real-world asset attestation",
-  "One credential. Every protocol.",
+  "Universal trust infrastructure",
+  "Verified real-world assets",
+  "One wallet. Proof on demand.",
 ];
 
 export function AbraxasBootScreen() {

@@ -69,7 +69,7 @@ export function AssetsExplorer({
         borderRadius: 14, background: "var(--surface-raised)",
         border: "1px solid var(--border)",
       }}>
-        <Btn href="/passport" size="sm">Get verified</Btn>
+        <Btn href="/passport" size="sm">Create wallet</Btn>
         <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
         <Btn href="/music-audit" variant="ghost" size="sm">Music audit</Btn>
       </div>

@@ -12,15 +12,13 @@ const ACCENT = "#10B981";
 
 export function PassportIntentCard({
   suiAddress,
-  identityEarned,
 }: {
   suiAddress: string | null;
-  identityEarned: boolean;
 }) {
   const [status, setStatus] = useState<"idle" | "signing" | "verified" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  if (!suiAddress || !identityEarned) return null;
+  if (!suiAddress) return null;
 
   async function proveControl() {
     if (!suiAddress) return;
@@ -84,8 +82,8 @@ export function PassportIntentCard({
         Prove wallet control without gas
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
-        Sign a short Abraxas challenge with your zkLogin session key. No transaction, no SUI spent.
-        Integrators can verify via <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>POST /api/intent/verify</code>.
+        Available right after wallet creation. Sign a short Abraxas challenge with your zkLogin session key.
+        No transaction, no SUI spent. Veriff is not required for this step.
       </p>
 
       {status === "verified" ? (

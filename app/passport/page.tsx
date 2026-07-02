@@ -148,7 +148,7 @@ function PassportPageInner() {
   const searchParams = useSearchParams();
   const { suiAddress, session } = useSuiAuth();
   const email = session?.email ?? "";
-  const [active, setActive] = useState<string | null>(suiAddress ? "identity" : "wallet");
+  const [active, setActive] = useState<string | null>("wallet");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passportState, setPassportState] = useState<PassportState>({
@@ -197,9 +197,7 @@ function PassportPageInner() {
   const earned = Object.values(passportState).filter(s => s === "earned").length;
   const activeStamp = active === "wallet" ? null : STAMPS.find(s => s.id === active) ?? null;
 
-  useEffect(() => {
-    if (suiAddress && active === "wallet") setActive("identity");
-  }, [suiAddress, active]);
+  const enhancedTrust = identityStatus === "earned" && Boolean(credential);
 
   const showVeriffHint = identityStatus === "pending" || passportState.identity === "in_progress" || starting;
 
@@ -298,18 +296,18 @@ function PassportPageInner() {
           </div>
           <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)", fontWeight:800, lineHeight:1.0,
                         color:"var(--text-primary)", letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
-            Verify once.<br/>
-            <span style={{ color:G }}>Transact everywhere.</span>
+            Create your wallet.<br/>
+            <span style={{ color:G }}>Transact now. Verify when you need more.</span>
           </h1>
           <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                        color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:0 }}>
-            Not a KYC vendor. a trust registry. Veriff verifies your identity; Abraxas issues
-            cryptographic proof bound to your Sui wallet. Protocols ask us if you&apos;re verified -
-            you never upload the same documents twice.
+            Abraxas is universal trust infrastructure on Sui. Sign in with Google to get a wallet in seconds.
+            Browse assets, submit deals, and sign intent proofs immediately. Add Veriff Precheck later for
+            enhanced stamps. protocols never need your documents twice.
           </p>
         </div>
 
-        <VerifyStepRail walletDone={walletDone} active={active} earned={railEarned} />
+        <VerifyStepRail walletDone={walletDone} active={active} earned={railEarned} enhancedTrust={enhancedTrust} />
 
         {!walletDone ? (
           <div style={{ marginBottom:"2rem" }}>
@@ -332,6 +330,8 @@ function PassportPageInner() {
 
         <PassportTrustCard suiAddress={suiAddress} />
 
+        <PassportIntentCard suiAddress={suiAddress} />
+
         <PassportCredentialBanner
           identityStatus={identityStatus}
           via={via}
@@ -346,11 +346,6 @@ function PassportPageInner() {
           isPolling={isPolling}
           onRefresh={refresh}
           syncMessage={syncMessage}
-        />
-
-        <PassportIntentCard
-          suiAddress={suiAddress}
-          identityEarned={identityStatus === "earned"}
         />
 
         <div style={{ marginBottom:"2rem" }}>
@@ -508,7 +503,7 @@ function PassportPageInner() {
               </div>
 
               {activeStamp.id === "identity" && status !== "earned" && (
-                <div>
+                <div id="identity-stamp">
                   {!walletDone && (
                     <div style={{ fontFamily:S, fontSize:"0.78rem", color:A, marginBottom:"0.75rem" }}>
                       Sign in with Google above first. Precheck links to your Sui wallet.
@@ -601,7 +596,7 @@ function PassportPageInner() {
 
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", paddingBottom:"3rem" }}>
           <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:8, background:G, color:"#000",
-              fontFamily:S, fontSize:"0.88rem", fontWeight:700, textDecoration:"none" }}>View marketplace →</Link>
+              fontFamily:S, fontSize:"0.88rem", fontWeight:700, textDecoration:"none" }}>Explore assets →</Link>
           <Link href="/build" style={{ padding:"0.75rem 1.5rem", borderRadius:8, border:"1px solid var(--border)",
               background:"var(--surface)", color:"var(--text-secondary)", fontFamily:S,
               fontSize:"0.88rem", fontWeight:600, textDecoration:"none" }}>Submit an asset →</Link>

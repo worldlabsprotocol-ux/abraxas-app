@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/VerificationFlow.tsx
-// Three-step verification funnel for mass-adoption clarity.
+// Wallet-first funnel. Verify is optional, not step one.
 
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
@@ -14,27 +14,27 @@ const ACCENT = "#10B981";
 const STEPS = [
   {
     n: "01",
-    title: "Sign in. get your wallet",
-    body: "Google sign-in via zkLogin creates your Sui address instantly. No seed phrase. This wallet holds your Passport.",
+    title: "Create your Sui wallet",
+    body: "Google sign-in via zkLogin. No seed phrase. Your wallet is ready in seconds and unlocks browsing, intent proofs, and asset submission.",
     kind: "identity" as const,
     href: "/passport",
-    cta: "Continue with Google",
+    cta: "Create wallet",
   },
   {
     n: "02",
-    title: "Verify once with a trusted provider",
-    body: "Veriff performs KYC. government ID and liveness. Abraxas records only the signed credential hash, issuer, and sanctions outcome. Never your passport.",
-    kind: "biometric" as const,
-    href: "/passport",
-    cta: "Start Precheck",
+    title: "Explore verified assets",
+    body: "Real estate, royalties, treasuries, and flagship deals like Cielo Sunrise. See what verified ownership looks like before you commit.",
+    kind: "owner" as const,
+    href: "/terminal#assets",
+    cta: "Browse assets",
   },
   {
     n: "03",
-    title: "Reuse proof everywhere",
-    body: "Protocols ask Abraxas: Is this wallet verified? Is AML clear? You approve consent. they receive a signed proof, not your documents.",
+    title: "Add trust when required",
+    body: "Veriff Precheck, KYB, and asset attestation are optional upgrades. Protocols ask Abraxas for proof. you approve consent. they never see your documents.",
     kind: "compliance" as const,
-    href: "/docs/ail",
-    cta: "Read AIL spec",
+    href: "/passport#identity-stamp",
+    cta: "Upgrade trust",
   },
 ];
 
@@ -56,14 +56,14 @@ export function VerificationFlow() {
           letterSpacing: "-0.03em", lineHeight: 1.05,
           color: "var(--text-primary)", margin: "0 0 0.5rem", maxWidth: 520,
         }}>
-          Verify once. That is the trust layer.
+          Wallet first. Trust when you need it.
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
           lineHeight: 1.7, maxWidth: 560, margin: 0,
         }}>
-          Abraxas is not another KYC vendor. It is the trust registry. licensed providers verify;
-          Abraxas standardizes, secures, and distributes proof with your consent.
+          Abraxas is not another KYC vendor. It is the trust registry on Sui.
+          Licensed providers verify. Abraxas standardizes proof. Nothing blocks you from using the platform today.
         </p>
       </div>
 

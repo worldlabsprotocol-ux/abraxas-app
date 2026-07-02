@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Verification-first homepage for mass adoption. Cielo flagship, then credential moat.
+// Assets-first homepage. Boot intro, market intel, verified assets, optional trust upgrades.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "./AmbientGlow";
@@ -11,6 +11,7 @@ import { TrustMetricsStrip } from "./TrustMetricsStrip";
 import { FeaturedFlagship } from "./FeaturedFlagship";
 import { VerificationFlow } from "./VerificationFlow";
 import { AssetsExplorer } from "./AssetsExplorer";
+import { MarketIntelFeed } from "./MarketIntelFeed";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { VerificationPackages } from "@/components/terminal/VerificationPackages";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
@@ -37,48 +38,51 @@ export function RedesignHome() {
         <RedesignNav />
 
         <main style={{ position: "relative", zIndex: 1 }}>
-          {/* Hero: verification value prop */}
           <div style={MAXW}>
             <RedesignHero />
           </div>
 
-          {/* Trust strip */}
           <div style={{ ...MAXW, paddingTop: "0.5rem" }}>
             <TrustMetricsStrip />
           </div>
 
-          {/* Flagship: Cielo Sunrise (cash-yielding proof) */}
+          <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <AssetsExplorer excludeIds={["genesis-asset"]} title="Verified assets on the network" />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <MarketIntelFeed />
+          </div>
+
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <FeaturedFlagship />
           </div>
 
-          {/* How verification works. 3 steps */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationFlow />
           </div>
 
-          {/* Passport demo */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <div style={{
               fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
               letterSpacing: "0.14em", textTransform: "uppercase",
               color: "#10B981", marginBottom: "0.75rem",
             }}>
-              Your credential
+              Your passport
             </div>
             <h2 style={{
               fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
               letterSpacing: "-0.03em", lineHeight: 1.05,
               color: "var(--text-primary)", margin: "0 0 0.75rem", maxWidth: 640,
             }}>
-              This is what verified looks like.
+              One wallet. Stamps you earn over time.
             </h2>
             <p style={{
               fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
               lineHeight: 1.7, maxWidth: 560, margin: "0 0 1.5rem",
             }}>
-              Yours starts empty. Each stamp is earned through a real process. not bought,
-              not faked. Get verified to unlock booking, investing, and asset submission.
+              Start with a zkLogin wallet and transact immediately. Each stamp is earned through
+              a real process. Identity via Veriff is optional until you need it.
             </p>
             <AbraxasPassport
               onGetVerified={() => { window.location.href = "/passport"; }}
@@ -86,17 +90,10 @@ export function RedesignHome() {
             />
           </div>
 
-          {/* Other verified assets (Cielo excluded. featured above) */}
-          <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <AssetsExplorer excludeIds={["genesis-asset"]} title="More on the network" />
-          </div>
-
-          {/* Verification pricing */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationPackages />
           </div>
 
-          {/* FAQ teaser + roadmap */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <HomeFAQTeaser />
             <div style={{ marginTop: "1.5rem" }}>
@@ -104,7 +101,6 @@ export function RedesignHome() {
             </div>
           </div>
 
-          {/* Final CTA */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)", paddingBottom: "var(--section-gap)" }}>
             <div style={{
               textAlign: "center", padding: "2.5rem 1.5rem",
@@ -116,16 +112,17 @@ export function RedesignHome() {
                 fontWeight: 800, color: "var(--text-primary)",
                 margin: "0 0 0.75rem", letterSpacing: "-0.02em",
               }}>
-                Start with verification. Everything else follows.
+                Start with assets. Add trust when it matters.
               </h2>
               <p style={{
                 fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
-                lineHeight: 1.7, maxWidth: 440, margin: "0 auto 1.25rem",
+                lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.25rem",
               }}>
-                No wallet required. Most people finish Precheck in under five minutes.
+                Create your wallet in seconds. Explore verified RWAs today.
+                Veriff Precheck unlocks enhanced stamps when you are ready.
               </p>
               <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Btn href="/passport" size="lg">Get verified →</Btn>
+                <Btn href="/passport" size="lg">Create wallet →</Btn>
                 <Btn href="/flagship" variant="secondary" size="lg">See Cielo Sunrise</Btn>
               </div>
             </div>
