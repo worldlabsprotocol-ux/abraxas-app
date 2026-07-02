@@ -1,9 +1,12 @@
 "use client";
 // FILE: components/cielo/CieloPaymentPanel.tsx
-// Phase 2: pay USDC on Sui + submit tx digest for on-chain verification.
+// Phase 2: manual digest verify · Phase 3: one-click pay from zkLogin wallet.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { payCieloFromWallet, verifyCieloPaymentOnServer } from "@/lib/cielo/payFromWallet";
+import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -27,22 +30,34 @@ interface PaymentInfo {
   memo: string;
   asset: string;
   payable: boolean;
+  usdc_coin_type: string | null;
 }
 
 export function CieloPaymentPanel({
   bookingId,
-  suiAddress,
+  suiAddress: suiAddressProp,
 }: {
   bookingId: string;
   suiAddress?: string | null;
 }) {
+  const { suiAddress: authAddress, isAuthenticated, canSignTransactions, signInWithGoogle } = useSuiAuth();
+  const suiAddress = suiAddressProp ?? authAddress;
+
   const [booking, setBooking] = useState<BookingPayment | null>(null);
   const [payment, setPayment] = useState<PaymentInfo | null>(null);
   const [txDigest, setTxDigest] = useState("");
   const [busy, setBusy] = useState(false);
+  const [payStep, setPayStep] = useState<"idle" | "signing" | "proving" | "submitting" | "verifying">("idle");
   const [err, setErr] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ explorer?: string | null } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [showManual, setShowManual] = useState(false);
+
+  const walletReady = Boolean(
+    suiAddress &&
+    isAuthenticated &&
+    (canSignTransactions || canSignZkLoginTransactions(suiAddress)),
+  );
 
   useEffect(() => {
     fetch(`/api/cielo/booking?booking_id=${encodeURIComponent(bookingId)}`)
@@ -54,35 +69,61 @@ export function CieloPaymentPanel({
       .catch(() => setErr("Could not load booking"));
   }, [bookingId]);
 
-  async function verifyPayment() {
-    if (!txDigest.trim()) {
-      setErr("Paste your Sui transaction digest");
-      return;
-    }
+  async function verifyPayment(digest: string) {
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetch("/api/cielo/payment/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          booking_id: bookingId,
-          tx_digest: txDigest.trim(),
-        }),
-      });
-      const data = await res.json() as {
-        ok?: boolean;
-        error?: string;
-        verification?: { explorer_url?: string | null };
-      };
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error ?? "Verification failed");
+      const result = await verifyCieloPaymentOnServer(bookingId, digest.trim());
+      if (!result.ok) {
+        throw new Error(result.error ?? "Verification failed");
       }
-      setSuccess({ explorer: data.verification?.explorer_url });
+      setSuccess({ explorer: result.explorer });
       setBooking(prev => prev ? { ...prev, paid: true, status: "captured" } : prev);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Verification failed");
     } finally {
+      setBusy(false);
+      setPayStep("idle");
+    }
+  }
+
+  async function verifyManualPayment() {
+    if (!txDigest.trim()) {
+      setErr("Paste your Sui transaction digest");
+      return;
+    }
+    await verifyPayment(txDigest.trim());
+  }
+
+  async function payNow() {
+    if (!payment?.treasury_address || !suiAddress) {
+      setErr("Connect your wallet and ensure treasury is configured");
+      return;
+    }
+    if (!payment.payable) {
+      setErr("This booking is not ready for payment yet");
+      return;
+    }
+
+    setBusy(true);
+    setErr(null);
+    setPayStep("signing");
+
+    try {
+      setPayStep("proving");
+      const { txDigest: digest } = await payCieloFromWallet({
+        senderAddress: suiAddress,
+        treasuryAddress: payment.treasury_address,
+        amountUsdc: payment.amount_usdc,
+        usdcCoinType: payment.usdc_coin_type,
+      });
+
+      setTxDigest(digest);
+      setPayStep("verifying");
+      await verifyPayment(digest);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Payment failed");
+      setPayStep("idle");
       setBusy(false);
     }
   }
@@ -123,6 +164,12 @@ export function CieloPaymentPanel({
     );
   }
 
+  const payLabel =
+    payStep === "proving" ? "Generating proof…" :
+    payStep === "signing" ? "Building transaction…" :
+    payStep === "verifying" ? "Verifying on Sui…" :
+    busy ? "Processing…" : `Pay ${payment.amount_usdc} ${payment.asset} →`;
+
   return (
     <div style={{
       padding: "1rem", borderRadius: 14,
@@ -130,10 +177,10 @@ export function CieloPaymentPanel({
     }}>
       <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: AMBER,
                      letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-        Phase 2 · Pay on Sui
+        Phase 3 · Pay from zkLogin wallet
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-        Send {payment.amount_usdc} {payment.asset}
+        {payment.amount_usdc} {payment.asset} to {payment.treasury_label}
       </div>
 
       <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.85rem" }}>
@@ -145,39 +192,94 @@ export function CieloPaymentPanel({
         )}
       </div>
 
-      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
-        Send from any Sui wallet. Paste the transaction digest below and Abraxas verifies payment on-chain automatically.
-        {!payment.treasury_address && " Set SUI_TREASURY_ADDRESS in Vercel for production."}
-      </p>
+      {!payment.payable && (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: AMBER, margin: "0 0 0.75rem", lineHeight: 1.6 }}>
+          Awaiting operator confirmation. You will receive a payment link once your dates are confirmed.
+        </p>
+      )}
 
-      <label style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)", display: "block", marginBottom: "0.25rem" }}>
-        TRANSACTION DIGEST
-      </label>
-      <input value={txDigest} onChange={e => setTxDigest(e.target.value)}
-        placeholder="e.g. 8xK2…"
-        style={{
-          width: "100%", padding: "0.55rem 0.65rem", borderRadius: 8,
-          border: "1px solid var(--border)", background: "var(--surface-raised)",
-          color: "var(--text-primary)", fontFamily: MONO, fontSize: "0.75rem", boxSizing: "border-box",
-          marginBottom: "0.65rem",
-        }} />
+      {payment.payable && walletReady && payment.treasury_address && (
+        <>
+          <button type="button" onClick={payNow} disabled={busy}
+            style={{
+              width: "100%", padding: "0.75rem", borderRadius: 999, border: "none",
+              background: busy ? `${ACCENT}55` : ACCENT, color: "#000",
+              fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, cursor: busy ? "wait" : "pointer",
+              marginBottom: "0.65rem",
+            }}>
+            {payLabel}
+          </button>
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.5 }}>
+            One tap: Abraxas signs with your zkLogin session, submits to Sui, and verifies payment automatically.
+            {!payment.usdc_coin_type && " Devnet mode sends 0.01 SUI as a test payment."}
+          </p>
+        </>
+      )}
+
+      {payment.payable && isAuthenticated && !walletReady && (
+        <div style={{
+          padding: "0.65rem 0.75rem", borderRadius: 10, marginBottom: "0.75rem",
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+        }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+            Sign in again to enable one-click pay (session signing keys refresh on login).
+          </p>
+          <button type="button" onClick={() => signInWithGoogle()}
+            style={{
+              marginTop: "0.5rem", padding: "0.45rem 0.85rem", borderRadius: 999,
+              border: `1px solid ${ACCENT}`, background: "transparent", color: ACCENT,
+              fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer",
+            }}>
+            Refresh Google sign-in →
+          </button>
+        </div>
+      )}
+
+      {payment.payable && !isAuthenticated && (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.6 }}>
+          <Link href="/passport" style={{ color: ACCENT }}>Sign in with Google</Link> to pay in one click from your zkLogin wallet.
+        </p>
+      )}
 
       {err && (
         <div style={{ color: "#EF4444", fontFamily: FONT, fontSize: "0.72rem", marginBottom: "0.5rem" }}>{err}</div>
       )}
 
-      <button type="button" onClick={verifyPayment} disabled={busy}
+      <button type="button" onClick={() => setShowManual(v => !v)}
         style={{
-          width: "100%", padding: "0.65rem", borderRadius: 999, border: "none",
-          background: busy ? `${ACCENT}55` : ACCENT, color: "#000",
-          fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, cursor: busy ? "wait" : "pointer",
+          background: "transparent", border: "none", padding: 0, cursor: "pointer",
+          fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
+          letterSpacing: "0.06em", textTransform: "uppercase",
         }}>
-        {busy ? "Verifying on Sui…" : "Verify payment →"}
+        {showManual ? "Hide manual verify ▲" : "Paid externally? Paste tx digest ▼"}
       </button>
 
-      <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.75rem 0 0" }}>
-        No wallet yet? <Link href="/passport" style={{ color: ACCENT }}>Create one with Google</Link>
-      </p>
+      {showManual && (
+        <div style={{ marginTop: "0.65rem" }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
+            Send from any Sui wallet, then paste the transaction digest below.
+          </p>
+          <label style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)", display: "block", marginBottom: "0.25rem" }}>
+            TRANSACTION DIGEST
+          </label>
+          <input value={txDigest} onChange={e => setTxDigest(e.target.value)}
+            placeholder="e.g. 8xK2…"
+            style={{
+              width: "100%", padding: "0.55rem 0.65rem", borderRadius: 8,
+              border: "1px solid var(--border)", background: "var(--surface-raised)",
+              color: "var(--text-primary)", fontFamily: MONO, fontSize: "0.75rem", boxSizing: "border-box",
+              marginBottom: "0.65rem",
+            }} />
+          <button type="button" onClick={verifyManualPayment} disabled={busy}
+            style={{
+              width: "100%", padding: "0.55rem", borderRadius: 999,
+              border: `1px solid ${ACCENT}66`, background: "transparent", color: ACCENT,
+              fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, cursor: busy ? "wait" : "pointer",
+            }}>
+            Verify payment →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,9 +6,9 @@ import {
   clearPendingSession,
   loadPendingSession,
   saveUserSession,
-  saveEphemeralSecretKey,
   type ZkLoginUserSession,
 } from "./session";
+import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
   const pending = loadPendingSession();
@@ -61,7 +61,18 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   };
 
   saveUserSession(session);
-  saveEphemeralSecretKey(pending.ephemeralSecretKey);
+  persistEphemeralKey(pending.ephemeralSecretKey);
+
+  if (regData.user_salt) {
+    saveSigningSession({
+      suiAddress: regData.sui_address,
+      idToken,
+      userSalt: regData.user_salt,
+      jwtRandomness: pending.randomness,
+      maxEpoch: pending.maxEpoch,
+    });
+  }
+
   clearPendingSession();
   return session;
 }

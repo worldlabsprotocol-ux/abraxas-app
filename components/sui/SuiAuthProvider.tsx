@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { loadUserSession, clearUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
+import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
@@ -21,6 +22,7 @@ interface SuiAuthContextValue {
   suiAddress: string | null;
   suiDid: string | null;
   isAuthenticated: boolean;
+  canSignTransactions: boolean;
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
@@ -56,6 +58,7 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     suiAddress: session?.suiAddress ?? null,
     suiDid: session?.suiAddress ? toSuiDid(session.suiAddress) : null,
     isAuthenticated: Boolean(session?.suiAddress),
+    canSignTransactions: canSignZkLoginTransactions(session?.suiAddress),
     isConfigured: isZkLoginConfigured(),
     isLoading,
     error,

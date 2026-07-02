@@ -57,6 +57,8 @@ export function loadUserSession(): ZkLoginUserSession | null {
 export function clearUserSession(): void {
   localStorage.removeItem(ZKLOGIN_SESSION_KEY);
   clearEphemeralSecretKey();
+  sessionStorage.removeItem("abraxas_zklogin_signing_v1");
+  sessionStorage.removeItem("abraxas_zklogin_proof_v1");
 }
 
 export function saveEphemeralSecretKey(secretKey: string): void {
