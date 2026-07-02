@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloBookingPanel.tsx
-// Book Cielo on Abraxas with USDC on Sui. Dates validated against Airbnb mirror.
+// Book Cielo on Abraxas with USDC on Sui. Dates validated on Protocol Calendar.
 
 import { useEffect, useState } from "react";
 import { CIELO_RATES, blockedNightsInRange, estimateUsdc, eachNight } from "@/lib/cielo/bookingValidation";
@@ -37,6 +37,7 @@ export function CieloBookingPanel({
   const [err, setErr] = useState<string | null>(null);
   const [refId, setRefId] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<BlockedDate[]>([]);
+  const [checkoutInfo, setCheckoutInfo] = useState<string[]>([]);
 
   useEffect(() => {
     setWallet(suiAddress ?? "");
@@ -60,7 +61,7 @@ export function CieloBookingPanel({
       return;
     }
     if (conflictNights.length > 0) {
-      setErr("Selected dates overlap with Airbnb or an existing Abraxas hold. Pick open dates.");
+      setErr("Selected dates are blocked on the Abraxas Protocol Calendar.");
       return;
     }
     setBusy(true);
@@ -90,6 +91,16 @@ export function CieloBookingPanel({
         throw new Error(data.error ?? "Submission failed");
       }
       setRefId(data.booking_id ?? null);
+      if (data.booking_id) {
+        fetch("/api/cielo/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ booking_id: data.booking_id, sui_address: wallet.trim() || null }),
+        })
+          .then(r => r.json())
+          .then(c => setCheckoutInfo((c.payment?.instructions ?? []) as string[]))
+          .catch(() => setCheckoutInfo([]));
+      }
       setStep("done");
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Submission failed");
@@ -121,8 +132,8 @@ export function CieloBookingPanel({
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
                        lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 420 }}>
-            Dates mirror the live Airbnb calendar so there is no double booking.
-            After approval, send USDC on Sui to {TREASURY_LABEL}.
+            Dates run on the Abraxas Protocol Calendar. When you request a stay, those nights
+            are held here immediately. Pay USDC on Sui after we confirm.
           </p>
         </div>
         {variant !== "inline" && (
@@ -228,9 +239,15 @@ export function CieloBookingPanel({
               </div>
             )}
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-              We will confirm your dates and send USDC on Sui payment instructions.
-              Treasury: <strong style={{ color: AMBER }}>{TREASURY_LABEL}</strong>. No Airbnb platform fees.
+              Your dates are on the Abraxas Protocol Calendar. We confirm within 24 hours, then you pay USDC on Sui to{" "}
+              <strong style={{ color: AMBER }}>{TREASURY_LABEL}</strong>.
             </p>
+            {checkoutInfo.length > 0 && (
+              <ul style={{ textAlign: "left", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+                            lineHeight: 1.65, margin: "0 0 1rem", paddingLeft: "1.1rem" }}>
+                {checkoutInfo.map(line => <li key={line}>{line}</li>)}
+              </ul>
+            )}
             {variant !== "inline" && (
               <button type="button" onClick={() => { setOpen(false); setStep("dates"); }} style={primaryBtn(false)}>
                 Close

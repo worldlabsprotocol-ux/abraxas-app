@@ -1,44 +1,41 @@
 "use client";
 // FILE: components/cielo/CieloAvailabilityPanel.tsx
-// Airbnb-mirrored calendar + Abraxas holds. No double booking on Abraxas.
+// Abraxas Protocol Calendar — our own availability layer for crypto bookings.
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
+import type { BlockedDate } from "@/lib/cielo/types";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
+const PENDING = "#F59E0B";
 const BLOCKED = "#EF4444";
-
-interface BlockedDate { start: string; end: string; }
 
 interface AvailabilityResponse {
   blocked?: BlockedDate[];
-  sources?: { airbnb: number; abraxas: number };
-  ical_connected?: boolean;
-  error?: string;
+  calendar?: string;
+  sources?: {
+    pending_bookings: number;
+    confirmed_bookings: number;
+    operator_blocks: number;
+  };
+  airbnb_listing_url?: string;
 }
 
 export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean }) {
   const [blocked, setBlocked] = useState<BlockedDate[] | null>(null);
-  const [meta, setMeta] = useState<{ airbnb: number; abraxas: number; ical: boolean } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [meta, setMeta] = useState<AvailabilityResponse["sources"] | null>(null);
 
   useEffect(() => {
     fetch("/api/cielo/availability")
       .then(r => r.json())
       .then((data: AvailabilityResponse) => {
-        if (data.blocked) {
-          setBlocked(data.blocked);
-          setMeta({
-            airbnb: data.sources?.airbnb ?? 0,
-            abraxas: data.sources?.abraxas ?? 0,
-            ical: data.ical_connected ?? false,
-          });
-        } else {
-          setError(data.error ?? "Could not load availability");
-        }
+        setBlocked(data.blocked ?? []);
+        setMeta(data.sources ?? null);
       })
-      .catch(() => setError("Could not load availability"));
+      .catch(() => setBlocked([]));
   }, []);
 
   const today = new Date();
@@ -48,9 +45,12 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
     return d.toISOString().slice(0, 10);
   });
 
-  function isBlocked(dateIso: string): boolean {
-    if (!blocked) return false;
-    return blocked.some(b => dateIso >= b.start && dateIso < b.end);
+  function blockStyle(dateIso: string): string {
+    if (!blocked) return "rgba(255,255,255,0.06)";
+    const hit = blocked.find(b => dateIso >= b.start && dateIso < b.end);
+    if (!hit) return `${ACCENT}35`;
+    if (hit.source === "abraxas_pending") return `${PENDING}88`;
+    return `${BLOCKED}88`;
   }
 
   return (
@@ -60,52 +60,48 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
       background: "var(--surface-raised)",
       border: "1px solid var(--border)",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-                     gap: "0.75rem", marginBottom: "0.65rem", flexWrap: "wrap" }}>
-        <div>
-          <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT,
-                         letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-            Availability mirror
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: compact ? "0.78rem" : "0.85rem", fontWeight: 700,
-                         color: "var(--text-primary)" }}>
-            Synced with Airbnb. no overlap on Abraxas.
-          </div>
+      <div style={{ marginBottom: "0.65rem" }}>
+        <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT,
+                       letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.25rem" }}>
+          Abraxas Protocol Calendar
         </div>
-        {meta && (
-          <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "var(--text-muted)", textAlign: "right" }}>
-            {meta.ical ? "Airbnb iCal live" : "Airbnb iCal pending"}
-            <br />
-            {meta.abraxas} Abraxas hold{meta.abraxas === 1 ? "" : "s"}
-          </div>
-        )}
+        <div style={{ fontFamily: FONT, fontSize: compact ? "0.78rem" : "0.85rem", fontWeight: 700,
+                       color: "var(--text-primary)" }}>
+          Our calendar. our crypto bookings.
+        </div>
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+                     lineHeight: 1.6, margin: "0.35rem 0 0" }}>
+          USDC stays on Abraxas run on this calendar — not Airbnb&apos;s host tools.
+          Cross-check the{" "}
+          <Link href={CIELO_AIRBNB_URL} target="_blank" rel="noopener noreferrer"
+            style={{ color: ACCENT, textDecoration: "underline" }}>
+            public listing
+          </Link>{" "}
+          before you travel; we reconcile both channels.
+        </p>
       </div>
 
-      {error ? (
-        <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
-          Live calendar sync is not connected yet. Check dates on the Airbnb listing, or submit a request and we will confirm within 24 hours.
-        </p>
-      ) : (
-        <>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${compact ? 7 : 10}, 1fr)`,
-            gap: 3,
-            marginBottom: "0.65rem",
-          }}>
-            {days.map(d => (
-              <div key={d} title={d} style={{
-                aspectRatio: "1", borderRadius: 4,
-                background: blocked === null ? "rgba(255,255,255,0.06)"
-                  : isBlocked(d) ? `${BLOCKED}88` : `${ACCENT}35`,
-              }} />
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-            <Legend color={`${ACCENT}35`} label="Open on Abraxas" />
-            <Legend color={`${BLOCKED}88`} label="Booked (Airbnb or Abraxas)" />
-          </div>
-        </>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${compact ? 7 : 10}, 1fr)`,
+        gap: 3,
+        marginBottom: "0.65rem",
+      }}>
+        {days.map(d => (
+          <div key={d} title={d} style={{ aspectRatio: "1", borderRadius: 4, background: blockStyle(d) }} />
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: "0.85rem", flexWrap: "wrap", marginBottom: meta ? "0.5rem" : 0 }}>
+        <Legend color={`${ACCENT}35`} label="Open on Abraxas" />
+        <Legend color={`${PENDING}88`} label="Pending request" />
+        <Legend color={`${BLOCKED}88`} label="Confirmed / blocked" />
+      </div>
+
+      {meta && (
+        <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "var(--text-muted)" }}>
+          {meta.operator_blocks} operator blocks · {meta.pending_bookings} pending · calendar v1
+        </div>
       )}
     </div>
   );

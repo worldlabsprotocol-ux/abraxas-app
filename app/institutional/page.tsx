@@ -76,9 +76,7 @@ export default function InstitutionalPage() {
         <Btn href="/docs/ail" variant="secondary" size="lg">AIL spec</Btn>
         <Btn href="/security" variant="ghost" size="lg">Security</Btn>
         <Btn href="/partners" variant="ghost" size="lg">Partners</Btn>
-        <Link href="/api/trust/status?sui=0x0" style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", alignSelf: "center" }}>
-          Trust status API →
-        </Link>
+        <Btn href="/admin/cielo" variant="ghost" size="lg">Calendar ops</Btn>
       </div>
     </RedesignPage>
   );

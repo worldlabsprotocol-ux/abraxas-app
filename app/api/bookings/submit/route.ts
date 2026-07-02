@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { getCieloAvailability } from "@/lib/cielo/availability";
+import { holdDatesForBooking } from "@/lib/cielo/calendar";
 import { rangesOverlap, eachNight, estimateUsdc } from "@/lib/cielo/bookingValidation";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   const availability = await getCieloAvailability();
   if (rangesOverlap(checkIn, checkOut, availability.blocked)) {
     return NextResponse.json({
-      error: "Selected dates overlap with Airbnb or an existing Abraxas booking",
+      error: "Selected dates are blocked on the Abraxas Protocol Calendar",
     }, { status: 409 });
   }
 
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
         payment_chain: body.payment_chain ?? "sui",
         payment_asset: body.payment_asset ?? "USDC",
       });
+      await holdDatesForBooking(booking_id, checkIn, checkOut);
     } catch {
       /* non-blocking if table missing in dev */
     }
@@ -111,7 +113,7 @@ export async function POST(req: NextRequest) {
           html: `<div style="font-family:system-ui,sans-serif;background:#040608;color:#F8FAFC;padding:24px;border-radius:8px;max-width:480px">
             <div style="color:#F59E0B;font-size:11px;font-weight:700;letter-spacing:3px;margin-bottom:12px">CIELO SUNRISE · ABRAXAS</div>
             <div style="font-size:22px;font-weight:700;margin-bottom:16px">Your booking request is in.</div>
-            <p style="color:#9CA3AF;font-size:13px;line-height:1.7">We mirror Airbnb availability so your dates do not overlap. Within 24 hours we confirm and send <strong style="color:#F59E0B">USDC on Sui</strong> payment instructions to <strong>${TREASURY}</strong>.</p>
+            <p style="color:#9CA3AF;font-size:13px;line-height:1.7">Your dates are reserved on the <strong>Abraxas Protocol Calendar</strong>. Within 24 hours we confirm and send <strong style="color:#F59E0B">USDC on Sui</strong> payment instructions to <strong>${TREASURY}</strong>.</p>
             <div style="background:#0D1117;border:1px solid #1C2333;border-radius:6px;padding:16px;margin:16px 0">
               <p style="margin:0 0 6px;color:#6B7280;font-size:11px">YOUR STAY</p>
               <p style="margin:0 0 4px">Check-in: ${checkIn}</p>

@@ -71,7 +71,7 @@ export function FeaturedFlagship() {
         <div style={{ padding: "clamp(1.25rem, 3vw, 2rem)", display: "flex", flexDirection: "column", gap: "1rem" }}>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
             {D.tagline}. Real property, live on Airbnb, bookable on Abraxas with USDC on Sui.
-            Availability mirrors Airbnb so dates never double-book. Skip platform fees when you pay direct.
+            Availability runs on the Abraxas Protocol Calendar — cross-check the public listing anytime.
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.65rem" }}>

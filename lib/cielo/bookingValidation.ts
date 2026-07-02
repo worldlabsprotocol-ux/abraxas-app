@@ -1,7 +1,7 @@
 // FILE: lib/cielo/bookingValidation.ts
-// Shared date overlap logic for Airbnb iCal + Abraxas stay_requests.
+import type { BlockedDate } from "@/lib/cielo/types";
 
-import type { BlockedDate } from "@/lib/icalSync";
+export type { BlockedDate };
 
 export function eachNight(checkIn: string, checkOut: string): string[] {
   const nights: string[] = [];
