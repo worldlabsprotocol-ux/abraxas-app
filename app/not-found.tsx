@@ -48,7 +48,7 @@ export default function NotFound() {
           marginBottom: "2.5rem",
         }}>
           The page you're looking for has been decommissioned, moved, or never existed.
-          The agents are still operating — just not here.
+          The agents are still operating. just not here.
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/docs/sui/page.tsx
-// Sui-native verification hub — zkLogin, Passport, sponsored tx, intent messaging.
+// Sui-native verification hub. zkLogin, Passport, sponsored tx, intent messaging.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -20,7 +20,7 @@ function SuiDocsInner() {
       <PageHeader
         eyebrow="Sui verification"
         title="Everything Abraxas does on Sui"
-        subtitle="zkLogin sign-in, on-chain Passport stamps, sponsored transactions for verified tiers, and intent message proofs — one place to learn and operate."
+        subtitle="zkLogin sign-in, on-chain Passport stamps, sponsored transactions for verified tiers, and intent message proofs. one place to learn and operate."
       />
 
       <ContentCard title="Try it now">
@@ -53,7 +53,7 @@ function SuiDocsInner() {
           ))}
         </ol>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
-          No gas — signing a personal message is off-chain. Verifiers use the same Ed25519 domain as Passport Type 0 proofs.
+          No gas. signing a personal message is off-chain. Verifiers use the same Ed25519 domain as Passport Type 0 proofs.
         </p>
       </ContentCard>
 

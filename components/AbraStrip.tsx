@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ABRA } from "@/lib/constants";
 
 /**
- * Subtle $ABRA presence strip — appears at the bottom of every page.
+ * Subtle $ABRA presence strip. appears at the bottom of every page.
  * Shows live price pulse, holders, and a soft buy CTA.
  * Jeff Yan principle: always present, never loud.
  */

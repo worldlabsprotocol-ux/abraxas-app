@@ -6,7 +6,7 @@
 // Orbis Protocol: decentralized social feeds + access gating via token ownership.
 // CURRENT: gated by local vault state (has deployed vault = has position).
 // PRODUCTION: replace hasPosition check with Orbis.isAllowed(walletAddress, contextId).
-// Orbis SDK: @orbisclub/orbis-sdk (not installed — would need npm install).
+// Orbis SDK: @orbisclub/orbis-sdk (not installed. would need npm install).
 "use client";
 
 import { useState, useEffect } from "react";
@@ -218,7 +218,7 @@ export function SovereignBriefing() {
       {/* Bags Index signal */}
       <BagsPanel />
 
-      {/* Raw agent reasoning — classified */}
+      {/* Raw agent reasoning. classified */}
       {primaryVault && <AgentReasoningLog vaultId={primaryVault.id} />}
     </div>
   );

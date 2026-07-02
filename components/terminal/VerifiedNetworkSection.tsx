@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/terminal/VerifiedNetworkSection.tsx
 // Positions the Abraxas Passport as the entry point to a verified
-// network. Concepts reframed in a builder/founder voice — original
+// network. Concepts reframed in a builder/founder voice. original
 // copy, no external brands or partners referenced.
 
 import { motion } from "framer-motion";

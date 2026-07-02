@@ -1,6 +1,6 @@
 // FILE: app/train/page.tsx
-// Sophia Agents + Circuit On-Chain Safety — AI Guardian Protocol.
-// Fixes the 404. Self-contained — no broken imports.
+// Sophia Agents + Circuit On-Chain Safety. AI Guardian Protocol.
+// Fixes the 404. Self-contained. no broken imports.
 "use client";
 export const dynamic = "force-dynamic";
 
@@ -10,13 +10,13 @@ const MONO = "'JetBrains Mono',monospace";
 
 // Simulated Sophia agent decisions
 const SOPHIA_DECISIONS = [
-  { ts:0,     agent:"SOPHIA-1", action:"REBALANCE",         detail:"Collateral ratio optimized — metals allocation increased 8%",  color:"#14F195" },
-  { ts:3000,  agent:"SOPHIA-2", action:"YIELD_CAPTURE",     detail:"Idle verified position deployed to Loopscale — 5.2% APR",     color:"#14F195" },
-  { ts:6500,  agent:"SOPHIA-3", action:"RISK_HEDGE",        detail:"Volatility threshold exceeded — hedge position initiated",       color:"#FBBF24" },
-  { ts:10000, agent:"CIRCUIT",  action:"ANOMALY_DETECTED",  detail:"Watch floor price deviation 4.2% — monitoring elevated",        color:"#FF8C00" },
-  { ts:13500, agent:"SOPHIA-1", action:"CUSTODY_VERIFIED",  detail:"Quarterly audit confirmed — Brinks vault Singapore cleared",    color:"#14F195" },
-  { ts:17000, agent:"CIRCUIT",  action:"CIRCUIT_NOMINAL",   detail:"All risk parameters within bounds — no action required",        color:"rgba(20,241,149,0.6)" },
-  { ts:21000, agent:"SOPHIA-2", action:"PROVENANCE_UPDATE", detail:"New appraisal anchored — collateral score revised to 88/100",  color:"#C8A96E" },
+  { ts:0,     agent:"SOPHIA-1", action:"REBALANCE",         detail:"Collateral ratio optimized. metals allocation increased 8%",  color:"#14F195" },
+  { ts:3000,  agent:"SOPHIA-2", action:"YIELD_CAPTURE",     detail:"Idle verified position deployed to Loopscale. 5.2% APR",     color:"#14F195" },
+  { ts:6500,  agent:"SOPHIA-3", action:"RISK_HEDGE",        detail:"Volatility threshold exceeded. hedge position initiated",       color:"#FBBF24" },
+  { ts:10000, agent:"CIRCUIT",  action:"ANOMALY_DETECTED",  detail:"Watch floor price deviation 4.2%. monitoring elevated",        color:"#FF8C00" },
+  { ts:13500, agent:"SOPHIA-1", action:"CUSTODY_VERIFIED",  detail:"Quarterly audit confirmed. Brinks vault Singapore cleared",    color:"#14F195" },
+  { ts:17000, agent:"CIRCUIT",  action:"CIRCUIT_NOMINAL",   detail:"All risk parameters within bounds. no action required",        color:"rgba(20,241,149,0.6)" },
+  { ts:21000, agent:"SOPHIA-2", action:"PROVENANCE_UPDATE", detail:"New appraisal anchored. collateral score revised to 88/100",  color:"#C8A96E" },
 ];
 
 const SOPHIA_FEATURES = [
@@ -28,11 +28,11 @@ const SOPHIA_FEATURES = [
 
 const CIRCUIT_SIGNALS = [
   { level:"NOMINAL", type:"ORACLE",     msg:"Price feeds consistent across 3 verified sources",    col:"rgba(20,241,149,0.65)" },
-  { level:"NOMINAL", type:"COLLATERAL", msg:"Portfolio health factor 1.48 — above threshold",      col:"rgba(20,241,149,0.65)" },
+  { level:"NOMINAL", type:"COLLATERAL", msg:"Portfolio health factor 1.48. above threshold",      col:"rgba(20,241,149,0.65)" },
   { level:"WATCH",   type:"LIQUIDITY",  msg:"Watch category liquidity depth below 30d average",    col:"#FBBF24" },
-  { level:"NOMINAL", type:"CUSTODY",    msg:"All custody vaults nominal — 0 overdue audits",       col:"rgba(20,241,149,0.65)" },
-  { level:"WATCH",   type:"VOLATILITY", msg:"Metals variance elevated — monitoring intensified",   col:"#FBBF24" },
-  { level:"NOMINAL", type:"CIRCUIT",    msg:"Automatic circuit breakers armed — no triggers",      col:"rgba(20,241,149,0.65)" },
+  { level:"NOMINAL", type:"CUSTODY",    msg:"All custody vaults nominal. 0 overdue audits",       col:"rgba(20,241,149,0.65)" },
+  { level:"WATCH",   type:"VOLATILITY", msg:"Metals variance elevated. monitoring intensified",   col:"#FBBF24" },
+  { level:"NOMINAL", type:"CIRCUIT",    msg:"Automatic circuit breakers armed. no triggers",      col:"rgba(20,241,149,0.65)" },
 ];
 
 function AgentFeed() {
@@ -265,7 +265,7 @@ export default function TrainPage() {
             Circuit monitors price velocity, liquidity depth, oracle consistency,
             and custody audit compliance in real time. When conditions breach
             configured thresholds, Circuit triggers small, automatic protective
-            actions — partial de-risking, collateral alerts, or custody escalation —
+            actions. partial de-risking, collateral alerts, or custody escalation -
             before positions become vulnerable to liquidation.
           </p>
           <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>

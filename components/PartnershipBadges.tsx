@@ -22,7 +22,7 @@ const PARTNERS: Partner[] = [
     stat: "$40M",
     statLabel: "raised",
     detail:
-      "Institutional-grade MPC wallet infrastructure. Split-key security — no single point of failure. Every $ABRA distribution is policy-governed, insured, and auditable on Solana. Backed by Red Dot Capital, Nyca, Wing VC, DCG.",
+      "Institutional-grade MPC wallet infrastructure. Split-key security. no single point of failure. Every $ABRA distribution is policy-governed, insured, and auditable on Solana. Backed by Red Dot Capital, Nyca, Wing VC, DCG.",
     color: "#0D7377",
     dot: "#10B981",
   },

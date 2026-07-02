@@ -1,5 +1,5 @@
 // FILE: lib/protocolArchitecture.ts
-// Honest technical architecture reference — Sui-native verification.
+// Honest technical architecture reference. Sui-native verification.
 
 export type ArchStatus = "live" | "in_progress" | "roadmap";
 
@@ -24,7 +24,7 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
     layer: "User intent",
     role: "Verify once · use everywhere",
     status: "in_progress",
-    detail: "Portable verification on Sui — zkLogin for identity, personal-message intents for gas-free proofs, sponsored transactions for tier members updating Passport stamps.",
+    detail: "Portable verification on Sui. zkLogin for identity, personal-message intents for gas-free proofs, sponsored transactions for tier members updating Passport stamps.",
     items: [
       "zkLogin sign-in on /passport (Google → Sui address)",
       "Intent messaging: sign challenge strings without a transaction (roadmap)",
@@ -42,7 +42,7 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
       "W3C Verifiable Credentials (did:sui:0x…)",
       "Ed25519 signed JWT issuance (POST /api/credentials/issue)",
       "Veriff Precheck on /passport (linked to zkLogin address)",
-      "Sui Passport Move module — devnet live (GET /api/sui/passport)",
+      "Sui Passport Move module. devnet live (GET /api/sui/passport)",
       "10-stamp bitmask model",
     ],
   },
@@ -66,7 +66,7 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
     detail: "Wyoming LLC packages and verified assets (Cielo Sunrise) with Abraxas verification pipeline. Ownership credentials tied to Sui holder address.",
     items: [
       "Wyoming LLC tiers on /build",
-      "Cielo Sunrise genesis asset — live gallery + booking",
+      "Cielo Sunrise genesis asset. live gallery + booking",
       "Asset submissions via V5 pipeline",
     ],
   },
@@ -98,7 +98,7 @@ export const ARCHITECTURE_LAYERS: readonly ArchLayer[] = [
 
 export const X402_ARCHITECTURE = {
   title: "x402 payment path (planned)",
-  summary: "HTTP 402 for verification packages — programmatic settlement tied to credential + Passport stamp issuance.",
+  summary: "HTTP 402 for verification packages. programmatic settlement tied to credential + Passport stamp issuance.",
   flow: [
     "Client requests package → server responds 402 with price",
     "Payment completed (stablecoin or Sui)",
@@ -110,19 +110,19 @@ export const X402_ARCHITECTURE = {
     { use: "Business / Property tiers", price: "From $199", status: "roadmap" as const },
     { use: "Wyoming LLC tiers", price: "$1,499 – $4,999", status: "roadmap" as const },
   ],
-  why: "x402 sells verification as infrastructure — APIs and agents pay programmatically.",
+  why: "x402 sells verification as infrastructure. APIs and agents pay programmatically.",
 } as const;
 
 export const PASSPORT_ONCHAIN_SPEC = {
   title: "Passport root (Sui primary)",
-  summary: "52-byte logical root — u16 stamp bitmask on Sui Move Passport object. zkLogin holder address. Full spec: /docs/passport-spec · hub: /docs/sui.",
+  summary: "52-byte logical root. u16 stamp bitmask on Sui Move Passport object. zkLogin holder address. Full spec: /docs/passport-spec · hub: /docs/sui.",
   accountLayout: [
-    { field: "version", desc: "u8 — format version (1)" },
-    { field: "stamps", desc: "u16 bitmask — 10 gates" },
-    { field: "authority", desc: "32 bytes — issuance cap authority on Sui" },
-    { field: "expires_at", desc: "u64 unix seconds — 0 = none" },
-    { field: "revoked", desc: "u8 — 0 active, 1 revoked" },
-    { field: "nonce", desc: "u64 — increments on stamp update" },
+    { field: "version", desc: "u8. format version (1)" },
+    { field: "stamps", desc: "u16 bitmask. 10 gates" },
+    { field: "authority", desc: "32 bytes. issuance cap authority on Sui" },
+    { field: "expires_at", desc: "u64 unix seconds. 0 = none" },
+    { field: "revoked", desc: "u8. 0 active, 1 revoked" },
+    { field: "nonce", desc: "u64. increments on stamp update" },
   ],
   verifyInstruction: [
     "verify(passport, required_stamps, timestamp) on Sui Move",
@@ -131,7 +131,7 @@ export const PASSPORT_ONCHAIN_SPEC = {
     "Type 1: zkLogin ZK presentation",
     "Intent: personal message sign (no gas)",
   ],
-  privacy: "No documents on-chain — only stamp bitmask and lifecycle fields.",
+  privacy: "No documents on-chain. only stamp bitmask and lifecycle fields.",
 } as const;
 
 export const INTEGRATOR_QUICKSTART = {

@@ -1,8 +1,8 @@
 // FILE: lib/protocolPassportSpec.ts
-// Shared copy for /docs/passport-spec — chain-agnostic Passport root.
+// Shared copy for /docs/passport-spec. chain-agnostic Passport root.
 
 export const PASSPORT_SPEC_INTRO =
-  "Sui-native Abraxas Passport specification. Same 52-byte logical state on Sui Move objects. zkLogin (Google OAuth) derives holder addresses; documents stay off-chain — only stamp bitmask + authority + lifecycle fields are on-chain.";
+  "Sui-native Abraxas Passport specification. Same 52-byte logical state on Sui Move objects. zkLogin (Google OAuth) derives holder addresses; documents stay off-chain. only stamp bitmask + authority + lifecycle fields are on-chain.";
 
 export const STAMP_BIT_TABLE = [
   { bit: 0, id: "identity", label: "Identity Verified" },
@@ -14,7 +14,7 @@ export const STAMP_BIT_TABLE = [
   { bit: 6, id: "tribal", label: "Tribal Partner Verified" },
   { bit: 7, id: "compliance", label: "Compliance Cleared" },
   { bit: 8, id: "lending", label: "Lending Eligible" },
-  { bit: 9, id: "social", label: "Social Verified (deprecated — not used)" },
+  { bit: 9, id: "social", label: "Social Verified (deprecated. not used)" },
 ] as const;
 
 export const IMPLEMENTATION_ORDER = [
@@ -38,9 +38,9 @@ export const ZKLOGIN_INTEGRATION = {
     "Presentation: Type 0 Ed25519 signature (gas-free personal message) or Type 1 ZK proof",
   ],
   gasNotes: [
-    "signPersonalMessage — off-chain intent scope PersonalMessage (3,0,0), no gas",
-    "Gasless USDC transfers on Sui — allowlisted stablecoins only, not general Move calls",
-    "Sponsored transactions — sponsor pays gas for full on-chain passport updates",
+    "signPersonalMessage. off-chain intent scope PersonalMessage (3,0,0), no gas",
+    "Gasless USDC transfers on Sui. allowlisted stablecoins only, not general Move calls",
+    "Sponsored transactions. sponsor pays gas for full on-chain passport updates",
   ],
   links: [
     { label: "Sui zkLogin overview", href: "https://docs.sui.io/concepts/cryptography/zklogin" },
@@ -52,12 +52,12 @@ export const ZKLOGIN_INTEGRATION = {
 
 export const PROOF_TYPES = [
   {
-    type: "0 — Ed25519 signature",
+    type: "0. Ed25519 signature",
     status: "spec ready",
     detail: "Sign domain || serialized_52_byte_root with issuance authority key. Lowest complexity; works off-chain with no gas.",
   },
   {
-    type: "1 — ZK presentation (zkLogin)",
+    type: "1. ZK presentation (zkLogin)",
     status: "roadmap",
     detail: "Proves holder controls a valid zkLogin-derived address linked to passport root without revealing OAuth credentials.",
   },

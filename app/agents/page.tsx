@@ -131,7 +131,7 @@ export default function AgentsPage() {
                 </div>
               </button>
 
-              {/* Expanded — decision trace */}
+              {/* Expanded. decision trace */}
               {isOpen && (
                 <div style={{ borderTop: "1px solid var(--line)", padding: "1rem 1.25rem" }}>
                   <p style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.75rem" }}>
@@ -161,7 +161,7 @@ export default function AgentsPage() {
           );
         })}
       </div>
-      {/* Sovereign Briefing — Orbis-gated, requires vault position */}
+      {/* Sovereign Briefing. Orbis-gated, requires vault position */}
       <div style={{ marginTop: "2rem" }}>
         <SovereignBriefing />
       </div>

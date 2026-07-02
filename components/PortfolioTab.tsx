@@ -36,12 +36,12 @@ const STATUS_META: Record<string,{label:string;color:string}> = {
 const SIGNAL_FEED = [
   { tag:"PROTOCOL",  text:"AAS-1 verification standard enforces 6-stage authentication chain",       time:"2h ago" },
   { tag:"RWA",       text:"Tokenized real-world assets on Solana surpassed $2.4B in Q1 2026",       time:"4h ago" },
-  { tag:"COLLATERAL",text:"Gold bullion remains highest LTV asset class at 80% — proof of custody required", time:"6h ago" },
+  { tag:"COLLATERAL",text:"Gold bullion remains highest LTV asset class at 80%. proof of custody required", time:"6h ago" },
   { tag:"ONCHAIN",   text:"Loopscale lending depth now supports USDC draws against Token-2022 certs", time:"8h ago" },
-  { tag:"ABRAXAS",   text:"Mineral rights tokenization available — Permian Basin WI accepted",       time:"12h ago" },
+  { tag:"ABRAXAS",   text:"Mineral rights tokenization available. Permian Basin WI accepted",       time:"12h ago" },
   { tag:"SECURITY",  text:"Zero fraud flags across all AAS-1 certified assets since protocol launch", time:"1d ago" },
   { tag:"PROTOCOL",  text:"Circuit Monitor provides real-time on-chain safety across all positions", time:"1d ago" },
-  { tag:"ABRA",      text:"$ABRA required for protocol access — acquire via Bags.fm or Jupiter",     time:"2d ago" },
+  { tag:"ABRA",      text:"$ABRA required for protocol access. acquire via Bags.fm or Jupiter",     time:"2d ago" },
 ];
 
 const TAG_COL: Record<string,string> = {
@@ -86,7 +86,7 @@ export function PortfolioTab() {
     <div style={{ width:"100%", maxWidth:960, margin:"0 auto" }}>
 
       {/* ══════════════════════════════════════════════════════════════
-          1. PROTOCOL FLOW — THE ECONOMIC ENGINE (HERO POSITION)
+          1. PROTOCOL FLOW. THE ECONOMIC ENGINE (HERO POSITION)
       ══════════════════════════════════════════════════════════════ */}
       <ProtocolFlow onStartTokenize={openStudio} />
 
@@ -102,9 +102,9 @@ export function PortfolioTab() {
             gap:"0.5rem", marginBottom:"1.25rem",
           }}>
             {[
-              { label:"Total Asset Value",  value: totalValue > 0 ? `$${totalValue.toLocaleString()}` : "—",      color:"#f0f0f0" },
+              { label:"Total Asset Value",  value: totalValue > 0 ? `$${totalValue.toLocaleString()}` : "-",      color:"#f0f0f0" },
               { label:"Verified Assets",    value: String(verifiedAssets.length),                                  color:"#14F195" },
-              { label:"Borrow Capacity",    value: borrowCapacity > 0 ? `$${borrowCapacity.toLocaleString()} USDC` : "—", color:"#6b8cff" },
+              { label:"Borrow Capacity",    value: borrowCapacity > 0 ? `$${borrowCapacity.toLocaleString()} USDC` : "-", color:"#6b8cff" },
               { label:"ABRA Balance",       value: loading ? "…" : `${balance.toLocaleString()} ABRA`,           color:"#C8A96E" },
             ].map(m => (
               <div key={m.label} style={{
@@ -145,7 +145,7 @@ export function PortfolioTab() {
           <p style={{ fontSize:"clamp(0.52rem, 1.5vw, 0.68rem)",
                        color:"rgba(255,255,255,0.3)", lineHeight:1.7,
                        maxWidth:380, margin:"0 auto 1.5rem" }}>
-            Submit a real-world asset — watch, metal, property, mineral rights —
+            Submit a real-world asset. watch, metal, property, mineral rights -
             and unlock borrowing capacity against verified collateral.
           </p>
           <button onClick={openStudio} style={{
@@ -215,9 +215,9 @@ export function PortfolioTab() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
-          4. CIRCUIT MONITOR — ON-CHAIN SAFETY
+          4. CIRCUIT MONITOR. ON-CHAIN SAFETY
       ══════════════════════════════════════════════════════════════ */}
-      <Rule label="Circuit Monitor — On-Chain Safety" />
+      <Rule label="Circuit Monitor. On-Chain Safety" />
       <div style={{
         padding:"1.25rem 1.5rem", borderRadius:"8px", marginBottom:"0.5rem",
         border:"1px solid rgba(20,241,149,0.12)",

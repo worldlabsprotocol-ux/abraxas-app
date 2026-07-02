@@ -1,6 +1,6 @@
 // FILE: components/BorrowPage.tsx
 // Borrow tab. Institutional. No fake numbers. Clear CTA.
-// Typography sized for readability — not microscopic telemetry.
+// Typography sized for readability. not microscopic telemetry.
 "use client";
 
 import { useState } from "react";
@@ -13,7 +13,7 @@ export function BorrowPage() {
 
   const FAQ = [
     {q:"What assets qualify as collateral?",
-     a:"Any asset that completes the Abraxas authentication pipeline — including watches, spirits, metals, graded cards, and art. The asset must pass custody validation before borrow eligibility is granted."},
+     a:"Any asset that completes the Abraxas authentication pipeline. including watches, spirits, metals, graded cards, and art. The asset must pass custody validation before borrow eligibility is granted."},
     {q:"How is the loan-to-value ratio determined?",
      a:"LTV is assigned per asset class based on historical market liquidity, volatility, and custody confidence. Metals qualify for up to 80% LTV. Art and racehorses are conservatively set at 45-55%."},
     {q:"What happens if my collateral value drops?",

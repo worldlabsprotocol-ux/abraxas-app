@@ -4,14 +4,14 @@
 // Used in PortfolioTab (per-asset detail) and admin dashboard.
 //
 // LIGHT MODE PASS (June 2026)
-// — Same structure/props/exports as before. Panels are now white cards with
+//. Same structure/props/exports as before. Panels are now white cards with
 //   a soft shadow instead of near-invisible rgba(255,255,255,0.02) tints,
 //   matching the verification/checklist panels in the reference screenshots.
-// — STAGE_STATUS_COLOR values are still plain hex (not rgba) on purpose —
+//. STAGE_STATUS_COLOR values are still plain hex (not rgba) on purpose -
 //   the file leans on a `${col}NN` string-concat alpha trick everywhere
 //   (e.g. `${col}12`), and hex6 + 2 hex chars = a valid hex8 color. Keeping
 //   hex here means none of those call sites needed to change.
-// — Swapped the progress-bar gradient's hardcoded purple (#7c3aed, unused
+//. Swapped the progress-bar gradient's hardcoded purple (#7c3aed, unused
 //   anywhere else in the brand palette) for the brand gold so it's
 //   consistent with AssetCard. Flag if that purple was intentional brand
 //   color elsewhere and I'll put it back.
@@ -329,7 +329,7 @@ export function VerificationPanel({
         )}
       </div>
 
-      {/* Stages — show condensed if compact */}
+      {/* Stages. show condensed if compact */}
       {!compact && (
         <div style={{
           border:"1px solid var(--abx-border-subtle, #E7E9EE)",

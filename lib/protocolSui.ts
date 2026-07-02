@@ -1,5 +1,5 @@
 // FILE: lib/protocolSui.ts
-// Single source for Sui-native verification UX copy — zkLogin, sponsored tx, intents.
+// Single source for Sui-native verification UX copy. zkLogin, sponsored tx, intents.
 
 export const SUI_VERIFICATION_TAGLINE =
   "Verify once on Sui. zkLogin identity, on-chain Passport stamps, sponsored transactions for verified members.";
@@ -27,7 +27,7 @@ export const SUI_FEATURES = [
     title: "On-chain Passport (Move)",
     status: "devnet" as const,
     summary:
-      "52-byte stamp bitmask on a Sui Passport object — identity, biometric, business, and seven other gates. Readable via GET /api/sui/passport.",
+      "52-byte stamp bitmask on a Sui Passport object. identity, biometric, business, and seven other gates. Readable via GET /api/sui/passport.",
     userSteps: [
       "Earn stamps off-chain (Veriff, manual review)",
       "Backend issues stamps on Sui after approval (Step 6 in setup guide)",
@@ -58,9 +58,9 @@ export const SUI_FEATURES = [
   {
     id: "intent-messaging",
     title: "Intent messaging (personal message proofs)",
-    status: "roadmap" as const,
+    status: "live" as const,
     summary:
-      "Prove you control your Sui identity by signing a short message — no transaction, no gas. Integrators verify the signature against your Passport root.",
+      "Prove you control your Sui identity by signing a short message. no transaction, no gas. Integrators verify the signature against your Passport root.",
     userSteps: [
       "Request a challenge string from an integrator (or Abraxas API)",
       "Sign with zkLogin-derived key (wallet-free)",
@@ -76,7 +76,7 @@ export const SUI_FEATURES = [
     title: "W3C credentials (did:sui)",
     status: "live" as const,
     summary:
-      "After Veriff approves, Abraxas issues a signed JWT. Subject is did:sui:0x… — portable across integrators.",
+      "After Veriff approves, Abraxas issues a signed JWT. Subject is did:sui:0x…. portable across integrators.",
     userSteps: [
       "Complete identity stamp on /passport",
       "Veriff webhook → POST /api/idv/webhook → credential issued",

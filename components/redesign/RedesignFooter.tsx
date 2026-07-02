@@ -107,7 +107,7 @@ export function RedesignFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. Universal trust infrastructure — Abraxas Identity Layer (AIL).
+              Verify once. Transact everywhere. Universal trust infrastructure. Abraxas Identity Layer (AIL).
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
               Live at{" "}

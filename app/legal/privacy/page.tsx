@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
           service to us.</p>
           <p style={{ marginBottom:"0.5rem" }}><strong>The Sui blockchain.</strong> Your Sui
           wallet address and Passport stamp bitmask may be recorded on-chain. Your name and
-          personal information are not published on-chain — only cryptographic proofs.</p>
+          personal information are not published on-chain. only cryptographic proofs.</p>
           <p><strong>Legal and safety reasons.</strong> We may disclose information to
           comply with a court order, law, or legal process, or to protect the rights,
           property, or safety of Abraxas, our users, or others.</p>

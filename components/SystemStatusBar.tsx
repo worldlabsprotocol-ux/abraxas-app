@@ -13,9 +13,9 @@ const STATE_COLORS = {
 };
 
 const RWA_TICKERS = [
-  "RWA on-chain market cap $18.4B  +3.2% — real assets, real liquidity · ",
+  "RWA on-chain market cap $18.4B  +3.2%. real assets, real liquidity · ",
   "Tokenized T-Bills AUM $3.1B  +12% MoM · BlackRock BUIDL $520M · Franklin OnChain $420M · ",
-  "Stablecoin supply $240B · Tether $141B · USDC $61B — settlement infrastructure growing · ",
+  "Stablecoin supply $240B · Tether $141B · USDC $61B. settlement infrastructure growing · ",
   "Solana RWA TVL $2.2B  +41% YTD · Loopscale Modular Vaults live · Abraxas Protocol active · ",
   "Tokenized gold volume +8% WoW · Silver +3% · Physical asset demand on-chain rising · ",
   "Collector market Q1 2026: $840M PSA card volume · Baxus spirits activity +31% · Courtyard watches +18% · ",

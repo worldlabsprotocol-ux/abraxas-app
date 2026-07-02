@@ -1,5 +1,5 @@
 // FILE: app/collect/page.tsx
-// Collector Crypt native integration — no external links.
+// Collector Crypt native integration. no external links.
 // Tokenized collectibles via Abraxas verification layer.
 // CA: CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp
 // Every card: high-res render, provenance, live price, Jupiter swap, Circuit defense, actions.

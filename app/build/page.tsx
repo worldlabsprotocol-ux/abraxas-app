@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/build/page.tsx
-// Build on Abraxas — Wyoming LLC packages + World Labs blueprint.
+// Build on Abraxas. Wyoming LLC packages + World Labs blueprint.
 // Slimmed to the core owner funnel: form → verify → tokenize.
 
 import { useState } from "react";
@@ -41,7 +41,7 @@ export default function BuildPage() {
         <p style={{ fontFamily:S, fontSize:"0.82rem", color:"var(--text-secondary)",
                      lineHeight:1.7, marginBottom:"1.5rem", maxWidth:560 }}>
           Form a Wyoming LLC, get fully verified via zkLogin on Sui, and tokenize what you own.
-          World Labs is the blueprint — Cielo Sunrise is the proof asset.
+          World Labs is the blueprint. Cielo Sunrise is the proof asset.
           Investors browse verified assets on the Marketplace.
         </p>
 

@@ -1,5 +1,5 @@
 // FILE: components/CieloBooking.tsx
-// USDC crypto booking form for Cielo Sunrise — bypasses Airbnb fees.
+// USDC crypto booking form for Cielo Sunrise. bypasses Airbnb fees.
 // Guests submit dates + wallet, Pablo confirms manually and receives full payment.
 "use client";
 
@@ -55,7 +55,7 @@ export function CieloBooking() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          property:   "Cielo Sunrise — AAS-1",
+          property:   "Cielo Sunrise. AAS-1",
           check_in:   checkIn,
           check_out:  checkOut,
           guests:     parseInt(guests),
@@ -206,7 +206,7 @@ export function CieloBooking() {
                   {[
                     ["Your Name *",   name,   setName,   "text",  "Full name"],
                     ["Email *",       email,  setEmail,  "email", "you@example.com"],
-                    ["Solana Wallet", wallet, setWallet, "text",  "Optional — for USDC payment"],
+                    ["Solana Wallet", wallet, setWallet, "text",  "Optional. for USDC payment"],
                   ].map(([l,v,set,type,ph]) => (
                     <div key={l as string} style={{ marginBottom:"0.625rem" }}>
                       <label style={lbl}>{l as string}</label>
@@ -263,7 +263,7 @@ export function CieloBooking() {
                                margin:"0 0 1rem" }}>
                     We will confirm your dates and send payment instructions
                     within 24 hours. Payment goes directly to the owner wallet
-                    at <strong style={{ color:G }}>{TREASURY}</strong> — no platform fees.
+                    at <strong style={{ color:G }}>{TREASURY}</strong>. no platform fees.
                   </p>
                   <button onClick={() => { setOpen(false); setStep("dates"); }} style={{
                     padding:"0.6rem 1.5rem", borderRadius:5, border:"none",

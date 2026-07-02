@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/FeaturedFlagship.tsx
-// Hero feature for Cielo Sunrise — verified, cash-yielding genesis asset.
+// Hero feature for Cielo Sunrise. verified, cash-yielding genesis asset.
 
 import { motion } from "framer-motion";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
@@ -87,7 +87,7 @@ export function FeaturedFlagship() {
             fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
             lineHeight: 1.7, margin: "0 0 1.25rem",
           }}>
-            {D.tagline}. Mineral Bluff, Georgia. Real property — bookable today on Airbnb.
+            {D.tagline}. Mineral Bluff, Georgia. Real property. bookable today on Airbnb.
             This is what a fully verified asset looks like on Abraxas: real title, real revenue
             history, real collateral score, and stablecoin booking when you are verified.
           </p>
@@ -150,7 +150,7 @@ export function FeaturedFlagship() {
             fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
             margin: "0.75rem 0 0", lineHeight: 1.55,
           }}>
-            Active Superhost listing in Mineral Bluff, GA — not a render or mock.
+            Active Superhost listing in Mineral Bluff, GA. not a render or mock.
             Verification required before stablecoin checkout on Abraxas.
           </p>
         </div>

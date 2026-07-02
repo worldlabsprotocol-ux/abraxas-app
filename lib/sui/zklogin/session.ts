@@ -3,6 +3,8 @@
 
 import { ZKLOGIN_SESSION_KEY, ZKLOGIN_PENDING_KEY } from "./config";
 
+const EPHEMERAL_KEY = "abraxas_zklogin_ephemeral_v1";
+
 export interface ZkLoginPendingSession {
   ephemeralSecretKey: string;
   randomness: string;
@@ -54,6 +56,19 @@ export function loadUserSession(): ZkLoginUserSession | null {
 
 export function clearUserSession(): void {
   localStorage.removeItem(ZKLOGIN_SESSION_KEY);
+  clearEphemeralSecretKey();
+}
+
+export function saveEphemeralSecretKey(secretKey: string): void {
+  sessionStorage.setItem(EPHEMERAL_KEY, secretKey);
+}
+
+export function loadEphemeralSecretKey(): string | null {
+  return sessionStorage.getItem(EPHEMERAL_KEY);
+}
+
+export function clearEphemeralSecretKey(): void {
+  sessionStorage.removeItem(EPHEMERAL_KEY);
 }
 
 /** Parse id_token from OAuth implicit callback hash (#id_token=...) */

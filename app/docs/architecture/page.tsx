@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/docs/architecture/page.tsx
-// Honest technical architecture — live vs in-progress vs roadmap.
+// Honest technical architecture. live vs in-progress vs roadmap.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -41,7 +41,7 @@ export default function ArchitecturePage() {
       <PageHeader
         eyebrow="Technical architecture"
         title="How Abraxas is built"
-        subtitle="Abraxas Identity Layer (AIL) — five-layer trust infrastructure. Live vs roadmap labeled honestly."
+        subtitle="Abraxas Identity Layer (AIL). five-layer trust infrastructure. Live vs roadmap labeled honestly."
       />
 
       <ContentCard title="Design principle">
@@ -49,8 +49,8 @@ export default function ArchitecturePage() {
                      lineHeight: 1.75, margin: "0 0 0.75rem" }}>
           Abraxas is a <strong style={{ color: "var(--text-primary)" }}>trust orchestration layer</strong>, not a KYC
           vendor. Licensed providers perform verification; Abraxas stores only credential hashes, issuer, expiration,
-          sanctions status, and wallet binding. External protocols integrate one API —{" "}
-          <em>Is this wallet verified?</em> — instead of five different KYC stacks.
+          sanctions status, and wallet binding. External protocols integrate one API -{" "}
+          <em>Is this wallet verified?</em>. instead of five different KYC stacks.
         </p>
         <Link href="/docs/ail" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, fontWeight: 600 }}>
           Read full AIL specification →

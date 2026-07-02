@@ -1,5 +1,5 @@
 // FILE: components/payments/PaymentButton.tsx
-// Drop-in payment button — wraps any Abraxas product in Stripe Checkout.
+// Drop-in payment button. wraps any Abraxas product in Stripe Checkout.
 // Shows Apple Pay / Google Pay icons automatically when available.
 // Usage:
 //   <PaymentButton product="wyoming_starter" label="START TOKENIZATION" />

@@ -1,5 +1,5 @@
 // FILE: components/verification/AssetIntelligence.tsx
-// Asset Intelligence Layer — lender confidence, fraud probability,
+// Asset Intelligence Layer. lender confidence, fraud probability,
 // liquidity estimate, volatility class, collateral readiness.
 // Bloomberg terminal energy. Not marketplace energy.
 "use client";
@@ -14,7 +14,7 @@ export interface AssetIntelligenceData {
   liquidityEstimate:      "HIGH" | "MEDIUM" | "LOW";
   volatilityClass:        "LOW" | "LOW-MEDIUM" | "MEDIUM" | "HIGH";
   collateralReadiness:    "READY" | "PENDING" | "INELIGIBLE";
-  financeabilityScore:    number;   // 0-100 — THE CORE METRIC
+  financeabilityScore:    number;   // 0-100. THE CORE METRIC
   dataFreshnessDays:      number;
   lastIntelligenceUpdate: string;
   signals: {
@@ -58,7 +58,7 @@ const STATUS_COLOR = {
   positive: GREEN, neutral:"rgba(255,255,255,0.4)",
   warning: AMBER,  negative: RED,
 };
-const STATUS_ICON = { positive:"▲", neutral:"—", warning:"⚠", negative:"▼" };
+const STATUS_ICON = { positive:"▲", neutral:"-", warning:"⚠", negative:"▼" };
 
 export function AssetIntelligence({ data }: { data: AssetIntelligenceData }) {
   const liqColor = data.liquidityEstimate === "HIGH" ? GREEN : data.liquidityEstimate === "MEDIUM" ? AMBER : RED;

@@ -36,7 +36,7 @@ async function syncToSupabase(data: Record<string, unknown>): Promise<void> {
       body: JSON.stringify(data),
     });
   } catch {
-    console.warn("Supabase sync failed — asset saved locally");
+    console.warn("Supabase sync failed. asset saved locally");
   }
 }
 
@@ -274,7 +274,7 @@ function IssuanceEngine({ onSuccess }: { onSuccess?: () => void }) {
             Asset Details
           </h2>
           <p style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.3)", margin:"0 0 1.25rem", lineHeight:1.6 }}>
-            Metadata is hashed and anchored on Sui — immutable after submission.
+            Metadata is hashed and anchored on Sui. immutable after submission.
           </p>
 
           <div style={{ display:"flex", flexDirection:"column", gap:"0.875rem", marginBottom:"1.25rem" }}>

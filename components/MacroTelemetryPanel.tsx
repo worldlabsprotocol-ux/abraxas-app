@@ -1,5 +1,5 @@
 // FILE: components/MacroTelemetryPanel.tsx
-// Sovereign Macro Telemetry — absorbs DeFiLlama, no external links.
+// Sovereign Macro Telemetry. absorbs DeFiLlama, no external links.
 // Radial gauge (SVG) + stablecoin flow bars + sector heatmap.
 // All data from /api/macro. JetBrains Mono, tabular numerics, no emojis.
 // [REESTABLISHING SECURE HANDSHAKE] when API drops.
@@ -18,7 +18,7 @@ interface MacroData {
 type StreamStatus = "live" | "idle" | "reconnecting" | "error";
 
 // ─── SVG Radial Gauge ─────────────────────────────────────────────────────────
-// Renders an SVG arc gauge — no dependencies.
+// Renders an SVG arc gauge. no dependencies.
 function RadialGauge({ value, max, label, color, size = 96 }: {
   value: number; max: number; label: string; color: string; size?: number;
 }) {
@@ -165,7 +165,7 @@ export function MacroTelemetryPanel() {
       } else throw new Error("bad response");
     } catch {
       setStatus("error");
-      // Keep previous data visible — graceful degradation
+      // Keep previous data visible. graceful degradation
     } finally {
       setLoading(false);
     }
@@ -191,7 +191,7 @@ export function MacroTelemetryPanel() {
     const totalStable = data.stablecoins.reduce((a, s) => a + s.circulating, 0);
     return [
       { label: "Solana TVL", value: data.solana.tvlFormatted, pct: 100, trend: tvlChange >= 0 ? "up" : "dn" },
-      { label: "USDC Flow",  value: usdcFlow ? `$${(usdcFlow.circulating / 1e9).toFixed(1)}B` : "—", pct: 80, trend: (usdcFlow?.change24h ?? 0) >= 0 ? "up" : "dn" },
+      { label: "USDC Flow",  value: usdcFlow ? `$${(usdcFlow.circulating / 1e9).toFixed(1)}B` : "-", pct: 80, trend: (usdcFlow?.change24h ?? 0) >= 0 ? "up" : "dn" },
       { label: "Stable Dom.", value: `$${(totalStable / 1e9).toFixed(1)}B`, pct: 60, trend: "flat" },
       { label: "24H Change",  value: `${tvlChange >= 0 ? "+" : ""}${tvlChange.toFixed(2)}%`, pct: 50, trend: tvlChange >= 0 ? "up" : "dn" },
     ];
@@ -244,7 +244,7 @@ export function MacroTelemetryPanel() {
           </span>
         </div>
         <span style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.25)", letterSpacing: "0.06em" }}>
-          {data ? new Date(data.updatedAt).toLocaleTimeString() : "—"}
+          {data ? new Date(data.updatedAt).toLocaleTimeString() : "-"}
         </span>
       </div>
 

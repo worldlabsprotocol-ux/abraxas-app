@@ -52,11 +52,11 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Why blockchain?",
-    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified Passport on Sui doesn't depend on trusting Abraxas forever — stamp bitmask and credentials are checkable by anyone.",
+    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified Passport on Sui doesn't depend on trusting Abraxas forever. stamp bitmask and credentials are checkable by anyone.",
   },
   {
     q: "Why Sui and zkLogin?",
-    a: "You sign in with Google — no seed phrase, no browser wallet extension for verification. Sui gives low-cost transactions, sponsored gas for verified tiers, and personal-message proofs integrators can verify off-chain.",
+    a: "You sign in with Google. no seed phrase, no browser wallet extension for verification. Sui gives low-cost transactions, sponsored gas for verified tiers, and personal-message proofs integrators can verify off-chain.",
   },
   {
     q: "Why Abraxas?",
@@ -131,11 +131,11 @@ export const SECURITY_ITEMS = [
   {
     title: "Key management & custody",
     items: [
-      "ABRAXAS_SIGNING_KEY in Vercel env only — never in client code",
+      "ABRAXAS_SIGNING_KEY in Vercel env only. never in client code",
       "Service role key server-side only for Supabase writes",
       "OAuth via Google; no passwords stored for zkLogin users",
       "Utila MPC custody for verified assets requiring institutional storage",
-      "zkLogin for verification identity — no browser wallet required on /passport",
+      "zkLogin for verification identity. no browser wallet required on /passport",
     ],
   },
 ] as const;

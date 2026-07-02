@@ -1,5 +1,5 @@
 // FILE: app/about/page.tsx
-// Public explainer page — uses the IG carousel slides as scrollable sections.
+// Public explainer page. uses the IG carousel slides as scrollable sections.
 // Shareable URL for newcomers, lifts the IG content into the web product.
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -7,20 +7,20 @@ import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "About Abraxas",
-  description: "Where assets become collateral. A plain-English explainer of Abraxas Protocol — the verification and collateral intelligence OS for real-world assets.",
+  description: "Where assets become collateral. A plain-English explainer of Abraxas Protocol. the verification and collateral intelligence OS for real-world assets.",
 };
 
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S = "system-ui,-apple-system,sans-serif";
 
 const SLIDES = [
-  { src: "/about/01_cover.png",      alt: "Cover — Where assets become collateral" },
-  { src: "/about/02_problem.png",    alt: "The problem — you own a valuable thing" },
+  { src: "/about/01_cover.png",      alt: "Cover. Where assets become collateral" },
+  { src: "/about/02_problem.png",    alt: "The problem. you own a valuable thing" },
   { src: "/about/03_broken.png",     alt: "Why tokenized RWA keeps failing" },
-  { src: "/about/04_approach.png",   alt: "The Abraxas approach — verify first" },
+  { src: "/about/04_approach.png",   alt: "The Abraxas approach. verify first" },
   { src: "/about/05_pipeline.png",   alt: "The 7-step verification pipeline" },
-  { src: "/about/06_genesis.png",    alt: "Genesis Asset — Cielo Sunrise" },
-  { src: "/about/07_verticals.png",  alt: "Asset verticals — tribal, housing, royalties" },
+  { src: "/about/06_genesis.png",    alt: "Genesis Asset. Cielo Sunrise" },
+  { src: "/about/07_verticals.png",  alt: "Asset verticals. tribal, housing, royalties" },
   { src: "/about/08_cta.png",        alt: "Verification is the trust layer" },
 ];
 
@@ -80,7 +80,7 @@ export default function AboutPage() {
         </p>
       </div>
 
-      {/* Slides — vertical scroll layout */}
+      {/* Slides. vertical scroll layout */}
       <div style={{ maxWidth: 700, margin: "0 auto",
                      padding: "1rem clamp(1rem,3vw,2rem) 3rem",
                      display: "flex", flexDirection: "column",

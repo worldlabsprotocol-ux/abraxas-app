@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/SuiWalletCreatedCard.tsx
-// Shown after zkLogin — explains the Sui wallet was created from Google sign-in.
+// Shown after zkLogin. explains the Sui wallet was created from Google sign-in.
 
 import Link from "next/link";
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";

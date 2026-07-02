@@ -29,7 +29,7 @@ interface DemoAsset {
   flags:              string[];
 }
 
-// Production-shaped static demo data — matches seeded Supabase records
+// Production-shaped static demo data. matches seeded Supabase records
 const DEMO_ASSETS: DemoAsset[] = [
   {
     id:                 "demo-001",
@@ -52,7 +52,7 @@ const DEMO_ASSETS: DemoAsset[] = [
   },
   {
     id:                 "demo-002",
-    title:              "LBMA Gold Bullion — 1oz × 50 Units",
+    title:              "LBMA Gold Bullion. 1oz × 50 Units",
     category:           "Fine Metals",
     subline:            "Serial numbers documented · Brinks bonded custody",
     declaredValueUsd:   97500,

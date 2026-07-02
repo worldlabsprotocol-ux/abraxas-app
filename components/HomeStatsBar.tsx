@@ -40,7 +40,7 @@ export function HomeStatsBar() {
         ))}
       </div>
 
-      {/* Stat freshness timestamp — per Mrityunjay item 07 */}
+      {/* Stat freshness timestamp. per Mrityunjay item 07 */}
       {ts && (
         <p style={{ textAlign: "center", fontSize: "0.58rem", color: "var(--subtle)", marginTop: "0.625rem" }}>
           Updated {ts} · Sum of vault TVLs · <button onClick={() => setShowAUMContext((v) => !v)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gold)", fontSize: "0.58rem", padding: 0, textDecoration: "underline" }}>Methodology ↗</button>
@@ -50,8 +50,8 @@ export function HomeStatsBar() {
       {showAUMContext && (
         <div style={{ marginTop: "1rem", padding: "0.875rem 1.25rem", background: "rgba(200,169,110,0.05)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "10px", fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.7 }}>
           <p style={{ fontWeight: 600, color: "var(--gold)", marginBottom: "0.375rem" }}>AUM Methodology</p>
-          <p>Total AUM is the sum of TVLs across all 5 active vaults — exactly the numbers you see in the vault marketplace. No multiplier, no pipeline projection.</p>
-          <p style={{ marginTop: "0.5rem" }}>This figure reflects World Labs Protocol's operating history — including trading fund positions from 2023 and asset tokenization work with Native American and Mexico reservation communities (moving traditionally illiquid assets on-chain starting 2023). Existing positions from MPC vaults and institutional accounts are being reconfigured into the Abraxas vault structure. The number reflects real prior work, not forward projections.</p>
+          <p>Total AUM is the sum of TVLs across all 5 active vaults. exactly the numbers you see in the vault marketplace. No multiplier, no pipeline projection.</p>
+          <p style={{ marginTop: "0.5rem" }}>This figure reflects World Labs Protocol's operating history. including trading fund positions from 2023 and asset tokenization work with Native American and Mexico reservation communities (moving traditionally illiquid assets on-chain starting 2023). Existing positions from MPC vaults and institutional accounts are being reconfigured into the Abraxas vault structure. The number reflects real prior work, not forward projections.</p>
           <p style={{ marginTop: "0.5rem", fontSize: "0.68rem", color: "var(--subtle)" }}>
             For full metric definitions see <a href="/methodology" style={{ color: "var(--gold)" }}>/methodology</a> · For defense event details see <a href="/transparency" style={{ color: "var(--gold)" }}>/transparency</a>
           </p>

@@ -1,5 +1,5 @@
 // FILE: components/LanguageSelector.tsx
-// Custom language selector — Google Translate backend, fully custom UI.
+// Custom language selector. Google Translate backend, fully custom UI.
 // Dropdown uses position:fixed so it's NEVER clipped by overflow:hidden parents.
 "use client";
 
@@ -65,7 +65,7 @@ export function LanguageSelector() {
     }
   }, []);
 
-  // Close on outside click — using fixed-position panel ref
+  // Close on outside click. using fixed-position panel ref
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -157,7 +157,7 @@ export function LanguageSelector() {
         <span style={{ color: G, fontSize: "0.65rem", marginLeft: 1 }}>▾</span>
       </button>
 
-      {/* Dropdown — position:fixed so it clears ALL overflow:hidden ancestors */}
+      {/* Dropdown. position:fixed so it clears ALL overflow:hidden ancestors */}
       {open && (
         <div
           ref={panelRef}

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/AssetDetailClient.tsx
-// Client component for asset detail — all real data wired.
+// Client component for asset detail. all real data wired.
 // Uses CertificateDisplay, LiveEventFeed, BorrowPanel.
 // All imports at top.
 
@@ -190,7 +190,7 @@ export function AssetDetailClient({ data }: { data: Record<string,unknown> }) {
                     ["Declared Value", fmt(value)],
                     ["LTV Cap",        `${ltv}%`],
                     ["Max Borrow",     score>0 ? `${fmt(Math.round(value*ltv/100))} USDC` : "Pending"],
-                    ["Risk Tier",      String(latestScore?.risk_tier ?? "—")],
+                    ["Risk Tier",      String(latestScore?.risk_tier ?? "-")],
                     ["Events",         String(data.eventCount ?? 0)],
                     ["Provenance",     String(data.provenanceCount ?? 0)+" records"],
                   ] as [string,string][]).map(([k,v]) => (
@@ -221,7 +221,7 @@ export function AssetDetailClient({ data }: { data: Record<string,unknown> }) {
                       ["Vault Ref",       String(custody.vault_ref ?? "")],
                       ["Status",          String(custody.status ?? "")],
                       ["Last Audit",      custody.last_audit_at ? new Date(String(custody.last_audit_at)).toLocaleDateString() : "Pending"],
-                      ["Next Audit Due",  custody.next_audit_due ? new Date(String(custody.next_audit_due)).toLocaleDateString() : "—"],
+                      ["Next Audit Due",  custody.next_audit_due ? new Date(String(custody.next_audit_due)).toLocaleDateString() : "-"],
                     ] as [string,string][]).map(([k,v]) => (
                       <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                             padding:"0.3rem 0",
@@ -248,10 +248,10 @@ export function AssetDetailClient({ data }: { data: Record<string,unknown> }) {
                     </div>
                     {([
                       ["Interest Type",  String(energyData.interest_type ?? "")],
-                      ["Reserve Category", String(energyData.reserve_category ?? "—")],
-                      ["Working Interest", energyData.working_interest_pct ? `${(Number(energyData.working_interest_pct)*100).toFixed(1)}%` : "—"],
+                      ["Reserve Category", String(energyData.reserve_category ?? "-")],
+                      ["Working Interest", energyData.working_interest_pct ? `${(Number(energyData.working_interest_pct)*100).toFixed(1)}%` : "-"],
                       ["Title Status",   String(energyData.title_status ?? "pending")],
-                      ["Net Acres",      energyData.net_acres ? String(energyData.net_acres) : "—"],
+                      ["Net Acres",      energyData.net_acres ? String(energyData.net_acres) : "-"],
                     ] as [string,string][]).map(([k,v]) => (
                       <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                             padding:"0.3rem 0",

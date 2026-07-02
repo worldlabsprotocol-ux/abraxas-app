@@ -84,7 +84,7 @@ export function LiveAbraStatus() {
 
       {status.error && (
         <p className="text-[0.7rem] text-abraxas-subtle mt-3">
-          {status.error} — using cached values
+          {status.error}. using cached values
         </p>
       )}
 
@@ -131,7 +131,7 @@ function Row({
             : "text-abraxas-red"
         }
       >
-        {loading ? "…" : ok ? "✓ verified" : "—"}
+        {loading ? "…" : ok ? "✓ verified" : "-"}
       </span>
     </div>
   );

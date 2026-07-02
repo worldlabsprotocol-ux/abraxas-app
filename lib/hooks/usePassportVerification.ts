@@ -146,6 +146,17 @@ export function usePassportVerification(
     }
   }, [fetchOnChainStatus, autoProvision]);
 
+  const syncVeriffDecision = useCallback(async (addr: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/idv/sync-decision?sui=${encodeURIComponent(addr)}`);
+      if (!res.ok) return false;
+      const data = await res.json() as { status?: string; synced?: boolean };
+      return data.status === "approved" || data.synced === true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const refresh = useCallback(async () => {
     if (!suiAddress && !email) {
       setIdentityStatus("not_started");
@@ -164,7 +175,13 @@ export function usePassportVerification(
       if (email) params.set("email", email);
 
       const res = await fetch(`/api/identity/status?${params}`);
-      const data = await res.json() as { status?: string; via?: string };
+      let data = await res.json() as { status?: string; via?: string };
+
+      if (data.status === "pending" && suiAddress) {
+        await syncVeriffDecision(suiAddress);
+        const res2 = await fetch(`/api/identity/status?${params}`);
+        data = await res2.json() as { status?: string; via?: string };
+      }
 
       if (data.status === "approved") {
         setIdentityStatus("earned");
@@ -197,7 +214,7 @@ export function usePassportVerification(
     } finally {
       setIsRefreshing(false);
     }
-  }, [suiAddress, email, syncCredential, autoVerify, syncOnChain]);
+  }, [suiAddress, email, syncCredential, autoVerify, syncOnChain, syncVeriffDecision]);
 
   useEffect(() => {
     if (suiAddress) {

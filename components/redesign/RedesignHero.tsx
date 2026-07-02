@@ -128,7 +128,7 @@ export function RedesignHero() {
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            Prove who you are once. Prove what you own once. Licensed verifiers perform KYC —
+            Prove who you are once. Prove what you own once. Licensed verifiers perform KYC -
             Abraxas orchestrates cryptographic proof so exchanges, lenders, and RWA platforms
             never make you upload the same documents twice.
           </motion.p>

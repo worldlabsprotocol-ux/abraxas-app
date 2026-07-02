@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RoadmapCTA.tsx
-// Bottom roadmap teaser — links to /roadmap instead of duplicating milestones inline.
+// Bottom roadmap teaser. links to /roadmap instead of duplicating milestones inline.
 
 import Link from "next/link";
 import { motion } from "framer-motion";

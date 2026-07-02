@@ -1,6 +1,6 @@
 // FILE: components/WalletGate.tsx
 // Guards routes that require a connected Solana wallet.
-// Shows connect prompt if no wallet — never crashes.
+// Shows connect prompt if no wallet. never crashes.
 "use client";
 
 import Link from "next/link";

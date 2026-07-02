@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/auth/zklogin/callback/page.tsx
-// OAuth returns here with #id_token=... — complete zkLogin and land on /passport.
+// OAuth returns here with #id_token=.... complete zkLogin and land on /passport.
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";

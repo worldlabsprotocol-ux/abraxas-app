@@ -90,7 +90,9 @@ export async function POST(req: NextRequest) {
     await sb.from("identity_verifications").upsert({
       wallet_address:  holder,
       sui_address:     holder,
+      veriff_session_id: session_id,
       status:          "pending",
+      liveness_provider: "veriff",
       updated_at:      new Date().toISOString(),
     }, { onConflict: "wallet_address" });
   }

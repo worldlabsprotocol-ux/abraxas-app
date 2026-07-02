@@ -15,7 +15,7 @@ export default function DocsPage() {
       <PageHeader
         eyebrow="Documentation"
         title="Technical overview"
-        subtitle="Abraxas Identity Layer (AIL) — trust orchestration, not KYC. Licensed providers verify; Abraxas distributes cryptographic proof."
+        subtitle="Abraxas Identity Layer (AIL). trust orchestration, not KYC. Licensed providers verify; Abraxas distributes cryptographic proof."
       />
       <ContentCard title="Start here">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>

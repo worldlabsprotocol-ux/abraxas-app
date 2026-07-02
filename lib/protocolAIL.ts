@@ -1,5 +1,5 @@
 // FILE: lib/protocolAIL.ts
-// Abraxas Identity Layer (AIL) — product & technical specification.
+// Abraxas Identity Layer (AIL). product & technical specification.
 // Single source for vision, architecture, and integrator contract.
 
 export const AIL_NAME = "Abraxas Identity Layer";
@@ -9,13 +9,13 @@ export const AIL_POSITIONING =
   "Universal Trust Infrastructure for Tokenized Assets and Digital Identity";
 
 export const AIL_ELEVATOR =
-  "Abraxas is not a KYC provider. It is a trust and credential orchestration layer — licensed verifiers perform KYC; Abraxas standardizes, secures, and distributes cryptographic proof with user consent.";
+  "Abraxas is not a KYC provider. It is a trust and credential orchestration layer. licensed verifiers perform KYC; Abraxas standardizes, secures, and distributes cryptographic proof with user consent.";
 
 export const AIL_PROBLEM =
   "Every exchange, protocol, RWA platform, and lender performs KYC independently because each is legally responsible for it. They do not trust each other's verification, and there is no universal trust framework.";
 
 export const AIL_SOLUTION =
-  "Complete verification once with an approved provider. Receive a signed W3C Verifiable Credential bound to your wallet. Abraxas records only proofs — never passports or selfies. When another protocol needs compliance, it asks Abraxas for a signed answer instead of making the user upload documents again.";
+  "Complete verification once with an approved provider. Receive a signed W3C Verifiable Credential bound to your wallet. Abraxas records only proofs. never passports or selfies. When another protocol needs compliance, it asks Abraxas for a signed answer instead of making the user upload documents again.";
 
 export const CORE_PRINCIPLES = [
   "Users own their identity credentials",
@@ -28,11 +28,11 @@ export const CORE_PRINCIPLES = [
   "User consent required before any proof is shared",
 ] as const;
 
-/** What Abraxas records — never raw documents */
+/** What Abraxas records. never raw documents */
 export const AIL_STORED_FIELDS = [
-  { field: "credential_hash", desc: "SHA-256 of the VC payload — tamper-evident reference" },
+  { field: "credential_hash", desc: "SHA-256 of the VC payload. tamper-evident reference" },
   { field: "issuer", desc: "Licensed verifier or Abraxas attestation key (did:web:…)" },
-  { field: "wallet_binding", desc: "Sui address (zkLogin) — primary holder anchor" },
+  { field: "wallet_binding", desc: "Sui address (zkLogin). primary holder anchor" },
   { field: "expiration", desc: "Credential and stamp TTL; 0 = no expiry until policy change" },
   { field: "risk_score", desc: "Dynamic 0–1000 trust score (roadmap)" },
   { field: "sanctions_status", desc: "AML / OFAC screening outcome from provider" },
@@ -44,7 +44,7 @@ export const AIL_STORED_FIELDS = [
 export const INTEGRATOR_QUERIES = [
   { q: "Is this wallet verified?", api: "GET /api/sui/passport?owner=0x… · POST /api/credentials/verify" },
   { q: "Is the credential still valid?", api: "Check expiration + revocation + issuer signature" },
-  { q: "Is this user eligible for US investors?", api: "Compliance engine — jurisdiction rules (roadmap)" },
+  { q: "Is this user eligible for US investors?", api: "Compliance engine. jurisdiction rules (roadmap)" },
   { q: "Has AML screening passed?", api: "Stamp bitmask + sanctions_status in credential subject" },
   { q: "Which issuer performed KYC?", api: "issuer field + trusted issuer registry (roadmap)" },
   { q: "Can I trust this attestation?", api: "Ed25519 verify against GET /api/credentials/public-key" },
@@ -64,11 +64,11 @@ export interface AILLayer {
 export const AIL_ARCHITECTURE_LAYERS: readonly AILLayer[] = [
   {
     id: "providers",
-    layer: "Layer 1 — Identity providers",
+    layer: "Layer 1. Identity providers",
     status: "live",
     summary: "Licensed third parties perform verification. Abraxas does not replace their legal role.",
     responsibilities: [
-      "Government ID + liveness (Veriff — live on /passport)",
+      "Government ID + liveness (Veriff. live on /passport)",
       "AML / sanctions screening (via Veriff outcome)",
       "Business / property / asset manual review (Abraxas verifier queue)",
       "Future: Persona, Sumsub, Trulioo, Parallel Markets (trusted issuer registry)",
@@ -77,7 +77,7 @@ export const AIL_ARCHITECTURE_LAYERS: readonly AILLayer[] = [
   },
   {
     id: "credential-engine",
-    layer: "Layer 2 — Credential engine",
+    layer: "Layer 2. Credential engine",
     status: "live",
     summary: "Validates provider outcomes, issues Abraxas-signed JWTs, tracks lifecycle.",
     responsibilities: [
@@ -90,12 +90,12 @@ export const AIL_ARCHITECTURE_LAYERS: readonly AILLayer[] = [
   },
   {
     id: "trust-registry",
-    layer: "Layer 3 — Trust registry",
+    layer: "Layer 3. Trust registry",
     status: "in_progress",
-    summary: "Who can issue, what was revoked, issuer reputation — the Stripe-of-trust registry.",
+    summary: "Who can issue, what was revoked, issuer reputation. the Stripe-of-trust registry.",
     responsibilities: [
       "Trusted issuer registry (roadmap)",
-      "Credential registry + revocation registry (partial — Supabase + on-chain revoke bit)",
+      "Credential registry + revocation registry (partial. Supabase + on-chain revoke bit)",
       "Issuer licensing metadata · supported jurisdictions (roadmap)",
       "Institution reputation scores (roadmap)",
     ],
@@ -103,9 +103,9 @@ export const AIL_ARCHITECTURE_LAYERS: readonly AILLayer[] = [
   },
   {
     id: "compliance-engine",
-    layer: "Layer 4 — Compliance engine",
+    layer: "Layer 4. Compliance engine",
     status: "roadmap",
-    summary: "Policy evaluation — PASS / FAIL / REVIEW for institution-specific rules.",
+    summary: "Policy evaluation. PASS / FAIL / REVIEW for institution-specific rules.",
     responsibilities: [
       "Jurisdiction eligibility · accredited investor rules",
       "Credential freshness (e.g. KYC within 12 months)",
@@ -116,16 +116,16 @@ export const AIL_ARCHITECTURE_LAYERS: readonly AILLayer[] = [
   },
   {
     id: "identity-wallet",
-    layer: "Layer 5 — Identity wallet (Passport)",
+    layer: "Layer 5. Identity wallet (Passport)",
     status: "live",
-    summary: "User-facing credential container — proofs only, no sensitive documents.",
+    summary: "User-facing credential container. proofs only, no sensitive documents.",
     responsibilities: [
       "zkLogin sign-in → Sui holder address (live)",
-      "Sui Move Passport object — stamp bitmask (devnet live)",
+      "Sui Move Passport object. stamp bitmask (devnet live)",
       "Multi-wallet binding + recovery (roadmap)",
-      "Cross-chain identifiers (roadmap — Sui primary today)",
+      "Cross-chain identifiers (roadmap. Sui primary today)",
     ],
-    output: "Abraxas Passport — reusable credentials for every participating protocol",
+    output: "Abraxas Passport. reusable credentials for every participating protocol",
   },
 ] as const;
 
@@ -179,8 +179,8 @@ export const TRUST_SCORE_FACTORS = [
 
 export const PRIVACY_BY_DESIGN = [
   "PII stays with identity provider whenever possible",
-  "Selective disclosure — reveal only what the request requires (zk roadmap)",
-  "On-chain: stamp bitmask + hashes — never document images",
+  "Selective disclosure. reveal only what the request requires (zk roadmap)",
+  "On-chain: stamp bitmask + hashes. never document images",
   "User consent before every proof share",
   "Encrypted off-chain metadata where Abraxas must store references",
 ] as const;

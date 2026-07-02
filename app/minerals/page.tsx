@@ -63,10 +63,10 @@ export default function MineralsPage() {
           gap: 20,
           alignItems: "start",
         }}>
-          {/* Left — Mineral Panel */}
+          {/* Left. Mineral Panel */}
           <MineralRightsPanel />
 
-          {/* Right — Pipeline + Partnerships */}
+          {/* Right. Pipeline + Partnerships */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
             {/* 7-Stage Pipeline */}

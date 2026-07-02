@@ -53,7 +53,7 @@ export function MarketplaceClient({ bagsTokens }: Props) {
       <div style={{ background: "linear-gradient(135deg, var(--surface), rgba(200,169,110,0.04))", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "14px", padding: "1.5rem 2rem", marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1rem", marginBottom: "0.3rem" }}>Have an asset to operate?</p>
-          <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Music catalog, real estate, invoices — see how Abraxas puts it to work.</p>
+          <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Music catalog, real estate, invoices. see how Abraxas puts it to work.</p>
         </div>
         <button onClick={() => router.push("/onboard")} style={{ background: "var(--gold)", color: "var(--void)", border: "none", borderRadius: "8px", padding: "0.65rem 1.5rem", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", whiteSpace: "nowrap" }}>
           Get Started →

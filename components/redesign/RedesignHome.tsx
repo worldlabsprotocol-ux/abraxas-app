@@ -52,7 +52,7 @@ export function RedesignHome() {
             <FeaturedFlagship />
           </div>
 
-          {/* How verification works — 3 steps */}
+          {/* How verification works. 3 steps */}
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationFlow />
           </div>
@@ -77,7 +77,7 @@ export function RedesignHome() {
               fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
               lineHeight: 1.7, maxWidth: 560, margin: "0 0 1.5rem",
             }}>
-              Yours starts empty. Each stamp is earned through a real process — not bought,
+              Yours starts empty. Each stamp is earned through a real process. not bought,
               not faked. Get verified to unlock booking, investing, and asset submission.
             </p>
             <AbraxasPassport
@@ -86,7 +86,7 @@ export function RedesignHome() {
             />
           </div>
 
-          {/* Other verified assets (Cielo excluded — featured above) */}
+          {/* Other verified assets (Cielo excluded. featured above) */}
           <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <AssetsExplorer excludeIds={["genesis-asset"]} title="More on the network" />
           </div>

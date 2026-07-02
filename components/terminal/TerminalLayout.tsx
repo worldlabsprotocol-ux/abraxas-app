@@ -127,7 +127,7 @@ export function TerminalLayout() {
                              fontFamily:M, fontSize:"0.3rem",
                              color:"rgba(255,255,255,0.2)",
                              textTransform:"uppercase", letterSpacing:"0.12em" }}>
-                ◈ COLLATERAL REGISTRY — {assets.length} ASSET{assets.length !== 1 ? "S" : ""}
+                ◈ COLLATERAL REGISTRY. {assets.length} ASSET{assets.length !== 1 ? "S" : ""}
               </div>
               <div style={{ flex:1, overflowY:"auto" }}>
                 {assets.length === 0 ? (
@@ -230,7 +230,7 @@ export function TerminalLayout() {
                     </div>
                     <div style={{ fontFamily:M, fontSize:"0.38rem",
                                    color:"rgba(255,255,255,0.3)", marginTop:"0.35rem" }}>
-                      {asset.assetClass} · ASSET ID: {asset.id?.slice(0,16).toUpperCase() ?? "—"}
+                      {asset.assetClass} · ASSET ID: {asset.id?.slice(0,16).toUpperCase() ?? "-"}
                     </div>
                   </div>
 

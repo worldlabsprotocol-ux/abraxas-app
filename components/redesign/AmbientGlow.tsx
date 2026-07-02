@@ -36,7 +36,7 @@ export function AmbientGlow() {
           filter: "blur(30px)",
         }}
       />
-      {/* faint top-right violet balance — secondary accent */}
+      {/* faint top-right violet balance. secondary accent */}
       <motion.div
         initial={false}
         animate={reduce ? undefined : { opacity: [0.5, 0.72, 0.5] }}

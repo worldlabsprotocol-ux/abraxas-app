@@ -170,7 +170,7 @@ export function FlagshipAssetPage() {
           </a>
           <span style={{ fontFamily:M, fontSize:"0.38rem", color:"rgba(242,246,243,0.35)",
                          letterSpacing:"0.06em", maxWidth:280, lineHeight:1.5 }}>
-            Real Superhost property in Mineral Bluff, GA — bookable today. Not a mock asset.
+            Real Superhost property in Mineral Bluff, GA. bookable today. Not a mock asset.
           </span>
           <a href={D.instagramUrl} target="_blank" rel="noopener noreferrer"
             style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",

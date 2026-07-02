@@ -39,12 +39,12 @@ export default function PassportSpecPage() {
 
       <ContentCard title={`52-byte fixed layout (${PASSPORT_SERIALIZED_SIZE} bytes LE)`}>
         <KeyValueTable rows={[
-          { k: "version", v: "u8 — start at 1", mono: true },
-          { k: "stamps", v: "u16 bitmask — 10 verification gates (bits 0–9)", mono: true },
-          { k: "authority", v: "32 bytes — issuance authority pubkey/address", mono: true },
-          { k: "expires_at", v: "u64 unix seconds — 0 = no expiration", mono: true },
-          { k: "revoked", v: "u8 — 0 active, 1 irreversible revoke", mono: true },
-          { k: "nonce", v: "u64 — increments on each issuance update", mono: true },
+          { k: "version", v: "u8. start at 1", mono: true },
+          { k: "stamps", v: "u16 bitmask. 10 verification gates (bits 0–9)", mono: true },
+          { k: "authority", v: "32 bytes. issuance authority pubkey/address", mono: true },
+          { k: "expires_at", v: "u64 unix seconds. 0 = no expiration", mono: true },
+          { k: "revoked", v: "u8. 0 active, 1 irreversible revoke", mono: true },
+          { k: "nonce", v: "u64. increments on each issuance update", mono: true },
         ]} />
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: "1rem 0 0", lineHeight: 1.65 }}>
           Signing domain for Type 0 proofs: <code style={{ fontFamily: MONO, color: ACCENT }}>abraxas-passport-v1</code> prepended to serialized root.
@@ -98,9 +98,9 @@ export default function PassportSpecPage() {
 
       <ContentCard title="Chain implementations">
         <KeyValueTable rows={[
-          { k: "TypeScript", v: "lib/passport/ — serialize, verify, stamp bits", mono: true },
-          { k: "Solana", v: "Legacy — not used for verification (deprecated)", mono: true },
-          { k: "Sui Move", v: "sui/abraxas_passport/ — primary verification anchor (devnet live)", mono: true },
+          { k: "TypeScript", v: "lib/passport/. serialize, verify, stamp bits", mono: true },
+          { k: "Solana", v: "Legacy. not used for verification (deprecated)", mono: true },
+          { k: "Sui Move", v: "sui/abraxas_passport/. primary verification anchor (devnet live)", mono: true },
           { k: "Primary chain", v: "Sui (zkLogin holder + Move Passport object)", mono: false },
           { k: "Sign-in", v: "Google OAuth → zkLogin Sui address", mono: false },
         ]} />

@@ -1,5 +1,5 @@
 // FILE: components/vos/VerificationTerminal.tsx
-// Abraxas Verification OS — contained terminal section.
+// Abraxas Verification OS. contained terminal section.
 // Uncontrolled input keeps mobile keyboard open.
 // Keyframe injected via useEffect (style jsx global breaks Next.js App Router).
 "use client";
@@ -147,7 +147,7 @@ export function VerificationTerminal() {
   const [busy,    setBusy]    = useState(false);
   const scroll = useRef<HTMLDivElement>(null);
 
-  /* Inject blink keyframe once into <head> — avoids style jsx global
+  /* Inject blink keyframe once into <head>. avoids style jsx global
      which doesn't work correctly in the Next.js 14 App Router.       */
   useEffect(() => {
     const id = "vos-blink";

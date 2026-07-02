@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/terminal/TerminalHeader.tsx
-// Network rail — Sui zkLogin status + protocol health.
+// Network rail. Sui zkLogin status + protocol health.
 
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { truncateSuiAddress } from "@/lib/sui/identity";
@@ -23,7 +23,7 @@ export function TerminalHeader() {
   const connected = Boolean(suiAuth?.suiAddress);
   const short = suiAuth?.suiAddress
     ? truncateSuiAddress(suiAuth.suiAddress, 4, 4)
-    : "—";
+    : "-";
 
   return (
     <div style={{

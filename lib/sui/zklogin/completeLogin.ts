@@ -6,6 +6,7 @@ import {
   clearPendingSession,
   loadPendingSession,
   saveUserSession,
+  saveEphemeralSecretKey,
   type ZkLoginUserSession,
 } from "./session";
 
@@ -60,6 +61,7 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   };
 
   saveUserSession(session);
+  saveEphemeralSecretKey(pending.ephemeralSecretKey);
   clearPendingSession();
   return session;
 }

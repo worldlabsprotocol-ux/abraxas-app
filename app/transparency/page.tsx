@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Transparency — Abraxas" };
+export const metadata = { title: "Transparency. Abraxas" };
 
 const DEFENSE_LOG = [
   {
@@ -61,9 +61,9 @@ export default function TransparencyPage() {
         </p>
       </div>
 
-      {/* Agent architecture — what "autonomous" means */}
+      {/* Agent architecture. what "autonomous" means */}
       <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "14px", padding: "1.5rem", marginBottom: "2.5rem" }}>
-        <p style={{ fontWeight: 700, fontSize: "0.875rem", marginBottom: "0.875rem" }}>Agent Architecture — What "Autonomous" Means</p>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", marginBottom: "0.875rem" }}>Agent Architecture. What "Autonomous" Means</p>
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {[
             { label: "Decision architecture", value: "Rule-based circuits with configurable thresholds. Each vault has a defined set of input signals, decision rules, and response actions. No LLM inference in the execution path. Deterministic, auditable, reproducible." },
@@ -84,7 +84,7 @@ export default function TransparencyPage() {
       <div style={{ marginBottom: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
           <p style={{ fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--subtle)" }}>
-            Defense Event Log — Most Recent
+            Defense Event Log. Most Recent
           </p>
           <div style={{ display: "flex", gap: "1.25rem", fontSize: "0.72rem" }}>
             <span style={{ color: "var(--text)" }}>Total events: <strong>31</strong></span>

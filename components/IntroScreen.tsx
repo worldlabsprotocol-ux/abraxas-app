@@ -61,7 +61,7 @@ export function IntroScreen({ onComplete }: { onComplete: () => void }) {
         pointerEvents:"none",
       }}/>
 
-      {/* Corner marks — institutional */}
+      {/* Corner marks. institutional */}
       {[
         {top:24,left:24,  borderTop:"1px solid",borderLeft:"1px solid"},
         {top:24,right:24, borderTop:"1px solid",borderRight:"1px solid"},

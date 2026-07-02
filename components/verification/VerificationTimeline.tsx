@@ -1,5 +1,5 @@
 // FILE: components/verification/VerificationTimeline.tsx
-// Verification lifecycle — Submitted → Minted
+// Verification lifecycle. Submitted → Minted
 // Every asset shows this. The protocol's trust infrastructure made visual.
 "use client";
 

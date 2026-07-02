@@ -1,6 +1,6 @@
 // FILE: components/Nav.tsx
 // Top nav: logo + wallet connect only.
-// NO navigation links — routing via BottomNav only.
+// NO navigation links. routing via BottomNav only.
 "use client";
 
 import Link from "next/link";
@@ -40,7 +40,7 @@ function WalletButton() {
     );
   }
 
-  // No wallet detected — still allow opening modal (Phantom extension may prompt install)
+  // No wallet detected. still allow opening modal (Phantom extension may prompt install)
   const hasWallet = !!wallet;
   return (
     <button
@@ -77,7 +77,7 @@ export function Nav() {
       WebkitBackdropFilter:"blur(16px)",
       borderBottom:"1px solid rgba(255,255,255,0.05)",
     }}>
-      {/* Logo only — no nav links */}
+      {/* Logo only. no nav links */}
       <Link href="/" style={{ textDecoration:"none", display:"flex", alignItems:"center", gap:"0.625rem" }}>
         <div style={{ width:"26px",height:"26px",borderRadius:"50%", border:"1px solid rgba(200,169,110,0.4)", display:"flex",alignItems:"center",justifyContent:"center", boxShadow:"0 0 8px rgba(200,169,110,0.12)" }}>
           <div style={{ width:"8px",height:"8px",borderRadius:"50%",background:"#C8A96E",boxShadow:"0 0 8px rgba(200,169,110,0.9)" }} />

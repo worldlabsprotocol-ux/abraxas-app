@@ -57,7 +57,7 @@ export function FoundingVerifiedCard({ walletOrContext, hasWallet, hasIdentity }
         <div>
           <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700,
                          color:G, letterSpacing:"0.08em", marginBottom:"0.3rem" }}>
-            FOUNDING VERIFIED — {maxSeats} SEATS ONLY
+            FOUNDING VERIFIED. {maxSeats} SEATS ONLY
           </div>
           <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
                          color:"var(--text-primary)", marginBottom:"0.3rem" }}>
@@ -66,7 +66,7 @@ export function FoundingVerifiedCard({ walletOrContext, hasWallet, hasIdentity }
           <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
                        lineHeight:1.6, maxWidth:480, margin:0 }}>
             No stake, no token burn. Sign in with Google (Sui wallet created via zkLogin),
-            complete Identity Verified — the seat is yours, permanently, non-transferable.
+            complete Identity Verified. the seat is yours, permanently, non-transferable.
           </p>
         </div>
         {seatsRemaining !== null && (

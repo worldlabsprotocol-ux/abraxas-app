@@ -65,7 +65,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
             { icon:"◎", title:"Accept investment without a bank",
               body:"Once formed, the LLC can tokenize membership units on Sui with a verified ownership record. No traditional bank gatekeeping, no months of opaque paperwork." },
             { icon:"◎", title:"An on-chain record of who owns what",
-              body:"The ownership structure is recorded on Sui — any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
+              body:"The ownership structure is recorded on Sui. any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
           ].map(r => (
             <div key={r.title} style={{ display:"flex", gap:"0.625rem",
                                          alignItems:"flex-start" }}>

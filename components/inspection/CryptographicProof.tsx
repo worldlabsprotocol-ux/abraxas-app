@@ -1,5 +1,5 @@
 // FILE: components/inspection/CryptographicProof.tsx
-// Layer 1 — Cryptographic commitment block. SHA256 + anchored tx + timestamp.
+// Layer 1. Cryptographic commitment block. SHA256 + anchored tx + timestamp.
 "use client";
 import { useState } from "react";
 
@@ -90,7 +90,7 @@ export function CryptographicProof({ asset }: { asset?: Asset }) {
         <span style={{ fontFamily:M, fontSize:"0.38rem", fontWeight:700,
                         color:"rgba(255,255,255,0.5)", textTransform:"uppercase",
                         letterSpacing:"0.15em" }}>
-          Cryptographic Proof — Layer 1
+          Cryptographic Proof. Layer 1
         </span>
         <div style={{ marginLeft:"auto", padding:"2px 8px", borderRadius:"3px",
                        background:"rgba(16,185,129,0.1)",

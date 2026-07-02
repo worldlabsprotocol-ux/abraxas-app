@@ -21,9 +21,9 @@ interface RevenueData {
  * up to 4 decimals.
  */
 function fmtFee(raw: string | number | undefined, isUSD = false): string {
-  if (raw === undefined || raw === null) return "—";
+  if (raw === undefined || raw === null) return "-";
   const n = typeof raw === "string" ? parseFloat(raw) : raw;
-  if (Number.isNaN(n)) return "—";
+  if (Number.isNaN(n)) return "-";
   if (n === 0) return isUSD ? "$0" : "0";
   const formatted = n.toLocaleString("en-US", {
     minimumFractionDigits: 0,
@@ -33,7 +33,7 @@ function fmtFee(raw: string | number | undefined, isUSD = false): string {
 }
 
 /**
- * Public revenue panel — pulls live ABRA token revenue from Bags.
+ * Public revenue panel. pulls live ABRA token revenue from Bags.
  * Renders quietly with provenance link to Solscan.
  *
  * Used on the homepage as a Hyperliquid-style trust signal:
@@ -67,7 +67,7 @@ export function RevenuePanel({ compact = false }: { compact?: boolean }) {
     };
   }, []);
 
-  // Pull whatever fields Bags returns — try all candidate keys.
+  // Pull whatever fields Bags returns. try all candidate keys.
   // When API is unavailable, fall back to verified on-chain facts.
   const lt = data?.lifetimeFees ?? {};
   const usd =
@@ -137,7 +137,7 @@ export function RevenuePanel({ compact = false }: { compact?: boolean }) {
             ) : usd !== undefined ? (
               fmtFee(usd, true)
             ) : (
-              <span className="text-abraxas-subtle text-base">—</span>
+              <span className="text-abraxas-subtle text-base">-</span>
             )}
           </div>
         </div>
@@ -151,7 +151,7 @@ export function RevenuePanel({ compact = false }: { compact?: boolean }) {
             ) : sol !== undefined ? (
               fmtFee(sol)
             ) : (
-              <span className="text-abraxas-subtle text-base">—</span>
+              <span className="text-abraxas-subtle text-base">-</span>
             )}
           </div>
         </div>
@@ -161,7 +161,7 @@ export function RevenuePanel({ compact = false }: { compact?: boolean }) {
         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
           <div>
             <div className="text-[0.65rem] text-abraxas-subtle uppercase tracking-wider mb-1">
-              Partner — Claimed
+              Partner. Claimed
             </div>
             <div className="font-display font-semibold text-sm text-abraxas-green">
               {fmtFee(data.partner.claimedFees)}
@@ -169,7 +169,7 @@ export function RevenuePanel({ compact = false }: { compact?: boolean }) {
           </div>
           <div>
             <div className="text-[0.65rem] text-abraxas-subtle uppercase tracking-wider mb-1">
-              Partner — Unclaimed
+              Partner. Unclaimed
             </div>
             <div className="font-display font-semibold text-sm text-abraxas-muted">
               {fmtFee(data.partner.unclaimedFees)}

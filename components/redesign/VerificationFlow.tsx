@@ -14,7 +14,7 @@ const ACCENT = "#10B981";
 const STEPS = [
   {
     n: "01",
-    title: "Sign in — get your wallet",
+    title: "Sign in. get your wallet",
     body: "Google sign-in via zkLogin creates your Sui address instantly. No seed phrase. This wallet holds your Passport.",
     kind: "identity" as const,
     href: "/passport",
@@ -23,7 +23,7 @@ const STEPS = [
   {
     n: "02",
     title: "Verify once with a trusted provider",
-    body: "Veriff performs KYC — government ID and liveness. Abraxas records only the signed credential hash, issuer, and sanctions outcome. Never your passport.",
+    body: "Veriff performs KYC. government ID and liveness. Abraxas records only the signed credential hash, issuer, and sanctions outcome. Never your passport.",
     kind: "biometric" as const,
     href: "/passport",
     cta: "Start Precheck",
@@ -31,7 +31,7 @@ const STEPS = [
   {
     n: "03",
     title: "Reuse proof everywhere",
-    body: "Protocols ask Abraxas: Is this wallet verified? Is AML clear? You approve consent — they receive a signed proof, not your documents.",
+    body: "Protocols ask Abraxas: Is this wallet verified? Is AML clear? You approve consent. they receive a signed proof, not your documents.",
     kind: "compliance" as const,
     href: "/docs/ail",
     cta: "Read AIL spec",
@@ -62,7 +62,7 @@ export function VerificationFlow() {
           fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
           lineHeight: 1.7, maxWidth: 560, margin: 0,
         }}>
-          Abraxas is not another KYC vendor. It is the trust registry — licensed providers verify;
+          Abraxas is not another KYC vendor. It is the trust registry. licensed providers verify;
           Abraxas standardizes, secures, and distributes proof with your consent.
         </p>
       </div>

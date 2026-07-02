@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/passport/page.tsx
-// Abraxas Passport — Sui-native verification via zkLogin + Veriff stamps.
+// Abraxas Passport. Sui-native verification via zkLogin + Veriff stamps.
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -10,6 +10,8 @@ import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard
 import { SuiWalletCreatedCard } from "@/components/passport/SuiWalletCreatedCard";
 import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
+import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
+import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
@@ -57,18 +59,18 @@ const STAMPS: Stamp[] = [
     color: G,
     kind: "identity",
     description: "Abraxas Precheck: government ID plus biometric liveness through Veriff. Your stamp is tied to the Sui wallet created when you signed in with Google.",
-    whatItProves: "You are a real person, the ID belongs to you, and you passed sanctions and PEP screening — all linked to your zkLogin Sui address.",
-    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera — liveness check takes about 60 seconds"],
+    whatItProves: "You are a real person, the ID belongs to you, and you passed sanctions and PEP screening. all linked to your zkLogin Sui address.",
+    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera. liveness check takes about 60 seconds"],
     processSteps: [
       "Sign in with Google to create your Sui wallet (zkLogin)",
-      "Start Abraxas Precheck — your Sui address is passed to Veriff automatically",
+      "Start Abraxas Precheck. your Sui address is passed to Veriff automatically",
       "Photograph your ID front and back",
       "Complete a 60-second liveness check",
       "Precheck returns a result, usually within minutes",
       "Abraxas issues your Identity Verified stamp on your Passport",
     ],
     timeEstimate: "Most Precheck approvals: under 5 minutes. Manual review: up to 1 business day.",
-    regulatoryBasis: "FATF-aligned KYC. Veriff is eIDAS-certified, ISO 27001. Abraxas stores only the verification outcome — never raw document data.",
+    regulatoryBasis: "FATF-aligned KYC. Veriff is eIDAS-certified, ISO 27001. Abraxas stores only the verification outcome. never raw document data.",
   },
   {
     id: "business",
@@ -197,9 +199,11 @@ function PassportPageInner() {
     if (suiAddress && active === "wallet") setActive("identity");
   }, [suiAddress, active]);
 
+  const showVeriffHint = identityStatus === "pending" || passportState.identity === "in_progress" || starting;
+
   async function startIdentityVerification() {
     if (!suiAddress) {
-      setError("Sign in with Google first — that creates your Sui wallet.");
+      setError("Sign in with Google first. That creates your Sui wallet.");
       setActive("wallet");
       return;
     }
@@ -236,13 +240,24 @@ function PassportPageInner() {
           host: "https://stationapi.veriff.com",
           apiKey: VERIFF_PUBLIC_API_KEY,
           parentId: "veriff-root",
-          onSession: function (err: unknown, response: { verification?: { url?: string } }) {
+          onSession: function (err: unknown, response: { verification?: { url?: string; id?: string } }) {
             setStarting(false);
             if (err || !response?.verification?.url) {
               setError("Could not start verification. Try again shortly.");
               return;
             }
             setPassportState(p => ({ ...p, identity: "in_progress" }));
+            if (response.verification?.id && suiAddress) {
+              fetch("/api/idv/register-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  sui_address: suiAddress,
+                  session_id: response.verification.id,
+                  email,
+                }),
+              }).catch(() => undefined);
+            }
             refresh();
             w.veriffSDK.createVeriffFrame({ url: response.verification!.url! });
           },
@@ -279,6 +294,7 @@ function PassportPageInner() {
 
       <AmbientGlow />
       <div id="veriff-root" />
+      <VeriffDeviceHint visible={showVeriffHint} />
       <RedesignNav />
 
       <div style={{ position:"relative", zIndex:1, maxWidth:960, margin:"0 auto",
@@ -295,8 +311,8 @@ function PassportPageInner() {
           </h1>
           <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                        color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:0 }}>
-            Not a KYC vendor — a trust registry. Veriff verifies your identity; Abraxas issues
-            cryptographic proof bound to your Sui wallet. Protocols ask us if you&apos;re verified —
+            Not a KYC vendor. a trust registry. Veriff verifies your identity; Abraxas issues
+            cryptographic proof bound to your Sui wallet. Protocols ask us if you&apos;re verified -
             you never upload the same documents twice.
           </p>
         </div>
@@ -307,12 +323,12 @@ function PassportPageInner() {
           <div style={{ marginBottom:"2rem" }}>
             <div style={{ fontFamily:S, fontSize:"0.88rem", fontWeight:700,
                            color:"var(--text-primary)", marginBottom:"0.75rem" }}>
-              Step 1 — Create your Sui wallet
+              Step 1. Create your Sui wallet
             </div>
             <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
                          lineHeight:1.65, margin:"0 0 1rem", maxWidth:520 }}>
               Sign in with Google. Abraxas uses zkLogin to derive a Sui address from your account.
-              That address holds your Passport — you never manage a seed phrase.
+              That address holds your Passport. you never manage a seed phrase.
             </p>
             <ZkLoginSignIn />
           </div>
@@ -335,6 +351,11 @@ function PassportPageInner() {
           isRefreshing={isRefreshing}
           isPolling={isPolling}
           onRefresh={refresh}
+        />
+
+        <PassportIntentCard
+          suiAddress={suiAddress}
+          identityEarned={identityStatus === "earned"}
         />
 
         <div style={{ marginBottom:"2rem" }}>
@@ -495,7 +516,7 @@ function PassportPageInner() {
                 <div>
                   {!walletDone && (
                     <div style={{ fontFamily:S, fontSize:"0.78rem", color:A, marginBottom:"0.75rem" }}>
-                      Sign in with Google above first — Precheck links to your Sui wallet.
+                      Sign in with Google above first. Precheck links to your Sui wallet.
                     </div>
                   )}
                   <button onClick={startIdentityVerification} disabled={starting || !walletDone}
@@ -555,7 +576,7 @@ function PassportPageInner() {
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:"0.75rem", marginBottom:"1rem" }}>
             {[
               { title:"Wallet", body:"Google OAuth → zkLogin → deterministic Sui address. No seed phrase. Your Passport object lives at this address." },
-              { title:"Issuance", body:"W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Documents stay with Veriff — only verification outcome is credentialized." },
+              { title:"Issuance", body:"W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Documents stay with Veriff. only verification outcome is credentialized." },
               { title:"On-chain anchor", body:"Stamp bitmask on Sui Move Passport object. Abraxas issues stamps after Veriff approve + manual review." },
               { title:"Portability", body:"Third parties verify via W3C credential or GET /api/sui/passport. Sponsored transactions for verified tiers (roadmap)." },
             ].map(c => (

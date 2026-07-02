@@ -20,20 +20,20 @@ interface Props {
 const PIPELINE_STEPS = [
   { id:"intake",    label:"Asset Intake & Hash",      detail:"Metadata SHA-256 anchored on Solana",         icon:"01", color:"#14F195" },
   { id:"identity",  label:"Identity Binding",          detail:"Wallet signature bound to Token-2022 position",icon:"02", color:"#C8A96E" },
-  { id:"documents", label:"Document Submission",       detail:"Verification queue — partner review initiated",icon:"03", color:"#FBBF24" },
+  { id:"documents", label:"Document Submission",       detail:"Verification queue. partner review initiated",icon:"03", color:"#FBBF24" },
   { id:"custody",   label:"Custody Assignment",        detail:"Institutional vault placement pending",        icon:"04", color:"#6b8cff" },
-  { id:"risk",      label:"Risk & Collateral Score",   detail:"4-factor algorithm — live price data feeding", icon:"05", color:"#a855f7" },
+  { id:"risk",      label:"Risk & Collateral Score",   detail:"4-factor algorithm. live price data feeding", icon:"05", color:"#a855f7" },
   { id:"cert",      label:"Certificate Mint",          detail:"Token-2022 + Ed25519 verifier signature",      icon:"06", color:"#9945FF" },
-  { id:"collateral",label:"Collateral Activation",     detail:"USDC borrowing via Loopscale — pending verify",icon:"07", color:"#14F195" },
+  { id:"collateral",label:"Collateral Activation",     detail:"USDC borrowing via Loopscale. pending verify",icon:"07", color:"#14F195" },
 ];
 
 const CIRCUIT_LINES = [
-  "CIRCUIT: Asset hash anchored — monitoring initiated",
-  "CIRCUIT: Wallet binding verified — owner authenticated",
+  "CIRCUIT: Asset hash anchored. monitoring initiated",
+  "CIRCUIT: Wallet binding verified. owner authenticated",
   "CIRCUIT: Document fingerprint queued for partner review",
   "CIRCUIT: Liquidity depth nominal for asset class",
-  "CIRCUIT: Oracle feeds stable — no anomalies detected",
-  "CIRCUIT: Provenance chain open — awaiting submissions",
+  "CIRCUIT: Oracle feeds stable. no anomalies detected",
+  "CIRCUIT: Provenance chain open. awaiting submissions",
 ];
 
 export function TokenizationProgress({
@@ -90,7 +90,7 @@ export function TokenizationProgress({
         <div>
           <div style={{ fontWeight:900, fontSize:"0.88rem", color:"#14F195",
                         fontFamily:MONO, letterSpacing:"-0.01em" }}>
-            {isDemoTx ? "DEMO — SUBMISSION CONFIRMED" : "TRANSACTION CONFIRMED"}
+            {isDemoTx ? "DEMO. SUBMISSION CONFIRMED" : "TRANSACTION CONFIRMED"}
           </div>
           <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.3)",
                         fontFamily:MONO, marginTop:2 }}>
@@ -99,7 +99,7 @@ export function TokenizationProgress({
         </div>
       </div>
 
-      {/* Pipeline + Circuit — two column */}
+      {/* Pipeline + Circuit. two column */}
       <div style={{
         display:"grid", gridTemplateColumns:"1.2fr 1fr",
         border:"1px solid rgba(255,255,255,0.08)",
@@ -263,7 +263,7 @@ export function TokenizationProgress({
         {[
           "Your asset is now in the verification queue. A named authentication partner has been assigned.",
           "Documentation upload will be requested within 24 hours via your registered contact.",
-          "Custody assignment completes within 2 — 5 business days for standard collectibles.",
+          "Custody assignment completes within 2. 5 business days for standard collectibles.",
           "Once all stages pass, your Token-2022 certificate is minted and USDC borrowing activates.",
         ].map((s, i) => (
           <div key={i} style={{ display:"flex", gap:"0.5rem",

@@ -51,7 +51,7 @@ const CATALOG = [
     tagColor: AMBER,
     name: "Chancellor K. Jackson",
     role: "TV pilot · anime treatment",
-    blurb: "\"14 Days in Beijing\" — script and rights access on Abraxas.",
+    blurb: "\"14 Days in Beijing\". script and rights access on Abraxas.",
     href: "/terminal#assets",
     cta: "View project",
     visual: "chancellor" as const,

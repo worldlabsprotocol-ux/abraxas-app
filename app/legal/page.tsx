@@ -1,4 +1,4 @@
-export const metadata = { title: "Legal Overview — Abraxas" };
+export const metadata = { title: "Legal Overview. Abraxas" };
 
 export default function LegalPage() {
   return (
@@ -7,7 +7,7 @@ export default function LegalPage() {
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>Legal</p>
         <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "2.25rem", letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>Legal Overview</h1>
         <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.7 }}>
-          How Abraxas handles the relationship between off-chain assets and their on-chain representations. For asset originators evaluating whether to commit real assets — this is the page that answers the legal structure question.
+          How Abraxas handles the relationship between off-chain assets and their on-chain representations. For asset originators evaluating whether to commit real assets. this is the page that answers the legal structure question.
         </p>
         <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "rgba(242,107,107,0.06)", border: "1px solid rgba(242,107,107,0.2)", borderRadius: "8px" }}>
           <p style={{ fontSize: "0.72rem", color: "#f26b6b", lineHeight: 1.55 }}>
@@ -20,7 +20,7 @@ export default function LegalPage() {
         {
           assetClass: "Music & IP Royalties",
           structure: "Royalty Assignment Agreement",
-          description: "When an artist or rights holder registers a music catalog, Abraxas operates under a limited royalty assignment — a standard music industry instrument that assigns collection rights for a defined period without transferring ownership of the underlying masters or publishing.",
+          description: "When an artist or rights holder registers a music catalog, Abraxas operates under a limited royalty assignment. a standard music industry instrument that assigns collection rights for a defined period without transferring ownership of the underlying masters or publishing.",
           ownership: "Artist or label retains full ownership of masters and publishing. Abraxas holds collection rights only during the operating period.",
           enforcement: "Royalty assignment is governed by applicable music licensing law. PRO registrations (ASCAP, BMI, SESAC, SoundExchange) remain with the original rights holder. Abraxas cannot block or redirect payments outside the platform.",
           jurisdiction: "United States (primary). Registration through DistroKid, UnitedMasters, or direct PRO affiliation.",
@@ -40,7 +40,7 @@ export default function LegalPage() {
         {
           assetClass: "Receivables & Invoices",
           structure: "Invoice Factoring Agreement",
-          description: "Receivables vaults operate under a standard invoice factoring structure — a well-established commercial finance instrument where outstanding invoices are assigned to the platform in exchange for immediate liquidity.",
+          description: "Receivables vaults operate under a standard invoice factoring structure. a well-established commercial finance instrument where outstanding invoices are assigned to the platform in exchange for immediate liquidity.",
           ownership: "Invoice originator receives advance payment. Abraxas collects against the invoice. Upon settlement, Abraxas retains the factoring spread.",
           enforcement: "UCC Article 9 security interest filed against assigned receivables. Standard commercial enforcement path.",
           jurisdiction: "United States (UCC). Cross-border receivables handled case by case.",
@@ -63,7 +63,7 @@ export default function LegalPage() {
             <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1rem" }}>{item.assetClass}</h2>
             <span style={{ fontSize: "0.65rem", color: "var(--gold)", border: "1px solid rgba(200,169,110,0.3)", padding: "0.12rem 0.45rem", borderRadius: "4px" }}>{item.structure}</span>
             <span style={{ fontSize: "0.62rem", color: item.status.includes("simulation") ? "#f0d98a" : item.status.includes("development") ? "var(--subtle)" : "var(--green)", background: item.status.includes("simulation") ? "rgba(240,217,138,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${item.status.includes("simulation") ? "rgba(240,217,138,0.2)" : "rgba(255,255,255,0.08)"}`, padding: "0.12rem 0.45rem", borderRadius: "4px" }}>
-              {item.status.includes("in progress") ? "SPV in progress" : item.status.includes("simulation") ? "Simulation — live pending graduation" : item.status.includes("development") ? "Framework in development" : "Active"}
+              {item.status.includes("in progress") ? "SPV in progress" : item.status.includes("simulation") ? "Simulation. live pending graduation" : item.status.includes("development") ? "Framework in development" : "Active"}
             </span>
           </div>
           {[
@@ -85,7 +85,7 @@ export default function LegalPage() {
       <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "12px", padding: "1.25rem 1.5rem" }}>
         <p style={{ fontWeight: 700, fontSize: "0.875rem", marginBottom: "0.5rem" }}>For asset originators considering engagement</p>
         <p style={{ fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.7 }}>
-          If you represent a label, CRE owner, factoring desk, or other institutional asset originator and want to discuss the legal structure in detail before committing assets — reach out directly. We will provide the full legal framework documentation, current SPV status, and jurisdiction-specific analysis for your asset class.
+          If you represent a label, CRE owner, factoring desk, or other institutional asset originator and want to discuss the legal structure in detail before committing assets. reach out directly. We will provide the full legal framework documentation, current SPV status, and jurisdiction-specific analysis for your asset class.
         </p>
         <a href="https://twitter.com/pabloretroworld" target="_blank" rel="noopener noreferrer"
           style={{ display: "inline-block", marginTop: "0.875rem", fontSize: "0.78rem", color: "var(--gold)", textDecoration: "none" }}>

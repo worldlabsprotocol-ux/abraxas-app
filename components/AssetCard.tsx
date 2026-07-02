@@ -1,15 +1,15 @@
 // FILE: components/AssetCard.tsx
-// Production AssetCard — the universal card component for every asset type.
-// Pokemon, One Piece, RWAs, luxury assets, NFTs — all go through this.
+// Production AssetCard. the universal card component for every asset type.
+// Pokemon, One Piece, RWAs, luxury assets, NFTs. all go through this.
 //
 // LIGHT MODE PASS (June 2026)
-// — Layout/props/exports unchanged. Re-themed to match the white-card,
+//. Layout/props/exports unchanged. Re-themed to match the white-card,
 //   soft-shadow marketplace cards seen in the reference screenshots.
-// — Colors now read through var(--abx-*, fallback) tokens (see
+//. Colors now read through var(--abx-*, fallback) tokens (see
 //   styles/abraxas-theme-tokens.css). Drop that file in and this works in
 //   both data-theme="light" and data-theme="dark" with zero further edits.
-// — Badges that sit ON TOP of the artwork (rarity, grade, status pill) keep
-//   the dark glass-chip treatment from the original — that pattern reads
+//. Badges that sit ON TOP of the artwork (rarity, grade, status pill) keep
+//   the dark glass-chip treatment from the original. that pattern reads
 //   fine over a photo regardless of page theme, same as every screenshot
 //   reference (image badges stay dark-on-photo even on light pages).
 // Framer Motion adds a subtle hover lift + press; border/shadow accents
@@ -53,7 +53,7 @@ interface AssetCardProps {
   compact?:  boolean;
 }
 
-// Deepened brand palette — same hues as the original, shifted so text/badges
+// Deepened brand palette. same hues as the original, shifted so text/badges
 // keep enough contrast sitting on white instead of glowing on near-black.
 const STATUS_CONFIG: Record<AssetStatus, { label: string; bg: string; text: string; dot: string }> = {
   PROTECTED:        { label: "PROTECTED",  bg: "rgba(31,174,107,0.16)",  text: "#1FAE6B", dot: "#1FAE6B" },
@@ -63,7 +63,7 @@ const STATUS_CONFIG: Record<AssetStatus, { label: string; bg: string; text: stri
   STAKED:           { label: "STAKED",     bg: "rgba(76,111,255,0.18)",  text: "#4C6FFF", dot: "#1FAE6B" },
 };
 
-// Card art — image if available, gradient + icon fallback
+// Card art. image if available, gradient + icon fallback
 function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
   const [imgErr, setImgErr] = useState(false);
   const sc = STATUS_CONFIG[asset.status];
@@ -92,7 +92,7 @@ function CardArt({ asset, height = 140 }: { asset: Asset; height?: number }) {
         </div>
       )}
 
-      {/* Status badge — glass chip over the artwork, theme-independent */}
+      {/* Status badge. glass chip over the artwork, theme-independent */}
       <div style={{
         position: "absolute", top: "0.5rem", right: "0.5rem",
         display: "flex", alignItems: "center", gap: "0.25rem",
@@ -234,7 +234,7 @@ export function AssetCard({ asset, onSelect, onProtect, onDuel, onStake, selecte
             </div>
           )}
 
-          {/* Actions — primary action solid-filled (matches the "Invest" /
+          {/* Actions. primary action solid-filled (matches the "Invest" /
               "Buy Now" pill CTAs in the reference shots), secondary actions
               stay as tinted pills so three buttons don't compete visually. */}
           {!compact && (

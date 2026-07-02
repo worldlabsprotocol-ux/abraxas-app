@@ -65,7 +65,7 @@ export function TransactionReceipt({
           ["Class",         assetClass],
           ["Token ID",      tokenId],
           ["ABRA Deducted", `${amountAbra.toLocaleString()} $ABRA`],
-          ["Status",        "Created — Pending Documents"],
+          ["Status",        "Created. Pending Documents"],
           ["Network",       isDemoTx ? "Demo Mode" : "Solana Mainnet"],
         ] as [string,string][]).map(([k,v]) => (
           <div key={k} style={{ display:"flex", justifyContent:"space-between",

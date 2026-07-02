@@ -1,5 +1,5 @@
 // FILE: components/identity/AbraxasPassport.tsx
-// Abraxas Digital Passport — dark premium credential card + stamp grid.
+// Abraxas Digital Passport. dark premium credential card + stamp grid.
 "use client";
 
 import { useState } from "react";
@@ -282,7 +282,7 @@ export function AbraxasPassport({
                   fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
                   lineHeight: 1.7, maxWidth: 440, margin: "0 0 1.1rem",
                 }}>
-                  One W3C credential anchored on Sui. Sign in with Google via zkLogin —
+                  One W3C credential anchored on Sui. Sign in with Google via zkLogin -
                   documents stay off-chain, only stamp proofs are on-chain.
                 </p>
               </>
@@ -364,7 +364,7 @@ export function AbraxasPassport({
                 fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
                 lineHeight: 1.55, margin: "0.625rem 0 0",
               }}>
-                No documents stored on-chain — only cryptographic proof of verification.
+                No documents stored on-chain. only cryptographic proof of verification.
               </p>
             </div>
 
@@ -470,7 +470,7 @@ export function AbraxasPassport({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.7, margin: 0,
           }}>
-            Each stamp is a verifiable gate — identity, business, property, lending eligibility.
+            Each stamp is a verifiable gate. identity, business, property, lending eligibility.
             External protocols will verify via CPI or signed presentation against the on-chain
             passport root. Integration SDK and program IDL are on the roadmap; credential
             structure is live today.

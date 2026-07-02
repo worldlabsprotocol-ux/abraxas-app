@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportCredentialBanner.tsx
-// Active W3C credential — auto-verified after Veriff approval (no manual JWT paste).
+// Active W3C credential. auto-verified after Veriff approval (no manual JWT paste).
 
 import { useState } from "react";
 import type { StoredCredential } from "@/lib/credentials/storage";
@@ -70,7 +70,7 @@ export function PassportCredentialBanner({
           Veriff Precheck in review
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-          Your documents are being reviewed{via ? ` (${via})` : ""}. This page updates automatically — usually under 5 minutes.
+          Your documents are being reviewed{via ? ` (${via})` : ""}. This page polls Veriff automatically and updates when approved, usually under 5 minutes.
         </p>
         <button type="button" onClick={onRefresh} disabled={isRefreshing}
           style={{
@@ -124,9 +124,9 @@ export function PassportCredentialBanner({
             </div>
             <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
               {verifyState === "checking" && "Confirming cryptographic proof…"}
-              {verifyState === "valid" && "Identity verified — ready to transact"}
-              {verifyState === "invalid" && "Credential issued — verification pending"}
-              {verifyState === "idle" && "Identity verified — portable proof ready"}
+              {verifyState === "valid" && "Identity verified. ready to transact"}
+              {verifyState === "invalid" && "Credential issued. verification pending"}
+              {verifyState === "idle" && "Identity verified. portable proof ready"}
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function PassportCredentialBanner({
               Auto-verified · signature valid · not revoked
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
-              Protocols can trust this wallet without seeing your documents. You don&apos;t need to paste anything — Abraxas verified your credential automatically.
+              Protocols can trust this wallet without seeing your documents. You don&apos;t need to paste anything. Abraxas verified your credential automatically.
             </p>
           </div>
         )}
@@ -148,7 +148,7 @@ export function PassportCredentialBanner({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "0.65rem", marginBottom: "1rem" }}>
           {[
             { k: "Level", v: credential.level.toUpperCase() },
-            { k: "Jurisdiction", v: credential.jurisdiction || verifyResult?.jurisdiction || "—" },
+            { k: "Jurisdiction", v: credential.jurisdiction || verifyResult?.jurisdiction || "-" },
             { k: "Document", v: credential.document_type?.replace(/_/g, " ") ?? "ID" },
             { k: "Expires", v: new Date(credential.expires_at).toLocaleDateString() },
           ].map(row => (
@@ -184,7 +184,7 @@ export function PassportCredentialBanner({
             padding: "0.75rem 0.9rem", marginBottom: "0.85rem",
           }}>
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
-              Creating your on-chain Passport on Sui devnet — sponsor wallet is paying gas…
+              Creating your on-chain Passport on Sui devnet. sponsor wallet is paying gas…
             </div>
           </div>
         )}
@@ -229,7 +229,7 @@ export function PassportCredentialBanner({
               {provisionError
                 ? provisionError
                 : onChain.issuer_configured
-                  ? "Queuing on-chain passport — this page will update automatically."
+                  ? "Queuing on-chain passport. this page will update automatically."
                   : "Off-chain credential is active. On-chain stamps appear once sponsor wallet env is set in Vercel."}
             </div>
             {provisionError && (

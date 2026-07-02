@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/terminal/CieloAvailability.tsx
-// SEPARATE FEATURE — shows real blocked/available dates pulled from
+// SEPARATE FEATURE. shows real blocked/available dates pulled from
 // your Airbnb iCal export. See lib/icalSync.ts for setup. Until
 // AIRBNB_ICAL_URL is set, this honestly shows a setup notice instead
 // of fake availability.

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/terminal/ZkLoginPreview.tsx
-// Sui zkLogin sign-in — links to /passport for full verification flow.
+// Sui zkLogin sign-in. links to /passport for full verification flow.
 
 import Link from "next/link";
 import { S, G, W } from "./tokens";
@@ -23,7 +23,7 @@ export function ZkLoginPreview() {
         <p style={{ fontFamily:S, fontSize:"0.82rem",
                      color:"rgba(21,21,26,0.5)", lineHeight:1.7,
                      maxWidth:560, margin:"0 0 1.25rem" }}>
-          No MetaMask. No seed phrases. Abraxas verification is Sui-native —
+          No MetaMask. No seed phrases. Abraxas verification is Sui-native -
           zkLogin derives your on-chain Passport holder address from Google OAuth.
         </p>
         <Link href="/passport"

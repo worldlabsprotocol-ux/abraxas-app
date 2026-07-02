@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/VerificationLifecycle.tsx
 // The single most important missing section on the site.
-// Shows the complete verification lifecycle — who verifies, how, and why it matters.
+// Shows the complete verification lifecycle. who verifies, how, and why it matters.
 // Zero fake data. Every claim is architecturally real.
 "use client";
 
@@ -22,7 +22,7 @@ const STAGES = [
   {
     n:"02", label:"Authentication Partner Review",
     color:"#FBBF24", icon:"◉",
-    description:"An authorized authentication partner — a grading service, certified appraiser, or institutional verifier — reviews the physical asset and documentation. Their identity and co-signature are recorded on-chain.",
+    description:"An authorized authentication partner. a grading service, certified appraiser, or institutional verifier. reviews the physical asset and documentation. Their identity and co-signature are recorded on-chain.",
     technical:"Partner registry · Signed attestations · On-chain co-signature requirement",
     trustSignal:"You know exactly who reviewed the asset. Not 'the protocol.' A named, credentialed institution with accountability.",
     actors:["CGC, PSA, BGS (collectibles)","MAI Certified Appraisers (real estate)","Licensed petroleum engineers (mineral rights)","Certified watchmakers (timepieces)"],
@@ -49,7 +49,7 @@ const STAGES = [
   {
     n:"05", label:"Risk + Collateral Scoring",
     color:"#a855f7", icon:"⬡",
-    description:"The protocol's risk engine scores the asset across five dimensions: liquidity, volatility, custody quality, provenance depth, and market comparables. The score directly determines the LTV cap — it is not a fixed value.",
+    description:"The protocol's risk engine scores the asset across five dimensions: liquidity, volatility, custody quality, provenance depth, and market comparables. The score directly determines the LTV cap. it is not a fixed value.",
     technical:"Multi-factor scoring algorithm · Oracle price feeds · Market comparable analysis",
     trustSignal:"LTV is computed from evidence, not assigned arbitrarily. A 90% confidence asset gets a higher LTV than a 60% confidence asset of the same class.",
     actors:["Protocol risk engine (automated)","Manual override by senior reviewer","Oracle price feed providers"],
@@ -97,7 +97,7 @@ export function VerificationLifecycle() {
           lineHeight:1.75, maxWidth:560, margin:0 }}>
           Most tokenization platforms stop at minting. Abraxas operates a seven-stage
           verification pipeline where named, credentialed partners co-sign every state
-          transition — and every action is immutably anchored on Solana.
+          transition. and every action is immutably anchored on Solana.
         </p>
       </div>
 
@@ -108,7 +108,7 @@ export function VerificationLifecycle() {
         <div style={{ fontSize:"0.5rem", color:"rgba(255,255,255,0.4)", lineHeight:1.7 }}>
           Most tokenized assets still rely on off-chain trust: "we say it's verified."
           Abraxas creates cryptographic verification records tied to real custodians,
-          certified appraisers, and provenance registries — enabling assets to function
+          certified appraisers, and provenance registries. enabling assets to function
           as independently auditable on-chain collateral. Users can verify who verified
           the asset, where it's held, and when it was last audited without trusting Abraxas.
         </div>

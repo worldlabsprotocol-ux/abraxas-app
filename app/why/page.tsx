@@ -10,7 +10,7 @@ const GAPS = [
     problem: "Assets tokenized. Yield sitting idle.",
     stat: "$36B in tokenized RWAs",
     statSub: "most earn nothing between distributions",
-    solution: "Abraxas agents operate the income stream continuously. Every distribution is captured and redeployed the moment it clears — not 30-90 days later.",
+    solution: "Abraxas agents operate the income stream continuously. Every distribution is captured and redeployed the moment it clears. not 30-90 days later.",
     color: "rgba(200,169,110,0.08)",
     border: "rgba(200,169,110,0.3)",
   },
@@ -37,7 +37,7 @@ const GAPS = [
     problem: "Tokenization without active management.",
     stat: "Low transfer activity",
     statSub: "most RWA tokens are held passively",
-    solution: "Tokenization is the start, not the finish. An Abraxas agent manages your position continuously — rebalancing, reinvesting, and defending — while the token stays in your wallet.",
+    solution: "Tokenization is the start, not the finish. An Abraxas agent manages your position continuously. rebalancing, reinvesting, and defending. while the token stays in your wallet.",
     color: "rgba(200,169,110,0.06)",
     border: "rgba(200,169,110,0.2)",
   },
@@ -47,13 +47,13 @@ const LANDSCAPE = [
   {
     layer: "Layer 1", role: "IP Registration & Licensing",
     what: "Registers IP on-chain, creates programmable licenses, enables automated royalty routing between creators.",
-    gap: "Doesn't operate the income stream after registration. The IP is on-chain — but idle.",
+    gap: "Doesn't operate the income stream after registration. The IP is on-chain. but idle.",
     icon: "◈", color: "rgba(107,140,255,0.07)", border: "rgba(107,140,255,0.18)",
   },
   {
     layer: "Layer 2", role: "Private Credit & Lending",
     what: "Unlocks liquidity through uncollateralized lending pools. Institutional-grade credit on-chain. Assets serve as collateral.",
-    gap: "Lends against your asset — capital leaves your hands. Doesn't operate the income stream the asset generates.",
+    gap: "Lends against your asset. capital leaves your hands. Doesn't operate the income stream the asset generates.",
     icon: "◉", color: "rgba(200,169,110,0.05)", border: "rgba(200,169,110,0.14)",
   },
   {
@@ -64,7 +64,7 @@ const LANDSCAPE = [
   },
   {
     layer: "Layer 4", role: "IP Liquidity & Trading",
-    what: "DEXs built for tokenized IP assets — instant swaps, liquidity pools, price discovery for IP tokens.",
+    what: "DEXs built for tokenized IP assets. instant swaps, liquidity pools, price discovery for IP tokens.",
     gap: "Provides trading markets for IP tokens, but doesn't compound yield or operate the underlying income stream.",
     icon: "⇄", color: "rgba(200,100,30,0.04)", border: "rgba(200,100,30,0.14)",
   },
@@ -73,27 +73,27 @@ const LANDSCAPE = [
 const FAQS = [
   {
     q: "What does 'operating the income stream' actually mean?",
-    a: "Every royalty, rent payment, or invoice settlement has a gap between when it's earned and when it's paid out — typically 30–90 days. During that gap, your money sits in a distributor's account earning nothing. Abraxas's agent monitors that income stream and deploys capital against it, capturing distributions the moment they clear. The agent doesn't just hold — it continuously rebalances, reinvests, and defends your position. That's the difference between tokenization and operation.",
+    a: "Every royalty, rent payment, or invoice settlement has a gap between when it's earned and when it's paid out. typically 30–90 days. During that gap, your money sits in a distributor's account earning nothing. Abraxas's agent monitors that income stream and deploys capital against it, capturing distributions the moment they clear. The agent doesn't just hold. it continuously rebalances, reinvests, and defends your position. That's the difference between tokenization and operation.",
   },
   {
     q: "How is this different from just holding tokenized assets?",
-    a: "Holding a tokenized asset passively is identical to holding the original asset — you wait for distributions, you receive them quarterly, you do nothing in between. Abraxas operates the position: distributions are reinvested immediately, income-stream velocity is monitored continuously, and circuit defense triggers if risk crosses a threshold. Over 12 months, the difference between passive holding and active operation at 8–12% APY is compounding — not speculation.",
+    a: "Holding a tokenized asset passively is identical to holding the original asset. you wait for distributions, you receive them quarterly, you do nothing in between. Abraxas operates the position: distributions are reinvested immediately, income-stream velocity is monitored continuously, and circuit defense triggers if risk crosses a threshold. Over 12 months, the difference between passive holding and active operation at 8–12% APY is compounding. not speculation.",
   },
   {
     q: "Why does Sui matter for this use case?",
-    a: "zkLogin lets users sign in with Google — no seed phrase, no browser extension — while still getting a real on-chain Sui address for their Passport. Sui's object model fits the Passport stamp bitmask natively, and transaction costs stay low enough that verification anchoring and sponsored actions for verified tiers are economically viable at scale.",
+    a: "zkLogin lets users sign in with Google. no seed phrase, no browser extension. while still getting a real on-chain Sui address for their Passport. Sui's object model fits the Passport stamp bitmask natively, and transaction costs stay low enough that verification anchoring and sponsored actions for verified tiers are economically viable at scale.",
   },
   {
     q: "What stops the system from collapsing in a down market?",
-    a: "Three layers: circuit defense triggers before losses reach principal, a 15–20% reserve buffer absorbs shocks without touching deployed capital, and Abraxas never uses leverage on underlying assets. Yield comes from operating income — royalties, rent, invoice spreads — not speculation. When streaming revenue drops 30%, yield adjusts proportionally. Principal doesn't collapse because it was never in a leveraged position.",
+    a: "Three layers: circuit defense triggers before losses reach principal, a 15–20% reserve buffer absorbs shocks without touching deployed capital, and Abraxas never uses leverage on underlying assets. Yield comes from operating income. royalties, rent, invoice spreads. not speculation. When streaming revenue drops 30%, yield adjusts proportionally. Principal doesn't collapse because it was never in a leveraged position.",
   },
   {
     q: "Who is this actually for?",
-    a: "Three audiences with three entry points. Artists, creators, and asset owners use /onboard to register their catalog, property, or invoice — the agent operates the income stream on their behalf. Yield seekers with no asset use /earn pools to deposit USDC and earn from the vault pool — minimum $50, no registration required. Whales and institutions operate directly through full vault assignments with custom agent parameters and circuit defense thresholds. The same protocol serves all three simultaneously.",
+    a: "Three audiences with three entry points. Artists, creators, and asset owners use /onboard to register their catalog, property, or invoice. the agent operates the income stream on their behalf. Yield seekers with no asset use /earn pools to deposit USDC and earn from the vault pool. minimum $50, no registration required. Whales and institutions operate directly through full vault assignments with custom agent parameters and circuit defense thresholds. The same protocol serves all three simultaneously.",
   },
   {
     q: "Is this legal?",
-    a: "Abraxas does not take custody of your assets, does not issue securities, and does not make investment decisions on your behalf in a fiduciary capacity. The agent executes according to on-chain rules that you set at deposit. The Token-2022 position token is a representation of your vault share — not a security. That said, regulatory environments vary by jurisdiction and are evolving rapidly. We recommend consulting legal counsel in your jurisdiction before making large deposits. The protocol is currently in beta.",
+    a: "Abraxas does not take custody of your assets, does not issue securities, and does not make investment decisions on your behalf in a fiduciary capacity. The agent executes according to on-chain rules that you set at deposit. The Token-2022 position token is a representation of your vault share. not a security. That said, regulatory environments vary by jurisdiction and are evolving rapidly. We recommend consulting legal counsel in your jurisdiction before making large deposits. The protocol is currently in beta.",
   },
 ];
 
@@ -145,14 +145,14 @@ export default function WhyPage() {
       {/* Landscape */}
       <div style={{ marginBottom: "3.5rem" }}>
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "1.25rem" }}>
-          The ecosystem — and what each layer misses
+          The ecosystem. and what each layer misses
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.25rem" }}>
           {LANDSCAPE.map((p) => (
             <div key={p.layer} style={{ background: p.color, border: `1px solid ${p.border}`, borderRadius: "12px", padding: "1.1rem 1.4rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem", flexWrap: "wrap" }}>
                 <span style={{ fontSize: "0.8rem" }}>{p.icon}</span>
-                <span style={{ fontWeight: 700, fontSize: "0.82rem" }}>{p.layer} — {p.role}</span>
+                <span style={{ fontWeight: 700, fontSize: "0.82rem" }}>{p.layer}. {p.role}</span>
               </div>
               <p style={{ fontSize: "0.75rem", color: "var(--muted)", lineHeight: 1.6, marginBottom: "0.35rem" }}>{p.what}</p>
               <p style={{ fontSize: "0.7rem", color: "var(--gold)", lineHeight: 1.5 }}>
@@ -170,7 +170,7 @@ export default function WhyPage() {
               <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 8px var(--gold)" }} />
             </div>
             <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>Abraxas</span>
-            <span style={{ fontSize: "0.62rem", color: "var(--gold)", border: "1px solid rgba(200,169,110,0.3)", padding: "0.12rem 0.45rem", borderRadius: "4px" }}>Layer 5 — The Operating Layer</span>
+            <span style={{ fontSize: "0.62rem", color: "var(--gold)", border: "1px solid rgba(200,169,110,0.3)", padding: "0.12rem 0.45rem", borderRadius: "4px" }}>Layer 5. The Operating Layer</span>
           </div>
           <p style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.7 }}>
             Autonomous agents manage the income stream generated by on-chain registered assets. Royalties, rent flows, voice IP payouts, and invoice settlements are captured, reinvested, and defended automatically. The asset stays with the owner. The agent operates on their behalf.

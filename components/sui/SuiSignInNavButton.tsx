@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/sui/SuiSignInNavButton.tsx
-// Nav CTA — prominent Google zkLogin on every redesign surface.
+// Nav CTA. prominent Google zkLogin on every redesign surface.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";

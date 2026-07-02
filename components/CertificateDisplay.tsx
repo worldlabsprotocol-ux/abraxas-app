@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/CertificateDisplay.tsx
-// Verification Certificate display — beautiful, institutional.
+// Verification Certificate display. beautiful, institutional.
 // Fetches from public /api/certificates/[id]/verify endpoint.
 // Can be embedded on any asset detail page.
 

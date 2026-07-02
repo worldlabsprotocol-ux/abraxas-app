@@ -1,5 +1,5 @@
 // FILE: components/onboarding/TrustStack.tsx
-// The trust infrastructure — made explicit and visible.
+// The trust infrastructure. made explicit and visible.
 // "What stands behind the collateral."
 "use client";
 
@@ -28,7 +28,7 @@ const TRUST_LAYERS = [
   {
     layer: "03",
     title: "Custody Verification",
-    desc:  "The physical or legal asset is confirmed to be under a verifiable custody arrangement — vault, legal escrow, or entity-controlled possession.",
+    desc:  "The physical or legal asset is confirmed to be under a verifiable custody arrangement. vault, legal escrow, or entity-controlled possession.",
     status:"REQUIRED", color:GREEN,
     icon: "◆",
     items: ["Vault receipt or escrow confirmation", "Custodian identity verification", "Jurisdiction compliance", "Audit trail"],
@@ -125,7 +125,7 @@ export function TrustStack({ compact = false }: { compact?: boolean }) {
                      color:"rgba(255,255,255,0.3)", maxWidth:540,
                      margin:"0 auto", lineHeight:1.75 }}>
           Abraxas does not issue certificates based on self-reported data.
-          Every collateral position is backed by a verified documentation chain —
+          Every collateral position is backed by a verified documentation chain -
           legal, custodial, and financial.
         </p>
       </div>

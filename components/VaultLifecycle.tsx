@@ -3,7 +3,7 @@
 import { Vault } from "@/lib/mockData";
 
 /**
- * Shows the vault lifecycle in plain language — no DeFi jargon.
+ * Shows the vault lifecycle in plain language. no DeFi jargon.
  * "Graduating" = the vault has proven its strategy and is entering
  * full autonomous operation. Artists and web2 users understand
  * this framing immediately.
@@ -21,7 +21,7 @@ const STAGES = [
     key: "graduating",
     label: "Graduating",
     plain: "Leaving initial phase, entering full operation",
-    desc: "The vault has met its performance thresholds. This is the transition from early access to full autonomous operation — like an artist going from independent release to distribution deal.",
+    desc: "The vault has met its performance thresholds. This is the transition from early access to full autonomous operation. like an artist going from independent release to distribution deal.",
     icon: "◎",
   },
   {
@@ -35,7 +35,7 @@ const STAGES = [
     key: "paused",
     label: "Paused",
     plain: "Manual review in progress",
-    desc: "A defense event triggered a pause for manual review. All capital is preserved. This is a feature, not a bug — the system protected your position.",
+    desc: "A defense event triggered a pause for manual review. All capital is preserved. This is a feature, not a bug. the system protected your position.",
     icon: "◑",
   },
 ];

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/sui/SuiIntegrationsPanel.tsx
-// Visual map of Sui verification features — fast discovery for users & operators.
+// Visual map of Sui verification features. fast discovery for users & operators.
 
 import Link from "next/link";
 import {
@@ -126,7 +126,7 @@ export function SuiIntegrationsPanel({ showSetup = true }: { showSetup?: boolean
               <Link key={s.step} href={s.href} style={{ textDecoration: "none", display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
                 <span style={{ fontFamily: MONO, fontSize: "0.65rem", color: ACCENT, fontWeight: 700 }}>{s.step}.</span>
                 <span style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)" }}>{s.label}</span>
-                <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>— done when: {s.doneWhen}</span>
+                <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>- done when: {s.doneWhen}</span>
               </Link>
             ))}
           </div>

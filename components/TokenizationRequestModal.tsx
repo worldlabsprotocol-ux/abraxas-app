@@ -5,12 +5,12 @@
 "use client";
 //
 // LIGHT-MODE FIX (June 2026): this whole modal was a self-contained
-// leftover dark theme — CARD/CARD2 were near-black, W was near-white
+// leftover dark theme. CARD/CARD2 were near-black, W was near-white
 // text, and every secondary/muted label was rgba(255,255,255,X). None
 // of that reads from the site's actual --surface/--text-primary
 // tokens, so while it was internally consistent (light text correctly
 // paired with dark backgrounds), it never got migrated when the rest
-// of the app standardized on one light theme — this is the one modal
+// of the app standardized on one light theme. this is the one modal
 // that would still pop up dark over an otherwise all-light page.
 // Flipped CARD/CARD2/BDR/W to the light tokens and every
 // rgba(255,255,255,X) text/border instance to its rgba(21,21,26,X)
@@ -21,7 +21,7 @@
 //
 // SEPARATE ISSUE, NOT TOUCHED HERE: this file imports WorldIDVerify
 // from "@/components/WorldIDVerify". Worth double-checking that still
-// exists in the repo — flagging since a missing import would break
+// exists in the repo. flagging since a missing import would break
 // the whole build, not just the styling, and is a bigger problem than
 // anything theme-related.
 
@@ -392,7 +392,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                   placeholder="@handle" style={input} autoComplete="off"/>
               </div>
               <div style={{ marginBottom:"1rem" }}>
-                <label style={lbl}>Sui wallet address (optional — or sign in on /passport)</label>
+                <label style={lbl}>Sui wallet address (optional. or sign in on /passport)</label>
                 <input type="text" value={wallet} onChange={e=>setWallet(e.target.value)}
                   placeholder="Tokens sent here after minting" style={input} autoComplete="off"/>
               </div>
@@ -526,7 +526,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
                            margin:"0 0 0.375rem" }}>Confirm payment.</p>
               <p style={{ fontFamily:S, fontSize:"0.78rem", color:"rgba(21,21,26,0.45)",
                            lineHeight:1.7, margin:"0 0 1rem" }}>
-                Paste your Sui transaction digest (optional) — we can reconcile without it.
+                Paste your Sui transaction digest (optional). we can reconcile without it.
               </p>
               <div style={{ marginBottom:"0.875rem" }}>
                 <label style={lbl}>Transaction Signature (optional)</label>

@@ -28,7 +28,7 @@ export function BorrowPanel({ assetId, ltv, collateralScore, estimatedUsdValue, 
   const [hover, setHover] = useState(false);
   const isEligible = ELIGIBLE_STATUSES.has(verificationStatus);
   const maxBorrow  = Math.round(estimatedUsdValue * ltv / 100);
-  const hf         = estimatedUsdValue > 0 ? (estimatedUsdValue / Math.max(1, estimatedUsdValue * 0.82)).toFixed(2) : "—";
+  const hf         = estimatedUsdValue > 0 ? (estimatedUsdValue / Math.max(1, estimatedUsdValue * 0.82)).toFixed(2) : "-";
   const score      = collateralScore ?? 0;
 
   return (
@@ -47,7 +47,7 @@ export function BorrowPanel({ assetId, ltv, collateralScore, estimatedUsdValue, 
         <div style={{ fontSize:"0.4rem", fontWeight:700, fontFamily:MONO,
                       color: isEligible ? "rgba(20,241,149,0.6)" : "rgba(255,255,255,0.2)",
                       textTransform:"uppercase", letterSpacing:"0.18em" }}>
-          {isEligible ? "Collateral Ready — Borrow Active" : "Verification Pending — Borrow Locked"}
+          {isEligible ? "Collateral Ready. Borrow Active" : "Verification Pending. Borrow Locked"}
         </div>
       </div>
 
@@ -68,7 +68,7 @@ export function BorrowPanel({ assetId, ltv, collateralScore, estimatedUsdValue, 
         {/* Metrics */}
         {([
           ["Max Borrow",   isEligible ? `${fmt(maxBorrow)} USDC` : "Pending", isEligible ? "#f0f0f0" : "rgba(255,255,255,0.2)"],
-          ["Health Factor", isEligible ? hf : "—",                           isEligible ? "#14F195" : "rgba(255,255,255,0.2)"],
+          ["Health Factor", isEligible ? hf : "-",                           isEligible ? "#14F195" : "rgba(255,255,255,0.2)"],
           ["Liq. Threshold","82%",                                              "rgba(255,255,255,0.45)"],
           ["Collateral Score", score > 0 ? `${score}/100` : "Pending",        score >= 80 ? "#14F195" : score >= 60 ? "#FBBF24" : "rgba(255,255,255,0.35)"],
           ["Protocol",     "Loopscale",                                        "rgba(107,140,255,0.7)"],

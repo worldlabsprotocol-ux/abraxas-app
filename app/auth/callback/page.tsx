@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/auth/callback/page.tsx
-// Legacy Supabase magic-link callback — redirects to Sui zkLogin passport flow.
+// Legacy Supabase magic-link callback. redirects to Sui zkLogin passport flow.
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -47,7 +47,7 @@ export default function AuthCallbackPage() {
               Confirming your email
             </div>
             <div style={{ fontSize:"0.78rem", color:"rgba(255,255,255,0.5)" }}>
-              Redirecting to Passport — sign in with Google to create your Sui wallet…
+              Redirecting to Passport. sign in with Google to create your Sui wallet…
             </div>
           </>
         ) : (

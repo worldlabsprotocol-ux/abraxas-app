@@ -27,7 +27,7 @@ export default function ZkLoginSetupPage() {
         </p>
       </ContentCard>
 
-      <ContentCard title="Step 1 — Google OAuth app">
+      <ContentCard title="Step 1. Google OAuth app">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
           If Google says <strong style={{ color: "var(--text-primary)" }}>doesn&apos;t comply with OAuth 2.0 policy</strong>, the redirect URI in the error must be added exactly in Google Cloud Console → Credentials → your Web client → <strong>Authorized redirect URIs</strong>.
         </p>
@@ -41,7 +41,7 @@ export default function ZkLoginSetupPage() {
         ]} />
       </ContentCard>
 
-      <ContentCard title="Step 2 — Supabase migration">
+      <ContentCard title="Step 2. Supabase migration">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
           Run <code style={{ fontFamily: MONO, fontSize: "0.75rem" }}>supabase/migrations/007_sui_zklogin.sql</code> in the SQL editor.
           Creates <code style={{ fontFamily: MONO }}>sui_zklogin_identities</code> and adds <code style={{ fontFamily: MONO }}>sui_address</code> columns.
@@ -53,7 +53,7 @@ export default function ZkLoginSetupPage() {
         ]} />
       </ContentCard>
 
-      <ContentCard title="Step 3 — Test sign-in">
+      <ContentCard title="Step 3. Test sign-in">
         <BulletList items={[
           "Visit /passport → Continue with Google",
           "Should land on /auth/zklogin/callback then /passport?signed_in=1",
@@ -61,7 +61,7 @@ export default function ZkLoginSetupPage() {
         ]} />
       </ContentCard>
 
-      <ContentCard title="Step 4 — Veriff (identity stamp)">
+      <ContentCard title="Step 4. Veriff (identity stamp)">
         <BulletList items={[
           "Veriff Station → API keys: VERIFF_API_KEY, VERIFF_SECRET",
           "Webhook: https://abraxas-app.vercel.app/api/idv/webhook",
@@ -69,13 +69,13 @@ export default function ZkLoginSetupPage() {
         ]} />
       </ContentCard>
 
-      <ContentCard title="Step 5 — Credential signing keys">
+      <ContentCard title="Step 5. Credential signing keys">
         <p style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
           node scripts/generate-abraxas-key.js → ABRAXAS_SIGNING_KEY + ABRAXAS_PUBLIC_KEY
         </p>
       </ContentCard>
 
-      <ContentCard title="Step 6 — On-chain stamps (your next build)">
+      <ContentCard title="Step 6. On-chain stamps (your next build)">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
           Move package is on devnet (<Link href="/docs/passport-spec" style={{ color: ACCENT }}>see live panel</Link>).
           After Veriff approves, add an API that calls <code style={{ fontFamily: MONO }}>issue_stamps_entry</code> and stores the Passport object ID per Sui address.
@@ -87,7 +87,7 @@ export default function ZkLoginSetupPage() {
         ]} />
       </ContentCard>
 
-      <ContentCard title="Step 7 — Proving service (transactions only)">
+      <ContentCard title="Step 7. Proving service (transactions only)">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
           Reading passports via RPC does not need the prover. Set NEXT_PUBLIC_ZKLOGIN_PROVER_URL when users sign Sui transactions with zkLogin.
         </p>

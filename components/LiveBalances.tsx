@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/authState";
 import { ABRA } from "@/lib/constants";
 
 function fmt(n: number | null, dp = 4): string {
-  if (n === null) return "—";
+  if (n === null) return "-";
   if (n === 0) return "0";
   if (n < 0.0001) return n.toExponential(2);
   return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: dp });

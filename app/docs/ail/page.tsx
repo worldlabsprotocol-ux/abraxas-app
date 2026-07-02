@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/docs/ail/page.tsx
-// Abraxas Identity Layer (AIL) — vision & product specification.
+// Abraxas Identity Layer (AIL). vision & product specification.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -69,7 +69,7 @@ export default function AILSpecPage() {
         </p>
       </ContentCard>
 
-      <ContentCard title="What Abraxas is — and is not">
+      <ContentCard title="What Abraxas is. and is not">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
           <div style={{ padding: "1rem", borderRadius: 12, border: "1px solid #EF444440", background: "#EF444408" }}>
             <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "#EF4444", marginBottom: "0.5rem" }}>
@@ -107,7 +107,7 @@ export default function AILSpecPage() {
 
       <ContentCard title="How integrators use AIL">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
-          When a protocol needs compliance, it asks Abraxas — the user does not upload documents again.
+          When a protocol needs compliance, it asks Abraxas. the user does not upload documents again.
         </p>
         {INTEGRATOR_QUERIES.map(row => (
           <div key={row.q} style={{ marginBottom: "0.75rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--border)" }}>
@@ -181,7 +181,7 @@ export default function AILSpecPage() {
 
       <ContentCard title="Role-based credentials">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.65 }}>
-          Different participants need different reusable credentials — each maps to Passport stamp bits.
+          Different participants need different reusable credentials. each maps to Passport stamp bits.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
           {ROLE_CREDENTIALS.map(role => (
@@ -198,7 +198,7 @@ export default function AILSpecPage() {
 
       <ContentCard title="Trust score (roadmap)">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.65 }}>
-          Dynamic 0–1000 score — not just initial KYC. Factors include:
+          Dynamic 0–1000 score. not just initial KYC. Factors include:
         </p>
         <BulletList items={TRUST_SCORE_FACTORS} />
       </ContentCard>
@@ -221,7 +221,7 @@ export default function AILSpecPage() {
       <ContentCard title="Long-term vision">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 1rem" }}>
           Build the core as a general-purpose trust engine. Ship reusable identity (KYC/KYB) as the first application.
-          Expand to real estate, metals, IP, licenses, carbon credits, supply chain, and AI agent credentials —
+          Expand to real estate, metals, IP, licenses, carbon credits, supply chain, and AI agent credentials -
           all on the same infrastructure.
         </p>
         <BulletList items={REVENUE_STREAMS} />

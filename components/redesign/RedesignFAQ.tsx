@@ -28,7 +28,7 @@ const GROUPS: Group[] = [
       {
         q: "Why RWA, and why now?",
         a: [
-          "Two things finally lined up. Verification rails got good enough — Sui zkLogin means anyone can get a holder address with Google, no seed phrase. And the demand showed up: real yield beats farm yield that evaporates by Monday.",
+          "Two things finally lined up. Verification rails got good enough. Sui zkLogin means anyone can get a holder address with Google, no seed phrase. And the demand showed up: real yield beats farm yield that evaporates by Monday.",
           "RWA isn't early because of the tech anymore. It's early because nobody solved trust. That's the whole gap, and it's the only part that matters. We're not here for the narrative pump \u2014 we're here because the boring part, verification, is the unlock, and we'd rather own the unlock than the hype.",
         ],
       },
@@ -47,8 +47,8 @@ const GROUPS: Group[] = [
       {
         q: "What does your verification process actually look like?",
         a: [
-          "Two tracks, both real. Identity: government ID plus liveness via Veriff, then a W3C credential with did:sui — your Sui address from zkLogin is the anchor.",
-          "Asset: title chain, ownership, revenue, appraisal, risk score — reviewed and attested. Stamps mirror to a Sui Passport object on-chain. Integrators verify via one API call without re-running KYC.",
+          "Two tracks, both real. Identity: government ID plus liveness via Veriff, then a W3C credential with did:sui. your Sui address from zkLogin is the anchor.",
+          "Asset: title chain, ownership, revenue, appraisal, risk score. reviewed and attested. Stamps mirror to a Sui Passport object on-chain. Integrators verify via one API call without re-running KYC.",
         ],
       },
     ],
@@ -59,8 +59,8 @@ const GROUPS: Group[] = [
       {
         q: "Walk me through the first cash-flowing rental you verified on Abraxas.",
         a: [
-          "Cielo Sunrise. A mountain wellness retreat in Mineral Bluff, Georgia — real cabin, real Airbnb listing, real revenue. Held in a single-member LLC with clear title, independently appraised at $1.1M against roughly $109.5K of annual NOI.",
-          "We ran it through the full pipeline: entity, title, insurance, revenue history, appraisal — then issued an AAS-1 verification certificate. It's our Genesis Asset: verified, collateral-eligible, cash-flowing. Not a rendering — a building you can actually book.",
+          "Cielo Sunrise. A mountain wellness retreat in Mineral Bluff, Georgia. real cabin, real Airbnb listing, real revenue. Held in a single-member LLC with clear title, independently appraised at $1.1M against roughly $109.5K of annual NOI.",
+          "We ran it through the full pipeline: entity, title, insurance, revenue history, appraisal. then issued an AAS-1 verification certificate. It's our Genesis Asset: verified, collateral-eligible, cash-flowing. Not a rendering. a building you can actually book.",
         ],
       },
       {
@@ -76,17 +76,17 @@ const GROUPS: Group[] = [
     group: "On Sui",
     items: [
       {
-        q: "Why Sui for verification — what does zkLogin give you?",
+        q: "Why Sui for verification. what does zkLogin give you?",
         a: [
           "Frictionless identity. Users sign in with Google; Abraxas derives a Sui address without a seed phrase or browser wallet. That address holds the Passport stamp bitmask and did:sui credentials.",
-          "Sui also enables sponsored transactions — verified tiers get gas paid from a growth-fee treasury — and intent messaging to prove control without spending SUI. See /docs/sui for the full map.",
+          "Sui also enables sponsored transactions. verified tiers get gas paid from a growth-fee treasury. and intent messaging to prove control without spending SUI. See /docs/sui for the full map.",
         ],
       },
       {
         q: "How do you handle the gap between on-chain speed and off-chain legal reality?",
         a: [
           "You respect the gap instead of pretending it doesn't exist. On-chain is the record and the rails; the legal wrapper is what makes it enforceable. Assets sit in real entities with clear title and a named custodian, so the token points at something a court recognizes.",
-          "On-chain, the credential and the economic claim move instantly. The legal transfer is handled by the wrapper and custodian on its own clock. Disputes resolve where they actually resolve — in the jurisdiction — and the on-chain provenance trail is the cleanest evidence in the room.",
+          "On-chain, the credential and the economic claim move instantly. The legal transfer is handled by the wrapper and custodian on its own clock. Disputes resolve where they actually resolve. in the jurisdiction. and the on-chain provenance trail is the cleanest evidence in the room.",
         ],
       },
     ],

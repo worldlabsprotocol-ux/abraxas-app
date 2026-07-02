@@ -1,7 +1,7 @@
 // FILE: app/methodology/page.tsx
 import Link from "next/link";
 
-export const metadata = { title: "Methodology — Abraxas" };
+export const metadata = { title: "Methodology. Abraxas" };
 
 const ITEMS = [
   {
@@ -44,7 +44,7 @@ export default function MethodologyPage() {
         Methodology
       </h1>
       <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.65, marginBottom: "2rem" }}>
-        Every headline number on Abraxas has a single, auditable definition. If a number on the site doesn't match a number here, that's a bug — flag it.
+        Every headline number on Abraxas has a single, auditable definition. If a number on the site doesn't match a number here, that's a bug. flag it.
       </p>
 
       {ITEMS.map((it, i) => (

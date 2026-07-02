@@ -62,7 +62,7 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
       </div>
       {!compact && (
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.875rem", maxWidth: 480 }}>
-          Sign in with Google. Abraxas derives a Sui address for you using zkLogin — no wallet extension, no seed phrase. This address is your verification anchor on-chain.
+          Sign in with Google. Abraxas derives a Sui address for you using zkLogin. no wallet extension, no seed phrase. This address is your verification anchor on-chain.
         </p>
       )}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
@@ -87,7 +87,7 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
       </div>
       {(error || !isConfigured) && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: !isConfigured ? "var(--text-muted)" : "#E0524F", margin: "0.75rem 0 0", lineHeight: 1.55 }}>
-          {error ?? "OAuth not configured yet — follow the backend setup guide to enable Google sign-in."}
+          {error ?? "OAuth not configured yet. follow the backend setup guide to enable Google sign-in."}
         </p>
       )}
     </div>
