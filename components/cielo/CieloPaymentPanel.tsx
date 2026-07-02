@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { payCieloFromWallet, verifyCieloPaymentOnServer } from "@/lib/cielo/payFromWallet";
-import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -57,7 +56,7 @@ export function CieloPaymentPanel({
   const walletReady = Boolean(
     suiAddress &&
     isAuthenticated &&
-    (canSignTransactions || canSignZkLoginTransactions(suiAddress)),
+    canSignTransactions,
   );
 
   useEffect(() => {

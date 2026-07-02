@@ -2,6 +2,14 @@
 // Browser session for zkLogin-derived Sui identity.
 
 import { ZKLOGIN_SESSION_KEY, ZKLOGIN_PENDING_KEY } from "./config";
+import {
+  readLocalStorage,
+  readSessionStorage,
+  removeLocalStorage,
+  removeSessionStorage,
+  writeLocalStorage,
+  writeSessionStorage,
+} from "./browserStorage";
 
 const EPHEMERAL_KEY = "abraxas_zklogin_ephemeral_v1";
 
@@ -23,12 +31,12 @@ export interface ZkLoginUserSession {
 }
 
 export function savePendingSession(session: ZkLoginPendingSession): void {
-  sessionStorage.setItem(ZKLOGIN_PENDING_KEY, JSON.stringify(session));
+  writeSessionStorage(ZKLOGIN_PENDING_KEY, JSON.stringify(session));
 }
 
 export function loadPendingSession(): ZkLoginPendingSession | null {
   try {
-    const raw = sessionStorage.getItem(ZKLOGIN_PENDING_KEY);
+    const raw = readSessionStorage(ZKLOGIN_PENDING_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ZkLoginPendingSession;
   } catch {
@@ -37,16 +45,16 @@ export function loadPendingSession(): ZkLoginPendingSession | null {
 }
 
 export function clearPendingSession(): void {
-  sessionStorage.removeItem(ZKLOGIN_PENDING_KEY);
+  removeSessionStorage(ZKLOGIN_PENDING_KEY);
 }
 
 export function saveUserSession(session: ZkLoginUserSession): void {
-  localStorage.setItem(ZKLOGIN_SESSION_KEY, JSON.stringify(session));
+  writeLocalStorage(ZKLOGIN_SESSION_KEY, JSON.stringify(session));
 }
 
 export function loadUserSession(): ZkLoginUserSession | null {
   try {
-    const raw = localStorage.getItem(ZKLOGIN_SESSION_KEY);
+    const raw = readLocalStorage(ZKLOGIN_SESSION_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ZkLoginUserSession;
   } catch {
@@ -55,22 +63,22 @@ export function loadUserSession(): ZkLoginUserSession | null {
 }
 
 export function clearUserSession(): void {
-  localStorage.removeItem(ZKLOGIN_SESSION_KEY);
+  removeLocalStorage(ZKLOGIN_SESSION_KEY);
   clearEphemeralSecretKey();
-  sessionStorage.removeItem("abraxas_zklogin_signing_v1");
-  sessionStorage.removeItem("abraxas_zklogin_proof_v1");
+  removeSessionStorage("abraxas_zklogin_signing_v1");
+  removeSessionStorage("abraxas_zklogin_proof_v1");
 }
 
 export function saveEphemeralSecretKey(secretKey: string): void {
-  sessionStorage.setItem(EPHEMERAL_KEY, secretKey);
+  writeSessionStorage(EPHEMERAL_KEY, secretKey);
 }
 
 export function loadEphemeralSecretKey(): string | null {
-  return sessionStorage.getItem(EPHEMERAL_KEY);
+  return readSessionStorage(EPHEMERAL_KEY);
 }
 
 export function clearEphemeralSecretKey(): void {
-  sessionStorage.removeItem(EPHEMERAL_KEY);
+  removeSessionStorage(EPHEMERAL_KEY);
 }
 
 /** Parse id_token from OAuth implicit callback hash (#id_token=...) */

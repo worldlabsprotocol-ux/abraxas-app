@@ -5,7 +5,6 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
-import { useWallet }           from "@solana/wallet-adapter-react";
 import { useAbraStore }        from "@/lib/abraxasStore";
 import { STATUS_LABEL,
          STATUS_COLOR,
@@ -215,12 +214,11 @@ export default function AdminPage() {
   const [advancing, setAdvancing] = useState(false);
   const [refresh,   setRefresh]   = useState(0);
 
-  const { publicKey, connected } = useWallet();
   const assets      = useAbraStore(s=>s.assets);
   const updateStatus= useAbraStore(s=>s.updateAssetStatus);
 
-  useEffect(()=>{ setMounted(true); if(connected&&publicKey) setAuthed(true); },[connected,publicKey]);
-  if(!mounted) return null;
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
 
   function tryPin() {
     if(pin===ADMIN_PIN) { setAuthed(true); setPinErr(false); }

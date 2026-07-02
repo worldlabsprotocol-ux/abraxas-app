@@ -34,13 +34,20 @@ const SuiAuthContext = createContext<SuiAuthContextValue | null>(null);
 
 export function SuiAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<ZkLoginUserSession | null>(null);
+  const [canSignTransactions, setCanSignTransactions] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSession(loadUserSession());
+    const loaded = loadUserSession();
+    setSession(loaded);
+    setCanSignTransactions(canSignZkLoginTransactions(loaded?.suiAddress));
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    setCanSignTransactions(canSignZkLoginTransactions(session?.suiAddress));
+  }, [session]);
 
   const signInWithGoogle = useCallback(async () => {
     setError(null);
@@ -51,6 +58,7 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     clearUserSession();
     setSession(null);
+    setCanSignTransactions(false);
   }, []);
 
   const value = useMemo<SuiAuthContextValue>(() => ({
@@ -58,13 +66,13 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     suiAddress: session?.suiAddress ?? null,
     suiDid: session?.suiAddress ? toSuiDid(session.suiAddress) : null,
     isAuthenticated: Boolean(session?.suiAddress),
-    canSignTransactions: canSignZkLoginTransactions(session?.suiAddress),
+    canSignTransactions,
     isConfigured: isZkLoginConfigured(),
     isLoading,
     error,
     signInWithGoogle,
     signOut,
-  }), [session, isLoading, error, signInWithGoogle, signOut]);
+  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signOut]);
 
   return (
     <SuiAuthContext.Provider value={value}>

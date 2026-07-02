@@ -3,6 +3,7 @@
 
 import { clearEphemeralSecretKey, loadEphemeralSecretKey, saveEphemeralSecretKey } from "./session";
 import type { ZkLoginSignatureInputs } from "@mysten/sui/zklogin";
+import { readSessionStorage, removeSessionStorage, writeSessionStorage } from "./browserStorage";
 
 const SIGNING_SESSION_KEY = "abraxas_zklogin_signing_v1";
 const PROOF_CACHE_KEY = "abraxas_zklogin_proof_v1";
@@ -24,12 +25,12 @@ export interface ZkLoginProofCache {
 }
 
 export function saveSigningSession(session: ZkLoginSigningSession): void {
-  sessionStorage.setItem(SIGNING_SESSION_KEY, JSON.stringify(session));
+  writeSessionStorage(SIGNING_SESSION_KEY, JSON.stringify(session));
 }
 
 export function loadSigningSession(): ZkLoginSigningSession | null {
   try {
-    const raw = sessionStorage.getItem(SIGNING_SESSION_KEY);
+    const raw = readSessionStorage(SIGNING_SESSION_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ZkLoginSigningSession;
   } catch {
@@ -38,8 +39,8 @@ export function loadSigningSession(): ZkLoginSigningSession | null {
 }
 
 export function clearSigningSession(): void {
-  sessionStorage.removeItem(SIGNING_SESSION_KEY);
-  sessionStorage.removeItem(PROOF_CACHE_KEY);
+  removeSessionStorage(SIGNING_SESSION_KEY);
+  removeSessionStorage(PROOF_CACHE_KEY);
   clearEphemeralSecretKey();
 }
 
@@ -65,12 +66,12 @@ export function saveProofCache(proof: PartialZkLoginSignature, maxEpoch: number)
     maxEpoch,
     fetchedAt: new Date().toISOString(),
   };
-  sessionStorage.setItem(PROOF_CACHE_KEY, JSON.stringify(cache));
+  writeSessionStorage(PROOF_CACHE_KEY, JSON.stringify(cache));
 }
 
 export function loadProofCache(maxEpoch: number): PartialZkLoginSignature | null {
   try {
-    const raw = sessionStorage.getItem(PROOF_CACHE_KEY);
+    const raw = readSessionStorage(PROOF_CACHE_KEY);
     if (!raw) return null;
     const cache = JSON.parse(raw) as ZkLoginProofCache;
     if (cache.maxEpoch !== maxEpoch) return null;
