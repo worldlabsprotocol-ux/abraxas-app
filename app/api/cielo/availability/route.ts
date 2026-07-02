@@ -1,14 +1,15 @@
 // FILE: app/api/cielo/availability/route.ts
-// SEPARATE FEATURE — see lib/icalSync.ts for full explanation.
 import { NextResponse } from "next/server";
-import { getCieloBlockedDates } from "@/lib/icalSync";
+import { getCieloAvailability } from "@/lib/cielo/availability";
 
 export async function GET() {
   try {
-    const blocked = await getCieloBlockedDates();
-    return NextResponse.json({ blocked });
+    const data = await getCieloAvailability();
+    return NextResponse.json(data, {
+      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60" },
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: msg, blocked: [] }, { status: 500 });
   }
 }

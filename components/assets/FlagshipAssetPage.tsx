@@ -5,6 +5,7 @@
 import { useState }             from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FLAGSHIP_PROPERTY }    from "@/lib/data/flagshipProperty";
+import { CieloFlagshipActions } from "@/components/cielo/CieloFlagshipActions";
 
 const M      = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 // Dark premium restyle (redesign). Data/content unchanged.
@@ -122,14 +123,14 @@ export function FlagshipAssetPage() {
               color:b.color, textTransform:"uppercase", letterSpacing:"0.12em",
             }}>{b.label}</span>
           ))}
-          {/* USDC Coming Soon */}
+          {/* USDC on Sui */}
           <span style={{
             padding:"3px 10px", borderRadius:"3px",
             background:"rgba(37,99,235,0.12)", border:"1px solid rgba(37,99,235,0.3)",
             fontFamily:M, fontSize:"0.3rem", fontWeight:900,
             color:BLUE, textTransform:"uppercase", letterSpacing:"0.12em",
           }}>
-            USDC BOOKING, COMING SOON
+            USDC ON SUI · LIVE
           </span>
         </div>
 
@@ -181,15 +182,9 @@ export function FlagshipAssetPage() {
                       letterSpacing:"0.06em" }}>
             @CIELOSUNRISE ↗
           </a>
-          <div style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",
-                         border:"1px solid rgba(37,99,235,0.3)",
-                         background:"rgba(37,99,235,0.06)",
-                         fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                         color:"rgba(96,165,250,0.7)", letterSpacing:"0.06em",
-                         cursor:"not-allowed", opacity:0.8 }}>
-            BOOK WITH USDC, COMING SOON
-          </div>
         </div>
+
+        <CieloFlagshipActions />
       </div>
 
       {/* ── TAB NAV ───────────────────────────────────────────────────── */}
@@ -598,7 +593,7 @@ export function FlagshipAssetPage() {
                 ["Mint Cost",        D.tokenization.mintCostAbra + " ABRA"],
                 ["Supply",           String(D.tokenization.totalSupply)],
                 ["Status",           D.tokenization.status],
-                ["Stablecoin",       "USDC, COMING SOON"],
+                ["Stablecoin",       "USDC on Sui · LIVE"],
               ].map(([k, v]) => (
                 <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                        padding:"0.5rem 0",

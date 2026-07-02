@@ -1,0 +1,313 @@
+"use client";
+// FILE: components/cielo/CieloBookingPanel.tsx
+// Book Cielo on Abraxas with USDC on Sui. Dates validated against Airbnb mirror.
+
+import { useEffect, useState } from "react";
+import { CIELO_RATES, blockedNightsInRange, estimateUsdc, eachNight } from "@/lib/cielo/bookingValidation";
+
+const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const ACCENT = "#10B981";
+const AMBER = "#F59E0B";
+const RED = "#EF4444";
+
+const TREASURY_LABEL = process.env.NEXT_PUBLIC_CIRCUIT_WALLET ?? "circuit.skr";
+
+interface BlockedDate { start: string; end: string; }
+
+type Step = "dates" | "contact" | "done";
+
+export function CieloBookingPanel({
+  suiAddress,
+  variant = "button",
+}: {
+  suiAddress?: string | null;
+  variant?: "button" | "inline";
+}) {
+  const [open, setOpen] = useState(variant === "inline");
+  const [step, setStep] = useState<Step>("dates");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [guests, setGuests] = useState("2");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [wallet, setWallet] = useState(suiAddress ?? "");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [refId, setRefId] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState<BlockedDate[]>([]);
+
+  useEffect(() => {
+    setWallet(suiAddress ?? "");
+  }, [suiAddress]);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/cielo/availability")
+      .then(r => r.json())
+      .then(d => setBlocked((d.blocked ?? []) as BlockedDate[]))
+      .catch(() => setBlocked([]));
+  }, [open]);
+
+  const nights = eachNight(checkIn, checkOut);
+  const conflictNights = checkIn && checkOut ? blockedNightsInRange(checkIn, checkOut, blocked) : [];
+  const est = estimateUsdc(checkIn, checkOut);
+
+  async function submit() {
+    if (!name.trim() || !email.trim() || !checkIn || !checkOut) {
+      setErr("Name, email, and dates are required.");
+      return;
+    }
+    if (conflictNights.length > 0) {
+      setErr("Selected dates overlap with Airbnb or an existing Abraxas hold. Pick open dates.");
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/bookings/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          property: "Cielo Sunrise · AAS-1",
+          check_in: checkIn,
+          check_out: checkOut,
+          guests: parseInt(guests, 10),
+          guest_name: name.trim(),
+          email: email.trim(),
+          wallet: wallet.trim() || null,
+          sui_address: wallet.trim() || null,
+          payment_chain: "sui",
+          payment_asset: "USDC",
+          notes: notes.trim() || null,
+          nights: nights.length,
+          est_usdc: est,
+        }),
+      });
+      const data = await res.json() as { ok?: boolean; booking_id?: string; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Submission failed");
+      }
+      setRefId(data.booking_id ?? null);
+      setStep("done");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Submission failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const panel = (
+    <div style={{
+      background: "var(--surface-raised)",
+      border: `1px solid ${AMBER}44`,
+      borderRadius: variant === "inline" ? 16 : 14,
+      overflow: "hidden",
+      boxShadow: variant === "inline" ? "var(--shadow-glow)" : undefined,
+    }}>
+      <div style={{
+        padding: "0.9rem 1.1rem",
+        borderBottom: "1px solid var(--border)",
+        display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem",
+      }}>
+        <div>
+          <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: AMBER,
+                         letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.2rem" }}>
+            Book on Abraxas
+          </div>
+          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+            Pay USDC on Sui. skip Airbnb fees.
+          </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+                       lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 420 }}>
+            Dates mirror the live Airbnb calendar so there is no double booking.
+            After approval, send USDC on Sui to {TREASURY_LABEL}.
+          </p>
+        </div>
+        {variant !== "inline" && (
+          <button type="button" onClick={() => setOpen(false)} aria-label="Close"
+            style={{ border: "1px solid var(--border)", background: "transparent",
+              color: "var(--text-muted)", borderRadius: 8, padding: "0.25rem 0.5rem", cursor: "pointer" }}>
+            ✕
+          </button>
+        )}
+      </div>
+
+      <div style={{ padding: "1rem 1.1rem" }}>
+        {step === "dates" && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.625rem" }}>
+              <Field label="Check-in">
+                <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)}
+                  style={inputStyle} />
+              </Field>
+              <Field label="Check-out">
+                <input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)}
+                  style={inputStyle} />
+              </Field>
+            </div>
+            <Field label="Guests">
+              <select value={guests} onChange={e => setGuests(e.target.value)} style={inputStyle}>
+                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(n => (
+                  <option key={n} value={n}>{n} guest{parseInt(n, 10) > 1 ? "s" : ""}</option>
+                ))}
+              </select>
+            </Field>
+
+            {conflictNights.length > 0 && (
+              <div style={{ marginTop: "0.75rem", padding: "0.65rem 0.75rem", borderRadius: 10,
+                             background: `${RED}12`, border: `1px solid ${RED}33` }}>
+                <div style={{ fontFamily: FONT, fontSize: "0.75rem", color: RED, fontWeight: 600 }}>
+                  Dates unavailable on Abraxas
+                </div>
+                <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginTop: 4 }}>
+                  {conflictNights.slice(0, 5).join(", ")}{conflictNights.length > 5 ? "…" : ""}
+                </div>
+              </div>
+            )}
+
+            {nights.length > 0 && conflictNights.length === 0 && (
+              <div style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 10,
+                             background: `${AMBER}10`, border: `1px solid ${AMBER}30` }}>
+                <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: AMBER, letterSpacing: "0.08em" }}>
+                  ESTIMATE
+                </div>
+                <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                  ~{est.toLocaleString()} USDC
+                </div>
+                <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                  {nights.length} nights · from ${CIELO_RATES.weeknight}/night on Abraxas
+                </div>
+              </div>
+            )}
+
+            <button type="button" onClick={() => setStep("contact")}
+              disabled={!checkIn || !checkOut || nights.length === 0 || conflictNights.length > 0}
+              style={primaryBtn(!checkIn || !checkOut || nights.length === 0 || conflictNights.length > 0)}>
+              Continue →
+            </button>
+          </>
+        )}
+
+        {step === "contact" && (
+          <>
+            <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-secondary)",
+                         lineHeight: 1.65, margin: "0 0 0.875rem" }}>
+              We confirm within 24 hours and send USDC payment instructions on Sui.
+              Your wallet can be prefilled from Google sign-in on /passport.
+            </p>
+            <Field label="Your name"><input value={name} onChange={e => setName(e.target.value)} style={inputStyle} /></Field>
+            <Field label="Email"><input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} /></Field>
+            <Field label="Sui wallet (for USDC)">
+              <input value={wallet} onChange={e => setWallet(e.target.value)}
+                placeholder="0x… from zkLogin wallet" style={inputStyle} />
+            </Field>
+            <Field label="Notes">
+              <textarea value={notes} rows={2} onChange={e => setNotes(e.target.value)}
+                style={{ ...inputStyle, resize: "vertical" }} />
+            </Field>
+            {err && <ErrorBox msg={err} />}
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <button type="button" onClick={() => setStep("dates")} style={ghostBtn}>← Back</button>
+              <button type="button" onClick={submit} disabled={busy} style={primaryBtn(busy)}>
+                {busy ? "Submitting…" : "Request booking →"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === "done" && (
+          <div style={{ textAlign: "center", padding: "0.5rem 0" }}>
+            <div style={{ fontFamily: FONT, fontSize: "1.25rem", fontWeight: 800, color: ACCENT, marginBottom: "0.5rem" }}>
+              Request received
+            </div>
+            {refId && (
+              <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
+                Ref: {refId}
+              </div>
+            )}
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
+              We will confirm your dates and send USDC on Sui payment instructions.
+              Treasury: <strong style={{ color: AMBER }}>{TREASURY_LABEL}</strong>. No Airbnb platform fees.
+            </p>
+            {variant !== "inline" && (
+              <button type="button" onClick={() => { setOpen(false); setStep("dates"); }} style={primaryBtn(false)}>
+                Close
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (variant === "inline") return panel;
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} style={{
+        padding: "0.75rem 1.5rem", borderRadius: 8, border: "none",
+        background: AMBER, color: "#000", fontFamily: FONT, fontSize: "0.85rem",
+        fontWeight: 700, cursor: "pointer",
+      }}>
+        Book with USDC on Sui →
+      </button>
+
+      {open && (
+        <div onClick={() => setOpen(false)} style={{
+          position: "fixed", inset: 0, zIndex: 2000,
+          background: "rgba(2,4,8,0.88)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "flex-start", justifyContent: "center",
+          padding: "1.5rem 1rem", overflowY: "auto",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480 }}>
+            {panel}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: "0.625rem" }}>
+      <label style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)",
+                       letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "0.25rem" }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function ErrorBox({ msg }: { msg: string }) {
+  return (
+    <div style={{ padding: "0.5rem 0.65rem", borderRadius: 8, background: `${RED}10`,
+                  border: `1px solid ${RED}33`, color: RED, fontFamily: FONT, fontSize: "0.72rem" }}>
+      {msg}
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "0.55rem 0.65rem", borderRadius: 8,
+  border: "1px solid var(--border)", background: "var(--surface)",
+  color: "var(--text-primary)", fontFamily: FONT, fontSize: "16px", boxSizing: "border-box",
+};
+
+function primaryBtn(disabled: boolean): React.CSSProperties {
+  return {
+    width: "100%", marginTop: "0.75rem", padding: "0.65rem 1rem", borderRadius: 999,
+    border: "none", background: disabled ? `${ACCENT}55` : ACCENT, color: "#000",
+    fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
+    cursor: disabled ? "not-allowed" : "pointer",
+  };
+}
+
+const ghostBtn: React.CSSProperties = {
+  flex: 1, padding: "0.65rem", borderRadius: 999, border: "1px solid var(--border)",
+  background: "transparent", color: "var(--text-muted)", fontFamily: FONT,
+  fontSize: "0.78rem", fontWeight: 600, cursor: "pointer",
+};

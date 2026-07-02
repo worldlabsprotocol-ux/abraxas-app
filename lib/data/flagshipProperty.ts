@@ -15,8 +15,8 @@ export const FLAGSHIP_PROPERTY = {
   tagline:   "Cabin w/ Sauna Dome + Red Light + Plunge · Tri-State Views",
   airbnbUrl: "https://www.airbnb.com/rooms/1681387746169197852?guests=1&adults=1&s=67&unique_share_id=dd03dff5-16c4-471a-be72-c89d19e2862a",
   instagramUrl: "https://www.instagram.com/cielosunrise",
-  stablecoinBooking: "USDC",
-  stablecoinStatus:  "COMING SOON",
+  stablecoinBooking: "USDC on Sui",
+  stablecoinStatus:  "LIVE",
 
   location: {
     address:      "Mineral Bluff, Georgia, United States",

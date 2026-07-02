@@ -34,6 +34,8 @@ export function AssetsExplorer({
   const pool = EXPLORE_ASSETS.filter(a => !excludeIds.includes(a.id));
   const assets = filter === "all"
     ? [...pool].sort((a, b) => {
+        if (a.id === "genesis-asset") return -1;
+        if (b.id === "genesis-asset") return 1;
         const order: Record<VerifyState, number> = { verified: 0, open: 1, owned: 2, reference: 3 };
         return order[a.state] - order[b.state];
       })

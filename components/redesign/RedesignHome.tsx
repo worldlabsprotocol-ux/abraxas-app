@@ -1,6 +1,5 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Assets-first homepage. Boot intro, market intel, verified assets, optional trust upgrades.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "./AmbientGlow";
@@ -12,6 +11,8 @@ import { FeaturedFlagship } from "./FeaturedFlagship";
 import { VerificationFlow } from "./VerificationFlow";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { MarketIntelFeed } from "./MarketIntelFeed";
+import { IntegratorStrip } from "./IntegratorStrip";
+import { SuiMacroStrip } from "./SuiMacroStrip";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { VerificationPackages } from "@/components/terminal/VerificationPackages";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
@@ -38,24 +39,27 @@ export function RedesignHome() {
         <RedesignNav />
 
         <main style={{ position: "relative", zIndex: 1 }}>
-          <div style={MAXW}>
-            <RedesignHero />
-          </div>
+          <div style={MAXW}><RedesignHero /></div>
+          <div style={{ ...MAXW, paddingTop: "0.5rem" }}><TrustMetricsStrip /></div>
 
-          <div style={{ ...MAXW, paddingTop: "0.5rem" }}>
-            <TrustMetricsStrip />
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <FeaturedFlagship />
           </div>
 
           <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <AssetsExplorer excludeIds={["genesis-asset"]} title="Verified assets on the network" />
+            <AssetsExplorer title="Verified assets on the network" />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <MarketIntelFeed />
           </div>
 
+          <div style={{ ...MAXW, paddingTop: "1rem" }}>
+            <SuiMacroStrip />
+          </div>
+
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <FeaturedFlagship />
+            <IntegratorStrip />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
@@ -81,8 +85,8 @@ export function RedesignHome() {
               fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
               lineHeight: 1.7, maxWidth: 560, margin: "0 0 1.5rem",
             }}>
-              Start with a zkLogin wallet and transact immediately. Each stamp is earned through
-              a real process. Identity via Veriff is optional until you need it.
+              Start with a zkLogin wallet and transact immediately. Book Cielo with USDC on Sui.
+              Add Veriff Precheck when a protocol requires enhanced trust.
             </p>
             <AbraxasPassport
               onGetVerified={() => { window.location.href = "/passport"; }}
@@ -96,9 +100,7 @@ export function RedesignHome() {
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <HomeFAQTeaser />
-            <div style={{ marginTop: "1.5rem" }}>
-              <RoadmapCTA />
-            </div>
+            <div style={{ marginTop: "1.5rem" }}><RoadmapCTA /></div>
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)", paddingBottom: "var(--section-gap)" }}>
@@ -112,18 +114,18 @@ export function RedesignHome() {
                 fontWeight: 800, color: "var(--text-primary)",
                 margin: "0 0 0.75rem", letterSpacing: "-0.02em",
               }}>
-                Start with assets. Add trust when it matters.
+                Book Cielo. Create your wallet. Scale from there.
               </h2>
               <p style={{
                 fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
                 lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.25rem",
               }}>
-                Create your wallet in seconds. Explore verified RWAs today.
-                Veriff Precheck unlocks enhanced stamps when you are ready.
+                The live revenue loop starts here: verified asset, mirrored availability,
+                USDC on Sui. This is what $100M infrastructure looks like in product form.
               </p>
               <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Btn href="/passport" size="lg">Create wallet →</Btn>
-                <Btn href="/flagship" variant="secondary" size="lg">See Cielo Sunrise</Btn>
+                <Btn href="/flagship" size="lg">Book Cielo Sunrise →</Btn>
+                <Btn href="/passport" variant="secondary" size="lg">Create wallet</Btn>
               </div>
             </div>
           </div>

@@ -26,6 +26,7 @@ const LINKS = [
 
 const MORE_LINKS = [
   { href: "/partners",    label: "Partners" },
+  { href: "/institutional", label: "Institutional" },
   { href: "/docs/ail",       label: "AIL" },
   { href: "/docs/sui",       label: "Sui" },
   { href: "/dashboard",   label: "Dashboard" },
