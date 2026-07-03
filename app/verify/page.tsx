@@ -29,10 +29,10 @@ export default function VerifyPage() {
         <p style={{
           fontFamily: "'Inter',system-ui,sans-serif",
           fontSize: "0.9rem", color: "var(--text-secondary)",
-          lineHeight: 1.7, maxWidth: 640, margin: "0 0 2rem",
+          lineHeight: 1.7, maxWidth: 640, margin: "0 0 1.25rem",
         }}>
           Validate the integrity, provenance, and active compliance state of any Abraxas Passport,
-          credential JWT, or verified asset ID. Built for relying parties — lenders, marketplaces, and integrators.
+          credential JWT, or verified asset ID. The example panel shows what a valid Cielo check looks like — click &quot;Try Cielo example&quot; for a live API response.
         </p>
         <Suspense fallback={null}>
           <PublicVerifierPanel />

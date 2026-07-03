@@ -5,7 +5,8 @@
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, KeyValueTable, BulletList } from "@/components/redesign/RedesignContent";
-import { CaseStudyGallery, CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
+import { CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
+import { SmyrnaPhotoGallery } from "@/components/case-studies/SmyrnaPhotoGallery";
 import {
   SMYRNA_ASSET,
   SMYRNA_CONFLICTS,
@@ -41,8 +42,8 @@ export default function SmyrnaCaseStudyPage() {
         subtitle={SMYRNA_ASSET.subtitle}
       />
 
-      <ContentCard title="Property photos">
-        <CaseStudyGallery images={SMYRNA_ASSET.gallery} altPrefix="Smyrna Townhome" />
+      <ContentCard title="Property photos & location context">
+        <SmyrnaPhotoGallery altPrefix="Smyrna Townhome" />
       </ContentCard>
 
       <ContentCard title="Asset snapshot">

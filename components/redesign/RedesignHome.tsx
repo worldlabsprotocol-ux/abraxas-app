@@ -9,6 +9,7 @@ import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { TrustMetricsStrip } from "./TrustMetricsStrip";
 import { ThreeDoorsSection } from "./ThreeDoorsSection";
 import { VisualProofSection } from "./VisualProofSection";
+import { ProductLoopDemo } from "./ProductLoopDemo";
 import { EcosystemShowcases } from "./EcosystemShowcases";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { IntegratorStrip } from "./IntegratorStrip";
@@ -48,6 +49,10 @@ export function RedesignHome() {
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VisualProofSection />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <ProductLoopDemo />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
