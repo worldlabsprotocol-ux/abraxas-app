@@ -209,14 +209,14 @@ export function CieloBookingPanel({
           <>
             <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-secondary)",
                          lineHeight: 1.65, margin: "0 0 0.875rem" }}>
-              We confirm within 24 hours and send USDC payment instructions on Sui.
-              Your wallet can be prefilled from Google sign-in on /passport.
+              We confirm within 24 hours and send payment instructions by email.
+              Your payment wallet can be filled automatically after sign-in.
             </p>
             <Field label="Your name"><input value={name} onChange={e => setName(e.target.value)} style={inputStyle} /></Field>
             <Field label="Email"><input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} /></Field>
-            <Field label="Sui wallet (for USDC)">
+            <Field label="Payment wallet (optional)">
               <input value={wallet} onChange={e => setWallet(e.target.value)}
-                placeholder="0x… from zkLogin wallet" style={inputStyle} />
+                placeholder="Filled automatically after sign-in" style={inputStyle} />
             </Field>
             <Field label="Notes">
               <textarea value={notes} rows={2} onChange={e => setNotes(e.target.value)}
@@ -252,7 +252,7 @@ export function CieloBookingPanel({
               </>
             )}
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-              Your dates are on the Abraxas Protocol Calendar. We confirm within 24 hours, then you pay USDC on Sui to{" "}
+              Your dates are on the live calendar. We confirm within 24 hours, then you pay stablecoin to{" "}
               <strong style={{ color: AMBER }}>{TREASURY_LABEL}</strong>.
             </p>
             {payUrl && (
@@ -261,7 +261,7 @@ export function CieloBookingPanel({
                 borderRadius: 999, background: AMBER, color: "#000",
                 fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
               }}>
-                Pay with USDC on Sui →
+                Pay now →
               </a>
             )}
             {checkoutInfo.length > 0 && (
@@ -290,7 +290,7 @@ export function CieloBookingPanel({
         background: AMBER, color: "#000", fontFamily: FONT, fontSize: "0.85rem",
         fontWeight: 700, cursor: "pointer",
       }}>
-        Book with USDC on Sui →
+        Book your stay →
       </button>
 
       {open && (

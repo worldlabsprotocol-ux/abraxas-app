@@ -1,13 +1,13 @@
 "use client";
 // FILE: components/passport/PassportIntentCard.tsx
-// Gas-free intent message proof after identity verification.
+// Quick security check after sign-in — no payment required.
 
 import { useState } from "react";
 import { loadEphemeralSecretKey } from "@/lib/sui/zklogin/session";
 import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
+import { consumerCopy } from "@/lib/consumerCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 export function PassportIntentCard({
@@ -28,7 +28,7 @@ export function PassportIntentCard({
     const secretKey = loadEphemeralSecretKey();
     if (!secretKey) {
       setStatus("error");
-      setError("Sign out and sign in again with Google to enable intent signing for this session.");
+      setError("Sign out and sign in again with Google to enable this check for your session.");
       return;
     }
 
@@ -66,29 +66,30 @@ export function PassportIntentCard({
       setStatus("verified");
     } catch (e: unknown) {
       setStatus("error");
-      setError(e instanceof Error ? e.message : "Intent proof failed");
+      setError(e instanceof Error ? e.message : "Security check failed");
     }
   }
+
+  const copy = consumerCopy.intent;
 
   return (
     <div style={{
       background: "var(--surface-raised)", border: "1px solid var(--border)",
       borderRadius: 16, padding: "1.25rem 1.35rem", marginBottom: "1.5rem",
     }}>
-      <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-        Intent message proof
+      <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+        Security
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
-        Prove wallet control without gas
+        {copy.title}
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
-        Available right after wallet creation. Sign a short Abraxas challenge with your zkLogin session key.
-        No transaction, no SUI spent. Veriff is not required for this step.
+        {copy.body}
       </p>
 
       {status === "verified" ? (
         <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 600, color: ACCENT }}>
-          ✓ Intent proof verified for this session
+          {copy.verified}
         </div>
       ) : (
         <button type="button" onClick={proveControl} disabled={status === "signing"}
@@ -98,7 +99,7 @@ export function PassportIntentCard({
             fontWeight: 700, cursor: status === "signing" ? "wait" : "pointer",
             opacity: status === "signing" ? 0.7 : 1,
           }}>
-          {status === "signing" ? "Signing…" : "Sign intent proof"}
+          {status === "signing" ? "Confirming…" : copy.cta}
         </button>
       )}
 

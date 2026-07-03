@@ -1,32 +1,33 @@
 "use client";
 // FILE: components/terminal/VerificationPackages.tsx
-// Optional trust upgrades on Sui. Not gates. Revenue tiers for enhanced verification.
+// Optional trust upgrades — not login gates.
 
 import Link from "next/link";
 import { S, M, G, BDR } from "./tokens";
 import { MotionCard } from "@/lib/motion/MotionCard";
+import { consumerCopy } from "@/lib/consumerCopy";
 
 const PACKAGES = [
   {
-    name: "Wallet + Intent",
+    name: "Free account",
     price: "Free",
-    desc: "Google zkLogin wallet, intent message proofs, asset browsing. No Veriff required.",
+    desc: consumerCopy.packages.walletPackage,
     color: G,
     live: true,
     status: "Live",
     href: "/passport",
   },
   {
-    name: "Identity (Precheck)",
+    name: "ID verification",
     price: "$29",
-    desc: "Government ID + liveness via Veriff. W3C credential + on-chain passport stamp.",
+    desc: consumerCopy.packages.identityPackage,
     color: G,
     live: true,
     status: "Optional",
     href: "/passport#identity-stamp",
   },
   {
-    name: "Business (KYB)",
+    name: "Business verification",
     price: "$199",
     desc: "Entity validation, beneficial ownership, operating docs. For business asset submission.",
     color: "#3B82F6",
@@ -55,7 +56,7 @@ const PACKAGES = [
   {
     name: "Enterprise bundle",
     price: "Custom",
-    desc: "Real estate, mineral rights, film IP, private businesses. White-glove review on Sui.",
+    desc: "Real estate, mineral rights, film IP, private businesses. White-glove review.",
     color: G,
     live: false,
     status: "Contact",
@@ -72,9 +73,7 @@ export function VerificationPackages() {
       </div>
       <p style={{ fontFamily: S, fontSize: "0.78rem", color: "var(--text-secondary)",
                    lineHeight: 1.65, marginBottom: "1.25rem", maxWidth: 620 }}>
-        On Sui, verification packages are revenue tiers for enhanced trust. not login gates.
-        Users transact with a free wallet first. Add Precheck or attestation stamps when a deal,
-        lender, or protocol requires them.
+        {consumerCopy.packages.intro}
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
                      gap: "0.75rem" }}>

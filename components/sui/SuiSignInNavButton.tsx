@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSuiAuthOptional } from "./SuiAuthProvider";
-import { truncateSuiAddress } from "@/lib/sui/identity";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -36,19 +35,19 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
 
   if (addr) {
     return (
-      <Link href="/passport" title="View your Passport"
+      <Link href="/passport" title="View your account"
         style={{
           padding: prominent ? "0.5rem 0.95rem" : "0.45rem 0.85rem",
           borderRadius: 999,
           border: `1px solid ${ACCENT}44`,
           background: `${ACCENT}12`,
-          fontFamily: MONO,
-          fontSize: prominent ? "0.72rem" : "0.68rem",
+          fontFamily: FONT,
+          fontSize: prominent ? "0.78rem" : "0.75rem",
           color: ACCENT,
           textDecoration: "none",
-          fontWeight: 600,
+          fontWeight: 700,
         }}>
-        {truncateSuiAddress(addr, 4, 4)}
+        Account ✓
       </Link>
     );
   }

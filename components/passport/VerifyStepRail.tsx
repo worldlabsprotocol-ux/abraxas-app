@@ -6,10 +6,10 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const STEPS = [
-  { id: "wallet", label: "Sui wallet", sub: "Google sign-in" },
-  { id: "ready", label: "Ready", sub: "Browse & transact" },
-  { id: "identity", label: "Identity", sub: "Veriff (optional)" },
-  { id: "business", label: "Business", sub: "KYB docs" },
+  { id: "wallet", label: "Sign in", sub: "Google account" },
+  { id: "ready", label: "Ready", sub: "Browse & book" },
+  { id: "identity", label: "ID check", sub: "Optional" },
+  { id: "business", label: "Business", sub: "If applicable" },
   { id: "asset_owner", label: "Asset owner", sub: "Title review" },
 ] as const;
 
@@ -45,7 +45,7 @@ export function VerifyStepRail({
             opacity: step.id === "wallet" || walletDone || step.id === "ready" || step.id === "identity" ? 1 : 0.65,
           }}>
             <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: col, fontWeight: 700, marginBottom: "0.2rem" }}>
-              {i + 1}. {done ? "DONE" : inProgress ? "IN REVIEW" : optional ? "OPTIONAL" : current ? "NOW" : "NEXT"}
+              {i + 1}. {done ? "DONE" : inProgress ? "IN REVIEW" : optional ? "OPTIONAL" : current ? "NOW" : "LATER"}
             </div>
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)" }}>
               {step.label}

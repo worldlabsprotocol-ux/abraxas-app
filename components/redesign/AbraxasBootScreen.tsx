@@ -10,9 +10,9 @@ const ACCENT = "#10B981";
 const SESSION_KEY = "abraxas_boot_v3";
 
 const LINES = [
-  "Universal trust infrastructure",
   "Verified real-world assets",
-  "One wallet. Proof on demand.",
+  "Browse first — verify when you transact",
+  "One account. Proof on demand.",
 ];
 
 export function AbraxasBootScreen() {

@@ -33,7 +33,7 @@ export function SuiMacroStrip() {
     }}>
       <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT,
                      letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.65rem" }}>
-        Sui network · live
+        Network snapshot
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "1.25rem", alignItems: "center" }}>
         <div>
@@ -47,7 +47,7 @@ export function SuiMacroStrip() {
         </div>
         {(data.stablecoins ?? []).slice(0, 4).map(s => (
           <div key={s.symbol}>
-            <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>{s.symbol} on Sui</div>
+            <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>{s.symbol}</div>
             <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
               {s.circulatingFormatted}
             </div>

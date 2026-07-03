@@ -47,13 +47,13 @@ export function FeaturedFlagship() {
             pointerEvents: "none",
           }} />
           <div style={{ position: "absolute", top: 16, left: 16, display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-            <VerificationBadge label="AAS-1 Verified · Genesis Asset" color={ACCENT} check />
+            <VerificationBadge label="Verified property · Live booking" color={ACCENT} check />
             <span style={{
               display: "inline-flex", padding: "0.35rem 0.65rem", borderRadius: 999,
               background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.25)",
               fontFamily: FONT, fontSize: "0.65rem", fontWeight: 700, color: "#fff",
             }}>
-              ● USDC on Sui · live booking
+              ● Pay with stablecoin
             </span>
           </div>
           <div style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}>
@@ -69,8 +69,8 @@ export function FeaturedFlagship() {
 
         <div style={{ padding: "clamp(1.25rem, 3vw, 2rem)", display: "flex", flexDirection: "column", gap: "1rem" }}>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
-            {D.tagline}. Real property, live on Airbnb, bookable on Abraxas with USDC on Sui.
-            Availability runs on the Abraxas Protocol Calendar — cross-check the public listing anytime.
+            {D.tagline}. Real property, live on Airbnb, bookable on Abraxas with stablecoin.
+            Check availability on the live calendar — cross-check the public listing anytime.
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.65rem" }}>
@@ -87,7 +87,7 @@ export function FeaturedFlagship() {
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem" }}>
-            <Btn href="/flagship#protocol-calendar" size="lg">Protocol Calendar →</Btn>
+            <Btn href="/flagship#protocol-calendar" size="lg">View calendar →</Btn>
             <Btn href="/flagship" variant="secondary" size="lg">Full dossier</Btn>
             <Btn href={D.airbnbUrl} newTab variant="ghost" size="lg">Airbnb listing</Btn>
           </div>

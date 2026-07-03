@@ -7,6 +7,7 @@ import { Btn } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 import { PassportStampIcon, type PassportStampKind } from "@/components/identity/PassportStampIcon";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
+import { consumerCopy } from "@/lib/consumerCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -42,7 +43,7 @@ function CredentialCard() {
           <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 900,
                           letterSpacing: "0.16em", color: ACCENT }}>ABRAXAS</span>
         </div>
-        <VerificationBadge label="Trust layer" color={ACCENT} check />
+          <VerificationBadge label="Verified asset" color={ACCENT} check />
       </div>
 
       <div style={{ padding: "1.15rem 1.15rem 1.25rem" }}>
@@ -54,12 +55,12 @@ function CredentialCard() {
                           color: VIOLET, letterSpacing: "0.08em",
                           padding: "0.15rem 0.5rem", borderRadius: 999,
                           background: `${VIOLET}1A`, border: `1px solid ${VIOLET}40` }}>
-            Sui · zkLogin · W3C
+            {consumerCopy.hero.cardChip}
           </span>
         </div>
         <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700,
                        color: "var(--text-primary)", lineHeight: 1.45, marginBottom: "1rem" }}>
-          Real assets. Verified ownership. One passport that every protocol can read.
+          {consumerCopy.hero.cardBody}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem",
@@ -88,12 +89,12 @@ function CredentialCard() {
           <div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
                            letterSpacing: "0.1em", textTransform: "uppercase",
-                           color: "var(--text-muted)" }}>Positioning</div>
+                           color: "var(--text-muted)" }}>{consumerCopy.hero.positioning}</div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem",
-                           fontWeight: 700, color: "var(--text-secondary)" }}>Not a KYC vendor</div>
+                           fontWeight: 700, color: "var(--text-secondary)" }}>{consumerCopy.hero.positioningDetail}</div>
           </div>
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
-                          color: ACCENT, letterSpacing: "0.06em" }}>Trust registry</span>
+                          color: ACCENT, letterSpacing: "0.06em" }}>Abraxas</span>
         </div>
       </div>
     </motion.div>
@@ -107,7 +108,7 @@ export function RedesignHero() {
                                               gap: "clamp(2rem, 5vw, 3.5rem)", alignItems: "center" }}>
         <motion.div variants={staggerContainer(0.1, 0.05)} initial="hidden" animate="show">
           <motion.div variants={staggerItem} style={{ marginBottom: "1.25rem" }}>
-            <VerificationBadge label="Universal trust infrastructure on Sui" color={ACCENT} />
+            <VerificationBadge label={consumerCopy.hero.badge} color={ACCENT} />
           </motion.div>
 
           <motion.h1 variants={staggerItem} style={{
@@ -123,22 +124,20 @@ export function RedesignHero() {
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            Abraxas connects verified ownership to on-chain action. Browse tokenized real estate,
-            royalties, and yield. Create a Sui wallet in one click. Add identity verification only
-            when a deal or protocol requires it.
+            {consumerCopy.hero.subhead}
           </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",
                                                        flexWrap: "wrap", marginBottom: "2rem" }}>
             <Btn href="#assets" size="lg">Explore assets →</Btn>
-            <Btn href="/passport" variant="secondary" size="lg">Create wallet</Btn>
-            <Btn href="/passport#identity-stamp" variant="ghost" size="lg">Verify later</Btn>
+            <Btn href="/passport" variant="secondary" size="lg">Sign in</Btn>
+            <Btn href="/flagship" variant="ghost" size="lg">Book Cielo</Btn>
           </motion.div>
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
             margin: "0", maxWidth: 480,
           }}>
-            Google sign-in creates your Sui address via zkLogin. No seed phrase. Veriff Precheck is optional until you need enhanced stamps.
+            {consumerCopy.hero.footnote}
           </motion.p>
         </motion.div>
 

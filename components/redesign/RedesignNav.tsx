@@ -19,16 +19,17 @@ const ACCENT = "#10B981";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
-  { href: "/passport",   label: "Verify" },
   { href: "/terminal",   label: "Assets" },
-  { href: "/build",      label: "Build" },
+  { href: "/passport",   label: "Account" },
+  { href: "/flagship",   label: "Cielo" },
 ];
 
 const MORE_LINKS = [
+  { href: "/build",       label: "Submit asset" },
   { href: "/partners",    label: "Partners" },
   { href: "/institutional", label: "Institutional" },
-  { href: "/docs/ail",       label: "AIL" },
-  { href: "/docs/sui",       label: "Sui" },
+  { href: "/docs/ail",       label: "Developer docs" },
+  { href: "/docs/sui",       label: "Sui integration" },
   { href: "/dashboard",   label: "Dashboard" },
   { href: "/swap",        label: "Swap" },
   { href: "/roadmap",     label: "Roadmap" },
@@ -93,7 +94,7 @@ export function RedesignNav() {
                                               flexShrink: 0 }}>
         <LanguageSelector />
         <SuiSignInNavButton prominent />
-        <Btn href="/passport" size="sm" variant="secondary">Create wallet</Btn>
+        <Btn href="/passport" size="sm" variant="secondary">Account</Btn>
       </div>
 
       {/* Mobile: language + hamburger */}
@@ -138,7 +139,7 @@ export function RedesignNav() {
             ))}
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
               <SuiSignInNavButton prominent />
-              <Btn href="/passport" size="sm" fullWidth variant="secondary">Create wallet</Btn>
+              <Btn href="/passport" size="sm" fullWidth variant="secondary">Account</Btn>
             </div>
           </motion.div>
         )}

@@ -13,6 +13,9 @@ import { AssetsExplorer } from "./AssetsExplorer";
 import { MarketIntelFeed } from "./MarketIntelFeed";
 import { IntegratorStrip } from "./IntegratorStrip";
 import { SuiMacroStrip } from "./SuiMacroStrip";
+import { OnboardingChoiceSection } from "./OnboardingChoiceSection";
+import { BrowseWithoutKycBanner } from "./BrowseWithoutKycBanner";
+import { WhyVerificationStorySection } from "./WhyVerificationStorySection";
 import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
 import { VerificationPackages } from "@/components/terminal/VerificationPackages";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
@@ -40,6 +43,10 @@ export function RedesignHome() {
 
         <main style={{ position: "relative", zIndex: 1 }}>
           <div style={MAXW}><RedesignHero /></div>
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><BrowseWithoutKycBanner /></div>
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <OnboardingChoiceSection />
+          </div>
           <div style={{ ...MAXW, paddingTop: "0.5rem" }}><TrustMetricsStrip /></div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
@@ -47,11 +54,7 @@ export function RedesignHome() {
           </div>
 
           <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <AssetsExplorer title="Verified assets on the network" />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <MarketIntelFeed />
+            <AssetsExplorer title="Verified assets" />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "1rem" }}>
@@ -59,11 +62,19 @@ export function RedesignHome() {
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <IntegratorStrip />
+            <MarketIntelFeed />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <VerificationFlow />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <WhyVerificationStorySection />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <IntegratorStrip />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
@@ -72,21 +83,20 @@ export function RedesignHome() {
               letterSpacing: "0.14em", textTransform: "uppercase",
               color: "#10B981", marginBottom: "0.75rem",
             }}>
-              Your passport
+              Your account
             </div>
             <h2 style={{
               fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
               letterSpacing: "-0.03em", lineHeight: 1.05,
               color: "var(--text-primary)", margin: "0 0 0.75rem", maxWidth: 640,
             }}>
-              One wallet. Stamps you earn over time.
+              One sign-in. Stamps you earn over time.
             </h2>
             <p style={{
               fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
               lineHeight: 1.7, maxWidth: 560, margin: "0 0 1.5rem",
             }}>
-              Start with a zkLogin wallet and transact immediately. Book Cielo with USDC on Sui.
-              Add Veriff Precheck when a protocol requires enhanced trust.
+              Sign in with Google to book, pay, and submit deals. Add an optional ID check when a protocol requires enhanced trust.
             </p>
             <AbraxasPassport
               onGetVerified={() => { window.location.href = "/passport"; }}
@@ -114,18 +124,17 @@ export function RedesignHome() {
                 fontWeight: 800, color: "var(--text-primary)",
                 margin: "0 0 0.75rem", letterSpacing: "-0.02em",
               }}>
-                Book Cielo. Create your wallet. Scale from there.
+                Book Cielo. Sign in when you're ready.
               </h2>
               <p style={{
                 fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
                 lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.25rem",
               }}>
-                The live revenue loop starts here: verified asset, mirrored availability,
-                USDC on Sui. This is what $100M infrastructure looks like in product form.
+                Browse the full platform today. Reserve Cielo Sunrise, sign in with Google to pay, and add an ID check only if a deal requires it.
               </p>
               <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap" }}>
                 <Btn href="/flagship" size="lg">Book Cielo Sunrise →</Btn>
-                <Btn href="/passport" variant="secondary" size="lg">Create wallet</Btn>
+                <Btn href="/passport" variant="secondary" size="lg">Sign in</Btn>
               </div>
             </div>
           </div>

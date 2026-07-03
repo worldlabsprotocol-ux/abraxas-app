@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { payCieloFromWallet, verifyCieloPaymentOnServer } from "@/lib/cielo/payFromWallet";
+import { consumerCopy } from "@/lib/consumerCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -149,7 +150,7 @@ export function CieloPaymentPanel({
         border: `1px solid ${ACCENT}44`,
       }}>
         <div style={{ fontFamily: FONT, fontSize: "1rem", fontWeight: 800, color: ACCENT, marginBottom: "0.35rem" }}>
-          Payment verified on Sui
+          Phase 3 · Pay from zkLogin · {payment.network ?? "sui"} verified on Sui
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.6 }}>
           Booking {booking.booking_id} is captured. Your stay is confirmed on the Abraxas Protocol Calendar.
@@ -171,27 +172,27 @@ export function CieloPaymentPanel({
   const payLabel =
     payStep === "proving" ? "Generating proof…" :
     payStep === "signing" ? "Building transaction…" :
-    payStep === "verifying" ? "Verifying on Sui…" :
-    busy ? "Processing…" : `Pay ${payment.amount_usdc} ${payment.asset} →`;
+    payStep === "verifying" ? "Confirming payment…" :
+    busy ? "Processing…" : `Pay ${payment.amount_usdc} ${payment.asset} now →`;
 
   return (
     <div style={{
       padding: "1rem", borderRadius: 14,
       background: "var(--surface)", border: `1px solid ${AMBER}44`,
     }}>
-      <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: AMBER,
+      <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: AMBER,
                      letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-        Phase 3 · Pay from zkLogin · {payment.network ?? "sui"}
+        {consumerCopy.cielo.payBadge}
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-        {payment.amount_usdc} {payment.asset} to {payment.treasury_label}
+        {consumerCopy.cielo.payHeadline(payment.amount_usdc, payment.asset)} to {payment.treasury_label}
       </div>
 
       <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.85rem" }}>
-        <Row label="Treasury" value={payment.treasury_address ?? payment.treasury_label}
+        <Row label="Pay to" value={payment.treasury_address ?? payment.treasury_label}
           copyKey="treasury" copied={copied} onCopy={copy} mono />
-        <Row label="Memo" value={payment.memo} copyKey="memo" copied={copied} onCopy={copy} mono />
-        {suiAddress && (
+        <Row label="Reference" value={payment.memo} copyKey="memo" copied={copied} onCopy={copy} mono />
+        {suiAddress && showManual && (
           <Row label="Your wallet" value={suiAddress} copyKey="wallet" copied={copied} onCopy={copy} mono />
         )}
       </div>
@@ -214,8 +215,7 @@ export function CieloPaymentPanel({
             {payLabel}
           </button>
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.5 }}>
-            One tap: Abraxas signs with your zkLogin session, submits USDC on Sui {payment.network ?? "mainnet"}, and verifies automatically.
-            {!payment.usdc_coin_type && " Devnet fallback sends 0.01 SUI when USDC coin type is not set."}
+            {consumerCopy.cielo.payHint}
           </p>
         </>
       )}
@@ -241,7 +241,8 @@ export function CieloPaymentPanel({
 
       {payment.payable && !isAuthenticated && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.6 }}>
-          <Link href="/passport" style={{ color: ACCENT }}>Sign in with Google</Link> to pay in one click from your zkLogin wallet.
+          <Link href="/passport" style={{ color: ACCENT, fontWeight: 600 }}>Sign in with Google</Link>{" "}
+          to pay in one click.
         </p>
       )}
 
@@ -255,16 +256,16 @@ export function CieloPaymentPanel({
           fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
           letterSpacing: "0.06em", textTransform: "uppercase",
         }}>
-        {showManual ? "Hide manual verify ▲" : "Paid externally? Paste tx digest ▼"}
+        {showManual ? "Hide advanced options ▲" : "Paid another way? ▼"}
       </button>
 
       {showManual && (
         <div style={{ marginTop: "0.65rem" }}>
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
-            Send from any Sui wallet, then paste the transaction digest below.
+            Send from any compatible wallet, then paste the transaction reference below.
           </p>
           <label style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)", display: "block", marginBottom: "0.25rem" }}>
-            TRANSACTION DIGEST
+            TRANSACTION REFERENCE
           </label>
           <input value={txDigest} onChange={e => setTxDigest(e.target.value)}
             placeholder="e.g. 8xK2…"

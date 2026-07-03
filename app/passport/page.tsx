@@ -28,6 +28,8 @@ import {
 } from "@/components/identity/AbraxasPassport";
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
+import { DeveloperDetails } from "@/components/redesign/DeveloperDetails";
+import { consumerCopy } from "@/lib/consumerCopy";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -59,19 +61,19 @@ const STAMPS: Stamp[] = [
     shortName: "ID",
     color: G,
     kind: "identity",
-    description: "Abraxas Precheck: government ID plus biometric liveness through Veriff. Your stamp is tied to the Sui wallet created when you signed in with Google.",
-    whatItProves: "You are a real person, the ID belongs to you, and you passed sanctions and PEP screening. all linked to your zkLogin Sui address.",
-    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera. liveness check takes about 60 seconds"],
+    description: "Government ID plus a quick selfie check through a licensed provider. Your stamp is tied to the account you created when you signed in with Google.",
+    whatItProves: "You are a real person, the ID belongs to you, and you passed standard sanctions screening — linked to your Abraxas account.",
+    requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera — the selfie check takes about 60 seconds"],
     processSteps: [
-      "Sign in with Google to create your Sui wallet (zkLogin)",
-      "Start Abraxas Precheck. your Sui address is passed to Veriff automatically",
+      "Sign in with Google to create your Abraxas account",
+      "Start the ID check — your account is linked automatically",
       "Photograph your ID front and back",
-      "Complete a 60-second liveness check",
-      "Precheck returns a result, usually within minutes",
-      "Abraxas issues your Identity Verified stamp on your Passport",
+      "Complete a 60-second selfie check",
+      "Results usually return within minutes",
+      "Abraxas adds your Identity Verified stamp",
     ],
-    timeEstimate: "Most Precheck approvals: under 5 minutes. Manual review: up to 1 business day.",
-    regulatoryBasis: "FATF-aligned KYC. Veriff is eIDAS-certified, ISO 27001. Abraxas stores only the verification outcome. never raw document data.",
+    timeEstimate: "Most approvals: under 5 minutes. Manual review: up to 1 business day.",
+    regulatoryBasis: "FATF-aligned identity check via a licensed provider. Abraxas stores only the verification outcome — never raw document data.",
   },
   {
     id: "business",
@@ -213,12 +215,12 @@ function PassportPageInner() {
 
   async function startIdentityVerification() {
     if (!suiAddress) {
-      setError("Sign in with Google first. That creates your Sui wallet.");
+      setError("Sign in with Google first to create your account.");
       setActive("wallet");
       return;
     }
     if (!email.includes("@")) {
-      setError("Your Google account must include an email for Veriff.");
+      setError("Your Google account must include an email for ID verification.");
       return;
     }
     setStarting(true);
@@ -241,7 +243,7 @@ function PassportPageInner() {
       };
 
       if (!sessionRes.ok || !sessionData.session_url) {
-        setError(sessionData.error ?? "Could not start verification. Check Veriff env vars.");
+        setError(sessionData.error ?? "Could not start ID verification. Try again in a moment.");
         return;
       }
 
@@ -292,18 +294,16 @@ function PassportPageInner() {
 
         <div style={{ marginBottom:"2.5rem" }}>
           <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600, color:G, marginBottom:"0.625rem" }}>
-            Abraxas Identity Layer
+            {consumerCopy.passport.eyebrow}
           </div>
           <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)", fontWeight:800, lineHeight:1.0,
                         color:"var(--text-primary)", letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
-            Create your wallet.<br/>
+            Sign in.<br/>
             <span style={{ color:G }}>Transact now. Verify when you need more.</span>
           </h1>
           <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
                        color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:0 }}>
-            Abraxas is universal trust infrastructure on Sui. Sign in with Google to get a wallet in seconds.
-            Browse assets, submit deals, and sign intent proofs immediately. Add Veriff Precheck later for
-            enhanced stamps. protocols never need your documents twice.
+            {consumerCopy.passport.subhead}
           </p>
         </div>
 
@@ -313,12 +313,11 @@ function PassportPageInner() {
           <div style={{ marginBottom:"2rem" }}>
             <div style={{ fontFamily:S, fontSize:"0.88rem", fontWeight:700,
                            color:"var(--text-primary)", marginBottom:"0.75rem" }}>
-              Step 1. Create your Sui wallet
+              Step 1 · Sign in with Google
             </div>
             <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
                          lineHeight:1.65, margin:"0 0 1rem", maxWidth:520 }}>
-              Sign in with Google. Abraxas uses zkLogin to derive a Sui address from your account.
-              That address holds your Passport. you never manage a seed phrase.
+              {consumerCopy.passport.walletHint}
             </p>
             <ZkLoginSignIn />
           </div>
@@ -413,11 +412,10 @@ function PassportPageInner() {
           <div style={{ background:"var(--surface-raised)", border:"1px solid var(--border)",
                          borderRadius:16, padding:"1.5rem", marginBottom:"2rem" }}>
             <div style={{ fontFamily:S, fontSize:"1.1rem", fontWeight:700, marginBottom:"0.75rem" }}>
-              Your wallet is one sign-in away
+              Your account is one sign-in away
             </div>
             <p style={{ fontFamily:S, fontSize:"0.85rem", color:"var(--text-secondary)", lineHeight:1.7, margin:0 }}>
-              Abraxas does not use browser wallet extensions for verification. Google OAuth + zkLogin
-              creates a deterministic Sui address tied to your account. That address is your Passport holder.
+              No browser wallet extensions. No seed phrase to write down. Google sign-in creates your Abraxas account automatically.
             </p>
           </div>
         )}
@@ -506,7 +504,7 @@ function PassportPageInner() {
                 <div id="identity-stamp">
                   {!walletDone && (
                     <div style={{ fontFamily:S, fontSize:"0.78rem", color:A, marginBottom:"0.75rem" }}>
-                      Sign in with Google above first. Precheck links to your Sui wallet.
+                      Sign in with Google above first. The ID check links to your account.
                     </div>
                   )}
                   <button onClick={startIdentityVerification} disabled={starting || !walletDone}
@@ -516,11 +514,11 @@ function PassportPageInner() {
                               fontFamily:S, fontSize:"0.88rem", fontWeight:700,
                               cursor: walletDone ? "pointer" : "not-allowed",
                               opacity: starting ? 0.6 : 1 }}>
-                    {starting ? "Starting..." : walletDone ? "Start Abraxas Precheck →" : "Sign in to continue"}
+                    {starting ? "Starting..." : walletDone ? `${consumerCopy.passport.precheck} →` : "Sign in to continue"}
                   </button>
                   <div style={{ marginTop:"1.25rem", paddingTop:"1.25rem", borderTop:"1px solid var(--border)" }}>
                     <div style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-muted)", marginBottom:"0.75rem" }}>
-                      Precheck unavailable? Upload your ID directly for manual review.
+                      ID check unavailable? Upload your ID directly for manual review.
                     </div>
                     <DocumentUpload email={email || suiAddress || ""} stampId="identity" color={activeStamp.color} />
                   </div>
@@ -557,17 +555,15 @@ function PassportPageInner() {
           );
         })()}
 
-        <div style={{ background:"var(--surface-raised)", border:"1px solid var(--border)",
-                       borderRadius:16, padding:"1.5rem", marginBottom:"2rem" }}>
-          <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700, color:G,
-                         letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"0.5rem" }}>
-            Credential architecture
-          </div>
+        <DeveloperDetails
+          title="Technical details (for developers)"
+          summary="zkLogin, W3C credentials, on-chain stamps, and Sui integration — expand if you're building on Abraxas."
+        >
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:"0.75rem", marginBottom:"1rem" }}>
             {[
               { title:"Wallet", body:"Google OAuth → zkLogin → deterministic Sui address. No seed phrase. Your Passport object lives at this address." },
-              { title:"Issuance", body:"W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Documents stay with Veriff. only verification outcome is credentialized." },
-              { title:"On-chain anchor", body:"Stamp bitmask on Sui Move Passport object. Abraxas issues stamps after Veriff approve + manual review." },
+              { title:"Issuance", body:"W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Documents stay with the identity provider — only the verification outcome is credentialized." },
+              { title:"On-chain anchor", body:"Stamp bitmask on Sui Move Passport object. Abraxas issues stamps after ID approval + manual review." },
               { title:"Portability", body:"Third parties verify via W3C credential or GET /api/sui/passport. Sponsored transactions for verified tiers (roadmap)." },
             ].map(c => (
               <div key={c.title} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:10, padding:"1rem" }}>
@@ -576,23 +572,22 @@ function PassportPageInner() {
               </div>
             ))}
           </div>
-          <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:"0.625rem", flexWrap:"wrap", marginBottom:"1.25rem" }}>
             <Link href="/docs/sui" style={{ padding:"0.6rem 1.1rem", borderRadius:999, background:G, color:"#000",
                 fontFamily:S, fontSize:"0.82rem", fontWeight:700, textDecoration:"none" }}>Sui integration hub →</Link>
             <Link href="/docs/passport-spec" style={{ padding:"0.6rem 1.1rem", borderRadius:999,
                 border:"1px solid var(--border)", background:"var(--surface)", color:"var(--text-secondary)",
                 fontFamily:S, fontSize:"0.82rem", fontWeight:600, textDecoration:"none" }}>Passport spec →</Link>
           </div>
-        </div>
-
-        <div style={{ marginBottom:"2rem" }}><SuiIntegrationsPanel showSetup /></div>
-        <div style={{ marginBottom:"2rem" }}>
-          <SuiDevnetPassportPanel
-            compact
-            ownerAddress={onChain?.provisioned ? suiAddress : undefined}
-            objectId={onChain?.object_id ?? undefined}
-          />
-        </div>
+          <SuiIntegrationsPanel showSetup />
+          <div style={{ marginTop:"1.25rem" }}>
+            <SuiDevnetPassportPanel
+              compact
+              ownerAddress={onChain?.provisioned ? suiAddress : undefined}
+              objectId={onChain?.object_id ?? undefined}
+            />
+          </div>
+        </DeveloperDetails>
 
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", paddingBottom:"3rem" }}>
           <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:8, background:G, color:"#000",

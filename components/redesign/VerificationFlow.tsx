@@ -1,11 +1,12 @@
 "use client";
 // FILE: components/redesign/VerificationFlow.tsx
-// Wallet-first funnel. Verify is optional, not step one.
+// Wallet-first funnel. ID check is optional, not step one.
 
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 import { PassportStampIcon } from "@/components/identity/PassportStampIcon";
 import { Btn } from "./ui";
+import { consumerCopy } from "@/lib/consumerCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -14,31 +15,31 @@ const ACCENT = "#10B981";
 const STEPS = [
   {
     n: "01",
-    title: "Create your Sui wallet",
-    body: "Google sign-in via zkLogin. No seed phrase. Your wallet is ready in seconds and unlocks browsing, intent proofs, and asset submission.",
+    title: consumerCopy.verificationFlow.step1Title,
+    body: consumerCopy.verificationFlow.step1Body,
     kind: "identity" as const,
     href: "/passport",
-    cta: "Create wallet",
+    cta: "Sign in",
   },
   {
     n: "02",
-    title: "Explore verified assets",
-    body: "Real estate, royalties, treasuries, and flagship deals like Cielo Sunrise. See what verified ownership looks like before you commit.",
+    title: consumerCopy.verificationFlow.step2Title,
+    body: consumerCopy.verificationFlow.step2Body,
     kind: "owner" as const,
     href: "/terminal#assets",
     cta: "Browse assets",
   },
   {
     n: "03",
-    title: "Add trust when required",
-    body: "Veriff Precheck, KYB, and asset attestation are optional upgrades. Protocols ask Abraxas for proof. you approve consent. they never see your documents.",
+    title: consumerCopy.verificationFlow.step3Title,
+    body: consumerCopy.verificationFlow.step3Body,
     kind: "compliance" as const,
     href: "/passport#identity-stamp",
-    cta: "Upgrade trust",
+    cta: "Add ID check",
   },
 ];
 
-const TRUST = ["W3C Verifiable Credentials", "Veriff KYC", "Trust registry", "Sui · zkLogin"];
+const TRUST = [...consumerCopy.verificationFlow.trustChips];
 
 export function VerificationFlow() {
   return (
@@ -56,14 +57,13 @@ export function VerificationFlow() {
           letterSpacing: "-0.03em", lineHeight: 1.05,
           color: "var(--text-primary)", margin: "0 0 0.5rem", maxWidth: 520,
         }}>
-          Wallet first. Trust when you need it.
+          Browse first. Verify when you need it.
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
           lineHeight: 1.7, maxWidth: 560, margin: 0,
         }}>
-          Abraxas is not another KYC vendor. It is the trust registry on Sui.
-          Licensed providers verify. Abraxas standardizes proof. Nothing blocks you from using the platform today.
+          {consumerCopy.verificationFlow.intro}
         </p>
       </div>
 
@@ -131,12 +131,12 @@ export function VerificationFlow() {
           fontFamily: FONT, fontSize: "0.68rem", fontWeight: 600,
           color: "var(--text-muted)", marginRight: "0.25rem",
         }}>
-          Built on:
+          Your data stays yours:
         </span>
         {TRUST.map(t => (
           <span key={t} style={{
-            fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700,
-            color: "var(--text-secondary)", letterSpacing: "0.06em",
+            fontFamily: FONT, fontSize: "0.68rem", fontWeight: 600,
+            color: "var(--text-secondary)",
             padding: "0.25rem 0.55rem", borderRadius: 6,
             border: "1px solid var(--border)",
           }}>
