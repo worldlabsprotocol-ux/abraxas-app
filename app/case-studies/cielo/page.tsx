@@ -11,7 +11,9 @@ import {
   CIELO_SOURCES,
   CIELO_ONCHAIN_PROOF,
   CIELO_TIMELINE,
+  CIELO_PHOTOS,
 } from "@/lib/cieloCaseStudy";
+import { CaseStudyGallery, CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
 import { Btn } from "@/components/redesign/ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -34,6 +36,21 @@ export default function CieloCaseStudyPage() {
         title="Cielo Sunrise (ABX-RE-HOSP-001)"
         subtitle="Institutional diligence pack: dated sources, conflict disclosures, assurance levels, and on-chain proof links. Eat-your-own-dogfood — not a mockup."
       />
+
+      <CaseStudyPhotoHero
+        src="/assets/cielo/08.jpg"
+        alt="Cielo Sunrise exterior"
+        badge="Genesis asset · AAS-1 Verified"
+        title="Cielo Sunrise"
+        subtitle="Mineral Bluff, GA · $1.1M appraised · Live STR + Abraxas booking"
+      />
+
+      <ContentCard title="Property evidence (photos)">
+        <CaseStudyGallery images={CIELO_PHOTOS} altPrefix="Cielo Sunrise" />
+        <p style={{ ...body, marginTop: "0.65rem", marginBottom: 0 }}>
+          Cross-check the public Airbnb listing for additional angles and guest reviews.
+        </p>
+      </ContentCard>
 
       <ContentCard title="Asset snapshot">
         <KeyValueTable rows={[

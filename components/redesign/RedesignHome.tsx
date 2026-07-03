@@ -1,6 +1,5 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Infrastructure-first homepage: three doors + protocol metrics + ecosystem showcases.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "./AmbientGlow";
@@ -9,6 +8,7 @@ import { RedesignHero } from "./RedesignHero";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { TrustMetricsStrip } from "./TrustMetricsStrip";
 import { ThreeDoorsSection } from "./ThreeDoorsSection";
+import { VisualProofSection } from "./VisualProofSection";
 import { EcosystemShowcases } from "./EcosystemShowcases";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { IntegratorStrip } from "./IntegratorStrip";
@@ -44,6 +44,10 @@ export function RedesignHome() {
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <ThreeDoorsSection />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <VisualProofSection />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>

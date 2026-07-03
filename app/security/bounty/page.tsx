@@ -76,7 +76,11 @@ export default function BugBountyPage() {
         <BulletList items={[...BUG_BOUNTY.outOfScope]} />
       </ContentCard>
 
-      <ContentCard title="Severity tiers (rewards at launch)">
+      <ContentCard title="Reward pool">
+        <p style={body}>{BUG_BOUNTY.rewardPoolNote}</p>
+      </ContentCard>
+
+      <ContentCard title="Severity tiers">
         <div style={{ display: "grid", gap: "0.65rem" }}>
           {BUG_BOUNTY.severityTiers.map(tier => (
             <div key={tier.level} style={{
@@ -88,7 +92,15 @@ export default function BugBountyPage() {
               <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0.25rem 0", lineHeight: 1.6 }}>
                 {tier.examples}
               </p>
-              <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT }}>{tier.reward}</div>
+              <div style={{ fontFamily: MONO, fontSize: "0.72rem", fontWeight: 700, color: ACCENT, marginTop: "0.35rem" }}>
+                {tier.rewardUsd}
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.35rem 0 0", lineHeight: 1.5 }}>
+                {tier.rewardNote}
+              </p>
+              <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                SLA: {tier.sla}
+              </div>
             </div>
           ))}
         </div>

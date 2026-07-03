@@ -66,6 +66,7 @@ export default function IntegrationsPage() {
           First-party flows prove the rails — your integration proves they travel.
         </p>
         <Btn href="/integrations/relying-parties" size="sm">Relying party onboarding →</Btn>
+        <Btn href="/integrations/outreach" variant="secondary" size="sm">Outreach templates</Btn>
       </ContentCard>
 
       <ContentCard title="Quick integration">

@@ -83,11 +83,37 @@ export const BUG_BOUNTY = {
     "Self-XSS, missing security headers without exploitable impact",
   ],
   severityTiers: [
-    { level: "Critical", examples: "Unauthorized credential issuance, RLS bypass exposing PII, key exfiltration", reward: "TBD at launch — highest tier" },
-    { level: "High", examples: "JWT validation bypass, payment verification accept wrong amount", reward: "TBD at launch" },
-    { level: "Medium", examples: "IDOR on non-PII resources, intent replay within window", reward: "TBD at launch" },
-    { level: "Low", examples: "Information disclosure without PII, non-exploitable misconfig", reward: "TBD at launch" },
+    {
+      level: "Critical",
+      examples: "Unauthorized credential issuance, RLS bypass exposing PII, signing key exfiltration, arbitrary payment acceptance",
+      rewardUsd: "$10,000 – $25,000",
+      rewardNote: "Highest tier. Immediate hotfix + retroactive payment for pre-registration reports once program is live.",
+      sla: "Acknowledgment within 24h · target fix within 7 days",
+    },
+    {
+      level: "High",
+      examples: "JWT validation bypass, credential replay across holders, payment verify accepts wrong amount/memo",
+      rewardUsd: "$2,500 – $10,000",
+      rewardNote: "Substantial impact on relying-party trust or user funds.",
+      sla: "Acknowledgment within 48h · target fix within 14 days",
+    },
+    {
+      level: "Medium",
+      examples: "IDOR on verification records, intent challenge replay within validity window, rate-limit bypass with demonstrated abuse",
+      rewardUsd: "$500 – $2,500",
+      rewardNote: "Meaningful security degradation without direct fund loss.",
+      sla: "Acknowledgment within 5 business days",
+    },
+    {
+      level: "Low",
+      examples: "Non-exploitable misconfigurations, informational leaks without PII, missing headers without demonstrated impact",
+      rewardUsd: "$100 – $500",
+      rewardNote: "Swag + hall of fame credit at launch.",
+      sla: "Best-effort review",
+    },
   ],
+  rewardPoolNote:
+    "Reward ranges are targets for formal program launch (post-audit). Pre-registration reports in good faith will be evaluated against these tiers retroactively. Total pool scales with protocol revenue — not marketed as investment return.",
   safeHarbor:
     "Good-faith security research on in-scope endpoints is welcome during pre-registration. Do not access data you do not own, exfiltrate user PII, or disrupt production bookings.",
   launchCriteria: [

@@ -132,7 +132,9 @@ export const CIELO_TIMELINE = D.verification.provenanceTimeline;
 
 export const CIELO_PHOTOS = [
   "/assets/cielo/01.jpg",
-  "/assets/cielo/02.jpg",
-  "/assets/cielo/03.jpg",
-  "/assets/cielo/04.jpg",
+  "/assets/cielo/06.jpg",
+  "/assets/cielo/08.jpg",
+  "/assets/cielo/14.jpg",
+  "/assets/cielo/17.jpg",
+  "/assets/cielo/20.jpg",
 ] as const;

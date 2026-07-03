@@ -15,11 +15,13 @@ export const DATA_ROOM_SECTIONS = [
     title: "Traction & integrations",
     items: [
       { label: "Relying party program", href: "/integrations/relying-parties", desc: "How external protocols verify credentials" },
+      { label: "Design partner outreach", href: "/integrations/outreach", desc: "Copy-paste email templates" },
       { label: "Protocol integrations", href: "/integrations", desc: "SDK, registry, design partner apply" },
       { label: "Pitch deck", href: "/investors/pitch", desc: "12-slide web deck for VC meetings" },
       { label: "Investor update template", href: "/investors/updates", desc: "Monthly update structure" },
       { label: "Cielo E2E health check", href: "/ops/cielo-e2e", desc: "Pre-demo revenue loop verification" },
       { label: "Cielo Sunrise case study", href: "/case-studies/cielo", desc: "Genesis asset · booking · revenue loop" },
+      { label: "Smyrna case study", href: "/case-studies/smyrna", desc: "Second asset · capital partner template" },
       { label: "Flagship dossier", href: "/flagship", desc: "Full property, financials, calendar" },
       { label: "Transparency log", href: "/transparency", desc: "Live operational events from Supabase" },
       { label: "Economics model", href: "/economics", desc: "Pro forma and unit economics" },

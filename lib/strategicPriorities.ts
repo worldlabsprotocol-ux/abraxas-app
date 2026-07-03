@@ -14,6 +14,7 @@ export const STRATEGIC_PILLARS = [
       { label: "Public verifier live", done: true, href: "/verify" },
       { label: "Credential verify API documented", done: true, href: "/integrations/relying-parties" },
       { label: "Design partner application flow", done: true, href: "/integrations" },
+      { label: "Outreach email templates", done: true, href: "/integrations/outreach" },
       { label: "First unaffiliated production check", done: false, href: "/integrations/relying-parties" },
     ],
     primaryHref: "/integrations/relying-parties",
@@ -31,6 +32,7 @@ export const STRATEGIC_PILLARS = [
       { label: "Public dossier + calendar", done: true, href: "/flagship" },
       { label: "Assurance taxonomy on metrics", done: true, href: "/verify?q=ABX-RE-HOSP-001" },
       { label: "Case study with source dates", done: true, href: "/case-studies/cielo" },
+      { label: "Second asset case study (Smyrna)", done: true, href: "/case-studies/smyrna" },
       { label: "Live booking revenue in transparency log", done: true, href: "/transparency" },
     ],
     primaryHref: "/case-studies/cielo",
@@ -46,6 +48,7 @@ export const STRATEGIC_PILLARS = [
     why: "Institutional capital requires third-party validation and a responsible disclosure path before mainnet scale.",
     milestones: [
       { label: "Bug bounty scope published", done: true, href: "/security/bounty" },
+      { label: "Reward tiers defined", done: true, href: "/security/bounty" },
       { label: "Sui Passport mainnet audit", done: false, href: "/security" },
       { label: "Credential API formal review", done: false, href: "/security" },
       { label: "Public bounty launch + rewards", done: false, href: "/security/bounty" },

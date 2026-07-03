@@ -56,7 +56,8 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryValue: "$1,850 / mo",
     state: "open",
     note: "Clear title, paid off. Seeking a verified capital partner.",
-    cta: "Inquire",
+    href: "/case-studies/smyrna",
+    cta: "View case study",
   },
   {
     id: "naj-tulum",
