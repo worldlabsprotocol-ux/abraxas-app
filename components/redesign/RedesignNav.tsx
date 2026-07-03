@@ -20,8 +20,9 @@ const LINKS = [
 ];
 
 const MORE_LINKS = [
-  { href: "/investors", label: "Investors" },
-  { href: "/metrics", label: "Metrics" },
+  { href: "/integrations", label: "Integrations" },
+  { href: "/investors/pitch", label: "Pitch deck" },
+  { href: "/ops/cielo-e2e", label: "Cielo E2E" },
   { href: "/terminal#featured-asset", label: "Featured stay" },
   { href: "/flagship", label: "Cielo dossier" },
   { href: "/build", label: "Submit asset" },

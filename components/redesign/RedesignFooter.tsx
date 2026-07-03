@@ -20,6 +20,9 @@ const LINKS = {
   ],
   learn: [
     { label: "Investor data room", href: "/investors" },
+    { label: "Pitch deck", href: "/investors/pitch" },
+    { label: "Integrations", href: "/integrations" },
+    { label: "Cielo E2E check", href: "/ops/cielo-e2e" },
     { label: "Litepaper", href: "/docs/litepaper" },
     { label: "Live metrics", href: "/metrics" },
     { label: "Cielo case study", href: "/case-studies/cielo" },

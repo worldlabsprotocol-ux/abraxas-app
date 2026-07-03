@@ -28,10 +28,11 @@ export async function GET() {
     created_at: string;
   }> = [];
   let investmentInterest = 0;
+  let designPartners = 0;
 
   if (SB_URL && SB_KEY) {
     const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-    const [w, c, p, bPending, bCaptured, revenueRows, recent, interest] = await Promise.all([
+    const [w, c, p, bPending, bCaptured, revenueRows, recent, interest, partners] = await Promise.all([
       sb.from("sui_zklogin_identities").select("id", { count: "exact", head: true }),
       sb.from("abraxas_credentials").select("id", { count: "exact", head: true }).is("revoked_at", null),
       sb.from("sui_passport_objects").select("id", { count: "exact", head: true }),
@@ -43,6 +44,7 @@ export async function GET() {
         .order("created_at", { ascending: false })
         .limit(8),
       sb.from("investment_interest").select("id", { count: "exact", head: true }),
+      sb.from("design_partners").select("id", { count: "exact", head: true }),
     ]);
     verifiedWallets = w.count ?? 0;
     credentials = c.count ?? 0;
@@ -55,6 +57,7 @@ export async function GET() {
     }, 0);
     recentBookings = (recent.data ?? []) as typeof recentBookings;
     investmentInterest = interest.count ?? 0;
+    designPartners = partners.count ?? 0;
   }
 
   const verifiedAssets = EXPLORE_ASSETS.filter(a => a.state === "verified").length;
@@ -87,6 +90,7 @@ export async function GET() {
         ? `$${cieloRevenueUsdc.toLocaleString()} USDC`
         : "Live booking",
       investment_interest_count: investmentInterest,
+      design_partner_applications: designPartners,
       passport_stamps: 10,
       credential_standard: "W3C VC",
     },

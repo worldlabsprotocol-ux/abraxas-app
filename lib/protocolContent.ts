@@ -25,6 +25,7 @@ export const ROADMAP = [
       "Self-serve purchase lifecycle status for buyers",
       "On-chain stamp issuance after Veriff approve (sui_passport_objects)",
       "Sponsored transaction treasury + tier allowances",
+      "Design partner applications via /integrations",
     ],
   },
   {
@@ -36,6 +37,7 @@ export const ROADMAP = [
       "x402 HTTP payment path for verification packages",
       "Institutional-grade secure storage integration (Utila)",
       "Passport accepted on external protocols",
+      "Design partner integration pipeline (/integrations)",
       "Public bug bounty program",
     ],
   },

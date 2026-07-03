@@ -24,6 +24,7 @@ interface InvestorMetrics {
   cielo_revenue_label: string;
   cielo_revenue_usdc: number;
   investment_interest_count: number;
+  design_partner_applications: number;
   sponsor_configured: boolean;
 }
 
@@ -92,6 +93,7 @@ export default function MetricsPage() {
             <Metric label="On-chain passports" value={String(m.on_chain_passports)} sub="Sui objects" />
             <Metric label="Featured stay" value={m.cielo_revenue_label} sub={`${m.captured_cielo_bookings} captured · ${m.pending_cielo_bookings} pending`} />
             <Metric label="Investor interest" value={String(m.investment_interest_count)} sub="Submitted via portal" />
+            <Metric label="Design partners" value={String(m.design_partner_applications)} sub="Integration applications" />
             <Metric label="Sponsor treasury" value={m.sponsor_configured ? "Configured" : "Pending"} sub="Gas sponsorship" />
           </div>
 
