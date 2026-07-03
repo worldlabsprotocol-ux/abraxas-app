@@ -46,11 +46,17 @@ export default function AboutPage() {
           </span>
         </div>
         <div style={{ flex: 1 }}/>
-        <Link href="/terminal" style={{ fontFamily: M, fontSize: "0.7rem",
+        <Link href="/" style={{ fontFamily: M, fontSize: "0.7rem",
                                           color: "#10B981", textDecoration: "none",
                                           letterSpacing: "0.1em",
                                           textTransform: "uppercase" }}>
-          OPEN TERMINAL →
+          OPEN APP →
+        </Link>
+        <Link href="/about/team" style={{ fontFamily: M, fontSize: "0.7rem",
+                                          color: "rgba(255,255,255,0.4)", textDecoration: "none",
+                                          letterSpacing: "0.1em",
+                                          textTransform: "uppercase" }}>
+          TEAM →
         </Link>
       </div>
 
@@ -112,16 +118,26 @@ export default function AboutPage() {
                      textAlign: "center" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap",
                        justifyContent: "center", marginBottom: "2rem" }}>
-          <Link href="/terminal" style={{
+          <Link href="/" style={{
             padding: "0.75rem 1.5rem", borderRadius: 5,
             background: "#10B981", color: "#000",
             fontFamily: M, fontSize: "1rem", fontWeight: 900,
             textDecoration: "none", letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}>
-            OPEN TERMINAL →
+            OPEN APP →
           </Link>
-          <Link href="/dashboard" style={{
+          <Link href="/about/team" style={{
+            padding: "0.75rem 1.5rem", borderRadius: 5,
+            border: "1px solid rgba(16,185,129,0.4)",
+            background: "rgba(16,185,129,0.08)",
+            color: "#10B981", fontFamily: M, fontSize: "1rem", fontWeight: 700,
+            textDecoration: "none", letterSpacing: "0.04em",
+            textTransform: "uppercase",
+          }}>
+            TEAM & EXECUTION →
+          </Link>
+          <Link href="/investors/strategy" style={{
             padding: "0.75rem 1.5rem", borderRadius: 5,
             border: "1px solid rgba(59,130,246,0.4)",
             background: "rgba(59,130,246,0.08)",
@@ -129,7 +145,7 @@ export default function AboutPage() {
             textDecoration: "none", letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}>
-            VIEW DASHBOARD
+            STRATEGIC ROADMAP →
           </Link>
         </div>
         <div style={{ fontFamily: M, fontSize: "0.75rem",

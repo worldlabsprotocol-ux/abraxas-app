@@ -60,6 +60,14 @@ export default function IntegrationsPage() {
         subtitle={`${liveCount} live integration surfaces today. External protocols integrate Abraxas Passport in ~4 lines — no re-KYC for users.`}
       />
 
+      <ContentCard title="Relying party program">
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
+          The network-effect milestone: an unaffiliated lender, marketplace, or protocol checks Abraxas credentials in production.
+          First-party flows prove the rails — your integration proves they travel.
+        </p>
+        <Btn href="/integrations/relying-parties" size="sm">Relying party onboarding →</Btn>
+      </ContentCard>
+
       <ContentCard title="Quick integration">
         <pre style={{
           fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.6,

@@ -22,7 +22,8 @@ const LINKS = [
 
 const MORE_LINKS = [
   { href: "/#registry", label: "Browse assets" },
-  { href: "/integrations", label: "Integrations" },
+  { href: "/investors/strategy", label: "Strategic roadmap" },
+  { href: "/integrations/relying-parties", label: "Relying parties" },
   { href: "/investors", label: "Investor data room" },
   { href: "/investors/pitch", label: "Pitch deck" },
   { href: "/metrics", label: "Live metrics" },

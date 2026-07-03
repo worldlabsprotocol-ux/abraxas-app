@@ -24,7 +24,10 @@ const LINKS = {
     { label: "Dashboard", href: "/dashboard" },
   ],
   learn: [
-    { label: "Investor data room", href: "/investors" },
+    { label: "Strategic roadmap", href: "/investors/strategy" },
+    { label: "Relying party program", href: "/integrations/relying-parties" },
+    { label: "Team & execution", href: "/about/team" },
+    { label: "Bug bounty", href: "/security/bounty" },
     { label: "Pitch deck", href: "/investors/pitch" },
     { label: "Integrations", href: "/integrations" },
     { label: "Litepaper", href: "/docs/litepaper" },

@@ -79,12 +79,12 @@ export default function InvestorsPage() {
       </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
-        <Btn href="/docs/litepaper" size="lg">Read litepaper →</Btn>
+        <Btn href="/investors/strategy" size="lg">Strategic roadmap →</Btn>
+        <Btn href="/docs/litepaper" variant="secondary" size="lg">Read litepaper</Btn>
         <Btn href="/investors/pitch" variant="secondary" size="lg">Pitch deck</Btn>
-        <Btn href="/metrics" variant="secondary" size="lg">Live metrics</Btn>
-        <Btn href="/integrations" variant="ghost" size="lg">Integrations</Btn>
+        <Btn href="/metrics" variant="ghost" size="lg">Live metrics</Btn>
+        <Btn href="/integrations/relying-parties" variant="ghost" size="lg">Relying parties</Btn>
         <Btn href="/case-studies/cielo" variant="ghost" size="lg">Cielo case study</Btn>
-        <Btn href="mailto:verify@abraxas-app.vercel.app?subject=Investor%20inquiry" variant="ghost" size="lg">Contact</Btn>
       </div>
     </RedesignPage>
   );

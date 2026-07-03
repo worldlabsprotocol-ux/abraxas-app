@@ -5,6 +5,7 @@ export const DATA_ROOM_SECTIONS = [
   {
     title: "Start here",
     items: [
+      { label: "Strategic roadmap (4 pillars)", href: "/investors/strategy", desc: "Relying party · Cielo · audit · team" },
       { label: "Litepaper", href: "/docs/litepaper", desc: "Problem, solution, proof, economics" },
       { label: "Chain architecture", href: "/docs/chain", desc: "Why Sui + Solana — intentional split" },
       { label: "Live metrics", href: "/metrics", desc: "Wallets, credentials, Cielo bookings" },
@@ -13,6 +14,7 @@ export const DATA_ROOM_SECTIONS = [
   {
     title: "Traction & integrations",
     items: [
+      { label: "Relying party program", href: "/integrations/relying-parties", desc: "How external protocols verify credentials" },
       { label: "Protocol integrations", href: "/integrations", desc: "SDK, registry, design partner apply" },
       { label: "Pitch deck", href: "/investors/pitch", desc: "12-slide web deck for VC meetings" },
       { label: "Investor update template", href: "/investors/updates", desc: "Monthly update structure" },
@@ -36,7 +38,8 @@ export const DATA_ROOM_SECTIONS = [
     title: "Token & security",
     items: [
       { label: "Tokenomics", href: "/tokenomics", desc: "Live $ABRA + institutional framework" },
-      { label: "Security", href: "/security", desc: "Practices, audit plan, bug bounty scope" },
+      { label: "Security & bug bounty", href: "/security/bounty", desc: "Audit tracker, scope, pre-registration" },
+      { label: "Security overview", href: "/security", desc: "Practices, key management, kill-switch" },
       { label: "Legal", href: "/legal", desc: "Terms, privacy, risk disclosures" },
     ],
   },
@@ -45,7 +48,8 @@ export const DATA_ROOM_SECTIONS = [
     items: [
       { label: "Institutional overview", href: "/institutional", desc: "Partners, audit trail, pillars" },
       { label: "Partners", href: "/partners", desc: "Veriff, Utila, CV5, and more" },
-      { label: "About", href: "/about", desc: "Founder story and mission" },
+      { label: "Team & execution", href: "/about/team", desc: "Current team, planned growth, advisor bench" },
+      { label: "About explainer", href: "/about", desc: "Mission and visual overview" },
       { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app", desc: "Open-source app" },
     ],
   },

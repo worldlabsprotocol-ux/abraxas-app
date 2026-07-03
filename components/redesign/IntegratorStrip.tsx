@@ -11,9 +11,9 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const ENDPOINTS = [
+  { method: "GET", path: "/api/verify/registry?q=…", desc: "Public credential + asset verifier" },
+  { method: "POST", path: "/api/credentials/verify", desc: "Relying party JWT gate" },
   { method: "GET", path: "/api/trust/status?sui=0x…", desc: "Wallet + ID status + credentials" },
-  { method: "POST", path: "/api/intent/verify", desc: "Account control proof" },
-  { method: "GET", path: "/api/sui/passport?sui=0x…", desc: "Verification stamp status" },
 ];
 
 export function IntegratorStrip() {
@@ -78,6 +78,7 @@ export function IntegratorStrip() {
             </div>
           ))}
           <div style={{ padding: "0.85rem 1rem", display: "flex", gap: "0.625rem", flexWrap: "wrap" }}>
+            <Btn href="/integrations/relying-parties" size="sm">Relying party program →</Btn>
             <Btn href="/docs/sui" variant="secondary" size="sm">Sui integration hub</Btn>
             <Btn href="/docs/passport-spec" variant="ghost" size="sm">Passport spec</Btn>
           </div>
