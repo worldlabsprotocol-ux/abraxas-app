@@ -103,7 +103,11 @@ export const DOCS_SECTIONS = [
   },
   {
     title: "Developer resources",
-    body: "GitHub: github.com/worldlabsprotocol-ux/abraxas-app. Sui hub: /docs/sui. Operator setup: /docs/zklogin-setup. Passport spec: /docs/passport-spec. Machine-readable: GET /api/passport/spec.",
+    body: "GitHub: github.com/worldlabsprotocol-ux/abraxas-app. Litepaper: /docs/litepaper. Chain narrative: /docs/chain. Sui hub: /docs/sui. Operator setup: /docs/zklogin-setup. Passport spec: /docs/passport-spec. Machine-readable: GET /api/passport/spec.",
+  },
+  {
+    title: "Investor data room",
+    body: "Diligence hub at /investors — litepaper, live metrics, Cielo case study, tokenomics framework, security posture, and economics model.",
   },
 ] as const;
 
@@ -125,7 +129,16 @@ export const SECURITY_ITEMS = [
       "Sui mainnet Passport audit before external CPI integrations",
       "Formal security review of credential verification API",
       "Sponsor treasury multisig for production",
-      "Public bug bounty program (planned post-audit)",
+      "Public bug bounty program (scope published — launch post-audit)",
+    ],
+  },
+  {
+    title: "Bug bounty scope (pre-launch)",
+    items: [
+      "Scope: /api/credentials/*, /api/idv/*, /api/intent/*, zkLogin prover proxy, payment verification",
+      "Out of scope: social engineering, DDoS, third-party Veriff infrastructure",
+      "Report channel: security@abraxas-app.vercel.app (replace with dedicated inbox before launch)",
+      "Rewards: tiered by severity after formal program launch",
     ],
   },
   {

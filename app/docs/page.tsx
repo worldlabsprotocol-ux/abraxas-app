@@ -45,9 +45,13 @@ export default function DocsPage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
+            { label: "Litepaper", href: "/docs/litepaper" },
+            { label: "Chain architecture", href: "/docs/chain" },
             { label: "AIL specification", href: "/docs/ail" },
+            { label: "Sui integration", href: "/docs/sui" },
             { label: "Passport spec", href: "/docs/passport-spec" },
-            { label: "zkLogin setup", href: "/docs/zklogin-setup" },
+            { label: "Investor data room", href: "/investors" },
+            { label: "Live metrics", href: "/metrics" },
             { label: "Architecture", href: "/docs/architecture" },
             { label: "Roadmap", href: "/roadmap" },
             { label: "Security", href: "/security" },

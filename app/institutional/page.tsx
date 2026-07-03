@@ -1,6 +1,5 @@
 "use client";
 // FILE: app/institutional/page.tsx
-// Institutional credibility: compliance, security, audit trail, partners.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -14,15 +13,15 @@ const ACCENT = "#10B981";
 const PILLARS = [
   {
     title: "Trust registry, not KYC vendor",
-    body: "Abraxas orchestrates proof. Veriff and licensed partners perform identity. Protocols query Abraxas via AIL. users keep document custody with providers.",
+    body: "Abraxas orchestrates proof. Licensed partners perform identity. Protocols query Abraxas via AIL — users keep document custody with providers.",
   },
   {
     title: "Sui-native verification",
-    body: "zkLogin wallets, W3C Verifiable Credentials, on-chain Passport stamps, and sponsored transactions for verified tiers.",
+    body: "Google sign-in, optional ID check, W3C credentials, and on-chain Passport stamps. Stablecoin booking live on Cielo Sunrise.",
   },
   {
     title: "Live asset proof",
-    body: "Cielo Sunrise (AAS-1) is a verified hospitality asset with live Airbnb revenue, mirrored availability on Abraxas, and USDC checkout on Sui.",
+    body: "Cielo Sunrise (AAS-1) is a verified hospitality asset with public Airbnb listing, mirrored calendar, and USDC checkout on Sui.",
   },
 ];
 
@@ -39,9 +38,13 @@ export default function InstitutionalPage() {
     <RedesignPage>
       <PageHeader
         eyebrow="Institutional"
-        title="Built for scale. honest about what is live."
-        subtitle="Abraxas is universal trust infrastructure on Sui. This page is the diligence layer: what is verified today, what partners back it, and where to inspect proof."
+        title="Built for scale. Honest about what is live."
+        subtitle="Diligence layer for funds, issuers, and design partners. Start at the data room for the full package."
       />
+
+      <ContentCard>
+        <Btn href="/investors" size="lg">Open investor data room →</Btn>
+      </ContentCard>
 
       <div style={{ display: "grid", gap: "1rem", marginBottom: "2rem" }}>
         {PILLARS.map(p => (
@@ -72,11 +75,13 @@ export default function InstitutionalPage() {
       </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginTop: "1.5rem" }}>
-        <Btn href="/flagship" size="lg">Inspect Cielo Sunrise →</Btn>
-        <Btn href="/docs/ail" variant="secondary" size="lg">AIL spec</Btn>
+        <Btn href="/case-studies/cielo" size="lg">Cielo case study →</Btn>
+        <Btn href="/metrics" variant="secondary" size="lg">Live metrics</Btn>
+        <Btn href="/docs/litepaper" variant="secondary" size="lg">Litepaper</Btn>
+        <Btn href="/docs/ail" variant="ghost" size="lg">AIL spec</Btn>
         <Btn href="/security" variant="ghost" size="lg">Security</Btn>
+        <Btn href="/economics" variant="ghost" size="lg">Economics</Btn>
         <Btn href="/partners" variant="ghost" size="lg">Partners</Btn>
-        <Btn href="/admin/cielo" variant="ghost" size="lg">Calendar ops</Btn>
       </div>
     </RedesignPage>
   );
