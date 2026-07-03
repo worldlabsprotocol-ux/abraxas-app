@@ -11,9 +11,10 @@ const ACCENT = "#10B981";
 
 const LINKS = {
   product: [
-    { label: "Verify", href: "/passport" },
+    { label: "Account", href: "/passport" },
     { label: "Assets", href: "/terminal" },
-    { label: "Build", href: "/build" },
+    { label: "Featured stay", href: "/terminal#featured-asset" },
+    { label: "Submit asset", href: "/build" },
     { label: "Dashboard", href: "/dashboard" },
     { label: "Swap", href: "/swap" },
   ],
@@ -107,7 +108,7 @@ export function RedesignFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. Universal trust infrastructure. Abraxas Identity Layer (AIL).
+              Verify once. Transact everywhere. Real assets with proof you can reuse — not another KYC form.
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
               Live at{" "}

@@ -24,6 +24,22 @@ export function FeaturedFlagship() {
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       id="featured-asset"
     >
+      <div style={{ marginBottom: "1rem" }}>
+        <div style={{
+          fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
+          letterSpacing: "0.14em", textTransform: "uppercase",
+          color: ACCENT, marginBottom: "0.5rem",
+        }}>
+          Featured asset
+        </div>
+        <h2 style={{
+          fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
+          letterSpacing: "-0.03em", lineHeight: 1.05,
+          color: "var(--text-primary)", margin: 0,
+        }}>
+          {D.title}
+        </h2>
+      </div>
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",

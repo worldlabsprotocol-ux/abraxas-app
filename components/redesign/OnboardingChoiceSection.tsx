@@ -18,7 +18,7 @@ const PATHS = [
     title: "Book or invest",
     desc: "Reserve Cielo Sunrise or put stablecoin into a verified asset.",
     steps: ["Pick dates or an asset", "Sign in with Google", "Pay — ID check only if required"],
-    href: "/flagship",
+    href: "/terminal#featured-asset",
   },
   {
     id: "submit",
@@ -43,8 +43,13 @@ export function OnboardingChoiceSection() {
   const [hovered, setHovered] = useState<string | null>(null);
 
   function go(id: string, href: string) {
-    if (id === "look" && href.startsWith("#")) {
-      document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+    if (href.includes("#")) {
+      const [path, hash] = href.split("#");
+      if (path && path !== window.location.pathname) {
+        router.push(href);
+        return;
+      }
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
       return;
     }
     router.push(href);

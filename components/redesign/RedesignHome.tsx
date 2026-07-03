@@ -44,10 +44,7 @@ export function RedesignHome() {
         <main style={{ position: "relative", zIndex: 1 }}>
           <div style={MAXW}><RedesignHero /></div>
           <div style={{ ...MAXW, paddingTop: "1.25rem" }}><BrowseWithoutKycBanner /></div>
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <OnboardingChoiceSection />
-          </div>
-          <div style={{ ...MAXW, paddingTop: "0.5rem" }}><TrustMetricsStrip /></div>
+          <div style={{ ...MAXW, paddingTop: "0.75rem" }}><TrustMetricsStrip /></div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <FeaturedFlagship />
@@ -55,6 +52,10 @@ export function RedesignHome() {
 
           <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <AssetsExplorer title="Verified assets" />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <OnboardingChoiceSection />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "1rem" }}>
@@ -124,16 +125,16 @@ export function RedesignHome() {
                 fontWeight: 800, color: "var(--text-primary)",
                 margin: "0 0 0.75rem", letterSpacing: "-0.02em",
               }}>
-                Book Cielo. Sign in when you're ready.
+                Ready when you are.
               </h2>
               <p style={{
                 fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
                 lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.25rem",
               }}>
-                Browse the full platform today. Reserve Cielo Sunrise, sign in with Google to pay, and add an ID check only if a deal requires it.
+                Browse verified assets, book a featured stay, or sign in when you want to pay or invest. ID verification stays optional until a deal requires it.
               </p>
               <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Btn href="/flagship" size="lg">Book Cielo Sunrise →</Btn>
+                <Btn href="#assets" size="lg">Explore assets →</Btn>
                 <Btn href="/passport" variant="secondary" size="lg">Sign in</Btn>
               </div>
             </div>

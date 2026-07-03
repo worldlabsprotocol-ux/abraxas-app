@@ -131,7 +131,6 @@ export function RedesignHero() {
                                                        flexWrap: "wrap", marginBottom: "2rem" }}>
             <Btn href="#assets" size="lg">Explore assets →</Btn>
             <Btn href="/passport" variant="secondary" size="lg">Sign in</Btn>
-            <Btn href="/flagship" variant="ghost" size="lg">Book Cielo</Btn>
           </motion.div>
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",

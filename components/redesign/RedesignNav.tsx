@@ -1,9 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Premium dark top nav for the redesign. Logo · links · language ·
-// wallet · Get Verified CTA, with a mobile slide-down menu. The
-// language selector is wired in here so it appears on the redesigned
-// home (and mobile), not just the legacy desktop nav.
+// Two-item primary nav: Assets · Account. Everything else lives in the menu.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -12,32 +9,32 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
-import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
-  { href: "/terminal",   label: "Assets" },
-  { href: "/passport",   label: "Account" },
-  { href: "/flagship",   label: "Cielo" },
+  { href: "/terminal", label: "Assets" },
+  { href: "/passport", label: "Account" },
 ];
 
 const MORE_LINKS = [
-  { href: "/build",       label: "Submit asset" },
-  { href: "/partners",    label: "Partners" },
+  { href: "/terminal#featured-asset", label: "Featured stay" },
+  { href: "/flagship", label: "Cielo dossier" },
+  { href: "/build", label: "Submit asset" },
+  { href: "/partners", label: "Partners" },
   { href: "/institutional", label: "Institutional" },
-  { href: "/docs/ail",       label: "Developer docs" },
-  { href: "/docs/sui",       label: "Sui integration" },
-  { href: "/dashboard",   label: "Dashboard" },
-  { href: "/swap",        label: "Swap" },
-  { href: "/roadmap",     label: "Roadmap" },
-    { href: "/tokenomics",  label: "Tokenomics" },
-    { href: "/music-audit", label: "Music audit" },
-    { href: "/faq",         label: "FAQ" },
-  { href: "/security",    label: "Security" },
-  { href: "/about",       label: "About" },
+  { href: "/docs/ail", label: "Developer docs" },
+  { href: "/docs/sui", label: "Sui integration" },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/swap", label: "Swap" },
+  { href: "/roadmap", label: "Roadmap" },
+  { href: "/tokenomics", label: "Tokenomics" },
+  { href: "/music-audit", label: "Music audit" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/security", label: "Security" },
+  { href: "/about", label: "About" },
 ];
 
 export function RedesignNav() {
@@ -64,7 +61,6 @@ export function RedesignNav() {
         </span>
       </Link>
 
-      {/* Desktop links */}
       <div className="rd-nav-links" style={{ display: "none", flex: 1,
                                               justifyContent: "center", gap: "0.25rem" }}>
         {LINKS.map(l => {
@@ -89,15 +85,12 @@ export function RedesignNav() {
       </div>
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
-      {/* Right cluster (desktop) */}
       <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem",
                                               flexShrink: 0 }}>
         <LanguageSelector />
         <SuiSignInNavButton prominent />
-        <Btn href="/passport" size="sm" variant="secondary">Account</Btn>
       </div>
 
-      {/* Mobile: language + hamburger */}
       <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem",
                                                marginLeft: "auto" }}>
         <LanguageSelector />
@@ -133,13 +126,12 @@ export function RedesignNav() {
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
                 style={{ padding: "0.55rem 0.5rem", borderRadius: 10, textDecoration: "none",
                          fontFamily: FONT, fontSize: "0.85rem", fontWeight: 500,
-                         color: pathname?.startsWith(l.href) ? ACCENT : "var(--text-secondary)" }}>
+                         color: pathname?.startsWith(l.href.split("#")[0]) ? ACCENT : "var(--text-secondary)" }}>
                 {l.label}
               </Link>
             ))}
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ marginTop: "0.5rem" }}>
               <SuiSignInNavButton prominent />
-              <Btn href="/passport" size="sm" fullWidth variant="secondary">Account</Btn>
             </div>
           </motion.div>
         )}

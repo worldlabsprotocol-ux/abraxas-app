@@ -31,7 +31,7 @@ const FALLBACK: PublicMetrics = {
   credential_standard: "W3C VC",
   sponsor_configured: false,
   captured_cielo_bookings: 0,
-  cielo_revenue_label: "Live on Sui",
+  cielo_revenue_label: "Live bookings",
 };
 
 export function TrustMetricsStrip() {
@@ -45,19 +45,19 @@ export function TrustMetricsStrip() {
   }, []);
 
   const METRICS = [
-    { value: String(m.verified_assets), label: "Verified assets", sub: "Live on Abraxas" },
+    { value: String(m.verified_assets), label: "Verified assets", sub: "On Abraxas today" },
     {
-      value: m.cielo_revenue_label ?? "Live on Sui",
-      label: "Cielo on Sui",
+      value: m.cielo_revenue_label ?? "Live bookings",
+      label: "Featured stay",
       sub: m.captured_cielo_bookings
-        ? `${m.captured_cielo_bookings} captured stay${m.captured_cielo_bookings === 1 ? "" : "s"}`
-        : "USDC revenue loop",
+        ? `${m.captured_cielo_bookings} confirmed stay${m.captured_cielo_bookings === 1 ? "" : "s"}`
+        : "Book without ID check",
     },
-    { value: m.attested_value_label, label: "Value attested", sub: "Cielo appraisal" },
+    { value: m.attested_value_label, label: "Value attested", sub: "Independently appraised" },
     {
       value: String(m.passport_stamps),
-      label: "Passport stamps",
-      sub: m.sponsor_configured ? "Sponsor live" : "Verification depth",
+      label: "Trust stamps",
+      sub: "Optional verification depth",
     },
   ];
 
@@ -88,7 +88,7 @@ export function TrustMetricsStrip() {
             fontSize: "1.45rem",
             fontWeight: 700,
             letterSpacing: "-0.02em",
-            color: metric.label.includes("attested") || metric.label.includes("Cielo") ? ACCENT : "var(--text-primary)",
+            color: metric.label.includes("attested") || metric.label.includes("Featured") ? ACCENT : "var(--text-primary)",
             lineHeight: 1.05,
           }}>
             <AnimatedCounter value={metric.value} />
