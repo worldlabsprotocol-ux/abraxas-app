@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Two-item primary nav: Assets · Account. Everything else lives in the menu.
+// Infrastructure nav: Identity · Asset Origin · Public Registry
 
 import Link from "next/link";
 import Image from "next/image";
@@ -15,28 +15,24 @@ const ACCENT = "#10B981";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
-  { href: "/terminal", label: "Assets" },
-  { href: "/passport", label: "Account" },
+  { href: "/passport", label: "Identity" },
+  { href: "/build", label: "Asset origin" },
+  { href: "/verify", label: "Public registry" },
 ];
 
 const MORE_LINKS = [
+  { href: "/#registry", label: "Browse assets" },
   { href: "/integrations", label: "Integrations" },
+  { href: "/investors", label: "Investor data room" },
   { href: "/investors/pitch", label: "Pitch deck" },
-  { href: "/ops/cielo-e2e", label: "Cielo E2E" },
-  { href: "/terminal#featured-asset", label: "Featured stay" },
-  { href: "/flagship", label: "Cielo dossier" },
-  { href: "/build", label: "Submit asset" },
-  { href: "/partners", label: "Partners" },
-  { href: "/institutional", label: "Institutional" },
-  { href: "/docs/ail", label: "Developer docs" },
-  { href: "/docs/sui", label: "Sui integration" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/swap", label: "Swap" },
+  { href: "/metrics", label: "Live metrics" },
+  { href: "/case-studies/cielo", label: "Cielo case study" },
+  { href: "/apps/cielo-sunrise", label: "Cielo pilot" },
+  { href: "/docs", label: "Documentation" },
   { href: "/roadmap", label: "Roadmap" },
   { href: "/tokenomics", label: "Tokenomics" },
-  { href: "/music-audit", label: "Music audit" },
-  { href: "/faq", label: "FAQ" },
   { href: "/security", label: "Security" },
+  { href: "/faq", label: "FAQ" },
   { href: "/about", label: "About" },
 ];
 
@@ -54,7 +50,7 @@ export function RedesignNav() {
       padding: "0 clamp(0.9rem, 2.5vw, 1.9rem)",
       height: "clamp(60px, 8vw, 72px)", gap: "0.85rem",
     }}>
-      <Link href="/terminal" style={{ display: "flex", alignItems: "center", gap: "0.55rem",
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.55rem",
                                        textDecoration: "none", flexShrink: 0 }}>
         <Image src="/icon-48.png" alt="Abraxas" width={30} height={30} priority
           style={{ display: "block", borderRadius: 8 }} />
@@ -67,7 +63,7 @@ export function RedesignNav() {
       <div className="rd-nav-links" style={{ display: "none", flex: 1,
                                               justifyContent: "center", gap: "0.25rem" }}>
         {LINKS.map(l => {
-          const active = pathname?.startsWith(l.href);
+          const active = pathname === l.href || pathname?.startsWith(l.href + "/");
           return (
             <MotionLink key={l.href} href={l.href}
               whileHover={reduce ? undefined : { scale: 1.06 }}
@@ -90,6 +86,12 @@ export function RedesignNav() {
 
       <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem",
                                               flexShrink: 0 }}>
+        <Link href="/docs" style={{
+          fontFamily: FONT, fontSize: "0.78rem", fontWeight: 500,
+          color: "var(--text-secondary)", textDecoration: "none", padding: "0.35rem 0.6rem",
+        }}>
+          Docs
+        </Link>
         <LanguageSelector />
         <SuiSignInNavButton prominent />
       </div>

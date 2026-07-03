@@ -1,5 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
+// Infrastructure-first homepage: three doors + protocol metrics + ecosystem showcases.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { AmbientGlow } from "./AmbientGlow";
@@ -7,17 +8,11 @@ import { RedesignNav } from "./RedesignNav";
 import { RedesignHero } from "./RedesignHero";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { TrustMetricsStrip } from "./TrustMetricsStrip";
-import { FeaturedFlagship } from "./FeaturedFlagship";
-import { VerificationFlow } from "./VerificationFlow";
+import { ThreeDoorsSection } from "./ThreeDoorsSection";
+import { EcosystemShowcases } from "./EcosystemShowcases";
 import { AssetsExplorer } from "./AssetsExplorer";
-import { MarketIntelFeed } from "./MarketIntelFeed";
 import { IntegratorStrip } from "./IntegratorStrip";
-import { SuiMacroStrip } from "./SuiMacroStrip";
-import { OnboardingChoiceSection } from "./OnboardingChoiceSection";
 import { BrowseWithoutKycBanner } from "./BrowseWithoutKycBanner";
-import { WhyVerificationStorySection } from "./WhyVerificationStorySection";
-import { AbraxasPassport } from "@/components/identity/AbraxasPassport";
-import { VerificationPackages } from "@/components/terminal/VerificationPackages";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
 import { RoadmapCTA } from "./RoadmapCTA";
 import { RedesignFooter } from "./RedesignFooter";
@@ -43,70 +38,24 @@ export function RedesignHome() {
 
         <main style={{ position: "relative", zIndex: 1 }}>
           <div style={MAXW}><RedesignHero /></div>
+
           <div style={{ ...MAXW, paddingTop: "1.25rem" }}><BrowseWithoutKycBanner /></div>
           <div style={{ ...MAXW, paddingTop: "0.75rem" }}><TrustMetricsStrip /></div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <FeaturedFlagship />
-          </div>
-
-          <div id="assets" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <AssetsExplorer title="Verified assets" />
+            <ThreeDoorsSection />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <OnboardingChoiceSection />
+            <EcosystemShowcases />
           </div>
 
-          <div style={{ ...MAXW, paddingTop: "1rem" }}>
-            <SuiMacroStrip />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <MarketIntelFeed />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <VerificationFlow />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <WhyVerificationStorySection />
+          <div id="registry" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <AssetsExplorer title="Public registry" />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <IntegratorStrip />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <div style={{
-              fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
-              letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "#10B981", marginBottom: "0.75rem",
-            }}>
-              Your account
-            </div>
-            <h2 style={{
-              fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
-              letterSpacing: "-0.03em", lineHeight: 1.05,
-              color: "var(--text-primary)", margin: "0 0 0.75rem", maxWidth: 640,
-            }}>
-              One sign-in. Stamps you earn over time.
-            </h2>
-            <p style={{
-              fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
-              lineHeight: 1.7, maxWidth: 560, margin: "0 0 1.5rem",
-            }}>
-              Sign in with Google to book, pay, and submit deals. Add an optional ID check when a protocol requires enhanced trust.
-            </p>
-            <AbraxasPassport
-              onGetVerified={() => { window.location.href = "/passport"; }}
-              earnedStamps={["identity","biometric","business","owner","royalty","property","tribal","compliance","lending"]}
-            />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <VerificationPackages />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
@@ -125,17 +74,17 @@ export function RedesignHome() {
                 fontWeight: 800, color: "var(--text-primary)",
                 margin: "0 0 0.75rem", letterSpacing: "-0.02em",
               }}>
-                Ready when you are.
+                Built for relying parties.
               </h2>
               <p style={{
                 fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
                 lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.25rem",
               }}>
-                Browse verified assets, book a featured stay, or sign in when you want to pay or invest. ID verification stays optional until a deal requires it.
+                Paste any credential hash into the public verifier. Partners integrate via POST /api/credentials/verify — no re-KYC required.
               </p>
               <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Btn href="#assets" size="lg">Explore assets →</Btn>
-                <Btn href="/passport" variant="secondary" size="lg">Sign in</Btn>
+                <Btn href="/verify" size="lg">Run verifier →</Btn>
+                <Btn href="/integrations" variant="secondary" size="lg">Integration docs</Btn>
               </div>
             </div>
           </div>

@@ -4,14 +4,13 @@
 
 import { useEffect, useState } from "react";
 import { CIELO_RATES, blockedNightsInRange, estimateUsdc, eachNight } from "@/lib/cielo/bookingValidation";
+import { NonCustodialDisclosure } from "@/components/compliance/NonCustodialDisclosure";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 const AMBER = "#F59E0B";
 const RED = "#EF4444";
-
-const TREASURY_LABEL = process.env.NEXT_PUBLIC_CIRCUIT_WALLET ?? "circuit.skr";
 
 interface BlockedDate { start: string; end: string; }
 
@@ -252,9 +251,11 @@ export function CieloBookingPanel({
               </>
             )}
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-              Your dates are on the live calendar. We confirm within 24 hours, then you pay stablecoin to{" "}
-              <strong style={{ color: AMBER }}>{TREASURY_LABEL}</strong>.
+              Your dates are on the live calendar. We confirm within 24 hours, then send stablecoin payment instructions to the Cielo asset settlement container on Sui.
             </p>
+            <div style={{ marginBottom: "1rem" }}>
+              <NonCustodialDisclosure variant="compact" />
+            </div>
             {payUrl && (
               <a href={payUrl} style={{
                 display: "inline-block", marginBottom: "1rem", padding: "0.65rem 1.25rem",

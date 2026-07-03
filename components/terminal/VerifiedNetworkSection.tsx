@@ -33,7 +33,7 @@ const REASONS: Reason[] = [
     title: "One verification, every door",
     punch: "Stop re-uploading the same documents to ten platforms. Verify your identity and your assets once, then carry that proof everywhere.",
     points: [
-      "One Passport accepted across every integrated protocol, lender, and marketplace",
+      "Verify once on Abraxas today — built for reuse across lenders, marketplaces, and protocols as partners come online",
       "No re-KYC, no redundant uploads, no waiting in the same line twice",
       "The credential is the key, the network is the building",
     ],

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { payCieloFromWallet, verifyCieloPaymentOnServer } from "@/lib/cielo/payFromWallet";
 import { consumerCopy } from "@/lib/consumerCopy";
+import { NonCustodialDisclosure } from "@/components/compliance/NonCustodialDisclosure";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -185,7 +186,14 @@ export function CieloPaymentPanel({
         {consumerCopy.cielo.payBadge}
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-        {consumerCopy.cielo.payHeadline(payment.amount_usdc, payment.asset)} to {payment.treasury_label}
+        {consumerCopy.cielo.payHeadline(payment.amount_usdc, payment.asset)} — asset settlement container
+      </div>
+
+      <div style={{ marginBottom: "0.85rem" }}>
+        <NonCustodialDisclosure
+          variant="compact"
+          settlementNote="Booking payments route to the Cielo asset settlement address on Sui. Abraxas attests to payment state — it is not the counterparty or custodian."
+        />
       </div>
 
       <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.85rem" }}>

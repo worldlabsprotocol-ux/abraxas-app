@@ -66,7 +66,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "What happens to my money?",
-    a: "Stablecoin payments route to the Abraxas treasury. Internally, your transaction moves through real stages: Authorized when you confirm you've sent it, Captured once our team verifies the transfer, Settled once everything is wrapped up.",
+    a: "Stablecoin payments route to asset-specific settlement containers on Sui — not a commingled investor treasury. Abraxas attests to transaction state; it does not take discretionary custody of your capital. Internally, bookings move through Authorized → Captured → Settled stages as on-chain transfers are verified.",
   },
   {
     q: "Do I need $ABRA to use Abraxas?",

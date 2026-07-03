@@ -1,13 +1,12 @@
 "use client";
 // FILE: components/redesign/RedesignHero.tsx
-// Assets-first hero: Jeff Yan clarity. Trust infrastructure, not a KYC form.
+// Infrastructure-first hero: Verify Once. Transact Everywhere.
 
 import { motion } from "framer-motion";
 import { Btn } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 import { PassportStampIcon, type PassportStampKind } from "@/components/identity/PassportStampIcon";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
-import { consumerCopy } from "@/lib/consumerCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -43,24 +42,24 @@ function CredentialCard() {
           <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 900,
                           letterSpacing: "0.16em", color: ACCENT }}>ABRAXAS</span>
         </div>
-          <VerificationBadge label="Verified asset" color={ACCENT} check />
+        <VerificationBadge label="Registry infrastructure" color={ACCENT} check />
       </div>
 
       <div style={{ padding: "1.15rem 1.15rem 1.25rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
           <span style={{ fontFamily: FONT, fontSize: "0.6rem", letterSpacing: "0.1em",
-                          textTransform: "uppercase", color: "var(--text-muted)" }}>What we do</span>
+                          textTransform: "uppercase", color: "var(--text-muted)" }}>Core thesis</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem",
                           fontFamily: FONT, fontSize: "0.6rem", fontWeight: 800,
                           color: VIOLET, letterSpacing: "0.08em",
                           padding: "0.15rem 0.5rem", borderRadius: 999,
                           background: `${VIOLET}1A`, border: `1px solid ${VIOLET}40` }}>
-            {consumerCopy.hero.cardChip}
+            Verify once
           </span>
         </div>
         <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700,
                        color: "var(--text-primary)", lineHeight: 1.45, marginBottom: "1rem" }}>
-          {consumerCopy.hero.cardBody}
+          Reusable verification and identity for real-world assets — anchored on Sui, portable across partners as they come online.
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem",
@@ -89,12 +88,12 @@ function CredentialCard() {
           <div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
                            letterSpacing: "0.1em", textTransform: "uppercase",
-                           color: "var(--text-muted)" }}>{consumerCopy.hero.positioning}</div>
+                           color: "var(--text-muted)" }}>Abraxas role</div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem",
-                           fontWeight: 700, color: "var(--text-secondary)" }}>{consumerCopy.hero.positioningDetail}</div>
+                           fontWeight: 700, color: "var(--text-secondary)" }}>Attestation · not custody</div>
           </div>
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
-                          color: ACCENT, letterSpacing: "0.06em" }}>Abraxas</span>
+                          color: ACCENT, letterSpacing: "0.06em" }}>/verify</span>
         </div>
       </div>
     </motion.div>
@@ -108,7 +107,7 @@ export function RedesignHero() {
                                               gap: "clamp(2rem, 5vw, 3.5rem)", alignItems: "center" }}>
         <motion.div variants={staggerContainer(0.1, 0.05)} initial="hidden" animate="show">
           <motion.div variants={staggerItem} style={{ marginBottom: "1.25rem" }}>
-            <VerificationBadge label={consumerCopy.hero.badge} color={ACCENT} />
+            <VerificationBadge label="Registry infrastructure layer for RWAs" color={ACCENT} />
           </motion.div>
 
           <motion.h1 variants={staggerItem} style={{
@@ -116,27 +115,28 @@ export function RedesignHero() {
             letterSpacing: "-0.04em", lineHeight: 0.98, color: "var(--text-primary)",
             margin: "0 0 1.2rem",
           }}>
-            Real assets deserve<br />
-            <span style={{ color: ACCENT }}>real proof.</span>
+            Verify once.<br />
+            <span style={{ color: ACCENT }}>Transact everywhere.</span>
           </motion.h1>
 
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            {consumerCopy.hero.subhead}
+            The decentralized identity and verification infrastructure layer for real-world assets.
+            Secure your identity, verify asset provenance, and eliminate repetitive compliance debt.
           </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",
                                                        flexWrap: "wrap", marginBottom: "2rem" }}>
-            <Btn href="#assets" size="lg">Explore assets →</Btn>
-            <Btn href="/passport" variant="secondary" size="lg">Sign in</Btn>
+            <Btn href="/passport" size="lg">Create my passport →</Btn>
+            <Btn href="/verify" variant="secondary" size="lg">Scan public registry</Btn>
           </motion.div>
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
             margin: "0", maxWidth: 480,
           }}>
-            {consumerCopy.hero.footnote}
+            Sign in with Google · no seed phrase · ID check only when a deal requires it
           </motion.p>
         </motion.div>
 

@@ -62,13 +62,8 @@ export default function TermsPage() {
         </Section>
 
         <Section title="4. How transactions are processed">
-          <p>Most transactions on Abraxas currently involve sending stablecoin (USDC
-          or USDT) directly to a treasury wallet, after which our team manually
-          confirms the transfer and follows up by email. This is not an instant or
-          fully automated process today. Typical confirmation time is same day to
-          one business day. By using the Services, you acknowledge and accept that
-          transactions are reviewed by a person, not settled automatically, and that
-          delays can occur.</p>
+          <p id="settlement">Abraxas operates as a verification and attestation registry — not a custodian or counterparty to your transaction. Stablecoin payments for bookings and asset interactions route to asset-specific settlement containers on supported blockchains (currently Sui). Abraxas verifies on-chain transfer state and attests to transaction progress; it does not take discretionary custody of investor capital in a commingled corporate treasury.</p>
+          <p style={{ marginTop: "0.75rem" }}>Transactions move through Authorized → Captured → Settled stages as on-chain transfers are confirmed. Typical confirmation time is same day to one business day. By using the Services, you acknowledge that settlement involves on-chain verification and that delays can occur.</p>
         </Section>
 
         <Section title="5. Identity verification">

@@ -10,38 +10,39 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const LINKS = {
+  protocol: [
+    { label: "Identity (Passport)", href: "/passport" },
+    { label: "Asset origin (V5)", href: "/build" },
+    { label: "Public verifier", href: "/verify" },
+    { label: "Browse registry", href: "/#registry" },
+    { label: "Ecosystem apps", href: "/apps/cielo-sunrise" },
+  ],
   product: [
-    { label: "Account", href: "/passport" },
-    { label: "Assets", href: "/terminal" },
-    { label: "Featured stay", href: "/terminal#featured-asset" },
-    { label: "Submit asset", href: "/build" },
+    { label: "Cielo pilot", href: "/apps/cielo-sunrise" },
+    { label: "Music audit", href: "/apps/music" },
+    { label: "Wyoming LLC", href: "/apps/wyoming" },
     { label: "Dashboard", href: "/dashboard" },
-    { label: "Swap", href: "/swap" },
   ],
   learn: [
     { label: "Investor data room", href: "/investors" },
     { label: "Pitch deck", href: "/investors/pitch" },
     { label: "Integrations", href: "/integrations" },
-    { label: "Cielo E2E check", href: "/ops/cielo-e2e" },
     { label: "Litepaper", href: "/docs/litepaper" },
     { label: "Live metrics", href: "/metrics" },
     { label: "Cielo case study", href: "/case-studies/cielo" },
-    { label: "Chain architecture", href: "/docs/chain" },
-    { label: "Economics model", href: "/economics" },
-    { label: "AIL spec", href: "/docs/ail" },
-    { label: "Sui hub", href: "/docs/sui" },
     { label: "Documentation", href: "/docs" },
+    { label: "Security", href: "/security" },
+    { label: "Non-custodial disclosure", href: "/legal#settlement" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "Tokenomics", href: "/tokenomics" },
-    { label: "Security", href: "/security" },
     { label: "FAQ", href: "/faq" },
-    { label: "Partners", href: "/partners" },
     { label: "About", href: "/about" },
   ],
   legal: [
     { label: "Legal overview", href: "/legal" },
     { label: "Privacy Policy", href: "/legal/privacy" },
     { label: "Terms of Service", href: "/legal/terms" },
+    { label: "Non-custodial settlement", href: "/legal#settlement" },
   ],
   social: [
     { label: "Discord", href: "https://discord.gg/sHK8EWbnXH" },
@@ -123,7 +124,8 @@ export function RedesignFooter() {
               </a>
             </p>
           </div>
-          <Column title="Product" items={LINKS.product} />
+          <Column title="Protocol" items={LINKS.protocol} />
+          <Column title="Apps" items={LINKS.product} />
           <Column title="Learn" items={LINKS.learn} />
           <Column title="Legal" items={LINKS.legal} />
           <Column title="Community" items={LINKS.social} />
