@@ -14,6 +14,8 @@ import { EcosystemShowcases } from "./EcosystemShowcases";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { IntegratorStrip } from "./IntegratorStrip";
 import { BrowseWithoutKycBanner } from "./BrowseWithoutKycBanner";
+import { WhatIsAbraxasSection } from "./WhatIsAbraxasSection";
+import { PassportInnovationSection } from "./PassportInnovationSection";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
 import { RoadmapCTA } from "./RoadmapCTA";
 import { RedesignFooter } from "./RedesignFooter";
@@ -41,7 +43,12 @@ export function RedesignHome() {
           <div style={MAXW}><RedesignHero /></div>
 
           <div style={{ ...MAXW, paddingTop: "1.25rem" }}><BrowseWithoutKycBanner /></div>
+          <div style={{ ...MAXW, paddingTop: "0.85rem" }}><WhatIsAbraxasSection /></div>
           <div style={{ ...MAXW, paddingTop: "0.75rem" }}><TrustMetricsStrip /></div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <PassportInnovationSection />
+          </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <ThreeDoorsSection />

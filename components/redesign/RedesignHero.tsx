@@ -81,8 +81,8 @@ export function RedesignHero() {
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            The decentralized identity and verification infrastructure layer for real-world assets.
-            Secure your identity, verify asset provenance, and eliminate repetitive compliance debt.
+            Prove what&apos;s real — your identity and your assets — without repeating the same checks everywhere.
+            Sign in with Google. Browse verified properties first. ID check only when a deal needs it.
           </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",

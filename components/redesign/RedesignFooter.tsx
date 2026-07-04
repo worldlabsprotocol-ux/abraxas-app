@@ -11,11 +11,11 @@ const ACCENT = "#10B981";
 
 const LINKS = {
   protocol: [
-    { label: "Identity (Passport)", href: "/passport" },
-    { label: "Asset origin (V5)", href: "/build" },
-    { label: "Public verifier", href: "/verify" },
-    { label: "Browse registry", href: "/#registry" },
-    { label: "Ecosystem apps", href: "/apps/cielo-sunrise" },
+    { label: "Home", href: "/" },
+    { label: "Passport", href: "/passport" },
+    { label: "Verify", href: "/verify" },
+    { label: "Submit your asset", href: "/build" },
+    { label: "Browse assets", href: "/#registry" },
   ],
   product: [
     { label: "Cielo pilot", href: "/apps/cielo-sunrise" },

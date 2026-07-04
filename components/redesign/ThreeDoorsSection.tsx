@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/ThreeDoorsSection.tsx
-// Core infrastructure entry points: Passport · Verify Asset · Public Verifier.
+// Simplified: Passport + public checker. Assets live on Home via photos.
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -12,27 +12,21 @@ const ACCENT = "#10B981";
 const DOORS = [
   {
     n: "01",
-    title: "Abraxas Passport",
-    subtitle: "Reusable identity primitives",
-    body: "Mint a portable compliance container. Sign in with Google via zkLogin — no seed phrase. Verify once and reuse across Abraxas today, and integrated partners as they come online.",
+    title: "Your Passport",
+    subtitle: "Sign in once · verify when needed",
+    body: "Google sign-in creates your wallet (zkLogin). Add an optional ID check when a deal requires it. Your proof is reusable — partners check it without seeing your documents.",
     href: "/passport",
-    cta: "Create reusable passport →",
+    cta: "Create my passport →",
+    image: "/assets/cielo/17.jpg",
   },
   {
     n: "02",
-    title: "Verify an asset",
-    subtitle: "Institutional compliance engine",
-    body: "Streamline real estate, IP, or physical assets through the deterministic 10-stage V5 pipeline. From Wyoming LLC containers to independent title review — bind physical assets to on-chain extensions.",
-    href: "/build",
-    cta: "Initiate V5 pipeline →",
-  },
-  {
-    n: "03",
-    title: "Public verifier",
-    subtitle: "Zero-trust immutable audit",
-    body: "Open infrastructure for relying parties. Instantly authenticate the active status, assurance level, and cryptographic signatures of any Passport DID or verified asset hash.",
+    title: "Check what's real",
+    subtitle: "Public proof checker",
+    body: "Paste any asset ID or credential hash. See if it's valid, expired, or revoked — with assurance levels L1–L4. Built for lenders, buyers, and anyone who needs to trust a claim.",
     href: "/verify",
-    cta: "Launch public verifier →",
+    cta: "Run public checker →",
+    image: "/assets/cielo/01.jpg",
   },
 ] as const;
 
@@ -45,15 +39,25 @@ export function ThreeDoorsSection() {
           letterSpacing: "0.14em", textTransform: "uppercase",
           color: ACCENT, marginBottom: "0.5rem",
         }}>
-          Three doors
+          Two things we do
         </div>
         <h2 style={{
           fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
           letterSpacing: "-0.03em", lineHeight: 1.05,
-          color: "var(--text-primary)", margin: 0, maxWidth: 560,
+          color: "var(--text-primary)", margin: "0 0 0.5rem", maxWidth: 560,
         }}>
           Know what&apos;s real before you trust it.
         </h2>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
+          lineHeight: 1.65, margin: 0, maxWidth: 620,
+        }}>
+          Verified properties and assets are on this page below — click any photo to explore.
+          Want to submit your own asset?{" "}
+          <Link href="/build" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
+            Submit here →
+          </Link>
+        </p>
       </div>
 
       <motion.div
@@ -63,7 +67,7 @@ export function ThreeDoorsSection() {
         viewport={{ once: true, margin: "-40px" }}
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
           gap: "1rem",
         }}
       >
@@ -71,24 +75,37 @@ export function ThreeDoorsSection() {
           <motion.div key={door.n} variants={staggerItem}>
             <Link href={door.href} style={{ textDecoration: "none", display: "block", height: "100%" }}>
               <div style={{
-                height: "100%", padding: "1.35rem 1.25rem",
-                borderRadius: 16, border: "1px solid var(--border-strong)",
+                height: "100%", borderRadius: 16, overflow: "hidden",
+                border: "1px solid var(--border-strong)",
                 background: "var(--surface-raised)",
-                boxShadow: "var(--shadow-card)",
-                transition: "border-color 0.2s",
               }}>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem", fontWeight: 700, color: ACCENT, marginBottom: "0.5rem" }}>
-                  {door.n} // {door.title}
+                <div style={{ position: "relative", height: 140 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={door.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,9,11,0.7) 0%, transparent 60%)" }} />
+                  <span style={{
+                    position: "absolute", top: 12, left: 12,
+                    fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "#fff",
+                    padding: "0.2rem 0.45rem", borderRadius: 999,
+                    background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.2)",
+                  }}>
+                    {door.n}
+                  </span>
                 </div>
-                <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.65rem" }}>
-                  {door.subtitle}
+                <div style={{ padding: "1.15rem 1.2rem" }}>
+                  <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.4rem" }}>
+                    {door.subtitle}
+                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
+                    {door.title}
+                  </div>
+                  <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.85rem" }}>
+                    {door.body}
+                  </p>
+                  <span style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: ACCENT }}>
+                    {door.cta}
+                  </span>
                 </div>
-                <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
-                  {door.body}
-                </p>
-                <span style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: ACCENT }}>
-                  {door.cta}
-                </span>
               </div>
             </Link>
           </motion.div>
