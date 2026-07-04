@@ -2,13 +2,14 @@
 // FILE: app/passport/page.tsx
 // Abraxas Passport. Sui-native verification via zkLogin + Veriff stamps.
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
 import { SuiWalletCreatedCard } from "@/components/passport/SuiWalletCreatedCard";
 import { PassportWalkthrough } from "@/components/passport/PassportWalkthrough";
+import { PassportCompletionDashboard } from "@/components/passport/PassportCompletionDashboard";
 import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
@@ -29,7 +30,11 @@ import {
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 import { DeveloperDetails } from "@/components/redesign/DeveloperDetails";
+import { Btn } from "@/components/redesign/ui";
 import { consumerCopy } from "@/lib/consumerCopy";
+import { computePassportCompletion, resolveFlowStep } from "@/lib/passportCompletion";
+import { useQuery } from "@tanstack/react-query";
+import { fetchTrustStatus, passportQueryKeys } from "@/lib/api/passport";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -173,7 +178,36 @@ function PassportPageInner() {
     refresh,
     retryProvision,
     syncMessage,
+    isLoading: verificationLoading,
   } = usePassportVerification(suiAddress, email || null);
+
+  const { data: trustData } = useQuery({
+    queryKey: suiAddress ? passportQueryKeys.trust(suiAddress) : ["passport", "trust", "none"],
+    queryFn: () => fetchTrustStatus(suiAddress!),
+    enabled: Boolean(suiAddress),
+  });
+
+  const hasCredential = Boolean(credential) && identityStatus === "earned";
+
+  const completion = useMemo(
+    () =>
+      computePassportCompletion({
+        walletDone: Boolean(suiAddress),
+        identityStatus,
+        credentialActive: hasCredential,
+        verifyState,
+        onChain,
+        intentProofs: trustData?.intent.proofs_count ?? 0,
+        stamps: passportState,
+      }),
+    [suiAddress, identityStatus, hasCredential, verifyState, onChain, trustData, passportState],
+  );
+
+  const currentFlowStep = resolveFlowStep(completion);
+
+  function scrollToFlowStep(step: 1 | 2 | 3 | 4) {
+    document.getElementById(`passport-step-${step}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   useEffect(() => {
     setPassportState(prev => ({
@@ -307,6 +341,20 @@ function PassportPageInner() {
           </p>
         </div>
 
+        <PassportCompletionDashboard
+          input={{
+            walletDone,
+            identityStatus,
+            credentialActive: hasCredential,
+            verifyState,
+            onChain,
+            intentProofs: trustData?.intent.proofs_count ?? 0,
+            stamps: passportState,
+          }}
+          loading={verificationLoading}
+          onItemClick={scrollToFlowStep}
+        />
+
         <PassportWalkthrough
           walletDone={walletDone}
           suiAddress={suiAddress}
@@ -320,9 +368,20 @@ function PassportPageInner() {
           error={error}
           onStartIdCheck={startIdentityVerification}
           onRefresh={refresh}
+          onChain={onChain}
+          intentProofs={trustData?.intent.proofs_count ?? 0}
+          stamps={passportState}
         />
 
-        <VerifyStepRail walletDone={walletDone} active={active} earned={railEarned} enhancedTrust={enhancedTrust} />
+        <VerifyStepRail
+          walletDone={walletDone}
+          active={active}
+          earned={railEarned}
+          enhancedTrust={enhancedTrust}
+          verifyState={verifyState}
+          currentFlowStep={currentFlowStep}
+          onStepClick={scrollToFlowStep}
+        />
 
         {walletDone && (
           <div style={{ marginBottom:"2rem" }}>
@@ -330,7 +389,7 @@ function PassportPageInner() {
           </div>
         )}
 
-        <PassportTrustCard suiAddress={suiAddress} />
+        <PassportTrustCard suiAddress={suiAddress} completionPercent={completion.percent} />
 
         <PassportIntentCard suiAddress={suiAddress} />
 
@@ -593,11 +652,8 @@ function PassportPageInner() {
         </DeveloperDetails>
 
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", paddingBottom:"3rem" }}>
-          <Link href="/terminal" style={{ padding:"0.75rem 1.5rem", borderRadius:8, background:G, color:"#000",
-              fontFamily:S, fontSize:"0.88rem", fontWeight:700, textDecoration:"none" }}>Explore assets →</Link>
-          <Link href="/build" style={{ padding:"0.75rem 1.5rem", borderRadius:8, border:"1px solid var(--border)",
-              background:"var(--surface)", color:"var(--text-secondary)", fontFamily:S,
-              fontSize:"0.88rem", fontWeight:600, textDecoration:"none" }}>Submit an asset →</Link>
+          <Btn href="/">Explore assets →</Btn>
+          <Btn href="/build" variant="tertiary">Submit an asset</Btn>
         </div>
       </div>
       <RedesignFooter />

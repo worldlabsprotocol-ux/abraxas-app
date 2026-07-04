@@ -51,7 +51,7 @@ function PhotoHeroPanel() {
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <Btn href="/verify?q=ABX-RE-HOSP-001" size="sm">Verify on-chain →</Btn>
-          <Btn href="/flagship" variant="secondary" size="sm">Full dossier</Btn>
+          <Btn href="/flagship" variant="tertiary" size="sm">Full dossier</Btn>
         </div>
       </div>
     </motion.div>

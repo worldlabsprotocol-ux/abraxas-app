@@ -26,18 +26,21 @@ export const consumerCopy = {
     subtitle: "Pick one — no account needed to look around.",
   },
   verificationFlow: {
-    step1Title: "Create your account",
+    step1Title: "Create account",
     step1Body:
       "Sign in with Google. Your Abraxas wallet is ready in seconds — browse assets, save deals, and book stays.",
-    step2Title: "Explore verified assets",
+    step2Title: "Verify identity",
     step2Body:
-      "Real estate, royalties, treasuries, and flagship deals like Cielo Sunrise. See verified ownership before you commit.",
-    step3Title: "Verify when a deal needs it",
+      "Optional ID check when a deal or protocol requires enhanced trust. Licensed provider — Abraxas stores only the outcome.",
+    step3Title: "Get passport",
     step3Body:
-      "Optional ID check, business verification, and asset attestation. Partners request proof — you approve once. They never see your documents.",
+      "W3C credential issued to your wallet automatically after approval. On-chain stamps when configured.",
+    step4Title: "Reuse anywhere",
+    step4Body:
+      "Share your verify link or JWT. Partners call our API — you never re-upload documents.",
     trustChips: ["Optional ID check", "Portable proof", "Licensed providers", "Secure by design"],
     intro:
-      "Browse everything today. Add an ID check only when you transact or a protocol requires enhanced trust.",
+      "Four clear steps: account → identity → passport → reuse. Browse first; verify only when needed.",
   },
   passport: {
     eyebrow: "Your Abraxas account",
@@ -51,8 +54,14 @@ export const consumerCopy = {
     idCheck: "Optional ID check",
     precheck: "Start ID check",
     precheckProvider: "Powered by a licensed identity provider. Abraxas stores only the outcome — never your documents.",
-    walkthroughTitle: "Three steps. Verify once, reuse everywhere.",
+    walkthroughTitle: "Create account → Verify identity → Get passport → Reuse anywhere.",
     walkthroughEyebrow: "Guided walkthrough",
+    flowSteps: [
+      { subtitle: "Google zkLogin creates your wallet in one click — no seed phrase." },
+      { subtitle: "Optional government ID + selfie when a deal or protocol needs enhanced trust." },
+      { subtitle: "W3C credential issued automatically after approval — portable proof on Sui." },
+      { subtitle: "Share your verify link or JWT. Partners check once — never re-upload your ID." },
+    ],
   },
   trustCard: {
     title: "Account status",

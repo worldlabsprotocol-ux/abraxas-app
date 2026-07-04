@@ -6,10 +6,12 @@ import { useSearchParams } from "next/navigation";
 import type { VerifierResponse } from "@/lib/verifyRegistry";
 import { CIELO_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
 import { VerifierResultCard } from "./VerifierResultCard";
+import { Btn } from "@/components/redesign/ui";
+import { StatusBanner } from "@/components/ui/StatusBanner";
+import { Skeleton } from "@/lib/motion/Skeleton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
 
 export function PublicVerifierPanel() {
   const searchParams = useSearchParams();
@@ -49,14 +51,16 @@ export function PublicVerifierPanel() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "stretch" }}>
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") void runVerify(query); }}
+          aria-label="Credential or asset identifier to verify"
           placeholder="Paste Passport DID, Sui address, credential JWT, or asset ID (e.g. ABX-RE-HOSP-001)…"
           style={{
             flex: "1 1 280px", minWidth: 0,
+            minHeight: 44,
             padding: "0.85rem 1rem", borderRadius: 12,
             border: "1px solid var(--border-strong)",
             background: "var(--surface-raised)",
@@ -64,51 +68,51 @@ export function PublicVerifierPanel() {
             fontFamily: MONO, fontSize: "0.78rem",
           }}
         />
-        <button
-          type="button"
-          disabled={loading || !query.trim()}
+        <Btn
           onClick={() => void runVerify(query)}
-          style={{
-            padding: "0.85rem 1.5rem", borderRadius: 12, border: "none",
-            background: loading ? "var(--surface)" : ACCENT,
-            color: loading ? "var(--text-muted)" : "#000",
-            fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700,
-            cursor: loading ? "wait" : "pointer",
-          }}
+          disabled={!query.trim()}
+          loading={loading}
+          ariaLabel="Verify identifier"
         >
-          {loading ? "Checking…" : "Verify"}
-        </button>
-        <button
-          type="button"
+          Verify
+        </Btn>
+        <Btn
+          variant="tertiary"
           onClick={() => { setQuery("ABX-RE-HOSP-001"); void runVerify("ABX-RE-HOSP-001"); }}
-          style={{
-            padding: "0.85rem 1rem", borderRadius: 12,
-            border: "1px solid var(--border)", background: "var(--surface)",
-            fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600,
-            color: ACCENT, cursor: "pointer",
-          }}
+          disabled={loading}
         >
           Try Cielo example
-        </button>
+        </Btn>
       </div>
 
       {err && (
-        <div style={{
-          padding: "0.85rem", borderRadius: 12,
-          background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)",
-          color: "#FCA5A5", fontFamily: FONT, fontSize: "0.8rem", marginBottom: "1rem",
-        }}>
-          {err}
+        <div style={{ marginBottom: "1rem" }}>
+          <StatusBanner tone="error" title="Verification failed">
+            {err}
+          </StatusBanner>
         </div>
       )}
 
       {loading && (
         <div style={{
-          padding: "2rem", textAlign: "center", borderRadius: 16,
-          border: "1px solid var(--border)", fontFamily: FONT, fontSize: "0.85rem",
-          color: "var(--text-muted)", marginBottom: "1rem",
+          padding: "1.5rem", borderRadius: 16,
+          border: "1px solid var(--border)", marginBottom: "1rem",
         }}>
-          Resolving registry state…
+          <StatusBanner tone="pending" title="Resolving registry state…" loading>
+            Checking cryptographic integrity and compliance status.
+          </StatusBanner>
+          <div style={{ display: "grid", gap: 8, marginTop: "1rem" }}>
+            <Skeleton width="100%" height={120} />
+            <Skeleton width="70%" height={14} />
+          </div>
+        </div>
+      )}
+
+      {result && !loading && result.state === "RESOLVED_VALID" && (
+        <div style={{ marginBottom: "1rem" }}>
+          <StatusBanner tone="success" title="Verified and active">
+            Registry lookup succeeded. Details below.
+          </StatusBanner>
         </div>
       )}
 
@@ -137,7 +141,7 @@ export function PublicVerifierPanel() {
               <div style={{ fontWeight: 700, color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
                 Your check runs here
               </div>
-              Paste any identifier, or click <strong style={{ color: ACCENT }}>Try Cielo example</strong> for a live API response.
+              Paste any identifier, or click <strong style={{ color: "var(--accent)" }}>Try Cielo example</strong> for a live API response.
               Relying parties integrate the same endpoint server-side.
             </div>
             <VerifierResultCard

@@ -35,20 +35,26 @@ export function WhatIsAbraxasSection() {
         {[
           {
             n: "1",
-            title: "Sign in once (like Google)",
-            body: "No seed phrase. We built wallet sign-in the hard way — Google → your own secure account — so normal people can actually use it.",
+            title: "Create account",
+            body: "Sign in with Google — no seed phrase. Your Abraxas wallet is ready in one click.",
             href: "/passport",
           },
           {
             n: "2",
-            title: "Verify when a deal needs it",
-            body: "Browse properties and assets first. ID check only when you pay, invest, or a partner requires it. Your proof travels with you — they never see your documents.",
-            href: "/passport#idv",
+            title: "Verify identity",
+            body: "Optional ID check when a deal needs it. Licensed provider handles documents — we store only the outcome.",
+            href: "/passport#passport-step-2",
           },
           {
             n: "3",
-            title: "Anyone can check the proof",
-            body: "Lenders, buyers, and partners paste an ID into our public checker — same way you'd verify a link — and see if it's still valid.",
+            title: "Get passport",
+            body: "Receive a signed credential tied to your wallet. Portable proof you control.",
+            href: "/passport#passport-step-3",
+          },
+          {
+            n: "4",
+            title: "Reuse anywhere",
+            body: "Partners verify via API or public checker — they never see your documents again.",
             href: "/verify",
           },
         ].map(item => (
@@ -57,6 +63,7 @@ export function WhatIsAbraxasSection() {
               display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.75rem",
               padding: "0.75rem", borderRadius: 12,
               background: "var(--surface)", border: "1px solid var(--border)",
+              minHeight: 44,
             }}>
               <div style={{
                 width: 28, height: 28, borderRadius: "50%", background: `${ACCENT}18`,

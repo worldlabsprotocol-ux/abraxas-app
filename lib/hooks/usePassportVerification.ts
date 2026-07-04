@@ -1,14 +1,26 @@
 "use client";
 // FILE: lib/hooks/usePassportVerification.ts
 // Polls identity status + syncs W3C credential + auto-verifies + auto-provisions on-chain.
+// Server state via React Query; local credential cache preserved.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   loadStoredCredential,
   saveStoredCredential,
   type StoredCredential,
 } from "@/lib/credentials/storage";
 import type { VerificationResult } from "@/lib/credentials/types";
+import {
+  fetchIdentityStatus,
+  fetchOnChainPassportStatus,
+  fetchCredentialMe,
+  meResponseToStoredCredential,
+  passportQueryKeys,
+  provisionOnChainPassport,
+  syncVeriffDecision,
+  verifyCredentialSelf,
+} from "@/lib/api/passport";
 
 export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined";
 export type CredentialVerifyState = "idle" | "checking" | "valid" | "invalid";
@@ -43,232 +55,186 @@ export interface OnChainPassportStatus {
 
 const POLL_MS = 5000;
 
+interface PipelineResult {
+  identityStatus: IdentityStampStatus;
+  via: string | null;
+  credential: StoredCredential | null;
+  verifyState: CredentialVerifyState;
+  verifyResult: VerificationResult | null;
+  onChain: OnChainPassportStatus | null;
+  syncMessage: string | null;
+}
+
+async function runIdentityPipeline(
+  suiAddress: string | null,
+  email: string | null,
+  verifiedJti: string | null,
+): Promise<PipelineResult> {
+  let syncMessage: string | null = null;
+  let identityStatus: IdentityStampStatus = "not_started";
+  let via: string | null = null;
+  let credential: StoredCredential | null = null;
+  let verifyState: CredentialVerifyState = "idle";
+  let verifyResult: VerificationResult | null = null;
+  let onChain: OnChainPassportStatus | null = null;
+
+  if (!suiAddress && !email) {
+    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage };
+  }
+
+  let data = await fetchIdentityStatus(suiAddress, email);
+
+  if (data.status === "pending" && suiAddress) {
+    const sync = await syncVeriffDecision(suiAddress);
+    syncMessage = sync.message ?? null;
+    data = await fetchIdentityStatus(suiAddress, email);
+  }
+
+  if (data.status === "approved" && suiAddress) {
+    identityStatus = "earned";
+    via = data.via ?? null;
+    const me = await fetchCredentialMe(suiAddress);
+    credential = meResponseToStoredCredential(suiAddress, me);
+    if (credential) saveStoredCredential(credential);
+
+    if (!verifiedJti || verifiedJti !== credential?.jti) {
+      try {
+        verifyState = "checking";
+        const vr = await verifyCredentialSelf(suiAddress);
+        verifyResult = vr;
+        verifyState = vr.verified ? "valid" : "invalid";
+      } catch {
+        verifyState = "invalid";
+      }
+    }
+
+    onChain = await fetchOnChainPassportStatus(suiAddress);
+    if (onChain?.needs_provision) {
+      try {
+        const provisioned = await provisionOnChainPassport(suiAddress);
+        if (provisioned.object_id) onChain = provisioned;
+      } catch {
+        /* best-effort */
+      }
+    }
+  } else if (data.status === "pending") {
+    identityStatus = "pending";
+    via = data.via ?? null;
+  } else if (data.status === "declined") {
+    identityStatus = "declined";
+  } else if (suiAddress) {
+    const cached = loadStoredCredential(suiAddress);
+    if (cached) {
+      credential = cached;
+      identityStatus = "earned";
+      try {
+        const vr = await verifyCredentialSelf(suiAddress);
+        verifyResult = vr;
+        verifyState = vr.verified ? "valid" : "invalid";
+      } catch {
+        verifyState = "invalid";
+      }
+      onChain = await fetchOnChainPassportStatus(suiAddress);
+    }
+  }
+
+  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage };
+}
+
 export function usePassportVerification(
   suiAddress: string | null,
   email: string | null,
 ) {
-  const [identityStatus, setIdentityStatus] = useState<IdentityStampStatus>("not_started");
-  const [via, setVia] = useState<string | null>(null);
-  const [credential, setCredential] = useState<StoredCredential | null>(null);
-  const [verifyState, setVerifyState] = useState<CredentialVerifyState>("idle");
-  const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null);
-  const [onChain, setOnChain] = useState<OnChainPassportStatus | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
+  const verifiedJtiRef = useRef<string | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState<string | null>(null);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [lastChecked, setLastChecked] = useState<Date | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const verifiedJtiRef = useRef<string | null>(null);
   const provisioningRef = useRef(false);
 
-  const syncCredential = useCallback(async (addr: string): Promise<StoredCredential | null> => {
-    const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(addr)}`);
-    const data = await res.json() as MeCredentialResponse;
-    if (!data.verified || !data.credential_jwt || !data.credential_jti || !data.expires_at) {
-      return null;
-    }
-    const stored: StoredCredential = {
-      jwt: data.credential_jwt,
-      jti: data.credential_jti,
-      expires_at: data.expires_at,
-      jurisdiction: data.jurisdiction ?? "",
-      level: data.verification_level ?? "standard",
-      sui_address: addr,
-      document_type: data.document_type,
-    };
-    saveStoredCredential(stored);
-    setCredential(stored);
-    return stored;
-  }, []);
-
-  const autoVerify = useCallback(async (addr: string, jti?: string) => {
-    if (jti && verifiedJtiRef.current === jti && verifyState === "valid") return;
-    setVerifyState("checking");
-    try {
-      const res = await fetch(`/api/credentials/verify-self?sui=${encodeURIComponent(addr)}`);
-      const data = await res.json() as VerificationResult;
-      if (data.verified) {
-        verifiedJtiRef.current = data.credential_jti ?? jti ?? null;
-        setVerifyResult(data);
-        setVerifyState("valid");
-      } else {
-        setVerifyResult(data);
-        setVerifyState("invalid");
+  const pipelineQuery = useQuery({
+    queryKey: passportQueryKeys.identity(suiAddress, email),
+    queryFn: async () => {
+      const result = await runIdentityPipeline(suiAddress, email, verifiedJtiRef.current);
+      if (result.verifyResult?.verified && result.credential?.jti) {
+        verifiedJtiRef.current = result.credential.jti;
       }
-    } catch {
-      setVerifyState("invalid");
-    }
-  }, [verifyState]);
-
-  const fetchOnChainStatus = useCallback(async (addr: string): Promise<OnChainPassportStatus | null> => {
-    const res = await fetch(`/api/sui/passport/provision?sui=${encodeURIComponent(addr)}`);
-    if (!res.ok) return null;
-    return res.json() as Promise<OnChainPassportStatus>;
-  }, []);
-
-  const autoProvision = useCallback(async (addr: string, status: OnChainPassportStatus) => {
-    if (!status.needs_provision || provisioningRef.current) return status;
-    provisioningRef.current = true;
-    setIsProvisioning(true);
-    setProvisionError(null);
-    try {
-      const res = await fetch("/api/sui/passport/provision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: addr }),
-      });
-      const data = await res.json() as OnChainPassportStatus & { error?: string };
-      if (!res.ok) {
-        setProvisionError(data.error ?? "On-chain provision failed");
-        return status;
+      if (suiAddress) {
+        void queryClient.invalidateQueries({ queryKey: passportQueryKeys.trust(suiAddress) });
       }
-      setOnChain(data);
-      return data;
-    } catch {
-      setProvisionError("On-chain provision failed");
-      return status;
-    } finally {
-      provisioningRef.current = false;
-      setIsProvisioning(false);
-    }
-  }, []);
-
-  const syncOnChain = useCallback(async (addr: string) => {
-    try {
-      let status = await fetchOnChainStatus(addr);
-      if (!status) return;
-      if (status.needs_provision) {
-        status = await autoProvision(addr, status) ?? status;
-      }
-      setOnChain(status);
-    } catch {
-      /* best-effort */
-    }
-  }, [fetchOnChainStatus, autoProvision]);
-
-  const syncVeriffDecision = useCallback(async (addr: string): Promise<boolean> => {
-    try {
-      const res = await fetch(`/api/idv/sync-decision?sui=${encodeURIComponent(addr)}`);
-      const data = await res.json() as {
-        status?: string;
-        synced?: boolean;
-        message?: string;
-      };
-      setSyncMessage(data.message ?? null);
-      return data.status === "approved" || data.synced === true;
-    } catch {
-      setSyncMessage("Could not reach Veriff sync endpoint");
+      return result;
+    },
+    enabled: Boolean(suiAddress || email),
+    refetchInterval: query => {
+      const d = query.state.data;
+      if (!d) return false;
+      if (d.identityStatus === "pending" || d.onChain?.needs_provision) return POLL_MS;
       return false;
-    }
-  }, []);
-
-  const refresh = useCallback(async () => {
-    if (!suiAddress && !email) {
-      setIdentityStatus("not_started");
-      setCredential(null);
-      setVerifyState("idle");
-      setVerifyResult(null);
-      setOnChain(null);
-      setProvisionError(null);
-      return;
-    }
-
-    setIsRefreshing(true);
-    try {
-      const params = new URLSearchParams();
-      if (suiAddress) params.set("sui_address", suiAddress);
-      if (email) params.set("email", email);
-
-      const res = await fetch(`/api/identity/status?${params}`);
-      let data = await res.json() as { status?: string; via?: string };
-
-      if (data.status === "pending" && suiAddress) {
-        await syncVeriffDecision(suiAddress);
-        const res2 = await fetch(`/api/identity/status?${params}`);
-        data = await res2.json() as { status?: string; via?: string };
-      }
-
-      if (data.status === "approved") {
-        setIdentityStatus("earned");
-        setVia(data.via ?? null);
-        if (suiAddress) {
-          const stored = await syncCredential(suiAddress);
-          await autoVerify(suiAddress, stored?.jti);
-          await syncOnChain(suiAddress);
-        }
-      } else if (data.status === "pending") {
-        setIdentityStatus("pending");
-        setVia(data.via ?? null);
-      } else if (data.status === "declined") {
-        setIdentityStatus("declined");
-      } else {
-        setIdentityStatus("not_started");
-        if (suiAddress) {
-          const cached = loadStoredCredential(suiAddress);
-          if (cached) {
-            setCredential(cached);
-            setIdentityStatus("earned");
-            await autoVerify(suiAddress, cached.jti);
-            await syncOnChain(suiAddress);
-          }
-        }
-      }
-      setLastChecked(new Date());
-    } catch {
-      /* best-effort */
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [suiAddress, email, syncCredential, autoVerify, syncOnChain, syncVeriffDecision]);
+    },
+  });
 
   useEffect(() => {
     if (suiAddress) {
       const cached = loadStoredCredential(suiAddress);
-      if (cached) {
-        setCredential(cached);
-        setIdentityStatus("earned");
-        autoVerify(suiAddress, cached.jti);
-        syncOnChain(suiAddress);
+      if (cached && !pipelineQuery.data?.credential) {
+        queryClient.setQueryData(
+          passportQueryKeys.identity(suiAddress, email),
+          (old: PipelineResult | undefined) =>
+            old ? { ...old, credential: cached, identityStatus: "earned" as const } : old,
+        );
       }
     }
-    refresh();
-  }, [suiAddress, email, refresh, autoVerify, syncOnChain]);
+  }, [suiAddress, email, pipelineQuery.data?.credential, queryClient]);
 
-  useEffect(() => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    const shouldPoll =
-      (identityStatus === "pending" || (identityStatus === "earned" && onChain?.needs_provision)) &&
-      (suiAddress || email);
-    if (shouldPoll) {
-      pollRef.current = setInterval(refresh, POLL_MS);
-    }
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [identityStatus, suiAddress, email, onChain?.needs_provision, refresh]);
+  const refresh = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: passportQueryKeys.identity(suiAddress, email),
+    });
+  }, [queryClient, suiAddress, email]);
 
   const retryProvision = useCallback(async () => {
-    if (!suiAddress) return;
-    const status = await fetchOnChainStatus(suiAddress);
-    if (status) await autoProvision(suiAddress, { ...status, needs_provision: true });
-    await syncOnChain(suiAddress);
-  }, [suiAddress, fetchOnChainStatus, autoProvision, syncOnChain]);
+    if (!suiAddress || provisioningRef.current) return;
+    provisioningRef.current = true;
+    setIsProvisioning(true);
+    setProvisionError(null);
+    try {
+      const status = await fetchOnChainPassportStatus(suiAddress);
+      if (status?.needs_provision) {
+        const data = await provisionOnChainPassport(suiAddress);
+        if (data.error) setProvisionError(data.error);
+        queryClient.setQueryData(
+          passportQueryKeys.identity(suiAddress, email),
+          (old: PipelineResult | undefined) =>
+            old ? { ...old, onChain: data.object_id ? data : old.onChain } : old,
+        );
+      }
+      await refresh();
+    } catch {
+      setProvisionError("On-chain provision failed");
+    } finally {
+      provisioningRef.current = false;
+      setIsProvisioning(false);
+    }
+  }, [suiAddress, email, queryClient, refresh]);
+
+  const data = pipelineQuery.data;
+  const identityStatus = data?.identityStatus ?? "not_started";
+  const isPolling = identityStatus === "pending" || Boolean(data?.onChain?.needs_provision);
 
   return {
     identityStatus,
-    via,
-    credential,
-    verifyState,
-    verifyResult,
-    onChain,
-    isRefreshing,
+    via: data?.via ?? null,
+    credential: data?.credential ?? null,
+    verifyState: data?.verifyState ?? "idle",
+    verifyResult: data?.verifyResult ?? null,
+    onChain: data?.onChain ?? null,
+    isRefreshing: pipelineQuery.isFetching && !pipelineQuery.isLoading,
     isProvisioning,
     provisionError,
-    syncMessage,
-    lastChecked,
+    syncMessage: data?.syncMessage ?? null,
+    lastChecked: pipelineQuery.dataUpdatedAt ? new Date(pipelineQuery.dataUpdatedAt) : null,
     refresh,
     retryProvision,
-    isPolling: identityStatus === "pending" || Boolean(onChain?.needs_provision),
+    isPolling,
+    isLoading: pipelineQuery.isLoading,
   };
 }
