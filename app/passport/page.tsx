@@ -8,13 +8,13 @@ import Link from "next/link";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { FoundingVerifiedCard } from "@/components/passport/FoundingVerifiedCard";
 import { SuiWalletCreatedCard } from "@/components/passport/SuiWalletCreatedCard";
+import { PassportWalkthrough } from "@/components/passport/PassportWalkthrough";
 import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { PassportTrustCard } from "@/components/passport/PassportTrustCard";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
-import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
@@ -307,21 +307,24 @@ function PassportPageInner() {
           </p>
         </div>
 
+        <PassportWalkthrough
+          walletDone={walletDone}
+          suiAddress={suiAddress}
+          email={email}
+          identityStatus={identityStatus}
+          credential={credential}
+          verifyState={verifyState}
+          isPolling={isPolling}
+          isRefreshing={isRefreshing}
+          starting={starting}
+          error={error}
+          onStartIdCheck={startIdentityVerification}
+          onRefresh={refresh}
+        />
+
         <VerifyStepRail walletDone={walletDone} active={active} earned={railEarned} enhancedTrust={enhancedTrust} />
 
-        {!walletDone ? (
-          <div style={{ marginBottom:"2rem" }}>
-            <div style={{ fontFamily:S, fontSize:"0.88rem", fontWeight:700,
-                           color:"var(--text-primary)", marginBottom:"0.75rem" }}>
-              Step 1 · Sign in with Google
-            </div>
-            <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
-                         lineHeight:1.65, margin:"0 0 1rem", maxWidth:520 }}>
-              {consumerCopy.passport.walletHint}
-            </p>
-            <ZkLoginSignIn />
-          </div>
-        ) : (
+        {walletDone && (
           <div style={{ marginBottom:"2rem" }}>
             <SuiWalletCreatedCard suiAddress={suiAddress!} email={email} />
           </div>

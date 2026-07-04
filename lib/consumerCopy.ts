@@ -51,6 +51,8 @@ export const consumerCopy = {
     idCheck: "Optional ID check",
     precheck: "Start ID check",
     precheckProvider: "Powered by a licensed identity provider. Abraxas stores only the outcome — never your documents.",
+    walkthroughTitle: "Three steps. Verify once, reuse everywhere.",
+    walkthroughEyebrow: "Guided walkthrough",
   },
   trustCard: {
     title: "Account status",
