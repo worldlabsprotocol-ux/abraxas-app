@@ -15,6 +15,7 @@ import {
 } from "@/lib/cieloCaseStudy";
 import { CaseStudyGallery, CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
 import { Btn } from "@/components/redesign/ui";
+import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -38,8 +39,9 @@ export default function CieloCaseStudyPage() {
       />
 
       <CaseStudyPhotoHero
-        src="/assets/cielo/08.jpg"
-        alt="Cielo Sunrise exterior"
+        src={CIELO_HERO_IMAGE.src}
+        alt={CIELO_HERO_IMAGE.alt}
+        objectPosition={CIELO_HERO_IMAGE.objectPosition}
         badge="Genesis asset · AAS-1 Verified"
         title="Cielo Sunrise"
         subtitle="Mineral Bluff, GA · $1.1M appraised · Live STR + Abraxas booking"

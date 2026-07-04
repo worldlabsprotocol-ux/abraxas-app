@@ -45,12 +45,14 @@ export function CaseStudyPhotoHero({
   badge,
   title,
   subtitle,
+  objectPosition = "center",
 }: {
   src: string;
   alt: string;
   badge: string;
   title: string;
   subtitle?: string;
+  objectPosition?: string;
 }) {
   return (
     <div style={{
@@ -59,7 +61,10 @@ export function CaseStudyPhotoHero({
       border: "1px solid var(--border-strong)",
     }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} style={{ width: "100%", height: "100%", minHeight: 280, objectFit: "cover", display: "block" }} />
+      <img src={src} alt={alt} style={{
+        width: "100%", height: "100%", minHeight: 280, objectFit: "cover", display: "block",
+        objectPosition,
+      }} />
       <div style={{
         position: "absolute", inset: 0,
         background: "linear-gradient(to top, rgba(6,9,11,0.92) 0%, rgba(6,9,11,0.2) 55%, transparent 100%)",

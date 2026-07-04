@@ -9,6 +9,8 @@ import { VerificationBadge } from "./VerificationBadge";
 import { AssuranceDrawer } from "@/components/compliance/AssuranceDrawer";
 import { Btn } from "./ui";
 import { CieloBookingPanel } from "@/components/cielo/CieloBookingPanel";
+import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { CieloPhoto } from "@/components/cielo/CieloPhoto";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -52,11 +54,10 @@ export function FeaturedFlagship() {
         boxShadow: "var(--shadow-glow)",
       }}>
         <div style={{ position: "relative", minHeight: 320 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/cielo/01.jpg"
-            alt="Cielo Sunrise"
-            style={{ width: "100%", height: "100%", minHeight: 320, objectFit: "cover", display: "block" }}
+          <CieloPhoto
+            src={CIELO_PORCH_IMAGE.src}
+            alt={CIELO_PORCH_IMAGE.alt}
+            minHeight={320}
           />
           <div style={{
             position: "absolute", inset: 0,

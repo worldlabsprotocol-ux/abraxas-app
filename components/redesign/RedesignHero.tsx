@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { Btn } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
+import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
+import { CieloPhoto } from "@/components/cielo/CieloPhoto";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -23,10 +25,11 @@ function PhotoHeroPanel() {
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/assets/cielo/08.jpg"
-        alt="Cielo Sunrise verified property"
-        style={{ width: "100%", height: "100%", minHeight: 360, objectFit: "cover", display: "block" }}
+      <CieloPhoto
+        src={CIELO_HERO_IMAGE.src}
+        alt={CIELO_HERO_IMAGE.alt}
+        objectPosition={CIELO_HERO_IMAGE.objectPosition}
+        minHeight={360}
       />
       <div style={{
         position: "absolute", inset: 0,
@@ -47,7 +50,7 @@ function PhotoHeroPanel() {
           Cielo Sunrise · $1.1M verified
         </div>
         <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.75)", marginBottom: "0.75rem" }}>
-          Real property · Live Airbnb · USDC booking on Sui
+          Real property · Live Airbnb · USDC booking on Sui · {CIELO_HERO_IMAGE.caption}
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <Btn href="/verify?q=ABX-RE-HOSP-001" size="sm">Verify on-chain →</Btn>

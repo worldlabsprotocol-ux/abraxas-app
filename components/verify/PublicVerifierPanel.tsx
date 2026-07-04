@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import type { VerifierResponse } from "@/lib/verifyRegistry";
 import { CIELO_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
+import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
 import { VerifierResultCard } from "./VerifierResultCard";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
@@ -125,7 +126,7 @@ export function PublicVerifierPanel() {
         {result && !loading && (
           <VerifierResultCard
             result={result}
-            heroImage={result.entity_label?.includes("Cielo") ? "/assets/cielo/08.jpg" : undefined}
+            heroImage={result.entity_label?.includes("Cielo") ? CIELO_HERO_IMAGE.src : undefined}
           />
         )}
 
@@ -147,7 +148,7 @@ export function PublicVerifierPanel() {
             <VerifierResultCard
               result={CIELO_VERIFIER_PREVIEW}
               previewLabel="Example · valid credential (Cielo Sunrise)"
-              heroImage="/assets/cielo/08.jpg"
+              heroImage={CIELO_HERO_IMAGE.src}
               compact
             />
           </>

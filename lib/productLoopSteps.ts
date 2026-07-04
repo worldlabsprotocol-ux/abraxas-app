@@ -1,4 +1,5 @@
 // FILE: lib/productLoopSteps.ts
+import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
 // Auto-advancing product walkthrough — ~30s full loop (6s per step).
 
 export interface ProductLoopStep {
@@ -18,7 +19,7 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Browse verified assets",
     subtitle: "Real photos, assurance levels, and registry state — no login required.",
     durationMs: 6000,
-    image: "/assets/cielo/06.jpg",
+    image: CIELO_HERO_IMAGE.src,
     badge: "AAS-1 Verified",
     metrics: [
       { label: "Appraised", value: "$1.1M" },
@@ -44,7 +45,7 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Sign in with Google",
     subtitle: "zkLogin creates your Sui wallet — no seed phrase, no browser extension.",
     durationMs: 5000,
-    image: "/assets/cielo/08.jpg",
+    image: "/assets/cielo/12.jpg",
     badge: "Passport ready",
     metrics: [
       { label: "Account", value: "Google → Sui" },
@@ -70,7 +71,7 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Verify on the public registry",
     subtitle: "Any relying party pastes ABX-RE-HOSP-001 — assurance taxonomy L1–L4 instant.",
     durationMs: 7000,
-    image: "/assets/cielo/01.jpg",
+    image: CIELO_PORCH_IMAGE.src,
     badge: "✓ VERIFIED & ACTIVE",
     metrics: [
       { label: "Registry ID", value: "ABX-RE-HOSP-001" },

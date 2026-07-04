@@ -31,7 +31,7 @@ export function VisualProofSection() {
       .catch(() => setMetrics(null));
   }, []);
 
-  const thumbs = EXPLORE_ASSETS.filter(a => a.image).slice(0, 4);
+  const thumbs = EXPLORE_ASSETS.filter(a => a.image && a.id !== "genesis-asset").slice(0, 4);
 
   return (
     <section>

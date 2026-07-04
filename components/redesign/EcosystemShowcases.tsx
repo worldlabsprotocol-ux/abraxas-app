@@ -5,6 +5,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
+
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
@@ -14,7 +16,8 @@ const SHOWCASES = [
     desc: "Cielo Sunrise — $1.1M verified hospitality with stablecoin booking and live calendar.",
     href: "/apps/cielo-sunrise",
     tag: "Live",
-    image: "/assets/cielo/06.jpg",
+    image: CIELO_HERO_IMAGE.src,
+    objectPosition: CIELO_HERO_IMAGE.objectPosition,
   },
   {
     title: "Music royalty audit",
@@ -75,7 +78,10 @@ export function EcosystemShowcases() {
                   <img
                     src={s.image}
                     alt=""
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    style={{
+                      width: "100%", height: "100%", objectFit: "cover", display: "block",
+                      objectPosition: "objectPosition" in s ? s.objectPosition : "center",
+                    }}
                   />
                   <div style={{
                     position: "absolute", inset: 0,

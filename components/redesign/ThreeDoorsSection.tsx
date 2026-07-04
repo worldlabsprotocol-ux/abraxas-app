@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 
+import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
@@ -17,7 +19,7 @@ const DOORS = [
     body: "Google sign-in creates your wallet (zkLogin). Add an optional ID check when a deal requires it. Your proof is reusable — partners check it without seeing your documents.",
     href: "/passport",
     cta: "Create my passport →",
-    image: "/assets/cielo/17.jpg",
+    image: CIELO_PORCH_IMAGE.src,
   },
   {
     n: "02",
@@ -26,7 +28,7 @@ const DOORS = [
     body: "Paste any asset ID or credential hash. See if it's valid, expired, or revoked — with assurance levels L1–L4. Built for lenders, buyers, and anyone who needs to trust a claim.",
     href: "/verify",
     cta: "Run public checker →",
-    image: "/assets/cielo/01.jpg",
+    image: "/assets/smyrna/011.webp",
   },
 ] as const;
 
