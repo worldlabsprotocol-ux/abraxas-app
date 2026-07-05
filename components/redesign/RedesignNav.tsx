@@ -22,6 +22,7 @@ const LINKS = [
 
 const MORE_LINKS = [
   { href: "/#registry", label: "Browse assets" },
+  { href: "/account", label: "My account" },
   { href: "/build", label: "Submit your asset" },
   { href: "/investors/strategy", label: "Strategic roadmap" },
   { href: "/integrations/relying-parties", label: "Relying parties" },

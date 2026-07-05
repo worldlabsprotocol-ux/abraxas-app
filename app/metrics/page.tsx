@@ -74,8 +74,18 @@ export default function MetricsPage() {
       <PageHeader
         eyebrow="Transparency"
         title="Live protocol metrics"
-        subtitle="Pulled from Supabase and public APIs. Zero means not yet configured or no activity — not fabricated placeholders."
+        subtitle="Design partner phase — counters reflect real Supabase/API data. Zero often means not yet configured, not fabricated placeholders."
       />
+
+      <div style={{
+        padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1.25rem",
+        background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.22)",
+        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6,
+      }}>
+        <strong style={{ color: "var(--text-primary)" }}>Early access.</strong>{" "}
+        Full registry metrics roll out as audits complete and third-party assets onboard.
+        Genesis asset Cielo Sunrise runs end-to-end — global counters may show 0 until pipeline config catches up.
+      </div>
 
       {err && (
         <ContentCard>

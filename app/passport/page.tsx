@@ -14,6 +14,7 @@ import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { PassportTrustCard } from "@/components/passport/PassportTrustCard";
+import { AddToAppleWallet } from "@/components/passport/AddToAppleWallet";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
@@ -390,6 +391,16 @@ function PassportPageInner() {
         )}
 
         <PassportTrustCard suiAddress={suiAddress} completionPercent={completion.percent} />
+
+        {walletDone && hasCredential && (
+          <div style={{ marginBottom: "1.5rem" }}>
+            <AddToAppleWallet
+              suiAddress={suiAddress}
+              verificationLevel={verifyState === "valid" ? "L3 Attested" : "Identity"}
+              credentialId={credential?.jti}
+            />
+          </div>
+        )}
 
         <PassportIntentCard suiAddress={suiAddress} />
 

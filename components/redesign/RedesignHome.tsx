@@ -14,7 +14,11 @@ import { EcosystemShowcases } from "./EcosystemShowcases";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { IntegratorStrip } from "./IntegratorStrip";
 import { BrowseWithoutKycBanner } from "./BrowseWithoutKycBanner";
+import { EarlyAccessBanner } from "./EarlyAccessBanner";
 import { WhatIsAbraxasSection } from "./WhatIsAbraxasSection";
+import { KycDebtSection } from "./KycDebtSection";
+import { UnifiedExperienceSection } from "./UnifiedExperienceSection";
+import { SupplyNetworkTeaser } from "./SupplyNetworkTeaser";
 import { PassportInnovationSection } from "./PassportInnovationSection";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
 import { RoadmapCTA } from "./RoadmapCTA";
@@ -43,11 +47,16 @@ export function RedesignHome() {
           <div style={MAXW}><RedesignHero /></div>
 
           <div style={{ ...MAXW, paddingTop: "1.25rem" }}><BrowseWithoutKycBanner /></div>
+          <div style={{ ...MAXW, paddingTop: "0.85rem" }}><EarlyAccessBanner /></div>
           <div style={{ ...MAXW, paddingTop: "0.85rem" }}><WhatIsAbraxasSection /></div>
           <div style={{ ...MAXW, paddingTop: "0.75rem" }}><TrustMetricsStrip /></div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <PassportInnovationSection />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <UnifiedExperienceSection />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
@@ -68,6 +77,14 @@ export function RedesignHome() {
 
           <div id="registry" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <AssetsExplorer title="Public registry" />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <KycDebtSection />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <SupplyNetworkTeaser />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>

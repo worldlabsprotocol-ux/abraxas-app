@@ -84,6 +84,14 @@ export const FAQ_ITEMS = [
 
 export const DOCS_SECTIONS = [
   {
+    title: "Why unified verification",
+    body: "Market-facing thesis on KYC debt, privacy, wallet friction, and how Abraxas solves it with zkLogin + W3C VCs. /docs/why-verification",
+  },
+  {
+    title: "Credential portability",
+    body: "Example JWT claim structure, integrator endpoints, and best practices for relying parties. /docs/credential-portability",
+  },
+  {
     title: "Architecture overview",
     body: "Abraxas Identity Layer (AIL): trust orchestration, not KYC. Layer 1: licensed providers (Veriff). Layer 2: credential engine (W3C VC, did:sui). Layer 3: trust registry. Layer 4: compliance engine. Layer 5: Identity Passport (Sui + zkLogin). Full spec: /docs/ail",
   },

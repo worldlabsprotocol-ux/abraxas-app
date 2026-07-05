@@ -11,6 +11,21 @@ Home / verify: **`/passport`** · AIL spec: **`/docs/ail`** · Sui hub: **`/docs
 
 ---
 
+## Hybrid chain architecture
+
+Abraxas intentionally splits responsibilities across two chains:
+
+| Chain | Role |
+|-------|------|
+| **Sui** | Identity, zkLogin, W3C credentials, Move Passport, USDC booking/settlement |
+| **Solana** | $ABRA SPL token (optional access tiers — verification is **not** gated) |
+
+Credentials follow the W3C standard and are portable — verify the Ed25519 signature anywhere.
+
+Full narrative: **[docs/chain](https://abraxas-app.vercel.app/docs/chain)** · Architecture: **`/docs/architecture`**
+
+---
+
 ## Sui verification stack
 
 | Layer | What it does |
@@ -50,6 +65,7 @@ Entity formation packages with verified ownership record.
 |-------|------------|
 | Framework | Next.js 14 (App Router) |
 | Verification chain | **Sui** · Move · zkLogin |
+| Treasury token | **Solana** · SPL $ABRA (optional tiers) |
 | Identity | W3C VC · Ed25519 · Veriff · zkLogin |
 | Database | Supabase (PostgreSQL) |
 | Deployment | Vercel |

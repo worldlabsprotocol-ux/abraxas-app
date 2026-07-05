@@ -45,6 +45,8 @@ export default function DocsPage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
+            { label: "Why verification", href: "/docs/why-verification" },
+            { label: "Credential portability", href: "/docs/credential-portability" },
             { label: "Litepaper", href: "/docs/litepaper" },
             { label: "Chain architecture", href: "/docs/chain" },
             { label: "AIL specification", href: "/docs/ail" },

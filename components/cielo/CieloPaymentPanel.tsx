@@ -1,6 +1,7 @@
 "use client";
 // FILE: components/cielo/CieloPaymentPanel.tsx
 // Phase 2: manual digest verify · Phase 3: one-click pay from zkLogin wallet.
+// Dual payment: fiat on-ramp (Ramp scaffold) + USDC on Sui.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -8,6 +9,7 @@ import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { payCieloFromWallet, verifyCieloPaymentOnServer } from "@/lib/cielo/payFromWallet";
 import { consumerCopy } from "@/lib/consumerCopy";
 import { NonCustodialDisclosure } from "@/components/compliance/NonCustodialDisclosure";
+import { PaymentMethodChooser, type PaymentMethod } from "@/components/cielo/PaymentMethodChooser";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -54,6 +56,7 @@ export function CieloPaymentPanel({
   const [success, setSuccess] = useState<{ explorer?: string | null } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [showManual, setShowManual] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("fiat");
 
   const walletReady = Boolean(
     suiAddress &&
@@ -196,6 +199,17 @@ export function CieloPaymentPanel({
         />
       </div>
 
+      {payment.payable && (
+        <PaymentMethodChooser
+          amountUsdc={payment.amount_usdc}
+          suiAddress={suiAddress}
+          bookingId={booking.booking_id}
+          memo={payment.memo}
+          value={paymentMethod}
+          onChange={setPaymentMethod}
+        />
+      )}
+
       <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.85rem" }}>
         <Row label="Pay to" value={payment.treasury_address ?? payment.treasury_label}
           copyKey="treasury" copied={copied} onCopy={copy} mono />
@@ -211,7 +225,7 @@ export function CieloPaymentPanel({
         </p>
       )}
 
-      {payment.payable && walletReady && payment.treasury_address && (
+      {payment.payable && walletReady && payment.treasury_address && paymentMethod === "crypto" && (
         <>
           <button type="button" onClick={payNow} disabled={busy}
             style={{
@@ -228,7 +242,7 @@ export function CieloPaymentPanel({
         </>
       )}
 
-      {payment.payable && isAuthenticated && !walletReady && (
+      {payment.payable && isAuthenticated && !walletReady && paymentMethod === "crypto" && (
         <div style={{
           padding: "0.65rem 0.75rem", borderRadius: 10, marginBottom: "0.75rem",
           background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
@@ -247,7 +261,7 @@ export function CieloPaymentPanel({
         </div>
       )}
 
-      {payment.payable && !isAuthenticated && (
+      {payment.payable && !isAuthenticated && paymentMethod === "crypto" && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.6 }}>
           <Link href="/passport" style={{ color: ACCENT, fontWeight: 600 }}>Sign in with Google</Link>{" "}
           to pay in one click.

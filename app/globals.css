@@ -126,6 +126,18 @@ a:focus:not(:focus-visible) {
   animation: abxPulse 1.5s ease-in-out infinite;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .abx-skeleton { animation: none; }
   *:not(img):not(svg):not(path) { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
