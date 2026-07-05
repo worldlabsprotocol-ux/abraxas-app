@@ -92,13 +92,16 @@ export function AddToAppleWallet({
       <button type="button" onClick={requestPass} disabled={busy}
         aria-busy={busy}
         style={{
-          display: "inline-flex", alignItems: "center", gap: "0.5rem",
-          padding: "0.65rem 1.1rem", borderRadius: 999, border: "none",
-          background: busy ? `${ACCENT}66` : "#000",
-          color: "#fff", fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
+          display: "inline-flex", alignItems: "center", gap: "0.55rem",
+          padding: "0.65rem 1.15rem", borderRadius: 10, border: "none",
+          background: busy ? "#333" : "#000",
+          color: "#fff", fontFamily: FONT, fontSize: "0.82rem", fontWeight: 600,
           cursor: busy ? "wait" : "pointer", minHeight: 44,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
         }}>
-        {busy ? <Spinner size={16} /> : null}
+        {busy ? <Spinner size={16} color="#fff" /> : (
+          <span style={{ fontSize: "1.1rem", lineHeight: 1 }} aria-hidden>🍎</span>
+        )}
         {busy ? "Preparing pass…" : "Add to Apple Wallet"}
       </button>
 

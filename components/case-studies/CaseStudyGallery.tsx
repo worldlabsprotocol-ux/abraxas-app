@@ -1,8 +1,15 @@
 "use client";
 // FILE: components/case-studies/CaseStudyGallery.tsx
-// Photo evidence strip for institutional case studies.
+// Photo evidence strip — fixed aspect ratios, no white letterboxing.
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const BG = "#06090B";
+
+const OBJECT_POSITIONS: Record<string, string> = {
+  "/assets/cielo/04.jpg": "78% center",
+  "/assets/cielo/01.jpg": "50% 20%",
+  "/assets/cielo/08.jpg": "center 35%",
+};
 
 export function CaseStudyGallery({
   images,
@@ -16,8 +23,8 @@ export function CaseStudyGallery({
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-      gap: "0.65rem",
+      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+      gap: "0.75rem",
       marginBottom: "0.5rem",
     }}>
       {images.map((src, i) => (
@@ -25,13 +32,19 @@ export function CaseStudyGallery({
           borderRadius: 12, overflow: "hidden",
           border: "1px solid var(--border-strong)",
           aspectRatio: "4/3",
-          background: "var(--surface)",
+          background: BG,
+          position: "relative",
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt={`${altPrefix} ${i + 1}`}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%",
+              objectFit: "cover", display: "block",
+              objectPosition: OBJECT_POSITIONS[src] ?? "center",
+            }}
           />
         </div>
       ))}
@@ -57,17 +70,21 @@ export function CaseStudyPhotoHero({
   return (
     <div style={{
       position: "relative", borderRadius: 18, overflow: "hidden",
-      marginBottom: "1.25rem", minHeight: 280,
+      marginBottom: "1.25rem",
       border: "1px solid var(--border-strong)",
+      aspectRatio: "16/9",
+      background: BG,
     }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} style={{
-        width: "100%", height: "100%", minHeight: 280, objectFit: "cover", display: "block",
+        position: "absolute", inset: 0,
+        width: "100%", height: "100%",
+        objectFit: "cover", display: "block",
         objectPosition,
       }} />
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(to top, rgba(6,9,11,0.92) 0%, rgba(6,9,11,0.2) 55%, transparent 100%)",
+        background: "linear-gradient(to top, rgba(6,9,11,0.92) 0%, rgba(6,9,11,0.35) 50%, rgba(6,9,11,0.15) 100%)",
       }} />
       <div style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}>
         <span style={{

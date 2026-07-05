@@ -1,8 +1,10 @@
 "use client";
 // FILE: components/cielo/CieloPhoto.tsx
-// Consistent Cielo imagery with optional crop (for collage source files).
+// Consistent Cielo imagery — dark letterbox prevents white-edge artifacts.
 
 import type { CSSProperties } from "react";
+
+const BG = "#06090B";
 
 export function CieloPhoto({
   src,
@@ -20,19 +22,29 @@ export function CieloPhoto({
   style?: CSSProperties;
 }) {
   return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={src}
-      alt={alt}
-      style={{
-        width: "100%",
-        height: height ?? "100%",
-        minHeight,
-        objectFit: "cover",
-        objectPosition,
-        display: "block",
-        ...style,
-      }}
-    />
+    <div style={{
+      position: "relative",
+      width: "100%",
+      height: height ?? "100%",
+      minHeight,
+      overflow: "hidden",
+      background: BG,
+      ...style,
+    }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition,
+          display: "block",
+        }}
+      />
+    </div>
   );
 }

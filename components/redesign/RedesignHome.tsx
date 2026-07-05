@@ -20,6 +20,7 @@ import { KycDebtSection } from "./KycDebtSection";
 import { UnifiedExperienceSection } from "./UnifiedExperienceSection";
 import { SupplyNetworkTeaser } from "./SupplyNetworkTeaser";
 import { PassportInnovationSection } from "./PassportInnovationSection";
+import { RevolutExperienceStrip } from "./RevolutExperienceStrip";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
 import { RoadmapCTA } from "./RoadmapCTA";
 import { RedesignFooter } from "./RedesignFooter";
@@ -53,6 +54,10 @@ export function RedesignHome() {
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <PassportInnovationSection />
+          </div>
+
+          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
+            <RevolutExperienceStrip />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>

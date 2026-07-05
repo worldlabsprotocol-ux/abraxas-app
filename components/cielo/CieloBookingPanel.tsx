@@ -1,10 +1,12 @@
 "use client";
 // FILE: components/cielo/CieloBookingPanel.tsx
-// Book Cielo on Abraxas with USDC on Sui. Dates validated on Protocol Calendar.
+// Book Cielo — Apple Pay / card (Ramp) or USDC on Sui.
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { CIELO_RATES, blockedNightsInRange, estimateUsdc, eachNight } from "@/lib/cielo/bookingValidation";
 import { NonCustodialDisclosure } from "@/components/compliance/NonCustodialDisclosure";
+import { PaymentMethodChooser, type PaymentMethod } from "@/components/cielo/PaymentMethodChooser";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -38,6 +40,7 @@ export function CieloBookingPanel({
   const [blocked, setBlocked] = useState<BlockedDate[]>([]);
   const [checkoutInfo, setCheckoutInfo] = useState<string[]>([]);
   const [payUrl, setPayUrl] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("fiat");
 
   useEffect(() => {
     setWallet(suiAddress ?? "");
@@ -131,12 +134,12 @@ export function CieloBookingPanel({
             Book on Abraxas
           </div>
           <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
-            Pay USDC on Sui. skip Airbnb fees.
+            Book like Revolut — Apple Pay or USDC.
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
                        lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 420 }}>
-            Dates run on the Abraxas Protocol Calendar. When you request a stay, those nights
-            are held here immediately. Pay USDC on Sui after we confirm.
+            Pick dates on the Protocol Calendar. Pay with Apple Pay / card (converts to USDC on Sui)
+            or use USDC from your zkLogin wallet.
           </p>
         </div>
         {variant !== "inline" && (
@@ -182,18 +185,26 @@ export function CieloBookingPanel({
             )}
 
             {nights.length > 0 && conflictNights.length === 0 && (
-              <div style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 10,
-                             background: `${AMBER}10`, border: `1px solid ${AMBER}30` }}>
-                <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: AMBER, letterSpacing: "0.08em" }}>
-                  ESTIMATE
+              <>
+                <div style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 10,
+                               background: `${AMBER}10`, border: `1px solid ${AMBER}30` }}>
+                  <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: AMBER, letterSpacing: "0.08em" }}>
+                    ESTIMATE
+                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                    ~{est.toLocaleString()} USDC
+                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                    {nights.length} nights · from ${CIELO_RATES.weeknight}/night on Abraxas
+                  </div>
                 </div>
-                <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                  ~{est.toLocaleString()} USDC
-                </div>
-                <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-                  {nights.length} nights · from ${CIELO_RATES.weeknight}/night on Abraxas
-                </div>
-              </div>
+                <PaymentMethodChooser
+                  amountUsdc={est}
+                  suiAddress={wallet.trim() || suiAddress}
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                />
+              </>
             )}
 
             <button type="button" onClick={() => setStep("contact")}
@@ -208,8 +219,11 @@ export function CieloBookingPanel({
           <>
             <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-secondary)",
                          lineHeight: 1.65, margin: "0 0 0.875rem" }}>
-              We confirm within 24 hours and send payment instructions by email.
-              Your payment wallet can be filled automatically after sign-in.
+              We confirm within 24 hours. You&apos;ll pay with{" "}
+              {paymentMethod === "fiat" ? "Apple Pay / card" : "USDC on Sui"} using the link we email.
+              {!wallet.trim() && !suiAddress && (
+                <>{" "}<Link href="/passport" style={{ color: ACCENT, fontWeight: 600 }}>Sign in with Google</Link> to pre-fill your wallet.</>
+              )}
             </p>
             <Field label="Your name"><input value={name} onChange={e => setName(e.target.value)} style={inputStyle} /></Field>
             <Field label="Email"><input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} /></Field>
@@ -251,18 +265,30 @@ export function CieloBookingPanel({
               </>
             )}
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-              Your dates are on the live calendar. We confirm within 24 hours, then send stablecoin payment instructions to the Cielo asset settlement container on Sui.
+              Your dates are on the live calendar. Once confirmed, pay with Apple Pay / card or USDC on Sui.
             </p>
+            {refId && est > 0 && (
+              <div style={{ marginBottom: "1rem", textAlign: "left" }}>
+                <PaymentMethodChooser
+                  amountUsdc={est}
+                  suiAddress={wallet.trim() || suiAddress}
+                  bookingId={refId}
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                />
+              </div>
+            )}
             <div style={{ marginBottom: "1rem" }}>
               <NonCustodialDisclosure variant="compact" />
             </div>
             {payUrl && (
               <a href={payUrl} style={{
                 display: "inline-block", marginBottom: "1rem", padding: "0.65rem 1.25rem",
-                borderRadius: 999, background: AMBER, color: "#000",
+                borderRadius: 999, background: paymentMethod === "fiat" ? "#000" : AMBER,
+                color: paymentMethod === "fiat" ? "#fff" : "#000",
                 fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
               }}>
-                Pay now →
+                {paymentMethod === "fiat" ? "Pay with Apple Pay / card →" : "Pay USDC now →"}
               </a>
             )}
             {checkoutInfo.length > 0 && (

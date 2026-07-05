@@ -392,8 +392,8 @@ function PassportPageInner() {
 
         <PassportTrustCard suiAddress={suiAddress} completionPercent={completion.percent} />
 
-        {walletDone && hasCredential && (
-          <div style={{ marginBottom: "1.5rem" }}>
+        {walletDone && (
+          <div id="apple-wallet" style={{ marginBottom: "1.5rem" }}>
             <AddToAppleWallet
               suiAddress={suiAddress}
               verificationLevel={verifyState === "valid" ? "L3 Attested" : "Identity"}

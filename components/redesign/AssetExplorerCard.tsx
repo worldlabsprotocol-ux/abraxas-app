@@ -29,10 +29,13 @@ export function AssetExplorerCard({ asset }: { asset: ExploreAsset }) {
       }}
     >
       {/* Photo */}
-      <div style={{ position: "relative", height: 188, background: "var(--surface)" }}>
+      <div style={{ position: "relative", height: 220, background: "#06090B" }}>
         {imgOk ? (
           <img src={asset.image} alt={asset.name} onError={() => setImgOk(false)}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            style={{
+              width: "100%", height: "100%", objectFit: "cover", display: "block",
+              objectPosition: asset.id === "genesis-asset" ? "center 35%" : "center",
+            }} />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex",
                         alignItems: "center", justifyContent: "center",

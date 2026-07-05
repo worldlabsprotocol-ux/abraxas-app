@@ -6,59 +6,13 @@ import { motion } from "framer-motion";
 import { Btn } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
-import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
-import { CieloPhoto } from "@/components/cielo/CieloPhoto";
+import { RegistryHeroPanel } from "./RegistryHeroPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 function PhotoHeroPanel() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-      style={{
-        position: "relative", borderRadius: 20, overflow: "hidden",
-        border: "1px solid var(--border-strong)",
-        boxShadow: "var(--shadow-glow)", minHeight: 360,
-      }}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <CieloPhoto
-        src={CIELO_HERO_IMAGE.src}
-        alt={CIELO_HERO_IMAGE.alt}
-        objectPosition={CIELO_HERO_IMAGE.objectPosition}
-        minHeight={360}
-      />
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(to top, rgba(6,9,11,0.92) 0%, rgba(6,9,11,0.15) 50%, transparent 100%)",
-      }} />
-      <div style={{ position: "absolute", top: 16, left: 16, right: 16, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <VerificationBadge label="L3 attested · Live booking" color={ACCENT} check />
-        <span style={{
-          fontFamily: "'JetBrains Mono',monospace", fontSize: "0.55rem", fontWeight: 700,
-          padding: "0.25rem 0.5rem", borderRadius: 999,
-          background: "rgba(0,0,0,0.6)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)",
-        }}>
-          ABX-RE-HOSP-001
-        </span>
-      </div>
-      <div style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}>
-        <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800, color: "#fff", marginBottom: "0.35rem" }}>
-          Cielo Sunrise · $1.1M verified
-        </div>
-        <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.75)", marginBottom: "0.75rem" }}>
-          Real property · Live Airbnb · USDC booking on Sui · {CIELO_HERO_IMAGE.caption}
-        </div>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Btn href="/verify?q=ABX-RE-HOSP-001" size="sm">Verify on-chain →</Btn>
-          <Btn href="/flagship" variant="tertiary" size="sm">Full dossier</Btn>
-        </div>
-      </div>
-    </motion.div>
-  );
+  return <RegistryHeroPanel />;
 }
 
 export function RedesignHero() {

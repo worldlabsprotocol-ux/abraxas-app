@@ -30,7 +30,7 @@ function PayInner() {
         Complete your Cielo payment
       </h1>
       <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
-        Booking {bookingId} · USDC on Sui · verified on-chain
+        Booking {bookingId} · Pay with Apple Pay / card or USDC on Sui · verified on-chain
         {" · "}
         <Link href={`/cielo/status?booking_id=${encodeURIComponent(bookingId)}`} style={{ color: "#10B981" }}>
           Track status

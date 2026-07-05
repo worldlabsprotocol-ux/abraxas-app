@@ -5,7 +5,7 @@
 // is honest per asset.
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
-import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
 
 export type VerifyState = "verified" | "reference" | "open" | "owned";
 
@@ -34,7 +34,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Cielo Sunrise",
     assetClass: "Real Estate · Hospitality",
     location: "Mineral Bluff, Georgia",
-    image: CIELO_HERO_IMAGE.src,
+    image: CIELO_PORCH_IMAGE.src,
     primaryLabel: "Appraised value",
     primaryValue: "$1,100,000",
     secondaryLabel: "Cash yield",

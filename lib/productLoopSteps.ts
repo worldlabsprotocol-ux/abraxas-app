@@ -1,6 +1,5 @@
 // FILE: lib/productLoopSteps.ts
-import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
-// Auto-advancing product walkthrough — ~30s full loop (6s per step).
+// Auto-advancing product walkthrough — Revolut-like flow, minimal Cielo imagery.
 
 export interface ProductLoopStep {
   id: string;
@@ -19,25 +18,25 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Browse verified assets",
     subtitle: "Real photos, assurance levels, and registry state — no login required.",
     durationMs: 6000,
-    image: CIELO_HERO_IMAGE.src,
-    badge: "AAS-1 Verified",
+    image: "/assets/smyrna/011.webp",
+    badge: "Public registry",
     metrics: [
-      { label: "Appraised", value: "$1.1M" },
-      { label: "Cash yield", value: "14.6%" },
-      { label: "Collateral", value: "96/100" },
+      { label: "Assets", value: "4 listed" },
+      { label: "Assurance", value: "L1–L4" },
+      { label: "KYC", value: "Optional" },
     ],
   },
   {
     id: "book",
-    title: "Book on the live calendar",
-    subtitle: "Pick dates · Protocol Calendar blocks availability · operator confirms within 24h.",
+    title: "Book with Apple Pay or card",
+    subtitle: "Pick dates · pay in fiat · USDC settles on Sui automatically.",
     durationMs: 6000,
-    image: "/assets/cielo/14.jpg",
-    badge: "Live booking",
+    image: "/assets/cielo/08.jpg",
+    badge: "Revolut-like checkout",
     metrics: [
-      { label: "Check-in", value: "Fri 4:00 PM" },
-      { label: "Check-out", value: "Mon 10:00 AM" },
-      { label: "Est. USDC", value: "$1,240" },
+      { label: "Primary", value: "Apple Pay" },
+      { label: "Alt", value: "USDC on Sui" },
+      { label: "Est.", value: "~$1,240" },
     ],
   },
   {
@@ -45,38 +44,36 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Sign in with Google",
     subtitle: "zkLogin creates your Sui wallet — no seed phrase, no browser extension.",
     durationMs: 5000,
-    image: "/assets/cielo/12.jpg",
     badge: "Passport ready",
     metrics: [
       { label: "Account", value: "Google → Sui" },
+      { label: "Wallet", value: "Apple Wallet" },
       { label: "ID check", value: "Optional" },
-      { label: "Stamps", value: "Earn over time" },
     ],
   },
   {
     id: "pay",
-    title: "Pay USDC on Sui",
-    subtitle: "One-click stablecoin transfer · asset settlement container · on-chain verify.",
+    title: "Pay without thinking about rails",
+    subtitle: "Fiat on-ramp or one-click USDC · asset settlement container · on-chain verify.",
     durationMs: 6000,
-    image: "/assets/cielo/17.jpg",
     badge: "Payment captured",
     metrics: [
-      { label: "Asset", value: "USDC" },
-      { label: "Network", value: "Sui mainnet" },
+      { label: "Method", value: "Apple Pay" },
+      { label: "Settles", value: "USDC · Sui" },
       { label: "Status", value: "Captured ✓" },
     ],
   },
   {
     id: "verify",
     title: "Verify on the public registry",
-    subtitle: "Any relying party pastes ABX-RE-HOSP-001 — assurance taxonomy L1–L4 instant.",
+    subtitle: "Any relying party checks your credential — assurance taxonomy L1–L4 instant.",
     durationMs: 7000,
-    image: CIELO_PORCH_IMAGE.src,
-    badge: "✓ VERIFIED & ACTIVE",
+    image: "/assets/worldwearables/naj.jpg",
+    badge: "✓ PORTABLE PROOF",
     metrics: [
-      { label: "Registry ID", value: "ABX-RE-HOSP-001" },
-      { label: "Stage", value: "MARKETPLACE_LIVE" },
-      { label: "Assurance", value: "L3 Attested" },
+      { label: "Standard", value: "W3C VC" },
+      { label: "API", value: "/verify" },
+      { label: "Reuse", value: "Any partner" },
     ],
   },
 ];

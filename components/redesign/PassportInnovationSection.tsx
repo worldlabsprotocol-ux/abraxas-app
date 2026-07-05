@@ -70,7 +70,8 @@ export function PassportInnovationSection() {
           ))}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
             <Btn href="/passport" size="sm">Open Passport →</Btn>
-            <Btn href="/docs/sui" variant="secondary" size="sm">zkLogin docs</Btn>
+            <Btn href="/passport#apple-wallet" variant="secondary" size="sm">Add to Apple Wallet</Btn>
+            <Btn href="/docs/sui" variant="ghost" size="sm">zkLogin docs</Btn>
           </div>
         </div>
 
@@ -88,7 +89,8 @@ export function PassportInnovationSection() {
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.85,
           }}>
             <li><strong style={{ color: "var(--text-primary)" }}>Sign in with Google</strong> — wallet created via zkLogin</li>
-            <li><strong style={{ color: "var(--text-primary)" }}>Browse & book</strong> — no ID required for Cielo</li>
+            <li><strong style={{ color: "var(--text-primary)" }}>Pay with Apple Pay</strong> — or USDC on Sui when ready</li>
+            <li><strong style={{ color: "var(--text-primary)" }}>Add to Apple Wallet</strong> — carry verified status natively</li>
             <li><strong style={{ color: "var(--text-primary)" }}>Optional ID check</strong> — Veriff when a deal needs it</li>
             <li><strong style={{ color: "var(--text-primary)" }}>Credential issued</strong> — W3C JWT, reusable proof</li>
             <li><strong style={{ color: "var(--text-primary)" }}>Partner verifies</strong> — POST /api/credentials/verify</li>

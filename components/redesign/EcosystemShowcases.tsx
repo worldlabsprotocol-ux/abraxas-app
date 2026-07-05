@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -16,8 +16,8 @@ const SHOWCASES = [
     desc: "Cielo Sunrise — $1.1M verified hospitality with stablecoin booking and live calendar.",
     href: "/apps/cielo-sunrise",
     tag: "Live",
-    image: CIELO_HERO_IMAGE.src,
-    objectPosition: CIELO_HERO_IMAGE.objectPosition,
+    image: CIELO_PORCH_IMAGE.src,
+    objectPosition: "center 35%",
   },
   {
     title: "Music royalty audit",
