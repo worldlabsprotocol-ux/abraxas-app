@@ -201,6 +201,7 @@ export function CieloBookingPanel({
                 <PaymentMethodChooser
                   amountUsdc={est}
                   suiAddress={wallet.trim() || suiAddress}
+                  email={email.trim() || undefined}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
                 />
@@ -273,6 +274,7 @@ export function CieloBookingPanel({
                   amountUsdc={est}
                   suiAddress={wallet.trim() || suiAddress}
                   bookingId={refId}
+                  email={email.trim() || undefined}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
                 />

@@ -19,6 +19,11 @@ export function isWalletPassConfigured(): boolean {
   );
 }
 
+export function getWalletPassWebServiceUrl(): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+  return `${base.replace(/\/$/, "")}/api/apple-wallet`;
+}
+
 export function buildPassJson(payload: WalletPassPayload) {
   const serial = payload.credentialId ?? `ABX-${payload.suiAddress.slice(-8)}`;
   const verifyUrl = payload.credentialId
@@ -36,6 +41,8 @@ export function buildPassJson(payload: WalletPassPayload) {
     foregroundColor: "rgb(255, 255, 255)",
     backgroundColor: "rgb(20, 20, 35)",
     labelColor: "rgb(180, 180, 200)",
+    webServiceURL: getWalletPassWebServiceUrl(),
+    authenticationToken: serial,
     generic: {
       headerFields: [
         {
@@ -64,7 +71,7 @@ export function buildPassJson(payload: WalletPassPayload) {
         {
           key: "details",
           label: "Verification Details",
-          value: `Portable W3C credential issued by Abraxas.\n\nVerify: ${verifyUrl}`,
+          value: `Your verified Abraxas Passport.\n\nVerify: ${verifyUrl}`,
         },
       ],
     },

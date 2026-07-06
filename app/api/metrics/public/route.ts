@@ -1,67 +1,34 @@
 // FILE: app/api/metrics/public/route.ts
-// Live protocol metrics for homepage trust strip.
+// Live protocol metrics — delegates to unified registry stats.
 
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
-import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
-import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
+import { getUnifiedRegistryStats } from "@/lib/registry/unifiedStats";
 
 export const revalidate = 120;
 
 export async function GET() {
-  const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-
-  let verifiedWallets = 0;
-  let credentials = 0;
-  let onChainPassports = 0;
-  let sponsoredReady = isPassportIssuerConfigured();
-  let pendingBookings = 0;
-  let capturedBookings = 0;
-  let cieloRevenueUsdc = 0;
-
-  if (SB_URL && SB_KEY) {
-    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-    const [w, c, p, bPending, bCaptured, revenueRows] = await Promise.all([
-      sb.from("sui_zklogin_identities").select("id", { count: "exact", head: true }),
-      sb.from("abraxas_credentials").select("id", { count: "exact", head: true }).is("revoked_at", null),
-      sb.from("sui_passport_objects").select("id", { count: "exact", head: true }),
-      sb.from("stay_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      sb.from("stay_requests").select("id", { count: "exact", head: true }).eq("status", "captured"),
-      sb.from("stay_requests").select("paid_amount_usdc, est_usdc").eq("status", "captured"),
-    ]);
-    verifiedWallets = w.count ?? 0;
-    credentials = c.count ?? 0;
-    onChainPassports = p.count ?? 0;
-    pendingBookings = bPending.count ?? 0;
-    capturedBookings = bCaptured.count ?? 0;
-    cieloRevenueUsdc = (revenueRows.data ?? []).reduce((sum, row) => {
-      const amt = row.paid_amount_usdc ?? row.est_usdc ?? 0;
-      return sum + Number(amt);
-    }, 0);
-  }
-
-  const verifiedAssets = EXPLORE_ASSETS.filter(a => a.state === "verified").length;
-  const attestedValue = FLAGSHIP_PROPERTY.financials.estimatedValue;
+  const stats = await getUnifiedRegistryStats();
 
   return NextResponse.json({
     ok: true,
     metrics: {
-      verified_assets: verifiedAssets,
-      attested_value_usd: attestedValue,
-      attested_value_label: "$1.1M+",
-      zklogin_wallets: verifiedWallets,
-      active_credentials: credentials,
-      on_chain_passports: onChainPassports,
-      sponsor_configured: sponsoredReady,
-      pending_cielo_bookings: pendingBookings,
-      captured_cielo_bookings: capturedBookings,
-      cielo_revenue_usdc: cieloRevenueUsdc,
-      cielo_revenue_label: cieloRevenueUsdc > 0 ? `$${cieloRevenueUsdc.toLocaleString()} captured` : "Apple Pay ready",
-      passport_stamps: 10,
-      credential_standard: "W3C VC",
+      verified_assets: stats.verified_assets,
+      attested_value_usd: stats.attested_value_usd,
+      attested_value_label: stats.attested_value_label,
+      registry_assets: stats.registry_assets,
+      asset_classes: stats.asset_classes,
+      zklogin_wallets: stats.zklogin_wallets,
+      active_credentials: stats.active_credentials,
+      on_chain_passports: stats.on_chain_passports,
+      sponsor_configured: stats.sponsor_configured,
+      captured_cielo_bookings: stats.captured_bookings,
+      cielo_revenue_usdc: stats.cielo_revenue_usdc,
+      cielo_revenue_label: stats.cielo_revenue_usdc > 0
+        ? `$${stats.cielo_revenue_usdc.toLocaleString()} captured`
+        : "Apple Pay ready",
+      phase: stats.phase,
     },
+    sources: stats.sources,
     updatedAt: new Date().toISOString(),
   }, {
     headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=60" },

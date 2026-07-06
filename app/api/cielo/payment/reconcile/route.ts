@@ -1,8 +1,6 @@
-// FILE: app/api/cielo/payment/verify/route.ts
-// Phase 2: verify on-chain USDC payment and capture booking.
-
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCieloPayment } from "@/lib/cielo/paymentVerify";
+import { findInboundTreasuryPayment } from "@/lib/cielo/paymentEvents";
 import { captureBookingPayment } from "@/lib/cielo/captureBookingPayment";
 import { estimateUsdc } from "@/lib/cielo/bookingValidation";
 import { createClient } from "@supabase/supabase-js";
@@ -10,13 +8,20 @@ import { createClient } from "@supabase/supabase-js";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * POST /api/cielo/payment/reconcile
+ * Verify payment by tx digest OR scan recent treasury inbound events.
+ */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const bookingId = String(body.booking_id ?? "");
-  const txDigest = String(body.tx_digest ?? "").trim();
+  const txDigest = body.tx_digest ? String(body.tx_digest).trim() : undefined;
+  const scanEvents = body.scan_events === true;
 
-  if (!bookingId || !txDigest) {
-    return NextResponse.json({ error: "booking_id and tx_digest required" }, { status: 400 });
+  if (!bookingId) {
+    return NextResponse.json({ error: "booking_id required" }, { status: 400 });
   }
 
   if (!SB_URL || !SB_KEY) {
@@ -44,11 +49,26 @@ export async function POST(req: NextRequest) {
   }
 
   const expected = stay.est_usdc ?? estimateUsdc(stay.check_in, stay.check_out);
-  const verification = await verifyCieloPayment(
-    txDigest,
-    expected,
-    stay.sui_address ?? stay.wallet,
-  );
+  const sender = stay.sui_address ?? stay.wallet ?? null;
+
+  let verification;
+  if (txDigest) {
+    verification = await verifyCieloPayment(txDigest, expected, sender);
+  } else if (scanEvents) {
+    const match = await findInboundTreasuryPayment(expected, sender);
+    if (!match) {
+      return NextResponse.json({
+        ok: false,
+        error: "No matching inbound payment found on treasury yet",
+        method: "event_scan",
+      }, { status: 404 });
+    }
+    verification = await verifyCieloPayment(match.tx_digest, expected, sender);
+  } else {
+    return NextResponse.json({
+      error: "Provide tx_digest or set scan_events: true",
+    }, { status: 400 });
+  }
 
   if (!verification.ok) {
     return NextResponse.json({
@@ -58,12 +78,14 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  await captureBookingPayment(bookingId, verification);
+  const result = await captureBookingPayment(bookingId, verification);
 
   return NextResponse.json({
     ok: true,
     booking_id: bookingId,
     status: "captured",
+    method: txDigest ? "digest" : "event_scan",
+    already_captured: result.already_captured,
     verification,
   });
 }

@@ -1,11 +1,13 @@
 "use client";
 // FILE: components/cielo/PaymentMethodChooser.tsx
-// Fiat-first checkout — Apple Pay default; crypto as a tiny secondary link.
+// Fiat-first checkout — MoonPay headless Apple Pay default; Ramp fallback; crypto secondary.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PAYMENT_METHOD_COPY } from "@/lib/payments/ramp";
 import { Spinner } from "@/components/ui/Spinner";
 import { ContactlessPayIcon } from "@/components/ui/WalletPassIcon";
+import { MoonPayAppleCheckout } from "@/components/payments/MoonPayAppleCheckout";
+import type { FiatOnRampProvider } from "@/lib/payments/provider";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -17,23 +19,37 @@ export function PaymentMethodChooser({
   suiAddress,
   bookingId,
   memo,
+  email,
   value,
   onChange,
   onRampReady,
+  onFiatComplete,
   compact = false,
 }: {
   amountUsdc: number;
   suiAddress?: string | null;
   bookingId?: string;
   memo?: string;
+  email?: string;
   value: PaymentMethod;
   onChange: (m: PaymentMethod) => void;
   onRampReady?: (sessionUrl: string | null, message?: string) => void;
+  onFiatComplete?: () => void;
   compact?: boolean;
 }) {
+  const [provider, setProvider] = useState<FiatOnRampProvider>("none");
+  const [providerLoading, setProviderLoading] = useState(true);
   const [rampBusy, setRampBusy] = useState(false);
   const [rampMsg, setRampMsg] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/payments/provider")
+      .then(r => r.json())
+      .then(d => setProvider((d.provider as FiatOnRampProvider) ?? "none"))
+      .catch(() => setProvider("none"))
+      .finally(() => setProviderLoading(false));
+  }, []);
 
   async function startRamp() {
     if (!suiAddress) {
@@ -78,7 +94,6 @@ export function PaymentMethodChooser({
     }
   }
 
-  const fiat = PAYMENT_METHOD_COPY.fiat;
   const crypto = PAYMENT_METHOD_COPY.crypto;
 
   if (value === "crypto" && showAdvanced) {
@@ -108,6 +123,44 @@ export function PaymentMethodChooser({
       </div>
     );
   }
+
+  const cryptoLink = (
+    <button type="button" onClick={() => { setShowAdvanced(true); onChange("crypto"); }}
+      style={{
+        marginTop: "0.55rem", background: "none", border: "none", padding: 0,
+        cursor: "pointer", fontFamily: FONT, fontSize: "0.68rem",
+        color: "var(--text-muted)", textDecoration: "underline",
+      }}>
+      Pay with crypto instead
+    </button>
+  );
+
+  if (providerLoading) {
+    return (
+      <div style={{ marginBottom: compact ? 0 : "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <Spinner size={16} color={ACCENT} />
+        <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>Loading checkout…</span>
+      </div>
+    );
+  }
+
+  if (provider === "moonpay") {
+    return (
+      <div style={{ marginBottom: compact ? 0 : "0.85rem" }}>
+        <MoonPayAppleCheckout
+          amountUsd={amountUsdc}
+          suiAddress={suiAddress}
+          bookingId={bookingId}
+          email={email}
+          compact={compact}
+          onComplete={() => onFiatComplete?.()}
+        />
+        {cryptoLink}
+      </div>
+    );
+  }
+
+  const fiat = PAYMENT_METHOD_COPY.fiat;
 
   return (
     <div style={{ marginBottom: compact ? 0 : "0.85rem" }}>
@@ -155,14 +208,7 @@ export function PaymentMethodChooser({
         )}
       </div>
 
-      <button type="button" onClick={() => { setShowAdvanced(true); onChange("crypto"); }}
-        style={{
-          marginTop: "0.55rem", background: "none", border: "none", padding: 0,
-          cursor: "pointer", fontFamily: FONT, fontSize: "0.68rem",
-          color: "var(--text-muted)", textDecoration: "underline",
-        }}>
-        Pay with crypto instead
-      </button>
+      {cryptoLink}
     </div>
   );
 }
