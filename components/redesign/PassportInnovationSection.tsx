@@ -1,6 +1,7 @@
 "use client";
 // FILE: components/redesign/PassportInnovationSection.tsx
 
+import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -65,8 +66,10 @@ export function PassportInnovationSection() {
               </p>
             </div>
           ))}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
-            <Btn href="/passport#apple-wallet" size="sm">Add to Apple Wallet →</Btn>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center" }}>
+            <AddToAppleWalletButton href="/passport#apple-wallet" variant="primary" size="sm">
+              Add to Apple Wallet
+            </AddToAppleWalletButton>
             <Btn href="/passport" variant="secondary" size="sm">Open Passport</Btn>
           </div>
         </div>

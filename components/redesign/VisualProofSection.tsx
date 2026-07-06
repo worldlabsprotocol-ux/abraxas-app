@@ -13,8 +13,8 @@ export function VisualProofSection() {
   const thumbs = EXPLORE_ASSETS.filter(a => a.image);
 
   return (
-    <section style={{ paddingTop: "0.5rem" }}>
-      <div style={{ marginBottom: "1.75rem" }}>
+    <section style={{ paddingTop: "0.75rem" }}>
+      <div style={{ marginBottom: "2rem" }}>
         <div style={{
           fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
           letterSpacing: "0.14em", textTransform: "uppercase",
@@ -41,7 +41,7 @@ export function VisualProofSection() {
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: "1rem",
+        gap: "1.15rem",
       }}>
         {thumbs.map(asset => (
           <Link key={asset.id} href={asset.href ?? "#registry"}

@@ -2,6 +2,7 @@
 // FILE: components/redesign/AppleWalletPromo.tsx
 // Hero-level Apple Wallet CTA — Revolut-like native identity.
 
+import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -9,7 +10,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 export function AppleWalletPromo() {
   return (
     <section aria-labelledby="apple-wallet-promo" style={{
-      padding: "1.35rem 1.25rem",
+      padding: "1.5rem 1.35rem",
       borderRadius: 18,
       background: "linear-gradient(135deg, #0a0a0a 0%, #121218 55%, #0a1210 100%)",
       border: "1px solid rgba(255,255,255,0.12)",
@@ -18,7 +19,7 @@ export function AppleWalletPromo() {
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
-        gap: "1.25rem",
+        gap: "1.35rem",
         alignItems: "center",
       }}>
         <div>
@@ -27,29 +28,31 @@ export function AppleWalletPromo() {
             letterSpacing: "0.12em", textTransform: "uppercase",
             color: "rgba(255,255,255,0.55)", marginBottom: "0.5rem",
           }}>
-            Like your Revolut card — but for verified RWAs
+            Your verified passport
           </div>
           <h2 id="apple-wallet-promo" style={{
             fontFamily: FONT, fontSize: "clamp(1.15rem, 2.8vw, 1.45rem)", fontWeight: 800,
             letterSpacing: "-0.02em", color: "#fff", margin: "0 0 0.5rem", lineHeight: 1.15,
           }}>
-            Carry your verified Passport in Apple Wallet
+            Keep your verified status in Apple Wallet — scan anywhere
           </h2>
           <p style={{
             fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.72)",
-            lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 440,
+            lineHeight: 1.65, margin: "0 0 1.1rem", maxWidth: 440,
           }}>
             Sign in once. Add your pass. Show verified status at booking, check-in, or partner flows —
             without explaining how verification works.
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href="/passport#apple-wallet" size="lg">Add to Apple Wallet →</Btn>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", alignItems: "center" }}>
+            <AddToAppleWalletButton href="/passport#apple-wallet" variant="primary" size="lg">
+              Add to Apple Wallet
+            </AddToAppleWalletButton>
             <Btn href="/passport" variant="tertiary" size="lg">Create passport</Btn>
           </div>
         </div>
 
         <div style={{
-          padding: "1rem", borderRadius: 14,
+          padding: "1.1rem", borderRadius: 14,
           background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
         }}>
           {[
@@ -60,7 +63,7 @@ export function AppleWalletPromo() {
           ].map((step, i) => (
             <div key={step} style={{
               display: "flex", gap: "0.65rem", alignItems: "flex-start",
-              padding: "0.45rem 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.08)" : undefined,
+              padding: "0.5rem 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.08)" : undefined,
             }}>
               <span style={{
                 width: 22, height: 22, borderRadius: "50%", flexShrink: 0,

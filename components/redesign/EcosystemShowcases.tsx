@@ -34,8 +34,8 @@ const SHOWCASES = [
 
 export function EcosystemShowcases() {
   return (
-    <section style={{ paddingTop: "0.5rem" }}>
-      <div style={{ marginBottom: "1.25rem" }}>
+    <section style={{ paddingTop: "0.75rem" }}>
+      <div style={{ marginBottom: "1.75rem" }}>
         <div style={{
           fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
           letterSpacing: "0.14em", textTransform: "uppercase",
@@ -54,7 +54,7 @@ export function EcosystemShowcases() {
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
-        gap: "1rem",
+        gap: "1.15rem",
       }}>
         {SHOWCASES.map((s, i) => (
           <motion.div

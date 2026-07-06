@@ -51,12 +51,12 @@ export function buildRampSession(req: RampSessionRequest): RampSessionResponse {
 
 export const PAYMENT_METHOD_COPY = {
   fiat: {
-    title: "Pay with Apple Pay / card",
-    subtitle: "Pay in your currency — conversion handled at checkout.",
+    title: "Pay with Apple Pay or card",
+    subtitle: "Pay in your local currency — we convert automatically. No wallet setup needed.",
     badge: "Recommended",
   },
   crypto: {
-    title: "Pay with existing balance",
+    title: "Pay with crypto instead",
     subtitle: "For users who already hold stablecoins in their Abraxas wallet.",
     badge: "Advanced",
   },

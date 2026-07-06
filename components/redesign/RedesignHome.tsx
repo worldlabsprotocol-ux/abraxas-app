@@ -116,7 +116,7 @@ export function RedesignHome() {
                 fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
                 lineHeight: 1.7, maxWidth: 480, margin: "0 auto 1.25rem",
               }}>
-                Paste any credential hash into the public verifier. Partners integrate via POST /api/credentials/verify — no re-KYC required.
+                Paste any credential hash into the public verifier. Partners integrate via our verification API — no re-KYC required.
               </p>
               <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", flexWrap: "wrap" }}>
                 <Btn href="/verify" size="lg">Run verifier →</Btn>

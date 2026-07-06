@@ -1,39 +1,52 @@
 "use client";
 // FILE: components/redesign/RevolutExperienceStrip.tsx
 
+import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
+import {
+  ContactlessPayIcon,
+  VerifiedCheckIcon,
+  WalletPassIcon,
+} from "@/components/ui/WalletPassIcon";
 import { Btn } from "./ui";
+import type { ComponentType } from "react";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 const CAPABILITIES = [
   {
-    icon: "🪪",
+    Icon: WalletPassIcon,
     title: "Passport in Apple Wallet",
     body: "Your verified status as a native pass — show it anywhere partners accept Abraxas proof.",
     href: "/passport#apple-wallet",
     cta: "Add to Wallet",
   },
   {
-    icon: "🍎",
+    Icon: ContactlessPayIcon,
     title: "Pay with Apple Pay / card",
     body: "Book verified stays in your currency. Conversion happens in checkout — you never manage a wallet.",
     href: "/#registry",
     cta: "Browse & book",
   },
   {
-    icon: "✓",
+    Icon: VerifiedCheckIcon,
     title: "Verify once, reuse everywhere",
     body: "Partners check your credential — no repeated document uploads at every marketplace.",
     href: "/verify",
     cta: "Run verifier",
   },
-] as const;
+] as const satisfies ReadonlyArray<{
+  Icon: ComponentType<{ size?: number; color?: string }>;
+  title: string;
+  body: string;
+  href: string;
+  cta: string;
+}>;
 
 export function RevolutExperienceStrip() {
   return (
     <section aria-labelledby="revolut-experience-heading" style={{ paddingTop: "0.25rem" }}>
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={{ marginBottom: "1.5rem" }}>
         <div style={{
           fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
           letterSpacing: "0.14em", textTransform: "uppercase",
@@ -60,15 +73,21 @@ export function RevolutExperienceStrip() {
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-        gap: "1rem",
+        gap: "1.15rem",
       }}>
         {CAPABILITIES.map(c => (
           <a key={c.title} href={c.href} style={{
-            padding: "1.2rem", borderRadius: 16, textDecoration: "none", color: "inherit",
+            padding: "1.25rem", borderRadius: 16, textDecoration: "none", color: "inherit",
             background: "var(--surface-raised)", border: "1px solid var(--border-strong)",
-            display: "flex", flexDirection: "column", gap: "0.55rem",
+            display: "flex", flexDirection: "column", gap: "0.65rem",
           }}>
-            <div style={{ fontSize: "1.25rem", lineHeight: 1 }}>{c.icon}</div>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <c.Icon size={20} color={ACCENT} />
+            </div>
             <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
               {c.title}
             </div>
@@ -82,8 +101,10 @@ export function RevolutExperienceStrip() {
         ))}
       </div>
 
-      <div style={{ marginTop: "1.25rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href="/passport#apple-wallet" size="sm">Add to Apple Wallet →</Btn>
+      <div style={{ marginTop: "1.35rem", display: "flex", flexWrap: "wrap", gap: "0.65rem", alignItems: "center" }}>
+        <AddToAppleWalletButton href="/passport#apple-wallet" variant="primary" size="sm">
+          Add to Apple Wallet
+        </AddToAppleWalletButton>
         <Btn href="/account" variant="secondary" size="sm">My verified assets</Btn>
       </div>
     </section>

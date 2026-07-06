@@ -2,7 +2,7 @@
 // FILE: components/passport/AddToAppleWallet.tsx
 
 import { useState } from "react";
-import { Spinner } from "@/components/ui/Spinner";
+import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -80,30 +80,18 @@ export function AddToAppleWallet({
         fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
         color: "var(--text-primary)", margin: "0 0 0.35rem",
       }}>
-        Add passport to Apple Wallet
+        Keep your verified status in Apple Wallet — scan anywhere
       </p>
       <p style={{
         fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
         lineHeight: 1.6, margin: "0 0 0.75rem",
       }}>
-        Carry your verified status like a boarding pass — QR links to the public verifier.
+        Carry your verified Passport like a boarding pass — QR links to the public verifier.
       </p>
 
-      <button type="button" onClick={requestPass} disabled={busy}
-        aria-busy={busy}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: "0.55rem",
-          padding: "0.65rem 1.15rem", borderRadius: 10, border: "none",
-          background: busy ? "#333" : "#000",
-          color: "#fff", fontFamily: FONT, fontSize: "0.82rem", fontWeight: 600,
-          cursor: busy ? "wait" : "pointer", minHeight: 44,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
-        }}>
-        {busy ? <Spinner size={16} color="#fff" /> : (
-          <span style={{ fontSize: "1.1rem", lineHeight: 1 }} aria-hidden>🍎</span>
-        )}
-        {busy ? "Preparing pass…" : "Add to Apple Wallet"}
-      </button>
+      <AddToAppleWalletButton onClick={requestPass} busy={busy} variant="dark" size="md">
+        Add to Apple Wallet
+      </AddToAppleWalletButton>
 
       {msg && (
         <p style={{

@@ -48,7 +48,7 @@ export function WhatIsAbraxasSection() {
           {
             n: "3",
             title: "Get passport",
-            body: "Receive a signed credential tied to your wallet. Portable proof you control.",
+            body: "Receive your verified Passport — portable proof you control.",
             href: "/passport#passport-step-3",
           },
           {
@@ -87,7 +87,7 @@ export function WhatIsAbraxasSection() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         <Btn href="/passport" size="sm">Create my passport →</Btn>
-        <Btn href="/docs/sui" variant="ghost" size="sm">Technical depth (zkLogin)</Btn>
+        <Btn href="/docs/sui" variant="ghost" size="sm">How it works (technical)</Btn>
       </div>
     </section>
   );

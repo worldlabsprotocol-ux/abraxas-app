@@ -16,7 +16,7 @@ const DOORS = [
     n: "01",
     title: "Your Passport",
     subtitle: "Sign in once · verify when needed",
-    body: "Google sign-in creates your wallet (zkLogin). Add an optional ID check when a deal requires it. Your proof is reusable — partners check it without seeing your documents.",
+    body: "Sign in with Google — no seed phrase. Add an optional ID check when a deal requires it. Your proof is reusable — partners check it without seeing your documents.",
     href: "/passport",
     cta: "Create my passport →",
     image: CIELO_PORCH_IMAGE.src,

@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/cielo/PaymentMethodChooser.tsx
-// Fiat-first checkout — Apple Pay / card default; crypto tucked under Advanced.
+// Fiat-first checkout — Apple Pay default; crypto as a tiny secondary link.
 
 import { useState } from "react";
 import { PAYMENT_METHOD_COPY } from "@/lib/payments/ramp";
 import { Spinner } from "@/components/ui/Spinner";
+import { ContactlessPayIcon } from "@/components/ui/WalletPassIcon";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -131,7 +132,7 @@ export function PaymentMethodChooser({
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.6 }}>
           Pay <strong style={{ color: "var(--text-primary)" }}>${amountUsdc.toFixed(2)}</strong>
-          {" "}in your currency. Small conversion fee shown before you confirm — like Revolut.
+          {" "}in your currency — we handle the rest. No wallet setup needed.
         </p>
         <button type="button" onClick={startRamp} disabled={rampBusy}
           style={{
@@ -144,8 +145,8 @@ export function PaymentMethodChooser({
             cursor: rampBusy ? "wait" : "pointer", minHeight: 48,
             boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
           }}>
-          {rampBusy ? <Spinner size={16} color="#fff" /> : <span aria-hidden>🍎</span>}
-          {rampBusy ? "Opening checkout…" : "Pay with Apple Pay / card"}
+          {rampBusy ? <Spinner size={16} color="#fff" /> : <ContactlessPayIcon size={18} color="#fff" />}
+          {rampBusy ? "Opening checkout…" : "Pay with Apple Pay — we handle the rest"}
         </button>
         {rampMsg && (
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
@@ -160,7 +161,7 @@ export function PaymentMethodChooser({
           cursor: "pointer", fontFamily: FONT, fontSize: "0.68rem",
           color: "var(--text-muted)", textDecoration: "underline",
         }}>
-        Already have crypto? Advanced payment options
+        Pay with crypto instead
       </button>
     </div>
   );
