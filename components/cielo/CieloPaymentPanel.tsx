@@ -189,13 +189,13 @@ export function CieloPaymentPanel({
         {consumerCopy.cielo.payBadge}
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-        {consumerCopy.cielo.payHeadline(payment.amount_usdc, payment.asset)} — asset settlement container
+        Complete your booking — ${payment.amount_usdc.toFixed(2)}
       </div>
 
       <div style={{ marginBottom: "0.85rem" }}>
         <NonCustodialDisclosure
           variant="compact"
-          settlementNote="Booking payments route to the Cielo asset settlement address on Sui. Abraxas attests to payment state — it is not the counterparty or custodian."
+          settlementNote="Payment routes to the verified asset settlement account. Abraxas attests to payment state — it is not the counterparty or custodian."
         />
       </div>
 
@@ -210,14 +210,16 @@ export function CieloPaymentPanel({
         />
       )}
 
+      {showManual && (
       <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.85rem" }}>
         <Row label="Pay to" value={payment.treasury_address ?? payment.treasury_label}
           copyKey="treasury" copied={copied} onCopy={copy} mono />
         <Row label="Reference" value={payment.memo} copyKey="memo" copied={copied} onCopy={copy} mono />
-        {suiAddress && showManual && (
+        {suiAddress && (
           <Row label="Your wallet" value={suiAddress} copyKey="wallet" copied={copied} onCopy={copy} mono />
         )}
       </div>
+      )}
 
       {!payment.payable && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: AMBER, margin: "0 0 0.75rem", lineHeight: 1.6 }}>
@@ -278,7 +280,7 @@ export function CieloPaymentPanel({
           fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
           letterSpacing: "0.06em", textTransform: "uppercase",
         }}>
-        {showManual ? "Hide advanced options ▲" : "Paid another way? ▼"}
+        {showManual ? "Hide payment details ▲" : "Payment details & other methods ▼"}
       </button>
 
       {showManual && (

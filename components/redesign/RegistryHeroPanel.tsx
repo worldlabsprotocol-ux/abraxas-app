@@ -78,7 +78,7 @@ export function RegistryHeroPanel() {
           background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.85)",
           border: "1px solid rgba(255,255,255,0.15)",
         }}>
-          {EXPLORE_ASSETS.length} assets · 1 live pilot
+          {EXPLORE_ASSETS.length} assets · design partner phase
         </span>
       </div>
 
@@ -87,11 +87,11 @@ export function RegistryHeroPanel() {
           Verified assets across classes
         </div>
         <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.78)", marginBottom: "0.75rem", lineHeight: 1.55 }}>
-          Browse without KYC. Genesis pilot Cielo Sunrise is live — one of several registry entries.
+          Browse without ID checks. Multiple asset classes with transparent assurance levels.
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <Btn href="#registry" size="sm">Browse registry →</Btn>
-          <Btn href="/flagship" variant="tertiary" size="sm">Cielo dossier</Btn>
+          <Btn href="/passport" variant="tertiary" size="sm">Create passport</Btn>
         </div>
       </div>
     </motion.div>

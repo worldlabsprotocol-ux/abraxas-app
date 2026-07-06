@@ -84,8 +84,8 @@ function AccountInner() {
     <RedesignPage maxWidth={720}>
       <PageHeader
         eyebrow="Account"
-        title="Your verified status"
-        subtitle="One place to see what's done, what's pending, and what you can do next."
+        title="My verified assets"
+        subtitle="Your passport, booking activity, and what you can do next — one place."
       />
 
       {isLoading ? (

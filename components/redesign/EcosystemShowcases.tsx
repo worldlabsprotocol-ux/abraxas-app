@@ -1,24 +1,13 @@
 "use client";
 // FILE: components/redesign/EcosystemShowcases.tsx
-// Proof-of-capability verticals with real imagery — not text-only cards.
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-
-import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 const SHOWCASES = [
-  {
-    title: "Genesis asset pilot",
-    desc: "Cielo Sunrise — $1.1M verified hospitality with stablecoin booking and live calendar.",
-    href: "/apps/cielo-sunrise",
-    tag: "Live",
-    image: CIELO_PORCH_IMAGE.src,
-    objectPosition: "center 35%",
-  },
   {
     title: "Music royalty audit",
     desc: "Split-sheet gaps, distribution leakage, and catalog provenance for media owners.",
@@ -28,17 +17,25 @@ const SHOWCASES = [
   },
   {
     title: "Wyoming LLC engine",
-    desc: "Corporate formation bound to on-chain asset mints and V5 pipeline.",
+    desc: "Entity formation bound to verified ownership and the asset pipeline.",
     href: "/apps/wyoming",
     tag: "Formation flow",
     image: "/assets/worldwearables/jan26.jpg",
+  },
+  {
+    title: "Genesis hospitality pilot",
+    desc: "End-to-end verified stay with Apple Pay booking — one design-partner asset.",
+    href: "/flagship",
+    tag: "Live pilot",
+    image: "/assets/cielo/08.jpg",
+    objectPosition: "center 35%",
   },
 ] as const;
 
 export function EcosystemShowcases() {
   return (
-    <section>
-      <div style={{ marginBottom: "1rem" }}>
+    <section style={{ paddingTop: "0.5rem" }}>
+      <div style={{ marginBottom: "1.25rem" }}>
         <div style={{
           fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
           letterSpacing: "0.14em", textTransform: "uppercase",
@@ -48,16 +45,16 @@ export function EcosystemShowcases() {
         </div>
         <p style={{
           fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
-          lineHeight: 1.7, maxWidth: 640, margin: 0,
+          lineHeight: 1.75, maxWidth: 640, margin: 0,
         }}>
-          Production apps built on Abraxas verification — each with real intake, assets, or revenue loops.
+          Vertical apps built on Abraxas verification — each with real intake, assets, or revenue loops.
         </p>
       </div>
 
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
-        gap: "0.875rem",
+        gap: "1rem",
       }}>
         {SHOWCASES.map((s, i) => (
           <motion.div
@@ -73,7 +70,7 @@ export function EcosystemShowcases() {
                 border: "1px solid var(--border-strong)",
                 background: "var(--surface-raised)",
               }}>
-                <div style={{ position: "relative", height: 140 }}>
+                <div style={{ position: "relative", height: 148, background: "#06090B" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={s.image}
@@ -97,11 +94,11 @@ export function EcosystemShowcases() {
                     {s.tag}
                   </span>
                 </div>
-                <div style={{ padding: "1rem 1.1rem" }}>
+                <div style={{ padding: "1.05rem 1.15rem" }}>
                   <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
                     {s.title}
                   </div>
-                  <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
+                  <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.65, margin: 0 }}>
                     {s.desc}
                   </p>
                 </div>

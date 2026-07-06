@@ -58,7 +58,7 @@ export async function GET() {
       pending_cielo_bookings: pendingBookings,
       captured_cielo_bookings: capturedBookings,
       cielo_revenue_usdc: cieloRevenueUsdc,
-      cielo_revenue_label: cieloRevenueUsdc > 0 ? `$${cieloRevenueUsdc.toLocaleString()} USDC` : "Live on Sui",
+      cielo_revenue_label: cieloRevenueUsdc > 0 ? `$${cieloRevenueUsdc.toLocaleString()} captured` : "Apple Pay ready",
       passport_stamps: 10,
       credential_standard: "W3C VC",
     },

@@ -64,11 +64,11 @@ export const ABRAXAS_SOLUTION_STEPS = [
 ] as const;
 
 export const HYBRID_ARCHITECTURE_SUMMARY =
-  "Sui runs identity, passports, credentials, and stablecoin settlement. Solana hosts $ABRA — optional access tiers, not a gate to verification.";
+  "Verification and booking run on modern identity rails. Optional token tiers live separately — your passport is never gated by holdings.";
 
 export const UNIFIED_EXPERIENCE_PRINCIPLES = [
   "I am verified once in Abraxas.",
-  "I browse and interact with real assets without thinking about chains or wallets.",
-  "When I pay, I choose how — card or USDC — and see the effective rate upfront.",
+  "I browse and book real assets without managing a crypto wallet.",
+  "When I pay, I use Apple Pay or my card — the rate is shown upfront.",
   "My verified status travels with me across partners.",
 ] as const;

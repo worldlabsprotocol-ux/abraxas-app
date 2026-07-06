@@ -1,5 +1,5 @@
 // FILE: lib/payments/ramp.ts
-// Ramp Network on-ramp scaffold — headless fiat → USDC on Sui.
+// Ramp Network on-ramp — fiat checkout for normal users (rails hidden).
 
 export interface RampSessionRequest {
   suiAddress: string;
@@ -12,8 +12,6 @@ export interface RampSessionResponse {
   configured: boolean;
   sessionUrl?: string;
   hostAppName?: string;
-  defaultAsset?: string;
-  defaultNetwork?: string;
   message?: string;
 }
 
@@ -21,13 +19,12 @@ export function isRampConfigured(): boolean {
   return Boolean(process.env.RAMP_API_KEY && process.env.RAMP_HOST_APP_NAME);
 }
 
-/** Build Ramp widget URL when API key is configured. */
 export function buildRampSession(req: RampSessionRequest): RampSessionResponse {
   if (!isRampConfigured()) {
     return {
       configured: false,
       message:
-        "Fiat on-ramp is not configured yet. Pay with USDC on Sui, or contact the operator to enable Apple Pay / card checkout.",
+        "Card checkout is being enabled for this property. We'll email you a secure payment link after confirmation.",
     };
   }
 
@@ -49,20 +46,18 @@ export function buildRampSession(req: RampSessionRequest): RampSessionResponse {
     configured: true,
     sessionUrl: `${base}/?${params.toString()}`,
     hostAppName,
-    defaultAsset: "USDC",
-    defaultNetwork: "Sui",
   };
 }
 
 export const PAYMENT_METHOD_COPY = {
   fiat: {
     title: "Pay with Apple Pay / card",
-    subtitle: "Fiat converts to USDC on Sui — effective rate shown before checkout.",
-    badge: "Recommended for most guests",
+    subtitle: "Pay in your currency — conversion handled at checkout.",
+    badge: "Recommended",
   },
   crypto: {
-    title: "Pay with USDC on Sui",
-    subtitle: "One-click from your zkLogin wallet, or send manually.",
-    badge: "For crypto-native users",
+    title: "Pay with existing balance",
+    subtitle: "For users who already hold stablecoins in their Abraxas wallet.",
+    badge: "Advanced",
   },
 } as const;

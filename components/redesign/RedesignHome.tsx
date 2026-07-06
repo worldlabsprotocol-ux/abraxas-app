@@ -17,8 +17,8 @@ import { BrowseWithoutKycBanner } from "./BrowseWithoutKycBanner";
 import { EarlyAccessBanner } from "./EarlyAccessBanner";
 import { WhatIsAbraxasSection } from "./WhatIsAbraxasSection";
 import { KycDebtSection } from "./KycDebtSection";
-import { UnifiedExperienceSection } from "./UnifiedExperienceSection";
 import { SupplyNetworkTeaser } from "./SupplyNetworkTeaser";
+import { AppleWalletPromo } from "./AppleWalletPromo";
 import { PassportInnovationSection } from "./PassportInnovationSection";
 import { RevolutExperienceStrip } from "./RevolutExperienceStrip";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
@@ -45,7 +45,9 @@ export function RedesignHome() {
         <RedesignNav />
 
         <main style={{ position: "relative", zIndex: 1 }}>
-          <div style={MAXW}><RedesignHero /></div>
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><RedesignHero /></div>
+
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><AppleWalletPromo /></div>
 
           <div style={{ ...MAXW, paddingTop: "1.25rem" }}><BrowseWithoutKycBanner /></div>
           <div style={{ ...MAXW, paddingTop: "0.85rem" }}><EarlyAccessBanner /></div>
@@ -58,10 +60,6 @@ export function RedesignHome() {
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <RevolutExperienceStrip />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <UnifiedExperienceSection />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
