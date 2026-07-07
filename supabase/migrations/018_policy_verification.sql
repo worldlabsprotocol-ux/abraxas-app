@@ -1,5 +1,10 @@
 -- 018_policy_verification.sql
 -- Partner policy engine, normalized credential claims, verification requests, audit trail.
+--
+-- IMPORTANT: Paste THIS file in Supabase SQL Editor — NOT docs/SUPABASE_MIGRATION_018.md
+-- Prerequisite: migration 006_abraxas_id.sql recommended (abraxas_credentials) but not required.
+
+create extension if not exists "pgcrypto";
 
 -- ── Wallet bindings (subject ↔ chain address) ───────────────────
 create table if not exists public.wallet_bindings (
@@ -23,7 +28,7 @@ create index if not exists idx_wallet_bindings_subject
 create table if not exists public.credential_claims (
   id                    uuid        primary key default gen_random_uuid(),
   subject_id            text        not null,
-  credential_jti        text        references public.abraxas_credentials(jti) on delete set null,
+  credential_jti        text,        -- soft link to abraxas_credentials.jti (FK added below if table exists)
   claim_type            text        not null,
   claim_value           jsonb       not null default '{}',
   issuer_id             text        not null,
@@ -179,3 +184,23 @@ values
     'active'
   )
 on conflict (id) do nothing;
+
+-- Optional FK when abraxas_credentials (migration 006) is present
+do $migration$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'abraxas_credentials'
+  ) and not exists (
+    select 1 from information_schema.table_constraints
+    where table_schema = 'public'
+      and table_name = 'credential_claims'
+      and constraint_name = 'credential_claims_credential_jti_fkey'
+  ) then
+    alter table public.credential_claims
+      add constraint credential_claims_credential_jti_fkey
+      foreign key (credential_jti)
+      references public.abraxas_credentials(jti)
+      on delete set null;
+  end if;
+end $migration$;

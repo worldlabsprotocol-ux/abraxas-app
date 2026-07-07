@@ -4,14 +4,39 @@ Run this migration **once** in your Supabase project before using the partner ve
 
 ## Quick run (Supabase Dashboard)
 
+> **Do not paste this markdown file into SQL Editor.**  
+> Open the SQL file: [`supabase/migrations/018_policy_verification.sql`](../supabase/migrations/018_policy_verification.sql)
+
 1. Open [Supabase Dashboard](https://supabase.com/dashboard) → your project → **SQL Editor**
 2. Click **New query**
-3. Paste the full contents of:
-
-   `supabase/migrations/018_policy_verification.sql`
-
+3. Paste the full contents of **`supabase/migrations/018_policy_verification.sql`** (starts with `-- 018_policy_verification.sql`)
 4. Click **Run**
 5. Confirm success (no errors). You should see `Success. No rows returned`
+
+### Pre-flight (optional)
+
+```sql
+-- Confirm base tables (006/007 not strictly required for 018, but needed for Veriff JWT flow)
+select
+  exists (select 1 from information_schema.tables where table_schema='public' and table_name='abraxas_credentials') as has_credentials,
+  exists (select 1 from information_schema.tables where table_schema='public' and table_name='sui_zklogin_identities') as has_zklogin;
+```
+
+If `has_credentials` is false, run `supabase/migrations/006_abraxas_id.sql` first (recommended), then 018.
+
+## Troubleshooting failed runs
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `syntax error at or near "#"` or `**` | Pasted this **markdown doc** instead of the `.sql` file | Use `018_policy_verification.sql` only |
+| `relation "public.abraxas_credentials" does not exist` | Old 018 with hard FK (fixed in latest) | Pull latest 018 or run repair script below, then re-run 018 |
+| `relation "credential_claims" already exists` | Partial apply | Run repair script, then full 018 again |
+| `duplicate key` on policies | Policies already seeded | Safe to ignore — verify with `select id from partner_policies` |
+
+### Repair after partial failure
+
+1. Run [`supabase/migrations/018_policy_verification_repair.sql`](../supabase/migrations/018_policy_verification_repair.sql)
+2. Re-run [`supabase/migrations/018_policy_verification.sql`](../supabase/migrations/018_policy_verification.sql)
 
 ## What this migration creates
 
