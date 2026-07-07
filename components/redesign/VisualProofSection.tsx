@@ -98,8 +98,7 @@ export function VisualProofSection() {
       </div>
 
       <div style={{ marginTop: "1.25rem", display: "flex", gap: "0.625rem", flexWrap: "wrap" }}>
-        <Btn href="#registry" size="sm">Browse full registry →</Btn>
-        <Btn href="/verify" variant="secondary" size="sm">Run verifier</Btn>
+        <Btn href="#registry" size="sm">Open full registry →</Btn>
       </div>
     </section>
   );

@@ -107,7 +107,7 @@ export function AssetsExplorer({
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
                      maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
-          Search, filter, and sort. Verification state up front — what is confirmed, owned, or reference only.
+          The canonical asset list — search, filter, and inspect verification scope per listing.
         </p>
       </div>
 
@@ -162,16 +162,9 @@ export function AssetsExplorer({
         )}
       </div>
 
-      {/* Quick actions */}
-      <div style={{
-        display: "flex", flexWrap: "wrap", gap: "0.5rem",
-        marginBottom: "1rem", padding: "0.75rem",
-        borderRadius: 14, background: "var(--surface-raised)",
-        border: "1px solid var(--border)",
-      }}>
-        <Btn href="/passport" size="sm">Create wallet</Btn>
-        <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
-        <Btn href="/music-audit" variant="ghost" size="sm">Music audit</Btn>
+      {/* Quick action — single entry for asset submission */}
+      <div style={{ marginBottom: "1rem" }}>
+        <Btn href="/build" variant="secondary" size="sm">Submit an asset →</Btn>
       </div>
 
       {/* State filters */}

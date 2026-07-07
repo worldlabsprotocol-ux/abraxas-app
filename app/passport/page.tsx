@@ -18,8 +18,6 @@ import { PassportClaimsCard } from "@/components/passport/PassportClaimsCard";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
 import { WalletBindingCard } from "@/components/passport/WalletBindingCard";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
-import { IssuerHolderVerifierSection } from "@/components/vision/IssuerHolderVerifierSection";
-import { ClaimStackSection } from "@/components/vision/ClaimStackSection";
 import { PUBLIC_POSITIONING } from "@/lib/passportLayers";
 import { AddToAppleWallet } from "@/components/passport/AddToAppleWallet";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
@@ -363,14 +361,6 @@ function PassportPageInner() {
           />
         )}
 
-        <div style={{ marginBottom: "2rem" }}>
-          <IssuerHolderVerifierSection compact />
-        </div>
-
-        <div style={{ marginBottom: "2rem" }}>
-          <ClaimStackSection compact />
-        </div>
-
         <PassportCompletionDashboard
           input={{
             walletDone,
@@ -695,7 +685,7 @@ function PassportPageInner() {
         </DeveloperDetails>
 
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", paddingBottom:"3rem" }}>
-          <Btn href="/">Explore assets →</Btn>
+          <Btn href="/#registry">Browse registry →</Btn>
           <Btn href="/build" variant="tertiary">Submit an asset</Btn>
         </div>
       </div>

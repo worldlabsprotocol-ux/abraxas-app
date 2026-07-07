@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Btn } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
-import { RegistryHeroPanel } from "./RegistryHeroPanel";
+import { NetworkHeroPanel } from "./NetworkHeroPanel";
 import { PUBLIC_POSITIONING } from "@/lib/passportLayers";
 import { HOMEPAGE_THESIS } from "@/lib/capabilityStatus";
 
@@ -14,7 +14,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 function PhotoHeroPanel() {
-  return <RegistryHeroPanel />;
+  return <NetworkHeroPanel />;
 }
 
 export function RedesignHero() {
@@ -24,7 +24,7 @@ export function RedesignHero() {
                                               gap: "clamp(2rem, 5vw, 3.5rem)", alignItems: "center" }}>
         <motion.div variants={staggerContainer(0.1, 0.05)} initial="hidden" animate="show">
           <motion.div variants={staggerItem} style={{ marginBottom: "1.25rem" }}>
-            <VerificationBadge label="Registry infrastructure layer for RWAs" color={ACCENT} />
+            <VerificationBadge label="Verification network for RWAs" color={ACCENT} />
           </motion.div>
 
           <motion.h1 variants={staggerItem} style={{
@@ -54,7 +54,7 @@ export function RedesignHero() {
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",
                                                        flexWrap: "wrap", marginBottom: "2rem" }}>
             <Btn href="/passport" size="lg">Create my passport →</Btn>
-            <Btn href="/verify" variant="secondary" size="lg">Scan public registry</Btn>
+            <Btn href="#test-network" variant="secondary" size="lg">Test the network</Btn>
           </motion.div>
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",

@@ -187,8 +187,8 @@ export function ProductLoopDemo() {
           ))}
 
           <div style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href="/flagship" size="sm">Book a verified stay →</Btn>
-            <Btn href="/verify?q=ABX-RE-HOSP-001" variant="secondary" size="sm">Run verifier</Btn>
+            <Btn href="/flagship" size="sm">Book genesis pilot →</Btn>
+            <Btn href="#test-network" variant="secondary" size="sm">Test the network</Btn>
           </div>
 
           <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
