@@ -193,6 +193,7 @@ function PassportPageInner() {
     isLoading: verificationLoading,
     setup: setupFromHook,
     veriffConfigured,
+    idvProvider,
     walletBindingL3,
   } = usePassportVerification(suiAddress, email || null);
 
@@ -277,7 +278,7 @@ function PassportPageInner() {
 
   const enhancedTrust = identityStatus === "earned" && Boolean(credential);
 
-  const showVeriffHint = identityStatus === "pending" || passportState.identity === "in_progress" || starting;
+  const showVeriffHint = idvProvider === "veriff" && (identityStatus === "pending" || passportState.identity === "in_progress" || starting);
 
   const loadVeriffScript = (src: string): Promise<void> =>
     new Promise((resolve, reject) => {
@@ -293,6 +294,11 @@ function PassportPageInner() {
     if (!suiAddress) {
       setError("Sign in with Google first to create your account.");
       setActive("wallet");
+      return;
+    }
+    if (idvProvider === "manual") {
+      setError(null);
+      document.getElementById("passport-setup-heading")?.scrollIntoView({ behavior: "smooth" });
       return;
     }
     if (!email.includes("@")) {
@@ -415,6 +421,7 @@ function PassportPageInner() {
           starting={starting}
           error={error}
           veriffConfigured={veriffConfigured}
+          idvProvider={idvProvider}
           onStartIdCheck={startIdentityVerification}
           onRefresh={refresh}
           onWalletBound={refresh}
@@ -644,7 +651,7 @@ function PassportPageInner() {
                     <div style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-muted)", marginBottom:"0.75rem" }}>
                       ID check unavailable? Upload your ID directly for manual review.
                     </div>
-                    <DocumentUpload email={email || suiAddress || ""} stampId="identity" color={activeStamp.color} />
+                    <DocumentUpload email={email || suiAddress || ""} suiAddress={suiAddress} stampId="identity" color={activeStamp.color} />
                   </div>
                 </div>
               )}
@@ -655,7 +662,7 @@ function PassportPageInner() {
                       Complete Google sign-in and Identity Verified first.
                     </div>
                   )}
-                  <DocumentUpload email={email || suiAddress || ""} stampId={activeStamp.id} color={activeStamp.color} />
+                  <DocumentUpload email={email || suiAddress || ""} suiAddress={suiAddress} stampId={activeStamp.id} color={activeStamp.color} />
                   <Link href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"
                     style={{ display:"inline-block", marginTop:"0.75rem", padding:"0.75rem 2rem",
                               borderRadius:8, border:`1.5px solid ${activeStamp.color}`,

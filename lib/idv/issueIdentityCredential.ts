@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { SignJWT, importJWK } from "jose";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import {
+  manualApprovedClaims,
   veriffApprovedClaims,
   walletBindingClaim,
 } from "@/lib/credentials/claimSchema";
@@ -26,7 +27,10 @@ export interface IssueIdentityCredentialResult {
 export async function issueIdentityCredential(
   holder: string,
   decision: VeriffDecisionInput,
+  options?: { provider?: "veriff" | "manual"; reviewId?: string },
 ): Promise<IssueIdentityCredentialResult> {
+  const provider = options?.provider ?? "veriff";
+  const reviewRef = options?.reviewId ?? decision.id;
   const sb = idvSupabase();
   const normalized = normalizeSuiAddress(holder);
   const now = new Date();
@@ -91,8 +95,10 @@ export async function issueIdentityCredential(
       world_id_verified: false,
       verified_at: now.toISOString(),
       chain: "sui" as const,
-      veriff_session_id: decision.id,
-      assurance_level: "L3" as const,
+      veriff_session_id: provider === "veriff" ? decision.id : undefined,
+      assurance_level: provider === "veriff" ? ("L3" as const) : ("L2" as const),
+      idv_provider: provider,
+      review_id: provider === "manual" ? reviewRef : undefined,
       permissions: {
         fiat_offramp: true,
         defi_access: true,
@@ -129,13 +135,13 @@ export async function issueIdentityCredential(
         document_state: state.toUpperCase() || null,
         document_verified: true,
         liveness_passed: true,
-        liveness_provider: "veriff",
+        liveness_provider: provider === "veriff" ? "veriff" : "manual_review",
         status: "approved",
         identity_verification_status: "approved",
         credential_status: "active",
         credential_jti: jti,
-        veriff_session_id: decision.id,
-        veriff_decision_id: decision.id,
+        veriff_session_id: provider === "veriff" ? decision.id : null,
+        veriff_decision_id: provider === "veriff" ? decision.id : reviewRef,
         last_verified_at: now.toISOString(),
         credential_issued_at: now.toISOString(),
         error_message: null,
@@ -159,14 +165,23 @@ export async function issueIdentityCredential(
 
     await upsertWalletBinding(normalized, normalized, "zklogin");
     await upsertClaims([
-      ...veriffApprovedClaims({
-        subjectId: normalized,
-        jti,
-        jurisdiction: juris,
-        documentType: docType,
-        veriffSessionId: decision.id,
-        expiresAt,
-      }),
+      ...(provider === "veriff"
+        ? veriffApprovedClaims({
+            subjectId: normalized,
+            jti,
+            jurisdiction: juris,
+            documentType: docType,
+            veriffSessionId: decision.id,
+            expiresAt,
+          })
+        : manualApprovedClaims({
+            subjectId: normalized,
+            jti,
+            jurisdiction: juris,
+            documentType: docType,
+            reviewId: reviewRef,
+            expiresAt,
+          })),
       walletBindingClaim({
         subjectId: normalized,
         walletAddress: normalized,
@@ -195,4 +210,33 @@ export async function issueIdentityCredential(
   }
 
   return { ok: true, jti, jwt, alreadyIssued: false };
+}
+
+export interface ManualReviewApproval {
+  reviewId: string;
+  jurisdiction?: string;
+  documentType?: string;
+  reviewer?: string;
+}
+
+/** Issue credential after admin manual review (Veriff unavailable). Assurance L2. */
+export async function issueManualIdentityCredential(
+  holder: string,
+  approval: ManualReviewApproval,
+): Promise<IssueIdentityCredentialResult> {
+  return issueIdentityCredential(
+    holder,
+    {
+      id: approval.reviewId,
+      status: "approved",
+      document: {
+        type: approval.documentType ?? "passport",
+        country: (approval.jurisdiction ?? "US").split("-")[0],
+        state: approval.jurisdiction?.includes("-")
+          ? approval.jurisdiction.split("-")[1]
+          : undefined,
+      },
+    },
+    { provider: "manual", reviewId: approval.reviewId },
+  );
 }

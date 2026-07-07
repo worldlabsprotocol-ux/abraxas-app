@@ -9,6 +9,7 @@ import {
   resolveCredentialStatus,
   resolveIdentityVerificationStatus,
 } from "@/lib/idv/identityVerificationStates";
+import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -29,6 +30,7 @@ type StatusPayload = {
   wallet_binding_l3?: boolean;
   setup?: ReturnType<typeof computePassportSetupState>;
   veriff_configured?: boolean;
+  idv_provider?: string;
 };
 
 function sb(): SupabaseClient | null {
@@ -48,6 +50,38 @@ async function walletBindingL3(supabase: SupabaseClient, sui: string): Promise<b
   return data?.binding_method === "signed_challenge";
 }
 
+async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Promise<StatusPayload | null> {
+  const normalized = normalizeSuiAddress(sui);
+
+  const { data: accepted } = await supabase
+    .from("passport_documents")
+    .select("status")
+    .eq("sui_address", normalized)
+    .eq("stamp_id", "identity")
+    .eq("status", "accepted")
+    .limit(1)
+    .maybeSingle();
+
+  if (accepted) {
+    return { status: "approved", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
+  }
+
+  const { data: pending } = await supabase
+    .from("passport_documents")
+    .select("status")
+    .eq("sui_address", normalized)
+    .eq("stamp_id", "identity")
+    .in("status", ["submitted", "under_review"])
+    .limit(1)
+    .maybeSingle();
+
+  if (pending) {
+    return { status: "pending", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
+  }
+
+  return null;
+}
+
 async function statusBySui(supabase: SupabaseClient, sui: string): Promise<StatusPayload | null> {
   const { data } = await supabase
     .from("identity_verifications")
@@ -59,7 +93,9 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
     .or(`wallet_address.eq.${sui},sui_address.eq.${sui}`)
     .maybeSingle();
 
-  if (!data) return null;
+  if (!data) {
+    return manualDocStatusBySui(supabase, sui);
+  }
 
   const idvStatus = resolveIdentityVerificationStatus(data);
   const credStatus = resolveCredentialStatus(data);
@@ -109,7 +145,8 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
     error_message: data.error_message,
     wallet_binding_l3: l3,
     setup,
-    veriff_configured: Boolean(process.env.VERIFF_API_KEY),
+    veriff_configured: isVeriffLive(),
+    idv_provider: getIdvProvider(),
   };
 }
 
@@ -142,7 +179,7 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
     .maybeSingle();
 
   if (docRow) {
-    return { status: "approved", via: "manual_review" };
+    return { status: "approved", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
   }
 
   const { data: pendingDoc } = await supabase
@@ -155,10 +192,10 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
     .maybeSingle();
 
   if (pendingDoc) {
-    return { status: "pending", via: "manual_review" };
+    return { status: "pending", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
   }
 
-  return { status: "not_started", veriff_configured: Boolean(process.env.VERIFF_API_KEY) };
+  return { status: "not_started", veriff_configured: isVeriffLive(), idv_provider: getIdvProvider() };
 }
 
 export async function GET(req: NextRequest) {
@@ -172,14 +209,16 @@ export async function GET(req: NextRequest) {
 
   const supabase = sb();
   if (!supabase) {
-    return NextResponse.json({ status: "not_started", dev_mode: true });
+    return NextResponse.json({
+      status: "not_started",
+      dev_mode: true,
+      idv_provider: getIdvProvider(),
+      veriff_configured: isVeriffLive(),
+    });
   }
 
   if (sui) {
     const bySui = await statusBySui(supabase, sui);
-    if (bySui && bySui.status !== "not_started") {
-      return NextResponse.json(bySui);
-    }
     if (bySui) return NextResponse.json(bySui);
   }
 
@@ -189,6 +228,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     status: "not_started",
-    veriff_configured: Boolean(process.env.VERIFF_API_KEY),
+    veriff_configured: isVeriffLive(),
+    idv_provider: getIdvProvider(),
   });
 }

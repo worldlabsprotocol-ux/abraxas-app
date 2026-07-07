@@ -1,27 +1,32 @@
 "use client";
 // FILE: components/passport/DocumentUpload.tsx
-// Real file upload for Passport stamps that require documents (Business
-// KYB, Property, Asset Owner). Identity doesn't use this ,
-// Veriff collects documents directly in its own hosted flow.
+// File upload for Passport stamps requiring manual review (including identity pilot path).
 
 import { useState } from "react";
 
 interface DocumentUploadProps {
   email: string;
+  suiAddress?: string | null;
   stampId: string;
   color: string;
+  onUploaded?: () => void;
 }
 
-export function DocumentUpload({ email, stampId, color }: DocumentUploadProps) {
+export function DocumentUpload({ email, suiAddress, stampId, color, onUploaded }: DocumentUploadProps) {
   const [files, setFiles] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!email.includes("@")) {
       setError("Enter your email at the top of the page first");
+      return;
+    }
+    if (stampId === "identity" && !suiAddress) {
+      setError("Sign in with Google first so we can link your upload to your account");
       return;
     }
     setUploading(true);
@@ -31,13 +36,21 @@ export function DocumentUpload({ email, stampId, color }: DocumentUploadProps) {
       formData.append("file", file);
       formData.append("email", email);
       formData.append("stampId", stampId);
+      if (suiAddress) formData.append("sui_address", suiAddress);
       const res = await fetch("/api/identity/documents/upload", {
         method: "POST",
         body: formData,
       });
-      const data = await res.json() as { uploaded?: boolean; fileName?: string; error?: string };
+      const data = await res.json() as {
+        uploaded?: boolean;
+        fileName?: string;
+        error?: string;
+        review_status?: string;
+      };
       if (data.uploaded && data.fileName) {
         setFiles(f => [...f, data.fileName!]);
+        if (stampId === "identity") setSubmitted(true);
+        onUploaded?.();
       } else {
         setError(data.error ?? "Upload failed. Try again.");
       }
@@ -54,8 +67,19 @@ export function DocumentUpload({ email, stampId, color }: DocumentUploadProps) {
                    borderRadius:10, padding:"1rem", marginBottom:"1rem" }}>
       <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.78rem",
                      fontWeight:600, color:"var(--text-primary)", marginBottom:"0.625rem" }}>
-        Upload your documents
+        {stampId === "identity" ? "Upload your government ID" : "Upload your documents"}
       </div>
+      {submitted && (
+        <div style={{
+          padding: "0.55rem 0.65rem", borderRadius: 8, marginBottom: "0.65rem",
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+          fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.72rem",
+          color: "var(--text-secondary)", lineHeight: 1.55,
+        }}>
+          Submitted for pilot review. Our team usually responds within one business day.
+          This page will update automatically when approved.
+        </div>
+      )}
       <label style={{ display:"inline-flex", alignItems:"center", gap:"0.5rem",
                         padding:"0.5rem 1rem", borderRadius:8,
                         border:`1.5px solid ${color}`, color, cursor:"pointer",
@@ -85,7 +109,8 @@ export function DocumentUpload({ email, stampId, color }: DocumentUploadProps) {
       )}
       <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.66rem",
                      color:"var(--text-muted)", marginTop:"0.625rem", lineHeight:1.5 }}>
-        PDF, JPG, or PNG. Reviewed by our team, not processed automatically.
+        PDF, JPG, or PNG. Reviewed by our team — not processed automatically.
+        {stampId === "identity" && " Documents are stored securely and deleted after review."}
       </div>
     </div>
   );

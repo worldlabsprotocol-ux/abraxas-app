@@ -37,6 +37,7 @@ interface Props {
   starting: boolean;
   error: string | null;
   veriffConfigured: boolean;
+  idvProvider?: "veriff" | "manual";
   onStartIdCheck: () => void;
   onRefresh: () => void;
   onWalletBound?: () => void;
@@ -54,10 +55,13 @@ export function PassportSetupPanel({
   starting,
   error,
   veriffConfigured,
+  idvProvider = veriffConfigured ? "veriff" : "manual",
   onStartIdCheck,
   onRefresh,
   onWalletBound,
 }: Props) {
+  const manualMode = idvProvider === "manual";
+  const assuranceLabel = manualMode ? "L2" : "L3";
   const completedCount = [setup.accountComplete, setup.identityComplete, setup.walletBound].filter(Boolean).length;
 
   async function bindWallet() {
@@ -142,7 +146,7 @@ export function PassportSetupPanel({
           <ol style={{ listStyle: "none", margin: "0 0 1.25rem", padding: 0, display: "grid", gap: "0.45rem" }}>
             {[
               { done: setup.accountComplete, label: "Account created", sub: walletDone && suiAddress ? truncateSuiAddress(suiAddress, 8, 6) : "Sign in with Google" },
-              { done: setup.identityComplete, label: "Verify identity", sub: setup.identityComplete ? "Credential active · L3" : "Required for payments & submissions" },
+              { done: setup.identityComplete, label: "Verify identity", sub: setup.identityComplete ? `Credential active · ${assuranceLabel}` : "Required for payments & submissions" },
               { done: setup.walletBound, label: "Bind wallet", sub: setup.walletBound ? "Signed control proof on file" : "One signature — no funds move" },
             ].map(item => (
               <li key={item.label} style={{
@@ -194,8 +198,12 @@ export function PassportSetupPanel({
                 </div>
                 <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
                   Required for investing, payments, asset submissions, and partner access.
-                  Usually takes 2–4 minutes. Your ID documents are processed by Veriff —
-                  Abraxas receives verification status, not your documents.
+                  {manualMode ? (
+                    <> Upload a government ID for pilot manual review — usually within one business day.</>
+                  ) : (
+                    <> Usually takes 2–4 minutes. Your ID documents are processed by Veriff —
+                    Abraxas receives verification status, not your documents.</>
+                  )}
                 </p>
 
                 {(identityStatus === "pending" || isPolling) ? (
@@ -205,10 +213,12 @@ export function PassportSetupPanel({
                     marginBottom: "0.65rem",
                   }}>
                     <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#F59E0B", marginBottom: 4 }}>
-                      Verification in progress
+                      {manualMode ? "Review in progress" : "Verification in progress"}
                     </div>
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
-                      Veriff is reviewing your submission. This page refreshes automatically.
+                      {manualMode
+                        ? "Our team is reviewing your uploaded ID. This page refreshes automatically."
+                        : "Veriff is reviewing your submission. This page refreshes automatically."}
                     </p>
                     <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>
                       Check status now
@@ -229,7 +239,20 @@ export function PassportSetupPanel({
                   </div>
                 ) : null}
 
-                {!veriffConfigured ? (
+                {manualMode ? (
+                  <>
+                    <DocumentUpload
+                      email={email}
+                      suiAddress={suiAddress}
+                      stampId="identity"
+                      color={ACCENT}
+                      onUploaded={onRefresh}
+                    />
+                    <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
+                      Pilot · Manual review · Assurance L2. Automated Veriff is temporarily unavailable.
+                    </p>
+                  </>
+                ) : !veriffConfigured ? (
                   <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#F59E0B", margin: "0 0 0.65rem" }}>
                     Veriff is not configured in this environment. Use manual review for pilot access.
                   </p>
@@ -252,7 +275,10 @@ export function PassportSetupPanel({
 
               <PassportVerificationFallback
                 email={email || suiAddress || ""}
+                suiAddress={suiAddress}
+                manualMode={manualMode}
                 onRetry={onStartIdCheck}
+                onRefresh={onRefresh}
                 starting={starting}
               />
             </div>
@@ -284,7 +310,7 @@ export function PassportSetupPanel({
                 ✓ Passport ready for supported verified actions
               </div>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
-                Identity credential active · Issuer Veriff / Abraxas · Assurance L3
+                Identity credential active · {manualMode ? "Abraxas manual review" : "Veriff / Abraxas"} · Assurance {assuranceLabel}
                 {credential.expires_at && <> · Expires {new Date(credential.expires_at).toLocaleDateString()}</>}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
@@ -314,7 +340,7 @@ export function PassportSetupPanel({
             </div>
           )}
 
-          <PassportDataTransparency visible={setup.identityComplete} via="veriff" />
+          <PassportDataTransparency visible={setup.identityComplete} via={manualMode ? "manual" : "veriff"} />
         </div>
       </div>
     </section>
@@ -323,13 +349,21 @@ export function PassportSetupPanel({
 
 function PassportVerificationFallback({
   email,
+  suiAddress,
+  manualMode,
   onRetry,
+  onRefresh,
   starting,
 }: {
   email: string;
+  suiAddress: string | null;
+  manualMode: boolean;
   onRetry: () => void;
+  onRefresh: () => void;
   starting: boolean;
 }) {
+  if (manualMode) return null;
+
   return (
     <details style={{ marginTop: "0.85rem" }}>
       <summary style={{
@@ -344,7 +378,7 @@ function PassportVerificationFallback({
         display: "flex", flexDirection: "column", gap: "0.5rem",
       }}>
         <Btn variant="secondary" size="sm" loading={starting} onClick={onRetry}>Try again</Btn>
-        <DocumentUpload email={email} stampId="identity" color={ACCENT} />
+        <DocumentUpload email={email} suiAddress={suiAddress} stampId="identity" color={ACCENT} onUploaded={onRefresh} />
         <Link
           href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20manual%20review"
           style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, textDecoration: "none" }}
@@ -370,7 +404,7 @@ function PassportDataTransparency({ visible, via }: { visible: boolean; via: str
         ["Identity", "Verified outcome only"],
         ["Document images", "Not stored by Abraxas"],
         ["Biometric data", "Not stored by Abraxas"],
-        ["Verification provider", via === "veriff" ? "Veriff" : "Licensed provider"],
+        ["Verification provider", via === "veriff" ? "Veriff" : via === "manual" ? "Abraxas pilot review" : "Licensed provider"],
       ].map(([k, v]) => (
         <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.68rem", marginBottom: 3 }}>
           <span style={{ color: "var(--text-muted)" }}>{k}</span>

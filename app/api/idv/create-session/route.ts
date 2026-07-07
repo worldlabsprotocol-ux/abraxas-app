@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }             from "@supabase/supabase-js";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
+import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 
 const VERIFF_KEY    = process.env.VERIFF_API_KEY    ?? "";
 const VERIFF_BASE   = "https://stationapi.veriff.com/v1";
@@ -38,14 +39,19 @@ export async function POST(req: NextRequest) {
   if (!holder) {
     return NextResponse.json({ error: "sui_address required" }, { status: 400 });
   }
-  if (!VERIFF_KEY) {
+
+  const idvProvider = getIdvProvider();
+  if (!isVeriffLive() || !VERIFF_KEY) {
     return NextResponse.json({
-      session_id:    `mock-${Date.now()}`,
+      session_id:    null,
       session_url:   null,
       is_mock:       true,
-      message:       "VERIFF_API_KEY not configured — identity verification unavailable in this environment",
-      error_code:    "veriff_not_configured",
-    });
+      idv_provider:  idvProvider,
+      message:       idvProvider === "manual"
+        ? "Live Veriff is disabled — upload your ID for pilot manual review instead"
+        : "VERIFF_API_KEY not configured — identity verification unavailable in this environment",
+      error_code:    idvProvider === "manual" ? "manual_review_mode" : "veriff_not_configured",
+    }, { status: 503 });
   }
 
   // Create Veriff session

@@ -21,6 +21,7 @@ export interface IdentityStatusResponse {
   wallet_binding_l3?: boolean;
   setup?: PassportSetupState;
   veriff_configured?: boolean;
+  idv_provider?: "veriff" | "manual";
 }
 
 export interface TrustStatusResponse {

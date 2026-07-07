@@ -46,6 +46,60 @@ export const CLAIM_ISSUERS = {
   manual: "issuer:abraxas-manual",
 } as const;
 
+/** Claims issued after Abraxas manual identity review (pilot — no Veriff) */
+export function manualApprovedClaims(input: {
+  subjectId: string;
+  jti: string;
+  jurisdiction: string;
+  documentType: string;
+  reviewId: string;
+  expiresAt: Date;
+}): Omit<CredentialClaimRecord, "id" | "status">[] {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = input.expiresAt.toISOString();
+  const base = {
+    subject_id: input.subjectId,
+    credential_jti: input.jti,
+    issuer_id: CLAIM_ISSUERS.manual,
+    assurance_level: "L2" as AssuranceLevel,
+    issued_at: issuedAt,
+    expires_at: expiresAt,
+    revocation_reference: null,
+    evidence_reference: `manual_review:${input.reviewId}`,
+    jurisdiction: input.jurisdiction,
+    policy_scope: "compliance",
+  };
+
+  return [
+    {
+      ...base,
+      claim_type: "identity_verified",
+      claim_value: {
+        document_type: input.documentType,
+        provider: "abraxas_manual_review",
+        review_method: "pilot_manual",
+      },
+    },
+    {
+      ...base,
+      claim_type: "government_id_verified",
+      claim_value: { document_type: input.documentType, provider: "manual" },
+    },
+    {
+      ...base,
+      claim_type: "liveness_passed",
+      claim_value: { provider: "manual_review", note: "Live check via video call or in-person pilot" },
+      assurance_level: "L1",
+    },
+    {
+      ...base,
+      claim_type: "screening_outcome",
+      claim_value: { outcome: "pending_partner_screen", note: "Full AML/OFAC program is partner-gated" },
+      assurance_level: "L1",
+    },
+  ];
+}
+
 /** Claims issued after successful Veriff approval */
 export function veriffApprovedClaims(input: {
   subjectId: string;

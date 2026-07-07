@@ -68,6 +68,7 @@ interface PipelineResult {
   syncMessage: string | null;
   setup: PassportSetupState | null;
   veriffConfigured: boolean;
+  idvProvider: "veriff" | "manual";
   walletBindingL3: boolean;
 }
 
@@ -85,18 +86,25 @@ async function runIdentityPipeline(
   let onChain: OnChainPassportStatus | null = null;
   let setup: PassportSetupState | null = null;
   let veriffConfigured = false;
+  let idvProvider: "veriff" | "manual" = "manual";
   let walletBindingL3 = false;
 
   if (!suiAddress && !email) {
-    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, walletBindingL3 };
+    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3 };
   }
 
   let data: IdentityStatusResponse = await fetchIdentityStatus(suiAddress, email);
   veriffConfigured = data.veriff_configured ?? false;
+  idvProvider = data.idv_provider ?? (veriffConfigured ? "veriff" : "manual");
   walletBindingL3 = data.wallet_binding_l3 ?? false;
   setup = data.setup ?? null;
 
-  if (data.status === "pending" && suiAddress) {
+  if (
+    data.status === "pending" &&
+    suiAddress &&
+    idvProvider === "veriff" &&
+    data.via !== "manual_review"
+  ) {
     const sync = await syncVeriffDecision(suiAddress);
     syncMessage = sync.message ?? null;
     data = await fetchIdentityStatus(suiAddress, email);
@@ -150,7 +158,7 @@ async function runIdentityPipeline(
     }
   }
 
-  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, walletBindingL3 };
+  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3 };
 }
 
 export function usePassportVerification(
@@ -261,6 +269,7 @@ export function usePassportVerification(
     isLoading: pipelineQuery.isLoading,
     setup,
     veriffConfigured: data?.veriffConfigured ?? false,
+    idvProvider: data?.idvProvider ?? "manual",
     walletBindingL3: data?.walletBindingL3 ?? false,
   };
 }
