@@ -103,8 +103,8 @@ values
     array['US','global'],
     array['L1','L2'],
     1,
-    'pending_audit',
-    '{"note":"Full AML program requires partner onboarding"}'::jsonb
+    'self_attested',
+    '{"note":"Full AML program requires partner onboarding; trust_status pending_audit"}'::jsonb
   )
 on conflict (id) do nothing;
 

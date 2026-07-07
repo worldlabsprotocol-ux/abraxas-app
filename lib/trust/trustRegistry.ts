@@ -72,7 +72,7 @@ export const TRUST_REGISTRY_FALLBACK: TrustedIssuer[] = [
     jurisdictions: ["US", "global"],
     assurance_levels: ["L1", "L2"],
     credential_ttl_days: 1,
-    audit_status: "pending_audit",
+    audit_status: "self_attested",
     metadata: { note: "Full AML program requires partner onboarding" },
   },
 ];
