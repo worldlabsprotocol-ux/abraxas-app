@@ -15,6 +15,8 @@ import { PassportCredentialBanner } from "@/components/passport/PassportCredenti
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { PassportTrustCard } from "@/components/passport/PassportTrustCard";
 import { PassportClaimsCard } from "@/components/passport/PassportClaimsCard";
+import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
+import { WalletBindingCard } from "@/components/passport/WalletBindingCard";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { IssuerHolderVerifierSection } from "@/components/vision/IssuerHolderVerifierSection";
 import { ClaimStackSection } from "@/components/vision/ClaimStackSection";
@@ -419,6 +421,8 @@ function PassportPageInner() {
 
         <PassportTrustCard suiAddress={suiAddress} completionPercent={completion.percent} />
         <PassportClaimsCard suiAddress={suiAddress} />
+        <WalletBindingCard suiAddress={suiAddress} />
+        <PassportShareHistoryCard suiAddress={suiAddress} />
 
         {walletDone && (
           <div id="apple-wallet" style={{ marginBottom: "1.5rem" }}>

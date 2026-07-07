@@ -4,7 +4,6 @@
 
 import Link from "next/link";
 import { PASSPORT_LAYERS, PUBLIC_POSITIONING } from "@/lib/passportLayers";
-import { ABRAXAS_POSITIONING } from "@/lib/abraxasNetwork";
 import { ProductStatusBadge } from "@/components/ui/ProductStatusBadge";
 import { Btn } from "./ui";
 
@@ -37,7 +36,7 @@ export function WhatIsAbraxasSection() {
         fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
         lineHeight: 1.55, maxWidth: 580, margin: "0 0 1rem",
       }}>
-        {ABRAXAS_POSITIONING.proofNotDocuments}
+        {PUBLIC_POSITIONING.proofNotDocuments}
       </p>
 
       <div style={{ display: "grid", gap: "0.65rem", marginBottom: "1rem" }}>

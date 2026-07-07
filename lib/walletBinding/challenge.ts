@@ -13,7 +13,7 @@ export interface BindingChallenge {
   expires_at: string;
 }
 
-const challengeStore = new Map<string, { wallet: string; expires: number }>();
+const challengeStore = new Map<string, { wallet: string; expires: number; message: string }>();
 
 export function createWalletBindingChallenge(walletAddress: string): BindingChallenge {
   const wallet = normalizeSuiAddress(walletAddress);
@@ -26,7 +26,7 @@ export function createWalletBindingChallenge(walletAddress: string): BindingChal
     `expires:${new Date(expires).toISOString()}`,
   ].join("\n");
 
-  challengeStore.set(challengeId, { wallet, expires });
+  challengeStore.set(challengeId, { wallet, expires, message });
 
   return {
     challenge_id: challengeId,
@@ -36,25 +36,40 @@ export function createWalletBindingChallenge(walletAddress: string): BindingChal
   };
 }
 
+export function getBindingChallenge(challengeId: string): { wallet: string; message: string } | null {
+  const entry = challengeStore.get(challengeId);
+  if (!entry) return null;
+  if (Date.now() > entry.expires) {
+    challengeStore.delete(challengeId);
+    return null;
+  }
+  return { wallet: entry.wallet, message: entry.message };
+}
+
+export function consumeBindingChallenge(challengeId: string, walletAddress: string): boolean {
+  const entry = challengeStore.get(challengeId);
+  if (!entry) return false;
+  if (Date.now() > entry.expires) {
+    challengeStore.delete(challengeId);
+    return false;
+  }
+  const wallet = normalizeSuiAddress(walletAddress);
+  if (entry.wallet !== wallet) return false;
+  challengeStore.delete(challengeId);
+  return true;
+}
+
+/** @deprecated use getBindingChallenge + consumeBindingChallenge */
 export function verifyWalletBindingSignature(input: {
   challengeId: string;
   walletAddress: string;
   signature: string;
 }): boolean {
-  const entry = challengeStore.get(input.challengeId);
+  const entry = getBindingChallenge(input.challengeId);
   if (!entry) return false;
-  if (Date.now() > entry.expires) {
-    challengeStore.delete(input.challengeId);
-    return false;
-  }
-
-  const wallet = normalizeSuiAddress(input.walletAddress);
-  if (entry.wallet !== wallet) return false;
-
-  // Signature verification delegated to Sui personal-message verify at API layer.
-  // Store marks challenge consumed.
-  challengeStore.delete(input.challengeId);
-  return input.signature.length > 0;
+  if (entry.wallet !== normalizeSuiAddress(input.walletAddress)) return false;
+  if (!input.signature.length) return false;
+  return consumeBindingChallenge(input.challengeId, input.walletAddress);
 }
 
 export function challengeMessageHash(message: string): string {

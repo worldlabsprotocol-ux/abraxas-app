@@ -127,6 +127,37 @@ export async function expireStaleClaims(): Promise<number> {
   return data?.length ?? 0;
 }
 
+export async function updateClaimStatus(input: {
+  claimId: string;
+  status: ClaimStatus;
+  reason?: string;
+}): Promise<void> {
+  const sb = getSupabaseAdmin();
+  if (!sb) throw new Error("Database unavailable");
+
+  const { data } = await sb
+    .from("credential_claims")
+    .update({
+      status: input.status,
+      revocation_reference: input.reason ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.claimId)
+    .select("subject_id, claim_type")
+    .single();
+
+  if (data) {
+    await appendAuditEvent({
+      actor_type: "admin",
+      actor_id: "claims_lifecycle",
+      action: `claims.${input.status}`,
+      object_type: "credential_claim",
+      object_id: input.claimId,
+      metadata: { claim_type: data.claim_type, reason: input.reason },
+    });
+  }
+}
+
 export async function upsertWalletBinding(
   subjectId: string,
   walletAddress: string,

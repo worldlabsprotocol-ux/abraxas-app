@@ -319,6 +319,8 @@ export const ABRAXAS_POSITIONING = {
   ],
   promise:
     "Verify once with approved providers, reuse eligible credentials across participating applications — share the proof, not the documents.",
+  proofNotDocuments:
+    "Share the proof, not the documents. Partners receive only the claims their policy requires.",
   eligibilityDisclaimer:
     "Eligibility is policy-based, issuer-specific, and time-bound. Verification status does not guarantee eligibility for every product, jurisdiction, or partner.",
   refreshPromise:
