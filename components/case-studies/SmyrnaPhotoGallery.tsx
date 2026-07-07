@@ -29,7 +29,8 @@ export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
         if (ok) found.push(src);
       }
       if (!cancelled) {
-        setLoaded(found.length ? found : ["/assets/smyrna/011.webp"]);
+        const foundLimited = found.length ? found.slice(0, 2) : ["/assets/smyrna/011.webp"];
+        setLoaded(foundLimited);
       }
     }
 

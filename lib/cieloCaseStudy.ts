@@ -132,5 +132,5 @@ export const CIELO_ONCHAIN_PROOF = [
 export const CIELO_TIMELINE = D.verification.provenanceTimeline;
 
 export const CIELO_PHOTOS = [
-  ...CIELO_GALLERY_IMAGES,
+  ...CIELO_GALLERY_IMAGES.slice(0, 2),
 ] as const;

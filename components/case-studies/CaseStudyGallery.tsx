@@ -14,11 +14,14 @@ const OBJECT_POSITIONS: Record<string, string> = {
 export function CaseStudyGallery({
   images,
   altPrefix,
+  maxImages,
 }: {
   images: readonly string[];
   altPrefix: string;
+  maxImages?: number;
 }) {
-  if (!images.length) return null;
+  const shown = maxImages != null ? images.slice(0, maxImages) : images;
+  if (!shown.length) return null;
 
   return (
     <div style={{
@@ -27,7 +30,7 @@ export function CaseStudyGallery({
       gap: "0.75rem",
       marginBottom: "0.5rem",
     }}>
-      {images.map((src, i) => (
+      {shown.map((src, i) => (
         <div key={src} style={{
           borderRadius: 12, overflow: "hidden",
           border: "1px solid var(--border-strong)",

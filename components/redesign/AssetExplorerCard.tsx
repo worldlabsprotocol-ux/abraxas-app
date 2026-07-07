@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/redesign/AssetExplorerCard.tsx
-// Premium dark asset card — compact text-only variant for registry lists.
+// Premium asset card — full photo (default) or compact with small thumbnail.
 
 import { MotionCard } from "@/lib/motion/MotionCard";
 import { VerificationBadge } from "./VerificationBadge";
 import { Btn } from "./ui";
+import { AssetThumbnail, assetThumbObjectPosition } from "@/components/ui/AssetThumbnail";
 import { VERIFY_META, type ExploreAsset } from "@/lib/data/exploreAssets";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -17,7 +18,7 @@ export function AssetExplorerCard({
   variant?: "default" | "compact";
 }) {
   const meta = VERIFY_META[asset.state];
-  const showPhoto = variant === "default";
+  const isCompact = variant === "compact";
 
   return (
     <MotionCard
@@ -32,7 +33,7 @@ export function AssetExplorerCard({
         height: "100%",
       }}
     >
-      {showPhoto ? (
+      {!isCompact ? (
         <div style={{ position: "relative", height: 220, background: "#06090B" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -40,7 +41,7 @@ export function AssetExplorerCard({
             alt={asset.name}
             style={{
               width: "100%", height: "100%", objectFit: "cover", display: "block",
-              objectPosition: asset.id === "genesis-asset" ? "center 35%" : "center",
+              objectPosition: assetThumbObjectPosition(asset.id),
             }}
           />
           <div style={{ position: "absolute", top: 12, left: 12 }}>
@@ -49,40 +50,62 @@ export function AssetExplorerCard({
         </div>
       ) : (
         <div style={{
-          padding: "1rem 1.1rem 0.65rem",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem",
+          padding: "1rem 1.1rem 0",
+          display: "flex", gap: "0.85rem", alignItems: "flex-start",
         }}>
-          <VerificationBadge label={meta.label} color={meta.color} />
-          <span style={{
-            fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700,
-            letterSpacing: "0.08em", textTransform: "uppercase",
-            color: "var(--text-muted)",
-          }}>
-            {asset.assetClass.split(" · ")[0]}
-          </span>
+          <AssetThumbnail
+            src={asset.image}
+            alt={asset.name}
+            size={72}
+            objectPosition={assetThumbObjectPosition(asset.id)}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.35rem" }}>
+              <VerificationBadge label={meta.label} color={meta.color} />
+              <span style={{
+                fontFamily: FONT, fontSize: "0.55rem", fontWeight: 700,
+                letterSpacing: "0.08em", textTransform: "uppercase",
+                color: "var(--text-muted)",
+              }}>
+                {asset.assetClass.split(" · ")[0]}
+              </span>
+            </div>
+            <div style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 700,
+                           letterSpacing: "-0.02em", color: "var(--text-primary)", lineHeight: 1.15 }}>
+              {asset.name}
+            </div>
+            <div style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 3 }}>
+              {asset.location}
+            </div>
+          </div>
         </div>
       )}
 
-      <div style={{ padding: showPhoto ? "1.05rem 1.1rem" : "0 1.1rem 1.05rem", display: "flex", flexDirection: "column", flex: 1 }}>
-        {showPhoto && (
-          <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
-                         letterSpacing: "0.1em", textTransform: "uppercase",
-                         color: "var(--text-muted)", marginBottom: "0.4rem" }}>
-            {asset.assetClass}
-          </div>
+      <div style={{
+        padding: isCompact ? "0.85rem 1.1rem 1.05rem" : "1.05rem 1.1rem",
+        display: "flex", flexDirection: "column", flex: 1,
+      }}>
+        {!isCompact && (
+          <>
+            <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
+                           letterSpacing: "0.1em", textTransform: "uppercase",
+                           color: "var(--text-muted)", marginBottom: "0.4rem" }}>
+              {asset.assetClass}
+            </div>
+            <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 700,
+                           letterSpacing: "-0.02em", color: "var(--text-primary)", lineHeight: 1.15 }}>
+              {asset.name}
+            </div>
+            <div style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 3 }}>
+              {asset.location}
+            </div>
+          </>
         )}
-        <div style={{ fontFamily: FONT, fontSize: variant === "compact" ? "1.05rem" : "1.15rem", fontWeight: 700,
-                       letterSpacing: "-0.02em", color: "var(--text-primary)", lineHeight: 1.15 }}>
-          {asset.name}
-        </div>
-        <div style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
-                       marginTop: 3 }}>
-          {asset.location}
-        </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem",
-                       margin: "0.95rem 0 0.65rem", paddingTop: "0.85rem",
-                       borderTop: "1px solid var(--border)" }}>
+                       margin: isCompact ? "0 0 0.65rem" : "0.95rem 0 0.65rem",
+                       paddingTop: isCompact ? 0 : "0.85rem",
+                       borderTop: isCompact ? "none" : "1px solid var(--border)" }}>
           {[
             { l: asset.primaryLabel, v: asset.primaryValue },
             { l: asset.secondaryLabel, v: asset.secondaryValue },
