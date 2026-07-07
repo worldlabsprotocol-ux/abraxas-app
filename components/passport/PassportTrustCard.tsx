@@ -89,6 +89,9 @@ export function PassportTrustCard({
             { label: copy.rows.identity, ok: trust.identity.status === "approved", detail: formatIdentityStatus(trust.identity.status) },
             { label: copy.rows.credential, ok: trust.credential.active, detail: trust.credential.active ? "Active" : "Optional" },
             { label: copy.rows.onChain, ok: trust.on_chain.provisioned, detail: trust.on_chain.stamps_complete ? "Complete" : "Optional" },
+            ...(trust.claims && trust.claims.active_count > 0
+              ? [{ label: "Compliance claims", ok: true, detail: `${trust.claims.active_count} active` }]
+              : []),
           ].map(row => (
             <div key={row.label} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: FONT, fontSize: "0.75rem", minHeight: 28 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: dot(row.ok), flexShrink: 0 }} aria-hidden />

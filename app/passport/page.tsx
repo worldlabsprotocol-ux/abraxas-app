@@ -14,6 +14,7 @@ import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { PassportTrustCard } from "@/components/passport/PassportTrustCard";
+import { PassportClaimsCard } from "@/components/passport/PassportClaimsCard";
 import { AddToAppleWallet } from "@/components/passport/AddToAppleWallet";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
@@ -35,7 +36,7 @@ import { Btn } from "@/components/redesign/ui";
 import { consumerCopy } from "@/lib/consumerCopy";
 import { computePassportCompletion, resolveFlowStep } from "@/lib/passportCompletion";
 import { useQuery } from "@tanstack/react-query";
-import { fetchTrustStatus, passportQueryKeys } from "@/lib/api/passport";
+import { fetchTrustStatus, passportQueryKeys, consentVerificationRequest } from "@/lib/api/passport";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -159,6 +160,10 @@ function PassportPageInner() {
   const [active, setActive] = useState<string | null>("wallet");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [partnerConsent, setPartnerConsent] = useState<{
+    status: "idle" | "pending" | "done" | "error";
+    message?: string;
+  }>({ status: "idle" });
   const [passportState, setPassportState] = useState<PassportState>({
     identity: "not_started",
     business: "not_started",
@@ -225,6 +230,30 @@ function PassportPageInner() {
               : prev.identity === "earned" ? "earned" : "not_started",
     }));
   }, [identityStatus, onChain?.stamps_complete, onChain?.issuer_configured, isProvisioning]);
+
+  const verifyRequestId = searchParams.get("verify_request");
+
+  useEffect(() => {
+    if (!verifyRequestId || !suiAddress) return;
+    let cancelled = false;
+    setPartnerConsent({ status: "pending" });
+    consentVerificationRequest(verifyRequestId, suiAddress)
+      .then(result => {
+        if (cancelled) return;
+        setPartnerConsent({
+          status: "done",
+          message: `Partner decision: ${result.decision} · ref ${result.decision_reference.slice(0, 8)}…`,
+        });
+      })
+      .catch(e => {
+        if (cancelled) return;
+        setPartnerConsent({
+          status: "error",
+          message: e instanceof Error ? e.message : "Consent failed",
+        });
+      });
+    return () => { cancelled = true; };
+  }, [verifyRequestId, suiAddress]);
 
   useEffect(() => {
     if (searchParams.get("signed_in") === "1") refresh();
@@ -391,6 +420,7 @@ function PassportPageInner() {
         )}
 
         <PassportTrustCard suiAddress={suiAddress} completionPercent={completion.percent} />
+        <PassportClaimsCard suiAddress={suiAddress} />
 
         {walletDone && (
           <div id="apple-wallet" style={{ marginBottom: "1.5rem" }}>

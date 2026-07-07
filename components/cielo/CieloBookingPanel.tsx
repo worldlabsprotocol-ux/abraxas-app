@@ -16,7 +16,14 @@ const RED = "#EF4444";
 
 interface BlockedDate { start: string; end: string; }
 
-type Step = "dates" | "contact" | "done";
+type Step = "dates" | "verification" | "contact" | "done";
+
+interface CheckLevelState {
+  loading: boolean;
+  needsDeepVerification: boolean;
+  decision: string;
+  missingClaims: string[];
+}
 
 export function CieloBookingPanel({
   suiAddress,
@@ -42,6 +49,43 @@ export function CieloBookingPanel({
   const [checkoutInfo, setCheckoutInfo] = useState<string[]>([]);
   const [payUrl, setPayUrl] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("fiat");
+  const [verification, setVerification] = useState<CheckLevelState>({
+    loading: false,
+    needsDeepVerification: false,
+    decision: "approved",
+    missingClaims: [],
+  });
+
+  async function proceedFromDates() {
+    setVerification(v => ({ ...v, loading: true }));
+    setErr(null);
+    try {
+      const res = await fetch("/api/verification/check-level", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "book_asset",
+          sui_address: wallet.trim() || suiAddress || undefined,
+        }),
+      });
+      const data = await res.json() as {
+        needsDeepVerification?: boolean;
+        decision?: string;
+        missing_claims?: string[];
+      };
+      const needs = Boolean(data.needsDeepVerification);
+      setVerification({
+        loading: false,
+        needsDeepVerification: needs,
+        decision: data.decision ?? "approved",
+        missingClaims: data.missing_claims ?? [],
+      });
+      setStep(needs ? "verification" : "contact");
+    } catch {
+      setVerification({ loading: false, needsDeepVerification: false, decision: "approved", missingClaims: [] });
+      setStep("contact");
+    }
+  }
 
   useEffect(() => {
     setWallet(suiAddress ?? "");
@@ -210,11 +254,62 @@ export function CieloBookingPanel({
               </>
             )}
 
-            <button type="button" onClick={() => setStep("contact")}
-              disabled={!checkIn || !checkOut || nights.length === 0 || conflictNights.length > 0}
-              style={primaryBtn(!checkIn || !checkOut || nights.length === 0 || conflictNights.length > 0)}>
-              Continue →
+            <button type="button" onClick={proceedFromDates}
+              disabled={!checkIn || !checkOut || nights.length === 0 || conflictNights.length > 0 || verification.loading}
+              style={primaryBtn(!checkIn || !checkOut || nights.length === 0 || conflictNights.length > 0 || verification.loading)}>
+              {verification.loading ? "Checking eligibility…" : "Continue →"}
             </button>
+          </>
+        )}
+
+        {step === "verification" && (
+          <>
+            <div style={{
+              padding: "0.85rem", borderRadius: 12, marginBottom: "0.75rem",
+              background: `${AMBER}12`, border: `1px solid ${AMBER}44`,
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: AMBER, marginBottom: "0.35rem" }}>
+                ID check required for verified stays
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
+                Booking policy <span style={{ fontFamily: MONO, fontSize: "0.62rem" }}>abraxas-booking-v1</span> needs
+                identity verification before we confirm your stay. You only pay for Veriff when you book — not to browse.
+              </p>
+              {verification.missingClaims.length > 0 && (
+                <ul style={{
+                  margin: "0 0 0.65rem", paddingLeft: "1.1rem",
+                  fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", lineHeight: 1.6,
+                }}>
+                  {verification.missingClaims.map(c => <li key={c}>{c.replace(/_/g, " ")}</li>)}
+                </ul>
+              )}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                <Link href="/passport#passport-step-2" style={{
+                  display: "inline-block", padding: "0.5rem 0.9rem", borderRadius: 999,
+                  background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700,
+                  textDecoration: "none",
+                }}>
+                  Complete ID check →
+                </Link>
+                {!wallet.trim() && !suiAddress && (
+                  <Link href="/passport" style={{
+                    fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT,
+                    alignSelf: "center", textDecoration: "none",
+                  }}>
+                    Sign in with Google first
+                  </Link>
+                )}
+              </div>
+            </div>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.75rem" }}>
+              After your ID is approved, return here — we&apos;ll re-check automatically.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button type="button" onClick={() => setStep("dates")} style={ghostBtn}>← Back</button>
+              <button type="button" onClick={proceedFromDates} style={{ ...ghostBtn, flex: 2, color: ACCENT, borderColor: `${ACCENT}55` }}>
+                Re-check eligibility
+              </button>
+            </div>
           </>
         )}
 
