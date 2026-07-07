@@ -32,6 +32,7 @@ export function CieloBookingPanel({
   const [guests, setGuests] = useState("2");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [wallet, setWallet] = useState(suiAddress ?? "");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -202,6 +203,7 @@ export function CieloBookingPanel({
                   amountUsdc={est}
                   suiAddress={wallet.trim() || suiAddress}
                   email={email.trim() || undefined}
+                  phoneNumber={phone.trim() || undefined}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
                 />
@@ -228,6 +230,10 @@ export function CieloBookingPanel({
             </p>
             <Field label="Your name"><input value={name} onChange={e => setName(e.target.value)} style={inputStyle} /></Field>
             <Field label="Email"><input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} /></Field>
+            <Field label="Phone (optional, for Apple Pay guest checkout)">
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                placeholder="+14155551234" style={inputStyle} />
+            </Field>
             <Field label="Payment wallet (optional)">
               <input value={wallet} onChange={e => setWallet(e.target.value)}
                 placeholder="Filled automatically after sign-in" style={inputStyle} />
@@ -275,6 +281,7 @@ export function CieloBookingPanel({
                   suiAddress={wallet.trim() || suiAddress}
                   bookingId={refId}
                   email={email.trim() || undefined}
+                  phoneNumber={phone.trim() || undefined}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
                 />

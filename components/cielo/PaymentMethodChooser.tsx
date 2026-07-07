@@ -20,6 +20,7 @@ export function PaymentMethodChooser({
   bookingId,
   memo,
   email,
+  phoneNumber,
   value,
   onChange,
   onRampReady,
@@ -31,6 +32,7 @@ export function PaymentMethodChooser({
   bookingId?: string;
   memo?: string;
   email?: string;
+  phoneNumber?: string;
   value: PaymentMethod;
   onChange: (m: PaymentMethod) => void;
   onRampReady?: (sessionUrl: string | null, message?: string) => void;
@@ -152,6 +154,7 @@ export function PaymentMethodChooser({
           suiAddress={suiAddress}
           bookingId={bookingId}
           email={email}
+          phoneNumber={phoneNumber}
           compact={compact}
           onComplete={() => onFiatComplete?.()}
         />
