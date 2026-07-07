@@ -28,6 +28,9 @@ import { RevolutExperienceStrip } from "./RevolutExperienceStrip";
 import { HomeFAQTeaser } from "./HomeFAQTeaser";
 import { RoadmapCTA } from "./RoadmapCTA";
 import { RedesignFooter } from "./RedesignFooter";
+import { TestTheNetworkSection } from "./TestTheNetworkSection";
+import { ChainArchitectureStrip } from "./ChainArchitectureStrip";
+import { AssuranceLegend } from "./AssuranceLegend";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -50,6 +53,10 @@ export function RedesignHome() {
 
         <main style={{ position: "relative", zIndex: 1 }}>
           <div style={{ ...MAXW, paddingTop: "1.25rem" }}><RedesignHero /></div>
+
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><TestTheNetworkSection /></div>
+
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><ChainArchitectureStrip /></div>
 
           <div style={{ ...MAXW, paddingTop: "1.25rem" }}><AppleWalletPromo /></div>
 
@@ -88,6 +95,7 @@ export function RedesignHome() {
 
           <div id="registry" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
             <AssetsExplorer title="Public registry" />
+            <div style={{ marginTop: "1.25rem" }}><AssuranceLegend /></div>
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
@@ -95,11 +103,11 @@ export function RedesignHome() {
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <SupplyNetworkTeaser />
+            <IntegratorStrip />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <IntegratorStrip />
+            <SupplyNetworkTeaser />
           </div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>

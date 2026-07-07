@@ -7,41 +7,47 @@ import {
   VerifiedCheckIcon,
   WalletPassIcon,
 } from "@/components/ui/WalletPassIcon";
+import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
+import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import { Btn } from "./ui";
 import type { ComponentType } from "react";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
-const CAPABILITIES = [
-  {
-    Icon: WalletPassIcon,
-    title: "Passport in Apple Wallet",
-    body: "Your verified status as a native pass — show it anywhere partners accept Abraxas proof.",
-    href: "/passport#apple-wallet",
-    cta: "Add to Wallet",
-  },
-  {
-    Icon: ContactlessPayIcon,
-    title: "Pay with Apple Pay / card",
-    body: "Book verified stays in your currency. Conversion happens in checkout — you never manage a wallet.",
-    href: "/#registry",
-    cta: "Browse & book",
-  },
-  {
-    Icon: VerifiedCheckIcon,
-    title: "Verify once, reuse everywhere",
-    body: "Partners check your credential — no repeated document uploads at every marketplace.",
-    href: "/verify",
-    cta: "Run verifier",
-  },
-] as const satisfies ReadonlyArray<{
+const CAPABILITIES: ReadonlyArray<{
   Icon: ComponentType<{ size?: number; color?: string }>;
   title: string;
   body: string;
   href: string;
   cta: string;
-}>;
+  status: CapabilityStatus;
+}> = [
+  {
+    Icon: WalletPassIcon,
+    title: "Passport in Apple Wallet",
+    body: "Pilot pass for supported partner check-in. Status display only — partners verify via Abraxas API.",
+    href: "/passport#apple-wallet",
+    cta: "Add to Wallet",
+    status: "pilot",
+  },
+  {
+    Icon: ContactlessPayIcon,
+    title: "Book with Apple Pay or card",
+    body: "Genesis hospitality pilot — fiat checkout with USDC settlement on Sui under supervision.",
+    href: "/flagship",
+    cta: "Book Cielo",
+    status: "pilot",
+  },
+  {
+    Icon: VerifiedCheckIcon,
+    title: "Verify once, reuse everywhere",
+    body: "Public registry lookup and credential verification API — test without signing in.",
+    href: "/verify",
+    cta: "Run verifier",
+    status: "live",
+  },
+];
 
 export function RevolutExperienceStrip() {
   return (
@@ -59,14 +65,14 @@ export function RevolutExperienceStrip() {
           letterSpacing: "-0.03em", lineHeight: 1.08,
           color: "var(--text-primary)", margin: "0 0 0.5rem", maxWidth: 560,
         }}>
-          One app. Verified assets. Apple-native checkout.
+          One passport. Verified assets. Proof at the moment of action.
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
           lineHeight: 1.75, maxWidth: 620, margin: 0,
         }}>
-          Sign in with Google, add your passport to Apple Wallet, and pay with Apple Pay —
-          the verification layer does the hard work underneath.
+          Sign in with Google, hold credentials in Passport (Wallet or browser QR), and let partners
+          enforce policy — the verification layer does the hard work underneath.
         </p>
       </div>
 
@@ -81,12 +87,15 @@ export function RevolutExperienceStrip() {
             background: "var(--surface-raised)", border: "1px solid var(--border-strong)",
             display: "flex", flexDirection: "column", gap: "0.65rem",
           }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <c.Icon size={20} color={ACCENT} />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <c.Icon size={20} color={ACCENT} />
+              </div>
+              <CapabilityStatusBadge status={c.status} size="xs" />
             </div>
             <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
               {c.title}
@@ -105,7 +114,8 @@ export function RevolutExperienceStrip() {
         <AddToAppleWalletButton href="/passport#apple-wallet" variant="primary" size="sm">
           Add to Apple Wallet
         </AddToAppleWalletButton>
-        <Btn href="/account" variant="secondary" size="sm">My verified assets</Btn>
+        <Btn href="/passport#qr-verify" variant="secondary" size="sm">Browser QR flow</Btn>
+        <Btn href="/account" variant="ghost" size="sm">My verified assets</Btn>
       </div>
     </section>
   );

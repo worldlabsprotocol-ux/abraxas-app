@@ -6,6 +6,7 @@ import { useState }             from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FLAGSHIP_PROPERTY }    from "@/lib/data/flagshipProperty";
 import { CieloFlagshipActions } from "@/components/cielo/CieloFlagshipActions";
+import { AssetVerificationScopePanel } from "@/components/redesign/AssetVerificationScopePanel";
 
 const M      = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 // Dark premium restyle (redesign). Data/content unchanged.
@@ -442,6 +443,8 @@ export function FlagshipAssetPage() {
         {/* ═══ VERIFICATION ═══════════════════════════════════════════ */}
         {tab === "verification" && (
           <div style={{ display:"flex", flexDirection:"column", gap:"1.5rem" }}>
+
+            <AssetVerificationScopePanel id="verification-scope" />
 
             <Section title="AAS-1 Verification Certificate" icon="◉">
               <div style={{ padding:"1rem", background:"rgba(16,185,129,0.06)",

@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCT_LOOP_STEPS } from "@/lib/productLoopSteps";
+import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -37,6 +38,12 @@ export function ProductLoopDemo() {
             color: ACCENT, marginBottom: "0.5rem",
           }}>
             End-to-end walkthrough
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap", marginBottom: "0.35rem" }}>
+            <CapabilityStatusBadge status="pilot" size="xs" />
+            <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
+              Genesis hospitality design-partner loop
+            </span>
           </div>
           <h2 style={{
             fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,

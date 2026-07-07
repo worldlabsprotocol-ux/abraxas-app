@@ -6,8 +6,16 @@
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
 import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import type { CapabilityStatus } from "@/lib/capabilityStatus";
+import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
 export type VerifyState = "verified" | "reference" | "open" | "owned";
+
+export interface MetricMeta {
+  level?: AssuranceLevel;
+  type?: "appraised" | "projected" | "estimated" | "model" | "historical" | "reference";
+  asOf?: string;
+}
 
 export interface ExploreAsset {
   id: string;
@@ -19,12 +27,17 @@ export interface ExploreAsset {
   primaryValue: string;     // e.g. "$1,100,000"
   secondaryLabel: string;   // e.g. "Cash yield"
   secondaryValue: string;   // e.g. "14.6%"
+  primaryMeta?: MetricMeta;
+  secondaryMeta?: MetricMeta;
   score?: string;           // collateral score "96"
   state: VerifyState;
+  statusBadge?: CapabilityStatus;
   note?: string;            // honesty caveat
   href?: string;            // detail/reference link
   external?: boolean;       // open href in a new tab
   liveProof?: { label: string; url: string };  // e.g. Airbnb listing
+  verificationScopeHref?: string;
+  offeringDisclaimer?: boolean;
   cta: string;
 }
 
@@ -37,11 +50,16 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     image: CIELO_PORCH_IMAGE.src,
     primaryLabel: "Appraised value",
     primaryValue: "$1,100,000",
+    primaryMeta: { level: 3, type: "appraised", asOf: "2025-12-01" },
     secondaryLabel: "Cash yield",
     secondaryValue: "14.6%",
+    secondaryMeta: { level: 1, type: "projected", asOf: "2026-01-15" },
     score: "96",
     state: "verified",
+    statusBadge: "pilot",
     href: "/flagship",
+    verificationScopeHref: "/flagship#verification-scope",
+    offeringDisclaimer: true,
     liveProof: { label: "Live on Airbnb", url: CIELO_AIRBNB_URL },
     cta: "View asset",
   },
@@ -53,9 +71,12 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     image: "/assets/smyrna/011.webp",
     primaryLabel: "Appreciation",
     primaryValue: "$76.2K → $228K+",
+    primaryMeta: { level: 1, type: "historical", asOf: "2024-06-01" },
     secondaryLabel: "Rent estimate",
     secondaryValue: "$1,850 / mo",
+    secondaryMeta: { level: 1, type: "estimated", asOf: "2026-01-01" },
     state: "open",
+    offeringDisclaimer: true,
     note: "Clear title, paid off. Seeking a verified capital partner.",
     href: "/case-studies/smyrna",
     cta: "View case study",
@@ -84,7 +105,9 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     primaryValue: "179m² / 149m²",
     secondaryLabel: "Ref. ROI (dev.)",
     secondaryValue: "23.8–32%",
+    secondaryMeta: { level: 1, type: "reference", asOf: "2023-01-01" },
     state: "reference",
+    offeringDisclaimer: true,
     note: "Completed cycle, sold out. ROI is the developer's projection, not Abraxas-verified.",
     cta: "Verify to view",
   },

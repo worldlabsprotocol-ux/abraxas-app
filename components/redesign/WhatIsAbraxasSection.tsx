@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { PASSPORT_LAYERS, PUBLIC_POSITIONING } from "@/lib/passportLayers";
+import { HOMEPAGE_THESIS } from "@/lib/capabilityStatus";
 import { ProductStatusBadge } from "@/components/ui/ProductStatusBadge";
 import { Btn } from "./ui";
 
@@ -28,9 +29,15 @@ export function WhatIsAbraxasSection() {
 
       <p style={{
         fontFamily: FONT, fontSize: "clamp(1rem, 2.5vw, 1.1rem)", fontWeight: 700,
-        color: "var(--text-primary)", lineHeight: 1.45, margin: "0 0 1rem", maxWidth: 580,
+        color: "var(--text-primary)", lineHeight: 1.45, margin: "0 0 0.65rem", maxWidth: 620,
       }}>
-        Portable eligibility and verification for permissioned on-chain finance — not a generic KYC vendor.
+        {HOMEPAGE_THESIS.productNotMarketplace}
+      </p>
+      <p style={{
+        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+        lineHeight: 1.55, maxWidth: 620, margin: "0 0 1rem",
+      }}>
+        {HOMEPAGE_THESIS.oneLiner}
       </p>
       <p style={{
         fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",

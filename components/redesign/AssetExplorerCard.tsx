@@ -4,6 +4,7 @@
 
 import { MotionCard } from "@/lib/motion/MotionCard";
 import { VerificationBadge } from "./VerificationBadge";
+import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 import { AssetThumbnail, assetThumbObjectPosition } from "@/components/ui/AssetThumbnail";
 import { VERIFY_META, type ExploreAsset } from "@/lib/data/exploreAssets";
@@ -44,8 +45,9 @@ export function AssetExplorerCard({
               objectPosition: assetThumbObjectPosition(asset.id),
             }}
           />
-          <div style={{ position: "absolute", top: 12, left: 12 }}>
+          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
             <VerificationBadge label={meta.label} color={meta.color} />
+            {asset.statusBadge && <CapabilityStatusBadge status={asset.statusBadge} size="xs" />}
           </div>
         </div>
       ) : (
@@ -62,6 +64,7 @@ export function AssetExplorerCard({
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.35rem" }}>
               <VerificationBadge label={meta.label} color={meta.color} />
+              {asset.statusBadge && <CapabilityStatusBadge status={asset.statusBadge} size="xs" />}
               <span style={{
                 fontFamily: FONT, fontSize: "0.55rem", fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
@@ -107,8 +110,8 @@ export function AssetExplorerCard({
                        paddingTop: isCompact ? 0 : "0.85rem",
                        borderTop: isCompact ? "none" : "1px solid var(--border)" }}>
           {[
-            { l: asset.primaryLabel, v: asset.primaryValue },
-            { l: asset.secondaryLabel, v: asset.secondaryValue },
+            { l: asset.primaryLabel, v: asset.primaryValue, meta: asset.primaryMeta },
+            { l: asset.secondaryLabel, v: asset.secondaryValue, meta: asset.secondaryMeta },
           ].map(m => (
             <div key={m.l}>
               <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700,
@@ -121,9 +124,32 @@ export function AssetExplorerCard({
                              color: "var(--text-primary)" }}>
                 {m.v}
               </div>
+              {m.meta && (
+                <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "var(--text-muted)", lineHeight: 1.45, marginTop: 4 }}>
+                  {m.meta.level && <span>L{m.meta.level} · </span>}
+                  {m.meta.type && <span>{m.meta.type} · </span>}
+                  {m.meta.asOf && <span>as of {m.meta.asOf}</span>}
+                </div>
+              )}
             </div>
           ))}
         </div>
+
+        {asset.offeringDisclaimer && (
+          <p style={{
+            fontFamily: FONT, fontSize: "0.62rem", color: "#F59E0B",
+            lineHeight: 1.5, margin: "0 0 0.65rem", padding: "0.45rem 0.55rem",
+            borderRadius: 8, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.22)",
+          }}>
+            Not an offering · not investment advice · no solicitation. Figures are attestations or estimates — see verification scope.
+          </p>
+        )}
+
+        {asset.verificationScopeHref && (
+          <Btn href={asset.verificationScopeHref} variant="ghost" size="sm" fullWidth>
+            Verification scope & disclosures →
+          </Btn>
+        )}
 
         {asset.score && (
           <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem",

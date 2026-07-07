@@ -2,6 +2,7 @@
 // FILE: components/redesign/SupplyNetworkTeaser.tsx
 
 import { SUPPLY_NETWORK } from "@/lib/supplyNetworkVision";
+import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -11,12 +12,15 @@ export function SupplyNetworkTeaser() {
   return (
     <section aria-labelledby="supply-network-heading">
       <div style={{ marginBottom: "1.25rem" }}>
-        <div style={{
-          fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
-          letterSpacing: "0.14em", textTransform: "uppercase",
-          color: ACCENT, marginBottom: "0.5rem",
-        }}>
-          Beyond real estate
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+          <div style={{
+            fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
+            letterSpacing: "0.14em", textTransform: "uppercase",
+            color: ACCENT,
+          }}>
+            Future vertical
+          </div>
+          <CapabilityStatusBadge status="planned" size="xs" />
         </div>
         <h2 id="supply-network-heading" style={{
           fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
@@ -27,9 +31,15 @@ export function SupplyNetworkTeaser() {
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
-          lineHeight: 1.7, maxWidth: 640, margin: 0,
+          lineHeight: 1.7, maxWidth: 640, margin: "0 0 0.5rem",
         }}>
           {SUPPLY_NETWORK.subhead}
+        </p>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+          lineHeight: 1.55, maxWidth: 640, margin: 0,
+        }}>
+          Enterprise supply-network vision — not a live product surface today. See dedicated page for scope.
         </p>
       </div>
 

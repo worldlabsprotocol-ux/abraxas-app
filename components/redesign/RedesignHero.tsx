@@ -8,6 +8,7 @@ import { VerificationBadge } from "./VerificationBadge";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 import { RegistryHeroPanel } from "./RegistryHeroPanel";
 import { PUBLIC_POSITIONING } from "@/lib/passportLayers";
+import { HOMEPAGE_THESIS } from "@/lib/capabilityStatus";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -34,6 +35,13 @@ export function RedesignHero() {
             Verify once.<br />
             <span style={{ color: ACCENT }}>Transact everywhere.</span>
           </motion.h1>
+
+          <motion.p variants={staggerItem} style={{
+            fontFamily: FONT, fontSize: "0.82rem", fontWeight: 600,
+            color: "var(--text-primary)", lineHeight: 1.55, maxWidth: 560, margin: "0 0 0.85rem",
+          }}>
+            {HOMEPAGE_THESIS.oneLiner}
+          </motion.p>
 
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",

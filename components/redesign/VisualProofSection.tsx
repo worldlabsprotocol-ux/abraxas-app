@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { EXPLORE_ASSETS, VERIFY_META } from "@/lib/data/exploreAssets";
 import { AssetThumbnail, assetThumbObjectPosition } from "@/components/ui/AssetThumbnail";
+import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -30,10 +31,16 @@ export function VisualProofSection() {
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
-          lineHeight: 1.65, maxWidth: 580, margin: 0,
+          lineHeight: 1.65, maxWidth: 580, margin: "0 0 0.5rem",
         }}>
-          Four asset classes at different assurance levels. One genesis pilot with live Apple Pay booking.
+          Four asset classes at different assurance levels. One genesis pilot with supervised booking.
         </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+          <CapabilityStatusBadge status="live" size="xs" />
+          <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
+            Public registry lookup · L1–L4 legend below registry
+          </span>
+        </div>
       </div>
 
       <div style={{
@@ -69,18 +76,13 @@ export function VisualProofSection() {
                     }}>
                       {meta.label}
                     </span>
-                    <span style={{
-                      fontFamily: FONT, fontSize: "0.55rem", fontWeight: 600,
-                      color: "var(--text-muted)", textAlign: "right",
-                    }}>
-                      {asset.assetClass.split(" · ")[0]}
-                    </span>
+                    {asset.statusBadge && <CapabilityStatusBadge status={asset.statusBadge} size="xs" />}
                   </div>
                   <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
                     {asset.name}
                   </div>
                   <div style={{ fontFamily: FONT, fontSize: "0.66rem", color: "var(--text-muted)" }}>
-                    {asset.location}
+                    {asset.location} · {asset.assetClass.split(" · ")[0]}
                   </div>
                   <div style={{
                     fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT,
