@@ -4,6 +4,8 @@
 import { jwtVerify, importJWK } from "jose";
 import { createClient } from "@supabase/supabase-js";
 import type { VerificationResult } from "@/lib/credentials/types";
+import { getActiveClaims } from "@/lib/credentials/claimsService";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
 
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -46,6 +48,33 @@ export async function verifyCredentialJwt(
 
   if (!jti || !sub) {
     return { verified: false, error: "Malformed credential" };
+  }
+
+  const holderAddr = (sub.sui_address ?? sub.wallet) as string;
+
+  if (requiredClaims.length > 0 && holderAddr) {
+    const activeClaims = await getActiveClaims(normalizeSuiAddress(holderAddr));
+    const activeTypes = new Set(activeClaims.map(c => c.claim_type));
+    const missing = requiredClaims.filter(c => !activeTypes.has(c as typeof activeClaims[number]["claim_type"]));
+    if (missing.length > 0) {
+      if (logPresentation && SB_URL && SB_KEY) {
+        const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+        await sb.from("credential_presentations").insert({
+          credential_jti: jti,
+          verifier_id: verifierId,
+          claims_disclosed: requiredClaims,
+          accepted: false,
+          rejection_reason: `Missing claims: ${missing.join(", ")}`,
+        });
+      }
+      return {
+        verified: false,
+        error: `Missing required claims: ${missing.join(", ")}`,
+        credential_jti: jti,
+        holder_address: holderAddr,
+        sui_address: holderAddr,
+      };
+    }
   }
 
   if (SB_URL && SB_KEY) {

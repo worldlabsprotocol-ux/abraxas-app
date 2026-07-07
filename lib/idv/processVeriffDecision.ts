@@ -4,6 +4,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { SignJWT, importJWK } from "jose";
 import { randomUUID } from "crypto";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
+import {
+  veriffApprovedClaims,
+  walletBindingClaim,
+} from "@/lib/credentials/claimSchema";
+import { upsertClaims, revokeSubjectClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
 
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -62,6 +68,17 @@ export async function processVeriffDecision(
           updated_at: new Date().toISOString(),
         })
         .or(`wallet_address.eq.${holder},sui_address.eq.${holder}`);
+
+      if (v.status === "declined") {
+        const normalized = normalizeSuiAddress(holder);
+        const { data: existing } = await sb
+          .from("abraxas_credentials")
+          .select("jti")
+          .or(`sui_address.eq.${normalized},holder_wallet.eq.${normalized}`)
+          .is("revoked_at", null)
+          .maybeSingle();
+        await revokeSubjectClaims(normalized, `veriff_declined:${v.id}`, existing?.jti);
+      }
     }
     return { ok: true, status: v.status === "declined" ? "declined" : "pending", holder };
   }
@@ -150,6 +167,7 @@ export async function processVeriffDecision(
       jti,
       holder_wallet: holder,
       sui_address: holder,
+      issuer: ISSUER,
       jurisdiction: juris,
       document_type: docType,
       verification_level: "standard",
@@ -158,6 +176,24 @@ export async function processVeriffDecision(
       expiration_date: expiresAt.toISOString(),
       credential_jwt: jwt,
     }, { onConflict: "jti" });
+
+    const normalized = normalizeSuiAddress(holder);
+    await upsertWalletBinding(normalized, normalized, "zklogin");
+    await upsertClaims([
+      ...veriffApprovedClaims({
+        subjectId: normalized,
+        jti,
+        jurisdiction: juris,
+        documentType: docType,
+        veriffSessionId: v.id,
+        expiresAt,
+      }),
+      walletBindingClaim({
+        subjectId: normalized,
+        walletAddress: normalized,
+        bindingMethod: "zklogin",
+      }),
+    ]);
   }
 
   try {

@@ -6,6 +6,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { jwtToAddress, decodeJwt } from "@mysten/sui/zklogin";
 import { randomBytes } from "crypto";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { walletBindingClaim } from "@/lib/credentials/claimSchema";
+import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -90,6 +93,14 @@ export async function POST(req: Request) {
   if (error) {
     console.error("[zklogin/register]", error);
     return NextResponse.json({ error: "Failed to save identity" }, { status: 500 });
+  }
+
+  try {
+    const normalized = normalizeSuiAddress(sui_address);
+    await upsertWalletBinding(normalized, normalized, "zklogin");
+    await upsertClaims([walletBindingClaim({ subjectId: normalized, walletAddress: normalized })]);
+  } catch (e) {
+    console.warn("[zklogin/register] wallet binding claim skipped:", e);
   }
 
   return NextResponse.json({

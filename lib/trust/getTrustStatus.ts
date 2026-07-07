@@ -4,6 +4,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { isPassportIssuerConfigured, getSponsorConfig } from "@/lib/sui/passportIssuer";
+import { getActiveClaims } from "@/lib/credentials/claimsService";
+import type { ClaimType } from "@/lib/credentials/claimSchema";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -39,6 +41,10 @@ export interface TrustStatus {
   ready_to_transact: boolean;
   enhanced_trust: boolean;
   wallet_registered: boolean;
+  claims: {
+    active_count: number;
+    types: ClaimType[];
+  };
 }
 
 export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | null> {
@@ -98,6 +104,7 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
   const onChainReady = Boolean(chain?.object_id);
   const stampsComplete = (chain?.stamp_bitmask ?? 0) >= 131;
   const enhancedTrust = identityApproved && credentialActive;
+  const activeClaims = await getActiveClaims(sui);
 
   return {
     sui_address: sui,
@@ -130,5 +137,9 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
     wallet_registered: walletRegistered,
     ready_to_transact: walletRegistered,
     enhanced_trust: enhancedTrust,
+    claims: {
+      active_count: activeClaims.length,
+      types: activeClaims.map(c => c.claim_type),
+    },
   };
 }
