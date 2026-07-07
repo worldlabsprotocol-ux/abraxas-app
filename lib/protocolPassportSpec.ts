@@ -12,7 +12,7 @@ export const STAMP_BIT_TABLE = [
   { bit: 4, id: "royalty", label: "Royalty Rights Verified" },
   { bit: 5, id: "property", label: "Property Owner Verified" },
   { bit: 6, id: "tribal", label: "Tribal Partner Verified" },
-  { bit: 7, id: "compliance", label: "Compliance Cleared" },
+  { bit: 7, id: "compliance", label: "Screening Outcome Recorded" },
   { bit: 8, id: "lending", label: "Lending Eligible" },
   { bit: 9, id: "social", label: "Social Verified (deprecated. not used)" },
 ] as const;

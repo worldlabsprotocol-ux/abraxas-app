@@ -43,10 +43,10 @@ export const consumerCopy = {
       "Four clear steps: account → identity → passport → reuse. Browse first; verify only when needed.",
   },
   passport: {
-    eyebrow: "Your Abraxas account",
-    headline: "Sign in. Transact. Verify when you need more.",
+    eyebrow: "Passport Core · Live",
+    headline: "Sign in. Transact. Verify when a policy requires it.",
     subhead:
-      "Sign in with Google to get a wallet in seconds. Browse assets, submit deals, and pay for bookings immediately. Add an optional ID check later for enhanced trust stamps.",
+      "Sign in with Google to get a wallet in seconds. Browse, book, and pay without uploading documents. Add specific compliance or asset claims only when a deal or partner needs them.",
     walletStep: "Step 1 · Sign in with Google",
     walletHint:
       "One click creates your Abraxas wallet. No browser extension, no seed phrase to write down.",

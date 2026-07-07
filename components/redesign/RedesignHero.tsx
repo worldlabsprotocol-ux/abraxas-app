@@ -7,6 +7,7 @@ import { Btn } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 import { RegistryHeroPanel } from "./RegistryHeroPanel";
+import { PUBLIC_POSITIONING } from "@/lib/passportLayers";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -38,8 +39,8 @@ export function RedesignHero() {
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            Prove what&apos;s real — your identity and your assets — without repeating the same checks everywhere.
-            Sign in with Google. Browse verified properties first. ID check only when a deal needs it.
+            {PUBLIC_POSITIONING.subhead} Sign in with Google, browse verified assets first —
+            ID check only when a deal or partner policy requires it.
           </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",

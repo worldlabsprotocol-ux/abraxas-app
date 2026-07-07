@@ -4,6 +4,7 @@
 
 import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
 import { ContactlessPayIcon, VerifiedCheckIcon, WalletPassIcon } from "@/components/ui/WalletPassIcon";
+import { ProductStatusBadge } from "@/components/ui/ProductStatusBadge";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -73,7 +74,10 @@ export function AppleWalletPromo() {
                 </span>
               </div>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>
-                Verified · L2
+                Passport Core · Preview
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginTop: 4 }}>
+                <ProductStatusBadge status="pilot" size="xs" />
               </div>
               <div style={{ fontFamily: MONO, fontSize: "0.48rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
                 did:sui:…abx7f2
