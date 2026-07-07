@@ -12,12 +12,15 @@ import { PassportWalkthrough } from "@/components/passport/PassportWalkthrough";
 import { PassportCompletionDashboard } from "@/components/passport/PassportCompletionDashboard";
 import { VerifyStepRail } from "@/components/passport/VerifyStepRail";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
-import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { PassportTrustCard } from "@/components/passport/PassportTrustCard";
 import { PassportClaimsCard } from "@/components/passport/PassportClaimsCard";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
+import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { WalletBindingCard } from "@/components/passport/WalletBindingCard";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
+import { PassportSetupPanel } from "@/components/passport/PassportSetupPanel";
+import { VerificationSuccessPanel } from "@/components/passport/VerificationSuccessPanel";
+import { PassportAdvancedSection } from "@/components/passport/PassportAdvancedSection";
 import { PUBLIC_POSITIONING } from "@/lib/passportLayers";
 import { AddToAppleWallet } from "@/components/passport/AddToAppleWallet";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
@@ -39,6 +42,7 @@ import { DeveloperDetails } from "@/components/redesign/DeveloperDetails";
 import { Btn } from "@/components/redesign/ui";
 import { consumerCopy } from "@/lib/consumerCopy";
 import { computePassportCompletion, resolveFlowStep } from "@/lib/passportCompletion";
+import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTrustStatus, passportQueryKeys } from "@/lib/api/passport";
 
@@ -165,6 +169,7 @@ function PassportPageInner() {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [partnerConsentDismissed, setPartnerConsentDismissed] = useState(false);
+  const [showSuccessPanel, setShowSuccessPanel] = useState(false);
   const [passportState, setPassportState] = useState<PassportState>({
     identity: "not_started",
     business: "not_started",
@@ -186,6 +191,9 @@ function PassportPageInner() {
     retryProvision,
     syncMessage,
     isLoading: verificationLoading,
+    setup: setupFromHook,
+    veriffConfigured,
+    walletBindingL3,
   } = usePassportVerification(suiAddress, email || null);
 
   const { data: trustData } = useQuery({
@@ -195,6 +203,7 @@ function PassportPageInner() {
   });
 
   const hasCredential = Boolean(credential) && identityStatus === "earned";
+  const walletDone = Boolean(suiAddress);
 
   const completion = useMemo(
     () =>
@@ -233,12 +242,36 @@ function PassportPageInner() {
   }, [identityStatus, onChain?.stamps_complete, onChain?.issuer_configured, isProvisioning]);
 
   const verifyRequestId = searchParams.get("verify_request");
+  const verificationParam = searchParams.get("verification");
 
   useEffect(() => {
     if (searchParams.get("signed_in") === "1") refresh();
   }, [searchParams, refresh]);
 
-  const walletDone = Boolean(suiAddress);
+  useEffect(() => {
+    if (verificationParam === "complete" || verificationParam === "pending") {
+      void refresh();
+    }
+  }, [verificationParam, refresh]);
+
+  useEffect(() => {
+    if (identityStatus === "earned" && hasCredential && verificationParam === "complete") {
+      setShowSuccessPanel(true);
+    }
+  }, [identityStatus, hasCredential, verificationParam]);
+
+  const setup = setupFromHook ?? computePassportSetupState({
+    walletDone,
+    identityStatus: identityStatus === "earned" ? "approved"
+      : identityStatus === "pending" ? "in_progress"
+      : identityStatus === "declined" ? "declined"
+      : "not_started",
+    credentialStatus: hasCredential ? "active" : "not_issued",
+    walletBindingL3,
+  });
+
+  const setupComplete = setup.nextAction === "ready";
+
   const earned = Object.values(passportState).filter(s => s === "earned").length;
   const activeStamp = active === "wallet" ? null : STAMPS.find(s => s.id === active) ?? null;
 
@@ -286,7 +319,10 @@ function PassportPageInner() {
       };
 
       if (!sessionRes.ok || !sessionData.session_url) {
-        setError(sessionData.error ?? "Could not start ID verification. Try again in a moment.");
+        const msg = sessionData.is_mock
+          ? "Identity verification is not available in this environment. Request manual review below."
+          : (sessionData.error ?? "Could not start ID verification. Try again in a moment.");
+        setError(msg);
         return;
       }
 
@@ -335,21 +371,16 @@ function PassportPageInner() {
       <div style={{ position:"relative", zIndex:1, maxWidth:960, margin:"0 auto",
                      padding:"clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)" }}>
 
-        <div style={{ marginBottom:"2.5rem" }}>
+        <div style={{ marginBottom:"1.5rem" }}>
           <div style={{ fontFamily:S, fontSize:"0.72rem", fontWeight:600, color:G, marginBottom:"0.625rem" }}>
-            {consumerCopy.passport.eyebrow}
+            Abraxas Passport
           </div>
-          <h1 style={{ fontFamily:S, fontSize:"var(--fs-display)", fontWeight:800, lineHeight:1.0,
-                        color:"var(--text-primary)", letterSpacing:"-0.04em", margin:"0 0 1.1rem" }}>
-            Sign in.<br/>
-            <span style={{ color:G }}>Transact now. Verify when you need more.</span>
+          <h1 style={{ fontFamily:S, fontSize:"clamp(1.35rem, 3.5vw, 1.85rem)", fontWeight:800, lineHeight:1.15,
+                        color:"var(--text-primary)", letterSpacing:"-0.03em", margin:"0 0 0.65rem" }}>
+            Welcome to Abraxas Passport
           </h1>
-          <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
-                       color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:"0 0 0.65rem" }}>
-            {consumerCopy.passport.subhead}
-          </p>
-          <p style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-muted)", lineHeight:1.6, maxWidth:560, margin:0 }}>
-            {PUBLIC_POSITIONING.proofNotDocuments} {PUBLIC_POSITIONING.disclaimer}
+          <p style={{ fontFamily:S, fontSize:"0.85rem", color:"var(--text-secondary)", lineHeight:1.65, maxWidth:560, margin:0 }}>
+            {PUBLIC_POSITIONING.proofNotDocuments}
           </p>
         </div>
 
@@ -361,101 +392,99 @@ function PassportPageInner() {
           />
         )}
 
-        <PassportCompletionDashboard
-          input={{
-            walletDone,
-            identityStatus,
-            credentialActive: hasCredential,
-            verifyState,
-            onChain,
-            intentProofs: trustData?.intent.proofs_count ?? 0,
-            stamps: passportState,
-          }}
-          loading={verificationLoading}
-          onItemClick={scrollToFlowStep}
-        />
+        {showSuccessPanel && hasCredential && (
+          <VerificationSuccessPanel
+            credential={credential}
+            onDismiss={() => setShowSuccessPanel(false)}
+            onBindWallet={() => {
+              setShowSuccessPanel(false);
+              document.getElementById("passport-setup-heading")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
+        )}
 
-        <PassportWalkthrough
+        <PassportSetupPanel
           walletDone={walletDone}
           suiAddress={suiAddress}
           email={email}
+          setup={setup}
           identityStatus={identityStatus}
           credential={credential}
-          verifyState={verifyState}
           isPolling={isPolling}
           isRefreshing={isRefreshing}
           starting={starting}
           error={error}
+          veriffConfigured={veriffConfigured}
           onStartIdCheck={startIdentityVerification}
           onRefresh={refresh}
-          onChain={onChain}
-          intentProofs={trustData?.intent.proofs_count ?? 0}
-          stamps={passportState}
+          onWalletBound={refresh}
         />
 
-        <VerifyStepRail
-          walletDone={walletDone}
-          active={active}
-          earned={railEarned}
-          enhancedTrust={enhancedTrust}
-          verifyState={verifyState}
-          currentFlowStep={currentFlowStep}
-          onStepClick={scrollToFlowStep}
-        />
-
-        {walletDone && (
-          <div style={{ marginBottom:"2rem" }}>
-            <SuiWalletCreatedCard suiAddress={suiAddress!} email={email} />
-          </div>
-        )}
-
-        <PassportTrustCard suiAddress={suiAddress} completionPercent={completion.percent} />
-        <PassportClaimsCard suiAddress={suiAddress} />
-        <WalletBindingCard suiAddress={suiAddress} />
-        <PassportShareHistoryCard suiAddress={suiAddress} />
-
-        {walletDone && (
-          <div id="apple-wallet" style={{ marginBottom: "1.5rem" }}>
-            <AddToAppleWallet
-              suiAddress={suiAddress}
-              verificationLevel={verifyState === "valid" ? "L3 Attested" : "Identity"}
-              credentialId={credential?.jti}
+        {setupComplete && (
+          <>
+            <PassportAdvancedSection
+              identityEarned={hasCredential}
+              walletBound={walletBindingL3}
+              showStamps
             />
-          </div>
+            <PassportClaimsCard suiAddress={suiAddress} />
+            <PassportShareHistoryCard suiAddress={suiAddress} />
+            <PassportCredentialBanner
+              identityStatus={identityStatus}
+              via={via}
+              credential={credential}
+              verifyState={verifyState}
+              verifyResult={verifyResult}
+              onChain={onChain}
+              isProvisioning={isProvisioning}
+              provisionError={provisionError}
+              onRetryProvision={retryProvision}
+              isRefreshing={isRefreshing}
+              isPolling={isPolling}
+              onRefresh={refresh}
+              syncMessage={syncMessage}
+            />
+            <details style={{ marginBottom: "1.5rem" }}>
+              <summary style={{ fontFamily: S, fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}>
+                Apple Wallet pass · Pilot
+              </summary>
+              <div id="apple-wallet" style={{ marginTop: "0.75rem" }}>
+                <AddToAppleWallet
+                  suiAddress={suiAddress}
+                  verificationLevel="L3 Attested"
+                  credentialId={credential?.jti}
+                />
+              </div>
+            </details>
+            <PassportIntentCard suiAddress={suiAddress} />
+          </>
         )}
 
-        <PassportIntentCard suiAddress={suiAddress} />
+        {!setupComplete && verificationLoading && (
+          <p style={{ fontFamily: S, fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center" }}>
+            Loading passport status…
+          </p>
+        )}
 
-        <PassportCredentialBanner
-          identityStatus={identityStatus}
-          via={via}
-          credential={credential}
-          verifyState={verifyState}
-          verifyResult={verifyResult}
-          onChain={onChain}
-          isProvisioning={isProvisioning}
-          provisionError={provisionError}
-          onRetryProvision={retryProvision}
-          isRefreshing={isRefreshing}
-          isPolling={isPolling}
-          onRefresh={refresh}
-          syncMessage={syncMessage}
-        />
-
-        <div style={{ marginBottom:"2rem" }}>
-          <AbraxasPassport
-            suiAddress={suiAddress}
-            earnedStamps={passportStateToStampIds(passportState)}
-            activeStamp={active && active !== "wallet" ? passportWizardToStampId(active) : null}
-            onStampClick={(id) => setActive(stampIdToPassportWizard(id))}
-            onGetVerified={() => walletDone ? setActive("identity") : setActive("wallet")}
-            showHeadline={false}
-            showVision={false}
-          />
-        </div>
+        {/* Legacy stamp detail — only after setup complete */}
+        {setupComplete && (
+          <details style={{ marginBottom: "2rem" }}>
+            <summary style={{ fontFamily: S, fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}>
+              Stamp credentials (business, asset owner)
+            </summary>
+            <div style={{ marginTop: "0.75rem" }}>
+              <AbraxasPassport
+                suiAddress={suiAddress}
+                earnedStamps={passportStateToStampIds(passportState)}
+                activeStamp={active && active !== "wallet" ? passportWizardToStampId(active) : null}
+                onStampClick={(id) => setActive(stampIdToPassportWizard(id))}
+                onGetVerified={() => walletDone ? setActive("identity") : setActive("wallet")}
+                showHeadline={false}
+                showVision={false}
+              />
 
         <div style={{ background:"var(--surface-raised)", border:"1px solid var(--border)",
-                       borderRadius:16, padding:"1.5rem", marginBottom:"2rem",
+                       borderRadius:16, padding:"1.5rem", marginBottom:"2rem", marginTop:"1rem",
                        display:"flex", flexDirection:"column", gap:"1.25rem" }}>
 
           <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", flexWrap:"wrap" }}>
@@ -649,6 +678,10 @@ function PassportPageInner() {
             </div>
           );
         })()}
+
+            </div>
+          </details>
+        )}
 
         <DeveloperDetails
           title="Technical details (for developers)"

@@ -1,0 +1,382 @@
+"use client";
+// FILE: components/passport/PassportSetupPanel.tsx
+// Dominant guided onboarding — account → identity → wallet bind.
+
+import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
+import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
+import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
+import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
+import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
+import type { StoredCredential } from "@/lib/credentials/storage";
+import { Btn } from "@/components/redesign/ui";
+import { DocumentUpload } from "@/components/passport/DocumentUpload";
+import Link from "next/link";
+
+const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const ACCENT = "#10B981";
+
+const UNLOCKS = [
+  "Verified asset submissions",
+  "Partner booking and payment flows",
+  "Permissioned marketplace access",
+  "Investor or entity eligibility, where required",
+  "Faster future onboarding",
+];
+
+interface Props {
+  walletDone: boolean;
+  suiAddress: string | null;
+  email: string;
+  setup: PassportSetupState;
+  identityStatus: IdentityStampStatus;
+  credential: StoredCredential | null;
+  isPolling: boolean;
+  isRefreshing: boolean;
+  starting: boolean;
+  error: string | null;
+  veriffConfigured: boolean;
+  onStartIdCheck: () => void;
+  onRefresh: () => void;
+  onWalletBound?: () => void;
+}
+
+export function PassportSetupPanel({
+  walletDone,
+  suiAddress,
+  email,
+  setup,
+  identityStatus,
+  credential,
+  isPolling,
+  isRefreshing,
+  starting,
+  error,
+  veriffConfigured,
+  onStartIdCheck,
+  onRefresh,
+  onWalletBound,
+}: Props) {
+  const completedCount = [setup.accountComplete, setup.identityComplete, setup.walletBound].filter(Boolean).length;
+
+  async function bindWallet() {
+    if (!suiAddress) return;
+    try {
+      const secret = getEphemeralSecretKey();
+      if (!secret) throw new Error("Sign in again to enable wallet signing.");
+
+      const chRes = await fetch("/api/wallet/binding/challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sui_address: suiAddress }),
+      });
+      const challenge = await chRes.json() as { challenge_id?: string; message?: string; error?: string };
+      if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
+        throw new Error(challenge.error ?? "Challenge failed");
+      }
+
+      const { signature, publicKey } = await signIntentMessage(challenge.message, secret);
+      const confirmRes = await fetch("/api/wallet/binding/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_id: challenge.challenge_id,
+          sui_address: suiAddress,
+          message: challenge.message,
+          signature,
+          public_key: publicKey,
+        }),
+      });
+      const result = await confirmRes.json() as { ok?: boolean; error?: string };
+      if (!confirmRes.ok) throw new Error(result.error ?? "Confirm failed");
+      onWalletBound?.();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  return (
+    <section aria-labelledby="passport-setup-heading" style={{ marginBottom: "2rem" }}>
+      <div style={{
+        borderRadius: 20,
+        border: "2px solid rgba(16,185,129,0.35)",
+        background: "var(--surface-raised)",
+        overflow: "hidden",
+        boxShadow: "0 0 48px rgba(16,185,129,0.08)",
+      }}>
+        <div style={{
+          padding: "1.15rem 1.35rem",
+          background: "linear-gradient(135deg, rgba(16,185,129,0.12) 0%, transparent 100%)",
+          borderBottom: "1px solid var(--border)",
+        }}>
+          <div style={{
+            fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            color: ACCENT, marginBottom: "0.35rem",
+          }}>
+            Your Passport setup
+          </div>
+          <h2 id="passport-setup-heading" style={{
+            fontFamily: FONT, fontSize: "clamp(1.15rem, 2.8vw, 1.45rem)", fontWeight: 800,
+            letterSpacing: "-0.02em", color: "var(--text-primary)", margin: "0 0 0.45rem",
+          }}>
+            {setup.nextAction === "ready"
+              ? "Your Abraxas Passport is ready"
+              : "Complete your profile once"}
+          </h2>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+            lineHeight: 1.6, margin: "0 0 0.75rem", maxWidth: 520,
+          }}>
+            Your reusable eligibility profile. Verify identity once, bind your wallet, and unlock
+            verified actions across Abraxas.
+          </p>
+          <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>
+            Setup progress: {completedCount} of 3 complete · {setup.stepLabel}
+          </div>
+        </div>
+
+        <div style={{ padding: "1.25rem 1.35rem" }}>
+          {/* Progress checklist */}
+          <ol style={{ listStyle: "none", margin: "0 0 1.25rem", padding: 0, display: "grid", gap: "0.45rem" }}>
+            {[
+              { done: setup.accountComplete, label: "Account created", sub: walletDone && suiAddress ? truncateSuiAddress(suiAddress, 8, 6) : "Sign in with Google" },
+              { done: setup.identityComplete, label: "Verify identity", sub: setup.identityComplete ? "Credential active · L3" : "Required for payments & submissions" },
+              { done: setup.walletBound, label: "Bind wallet", sub: setup.walletBound ? "Signed control proof on file" : "One signature — no funds move" },
+            ].map(item => (
+              <li key={item.label} style={{
+                display: "flex", gap: "0.65rem", alignItems: "flex-start",
+                padding: "0.55rem 0.65rem", borderRadius: 10,
+                background: item.done ? "rgba(16,185,129,0.08)" : "var(--surface)",
+                border: `1px solid ${item.done ? "rgba(16,185,129,0.25)" : "var(--border)"}`,
+              }}>
+                <span style={{
+                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: item.done ? ACCENT : "transparent",
+                  border: `1.5px solid ${item.done ? ACCENT : "var(--border)"}`,
+                  fontFamily: MONO, fontSize: "0.62rem", fontWeight: 800,
+                  color: item.done ? "#000" : "var(--text-muted)",
+                }}>
+                  {item.done ? "✓" : "○"}
+                </span>
+                <div>
+                  <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.45 }}>
+                    {item.sub}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          {/* Primary action for current step */}
+          {!walletDone && (
+            <div>
+              <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
+                No seed phrase. Google sign-in creates your Abraxas account and Sui wallet automatically.
+              </p>
+              <ZkLoginSignIn />
+            </div>
+          )}
+
+          {walletDone && !setup.identityComplete && (
+            <div>
+              <div style={{
+                padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "0.85rem",
+                background: "var(--surface)", border: "1px solid var(--border)",
+              }}>
+                <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                  Identity verification
+                </div>
+                <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
+                  Required for investing, payments, asset submissions, and partner access.
+                  Usually takes 2–4 minutes. Your ID documents are processed by Veriff —
+                  Abraxas receives verification status, not your documents.
+                </p>
+
+                {(identityStatus === "pending" || isPolling) ? (
+                  <div style={{
+                    padding: "0.65rem 0.75rem", borderRadius: 10,
+                    background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                    marginBottom: "0.65rem",
+                  }}>
+                    <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#F59E0B", marginBottom: 4 }}>
+                      Verification in progress
+                    </div>
+                    <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
+                      Veriff is reviewing your submission. This page refreshes automatically.
+                    </p>
+                    <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>
+                      Check status now
+                    </Btn>
+                  </div>
+                ) : identityStatus === "declined" ? (
+                  <div style={{
+                    padding: "0.65rem 0.75rem", borderRadius: 10,
+                    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+                    marginBottom: "0.65rem",
+                  }}>
+                    <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#EF4444", marginBottom: 4 }}>
+                      Verification not approved
+                    </div>
+                    <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem" }}>
+                      Try again with a different document, or request manual review below.
+                    </p>
+                  </div>
+                ) : null}
+
+                {!veriffConfigured ? (
+                  <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#F59E0B", margin: "0 0 0.65rem" }}>
+                    Veriff is not configured in this environment. Use manual review for pilot access.
+                  </p>
+                ) : (
+                  <Btn
+                    size="lg"
+                    fullWidth
+                    loading={starting}
+                    onClick={onStartIdCheck}
+                    disabled={identityStatus === "pending"}
+                  >
+                    Verify with Veriff →
+                  </Btn>
+                )}
+
+                {error && (
+                  <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0.65rem 0 0" }}>{error}</p>
+                )}
+              </div>
+
+              <PassportVerificationFallback
+                email={email || suiAddress || ""}
+                onRetry={onStartIdCheck}
+                starting={starting}
+              />
+            </div>
+          )}
+
+          {walletDone && setup.identityComplete && !setup.walletBound && (
+            <div style={{
+              padding: "0.85rem 1rem", borderRadius: 12,
+              background: "var(--surface)", border: "1px solid var(--border)",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                Bind this wallet to your Passport
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
+                Signing proves you control this wallet. It does not authorize a transaction or move funds.
+              </p>
+              <Btn size="lg" fullWidth onClick={() => void bindWallet()}>
+                Sign to bind wallet →
+              </Btn>
+            </div>
+          )}
+
+          {setup.nextAction === "ready" && credential && (
+            <div style={{
+              padding: "0.85rem 1rem", borderRadius: 12,
+              background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: ACCENT, marginBottom: "0.5rem" }}>
+                ✓ Passport ready for supported verified actions
+              </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
+                Identity credential active · Issuer Veriff / Abraxas · Assurance L3
+                {credential.expires_at && <> · Expires {new Date(credential.expires_at).toLocaleDateString()}</>}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+                <Btn href="/#registry" size="sm">Browse registry →</Btn>
+                <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
+              </div>
+            </div>
+          )}
+
+          {/* What this unlocks */}
+          {!setup.identityComplete && (
+            <div style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border)" }}>
+              <div style={{
+                fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700,
+                letterSpacing: "0.08em", textTransform: "uppercase",
+                color: "var(--text-muted)", marginBottom: "0.5rem",
+              }}>
+                What this unlocks
+              </div>
+              <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                {UNLOCKS.map(u => (
+                  <li key={u} style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65, marginBottom: 4 }}>
+                    {u}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <PassportDataTransparency visible={setup.identityComplete} via="veriff" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PassportVerificationFallback({
+  email,
+  onRetry,
+  starting,
+}: {
+  email: string;
+  onRetry: () => void;
+  starting: boolean;
+}) {
+  return (
+    <details style={{ marginTop: "0.85rem" }}>
+      <summary style={{
+        fontFamily: FONT, fontSize: "0.74rem", fontWeight: 600,
+        color: "var(--text-muted)", cursor: "pointer", listStyle: "none",
+      }}>
+        Having trouble verifying?
+      </summary>
+      <div style={{
+        marginTop: "0.65rem", padding: "0.75rem", borderRadius: 10,
+        background: "var(--surface)", border: "1px solid var(--border)",
+        display: "flex", flexDirection: "column", gap: "0.5rem",
+      }}>
+        <Btn variant="secondary" size="sm" loading={starting} onClick={onRetry}>Try again</Btn>
+        <DocumentUpload email={email} stampId="identity" color={ACCENT} />
+        <Link
+          href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20manual%20review"
+          style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, textDecoration: "none" }}
+        >
+          Contact Passport Support →
+        </Link>
+        <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+          Manual review is logged and restricted to pilot users. Status: review requested after upload.
+        </p>
+      </div>
+    </details>
+  );
+}
+
+function PassportDataTransparency({ visible, via }: { visible: boolean; via: string }) {
+  if (!visible) return null;
+  return (
+    <div style={{ marginTop: "1rem", padding: "0.65rem 0.75rem", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div style={{ fontFamily: MONO, fontSize: "0.48rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+        What Abraxas stores
+      </div>
+      {[
+        ["Identity", "Verified outcome only"],
+        ["Document images", "Not stored by Abraxas"],
+        ["Biometric data", "Not stored by Abraxas"],
+        ["Verification provider", via === "veriff" ? "Veriff" : "Licensed provider"],
+      ].map(([k, v]) => (
+        <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.68rem", marginBottom: 3 }}>
+          <span style={{ color: "var(--text-muted)" }}>{k}</span>
+          <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}

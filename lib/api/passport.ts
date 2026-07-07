@@ -5,9 +5,22 @@ import type { MeCredentialResponse, OnChainPassportStatus } from "@/lib/hooks/us
 import type { VerificationResult } from "@/lib/credentials/types";
 import type { StoredCredential } from "@/lib/credentials/storage";
 
+import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
+
 export interface IdentityStatusResponse {
   status?: string;
   via?: string;
+  identity_verification_status?: string;
+  credential_status?: string;
+  veriff_session_id?: string | null;
+  credential_jti?: string | null;
+  last_verified_at?: string | null;
+  credential_issued_at?: string | null;
+  expires_at?: string | null;
+  error_message?: string | null;
+  wallet_binding_l3?: boolean;
+  setup?: PassportSetupState;
+  veriff_configured?: boolean;
 }
 
 export interface TrustStatusResponse {

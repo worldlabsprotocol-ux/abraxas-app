@@ -1,0 +1,198 @@
+// FILE: lib/idv/issueIdentityCredential.ts
+// Canonical, idempotent identity credential issuance after Veriff approval.
+
+import { randomUUID } from "crypto";
+import { SignJWT, importJWK } from "jose";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
+import {
+  veriffApprovedClaims,
+  walletBindingClaim,
+} from "@/lib/credentials/claimSchema";
+import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
+import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
+import type { VeriffDecisionInput } from "./types";
+
+const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
+const TTL_MS = 365 * 24 * 60 * 60 * 1000;
+
+export interface IssueIdentityCredentialResult {
+  ok: boolean;
+  jti?: string;
+  jwt?: string;
+  alreadyIssued?: boolean;
+  message?: string;
+}
+
+export async function issueIdentityCredential(
+  holder: string,
+  decision: VeriffDecisionInput,
+): Promise<IssueIdentityCredentialResult> {
+  const sb = idvSupabase();
+  const normalized = normalizeSuiAddress(holder);
+  const now = new Date();
+
+  if (sb) {
+    const { data: existing } = await sb
+      .from("identity_verifications")
+      .select("credential_jti, status, identity_verification_status, credential_status")
+      .or(`wallet_address.eq.${normalized},sui_address.eq.${normalized}`)
+      .maybeSingle();
+
+    if (
+      existing?.credential_jti &&
+      (existing.status === "approved" ||
+        existing.identity_verification_status === "approved" ||
+        existing.credential_status === "active")
+    ) {
+      const { data: cred } = await sb
+        .from("abraxas_credentials")
+        .select("credential_jwt, jti")
+        .eq("jti", existing.credential_jti)
+        .maybeSingle();
+
+      return {
+        ok: true,
+        jti: existing.credential_jti,
+        jwt: cred?.credential_jwt,
+        alreadyIssued: true,
+        message: "Credential already active",
+      };
+    }
+  }
+
+  const signingKeyJson = process.env.ABRAXAS_SIGNING_KEY;
+  if (!signingKeyJson) {
+    return { ok: false, message: "ABRAXAS_SIGNING_KEY not configured" };
+  }
+
+  const signingKey = await importJWK(JSON.parse(signingKeyJson), "EdDSA");
+  const expiresAt = new Date(now.getTime() + TTL_MS);
+  const jti = `urn:uuid:${randomUUID()}`;
+
+  const country = decision.document?.country ?? "US";
+  const state = decision.document?.state ?? "";
+  const juris = state ? `${country.toUpperCase()}-${state.toUpperCase()}` : country.toUpperCase();
+  const docType = (decision.document?.type ?? "passport").toLowerCase()
+    .replace(" ", "_") as "passport" | "drivers_license" | "mobile_dl" | "national_id";
+
+  const claims = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    type: ["VerifiableCredential", "AbraxasIdentityCredential"],
+    issuer: ISSUER,
+    issuanceDate: now.toISOString(),
+    expirationDate: expiresAt.toISOString(),
+    id: jti,
+    credentialSubject: {
+      id: `did:sui:${normalized}`,
+      sui_address: normalized,
+      jurisdiction: juris,
+      document_type: docType,
+      verification_level: "standard" as const,
+      world_id_verified: false,
+      verified_at: now.toISOString(),
+      chain: "sui" as const,
+      veriff_session_id: decision.id,
+      assurance_level: "L3" as const,
+      permissions: {
+        fiat_offramp: true,
+        defi_access: true,
+        rwa_tokenize: true,
+        cross_border: true,
+      },
+    },
+  };
+
+  const jwt = await new SignJWT({ vc: claims })
+    .setProtectedHeader({ alg: "EdDSA", typ: "JWT" })
+    .setJti(jti)
+    .setIssuer(ISSUER)
+    .setSubject(`did:sui:${normalized}`)
+    .setIssuedAt(now)
+    .setExpirationTime(expiresAt)
+    .sign(signingKey);
+
+  if (sb) {
+    let userEmail: string | null = null;
+    const { data: zkRow } = await sb
+      .from("sui_zklogin_identities")
+      .select("email")
+      .eq("sui_address", normalized)
+      .maybeSingle();
+    if (zkRow?.email) userEmail = zkRow.email;
+
+    await transitionIdentityVerification(
+      normalized,
+      {
+        user_email: userEmail,
+        document_type: docType,
+        document_country: country.toUpperCase(),
+        document_state: state.toUpperCase() || null,
+        document_verified: true,
+        liveness_passed: true,
+        liveness_provider: "veriff",
+        status: "approved",
+        identity_verification_status: "approved",
+        credential_status: "active",
+        credential_jti: jti,
+        veriff_session_id: decision.id,
+        veriff_decision_id: decision.id,
+        last_verified_at: now.toISOString(),
+        credential_issued_at: now.toISOString(),
+        error_message: null,
+      },
+      "issueIdentityCredential",
+    );
+
+    await sb.from("abraxas_credentials").upsert({
+      jti,
+      holder_wallet: normalized,
+      sui_address: normalized,
+      issuer: ISSUER,
+      jurisdiction: juris,
+      document_type: docType,
+      verification_level: "standard",
+      world_id_verified: false,
+      issuance_date: now.toISOString(),
+      expiration_date: expiresAt.toISOString(),
+      credential_jwt: jwt,
+    }, { onConflict: "jti" });
+
+    await upsertWalletBinding(normalized, normalized, "zklogin");
+    await upsertClaims([
+      ...veriffApprovedClaims({
+        subjectId: normalized,
+        jti,
+        jurisdiction: juris,
+        documentType: docType,
+        veriffSessionId: decision.id,
+        expiresAt,
+      }),
+      walletBindingClaim({
+        subjectId: normalized,
+        walletAddress: normalized,
+        bindingMethod: "zklogin",
+      }),
+    ]);
+  }
+
+  try {
+    const { isPassportIssuerConfigured, provisionOnChainPassport } = await import("@/lib/sui/passportIssuer");
+    if (isPassportIssuerConfigured() && sb) {
+      const onChain = await provisionOnChainPassport(normalized);
+      await sb.from("sui_passport_objects").upsert({
+        sui_address: normalized,
+        object_id: onChain.objectId,
+        network: "devnet",
+        stamp_bitmask: onChain.stampBitmask,
+        create_tx_digest: onChain.createTxDigest ?? null,
+        stamps_tx_digest: onChain.stampsTxDigest ?? null,
+        provisioned_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      }, { onConflict: "sui_address" });
+    }
+  } catch (e: unknown) {
+    console.error("[issueIdentityCredential] On-chain provision failed:", e);
+  }
+
+  return { ok: true, jti, jwt, alreadyIssued: false };
+}

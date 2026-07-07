@@ -15,8 +15,8 @@
 //   Swap out this file if you go with Persona
 
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac }               from "crypto";
 import { createClient }             from "@supabase/supabase-js";
+import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
 
 const VERIFF_KEY    = process.env.VERIFF_API_KEY    ?? "";
 const VERIFF_BASE   = "https://stationapi.veriff.com/v1";
@@ -39,12 +39,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "sui_address required" }, { status: 400 });
   }
   if (!VERIFF_KEY) {
-    // Dev fallback: return a mock session so the UI still works without Veriff
     return NextResponse.json({
       session_id:    `mock-${Date.now()}`,
       session_url:   null,
       is_mock:       true,
-      message:       "VERIFF_API_KEY not configured — using mock session for development",
+      message:       "VERIFF_API_KEY not configured — identity verification unavailable in this environment",
+      error_code:    "veriff_not_configured",
     });
   }
 
@@ -95,15 +95,19 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
     if (zkRow?.email) userEmail = zkRow.email;
 
-    await sb.from("identity_verifications").upsert({
-      wallet_address:      holder,
-      sui_address:         holder,
-      user_email:          userEmail,
-      veriff_session_id:   session_id,
-      status:              "pending",
-      liveness_provider:   "veriff",
-      updated_at:          new Date().toISOString(),
-    }, { onConflict: "wallet_address" });
+    await transitionIdentityVerification(
+      holder,
+      {
+        user_email:          userEmail,
+        veriff_session_id:   session_id,
+        status:              "pending",
+        identity_verification_status: "session_created",
+        credential_status:   "not_issued",
+        liveness_provider:   "veriff",
+        error_message:       null,
+      },
+      "create_session",
+    );
   }
 
   return NextResponse.json({ session_id, session_url, is_mock: false });

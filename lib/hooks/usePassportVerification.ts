@@ -20,7 +20,10 @@ import {
   provisionOnChainPassport,
   syncVeriffDecision,
   verifyCredentialSelf,
+  type IdentityStatusResponse,
 } from "@/lib/api/passport";
+import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
+import { computePassportSetupState, resolveCredentialStatus, resolveIdentityVerificationStatus } from "@/lib/idv/identityVerificationStates";
 
 export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined";
 export type CredentialVerifyState = "idle" | "checking" | "valid" | "invalid";
@@ -63,6 +66,9 @@ interface PipelineResult {
   verifyResult: VerificationResult | null;
   onChain: OnChainPassportStatus | null;
   syncMessage: string | null;
+  setup: PassportSetupState | null;
+  veriffConfigured: boolean;
+  walletBindingL3: boolean;
 }
 
 async function runIdentityPipeline(
@@ -77,12 +83,18 @@ async function runIdentityPipeline(
   let verifyState: CredentialVerifyState = "idle";
   let verifyResult: VerificationResult | null = null;
   let onChain: OnChainPassportStatus | null = null;
+  let setup: PassportSetupState | null = null;
+  let veriffConfigured = false;
+  let walletBindingL3 = false;
 
   if (!suiAddress && !email) {
-    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage };
+    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, walletBindingL3 };
   }
 
-  let data = await fetchIdentityStatus(suiAddress, email);
+  let data: IdentityStatusResponse = await fetchIdentityStatus(suiAddress, email);
+  veriffConfigured = data.veriff_configured ?? false;
+  walletBindingL3 = data.wallet_binding_l3 ?? false;
+  setup = data.setup ?? null;
 
   if (data.status === "pending" && suiAddress) {
     const sync = await syncVeriffDecision(suiAddress);
@@ -138,7 +150,7 @@ async function runIdentityPipeline(
     }
   }
 
-  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage };
+  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, walletBindingL3 };
 }
 
 export function usePassportVerification(
@@ -220,6 +232,17 @@ export function usePassportVerification(
   const identityStatus = data?.identityStatus ?? "not_started";
   const isPolling = identityStatus === "pending" || Boolean(data?.onChain?.needs_provision);
 
+  const setup = data?.setup ?? (suiAddress ? computePassportSetupState({
+    walletDone: Boolean(suiAddress),
+    identityStatus: resolveIdentityVerificationStatus(
+      data?.identityStatus === "earned" ? { status: "approved", credential_jti: data?.credential?.jti } : null,
+    ),
+    credentialStatus: resolveCredentialStatus(
+      data?.identityStatus === "earned" ? { status: "approved", credential_jti: data?.credential?.jti } : null,
+    ),
+    walletBindingL3: data?.walletBindingL3 ?? false,
+  }) : null);
+
   return {
     identityStatus,
     via: data?.via ?? null,
@@ -236,5 +259,8 @@ export function usePassportVerification(
     retryProvision,
     isPolling,
     isLoading: pipelineQuery.isLoading,
+    setup,
+    veriffConfigured: data?.veriffConfigured ?? false,
+    walletBindingL3: data?.walletBindingL3 ?? false,
   };
 }
