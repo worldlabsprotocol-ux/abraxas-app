@@ -4,6 +4,7 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
+import { claimTypeLabel, type ClaimType } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import type { PartnerPolicy, PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
@@ -66,6 +67,62 @@ export async function createVerificationRequest(input: {
     request_id: data.id as string,
     consent_url: `${APP_URL}/passport?verify_request=${data.id}`,
     expires_at: expiresAt,
+  };
+}
+
+export interface VerificationRequestPreview {
+  request_id: string;
+  partner_id: string;
+  policy_id: string;
+  policy_name: string;
+  requested_action: string | null;
+  requested_claims: string[];
+  claim_labels: { claim_type: string; label: string; will_share: boolean }[];
+  never_shared: string[];
+  expires_at: string;
+  status: string;
+}
+
+/** Holder preview before consent — no decision yet */
+export async function getVerificationRequestPreview(
+  requestId: string,
+): Promise<VerificationRequestPreview | null> {
+  const sb = requireSupabaseAdmin();
+  const { data: request } = await sb
+    .from("verification_requests")
+    .select("*")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (!request) return null;
+
+  const policy = await getPolicy(request.policy_id as string);
+  const requestedClaims = (request.requested_claims as string[]) ?? [];
+  const policyClaims = (policy?.rules_json.required_claims ?? []).map(r => r.claim_type);
+  const allClaims = Array.from(new Set([...requestedClaims, ...policyClaims]));
+
+  return {
+    request_id: requestId,
+    partner_id: request.partner_id as string,
+    policy_id: request.policy_id as string,
+    policy_name: policy?.name ?? request.policy_id as string,
+    requested_action: (request.requested_action as string | null) ?? null,
+    requested_claims: allClaims,
+    claim_labels: allClaims.map(ct => ({
+      claim_type: ct,
+      label: claimTypeLabel(ct as ClaimType),
+      will_share: true,
+    })),
+    never_shared: [
+      "Passport image",
+      "Passport number",
+      "Full date of birth",
+      "Home address",
+      "Selfie / biometric data",
+      "Tax or financial documents",
+    ],
+    expires_at: request.expires_at as string,
+    status: request.status as string,
   };
 }
 

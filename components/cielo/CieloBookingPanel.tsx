@@ -82,8 +82,9 @@ export function CieloBookingPanel({
       });
       setStep(needs ? "verification" : "contact");
     } catch {
-      setVerification({ loading: false, needsDeepVerification: false, decision: "approved", missingClaims: [] });
-      setStep("contact");
+      setVerification({ loading: false, needsDeepVerification: true, decision: "manual_review", missingClaims: ["policy_unavailable"] });
+      setStep("verification");
+      setErr("Verification check unavailable — complete ID check or try again.");
     }
   }
 

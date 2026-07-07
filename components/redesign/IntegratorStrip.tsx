@@ -11,9 +11,16 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const ENDPOINTS = [
-  { method: "GET", path: "/api/verify/registry?q=…", desc: "Public credential + asset verifier" },
-  { method: "POST", path: "/api/credentials/verify", desc: "Relying party JWT gate" },
-  { method: "GET", path: "/api/trust/status?sui=0x…", desc: "Wallet + ID status + credentials" },
+  { method: "POST", path: "/api/v1/verification-requests", desc: "Partner: create consent request + policy evaluation" },
+  { method: "GET", path: "/api/v1/verification-requests/{id}", desc: "Holder preview — selective disclosure before consent" },
+  { method: "POST", path: "/api/v1/verification-requests/{id}/consent", desc: "Holder approves — returns approve/deny/manual_review" },
+  { method: "GET", path: "/api/v1/decisions/{id}/status", desc: "Re-check decision before settlement" },
+  { method: "POST", path: "/api/v1/policies/evaluate", desc: "Direct policy evaluation on live claims" },
+  { method: "GET", path: "/api/trust/registry", desc: "Trust Registry — issuers + credential schemas" },
+  { method: "POST", path: "/api/verification/check-level", desc: "First-party hybrid Veriff gate" },
+  { method: "GET", path: "/api/credentials/claims?sui=0x…", desc: "Active normalized claims for a wallet" },
+  { method: "POST", path: "/api/credentials/verify", desc: "Relying party JWT verify" },
+  { method: "GET", path: "/api/trust/status?sui=0x…", desc: "Wallet + credential summary" },
 ];
 
 export function IntegratorStrip() {

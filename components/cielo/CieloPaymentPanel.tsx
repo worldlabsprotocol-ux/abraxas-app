@@ -102,7 +102,12 @@ export function CieloPaymentPanel({
         missingClaims: data.missing_claims ?? [],
       });
     } catch {
-      setVerification({ loading: false, checked: true, needsDeepVerification: false, missingClaims: [] });
+      setVerification({
+        loading: false,
+        checked: true,
+        needsDeepVerification: true,
+        missingClaims: ["policy_unavailable"],
+      });
     }
   }
 

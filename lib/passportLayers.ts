@@ -59,10 +59,10 @@ export const PASSPORT_LAYERS = [
       "Identity, screening, KYB, accreditation, and jurisdiction eligibility as separate signed claims. Partners set their own acceptance rules.",
     capabilities: [
       "Government ID + liveness (Veriff)",
-      "Sanctions / screening outcome (pilot)",
+      "Sanctions / screening outcome (partner-gated)",
       "KYB + business verification (manual review)",
       "Accreditation & suitability (partner-gated)",
-      "Policy engine + partner verifier API (planned)",
+      "Policy engine + partner verifier API v1 (live)",
     ],
   },
   {
@@ -81,6 +81,23 @@ export const PASSPORT_LAYERS = [
     ],
   },
 ] as const;
+
+/** Trust Registry product layer (network) */
+export const TRUST_REGISTRY_LAYER = {
+  id: "trust_registry" as const,
+  title: "Trust Registry",
+  status: "pilot" as ProductStatus,
+  tagline: "Which issuers are trusted for which claims.",
+  summary:
+    "A credential is only valuable if the verifier trusts the issuer. Abraxas maintains issuer onboarding standards, public keys, and schema acceptance rules.",
+  capabilities: [
+    "Issuer due diligence tiers",
+    "Supported claim types per issuer",
+    "Assurance level acceptance",
+    "Jurisdiction rules",
+    "Issuer suspension + audit status",
+  ],
+} as const;
 
 export interface StampCatalogEntry {
   id: StampBitId;
@@ -203,6 +220,10 @@ export const PUBLIC_POSITIONING = {
     "Asset Passport records the verification trail behind an asset — ownership, custody, valuation, and legal attestations required by the applicable offering policy.",
   proofNotDocuments:
     "Share the proof, not the documents. Partners receive only the claims their policy requires.",
+  category:
+    "Portable eligibility and verification network for permissioned on-chain finance.",
+  refreshPromise:
+    "Verify once, reuse what remains valid, and refresh only what changed or expired.",
 } as const;
 
 export function stampsForLayer(layerId: PassportLayerId): StampCatalogEntry[] {

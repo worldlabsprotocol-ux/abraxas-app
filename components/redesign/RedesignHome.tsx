@@ -17,6 +17,9 @@ import { BrowseWithoutKycBanner } from "./BrowseWithoutKycBanner";
 import { EarlyAccessBanner } from "./EarlyAccessBanner";
 import { WhatIsAbraxasSection } from "./WhatIsAbraxasSection";
 import { PassportLayersSection } from "./PassportLayersSection";
+import { NetworkProductsSection } from "@/components/vision/NetworkProductsSection";
+import { IssuerHolderVerifierSection } from "@/components/vision/IssuerHolderVerifierSection";
+import { ClaimStackSection } from "@/components/vision/ClaimStackSection";
 import { KycDebtSection } from "./KycDebtSection";
 import { SupplyNetworkTeaser } from "./SupplyNetworkTeaser";
 import { AppleWalletPromo } from "./AppleWalletPromo";
@@ -54,6 +57,9 @@ export function RedesignHome() {
           <div style={{ ...MAXW, paddingTop: "0.85rem" }}><EarlyAccessBanner /></div>
           <div style={{ ...MAXW, paddingTop: "0.85rem" }}><WhatIsAbraxasSection /></div>
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}><PassportLayersSection /></div>
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><NetworkProductsSection /></div>
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><IssuerHolderVerifierSection /></div>
+          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><ClaimStackSection /></div>
           <div style={{ ...MAXW, paddingTop: "0.75rem" }}><TrustMetricsStrip /></div>
 
           <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>

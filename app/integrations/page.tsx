@@ -63,11 +63,40 @@ export default function IntegrationsPage() {
       <ContentCard title="Relying party program">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
           The network-effect milestone: an unaffiliated lender, marketplace, or protocol checks Abraxas credentials in production.
-          First-party flows prove the rails — your integration proves they travel.
+          Partners configure eligibility rules — Abraxas returns <strong>approved / denied / manual review</strong> with consent receipts and audit references.
         </p>
         <Btn href="/integrations/relying-parties" size="sm">Relying party onboarding →</Btn>
         <Btn href="/integrations/outreach" variant="secondary" size="sm">Outreach templates</Btn>
       </ContentCard>
+
+      <div id="policy-engine">
+      <ContentCard title="Policy Engine">
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.65rem" }}>
+          Partners define required claims (identity, screening, wallet binding, accreditation) with assurance levels and max age.
+          The engine evaluates live claim status — not a static profile — and logs every decision.
+        </p>
+        <BulletList items={[
+          "Seeded policies: abraxas-core-v1, abraxas-booking-v1, abraxas-rwa-us-v1",
+          "POST /api/v1/policies/evaluate — direct evaluation",
+          "GET /api/v1/decisions/{id}/status — re-check before settlement",
+        ]} />
+      </ContentCard>
+      </div>
+
+      <div id="trust-registry">
+      <ContentCard title="Trust Registry">
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.65rem" }}>
+          A credential is only valuable if the verifier trusts the issuer. Abraxas maintains which issuers may sign which claim types,
+          with assurance tiers, jurisdictions, and audit status.
+        </p>
+        <BulletList items={[
+          "GET /api/trust/registry — issuers + W3C schema identifiers",
+          "Veriff · Abraxas Network · Manual Review · Screening (partner-gated)",
+          "Issuer suspension and schema versioning",
+        ]} />
+        <Btn href="/api/trust/registry" size="sm" variant="secondary">View registry JSON →</Btn>
+      </ContentCard>
+      </div>
 
       <ContentCard title="Quick integration">
         <pre style={{

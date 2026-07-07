@@ -48,6 +48,17 @@ function buildLevel(input: IssueCredentialInput): "basic" | "standard" | "enhanc
 }
 
 export async function POST(req: NextRequest) {
+  const internalSecret = process.env.INTERNAL_API_SECRET;
+  if (process.env.NODE_ENV === "production") {
+    const provided = req.headers.get("x-internal-secret") ?? "";
+    if (!internalSecret || provided !== internalSecret) {
+      return NextResponse.json(
+        { error: "Credential issuance is restricted to verified IDV pipeline. Use /api/idv/webhook." },
+        { status: 403 },
+      );
+    }
+  }
+
   const body: IssueCredentialInput = await req.json().catch(() => null);
 
   const holderAddress = resolveHolderAddress(body);

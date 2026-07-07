@@ -15,6 +15,10 @@ import { PassportCredentialBanner } from "@/components/passport/PassportCredenti
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { PassportTrustCard } from "@/components/passport/PassportTrustCard";
 import { PassportClaimsCard } from "@/components/passport/PassportClaimsCard";
+import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
+import { IssuerHolderVerifierSection } from "@/components/vision/IssuerHolderVerifierSection";
+import { ClaimStackSection } from "@/components/vision/ClaimStackSection";
+import { PUBLIC_POSITIONING } from "@/lib/passportLayers";
 import { AddToAppleWallet } from "@/components/passport/AddToAppleWallet";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
@@ -36,7 +40,7 @@ import { Btn } from "@/components/redesign/ui";
 import { consumerCopy } from "@/lib/consumerCopy";
 import { computePassportCompletion, resolveFlowStep } from "@/lib/passportCompletion";
 import { useQuery } from "@tanstack/react-query";
-import { fetchTrustStatus, passportQueryKeys, consentVerificationRequest } from "@/lib/api/passport";
+import { fetchTrustStatus, passportQueryKeys } from "@/lib/api/passport";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -69,7 +73,7 @@ const STAMPS: Stamp[] = [
     color: G,
     kind: "identity",
     description: "Government ID plus a quick selfie check through a licensed provider. Your stamp is tied to the account you created when you signed in with Google.",
-    whatItProves: "You are a real person, the ID belongs to you, and you passed standard sanctions screening — linked to your Abraxas account.",
+    whatItProves: "You are a real person and the ID belongs to you — as separate signed claims (identity, liveness, document). Screening is a separate partner-gated claim, not implied by this step.",
     requiredDocs: ["Government-issued photo ID (passport, driver's license, or national ID)", "A camera — the selfie check takes about 60 seconds"],
     processSteps: [
       "Sign in with Google to create your Abraxas account",
@@ -160,10 +164,7 @@ function PassportPageInner() {
   const [active, setActive] = useState<string | null>("wallet");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [partnerConsent, setPartnerConsent] = useState<{
-    status: "idle" | "pending" | "done" | "error";
-    message?: string;
-  }>({ status: "idle" });
+  const [partnerConsentDismissed, setPartnerConsentDismissed] = useState(false);
   const [passportState, setPassportState] = useState<PassportState>({
     identity: "not_started",
     business: "not_started",
@@ -232,28 +233,6 @@ function PassportPageInner() {
   }, [identityStatus, onChain?.stamps_complete, onChain?.issuer_configured, isProvisioning]);
 
   const verifyRequestId = searchParams.get("verify_request");
-
-  useEffect(() => {
-    if (!verifyRequestId || !suiAddress) return;
-    let cancelled = false;
-    setPartnerConsent({ status: "pending" });
-    consentVerificationRequest(verifyRequestId, suiAddress)
-      .then(result => {
-        if (cancelled) return;
-        setPartnerConsent({
-          status: "done",
-          message: `Partner decision: ${result.decision} · ref ${result.decision_reference.slice(0, 8)}…`,
-        });
-      })
-      .catch(e => {
-        if (cancelled) return;
-        setPartnerConsent({
-          status: "error",
-          message: e instanceof Error ? e.message : "Consent failed",
-        });
-      });
-    return () => { cancelled = true; };
-  }, [verifyRequestId, suiAddress]);
 
   useEffect(() => {
     if (searchParams.get("signed_in") === "1") refresh();
@@ -366,9 +345,28 @@ function PassportPageInner() {
             <span style={{ color:G }}>Transact now. Verify when you need more.</span>
           </h1>
           <p style={{ fontFamily:S, fontSize:"clamp(0.88rem,1.8vw,1rem)",
-                       color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:0 }}>
+                       color:"var(--text-secondary)", lineHeight:1.75, maxWidth:560, margin:"0 0 0.65rem" }}>
             {consumerCopy.passport.subhead}
           </p>
+          <p style={{ fontFamily:S, fontSize:"0.72rem", color:"var(--text-muted)", lineHeight:1.6, maxWidth:560, margin:0 }}>
+            {PUBLIC_POSITIONING.proofNotDocuments} {PUBLIC_POSITIONING.disclaimer}
+          </p>
+        </div>
+
+        {verifyRequestId && suiAddress && !partnerConsentDismissed && (
+          <ConsentCeremony
+            requestId={verifyRequestId}
+            suiAddress={suiAddress}
+            onDismiss={() => setPartnerConsentDismissed(true)}
+          />
+        )}
+
+        <div style={{ marginBottom: "2rem" }}>
+          <IssuerHolderVerifierSection compact />
+        </div>
+
+        <div style={{ marginBottom: "2rem" }}>
+          <ClaimStackSection compact />
         </div>
 
         <PassportCompletionDashboard

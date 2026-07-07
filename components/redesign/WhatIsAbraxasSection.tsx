@@ -3,7 +3,8 @@
 // Three-layer explainer — tightened copy.
 
 import Link from "next/link";
-import { PASSPORT_LAYERS } from "@/lib/passportLayers";
+import { PASSPORT_LAYERS, PUBLIC_POSITIONING } from "@/lib/passportLayers";
+import { ABRAXAS_POSITIONING } from "@/lib/abraxasNetwork";
 import { ProductStatusBadge } from "@/components/ui/ProductStatusBadge";
 import { Btn } from "./ui";
 
@@ -31,6 +32,12 @@ export function WhatIsAbraxasSection() {
         color: "var(--text-primary)", lineHeight: 1.45, margin: "0 0 1rem", maxWidth: 580,
       }}>
         Portable eligibility and verification for permissioned on-chain finance — not a generic KYC vendor.
+      </p>
+      <p style={{
+        fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+        lineHeight: 1.55, maxWidth: 580, margin: "0 0 1rem",
+      }}>
+        {ABRAXAS_POSITIONING.proofNotDocuments}
       </p>
 
       <div style={{ display: "grid", gap: "0.65rem", marginBottom: "1rem" }}>

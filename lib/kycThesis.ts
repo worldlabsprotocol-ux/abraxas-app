@@ -1,74 +1,91 @@
 // FILE: lib/kycThesis.ts
-// Market-facing thesis: why unified KYC is hard + how Abraxas solves it.
+// Market-facing thesis aligned with Abraxas network vision.
 
-export const KYC_DEBT_HEADLINE = "Verification debt is the hidden tax on every RWA deal.";
+import { ABRAXAS_POSITIONING, NETWORK_ROLES } from "@/lib/abraxasNetwork";
+
+export const KYC_DEBT_HEADLINE =
+  "Verification debt is the hidden tax on every permissioned on-chain transaction.";
 
 export const KYC_BARRIERS = [
   {
-    title: "Regulatory fragmentation",
-    body: "Different counterparties and jurisdictions expect different KYC/AML standards. Issuing a credential others can trust creates liability questions most teams avoid.",
+    title: "Trust, liability, and privacy — not upload UX",
+    body: "Each platform asks the same person for the same passport because it needs an auditable answer under its own risk rules — not because forms are hard to design.",
   },
   {
-    title: "Privacy requirements",
-    body: "Raw identity documents cannot live on public chains. Solutions must keep PII off-chain while still providing cryptographic proof.",
+    title: "KYC is a stack, not one checkmark",
+    body: "Identity, liveness, sanctions, wallet control, accreditation, and asset title are separate claims with different issuers, assurance levels, and expiry.",
   },
   {
-    title: "Wallet friction",
-    body: "Seed phrases and extensions block normal users. Adding KYC on top of bad wallet UX killed adoption for years.",
+    title: "Documents should stay with regulated providers",
+    body: "Raw PII cannot live on-chain. The product is signed proof + selective disclosure — share the claim, not the document.",
   },
   {
-    title: "No portable standards",
-    body: "Even when verification happened, proof usually only worked inside one platform — not across lenders, marketplaces, and protocols.",
+    title: "Wallet control is a separate problem",
+    body: "A verified person is not automatically tied to a wallet. Binding requires a signed challenge and step-up for high-value actions.",
   },
   {
-    title: "Enforcement gap",
-    body: "Many systems issue claims but few protocols check them at the moment of action — booking, transfer, lending.",
+    title: "Partners need policy + audit, not a generic API",
+    body: "Verifiers configure their own rules and receive approve / deny / manual review with consent receipts and decision references.",
   },
   {
-    title: "Economic reality",
-    body: "Building the verification layer is expensive. Most RWA projects prioritized tokenization first and treated KYC as downstream.",
+    title: "Reuse is policy-driven, not forever",
+    body: "Passports expire, sanctions lists change, wallet risk shifts. Verify once, refresh only what changed or expired.",
   },
 ] as const;
 
 export const ABRAXAS_SOLUTION_STEPS = [
   {
     step: "1",
-    title: "Seamless identity creation",
-    body: "Sign in with Google. Sui zkLogin creates a persistent did:sui address — no seed phrase, no browser extension.",
+    title: "Issuer verifies once",
+    body: `${NETWORK_ROLES.issuer.title}: licensed ID provider, screening firm, or appraiser signs tamper-evident claims.`,
   },
   {
     step: "2",
-    title: "Optional, tiered verification",
-    body: "Browse the registry without ID checks. When a deal needs enhanced trust, optional Veriff IDV runs through a licensed provider. Abraxas stores only the outcome.",
+    title: "Holder controls consent",
+    body: `${NETWORK_ROLES.holder.title}: Abraxas Passport shows credentials, expiry, and exactly what each partner will receive.`,
   },
   {
     step: "3",
-    title: "Portable credential issuance",
-    body: "W3C Verifiable Credential as an Ed25519-signed JWT. Structured claims about identity and assets with assurance levels L1–L4.",
+    title: "Verifier applies policy",
+    body: `${NETWORK_ROLES.verifier.title}: policy engine returns approved / denied / manual review with audit trail.`,
   },
   {
     step: "4",
-    title: "On-chain anchoring & public verify",
-    body: "Credential status anchors on Sui. Anyone can verify via /verify or POST /api/credentials/verify without seeing raw documents.",
+    title: "Selective disclosure",
+    body: "Partners receive only the claims their policy requires — never passport images, biometrics, or full profiles by default.",
   },
   {
     step: "5",
-    title: "Revocation & lifecycle",
-    body: "Credentials can be revoked. Individual claims refresh (new appraisal, booking data) without re-running full KYC.",
+    title: "Status check before settlement",
+    body: "Decisions are time-bound. Re-check claim status before booking capture, investment, or token transfer.",
   },
   {
     step: "6",
-    title: "Real on-chain actions",
-    body: "Book Cielo Sunrise: zkLogin → credential check → USDC on Sui. Verify once, transact — not just a tagline.",
+    title: "Enforcement at the action",
+    body: "Cielo booking, payment, and RWA transfer gates evaluate live claims — not a static dashboard badge.",
   },
 ] as const;
 
-export const HYBRID_ARCHITECTURE_SUMMARY =
-  "Verification and booking run on modern identity rails. Optional token tiers live separately — your passport is never gated by holdings.";
+export const HYBRID_ARCHITECTURE_SUMMARY = ABRAXAS_POSITIONING.promise;
 
 export const UNIFIED_EXPERIENCE_PRINCIPLES = [
-  "I am verified once in Abraxas.",
-  "I browse and book real assets without managing a crypto wallet.",
-  "When I pay, I use Apple Pay or my card — the rate is shown upfront.",
-  "My verified status travels with me across partners.",
+  "I verify once with an approved provider.",
+  "I see each claim separately — not one vague KYC badge.",
+  "I approve exactly what each partner receives.",
+  "My wallet binding is proven by signature, not assumption.",
+  "Eligibility is policy-based, issuer-specific, and time-bound.",
 ] as const;
+
+export const OLD_VS_NEW_FLOW = {
+  old: [
+    "User uploads passport → Platform A stores it",
+    "User uploads passport again → Platform B stores it",
+    "User uploads passport again → Platform C stores it",
+  ],
+  new: [
+    "User completes strong verification once with a trusted issuer",
+    "Issuer signs proof to the holder's Abraxas Passport",
+    "User shares only required claims with Platform A, B, or C",
+    "Each platform applies its policy and keeps an audit record",
+  ],
+} as const;

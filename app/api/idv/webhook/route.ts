@@ -8,7 +8,9 @@ import { processVeriffDecision } from "@/lib/idv/processVeriffDecision";
 const VERIFF_SECRET = process.env.VERIFF_SECRET ?? "";
 
 function verifySignature(payload: string, sig: string): boolean {
-  if (!VERIFF_SECRET) return true;
+  if (!VERIFF_SECRET) {
+    return process.env.NODE_ENV !== "production";
+  }
   const expected = createHmac("sha256", VERIFF_SECRET).update(payload).digest("hex");
   return expected === sig;
 }

@@ -10,12 +10,16 @@ export type ClaimType =
   | "liveness_passed"
   | "government_id_verified"
   | "screening_outcome"
+  | "risk_review"
   | "kyb_verified"
+  | "ubo_verified"
   | "accredited_status"
+  | "product_eligibility"
   | "wallet_binding_confirmed"
   | "wallet_risk_band"
   | "asset_ownership_reviewed"
   | "asset_title_verified"
+  | "transfer_eligibility"
   | "residency_country";
 
 export interface CredentialClaimRecord {
@@ -125,13 +129,17 @@ export function claimTypeLabel(type: ClaimType): string {
     identity_verified: "Identity verified",
     liveness_passed: "Liveness passed",
     government_id_verified: "Government ID verified",
-    screening_outcome: "Screening outcome",
+    screening_outcome: "Sanctions screening",
+    risk_review: "PEP / adverse media review",
     kyb_verified: "KYB verified",
+    ubo_verified: "Beneficial ownership verified",
     accredited_status: "Accredited investor",
+    product_eligibility: "Product suitability",
     wallet_binding_confirmed: "Wallet binding",
     wallet_risk_band: "Wallet risk band",
     asset_ownership_reviewed: "Asset ownership reviewed",
     asset_title_verified: "Asset title verified",
+    transfer_eligibility: "Transfer eligibility",
     residency_country: "Residency country",
   };
   return labels[type] ?? type;
