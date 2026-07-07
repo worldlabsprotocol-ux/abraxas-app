@@ -1,12 +1,10 @@
 "use client";
 // FILE: components/redesign/ThreeDoorsSection.tsx
-// Simplified: Passport + public checker. Assets live on Home via photos.
+// Passport + public checker — text-first cards, no hero photos.
 
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
-
-import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -16,19 +14,19 @@ const DOORS = [
     n: "01",
     title: "Your Passport",
     subtitle: "Sign in once · verify when needed",
-    body: "Sign in with Google — no seed phrase. Add an optional ID check when a deal requires it. Your proof is reusable — partners check it without seeing your documents.",
+    body: "Sign in with Google — no seed phrase. Add an ID check only when a deal requires it. Partners verify without seeing your documents.",
     href: "/passport",
     cta: "Create my passport →",
-    image: CIELO_PORCH_IMAGE.src,
+    accent: ACCENT,
   },
   {
     n: "02",
     title: "Check what's real",
     subtitle: "Public proof checker",
-    body: "Paste any asset ID or credential hash. See if it's valid, expired, or revoked — with assurance levels L1–L4. Built for lenders, buyers, and anyone who needs to trust a claim.",
+    body: "Paste any asset ID or credential hash. See if it's valid, expired, or revoked — with assurance levels L1–L4.",
     href: "/verify",
     cta: "Run public checker →",
-    image: "/assets/smyrna/011.webp",
+    accent: "#3B82F6",
   },
 ] as const;
 
@@ -54,8 +52,7 @@ export function ThreeDoorsSection() {
           fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)",
           lineHeight: 1.65, margin: 0, maxWidth: 620,
         }}>
-          Verified properties and assets are on this page below — click any photo to explore.
-          Want to submit your own asset?{" "}
+          Verified assets are listed in the registry below. Want to submit your own?{" "}
           <Link href="/build" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
             Submit here →
           </Link>
@@ -81,23 +78,25 @@ export function ThreeDoorsSection() {
                 border: "1px solid var(--border-strong)",
                 background: "var(--surface-raised)",
               }}>
-                <div style={{ position: "relative", height: 140 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={door.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,9,11,0.7) 0%, transparent 60%)" }} />
+                <div style={{
+                  position: "relative", height: 72, padding: "0 1.2rem",
+                  display: "flex", alignItems: "center", gap: "0.75rem",
+                  background: `linear-gradient(135deg, ${door.accent}18 0%, transparent 70%)`,
+                  borderBottom: "1px solid var(--border)",
+                }}>
                   <span style={{
-                    position: "absolute", top: 12, left: 12,
-                    fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "#fff",
-                    padding: "0.2rem 0.45rem", borderRadius: 999,
-                    background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.2)",
+                    fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800, color: door.accent,
+                    width: 32, height: 32, borderRadius: "50%",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: `${door.accent}15`, border: `1px solid ${door.accent}44`,
                   }}>
                     {door.n}
                   </span>
-                </div>
-                <div style={{ padding: "1.15rem 1.2rem" }}>
-                  <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.4rem" }}>
+                  <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     {door.subtitle}
                   </div>
+                </div>
+                <div style={{ padding: "1.15rem 1.2rem" }}>
                   <div style={{ fontFamily: FONT, fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
                     {door.title}
                   </div>

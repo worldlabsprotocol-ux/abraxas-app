@@ -1,5 +1,5 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — Revolut-like flow, minimal Cielo imagery.
+// Auto-advancing product walkthrough — one representative image, minimal jargon.
 
 export interface ProductLoopStep {
   id: string;
@@ -16,37 +16,36 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "browse",
     title: "Browse verified assets",
-    subtitle: "Real photos, assurance levels, and registry state — no login required.",
+    subtitle: "Assurance levels and registry state — no login required.",
     durationMs: 6000,
     image: "/assets/smyrna/011.webp",
     badge: "Public registry",
     metrics: [
       { label: "Assets", value: "4 listed" },
       { label: "Assurance", value: "L1–L4" },
-      { label: "KYC", value: "Optional" },
+      { label: "ID check", value: "When needed" },
     ],
   },
   {
     id: "book",
     title: "Book with Apple Pay or card",
-    subtitle: "Pick dates · pay in fiat · USDC settles on Sui automatically.",
+    subtitle: "Pick dates · pay in fiat · settles automatically on-chain.",
     durationMs: 6000,
-    image: "/assets/cielo/08.jpg",
-    badge: "Revolut-like checkout",
+    badge: "Seamless checkout",
     metrics: [
       { label: "Primary", value: "Apple Pay" },
-      { label: "Alt", value: "USDC on Sui" },
+      { label: "Alt", value: "USDC" },
       { label: "Est.", value: "~$1,240" },
     ],
   },
   {
     id: "signin",
     title: "Sign in with Google",
-    subtitle: "zkLogin creates your Sui wallet — no seed phrase, no browser extension.",
+    subtitle: "Your wallet is ready in one click — no seed phrase, no extension.",
     durationMs: 5000,
     badge: "Passport ready",
     metrics: [
-      { label: "Account", value: "Google → Sui" },
+      { label: "Account", value: "Google" },
       { label: "Wallet", value: "Apple Wallet" },
       { label: "ID check", value: "Optional" },
     ],
@@ -54,21 +53,20 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "pay",
     title: "Pay without thinking about rails",
-    subtitle: "Fiat on-ramp or one-click USDC · asset settlement container · on-chain verify.",
+    subtitle: "Fiat on-ramp or stablecoin · settlement captured · on-chain verify.",
     durationMs: 6000,
     badge: "Payment captured",
     metrics: [
       { label: "Method", value: "Apple Pay" },
-      { label: "Settles", value: "USDC · Sui" },
+      { label: "Settles", value: "USDC" },
       { label: "Status", value: "Captured ✓" },
     ],
   },
   {
     id: "verify",
     title: "Verify on the public registry",
-    subtitle: "Any relying party checks your credential — assurance taxonomy L1–L4 instant.",
+    subtitle: "Any partner checks your credential — assurance levels L1–L4, instant.",
     durationMs: 7000,
-    image: "/assets/worldwearables/naj.jpg",
     badge: "✓ PORTABLE PROOF",
     metrics: [
       { label: "Standard", value: "W3C VC" },

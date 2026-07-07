@@ -1,5 +1,6 @@
 "use client";
 // FILE: components/redesign/EcosystemShowcases.tsx
+// Text-first vertical showcases — no photo headers.
 
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -13,22 +14,21 @@ const SHOWCASES = [
     desc: "Split-sheet gaps, distribution leakage, and catalog provenance for media owners.",
     href: "/apps/music",
     tag: "Intake live",
-    image: "/assets/worldwearables/1212.jpg",
+    accent: "#8B5CF6",
   },
   {
     title: "Wyoming LLC engine",
     desc: "Entity formation bound to verified ownership and the asset pipeline.",
     href: "/apps/wyoming",
     tag: "Formation flow",
-    image: "/assets/worldwearables/jan26.jpg",
+    accent: "#3B82F6",
   },
   {
     title: "Genesis hospitality pilot",
     desc: "End-to-end verified stay with Apple Pay booking — one design-partner asset.",
     href: "/flagship",
     tag: "Live pilot",
-    image: "/assets/cielo/08.jpg",
-    objectPosition: "center 35%",
+    accent: ACCENT,
   },
 ] as const;
 
@@ -54,7 +54,7 @@ export function EcosystemShowcases() {
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
-        gap: "1.15rem",
+        gap: "0.85rem",
       }}>
         {SHOWCASES.map((s, i) => (
           <motion.div
@@ -66,42 +66,25 @@ export function EcosystemShowcases() {
           >
             <Link href={s.href} style={{ textDecoration: "none", display: "block", height: "100%" }}>
               <div style={{
-                borderRadius: 16, overflow: "hidden", height: "100%",
+                borderRadius: 14, padding: "1.05rem 1.15rem", height: "100%",
                 border: "1px solid var(--border-strong)",
                 background: "var(--surface-raised)",
+                borderTop: `3px solid ${s.accent}`,
               }}>
-                <div style={{ position: "relative", height: 148, background: "#06090B" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={s.image}
-                    alt=""
-                    style={{
-                      width: "100%", height: "100%", objectFit: "cover", display: "block",
-                      objectPosition: "objectPosition" in s ? s.objectPosition : "center",
-                    }}
-                  />
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(to top, rgba(6,9,11,0.9) 0%, transparent 60%)",
-                  }} />
-                  <span style={{
-                    position: "absolute", top: 10, right: 10,
-                    fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700,
-                    padding: "0.2rem 0.45rem", borderRadius: 999,
-                    background: "rgba(0,0,0,0.55)", color: ACCENT,
-                    border: "1px solid rgba(16,185,129,0.35)",
-                  }}>
-                    {s.tag}
-                  </span>
+                <span style={{
+                  fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700,
+                  padding: "0.2rem 0.45rem", borderRadius: 999,
+                  color: s.accent, border: `1px solid ${s.accent}44`,
+                  background: `${s.accent}12`, display: "inline-block", marginBottom: "0.65rem",
+                }}>
+                  {s.tag}
+                </span>
+                <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                  {s.title}
                 </div>
-                <div style={{ padding: "1.05rem 1.15rem" }}>
-                  <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-                    {s.title}
-                  </div>
-                  <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.65, margin: 0 }}>
-                    {s.desc}
-                  </p>
-                </div>
+                <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.65, margin: 0 }}>
+                  {s.desc}
+                </p>
               </div>
             </Link>
           </motion.div>

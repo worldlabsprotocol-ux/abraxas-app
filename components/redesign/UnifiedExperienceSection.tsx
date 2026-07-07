@@ -50,7 +50,7 @@ export function UnifiedExperienceSection() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         <Btn href="/passport" size="sm">Create passport →</Btn>
         <Btn href="/account" variant="secondary" size="sm">My account</Btn>
-        <Btn href="/flagship" variant="ghost" size="sm">Book Cielo Sunrise</Btn>
+        <Btn href="/flagship" variant="ghost" size="sm">Book verified stay</Btn>
       </div>
     </section>
   );

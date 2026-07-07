@@ -79,13 +79,24 @@ export function ProductLoopDemo() {
               transition={{ duration: 0.45 }}
               style={{ position: "absolute", inset: 0 }}
             >
-              {step.image && (
+              {step.image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={step.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <div style={{
+                  width: "100%", height: "100%",
+                  background: `
+                    radial-gradient(ellipse 70% 55% at 15% 20%, rgba(16,185,129,0.18) 0%, transparent 55%),
+                    radial-gradient(ellipse 50% 45% at 85% 80%, rgba(59,130,246,0.12) 0%, transparent 50%),
+                    linear-gradient(160deg, #0d151c 0%, #06090B 100%)
+                  `,
+                }} />
               )}
               <div style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(to top, rgba(6,9,11,0.95) 0%, rgba(6,9,11,0.35) 45%, rgba(6,9,11,0.15) 100%)",
+                background: step.image
+                  ? "linear-gradient(to top, rgba(6,9,11,0.95) 0%, rgba(6,9,11,0.35) 45%, rgba(6,9,11,0.15) 100%)"
+                  : "linear-gradient(to top, rgba(6,9,11,0.75) 0%, transparent 50%)",
               }} />
             </motion.div>
           </AnimatePresence>
@@ -169,7 +180,7 @@ export function ProductLoopDemo() {
           ))}
 
           <div style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href="/flagship" size="sm">Try Cielo live →</Btn>
+            <Btn href="/flagship" size="sm">Book a verified stay →</Btn>
             <Btn href="/verify?q=ABX-RE-HOSP-001" variant="secondary" size="sm">Run verifier</Btn>
           </div>
 

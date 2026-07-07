@@ -254,7 +254,7 @@ export function AssetsExplorer({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-                  <AssetExplorerCard asset={a} />
+                  <AssetExplorerCard asset={a} variant="compact" />
                 </motion.div>
               ))}
             </AnimatePresence>

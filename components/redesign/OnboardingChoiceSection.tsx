@@ -16,7 +16,7 @@ const PATHS = [
     id: "invest",
     color: ACCENT,
     title: "Book or invest",
-    desc: "Reserve Cielo Sunrise or put stablecoin into a verified asset.",
+    desc: "Reserve a verified stay or put stablecoin into a verified asset.",
     steps: ["Pick dates or an asset", "Sign in with Google", "Pay — ID check only if required"],
     href: "/terminal#featured-asset",
   },

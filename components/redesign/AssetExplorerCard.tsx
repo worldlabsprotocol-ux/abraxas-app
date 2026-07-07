@@ -1,9 +1,7 @@
 "use client";
 // FILE: components/redesign/AssetExplorerCard.tsx
-// Premium dark asset card: photo-bleed top with verification badge,
-// then a tight info zone with financial numbers and a CTA.
+// Premium dark asset card — compact text-only variant for registry lists.
 
-import { useState } from "react";
 import { MotionCard } from "@/lib/motion/MotionCard";
 import { VerificationBadge } from "./VerificationBadge";
 import { Btn } from "./ui";
@@ -11,9 +9,15 @@ import { VERIFY_META, type ExploreAsset } from "@/lib/data/exploreAssets";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
-export function AssetExplorerCard({ asset }: { asset: ExploreAsset }) {
-  const [imgOk, setImgOk] = useState(true);
+export function AssetExplorerCard({
+  asset,
+  variant = "default",
+}: {
+  asset: ExploreAsset;
+  variant?: "default" | "compact";
+}) {
   const meta = VERIFY_META[asset.state];
+  const showPhoto = variant === "default";
 
   return (
     <MotionCard
@@ -28,34 +32,46 @@ export function AssetExplorerCard({ asset }: { asset: ExploreAsset }) {
         height: "100%",
       }}
     >
-      {/* Photo */}
-      <div style={{ position: "relative", height: 220, background: "#06090B" }}>
-        {imgOk ? (
-          <img src={asset.image} alt={asset.name} onError={() => setImgOk(false)}
+      {showPhoto ? (
+        <div style={{ position: "relative", height: 220, background: "#06090B" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={asset.image}
+            alt={asset.name}
             style={{
               width: "100%", height: "100%", objectFit: "cover", display: "block",
               objectPosition: asset.id === "genesis-asset" ? "center 35%" : "center",
-            }} />
-        ) : (
-          <div style={{ width: "100%", height: "100%", display: "flex",
-                        alignItems: "center", justifyContent: "center",
-                        color: "var(--text-muted)", fontFamily: FONT, fontSize: "0.8rem" }}>
-            {asset.name}
+            }}
+          />
+          <div style={{ position: "absolute", top: 12, left: 12 }}>
+            <VerificationBadge label={meta.label} color={meta.color} />
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          padding: "1rem 1.1rem 0.65rem",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem",
+        }}>
+          <VerificationBadge label={meta.label} color={meta.color} />
+          <span style={{
+            fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700,
+            letterSpacing: "0.08em", textTransform: "uppercase",
+            color: "var(--text-muted)",
+          }}>
+            {asset.assetClass.split(" · ")[0]}
+          </span>
+        </div>
+      )}
+
+      <div style={{ padding: showPhoto ? "1.05rem 1.1rem" : "0 1.1rem 1.05rem", display: "flex", flexDirection: "column", flex: 1 }}>
+        {showPhoto && (
+          <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
+                         letterSpacing: "0.1em", textTransform: "uppercase",
+                         color: "var(--text-muted)", marginBottom: "0.4rem" }}>
+            {asset.assetClass}
           </div>
         )}
-        <div style={{ position: "absolute", top: 12, left: 12 }}>
-          <VerificationBadge label={meta.label} color={meta.color} />
-        </div>
-      </div>
-
-      {/* Info */}
-      <div style={{ padding: "1.05rem 1.1rem", display: "flex", flexDirection: "column", flex: 1 }}>
-        <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
-                       letterSpacing: "0.1em", textTransform: "uppercase",
-                       color: "var(--text-muted)", marginBottom: "0.4rem" }}>
-          {asset.assetClass}
-        </div>
-        <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 700,
+        <div style={{ fontFamily: FONT, fontSize: variant === "compact" ? "1.05rem" : "1.15rem", fontWeight: 700,
                        letterSpacing: "-0.02em", color: "var(--text-primary)", lineHeight: 1.15 }}>
           {asset.name}
         </div>
@@ -64,7 +80,6 @@ export function AssetExplorerCard({ asset }: { asset: ExploreAsset }) {
           {asset.location}
         </div>
 
-        {/* Metrics */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem",
                        margin: "0.95rem 0 0.65rem", paddingTop: "0.85rem",
                        borderTop: "1px solid var(--border)" }}>
