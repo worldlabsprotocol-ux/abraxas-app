@@ -8,8 +8,10 @@ import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { payCieloFromWallet, verifyCieloPaymentOnServer } from "@/lib/cielo/payFromWallet";
 import { consumerCopy } from "@/lib/consumerCopy";
+import { fetchCheckLevel } from "@/lib/api/passport";
 import { NonCustodialDisclosure } from "@/components/compliance/NonCustodialDisclosure";
 import { PaymentMethodChooser, type PaymentMethod } from "@/components/cielo/PaymentMethodChooser";
+import { VerificationGatePrompt } from "@/components/verification/VerificationGatePrompt";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -57,6 +59,12 @@ export function CieloPaymentPanel({
   const [copied, setCopied] = useState<string | null>(null);
   const [showManual, setShowManual] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("fiat");
+  const [verification, setVerification] = useState({
+    loading: false,
+    checked: false,
+    needsDeepVerification: false,
+    missingClaims: [] as string[],
+  });
 
   const walletReady = Boolean(
     suiAddress &&
@@ -73,6 +81,37 @@ export function CieloPaymentPanel({
       })
       .catch(() => setErr("Could not load booking"));
   }, [bookingId]);
+
+  async function recheckVerification() {
+    if (!suiAddress) {
+      setVerification({
+        loading: false,
+        checked: true,
+        needsDeepVerification: true,
+        missingClaims: ["wallet_binding_confirmed"],
+      });
+      return;
+    }
+    setVerification(v => ({ ...v, loading: true }));
+    try {
+      const data = await fetchCheckLevel("high_value_transaction", suiAddress);
+      setVerification({
+        loading: false,
+        checked: true,
+        needsDeepVerification: Boolean(data.needsDeepVerification),
+        missingClaims: data.missing_claims ?? [],
+      });
+    } catch {
+      setVerification({ loading: false, checked: true, needsDeepVerification: false, missingClaims: [] });
+    }
+  }
+
+  useEffect(() => {
+    if (!booking?.paid && payment?.payable) {
+      void recheckVerification();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- re-check when wallet or payable state changes
+  }, [booking?.paid, payment?.payable, suiAddress]);
 
   async function verifyPayment(digest: string) {
     setBusy(true);
@@ -101,6 +140,10 @@ export function CieloPaymentPanel({
   }
 
   async function payNow() {
+    if (verification.needsDeepVerification) {
+      setErr("Complete ID verification before paying");
+      return;
+    }
     if (!payment?.treasury_address || !suiAddress) {
       setErr("Connect your wallet and ensure treasury is configured");
       return;
@@ -179,6 +222,8 @@ export function CieloPaymentPanel({
     payStep === "verifying" ? "Confirming payment…" :
     busy ? "Processing…" : `Pay ${payment.amount_usdc} ${payment.asset} now →`;
 
+  const paymentBlocked = verification.checked && verification.needsDeepVerification;
+
   return (
     <div style={{
       padding: "1rem", borderRadius: 14,
@@ -199,7 +244,16 @@ export function CieloPaymentPanel({
         />
       </div>
 
-      {payment.payable && (
+      {payment.payable && paymentBlocked && (
+        <VerificationGatePrompt
+          actionLabel="Settlement for this booking"
+          missingClaims={verification.missingClaims}
+          onRecheck={recheckVerification}
+          rechecking={verification.loading}
+        />
+      )}
+
+      {payment.payable && !paymentBlocked && (
         <PaymentMethodChooser
           amountUsdc={payment.amount_usdc}
           suiAddress={suiAddress}
@@ -208,6 +262,12 @@ export function CieloPaymentPanel({
           value={paymentMethod}
           onChange={setPaymentMethod}
         />
+      )}
+
+      {payment.payable && paymentBlocked && (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.6 }}>
+          Payment methods unlock after your Passport meets the booking policy.
+        </p>
       )}
 
       {showManual && (
@@ -227,7 +287,7 @@ export function CieloPaymentPanel({
         </p>
       )}
 
-      {payment.payable && walletReady && payment.treasury_address && paymentMethod === "crypto" && (
+      {payment.payable && walletReady && payment.treasury_address && paymentMethod === "crypto" && !paymentBlocked && (
         <>
           <button type="button" onClick={payNow} disabled={busy}
             style={{
@@ -299,7 +359,7 @@ export function CieloPaymentPanel({
               color: "var(--text-primary)", fontFamily: MONO, fontSize: "0.75rem", boxSizing: "border-box",
               marginBottom: "0.65rem",
             }} />
-          <button type="button" onClick={verifyManualPayment} disabled={busy}
+          <button type="button" onClick={verifyManualPayment} disabled={busy || paymentBlocked}
             style={{
               width: "100%", padding: "0.55rem", borderRadius: 999,
               border: `1px solid ${ACCENT}66`, background: "transparent", color: ACCENT,
