@@ -1,85 +1,67 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage — problem → solution → three layers → proof → registry.
+// Sharp homepage — one action, supporting proof. Full depth lives on Trust Framework / docs.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
+import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
-import { ProductLoopDemo } from "./ProductLoopDemo";
-import { AssetsExplorer } from "./AssetsExplorer";
-import { IntegratorStrip } from "./IntegratorStrip";
-import { BrowseWithoutKycBanner } from "./BrowseWithoutKycBanner";
-import { NetworkProductsSection } from "@/components/vision/NetworkProductsSection";
-import { TrustFrameworkTeaser } from "@/components/vision/TrustFrameworkTeaser";
-import { KycDebtSection } from "./KycDebtSection";
-import { HomeBillboardHero } from "./HomeBillboardHero";
-import { HomeOnboardingStrip } from "./HomeOnboardingStrip";
-import { HomeVerifyOnceSection } from "./HomeVerifyOnceSection";
-import { HomeProtocolSection } from "./HomeProtocolSection";
-import { HomeFAQTeaser } from "./HomeFAQTeaser";
-import { RoadmapCTA } from "./RoadmapCTA";
 import { RedesignFooter } from "./RedesignFooter";
-import { TestTheNetworkSection } from "./TestTheNetworkSection";
-import { ChainArchitectureStrip } from "./ChainArchitectureStrip";
-import { AssuranceLegend } from "./AssuranceLegend";
+import { AssetsExplorer } from "./AssetsExplorer";
+import { TrustFrameworkTeaser } from "@/components/vision/TrustFrameworkTeaser";
+import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
+import { HomeProofSection } from "@/components/home/HomeProofSection";
+import { HomePassportIntro } from "@/components/home/HomePassportIntro";
+import { HomePublicProof } from "@/components/home/HomePublicProof";
+import { HomeCieloLoop } from "@/components/home/HomeCieloLoop";
+import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
+import { HomeNetworkBrief } from "@/components/home/HomeNetworkBrief";
+import { HomeClosingBand } from "@/components/home/HomeClosingBand";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180, margin: "0 auto",
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
+function HomeContent() {
+  return (
+    <main style={{ position: "relative", zIndex: 1 }}>
+      <div style={MAXW}>
+        <HomeSharpHero />
+        <HomeSignedInModule />
+        <HomeProofSection />
+        <HomePassportIntro />
+        <HomePublicProof />
+        <HomeCieloLoop />
+        <HomePartnersBrief />
+        <HomeNetworkBrief />
+        <TrustFrameworkTeaser />
+        <div id="registry" style={{ paddingTop: "clamp(2rem, 5vw, 3rem)", borderTop: "1px solid var(--border-strong)" }}>
+          <AssetsExplorer title="Browse registry" compact />
+        </div>
+        <HomeClosingBand />
+      </div>
+    </main>
+  );
+}
+
 export function RedesignHome() {
   return (
     <WalletContextProvider>
-      <AbraxasBootScreen />
-      <div data-theme="dark" style={{
-        background: "var(--bg)", color: "var(--text-primary)",
-        minHeight: "100vh", position: "relative", overflowX: "hidden",
-      }}>
-        <AmbientGlow />
-        <RedesignNav />
-
-        <main style={{ position: "relative", zIndex: 1 }}>
-          <div style={MAXW}><HomeBillboardHero /></div>
-
-          <div style={MAXW}><HomeVerifyOnceSection /></div>
-
-          <div style={MAXW}><HomeProtocolSection /></div>
-
-          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><HomeOnboardingStrip /></div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}><KycDebtSection /></div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}><NetworkProductsSection /></div>
-
-          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><BrowseWithoutKycBanner /></div>
-
-          <div id="test-network" style={{ ...MAXW, paddingTop: "1.25rem" }}>
-            <TestTheNetworkSection />
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <ProductLoopDemo />
-          </div>
-
-          <div id="registry" style={{ ...MAXW, paddingTop: "var(--section-gap)" }}>
-            <AssetsExplorer title="Public registry" />
-            <div style={{ marginTop: "1.25rem" }}><AssuranceLegend /></div>
-          </div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}><TrustFrameworkTeaser /></div>
-          <div style={{ ...MAXW, paddingTop: "1.25rem" }}><ChainArchitectureStrip /></div>
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)" }}><IntegratorStrip /></div>
-
-          <div style={{ ...MAXW, paddingTop: "var(--section-gap)", paddingBottom: "var(--section-gap)" }}>
-            <HomeFAQTeaser />
-            <div style={{ marginTop: "1.5rem" }}><RoadmapCTA /></div>
-          </div>
-        </main>
-
-        <RedesignFooter />
-      </div>
+      <SuiAuthProvider>
+        <AbraxasBootScreen />
+        <div data-theme="dark" style={{
+          background: "var(--bg)", color: "var(--text-primary)",
+          minHeight: "100vh", position: "relative", overflowX: "hidden",
+        }}>
+          <AmbientGlow />
+          <RedesignNav />
+          <HomeContent />
+          <RedesignFooter />
+        </div>
+      </SuiAuthProvider>
     </WalletContextProvider>
   );
 }

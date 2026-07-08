@@ -56,10 +56,12 @@ export function AssetsExplorer({
   excludeIds = [],
   title = "Real assets. Proven on-chain.",
   eyebrow = "Verified Assets",
+  compact = false,
 }: {
   excludeIds?: string[];
   title?: string;
   eyebrow?: string;
+  compact?: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<SortKey>("verified-first");
@@ -89,6 +91,8 @@ export function AssetsExplorer({
     return sortAssets(list, sort);
   }, [pool, filter, sort, query, assetClass]);
 
+  const displayAssets = compact ? assets.slice(0, 3) : assets;
+
   return (
     <section style={{ position: "relative", zIndex: 1 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between",
@@ -99,149 +103,154 @@ export function AssetsExplorer({
                          color: ACCENT, marginBottom: "0.5rem" }}>
             {eyebrow}
           </div>
-          <h2 style={{ fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
+          <h2 style={{ fontFamily: FONT, fontSize: compact ? "var(--fs-h2)" : "var(--fs-h1)", fontWeight: 800,
                         letterSpacing: "-0.03em", lineHeight: 1.05,
                         color: "var(--text-primary)", margin: 0 }}>
             {title}
           </h2>
         </div>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
-                     maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
-          The canonical asset list — search, filter, and inspect verification scope per listing.
-        </p>
-      </div>
-
-      {/* Search + sort */}
-      <div style={{
-        display: "flex", flexWrap: "wrap", gap: "0.65rem", alignItems: "center",
-        marginBottom: "1rem",
-      }}>
-        <label style={{ flex: "1 1 200px", minWidth: 180 }}>
-          <span className="sr-only">Search assets</span>
-          <input
-            type="search"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search name, location, class…"
-            aria-label="Search assets"
-            style={{
-              width: "100%", padding: "0.6rem 0.85rem", borderRadius: 999,
-              border: "1px solid var(--border)", background: "var(--surface-raised)",
-              color: "var(--text-primary)", fontFamily: FONT, fontSize: "0.82rem",
-              boxSizing: "border-box", minHeight: 44,
-            }}
-          />
-        </label>
-        <label>
-          <span className="sr-only">Sort assets</span>
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value as SortKey)}
-            aria-label="Sort assets"
-            style={{
-              padding: "0.6rem 0.85rem", borderRadius: 999,
-              border: "1px solid var(--border)", background: "var(--surface-raised)",
-              color: "var(--text-primary)", fontFamily: FONT, fontSize: "0.82rem",
-              minHeight: 44, cursor: "pointer",
-            }}
-          >
-            {SORTS.map(s => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
-          </select>
-        </label>
-        {(query || filter !== "all" || assetClass !== "all") && (
-          <button type="button" onClick={() => { setQuery(""); setFilter("all"); setAssetClass("all"); }}
-            style={{
-              padding: "0.5rem 0.85rem", borderRadius: 999, border: "1px solid var(--border)",
-              background: "transparent", color: "var(--text-muted)",
-              fontFamily: FONT, fontSize: "0.75rem", cursor: "pointer", minHeight: 44,
-            }}>
-            Clear filters
-          </button>
+        {!compact && (
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
+                       maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
+            The canonical asset list — search, filter, and inspect verification scope per listing.
+          </p>
         )}
       </div>
 
-      {/* Quick action — single entry for asset submission */}
-      <div style={{ marginBottom: "1rem" }}>
-        <Btn href="/build" variant="secondary" size="sm">Submit an asset →</Btn>
-      </div>
-
-      {/* State filters */}
-      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-        {FILTERS.map(f => {
-          const active = filter === f.id;
-          return (
-            <button key={f.id} onClick={() => setFilter(f.id)}
-              aria-pressed={active}
-              style={{ position: "relative", padding: "0.5rem 1rem", borderRadius: 999,
-                       border: `1px solid ${active ? "var(--border-strong)" : "var(--border)"}`,
-                       background: active ? "rgba(16,185,129,0.12)" : "transparent",
-                       color: active ? ACCENT : "var(--text-secondary)",
-                       fontFamily: FONT, fontSize: "0.8rem", fontWeight: active ? 700 : 500,
-                       cursor: "pointer", letterSpacing: "-0.01em", minHeight: 44 }}>
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Asset class filters */}
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-        <button type="button" onClick={() => setAssetClass("all")}
-          aria-pressed={assetClass === "all"}
-          style={{
-            padding: "0.35rem 0.75rem", borderRadius: 999,
-            border: `1px solid ${assetClass === "all" ? ACCENT : "var(--border)"}`,
-            background: assetClass === "all" ? "rgba(16,185,129,0.1)" : "transparent",
-            color: assetClass === "all" ? ACCENT : "var(--text-muted)",
-            fontFamily: MONO, fontSize: "0.62rem", fontWeight: 700,
-            letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+      {!compact && (
+        <>
+          <div style={{
+            display: "flex", flexWrap: "wrap", gap: "0.65rem", alignItems: "center",
+            marginBottom: "1rem",
           }}>
-          All classes
-        </button>
-        {ASSET_CLASSES.map(cls => {
-          const active = assetClass === cls;
-          return (
-            <button key={cls} type="button" onClick={() => setAssetClass(cls)}
-              aria-pressed={active}
+            <label style={{ flex: "1 1 200px", minWidth: 180 }}>
+              <span className="sr-only">Search assets</span>
+              <input
+                type="search"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search name, location, class…"
+                aria-label="Search assets"
+                style={{
+                  width: "100%", padding: "0.6rem 0.85rem", borderRadius: 999,
+                  border: "1px solid var(--border)", background: "var(--surface-raised)",
+                  color: "var(--text-primary)", fontFamily: FONT, fontSize: "0.82rem",
+                  boxSizing: "border-box", minHeight: 44,
+                }}
+              />
+            </label>
+            <label>
+              <span className="sr-only">Sort assets</span>
+              <select
+                value={sort}
+                onChange={e => setSort(e.target.value as SortKey)}
+                aria-label="Sort assets"
+                style={{
+                  padding: "0.6rem 0.85rem", borderRadius: 999,
+                  border: "1px solid var(--border)", background: "var(--surface-raised)",
+                  color: "var(--text-primary)", fontFamily: FONT, fontSize: "0.82rem",
+                  minHeight: 44, cursor: "pointer",
+                }}
+              >
+                {SORTS.map(s => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </label>
+            {(query || filter !== "all" || assetClass !== "all") && (
+              <button type="button" onClick={() => { setQuery(""); setFilter("all"); setAssetClass("all"); }}
+                style={{
+                  padding: "0.5rem 0.85rem", borderRadius: 999, border: "1px solid var(--border)",
+                  background: "transparent", color: "var(--text-muted)",
+                  fontFamily: FONT, fontSize: "0.75rem", cursor: "pointer", minHeight: 44,
+                }}>
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          <div style={{ marginBottom: "1rem" }}>
+            <Btn href="/build" variant="secondary" size="sm">Submit an asset →</Btn>
+          </div>
+
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+            {FILTERS.map(f => {
+              const active = filter === f.id;
+              return (
+                <button key={f.id} onClick={() => setFilter(f.id)}
+                  aria-pressed={active}
+                  style={{ position: "relative", padding: "0.5rem 1rem", borderRadius: 999,
+                           border: `1px solid ${active ? "var(--border-strong)" : "var(--border)"}`,
+                           background: active ? "rgba(16,185,129,0.12)" : "transparent",
+                           color: active ? ACCENT : "var(--text-secondary)",
+                           fontFamily: FONT, fontSize: "0.8rem", fontWeight: active ? 700 : 500,
+                           cursor: "pointer", letterSpacing: "-0.01em", minHeight: 44 }}>
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+            <button type="button" onClick={() => setAssetClass("all")}
+              aria-pressed={assetClass === "all"}
               style={{
                 padding: "0.35rem 0.75rem", borderRadius: 999,
-                border: `1px solid ${active ? ACCENT : "var(--border)"}`,
-                background: active ? "rgba(16,185,129,0.1)" : "transparent",
-                color: active ? ACCENT : "var(--text-muted)",
+                border: `1px solid ${assetClass === "all" ? ACCENT : "var(--border)"}`,
+                background: assetClass === "all" ? "rgba(16,185,129,0.1)" : "transparent",
+                color: assetClass === "all" ? ACCENT : "var(--text-muted)",
                 fontFamily: MONO, fontSize: "0.62rem", fontWeight: 700,
                 letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
               }}>
-              {cls}
+              All classes
             </button>
-          );
-        })}
-      </div>
+            {ASSET_CLASSES.map(cls => {
+              const active = assetClass === cls;
+              return (
+                <button key={cls} type="button" onClick={() => setAssetClass(cls)}
+                  aria-pressed={active}
+                  style={{
+                    padding: "0.35rem 0.75rem", borderRadius: 999,
+                    border: `1px solid ${active ? ACCENT : "var(--border)"}`,
+                    background: active ? "rgba(16,185,129,0.1)" : "transparent",
+                    color: active ? ACCENT : "var(--text-muted)",
+                    fontFamily: MONO, fontSize: "0.62rem", fontWeight: 700,
+                    letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+                  }}>
+                  {cls}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-      {assets.length === 0 ? (
+      {displayAssets.length === 0 ? (
         <div style={{
           padding: "2rem 1rem", textAlign: "center", borderRadius: 14,
           border: "1px dashed var(--border)", color: "var(--text-muted)",
           fontFamily: FONT, fontSize: "0.82rem",
         }}>
           No assets match your search.{" "}
-          <button type="button" onClick={() => { setQuery(""); setFilter("all"); setAssetClass("all"); }}
-            style={{ background: "none", border: "none", color: ACCENT, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-            Clear filters
-          </button>
+          {!compact && (
+            <button type="button" onClick={() => { setQuery(""); setFilter("all"); setAssetClass("all"); }}
+              style={{ background: "none", border: "none", color: ACCENT, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <>
           <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
                          letterSpacing: "0.08em", marginBottom: "0.75rem" }}>
-            {assets.length} ASSET{assets.length === 1 ? "" : "S"}
+            {displayAssets.length} ASSET{displayAssets.length === 1 ? "" : "S"}
+            {compact && assets.length > 3 ? ` · ${assets.length} total` : ""}
           </div>
           <motion.div layout={!reduce}
             style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
                      gap: "1.1rem" }}>
             <AnimatePresence mode="popLayout">
-              {assets.map(a => (
+              {displayAssets.map(a => (
                 <motion.div key={a.id} layout={!reduce}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -252,6 +261,11 @@ export function AssetsExplorer({
               ))}
             </AnimatePresence>
           </motion.div>
+          {compact && (
+            <div style={{ marginTop: "1rem" }}>
+              <Btn href="/#registry" variant="ghost" size="sm">View all registry assets →</Btn>
+            </div>
+          )}
         </>
       )}
     </section>
