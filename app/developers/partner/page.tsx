@@ -132,6 +132,8 @@ export default function PartnerDashboardPage() {
           Partner verification requests guide →
         </Link>
       </ContentCard>
+
+      <ContentCard title="First-party browser flows">
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
           Cielo verified-rate and Passport use signed browser sessions. The server evaluates{" "}
           <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>cielo-verified-guest-v1</code> internally — guests are never asked for an API key.
