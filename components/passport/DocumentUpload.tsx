@@ -63,7 +63,7 @@ export function DocumentUpload({ email, suiAddress, stampId, color, onUploaded }
   }
 
   return (
-    <div style={{ background:"var(--surface)", border:`1px dashed ${color}40`,
+    <div style={{ background:"var(--surface-inset)", border:`1px dashed ${color}55`,
                    borderRadius:10, padding:"1rem", marginBottom:"1rem" }}>
       <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.78rem",
                      fontWeight:600, color:"var(--text-primary)", marginBottom:"0.625rem" }}>

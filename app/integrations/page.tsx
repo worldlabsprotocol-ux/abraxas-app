@@ -108,8 +108,9 @@ export default function IntegrationsPage() {
           {INTEGRATION_SDK_SNIPPET}
         </pre>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href="/docs/ail" size="sm">Full AIL spec →</Btn>
-          <Btn href="/docs/architecture" variant="secondary" size="sm">Architecture</Btn>
+          <Btn href="/verify?mode=credential" size="sm">Live credential tester →</Btn>
+          <Btn href="/docs/ail" size="sm" variant="secondary">Full AIL spec →</Btn>
+          <Btn href="/docs/architecture" variant="tertiary" size="sm">Architecture</Btn>
         </div>
       </ContentCard>
 

@@ -7,6 +7,7 @@
   --bg-secondary:   #FFFFFF;
   --surface:        rgba(255, 255, 255, 0.92);
   --surface-raised: #FFFFFF;
+  --surface-inset:  rgba(21, 21, 26, 0.04);
   --surface-glass:  rgba(255, 255, 255, 0.72);
   --border:         rgba(21, 21, 26, 0.1);
   --border-strong:  rgba(16, 185, 129, 0.35);
@@ -37,6 +38,7 @@
   --bg-secondary:   #0A0F0D;
   --surface:        #0E1412;
   --surface-raised: #121A16;
+  --surface-inset:  rgba(255, 255, 255, 0.06);
   --surface-glass:  #0E1412;
   --border:         rgba(255, 255, 255, 0.09);
   --border-strong:  rgba(16, 185, 129, 0.42);
@@ -136,6 +138,14 @@ a:focus:not(:focus-visible) {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+details > summary {
+  color: var(--text-muted);
+}
+
+details > summary::-webkit-details-marker {
+  color: var(--text-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

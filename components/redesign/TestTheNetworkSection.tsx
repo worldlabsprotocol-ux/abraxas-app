@@ -72,7 +72,7 @@ export function TestTheNetworkSection() {
       }}>
         <div style={{
           padding: "1rem", borderRadius: 14,
-          background: "var(--surface)", border: "1px solid var(--border)",
+          background: "var(--surface-inset)", border: "1px solid var(--border)",
         }}>
           <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)", marginBottom: "0.35rem" }}>
             LIVE REGISTRY LOOKUP
@@ -94,7 +94,7 @@ export function TestTheNetworkSection() {
 
         <div style={{
           padding: "1rem", borderRadius: 14,
-          background: "var(--surface)", border: "1px solid var(--border)",
+          background: "var(--surface-inset)", border: "1px solid var(--border)",
         }}>
           <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)", marginBottom: "0.35rem" }}>
             ISSUER ATTESTATIONS
@@ -115,23 +115,32 @@ export function TestTheNetworkSection() {
 
         <div style={{
           padding: "1rem", borderRadius: 14,
-          background: "var(--surface)", border: "1px solid var(--border)",
+          background: "var(--surface-inset)", border: "1px solid var(--border)",
         }}>
           <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)", marginBottom: "0.35rem" }}>
             API PATHS (PARTNERS)
           </div>
           {[
             { s: "live", path: "GET /api/verify/registry?q=" },
-            { s: "live", path: "POST /api/credentials/verify" },
+            { s: "live", path: "POST /api/credentials/verify", href: "/verify?mode=credential" },
             { s: "pilot", path: "POST /api/v1/verification-requests" },
             { s: "pilot", path: "GET /api/v1/decisions/{id}/status" },
           ].map(row => (
-            <div key={row.path} style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: 6 }}>
+            <div key={row.path} style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: 6, flexWrap: "wrap" }}>
               <CapabilityStatusBadge status={row.s as "live" | "pilot"} size="xs" />
-              <code style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)" }}>{row.path}</code>
+              {"href" in row && row.href ? (
+                <Link href={row.href} style={{ fontFamily: MONO, fontSize: "0.58rem", color: ACCENT, textDecoration: "none" }}>
+                  {row.path} →
+                </Link>
+              ) : (
+                <code style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)" }}>{row.path}</code>
+              )}
             </div>
           ))}
-          <Btn href="/integrations" variant="ghost" size="sm">Integration docs →</Btn>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.35rem" }}>
+            <Btn href="/verify?mode=credential" variant="secondary" size="sm">Try credential verify →</Btn>
+            <Btn href="/integrations" variant="ghost" size="sm">Integration docs →</Btn>
+          </div>
         </div>
       </div>
 

@@ -64,7 +64,7 @@ export function PublicVerifierPanel() {
             minHeight: 44,
             padding: "0.85rem 1rem", borderRadius: 12,
             border: "1px solid var(--border-strong)",
-            background: "var(--surface-raised)",
+            background: "var(--surface-inset)",
             color: "var(--text-primary)",
             fontFamily: MONO, fontSize: "0.78rem",
           }}

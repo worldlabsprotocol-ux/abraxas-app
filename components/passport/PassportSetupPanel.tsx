@@ -152,7 +152,7 @@ export function PassportSetupPanel({
               <li key={item.label} style={{
                 display: "flex", gap: "0.65rem", alignItems: "flex-start",
                 padding: "0.55rem 0.65rem", borderRadius: 10,
-                background: item.done ? "rgba(16,185,129,0.08)" : "var(--surface)",
+                background: item.done ? "rgba(16,185,129,0.08)" : "var(--surface-inset)",
                 border: `1px solid ${item.done ? "rgba(16,185,129,0.25)" : "var(--border)"}`,
               }}>
                 <span style={{
@@ -161,7 +161,7 @@ export function PassportSetupPanel({
                   background: item.done ? ACCENT : "transparent",
                   border: `1.5px solid ${item.done ? ACCENT : "var(--border)"}`,
                   fontFamily: MONO, fontSize: "0.62rem", fontWeight: 800,
-                  color: item.done ? "#000" : "var(--text-muted)",
+                  color: item.done ? "#04130C" : "var(--text-muted)",
                 }}>
                   {item.done ? "✓" : "○"}
                 </span>
@@ -191,7 +191,7 @@ export function PassportSetupPanel({
             <div>
               <div style={{
                 padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "0.85rem",
-                background: "var(--surface)", border: "1px solid var(--border)",
+                background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
               }}>
                 <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
                   Identity verification
@@ -287,7 +287,7 @@ export function PassportSetupPanel({
           {walletDone && setup.identityComplete && !setup.walletBound && (
             <div style={{
               padding: "0.85rem 1rem", borderRadius: 12,
-              background: "var(--surface)", border: "1px solid var(--border)",
+              background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
             }}>
               <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
                 Bind this wallet to your Passport
@@ -374,7 +374,7 @@ function PassportVerificationFallback({
       </summary>
       <div style={{
         marginTop: "0.65rem", padding: "0.75rem", borderRadius: 10,
-        background: "var(--surface)", border: "1px solid var(--border)",
+        background: "var(--surface-inset)", border: "1px solid var(--border)",
         display: "flex", flexDirection: "column", gap: "0.5rem",
       }}>
         <Btn variant="secondary" size="sm" loading={starting} onClick={onRetry}>Try again</Btn>
@@ -396,7 +396,7 @@ function PassportVerificationFallback({
 function PassportDataTransparency({ visible, via }: { visible: boolean; via: string }) {
   if (!visible) return null;
   return (
-    <div style={{ marginTop: "1rem", padding: "0.65rem 0.75rem", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)" }}>
+    <div style={{ marginTop: "1rem", padding: "0.65rem 0.75rem", borderRadius: 10, background: "var(--surface-inset)", border: "1px solid var(--border)" }}>
       <div style={{ fontFamily: MONO, fontSize: "0.48rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
         What Abraxas stores
       </div>

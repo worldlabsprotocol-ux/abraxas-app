@@ -99,7 +99,7 @@ export function VerifierResultCard({
             ...(compact ? [] : [["Class", result.asset_class ?? "—"]]),
             ["Last sync", result.last_sync_timestamp ? new Date(result.last_sync_timestamp).toLocaleDateString() : "—"],
           ].map(([k, v]) => (
-            <div key={k} style={{ padding: "0.55rem", borderRadius: 8, background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div key={k} style={{ padding: "0.55rem", borderRadius: 8, background: "var(--surface-inset)", border: "1px solid var(--border)" }}>
               <div style={{ fontFamily: MONO, fontSize: "0.48rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 2 }}>{k}</div>
               <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-primary)", wordBreak: "break-word" }}>{v}</div>
             </div>

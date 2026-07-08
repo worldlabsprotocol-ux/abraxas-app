@@ -44,7 +44,7 @@ export function VerificationSuccessPanel({
       {credential && (
         <div style={{
           padding: "0.55rem 0.65rem", borderRadius: 8, marginBottom: "0.85rem",
-          background: "var(--surface)", border: "1px solid var(--border)",
+          background: "var(--surface-inset)", border: "1px solid var(--border)",
           fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.55,
         }}>
           <div><strong style={{ color: "var(--text-primary)" }}>Issuer:</strong> Veriff · Abraxas-approved</div>
