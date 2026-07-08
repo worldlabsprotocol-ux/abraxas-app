@@ -38,7 +38,7 @@ export function VisualProofSection() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
           <CapabilityStatusBadge status="live" size="xs" />
           <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-            Public registry lookup · L1–L4 legend below registry
+            Public registry lookup · L1 to L4 legend below registry
           </span>
         </div>
       </div>

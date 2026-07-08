@@ -70,7 +70,7 @@ export function TestTheNetworkSection() {
         fontFamily: FONT, fontSize: "var(--fs-h2)", fontWeight: 800,
         letterSpacing: "-0.02em", color: "var(--text-primary)", margin: "0 0 0.45rem",
       }}>
-        Prove it in one click — no sign-in
+        Prove it in one click. No sign in required.
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",

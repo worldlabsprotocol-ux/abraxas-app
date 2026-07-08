@@ -17,7 +17,7 @@ const STEPS = [
   {
     n: 1,
     title: consumerCopy.verificationFlow.step1Title,
-    body: "Sign in with Google — your Abraxas wallet is ready in one click.",
+    body: "Sign in with Google. Your Abraxas wallet is ready in one click.",
     status: "live" as const,
   },
   {
@@ -29,7 +29,7 @@ const STEPS = [
   {
     n: 3,
     title: consumerCopy.verificationFlow.step4Title,
-    body: "Share your credential or test /verify — partners check once, you never re-upload.",
+    body: "Share your credential or test /verify. Partners check once, you never re-upload.",
     status: "live" as const,
   },
 ];
@@ -67,7 +67,7 @@ export function HomeOnboardingStrip() {
               maxWidth: 520,
             }}
           >
-            Onboard in minutes — not another tab maze
+            Onboard in minutes, not another tab maze
           </h2>
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 520, margin: "0.45rem 0 0" }}>
             {consumerCopy.verificationFlow.intro}
@@ -182,7 +182,7 @@ export function HomeOnboardingStrip() {
               Step 3 · Test proof
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
-              Run a live credential or policy check — same API partners integrate.
+              Run a live credential or policy check. Same API partners integrate.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               <Btn href="/verify?mode=profile" size="sm">Set up profile →</Btn>

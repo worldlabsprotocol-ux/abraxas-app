@@ -23,7 +23,7 @@ const DOORS = [
     n: "02",
     title: "Check what's real",
     subtitle: "Public proof checker",
-    body: "Paste any asset ID or credential hash. See if it's valid, expired, or revoked — with assurance levels L1–L4.",
+    body: "Paste any asset ID or credential hash. See if it is valid, expired, or revoked with assurance levels L1 to L4.",
     href: "/verify",
     cta: "Run public checker →",
     accent: "#3B82F6",

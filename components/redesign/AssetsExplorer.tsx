@@ -25,7 +25,7 @@ const FILTERS: { id: Filter; label: string }[] = [
 
 const SORTS: { id: SortKey; label: string }[] = [
   { id: "verified-first", label: "Verified first" },
-  { id: "name-asc",       label: "Name A–Z" },
+  { id: "name-asc",       label: "Name A to Z" },
   { id: "yield-desc",     label: "Yield (high → low)" },
 ];
 

@@ -33,7 +33,7 @@ const PATHS = [
     color: AMBER,
     title: "Just look around",
     desc: "See what's already verified before deciding anything.",
-    steps: ["Browse the marketplace", "No sign-in required", "Come back anytime"],
+    steps: ["Browse the marketplace", "No sign in required", "Come back anytime"],
     href: "#assets",
   },
 ];

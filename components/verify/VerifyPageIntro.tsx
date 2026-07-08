@@ -24,18 +24,18 @@ export function VerifyPageIntro() {
         fontSize: "0.9rem", color: "var(--text-secondary)",
         lineHeight: 1.7, maxWidth: 720, margin: "0 0 0.5rem",
       }}>
-        Browse tokenized assets (Cielo, Smyrna, and more), create your public profile, or paste a credential JWT —
-        sample checks run in under 15 seconds without signing in.
+        Browse tokenized assets (Cielo, Smyrna, and more), create your public profile, or paste a credential JWT.
+        Sample checks run in under 15 seconds without signing in.
       </p>
       <p style={{
         fontFamily: "'Inter',system-ui,sans-serif",
         fontSize: "0.78rem", color: "var(--text-muted)",
         lineHeight: 1.65, maxWidth: 720, margin: "0 0 1.25rem",
       }}>
-        Four modes: <strong style={{ color: "var(--text-secondary)" }}>Registry</strong> (tokenized assets) ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Your profile</strong> (username &amp; avatar) ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Credential JWT</strong> (partner API) ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Policy gate</strong> (demo)
+        Four modes: <strong style={{ color: "var(--text-secondary)" }}>Registry</strong> ·{" "}
+        <strong style={{ color: "var(--text-secondary)" }}>Profile</strong> ·{" "}
+        <strong style={{ color: "var(--text-secondary)" }}>Credential</strong> ·{" "}
+        <strong style={{ color: "var(--text-secondary)" }}>Policy</strong>
       </p>
     </div>
   );

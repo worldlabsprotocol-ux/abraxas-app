@@ -34,10 +34,10 @@ function VerifyTabs({ tab, setTab }: { tab: VerifyTab; setTab: (t: VerifyTab) =>
   const { suiAddress } = useSuiAuth();
 
   const tabs: Array<[VerifyTab, string]> = [
-    ["registry", "Registry lookup"],
-    ["profile", "Your profile"],
-    ["credential", "Credential JWT"],
-    ["policy", "Policy gate (demo)"],
+    ["registry", "Registry"],
+    ["profile", "Profile"],
+    ["credential", "Credential"],
+    ["policy", "Policy"],
   ];
 
   return (

@@ -114,7 +114,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
 ];
 
 export const VERIFY_META: Record<VerifyState, { label: string; color: string }> = {
-  verified:  { label: "AAS-1 Verified",      color: "#10B981" },
+  verified:  { label: "AAS 1 Verified",      color: "#10B981" },
   open:      { label: "Open · Ownership clear", color: "#3B82F6" },
   owned:     { label: "Owned · Not open",    color: "#F59E0B" },
   reference: { label: "Reference · Completed", color: "#8B5CF6" },

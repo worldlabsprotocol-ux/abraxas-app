@@ -42,7 +42,7 @@ const LINKS = {
     { label: "Legal overview", href: "/legal" },
     { label: "Privacy Policy", href: "/legal/privacy" },
     { label: "Terms of Service", href: "/legal/terms" },
-    { label: "Non-custodial settlement", href: "/legal#settlement" },
+    { label: "Settlement disclosure", href: "/legal#settlement" },
   ],
   social: [
     { label: "Discord", href: "https://discord.gg/sHK8EWbnXH" },
@@ -115,7 +115,7 @@ export function RedesignFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. Real assets with proof you can reuse — not another KYC form.
+              Verify once. Transact everywhere. Real assets with proof you can reuse, not another KYC form.
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
               Live at{" "}

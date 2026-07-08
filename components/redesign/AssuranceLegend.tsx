@@ -20,7 +20,7 @@ export function AssuranceLegend({ compact = false }: { compact?: boolean }) {
         letterSpacing: "0.08em", textTransform: "uppercase",
         color: "var(--text-muted)", marginBottom: "0.5rem",
       }}>
-        Assurance levels (L1–L4)
+        Assurance levels (L1 to L4)
       </div>
       <div style={{ display: "grid", gap: compact ? "0.35rem" : "0.45rem" }}>
         {ASSURANCE_LEVELS_PARTNER.map(l => (

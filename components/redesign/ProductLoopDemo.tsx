@@ -209,7 +209,7 @@ export function ProductLoopDemo() {
           </div>
 
           <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
-            Auto-advances every 5–7s · full loop ~{Math.round(PRODUCT_LOOP_STEPS.reduce((a, s) => a + s.durationMs, 0) / 1000)}s
+            Auto-advances every 5 to 7s · full loop ~{Math.round(PRODUCT_LOOP_STEPS.reduce((a, s) => a + s.durationMs, 0) / 1000)}s
           </p>
         </div>
       </div>

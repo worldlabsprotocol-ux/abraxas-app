@@ -94,7 +94,7 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
       </div>
       {(error || !isConfigured) && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: !isConfigured ? "var(--text-muted)" : "#E0524F", margin: "0.75rem 0 0", lineHeight: 1.55 }}>
-          {error ?? "Sign-in is being configured. Check back soon or contact support."}
+          {error ?? "Sign in is being configured. Check back soon or contact support."}
         </p>
       )}
     </div>

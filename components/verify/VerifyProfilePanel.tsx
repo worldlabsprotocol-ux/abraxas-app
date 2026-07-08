@@ -2,11 +2,12 @@
 // FILE: components/verify/VerifyProfilePanel.tsx
 // Profile creation on /verify — username, display name, avatar color.
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { Btn } from "@/components/redesign/ui";
-import Link from "next/link";
+import { notifyProfileUpdated } from "@/lib/hooks/useUserProfile";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -91,6 +92,7 @@ export function VerifyProfilePanel() {
       if (!res.ok) throw new Error(data.error ?? "Save failed");
       setProfile(data.profile ?? null);
       setSaved(true);
+      notifyProfileUpdated();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -105,7 +107,7 @@ export function VerifyProfilePanel() {
           Your profile
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 1rem", maxWidth: 480 }}>
-          Sign in to create a public profile — username, display name, and avatar. Connects your verify identity to the rest of the platform.
+          Sign in to create a public profile: username, display name, and avatar. Connects your verify identity to the rest of the platform.
         </p>
         <ZkLoginSignIn compact={false} />
       </div>
