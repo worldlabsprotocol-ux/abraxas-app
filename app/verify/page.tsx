@@ -7,7 +7,7 @@ export default function VerifyPage() {
   return (
     <RedesignShell>
       <VerifyPageIntro />
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
         <Suspense fallback={
           <p style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>
             Loading verifier…

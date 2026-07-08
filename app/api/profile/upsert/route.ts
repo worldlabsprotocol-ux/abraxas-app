@@ -1,42 +1,56 @@
 // FILE: app/api/profile/upsert/route.ts
-// Create or update a user profile linked to a wallet address.
-// Called automatically when wallet connects for the first time.
-import { NextRequest, NextResponse } from "next/server";
-import { createClient }             from "@supabase/supabase-js";
+// Create or update a user profile linked to a Sui address (zkLogin primary identity).
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 interface ProfilePayload {
-  wallet_address: string;
-  username?:      string;
-  display_name?:  string;
-  email?:         string;
-  bio?:           string;
+  wallet_address?: string;
+  sui_address?: string;
+  username?: string;
+  display_name?: string;
+  email?: string;
+  bio?: string;
+  avatar_color?: string;
+}
+
+function resolveAddress(body: ProfilePayload, searchParam: string | null): string | null {
+  return body.sui_address ?? body.wallet_address ?? searchParam ?? null;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as ProfilePayload;
-
-    if (!body.wallet_address) {
-      return NextResponse.json({ error: "wallet_address required" }, { status: 400 });
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json({ error: "Profile storage not configured" }, { status: 503 });
     }
 
-    // Upsert — create on first connect, update on subsequent edits
+    const body = await req.json() as ProfilePayload;
+    const address = resolveAddress(body, null);
+
+    if (!address) {
+      return NextResponse.json({ error: "sui_address or wallet_address required" }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from("user_profiles")
       .upsert(
         {
-          wallet_address: body.wallet_address,
-          ...(body.username     && { username:     body.username }),
+          wallet_address: address,
+          ...(body.username && { username: body.username }),
           ...(body.display_name && { display_name: body.display_name }),
-          ...(body.email        && { email:         body.email }),
-          ...(body.bio          && { bio:           body.bio }),
+          ...(body.email && { email: body.email }),
+          ...(body.bio && { bio: body.bio }),
+          ...(body.avatar_color && { avatar_color: body.avatar_color }),
         },
-        { onConflict: "wallet_address" }
+        { onConflict: "wallet_address" },
       )
       .select()
       .single();
@@ -50,17 +64,26 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const wallet = req.nextUrl.searchParams.get("wallet");
-  if (!wallet) {
-    return NextResponse.json({ error: "wallet param required" }, { status: 400 });
+  const supabase = getSupabase();
+  if (!supabase) {
+    return NextResponse.json({ profile: null });
   }
+
+  const address =
+    req.nextUrl.searchParams.get("sui") ??
+    req.nextUrl.searchParams.get("wallet");
+
+  if (!address) {
+    return NextResponse.json({ error: "sui or wallet param required" }, { status: 400 });
+  }
+
   const { data, error } = await supabase
     .from("user_profiles")
     .select("*")
-    .eq("wallet_address", wallet)
-    .single();
+    .eq("wallet_address", address)
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") { // PGRST116 = no rows
+  if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   return NextResponse.json({ profile: data ?? null });

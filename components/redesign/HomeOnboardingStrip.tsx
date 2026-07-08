@@ -185,7 +185,7 @@ export function HomeOnboardingStrip() {
               Run a live credential or policy check — same API partners integrate.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              <Btn href="/verify" size="sm">Open /verify →</Btn>
+              <Btn href="/verify?mode=profile" size="sm">Set up profile →</Btn>
               <Btn href="#test-network" variant="secondary" size="sm">Quick tests</Btn>
             </div>
           </div>

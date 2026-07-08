@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignFooter.tsx
-// Full protocol footer for the dark premium redesign.
+// Protocol footer — curated columns, no link sprawl.
 
 import Link from "next/link";
 import { SITE_URL } from "@/lib/siteUrl";
@@ -16,9 +16,9 @@ const LINKS = {
     { label: "Verify", href: "/verify" },
     { label: "My account", href: "/account" },
     { label: "Submit your asset", href: "/build" },
-    { label: "Browse assets", href: "/#registry" },
+    { label: "Browse registry", href: "/#registry" },
   ],
-  product: [
+  apps: [
     { label: "Cielo pilot", href: "/apps/cielo-sunrise" },
     { label: "Music audit", href: "/apps/music" },
     { label: "Wyoming LLC", href: "/apps/wyoming" },
@@ -26,24 +26,17 @@ const LINKS = {
   ],
   learn: [
     { label: "Why verification", href: "/docs/why-verification" },
-    { label: "Credential portability", href: "/docs/credential-portability" },
-    { label: "Supply network vision", href: "/solutions/supply-network" },
-    { label: "Chain architecture", href: "/docs/chain" },
-    { label: "Relying party program", href: "/integrations/relying-parties" },
-    { label: "Team & execution", href: "/about/team" },
-    { label: "Bug bounty", href: "/security/bounty" },
-    { label: "Pitch deck", href: "/investors/pitch" },
-    { label: "Integrations", href: "/integrations" },
-    { label: "Litepaper", href: "/docs/litepaper" },
-    { label: "Live metrics", href: "/metrics" },
     { label: "Cielo case study", href: "/case-studies/cielo" },
-    { label: "Documentation", href: "/docs" },
-    { label: "Security", href: "/security" },
-    { label: "Non-custodial disclosure", href: "/legal#settlement" },
-    { label: "Roadmap", href: "/roadmap" },
-    { label: "Tokenomics", href: "/tokenomics" },
     { label: "FAQ", href: "/faq" },
+    { label: "Roadmap", href: "/roadmap" },
     { label: "About", href: "/about" },
+  ],
+  developers: [
+    { label: "Documentation", href: "/docs" },
+    { label: "Integrations", href: "/integrations" },
+    { label: "Relying parties", href: "/integrations/relying-parties" },
+    { label: "Live metrics", href: "/metrics" },
+    { label: "Security", href: "/security" },
   ],
   legal: [
     { label: "Legal overview", href: "/legal" },
@@ -106,11 +99,11 @@ export function RedesignFooter() {
       }}>
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
           gap: "1.5rem",
           marginBottom: "2rem",
         }}>
-          <div>
+          <div style={{ gridColumn: "span 1", minWidth: 180 }}>
             <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900,
                            color: ACCENT, marginBottom: "0.5rem" }}>
               ABRAXAS
@@ -132,8 +125,9 @@ export function RedesignFooter() {
             </p>
           </div>
           <Column title="Protocol" items={LINKS.protocol} />
-          <Column title="Apps" items={LINKS.product} />
+          <Column title="Apps" items={LINKS.apps} />
           <Column title="Learn" items={LINKS.learn} />
+          <Column title="Developers" items={LINKS.developers} />
           <Column title="Legal" items={LINKS.legal} />
           <Column title="Community" items={LINKS.social} />
         </div>

@@ -271,7 +271,7 @@ function PassportPageInner() {
     walletBindingL3,
   });
 
-  const setupComplete = setup.nextAction === "ready";
+  const setupComplete = setup.profileComplete;
 
   const earned = Object.values(passportState).filter(s => s === "earned").length;
   const activeStamp = active === "wallet" ? null : STAMPS.find(s => s.id === active) ?? null;

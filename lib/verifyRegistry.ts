@@ -7,6 +7,7 @@ import { getTrustStatus } from "@/lib/trust/getTrustStatus";
 import { verifyCredentialJwt } from "@/lib/credentials/verifyJwt";
 import { CIELO_ASSURANCE_CLAIMS, type AssuranceBreakdown } from "@/lib/assuranceTaxonomy";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
+import { resolveRegistryAsset, type RegistryAssetDef } from "@/lib/data/registryAssets";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -49,7 +50,27 @@ function isLikelyDid(input: string): boolean {
 }
 
 function isLikelyAssetId(input: string): boolean {
-  return /^ABX-/i.test(input.trim()) || input.toLowerCase().includes("cielo");
+  return /^ABX-/i.test(input.trim()) || resolveRegistryAsset(input) !== null;
+}
+
+function assetResponse(asset: RegistryAssetDef, query: string): VerifierResponse {
+  return {
+    state: "RESOLVED_VALID",
+    query,
+    resolved_type: "asset",
+    did: `did:sui:${asset.slug}-${asset.abxId.toLowerCase()}`,
+    entity_label: asset.name,
+    asset_class: asset.assetClass,
+    verification_status: "RESOLVED_VALID",
+    current_pipeline_stage: asset.pipelineStage,
+    issuance_timestamp: "2025-11-01T00:00:00Z",
+    last_sync_timestamp: new Date().toISOString(),
+    assurance_level: asset.assuranceLevel,
+    assurance_taxonomy: asset.assuranceTaxonomy,
+    anchor_block: null,
+    metadata_uri: asset.metadataUri,
+    notice: asset.notice,
+  };
 }
 
 function buildAssuranceFromTrust(trust: Awaited<ReturnType<typeof getTrustStatus>>): AssuranceBreakdown {
@@ -122,9 +143,17 @@ export async function resolveVerifierQuery(rawQuery: string): Promise<VerifierRe
     };
   }
 
-  // Known flagship asset shortcuts
-  if (isLikelyAssetId(query) || query === FLAGSHIP_PROPERTY.id) {
+  // Known registry asset shortcuts (exact match — not all ABX-* → Cielo)
+  const registryAsset = resolveRegistryAsset(query);
+  if (registryAsset) {
+    return assetResponse(registryAsset, query);
+  }
+  if (query === FLAGSHIP_PROPERTY.id || query.toLowerCase().includes("cielo")) {
     return cieloAssetResponse(query);
+  }
+
+  if (isLikelyAssetId(query)) {
+    return nullState(query, "Asset ID format recognized but not found in the Abraxas registry.");
   }
 
   // JWT credential

@@ -62,7 +62,7 @@ export function PassportSetupPanel({
 }: Props) {
   const manualMode = idvProvider === "manual";
   const assuranceLabel = manualMode ? "L2" : "L3";
-  const completedCount = [setup.accountComplete, setup.identityComplete, setup.walletBound].filter(Boolean).length;
+  const completedCount = [setup.accountComplete, setup.walletBound, setup.identityComplete].filter(Boolean).length;
 
   async function bindWallet() {
     if (!suiAddress) return;
@@ -126,15 +126,17 @@ export function PassportSetupPanel({
             letterSpacing: "-0.02em", color: "var(--text-primary)", margin: "0 0 0.45rem",
           }}>
             {setup.nextAction === "ready"
-              ? "Your Abraxas Passport is ready"
+              ? setup.identityComplete
+                ? "Your Abraxas Passport is ready"
+                : "Your profile is ready"
               : "Complete your profile once"}
           </h2>
           <p style={{
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.6, margin: "0 0 0.75rem", maxWidth: 520,
           }}>
-            Your reusable eligibility profile. Verify identity once, bind your wallet, and unlock
-            verified actions across Abraxas.
+            Your reusable eligibility profile. Bind your wallet to finish setup —
+            ID verification is optional until a partner policy requires it.
           </p>
           <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>
             Setup progress: {completedCount} of 3 complete · {setup.stepLabel}
@@ -146,8 +148,8 @@ export function PassportSetupPanel({
           <ol style={{ listStyle: "none", margin: "0 0 1.25rem", padding: 0, display: "grid", gap: "0.45rem" }}>
             {[
               { done: setup.accountComplete, label: "Account created", sub: walletDone && suiAddress ? truncateSuiAddress(suiAddress, 8, 6) : "Sign in with Google" },
-              { done: setup.identityComplete, label: "Verify identity", sub: setup.identityComplete ? `Credential active · ${assuranceLabel}` : "Required for payments & submissions" },
               { done: setup.walletBound, label: "Bind wallet", sub: setup.walletBound ? "Signed control proof on file" : "One signature — no funds move" },
+              { done: setup.identityComplete, label: "Verify identity", sub: setup.identityComplete ? `Credential active · ${assuranceLabel}` : "Optional · for payments & enhanced trust" },
             ].map(item => (
               <li key={item.label} style={{
                 display: "flex", gap: "0.65rem", alignItems: "flex-start",
@@ -187,22 +189,49 @@ export function PassportSetupPanel({
             </div>
           )}
 
-          {walletDone && !setup.identityComplete && (
+          {walletDone && !setup.walletBound && (
+            <div style={{
+              padding: "0.85rem 1rem", borderRadius: 12,
+              background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                Bind this wallet to your Passport
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
+                Signing proves you control this wallet. It does not authorize a transaction or move funds.
+                This completes your core profile — no ID upload required.
+              </p>
+              <Btn size="lg" fullWidth onClick={() => void bindWallet()}>
+                Sign to bind wallet →
+              </Btn>
+            </div>
+          )}
+
+          {walletDone && setup.walletBound && !setup.identityComplete && (
             <div>
               <div style={{
                 padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "0.85rem",
                 background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
               }}>
-                <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-                  Identity verification
+                <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.35rem" }}>
+                  <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    Identity verification
+                  </div>
+                  <span style={{
+                    fontFamily: MONO, fontSize: "0.48rem", fontWeight: 700,
+                    padding: "0.2rem 0.45rem", borderRadius: 999,
+                    background: "rgba(16,185,129,0.12)", color: ACCENT,
+                    border: "1px solid rgba(16,185,129,0.35)",
+                  }}>
+                    OPTIONAL
+                  </span>
                 </div>
                 <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-                  Required for investing, payments, asset submissions, and partner access.
+                  Your profile is active. Add an ID check when you need enhanced trust for payments, submissions, or partner policies.
                   {manualMode ? (
-                    <> Upload a government ID for pilot manual review — usually within one business day.</>
+                    <> Upload a government ID for pilot manual review.</>
                   ) : (
-                    <> Usually takes 2–4 minutes. Your ID documents are processed by Veriff —
-                    Abraxas receives verification status, not your documents.</>
+                    <> Usually takes 2–4 minutes via licensed provider — Abraxas stores outcome only.</>
                   )}
                 </p>
 
@@ -217,8 +246,8 @@ export function PassportSetupPanel({
                     </div>
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
                       {manualMode
-                        ? "Our team is reviewing your uploaded ID. This page refreshes automatically."
-                        : "Veriff is reviewing your submission. This page refreshes automatically."}
+                        ? "Our team is reviewing your uploaded ID. You can continue using your profile while you wait."
+                        : "Veriff is reviewing your submission. Your profile stays active."}
                     </p>
                     <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>
                       Check status now
@@ -234,7 +263,7 @@ export function PassportSetupPanel({
                       Verification not approved
                     </div>
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem" }}>
-                      Try again with a different document, or request manual review below.
+                      Try again with a different document, or contact support.
                     </p>
                   </div>
                 ) : null}
@@ -249,12 +278,12 @@ export function PassportSetupPanel({
                       onUploaded={onRefresh}
                     />
                     <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
-                      Pilot · Manual review · Assurance L2. Automated Veriff is temporarily unavailable.
+                      Pilot · Manual review · Assurance L2. Not required to use your profile.
                     </p>
                   </>
                 ) : !veriffConfigured ? (
                   <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#F59E0B", margin: "0 0 0.65rem" }}>
-                    Veriff is not configured in this environment. Use manual review for pilot access.
+                    Automated ID check is not configured. Use manual upload for pilot access.
                   </p>
                 ) : (
                   <Btn
@@ -264,7 +293,7 @@ export function PassportSetupPanel({
                     onClick={onStartIdCheck}
                     disabled={identityStatus === "pending"}
                   >
-                    Verify with Veriff →
+                    Add optional ID check →
                   </Btn>
                 )}
 
@@ -284,24 +313,26 @@ export function PassportSetupPanel({
             </div>
           )}
 
-          {walletDone && setup.identityComplete && !setup.walletBound && (
+          {setup.nextAction === "ready" && setup.profileComplete && !setup.identityComplete && (
             <div style={{
-              padding: "0.85rem 1rem", borderRadius: 12,
-              background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
+              padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "0.85rem",
+              background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)",
             }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-                Bind this wallet to your Passport
+              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: ACCENT, marginBottom: "0.5rem" }}>
+                ✓ Profile ready — browse, verify, and connect
               </div>
-              <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
-                Signing proves you control this wallet. It does not authorize a transaction or move funds.
-              </p>
-              <Btn size="lg" fullWidth onClick={() => void bindWallet()}>
-                Sign to bind wallet →
-              </Btn>
+              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
+                Wallet bound · Core account active · Add optional ID check above when a deal requires enhanced trust.
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+                <Btn href="/verify?mode=profile" size="sm">Set up public profile →</Btn>
+                <Btn href="/verify" variant="secondary" size="sm">Test verification</Btn>
+                <Btn href="/#registry" variant="ghost" size="sm">Browse registry</Btn>
+              </div>
             </div>
           )}
 
-          {setup.nextAction === "ready" && credential && (
+          {setup.nextAction === "ready" && setup.identityComplete && credential && (
             <div style={{
               padding: "0.85rem 1rem", borderRadius: 12,
               background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)",

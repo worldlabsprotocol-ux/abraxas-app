@@ -1,5 +1,6 @@
 // FILE: lib/idv/identityVerificationStates.ts
 // Identity verification + credential status state machine.
+// Profile complete = account + wallet bind. Identity is optional until policy requires it.
 
 export type IdentityVerificationStatus =
   | "not_started"
@@ -26,6 +27,7 @@ export interface PassportSetupState {
   stepLabel: string;
   accountComplete: boolean;
   identityComplete: boolean;
+  profileComplete: boolean;
   walletBound: boolean;
   identityStatus: IdentityVerificationStatus;
   credentialStatus: CredentialStatus;
@@ -78,11 +80,12 @@ export function computePassportSetupState(input: {
   const identityComplete =
     input.identityStatus === "approved" && input.credentialStatus === "active";
   const walletBound = input.walletBindingL3;
+  const profileComplete = accountComplete && walletBound;
 
+  // Step 1: account · Step 2: bind wallet · Step 3: optional identity
   let step: SetupStep = 1;
-  if (accountComplete && !identityComplete) step = 2;
-  else if (accountComplete && identityComplete && !walletBound) step = 3;
-  else if (accountComplete && identityComplete && walletBound) step = 3;
+  if (accountComplete && !walletBound) step = 2;
+  else if (accountComplete && walletBound) step = 3;
 
   let nextAction: PassportSetupState["nextAction"] = "sign_in";
   let nextActionLabel = "Sign in with Google";
@@ -90,37 +93,43 @@ export function computePassportSetupState(input: {
   if (!accountComplete) {
     nextAction = "sign_in";
     nextActionLabel = "Sign in with Google";
-  } else if (input.identityStatus === "declined" || input.identityStatus === "expired" || input.identityStatus === "error") {
+  } else if (!walletBound) {
+    nextAction = "bind_wallet";
+    nextActionLabel = "Sign to bind wallet";
+  } else if (
+    input.identityStatus === "declined" ||
+    input.identityStatus === "expired" ||
+    input.identityStatus === "error"
+  ) {
     nextAction = "retry_verify";
-    nextActionLabel = "Try identity verification again";
-  } else if (input.identityStatus === "requires_resubmission") {
-    nextAction = "retry_verify";
-    nextActionLabel = "Use a different document";
+    nextActionLabel = "Retry optional ID check";
   } else if (
     input.identityStatus === "in_progress" ||
     input.identityStatus === "submitted" ||
     input.identityStatus === "session_created"
   ) {
     nextAction = "wait_review";
-    nextActionLabel = "Verification in progress";
-  } else if (!identityComplete) {
-    nextAction = "verify_identity";
-    nextActionLabel = "Verify with Veriff";
-  } else if (!walletBound) {
-    nextAction = "bind_wallet";
-    nextActionLabel = "Sign to bind wallet";
-  } else {
+    nextActionLabel = "ID review in progress (optional)";
+  } else if (profileComplete && !identityComplete) {
+    nextAction = "ready";
+    nextActionLabel = "Profile ready — add ID anytime";
+  } else if (profileComplete) {
     nextAction = "ready";
     nextActionLabel = "Passport ready";
   }
 
-  const completedSteps = [accountComplete, identityComplete, walletBound].filter(Boolean).length;
+  const completedSteps = [
+    accountComplete,
+    walletBound,
+    identityComplete,
+  ].filter(Boolean).length;
 
   return {
     step,
-    stepLabel: `Step ${step} of 3`,
+    stepLabel: `Step ${step} of 3 · ${completedSteps}/3 complete`,
     accountComplete,
     identityComplete,
+    profileComplete,
     walletBound,
     identityStatus: input.identityStatus,
     credentialStatus: input.credentialStatus,

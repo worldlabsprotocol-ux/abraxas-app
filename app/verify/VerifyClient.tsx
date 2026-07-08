@@ -6,13 +6,15 @@ import { useSearchParams } from "next/navigation";
 import { PublicVerifierPanel } from "@/components/verify/PublicVerifierPanel";
 import { RelyingPartyVerifyPanel } from "@/components/verify/RelyingPartyVerifyPanel";
 import { PolicyCheckPanel } from "@/components/verify/PolicyCheckPanel";
+import { VerifyProfilePanel } from "@/components/verify/VerifyProfilePanel";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 
-export type VerifyTab = "registry" | "credential" | "policy";
+export type VerifyTab = "registry" | "credential" | "policy" | "profile";
 
 function tabFromParams(mode: string | null): VerifyTab {
   if (mode === "credential") return "credential";
   if (mode === "policy") return "policy";
+  if (mode === "profile") return "profile";
   return "registry";
 }
 
@@ -33,6 +35,7 @@ function VerifyTabs({ tab, setTab }: { tab: VerifyTab; setTab: (t: VerifyTab) =>
 
   const tabs: Array<[VerifyTab, string]> = [
     ["registry", "Registry lookup"],
+    ["profile", "Your profile"],
     ["credential", "Credential JWT"],
     ["policy", "Policy gate (demo)"],
   ];
@@ -68,6 +71,7 @@ function VerifyTabs({ tab, setTab }: { tab: VerifyTab; setTab: (t: VerifyTab) =>
       )}
       {tab === "credential" && <RelyingPartyVerifyPanel suiAddress={suiAddress} />}
       {tab === "policy" && <PolicyCheckPanel suiAddress={suiAddress} />}
+      {tab === "profile" && <VerifyProfilePanel />}
     </>
   );
 }
