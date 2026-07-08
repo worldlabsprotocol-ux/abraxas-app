@@ -299,7 +299,7 @@ function PassportStatusCard({
   walletBindingL3: boolean;
   identityUi: IdentityUiState;
   assuranceLabel: string;
-  availableNow: { label: string }[];
+  availableNow: string[];
   returnPath?: string | null;
 }) {
   return (
@@ -377,12 +377,12 @@ function PassportStatusCard({
           What you can do now
         </div>
         <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-          {availableNow.slice(0, 5).map(c => (
-            <li key={c.label} style={{
+          {availableNow.slice(0, 5).map(label => (
+            <li key={label} style={{
               fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
               lineHeight: 1.6, marginBottom: 4,
             }}>
-              {c.label}
+              {label}
             </li>
           ))}
         </ul>
