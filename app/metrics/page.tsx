@@ -1,12 +1,13 @@
 "use client";
 // FILE: app/metrics/page.tsx
-// Public protocol metrics dashboard for investors.
+// Public protocol metrics dashboard — real Supabase counters including verification network.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import type { VerificationNetworkMetrics } from "@/lib/metrics/verificationMetrics";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -30,6 +31,7 @@ interface InvestorMetrics {
 
 interface Payload {
   metrics: InvestorMetrics;
+  verification_network: VerificationNetworkMetrics;
   abra_token: {
     token_mint: string | null;
     lifetime_fees: Record<string, unknown> | null;
@@ -40,17 +42,28 @@ interface Payload {
   updatedAt: string;
 }
 
-function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Metric({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
   return (
     <div style={{
       padding: "1rem", borderRadius: 14,
-      background: "var(--surface)", border: "1px solid var(--border)",
+      background: highlight ? "rgba(16,185,129,0.08)" : "var(--surface-inset)",
+      border: `1px solid ${highlight ? "rgba(16,185,129,0.3)" : "var(--border)"}`,
     }}>
       <div style={{ fontFamily: FONT, fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>{value}</div>
       <div style={{ fontFamily: FONT, fontSize: "0.75rem", fontWeight: 600, color: "var(--text-primary)", marginTop: 4 }}>{label}</div>
       {sub && <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", marginTop: 2 }}>{sub}</div>}
     </div>
   );
+}
+
+function fmtRelative(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return d.toLocaleString();
 }
 
 export default function MetricsPage() {
@@ -68,24 +81,31 @@ export default function MetricsPage() {
   }, []);
 
   const m = data?.metrics;
+  const v = data?.verification_network;
+  const hasVerifyActivity = Boolean(v && v.data_available && v.total_presentations > 0);
 
   return (
     <RedesignPage maxWidth={900}>
       <PageHeader
         eyebrow="Transparency"
         title="Live protocol metrics"
-        subtitle="Design partner phase — counters reflect real Supabase/API data. Zero often means not yet configured, not fabricated placeholders."
+        subtitle="Real counters from Supabase — credentials issued, verification API calls, bookings, and partner interest. Updated every ~2 minutes."
       />
 
-      <div style={{
-        padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1.25rem",
-        background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.22)",
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6,
-      }}>
-        <strong style={{ color: "var(--text-primary)" }}>Early access.</strong>{" "}
-        Full registry metrics roll out as audits complete and third-party assets onboard.
-        Genesis asset Cielo Sunrise runs end-to-end — global counters may show 0 until pipeline config catches up.
-      </div>
+      {!hasVerifyActivity && (
+        <div style={{
+          padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1.25rem",
+          background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.22)",
+          fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6,
+        }}>
+          <strong style={{ color: "var(--text-primary)" }}>Design partner phase.</strong>{" "}
+          Verification call counts start at zero until partners and the public tester hit{" "}
+          <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>POST /api/credentials/verify</code>.
+          Try the{" "}
+          <Link href="/verify?mode=credential" style={{ color: ACCENT, fontWeight: 700 }}>live credential tester</Link>{" "}
+          to log the first check.
+        </div>
+      )}
 
       {err && (
         <ContentCard>
@@ -93,26 +113,74 @@ export default function MetricsPage() {
         </ContentCard>
       )}
 
+      {v && v.data_available && (
+        <ContentCard title="Verification network (live)">
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
+            Every call to <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>/api/credentials/verify</code> is logged in{" "}
+            <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>credential_presentations</code> — the same audit trail relying parties use.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
+            <Metric label="Checks (30d)" value={String(v.presentations_30d)} sub={`${v.presentations_7d} in last 7d`} highlight />
+            <Metric label="Success rate (30d)" value={v.success_rate_30d != null ? `${v.success_rate_30d}%` : "—"} sub={`${v.accepted_30d} accepted · ${v.rejected_30d} denied`} />
+            <Metric label="Relying parties (30d)" value={String(v.unique_verifiers_30d)} sub={`${v.unique_verifiers_all_time} all-time`} />
+            <Metric label="Credentials issued (30d)" value={String(v.credentials_issued_30d)} sub={`${m?.active_credentials ?? 0} active total`} />
+            <Metric label="Last verification" value={fmtRelative(v.last_presentation_at)} sub={v.last_presentation_at ? new Date(v.last_presentation_at).toLocaleString() : "No checks yet"} />
+            <Metric label="Manual IDV queue" value={String(v.manual_idv_pending)} sub={`${v.manual_idv_approved} approved`} />
+          </div>
+
+          {v.top_verifiers_30d.length > 0 && (
+            <>
+              <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                Top verifier_id (30d)
+              </div>
+              <div style={{ display: "grid", gap: "0.35rem", marginBottom: "0.85rem" }}>
+                {v.top_verifiers_30d.map(row => (
+                  <div key={row.verifier_id} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem",
+                    padding: "0.45rem 0.65rem", borderRadius: 8,
+                    background: "var(--surface-inset)", border: "1px solid var(--border)",
+                    fontFamily: FONT, fontSize: "0.72rem",
+                  }}>
+                    <code style={{ fontFamily: MONO, fontSize: "0.68rem", color: ACCENT }}>{row.verifier_id}</code>
+                    <span style={{ color: "var(--text-muted)" }}>{row.accepted}/{row.total} accepted</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Btn href="/verify?mode=credential" size="sm">Try credential verify →</Btn>
+            <Btn href="/verify" variant="secondary" size="sm">Registry verifier</Btn>
+          </div>
+        </ContentCard>
+      )}
+
       {m && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}>
-            <Metric label="Verified assets" value={String(m.verified_assets)} sub={`${m.pipeline_assets} in pipeline`} />
-            <Metric label="Attested value" value={m.attested_value_label} sub="Cielo appraisal" />
-            <Metric label="Accounts (zkLogin)" value={String(m.zklogin_wallets)} sub="Registered wallets" />
-            <Metric label="Active credentials" value={String(m.active_credentials)} sub="W3C VC issued" />
-            <Metric label="On-chain passports" value={String(m.on_chain_passports)} sub="Sui objects" />
-            <Metric label="Featured stay" value={m.cielo_revenue_label} sub={`${m.captured_cielo_bookings} captured · ${m.pending_cielo_bookings} pending`} />
-            <Metric label="Investor interest" value={String(m.investment_interest_count)} sub="Submitted via portal" />
-            <Metric label="Design partners" value={String(m.design_partner_applications)} sub="Integration applications" />
-            <Metric label="Sponsor treasury" value={m.sponsor_configured ? "Configured" : "Pending"} sub="Gas sponsorship" />
-          </div>
+          <ContentCard title="Registry & accounts">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem" }}>
+              <Metric label="Verified assets" value={String(m.verified_assets)} sub={`${m.pipeline_assets} in pipeline`} />
+              <Metric label="Attested value" value={m.attested_value_label} sub="Cielo appraisal" />
+              <Metric label="Accounts (zkLogin)" value={String(m.zklogin_wallets)} sub="Registered wallets" />
+              <Metric label="Active credentials" value={String(m.active_credentials)} sub="W3C VC issued" />
+              <Metric label="On-chain passports" value={String(m.on_chain_passports)} sub="Sui objects" />
+              <Metric label="Featured stay" value={m.cielo_revenue_label} sub={`${m.captured_cielo_bookings} captured · ${m.pending_cielo_bookings} pending`} />
+              <Metric label="Investor interest" value={String(m.investment_interest_count)} sub="Submitted via portal" />
+              <Metric label="Design partners" value={String(m.design_partner_applications)} sub="Integration applications" />
+              <Metric label="Sponsor treasury" value={m.sponsor_configured ? "Configured" : "Pending"} sub="Gas sponsorship" />
+            </div>
+          </ContentCard>
 
           {data?.abra_token?.lifetime_fees && (
             <ContentCard title="$ABRA token (Solana · Bags.fm)">
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: "0 0 0.5rem" }}>
                 Live from Bags API when configured. Verify on-chain independently.
               </p>
-              <pre style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-secondary)", overflow: "auto", margin: 0 }}>
+              <pre style={{
+                fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-secondary)", overflow: "auto", margin: 0,
+                padding: "0.75rem", borderRadius: 10, background: "var(--surface-inset)", border: "1px solid var(--border)",
+              }}>
                 {JSON.stringify(data.abra_token.lifetime_fees, null, 2)}
               </pre>
             </ContentCard>
@@ -133,6 +201,8 @@ export default function MetricsPage() {
           <ContentCard title="Data sources">
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
               Supabase: {data?.data_sources.supabase ? "connected" : "not configured"} · Bags API: {data?.data_sources.bags_api ? "connected" : "not configured"}
+              <br />
+              Verification log: credential_presentations · Manual IDV: passport_documents
               <br />
               Last updated: {data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : "—"}
             </div>

@@ -27,6 +27,7 @@ export async function GET() {
         ? `$${stats.cielo_revenue_usdc.toLocaleString()} captured`
         : "Apple Pay ready",
       phase: stats.phase,
+      verification_network: stats.verification_network,
     },
     sources: stats.sources,
     updatedAt: new Date().toISOString(),

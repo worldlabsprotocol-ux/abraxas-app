@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
+import { getVerificationNetworkMetrics, type VerificationNetworkMetrics } from "@/lib/metrics/verificationMetrics";
 
 export interface UnifiedRegistryStats {
   phase: "design_partner";
@@ -20,6 +21,7 @@ export interface UnifiedRegistryStats {
   captured_bookings: number;
   cielo_revenue_usdc: number;
   sponsor_configured: boolean;
+  verification_network: VerificationNetworkMetrics;
   sources: {
     catalog: string;
     database: string;
@@ -63,6 +65,7 @@ export async function getUnifiedRegistryStats(): Promise<UnifiedRegistryStats> {
   // Verified assets: catalog truth + at least one if live bookings exist
   const liveBookingAssets = capturedBookings > 0 ? 1 : 0;
   const verifiedAssets = Math.max(verifiedInCatalog, liveBookingAssets);
+  const verification = await getVerificationNetworkMetrics();
 
   return {
     phase: "design_partner",
@@ -78,6 +81,7 @@ export async function getUnifiedRegistryStats(): Promise<UnifiedRegistryStats> {
     captured_bookings: capturedBookings,
     cielo_revenue_usdc: cieloRevenueUsdc,
     sponsor_configured: isPassportIssuerConfigured(),
+    verification_network: verification,
     sources: {
       catalog: "lib/data/exploreAssets.ts",
       database: SB_URL ? "supabase" : "unavailable",

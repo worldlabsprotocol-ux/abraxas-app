@@ -2,7 +2,7 @@
 // FILE: components/redesign/TestTheNetworkSection.tsx
 // "Prove it" — test verification without signing in.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CIELO_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
@@ -18,6 +18,20 @@ export function TestTheNetworkSection() {
   const [loading, setLoading] = useState(false);
   const [live, setLive] = useState<typeof CIELO_VERIFIER_PREVIEW | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  const [verifyStats, setVerifyStats] = useState<{ checks30d: number; lastAt: string | null } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/metrics/public")
+      .then(r => r.json())
+      .then(d => {
+        const vn = (d as { metrics?: { verification_network?: { presentations_30d?: number; last_presentation_at?: string | null } } }).metrics?.verification_network;
+        if (vn) {
+          setVerifyStats({ checks30d: vn.presentations_30d ?? 0, lastAt: vn.last_presentation_at ?? null });
+        }
+      })
+      .catch(() => { /* optional */ });
+  }, []);
 
   async function runLive() {
     setLoading(true);

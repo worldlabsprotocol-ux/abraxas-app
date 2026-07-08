@@ -7,6 +7,7 @@ import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { fetchAbraStats } from "@/lib/bags";
+import { getVerificationNetworkMetrics } from "@/lib/metrics/verificationMetrics";
 
 export const revalidate = 120;
 
@@ -71,6 +72,7 @@ export async function GET() {
   }
 
   const sponsoredReady = isPassportIssuerConfigured();
+  const verification = await getVerificationNetworkMetrics();
 
   return NextResponse.json({
     ok: true,
@@ -94,6 +96,7 @@ export async function GET() {
       passport_stamps: 10,
       credential_standard: "W3C VC",
     },
+    verification_network: verification,
     abra_token: abraRevenue
       ? {
           token_mint: abraRevenue.tokenMint || null,
