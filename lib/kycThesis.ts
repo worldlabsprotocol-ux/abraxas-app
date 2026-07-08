@@ -3,6 +3,9 @@
 
 import { ABRAXAS_POSITIONING, NETWORK_ROLES } from "@/lib/abraxasNetwork";
 
+export const PLAIN_LANGUAGE_OPENER =
+  "Abraxas is a verification network — not a marketplace, law firm, or music auditor. You prove who you are and what's real once. Partners check that signed proof when a transaction needs trust — instead of making you upload the same documents again.";
+
 export const KYC_DEBT_HEADLINE =
   "Verification debt is the hidden tax on every permissioned on-chain transaction.";
 

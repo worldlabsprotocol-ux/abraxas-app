@@ -37,21 +37,27 @@ export function ProductLoopDemo() {
             letterSpacing: "0.14em", textTransform: "uppercase",
             color: ACCENT, marginBottom: "0.5rem",
           }}>
-            End-to-end walkthrough
+            End-to-end example
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap", marginBottom: "0.35rem" }}>
             <CapabilityStatusBadge status="pilot" size="xs" />
             <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-              Genesis hospitality design-partner loop
+              Example proof loop — same engine partners integrate
             </span>
           </div>
           <h2 style={{
             fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
             letterSpacing: "-0.03em", lineHeight: 1.05,
-            color: "var(--text-primary)", margin: 0, maxWidth: 480,
+            color: "var(--text-primary)", margin: 0, maxWidth: 520,
           }}>
-            See the full loop in 30 seconds.
+            See verification in action
           </h2>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+            lineHeight: 1.6, maxWidth: 480, margin: "0.5rem 0 0",
+          }}>
+            One reference journey — not a separate product line.
+          </p>
         </div>
         <button
           type="button"

@@ -32,14 +32,13 @@ export function NetworkProductsSection() {
           letterSpacing: "-0.02em", lineHeight: 1.15,
           color: "var(--text-primary)", margin: "0 0 0.45rem", maxWidth: 620,
         }}>
-          Policy-controlled credential network
+          Three layers — one verification network
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
           lineHeight: 1.6, maxWidth: 640, margin: 0,
         }}>
-          Not a KYC vendor — a portable eligibility network. Partners buy an auditable decision,
-          not a document upload form.
+          Passport proves who can transact. Registry proves what is real. Partner APIs enforce trust at the moment of action.
         </p>
       </div>
 
