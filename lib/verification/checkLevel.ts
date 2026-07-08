@@ -9,14 +9,16 @@ export type VerificationAction =
   | "book_asset"
   | "high_value_transaction"
   | "invest_rwa"
-  | "submit_asset";
+  | "submit_asset"
+  | "verified_participant";
 
 const ACTION_POLICY: Record<VerificationAction, string | null> = {
   browse: "abraxas-core-v1",
   book_asset: "abraxas-booking-v1",
   high_value_transaction: "abraxas-booking-v1",
   invest_rwa: "abraxas-rwa-us-v1",
-  submit_asset: "abraxas-booking-v1",
+  submit_asset: "abraxas-verified-participant-v1",
+  verified_participant: "abraxas-verified-participant-v1",
 };
 
 export interface CheckLevelResult {

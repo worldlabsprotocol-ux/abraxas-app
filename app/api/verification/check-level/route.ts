@@ -10,6 +10,7 @@ const VALID_ACTIONS: VerificationAction[] = [
   "high_value_transaction",
   "invest_rwa",
   "submit_asset",
+  "verified_participant",
 ];
 
 export async function POST(req: NextRequest) {

@@ -161,6 +161,9 @@ export function TestTheNetworkSection() {
       {!live && (
         <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.75rem 0 0", lineHeight: 1.5 }}>
           Preview shown until you run live check. On-chain anchor references appear when configured for the asset.
+          {verifyStats && verifyStats.checks30d > 0 && (
+            <> · <strong style={{ color: "var(--text-secondary)" }}>{verifyStats.checks30d}</strong> credential verify calls (30d)</>
+          )}
         </p>
       )}
     </section>

@@ -13,7 +13,7 @@ const STATE_STYLES = {
   RESOLVED_VALID: { bg: "#10B981", label: "✓ VERIFIED & ACTIVE" },
   RESOLVED_REVOKED: { bg: "#DC2626", label: "⚠ EXPIRED OR REVOKED" },
   NULL_STATE: { bg: "#64748B", label: "∅ NOT FOUND" },
-};
+} as const;
 
 export function VerifierResultCard({
   result,

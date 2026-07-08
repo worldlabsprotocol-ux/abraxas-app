@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import type { VerifierResponse } from "@/lib/verifyRegistry";
-import { CIELO_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
+import { CIELO_VERIFIER_PREVIEW, NOT_FOUND_VERIFIER_PREVIEW, REVOKED_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
 import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
 import { VerifierResultCard } from "./VerifierResultCard";
 import { Btn } from "@/components/redesign/ui";
@@ -49,9 +49,42 @@ export function PublicVerifierPanel() {
   }
 
   const showPreview = !result && !loading && !err;
+  type SampleKind = "valid" | "not_found" | "revoked" | null;
+  const [sampleKind, setSampleKind] = useState<SampleKind>(null);
+
+  function showSample(kind: SampleKind) {
+    setSampleKind(kind);
+    setResult(null);
+    setErr(null);
+    if (kind === "valid") {
+      setQuery("ABX-RE-HOSP-001");
+      void runVerify("ABX-RE-HOSP-001");
+      setSampleKind(null);
+    }
+  }
+
+  const previewResult =
+    sampleKind === "not_found" ? NOT_FOUND_VERIFIER_PREVIEW
+    : sampleKind === "revoked" ? REVOKED_VERIFIER_PREVIEW
+    : null;
 
   return (
     <div>
+      <div style={{
+        padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1.25rem",
+        background: "var(--surface-inset)", border: "1px solid var(--border)",
+      }}>
+        <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.45rem" }}>
+          Quick tests (15 seconds)
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
+          <Btn size="sm" onClick={() => showSample("valid")} disabled={loading}>Sample asset (Cielo)</Btn>
+          <Btn size="sm" variant="secondary" onClick={() => showSample("not_found")} disabled={loading}>Not found demo</Btn>
+          <Btn size="sm" variant="tertiary" onClick={() => showSample("revoked")} disabled={loading}>Revoked demo</Btn>
+          <Btn href="/verify?mode=policy" variant="ghost" size="sm">Policy gate demo</Btn>
+        </div>
+      </div>
+
       <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "stretch" }}>
         <input
           value={query}
@@ -117,9 +150,25 @@ export function PublicVerifierPanel() {
         </div>
       )}
 
+      {result && !loading && result.state === "NULL_STATE" && (
+        <div style={{ marginBottom: "1rem" }}>
+          <StatusBanner tone="error" title="Not found">
+            No active Abraxas record for this identifier.
+          </StatusBanner>
+        </div>
+      )}
+
+      {result && !loading && result.state === "RESOLVED_REVOKED" && (
+        <div style={{ marginBottom: "1rem" }}>
+          <StatusBanner tone="error" title="Revoked or expired">
+            This record is not eligible for gated actions. Fail closed.
+          </StatusBanner>
+        </div>
+      )}
+
       <div className="verify-results-grid" style={{
         display: "grid",
-        gridTemplateColumns: showPreview ? "1fr 1fr" : "1fr",
+        gridTemplateColumns: showPreview && !previewResult ? "1fr 1fr" : "1fr",
         gap: "1.25rem",
         alignItems: "start",
       }}>
@@ -130,7 +179,18 @@ export function PublicVerifierPanel() {
           />
         )}
 
-        {showPreview && (
+        {previewResult && !result && !loading && (
+          <VerifierResultCard
+            result={previewResult}
+            previewLabel={
+              sampleKind === "not_found" ? "Demo · record not found"
+              : "Demo · revoked / expired credential"
+            }
+            compact
+          />
+        )}
+
+        {showPreview && !previewResult && (
           <>
             <div style={{
               padding: "1.25rem", borderRadius: 16,

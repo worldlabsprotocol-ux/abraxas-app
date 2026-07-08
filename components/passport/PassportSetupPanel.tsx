@@ -314,8 +314,10 @@ export function PassportSetupPanel({
                 {credential.expires_at && <> · Expires {new Date(credential.expires_at).toLocaleDateString()}</>}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-                <Btn href="/#registry" size="sm">Browse registry →</Btn>
+                <Btn href="/verify?mode=credential" size="sm">Verify credential publicly →</Btn>
+                <Btn href="/verify?mode=policy" variant="secondary" size="sm">Run policy check</Btn>
                 <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
+                <Btn href="/#registry" variant="ghost" size="sm">Browse registry</Btn>
               </div>
             </div>
           )}
