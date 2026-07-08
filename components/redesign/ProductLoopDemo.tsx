@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCT_LOOP_STEPS } from "@/lib/productLoopSteps";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
+import { ProductLoopStepVisual } from "./ProductLoopStepVisual";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -94,13 +95,22 @@ export function ProductLoopDemo() {
             >
               {step.image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={step.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img
+                  src={step.image}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: step.imageObjectPosition ?? "center",
+                  }}
+                />
               ) : (
                 <div style={{
                   width: "100%", height: "100%",
                   background: `
-                    radial-gradient(ellipse 70% 55% at 15% 20%, rgba(16,185,129,0.18) 0%, transparent 55%),
-                    radial-gradient(ellipse 50% 45% at 85% 80%, rgba(59,130,246,0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse 70% 55% at 15% 20%, rgba(16,185,129,0.22) 0%, transparent 55%),
+                    radial-gradient(ellipse 50% 45% at 85% 80%, rgba(59,130,246,0.14) 0%, transparent 50%),
                     linear-gradient(160deg, #0d151c 0%, #06090B 100%)
                   `,
                 }} />
@@ -108,9 +118,10 @@ export function ProductLoopDemo() {
               <div style={{
                 position: "absolute", inset: 0,
                 background: step.image
-                  ? "linear-gradient(to top, rgba(6,9,11,0.95) 0%, rgba(6,9,11,0.35) 45%, rgba(6,9,11,0.15) 100%)"
-                  : "linear-gradient(to top, rgba(6,9,11,0.75) 0%, transparent 50%)",
+                  ? "linear-gradient(to top, rgba(6,9,11,0.92) 0%, rgba(6,9,11,0.45) 50%, rgba(6,9,11,0.2) 100%)"
+                  : "linear-gradient(to top, rgba(6,9,11,0.55) 0%, rgba(6,9,11,0.15) 100%)",
               }} />
+              <ProductLoopStepVisual stepId={step.id} />
             </motion.div>
           </AnimatePresence>
 

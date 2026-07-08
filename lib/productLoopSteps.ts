@@ -1,5 +1,7 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — one representative image, minimal jargon.
+// Auto-advancing product walkthrough — visuals + mock UI per step.
+
+import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
 
 export interface ProductLoopStep {
   id: string;
@@ -7,6 +9,7 @@ export interface ProductLoopStep {
   subtitle: string;
   durationMs: number;
   image?: string;
+  imageObjectPosition?: string;
   badge?: string;
   metrics?: { label: string; value: string }[];
   cta?: string;
@@ -31,6 +34,8 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Book with Apple Pay or card",
     subtitle: "Pick dates · pay in fiat · settles automatically on-chain.",
     durationMs: 6000,
+    image: CIELO_PORCH_IMAGE.src,
+    imageObjectPosition: "center 40%",
     badge: "Seamless checkout",
     metrics: [
       { label: "Primary", value: "Apple Pay" },
@@ -55,6 +60,8 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Pay without thinking about rails",
     subtitle: "Fiat on-ramp or stablecoin · settlement captured · on-chain verify.",
     durationMs: 6000,
+    image: CIELO_HERO_IMAGE.src,
+    imageObjectPosition: CIELO_HERO_IMAGE.objectPosition,
     badge: "Payment captured",
     metrics: [
       { label: "Method", value: "Apple Pay" },
