@@ -139,7 +139,6 @@ export async function fetchCredentialClaims(suiAddress: string): Promise<Credent
 
 export async function consentVerificationRequest(
   requestId: string,
-  suiAddress: string,
 ): Promise<{
   decision: string;
   claims: Record<string, unknown>;
@@ -149,8 +148,7 @@ export async function consentVerificationRequest(
 }> {
   const res = await fetch(`/api/v1/verification-requests/${requestId}/consent`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sui_address: suiAddress }),
+    credentials: "include",
   });
   const data = await res.json() as Record<string, unknown>;
   if (!res.ok) throw new Error((data.error as string) ?? "Consent failed");
@@ -161,6 +159,16 @@ export async function consentVerificationRequest(
     valid_until: string | null;
     reason_codes: string[];
   };
+}
+
+export async function declineVerificationRequest(requestId: string): Promise<{ status: string }> {
+  const res = await fetch(`/api/v1/verification-requests/${requestId}/decline`, {
+    method: "POST",
+    credentials: "include",
+  });
+  const data = await res.json() as Record<string, unknown>;
+  if (!res.ok) throw new Error((data.error as string) ?? "Decline failed");
+  return data as { status: string };
 }
 
 export function meResponseToStoredCredential(

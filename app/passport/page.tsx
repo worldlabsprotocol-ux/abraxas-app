@@ -207,7 +207,6 @@ function PassportPageInner() {
             {verifyRequestId && suiAddress && !partnerConsentDismissed && (
               <ConsentCeremony
                 requestId={verifyRequestId}
-                suiAddress={suiAddress}
                 onDismiss={() => setPartnerConsentDismissed(true)}
               />
             )}

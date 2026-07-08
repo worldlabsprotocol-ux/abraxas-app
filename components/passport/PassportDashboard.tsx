@@ -700,6 +700,29 @@ function CredentialRow({
 }
 
 function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
+
+  async function startDemoRequest() {
+    setDemoBusy(true);
+    setDemoError(null);
+    try {
+      const res = await fetch("/api/passport/demo-partner-request", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ policy_id: "abraxas-core-v1" }),
+      });
+      const data = await res.json() as { consent_url?: string; error?: string };
+      if (!res.ok || !data.consent_url) throw new Error(data.error ?? "Demo request failed");
+      window.location.href = data.consent_url;
+    } catch (e) {
+      setDemoError(e instanceof Error ? e.message : "Demo request failed");
+    } finally {
+      setDemoBusy(false);
+    }
+  }
+
   return (
     <section style={{ marginBottom: "1.25rem" }} aria-labelledby="partner-access-heading">
       <div style={{
@@ -721,6 +744,19 @@ function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
       }}>
         When a partner requests eligibility, you see which claims they need, why, how long approval is valid, and what action the decision unlocks.
       </p>
+      {suiAddress && (
+        <div style={{ marginBottom: "0.85rem" }}>
+          <Btn size="sm" variant="secondary" loading={demoBusy} onClick={() => void startDemoRequest()}>
+            Test portable reuse loop →
+          </Btn>
+          {demoError && (
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: RED, margin: "0.45rem 0 0" }}>{demoError}</p>
+          )}
+          <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.45rem 0 0", lineHeight: 1.5 }}>
+            Pilot demo — simulates a partner consent request without an API key in your browser.
+          </p>
+        </div>
+      )}
       <PassportShareHistoryCard suiAddress={suiAddress} />
     </section>
   );

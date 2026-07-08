@@ -1,9 +1,9 @@
-// FILE: app/api/v1/verification-requests/[id]/consent/route.ts
-// Holder consents via browser session; policy engine returns decision.
+// FILE: app/api/v1/verification-requests/[id]/decline/route.ts
+// Holder declines a partner verification request — no claims shared.
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
-import { consentAndDecide } from "@/lib/verification/requestsService";
+import { declineVerificationRequest } from "@/lib/verification/requestsService";
 
 export async function POST(
   req: NextRequest,
@@ -17,20 +17,13 @@ export async function POST(
   const { id } = await params;
 
   try {
-    const result = await consentAndDecide({
+    const result = await declineVerificationRequest({
       requestId: id,
       suiAddress: session.session.suiAddress,
     });
-
-    return NextResponse.json({
-      decision: result.decision,
-      claims: result.claims,
-      valid_until: result.valid_until,
-      decision_reference: result.decision_id,
-      reason_codes: result.reason_codes,
-    });
+    return NextResponse.json(result);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Consent failed";
+    const msg = e instanceof Error ? e.message : "Decline failed";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

@@ -8,7 +8,7 @@ import type { NextRequest } from "next/server";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-export type PartnerScope = "verify:credential" | "verify:registry";
+export type PartnerScope = "verify:credential" | "verify:registry" | "verify:requests";
 
 export interface PartnerAuthContext {
   partnerId: string;

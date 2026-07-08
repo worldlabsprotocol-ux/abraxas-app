@@ -2,13 +2,15 @@
 // Partner API: create eligibility verification request.
 
 import { NextRequest, NextResponse } from "next/server";
-import { authenticatePartner } from "@/lib/verification/partnerAuth";
+import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 import { createVerificationRequest } from "@/lib/verification/requestsService";
+import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export async function POST(req: NextRequest) {
-  const auth = authenticatePartner(req);
+  const started = Date.now();
+  const auth = await authenticateV1Partner(req, "verify:requests");
   if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: 401 });
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   const body = await req.json().catch(() => ({})) as {
@@ -16,7 +18,6 @@ export async function POST(req: NextRequest) {
     requested_action?: string;
     requested_claims?: string[];
     sui_address?: string;
-    subject_session?: string;
   };
 
   if (!body.policy_id) {
@@ -32,6 +33,18 @@ export async function POST(req: NextRequest) {
       suiAddress: body.sui_address,
     });
 
+    void logPartnerUsage({
+      endpoint: "/api/v1/verification-requests",
+      method: "POST",
+      success: true,
+      partner: auth.ctx,
+      httpStatus: 200,
+      responseTimeMs: Date.now() - started,
+      policyId: body.policy_id,
+      recordType: "verification_request",
+      recordId: result.request_id,
+    });
+
     return NextResponse.json({
       ...result,
       policy_id: body.policy_id,
@@ -40,6 +53,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Failed to create request";
+    void logPartnerUsage({
+      endpoint: "/api/v1/verification-requests",
+      method: "POST",
+      success: false,
+      partner: auth.ctx,
+      httpStatus: 400,
+      responseTimeMs: Date.now() - started,
+      policyId: body.policy_id,
+    });
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

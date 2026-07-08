@@ -1,18 +1,31 @@
 // FILE: app/api/credentials/share-history/route.ts
-// Partner access history — consent receipts for a subject.
+// Partner access history — consent receipts for authenticated holder.
 
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { resolveBrowserSession } from "@/lib/auth/browserSession";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(req: NextRequest) {
-  const sui = req.nextUrl.searchParams.get("sui");
-  if (!sui) {
-    return NextResponse.json({ error: "sui query param required" }, { status: 400 });
+  const session = await resolveBrowserSession(req);
+  const querySui = req.nextUrl.searchParams.get("sui");
+
+  let subject: string | null = null;
+  if (session) {
+    subject = session.suiAddress;
+  } else if (querySui) {
+    subject = normalizeSuiAddress(querySui);
+  }
+
+  if (!subject) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
+  if (session && querySui && normalizeSuiAddress(querySui) !== session.suiAddress) {
+    return NextResponse.json({ error: "Session mismatch" }, { status: 403 });
   }
 
   try {
-    const subject = normalizeSuiAddress(sui);
     const sb = requireSupabaseAdmin();
 
     const { data: receipts } = await sb

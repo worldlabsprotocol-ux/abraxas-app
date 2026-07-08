@@ -11,9 +11,10 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const ENDPOINTS = [
-  { method: "POST", path: "/api/v1/verification-requests", desc: "Partner: create consent request + policy evaluation" },
+  { method: "POST", path: "/api/v1/verification-requests", desc: "Partner: create consent request + consent_url" },
   { method: "GET", path: "/api/v1/verification-requests/{id}", desc: "Holder preview — selective disclosure before consent" },
-  { method: "POST", path: "/api/v1/verification-requests/{id}/consent", desc: "Holder approves — returns approve/deny/manual_review" },
+  { method: "POST", path: "/api/v1/verification-requests/{id}/consent", desc: "Holder approves (session auth) — policy decision" },
+  { method: "POST", path: "/api/v1/verification-requests/{id}/decline", desc: "Holder declines — no claims shared" },
   { method: "GET", path: "/api/v1/decisions/{id}/status", desc: "Re-check decision before settlement" },
   { method: "POST", path: "/api/v1/policies/evaluate", desc: "Direct policy evaluation on live claims (pilot-ready for approved partners)" },
   { method: "GET", path: "/api/trust/registry", desc: "Trust Registry — issuers + credential schemas" },

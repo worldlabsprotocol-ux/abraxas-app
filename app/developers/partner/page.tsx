@@ -112,7 +112,26 @@ export default function PartnerDashboardPage() {
         </ContentCard>
       )}
 
-      <ContentCard title="First-party browser flows">
+      <ContentCard title="Verification requests (Step 4)">
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.85rem" }}>
+          Create consent URLs server-side with{" "}
+          <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>POST /api/v1/verification-requests</code>.
+          Holders approve at the returned <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>consent_url</code> — session-authenticated, no API key in the browser.
+        </p>
+        <Link
+          href="/docs/partner-verification-requests"
+          style={{
+            display: "inline-block",
+            fontFamily: FONT,
+            fontSize: "0.78rem",
+            fontWeight: 700,
+            color: ACCENT,
+            textDecoration: "none",
+          }}
+        >
+          Partner verification requests guide →
+        </Link>
+      </ContentCard>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
           Cielo verified-rate and Passport use signed browser sessions. The server evaluates{" "}
           <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>cielo-verified-guest-v1</code> internally — guests are never asked for an API key.

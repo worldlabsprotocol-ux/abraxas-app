@@ -4,12 +4,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildPresentationRequest, presentationRequestUrl } from "@/lib/openid4vp/presentation";
 import { createVerificationRequest } from "@/lib/verification/requestsService";
-import { authenticatePartner } from "@/lib/verification/partnerAuth";
+import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 
 export async function POST(req: NextRequest) {
-  const auth = authenticatePartner(req);
+  const auth = await authenticateV1Partner(req, "verify:requests");
   if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: 401 });
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   const body = await req.json().catch(() => ({})) as {

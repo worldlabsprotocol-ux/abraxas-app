@@ -152,6 +152,10 @@ export async function consentAndDecide(input: {
     throw new Error("Request expired");
   }
 
+  if (request.sui_address && normalizeSuiAddress(request.sui_address as string) !== subject) {
+    throw new Error("This request is for a different Passport");
+  }
+
   const policy = await getPolicy(request.policy_id as string);
   if (!policy) throw new Error("Policy not found");
 
@@ -211,6 +215,51 @@ export async function consentAndDecide(input: {
     reason_codes: evaluation.reason_codes,
     valid_until: evaluation.valid_until,
   };
+}
+
+/** Holder declines — no claims shared, request cancelled */
+export async function declineVerificationRequest(input: {
+  requestId: string;
+  suiAddress: string;
+}): Promise<{ status: "cancelled" }> {
+  const sb = requireSupabaseAdmin();
+  const subject = normalizeSuiAddress(input.suiAddress);
+
+  const { data: request } = await sb
+    .from("verification_requests")
+    .select("*")
+    .eq("id", input.requestId)
+    .maybeSingle();
+
+  if (!request) throw new Error("Request not found");
+  if (request.status === "decided") throw new Error("Request already decided");
+  if (request.status === "cancelled") return { status: "cancelled" };
+  if (new Date(request.expires_at as string) < new Date()) {
+    await sb.from("verification_requests").update({ status: "expired" }).eq("id", input.requestId);
+    throw new Error("Request expired");
+  }
+
+  if (request.sui_address && normalizeSuiAddress(request.sui_address as string) !== subject) {
+    throw new Error("This request is for a different Passport");
+  }
+
+  await sb.from("verification_requests").update({
+    status: "cancelled",
+    subject_id: subject,
+    sui_address: subject,
+  }).eq("id", input.requestId);
+
+  await appendAuditEvent({
+    actor_type: "subject",
+    actor_id: subject,
+    action: "verification_request.declined",
+    object_type: "verification_request",
+    object_id: input.requestId,
+    policy_id: request.policy_id as string,
+    metadata: { partner_id: request.partner_id },
+  });
+
+  return { status: "cancelled" };
 }
 
 function mapDecisionRow(row: Record<string, unknown>): PolicyDecisionRecord {

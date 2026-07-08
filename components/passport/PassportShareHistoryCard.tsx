@@ -18,8 +18,8 @@ interface ShareRecord {
   revoked_at: string | null;
 }
 
-async function fetchShareHistory(sui: string) {
-  const res = await fetch(`/api/credentials/share-history?sui=${encodeURIComponent(sui)}`);
+async function fetchShareHistory() {
+  const res = await fetch("/api/credentials/share-history", { credentials: "include" });
   if (!res.ok) throw new Error("Share history unavailable");
   return res.json() as Promise<{ shares: ShareRecord[] }>;
 }
@@ -27,7 +27,7 @@ async function fetchShareHistory(sui: string) {
 export function PassportShareHistoryCard({ suiAddress }: { suiAddress: string | null }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["passport", "share-history", suiAddress],
-    queryFn: () => fetchShareHistory(suiAddress!),
+    queryFn: () => fetchShareHistory(),
     enabled: Boolean(suiAddress),
     staleTime: 30_000,
   });

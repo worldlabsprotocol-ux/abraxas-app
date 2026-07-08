@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { NEVER_SHARED_WITH_PARTNERS, POLICY_DECISIONS, type PolicyDecision } from "@/lib/abraxasNetwork";
+import { consentVerificationRequest, declineVerificationRequest } from "@/lib/api/passport";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -22,12 +23,11 @@ export interface ConsentPreview {
 
 export function ConsentCeremony({
   requestId,
-  suiAddress,
   onComplete,
   onDismiss,
 }: {
   requestId: string;
-  suiAddress: string;
+  suiAddress?: string;
   onComplete?: (result: { decision: string; decision_reference: string }) => void;
   onDismiss?: () => void;
 }) {
@@ -35,7 +35,7 @@ export function ConsentCeremony({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ decision: PolicyDecision; decision_reference: string } | null>(null);
+  const [result, setResult] = useState<{ decision: PolicyDecision | "declined"; decision_reference: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/v1/verification-requests/${requestId}`)
@@ -52,22 +52,26 @@ export function ConsentCeremony({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/v1/verification-requests/${requestId}/consent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress }),
-      });
-      const data = await res.json() as {
-        decision?: string;
-        decision_reference?: string;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Consent failed");
+      const data = await consentVerificationRequest(requestId);
       const decision = (data.decision ?? "manual_review") as PolicyDecision;
       setResult({ decision, decision_reference: data.decision_reference ?? "" });
       onComplete?.({ decision, decision_reference: data.decision_reference ?? "" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Consent failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function decline() {
+    setBusy(true);
+    setError(null);
+    try {
+      await declineVerificationRequest(requestId);
+      setResult({ decision: "declined", decision_reference: "" });
+      onDismiss?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Decline failed");
     } finally {
       setBusy(false);
     }
@@ -90,6 +94,22 @@ export function ConsentCeremony({
   }
 
   if (result) {
+    if (result.decision === "declined") {
+      return (
+        <div style={{
+          padding: "1rem 1.15rem", borderRadius: 14, marginBottom: "1.25rem",
+          background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
+        }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "var(--text-secondary)", marginBottom: "0.35rem" }}>
+            Request declined
+          </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
+            No claims were shared with the partner.
+          </p>
+        </div>
+      );
+    }
+
     const meta = POLICY_DECISIONS[result.decision];
     return (
       <div style={{
@@ -110,6 +130,19 @@ export function ConsentCeremony({
   }
 
   if (!preview) return null;
+
+  if (preview.status === "cancelled" || preview.status === "decided" || preview.status === "expired") {
+    return (
+      <div style={{
+        padding: "1rem", borderRadius: 14, marginBottom: "1.25rem",
+        background: "var(--surface-inset)", border: "1px solid var(--border)",
+      }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+          This partner request is no longer active ({preview.status}).
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -136,11 +169,15 @@ export function ConsentCeremony({
           <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: ACCENT, marginBottom: "0.35rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Will share (claims only)
           </div>
-          {preview.claim_labels.map(c => (
+          {preview.claim_labels.length > 0 ? preview.claim_labels.map(c => (
             <div key={c.claim_type} style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-primary)", marginBottom: 4 }}>
               ✓ {c.label}
             </div>
-          ))}
+          )) : (
+            <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
+              Policy outcome only — no personal documents
+            </div>
+          )}
         </div>
         <div>
           <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "var(--text-muted)", marginBottom: "0.35rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -159,7 +196,7 @@ export function ConsentCeremony({
       )}
 
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-        <button type="button" onClick={approve} disabled={busy}
+        <button type="button" onClick={() => void approve()} disabled={busy}
           style={{
             padding: "0.6rem 1.1rem", borderRadius: 999, border: "none",
             background: busy ? `${ACCENT}55` : ACCENT, color: "#000",
@@ -168,17 +205,15 @@ export function ConsentCeremony({
           }}>
           {busy ? "Processing…" : "Approve & share claims →"}
         </button>
-        {onDismiss && (
-          <button type="button" onClick={onDismiss}
-            style={{
-              padding: "0.6rem 0.9rem", borderRadius: 999,
-              border: "1px solid var(--border)", background: "transparent",
-              color: "var(--text-muted)", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
-              cursor: "pointer",
-            }}>
-            Decline
-          </button>
-        )}
+        <button type="button" onClick={() => void decline()} disabled={busy}
+          style={{
+            padding: "0.6rem 0.9rem", borderRadius: 999,
+            border: "1px solid var(--border)", background: "transparent",
+            color: "var(--text-muted)", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+            cursor: busy ? "wait" : "pointer",
+          }}>
+          Decline
+        </button>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.55rem 0 0", lineHeight: 1.5 }}>
         Expires {new Date(preview.expires_at).toLocaleString()} · Policy {preview.policy_id}

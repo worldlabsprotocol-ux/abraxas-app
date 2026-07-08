@@ -1,15 +1,17 @@
 // FILE: app/api/v1/policies/evaluate/route.ts
-// Direct policy evaluation for first-party flows (no consent ceremony).
+// Direct policy evaluation for server-side partner checks (no consent ceremony).
 
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { authenticatePartner } from "@/lib/verification/partnerAuth";
+import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 import { evaluateSubjectPolicy } from "@/lib/verification/requestsService";
+import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export async function POST(req: NextRequest) {
-  const auth = authenticatePartner(req);
+  const started = Date.now();
+  const auth = await authenticateV1Partner(req, "verify:requests");
   if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: 401 });
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   const body = await req.json().catch(() => ({})) as {
@@ -25,6 +27,18 @@ export async function POST(req: NextRequest) {
     const subject = normalizeSuiAddress(body.sui_address);
     const result = await evaluateSubjectPolicy(subject, body.policy_id);
 
+    void logPartnerUsage({
+      endpoint: "/api/v1/policies/evaluate",
+      method: "POST",
+      success: true,
+      partner: auth.ctx,
+      httpStatus: 200,
+      responseTimeMs: Date.now() - started,
+      policyId: result.policy_id,
+      policyVersion: String(result.policy_version),
+      decision: result.decision,
+    });
+
     return NextResponse.json({
       decision: result.decision,
       policy_id: result.policy_id,
@@ -36,6 +50,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Evaluation failed";
+    void logPartnerUsage({
+      endpoint: "/api/v1/policies/evaluate",
+      method: "POST",
+      success: false,
+      partner: auth.ctx,
+      httpStatus: 400,
+      responseTimeMs: Date.now() - started,
+      policyId: body.policy_id,
+    });
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 }
