@@ -18,6 +18,11 @@ export interface VerificationNetworkMetrics {
   credentials_issued_30d: number;
   manual_idv_pending: number;
   manual_idv_approved: number;
+  partner_api_calls_30d: number;
+  partner_api_success_30d: number;
+  unique_partners_30d: number;
+  top_partners_30d: Array<{ partner_id: string; total: number; success: number }>;
+  last_partner_api_at: string | null;
   data_available: boolean;
 }
 
@@ -46,6 +51,24 @@ function aggregateVerifiers(
   return { unique: map.size, top };
 }
 
+function aggregatePartners(
+  rows: Array<{ partner_id: string | null; success: boolean | null }>,
+): { unique: number; top: VerificationNetworkMetrics["top_partners_30d"] } {
+  const map = new Map<string, { total: number; success: number }>();
+  for (const row of rows) {
+    const id = row.partner_id || "unknown";
+    const cur = map.get(id) ?? { total: 0, success: 0 };
+    cur.total += 1;
+    if (row.success) cur.success += 1;
+    map.set(id, cur);
+  }
+  const top = Array.from(map.entries())
+    .map(([partner_id, v]) => ({ partner_id, total: v.total, success: v.success }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8);
+  return { unique: map.size, top };
+}
+
 export async function getVerificationNetworkMetrics(): Promise<VerificationNetworkMetrics> {
   const empty: VerificationNetworkMetrics = {
     total_presentations: 0,
@@ -61,6 +84,11 @@ export async function getVerificationNetworkMetrics(): Promise<VerificationNetwo
     credentials_issued_30d: 0,
     manual_idv_pending: 0,
     manual_idv_approved: 0,
+    partner_api_calls_30d: 0,
+    partner_api_success_30d: 0,
+    unique_partners_30d: 0,
+    top_partners_30d: [],
+    last_partner_api_at: null,
     data_available: false,
   };
 
@@ -80,6 +108,8 @@ export async function getVerificationNetworkMetrics(): Promise<VerificationNetwo
     creds30Res,
     manualPendingRes,
     manualApprovedRes,
+    partnerMonthRes,
+    lastPartnerRes,
   ] = await Promise.all([
     client.from("credential_presentations").select("id", { count: "exact", head: true }),
     client.from("credential_presentations").select("id", { count: "exact", head: true }).gte("presented_at", since7d),
@@ -89,6 +119,8 @@ export async function getVerificationNetworkMetrics(): Promise<VerificationNetwo
     client.from("abraxas_credentials").select("jti", { count: "exact", head: true }).gte("issuance_date", since30d).is("revoked_at", null),
     client.from("passport_documents").select("id", { count: "exact", head: true }).eq("stamp_id", "identity").in("status", ["submitted", "under_review"]),
     client.from("passport_documents").select("id", { count: "exact", head: true }).eq("stamp_id", "identity").eq("status", "accepted"),
+    client.from("partner_api_usage").select("partner_id, success, created_at").gte("created_at", since30d),
+    client.from("partner_api_usage").select("created_at").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   const monthRows = monthRowsRes.data ?? [];
@@ -97,6 +129,10 @@ export async function getVerificationNetworkMetrics(): Promise<VerificationNetwo
   const { unique: unique30, top } = aggregateVerifiers(monthRows as Array<{ verifier_id: string; accepted: boolean }>);
 
   const allVerifierIds = new Set((allVerifiersRes.data ?? []).map(r => r.verifier_id || "unknown"));
+
+  const partnerRows = partnerMonthRes.error ? [] : (partnerMonthRes.data ?? []);
+  const partnerSuccess30 = partnerRows.filter(r => r.success).length;
+  const { unique: uniquePartners30, top: topPartners } = aggregatePartners(partnerRows);
 
   return {
     total_presentations: totalRes.count ?? 0,
@@ -112,6 +148,11 @@ export async function getVerificationNetworkMetrics(): Promise<VerificationNetwo
     credentials_issued_30d: creds30Res.count ?? 0,
     manual_idv_pending: manualPendingRes.error ? 0 : (manualPendingRes.count ?? 0),
     manual_idv_approved: manualApprovedRes.error ? 0 : (manualApprovedRes.count ?? 0),
+    partner_api_calls_30d: partnerRows.length,
+    partner_api_success_30d: partnerSuccess30,
+    unique_partners_30d: uniquePartners30,
+    top_partners_30d: topPartners,
+    last_partner_api_at: lastPartnerRes.error ? null : (lastPartnerRes.data?.created_at ?? null),
     data_available: true,
   };
 }

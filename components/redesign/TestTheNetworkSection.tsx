@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CIELO_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
+import { assuranceRowIssuer } from "@/lib/assuranceTaxonomy";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 
@@ -116,7 +117,7 @@ export function TestTheNetworkSection() {
           {preview.assurance_taxonomy && Object.entries(preview.assurance_taxonomy).map(([k, v]) => (
             <div key={k} style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)", marginBottom: 4 }}>
               <strong style={{ color: "var(--text-primary)" }}>{k.replace(/_/g, " ")}</strong>
-              {" · "}{typeof v === "object" && v && "provider" in v ? String(v.provider) : ""}
+              {" · "}{typeof v === "object" && v ? assuranceRowIssuer(v) : "Pending named issuer"}
               {" · "}{typeof v === "object" && v && "status" in v ? String(v.status) : ""}
             </div>
           ))}

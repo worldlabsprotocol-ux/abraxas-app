@@ -115,6 +115,9 @@ export default function AdminIdentityPage() {
           <Link href="/admin" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#10B981", textDecoration: "none" }}>
             ← Admin home
           </Link>
+          <Link href="/admin/partners" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#10B981", textDecoration: "none" }}>
+            Partner keys →
+          </Link>
         </div>
 
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>

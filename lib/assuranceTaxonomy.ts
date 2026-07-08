@@ -103,6 +103,19 @@ export interface AssuranceBreakdown {
   L4_ActiveMonitoring?: { status: string; lastSync?: string; oracleSource?: string };
 }
 
+type AssuranceRow = NonNullable<AssuranceBreakdown[keyof AssuranceBreakdown]>;
+
+const PENDING_ISSUER = "Pending named issuer";
+
+/** Resolve display name for an assurance taxonomy row (L1–L4). */
+export function assuranceRowIssuer(row: AssuranceRow | undefined): string {
+  if (!row) return PENDING_ISSUER;
+  if ("provider" in row && row.provider) return row.provider.replace(/_/g, " ");
+  if ("authority" in row && row.authority) return row.authority.replace(/_/g, " ");
+  if ("oracleSource" in row && row.oracleSource) return row.oracleSource.replace(/_/g, " ");
+  return PENDING_ISSUER;
+}
+
 export const CIELO_ASSURANCE_CLAIMS: AssuranceClaim[] = [
   {
     label: "Appraised value",

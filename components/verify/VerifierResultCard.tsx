@@ -1,10 +1,9 @@
-"use client";
 // FILE: components/verify/VerifierResultCard.tsx
-// Shared result card for live + preview verifier states.
+// Shared result card for live + preview verifier states (server + client safe).
 
 import Link from "next/link";
 import type { VerifierResponse } from "@/lib/verifyRegistry";
-import { ASSURANCE_LEVELS } from "@/lib/assuranceTaxonomy";
+import { ASSURANCE_LEVELS, assuranceRowIssuer } from "@/lib/assuranceTaxonomy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -120,10 +119,16 @@ export function VerifierResultCard({
                 const row = taxonomy[key as keyof typeof taxonomy];
                 if (!row) return null;
                 const status = row.status ?? "—";
+                const issuer = assuranceRowIssuer(row);
                 return (
-                  <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.4rem 0", borderBottom: "1px solid var(--border)" }}>
-                    <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)" }}>{level.shortLabel}</span>
-                    <span style={{ fontFamily: FONT, fontSize: "0.65rem", fontWeight: 700, color: status === "VERIFIED" || status === "ACTIVE" ? "#10B981" : "var(--text-muted)" }}>{status}</span>
+                  <div key={key} style={{ padding: "0.4rem 0", borderBottom: "1px solid var(--border)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)" }}>{level.shortLabel}</span>
+                      <span style={{ fontFamily: FONT, fontSize: "0.65rem", fontWeight: 700, color: status === "VERIFIED" || status === "ACTIVE" ? "#10B981" : "var(--text-muted)" }}>{status}</span>
+                    </div>
+                    <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", marginTop: 2 }}>
+                      Issuer: {issuer}
+                    </div>
                   </div>
                 );
               })}

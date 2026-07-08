@@ -3,7 +3,8 @@
 // The verifier does NOT need to re-KYC the user.
 //
 // POST /api/credentials/verify
-// Body: { credential_jwt: string, verifier_id: string, required_claims?: string[] }
+// Body: { credential_jwt: string, verifier_id?: string, required_claims?: string[] }
+// Auth: optional Bearer abx_… or X-Abraxas-Api-Key (required when REQUIRE_PARTNER_API_KEY=true)
 // Returns: VerificationResult
 //
 // GET /api/credentials/verify?wallet=<address>
@@ -13,26 +14,42 @@ import { NextRequest, NextResponse }   from "next/server";
 import { createClient }                from "@supabase/supabase-js";
 import type { VerificationResult }     from "@/lib/credentials/types";
 import { verifyCredentialJwt }         from "@/lib/credentials/verifyJwt";
+import { resolvePartnerAuth }          from "@/lib/partner/partnerAuth";
+import { logPartnerUsage }             from "@/lib/partner/logPartnerUsage";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 // Verify a credential JWT presented by a user
-export async function POST(req: NextRequest): Promise<NextResponse<VerificationResult>> {
+export async function POST(req: NextRequest): Promise<NextResponse<VerificationResult | { error: string }>> {
+  const auth = await resolvePartnerAuth(req, "verify:credential");
+  if (auth && !auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const body = await req.json().catch(() => ({})) as {
     credential_jwt?: string;
     verifier_id?:   string;
     required_claims?: string[];
   };
 
-  const { credential_jwt, verifier_id = "unknown", required_claims = [] } = body;
+  const partnerCtx = auth?.ok ? auth.ctx : null;
+  const verifierId = partnerCtx?.partnerId ?? body.verifier_id ?? "unknown";
 
   const result = await verifyCredentialJwt(
-    credential_jwt ?? "",
-    verifier_id,
-    required_claims,
+    body.credential_jwt ?? "",
+    verifierId,
+    body.required_claims ?? [],
     true,
   );
+
+  void logPartnerUsage({
+    endpoint: "/api/credentials/verify",
+    method: "POST",
+    success: result.verified,
+    responseState: result.verified ? "verified" : (result.error ?? "denied"),
+    partner: partnerCtx,
+  });
 
   return NextResponse.json(result);
 }

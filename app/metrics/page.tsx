@@ -149,6 +149,33 @@ export default function MetricsPage() {
             </>
           )}
 
+          {(v.partner_api_calls_30d > 0 || v.unique_partners_30d > 0) && (
+            <>
+              <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.5rem", marginTop: "0.25rem" }}>
+                Partner API keys (30d)
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.75rem", marginBottom: "0.85rem" }}>
+                <Metric label="Partner API calls" value={String(v.partner_api_calls_30d)} sub={`${v.partner_api_success_30d} successful`} />
+                <Metric label="Active partners" value={String(v.unique_partners_30d)} sub={fmtRelative(v.last_partner_api_at)} />
+              </div>
+              {v.top_partners_30d.length > 0 && (
+                <div style={{ display: "grid", gap: "0.35rem", marginBottom: "0.85rem" }}>
+                  {v.top_partners_30d.map(row => (
+                    <div key={row.partner_id} style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem",
+                      padding: "0.45rem 0.65rem", borderRadius: 8,
+                      background: "var(--surface-inset)", border: "1px solid var(--border)",
+                      fontFamily: FONT, fontSize: "0.72rem",
+                    }}>
+                      <code style={{ fontFamily: MONO, fontSize: "0.68rem", color: ACCENT }}>{row.partner_id}</code>
+                      <span style={{ color: "var(--text-muted)" }}>{row.success}/{row.total} ok</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Btn href="/verify?mode=credential" size="sm">Try credential verify →</Btn>
             <Btn href="/verify" variant="secondary" size="sm">Registry verifier</Btn>
@@ -202,7 +229,7 @@ export default function MetricsPage() {
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
               Supabase: {data?.data_sources.supabase ? "connected" : "not configured"} · Bags API: {data?.data_sources.bags_api ? "connected" : "not configured"}
               <br />
-              Verification log: credential_presentations · Manual IDV: passport_documents
+              Verification log: credential_presentations · Partner API: partner_api_usage · Manual IDV: passport_documents
               <br />
               Last updated: {data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : "—"}
             </div>

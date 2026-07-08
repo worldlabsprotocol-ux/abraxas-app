@@ -4,6 +4,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
+import { resolvePartnerAuth } from "@/lib/partner/partnerAuth";
+import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +13,29 @@ const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 export async function GET(req: NextRequest) {
+  const auth = await resolvePartnerAuth(req, "verify:registry");
+  if (auth && !auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const q = req.nextUrl.searchParams.get("q") ?? req.nextUrl.searchParams.get("query") ?? "";
   if (!q.trim()) {
     return NextResponse.json({ error: "q param required" }, { status: 400 });
   }
 
   const result = await resolveVerifierQuery(q);
+  const partnerCtx = auth?.ok ? auth.ctx : null;
+
+  if (partnerCtx) {
+    void logPartnerUsage({
+      endpoint: "/api/verify/registry",
+      method: "GET",
+      success: result.state === "RESOLVED_VALID",
+      responseState: result.state,
+      partner: partnerCtx,
+    });
+  }
+
   return NextResponse.json(result);
 }
 
