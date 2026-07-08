@@ -13,6 +13,8 @@ export interface RequiredClaimRule {
 
 export interface PartnerPolicyRules {
   allow_core_only?: boolean;
+  /** When true, policy is for sandbox demo only — decisions are not production-usable. */
+  sandbox_only?: boolean;
   required_claims?: RequiredClaimRule[];
   blocked_jurisdictions?: string[];
 }
@@ -32,6 +34,9 @@ export interface PolicyEvaluationResult {
   reason_codes: string[];
   valid_until: string | null;
   missing_claims: string[];
+  /** Present when evaluation is sandbox-only — not usable for payments, investments, or transfers. */
+  decision_context?: "sandbox_only" | "production";
+  production_usable?: boolean;
 }
 
 export interface PolicyDecisionRecord {

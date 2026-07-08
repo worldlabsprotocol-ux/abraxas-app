@@ -44,6 +44,7 @@ export const CLAIM_ISSUERS = {
   abraxas: "issuer:abraxas",
   reclaim: "issuer:reclaim",
   manual: "issuer:abraxas-manual",
+  sandbox: "issuer:abraxas-sandbox",
 } as const;
 
 /** Claims issued after Abraxas manual identity review (pilot — no Veriff) */

@@ -34,8 +34,21 @@ export default function AdminPartnersPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [orgPartnerId, setOrgPartnerId] = useState("");
   const [company, setCompany] = useState("");
+  const [legalEntity, setLegalEntity] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [partners, setPartners] = useState<Array<{ partner_id: string; company: string; status: string }>>([]);
+  const [useCase, setUseCase] = useState("");
+  const [assignedPolicy, setAssignedPolicy] = useState("");
+  const [allowedEnv, setAllowedEnv] = useState<"sandbox" | "production">("sandbox");
+  const [partners, setPartners] = useState<Array<{
+    partner_id: string;
+    company: string;
+    status: string;
+    legal_entity?: string | null;
+    use_case?: string | null;
+    assigned_policy_id?: string | null;
+    usage_count?: number;
+    consent_count?: number;
+  }>>([]);
 
   const loadKeys = useCallback(async () => {
     setLoading(true);
@@ -46,7 +59,19 @@ export default function AdminPartnersPage() {
         fetch("/api/admin/partners", { headers: { "x-admin-pin": pin } }),
       ]);
       const keysData = await keysRes.json() as { keys?: PartnerKeyRow[]; error?: string };
-      const partnersData = await partnersRes.json() as { partners?: Array<{ partner_id: string; company: string; status: string }>; error?: string };
+      const partnersData = await partnersRes.json() as {
+        partners?: Array<{
+          partner_id: string;
+          company: string;
+          status: string;
+          legal_entity?: string | null;
+          use_case?: string | null;
+          assigned_policy_id?: string | null;
+          usage_count?: number;
+          consent_count?: number;
+        }>;
+        error?: string;
+      };
       if (!keysRes.ok) throw new Error(keysData.error ?? "Failed to load keys");
       setKeys(keysData.keys ?? []);
       setPartners(partnersData.partners ?? []);
@@ -106,14 +131,22 @@ export default function AdminPartnersPage() {
         body: JSON.stringify({
           partner_id: orgPartnerId.trim(),
           company: company.trim(),
+          legal_entity: legalEntity.trim() || undefined,
           contact_email: contactEmail.trim() || undefined,
+          use_case: useCase.trim() || undefined,
+          assigned_policy_id: assignedPolicy.trim() || undefined,
+          allowed_environments: [allowedEnv],
+          status: allowedEnv === "production" ? "active" : "recruiting",
         }),
       });
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Create partner failed");
       setOrgPartnerId("");
       setCompany("");
+      setLegalEntity("");
       setContactEmail("");
+      setUseCase("");
+      setAssignedPolicy("");
       await loadKeys();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create partner failed");
@@ -151,7 +184,7 @@ export default function AdminPartnersPage() {
               Pilot · Partner API
             </div>
             <h1 style={{ fontFamily: FONT, fontSize: "1.35rem", fontWeight: 800, margin: 0 }}>
-              Partner API keys
+              Partner onboarding
             </h1>
           </div>
           <Link href="/admin/identity" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#10B981", textDecoration: "none" }}>
@@ -162,9 +195,8 @@ export default function AdminPartnersPage() {
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
           Issue keys for relying parties calling{" "}
           <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>POST /api/credentials/verify</code> and{" "}
-          <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>GET /api/verify/registry</code>.
-          Send as <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>Authorization: Bearer abx_…</code> or{" "}
-          <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>X-Abraxas-Api-Key</code>.
+          <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>POST /api/v1/verification-requests</code>.
+          Register the org first, assign a policy, then issue sandbox or live keys. Real external partners require signed agreement before production keys.
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -197,23 +229,58 @@ export default function AdminPartnersPage() {
           background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
         }}>
           <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Register partner org (migration 025)
+            Register relying party org
           </div>
           <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.75rem" }}>
-            <input value={orgPartnerId} onChange={e => setOrgPartnerId(e.target.value)} placeholder="partner_id"
+            <input value={orgPartnerId} onChange={e => setOrgPartnerId(e.target.value)} placeholder="partner_id (e.g. acme-lending)"
               style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: MONO, fontSize: "0.72rem", width: "100%", boxSizing: "border-box" }} />
-            <input value={company} onChange={e => setCompany(e.target.value)} placeholder="Company name"
+            <input value={company} onChange={e => setCompany(e.target.value)} placeholder="Company name (public)"
               style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: FONT, fontSize: "0.78rem", width: "100%", boxSizing: "border-box" }} />
-            <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Contact email (optional)"
+            <input value={legalEntity} onChange={e => setLegalEntity(e.target.value)} placeholder="Legal entity (optional)"
               style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: FONT, fontSize: "0.78rem", width: "100%", boxSizing: "border-box" }} />
+            <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Contact email"
+              style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: FONT, fontSize: "0.78rem", width: "100%", boxSizing: "border-box" }} />
+            <input value={useCase} onChange={e => setUseCase(e.target.value)} placeholder="Use case (e.g. investor onboarding gate)"
+              style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: FONT, fontSize: "0.78rem", width: "100%", boxSizing: "border-box" }} />
+            <input value={assignedPolicy} onChange={e => setAssignedPolicy(e.target.value)} placeholder="Assigned policy_id (optional)"
+              style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: MONO, fontSize: "0.72rem", width: "100%", boxSizing: "border-box" }} />
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            {(["sandbox", "production"] as const).map(env => (
+              <button key={env} type="button" onClick={() => setAllowedEnv(env)}
+                style={{
+                  padding: "0.4rem 0.75rem", borderRadius: 6, cursor: "pointer",
+                  border: `1px solid ${allowedEnv === env ? "#10B981" : "rgba(255,255,255,0.12)"}`,
+                  background: allowedEnv === env ? "rgba(16,185,129,0.15)" : "transparent",
+                  color: allowedEnv === env ? "#10B981" : "rgba(255,255,255,0.45)",
+                  fontFamily: MONO, fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase",
+                }}>
+                {env}
+              </button>
+            ))}
           </div>
           <button type="button" onClick={() => void createPartnerOrg()} disabled={loading}
             style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: "rgba(16,185,129,0.2)", color: "#10B981", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
             Register partner
           </button>
           {partners.length > 0 && (
-            <div style={{ marginTop: "0.75rem", fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)" }}>
-              {partners.length} registered partner{partners.length === 1 ? "" : "s"}
+            <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {partners.map(p => (
+                <div key={p.partner_id} style={{
+                  padding: "0.65rem 0.75rem", borderRadius: 8,
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+                  fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.55)",
+                }}>
+                  <div style={{ fontWeight: 700, color: "#f0f0f0" }}>{p.company}</div>
+                  <div style={{ fontFamily: MONO, fontSize: "0.58rem", marginTop: 4 }}>
+                    {p.partner_id} · {p.status}
+                    {p.assigned_policy_id ? ` · policy ${p.assigned_policy_id}` : ""}
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    API calls: {p.usage_count ?? 0} · Consent events: {p.consent_count ?? 0}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

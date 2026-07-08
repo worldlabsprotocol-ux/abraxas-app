@@ -1,10 +1,11 @@
 // FILE: app/api/passport/pilot-screening/route.ts
-// Pilot: apply screening_outcome=clear for Tier 3 testing (session auth).
+// Sandbox demo: apply clearly labeled screening_outcome for Tier 3 testing (session auth).
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
-import { applyScreeningClear } from "@/lib/screening/applyScreeningOutcome";
+import { applySandboxScreeningClear } from "@/lib/screening/applySandboxScreeningOutcome";
 import { getTrustStatus } from "@/lib/trust/getTrustStatus";
+import { SANDBOX_DISCLAIMER } from "@/lib/credentials/sandboxClaims";
 
 function pilotScreeningEnabled(): boolean {
   if (process.env.PILOT_TIER3_SCREENING === "true") return true;
@@ -14,7 +15,7 @@ function pilotScreeningEnabled(): boolean {
 
 export async function POST(req: NextRequest) {
   if (!pilotScreeningEnabled()) {
-    return NextResponse.json({ error: "Pilot screening not enabled" }, { status: 403 });
+    return NextResponse.json({ error: "Sandbox demo screening not enabled" }, { status: 403 });
   }
 
   const session = await requireBrowserSession(req);
@@ -25,21 +26,26 @@ export async function POST(req: NextRequest) {
   const trust = await getTrustStatus(session.session.suiAddress);
   if (!trust?.enhanced_trust) {
     return NextResponse.json({
-      error: "Identity verification required before pilot screening",
+      error: "Identity verification required before sandbox demo screening",
     }, { status: 400 });
   }
 
   try {
-    await applyScreeningClear({
+    const result = await applySandboxScreeningClear({
       subjectId: session.session.suiAddress,
-      providerRef: `pilot:self-service:${Date.now()}`,
-      jurisdiction: undefined,
       ttlHours: 24,
     });
     return NextResponse.json({
       ok: true,
       screening_outcome: "clear",
-      message: "Pilot screening claim issued — Tier 3 eligibility may now be active.",
+      environment: "sandbox",
+      status: "demo",
+      non_reliance: true,
+      issuer: "Abraxas Sandbox",
+      expires_at: result.expires_at,
+      created_at: result.created_at,
+      disclaimer: SANDBOX_DISCLAIMER,
+      message: "Sandbox demo screening claim issued — not a real sanctions or AML clearance.",
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Screening failed";

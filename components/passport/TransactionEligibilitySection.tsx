@@ -1,26 +1,40 @@
 "use client";
 // FILE: components/passport/TransactionEligibilitySection.tsx
-// Tier 3 — transaction-specific claims and first external relying partner gate.
+// Tier 3 — transaction-specific claims and sandbox partner demo gate.
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Btn } from "@/components/redesign/ui";
 import { POLICY_DECISIONS, type PolicyDecision } from "@/lib/abraxasNetwork";
+import { SANDBOX_DISCLAIMER } from "@/lib/credentials/sandboxClaims";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
+const SANDBOX_ACCENT = "#F59E0B";
 
 interface EligibilityResponse {
   passport_tier: number;
   tier_label: string;
   transaction_eligibility: boolean;
-  tier3_claims: { claim_type: string; label: string }[];
-  meridian: {
+  tier3_sandbox_demo?: boolean;
+  tier3_claims: {
+    claim_type: string;
+    label: string;
+    environment?: string;
+    status?: string;
+    expires_at?: string | null;
+    issuer?: string;
+  }[];
+  sandbox_partner: {
     partner_id: string;
     company: string;
     policy_id: string;
+    disclaimer: string;
+    sandbox_only: boolean;
     decision: PolicyDecision;
+    decision_context: string;
+    production_usable: boolean;
     missing_claims: string[];
     reason_codes: string[];
     valid_until: string | null;
@@ -35,7 +49,7 @@ async function fetchEligibility(): Promise<EligibilityResponse> {
 
 export function TransactionEligibilitySection({ enabled }: { enabled: boolean }) {
   const queryClient = useQueryClient();
-  const [busy, setBusy] = useState<"screening" | "meridian" | null>(null);
+  const [busy, setBusy] = useState<"screening" | "sandbox" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery({
@@ -47,7 +61,7 @@ export function TransactionEligibilitySection({ enabled }: { enabled: boolean })
 
   if (!enabled) return null;
 
-  async function applyPilotScreening() {
+  async function applySandboxScreening() {
     setBusy("screening");
     setError(null);
     try {
@@ -66,8 +80,8 @@ export function TransactionEligibilitySection({ enabled }: { enabled: boolean })
     }
   }
 
-  async function startMeridianConsent() {
-    setBusy("meridian");
+  async function startSandboxConsent() {
+    setBusy("sandbox");
     setError(null);
     try {
       const res = await fetch("/api/passport/demo-partner-request", {
@@ -132,13 +146,16 @@ export function TransactionEligibilitySection({ enabled }: { enabled: boolean })
           }}>
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
               {data.tier_label}
-              {data.transaction_eligibility ? " · Tier 3 active" : data.passport_tier >= 2 ? " · Tier 2" : ""}
+              {data.transaction_eligibility ? " · Tier 3 active" : data.tier3_sandbox_demo ? " · sandbox demo" : data.passport_tier >= 2 ? " · Tier 2" : ""}
             </div>
             {data.tier3_claims.length > 0 ? (
               <ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.1rem" }}>
                 {data.tier3_claims.map(c => (
-                  <li key={c.claim_type} style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                  <li key={`${c.claim_type}-${c.environment ?? "prod"}`} style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
                     {c.label}
+                    {c.environment === "sandbox" && (
+                      <span style={{ color: SANDBOX_ACCENT, fontWeight: 700 }}> · demo / sandbox</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -149,34 +166,47 @@ export function TransactionEligibilitySection({ enabled }: { enabled: boolean })
             )}
           </div>
 
-          {data.meridian && (
+          {data.sandbox_partner && (
             <div style={{
               padding: "0.75rem 0.85rem", borderRadius: 10,
-              background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.25)",
+              background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.35)",
               marginBottom: "0.85rem",
             }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: "#3B82F6", marginBottom: 4 }}>
-                {data.meridian.company} · first external relying party
+              <div style={{
+                fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700,
+                letterSpacing: "0.08em", textTransform: "uppercase",
+                color: SANDBOX_ACCENT, marginBottom: 6,
+              }}>
+                Sandbox demonstration
               </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: SANDBOX_ACCENT, marginBottom: 4 }}>
+                {data.sandbox_partner.company}
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.5rem" }}>
+                {data.sandbox_partner.disclaimer || SANDBOX_DISCLAIMER}
+              </p>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
-                Policy: {data.meridian.policy_id} ·{" "}
-                <span style={{ color: POLICY_DECISIONS[data.meridian.decision]?.color ?? "inherit", fontWeight: 700 }}>
-                  {POLICY_DECISIONS[data.meridian.decision]?.label ?? data.meridian.decision}
+                Policy: {data.sandbox_partner.policy_id} ·{" "}
+                <span style={{ color: POLICY_DECISIONS[data.sandbox_partner.decision]?.color ?? "inherit", fontWeight: 700 }}>
+                  {POLICY_DECISIONS[data.sandbox_partner.decision]?.label ?? data.sandbox_partner.decision}
                 </span>
+                {data.sandbox_partner.decision_context === "sandbox_only" && (
+                  <span style={{ color: SANDBOX_ACCENT, fontWeight: 600 }}> · not production-usable</span>
+                )}
               </div>
-              {data.meridian.missing_claims.length > 0 && (
+              {data.sandbox_partner.missing_claims.length > 0 && (
                 <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
-                  Missing: {data.meridian.missing_claims.join(", ").replace(/_/g, " ")}
+                  Missing: {data.sandbox_partner.missing_claims.join(", ").replace(/_/g, " ")}
                 </p>
               )}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                {data.meridian.missing_claims.includes("screening_outcome") && data.passport_tier >= 2 && (
-                  <Btn size="sm" variant="secondary" loading={busy === "screening"} onClick={() => void applyPilotScreening()}>
-                    Apply pilot screening →
+                {data.sandbox_partner.missing_claims.includes("screening_outcome") && data.passport_tier >= 2 && (
+                  <Btn size="sm" variant="secondary" loading={busy === "screening"} onClick={() => void applySandboxScreening()}>
+                    Apply sandbox demo screening →
                   </Btn>
                 )}
-                <Btn size="sm" loading={busy === "meridian"} onClick={() => void startMeridianConsent()}>
-                  Meridian consent flow →
+                <Btn size="sm" loading={busy === "sandbox"} onClick={() => void startSandboxConsent()}>
+                  Sandbox consent flow →
                 </Btn>
               </div>
             </div>

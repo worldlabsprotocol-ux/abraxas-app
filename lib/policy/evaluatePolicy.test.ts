@@ -64,4 +64,55 @@ describe("evaluatePolicyRules", () => {
     ]);
     expect(result.decision).toBe("manual_review");
   });
+
+  it("rejects sandbox screening claims on production policies", () => {
+    const prodPolicy: PartnerPolicyRules = {
+      required_claims: [
+        { claim_type: "identity_verified", max_age_hours: 8760, min_assurance: "L2" },
+        { claim_type: "screening_outcome", max_age_hours: 24, must_equal: "clear" },
+      ],
+    };
+    const result = evaluatePolicyRules(prodPolicy, [
+      claim({ claim_type: "identity_verified" }),
+      claim({
+        claim_type: "screening_outcome",
+        issuer_id: "issuer:abraxas-sandbox",
+        claim_value: {
+          outcome: "clear",
+          environment: "sandbox",
+          status: "demo",
+          non_reliance: true,
+        },
+      }),
+    ]);
+    expect(result.decision).not.toBe("approved");
+    expect(result.missing_claims).toContain("screening_outcome");
+    expect(result.production_usable).toBe(false);
+  });
+
+  it("sandbox policy approves with sandbox screening and returns sandbox_only context", () => {
+    const sandboxPolicy: PartnerPolicyRules = {
+      sandbox_only: true,
+      required_claims: [
+        { claim_type: "identity_verified", max_age_hours: 8760, min_assurance: "L2" },
+        { claim_type: "screening_outcome", max_age_hours: 24, must_equal: "clear" },
+      ],
+    };
+    const result = evaluatePolicyRules(sandboxPolicy, [
+      claim({ claim_type: "identity_verified" }),
+      claim({
+        claim_type: "screening_outcome",
+        issuer_id: "issuer:abraxas-sandbox",
+        claim_value: {
+          outcome: "clear",
+          environment: "sandbox",
+          status: "demo",
+          non_reliance: true,
+        },
+      }),
+    ]);
+    expect(result.decision).toBe("approved");
+    expect(result.decision_context).toBe("sandbox_only");
+    expect(result.production_usable).toBe(false);
+  });
 });

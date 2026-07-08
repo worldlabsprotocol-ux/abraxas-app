@@ -1,88 +1,90 @@
-# Step 5 — Tier 3 eligibility + first external relying partner
+# Step 5 — Tier 3 eligibility + partner sandbox
 
-## Overview
+## Honest positioning
 
-Step 5 adds **transaction-specific eligibility (Tier 3)** and registers **Meridian Private Credit** as the first external relying party running the Step 4 consent loop in production pilot.
+Step 5 adds **transaction-specific eligibility (Tier 3)** and an **internal partner sandbox** for testing policy, consent, and screening architecture.
 
-## Tier model
+**What is built:** partner-style policy, consent flow, screening claim, and Tier 3 eligibility experience.
 
-| Tier | Meaning |
-|------|---------|
-| 0 | Account only |
-| 1 | Wallet-bound Passport |
-| 2 | Identity-verified Passport |
-| 3 | Transaction-specific eligibility (screening, investor, KYB, asset claims) |
+**What is not proven yet:** an independent organization using its own `abx_live_` key, making real requests, and relying on Abraxas for a production decision.
 
-Tier 3 activates when the holder has at least one active Tier 3 claim:
+Do **not** present the sandbox as a live external relying party until a separate organization has explicitly agreed to participate.
 
-- `screening_outcome`
-- `accredited_status`
-- `kyb_verified`
-- `transfer_eligibility`
-- `product_eligibility`
-- `asset_ownership_reviewed`
+## Abraxas Partner Sandbox
 
-## Meridian Private Credit (first external relying party)
+- **Public name:** Abraxas Partner Sandbox
+- **Internal partner_id:** `meridian-private-credit` (legacy ID — not shown as third-party proof)
+- **Policy:** `meridian-investor-gate-v1` (`sandbox_only: true`)
+- **Disclaimer:** Sandbox demonstration — not a live financial offering or external partner integration.
 
-- **Partner ID:** `meridian-private-credit`
-- **Policy:** `meridian-investor-gate-v1`
-- **Requires:** identity (L2+) · wallet binding · sanctions screening (24h)
+Required claims (demo):
 
-Partners create requests server-side:
-
-```http
-POST /api/v1/verification-requests
-Authorization: Bearer abx_live_…
-
+```json
 {
-  "policy_id": "meridian-investor-gate-v1",
-  "requested_action": "investor_onboarding",
-  "sui_address": "0x…"
+  "sandbox_only": true,
+  "required_claims": [
+    { "claim_type": "identity_verified", "max_age_hours": 8760, "min_assurance": "L2" },
+    { "claim_type": "wallet_binding_confirmed", "max_age_hours": 720, "min_assurance": "L2" },
+    { "claim_type": "screening_outcome", "max_age_hours": 24, "must_equal": "clear" }
+  ]
 }
 ```
 
-## Holder APIs
+## Sandbox screening
+
+When `PILOT_TIER3_SCREENING` is enabled (default off in production), demo screening claims include:
+
+- `issuer`: Abraxas Sandbox
+- `environment`: sandbox
+- `status`: demo
+- `non_reliance`: true
+
+Policy responses for sandbox policies return `decision_context: "sandbox_only"` and `production_usable: false`.
+
+Sandbox claims **cannot** satisfy production policies.
+
+## API surface
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/passport/transaction-eligibility` | Tier 3 status + Meridian policy evaluation |
-| POST | `/api/passport/pilot-screening` | Pilot screening claim (non-prod or `PILOT_TIER3_SCREENING=true`) |
-| POST | `/api/passport/demo-partner-request` | Demo consent URL (supports Meridian policy) |
-| GET | `/api/partners/registry` | Public external relying partner list |
+| GET | `/api/passport/transaction-eligibility` | Tier 3 status + sandbox policy evaluation |
+| POST | `/api/passport/pilot-screening` | Sandbox demo screening claim |
+| POST | `/api/passport/demo-partner-request` | Demo consent URL (sandbox policy) |
+| GET | `/api/partners/registry` | **External** relying partners only (excludes sandbox) |
+| POST | `/api/external-assets/apply` | External asset owner application |
 
-## Screening partner API
+## External asset owner intake
 
-```http
-POST /api/v1/screening/outcome
-Authorization: Bearer abx_live_…
+Applications land in `external_asset_applications` with:
 
-{ "sui_address": "0x…", "outcome": "clear" }
-```
+- `originator`: `external` or `abraxas_sample`
+- `status`: `pending_review` until a named reviewer signs
+- Public verify slug assigned after review — not before
 
-Requires `verify:screening` scope (or `verify:requests` / `verify:credential`).
+One sample record (`ABX-DEMO-LAND-001`) is seeded as `is_demo_sample: true`.
 
-## Database (migration 028)
+## Partner onboarding (admin)
 
-Run `supabase/migrations/028_meridian_relying_partner.sql`:
+`/admin/partners` supports registering real future relying parties:
 
-- Seeds `meridian-private-credit` in `partners`
-- Seeds `meridian-investor-gate-v1` policy
-- Adds `verify:screening` scope to existing API keys
+- Company, legal entity, contact email, use case
+- Allowed environment (sandbox / production)
+- Policy assignment + API key issuance and revocation
+- Usage logs via `partner_api_usage`
 
-## Local test checklist
+## Migration
 
-1. Run migrations **018**, **024**, **027**, **028**
-2. Sign in, bind wallet, complete identity (Tier 2)
-3. Passport → **Apply pilot screening** (or POST screening API)
-4. Confirm Tier 3 active on Passport
-5. **Meridian consent flow** → approve → check partner access history
-6. Server-side: create Meridian request with partner key, poll decision
+Run `supabase/migrations/029_sandbox_honest_labeling.sql` after 028:
 
-## Environment
+- Relabels sandbox partner display name
+- Sets `sandbox_only: true` on investor gate policy
+- Adds external asset applications table + partner onboarding columns
 
-| Variable | Purpose |
-|----------|---------|
-| `PILOT_TIER3_SCREENING=true` | Enable pilot screening button in production |
-| `PILOT_TIER3_SCREENING=false` | Disable pilot screening in dev |
+## QA checklist
 
-Default: enabled in non-production, disabled in production unless explicitly set.
+1. Passport → Tier 3 section shows **Abraxas Partner Sandbox** with amber sandbox label
+2. Apply sandbox demo screening → claim shows demo/sandbox, not production Tier 3
+3. Sandbox consent flow → partner access history
+4. `/integrations/relying-parties` — sandbox in demo section; external list empty
+5. `/api/partners/registry` → `count: 0`
+6. Production policy evaluation rejects sandbox screening claims

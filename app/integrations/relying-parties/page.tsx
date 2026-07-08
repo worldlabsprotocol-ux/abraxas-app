@@ -15,14 +15,17 @@ import {
   RELYING_PARTY_LIMITATIONS,
   DESIGN_PARTNER_SLOTS,
 } from "@/lib/relyingPartyProgram";
-import { getExternalRelyingPartners } from "@/lib/relyingPartners";
+import { getExternalRelyingPartners, getSandboxPartners } from "@/lib/relyingPartners";
+import { SANDBOX_DISCLAIMER } from "@/lib/credentials/sandboxClaims";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
+const SANDBOX_ACCENT = "#F59E0B";
 
 export default function RelyingPartiesPage() {
   const externalPartners = getExternalRelyingPartners();
+  const sandboxPartners = getSandboxPartners();
 
   return (
     <RedesignPage maxWidth={900}>
@@ -44,27 +47,71 @@ export default function RelyingPartiesPage() {
         </div>
       </ContentCard>
 
-      <ContentCard title="First external relying party (pilot live)">
-        {externalPartners.map(partner => (
+      <ContentCard title="Partner sandbox (internal demo)">
+        <p style={{ ...body, marginBottom: "0.75rem" }}>
+          Tier 3 policy, consent, and screening architecture is live for testing — labeled honestly as a sandbox,
+          not as an external relying party.
+        </p>
+        {sandboxPartners.map(partner => (
           <div key={partner.partner_id} style={{
             padding: "0.85rem", borderRadius: 12,
-            background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.28)",
+            background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.35)",
             marginBottom: "0.65rem",
           }}>
-            <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: ACCENT, marginBottom: 4 }}>
+            <div style={{
+              fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
+              letterSpacing: "0.08em", textTransform: "uppercase",
+              color: SANDBOX_ACCENT, marginBottom: 6,
+            }}>
+              Sandbox · not an external partner
+            </div>
+            <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: SANDBOX_ACCENT, marginBottom: 4 }}>
               {partner.company}
             </div>
+            <p style={{ ...body, margin: "0 0 0.35rem", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+              {partner.disclaimer ?? SANDBOX_DISCLAIMER}
+            </p>
             <p style={{ ...body, margin: "0 0 0.5rem" }}>{partner.description}</p>
             <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: "0.65rem" }}>
               Policy {partner.policy_id} · {partner.api_entry} · Status {partner.status}
             </div>
-            <Btn href="/passport" size="sm">Test on Passport →</Btn>
+            <Btn href="/passport" size="sm">Try on Passport →</Btn>
           </div>
         ))}
         <p style={{ ...body, margin: "0.65rem 0 0", fontSize: "0.72rem" }}>
-          Partners integrate server-side. Holders never paste API keys — they consent at{" "}
+          Holders never paste API keys — they consent at{" "}
           <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>/passport?verify_request=…</code>
         </p>
+      </ContentCard>
+
+      <ContentCard title="External relying parties">
+        {externalPartners.length === 0 ? (
+          <p style={body}>
+            No external relying parties are publicly listed yet. Abraxas is pilot-ready — recruiting the first
+            unaffiliated organization to operate with an issued <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_</code> key
+            for one narrow workflow.
+          </p>
+        ) : (
+          externalPartners.map(partner => (
+            <div key={partner.partner_id} style={{
+              padding: "0.85rem", borderRadius: 12,
+              background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.28)",
+              marginBottom: "0.65rem",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: ACCENT, marginBottom: 4 }}>
+                {partner.company}
+              </div>
+              <p style={{ ...body, margin: "0 0 0.5rem" }}>{partner.description}</p>
+              <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: "0.65rem" }}>
+                Policy {partner.policy_id} · {partner.api_entry} · Status {partner.status}
+              </div>
+            </div>
+          ))
+        )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+          <Btn href="/integrations/outreach" size="sm">Recruitment templates →</Btn>
+          <Btn href="/integrations/external-assets" variant="secondary" size="sm">External asset intake →</Btn>
+        </div>
       </ContentCard>
 
       <ContentCard title="Four-step onboarding">

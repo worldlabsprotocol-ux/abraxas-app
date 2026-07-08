@@ -33,8 +33,8 @@ export async function evaluateTransferEligibility(
     evaluateSubjectPolicy(to, policyId),
   ]);
 
-  const fromOk = fromEval.decision === "approved";
-  const toOk = toEval.decision === "approved";
+  const fromOk = fromEval.decision === "approved" && fromEval.production_usable !== false;
+  const toOk = toEval.decision === "approved" && toEval.production_usable !== false;
 
   let decision: TransferEligibilityResult["decision"] = "approved";
   const reason_codes: string[] = [];

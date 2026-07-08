@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
       reason_codes: result.reason_codes,
       valid_until: result.valid_until,
       missing_claims: result.missing_claims,
+      decision_context: result.decision_context ?? "production",
+      production_usable: result.production_usable ?? result.decision === "approved",
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Evaluation failed";

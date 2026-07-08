@@ -108,6 +108,30 @@ const NAJ: RegistryAssetDef = {
   aliases: ["naj", "naj-tulum"],
 };
 
+const DEMO_EXTERNAL: RegistryAssetDef = {
+  abxId: "ABX-DEMO-LAND-001",
+  slug: "demo-riverside-parcel",
+  name: "Sample Riverside Parcel (DEMO)",
+  assetClass: "REAL_ESTATE_LAND",
+  location: "Lane County, Oregon",
+  image: "/assets/worldwearables/naj.jpg",
+  verifyState: "reference",
+  pipelineStage: "DEMO_SAMPLE",
+  assuranceLevel: 0,
+  assuranceTaxonomy: {
+    L1_IdentityClaim: { status: "PENDING", provider: "Pending_review" },
+  },
+  metadataUri: "/integrations/external-assets",
+  notice:
+    "DEMO / SAMPLE — illustrates external asset owner intake. Not verified. Status Pending review until named reviewer signs.",
+  tokenization: {
+    standard: "Reference entry",
+    chain: "Off-chain",
+    status: "DEMO_SAMPLE",
+  },
+  aliases: ["demo-land", "abx-demo-land-001"],
+};
+
 const CLOVE: RegistryAssetDef = {
   abxId: "ABX-RE-VIL-004",
   slug: "the-clove",
@@ -132,7 +156,7 @@ const CLOVE: RegistryAssetDef = {
   aliases: ["clove", "the-clove"],
 };
 
-export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, NAJ, CLOVE];
+export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, NAJ, DEMO_EXTERNAL, CLOVE];
 
 const BY_KEY = new Map<string, RegistryAssetDef>();
 for (const asset of REGISTRY_ASSETS) {

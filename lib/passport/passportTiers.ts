@@ -2,6 +2,8 @@
 // Tier 0–3 passport model — account, wallet-bound, identity-verified, action-specific.
 
 import { hasTransactionEligibility } from "@/lib/passport/tier3Claims";
+import { productionTier3ClaimTypes } from "@/lib/credentials/sandboxClaims";
+import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 
 export type PassportTier = 0 | 1 | 2 | 3;
 
@@ -14,6 +16,8 @@ export interface PassportTierInput {
   consentActive?: boolean;
   /** Active credential claim types from claims registry */
   activeClaimTypes?: string[];
+  /** Full active claims — used to exclude sandbox/demo from production Tier 3 */
+  activeClaims?: CredentialClaimRecord[];
 }
 
 export interface TierCapability {
@@ -41,7 +45,11 @@ export function resolvePassportTier(input: PassportTierInput): PassportTier {
   if (!input.walletBound || !input.walletBindingFresh) return 0;
   if (!input.profileComplete) return 0;
   if (!input.identityCredentialActive) return 1;
-  if (hasTransactionEligibility(input.activeClaimTypes ?? [])) return 3;
+  if (input.activeClaims?.length) {
+    if (productionTier3ClaimTypes(input.activeClaims).length > 0) return 3;
+  } else if (hasTransactionEligibility(input.activeClaimTypes ?? [])) {
+    return 3;
+  }
   return 2;
 }
 
@@ -80,7 +88,7 @@ export function tierCapabilities(input: PassportTierInput): TierCapability[] {
       tierRequired: 3,
     },
     {
-      label: "Meridian private-credit eligibility (pilot)",
+      label: "Partner sandbox eligibility (demo only)",
       unlocked: tier >= 3,
       tierRequired: 3,
     },

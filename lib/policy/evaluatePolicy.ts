@@ -2,6 +2,7 @@
 // Evaluate partner policy against a subject's active claims.
 
 import type { CredentialClaimRecord, AssuranceLevel } from "@/lib/credentials/claimSchema";
+import { isSandboxClaim } from "@/lib/credentials/sandboxClaims";
 import type {
   PartnerPolicyRules,
   PolicyEvaluationResult,
@@ -15,9 +16,17 @@ const ASSURANCE_RANK: Record<AssuranceLevel, number> = {
   L4: 4,
 };
 
-function claimMeetsRule(claim: CredentialClaimRecord | undefined, rule: RequiredClaimRule): boolean {
+function claimMeetsRule(
+  claim: CredentialClaimRecord | undefined,
+  rule: RequiredClaimRule,
+  policySandboxOnly: boolean,
+): boolean {
   if (!claim) return false;
   if (claim.status !== "active") return false;
+
+  const sandbox = isSandboxClaim(claim);
+  if (sandbox && !policySandboxOnly) return false;
+  if (!sandbox && policySandboxOnly && rule.claim_type === "screening_outcome") return false;
 
   const now = Date.now();
   if (rule.max_age_hours != null) {
@@ -47,6 +56,12 @@ export function evaluatePolicyRules(
   claims: CredentialClaimRecord[],
   context?: { jurisdiction?: string | null },
 ): PolicyEvaluationResult {
+  const policySandboxOnly = rules.sandbox_only === true;
+  const decisionContext: PolicyEvaluationResult["decision_context"] = policySandboxOnly
+    ? "sandbox_only"
+    : "production";
+  const productionUsable = !policySandboxOnly;
+
   if (rules.allow_core_only) {
     return {
       decision: "approved",
@@ -54,6 +69,8 @@ export function evaluatePolicyRules(
       reason_codes: [],
       valid_until: null,
       missing_claims: [],
+      decision_context: decisionContext,
+      production_usable: productionUsable,
     };
   }
 
@@ -74,12 +91,14 @@ export function evaluatePolicyRules(
       reason_codes: ["jurisdiction_blocked"],
       valid_until: null,
       missing_claims: required.map(r => r.claim_type),
+      decision_context: decisionContext,
+      production_usable: false,
     };
   }
 
   for (const rule of required) {
     const claim = claimsByType.get(rule.claim_type);
-    if (!claimMeetsRule(claim, rule)) {
+    if (!claimMeetsRule(claim, rule, policySandboxOnly)) {
       missing.push(rule.claim_type);
       continue;
     }
@@ -94,6 +113,8 @@ export function evaluatePolicyRules(
       reason_codes: missing.map(m => `missing:${m}`),
       valid_until: computeValidUntil(claims, required),
       missing_claims: missing,
+      decision_context: decisionContext,
+      production_usable: false,
     };
   }
 
@@ -103,6 +124,8 @@ export function evaluatePolicyRules(
     reason_codes: [],
     valid_until: computeValidUntil(claims, required),
     missing_claims: [],
+    decision_context: decisionContext,
+    production_usable: productionUsable,
   };
 }
 
