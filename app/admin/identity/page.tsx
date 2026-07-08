@@ -121,7 +121,8 @@ export default function AdminIdentityPage() {
         </div>
 
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
-          Veriff live integrations are disabled. Approve uploads here to issue L2 identity credentials.
+          Veriff live integrations are disabled. When users upload IDs on Passport, pending items appear here.
+          Approve to issue an L2 identity credential — or reject with a note. URL: <strong>/admin/identity</strong>
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>

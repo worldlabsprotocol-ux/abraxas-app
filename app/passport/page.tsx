@@ -19,6 +19,7 @@ import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { WalletBindingCard } from "@/components/passport/WalletBindingCard";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { PassportSetupPanel } from "@/components/passport/PassportSetupPanel";
+import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { VerificationSuccessPanel } from "@/components/passport/VerificationSuccessPanel";
 import { PassportAdvancedSection } from "@/components/passport/PassportAdvancedSection";
 import { PUBLIC_POSITIONING } from "@/lib/passportLayers";
@@ -45,6 +46,7 @@ import { computePassportCompletion, resolveFlowStep } from "@/lib/passportComple
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTrustStatus, passportQueryKeys } from "@/lib/api/passport";
+import { VerifyClient } from "@/app/verify/VerifyClient";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -244,6 +246,7 @@ function PassportPageInner() {
 
   const verifyRequestId = searchParams.get("verify_request");
   const verificationParam = searchParams.get("verification");
+  const pageView = searchParams.get("view") === "verify" ? "verify" : "passport";
 
   useEffect(() => {
     if (searchParams.get("signed_in") === "1") refresh();
@@ -386,10 +389,24 @@ function PassportPageInner() {
             Welcome to Abraxas Passport
           </h1>
           <p style={{ fontFamily:S, fontSize:"0.85rem", color:"var(--text-secondary)", lineHeight:1.65, maxWidth:560, margin:0 }}>
-            {PUBLIC_POSITIONING.proofNotDocuments}
+            {pageView === "verify"
+              ? "Look up registry records, run policy checks, and verify credentials — same tools partners integrate server-side."
+              : PUBLIC_POSITIONING.proofNotDocuments}
           </p>
         </div>
 
+        <Suspense fallback={null}>
+          <PassportPageTabs active={pageView} />
+        </Suspense>
+
+        {pageView === "verify" ? (
+          <Suspense fallback={
+            <p style={{ fontFamily: S, fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading verifier…</p>
+          }>
+            <VerifyClient />
+          </Suspense>
+        ) : (
+          <>
         {verifyRequestId && suiAddress && !partnerConsentDismissed && (
           <ConsentCeremony
             requestId={verifyRequestId}
@@ -729,6 +746,8 @@ function PassportPageInner() {
           <Btn href="/#registry">Browse registry →</Btn>
           <Btn href="/build" variant="tertiary">Submit an asset</Btn>
         </div>
+          </>
+        )}
       </div>
       <RedesignFooter />
     </div>

@@ -73,12 +73,12 @@ export function TestTheNetworkSection() {
       }}>
         Prove it in one click. No sign in required.
       </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, maxWidth: 620, margin: "0 0 1rem",
-      }}>
-        Run a live registry lookup, inspect issuer attestations, and open the public verifier API path partners use.
-      </p>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+          lineHeight: 1.65, maxWidth: 620, margin: "0 0 1rem",
+        }}>
+          Run a live registry lookup or inspect issuer attestations. No sign-in or partner API key required.
+        </p>
 
       <div style={{
         display: "grid",
@@ -137,7 +137,7 @@ export function TestTheNetworkSection() {
           </div>
           {[
             { s: "live", path: "GET /api/verify/registry?q=" },
-            { s: "live", path: "POST /api/credentials/verify", href: "/verify?mode=credential" },
+            { s: "live", path: "POST /api/credentials/verify", href: "/passport?view=verify&mode=credential", note: "JWT verify · no API key" },
             { s: "pilot", path: "POST /api/v1/verification-requests" },
             { s: "pilot", path: "GET /api/v1/decisions/{id}/status" },
           ].map(row => (
@@ -153,8 +153,8 @@ export function TestTheNetworkSection() {
             </div>
           ))}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.35rem" }}>
-            <Btn href="/verify?mode=credential" variant="secondary" size="sm">Try credential verify →</Btn>
-            <Btn href="/integrations" variant="ghost" size="sm">Integration docs →</Btn>
+            <Btn href="/passport?view=verify&mode=credential" variant="secondary" size="sm">Try credential verify →</Btn>
+            <Btn href="/integrations" variant="ghost" size="sm">Partner integration docs →</Btn>
           </div>
         </div>
       </div>

@@ -16,8 +16,7 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
-  { href: "/passport", label: "Passport" },
-  { href: "/verify", label: "Verify" },
+  { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
 ];
 
 const MORE_LINKS = [
@@ -36,7 +35,10 @@ const MORE_LINKS = [
   { href: "/about", label: "About" },
 ];
 
-function isLinkActive(pathname: string | null, href: string, exact?: boolean) {
+function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {
+  if (matchPrefixes?.length) {
+    return matchPrefixes.some(p => pathname === p || (pathname?.startsWith(p + "/") ?? false));
+  }
   if (href === "/") return pathname === "/" || pathname === "/terminal";
   if (exact) return pathname === href;
   return pathname === href || (pathname?.startsWith(href + "/") ?? false);
@@ -72,7 +74,7 @@ export function RedesignNav() {
       <div className="rd-nav-links" style={{ display: "none", flex: 1,
                                               justifyContent: "center", gap: "0.25rem" }}>
         {LINKS.map(l => {
-          const active = isLinkActive(pathname, l.href, l.exact);
+          const active = isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined);
           return (
             <MotionLink key={l.href} href={l.href}
               whileHover={reduce ? undefined : { scale: 1.06 }}
@@ -154,7 +156,7 @@ export function RedesignNav() {
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
                 style={{ padding: "0.7rem 0.5rem", borderRadius: 10, textDecoration: "none",
                          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 600,
-                         color: isLinkActive(pathname, l.href, l.exact) ? ACCENT : "var(--text-primary)" }}>
+                         color: isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined) ? ACCENT : "var(--text-primary)" }}>
                 {l.label}
               </Link>
             ))}

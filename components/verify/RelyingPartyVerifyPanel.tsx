@@ -112,7 +112,7 @@ export function RelyingPartyVerifyPanel({ suiAddress }: { suiAddress?: string | 
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
       }}>
         Relying parties call this server-side with a user&apos;s Abraxas credential JWT.
-        This tester hits the same endpoint partners integrate — signature, registry, and optional claim checks included.
+        This public tester verifies the JWT cryptographically — no partner API key required.
       </p>
 
       <div style={{ display: "grid", gap: "0.85rem", marginBottom: "1rem" }}>

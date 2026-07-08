@@ -7,6 +7,7 @@ import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
 import { VerifyStaticSample } from "@/components/verify/VerifyStaticSample";
 import { VerifyClient } from "./VerifyClient";
+import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { resolveRegistryAsset } from "@/lib/data/registryAssets";
 
 interface PageProps {
@@ -28,6 +29,9 @@ export default function VerifyPage({ searchParams }: PageProps) {
       <VerifyPageIntro />
       <VerifyStaticSample />
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
+        <Suspense fallback={null}>
+          <PassportPageTabs active="verify" />
+        </Suspense>
         <Suspense fallback={
           <p style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>
             Loading verifier…

@@ -45,11 +45,6 @@ const VALID_ACTIONS: VerificationAction[] = [
 
 export async function POST(req: NextRequest): Promise<NextResponse<PartnerVerifyResponse | VerificationResult | { error: string }>> {
   const started = Date.now();
-  const auth = await resolvePartnerAuth(req, "verify:credential");
-  if (auth && !auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
-
   const body = await req.json().catch(() => ({})) as {
     credential_jwt?: string;
     record_id?: string;
@@ -59,6 +54,16 @@ export async function POST(req: NextRequest): Promise<NextResponse<PartnerVerify
     verifier_id?: string;
     required_claims?: string[];
   };
+
+  // Public JWT cryptographic verify — no partner key (browser /verify tester, Passport self-check).
+  const isPublicCredentialVerify = Boolean(body.credential_jwt?.trim());
+
+  const auth = isPublicCredentialVerify
+    ? null
+    : await resolvePartnerAuth(req, "verify:credential");
+  if (auth && !auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
 
   const partnerCtx = auth?.ok ? auth.ctx : null;
   const partnerId = partnerCtx?.partnerId ?? body.verifier_id ?? "unknown";

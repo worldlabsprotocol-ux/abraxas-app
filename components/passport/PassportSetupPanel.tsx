@@ -249,14 +249,28 @@ export function PassportSetupPanel({
                     OPTIONAL
                   </span>
                 </div>
-                <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
                   Your profile is active. Add an ID check when you need enhanced trust for payments, submissions, or partner policies.
                   {manualMode ? (
-                    <> Upload a government ID for pilot manual review.</>
+                    <> Upload a government ID below — our team reviews manually (Veriff trial is not active).</>
                   ) : (
                     <> Usually takes 2–4 minutes via licensed provider — Abraxas stores outcome only.</>
                   )}
                 </p>
+
+                {manualMode && (identityStatus === "pending" || isPolling) && (
+                  <div style={{
+                    padding: "0.65rem 0.75rem", borderRadius: 10, marginBottom: "0.65rem",
+                    background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.25)",
+                  }}>
+                    <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#3B82F6", marginBottom: 4 }}>
+                      Veriff session inactive
+                    </div>
+                    <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
+                      If you started Veriff before the trial ended, that review will not complete. Upload your ID below for pilot manual review instead — or skip identity; Tier 1 Passport works without it.
+                    </p>
+                  </div>
+                )}
 
                 {(identityStatus === "pending" || isPolling) ? (
                   <div style={{
