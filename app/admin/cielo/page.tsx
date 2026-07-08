@@ -30,11 +30,26 @@ interface Booking {
   payment_tx_digest?: string | null;
 }
 
+interface VerifiedRateRequest {
+  public_reference: string;
+  status: string;
+  eligibility_decision: string;
+  guest_name: string | null;
+  contact_email: string | null;
+  check_in: string | null;
+  check_out: string | null;
+  verification_decision_id: string | null;
+  consent_receipt_id: string | null;
+  policy_id: string;
+  created_at: string;
+}
+
 export default function CieloAdminPage() {
   const [pin, setPin] = useState("");
   const [authed, setAuthed] = useState(false);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [verifiedRate, setVerifiedRate] = useState<VerifiedRateRequest[]>([]);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [note, setNote] = useState("Blocked after checking public Airbnb listing");
@@ -54,12 +69,14 @@ export default function CieloAdminPage() {
 
   async function refresh() {
     const headers = { "x-admin-pin": pin };
-    const [b, k] = await Promise.all([
+    const [b, k, vr] = await Promise.all([
       fetch("/api/admin/cielo/calendar", { headers }).then(r => r.json()),
       fetch("/api/admin/cielo/bookings", { headers }).then(r => r.json()),
+      fetch("/api/admin/cielo/verified-rate", { headers }).then(r => r.json()),
     ]);
     setBlocks(b.blocks ?? []);
     setBookings(k.bookings ?? []);
+    setVerifiedRate(vr.requests ?? []);
   }
 
   async function login() {
@@ -85,6 +102,15 @@ export default function CieloAdminPage() {
       method: "DELETE",
       headers: { "Content-Type": "application/json", "x-admin-pin": pin },
       body: JSON.stringify({ id, pin }),
+    });
+    await refresh();
+  }
+
+  async function updateVerifiedRate(ref: string, status: string) {
+    await fetch("/api/admin/cielo/verified-rate", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      body: JSON.stringify({ public_reference: ref, status }),
     });
     await refresh();
   }
@@ -143,6 +169,37 @@ export default function CieloAdminPage() {
               {b.source === "operator" && (
                 <button type="button" onClick={() => removeBlock(b.id)} style={{ background: "transparent", border: "none", color: "#EF4444", cursor: "pointer" }}>Remove</button>
               )}
+            </div>
+          ))}
+        </section>
+
+        <section style={{ marginBottom: "2rem" }}>
+          <h2 style={{ fontFamily: FONT, fontSize: "1rem", marginBottom: "0.75rem" }}>
+            Verified-rate pilot requests ({verifiedRate.length})
+          </h2>
+          <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "#888", marginBottom: "0.75rem", lineHeight: 1.55 }}>
+            Passport-gated pilot requests — not confirmed bookings. Decision references link to policy audit trail.
+          </p>
+          {verifiedRate.length === 0 ? (
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#666" }}>No verified-rate requests yet.</p>
+          ) : verifiedRate.map(r => (
+            <div key={r.public_reference} style={{ padding: "0.75rem 0", borderBottom: "1px solid #222" }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 600 }}>
+                {r.public_reference} · {r.eligibility_decision} · {r.status}
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: "0.65rem", color: "#888", lineHeight: 1.6 }}>
+                {r.guest_name ?? "—"} · {r.contact_email ?? "—"}
+                {r.check_in && r.check_out ? ` · ${r.check_in} → ${r.check_out}` : ""}
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "#666", marginTop: 4 }}>
+                policy {r.policy_id} · decision {r.verification_decision_id?.slice(0, 8) ?? "—"}… · consent {r.consent_receipt_id?.slice(0, 8) ?? "—"}…
+              </div>
+              <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.35rem", flexWrap: "wrap" }}>
+                {["request_received", "pending_review", "eligible", "operator_confirmed", "declined"].map(s => (
+                  <button key={s} type="button" onClick={() => updateVerifiedRate(r.public_reference, s)}
+                    style={{ ...btn, padding: "0.25rem 0.5rem", fontSize: "0.62rem" }}>{s}</button>
+                ))}
+              </div>
             </div>
           ))}
         </section>

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
 import { resolveRegistryAsset } from "@/lib/data/registryAssets";
 import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_RECORD_ID } from "@/lib/cielo/verifiedGuestPolicy";
+import { getPublicRegistryEvents } from "@/lib/cielo/verifiedRateService";
 import { VerifierResultCard } from "./VerifierResultCard";
 import { recordDetailRows, RECORD_DETAIL_FONT, RECORD_DETAIL_MONO } from "@/lib/verify/recordScope";
 
@@ -14,6 +16,14 @@ export async function VerifyRecordStatic({ recordId }: { recordId: string }) {
   const result = await resolveVerifierQuery(abxId);
   const heroImage = asset?.abxId === "ABX-RE-HOSP-001" ? CIELO_HERO_IMAGE.src : asset?.image;
   const detailRows = recordDetailRows(result);
+  let publicEvents: Array<{ message: string; created_at: string }> = [];
+  if (abxId === CIELO_RECORD_ID) {
+    try {
+      publicEvents = await getPublicRegistryEvents(abxId, 5);
+    } catch {
+      /* optional when DB unavailable */
+    }
+  }
 
   return (
     <article
@@ -104,6 +114,33 @@ export async function VerifyRecordStatic({ recordId }: { recordId: string }) {
               </div>
             ))}
           </dl>
+          {publicEvents.length > 0 && (
+            <div style={{ marginTop: "1rem" }}>
+              <div style={{
+                fontFamily: RECORD_DETAIL_MONO,
+                fontSize: "0.48rem",
+                color: "var(--text-muted)",
+                textTransform: "uppercase",
+                marginBottom: "0.35rem",
+              }}>
+                Public activity
+              </div>
+              {publicEvents.map((ev, i) => (
+                <div key={i} style={{
+                  fontFamily: RECORD_DETAIL_FONT,
+                  fontSize: "0.72rem",
+                  color: "var(--text-secondary)",
+                  marginBottom: 4,
+                  lineHeight: 1.5,
+                }}>
+                  {ev.message}
+                  <span style={{ fontFamily: RECORD_DETAIL_MONO, fontSize: "0.58rem", color: "var(--text-muted)", marginLeft: 6 }}>
+                    {new Date(ev.created_at as string).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ marginTop: "1rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Link
               href="/verify"
