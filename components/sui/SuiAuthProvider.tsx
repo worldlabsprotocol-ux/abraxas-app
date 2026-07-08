@@ -47,6 +47,14 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setCanSignTransactions(canSignZkLoginTransactions(session?.suiAddress));
+    if (session?.suiAddress) {
+      void fetch("/api/auth/browser-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ sui_address: session.suiAddress }),
+      }).catch(() => { /* best-effort */ });
+    }
   }, [session]);
 
   const signInWithGoogle = useCallback(async () => {

@@ -11,6 +11,7 @@ import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
+import { PassportTierCapabilities } from "@/components/passport/PassportTierCapabilities";
 import Link from "next/link";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -41,6 +42,7 @@ interface Props {
   onStartIdCheck: () => void;
   onRefresh: () => void;
   onWalletBound?: () => void;
+  returnPath?: string | null;
 }
 
 export function PassportSetupPanel({
@@ -59,6 +61,7 @@ export function PassportSetupPanel({
   onStartIdCheck,
   onRefresh,
   onWalletBound,
+  returnPath,
 }: Props) {
   const manualMode = idvProvider === "manual";
   const assuranceLabel = manualMode ? "L2" : "L3";
@@ -211,6 +214,26 @@ export function PassportSetupPanel({
             <div>
               <div style={{
                 padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "0.85rem",
+                background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)",
+              }}>
+                <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: ACCENT, marginBottom: "0.35rem" }}>
+                  Continue with basic Passport
+                </div>
+                <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
+                  Tier 1 complete — wallet bound. Browse, connect apps, and use the Cielo verified-rate pilot without ID verification.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                  {returnPath ? (
+                    <Btn href={decodeURIComponent(returnPath)} size="sm">Return to flow →</Btn>
+                  ) : (
+                    <Btn href="/cielo/verified-rate" size="sm">Try Cielo verified rate →</Btn>
+                  )}
+                  <Btn href="/#registry" variant="ghost" size="sm">Browse registry</Btn>
+                </div>
+              </div>
+
+              <div style={{
+                padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "0.85rem",
                 background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.35rem" }}>
@@ -286,15 +309,25 @@ export function PassportSetupPanel({
                     Automated ID check is not configured. Use manual upload for pilot access.
                   </p>
                 ) : (
-                  <Btn
-                    size="lg"
-                    fullWidth
-                    loading={starting}
-                    onClick={onStartIdCheck}
-                    disabled={identityStatus === "pending"}
-                  >
-                    Add optional ID check →
-                  </Btn>
+                  <>
+                    <Btn
+                      size="lg"
+                      fullWidth
+                      loading={starting}
+                      onClick={onStartIdCheck}
+                      disabled={identityStatus === "pending"}
+                    >
+                      Add identity verification — optional →
+                    </Btn>
+                    <Btn
+                      variant="ghost"
+                      size="sm"
+                      fullWidth
+                      href={returnPath ? decodeURIComponent(returnPath) : "/cielo/verified-rate"}
+                    >
+                      Skip for now →
+                    </Btn>
+                  </>
                 )}
 
                 {error && (
@@ -372,6 +405,16 @@ export function PassportSetupPanel({
               </ul>
             </div>
           )}
+
+          <PassportTierCapabilities
+            input={{
+              accountActive: setup.accountComplete,
+              profileComplete: setup.profileComplete,
+              walletBound: setup.walletBound,
+              walletBindingFresh: setup.walletBound,
+              identityCredentialActive: setup.identityComplete,
+            }}
+          />
 
           <PassportDataTransparency visible={setup.identityComplete} via={manualMode ? "manual" : "veriff"} />
         </div>

@@ -88,7 +88,7 @@ export default function RelyingPartiesPage() {
         <p style={{ ...body, marginTop: "0.65rem", marginBottom: 0 }}>
           Try: <Link href="/verify/ABX-RE-HOSP-001" style={{ color: ACCENT }}>ABX-RE-HOSP-001</Link>
           {" · "}
-          <Link href="/developers/partner" style={{ color: ACCENT }}>Partner dashboard</Link>
+          <Link href="/integrations" style={{ color: ACCENT }}>Integration docs</Link>
         </p>
       </ContentCard>
 

@@ -74,5 +74,11 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   }
 
   clearPendingSession();
+  void fetch("/api/auth/browser-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ sui_address: regData.sui_address }),
+  }).catch(() => { /* best-effort */ });
   return session;
 }

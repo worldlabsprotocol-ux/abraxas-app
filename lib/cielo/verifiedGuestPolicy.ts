@@ -123,14 +123,18 @@ async function hasActiveConsent(
 }
 
 async function hasActiveIdentityCredential(client: SupabaseClient, subject: string): Promise<boolean> {
-  const { data } = await client
-    .from("abraxas_credentials")
-    .select("jti")
+  const { data: idv } = await client
+    .from("identity_verifications")
+    .select("status, credential_jti")
     .or(`sui_address.eq.${subject},wallet_address.eq.${subject}`)
-    .is("revoked_at", null)
-    .limit(1)
     .maybeSingle();
-  return Boolean(data);
+
+  if (idv?.status !== "approved" || !idv.credential_jti) return false;
+
+  const claims = await getActiveClaims(subject);
+  return claims.some(c =>
+    ["identity_verified", "liveness_passed", "government_id_verified"].includes(c.claim_type),
+  );
 }
 
 export async function evaluateCieloVerifiedGuest(

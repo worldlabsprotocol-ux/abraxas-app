@@ -46,17 +46,17 @@ function stampStatus(
 }
 
 export function computePassportCompletion(input: PassportCompletionInput): PassportCompletion {
+  const walletChecklist: ChecklistStatus =
+    input.walletDone ? "verified" : "not_started";
+
   const identityChecklist: ChecklistStatus =
-    input.identityStatus === "earned" ? "verified"
+    input.identityStatus === "earned" && input.credentialActive ? "verified"
     : input.identityStatus === "pending" ? "pending"
     : input.walletDone ? "optional"
     : "not_started";
 
   const passportChecklist: ChecklistStatus =
-    input.credentialActive && input.onChain?.stamps_complete ? "verified"
-    : input.credentialActive ? "verified"
-    : input.onChain?.needs_provision ? "pending"
-    : input.identityStatus === "earned" ? "pending"
+    input.walletDone ? "verified"
     : "not_started";
 
   const reuseChecklist: ChecklistStatus =
@@ -75,28 +75,32 @@ export function computePassportCompletion(input: PassportCompletionInput): Passp
       step: 1,
     },
     {
-      id: "identity",
-      label: "Verify identity",
-      detail:
-        input.identityStatus === "earned" ? "ID check approved"
-        : input.identityStatus === "pending" ? "Documents in review"
-        : input.identityStatus === "declined" ? "Not approved — try again"
-        : "Optional until a deal requires it",
-      status: identityChecklist,
+      id: "wallet",
+      label: "Bind wallet",
+      detail: input.walletDone ? "Wallet-bound Passport (Tier 1)" : "Sign to bind wallet",
+      status: walletChecklist,
       weight: 25,
       step: 2,
     },
     {
-      id: "passport",
-      label: "Get passport",
+      id: "identity",
+      label: "Add identity (optional)",
       detail:
-        input.credentialActive && input.onChain?.stamps_complete ? "Credential + on-chain stamps"
-        : input.credentialActive ? "Credential issued"
-        : input.onChain?.needs_provision ? "Provisioning on-chain…"
-        : "Issued after ID approval",
+        input.identityStatus === "earned" && input.credentialActive ? "Tier 2 · credential active"
+        : input.identityStatus === "pending" ? "Documents in review"
+        : input.identityStatus === "declined" ? "Not approved — try again"
+        : "Skip until a partner policy requires it",
+      status: identityChecklist,
+      weight: 0,
+      step: 3,
+    },
+    {
+      id: "passport",
+      label: "Basic Passport ready",
+      detail: input.walletDone ? "Account + wallet binding active" : "Complete sign-in and wallet bind",
       status: passportChecklist,
       weight: 25,
-      step: 3,
+      step: 2,
     },
     {
       id: "reuse",
@@ -150,8 +154,8 @@ export function computePassportCompletion(input: PassportCompletionInput): Passp
 
 export const PASSPORT_FLOW_STEPS = [
   { id: 1 as const, key: "account", label: "Create account", sub: "Google · zkLogin" },
-  { id: 2 as const, key: "identity", label: "Verify identity", sub: "Optional ID check" },
-  { id: 3 as const, key: "passport", label: "Get passport", sub: "Credential issued" },
+  { id: 2 as const, key: "wallet", label: "Bind wallet", sub: "Signed control proof" },
+  { id: 3 as const, key: "identity", label: "Add identity (optional)", sub: "Tier 2 · when required" },
   { id: 4 as const, key: "reuse", label: "Reuse anywhere", sub: "Share verify link" },
 ] as const;
 

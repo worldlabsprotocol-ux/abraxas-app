@@ -1,14 +1,19 @@
 // FILE: app/api/cielo/verified-rate/submit/route.ts
-// Submit pilot verified-rate booking request (approved eligibility only).
+// Submit pilot verified-rate booking request (session auth, approved eligibility only).
 
 import { NextRequest, NextResponse } from "next/server";
 import { submitVerifiedRateRequest } from "@/lib/cielo/verifiedRateService";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const body = (await req.json().catch(() => ({}))) as {
-    sui_address?: string;
     verification_decision_id?: string;
     consent_receipt_id?: string;
     check_in?: string;
@@ -19,9 +24,9 @@ export async function POST(req: NextRequest) {
     notes?: string;
   };
 
-  if (!body.sui_address || !body.verification_decision_id || !body.consent_receipt_id) {
+  if (!body.verification_decision_id || !body.consent_receipt_id) {
     return NextResponse.json({
-      error: "sui_address, verification_decision_id, and consent_receipt_id required",
+      error: "verification_decision_id and consent_receipt_id required",
     }, { status: 400 });
   }
 
@@ -31,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await submitVerifiedRateRequest({
-      suiAddress: body.sui_address,
+      suiAddress: auth.session.suiAddress,
       decisionId: body.verification_decision_id,
       consentReceiptId: body.consent_receipt_id,
       checkIn: body.check_in,

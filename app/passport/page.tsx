@@ -425,6 +425,7 @@ function PassportPageInner() {
           onStartIdCheck={startIdentityVerification}
           onRefresh={refresh}
           onWalletBound={refresh}
+          returnPath={searchParams.get("return")}
         />
 
         {setupComplete && (

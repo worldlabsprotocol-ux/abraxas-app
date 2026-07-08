@@ -27,6 +27,15 @@ interface ConsentResult {
 
 const RETURN_PATH = "/cielo/verified-rate";
 
+async function ensureBrowserSession(suiAddress: string): Promise<void> {
+  await fetch("/api/auth/browser-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ sui_address: suiAddress }),
+  }).catch(() => { /* best-effort */ });
+}
+
 export function CieloVerifiedRateFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,9 +66,9 @@ export function CieloVerifiedRateFlow() {
     setLoading(true);
     setErr(null);
     try {
-      const qs = new URLSearchParams({ sui_address: suiAddress });
-      if (fixture) qs.set("fixture", fixture);
-      const res = await fetch(`/api/cielo/verified-rate/status?${qs}`);
+      await ensureBrowserSession(suiAddress);
+      const qs = fixture ? `?fixture=${encodeURIComponent(fixture)}` : "";
+      const res = await fetch(`/api/cielo/verified-rate/status${qs}`, { credentials: "include" });
       const data = await res.json() as { evaluation?: CieloVerifiedGuestEvaluation; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Status check failed");
       setEvaluation(data.evaluation ?? null);
@@ -86,7 +95,8 @@ export function CieloVerifiedRateFlow() {
       const res = await fetch("/api/cielo/verified-rate/consent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress }),
+        credentials: "include",
+        body: JSON.stringify({}),
       });
       const data = await res.json() as ConsentResult & { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Consent failed");
@@ -115,8 +125,8 @@ export function CieloVerifiedRateFlow() {
       const res = await fetch("/api/cielo/verified-rate/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
-          sui_address: suiAddress,
           verification_decision_id: consentResult.verification_decision_id,
           consent_receipt_id: consentResult.consent_receipt_id,
           check_in: checkIn || undefined,
@@ -160,7 +170,7 @@ export function CieloVerifiedRateFlow() {
         </h2>
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
           Passport unlocks a pilot verified-rate request at Cielo — not a confirmed reservation or payment.
-          Identity verification is optional until Veriff credentials are live.
+          Tier 1 only: account, profile, wallet binding, and consent. No partner API key required.
         </p>
       </div>
 

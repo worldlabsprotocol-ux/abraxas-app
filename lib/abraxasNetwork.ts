@@ -296,8 +296,8 @@ export const NETWORK_PRODUCTS = [
     id: "policy_engine",
     title: "Abraxas Policy Engine",
     role: "verifier" as NetworkRole,
-    status: "live" as ProductStatus,
-    tagline: "Partners configure eligibility rules — Abraxas returns approve / deny / manual review plus audit trail.",
+    status: "pilot" as ProductStatus,
+    tagline: "Pilot-ready for approved partners — configure eligibility rules; Abraxas returns approve / deny / manual review plus audit trail.",
     capabilities: [
       "Versioned partner policies",
       "Rules evaluator on live claims",
@@ -336,3 +336,34 @@ export function claimsByLayer(layer: ClaimLayer): ClaimStackEntry[] {
 export function getClaimStackEntry(claimType: string): ClaimStackEntry | undefined {
   return CLAIM_STACK.find(c => c.claim_type === claimType);
 }
+
+/** Institutional grouping for Trust Framework page — four decision domains. */
+export const TRUST_FRAMEWORK_DOMAINS = [
+  {
+    domain: "Person & entity",
+    exampleClaims: "Identity, liveness, KYB, UBO",
+    issuers: "Approved ID/KYB providers",
+    status: "Pilot / Partner-gated",
+  },
+  {
+    domain: "Wallet & transaction",
+    exampleClaims: "Wallet control, wallet risk, transfer permission",
+    issuers: "Abraxas + approved analytics/policy providers",
+    status: "Live / Planned",
+  },
+  {
+    domain: "Investor eligibility",
+    exampleClaims: "Accreditation, suitability, jurisdiction",
+    issuers: "Accredited verifier, issuer, broker-dealer",
+    status: "Partner-gated",
+  },
+  {
+    domain: "Asset & collateral",
+    exampleClaims: "Ownership review, title, appraisal, custody",
+    issuers: "Title firms, appraisers, custodians, attorneys",
+    status: "Pilot / Planned",
+  },
+] as const;
+
+export const TRUST_FRAMEWORK_OPERATING_MODEL =
+  "Abraxas uses Sui zkLogin for low-friction account creation. Credentials remain chain-neutral and are presented as signed, time-bound claims. Wallet binding and transaction enforcement are chain-specific, beginning on Sui. Raw identity documents remain with approved verification providers; Abraxas stores only the minimum credential, consent, policy, and audit metadata required for the applicable workflow.";

@@ -15,7 +15,7 @@ const ENDPOINTS = [
   { method: "GET", path: "/api/v1/verification-requests/{id}", desc: "Holder preview — selective disclosure before consent" },
   { method: "POST", path: "/api/v1/verification-requests/{id}/consent", desc: "Holder approves — returns approve/deny/manual_review" },
   { method: "GET", path: "/api/v1/decisions/{id}/status", desc: "Re-check decision before settlement" },
-  { method: "POST", path: "/api/v1/policies/evaluate", desc: "Direct policy evaluation on live claims" },
+  { method: "POST", path: "/api/v1/policies/evaluate", desc: "Direct policy evaluation on live claims (pilot-ready for approved partners)" },
   { method: "GET", path: "/api/trust/registry", desc: "Trust Registry — issuers + credential schemas" },
   { method: "POST", path: "/api/verification/check-level", desc: "First-party hybrid Veriff gate" },
   { method: "GET", path: "/api/credentials/claims?sui=0x…", desc: "Active normalized claims for a wallet" },
@@ -40,7 +40,7 @@ export function IntegratorStrip() {
         </h2>
         <p style={{ fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
                      lineHeight: 1.7, maxWidth: 620, margin: 0 }}>
-          {consumerCopy.integrator.body}
+          {consumerCopy.integrator.body} Policy engine is pilot-ready for approved partners — not publicly labeled Live until external partners operate with issued keys.
         </p>
       </div>
 

@@ -86,8 +86,8 @@ export function PassportTrustCard({
           {[
             { label: copy.rows.wallet, ok: trust.wallet_registered || walletReady, detail: "Active" },
             { label: copy.rows.intent, ok: trust.intent.proofs_count > 0, detail: trust.intent.proofs_count > 0 ? "Done" : "Optional" },
-            { label: copy.rows.identity, ok: trust.identity.status === "approved", detail: formatIdentityStatus(trust.identity.status) },
-            { label: copy.rows.credential, ok: trust.credential.active, detail: trust.credential.active ? "Active" : "Optional" },
+            { label: copy.rows.identity, ok: trust.identity.status === "approved" && trust.credential.active, detail: trust.identity.status === "approved" && trust.credential.active ? "Verified" : formatIdentityStatus(trust.identity.status) },
+            { label: copy.rows.credential, ok: trust.credential.active, detail: trust.credential.active ? "Active · Tier 2" : "Not issued" },
             { label: copy.rows.onChain, ok: trust.on_chain.provisioned, detail: trust.on_chain.stamps_complete ? "Complete" : "Optional" },
             ...(trust.claims && trust.claims.active_count > 0
               ? [{ label: "Compliance claims", ok: true, detail: `${trust.claims.active_count} active` }]

@@ -60,31 +60,53 @@ export function CieloBookingPanel({
     setVerification(v => ({ ...v, loading: true }));
     setErr(null);
     try {
-      const res = await fetch("/api/verification/check-level", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "book_asset",
-          sui_address: wallet.trim() || suiAddress || undefined,
-        }),
-      });
+      if (!suiAddress && !wallet.trim()) {
+        setVerification({
+          loading: false,
+          needsDeepVerification: true,
+          decision: "manual_review",
+          missingClaims: ["missing:account"],
+        });
+        setStep("verification");
+        return;
+      }
+
+      if (suiAddress) {
+        await fetch("/api/auth/browser-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ sui_address: suiAddress }),
+        }).catch(() => { /* best-effort */ });
+      }
+
+      const res = await fetch("/api/cielo/verified-rate/status", { credentials: "include" });
       const data = await res.json() as {
-        needsDeepVerification?: boolean;
-        decision?: string;
-        missing_claims?: string[];
+        evaluation?: {
+          account_active?: boolean;
+          profile_complete?: boolean;
+          wallet_binding_active?: boolean;
+          wallet_binding_fresh?: boolean;
+          reason_codes?: string[];
+        };
       };
-      const needs = Boolean(data.needsDeepVerification);
+
+      const ev = data.evaluation;
+      const ready = Boolean(
+        ev?.account_active && ev?.profile_complete && ev?.wallet_binding_active && ev?.wallet_binding_fresh,
+      );
+
       setVerification({
         loading: false,
-        needsDeepVerification: needs,
-        decision: data.decision ?? "approved",
-        missingClaims: data.missing_claims ?? [],
+        needsDeepVerification: !ready,
+        decision: ready ? "approved" : "manual_review",
+        missingClaims: ev?.reason_codes ?? [],
       });
-      setStep(needs ? "verification" : "contact");
+      setStep(ready ? "contact" : "verification");
     } catch {
       setVerification({ loading: false, needsDeepVerification: true, decision: "manual_review", missingClaims: ["policy_unavailable"] });
       setStep("verification");
-      setErr("Verification check unavailable — complete ID check or try again.");
+      setErr("Eligibility check unavailable — complete Passport setup or try again.");
     }
   }
 
@@ -270,11 +292,11 @@ export function CieloBookingPanel({
               background: `${AMBER}12`, border: `1px solid ${AMBER}44`,
             }}>
               <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: AMBER, marginBottom: "0.35rem" }}>
-                ID check required for verified stays
+                Complete Tier 1 Passport first
               </div>
               <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
-                Booking policy <span style={{ fontFamily: MONO, fontSize: "0.62rem" }}>abraxas-booking-v1</span> needs
-                identity verification before we confirm your stay. You only pay for Veriff when you book — not to browse.
+                Cielo verified-rate pilot requires account, profile, and wallet binding — not identity verification.
+                Policy <span style={{ fontFamily: MONO, fontSize: "0.62rem" }}>cielo-verified-guest-v1</span>.
               </p>
               {verification.missingClaims.length > 0 && (
                 <ul style={{
@@ -285,25 +307,23 @@ export function CieloBookingPanel({
                 </ul>
               )}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                <Link href="/passport#passport-step-2" style={{
+                <Link href="/passport" style={{
                   display: "inline-block", padding: "0.5rem 0.9rem", borderRadius: 999,
                   background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700,
                   textDecoration: "none",
                 }}>
-                  Complete ID check →
+                  Continue with basic Passport →
                 </Link>
-                {!wallet.trim() && !suiAddress && (
-                  <Link href="/passport" style={{
-                    fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT,
-                    alignSelf: "center", textDecoration: "none",
-                  }}>
-                    Sign in with Google first
-                  </Link>
-                )}
+                <Link href="/cielo/verified-rate" style={{
+                  fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT,
+                  alignSelf: "center", textDecoration: "none",
+                }}>
+                  Check verified rate (pilot) →
+                </Link>
               </div>
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.75rem" }}>
-              After your ID is approved, return here — we&apos;ll re-check automatically.
+              Identity verification is optional for this pilot. Add it later only if a partner policy requires Tier 2.
             </p>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button type="button" onClick={() => setStep("dates")} style={ghostBtn}>← Back</button>
