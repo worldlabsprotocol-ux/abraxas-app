@@ -1,10 +1,28 @@
+// FILE: app/verify/page.tsx
+// Redirect ?q=ABX-… to canonical /verify/[recordId] when the ID is known.
+
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
 import { VerifyStaticSample } from "@/components/verify/VerifyStaticSample";
 import { VerifyClient } from "./VerifyClient";
+import { resolveRegistryAsset } from "@/lib/data/registryAssets";
 
-export default function VerifyPage() {
+interface PageProps {
+  searchParams?: { q?: string; mode?: string };
+}
+
+export default function VerifyPage({ searchParams }: PageProps) {
+  const q = searchParams?.q?.trim();
+  if (q) {
+    const asset = resolveRegistryAsset(q);
+    if (asset) {
+      const mode = searchParams?.mode;
+      redirect(mode ? `/verify/${encodeURIComponent(asset.abxId)}?mode=${mode}` : `/verify/${encodeURIComponent(asset.abxId)}`);
+    }
+  }
+
   return (
     <RedesignShell>
       <VerifyPageIntro />

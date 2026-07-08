@@ -100,7 +100,7 @@ export function TestTheNetworkSection() {
             <Btn onClick={() => void runLive()} loading={loading} size="sm">
               {live ? "Re-run live check" : "Run live check →"}
             </Btn>
-            <Btn href={`/verify?q=${SAMPLE_QUERY}`} variant="secondary" size="sm">Open verifier</Btn>
+            <Btn href={`/verify/${encodeURIComponent(SAMPLE_QUERY)}`} variant="secondary" size="sm">Open verifier</Btn>
           </div>
           {err && (
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "#EF4444", margin: "0.5rem 0 0" }}>{err}</p>

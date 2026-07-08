@@ -85,17 +85,31 @@ export function VerifyAssetsShowcase({ onSelectAsset }: Props) {
                   <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>{asset.note}</p>
                 )}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "auto", paddingTop: "0.35rem" }}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectAsset?.(asset.abxId)}
+                  <Link
+                    href={`/verify/${encodeURIComponent(asset.abxId)}`}
                     style={{
-                      padding: "0.45rem 0.75rem", borderRadius: 999, border: "none", cursor: "pointer",
+                      padding: "0.45rem 0.75rem", borderRadius: 999,
                       background: ACCENT, color: "#04130C",
                       fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
+                      textDecoration: "none",
                     }}
                   >
                     Verify this asset →
-                  </button>
+                  </Link>
+                  {onSelectAsset && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectAsset(asset.abxId)}
+                      style={{
+                        padding: "0.45rem 0.75rem", borderRadius: 999,
+                        border: "1px solid var(--border-strong)", cursor: "pointer",
+                        background: "transparent", color: "var(--text-secondary)",
+                        fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+                      }}
+                    >
+                      Quick lookup
+                    </button>
+                  )}
                   {asset.href && (
                     <Link href={asset.href} style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
                       View details

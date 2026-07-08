@@ -92,7 +92,7 @@ export const CIELO_ONCHAIN_PROOF = [
   {
     label: "Public registry verifier",
     desc: "Instant assurance taxonomy + pipeline stage",
-    href: `/verify?q=${encodeURIComponent(D.id)}`,
+    href: `/verify/${encodeURIComponent(D.id)}`,
     type: "registry",
   },
   {

@@ -30,7 +30,7 @@ export const STRATEGIC_PILLARS = [
     why: "Investors need one asset they can diligence end-to-end without trusting marketing copy alone.",
     milestones: [
       { label: "Public dossier + calendar", done: true, href: "/flagship" },
-      { label: "Assurance taxonomy on metrics", done: true, href: "/verify?q=ABX-RE-HOSP-001" },
+      { label: "Assurance taxonomy on metrics", done: true, href: "/verify/ABX-RE-HOSP-001" },
       { label: "Case study with source dates", done: true, href: "/case-studies/cielo" },
       { label: "Second asset case study (Smyrna)", done: true, href: "/case-studies/smyrna" },
       { label: "Live booking revenue in transparency log", done: true, href: "/transparency" },

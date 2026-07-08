@@ -86,7 +86,9 @@ export default function RelyingPartiesPage() {
         </p>
         <CodeBlock>{REGISTRY_VERIFY_EXAMPLE}</CodeBlock>
         <p style={{ ...body, marginTop: "0.65rem", marginBottom: 0 }}>
-          Try: <Link href="/verify?q=ABX-RE-HOSP-001" style={{ color: ACCENT }}>ABX-RE-HOSP-001</Link>
+          Try: <Link href="/verify/ABX-RE-HOSP-001" style={{ color: ACCENT }}>ABX-RE-HOSP-001</Link>
+          {" · "}
+          <Link href="/developers/partner" style={{ color: ACCENT }}>Partner dashboard</Link>
         </p>
       </ContentCard>
 

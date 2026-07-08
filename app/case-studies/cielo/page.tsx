@@ -114,7 +114,7 @@ export default function CieloCaseStudyPage() {
         </div>
         <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0 }}>
           Interactive methodology drawers also live on the asset page and in{" "}
-          <Link href={`/verify?q=${encodeURIComponent(D.id)}`} style={{ color: ACCENT }}>/verify</Link>.
+          <Link href={`/verify/${encodeURIComponent(D.id)}`} style={{ color: ACCENT }}>/verify</Link>.
         </p>
       </ContentCard>
 
@@ -196,7 +196,7 @@ export default function CieloCaseStudyPage() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/investors/strategy" size="lg">Strategic roadmap →</Btn>
-        <Btn href="/verify?q=ABX-RE-HOSP-001" variant="secondary" size="lg">Verify asset</Btn>
+        <Btn href="/verify/ABX-RE-HOSP-001" variant="secondary" size="lg">Verify asset</Btn>
         <Link href="/investors" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
           Data room →
         </Link>

@@ -13,6 +13,13 @@ export interface PartnerUsageEntry {
   success?: boolean;
   responseState?: string;
   partner?: PartnerAuthContext | null;
+  httpStatus?: number;
+  responseTimeMs?: number;
+  recordType?: string;
+  recordId?: string;
+  policyId?: string;
+  policyVersion?: string;
+  decision?: string;
 }
 
 export async function logPartnerUsage(entry: PartnerUsageEntry): Promise<void> {
@@ -26,6 +33,13 @@ export async function logPartnerUsage(entry: PartnerUsageEntry): Promise<void> {
     method: entry.method,
     success: entry.success ?? null,
     response_state: entry.responseState ?? null,
+    http_status: entry.httpStatus ?? null,
+    response_time_ms: entry.responseTimeMs ?? null,
+    record_type: entry.recordType ?? null,
+    record_id: entry.recordId ?? null,
+    policy_id: entry.policyId ?? null,
+    policy_version: entry.policyVersion ?? null,
+    decision: entry.decision ?? null,
   });
 
   if (error) {

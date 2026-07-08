@@ -1,27 +1,50 @@
 // FILE: app/api/credentials/verify/route.ts
-// Any protocol (Utila, Coinbase, etc.) calls this to verify an Abraxas credential.
-// The verifier does NOT need to re-KYC the user.
+// Partner verify endpoint — credential JWT, registry record, or policy check.
 //
 // POST /api/credentials/verify
-// Body: { credential_jwt: string, verifier_id?: string, required_claims?: string[] }
-// Auth: optional Bearer abx_… or X-Abraxas-Api-Key (required when REQUIRE_PARTNER_API_KEY=true)
-// Returns: VerificationResult
-//
-// GET /api/credentials/verify?wallet=<address>
-// Returns: current credential status for a wallet
+// Body: {
+//   credential_jwt?: string;
+//   record_id?: string;
+//   policy_id?: string;
+//   requested_action?: string;
+//   sui_address?: string;
+//   verifier_id?: string;
+//   required_claims?: string[];
+// }
+// Auth: Bearer abx_live_… | abx_test_… | abx_… | X-Abraxas-Api-Key
+// Returns: PartnerVerifyResponse (+ legacy VerificationResult fields)
 
-import { NextRequest, NextResponse }   from "next/server";
-import { createClient }                from "@supabase/supabase-js";
-import type { VerificationResult }     from "@/lib/credentials/types";
-import { verifyCredentialJwt }         from "@/lib/credentials/verifyJwt";
-import { resolvePartnerAuth }          from "@/lib/partner/partnerAuth";
-import { logPartnerUsage }             from "@/lib/partner/logPartnerUsage";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import type { VerificationResult } from "@/lib/credentials/types";
+import { verifyCredentialJwt } from "@/lib/credentials/verifyJwt";
+import { resolveVerifierQuery } from "@/lib/verifyRegistry";
+import { checkVerificationLevel, type VerificationAction } from "@/lib/verification/checkLevel";
+import { resolvePartnerAuth } from "@/lib/partner/partnerAuth";
+import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
+import {
+  DEFAULT_POLICY_ID,
+  DEFAULT_POLICY_VERSION,
+  envelopeFromCredential,
+  envelopeFromPolicyCheck,
+  envelopeFromRegistry,
+  type PartnerVerifyResponse,
+} from "@/lib/partner/partnerDecision";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-// Verify a credential JWT presented by a user
-export async function POST(req: NextRequest): Promise<NextResponse<VerificationResult | { error: string }>> {
+const VALID_ACTIONS: VerificationAction[] = [
+  "browse",
+  "book_asset",
+  "high_value_transaction",
+  "invest_rwa",
+  "submit_asset",
+  "verified_participant",
+];
+
+export async function POST(req: NextRequest): Promise<NextResponse<PartnerVerifyResponse | VerificationResult | { error: string }>> {
+  const started = Date.now();
   const auth = await resolvePartnerAuth(req, "verify:credential");
   if (auth && !auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -29,32 +52,71 @@ export async function POST(req: NextRequest): Promise<NextResponse<VerificationR
 
   const body = await req.json().catch(() => ({})) as {
     credential_jwt?: string;
-    verifier_id?:   string;
+    record_id?: string;
+    policy_id?: string;
+    requested_action?: string;
+    sui_address?: string;
+    verifier_id?: string;
     required_claims?: string[];
   };
 
   const partnerCtx = auth?.ok ? auth.ctx : null;
-  const verifierId = partnerCtx?.partnerId ?? body.verifier_id ?? "unknown";
+  const partnerId = partnerCtx?.partnerId ?? body.verifier_id ?? "unknown";
+  const policyId = body.policy_id ?? DEFAULT_POLICY_ID;
 
-  const result = await verifyCredentialJwt(
-    body.credential_jwt ?? "",
-    verifierId,
-    body.required_claims ?? [],
-    true,
-  );
+  let response: PartnerVerifyResponse;
+  let httpStatus = 200;
+
+  if (body.credential_jwt) {
+    const result = await verifyCredentialJwt(
+      body.credential_jwt,
+      partnerId,
+      body.required_claims ?? [],
+      true,
+    );
+    response = envelopeFromCredential(result, policyId, partnerId);
+    httpStatus = result.verified ? 200 : 422;
+  } else if (body.record_id) {
+    const registry = await resolveVerifierQuery(body.record_id);
+    response = envelopeFromRegistry(registry, policyId, partnerId);
+    httpStatus = response.decision === "approved" ? 200 : 404;
+  } else if (body.sui_address && body.requested_action) {
+    const action = body.requested_action as VerificationAction;
+    if (!VALID_ACTIONS.includes(action)) {
+      return NextResponse.json({ error: "Invalid requested_action" }, { status: 400 });
+    }
+    const check = await checkVerificationLevel(body.sui_address, action);
+    response = envelopeFromPolicyCheck(
+      { decision: check.decision, policy_id: check.policy_id ?? policyId, currentLevel: check.currentLevel },
+      partnerId,
+      action,
+    );
+    httpStatus = response.decision === "approved" ? 200 : response.decision === "manual_review" ? 202 : 403;
+  } else {
+    return NextResponse.json(
+      { error: "Provide credential_jwt, record_id, or sui_address + requested_action" },
+      { status: 400 },
+    );
+  }
 
   void logPartnerUsage({
     endpoint: "/api/credentials/verify",
     method: "POST",
-    success: result.verified,
-    responseState: result.verified ? "verified" : (result.error ?? "denied"),
+    success: response.decision === "approved",
+    responseState: response.status,
     partner: partnerCtx,
+    httpStatus,
+    responseTimeMs: Date.now() - started,
+    recordType: response.record_type,
+    recordId: response.record_id,
+    policyId: response.policy_id,
+    policyVersion: response.policy_version ?? DEFAULT_POLICY_VERSION,
+    decision: response.decision,
   });
 
-  return NextResponse.json(result);
+  return NextResponse.json(response, { status: httpStatus });
 }
 
-// Check credential status by Sui address (for dashboard display)
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const address = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("wallet");
   if (!address) return NextResponse.json({ error: "sui or wallet param required" }, { status: 400 });
@@ -71,11 +133,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!data) return NextResponse.json({ verified: false, status: "not_found" });
 
   return NextResponse.json({
-    verified:       data.status === "approved",
-    status:         data.status,
+    verified: data.status === "approved",
+    status: data.status,
     credential_jti: data.credential_jti,
-    document_type:  data.document_type,
-    jurisdiction:   data.document_country,
-    world_id:       data.world_id_verified,
+    document_type: data.document_type,
+    jurisdiction: data.document_country,
+    world_id: data.world_id_verified,
   });
 }

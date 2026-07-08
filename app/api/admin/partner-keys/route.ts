@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     partner_id?: string;
     display_name?: string;
     scopes?: PartnerScope[];
+    environment?: "live" | "test";
   };
 
   const partnerId = body.partner_id?.trim();
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "partner_id and display_name required" }, { status: 400 });
   }
 
-  const { raw, prefix, hash } = generatePartnerKey();
+  const { raw, prefix, hash } = generatePartnerKey(body.environment ?? "live");
   const scopes = body.scopes?.length ? body.scopes : DEFAULT_SCOPES;
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });

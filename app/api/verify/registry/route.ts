@@ -13,6 +13,7 @@ const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 export async function GET(req: NextRequest) {
+  const started = Date.now();
   const auth = await resolvePartnerAuth(req, "verify:registry");
   if (auth && !auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -33,6 +34,11 @@ export async function GET(req: NextRequest) {
       success: result.state === "RESOLVED_VALID",
       responseState: result.state,
       partner: partnerCtx,
+      httpStatus: 200,
+      responseTimeMs: Date.now() - started,
+      recordType: result.resolved_type,
+      recordId: result.query,
+      decision: result.state === "RESOLVED_VALID" ? "approved" : "denied",
     });
   }
 

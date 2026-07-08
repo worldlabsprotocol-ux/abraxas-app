@@ -13,7 +13,7 @@ export const RELYING_PARTY_CHECKLIST = [
   {
     step: 2,
     title: "Test in sandbox",
-    body: "Use a devnet Passport or paste ABX-RE-HOSP-001 in /verify. Confirm RESOLVED_VALID before wiring production gates.",
+    body: "Use /verify/ABX-RE-HOSP-001 or POST with your abx_live_ key. Confirm decision: approved before wiring production gates.",
   },
   {
     step: 3,
@@ -27,20 +27,25 @@ export const RELYING_PARTY_CHECKLIST = [
   },
 ] as const;
 
-export const CREDENTIAL_VERIFY_EXAMPLE = `// Server-side: verify a user's Abraxas credential before checkout
+export const CREDENTIAL_VERIFY_EXAMPLE = `// Server-side: partner decision envelope (record, credential, or policy)
 const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer abx_live_YOUR_KEY",
+  },
   body: JSON.stringify({
-    credential_jwt: userPresentationJwt,
-    verifier_id: "your_protocol_name",
-    required_claims: ["jurisdiction", "verification_level"],
+    record_id: "ABX-RE-HOSP-001",
+    policy_id: "abraxas-booking-v1",
   }),
 });
 
 const result = await res.json();
-if (result.verified && result.verification_level === "enhanced") {
-  // Clear regulated flow — user already ID-verified via Abraxas
+// { decision: "approved"|"denied"|"manual_review", status, assurance_level,
+//   policy_version, decision_reference, valid_until, ... }
+
+if (result.decision === "approved") {
+  // Clear gated action — user or asset already verified via Abraxas
 }`;
 
 export const TRUST_STATUS_EXAMPLE = `// Lightweight gate: does this Sui wallet have an Abraxas account + ID?

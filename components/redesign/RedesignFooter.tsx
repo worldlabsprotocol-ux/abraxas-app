@@ -34,6 +34,7 @@ const LINKS = {
   developers: [
     { label: "Documentation", href: "/docs" },
     { label: "Integrations", href: "/integrations" },
+    { label: "Partner dashboard", href: "/developers/partner" },
     { label: "Relying parties", href: "/integrations/relying-parties" },
     { label: "Live metrics", href: "/metrics" },
     { label: "Security", href: "/security" },

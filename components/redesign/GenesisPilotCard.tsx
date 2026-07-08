@@ -68,7 +68,7 @@ export function GenesisPilotCard() {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "auto" }}>
           <Btn href="/flagship" size="sm">Full dossier →</Btn>
-          <Btn href={`/verify?q=${encodeURIComponent(D.id)}`} variant="secondary" size="sm">Verify asset</Btn>
+          <Btn href={`/verify/${encodeURIComponent(D.id)}`} variant="secondary" size="sm">Verify asset</Btn>
           <Link href="/flagship" style={{
             fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
             color: ACCENT, alignSelf: "center", textDecoration: "none",

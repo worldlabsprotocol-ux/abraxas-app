@@ -29,19 +29,27 @@ export default function AdminPartnersPage() {
   const [error, setError] = useState("");
   const [partnerId, setPartnerId] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [keyEnvironment, setKeyEnvironment] = useState<"live" | "test">("live");
   const [newKey, setNewKey] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [orgPartnerId, setOrgPartnerId] = useState("");
+  const [company, setCompany] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [partners, setPartners] = useState<Array<{ partner_id: string; company: string; status: string }>>([]);
 
   const loadKeys = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/partner-keys", {
-        headers: { "x-admin-pin": pin },
-      });
-      const data = await res.json() as { keys?: PartnerKeyRow[]; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Failed to load keys");
-      setKeys(data.keys ?? []);
+      const [keysRes, partnersRes] = await Promise.all([
+        fetch("/api/admin/partner-keys", { headers: { "x-admin-pin": pin } }),
+        fetch("/api/admin/partners", { headers: { "x-admin-pin": pin } }),
+      ]);
+      const keysData = await keysRes.json() as { keys?: PartnerKeyRow[]; error?: string };
+      const partnersData = await partnersRes.json() as { partners?: Array<{ partner_id: string; company: string; status: string }>; error?: string };
+      if (!keysRes.ok) throw new Error(keysData.error ?? "Failed to load keys");
+      setKeys(keysData.keys ?? []);
+      setPartners(partnersData.partners ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
@@ -68,6 +76,7 @@ export default function AdminPartnersPage() {
         body: JSON.stringify({
           partner_id: partnerId.trim(),
           display_name: displayName.trim(),
+          environment: keyEnvironment,
         }),
       });
       const data = await res.json() as { api_key?: string; error?: string };
@@ -78,6 +87,36 @@ export default function AdminPartnersPage() {
       await loadKeys();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createPartnerOrg() {
+    if (!orgPartnerId.trim() || !company.trim()) {
+      setError("Partner ID and company required.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/partners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+        body: JSON.stringify({
+          partner_id: orgPartnerId.trim(),
+          company: company.trim(),
+          contact_email: contactEmail.trim() || undefined,
+        }),
+      });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Create partner failed");
+      setOrgPartnerId("");
+      setCompany("");
+      setContactEmail("");
+      await loadKeys();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Create partner failed");
     } finally {
       setLoading(false);
     }
@@ -158,6 +197,32 @@ export default function AdminPartnersPage() {
           background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
         }}>
           <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Register partner org (migration 025)
+          </div>
+          <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <input value={orgPartnerId} onChange={e => setOrgPartnerId(e.target.value)} placeholder="partner_id"
+              style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: MONO, fontSize: "0.72rem", width: "100%", boxSizing: "border-box" }} />
+            <input value={company} onChange={e => setCompany(e.target.value)} placeholder="Company name"
+              style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: FONT, fontSize: "0.78rem", width: "100%", boxSizing: "border-box" }} />
+            <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Contact email (optional)"
+              style={{ padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0", fontFamily: FONT, fontSize: "0.78rem", width: "100%", boxSizing: "border-box" }} />
+          </div>
+          <button type="button" onClick={() => void createPartnerOrg()} disabled={loading}
+            style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: "rgba(16,185,129,0.2)", color: "#10B981", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
+            Register partner
+          </button>
+          {partners.length > 0 && (
+            <div style={{ marginTop: "0.75rem", fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)" }}>
+              {partners.length} registered partner{partners.length === 1 ? "" : "s"}
+            </div>
+          )}
+        </div>
+
+        <div style={{
+          padding: "1rem", borderRadius: 10, marginBottom: "1.25rem",
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+        }}>
+          <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Issue new key
           </div>
           <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.75rem" }}>
@@ -181,6 +246,20 @@ export default function AdminPartnersPage() {
                 color: "#f0f0f0", fontFamily: FONT, fontSize: "0.78rem", width: "100%", boxSizing: "border-box",
               }}
             />
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            {(["live", "test"] as const).map(env => (
+              <button key={env} type="button" onClick={() => setKeyEnvironment(env)}
+                style={{
+                  padding: "0.4rem 0.75rem", borderRadius: 6, cursor: "pointer",
+                  border: `1px solid ${keyEnvironment === env ? "#10B981" : "rgba(255,255,255,0.12)"}`,
+                  background: keyEnvironment === env ? "rgba(16,185,129,0.15)" : "transparent",
+                  color: keyEnvironment === env ? "#10B981" : "rgba(255,255,255,0.45)",
+                  fontFamily: MONO, fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase",
+                }}>
+                abx_{env}_
+              </button>
+            ))}
           </div>
           <button
             onClick={() => void createKey()}

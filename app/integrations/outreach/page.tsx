@@ -74,7 +74,7 @@ export default function OutreachPage() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/integrations/relying-parties" size="lg">Relying party docs →</Btn>
         <Btn href="/integrations" variant="secondary" size="lg">Submit application</Btn>
-        <Btn href="/verify?q=ABX-RE-HOSP-001" variant="ghost" size="lg">Demo verifier</Btn>
+        <Btn href="/verify/ABX-RE-HOSP-001" variant="ghost" size="lg">Demo verifier</Btn>
       </div>
     </RedesignPage>
   );

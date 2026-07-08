@@ -27,7 +27,7 @@ export function getWalletPassWebServiceUrl(): string {
 export function buildPassJson(payload: WalletPassPayload) {
   const serial = payload.credentialId ?? `ABX-${payload.suiAddress.slice(-8)}`;
   const verifyUrl = payload.credentialId
-    ? `https://abraxas-app.vercel.app/verify?q=${encodeURIComponent(payload.credentialId)}`
+    ? `https://abraxas-app.vercel.app/verify/${encodeURIComponent(payload.credentialId)}`
     : `https://abraxas-app.vercel.app/verify?wallet=${encodeURIComponent(payload.suiAddress)}`;
 
   return {

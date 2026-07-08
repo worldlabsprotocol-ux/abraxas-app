@@ -78,7 +78,7 @@ export const SMYRNA_SOURCES = [
 
 export const SMYRNA_PROOF = [
   { label: "Public registry card", desc: "Asset explorer entry with verification state", href: "/#registry" },
-  { label: "Verify asset ID", desc: "Registry lookup when pipeline stage advances", href: `/verify?q=${encodeURIComponent(SMYRNA_ASSET.id)}` },
+  { label: "Verify asset ID", desc: "Registry lookup when pipeline stage advances", href: `/verify/${encodeURIComponent(SMYRNA_ASSET.id)}` },
   { label: "Submit capital interest", desc: "Investor intake for verified partner flows", href: "/investors" },
   { label: "V5 pipeline docs", desc: "How assets move to MARKETPLACE_LIVE", href: "/build" },
 ] as const;

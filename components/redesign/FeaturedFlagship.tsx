@@ -99,7 +99,7 @@ export function FeaturedFlagship() {
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem" }}>
             <Btn href="/flagship#protocol-calendar" size="lg">View calendar →</Btn>
-            <Btn href={`/verify?q=${encodeURIComponent(D.id)}`} variant="secondary" size="lg">Verify asset</Btn>
+            <Btn href={`/verify/${encodeURIComponent(D.id)}`} variant="secondary" size="lg">Verify asset</Btn>
             <Btn href={D.airbnbUrl} newTab variant="ghost" size="lg">Airbnb listing</Btn>
           </div>
 

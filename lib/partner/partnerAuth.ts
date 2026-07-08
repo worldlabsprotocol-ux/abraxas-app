@@ -14,6 +14,7 @@ export interface PartnerAuthContext {
   partnerId: string;
   apiKeyId: string;
   displayName: string;
+  keyPrefix: string;
   scopes: PartnerScope[];
 }
 
@@ -34,10 +35,10 @@ export function hashPartnerKey(key: string): string {
   return createHash("sha256").update(key).digest("hex");
 }
 
-export function generatePartnerKey(): { raw: string; prefix: string; hash: string } {
+export function generatePartnerKey(environment: "live" | "test" = "live"): { raw: string; prefix: string; hash: string } {
   const suffix = randomBytes(24).toString("base64url");
-  const raw = `abx_${suffix}`;
-  const prefix = raw.slice(0, 12);
+  const raw = environment === "live" ? `abx_live_${suffix}` : `abx_test_${suffix}`;
+  const prefix = raw.slice(0, 16);
   return { raw, prefix, hash: hashPartnerKey(raw) };
 }
 
@@ -71,7 +72,7 @@ export async function authenticatePartner(
   const hash = hashPartnerKey(rawKey);
   const { data, error } = await client
     .from("partner_api_keys")
-    .select("id, partner_id, display_name, scopes, revoked_at")
+    .select("id, partner_id, display_name, key_prefix, scopes, revoked_at")
     .eq("key_hash", hash)
     .maybeSingle();
 
@@ -99,6 +100,7 @@ export async function authenticatePartner(
       partnerId: data.partner_id,
       apiKeyId: data.id,
       displayName: data.display_name,
+      keyPrefix: data.key_prefix,
       scopes,
     },
   };

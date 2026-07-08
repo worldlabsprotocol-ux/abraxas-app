@@ -2,8 +2,9 @@
 // FILE: components/verify/PublicVerifierPanel.tsx
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { VerifierResponse } from "@/lib/verifyRegistry";
+import { resolveRegistryAsset } from "@/lib/data/registryAssets";
 import { CIELO_VERIFIER_PREVIEW, NOT_FOUND_VERIFIER_PREVIEW, REVOKED_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
 import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
 import { VerifierResultCard } from "./VerifierResultCard";
@@ -16,6 +17,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
 export function PublicVerifierPanel() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,11 @@ export function PublicVerifierPanel() {
   async function runVerify(q: string) {
     const trimmed = q.trim();
     if (!trimmed) return;
+    const asset = resolveRegistryAsset(trimmed);
+    if (asset) {
+      router.push(`/verify/${encodeURIComponent(asset.abxId)}`);
+      return;
+    }
     setLoading(true);
     setErr(null);
     setResult(null);

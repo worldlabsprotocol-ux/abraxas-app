@@ -46,7 +46,7 @@ Hi [Name],
 
 Following up — wanted to share a 60-second diligence path your eng team can run without a call:
 
-1. Open https://abraxas-app.vercel.app/verify?q=ABX-RE-HOSP-001 (Cielo asset — full assurance taxonomy)
+1. Open https://abraxas-app.vercel.app/verify/ABX-RE-HOSP-001 (Cielo asset — full assurance taxonomy)
 2. Review POST /api/credentials/verify in our relying party doc
 3. Optional: clone https://github.com/worldlabsprotocol-ux/abraxas-app and inspect /api/trust/status
 
