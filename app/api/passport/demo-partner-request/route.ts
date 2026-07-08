@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { createVerificationRequest } from "@/lib/verification/requestsService";
 
-const DEMO_POLICIES = ["abraxas-core-v1", "cielo-verified-guest-v1"] as const;
+const DEMO_POLICIES = ["abraxas-core-v1", "cielo-verified-guest-v1", "meridian-investor-gate-v1"] as const;
 
 export async function POST(req: NextRequest) {
   const session = await requireBrowserSession(req);
@@ -18,18 +18,22 @@ export async function POST(req: NextRequest) {
     ? body.policy_id
     : "abraxas-core-v1";
 
+  const partnerId = policyId === "meridian-investor-gate-v1"
+    ? "meridian-private-credit"
+    : "abraxas-pilot";
+
   try {
     const result = await createVerificationRequest({
-      partnerId: "abraxas-pilot",
+      partnerId,
       policyId,
-      requestedAction: "pilot_eligibility_check",
+      requestedAction: policyId === "meridian-investor-gate-v1" ? "investor_onboarding" : "pilot_eligibility_check",
       suiAddress: session.session.suiAddress,
     });
 
     return NextResponse.json({
       ...result,
       policy_id: policyId,
-      partner_id: "abraxas-pilot",
+      partner_id: partnerId,
       message: "Open consent_url to complete the portable reuse loop.",
     });
   } catch (e: unknown) {

@@ -15,12 +15,15 @@ import {
   RELYING_PARTY_LIMITATIONS,
   DESIGN_PARTNER_SLOTS,
 } from "@/lib/relyingPartyProgram";
+import { getExternalRelyingPartners } from "@/lib/relyingPartners";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 export default function RelyingPartiesPage() {
+  const externalPartners = getExternalRelyingPartners();
+
   return (
     <RedesignPage maxWidth={900}>
       <PageHeader
@@ -39,6 +42,29 @@ export default function RelyingPartiesPage() {
           <Btn href="/verify" size="sm">Test public verifier →</Btn>
           <Btn href="/integrations" variant="secondary" size="sm">Apply as design partner</Btn>
         </div>
+      </ContentCard>
+
+      <ContentCard title="First external relying party (pilot live)">
+        {externalPartners.map(partner => (
+          <div key={partner.partner_id} style={{
+            padding: "0.85rem", borderRadius: 12,
+            background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.28)",
+            marginBottom: "0.65rem",
+          }}>
+            <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: ACCENT, marginBottom: 4 }}>
+              {partner.company}
+            </div>
+            <p style={{ ...body, margin: "0 0 0.5rem" }}>{partner.description}</p>
+            <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: "0.65rem" }}>
+              Policy {partner.policy_id} · {partner.api_entry} · Status {partner.status}
+            </div>
+            <Btn href="/passport" size="sm">Test on Passport →</Btn>
+          </div>
+        ))}
+        <p style={{ ...body, margin: "0.65rem 0 0", fontSize: "0.72rem" }}>
+          Partners integrate server-side. Holders never paste API keys — they consent at{" "}
+          <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>/passport?verify_request=…</code>
+        </p>
       </ContentCard>
 
       <ContentCard title="Four-step onboarding">

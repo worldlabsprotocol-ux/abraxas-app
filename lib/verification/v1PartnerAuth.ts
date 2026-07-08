@@ -16,7 +16,7 @@ export interface V1PartnerAuth {
 
 export type V1PartnerAuthFailure = { error: string; status: 401 | 403 };
 
-const LEGACY_SCOPES: PartnerScope[] = ["verify:credential", "verify:registry", "verify:requests"];
+const LEGACY_SCOPES: PartnerScope[] = ["verify:credential", "verify:registry", "verify:requests", "verify:screening"];
 
 function legacyEnvAuth(req: NextRequest): V1PartnerAuth | V1PartnerAuthFailure | null {
   const headerKey =
@@ -53,6 +53,7 @@ function legacyEnvAuth(req: NextRequest): V1PartnerAuth | V1PartnerAuthFailure |
 function scopeAllowed(ctx: PartnerAuthContext, required: PartnerScope): boolean {
   if (ctx.scopes.includes(required)) return true;
   if (required === "verify:requests" && ctx.scopes.includes("verify:credential")) return true;
+  if (required === "verify:screening" && (ctx.scopes.includes("verify:requests") || ctx.scopes.includes("verify:credential"))) return true;
   return false;
 }
 
@@ -63,7 +64,7 @@ export async function authenticateV1Partner(
   const rawKey = extractPartnerKey(req);
 
   if (rawKey) {
-    const dbAuth = await authenticateDbPartner(req, requiredScope);
+    const dbAuth = await authenticateDbPartner(req);
     if (dbAuth?.ok) {
       if (!scopeAllowed(dbAuth.ctx, requiredScope)) {
         return { error: `Missing scope: ${requiredScope}`, status: 403 };

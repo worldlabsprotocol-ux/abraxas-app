@@ -15,6 +15,7 @@ import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
+import { TransactionEligibilitySection } from "@/components/passport/TransactionEligibilitySection";
 import {
   resolvePassportTier,
   TIER_LABELS,
@@ -234,6 +235,8 @@ export function PassportDashboard({
             manualMode={manualMode}
             credential={credential}
           />
+
+          <TransactionEligibilitySection enabled={setup.profileComplete} />
 
           <PartnerAccessSection suiAddress={suiAddress} />
 

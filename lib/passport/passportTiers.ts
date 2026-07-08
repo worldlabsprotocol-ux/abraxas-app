@@ -1,6 +1,8 @@
 // FILE: lib/passport/passportTiers.ts
 // Tier 0–3 passport model — account, wallet-bound, identity-verified, action-specific.
 
+import { hasTransactionEligibility } from "@/lib/passport/tier3Claims";
+
 export type PassportTier = 0 | 1 | 2 | 3;
 
 export interface PassportTierInput {
@@ -10,6 +12,8 @@ export interface PassportTierInput {
   walletBindingFresh: boolean;
   identityCredentialActive: boolean;
   consentActive?: boolean;
+  /** Active credential claim types from claims registry */
+  activeClaimTypes?: string[];
 }
 
 export interface TierCapability {
@@ -37,6 +41,7 @@ export function resolvePassportTier(input: PassportTierInput): PassportTier {
   if (!input.walletBound || !input.walletBindingFresh) return 0;
   if (!input.profileComplete) return 0;
   if (!input.identityCredentialActive) return 1;
+  if (hasTransactionEligibility(input.activeClaimTypes ?? [])) return 3;
   return 2;
 }
 
@@ -71,10 +76,32 @@ export function tierCapabilities(input: PassportTierInput): TierCapability[] {
     },
     {
       label: "Investor / KYB / sanctions-gated actions",
-      unlocked: false,
+      unlocked: tier >= 3,
+      tierRequired: 3,
+    },
+    {
+      label: "Meridian private-credit eligibility (pilot)",
+      unlocked: tier >= 3,
       tierRequired: 3,
     },
   ];
+}
+
+export function buildPassportTierInput(input: {
+  walletRegistered: boolean;
+  walletBindingClaim: boolean;
+  identityCredentialActive: boolean;
+  activeClaimTypes?: string[];
+}): PassportTierInput {
+  const walletReady = input.walletRegistered && input.walletBindingClaim;
+  return {
+    accountActive: input.walletRegistered,
+    profileComplete: walletReady,
+    walletBound: walletReady,
+    walletBindingFresh: input.walletBindingClaim,
+    identityCredentialActive: input.identityCredentialActive,
+    activeClaimTypes: input.activeClaimTypes ?? [],
+  };
 }
 
 export function isIdentityVerified(input: Pick<PassportTierInput, "identityCredentialActive">): boolean {

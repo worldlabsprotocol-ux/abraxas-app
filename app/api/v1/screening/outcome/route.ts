@@ -4,18 +4,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { applyScreeningClear } from "@/lib/screening/applyScreeningOutcome";
-
-const SCREENING_KEY = process.env.SCREENING_PARTNER_API_KEY ?? process.env.PARTNER_API_KEY ?? "";
-
-function authScreening(req: NextRequest): boolean {
-  if (!SCREENING_KEY) return process.env.NODE_ENV !== "production";
-  const key = req.headers.get("x-api-key") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return key === SCREENING_KEY;
-}
+import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
+import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export async function POST(req: NextRequest) {
-  if (!authScreening(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const started = Date.now();
+  const auth = await authenticateV1Partner(req, "verify:screening");
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   const body = await req.json().catch(() => ({})) as {
@@ -36,6 +32,19 @@ export async function POST(req: NextRequest) {
       providerRef: body.provider_ref ?? `screening:${Date.now()}`,
       jurisdiction: body.jurisdiction,
     });
+
+    void logPartnerUsage({
+      endpoint: "/api/v1/screening/outcome",
+      method: "POST",
+      success: true,
+      partner: auth.ctx,
+      httpStatus: 200,
+      responseTimeMs: Date.now() - started,
+      recordType: "screening_outcome",
+      recordId: subject,
+      decision: "clear",
+    });
+
     return NextResponse.json({ ok: true, subject_id: subject, screening_outcome: "clear" });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Screening update failed";
