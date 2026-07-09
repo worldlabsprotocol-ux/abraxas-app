@@ -106,6 +106,8 @@ export default function AdminReceiptsPage() {
       <header style={{ padding: "1rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between" }}>
         <div>
           <Link href="/admin/partners" style={{ color: "#a78bfa", fontSize: "0.75rem", textDecoration: "none" }}>← Admin</Link>
+          {" · "}
+          <Link href="/admin/trust" style={{ color: "#a78bfa", fontSize: "0.75rem", textDecoration: "none" }}>Trust layer</Link>
           <h1 style={{ fontSize: "0.9rem", margin: "0.25rem 0 0", letterSpacing: "0.08em" }}>Decision Receipts</h1>
           <p style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", margin: "0.25rem 0 0" }}>
             Eligibility decision receipts — signed policy evaluation artifacts

@@ -8,6 +8,8 @@ import {
   getReceiptById,
 } from "@/lib/decisionReceipts/service";
 import { toPublicView, verifyRecordSignature, resolveReceiptStatus } from "@/lib/decisionReceipts/views";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
 
 export async function GET(
   req: NextRequest,
@@ -25,6 +27,8 @@ export async function GET(
   }
 
   const audit = await getReceiptAuditTimeline(receiptId);
+  const validity = await resolveReceiptValidity(record);
+  const dependencies = await getReceiptDependencies(receiptId);
 
   return NextResponse.json({
     receipt: {
@@ -38,6 +42,8 @@ export async function GET(
     },
     signature_status: verifyRecordSignature(record) ? "valid" : "invalid",
     resolved_status: resolveReceiptStatus(record),
+    current_validity: validity,
+    dependencies,
     audit_timeline: audit,
   });
 }

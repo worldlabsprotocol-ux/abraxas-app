@@ -9,6 +9,10 @@ export interface RequiredClaimRule {
   max_age_hours?: number;
   min_assurance?: AssuranceLevel;
   must_equal?: string | boolean;
+  /** Trusted issuers for this claim requirement (policy-level override) */
+  accepted_issuers?: string[];
+  accepted_jurisdictions?: string[];
+  credential_max_age_hours?: number;
 }
 
 export interface PartnerPolicyRules {
@@ -17,6 +21,21 @@ export interface PartnerPolicyRules {
   sandbox_only?: boolean;
   required_claims?: RequiredClaimRule[];
   blocked_jurisdictions?: string[];
+  /** Enforce issuer trust registry on all required claims */
+  enforce_issuer_trust?: boolean;
+}
+
+export interface PolicyEvaluationContext {
+  jurisdiction?: string | null;
+  partnerId?: string;
+  policyId?: string;
+  /** DB-backed trust rules loaded for this evaluation */
+  trustRulesByClaimType?: Map<string, {
+    accepted_issuer_ids: string[];
+    minimum_assurance_level?: AssuranceLevel | null;
+    accepted_jurisdictions?: string[];
+    credential_max_age_hours?: number | null;
+  }>;
 }
 
 export interface PartnerPolicy {

@@ -10,13 +10,10 @@ import {
   loadReceiptSigningKey,
   signReceiptPayload,
 } from "@/lib/decisionReceipts/signing";
+import { recordReceiptClaimDependencies } from "@/lib/decisionReceipts/dependencies";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
-import {
-  isReceiptCurrentlyValid,
-  resolveReceiptStatus,
-  toPartnerView,
-  toPublicView,
-} from "@/lib/decisionReceipts/views";
+import { toPartnerView, toPublicView } from "@/lib/decisionReceipts/views";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import type {
   DecisionReceiptContext,
   DecisionReceiptRecord,
@@ -177,6 +174,8 @@ export async function issueDecisionReceipt(
 
   const record = mapRow(data as Record<string, unknown>);
 
+  await recordReceiptClaimDependencies(receiptId, input.evaluatedClaimRefs);
+
   await appendAuditEvent({
     actor_type: "system",
     actor_id: "abraxas-receipts",
@@ -253,8 +252,14 @@ export async function getPartnerReceipt(receiptId: string, partnerId: string) {
   if (record.partner_id !== partnerId) return { error: "forbidden" as const };
   const consentOk = await consentAllowsPartnerReceipt(record.consent_receipt_id, partnerId);
   const view = toPartnerView(record, consentOk);
-  const valid = isReceiptCurrentlyValid(record) && consentOk;
-  return { view, valid, status: resolveReceiptStatus(record) };
+  const validity = await resolveReceiptValidity(record, { partnerId, policyId: record.policy_id });
+  return {
+    view,
+    valid: validity.currently_valid && consentOk,
+    status: validity.stored_status,
+    validity: validity.validity,
+    invalidation_reasons: validity.invalidation_reasons,
+  };
 }
 
 export async function listReceiptsForAdmin(limit = 50): Promise<DecisionReceiptRecord[]> {
@@ -314,4 +319,5 @@ export async function issueReceiptForDecision(input: {
   }
 }
 
-export { isReceiptCurrentlyValid, resolveReceiptStatus, toPublicView, toPartnerView };
+export { resolveReceiptStatus, toPublicView, toPartnerView } from "@/lib/decisionReceipts/views";
+export { resolveReceiptValidity, isReceiptCurrentlyValidSync as isReceiptCurrentlyValid } from "@/lib/decisionReceipts/validityResolver";

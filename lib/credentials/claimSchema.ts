@@ -1,7 +1,7 @@
 // FILE: lib/credentials/claimSchema.ts
 // Canonical claim types for Compliance + Asset passports.
 
-export type ClaimStatus = "active" | "suspended" | "revoked" | "expired";
+export type ClaimStatus = "active" | "suspended" | "revoked" | "expired" | "under_review";
 export type AssuranceLevel = "L1" | "L2" | "L3" | "L4";
 
 /** Machine-readable claim identifiers used in policies and APIs */

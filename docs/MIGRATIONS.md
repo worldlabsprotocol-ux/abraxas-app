@@ -62,3 +62,12 @@ Admin partner keys and metrics APIs require **024 + 025 + 032** applied in Supab
 ## Decision receipts (033)
 
 After 018 (and ideally 032), run **`033_decision_receipts.sql`** to enable signed eligibility decision receipts. Preflight and post-migration verification queries are in the migration file comments.
+
+## Trust Layer v1 (034 + 035)
+
+After 033, run in order:
+
+1. **`034_credential_status_registry.sql`** — status events, receipt claim dependencies
+2. **`035_issuer_framework_trust_registry.sql`** — signing keys, partner issuer trust rules
+
+See `docs/TRUST_LAYER.md` for API and architecture details.
