@@ -8,6 +8,12 @@ import { claimTypeLabel, type ClaimType } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import type { PartnerPolicy, PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
+import {
+  buildEvaluatedClaimRefs,
+  claimTypesFromEvaluation,
+} from "@/lib/decisionReceipts/claimRefs";
+import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
+import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
 
@@ -131,6 +137,7 @@ export async function consentAndDecide(input: {
   suiAddress: string;
 }): Promise<{
   decision_id: string;
+  receipt_id: string | null;
   decision: string;
   claims: Record<string, unknown>;
   reason_codes: string[];
@@ -208,8 +215,29 @@ export async function consentAndDecide(input: {
     },
   });
 
+  const claimTypes = claimTypesFromEvaluation(evaluation.claims);
+  const evaluatedClaimRefs = buildEvaluatedClaimRefs(claims, claimTypes.length ? claimTypes : Object.keys(evaluation.claims));
+
+  const receipt = await issueReceiptForDecision({
+    decisionId: decisionRow?.id as string,
+    consentReceiptId: consent?.id as string,
+    partnerId: request.partner_id as string,
+    policyId: policy.id,
+    policyVersion: policy.version,
+    subjectId: subject,
+    decisionResult: evaluation.decision,
+    reasonCodes: evaluation.reason_codes,
+    claimsJson: evaluation.claims,
+    evaluatedClaimRefs,
+    expiresAt: evaluation.valid_until,
+    decisionContext: isSandboxPolicyId(policy.id) || evaluation.decision_context === "sandbox_only"
+      ? "sandbox_only"
+      : "production",
+  });
+
   return {
     decision_id: decisionRow?.id as string,
+    receipt_id: receipt?.id ?? null,
     decision: evaluation.decision,
     claims: evaluation.claims,
     reason_codes: evaluation.reason_codes,

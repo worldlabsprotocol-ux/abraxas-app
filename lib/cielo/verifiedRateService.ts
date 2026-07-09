@@ -26,10 +26,16 @@ import {
   evaluateCieloVerifiedGuest,
   type CieloEligibilityDecision,
 } from "@/lib/cielo/verifiedGuestPolicy";
+import {
+  buildEvaluatedClaimRefs,
+  claimTypesFromEvaluation,
+} from "@/lib/decisionReceipts/claimRefs";
+import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 
 export interface VerifiedRateConsentResult {
   consent_receipt_id: string;
   verification_decision_id: string;
+  receipt_id: string | null;
   decision: CieloEligibilityDecision;
   display_decision: string;
   reason_codes: string[];
@@ -200,9 +206,33 @@ export async function grantCieloVerifiedGuestConsent(
     metadata: { decision: finalDecision, reason_codes: gate.reason_codes },
   });
 
+  const decisionResult =
+    finalDecision === "approved" ? "approved" : finalDecision === "manual_review" ? "manual_review" : "denied";
+  const claimTypes = claimTypesFromEvaluation(evaluation.claims);
+  const evaluatedClaimRefs = buildEvaluatedClaimRefs(
+    claims,
+    claimTypes.length ? claimTypes : requestedClaims,
+  );
+
+  const receipt = await issueReceiptForDecision({
+    decisionId: decision.id as string,
+    consentReceiptId: consent.id as string,
+    partnerId: CIELO_PARTNER_ID,
+    policyId: policy.id,
+    policyVersion: policy.version,
+    subjectId: subject,
+    decisionResult,
+    reasonCodes: gate.reason_codes,
+    claimsJson: evaluation.claims,
+    evaluatedClaimRefs,
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    decisionContext: "production",
+  });
+
   return {
     consent_receipt_id: consent.id as string,
     verification_decision_id: decision.id as string,
+    receipt_id: receipt?.id ?? null,
     decision: finalDecision,
     display_decision: gate.display_decision,
     reason_codes: gate.reason_codes,

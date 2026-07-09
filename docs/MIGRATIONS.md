@@ -58,3 +58,7 @@ Keep `PILOT_TIER3_SCREENING` **unset or `false`** in Vercel production. Demo scr
 ## Partner keys + metrics
 
 Admin partner keys and metrics APIs require **024 + 025 + 032** applied in Supabase. Confirm with post-migration verification queries before claiming “live” in marketing copy.
+
+## Decision receipts (033)
+
+After 018 (and ideally 032), run **`033_decision_receipts.sql`** to enable signed eligibility decision receipts. Preflight and post-migration verification queries are in the migration file comments.

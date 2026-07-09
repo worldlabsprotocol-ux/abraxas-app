@@ -27,6 +27,10 @@ export async function POST(
       claims: result.claims,
       valid_until: result.valid_until,
       decision_reference: result.decision_id,
+      receipt_id: result.receipt_id,
+      receipt_public_url: result.receipt_id
+        ? `${process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app"}/api/receipts/${result.receipt_id}/public`
+        : null,
       reason_codes: result.reason_codes,
     });
   } catch (e: unknown) {
