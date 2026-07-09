@@ -4,7 +4,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { createClient } from "@supabase/supabase-js";
-import { attachBrowserSessionCookie, issueBrowserSessionToken } from "@/lib/auth/browserSession";
+import {
+  attachBrowserSessionCookie,
+  issueBrowserSessionToken,
+  resolveBrowserSession,
+} from "@/lib/auth/browserSession";
+
+export async function GET(req: NextRequest) {
+  const session = await resolveBrowserSession(req);
+  if (!session) {
+    return NextResponse.json({ authenticated: false });
+  }
+  return NextResponse.json({
+    authenticated: true,
+    sui_address: session.suiAddress,
+  });
+}
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { sui_address?: string };
@@ -40,6 +55,8 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true, sui_address: sui });
-  attachBrowserSessionCookie(res, token);
+  attachBrowserSessionCookie(res, token, {
+    secure: req.nextUrl.protocol === "https:",
+  });
   return res;
 }

@@ -32,10 +32,15 @@ export async function issueBrowserSessionToken(suiAddress: string): Promise<stri
     .sign(secret);
 }
 
-export function attachBrowserSessionCookie(res: NextResponse, token: string): void {
+export function attachBrowserSessionCookie(
+  res: NextResponse,
+  token: string,
+  options?: { secure?: boolean },
+): void {
+  const secure = options?.secure ?? process.env.NODE_ENV === "production";
   res.cookies.set(BROWSER_SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_TTL_SEC,

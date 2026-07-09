@@ -74,11 +74,17 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   }
 
   clearPendingSession();
-  void fetch("/api/auth/browser-session", {
+
+  const sessionRes = await fetch("/api/auth/browser-session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ sui_address: regData.sui_address }),
-  }).catch(() => { /* best-effort */ });
+  });
+  if (!sessionRes.ok) {
+    const errData = (await sessionRes.json().catch(() => ({}))) as { error?: string };
+    console.warn("[zkLogin] browser session cookie not set:", errData.error ?? sessionRes.status);
+  }
+
   return session;
 }

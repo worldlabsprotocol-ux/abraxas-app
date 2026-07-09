@@ -4,7 +4,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { EvmWalletConnectActions } from "@/components/wallet/EvmWalletConnectActions";
+import {
+  ensureBrowserSession,
+  probeBrowserSession,
+} from "@/lib/auth/ensureBrowserSessionClient";
+import { mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
+import { loadUserSession } from "@/lib/sui/zklogin/session";
 import { useBindEvmWallet } from "@/lib/walletAuthority/client/useBindEvmWallet";
+import { ensurePassportBrowserSessionForBind } from "@/lib/walletAuthority/client/bindEvmWallet";
 import { mapWalletApiError } from "@/lib/walletAuthority/client/sessionHints";
 
 interface ConnectPreview {
@@ -22,11 +29,15 @@ interface ConnectPreview {
   never_shared: string[];
 }
 
+type SessionSyncState = "loading" | "ready" | "needs_sign_in" | "error";
+
 export default function ConnectAuthorizeClient({ requestId }: { requestId: string }) {
   const [preview, setPreview] = useState<ConnectPreview | null>(null);
   const [loadError, setLoadError] = useState("");
   const [consentLoading, setConsentLoading] = useState(false);
   const [consentError, setConsentError] = useState("");
+  const [sessionSync, setSessionSync] = useState<SessionSyncState>("loading");
+  const [sessionSyncError, setSessionSyncError] = useState("");
 
   const expectedWallet = preview?.authorization.wallet_address ?? null;
   const {
@@ -39,6 +50,34 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
     uiState,
   } = useBindEvmWallet({ expectedWalletAddress: expectedWallet, credentials: "include" });
 
+  const syncPassportSession = useCallback(async () => {
+    setSessionSync("loading");
+    setSessionSyncError("");
+    const probe = await probeBrowserSession();
+    if (probe.authenticated) {
+      setSessionSync("ready");
+      return;
+    }
+    const zk = loadUserSession();
+    if (!zk?.suiAddress) {
+      setSessionSync("needs_sign_in");
+      return;
+    }
+    const ensured = await ensureBrowserSession(zk.suiAddress);
+    if (!ensured.ok) {
+      setSessionSync("error");
+      setSessionSyncError(mapBrowserSessionSetupFailure(ensured.reason, ensured.status));
+      return;
+    }
+    const after = await probeBrowserSession();
+    setSessionSync(after.authenticated ? "ready" : "error");
+    if (!after.authenticated) {
+      setSessionSyncError(
+        "Passport sign-in could not be confirmed in this browser. Open Passport here, sign in, then return.",
+      );
+    }
+  }, []);
+
   const load = useCallback(async () => {
     const res = await fetch(`/api/connect/authorize/${requestId}`);
     const data = await res.json() as ConnectPreview & { error?: string };
@@ -48,12 +87,14 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
 
   useEffect(() => {
     void load().catch(e => setLoadError(e instanceof Error ? e.message : "Load failed"));
-  }, [load]);
+    void syncPassportSession();
+  }, [load, syncPassportSession]);
 
   async function consent() {
     setConsentLoading(true);
     setConsentError("");
     try {
+      await ensurePassportBrowserSessionForBind();
       const res = await fetch(`/api/connect/authorize/${requestId}`, {
         method: "POST",
         credentials: "include",
@@ -81,13 +122,26 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
   }
 
   const needsEvmBind = preview.authorization.chain === "evm" && preview.authorization.wallet_address;
-  const loading = bindLoading || consentLoading;
-  const error = bindError ?? consentError;
+  const loading = bindLoading || consentLoading || sessionSync === "loading";
+  const error = bindError ?? consentError ?? sessionSyncError;
+  const passportHref = `/passport?return=${encodeURIComponent(`/connect/authorize?request=${requestId}`)}`;
 
   return (
     <div style={{ maxWidth: 520, margin: "2rem auto", padding: "1.5rem", fontFamily: "system-ui,sans-serif", color: "#f0f0f0", background: "#0d1017", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)" }}>
       <div style={{ fontSize: "0.7rem", color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 8 }}>ABRAXAS CONNECT</div>
       <h1 style={{ fontSize: "1.1rem", margin: "0 0 1rem" }}>Authorization request</h1>
+
+      {sessionSync === "needs_sign_in" && (
+        <p style={{ fontSize: "0.78rem", color: "#FBBF24", marginBottom: "0.75rem", lineHeight: 1.5 }}>
+          Sign in to Passport in this browser before binding or consenting.
+        </p>
+      )}
+
+      {sessionSync === "loading" && (
+        <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", marginBottom: "0.75rem" }}>
+          Confirming Passport session in this browser…
+        </p>
+      )}
 
       <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
         Partner <strong>{preview.authorization.partner_id}</strong> is requesting eligibility verification
@@ -111,7 +165,7 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
         ))}
       </div>
 
-      {needsEvmBind && !bound && (
+      {needsEvmBind && !bound && sessionSync !== "needs_sign_in" && (
         <EvmWalletConnectActions
           uiState={uiState}
           loading={bindLoading}
@@ -132,7 +186,7 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
       <button
         type="button"
         onClick={() => void consent()}
-        disabled={loading || (needsEvmBind && !bound) || preview.authorization.status === "expired"}
+        disabled={loading || (needsEvmBind && !bound) || preview.authorization.status === "expired" || sessionSync === "needs_sign_in"}
         style={{ width: "100%", padding: "0.75rem", cursor: "pointer", background: "#14F195", color: "#000", border: "none", borderRadius: 6, fontWeight: 600 }}
       >
         {consentLoading ? "Processing…" : "Consent and evaluate policy"}
@@ -141,10 +195,12 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
       {error && <p style={{ color: "#f26b6b", fontSize: "0.8rem", marginTop: "0.75rem" }}>{error}</p>}
 
       <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", marginTop: "1rem" }}>
-        Sign in to Passport in this browser before binding. Expires {new Date(preview.authorization.expires_at).toLocaleString()}.
+        Expires {new Date(preview.authorization.expires_at).toLocaleString()}.
       </p>
 
-      <Link href="/passport" style={{ fontSize: "0.75rem", color: "#a78bfa" }}>Open Passport in this browser →</Link>
+      <Link href={passportHref} style={{ fontSize: "0.75rem", color: "#a78bfa" }}>
+        Open Passport in this browser →
+      </Link>
     </div>
   );
 }

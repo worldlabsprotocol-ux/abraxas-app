@@ -11,7 +11,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { loadUserSession, clearUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
+import {
+  loadUserSession,
+  clearUserSession,
+  type ZkLoginUserSession,
+} from "@/lib/sui/zklogin/session";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSessionClient";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
@@ -48,12 +53,11 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setCanSignTransactions(canSignZkLoginTransactions(session?.suiAddress));
     if (session?.suiAddress) {
-      void fetch("/api/auth/browser-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ sui_address: session.suiAddress }),
-      }).catch(() => { /* best-effort */ });
+      void ensureBrowserSession(session.suiAddress).then(result => {
+        if (!result.ok) {
+          console.warn("[SuiAuth] browser session sync failed:", result.reason);
+        }
+      });
     }
   }, [session]);
 
