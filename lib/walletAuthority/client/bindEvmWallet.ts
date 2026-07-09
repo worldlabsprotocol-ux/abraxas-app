@@ -5,34 +5,46 @@
 import {
   connectEvmWallet,
   signEvmPersonalMessage,
+  type EvmConnectionMethod,
   type EvmWalletConnection,
 } from "@/lib/walletAuthority/client/ethereumProvider";
+import { mapWalletApiError } from "@/lib/walletAuthority/client/sessionHints";
 
 export interface BindEvmWalletResult {
   address: string;
   chainId: number;
   binding_id: string;
   binding_status: string;
+  connection_method: EvmConnectionMethod;
 }
 
 export interface BindEvmWalletOptions {
-  /** Expected wallet from authorization request — must match connected account. */
   expectedWalletAddress?: string | null;
   credentials?: RequestCredentials;
+  connectionMethod?: EvmConnectionMethod;
+  chainId?: number;
 }
 
 function addressesEqual(a: string, b: string): boolean {
   return a.toLowerCase() === b.toLowerCase();
 }
 
+async function parseApiError(res: Response, fallback: string): Promise<string> {
+  const data = await res.json().catch(() => ({})) as { error?: string };
+  return mapWalletApiError(data.error ?? fallback, res.status);
+}
+
 /**
- * Full MetaMask SIWE bind: connect → challenge → sign → confirm.
- * Uses wallet-authority APIs (session cookie required).
+ * Full EVM SIWE bind: connect → challenge → sign → confirm.
+ * Uses wallet-authority APIs (session cookie required in this browser).
  */
 export async function bindEvmWalletToPassport(
   options: BindEvmWalletOptions = {},
 ): Promise<BindEvmWalletResult> {
-  const connection = await connectEvmWallet();
+  const connection = await connectEvmWallet({
+    method: options.connectionMethod,
+    chainId: options.chainId,
+  });
   await validateExpectedWallet(connection, options.expectedWalletAddress);
 
   const chRes = await fetch("/api/wallet-authority/evm/challenge", {
@@ -50,7 +62,7 @@ export async function bindEvmWalletToPassport(
     error?: string;
   };
   if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
-    throw new Error(challenge.error ?? "Challenge failed");
+    throw new Error(await parseApiError(chRes, challenge.error ?? "Challenge failed"));
   }
 
   const signature = await signEvmPersonalMessage(
@@ -75,7 +87,7 @@ export async function bindEvmWalletToPassport(
     error?: string;
   };
   if (!bindRes.ok || !bindData.ok) {
-    throw new Error(bindData.error ?? "Bind failed");
+    throw new Error(await parseApiError(bindRes, bindData.error ?? "Bind failed"));
   }
 
   return {
@@ -83,6 +95,7 @@ export async function bindEvmWalletToPassport(
     chainId: connection.chainId,
     binding_id: bindData.binding_id ?? "",
     binding_status: bindData.binding_status ?? "active",
+    connection_method: connection.method,
   };
 }
 

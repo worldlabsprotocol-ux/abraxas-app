@@ -1,7 +1,7 @@
 // FILE: lib/walletAuthority/client/bindEvmWallet.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
-  connectEvmWallet,
+  connectEvmWalletInjected,
   signEvmPersonalMessage,
   type EthereumProvider,
 } from "@/lib/walletAuthority/client/ethereumProvider";
@@ -25,7 +25,7 @@ function createMockProvider(): EthereumProvider & { calls: string[] } {
   };
 }
 
-describe("connectEvmWallet", () => {
+describe("connectEvmWalletInjected", () => {
   beforeEach(() => {
     vi.stubGlobal("window", { ethereum: createMockProvider() });
   });
@@ -38,9 +38,10 @@ describe("connectEvmWallet", () => {
     const provider = createMockProvider();
     (window as unknown as { ethereum: EthereumProvider }).ethereum = provider;
 
-    const connection = await connectEvmWallet();
+    const connection = await connectEvmWalletInjected();
     expect(connection.address).toBe(TEST_ADDRESS);
     expect(connection.chainId).toBe(1);
+    expect(connection.method).toBe("injected");
     expect(provider.calls).toEqual(["eth_requestAccounts", "eth_chainId"]);
   });
 });

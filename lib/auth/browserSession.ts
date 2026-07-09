@@ -82,7 +82,7 @@ export async function requireBrowserSession(req: NextRequest): Promise<
 > {
   const session = await resolveBrowserSession(req);
   if (!session) {
-    return { ok: false, error: "Sign in required", status: 401 };
+    return { ok: false, error: "Sign in required in this browser", status: 401 };
   }
   return { ok: true, session };
 }
