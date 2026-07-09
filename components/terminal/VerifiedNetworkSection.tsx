@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/terminal/VerifiedNetworkSection.tsx
 // Positions the Abraxas Passport as the entry point to a verified
-// network. Concepts reframed in a builder/founder voice — original
+// network. Concepts reframed in a builder/founder voice. original
 // copy, no external brands or partners referenced.
 
 import { motion } from "framer-motion";
@@ -33,7 +33,7 @@ const REASONS: Reason[] = [
     title: "One verification, every door",
     punch: "Stop re-uploading the same documents to ten platforms. Verify your identity and your assets once, then carry that proof everywhere.",
     points: [
-      "One Passport accepted across every integrated protocol, lender, and marketplace",
+      "Verify once on Abraxas today — built for reuse across lenders, marketplaces, and protocols as partners come online",
       "No re-KYC, no redundant uploads, no waiting in the same line twice",
       "The credential is the key, the network is the building",
     ],
@@ -41,7 +41,7 @@ const REASONS: Reason[] = [
   {
     n: "03",
     title: "Trust that actually travels",
-    punch: "A PDF is a claim. A W3C credential anchored on Solana is proof. You read as institutional-ready the second you connect.",
+    punch: "A PDF is a claim. A W3C credential anchored on Sui is proof. You read as institutional-ready the second you connect.",
     points: [
       "Cryptographic, portable, verifiable in a single call",
       "Investors, partners, and protocols confirm you without re-running KYC",

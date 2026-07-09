@@ -1,11 +1,6 @@
 "use client";
 // FILE: app/auth/callback/page.tsx
-// THE MISSING PIECE, Supabase sends the magic link, but nothing was
-// ever built to receive it. This page completes the loop: verify the
-// session Supabase just created from the email link, create (or fetch)
-// the user's Solana wallet, store the session locally, and land them
-// in the dashboard. This is the zkLogin-style behavior, click the
-// email link, land with a real wallet and profile, no separate signup.
+// Legacy Supabase magic-link callback. redirects to Sui zkLogin passport flow.
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -24,8 +19,6 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     async function complete() {
       try {
-        // Supabase's client SDK auto-detects the auth token in the URL
-        // and creates a session, we just need to wait for it and read it.
         const { data, error } = await supabase.auth.getSession();
         if (error || !data.session?.user?.email) {
           throw new Error(error?.message ?? "No session found in the link");
@@ -34,19 +27,7 @@ export default function AuthCallbackPage() {
         const email = data.session.user.email;
         localStorage.setItem("abraxas_email", email);
 
-        // Create or fetch the wallet tied to this email, idempotent,
-        // safe to call every time someone logs in.
-        const walletRes = await fetch("/api/auth/wallet/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const walletData = await walletRes.json() as { publicKey?: string; error?: string };
-        if (walletData.publicKey) {
-          localStorage.setItem("abraxas_credential_v1", walletData.publicKey);
-        }
-
-        router.push("/dashboard");
+        router.push("/passport");
       } catch (err) {
         setStatus("error");
         setErrorMsg(err instanceof Error ? err.message : "Something went wrong");
@@ -63,10 +44,10 @@ export default function AuthCallbackPage() {
         {status === "working" ? (
           <>
             <div style={{ fontSize:"0.95rem", fontWeight:600, marginBottom:"0.5rem" }}>
-              Setting up your account
+              Confirming your email
             </div>
             <div style={{ fontSize:"0.78rem", color:"rgba(255,255,255,0.5)" }}>
-              Confirming your email and creating your wallet...
+              Redirecting to Passport. sign in with Google to create your Sui wallet…
             </div>
           </>
         ) : (
@@ -79,9 +60,9 @@ export default function AuthCallbackPage() {
                            marginBottom:"1rem" }}>
               {errorMsg}
             </div>
-            <a href="/terminal?signin=1" style={{ color:"#10B981", fontSize:"0.8rem",
+            <a href="/passport" style={{ color:"#10B981", fontSize:"0.8rem",
                                                     textDecoration:"none" }}>
-              Try signing in again →
+              Go to Passport →
             </a>
           </>
         )}

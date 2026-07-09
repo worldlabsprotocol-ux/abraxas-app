@@ -1,5 +1,5 @@
 // FILE: app/vault/[id]/page.tsx
-// Vault execution unit view — shows agent, circuit state, event stream, on-chain proof.
+// Vault execution unit view. shows agent, circuit state, event stream, on-chain proof.
 "use client";
 
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { VAULTS, fmtUSD } from "@/lib/appData";
 import { AGENTS } from "@/lib/agentEngine";
 import { useProtocolStream } from "@/lib/protocolStream";
 
-// Vault-scoped event stream — filters global stream by vaultId
+// Vault-scoped event stream. filters global stream by vaultId
 function VaultEventStream({ vaultId }: { vaultId: string }) {
   const all     = useProtocolStream(60);
   const events  = all.filter((e) => !e.vaultId || e.vaultId === vaultId).slice(0, 12);
@@ -87,7 +87,7 @@ function AgentPanel({ vaultId, agentId }: { vaultId: string; agentId: string }) 
           <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
             {String(data.agent.lastAction ?? "")}
           </div>
-          {/* Decision trace — show firing rules */}
+          {/* Decision trace. show firing rules */}
           {(data.decisions as Array<Record<string,unknown>>).filter((d) => d.fired).length > 0 && (
             <div style={{ borderTop: "1px solid rgba(61,214,140,0.12)", paddingTop: "0.625rem" }}>
               <p style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--subtle)", marginBottom: "0.4rem" }}>

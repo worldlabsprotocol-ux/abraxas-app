@@ -1,5 +1,5 @@
 // FILE: components/FloatingTerminal.tsx
-// Persistent VOS terminal button — bottom-right corner on every page.
+// Persistent VOS terminal button. bottom-right corner on every page.
 // Click to open/close the panel. Works like Intercom/support chat.
 // Add <FloatingTerminal /> to app/layout.tsx.
 "use client";

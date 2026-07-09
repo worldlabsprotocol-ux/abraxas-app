@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: "Why blockchain?",
-    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified record on Solana doesn't depend on trusting Abraxas forever, it's checkable by anyone, anytime, without calling us first.",
+    a: "Because a paper record can be lost, altered, or only trusted if you trust whoever's holding it. A verified Passport on Sui doesn't depend on trusting Abraxas forever. it's checkable by anyone, anytime, without calling us first.",
   },
   {
     q: "Why Abraxas?",
@@ -27,7 +27,7 @@ const FAQS = [
   },
   {
     q: "What happens to my money?",
-    a: "You send stablecoin directly to the treasury wallet. Internally, your transaction moves through real stages, Authorized when you confirm you've sent it, Captured once our team verifies the transfer on-chain (typically within one business day), Settled once everything is wrapped up, so this isn't a black box on our end. A self-serve status check for you to track your own transaction is coming, for now we follow up directly by email at each stage.",
+    a: "Stablecoin payments route to asset-specific settlement containers on Sui. Abraxas verifies on-chain transfer state — it does not take discretionary custody of investor capital. Bookings move through Authorized → Captured → Settled as transfers are confirmed (typically within one business day). We follow up by email at each stage.",
   },
 ];
 

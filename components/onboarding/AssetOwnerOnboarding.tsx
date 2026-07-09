@@ -381,7 +381,7 @@ export function AssetOwnerOnboarding({
                 placeholder="For verification follow-up" style={inp} inputMode="email"/>
             </div>
             <div>
-              <label style={lbl}>Solana wallet address (for token delivery)</label>
+              <label style={lbl}>Sui wallet address (for token delivery. or sign in on /passport)</label>
               <input ref={walletRef} type="text" defaultValue=""
                 placeholder="Optional, tokens sent here after minting" style={inp} autoComplete="off"/>
             </div>

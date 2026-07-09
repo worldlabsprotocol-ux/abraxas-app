@@ -1,5 +1,5 @@
 // FILE: components/WorldIDVerify.tsx
-// World ID stub — renders nothing until v2 SDK integration is configured.
+// World ID stub. renders nothing until v2 SDK integration is configured.
 // Replace this file with the full implementation when ready.
 // See: docs.world.org/world-id/quick-start for v2 setup guide.
 "use client";

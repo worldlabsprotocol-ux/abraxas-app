@@ -1,5 +1,5 @@
 // FILE: app/payment/success/page.tsx
-// Post-payment success page — shows confirmation, next steps.
+// Post-payment success page. shows confirmation, next steps.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -15,7 +15,7 @@ const BDR = "#1C2333";
 const NEXT_STEPS: Record<string, string[]> = {
   wyoming_starter:    ["Review your Operating Agreement draft (24–48h)","Confirm entity name + registered agent","Token minted after LLC is filed","V5 verification begins automatically"],
   wyoming_growth:     ["Review your Operating Agreement draft (24–48h)","Multi-sig governance setup scheduled","Cap table configuration call booked","Lending eligibility assigned on completion"],
-  wyoming_enterprise: ["Dedicated verifier assigned within 2 hours","Compliance package delivered within 48h","Priority processing — all stages expedited","Direct line to verification team"],
+  wyoming_enterprise: ["Dedicated verifier assigned within 2 hours","Compliance package delivered within 48h","Priority processing. all stages expedited","Direct line to verification team"],
   asset_verification: ["Documentation review begins within 24h","Assigned verifier contacts you by email","V5 pipeline stages: Identity → Ownership → Legal → Audit","W3C credential issued on completion"],
   music_audit:        ["ISRC/ISWC gap analysis begins within 48h","MLC registration status reviewed","Royalty gap report delivered within 5 business days","Tokenization path recommended in report"],
 };
@@ -26,10 +26,10 @@ export default function PaymentSuccessPage() {
   const steps   = NEXT_STEPS[product] ?? NEXT_STEPS["wyoming_starter"]!;
 
   const productLabel =
-    product === "wyoming_starter"    ? "Wyoming LLC — Starter"
-    : product === "wyoming_growth"   ? "Wyoming LLC — Growth"
-    : product === "wyoming_enterprise" ? "Wyoming LLC — Enterprise"
-    : product === "asset_verification" ? "Asset Verification — V5"
+    product === "wyoming_starter"    ? "Wyoming LLC. Starter"
+    : product === "wyoming_growth"   ? "Wyoming LLC. Growth"
+    : product === "wyoming_enterprise" ? "Wyoming LLC. Enterprise"
+    : product === "asset_verification" ? "Asset Verification. V5"
     : product === "music_audit"      ? "Music Royalty Audit"
     : "Abraxas Protocol";
 

@@ -28,7 +28,7 @@ const GROUPS: Group[] = [
       {
         q: "Why RWA, and why now?",
         a: [
-          "Two things finally lined up. The rails got good enough \u2014 Solana settles in a blink for a fraction of a cent, so you can actually move ownership and yield on-chain without it being a science project. And the demand showed up: real yield beats farm yield that evaporates by Monday.",
+          "Two things finally lined up. Verification rails got good enough. Sui zkLogin means anyone can get a holder address with Google, no seed phrase. And the demand showed up: real yield beats farm yield that evaporates by Monday.",
           "RWA isn't early because of the tech anymore. It's early because nobody solved trust. That's the whole gap, and it's the only part that matters. We're not here for the narrative pump \u2014 we're here because the boring part, verification, is the unlock, and we'd rather own the unlock than the hype.",
         ],
       },
@@ -47,8 +47,8 @@ const GROUPS: Group[] = [
       {
         q: "What does your verification process actually look like?",
         a: [
-          "Two tracks, both real. Identity: government ID plus a liveness check through a certified provider, screened against sanctions, then minted as a W3C Verifiable Credential signed by Abraxas and anchored on Solana.",
-          "Asset: title and deed chain, ownership, revenue telemetry, an independent appraisal, and a risk score \u2014 reviewed, then attested. Every stamp is earned through a real process and stored as proof, not raw documents. The output isn't a PDF you email around. It's a credential any protocol can verify in one call, without re-running a thing.",
+          "Two tracks, both real. Identity: government ID plus liveness via Veriff, then a W3C credential with did:sui. your Sui address from zkLogin is the anchor.",
+          "Asset: title chain, ownership, revenue, appraisal, risk score. reviewed and attested. Stamps mirror to a Sui Passport object on-chain. Integrators verify via one API call without re-running KYC.",
         ],
       },
     ],
@@ -57,10 +57,10 @@ const GROUPS: Group[] = [
     group: "On tokenizing a real rental",
     items: [
       {
-        q: "Walk me through the first cash-flowing rental you tokenized on Solana.",
+        q: "Walk me through the first cash-flowing rental you verified on Abraxas.",
         a: [
-          "Cielo Sunrise. A mountain wellness retreat in Mineral Bluff, Georgia \u2014 real cabin, real 5.0 Superhost listing, real revenue. Held in a single-member LLC with clear title, independently appraised at $1.1M against roughly $109.5K of annual NOI.",
-          "We ran it through the full pipeline: entity, title, insurance, revenue history, appraisal \u2014 then anchored an AAS-1 verification certificate on Solana mainnet as a Token-2022 asset. It's our Genesis Asset because it's the proof: a verified, collateral-eligible, cash-flowing property living on-chain. Not a rendering \u2014 a building you can actually book.",
+          "Cielo Sunrise. A mountain wellness retreat in Mineral Bluff, Georgia. real cabin, real Airbnb listing, real revenue. Held in a single-member LLC with clear title, independently appraised at $1.1M against roughly $109.5K of annual NOI.",
+          "We ran it through the full pipeline: entity, title, insurance, revenue history, appraisal. then issued an AAS-1 verification certificate. It's our Genesis Asset: verified, collateral-eligible, cash-flowing. Not a rendering. a building you can actually book.",
         ],
       },
       {
@@ -73,20 +73,20 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    group: "On Solana",
+    group: "On Sui",
     items: [
       {
-        q: "Why Solana for real-world assets \u2014 what does it give you that other chains don't?",
+        q: "Why Sui for verification. what does zkLogin give you?",
         a: [
-          "Speed, cost, and one shared state. RWA only works if moving ownership or distributing yield is cheap and instant \u2014 on Solana that's sub-cent and sub-second, so the chain disappears and the asset becomes the thing you're looking at. Token-2022 gives us the controls real assets need at the token level.",
-          "And it's one global ledger, not fifteen rollups you bridge between to find the truth. For something whose entire job is to be the source of trust, you want the fewest possible places the truth can live.",
+          "Frictionless identity. Users sign in with Google; Abraxas derives a Sui address without a seed phrase or browser wallet. That address holds the Passport stamp bitmask and did:sui credentials.",
+          "Sui also enables sponsored transactions. verified tiers get gas paid from a growth-fee treasury. and intent messaging to prove control without spending SUI. See /docs/sui for the full map.",
         ],
       },
       {
         q: "How do you handle the gap between on-chain speed and off-chain legal reality?",
         a: [
           "You respect the gap instead of pretending it doesn't exist. On-chain is the record and the rails; the legal wrapper is what makes it enforceable. Assets sit in real entities with clear title and a named custodian, so the token points at something a court recognizes.",
-          "On-chain, the credential and the economic claim move instantly. The legal transfer is handled by the wrapper and custodian on its own clock. Disputes resolve where they actually resolve \u2014 in the jurisdiction \u2014 and the on-chain provenance trail is the cleanest evidence in the room. Anyone telling you the chain replaces the courthouse hasn't closed a real deal.",
+          "On-chain, the credential and the economic claim move instantly. The legal transfer is handled by the wrapper and custodian on its own clock. Disputes resolve where they actually resolve. in the jurisdiction. and the on-chain provenance trail is the cleanest evidence in the room.",
         ],
       },
     ],

@@ -15,8 +15,14 @@ export default function DocsPage() {
       <PageHeader
         eyebrow="Documentation"
         title="Technical overview"
-        subtitle="Litepaper-style reference for credentials, asset verification, and integration. Full SDK docs ship with the first external integration."
+        subtitle="Abraxas Identity Layer (AIL). trust orchestration, not KYC. Licensed providers verify; Abraxas distributes cryptographic proof."
       />
+      <ContentCard title="Start here">
+        <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
+          Read the full product specification:{" "}
+          <Link href="/docs/ail" style={{ color: ACCENT, fontWeight: 600 }}>Abraxas Identity Layer (AIL) →</Link>
+        </p>
+      </ContentCard>
       {DOCS_SECTIONS.map(section => (
         <ContentCard key={section.title} title={section.title}>
           <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
@@ -29,10 +35,9 @@ export default function DocsPage() {
         <BulletList items={[
           "POST /api/credentials/verify",
           "GET /api/credentials/public-key",
-          "POST /api/credentials/issue",
-          "POST /api/identity/veriff/create-session",
-          "POST /api/reclaim/start",
-          "POST /api/reclaim/callback",
+          "POST /api/auth/zklogin/register",
+          "GET /api/sui/passport",
+          "POST /api/idv/create-session",
           "POST /api/purchase/submit",
           "POST /api/waitlist/join",
         ]} />
@@ -40,7 +45,15 @@ export default function DocsPage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
+            { label: "Why verification", href: "/docs/why-verification" },
+            { label: "Credential portability", href: "/docs/credential-portability" },
+            { label: "Litepaper", href: "/docs/litepaper" },
+            { label: "Chain architecture", href: "/docs/chain" },
+            { label: "AIL specification", href: "/docs/ail" },
+            { label: "Sui integration", href: "/docs/sui" },
             { label: "Passport spec", href: "/docs/passport-spec" },
+            { label: "Investor data room", href: "/investors" },
+            { label: "Live metrics", href: "/metrics" },
             { label: "Architecture", href: "/docs/architecture" },
             { label: "Roadmap", href: "/roadmap" },
             { label: "Security", href: "/security" },

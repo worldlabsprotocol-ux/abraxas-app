@@ -45,7 +45,7 @@ export function MarketFeed() {
     });
   }, []);
 
-  // Always show something — music tab = all music+sync+yield signals
+  // Always show something. music tab = all music+sync+yield signals
   const musicSignals = signals.filter((s) => !FILM_CATS.includes(s.category ?? ""));
   const filmSignals  = signals.filter((s) => FILM_CATS.includes(s.category ?? ""));
 
@@ -79,7 +79,7 @@ export function MarketFeed() {
                 {featured.thumb && <img src={featured.thumb} alt={featured.name} style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: "0.75rem", fontWeight: 600 }}>{featured.name}</div>
-                  <div style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>{featured.genre} · Active catalog — signal source</div>
+                  <div style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>{featured.genre} · Active catalog. signal source</div>
                 </div>
                 <div style={{ fontSize: "0.6rem", color: "var(--gold)", border: "1px solid rgba(200,169,110,0.2)", padding: "0.15rem 0.45rem", borderRadius: "4px" }}>Live signal</div>
               </div>
@@ -111,7 +111,7 @@ export function MarketFeed() {
               <span style={{ fontSize: "1rem" }}>🎬</span>
               <div>
                 <div style={{ fontSize: "0.75rem", fontWeight: 600 }}>Film, TV & Screenwriter IP</div>
-                <div style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>Residuals, sync rights, streaming backends — all tokenizable income streams</div>
+                <div style={{ fontSize: "0.62rem", color: "var(--subtle)" }}>Residuals, sync rights, streaming backends. all tokenizable income streams</div>
               </div>
             </div>
             {filmSignals.length > 0 ? filmSignals.map((s) => (
@@ -140,7 +140,7 @@ export function MarketFeed() {
             {rwaTokens.length > 0 && (
               <div style={{ marginBottom: "0.875rem" }}>
                 <p style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>
-                  Live RWA Tokens — CoinGecko
+                  Live RWA Tokens. CoinGecko
                 </p>
                 {rwaTokens.slice(0, 4).map((t) => (
                   <div key={t.symbol} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>

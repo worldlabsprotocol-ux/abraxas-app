@@ -1,5 +1,5 @@
 // FILE: components/SovereignPulse.tsx
-// Sovereign Pulse — always alive. Nuclear reactor at idle, not a dead terminal.
+// Sovereign Pulse. always alive. Nuclear reactor at idle, not a dead terminal.
 // IDLE state: "MONITORING GLOBAL RAILS" with heartbeat.
 // CONNECTING: "SYSTEM INITIALIZING" with build-up animation.
 // LIVE: full event stream.
@@ -16,18 +16,18 @@ const STATUS_CONFIG = {
   IDLE:         { color: "#14F195", label: "SYSTEM READY · MONITORING ACTIVE", pulse: true,  fast: false },
 };
 
-// Idle heartbeat messages — shown when stream is quiet
+// Idle heartbeat messages. shown when stream is quiet
 const HEARTBEAT_LINES = [
-  "[00:00:00] [CIRCUIT]  All circuits nominal — monitoring vault PDAs on-chain",
-  "[00:00:01] [CIRCUIT]  Vault PDA state verified — no anomalies detected",
-  "[00:00:02] [SCAN]     Helius telemetry active — awaiting on-chain events",
+  "[00:00:00] [CIRCUIT]  All circuits nominal. monitoring vault PDAs on-chain",
+  "[00:00:01] [CIRCUIT]  Vault PDA state verified. no anomalies detected",
+  "[00:00:02] [SCAN]     Helius telemetry active. awaiting on-chain events",
   "[00:00:03] [CIRCUIT]  Liquidity depth nominal across all monitored pools",
-  "[00:00:04] [CIRCUIT]  Policy bounds verified — portfolio within risk threshold",
-  "[00:00:05] [SCAN]     Oracle price feeds stable — no deviation detected",
-  "[00:00:06] [CIRCUIT]  Circuit breaker armed — threshold monitoring active",
+  "[00:00:04] [CIRCUIT]  Policy bounds verified. portfolio within risk threshold",
+  "[00:00:05] [SCAN]     Oracle price feeds stable. no deviation detected",
+  "[00:00:06] [CIRCUIT]  Circuit breaker armed. threshold monitoring active",
   "[00:00:07] [CIRCUIT]  Counterparty exposure within acceptable parameters",
-  "[00:00:08] [SCAN]     Block progression nominal — 0 missed slots",
-  "[00:00:09] [CIRCUIT]  Reserve buffer at 22% — above minimum threshold",
+  "[00:00:08] [SCAN]     Block progression nominal. 0 missed slots",
+  "[00:00:09] [CIRCUIT]  Reserve buffer at 22%. above minimum threshold",
 ];
 
 const RISK_COLOR: Record<string, string> = {
@@ -42,7 +42,7 @@ export function SovereignPulse({ vaultId }: { vaultId?: string }) {
   const [heartbeatIdx, setHeartbeatIdx] = useState(0);
   const [heartbeatLines, setHeartbeatLines] = useState<string[]>([HEARTBEAT_LINES[0]]);
 
-  // Always-alive heartbeat — fires even when stream is quiet
+  // Always-alive heartbeat. fires even when stream is quiet
   useEffect(() => {
     const ts = new Date().toISOString().slice(11, 19);
     const iv = setInterval(() => {
@@ -60,7 +60,7 @@ export function SovereignPulse({ vaultId }: { vaultId?: string }) {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [stream.reasoning.length, heartbeatLines.length]);
 
-  // Merge real reasoning with heartbeat — real events take priority at top
+  // Merge real reasoning with heartbeat. real events take priority at top
   const terminalLines = stream.reasoning.length > 0
     ? [...stream.reasoning, ...heartbeatLines].slice(0, 20)
     : heartbeatLines;
@@ -89,7 +89,7 @@ export function SovereignPulse({ vaultId }: { vaultId?: string }) {
         </button>
       </div>
 
-      {/* Terminal — always has content */}
+      {/* Terminal. always has content */}
       <div ref={scrollRef} style={{ height: "150px", overflowY: "auto", padding: "0.625rem 1rem" }}>
         {terminalLines.map((line, i) => (
           <p key={i} style={{ margin: "0 0 0.2rem", fontSize: "0.6rem", color: i === 0 ? sc.color : `rgba(96,165,250,${Math.max(0.15, 0.8 - i * 0.04)})`, lineHeight: 1.5 }}>
@@ -98,11 +98,11 @@ export function SovereignPulse({ vaultId }: { vaultId?: string }) {
         ))}
       </div>
 
-      {/* Event stream — shows real events, gracefully empty */}
+      {/* Event stream. shows real events, gracefully empty */}
       <div style={{ borderTop: "1px solid rgba(96,165,250,0.1)", maxHeight: "180px", overflowY: "auto" }}>
         {heliusEvents.length === 0 ? (
           <div style={{ padding: "0.75rem 1rem", fontSize: "0.6rem", color: "rgba(96,165,250,0.4)" }}>
-            {`> NO ANOMALIES DETECTED — SYSTEM OPERATING NORMALLY`}
+            {`> NO ANOMALIES DETECTED. SYSTEM OPERATING NORMALLY`}
           </div>
         ) : (
           heliusEvents.slice(0, 10).map((e) => {

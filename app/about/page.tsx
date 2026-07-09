@@ -1,5 +1,5 @@
 // FILE: app/about/page.tsx
-// Public explainer page — uses the IG carousel slides as scrollable sections.
+// Public explainer page. uses the IG carousel slides as scrollable sections.
 // Shareable URL for newcomers, lifts the IG content into the web product.
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -7,20 +7,20 @@ import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "About Abraxas",
-  description: "Where assets become collateral. A plain-English explainer of Abraxas Protocol — the verification and collateral intelligence OS for real-world assets.",
+  description: "Where assets become collateral. A plain-English explainer of Abraxas Protocol. the verification and collateral intelligence OS for real-world assets.",
 };
 
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const S = "system-ui,-apple-system,sans-serif";
 
 const SLIDES = [
-  { src: "/about/01_cover.png",      alt: "Cover — Where assets become collateral" },
-  { src: "/about/02_problem.png",    alt: "The problem — you own a valuable thing" },
+  { src: "/about/01_cover.png",      alt: "Cover. Where assets become collateral" },
+  { src: "/about/02_problem.png",    alt: "The problem. you own a valuable thing" },
   { src: "/about/03_broken.png",     alt: "Why tokenized RWA keeps failing" },
-  { src: "/about/04_approach.png",   alt: "The Abraxas approach — verify first" },
+  { src: "/about/04_approach.png",   alt: "The Abraxas approach. verify first" },
   { src: "/about/05_pipeline.png",   alt: "The 7-step verification pipeline" },
-  { src: "/about/06_genesis.png",    alt: "Genesis Asset — Cielo Sunrise" },
-  { src: "/about/07_verticals.png",  alt: "Asset verticals — tribal, housing, royalties" },
+  { src: "/about/06_genesis.png",    alt: "Genesis Asset. Cielo Sunrise" },
+  { src: "/about/07_verticals.png",  alt: "Asset verticals. tribal, housing, royalties" },
   { src: "/about/08_cta.png",        alt: "Verification is the trust layer" },
 ];
 
@@ -46,11 +46,17 @@ export default function AboutPage() {
           </span>
         </div>
         <div style={{ flex: 1 }}/>
-        <Link href="/terminal" style={{ fontFamily: M, fontSize: "0.7rem",
+        <Link href="/" style={{ fontFamily: M, fontSize: "0.7rem",
                                           color: "#10B981", textDecoration: "none",
                                           letterSpacing: "0.1em",
                                           textTransform: "uppercase" }}>
-          OPEN TERMINAL →
+          OPEN APP →
+        </Link>
+        <Link href="/about/team" style={{ fontFamily: M, fontSize: "0.7rem",
+                                          color: "rgba(255,255,255,0.4)", textDecoration: "none",
+                                          letterSpacing: "0.1em",
+                                          textTransform: "uppercase" }}>
+          TEAM →
         </Link>
       </div>
 
@@ -75,12 +81,12 @@ export default function AboutPage() {
                      color: "rgba(255,255,255,0.5)", lineHeight: 1.75,
                      margin: "1rem auto", maxWidth: 620 }}>
           Plain-English explainer of how Abraxas verifies real-world assets
-          before they become programmable collateral on Solana. Eight sections.
+          before they become programmable collateral on Sui. Eight sections.
           Scroll or swipe.
         </p>
       </div>
 
-      {/* Slides — vertical scroll layout */}
+      {/* Slides. vertical scroll layout */}
       <div style={{ maxWidth: 700, margin: "0 auto",
                      padding: "1rem clamp(1rem,3vw,2rem) 3rem",
                      display: "flex", flexDirection: "column",
@@ -112,16 +118,26 @@ export default function AboutPage() {
                      textAlign: "center" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap",
                        justifyContent: "center", marginBottom: "2rem" }}>
-          <Link href="/terminal" style={{
+          <Link href="/" style={{
             padding: "0.75rem 1.5rem", borderRadius: 5,
             background: "#10B981", color: "#000",
             fontFamily: M, fontSize: "1rem", fontWeight: 900,
             textDecoration: "none", letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}>
-            OPEN TERMINAL →
+            OPEN APP →
           </Link>
-          <Link href="/dashboard" style={{
+          <Link href="/about/team" style={{
+            padding: "0.75rem 1.5rem", borderRadius: 5,
+            border: "1px solid rgba(16,185,129,0.4)",
+            background: "rgba(16,185,129,0.08)",
+            color: "#10B981", fontFamily: M, fontSize: "1rem", fontWeight: 700,
+            textDecoration: "none", letterSpacing: "0.04em",
+            textTransform: "uppercase",
+          }}>
+            TEAM & EXECUTION →
+          </Link>
+          <Link href="/investors/strategy" style={{
             padding: "0.75rem 1.5rem", borderRadius: 5,
             border: "1px solid rgba(59,130,246,0.4)",
             background: "rgba(59,130,246,0.08)",
@@ -129,7 +145,7 @@ export default function AboutPage() {
             textDecoration: "none", letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}>
-            VIEW DASHBOARD
+            STRATEGIC ROADMAP →
           </Link>
         </div>
         <div style={{ fontFamily: M, fontSize: "0.75rem",

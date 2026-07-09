@@ -7,7 +7,7 @@ import { VAULT_YIELD_RATES } from "@/lib/usePortfolioData";
 import { formatCurrency } from "@/lib/utils";
 
 /**
- * /demo — read-only dashboard for prospect evaluation.
+ * /demo. read-only dashboard for prospect evaluation.
  * No wallet required. Shows what a real operator dashboard looks like.
  * Per Mrityunjay: "serious evaluators can't see beyond the marketing surface."
  */
@@ -28,7 +28,7 @@ export default function DemoPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.75rem 1.25rem", background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.25)", borderRadius: "10px", marginBottom: "2rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span style={{ fontSize: "0.72rem", color: "var(--gold)", fontWeight: 600 }}>◈ Demo Mode</span>
-          <span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>— illustrative positions, real vault data, no wallet required</span>
+          <span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>- illustrative positions, real vault data, no wallet required</span>
         </div>
         <button onClick={() => router.push("/app")} style={{ background: "var(--gold)", color: "var(--void)", border: "none", borderRadius: "6px", padding: "0.35rem 0.875rem", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif" }}>
           Connect Wallet →
@@ -36,7 +36,7 @@ export default function DemoPage() {
       </div>
 
       <div style={{ marginBottom: "2rem" }}>
-        <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.4rem" }}>Operator Dashboard — Demo</p>
+        <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.4rem" }}>Operator Dashboard. Demo</p>
         <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.75rem", letterSpacing: "-0.01em" }}>
           What your dashboard looks like.
         </h1>

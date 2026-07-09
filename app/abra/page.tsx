@@ -14,7 +14,7 @@ interface TokenMarket {
   status: string | null;
 }
 
-// Verified on-chain facts — stable fallbacks when API unavailable
+// Verified on-chain facts. stable fallbacks when API unavailable
 const KNOWN = {
   holders:  47,        // updated verified count
   progress: "14.7%",
@@ -63,13 +63,13 @@ function useLiveAbraMarket(): { data: TokenMarket; loading: boolean } {
 }
 
 function fmt(n: number | null, dp = 4): string {
-  if (n === null) return "—";
+  if (n === null) return "-";
   if (n === 0) return "0";
   if (n < 0.000001) return n.toExponential(2);
   return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: dp });
 }
 function fmtK(n: number | null): string {
-  if (n === null) return "—";
+  if (n === null) return "-";
   if (n >= 1_000_000) return "$" + (n / 1_000_000).toFixed(2) + "M";
   if (n >= 1_000) return "$" + (n / 1_000).toFixed(1) + "K";
   return "$" + n.toFixed(2);
@@ -80,7 +80,7 @@ export default function AbraPage() {
   const portfolio = usePortfolioData();
   const abraBalanceUsd = portfolio.abra !== null ? portfolio.abra * portfolio.abraPrice : null;
 
-  // Always show 47 — holders is a stable fact, not API-dependent
+  // Always show 47. holders is a stable fact, not API-dependent
   const displayHolders = 47;
   const displayProgress = mkt.progress !== null
     ? `${(mkt.progress * 100).toFixed(1)}%`
@@ -102,7 +102,7 @@ export default function AbraPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: "2.5rem" }}>
         <div>
           <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>
-            Participation Token · Solana
+            Participation Token
           </p>
           <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.02em" }}>
             $ABRA
@@ -140,7 +140,7 @@ export default function AbraPage() {
             <p style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.4rem" }}>Your Holdings</p>
             <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "1.5rem", color: "var(--gold)" }}>{fmt(portfolio.abra)} $ABRA</p>
             <p style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: "0.2rem" }}>
-              ≈ {abraBalanceUsd !== null ? `$${abraBalanceUsd.toFixed(4)}` : "—"} USD
+              ≈ {abraBalanceUsd !== null ? `$${abraBalanceUsd.toFixed(4)}` : "-"} USD
             </p>
           </div>
           <a href={ABRA.bags} target="_blank" rel="noopener noreferrer">
@@ -149,7 +149,7 @@ export default function AbraPage() {
         </div>
       )}
 
-      {/* Why hold $ABRA — subtle but clear */}
+      {/* Why hold $ABRA. subtle but clear */}
       <div style={{ background: "var(--surface)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "14px", padding: "1.5rem", marginBottom: "1.5rem" }}>
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "1rem" }}>
           Why operators hold $ABRA
@@ -177,7 +177,7 @@ export default function AbraPage() {
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.75rem" }}>Token Details</p>
         {[
           { label: "Contract",    value: ABRA.ca,    mono: true, link: ABRA.solscan },
-          { label: "Chain",       value: "Solana" },
+          { label: "Verification", value: "Sui Passport" },
           { label: "Platform",    value: "Bags",     link: ABRA.bags },
           { label: "Allocation",  value: "No private sale · No VC" },
           { label: "Earned by",   value: "Vault participation & asset activation" },

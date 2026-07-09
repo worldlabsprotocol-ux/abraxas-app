@@ -4,7 +4,7 @@
 // established consumer platform's policy: data collection, children's
 // privacy, state-specific rights, do-not-track, service providers,
 // and contact information, all written for what Abraxas actually
-// does (Veriff biometric verification, Supabase storage, Solana
+// does (Veriff biometric verification, Supabase storage, Sui zkLogin
 // wallets, stablecoin transactions, verification documents).
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -44,7 +44,8 @@ export default function PrivacyPolicyPage() {
           <p style={{ marginBottom:"0.75rem" }}>The information we collect depends on how you
           interact with the Services. This includes:</p>
           <p style={{ marginBottom:"0.5rem" }}><strong>Account information.</strong> Your email
-          address, and the Solana wallet address we create on your behalf when you sign in.</p>
+          address from Google sign-in, and the Sui wallet address derived via zkLogin when you
+          authenticate on /passport.</p>
           <p style={{ marginBottom:"0.5rem" }}><strong>Identity verification information.</strong>
           If you complete Abraxas Precheck, our certified partner Veriff collects your
           government ID and a liveness check directly. We receive a verification
@@ -92,9 +93,9 @@ export default function PrivacyPolicyPage() {
           feature, a separate third-party service with its own privacy practices).
           Each provider processes information only as needed to provide their
           service to us.</p>
-          <p style={{ marginBottom:"0.5rem" }}><strong>The Solana blockchain.</strong> Wallet
-          addresses and transaction amounts are recorded on a public blockchain by
-          design. Your name and personal information are not published on-chain.</p>
+          <p style={{ marginBottom:"0.5rem" }}><strong>The Sui blockchain.</strong> Your Sui
+          wallet address and Passport stamp bitmask may be recorded on-chain. Your name and
+          personal information are not published on-chain. only cryptographic proofs.</p>
           <p><strong>Legal and safety reasons.</strong> We may disclose information to
           comply with a court order, law, or legal process, or to protect the rights,
           property, or safety of Abraxas, our users, or others.</p>

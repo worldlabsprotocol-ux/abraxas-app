@@ -94,7 +94,7 @@ export function ExplainerCarousel() {
         </a>
       </div>
 
-      {/* Main slide — capped at 280px tall on mobile so it doesn't dominate */}
+      {/* Main slide. capped at 280px tall on mobile so it doesn't dominate */}
       <div style={{
         position: "relative",
         maxWidth: 560, margin: "0 auto",

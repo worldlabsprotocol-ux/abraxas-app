@@ -1,5 +1,5 @@
 // FILE: app/assets/[id]/page.tsx
-// Rich asset detail page — provenance, custody, certificate, timeline, borrow.
+// Rich asset detail page. provenance, custody, certificate, timeline, borrow.
 // Fetches real data from /api/assets/[id] → get_asset_intelligence RPC.
 // All imports at top. No client-only APIs used server-side.
 import { Suspense }            from "react";

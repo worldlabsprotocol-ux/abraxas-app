@@ -1,5 +1,5 @@
 // FILE: app/rwa/page.tsx
-// IP / RWA Living Market — not a brochure, a control surface.
+// IP / RWA Living Market. not a brochure, a control surface.
 // Physical asset NAV updates every 10min from /api/rwa/physical.
 // Stress Test triggers multi-step Helius sequence.
 // Ondo stability layer + Physical growth layer + Metal hedge layer.
@@ -19,7 +19,7 @@ interface OndoToken     { symbol: string; name: string; baseApy: number; dailyYi
 interface MetalData { name: string; symbol: string; spotUsd: number; change24h: number; updatedAt: string; }
 
 function Sparkline({ positive }: { positive: boolean }) {
-  // Deterministic sparkline seeded by minute — looks live
+  // Deterministic sparkline seeded by minute. looks live
   const pts = Array.from({ length: 20 }, (_, i) => {
     const x = Math.abs(Math.sin(i * 2.3 + Date.now() / 60_000)) * 0.5 + (positive ? i * 0.03 : -i * 0.02) + Math.random() * 0.1;
     return x;
@@ -269,14 +269,14 @@ function useStressTest(vaultId?: string) {
     if (phase !== "idle") return;
     const addLog = (msg: string) => setLog((p) => [msg, ...p]);
 
-    setPhase("detecting"); addLog("[STRESS TEST] Floor sweep initiated — scanning Collector Crypt");
+    setPhase("detecting"); addLog("[STRESS TEST] Floor sweep initiated. scanning Collector Crypt");
     await sleep(600);
     simulateHeliusEvent(vaultId);
     addLog("[HELIUS] NFT_SALE: PSA 10 Charizard mass movement detected");
 
-    setPhase("valuing");   addLog("[SOPHIA] Recalculating vault NAV — physical asset delta applied");
+    setPhase("valuing");   addLog("[SOPHIA] Recalculating vault NAV. physical asset delta applied");
     await sleep(700);
-    addLog("[CIRCUIT] Risk signal: HIGH — floor velocity -12.4%/hr");
+    addLog("[CIRCUIT] Risk signal: HIGH. floor velocity -12.4%/hr");
 
     setPhase("briefing");  addLog("[ELEVENLABS] Briefing queued: priority alert on physical floor sweep");
     await sleep(500);
@@ -285,7 +285,7 @@ function useStressTest(vaultId?: string) {
       await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "Priority alert. Collector Crypt floor sweep detected. PSA 10 Charizard mass sale event. Sophia agent recalculating vault NAV. Circuit arming now." }) });
     } catch {}
 
-    setPhase("arming");    addLog("[CIRCUIT] Circuit Shield arming — vault protection active");
+    setPhase("arming");    addLog("[CIRCUIT] Circuit Shield arming. vault protection active");
     await sleep(800);
     addLog("[VAULT] NAV updated. Stress test complete. Defense armed.");
 
@@ -320,7 +320,7 @@ function ShardBar({ pct, onFragment, onRecall }: { pct: number; onFragment: () =
     <div style={{ marginTop: "0.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
         <span style={{ fontSize: "0.56rem", color: active ? "#FBBF24" : "var(--subtle)", fontWeight: active ? 700 : 400, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          X402 Liquidity Shards {active ? `${pct}% deployed` : "— none deployed"}
+          X402 Liquidity Shards {active ? `${pct}% deployed` : "- none deployed"}
         </span>
         <div style={{ display: "flex", gap: "0.25rem" }}>
           <button onClick={onFragment} style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: "3px", padding: "0.1rem 0.35rem", fontSize: "0.54rem", color: "#FBBF24", cursor: "pointer" }}>+25%</button>
@@ -494,12 +494,12 @@ export default function RWAPage() {
       {/* Stress test */}
       <StressTestPanel stress={stress} />
 
-      {/* Macro telemetry — Abraxas */}
+      {/* Macro telemetry. Abraxas */}
       <div style={{ marginBottom: "1.75rem" }}>
         <MacroPanel />
       </div>
 
-      {/* Sovereign Metals — Gold & Silver */}
+      {/* Sovereign Metals. Gold & Silver */}
       {(!loading && physical?.metals && physical.metals.length > 0) && (
         <section style={{ marginBottom: "1.75rem" }}>
           <p style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--gold)", marginBottom: "0.625rem" }}>
@@ -513,7 +513,7 @@ export default function RWAPage() {
         </section>
       )}
 
-      {/* Stability layer — Ondo */}
+      {/* Stability layer. Ondo */}
       <section style={{ marginBottom: "1.75rem" }}>
         <p style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#14F195", marginBottom: "0.625rem" }}>
           Stability · Ondo Finance

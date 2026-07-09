@@ -13,16 +13,17 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { walletOrContext, hasSocial, hasIdentity } = await req.json() as {
-      walletOrContext?: string; hasSocial?: boolean; hasIdentity?: boolean;
+    const { walletOrContext, hasWallet, hasIdentity, hasSocial } = await req.json() as {
+      walletOrContext?: string; hasWallet?: boolean; hasIdentity?: boolean; hasSocial?: boolean;
     };
 
     if (!walletOrContext) {
       return NextResponse.json({ error: "walletOrContext required" }, { status: 400 });
     }
-    if (!hasSocial || !hasIdentity) {
+    const walletReady = hasWallet ?? hasSocial;
+    if (!walletReady || !hasIdentity) {
       return NextResponse.json(
-        { error: "Founding Verified requires both Social Verified and Identity Verified first" },
+        { error: "Founding Verified requires Sui wallet (Google sign-in) and Identity Verified first" },
         { status: 400 }
       );
     }

@@ -11,7 +11,7 @@ interface NFTCollection {
   chain: string;
 }
 
-// OpenSea & Magic Eden public data — no API key required for top collections
+// OpenSea & Magic Eden public data. no API key required for top collections
 const FALLBACK_COLLECTIONS: NFTCollection[] = [
   { name: "CryptoPunks",        floor: "45.2 ETH",  volume: "$2.1M",  change: "+3.2%",  positive: true,  chain: "ETH" },
   { name: "Bored Ape YC",       floor: "11.8 ETH",  volume: "$980K",  change: "-1.4%",  positive: false, chain: "ETH" },
@@ -19,7 +19,7 @@ const FALLBACK_COLLECTIONS: NFTCollection[] = [
   { name: "Mad Lads",           floor: "142 SOL",   volume: "1.4K SOL",change: "+5.1%", positive: true,  chain: "SOL" },
   { name: "Tensorians",         floor: "28 SOL",    volume: "840 SOL",change: "+2.8%",  positive: true,  chain: "SOL" },
   { name: "Okay Bears",         floor: "18.4 SOL",  volume: "620 SOL",change: "-0.9%",  positive: false, chain: "SOL" },
-  { name: "IP RWA (Aria)",      floor: "—",         volume: "$110M TVL",change: "+IP",  positive: true,  chain: "STORY" },
+  { name: "IP RWA (Aria)",      floor: "-",         volume: "$110M TVL",change: "+IP",  positive: true,  chain: "STORY" },
 ];
 
 export function NFTMarketFeed() {

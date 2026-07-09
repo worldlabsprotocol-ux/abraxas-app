@@ -1,5 +1,5 @@
 // FILE: components/verification/VerificationTimeline.tsx
-// Verification lifecycle — Submitted → Minted
+// Verification lifecycle. Submitted → Minted
 // Every asset shows this. The protocol's trust infrastructure made visual.
 "use client";
 
@@ -28,7 +28,7 @@ const STEPS: TimelineStep[] = [
   { id:"revenue_audited",     label:"Revenue Audited",        icon:"04", actor:"STR Revenue Verification" },
   { id:"risk_scored",         label:"Risk Scored",            icon:"05", actor:"Abraxas Risk Engine" },
   { id:"collateral_eligible", label:"Collateral Eligible",    icon:"06", actor:"Abraxas Protocol" },
-  { id:"certificate_minted",  label:"Certificate Minted",     icon:"07", actor:"Solana Mainnet" },
+  { id:"certificate_minted",  label:"Certificate Minted",     icon:"07", actor:"Sui Devnet" },
 ];
 
 interface Props {

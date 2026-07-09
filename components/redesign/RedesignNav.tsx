@@ -1,9 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Premium dark top nav for the redesign. Logo · links · language ·
-// wallet · Get Verified CTA, with a mobile slide-down menu. The
-// language selector is wired in here so it appears on the redesigned
-// home (and mobile), not just the legacy desktop nav.
+// Consumer nav: Home · Passport · Verify — assets via Home photos.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -11,36 +8,47 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { WalletConnectButton } from "@/components/WalletConnectButton";
-import { Btn } from "./ui";
+import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
-  { href: "/passport",   label: "Verify" },
-  { href: "/terminal",   label: "Assets" },
-  { href: "/build",      label: "Build" },
+  { href: "/", label: "Home", exact: true },
+  { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
 ];
 
 const MORE_LINKS = [
-  { href: "/partners",    label: "Partners" },
-  { href: "/docs",        label: "Docs" },
-  { href: "/dashboard",   label: "Dashboard" },
-  { href: "/swap",        label: "Swap" },
-  { href: "/roadmap",     label: "Roadmap" },
-    { href: "/tokenomics",  label: "Tokenomics" },
-    { href: "/music-audit", label: "Music audit" },
-    { href: "/faq",         label: "FAQ" },
-  { href: "/security",    label: "Security" },
-  { href: "/about",       label: "About" },
+  { href: "/#registry", label: "Browse assets" },
+  { href: "/account", label: "My account" },
+  { href: "/build", label: "Submit your asset" },
+  { href: "/investors/strategy", label: "Strategic roadmap" },
+  { href: "/integrations/relying-parties", label: "Relying parties" },
+  { href: "/integrations/outreach", label: "Partner outreach" },
+  { href: "/investors", label: "Investor data room" },
+  { href: "/case-studies/cielo", label: "Cielo case study" },
+  { href: "/docs", label: "Documentation" },
+  { href: "/docs/sui", label: "zkLogin / Sui docs" },
+  { href: "/roadmap", label: "Roadmap" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/about", label: "About" },
 ];
+
+function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {
+  if (matchPrefixes?.length) {
+    return matchPrefixes.some(p => pathname === p || (pathname?.startsWith(p + "/") ?? false));
+  }
+  if (href === "/") return pathname === "/" || pathname === "/terminal";
+  if (exact) return pathname === href;
+  return pathname === href || (pathname?.startsWith(href + "/") ?? false);
+}
 
 export function RedesignNav() {
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
+  const onHome = isLinkActive(pathname, "/", true);
 
   return (
     <nav style={{
@@ -51,9 +59,11 @@ export function RedesignNav() {
       padding: "0 clamp(0.9rem, 2.5vw, 1.9rem)",
       height: "clamp(60px, 8vw, 72px)", gap: "0.85rem",
     }}>
-      <Link href="/terminal" style={{ display: "flex", alignItems: "center", gap: "0.55rem",
-                                       textDecoration: "none", flexShrink: 0 }}>
-        <Image src="/icon-48.png" alt="Abraxas" width={30} height={30} priority
+      <Link href="/" aria-label="Abraxas home" style={{
+        display: "flex", alignItems: "center", gap: "0.55rem",
+        textDecoration: "none", flexShrink: 0,
+      }}>
+        <Image src="/icon-48.png" alt="" width={30} height={30} priority
           style={{ display: "block", borderRadius: 8 }} />
         <span style={{ fontFamily: FONT, fontSize: "clamp(1.05rem,1.6vw,1.25rem)",
                         fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
@@ -61,11 +71,10 @@ export function RedesignNav() {
         </span>
       </Link>
 
-      {/* Desktop links */}
       <div className="rd-nav-links" style={{ display: "none", flex: 1,
                                               justifyContent: "center", gap: "0.25rem" }}>
         {LINKS.map(l => {
-          const active = pathname?.startsWith(l.href);
+          const active = isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined);
           return (
             <MotionLink key={l.href} href={l.href}
               whileHover={reduce ? undefined : { scale: 1.06 }}
@@ -84,19 +93,45 @@ export function RedesignNav() {
           );
         })}
       </div>
+
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
-      {/* Right cluster (desktop) */}
       <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem",
                                               flexShrink: 0 }}>
+        {!onHome && (
+          <Link href="/" style={{
+            padding: "0.4rem 0.85rem", borderRadius: 999,
+            border: "1px solid rgba(16,185,129,0.35)",
+            background: "rgba(16,185,129,0.1)",
+            fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
+            color: ACCENT, textDecoration: "none",
+          }}>
+            ← Home
+          </Link>
+        )}
+        <Link href="/docs" style={{
+          fontFamily: FONT, fontSize: "0.78rem", fontWeight: 500,
+          color: "var(--text-secondary)", textDecoration: "none", padding: "0.35rem 0.6rem",
+        }}>
+          Docs
+        </Link>
         <LanguageSelector />
-        <WalletConnectButton />
-        <Btn href="/passport" size="sm">Get Verified</Btn>
+        <SuiSignInNavButton prominent />
       </div>
 
-      {/* Mobile: language + hamburger */}
       <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem",
                                                marginLeft: "auto" }}>
+        {!onHome && (
+          <Link href="/" style={{
+            padding: "0.35rem 0.65rem", borderRadius: 999,
+            border: "1px solid rgba(16,185,129,0.35)",
+            background: "rgba(16,185,129,0.1)",
+            fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700,
+            color: ACCENT, textDecoration: "none",
+          }}>
+            Home
+          </Link>
+        )}
         <LanguageSelector />
         <button onClick={() => setOpen(o => !o)} aria-label="Menu"
           style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid var(--border)",
@@ -121,7 +156,7 @@ export function RedesignNav() {
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
                 style={{ padding: "0.7rem 0.5rem", borderRadius: 10, textDecoration: "none",
                          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 600,
-                         color: pathname?.startsWith(l.href) ? ACCENT : "var(--text-primary)" }}>
+                         color: isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined) ? ACCENT : "var(--text-primary)" }}>
                 {l.label}
               </Link>
             ))}
@@ -130,13 +165,12 @@ export function RedesignNav() {
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
                 style={{ padding: "0.55rem 0.5rem", borderRadius: 10, textDecoration: "none",
                          fontFamily: FONT, fontSize: "0.85rem", fontWeight: 500,
-                         color: pathname?.startsWith(l.href) ? ACCENT : "var(--text-secondary)" }}>
+                         color: pathname?.startsWith(l.href.split("#")[0]) ? ACCENT : "var(--text-secondary)" }}>
                 {l.label}
               </Link>
             ))}
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center" }}>
-              <WalletConnectButton />
-              <Btn href="/passport" size="sm" fullWidth>Get Verified</Btn>
+            <div style={{ marginTop: "0.5rem" }}>
+              <SuiSignInNavButton prominent />
             </div>
           </motion.div>
         )}

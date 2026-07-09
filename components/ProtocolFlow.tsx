@@ -1,5 +1,5 @@
 // FILE: components/ProtocolFlow.tsx
-// Protocol flow visualization — VERIFY → TOKENIZE → COLLATERALIZE → BORROW → ONCHAIN CREDIT
+// Protocol flow visualization. VERIFY → TOKENIZE → COLLATERALIZE → BORROW → ONCHAIN CREDIT
 // Institutional, animated, mobile-responsive.
 "use client";
 
@@ -21,7 +21,7 @@ const STEPS = [
     label: "TOKENIZE",
     icon:  "◈",
     color: "#C8A96E",
-    desc:  "Token-2022 certificate minted — immutable proof of ownership",
+    desc:  "Token-2022 certificate minted. immutable proof of ownership",
     metric:{ label:"Mint cost", value:"100–500 ABRA" },
   },
   {
@@ -50,7 +50,7 @@ const STEPS = [
   },
 ] as const;
 
-// Metrics sourced from Supabase + on-chain — "Pending Sync" until env vars set
+// Metrics sourced from Supabase + on-chain. "Pending Sync" until env vars set
 const METRICS = [
   { label:"Total Assets Verified",    value:"Pending Sync", tag:"LIVE" },
   { label:"Active Certificates",      value:"Pending Sync", tag:"CHAIN" },

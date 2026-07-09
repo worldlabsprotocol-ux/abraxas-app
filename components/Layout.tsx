@@ -1,7 +1,7 @@
 // FILE: app/layout.tsx
 // Root layout. Now defaults to LIGHT mode.
 // (Previously hardcoded data-theme="dark" with a comment pointing at
-// ThemeContext.tsx — flipped here. If ThemeContext also sets/overrides
+// ThemeContext.tsx. flipped here. If ThemeContext also sets/overrides
 // this attribute on mount, e.g. from localStorage or a toggle, check it
 // still defaults new users to "light" rather than re-forcing "dark."
 // Share ThemeContext.tsx if you want that reconciled directly.)

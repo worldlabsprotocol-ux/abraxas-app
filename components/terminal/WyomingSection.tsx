@@ -63,9 +63,9 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
             { icon:"◎", title:"Hold assets legally",
               body:"An LLC means the property, the IP, or the rights belong to an entity, not just you personally. That protects you and makes the ownership easy to verify." },
             { icon:"◎", title:"Accept investment without a bank",
-              body:"Once formed, the LLC can tokenize membership units on Solana with a verified ownership record. No traditional bank gatekeeping, no months of opaque paperwork." },
+              body:"Once formed, the LLC can tokenize membership units on Sui with a verified ownership record. No traditional bank gatekeeping, no months of opaque paperwork." },
             { icon:"◎", title:"An on-chain record of who owns what",
-              body:"The ownership structure is recorded on Solana, any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
+              body:"The ownership structure is recorded on Sui. any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
           ].map(r => (
             <div key={r.title} style={{ display:"flex", gap:"0.625rem",
                                          alignItems:"flex-start" }}>
@@ -91,7 +91,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
             <div style={{ width:6, height:6, borderRadius:"50%", background:G }} />
             <span style={{ fontFamily:M, fontSize:"0.55rem", fontWeight:700,
                             color:G, letterSpacing:"0.08em" }}>
-              USDT · SOLANA
+              USDT · SUI
             </span>
           </div>
           <span style={{ fontFamily:S, fontSize:"0.7rem",
@@ -114,7 +114,8 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
             equal one US dollar, it doesn't fluctuate in value like Bitcoin
             or other crypto. It moves instantly over the internet instead of
             through a bank wire, which is why Abraxas uses it for payment.
-            You'll need a digital wallet (like Phantom) to hold and send it,
+            You'll need a Sui wallet (created automatically when you sign in with Google on /passport)
+            or any Sui-compatible wallet to hold and send it,
             the same way you'd need a bank account to send a wire.
           </p>
         </details>

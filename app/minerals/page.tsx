@@ -24,7 +24,7 @@ export default function MineralsPage() {
           </h1>
           <p style={{ color: "#64748B", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
             Verification, tokenization, and collateral infrastructure for Native American
-            reservation mineral assets on Solana. Post-discovery. Tribal-consent-first.
+            reservation mineral assets on Sui. Post-discovery. Tribal-consent-first.
             On-chain royalties.
           </p>
         </div>
@@ -63,10 +63,10 @@ export default function MineralsPage() {
           gap: 20,
           alignItems: "start",
         }}>
-          {/* Left — Mineral Panel */}
+          {/* Left. Mineral Panel */}
           <MineralRightsPanel />
 
-          {/* Right — Pipeline + Partnerships */}
+          {/* Right. Pipeline + Partnerships */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
             {/* 7-Stage Pipeline */}
@@ -127,7 +127,7 @@ export default function MineralsPage() {
               Tokenize a Mineral Rights Position
             </div>
             <div style={{ color: "#64748B", fontSize: 11 }}>
-              BIA-compliant · Tribal consent verified · AAS certificate on Solana
+              BIA-compliant · Tribal consent verified · AAS certificate on Sui
             </div>
           </div>
           <a href="/dashboard" style={{

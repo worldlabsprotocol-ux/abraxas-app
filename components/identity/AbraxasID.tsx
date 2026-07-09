@@ -1,5 +1,5 @@
 // FILE: components/identity/AbraxasID.tsx
-// Abraxas Unified Identity Credential — verify once, use everywhere.
+// Abraxas Unified Identity Credential. verify once, use everywhere.
 // Issues a W3C Verifiable Credential (VC) as an on-chain attestation.
 // Other protocols accept the Abraxas credential without re-KYC.
 "use client";
@@ -22,7 +22,7 @@ const PARTNER_PROTOCOLS = [
   { name: "Utila",          category: "FX / Off-ramp",     status: "coming",  flag: "🇨🇦" },
   { name: "Civic Pass",     category: "DeFi Access",       status: "planned",  flag: "🛡" },
   { name: "Polygon ID",     category: "Cross-chain",       status: "planned",  flag: "🔷" },
-  { name: "Sanctum",        category: "Solana DeFi",       status: "planned",  flag: "◎" },
+  { name: "Aftermath",        category: "Sui DeFi",          status: "planned",  flag: "◎" },
   { name: "Credix",         category: "RWA Credit",        status: "planned",  flag: "🏦" },
 ];
 
@@ -67,7 +67,7 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
     const next = STEP_ORDER[curIdx + 1];
     if (!next) { setBusy(false); return; }
     if (next === "credential") {
-      // Issue the credential — in production this calls your API
+      // Issue the credential. in production this calls your API
       // which creates a W3C VC and mints a soul-bound token
       const id = "ABRA-ID-" + Math.random().toString(36).slice(2,8).toUpperCase();
       setState(s => ({ ...s, step: next, credentialId: id, issuedAt: new Date().toISOString() }));
@@ -106,7 +106,7 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
         <p style={{ fontFamily:S, fontSize:"0.72rem",
                      color:"rgba(255,255,255,0.4)", lineHeight:1.65, margin:0 }}>
           Complete Abraxas identity verification once. Receive a W3C Verifiable Credential
-          that partner protocols accept without requiring you to KYC again — no matter the
+          that partner protocols accept without requiring you to KYC again. no matter the
           platform or currency you are converting to.
         </p>
       </div>
@@ -157,7 +157,7 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
               </svg>
               <div>
                 <div style={{ fontFamily:M, fontSize:"0.65rem", fontWeight:700, color:G }}>
-                  World ID — Proof of Personhood
+                  World ID. Proof of Personhood
                 </div>
                 <div style={{ fontFamily:S, fontSize:"0.68rem",
                                color:"rgba(255,255,255,0.4)", marginTop:2 }}>
@@ -206,13 +206,13 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
               <label style={lbl}>Country / Jurisdiction</label>
               <input type="text" value={state.jurisdiction} style={inp}
                 onChange={e => setState(s=>({...s,jurisdiction:e.target.value}))}
-                placeholder="e.g. United States — California"/>
+                placeholder="e.g. United States. California"/>
             </div>
             <div style={{ padding:"0.625rem 0.875rem", borderRadius:4, marginBottom:"0.875rem",
                            background:`${A}08`, border:`1px solid ${A}25`,
                            fontFamily:S, fontSize:"0.68rem",
                            color:"rgba(255,255,255,0.4)", lineHeight:1.6 }}>
-              🔒 Documents are verified then discarded. Only a cryptographic attestation is stored —
+              🔒 Documents are verified then discarded. Only a cryptographic attestation is stored -
               not your document image. Abraxas is not a breach target.
             </div>
             <button onClick={advance} disabled={busy || !state.legalName || !state.jurisdiction}
@@ -270,14 +270,14 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
                 W3C VERIFIABLE CREDENTIAL · ABRAXAS IDENTITY V1
               </div>
               {[
-                ["Credential ID",  state.credentialId ?? "—"],
-                ["Holder Name",    state.legalName || "—"],
-                ["Jurisdiction",   state.jurisdiction || "—"],
+                ["Credential ID",  state.credentialId ?? "-"],
+                ["Holder Name",    state.legalName || "-"],
+                ["Jurisdiction",   state.jurisdiction || "-"],
                 ["World ID",       "Verified ✓"],
                 ["Document",       state.documentType.replace("_"," ").toUpperCase()],
-                ["Issued",         state.issuedAt ? new Date(state.issuedAt).toLocaleDateString() : "—"],
+                ["Issued",         state.issuedAt ? new Date(state.issuedAt).toLocaleDateString() : "-"],
                 ["Standard",       "W3C VC Data Model v2.0"],
-                ["Chain",          "Solana (soul-bound)"],
+                ["Chain",          "Sui (Passport object)"],
               ].map(([k,v]) => (
                 <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                        padding:"0.3rem 0",
@@ -349,7 +349,7 @@ export function AbraxasID({ walletAddress }: { walletAddress?: string }) {
                            border:`1px solid ${B}25`,
                            fontFamily:S, fontSize:"0.7rem",
                            color:"rgba(255,255,255,0.45)", lineHeight:1.65 }}>
-              Your Abraxas ID credential is a soul-bound token on Solana. It cannot be
+              Your Abraxas ID credential is anchored to your Sui Passport. It cannot be
               transferred, sold, or forged. Partner protocols verify it cryptographically
               in milliseconds. If regulations require re-verification, the credential auto-refreshes
               per W3C VC Refresh specification.

@@ -1,15 +1,23 @@
 // FILE: components/identity/AbraxasPassport.tsx
-// Abraxas Digital Passport — dark premium credential card + 10-stamp grid.
-// Live credential lookup via useAbraxasID; Reclaim social stamp when active.
+// Abraxas Digital Passport. dark premium credential card + stamp grid.
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAbraxasID } from "@/lib/credentials/useAbraxasID";
-import { useReclaimSocialStamp } from "@/lib/useReclaimSocialStamp";
+import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
+import { truncateDid, toSuiDid } from "@/lib/sui/identity";
 import { PassportStampIcon, type PassportStampKind } from "./PassportStampIcon";
 import { VerificationBadge } from "@/components/redesign/VerificationBadge";
+import { ProductStatusBadge } from "@/components/ui/ProductStatusBadge";
 import { Btn } from "@/components/redesign/ui";
+import {
+  STAMP_CATALOG,
+  STAMPS_BY_LAYER,
+  TRACKABLE_STAMP_IDS,
+  PUBLIC_POSITIONING,
+  type StampCatalogEntry,
+} from "@/lib/passportLayers";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -18,20 +26,25 @@ const AMBER = "#F59E0B";
 const BLUE = "#3B82F6";
 const VIOLET = "#8B5CF6";
 
-const ALL_STAMPS = [
-  { id: "identity",   label: "Identity",        kind: "identity" as PassportStampKind,   color: ACCENT, desc: "Gov ID + liveness confirmed" },
-  { id: "biometric",  label: "Biometric",       kind: "biometric" as PassportStampKind,  color: ACCENT, desc: "Liveness match · face verification" },
-  { id: "business",   label: "Business",        kind: "business" as PassportStampKind,   color: BLUE,   desc: "KYB complete · entity confirmed" },
-  { id: "owner",      label: "Asset Owner",     kind: "owner" as PassportStampKind,      color: AMBER,  desc: "Ownership claim attested on-chain" },
-  { id: "royalty",    label: "Royalty",         kind: "royalty" as PassportStampKind,    color: VIOLET, desc: "Publishing / royalty claim confirmed" },
-  { id: "property",   label: "Property",        kind: "property" as PassportStampKind,  color: AMBER,  desc: "Real estate title chain verified" },
-  { id: "tribal",     label: "Tribal",          kind: "tribal" as PassportStampKind,    color: ACCENT, desc: "Sovereign land / mineral rights" },
-  { id: "compliance", label: "Compliance",      kind: "compliance" as PassportStampKind,color: ACCENT, desc: "AML / OFAC screening passed" },
-  { id: "lending",    label: "Lending",         kind: "lending" as PassportStampKind,   color: ACCENT, desc: "Collateral credit verified" },
-  { id: "social",     label: "Social",          kind: "social" as PassportStampKind,    color: BLUE,   desc: "LinkedIn, X, GitHub, or Gmail via Reclaim zkTLS" },
-] as const;
+const DISPLAY_STAMPS = STAMP_CATALOG.filter(s => s.id !== "social");
 
-export type StampId = typeof ALL_STAMPS[number]["id"];
+export type StampId = typeof DISPLAY_STAMPS[number]["id"];
+
+function stampKind(id: StampId): PassportStampKind {
+  return id as PassportStampKind;
+}
+
+const STAMP_COLORS: Partial<Record<StampId, string>> = {
+  identity: ACCENT,
+  biometric: ACCENT,
+  business: BLUE,
+  owner: AMBER,
+  royalty: VIOLET,
+  property: AMBER,
+  tribal: ACCENT,
+  compliance: ACCENT,
+  lending: ACCENT,
+};
 
 function stampsFromCredential(level: string | undefined): StampId[] {
   if (!level) return [];
@@ -45,7 +58,7 @@ function stampsFromCredential(level: string | undefined): StampId[] {
 function Stamp({
   stamp, earned, onClick, active,
 }: {
-  stamp: typeof ALL_STAMPS[number];
+  stamp: StampCatalogEntry & { color: string };
   earned: boolean;
   onClick?: () => void;
   active?: boolean;
@@ -53,6 +66,7 @@ function Stamp({
   const [tip, setTip] = useState(false);
   const reduce = useReducedMotion();
   const Tag = onClick ? "button" : "div";
+  const dimmed = !earned && (stamp.status === "planned" || stamp.status === "partner_gated");
 
   return (
     <Tag
@@ -64,12 +78,13 @@ function Stamp({
         display: "flex", flexDirection: "column", alignItems: "center",
         gap: "0.375rem", cursor: onClick ? "pointer" : "default",
         position: "relative", background: "none", border: "none", padding: 0,
+        opacity: dimmed ? 0.55 : 1,
       }}
     >
       <motion.div
         key={String(earned)}
         initial={reduce ? false : (earned ? { scale: 0.55, opacity: 0 } : false)}
-        animate={{ scale: tip && earned ? 1.06 : 1, opacity: earned ? 1 : 0.45 }}
+        animate={{ scale: tip && earned ? 1.06 : 1, opacity: earned ? 1 : dimmed ? 0.5 : 0.65 }}
         transition={{ type: "spring", stiffness: 420, damping: 18 }}
         style={{
           width: 56, height: 56, borderRadius: "50%",
@@ -82,7 +97,7 @@ function Stamp({
           outlineOffset: 2,
         }}
       >
-        <PassportStampIcon kind={stamp.kind} size={22}
+        <PassportStampIcon kind={stampKind(stamp.id as StampId)} size={22}
           color={earned ? stamp.color : "var(--text-muted)"} />
         {earned && (
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 56 56">
@@ -99,16 +114,24 @@ function Stamp({
       }}>
         {stamp.label}
       </div>
-      {tip && earned && (
+      {!earned && (
+        <ProductStatusBadge status={stamp.status} size="xs" />
+      )}
+      {tip && (
         <div style={{
           position: "absolute", bottom: "108%", left: "50%", transform: "translateX(-50%)",
           zIndex: 20, background: "var(--surface-raised)", border: `1px solid ${stamp.color}40`,
-          borderRadius: 8, padding: "0.4rem 0.65rem",
+          borderRadius: 8, padding: "0.4rem 0.65rem", maxWidth: 220,
           fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-secondary)",
-          whiteSpace: "nowrap", pointerEvents: "none",
+          lineHeight: 1.45, pointerEvents: "none",
           boxShadow: "var(--shadow-card)",
         }}>
           {stamp.desc}
+          {stamp.availabilityNote && !earned && (
+            <span style={{ display: "block", marginTop: 4, color: "var(--text-muted)" }}>
+              {stamp.availabilityNote}
+            </span>
+          )}
         </div>
       )}
     </Tag>
@@ -117,6 +140,8 @@ function Stamp({
 
 export function AbraxasPassport({
   onGetVerified,
+  suiAddress: propSuiAddress,
+  /** @deprecated use suiAddress */
   walletAddress,
   earnedStamps: propStamps,
   onStampClick,
@@ -126,6 +151,7 @@ export function AbraxasPassport({
   didHint,
 }: {
   onGetVerified?: () => void;
+  suiAddress?: string | null;
   walletAddress?: string;
   earnedStamps?: StampId[];
   onStampClick?: (id: StampId) => void;
@@ -134,57 +160,45 @@ export function AbraxasPassport({
   showHeadline?: boolean;
   didHint?: string;
 }) {
-  const [walletPubkey, setWalletPubkey] = useState<string | null>(null);
+  const suiAuth = useSuiAuthOptional();
   const [launching, setLaunching] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("abraxas_credential_v1");
-      if (stored) {
-        const c = JSON.parse(stored) as { wallet?: string };
-        setWalletPubkey(c.wallet ?? null);
-      }
-    } catch { /* ignore */ }
-  }, []);
+  const holderAddress = propSuiAddress ?? suiAuth?.suiAddress ?? walletAddress ?? null;
 
-  const { credential, status } = useAbraxasID();
-  const hasSocialStamp = useReclaimSocialStamp(walletAddress ?? walletPubkey);
-
-  const walletStr = walletAddress ?? walletPubkey;
-  const baseEarned: StampId[] = propStamps
+  const { credential, status } = useAbraxasID(holderAddress);
+  const earned: StampId[] = propStamps
     ?? stampsFromCredential(credential?.level)
     ?? (status === "verified" ? ["identity", "compliance"] : []);
-  const earned: StampId[] = hasSocialStamp && !baseEarned.includes("social")
-    ? [...baseEarned, "social"]
-    : baseEarned;
 
-  const total = ALL_STAMPS.length;
-  const earnedCount = earned.length;
-  const trustPct = Math.round((earnedCount / total) * 100);
+  const total = TRACKABLE_STAMP_IDS.filter(id => id !== "social").length;
+  const earnedTrackable = earned.filter(id => TRACKABLE_STAMP_IDS.includes(id as typeof TRACKABLE_STAMP_IDS[number])).length;
+  const trustPct = Math.round((earnedTrackable / Math.max(total, 1)) * 100);
   const trustLabel =
-    earnedCount === 0 ? "UNVERIFIED"
-    : earnedCount <= 2 ? "BASIC"
-    : earnedCount <= 5 ? "VERIFIED"
-    : earnedCount <= 8 ? "TRUSTED"
-    : "ELITE";
+    earnedTrackable === 0 ? "CORE ONLY"
+    : earnedTrackable <= 2 ? "COMPLIANCE STARTED"
+    : earnedTrackable <= 4 ? "VERIFIED"
+    : "ENHANCED";
   const trustColor =
-    trustLabel === "UNVERIFIED" ? "var(--text-muted)"
-    : trustLabel === "BASIC"    ? AMBER
+    trustLabel === "CORE ONLY" ? "var(--text-muted)"
+    : trustLabel === "COMPLIANCE STARTED" ? AMBER
     : trustLabel === "VERIFIED" ? ACCENT
-    : trustLabel === "TRUSTED"  ? BLUE
-    : VIOLET;
+    : BLUE;
 
   const didDisplay = didHint
-    ?? (walletStr ? `did:sol:${walletStr.slice(0, 4)}…${walletStr.slice(-3)}` : "did:sol:7xKX…AsU");
+    ?? (holderAddress ? truncateDid(holderAddress) : "did:sui:…sign in");
 
   async function handleGetVerified() {
+    if (!holderAddress) {
+      onGetVerified?.();
+      return;
+    }
     setLaunching(true);
     try {
       const res = await fetch("/api/idv/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: walletStr ?? "anon", level: "STANDARD" }),
+        body: JSON.stringify({ sui_address: holderAddress, document_type: "PASSPORT" }),
       });
       const data = await res.json() as { session_url?: string };
       if (data.session_url) {
@@ -205,7 +219,9 @@ export function AbraxasPassport({
       type: ["VerifiableCredential", "AbraxasPassportCredential"],
       issuer: "did:web:abraxas-app.vercel.app",
       credentialSubject: {
-        id: didDisplay.startsWith("did:") ? didDisplay : `did:sol:${walletStr ?? "unlinked"}`,
+        id: holderAddress ? toSuiDid(holderAddress) : "did:sui:unlinked",
+        chain: "sui",
+        sui_address: holderAddress,
         protocol: "abraxas",
         stamps: earned,
         level: trustLabel,
@@ -258,9 +274,9 @@ export function AbraxasPassport({
               </span>
             )}
             <VerificationBadge
-              label={`${trustLabel} · ${earnedCount}/${total}`}
+              label={`${trustLabel} · ${earnedTrackable}/${total} live claims`}
               color={trustColor}
-              check={earnedCount > 0}
+              check={earnedTrackable > 0}
             />
           </div>
         </div>
@@ -288,8 +304,8 @@ export function AbraxasPassport({
                   fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
                   lineHeight: 1.7, maxWidth: 440, margin: "0 0 1.1rem",
                 }}>
-                  One W3C credential anchored on Solana. Documents stay off-chain —
-                  only cryptographic proof of each stamp is portable across protocols.
+                  {PUBLIC_POSITIONING.proofNotDocuments} Documents stay with regulated providers —
+                  Abraxas carries signed claims you consent to share.
                 </p>
               </>
             )}
@@ -301,16 +317,16 @@ export function AbraxasPassport({
                   fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)",
                   letterSpacing: "0.1em", textTransform: "uppercase",
                 }}>
-                  Trust level
+                  Trust level · pilot claims
                 </span>
                 <span style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, color: trustColor }}>
-                  {earnedCount}/{total} stamps
+                  {earnedTrackable}/{total} earned
                 </span>
               </div>
               <div style={{ height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.max(trustPct, earnedCount > 0 ? 4 : 0)}%` }}
+                  animate={{ width: `${Math.max(trustPct, earnedTrackable > 0 ? 4 : 0)}%` }}
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   style={{ height: "100%", background: ACCENT, borderRadius: 3 }}
                 />
@@ -355,7 +371,7 @@ export function AbraxasPassport({
                 {didDisplay}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-                {["W3C VC v2.0", "Ed25519", "Solana Mainnet"].map(tag => (
+                {["W3C VC v2.0", "Ed25519", "Sui · zkLogin"].map(tag => (
                   <span key={tag} style={{
                     fontFamily: MONO, fontSize: "0.5rem", fontWeight: 700,
                     color: ACCENT, letterSpacing: "0.06em",
@@ -370,7 +386,7 @@ export function AbraxasPassport({
                 fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
                 lineHeight: 1.55, margin: "0.625rem 0 0",
               }}>
-                No documents stored on-chain — only cryptographic proof of verification.
+                No documents stored on-chain. only cryptographic proof of verification.
               </p>
             </div>
 
@@ -389,12 +405,12 @@ export function AbraxasPassport({
 
             <div style={{
               fontFamily: MONO, fontSize: "0.52rem", textAlign: "right",
-              color: earnedCount > 0 ? ACCENT : "var(--text-muted)",
+              color: earnedTrackable > 0 ? ACCENT : "var(--text-muted)",
               letterSpacing: "0.06em",
             }}>
-              {earnedCount > 0
-                ? `✓ ${earnedCount} stamp${earnedCount > 1 ? "s" : ""} active`
-                : "No stamps yet — start with Social or Precheck"}
+              {earnedTrackable > 0
+                ? `✓ ${earnedTrackable} claim${earnedTrackable > 1 ? "s" : ""} active`
+                : "Passport Core ready · add claims when needed"}
             </div>
           </div>
         </div>
@@ -409,7 +425,7 @@ export function AbraxasPassport({
           {[
             { k: "Standard", v: "W3C VC Data Model v2.0" },
             { k: "Signature", v: "Ed25519 · Abraxas issuer key" },
-            { k: "Anchor", v: "Solana Mainnet attestation hash" },
+            { k: "Anchor", v: "Sui Passport object (devnet → mainnet)" },
             { k: "Privacy", v: "Documents off-chain · proof on-chain" },
           ].map(row => (
             <div key={row.k} style={{ display: "flex", gap: "0.4rem", alignItems: "baseline" }}>
@@ -427,37 +443,49 @@ export function AbraxasPassport({
         </div>
       </div>
 
-      {/* Stamps grid */}
+      {/* Stamps by layer */}
       <div style={{ marginTop: "1.25rem" }}>
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          marginBottom: "0.75rem",
+        {STAMPS_BY_LAYER.map(layer => {
+          const layerStamps = layer.stamps.filter(s => s.id !== "social");
+          if (!layerStamps.length) return null;
+          return (
+            <div key={layer.id} style={{ marginBottom: "1.15rem" }}>
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                marginBottom: "0.65rem", flexWrap: "wrap", gap: "0.35rem",
+              }}>
+                <span style={{
+                  fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                }}>
+                  {layer.title}
+                </span>
+                <ProductStatusBadge status={layer.status} size="xs" />
+              </div>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))",
+                gap: "0.75rem",
+              }}>
+                {layerStamps.map(s => (
+                  <Stamp
+                    key={s.id}
+                    stamp={{ ...s, color: STAMP_COLORS[s.id as StampId] ?? ACCENT }}
+                    earned={earned.includes(s.id as StampId)}
+                    active={activeStamp === s.id}
+                    onClick={onStampClick ? () => onStampClick(s.id as StampId) : undefined}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+        <p style={{
+          fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
+          lineHeight: 1.55, margin: "0.35rem 0 0",
         }}>
-          <span style={{
-            fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
-            letterSpacing: "0.14em", textTransform: "uppercase",
-          }}>
-            Verification stamps
-          </span>
-          <span style={{ fontFamily: MONO, fontSize: "0.52rem", color: `${ACCENT}99`, letterSpacing: "0.06em" }}>
-            {earnedCount}/{total} earned
-          </span>
-        </div>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))",
-          gap: "0.75rem",
-        }}>
-          {ALL_STAMPS.map(s => (
-            <Stamp
-              key={s.id}
-              stamp={s}
-              earned={earned.includes(s.id)}
-              active={activeStamp === s.id}
-              onClick={onStampClick ? () => onStampClick(s.id) : undefined}
-            />
-          ))}
-        </div>
+          {PUBLIC_POSITIONING.disclaimer}
+        </p>
       </div>
 
       {/* Vision note */}
@@ -476,10 +504,8 @@ export function AbraxasPassport({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.7, margin: 0,
           }}>
-            Each stamp is a verifiable gate — identity, business, property, lending eligibility.
-            External protocols will verify via CPI or signed presentation against the on-chain
-            passport root. Integration SDK and program IDL are on the roadmap; credential
-            structure is live today.
+            Each claim is a specific credential — identity, screening, KYB, asset ownership, lending eligibility.
+            Partners verify via API with their own policy rules. Planned claims are shown for roadmap transparency.
           </p>
         </div>
       )}
@@ -489,10 +515,9 @@ export function AbraxasPassport({
 
 /** Map /passport page stamp state → AbraxasPassport stamp IDs */
 export function passportStateToStampIds(
-  state: { social?: "earned" | "in_progress" | "not_started"; identity?: "earned" | "in_progress" | "not_started"; business?: "earned" | "in_progress" | "not_started"; asset_owner?: "earned" | "in_progress" | "not_started" },
+  state: { identity?: "earned" | "in_progress" | "not_started"; business?: "earned" | "in_progress" | "not_started"; asset_owner?: "earned" | "in_progress" | "not_started" },
 ): StampId[] {
   const earned: StampId[] = [];
-  if (state.social === "earned") earned.push("social");
   if (state.identity === "earned") {
     earned.push("identity", "biometric", "compliance");
   }
@@ -504,7 +529,6 @@ export function passportStateToStampIds(
 /** Map /passport wizard stamp id → AbraxasPassport StampId for highlight */
 export function passportWizardToStampId(wizardId: string): StampId | null {
   const map: Record<string, StampId> = {
-    social: "social",
     identity: "identity",
     business: "business",
     asset_owner: "owner",
@@ -515,7 +539,6 @@ export function passportWizardToStampId(wizardId: string): StampId | null {
 /** Map AbraxasPassport stamp click → /passport wizard stamp id */
 export function stampIdToPassportWizard(id: StampId): string {
   const map: Partial<Record<StampId, string>> = {
-    social: "social",
     identity: "identity",
     biometric: "identity",
     business: "business",
@@ -526,5 +549,5 @@ export function stampIdToPassportWizard(id: StampId): string {
     tribal: "asset_owner",
     lending: "asset_owner",
   };
-  return map[id] ?? "social";
+  return map[id] ?? "identity";
 }

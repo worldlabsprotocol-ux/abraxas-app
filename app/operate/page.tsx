@@ -42,7 +42,7 @@ function OperateInner() {
         {step === "pick" ? "Pick an asset." : "Name your position."}
       </h1>
 
-      {/* STEP 1 — Pick asset */}
+      {/* STEP 1. Pick asset */}
       {step === "pick" && (
         <>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.25rem" }}>
@@ -96,7 +96,7 @@ function OperateInner() {
         </>
       )}
 
-      {/* STEP 2 — Customize position metadata (used in Token-2022 mint) */}
+      {/* STEP 2. Customize position metadata (used in Token-2022 mint) */}
       {step === "customize" && asset && vault && (
         <>
           <div style={{ background: "var(--surface)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "0.875rem 1.25rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -131,7 +131,7 @@ function OperateInner() {
               <textarea
                 value={meta.description}
                 onChange={(e) => setMeta((m) => ({ ...m, description: e.target.value }))}
-                placeholder="Short note about this position — included in token metadata."
+                placeholder="Short note about this position. included in token metadata."
                 rows={2}
                 style={{ width: "100%", boxSizing: "border-box", background: "var(--surface)", border: "1px solid var(--line)", color: "var(--text)", borderRadius: "8px", padding: "0.75rem 1rem", fontSize: "0.875rem", outline: "none", resize: "vertical", fontFamily: "'Space Grotesk', sans-serif" }}
               />
@@ -140,7 +140,7 @@ function OperateInner() {
 
           <div style={{ background: "rgba(200,169,110,0.05)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "8px", padding: "0.75rem 1rem", marginBottom: "1.25rem" }}>
             <p style={{ fontSize: "0.7rem", color: "var(--muted)", lineHeight: 1.55 }}>
-              <strong style={{ color: "var(--gold)" }}>ABRAP token metadata</strong> — Your position name and description are embedded in the Token-2022 token. The dashboard, Solscan, and compatible wallets will display this information. Wallet display depends on the wallet's metadata indexing.
+              <strong style={{ color: "var(--gold)" }}>ABRAP token metadata</strong>. Your position name and description are embedded in the Token-2022 token. The dashboard, Solscan, and compatible wallets will display this information. Wallet display depends on the wallet's metadata indexing.
             </p>
           </div>
 

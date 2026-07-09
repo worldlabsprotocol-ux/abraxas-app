@@ -1,5 +1,5 @@
 // FILE: components/music/MusicAuditTool.tsx
-// Music catalog royalty audit — finds missing ISRCs, unregistered works,
+// Music catalog royalty audit. finds missing ISRCs, unregistered works,
 // PRO gaps, and potential unclaimed royalties for Abraxas publishing clients.
 "use client";
 
@@ -67,7 +67,7 @@ function analyzeTrack(t: Track): Gap[] {
   if (t.releaseYear && parseInt(t.releaseYear) < 2019 && !t.isrc) gaps.push({
     severity: "medium",
     issue: `"${t.title}" is an older release that may have unclaimed royalties`,
-    fix: "Audit legacy releases — older catalog often has years of accumulated unclaimed royalties",
+    fix: "Audit legacy releases. older catalog often has years of accumulated unclaimed royalties",
   });
   return gaps;
 }
@@ -133,7 +133,7 @@ export function MusicAuditTool({ clientName }: { clientName?: string }) {
           </div>
           <div style={{ fontFamily:S, fontSize:"clamp(0.9rem,2vw,1.1rem)",
                          fontWeight:800, color:W }}>
-            {clientName ? `Catalog Audit — ${clientName}` : "Royalty Gap Analysis"}
+            {clientName ? `Catalog Audit. ${clientName}` : "Royalty Gap Analysis"}
           </div>
         </div>
         {audited && (
@@ -176,7 +176,7 @@ export function MusicAuditTool({ clientName }: { clientName?: string }) {
             <div style={{ marginTop:"0.625rem", padding:"0.5rem 0.75rem", borderRadius:4,
                            background:`${R}10`, border:`1px solid ${R}30`,
                            fontSize:"0.65rem", color:R, lineHeight:1.6 }}>
-              {criticalCount} critical issue{criticalCount>1?"s":""} found — streams may be untracked and royalties going to the unmatched pool. Fix these first.
+              {criticalCount} critical issue{criticalCount>1?"s":""} found. streams may be untracked and royalties going to the unmatched pool. Fix these first.
             </div>
           )}
         </div>
@@ -192,7 +192,7 @@ export function MusicAuditTool({ clientName }: { clientName?: string }) {
             <p style={{ fontFamily:S, fontSize:"0.78rem",
                          color:"rgba(255,255,255,0.45)", lineHeight:1.65, margin:"0 0 1rem" }}>
               Enter your catalog below. The audit engine checks every track for ISRC/ISWC codes,
-              PRO registration, MLC filing, and split sheet status — the four most common causes
+              PRO registration, MLC filing, and split sheet status. the four most common causes
               of unclaimed royalties.
             </p>
             {tracks.map((t, idx) => (

@@ -1,5 +1,5 @@
 // FILE: components/verification/AttestationCards.tsx
-// Attestation trust surfaces — each verification actor made visible.
+// Attestation trust surfaces. each verification actor made visible.
 // "Abraxas verifies whether a real-world asset is financeable."
 "use client";
 import { useState } from "react";

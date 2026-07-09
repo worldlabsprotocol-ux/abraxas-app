@@ -5,6 +5,8 @@
 import { useState }             from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FLAGSHIP_PROPERTY }    from "@/lib/data/flagshipProperty";
+import { CieloFlagshipActions } from "@/components/cielo/CieloFlagshipActions";
+import { AssetVerificationScopePanel } from "@/components/redesign/AssetVerificationScopePanel";
 
 const M      = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 // Dark premium restyle (redesign). Data/content unchanged.
@@ -122,14 +124,14 @@ export function FlagshipAssetPage() {
               color:b.color, textTransform:"uppercase", letterSpacing:"0.12em",
             }}>{b.label}</span>
           ))}
-          {/* USDC Coming Soon */}
+          {/* USDC on Sui */}
           <span style={{
             padding:"3px 10px", borderRadius:"3px",
             background:"rgba(37,99,235,0.12)", border:"1px solid rgba(37,99,235,0.3)",
             fontFamily:M, fontSize:"0.3rem", fontWeight:900,
             color:BLUE, textTransform:"uppercase", letterSpacing:"0.12em",
           }}>
-            USDC BOOKING, COMING SOON
+            USDC ON SUI · LIVE
           </span>
         </div>
 
@@ -170,7 +172,7 @@ export function FlagshipAssetPage() {
           </a>
           <span style={{ fontFamily:M, fontSize:"0.38rem", color:"rgba(242,246,243,0.35)",
                          letterSpacing:"0.06em", maxWidth:280, lineHeight:1.5 }}>
-            Real Superhost property in Mineral Bluff, GA — bookable today. Not a mock asset.
+            Real Superhost property in Mineral Bluff, GA. bookable today. Not a mock asset.
           </span>
           <a href={D.instagramUrl} target="_blank" rel="noopener noreferrer"
             style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",
@@ -181,15 +183,9 @@ export function FlagshipAssetPage() {
                       letterSpacing:"0.06em" }}>
             @CIELOSUNRISE ↗
           </a>
-          <div style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",
-                         border:"1px solid rgba(37,99,235,0.3)",
-                         background:"rgba(37,99,235,0.06)",
-                         fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                         color:"rgba(96,165,250,0.7)", letterSpacing:"0.06em",
-                         cursor:"not-allowed", opacity:0.8 }}>
-            BOOK WITH USDC, COMING SOON
-          </div>
         </div>
+
+        <CieloFlagshipActions />
       </div>
 
       {/* ── TAB NAV ───────────────────────────────────────────────────── */}
@@ -448,6 +444,8 @@ export function FlagshipAssetPage() {
         {tab === "verification" && (
           <div style={{ display:"flex", flexDirection:"column", gap:"1.5rem" }}>
 
+            <AssetVerificationScopePanel id="verification-scope" />
+
             <Section title="AAS-1 Verification Certificate" icon="◉">
               <div style={{ padding:"1rem", background:"rgba(16,185,129,0.06)",
                              border:"1px solid rgba(16,185,129,0.25)", borderRadius:"6px",
@@ -468,7 +466,7 @@ export function FlagshipAssetPage() {
               <HashRow label="Document SHA-256 Hash"  value={V.documentHash} />
               <HashRow label="Metadata Hash"           value={V.metaHash} />
               <HashRow label="Anchored Transaction"    value={V.anchoredTx}
-                link={"https://explorer.solana.com/tx/" + V.anchoredTx} />
+                link={"https://suiscan.xyz/devnet/object/" + V.anchoredTx} />
             </Section>
 
             <Section title="Provenance Timeline" icon="◈">
@@ -598,7 +596,7 @@ export function FlagshipAssetPage() {
                 ["Mint Cost",        D.tokenization.mintCostAbra + " ABRA"],
                 ["Supply",           String(D.tokenization.totalSupply)],
                 ["Status",           D.tokenization.status],
-                ["Stablecoin",       "USDC, COMING SOON"],
+                ["Stablecoin",       "USDC on Sui · LIVE"],
               ].map(([k, v]) => (
                 <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                        padding:"0.5rem 0",

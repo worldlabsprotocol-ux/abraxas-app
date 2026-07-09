@@ -1,11 +1,10 @@
-// FILE: app/admin/page.tsx — v2 PROTOCOL ARCHITECTURE
+// FILE: app/admin/page.tsx. v2 PROTOCOL ARCHITECTURE
 // Full operational verification center with partner assignment,
 // stage advancement, document tracking, and audit trail.
 "use client";
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
-import { useWallet }           from "@solana/wallet-adapter-react";
 import { useAbraStore }        from "@/lib/abraxasStore";
 import { STATUS_LABEL,
          STATUS_COLOR,
@@ -23,9 +22,9 @@ const MONO      = "'JetBrains Mono',monospace";
 function fmtUsd(n:number) {
   return n>=1e6?`$${(n/1e6).toFixed(2)}M`:n>=1000?`$${(n/1000).toFixed(1)}K`:`$${n}`;
 }
-function shortKey(k:string) { return k?`${k.slice(0,8)}...${k.slice(-4)}`:"—"; }
+function shortKey(k:string) { return k?`${k.slice(0,8)}...${k.slice(-4)}`:"-"; }
 function ts(n:number) {
-  return n ? new Date(n).toISOString().replace("T"," ").slice(0,19)+" UTC" : "—";
+  return n ? new Date(n).toISOString().replace("T"," ").slice(0,19)+" UTC" : "-";
 }
 
 // ── Stage advancement modal ───────────────────────────────────────────────────
@@ -80,7 +79,7 @@ function AdvanceModal({
           borderBottom:"1px solid rgba(255,255,255,0.06)",
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ fontWeight:700, fontSize:"0.64rem", color:"#f0f0f0", fontFamily:MONO }}>
-            Advance Stage {currentStage} — {stage?.name ?? "Unknown"}
+            Advance Stage {currentStage}. {stage?.name ?? "Unknown"}
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none",
             cursor:"pointer", color:"rgba(255,255,255,0.3)", fontSize:"1rem" }}>×</button>
@@ -215,12 +214,11 @@ export default function AdminPage() {
   const [advancing, setAdvancing] = useState(false);
   const [refresh,   setRefresh]   = useState(0);
 
-  const { publicKey, connected } = useWallet();
   const assets      = useAbraStore(s=>s.assets);
   const updateStatus= useAbraStore(s=>s.updateAssetStatus);
 
-  useEffect(()=>{ setMounted(true); if(connected&&publicKey) setAuthed(true); },[connected,publicKey]);
-  if(!mounted) return null;
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
 
   function tryPin() {
     if(pin===ADMIN_PIN) { setAuthed(true); setPinErr(false); }
@@ -392,7 +390,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Queue / All — two column */}
+        {/* Queue / All. two column */}
         {(tab==="queue"||tab==="all")&&(
           <div style={{ display:"grid",
             gridTemplateColumns: selected_asset?"1fr 1fr":"1fr", gap:"1rem" }}>
@@ -627,7 +625,7 @@ export default function AdminPage() {
                     marginBottom:2 }}>SUBMISSION_RECEIVED</div>
                   <div style={{ fontSize:"0.38rem",
                     color:"rgba(255,255,255,0.3)" }}>
-                    ABRA: {a.mintCostAbra} · Tx: {shortKey(a.txSignature||"—")}
+                    ABRA: {a.mintCostAbra} · Tx: {shortKey(a.txSignature||"-")}
                   </div>
                 </div>
               </div>

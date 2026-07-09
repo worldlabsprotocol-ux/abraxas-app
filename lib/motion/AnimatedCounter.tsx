@@ -1,11 +1,7 @@
 "use client";
 // FILE: lib/motion/AnimatedCounter.tsx
-// Smooth count-up for numeric values. Accepts the same display strings
-// the app already uses ("$1,100,000", "14.6%", "94 / 100", "$660K USDC")
-// and animates only the first numeric token while preserving its
-// prefix, suffix, decimal places and thousands grouping. Non-numeric
-// strings ("W3C") render as-is. Animates the first time it scrolls into
-// view; updates smoothly when the target value changes.
+// Smooth count-up for numeric values. Non-numeric and currency-compact strings
+// (e.g. "$1.1M+") render statically — never flash "$0.0M+" during load.
 
 import { animate, useInView, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -35,26 +31,27 @@ function parse(value: string) {
   };
 }
 
+/** Skip animation for currency shorthand and small integers that look bad counting from zero. */
+function shouldAnimateStatic(str: string, parsed: NonNullable<ReturnType<typeof parse>>): boolean {
+  if (/[MK%+]/.test(parsed.suffix)) return true;
+  if (parsed.prefix.includes("$") && parsed.target < 100) return true;
+  return false;
+}
+
 export function AnimatedCounter({ value, duration = 1.6, style, className }: AnimatedCounterProps) {
   const str = typeof value === "number" ? String(value) : value;
   const parsed = parse(str);
   const reduce = useReducedMotion();
+  const staticDisplay = !parsed || shouldAnimateStatic(str, parsed);
 
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.4 });
-  const [display, setDisplay] = useState(() =>
-    parsed && !reduce ? `${parsed.prefix}${(0).toFixed(parsed.decimals)}${parsed.suffix}` : str
-  );
+  const [display, setDisplay] = useState(str);
 
   useEffect(() => {
-    if (!parsed) {
-      setDisplay(str);
-      return;
-    }
-    if (reduce || !inView) {
-      if (reduce) setDisplay(str);
-      return;
-    }
+    setDisplay(str);
+    if (!parsed || reduce || !inView || staticDisplay) return;
+
     const fmt = (n: number) => {
       const fixed = n.toFixed(parsed.decimals);
       if (!parsed.grouped) return `${parsed.prefix}${fixed}${parsed.suffix}`;
@@ -62,14 +59,14 @@ export function AnimatedCounter({ value, duration = 1.6, style, className }: Ani
       const grouped = Number(int).toLocaleString("en-US");
       return `${parsed.prefix}${dec ? `${grouped}.${dec}` : grouped}${parsed.suffix}`;
     };
+
     const controls = animate(0, parsed.target, {
       duration,
       ease: [0.22, 1, 0.36, 1],
       onUpdate: (v) => setDisplay(fmt(v)),
     });
     return () => controls.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [str, inView, reduce]);
+  }, [str, inView, reduce, parsed, staticDisplay, duration]);
 
   return (
     <span ref={ref} style={style} className={className}>

@@ -1,11 +1,12 @@
 "use client";
 // FILE: components/redesign/VerificationFlow.tsx
-// Three-step verification funnel for mass-adoption clarity.
+// Wallet-first funnel. ID check is optional, not step one.
 
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/motion/variants";
 import { PassportStampIcon } from "@/components/identity/PassportStampIcon";
 import { Btn } from "./ui";
+import { consumerCopy } from "@/lib/consumerCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -14,31 +15,31 @@ const ACCENT = "#10B981";
 const STEPS = [
   {
     n: "01",
-    title: "Verify who you are",
-    body: "Abraxas Precheck: government ID and a 60-second liveness check through Veriff. Most people finish in under five minutes.",
+    title: consumerCopy.verificationFlow.step1Title,
+    body: consumerCopy.verificationFlow.step1Body,
     kind: "identity" as const,
     href: "/passport",
-    cta: "Start Precheck",
+    cta: "Sign in",
   },
   {
     n: "02",
-    title: "Earn the stamps you need",
-    body: "Social, business, property, or asset owner — each stamp is a real credential backed by documentation, not a checkbox.",
-    kind: "business" as const,
-    href: "/passport",
-    cta: "See all stamps",
-  },
-  {
-    n: "03",
-    title: "Access verified assets",
-    body: "Your Passport travels with you. Book stays, express investment interest, or submit your own asset — without repeating KYC everywhere.",
-    kind: "compliance" as const,
+    title: consumerCopy.verificationFlow.step2Title,
+    body: consumerCopy.verificationFlow.step2Body,
+    kind: "owner" as const,
     href: "/terminal#assets",
     cta: "Browse assets",
   },
+  {
+    n: "03",
+    title: consumerCopy.verificationFlow.step3Title,
+    body: consumerCopy.verificationFlow.step3Body,
+    kind: "compliance" as const,
+    href: "/passport#identity-stamp",
+    cta: "Add ID check",
+  },
 ];
 
-const TRUST = ["Veriff KYC", "W3C credentials", "Wyoming LLC support", "Solana anchored"];
+const TRUST = [...consumerCopy.verificationFlow.trustChips];
 
 export function VerificationFlow() {
   return (
@@ -56,14 +57,13 @@ export function VerificationFlow() {
           letterSpacing: "-0.03em", lineHeight: 1.05,
           color: "var(--text-primary)", margin: "0 0 0.5rem", maxWidth: 520,
         }}>
-          Verify once. That is the whole product.
+          Browse first. Verify when you need it.
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
           lineHeight: 1.7, maxWidth: 560, margin: 0,
         }}>
-          Abraxas is not a marketplace with verification bolted on. Verification is
-          the marketplace. Everything else follows from a credential you actually earned.
+          {consumerCopy.verificationFlow.intro}
         </p>
       </div>
 
@@ -131,12 +131,12 @@ export function VerificationFlow() {
           fontFamily: FONT, fontSize: "0.68rem", fontWeight: 600,
           color: "var(--text-muted)", marginRight: "0.25rem",
         }}>
-          Built on:
+          Your data stays yours:
         </span>
         {TRUST.map(t => (
           <span key={t} style={{
-            fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700,
-            color: "var(--text-secondary)", letterSpacing: "0.06em",
+            fontFamily: FONT, fontSize: "0.68rem", fontWeight: 600,
+            color: "var(--text-secondary)",
             padding: "0.25rem 0.55rem", borderRadius: 6,
             border: "1px solid var(--border)",
           }}>

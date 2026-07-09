@@ -1,21 +1,16 @@
 // FILE: lib/credentials/useAbraxasID.ts
-// React hook — manages credential state, issues + verifies from the frontend.
-// Other protocols use the /verify API directly — this hook is for the Abraxas app.
+// React hook — credential state keyed by Sui address (syncs from server + local cache).
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import type { VerificationResult, IssueCredentialInput } from "./types";
-
-const STORAGE_KEY = "abraxas_credential_v1";
-
-interface StoredCredential {
-  jwt:         string;
-  jti:         string;
-  expires_at:  string;
-  jurisdiction: string;
-  level:       string;
-  wallet:      string;
-}
+import { resolveHolderAddress } from "./types";
+import {
+  loadStoredCredential,
+  saveStoredCredential,
+  type StoredCredential,
+} from "./storage";
 
 interface UseAbraxasIDReturn {
   credential:        StoredCredential | null;
@@ -23,43 +18,97 @@ interface UseAbraxasIDReturn {
   issue:             (input: IssueCredentialInput) => Promise<boolean>;
   verify:            () => Promise<VerificationResult | null>;
   revoke:            () => void;
+  refreshFromServer: () => Promise<void>;
   isLoading:         boolean;
   error:             string | null;
 }
 
-export function useAbraxasID(walletAddress?: string): UseAbraxasIDReturn {
+export function useAbraxasID(suiAddress?: string | null): UseAbraxasIDReturn {
   const [credential, setCredential] = useState<StoredCredential | null>(null);
   const [status,     setStatus]     = useState<UseAbraxasIDReturn["status"]>("idle");
   const [isLoading,  setIsLoading]  = useState(false);
   const [error,      setError]      = useState<string | null>(null);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    if (!walletAddress) return;
-    const stored = localStorage.getItem(`${STORAGE_KEY}_${walletAddress}`);
-    if (!stored) { setStatus("unverified"); return; }
+  const refreshFromServer = useCallback(async () => {
+    if (!suiAddress) {
+      setStatus("unverified");
+      setCredential(null);
+      return;
+    }
+    setStatus("checking");
     try {
-      const cred: StoredCredential = JSON.parse(stored);
-      if (new Date(cred.expires_at) < new Date()) {
-        setStatus("expired");
+      const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`);
+      const data = await res.json() as {
+        verified?: boolean;
+        credential_jwt?: string;
+        credential_jti?: string;
+        expires_at?: string;
+        jurisdiction?: string;
+        verification_level?: string;
+        document_type?: string;
+      };
+      if (data.verified && data.credential_jwt && data.credential_jti && data.expires_at) {
+        const stored: StoredCredential = {
+          jwt: data.credential_jwt,
+          jti: data.credential_jti,
+          expires_at: data.expires_at,
+          jurisdiction: data.jurisdiction ?? "",
+          level: data.verification_level ?? "standard",
+          sui_address: suiAddress,
+          document_type: data.document_type,
+        };
+        saveStoredCredential(stored);
+        setCredential(stored);
+        setStatus("verified");
         return;
       }
-      setCredential(cred);
-      setStatus("verified");
+      const cached = loadStoredCredential(suiAddress);
+      if (cached) {
+        setCredential(cached);
+        setStatus("verified");
+      } else {
+        setCredential(null);
+        setStatus("unverified");
+      }
     } catch {
-      setStatus("unverified");
+      const cached = loadStoredCredential(suiAddress);
+      if (cached) {
+        setCredential(cached);
+        setStatus("verified");
+      } else {
+        setStatus("unverified");
+      }
     }
-  }, [walletAddress]);
+  }, [suiAddress]);
 
-  // Issue a new credential
+  useEffect(() => {
+    if (!suiAddress) {
+      setStatus("unverified");
+      setCredential(null);
+      return;
+    }
+    const cached = loadStoredCredential(suiAddress);
+    if (cached) {
+      setCredential(cached);
+      setStatus("verified");
+    }
+    refreshFromServer();
+  }, [suiAddress, refreshFromServer]);
+
   const issue = useCallback(async (input: IssueCredentialInput): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
+    const holder = resolveHolderAddress(input);
+    if (!holder) {
+      setError("sui_address required");
+      setIsLoading(false);
+      return false;
+    }
     try {
       const res  = await fetch("/api/credentials/issue", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(input),
+        body:    JSON.stringify({ ...input, sui_address: holder }),
       });
       const data = await res.json() as {
         credential_jwt?: string; credential_jti?: string;
@@ -73,9 +122,9 @@ export function useAbraxasID(walletAddress?: string): UseAbraxasIDReturn {
         expires_at:   data.expires_at!,
         jurisdiction: data.jurisdiction!,
         level:        data.level!,
-        wallet:       input.wallet_address,
+        sui_address:  holder,
       };
-      localStorage.setItem(`${STORAGE_KEY}_${input.wallet_address}`, JSON.stringify(stored));
+      saveStoredCredential(stored);
       setCredential(stored);
       setStatus("verified");
       return true;
@@ -85,7 +134,6 @@ export function useAbraxasID(walletAddress?: string): UseAbraxasIDReturn {
     } finally { setIsLoading(false); }
   }, []);
 
-  // Verify the stored credential against Abraxas backend
   const verify = useCallback(async (): Promise<VerificationResult | null> => {
     if (!credential) return null;
     setIsLoading(true);
@@ -106,12 +154,13 @@ export function useAbraxasID(walletAddress?: string): UseAbraxasIDReturn {
     } finally { setIsLoading(false); }
   }, [credential]);
 
-  // Clear credential
   const revoke = useCallback(() => {
-    if (walletAddress) localStorage.removeItem(`${STORAGE_KEY}_${walletAddress}`);
+    if (suiAddress) {
+      localStorage.removeItem(`abraxas_credential_v1_${suiAddress}`);
+    }
     setCredential(null);
     setStatus("unverified");
-  }, [walletAddress]);
+  }, [suiAddress]);
 
-  return { credential, status, issue, verify, revoke, isLoading, error };
+  return { credential, status, issue, verify, revoke, refreshFromServer, isLoading, error };
 }

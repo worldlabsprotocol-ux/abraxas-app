@@ -27,7 +27,10 @@ async function main() {
     }
   }
 
-  const { privateKey, publicKey } = await generateKeyPair("EdDSA", { crv: "Ed25519" });
+  const { privateKey, publicKey } = await generateKeyPair("EdDSA", {
+    crv: "Ed25519",
+    extractable: true,
+  });
   const priv = await exportJWK(privateKey);
   const pub  = await exportJWK(publicKey);
 

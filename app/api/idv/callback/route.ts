@@ -6,16 +6,17 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 
-function landing(req: NextRequest) {
+function landing(req: NextRequest, complete: boolean) {
   const url = new URL("/passport", req.nextUrl.origin);
-  url.searchParams.set("verified", "pending");
+  url.searchParams.set("verification", complete ? "complete" : "pending");
   return NextResponse.redirect(url);
 }
 
 export async function GET(req: NextRequest) {
-  return landing(req);
+  const status = req.nextUrl.searchParams.get("status");
+  return landing(req, status === "approved");
 }
 
 export async function POST(req: NextRequest) {
-  return landing(req);
+  return landing(req, false);
 }

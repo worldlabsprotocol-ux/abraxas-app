@@ -1,7 +1,7 @@
 // FILE: components/AssetIntelligenceDrawer.tsx
-// Per-asset intelligence drawer — the depth behind every asset card.
+// Per-asset intelligence drawer. the depth behind every asset card.
 // Shows: who verified, where custody is, risk flags, provenance, event timeline.
-// Zero fake data — "Pending Sync" when data is unavailable.
+// Zero fake data. "Pending Sync" when data is unavailable.
 "use client";
 
 import { useState, useEffect } from "react";
@@ -186,7 +186,7 @@ function RiskPanel({ asset }: { asset: AbraAsset }) {
 }
 
 function EventTimeline({ assetId, createdAt }: { assetId: string; createdAt: number }) {
-  // Shows the real event chain — populated from Supabase in production
+  // Shows the real event chain. populated from Supabase in production
   // Shows structural template in dev mode
   const devEvents = [
     { eventType:"ASSET_SUBMITTED", actor:"Protocol", createdAt, actorName:"Protocol" },

@@ -1,4 +1,4 @@
-// FILE: app/lending/page.tsx — Lending Engine — Coming Online (not a 404)
+// FILE: app/lending/page.tsx. Lending Engine. Coming Online (not a 404)
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";

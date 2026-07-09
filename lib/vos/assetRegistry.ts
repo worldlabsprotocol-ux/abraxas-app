@@ -25,7 +25,7 @@ const CIELO_SUNRISE: AssetRecord = {
     confidence:    96,
     documentHash:  "sha256:c1e10s5u9n7r2i5e0b3l8u2e4r5i6d7g1e0g2a4b5c6d7e8f9a0b1c2d3e4f500",
     metadataHash:  "sha256:a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8",
-    anchoredTx:    "5CiEL0SuNR1sEGaB2luEr3iDge4GA5mesh6TxHash7Solana8Mainnet9Anchor0",
+    anchoredTx:    "8c77ae709b8da7fb8ae9a5713cf597e5493846a5204d4df0eaf672bde94ceb29",
   },
 
   custody: {
@@ -60,7 +60,7 @@ const CIELO_SUNRISE: AssetRecord = {
       "Active short-term rental insurance — $1.1M structure coverage",
       "Owner-managed property with verified TTM revenue ($138K gross)",
       "DSCR 2.4x — well above 1.25x lending threshold",
-      "AAS-1 certificate anchored on Solana mainnet — tamper-evident",
+      "AAS-1 certificate anchored on Sui devnet — tamper-evident",
     ],
   },
 
@@ -74,7 +74,7 @@ const CIELO_SUNRISE: AssetRecord = {
     { date: "2024-10-01", event: "Superhost Status Achieved — 5.0 Rating",            actor: "Airbnb Platform",                  status: "COMPLETE" },
     { date: "2025-05-01", event: "Independent Appraisal — $1,100,000",                actor: "Blue Ridge Highlands Appraisal",   status: "COMPLETE" },
     { date: "2025-05-15", event: "AAS-1 Certificate Issued",                          actor: "Abraxas Verification Network",     status: "COMPLETE" },
-    { date: "2025-05-15", event: "Certificate Anchored On-Chain — Solana Mainnet",    actor: "Abraxas Protocol",                 status: "COMPLETE", txHash: "5CiEL0SuNR1sEGaB2luEr3iDge4GA5mesh6TxHash7Solana8Mainnet9Anchor0" },
+    { date: "2025-05-15", event: "Certificate Anchored On-Chain — Sui Devnet",    actor: "Abraxas Protocol",                 status: "COMPLETE", txHash: "8c77ae709b8da7fb8ae9a5713cf597e5493846a5204d4df0eaf672bde94ceb29" },
   ],
 };
 

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/CertificateDisplay.tsx
-// Verification Certificate display — beautiful, institutional.
+// Verification Certificate display. beautiful, institutional.
 // Fetches from public /api/certificates/[id]/verify endpoint.
 // Can be embedded on any asset detail page.
 
@@ -121,7 +121,7 @@ export function CertificateDisplay({ certificateId }: { certificateId: string })
                 {isRevoked?"CERTIFICATE REVOKED":"CERTIFICATE VERIFIED"}
               </div>
               <div style={{fontSize:"0.4rem",color:"rgba(255,255,255,0.25)",marginTop:2}}>
-                Abraxas Authentication Standard · AAS-1 · Solana
+                Abraxas Authentication Standard · AAS-1 · Sui
               </div>
             </div>
           </div>
@@ -161,7 +161,7 @@ export function CertificateDisplay({ certificateId }: { certificateId: string })
         <Field label="Verifier Signature"   value={cert.verifierSignature}/>
         <Field label="Provenance Root"      value={cert.provenanceRoot}    highlight/>
         <Field label="Custody Reference"    value={cert.custodyRef}/>
-        <Field label="Solana Anchor Tx"     value={cert.anchoredTx}/>
+        <Field label="Sui Anchor Object"     value={cert.anchoredTx}/>
         {isRevoked&&<Field label="Revoked"  value={cert.revokedAt!}/>}
         {cert.revocationReason&&<Field label="Revocation Reason" value={cert.revocationReason}/>}
       </div>
@@ -172,7 +172,7 @@ export function CertificateDisplay({ certificateId }: { certificateId: string })
         display:"flex",justifyContent:"space-between",
         alignItems:"center",flexWrap:"wrap",gap:"0.5rem"}}>
         <div style={{fontSize:"0.4rem",color:"rgba(255,255,255,0.2)",lineHeight:1.6}}>
-          This certificate is publicly verifiable by anyone with a Solana connection.
+          This certificate is publicly verifiable by anyone via Suiscan or GET /api/sui/passport.
           The verifier signature and provenance root cannot be forged.
         </div>
         {cert.anchoredTx && !cert.anchoredTx.startsWith("DEMO") && (

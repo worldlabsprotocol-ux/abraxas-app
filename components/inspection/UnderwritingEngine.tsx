@@ -1,5 +1,5 @@
 // FILE: components/inspection/UnderwritingEngine.tsx
-// Risk score breakdown — explicit math, not a random number.
+// Risk score breakdown. explicit math, not a random number.
 // Shows weighted modular inputs + dynamic data-freshness degradation.
 "use client";
 
@@ -39,7 +39,7 @@ function getFactors(asset?: Asset): RiskFactor[] {
       label:"Custody Method",
       points: isVerified ? 15 : 0,
       status: isVerified ? "verified" : "pending",
-      detail: isVerified ? "MPC Secured — Brinks / Certified Vault" : "Custody pending",
+      detail: isVerified ? "MPC Secured. Brinks / Certified Vault" : "Custody pending",
       fresh: true,
     },
     {
@@ -54,7 +54,7 @@ function getFactors(asset?: Asset): RiskFactor[] {
       points: isFresh ? 10 : 5,
       status: isFresh ? "verified" : "degraded",
       detail: asset?.createdAt
-        ? `Last ingest: ${ageDays}d ago${isFresh ? "" : " — STALE"}`
+        ? `Last ingest: ${ageDays}d ago${isFresh ? "" : ". STALE"}`
         : "No data ingest",
       fresh: isFresh,
     },
@@ -62,7 +62,7 @@ function getFactors(asset?: Asset): RiskFactor[] {
       label:"Asset Provenance Chain",
       points: asset?.id ? 25 : 0,
       status: asset?.id ? "verified" : "pending",
-      detail: asset?.id ? "Immutable anchor — SHA256 committed" : "Provenance uncommitted",
+      detail: asset?.id ? "Immutable anchor. SHA256 committed" : "Provenance uncommitted",
       fresh: true,
     },
     {
@@ -113,7 +113,7 @@ export function UnderwritingEngine({ asset }: { asset?: Asset }) {
                      marginBottom:"0.875rem" }}>
         <span style={{ fontFamily:M, fontSize:"2.4rem", fontWeight:900,
                         color:scoreColor, lineHeight:1 }}>
-          {total > 0 ? total : "—"}
+          {total > 0 ? total : "-"}
         </span>
         <span style={{ fontFamily:M, fontSize:"0.9rem",
                         color:"rgba(255,255,255,0.2)" }}>

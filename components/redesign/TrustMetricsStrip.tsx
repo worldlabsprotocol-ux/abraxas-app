@@ -1,73 +1,88 @@
 "use client";
 // FILE: components/redesign/TrustMetricsStrip.tsx
-// Compact credibility strip between hero and asset grid.
+// Honest early-access banner — no zero counters or signal cards on the homepage.
 
-import { motion } from "framer-motion";
-import { staggerContainer, staggerItem } from "@/lib/motion/variants";
-import { AnimatedCounter } from "@/lib/motion/AnimatedCounter";
+import Link from "next/link";
+import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
-const METRICS = [
-  { value: "6", label: "Verified assets", sub: "Live on Abraxas" },
-  { value: "~$2M", label: "Value attested", sub: "Real appraisals" },
-  { value: "W3C", label: "Credential standard", sub: "Portable proof" },
-  { value: "10", label: "Passport stamps", sub: "Verification depth" },
-];
-
 export function TrustMetricsStrip() {
   return (
-    <motion.div
-      variants={staggerContainer(0.06, 0.04)}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-40px" }}
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-        gap: "0.75rem",
-        marginBottom: "var(--section-gap, 2.5rem)",
-      }}
-    >
-      {METRICS.map(m => (
-        <motion.div key={m.label} variants={staggerItem}
-          style={{
-            padding: "1rem 1.15rem",
-            borderRadius: 14,
-            background: "var(--surface-raised)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-card)",
+    <div style={{
+      padding: "1.35rem 1.25rem",
+      borderRadius: 16,
+      background: "var(--surface-raised)",
+      border: "1px solid var(--border)",
+      marginBottom: "var(--section-gap, 2.5rem)",
+    }}>
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: "1rem",
+      }}>
+        <div style={{ flex: "1 1 280px", maxWidth: 560 }}>
+          <span style={{
+            fontFamily: FONT,
+            fontSize: "0.58rem",
+            fontWeight: 800,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#3B82F6",
+            padding: "0.25rem 0.55rem",
+            borderRadius: 6,
+            background: "rgba(59,130,246,0.12)",
+            border: "1px solid rgba(59,130,246,0.25)",
           }}>
-          <div style={{
-            fontFamily: "'Space Grotesk','Inter',sans-serif",
-            fontSize: "1.45rem",
-            fontWeight: 700,
+            Design partner phase
+          </span>
+          <h2 style={{
+            fontFamily: FONT,
+            fontSize: "clamp(1rem, 2.5vw, 1.15rem)",
+            fontWeight: 800,
             letterSpacing: "-0.02em",
-            color: m.label.includes("attested") ? ACCENT : "var(--text-primary)",
-            lineHeight: 1.05,
-          }}>
-            <AnimatedCounter value={m.value} />
-          </div>
-          <div style={{
-            fontFamily: FONT,
-            fontSize: "0.72rem",
-            fontWeight: 600,
             color: "var(--text-primary)",
-            marginTop: 4,
+            margin: "0.65rem 0 0.45rem",
+            lineHeight: 1.2,
           }}>
-            {m.label}
-          </div>
-          <div style={{
+            Early access registry — growing with design partners
+          </h2>
+          <p style={{
             fontFamily: FONT,
-            fontSize: "0.62rem",
-            color: "var(--text-muted)",
-            marginTop: 2,
+            fontSize: "0.82rem",
+            color: "var(--text-secondary)",
+            lineHeight: 1.65,
+            margin: 0,
           }}>
-            {m.sub}
-          </div>
-        </motion.div>
-      ))}
-    </motion.div>
+            Real assets, live booking rails, and verified passports — more partners onboarding as audits complete.
+          </p>
+        </div>
+
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: "0.5rem",
+          flexShrink: 0,
+        }}>
+          <Link href="/metrics" style={{
+            fontFamily: FONT,
+            fontSize: "0.76rem",
+            fontWeight: 700,
+            color: ACCENT,
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+          }}>
+            See live metrics →
+          </Link>
+          <AddToAppleWalletButton href="/passport#apple-wallet" variant="primary" size="sm">
+            Add to Apple Wallet
+          </AddToAppleWalletButton>
+        </div>
+      </div>
+    </div>
   );
 }

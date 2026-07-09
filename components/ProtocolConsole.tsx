@@ -1,5 +1,5 @@
 // FILE: components/ProtocolConsole.tsx
-// Interactive protocol execution console — simulation mode.
+// Interactive protocol execution console. simulation mode.
 "use client";
 
 import { useState } from "react";

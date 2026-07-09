@@ -15,8 +15,8 @@ export const FLAGSHIP_PROPERTY = {
   tagline:   "Cabin w/ Sauna Dome + Red Light + Plunge · Tri-State Views",
   airbnbUrl: "https://www.airbnb.com/rooms/1681387746169197852?guests=1&adults=1&s=67&unique_share_id=dd03dff5-16c4-471a-be72-c89d19e2862a",
   instagramUrl: "https://www.instagram.com/cielosunrise",
-  stablecoinBooking: "USDC",
-  stablecoinStatus:  "COMING SOON",
+  stablecoinBooking: "USDC on Sui",
+  stablecoinStatus:  "LIVE",
 
   location: {
     address:      "Mineral Bluff, Georgia, United States",
@@ -202,7 +202,7 @@ export const FLAGSHIP_PROPERTY = {
     verifier:      "Abraxas Verification Network",
     documentHash:  "sha256:c1e10s5u9n7r2i5e0b3l8u2e4r5i6d7g1e0g2a4b5c6d7e8f9a0b1c2d3e4f500",
     metaHash:      "sha256:a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8",
-    anchoredTx:    "5CiEL0SuNR1sEGaB2luEr3iDge4GA5mesh6TxHash7Solana8Mainnet9Anchor0",
+    anchoredTx:    "8c77ae709b8da7fb8ae9a5713cf597e5493846a5204d4df0eaf672bde94ceb29",
     provenanceTimeline: [
       { date:"2023-06-01", event:"Entity Formation, Cielo Sunrise Hospitality LLC",  actor:"Sae'Von / World Labs Protocol",    status:"COMPLETE" },
       { date:"2023-09-15", event:"Property Acquisition, Mineral Bluff, GA",           actor:"Cielo Sunrise Hospitality LLC",    status:"COMPLETE" },
@@ -214,7 +214,7 @@ export const FLAGSHIP_PROPERTY = {
       { date:"2025-05-01", event:"Independent Appraisal, $1,100,000",                actor:"Blue Ridge Highlands Appraisal",    status:"COMPLETE" },
       { date:"2025-05-10", event:"AAS-1 Verification Application Submitted",           actor:"World Labs Protocol",               status:"COMPLETE" },
       { date:"2025-05-15", event:"AAS-1 Certificate Issued",                          actor:"Abraxas Verification Network",      status:"COMPLETE" },
-      { date:"2025-05-15", event:"Certificate Anchored On-Chain, Solana Mainnet",    actor:"Abraxas Protocol",                  status:"COMPLETE" },
+      { date:"2025-05-15", event:"Certificate Anchored On-Chain, Sui Devnet",    actor:"Abraxas Protocol",                  status:"COMPLETE" },
     ],
     custodyLedger: {
       custodian:    "Certified Title & Deed Verification Network",
@@ -230,8 +230,8 @@ export const FLAGSHIP_PROPERTY = {
   },
 
   tokenization: {
-    tokenStandard:     "Token-2022",
-    chain:             "Solana Mainnet",
+    tokenStandard:     "Sui Move Passport",
+    chain:             "Sui Devnet",
     mintCostAbra:      300,
     fractionalized:    false,
     transferable:      true,

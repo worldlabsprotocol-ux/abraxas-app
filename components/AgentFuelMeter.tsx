@@ -37,7 +37,7 @@ export function AgentFuelMeter({ agentId }: { agentId: string }) {
       </div>
       {wallet.lowFuel && (
         <p style={{ fontSize: "0.56rem", color: "#f26b6b", marginTop: "0.2rem" }}>
-          Low fuel — agent operations paused until topped up
+          Low fuel. agent operations paused until topped up
         </p>
       )}
     </div>

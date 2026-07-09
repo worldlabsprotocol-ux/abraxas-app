@@ -15,8 +15,9 @@
 //   Swap out this file if you go with Persona
 
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac }               from "crypto";
 import { createClient }             from "@supabase/supabase-js";
+import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
+import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 
 const VERIFF_KEY    = process.env.VERIFF_API_KEY    ?? "";
 const VERIFF_BASE   = "https://stationapi.veriff.com/v1";
@@ -25,25 +26,32 @@ const SB_URL        = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_SERVICE    = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 interface SessionBody {
-  wallet_address:  string;
-  document_type?:  string;  // PASSPORT | DRIVERS_LICENSE | ID_CARD
+  sui_address?:    string;
+  wallet_address?: string;
+  document_type?:  string;
   first_name?:     string;
   last_name?:      string;
 }
 
 export async function POST(req: NextRequest) {
   const body: SessionBody = await req.json().catch(() => ({}));
-  if (!body.wallet_address) {
-    return NextResponse.json({ error: "wallet_address required" }, { status: 400 });
+  const holder = body.sui_address ?? body.wallet_address;
+  if (!holder) {
+    return NextResponse.json({ error: "sui_address required" }, { status: 400 });
   }
-  if (!VERIFF_KEY) {
-    // Dev fallback: return a mock session so the UI still works without Veriff
+
+  const idvProvider = getIdvProvider();
+  if (!isVeriffLive() || !VERIFF_KEY) {
     return NextResponse.json({
-      session_id:    `mock-${Date.now()}`,
+      session_id:    null,
       session_url:   null,
       is_mock:       true,
-      message:       "VERIFF_API_KEY not configured — using mock session for development",
-    });
+      idv_provider:  idvProvider,
+      message:       idvProvider === "manual"
+        ? "Live Veriff is disabled — upload your ID for pilot manual review instead"
+        : "VERIFF_API_KEY not configured — identity verification unavailable in this environment",
+      error_code:    idvProvider === "manual" ? "manual_review_mode" : "veriff_not_configured",
+    }, { status: 503 });
   }
 
   // Create Veriff session
@@ -57,7 +65,7 @@ export async function POST(req: NextRequest) {
       document:   {
         type: (body.document_type ?? "PASSPORT").toUpperCase(),
       },
-      vendorData: `wallet:${body.wallet_address}`,  // we get this back in the webhook
+      vendorData: `sui:${holder}`,
     },
   };
 
@@ -82,14 +90,30 @@ export async function POST(req: NextRequest) {
 
   const { id: session_id, url: session_url } = data.verification;
 
-  // Track session in Supabase so webhook can match it to a wallet
+  // Track session in Supabase so webhook + polling can match it to a wallet
   if (SB_URL && SB_SERVICE) {
     const sb = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
-    await sb.from("identity_verifications").upsert({
-      wallet_address:  body.wallet_address,
-      status:          "pending",
-      updated_at:      new Date().toISOString(),
-    }, { onConflict: "wallet_address" });
+    let userEmail: string | null = null;
+    const { data: zkRow } = await sb
+      .from("sui_zklogin_identities")
+      .select("email")
+      .eq("sui_address", holder)
+      .maybeSingle();
+    if (zkRow?.email) userEmail = zkRow.email;
+
+    await transitionIdentityVerification(
+      holder,
+      {
+        user_email:          userEmail,
+        veriff_session_id:   session_id,
+        status:              "pending",
+        identity_verification_status: "session_created",
+        credential_status:   "not_issued",
+        liveness_provider:   "veriff",
+        error_message:       null,
+      },
+      "create_session",
+    );
   }
 
   return NextResponse.json({ session_id, session_url, is_mock: false });

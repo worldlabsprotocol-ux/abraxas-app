@@ -1,5 +1,5 @@
 // FILE: components/BecomeAPartner.tsx
-// Partner application modal — appraisers, attorneys, title companies, auditors.
+// Partner application modal. appraisers, attorneys, title companies, auditors.
 // Saves to Supabase + emails Pablo on submit. No CLI needed.
 "use client";
 

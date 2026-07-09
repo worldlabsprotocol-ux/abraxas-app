@@ -1,5 +1,5 @@
 // FILE: app/passport/[id]/page.tsx
-// Public "Abraxas Passport" — one URL per verified entity.
+// Public "Abraxas Passport". one URL per verified entity.
 // Shareable on Twitter, embeds in pitch decks, links from partner sites.
 // This is the viral growth surface: every verified user = a marketing moment.
 import { createClient }  from "@supabase/supabase-js";
@@ -136,17 +136,17 @@ export default async function PassportPage({ params }: { params: { id: string } 
               {([
                 ["Credential ID",   params.id],
                 ["Type",            data.credential_type === "identity" ? "Identity (KYC)" : `RWA · ${data.asset_type?.replace(/_/g," ")}`],
-                ["Jurisdiction",    data.jurisdiction ?? "—"],
+                ["Jurisdiction",    data.jurisdiction ?? "-"],
                 ...(data.credential_type === "identity" ? [
                   ["Verification Level", (data.verification_level ?? "standard").toUpperCase()],
                   ["Certified IDV",      "Document + Liveness · Veriff"],
                 ] : [
-                  ["Asset Value", data.asset_value && data.asset_value !== "Not specified" ? `$${parseInt(data.asset_value.replace(/[^0-9]/g,"") || "0").toLocaleString()}` : "—"],
+                  ["Asset Value", data.asset_value && data.asset_value !== "Not specified" ? `$${parseInt(data.asset_value.replace(/[^0-9]/g,"") || "0").toLocaleString()}` : "-"],
                 ]),
-                ["Issued",   data.issuance_date   ? new Date(data.issuance_date).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}) : "—"],
-                ["Expires",  data.expiration_date ? new Date(data.expiration_date).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}) : "—"],
+                ["Issued",   data.issuance_date   ? new Date(data.issuance_date).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}) : "-"],
+                ["Expires",  data.expiration_date ? new Date(data.expiration_date).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}) : "-"],
                 ["Standard", "W3C Verifiable Credential v2.0"],
-                ["Chain",    "Solana Mainnet"],
+                ["Chain",    "Sui (zkLogin)"],
               ] as [string,string][]).map(([k,v]) => (
                 <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                        padding:"0.5rem 0.75rem",
@@ -167,7 +167,7 @@ export default async function PassportPage({ params }: { params: { id: string } 
               <div style={{ fontSize:"0.58rem", color:G, fontWeight:700,
                              letterSpacing:"0.12em", textTransform:"uppercase",
                              marginBottom:"0.375rem" }}>
-                FOR PROTOCOLS — VERIFY THIS CREDENTIAL
+                FOR PROTOCOLS. VERIFY THIS CREDENTIAL
               </div>
               <div style={{ fontFamily:"'Courier New',monospace", fontSize:"0.6rem",
                              color:"rgba(255,255,255,0.4)", lineHeight:1.6,

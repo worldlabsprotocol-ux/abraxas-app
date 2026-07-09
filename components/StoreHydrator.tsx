@@ -1,5 +1,5 @@
 // FILE: components/StoreHydrator.tsx
-// Deterministic Zustand rehydration — solves SSR/CSR mismatch.
+// Deterministic Zustand rehydration. solves SSR/CSR mismatch.
 // Mount once in layout.tsx. Required for skipHydration stores.
 "use client";
 import { useEffect } from "react";

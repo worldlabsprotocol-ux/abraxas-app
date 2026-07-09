@@ -1,8 +1,8 @@
 // FILE: components/SovereignAssetCard.tsx
 // High-density institutional asset card.
 // Tabular numerics prevent layout shift on live updates.
-// Inline SVG sparkline — zero dependencies.
-// Jupiter swap placeholder in footer — swap @jup-ag/terminal in when ready.
+// Inline SVG sparkline. zero dependencies.
+// Jupiter swap placeholder in footer. swap @jup-ag/terminal in when ready.
 // No emojis. SVG monoline icons only. JetBrains Mono for all data.
 "use client";
 
@@ -49,7 +49,7 @@ interface SovereignAssetCardProps {
 }
 
 // ─── SVG icon set (no emojis, no lucide dependency) ──────────────────────────
-// Gold gradient def — referenced by icons
+// Gold gradient def. referenced by icons
 const GOLD_ID  = "gold-grad";
 const SILV_ID  = "silv-grad";
 
@@ -271,7 +271,7 @@ export function SovereignAssetCard({
           </div>
         </div>
 
-        {/* Price block — tabular numerics prevent jitter */}
+        {/* Price block. tabular numerics prevent jitter */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0.5rem" }}>
           <div>
             <div style={{

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignFooter.tsx
-// Full protocol footer for the dark premium redesign.
+// Protocol footer — curated columns, no link sprawl.
 
 import Link from "next/link";
 import { SITE_URL } from "@/lib/siteUrl";
@@ -10,29 +10,40 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const LINKS = {
-  product: [
-    { label: "Verify", href: "/passport" },
-    { label: "Assets", href: "/terminal" },
-    { label: "Build", href: "/build" },
+  protocol: [
+    { label: "Home", href: "/" },
+    { label: "Passport", href: "/passport" },
+    { label: "Verify", href: "/verify" },
+    { label: "My account", href: "/account" },
+    { label: "Submit your asset", href: "/build" },
+    { label: "Browse registry", href: "/#registry" },
+  ],
+  apps: [
+    { label: "Cielo pilot", href: "/apps/cielo-sunrise" },
+    { label: "Music audit", href: "/apps/music" },
+    { label: "Wyoming LLC", href: "/apps/wyoming" },
     { label: "Dashboard", href: "/dashboard" },
-    { label: "Swap", href: "/swap" },
   ],
   learn: [
-    { label: "Documentation", href: "/docs" },
-    { label: "Passport spec", href: "/docs/passport-spec" },
-    { label: "Architecture", href: "/docs/architecture" },
-    { label: "Roadmap", href: "/roadmap" },
-    { label: "Tokenomics", href: "/tokenomics" },
-    { label: "Music audit", href: "/music-audit" },
+    { label: "Why verification", href: "/docs/why-verification" },
+    { label: "Cielo case study", href: "/case-studies/cielo" },
     { label: "FAQ", href: "/faq" },
-    { label: "Security", href: "/security" },
-    { label: "Partners", href: "/partners" },
+    { label: "Roadmap", href: "/roadmap" },
     { label: "About", href: "/about" },
+  ],
+  developers: [
+    { label: "Documentation", href: "/docs" },
+    { label: "Integrations", href: "/integrations" },
+    { label: "Relying parties", href: "/integrations/relying-parties" },
+    { label: "Trust Framework", href: "/trust-framework" },
+    { label: "Live metrics", href: "/metrics" },
+    { label: "Security", href: "/security" },
   ],
   legal: [
     { label: "Legal overview", href: "/legal" },
     { label: "Privacy Policy", href: "/legal/privacy" },
     { label: "Terms of Service", href: "/legal/terms" },
+    { label: "Settlement disclosure", href: "/legal#settlement" },
   ],
   social: [
     { label: "Discord", href: "https://discord.gg/sHK8EWbnXH" },
@@ -89,11 +100,11 @@ export function RedesignFooter() {
       }}>
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
           gap: "1.5rem",
           marginBottom: "2rem",
         }}>
-          <div>
+          <div style={{ gridColumn: "span 1", minWidth: 180 }}>
             <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900,
                            color: ACCENT, marginBottom: "0.5rem" }}>
               ABRAXAS
@@ -105,7 +116,7 @@ export function RedesignFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. The verification layer for real-world assets on Solana.
+              Verify once. Transact everywhere. Real assets with proof you can reuse, not another KYC form.
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
               Live at{" "}
@@ -114,8 +125,10 @@ export function RedesignFooter() {
               </a>
             </p>
           </div>
-          <Column title="Product" items={LINKS.product} />
+          <Column title="Protocol" items={LINKS.protocol} />
+          <Column title="Apps" items={LINKS.apps} />
           <Column title="Learn" items={LINKS.learn} />
+          <Column title="Developers" items={LINKS.developers} />
           <Column title="Legal" items={LINKS.legal} />
           <Column title="Community" items={LINKS.social} />
         </div>

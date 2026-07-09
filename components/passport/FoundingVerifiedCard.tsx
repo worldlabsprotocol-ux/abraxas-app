@@ -1,24 +1,19 @@
 "use client";
 // FILE: components/passport/FoundingVerifiedCard.tsx
-// A capped, soulbound cohort badge. No token burn, no stake, earned
-// purely by completing real verification. The credential is the
-// reward, not a fee discount, that's the deliberate difference from
-// a typical "stake to unlock a tier" mechanic.
 
 import { useState, useEffect } from "react";
 
 const S = "system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const G = "#10B981";
-const BDR = "var(--border)";
 
 interface FoundingVerifiedCardProps {
   walletOrContext: string;
-  hasSocial: boolean;
+  hasWallet: boolean;
   hasIdentity: boolean;
 }
 
-export function FoundingVerifiedCard({ walletOrContext, hasSocial, hasIdentity }: FoundingVerifiedCardProps) {
+export function FoundingVerifiedCard({ walletOrContext, hasWallet, hasIdentity }: FoundingVerifiedCardProps) {
   const [seatsRemaining, setSeatsRemaining] = useState<number | null>(null);
   const [maxSeats, setMaxSeats] = useState<number>(250);
   const [claimedSeat, setClaimedSeat] = useState<number | null>(null);
@@ -32,7 +27,7 @@ export function FoundingVerifiedCard({ walletOrContext, hasSocial, hasIdentity }
       .catch(() => {});
   }, []);
 
-  const eligible = hasSocial && hasIdentity;
+  const eligible = hasWallet && hasIdentity;
   const soldOut = seatsRemaining !== null && seatsRemaining <= 0;
 
   async function claim() {
@@ -42,7 +37,7 @@ export function FoundingVerifiedCard({ walletOrContext, hasSocial, hasIdentity }
       const res = await fetch("/api/passport/genesis/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ walletOrContext, hasSocial, hasIdentity }),
+        body: JSON.stringify({ walletOrContext, hasWallet, hasIdentity }),
       });
       const data = await res.json();
       if (data.error) { setError(data.error); return; }
@@ -62,19 +57,16 @@ export function FoundingVerifiedCard({ walletOrContext, hasSocial, hasIdentity }
         <div>
           <div style={{ fontFamily:M, fontSize:"0.62rem", fontWeight:700,
                          color:G, letterSpacing:"0.08em", marginBottom:"0.3rem" }}>
-            FOUNDING VERIFIED, {maxSeats} SEATS ONLY
+            FOUNDING VERIFIED. {maxSeats} SEATS ONLY
           </div>
           <div style={{ fontFamily:S, fontSize:"0.95rem", fontWeight:700,
                          color:"var(--text-primary)", marginBottom:"0.3rem" }}>
-            A permanent, soulbound credential for the first {maxSeats} people who
-            actually complete verification
+            A permanent credential for the first {maxSeats} people who complete real verification
           </div>
           <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-secondary)",
                        lineHeight:1.6, maxWidth:480, margin:0 }}>
-            No stake, no token burn. Complete Social Verified and Identity
-            Verified, the two stamps anyone can actually earn today, and the
-            seat is yours, permanently, non-transferable. This rewards
-            real verification depth, not capital.
+            No stake, no token burn. Sign in with Google (Sui wallet created via zkLogin),
+            complete Identity Verified. the seat is yours, permanently, non-transferable.
           </p>
         </div>
         {seatsRemaining !== null && (
@@ -97,14 +89,13 @@ export function FoundingVerifiedCard({ walletOrContext, hasSocial, hasIdentity }
         </div>
       ) : (
         <button onClick={claim} disabled={!eligible || soldOut || claiming}
-          style={{ marginTop:"0.875rem", padding:"0.6rem 1.25rem", borderRadius:8,
-                    border:"none",
+          style={{ marginTop:"0.875rem", padding:"0.6rem 1.25rem", borderRadius:8, border:"none",
                     background: eligible && !soldOut ? G : "var(--surface-raised)",
                     color: eligible && !soldOut ? "#000" : "var(--text-muted)",
                     fontFamily:S, fontSize:"0.82rem", fontWeight:700,
                     cursor: eligible && !soldOut ? "pointer" : "not-allowed" }}>
           {soldOut ? "All seats claimed"
-            : !eligible ? "Complete Social + Identity Verified first"
+            : !eligible ? "Sign in + complete Identity Verified first"
             : claiming ? "Claiming..." : "Claim Founding Verified"}
         </button>
       )}

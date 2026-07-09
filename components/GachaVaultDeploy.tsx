@@ -2,7 +2,7 @@
 // Collector Crypt gacha-style vault deployment animation.
 // Triggered when user deploys a vault for a physical RWA asset.
 // Reveals the Token-2022 position mint with a staged animation sequence.
-// No new packages — pure CSS keyframes + React state.
+// No new packages. pure CSS keyframes + React state.
 "use client";
 
 import { useState, useEffect } from "react";
@@ -137,7 +137,7 @@ export function GachaVaultDeploy({ assetName, assetType, vaultName, onComplete, 
               <a href={result.explorerUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.65rem", color: "var(--gold)", textDecoration: "none" }}>Solscan ↗</a>
               <a href={`https://solscan.io/account/${COLLECTOR_CRYPT_CA}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.65rem", color: "var(--subtle)", textDecoration: "none" }}>Collector Crypt ↗</a>
             </div>
-            {result.simulated && <p style={{ fontSize: "0.58rem", color: "var(--subtle)", marginTop: "0.35rem" }}>Simulation Mode — no real mint</p>}
+            {result.simulated && <p style={{ fontSize: "0.58rem", color: "var(--subtle)", marginTop: "0.35rem" }}>Simulation Mode. no real mint</p>}
           </div>
         )}
 

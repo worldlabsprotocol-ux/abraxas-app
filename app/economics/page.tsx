@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/economics/page.tsx
-// Abraxas Platform Economics — Investor-Grade Financial Model
+// Abraxas Platform Economics. Investor-Grade Financial Model
 // All data sourced directly from Abraxas_Sensitivity_ProForma.xlsx
 // Design: Bloomberg × Goldman Sachs IM × institutional dark terminal
 
@@ -214,7 +214,7 @@ export default function EconomicsPage() {
           color: C.muted, lineHeight: 1.8, maxWidth: 620, margin: "0 0 3rem",
         }}>
           Abraxas is engineered around recurring fee streams tied to assets under
-          management — not speculative token activity. The economic model rewards
+          management. not speculative token activity. The economic model rewards
           institutional-scale assets: verification workload grows slowly, revenue grows
           rapidly, and margins compound over time.
         </p>
@@ -260,7 +260,7 @@ export default function EconomicsPage() {
           <p style={{ fontFamily: SANS, fontSize: "clamp(0.78rem,1.6vw,0.9rem)",
                        color: C.muted, lineHeight: 1.8, maxWidth: 580,
                        margin: "0 0 2.5rem" }}>
-            Abraxas generates revenue at each stage of the asset lifecycle — from
+            Abraxas generates revenue at each stage of the asset lifecycle. from
             initial verification through ongoing platform participation and lending
             activity. Recurring streams scale with AUM without proportional cost increases.
           </p>
@@ -278,7 +278,7 @@ export default function EconomicsPage() {
               {
                 icon: "◈", color: "#8B5CF6", title: "Tokenization Fees",
                 badge: "One-time · 0.25% of asset value",
-                desc: "Charged at issuance when the Token-2022 certificate is minted on Solana mainnet. Scales linearly with the value of each asset brought on-chain.",
+                desc: "Charged at issuance when the certificate is anchored on Sui. Scales linearly with the value of each asset brought on-chain.",
                 y3Small: "$3.13M", y3Large: "$9.38M",
               },
               {
@@ -379,7 +379,7 @@ export default function EconomicsPage() {
                        color: C.muted, lineHeight: 1.8, maxWidth: 600,
                        margin: "0 0 2rem" }}>
             Verification cost scales with the number of assets, not their value.
-            A $25M asset requires similar due diligence to a $2M asset — but
+            A $25M asset requires similar due diligence to a $2M asset. but
             generates 12.5× more fee revenue. This asymmetry drives margin expansion.
           </p>
 
@@ -410,7 +410,7 @@ export default function EconomicsPage() {
                 label: "Year 3 EBITDA margin", icon: "◆",
                 small: "−14.9%", large: "+74.5%",
                 ratio: "89 pts", ratioColor: C.green,
-                insight: "The margin divergence is 89 percentage points by Year 3 — a structural advantage of asset scale.",
+                insight: "The margin divergence is 89 percentage points by Year 3. a structural advantage of asset scale.",
               },
             ].map(item => (
               <div key={item.label} style={{
@@ -462,7 +462,7 @@ export default function EconomicsPage() {
             <div style={{ fontFamily: MONO, fontSize: "0.3rem", color: C.muted,
                            textTransform: "uppercase", letterSpacing: "0.12em",
                            marginBottom: "1rem" }}>
-              Gross Margin Progression (%) — Scale Creates Structural Advantage
+              Gross Margin Progression (%). Scale Creates Structural Advantage
             </div>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={marginData} margin={{ top: 10, right: 30, bottom: 10, left: 20 }}>
@@ -472,10 +472,10 @@ export default function EconomicsPage() {
                 <Tooltip content={<CustomTooltip unit="%" />} />
                 <ReferenceLine y={0} stroke={C.border} strokeWidth={2} />
                 <Legend wrapperStyle={{ fontFamily: MONO, fontSize: 10, color: C.muted }} />
-                <Line dataKey="largeGross" name="Large — Gross Margin"
+                <Line dataKey="largeGross" name="Large. Gross Margin"
                       stroke={C.green} strokeWidth={2.5} dot={{ r: 4, fill: C.green }}
                       connectNulls />
-                <Line dataKey="smallGross" name="Small — Gross Margin"
+                <Line dataKey="smallGross" name="Small. Gross Margin"
                       stroke={C.amber} strokeWidth={2} strokeDasharray="5 3"
                       dot={{ r: 4, fill: C.amber }} connectNulls />
               </LineChart>
@@ -638,12 +638,12 @@ export default function EconomicsPage() {
               {
                 n: "02", color: C.green,
                 title: "Verification capacity is the primary operational constraint.",
-                desc: "The small-asset path requires 50 verification analysts in Year 3 vs. 20 for the large-asset path — processing similar aggregate dollar volume. Automation and tiered review are essential for small-asset economics.",
+                desc: "The small-asset path requires 50 verification analysts in Year 3 vs. 20 for the large-asset path. processing similar aggregate dollar volume. Automation and tiered review are essential for small-asset economics.",
               },
               {
                 n: "03", color: C.green,
                 title: "Recurring AUM fees are the long-term value driver.",
-                desc: "Platform fees on AUM compound annually with retention. By Year 3, the large-asset path generates $27M in platform fees alone — more than the total revenue of the small-asset path in Year 2.",
+                desc: "Platform fees on AUM compound annually with retention. By Year 3, the large-asset path generates $27M in platform fees alone. more than the total revenue of the small-asset path in Year 2.",
               },
               {
                 n: "04", color: C.amber,
@@ -653,7 +653,7 @@ export default function EconomicsPage() {
               {
                 n: "05", color: C.green,
                 title: "Margin expansion is structural, not cyclical.",
-                desc: "The large-asset path reaches 74.5% EBITDA margins in Year 3. This is a direct consequence of fixed verification infrastructure supporting an exponentially growing AUM base — the classic operating leverage curve.",
+                desc: "The large-asset path reaches 74.5% EBITDA margins in Year 3. This is a direct consequence of fixed verification infrastructure supporting an exponentially growing AUM base. the classic operating leverage curve.",
               },
               {
                 n: "06", color: "#3B82F6",
@@ -697,7 +697,7 @@ export default function EconomicsPage() {
           <h2 style={{ fontFamily: SERIF, fontSize: "clamp(1.4rem,3vw,2.2rem)",
                         fontWeight: 400, color: C.white, margin: "0 0 2rem",
                         letterSpacing: "-0.02em" }}>
-            Transparent pricing — identical across scenarios.
+            Transparent pricing. identical across scenarios.
           </h2>
           <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 1fr",
@@ -762,7 +762,7 @@ export default function EconomicsPage() {
               AUM retention rates. Actual results will vary based on market conditions,
               regulatory environment, competitive dynamics, asset sourcing outcomes, and
               execution. The sensitivity pro forma presented here models two scenarios
-              across identical fee and cost assumptions — the sole variable is average
+              across identical fee and cost assumptions. the sole variable is average
               asset value. Neither scenario constitutes a guarantee of future performance.
               Abraxas does not provide investment advice. This material is provided for
               informational and strategic planning purposes only.

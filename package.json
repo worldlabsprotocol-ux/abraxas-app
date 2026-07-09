@@ -7,10 +7,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts"
+    "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts",
+    "sui:build": "sui move build --path sui/abraxas_passport",
+    "sui:deploy:devnet": "bash scripts/sui/deploy-devnet.sh",
+    "sui:mint-cap": "bash scripts/sui/mint-issuance-cap.sh",
+    "cielo:e2e": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/cielo-e2e-check.ts",
+    "cielo:e2e:remote": "BASE_URL=https://abraxas-app.vercel.app npx ts-node scripts/cielo-e2e-check.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
+    "@moonpay/platform-sdk-web": "^1.6.0",
+    "@mysten/sui": "^1.45.2",
     "@reclaimprotocol/js-sdk": "^5.5.0",
     "@solana/spl-token": "^0.4.8",
     "@solana/wallet-adapter-base": "^0.9.27",
@@ -22,6 +31,7 @@
     "@solana/web3.js": "^1.98.4",
     "@supabase/supabase-js": "^2.105.4",
     "@tailwindcss/postcss": "^4.3.1",
+    "@tanstack/react-query": "^5.101.2",
     "framer-motion": "^12.42.0",
     "jose": "^6.2.3",
     "next": "14.2.35",
@@ -40,7 +50,8 @@
     "encoding": "^0.1.13",
     "pino-pretty": "^11.2.2",
     "postcss": "^8.4.39",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vitest": "^3.2.7"
   },
   "resolutions": {
     "react": "^18.3.1",
