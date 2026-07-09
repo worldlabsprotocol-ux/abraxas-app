@@ -2,14 +2,21 @@
 // EVM wallet binding via SIWE-compatible signed messages.
 
 import { createHash, randomBytes } from "crypto";
-import { verifyMessage, getAddress } from "viem";
+import { getAddress, isAddress, verifyMessage } from "viem";
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const ISSUED_AT_MAX_AGE_MS = CHALLENGE_TTL_MS;
 const CLOCK_SKEW_MS = 60 * 1000;
 
 export function normalizeEvmAddress(address: string): string {
-  return getAddress(address);
+  if (!address || typeof address !== "string") {
+    throw new Error("Invalid EVM address");
+  }
+  const trimmed = address.trim();
+  if (!isAddress(trimmed)) {
+    throw new Error("Invalid EVM address format");
+  }
+  return getAddress(trimmed);
 }
 
 export function expectedSiweUri(domain: string): string {

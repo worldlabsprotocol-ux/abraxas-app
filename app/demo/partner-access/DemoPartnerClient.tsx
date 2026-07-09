@@ -3,10 +3,7 @@
 // DEMO — tokenized asset access page; unlocks only after live receipt validation.
 
 import { useCallback, useEffect, useState } from "react";
-
-function getEthereumProvider(): { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } | undefined {
-  return (window as unknown as { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
-}
+import { connectEvmWallet } from "@/lib/walletAuthority/client/bindEvmWallet";
 
 export default function DemoPartnerClient() {
   const [wallet, setWallet] = useState<string | null>(null);
@@ -41,15 +38,14 @@ export default function DemoPartnerClient() {
   }, [validate]);
 
   async function connectMetaMask() {
-    const ethereum = getEthereumProvider();
-    if (!ethereum) {
-      setError("MetaMask required for this DEMO.");
-      return;
+    setError("");
+    try {
+      const connection = await connectEvmWallet();
+      setWallet(connection.address);
+      setChainId(connection.chainId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "MetaMask connect failed");
     }
-    const accounts = await ethereum.request({ method: "eth_requestAccounts" }) as string[];
-    setWallet(accounts[0] ?? null);
-    const hex = await ethereum.request({ method: "eth_chainId" }) as string;
-    setChainId(parseInt(hex, 16));
   }
 
   async function startVerify() {
