@@ -2,6 +2,7 @@
 // Wallet authority — bind, verify, list, revoke; preserves Sui/zkLogin paths.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { upsertClaims } from "@/lib/credentials/claimsService";
@@ -36,6 +37,47 @@ export function resolveConnectDomain(): string {
     return new URL(appUrl).host;
   } catch {
     return "abraxas-app.vercel.app";
+  }
+}
+
+/** Atomic single-use challenge consume — returns row or null if already consumed. */
+export async function consumeWalletBindingChallenge(
+  sb: SupabaseClient,
+  challengeId: string,
+): Promise<Record<string, unknown> | null> {
+  const now = new Date().toISOString();
+  const { data } = await sb
+    .from("wallet_binding_challenges")
+    .update({ consumed_at: now })
+    .eq("id", challengeId)
+    .is("consumed_at", null)
+    .select("*")
+    .maybeSingle();
+  return (data as Record<string, unknown> | null) ?? null;
+}
+
+async function assertWalletNotActiveOnOtherSubject(
+  sb: SupabaseClient,
+  chain: WalletChain,
+  walletAddress: string,
+  subjectId: string,
+): Promise<void> {
+  const wallet = chain === "evm"
+    ? normalizeEvmAddress(walletAddress)
+    : normalizeSuiAddress(walletAddress);
+  const subject = normalizeSuiAddress(subjectId);
+
+  const { data: existing } = await sb
+    .from("wallet_bindings")
+    .select("id, subject_id")
+    .eq("chain", chain)
+    .eq("wallet_address", wallet)
+    .eq("binding_status", "active")
+    .is("revoked_at", null)
+    .maybeSingle();
+
+  if (existing && (existing.subject_id as string) !== subject) {
+    throw new Error("Wallet already bound to another Passport subject");
   }
 }
 
@@ -133,13 +175,13 @@ export async function confirmEvmBinding(input: {
   });
   if (!valid) throw new Error("Invalid signature");
 
-  const now = new Date().toISOString();
-  await sb.from("wallet_binding_challenges")
-    .update({ consumed_at: now })
-    .eq("id", input.challengeId)
-    .is("consumed_at", null);
-
   const wallet = normalizeEvmAddress(challenge.wallet_address as string);
+  await assertWalletNotActiveOnOtherSubject(sb, "evm", wallet, subject);
+
+  const consumed = await consumeWalletBindingChallenge(sb, input.challengeId);
+  if (!consumed) throw new Error("Challenge already used");
+
+  const now = new Date().toISOString();
   const { data: binding, error } = await sb.from("wallet_bindings").upsert({
     subject_id: subject,
     chain: "evm",
@@ -154,7 +196,12 @@ export async function confirmEvmBinding(input: {
     risk_status: "low",
   }, { onConflict: "subject_id,wallet_address" }).select("*").single();
 
-  if (error || !binding) throw new Error(error?.message ?? "Failed to save binding");
+  if (error || !binding) {
+    if (error?.message?.includes("idx_wallet_bindings_active_wallet_unique")) {
+      throw new Error("Wallet already bound to another Passport subject");
+    }
+    throw new Error(error?.message ?? "Failed to save binding");
+  }
 
   const claim = walletBindingClaim({
     subjectId: subject,

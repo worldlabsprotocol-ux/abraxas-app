@@ -5,9 +5,27 @@ import { createHash, randomBytes } from "crypto";
 import { verifyMessage, getAddress } from "viem";
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
+const ISSUED_AT_MAX_AGE_MS = CHALLENGE_TTL_MS;
+const CLOCK_SKEW_MS = 60 * 1000;
 
 export function normalizeEvmAddress(address: string): string {
   return getAddress(address);
+}
+
+export function expectedSiweUri(domain: string): string {
+  return `https://${domain}`;
+}
+
+export interface ParsedSiweMessage {
+  domain: string;
+  address: string;
+  statement: string;
+  uri: string;
+  version: string;
+  chainId: number;
+  nonce: string;
+  issuedAt: string;
+  expirationTime: string;
 }
 
 export function buildSiweMessage(input: {
@@ -26,7 +44,7 @@ export function buildSiweMessage(input: {
     "",
     input.statement ?? "Bind this wallet to your Abraxas Passport.",
     "",
-    `URI: https://${input.domain}`,
+    `URI: ${expectedSiweUri(input.domain)}`,
     `Version: 1`,
     `Chain ID: ${input.chainId}`,
     `Nonce: ${input.nonce}`,
@@ -34,6 +52,107 @@ export function buildSiweMessage(input: {
     `Expiration Time: ${input.expirationTime}`,
   ];
   return lines.join("\n");
+}
+
+export function parseSiweMessage(message: string): ParsedSiweMessage | null {
+  try {
+    const lines = message.split("\n");
+    const domainMatch = lines[0]?.match(/^(.+) wants you to sign in with your Ethereum account:$/);
+    if (!domainMatch?.[1]) return null;
+
+    const address = normalizeEvmAddress(lines[1] ?? "");
+    if (lines[2] !== "") return null;
+
+    let i = 3;
+    const statementLines: string[] = [];
+    while (i < lines.length && lines[i] !== "") {
+      statementLines.push(lines[i]!);
+      i += 1;
+    }
+    if (lines[i] !== "") return null;
+    i += 1;
+
+    const uriLine = lines[i++];
+    const versionLine = lines[i++];
+    const chainLine = lines[i++];
+    const nonceLine = lines[i++];
+    const issuedLine = lines[i++];
+    const expirationLine = lines[i++];
+
+    if (
+      !uriLine?.startsWith("URI: ")
+      || !versionLine?.startsWith("Version: ")
+      || !chainLine?.startsWith("Chain ID: ")
+      || !nonceLine?.startsWith("Nonce: ")
+      || !issuedLine?.startsWith("Issued At: ")
+      || !expirationLine?.startsWith("Expiration Time: ")
+      || i !== lines.length
+    ) {
+      return null;
+    }
+
+    const chainId = Number.parseInt(chainLine.slice("Chain ID: ".length), 10);
+    if (!Number.isFinite(chainId)) return null;
+
+    return {
+      domain: domainMatch[1],
+      address,
+      statement: statementLines.join("\n"),
+      uri: uriLine.slice("URI: ".length),
+      version: versionLine.slice("Version: ".length),
+      nonce: nonceLine.slice("Nonce: ".length),
+      issuedAt: issuedLine.slice("Issued At: ".length),
+      expirationTime: expirationLine.slice("Expiration Time: ".length),
+      chainId,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function validateSiweMessage(
+  message: string,
+  expected: {
+    domain: string;
+    chainId: number;
+    nonce: string;
+    address: string;
+  },
+  nowMs = Date.now(),
+): { ok: true; parsed: ParsedSiweMessage } | { ok: false; reason: string } {
+  const parsed = parseSiweMessage(message);
+  if (!parsed) return { ok: false, reason: "parse_failed" };
+
+  const rebuilt = buildSiweMessage({
+    domain: parsed.domain,
+    address: parsed.address,
+    chainId: parsed.chainId,
+    nonce: parsed.nonce,
+    issuedAt: parsed.issuedAt,
+    expirationTime: parsed.expirationTime,
+    statement: parsed.statement,
+  });
+  if (rebuilt !== message) return { ok: false, reason: "message_tampered" };
+
+  if (parsed.domain !== expected.domain) return { ok: false, reason: "domain_mismatch" };
+  if (parsed.chainId !== expected.chainId) return { ok: false, reason: "chain_id_mismatch" };
+  if (parsed.nonce !== expected.nonce) return { ok: false, reason: "nonce_mismatch" };
+  if (parsed.address.toLowerCase() !== normalizeEvmAddress(expected.address).toLowerCase()) {
+    return { ok: false, reason: "address_mismatch" };
+  }
+  if (parsed.uri !== expectedSiweUri(expected.domain)) return { ok: false, reason: "uri_mismatch" };
+  if (parsed.version !== "1") return { ok: false, reason: "version_mismatch" };
+
+  const issuedAtMs = Date.parse(parsed.issuedAt);
+  const expirationMs = Date.parse(parsed.expirationTime);
+  if (Number.isNaN(issuedAtMs) || Number.isNaN(expirationMs)) {
+    return { ok: false, reason: "invalid_timestamps" };
+  }
+  if (issuedAtMs > nowMs + CLOCK_SKEW_MS) return { ok: false, reason: "issued_at_in_future" };
+  if (nowMs - issuedAtMs > ISSUED_AT_MAX_AGE_MS) return { ok: false, reason: "issued_at_too_old" };
+  if (expirationMs <= nowMs) return { ok: false, reason: "expiration_passed" };
+
+  return { ok: true, parsed };
 }
 
 export function createEvmChallengePayload(input: {
@@ -69,19 +188,31 @@ export async function verifyEvmBindingSignature(input: {
   expectedDomain: string;
   expectedChainId: number;
   expectedNonce: string;
+  nowMs?: number;
 }): Promise<boolean> {
   try {
-    const address = normalizeEvmAddress(input.expectedAddress);
-    if (!input.message.includes(input.expectedDomain)) return false;
-    if (!input.message.includes(`Chain ID: ${input.expectedChainId}`)) return false;
-    if (!input.message.includes(`Nonce: ${input.expectedNonce}`)) return false;
+    const validation = validateSiweMessage(
+      input.message,
+      {
+        domain: input.expectedDomain,
+        chainId: input.expectedChainId,
+        nonce: input.expectedNonce,
+        address: input.expectedAddress,
+      },
+      input.nowMs,
+    );
+    if (!validation.ok) return false;
 
-    const valid = await verifyMessage({
+    const address = normalizeEvmAddress(input.expectedAddress);
+    const signature = input.signature.startsWith("0x")
+      ? input.signature as `0x${string}`
+      : `0x${input.signature}` as `0x${string}`;
+
+    return verifyMessage({
       address: address as `0x${string}`,
       message: input.message,
-      signature: input.signature.startsWith("0x") ? input.signature as `0x${string}` : `0x${input.signature}` as `0x${string}`,
+      signature,
     });
-    return valid;
   } catch {
     return false;
   }

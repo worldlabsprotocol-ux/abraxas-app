@@ -14,8 +14,36 @@ export interface ConnectWebhookPayload {
   timestamp: string;
 }
 
-function signPayload(secret: string, body: string): string {
-  return createHmac("sha256", secret).update(body, "utf8").digest("hex");
+export const WEBHOOK_REPLAY_WINDOW_MS = 5 * 60 * 1000;
+
+export function signWebhookPayload(secret: string, timestamp: string, body: string): string {
+  return createHmac("sha256", secret).update(`${timestamp}.${body}`, "utf8").digest("hex");
+}
+
+export function verifyWebhookPayload(
+  secret: string,
+  timestamp: string,
+  body: string,
+  signature: string,
+  nowMs = Date.now(),
+): { ok: true } | { ok: false; reason: string } {
+  const ts = Date.parse(timestamp);
+  if (Number.isNaN(ts)) return { ok: false, reason: "invalid_timestamp" };
+  if (Math.abs(nowMs - ts) > WEBHOOK_REPLAY_WINDOW_MS) {
+    return { ok: false, reason: "timestamp_outside_window" };
+  }
+
+  const expected = signWebhookPayload(secret, timestamp, body);
+  if (signature !== expected) return { ok: false, reason: "invalid_signature" };
+  return { ok: true };
+}
+
+function assertDispatchTimestampFresh(timestamp: string, nowMs = Date.now()): void {
+  const ts = Date.parse(timestamp);
+  if (Number.isNaN(ts)) throw new Error("Webhook timestamp invalid");
+  if (Math.abs(nowMs - ts) > WEBHOOK_REPLAY_WINDOW_MS) {
+    throw new Error("Webhook timestamp outside replay window");
+  }
 }
 
 export async function dispatchConnectWebhook(input: {
@@ -35,6 +63,9 @@ export async function dispatchConnectWebhook(input: {
   if (!endpoints?.length) return;
 
   const eventId = `evt_${randomBytes(8).toString("hex")}`;
+  const timestamp = new Date().toISOString();
+  assertDispatchTimestampFresh(timestamp);
+
   const payload: ConnectWebhookPayload = {
     event: "authorization.completed",
     event_id: eventId,
@@ -42,7 +73,7 @@ export async function dispatchConnectWebhook(input: {
     status: input.status,
     receipt_id: input.receiptId,
     reason_codes: input.reasonCodes,
-    timestamp: new Date().toISOString(),
+    timestamp,
   };
 
   const body = JSON.stringify(payload);
@@ -61,12 +92,13 @@ export async function dispatchConnectWebhook(input: {
     if (!delivery) continue;
 
     try {
-      const signature = signPayload(endpoint.signing_secret as string, body);
+      const signature = signWebhookPayload(endpoint.signing_secret as string, timestamp, body);
       const res = await fetch(endpoint.url as string, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Abraxas-Signature": signature,
+          "X-Abraxas-Timestamp": timestamp,
           "X-Abraxas-Event-Id": eventId,
         },
         body,
@@ -87,5 +119,3 @@ export async function dispatchConnectWebhook(input: {
     }
   }
 }
-
-export { signPayload as signWebhookPayloadForTest };
