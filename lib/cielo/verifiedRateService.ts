@@ -1,13 +1,24 @@
 // FILE: lib/cielo/verifiedRateService.ts
-// Consent, decisions, booking requests, and public registry events for Cielo verified rate.
+// Consent, eligibility decisions, verified-rate requests, and public registry events for Cielo.
 
 import { randomUUID } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
+import { isSandboxClaim } from "@/lib/credentials/sandboxClaims";
+import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { getPolicy } from "@/lib/verification/requestsService";
+import {
+  recordRequestReceivedEvent,
+  getVerifiedRateRequestByRef,
+} from "@/lib/cielo/verifiedRateOperator";
+import {
+  USER_STATUS_LABELS,
+  VERIFIED_RATE_DISCLAIMER,
+  type VerifiedRateOperatorStatus,
+} from "@/lib/cielo/verifiedRateLabels";
 import {
   CIELO_PARTNER_ID,
   CIELO_RECORD_ID,
@@ -46,6 +57,54 @@ export interface VerifiedRateSubmitResult {
 
 function publicReference(): string {
   return `CVR-${randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+async function assertProductionEligibleDecision(input: {
+  subject: string;
+  policyId: string;
+  decisionId: string;
+}): Promise<void> {
+  if (isSandboxPolicyId(input.policyId)) {
+    throw new Error("Sandbox policy eligibility cannot submit a verified-rate request");
+  }
+
+  const policy = await getPolicy(input.policyId);
+  if (policy?.rules_json.sandbox_only) {
+    throw new Error("Sandbox-only policy decisions cannot submit verified-rate requests");
+  }
+
+  const claims = await getActiveClaims(input.subject);
+  const evalResult = evaluatePolicyRules(policy?.rules_json ?? {}, claims);
+  if (evalResult.production_usable === false || evalResult.decision_context === "sandbox_only") {
+    throw new Error("Sandbox eligibility cannot submit a verified-rate request");
+  }
+
+  if (claims.some(c => isSandboxClaim(c))) {
+    const hasOnlySandboxScreening = claims
+      .filter(c => c.claim_type === "screening_outcome")
+      .every(c => isSandboxClaim(c));
+    if (hasOnlySandboxScreening && claims.some(c => c.claim_type === "screening_outcome")) {
+      throw new Error("Sandbox screening claims cannot be used for verified-rate requests");
+    }
+  }
+
+  const sb = requireSupabaseAdmin();
+  const { data: decisionRow } = await sb
+    .from("verification_decisions")
+    .select("claims_json")
+    .eq("id", input.decisionId)
+    .maybeSingle();
+
+  const claimsJson = (decisionRow?.claims_json ?? {}) as Record<string, unknown>;
+  for (const value of Object.values(claimsJson)) {
+    if (typeof value === "object" && value !== null) {
+      const v = value as Record<string, unknown>;
+      const nested = (v.value ?? v) as Record<string, unknown>;
+      if (nested.environment === "sandbox" || nested.non_reliance === true) {
+        throw new Error("Sandbox credential data cannot submit a verified-rate request");
+      }
+    }
+  }
 }
 
 export async function grantCieloVerifiedGuestConsent(
@@ -172,6 +231,12 @@ export async function submitVerifiedRateRequest(
     throw new Error("Eligibility decision is no longer active");
   }
 
+  await assertProductionEligibleDecision({
+    subject,
+    policyId: decisionRow.policy_id as string,
+    decisionId: input.decisionId,
+  });
+
   const mappedDecision: CieloEligibilityDecision =
     decisionRow.decision === "approved"
       ? "approved"
@@ -191,7 +256,7 @@ export async function submitVerifiedRateRequest(
   const ref = publicReference();
   const status = "request_received";
 
-  const { error } = await sb.from("cielo_verified_rate_requests").insert({
+  const { data: inserted, error } = await sb.from("cielo_verified_rate_requests").insert({
     public_reference: ref,
     subject_sui_address: subject,
     wallet_binding_id: gate.wallet_binding_id,
@@ -210,20 +275,26 @@ export async function submitVerifiedRateRequest(
     status,
     reason_codes: gate.reason_codes,
     updated_at: new Date().toISOString(),
-  });
+  }).select("id").single();
 
-  if (error) throw new Error(error.message);
+  if (error || !inserted) throw new Error(error?.message ?? "Insert failed");
+
+  await recordRequestReceivedEvent({
+    requestId: inserted.id as string,
+    publicReference: ref,
+    subjectId: subject,
+  });
 
   await sb.from("cielo_registry_public_events").insert({
     record_id: CIELO_RECORD_ID,
     event_type: "verified_rate_request",
-    message: "Verified booking eligibility event recorded",
+    message: "Verified-rate request recorded",
   });
 
   await appendAuditEvent({
     actor_type: "subject",
     actor_id: subject,
-    action: "cielo.booking_request_created",
+    action: "cielo.verified_rate_request_created",
     object_type: "cielo_verified_rate_request",
     object_id: ref,
     policy_id: decisionRow.policy_id as string,
@@ -249,16 +320,42 @@ export async function getPublicRegistryEvents(recordId: string, limit = 5) {
   return data ?? [];
 }
 
+export async function getVerifiedRateRequestForSubject(
+  publicReference: string,
+  suiAddress: string,
+) {
+  const row = await getVerifiedRateRequestByRef(publicReference);
+  if (!row) return null;
+
+  const subject = normalizeSuiAddress(suiAddress);
+  if (row.subject_sui_address !== subject) {
+    throw new Error("Forbidden");
+  }
+
+  const status = row.status as VerifiedRateOperatorStatus;
+
+  return {
+    public_reference: row.public_reference,
+    status,
+    status_label: USER_STATUS_LABELS[status] ?? row.status,
+    eligibility_decision: row.eligibility_decision,
+    disclaimer: VERIFIED_RATE_DISCLAIMER,
+    check_in: row.check_in,
+    check_out: row.check_out,
+    guests: row.guests,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    timeline: row.events.map(e => ({
+      status: e.next_status,
+      status_label: USER_STATUS_LABELS[e.next_status as VerifiedRateOperatorStatus] ?? e.next_status,
+      action: e.action,
+      at: e.created_at,
+    })),
+  };
+}
+
+/** @deprecated Use listVerifiedRateRequests from verifiedRateOperator */
 export async function listVerifiedRateRequestsForAdmin(limit = 50) {
-  const sb = requireSupabaseAdmin();
-  const { data } = await sb
-    .from("cielo_verified_rate_requests")
-    .select(`
-      public_reference, status, eligibility_decision, check_in, check_out, guests,
-      guest_name, contact_email, policy_id, policy_version, verification_decision_id,
-      consent_receipt_id, reason_codes, created_at, updated_at
-    `)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  return data ?? [];
+  const { listVerifiedRateRequests } = await import("@/lib/cielo/verifiedRateOperator");
+  return listVerifiedRateRequests({ limit });
 }

@@ -30,15 +30,35 @@ Decisions: `APPROVED` · `MANUAL REVIEW` · `NOT ELIGIBLE`
 |--------|------|---------|
 | GET | `/api/cielo/verified-rate/status?sui_address=` | Pre-flight Passport checks |
 | POST | `/api/cielo/verified-rate/consent` | Consent + policy decision |
-| POST | `/api/cielo/verified-rate/submit` | Create booking request (approved only) |
-| GET | `/api/admin/cielo/verified-rate` | Operator list (admin PIN) |
-| PATCH | `/api/admin/cielo/verified-rate` | Update request status |
+| POST | `/api/cielo/verified-rate/submit` | Create verified-rate request (approved eligibility only) |
+| GET | `/api/cielo/verified-rate/request?ref=` | User status (session ownership required) |
+| GET | `/api/admin/cielo/verified-rate` | Operator queue + detail (admin PIN) |
+| PATCH | `/api/admin/cielo/verified-rate` | Operator actions (admin PIN) |
 
-## Database (migration 026)
+## Operator workflow (migration 031)
+
+Admin queue at `/admin/cielo`:
+
+| Filter | Operator action |
+|--------|-----------------|
+| Request received | Initial state after user submits |
+| Pending review | Mark under review |
+| Eligible | Mark eligible after operator review |
+| Operator confirmed | Confirm contact sent to guest |
+| Declined | Decline (reason required) |
+
+Each action writes an immutable row to `cielo_verified_rate_request_events` and an `audit_events` entry.
+
+User status page: `/cielo/verified-rate/confirmation?ref=CVR-…` (session must match submitter).
+
+Public `/verify/ABX-RE-HOSP-001` shows anonymized event lines only — no guest PII.
+
+## Database (migrations 026 + 031)
 
 - `partner_policies` — seeds `cielo-verified-guest-v1`
 - `cielo_verified_rate_requests` — pilot requests with decision/consent FKs
-- `cielo_registry_public_events` — public-safe messages on verify page
+- `cielo_verified_rate_request_events` — immutable operator/subject timeline (031)
+- Operator fields on requests: `assigned_to`, `operator_notes`, `contacted_at`, `reviewed_at`, `decided_at`, `decision_reason` (031)
 
 Reuses existing: `verification_requests`, `consent_receipts`, `verification_decisions`, `audit_events`
 
@@ -48,12 +68,13 @@ Set `CIELO_VERIFIED_RATE_FIXTURE=approved|manual_review|not_eligible` in env, or
 
 ## Local test checklist
 
-1. Run migrations **024**, **025**, **026** in Supabase
+1. Run migrations **024**, **025**, **026**, **031** in Supabase
 2. Sign in at `/passport`, bind wallet, save profile at `/verify` (Profile tab)
 3. Visit `/cielo/verified-rate`, complete 3 steps
 4. Confirm `CVR-…` reference on confirmation page
-5. Check `/admin/cielo` for request + decision IDs
-6. Check `/verify/ABX-RE-HOSP-001` for public activity line
+5. Check `/admin/cielo` verified-rate queue — mark under review → eligible → confirm contact
+6. Revisit `/cielo/verified-rate/confirmation?ref=CVR-…` for live user status
+7. Check `/verify/ABX-RE-HOSP-001` for public activity line (no PII)
 
 ## Production test checklist
 

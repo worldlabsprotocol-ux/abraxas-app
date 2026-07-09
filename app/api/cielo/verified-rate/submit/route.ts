@@ -1,5 +1,5 @@
 // FILE: app/api/cielo/verified-rate/submit/route.ts
-// Submit pilot verified-rate booking request (session auth, approved eligibility only).
+// Submit verified-rate request (session auth, approved eligibility only).
 
 import { NextRequest, NextResponse } from "next/server";
 import { submitVerifiedRateRequest } from "@/lib/cielo/verifiedRateService";
