@@ -58,7 +58,9 @@ export default function AdminTrustPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#060810", color: "#f0f0f0", fontFamily: MONO, fontSize: "0.68rem" }}>
       <header style={{ padding: "1rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <Link href="/admin/receipts" style={{ color: "#a78bfa", textDecoration: "none" }}>← Receipts</Link>
+          <Link href="/admin/receipts" style={{ color: "#a78bfa", textDecoration: "none" }}>← Receipts</Link>
+          {" · "}
+          <Link href="/admin/connect" style={{ color: "#a78bfa", textDecoration: "none" }}>Connect</Link>
         <h1 style={{ fontSize: "0.85rem", margin: "0.35rem 0 0" }}>Trust Layer (pilot)</h1>
         <p style={{ color: "rgba(255,255,255,0.4)", margin: "0.25rem 0 0" }}>Credential status · Issuer registry · Live receipt validity</p>
       </header>

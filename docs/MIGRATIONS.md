@@ -71,3 +71,9 @@ After 033, run in order:
 2. **`035_issuer_framework_trust_registry.sql`** — signing keys, partner issuer trust rules
 
 See `docs/TRUST_LAYER.md` for API and architecture details.
+
+## Abraxas Connect (036)
+
+After 033–035, run **`036_connect_wallet_authority.sql`** for Connect authorization requests, persisted SIWE challenges, and partner webhooks.
+
+See `docs/ABRAXAS_CONNECT.md`.
