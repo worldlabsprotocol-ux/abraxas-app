@@ -1,10 +1,12 @@
 // FILE: lib/policy/evaluatePolicy.ts
-// Evaluate partner policy against a subject's active claims.
+// Evaluate partner policy against a subject's active claims with issuer trust enforcement.
 
 import type { CredentialClaimRecord, AssuranceLevel } from "@/lib/credentials/claimSchema";
 import { isSandboxClaim } from "@/lib/credentials/sandboxClaims";
+import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import type {
   PartnerPolicyRules,
+  PolicyEvaluationContext,
   PolicyEvaluationResult,
   RequiredClaimRule,
 } from "@/lib/policy/types";
@@ -20,25 +22,33 @@ function claimMeetsRule(
   claim: CredentialClaimRecord | undefined,
   rule: RequiredClaimRule,
   policySandboxOnly: boolean,
+  trustContext?: PolicyEvaluationContext,
 ): boolean {
   if (!claim) return false;
-  if (claim.status !== "active") return false;
+
+  const liveStatus = resolveClaimStatusAtRead({
+    status: claim.status,
+    expires_at: claim.expires_at,
+  });
+  if (liveStatus !== "active") return false;
 
   const sandbox = isSandboxClaim(claim);
   if (sandbox && !policySandboxOnly) return false;
   if (!sandbox && policySandboxOnly && rule.claim_type === "screening_outcome") return false;
 
   const now = Date.now();
-  if (rule.max_age_hours != null) {
+  const maxAgeHours = rule.credential_max_age_hours ?? rule.max_age_hours;
+  if (maxAgeHours != null) {
     const issued = new Date(claim.issued_at).getTime();
-    const maxMs = rule.max_age_hours * 60 * 60 * 1000;
+    const maxMs = maxAgeHours * 60 * 60 * 1000;
     if (now - issued > maxMs) return false;
   }
 
   if (claim.expires_at && new Date(claim.expires_at).getTime() < now) return false;
 
-  if (rule.min_assurance && claim.assurance_level) {
-    if (ASSURANCE_RANK[claim.assurance_level] < ASSURANCE_RANK[rule.min_assurance]) {
+  const minAssurance = rule.min_assurance;
+  if (minAssurance && claim.assurance_level) {
+    if (ASSURANCE_RANK[claim.assurance_level] < ASSURANCE_RANK[minAssurance]) {
       return false;
     }
   }
@@ -48,13 +58,61 @@ function claimMeetsRule(
     if (String(outcome) !== String(rule.must_equal)) return false;
   }
 
+  if (trustContext && (trustContext.trustRulesByClaimType || rule.accepted_issuers?.length)) {
+    const dbRule = trustContext.trustRulesByClaimType?.get(rule.claim_type);
+    const acceptedIssuers = rule.accepted_issuers ?? dbRule?.accepted_issuer_ids ?? [];
+    if (acceptedIssuers.length > 0 && !acceptedIssuers.includes(claim.issuer_id)) {
+      return false;
+    }
+
+    const minFromRule = dbRule?.minimum_assurance_level;
+    if (minFromRule && claim.assurance_level) {
+      if (ASSURANCE_RANK[claim.assurance_level] < ASSURANCE_RANK[minFromRule]) return false;
+    }
+
+    const jurisdictions = rule.accepted_jurisdictions ?? dbRule?.accepted_jurisdictions ?? [];
+    if (jurisdictions.length > 0 && claim.jurisdiction) {
+      if (!jurisdictions.includes("global") && !jurisdictions.includes(claim.jurisdiction)) {
+        return false;
+      }
+    }
+  }
+
   return true;
+}
+
+function trustFailureReason(
+  claim: CredentialClaimRecord | undefined,
+  rule: RequiredClaimRule,
+  trustContext?: PolicyEvaluationContext,
+): string {
+  if (!claim) return `missing:${rule.claim_type}`;
+  const liveStatus = resolveClaimStatusAtRead({ status: claim.status, expires_at: claim.expires_at });
+  if (liveStatus === "under_review") return `under_review:${rule.claim_type}`;
+  if (liveStatus === "suspended") return `suspended:${rule.claim_type}`;
+  if (liveStatus === "revoked") return `revoked:${rule.claim_type}`;
+  if (liveStatus === "expired") return `expired:${rule.claim_type}`;
+
+  const dbRule = trustContext?.trustRulesByClaimType?.get(rule.claim_type);
+  const acceptedIssuers = rule.accepted_issuers ?? dbRule?.accepted_issuer_ids ?? [];
+  if (acceptedIssuers.length > 0 && !acceptedIssuers.includes(claim.issuer_id)) {
+    return `untrusted_issuer:${claim.issuer_id}`;
+  }
+
+  const minFromRule = rule.min_assurance ?? dbRule?.minimum_assurance_level;
+  if (minFromRule && claim.assurance_level) {
+    if (ASSURANCE_RANK[claim.assurance_level] < ASSURANCE_RANK[minFromRule as AssuranceLevel]) {
+      return `insufficient_assurance:${rule.claim_type}`;
+    }
+  }
+
+  return `missing:${rule.claim_type}`;
 }
 
 export function evaluatePolicyRules(
   rules: PartnerPolicyRules,
   claims: CredentialClaimRecord[],
-  context?: { jurisdiction?: string | null },
+  context?: PolicyEvaluationContext,
 ): PolicyEvaluationResult {
   const policySandboxOnly = rules.sandbox_only === true;
   const decisionContext: PolicyEvaluationResult["decision_context"] = policySandboxOnly
@@ -98,8 +156,9 @@ export function evaluatePolicyRules(
 
   for (const rule of required) {
     const claim = claimsByType.get(rule.claim_type);
-    if (!claimMeetsRule(claim, rule, policySandboxOnly)) {
+    if (!claimMeetsRule(claim, rule, policySandboxOnly, context)) {
       missing.push(rule.claim_type);
+      reasonCodes.push(trustFailureReason(claim, rule, context));
       continue;
     }
     disclosed[rule.claim_type] = sanitizeClaimForPartner(claim!);
@@ -107,10 +166,16 @@ export function evaluatePolicyRules(
 
   if (missing.length > 0) {
     const screeningMissing = missing.includes("screening_outcome");
+    const underReview = reasonCodes.some(r => r.startsWith("under_review:"));
+    const decision = underReview
+      ? "manual_review"
+      : screeningMissing && missing.length === 1
+        ? "manual_review"
+        : "denied";
     return {
-      decision: screeningMissing && missing.length === 1 ? "manual_review" : "denied",
+      decision,
       claims: disclosed,
-      reason_codes: missing.map(m => `missing:${m}`),
+      reason_codes: reasonCodes.length ? reasonCodes : missing.map(m => `missing:${m}`),
       valid_until: computeValidUntil(claims, required),
       missing_claims: missing,
       decision_context: decisionContext,
@@ -153,8 +218,9 @@ function computeValidUntil(
     const candidates: number[] = [];
     if (c.expires_at) candidates.push(new Date(c.expires_at).getTime());
     const rule = rules.find(r => r.claim_type === c.claim_type);
-    if (rule?.max_age_hours) {
-      candidates.push(new Date(c.issued_at).getTime() + rule.max_age_hours * 3600000);
+    const maxAge = rule?.credential_max_age_hours ?? rule?.max_age_hours;
+    if (maxAge) {
+      candidates.push(new Date(c.issued_at).getTime() + maxAge * 3600000);
     }
     for (const t of candidates) {
       if (earliest == null || t < earliest) earliest = t;

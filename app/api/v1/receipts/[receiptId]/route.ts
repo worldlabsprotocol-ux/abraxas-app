@@ -63,5 +63,7 @@ export async function GET(
     receipt: result.view,
     currently_valid: result.valid,
     status: result.status,
+    validity: result.validity,
+    invalidation_reasons: result.invalidation_reasons,
   });
 }

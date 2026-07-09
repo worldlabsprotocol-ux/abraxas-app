@@ -1,18 +1,12 @@
 // FILE: app/api/admin/claims/status/route.ts
-// Credential lifecycle admin — suspend / revoke / reactivate claims.
+// Credential lifecycle admin — validated transitions via status registry.
 
 import { NextRequest, NextResponse } from "next/server";
-import { updateClaimStatus } from "@/lib/credentials/claimsService";
+import { checkAdmin } from "@/lib/adminAuth";
+import { transitionClaimStatus } from "@/lib/trust/credentialStatusRegistry";
 import type { ClaimStatus } from "@/lib/credentials/claimSchema";
 
-const ADMIN_PIN = process.env.ADMIN_PIN ?? process.env.NEXT_PUBLIC_ADMIN_PIN ?? "";
-
-function checkAdmin(req: NextRequest): boolean {
-  if (!ADMIN_PIN) return process.env.NODE_ENV !== "production";
-  return req.headers.get("x-admin-pin") === ADMIN_PIN;
-}
-
-const ALLOWED: ClaimStatus[] = ["active", "suspended", "revoked", "expired"];
+const ALLOWED: ClaimStatus[] = ["active", "suspended", "revoked", "expired", "under_review"];
 
 export async function PATCH(req: NextRequest) {
   if (!checkAdmin(req)) {
@@ -23,21 +17,30 @@ export async function PATCH(req: NextRequest) {
     claim_id?: string;
     status?: ClaimStatus;
     reason?: string;
+    idempotency_key?: string;
   };
 
   if (!body.claim_id || !body.status || !ALLOWED.includes(body.status)) {
     return NextResponse.json({ error: "claim_id and valid status required" }, { status: 400 });
   }
 
-  try {
-    await updateClaimStatus({
-      claimId: body.claim_id,
-      status: body.status,
-      reason: body.reason,
-    });
-    return NextResponse.json({ ok: true, claim_id: body.claim_id, status: body.status });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Update failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+  const actorId = req.headers.get("x-admin-pin") ?? "admin";
+  const result = await transitionClaimStatus({
+    claimId: body.claim_id,
+    toStatus: body.status,
+    reasonCode: body.reason,
+    changedBy: `admin:${actorId}`,
+    idempotencyKey: body.idempotency_key,
+  });
+
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: 400 });
   }
+
+  return NextResponse.json({
+    ok: true,
+    claim_id: body.claim_id,
+    from_status: result.from,
+    status: result.to,
+  });
 }

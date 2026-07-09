@@ -8,6 +8,7 @@ import { claimTypeLabel, type ClaimType } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import type { PartnerPolicy, PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
+import { loadPolicyTrustContext } from "@/lib/trust/loadPolicyTrustContext";
 import {
   buildEvaluatedClaimRefs,
   claimTypesFromEvaluation,
@@ -168,8 +169,16 @@ export async function consentAndDecide(input: {
 
   const claims = await getActiveClaims(subject);
   const residency = claims.find(c => c.claim_type === "residency_country")?.claim_value?.country as string | undefined;
-  const evaluation = evaluatePolicyRules(policy.rules_json, claims, {
+  const trustContext = await loadPolicyTrustContext({
+    partnerId: request.partner_id as string,
+    policyId: policy.id,
     jurisdiction: residency ?? claims.find(c => c.jurisdiction)?.jurisdiction,
+  });
+  const evaluation = evaluatePolicyRules(policy.rules_json, claims, {
+    jurisdiction: trustContext.jurisdiction,
+    partnerId: trustContext.partnerId,
+    policyId: trustContext.policyId,
+    trustRulesByClaimType: trustContext.trustRulesByClaimType,
   });
 
   const { data: consent } = await sb.from("consent_receipts").insert({
