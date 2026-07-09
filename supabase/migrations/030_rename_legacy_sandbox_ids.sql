@@ -1,6 +1,6 @@
 -- 030_rename_legacy_sandbox_ids.sql
--- Removes fictional "Meridian" IDs from DB for installs that ran older 028/029.
--- Safe to run even if meridian rows never existed (no-op).
+-- SUPERSEDED: use 032_reconcile_sandbox_and_cielo_operator_workflow.sql instead.
+-- Kept for history only — do not run if applying 032.
 
 -- 1) Ensure target partner row exists under new ID
 insert into public.partners (partner_id, company, contact_name, status, allowed_environments)

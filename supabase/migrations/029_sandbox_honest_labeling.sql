@@ -1,5 +1,6 @@
 -- 029_sandbox_honest_labeling.sql
--- Relabel internal sandbox partner; mark policy sandbox-only.
+-- SUPERSEDED: use 032_reconcile_sandbox_and_cielo_operator_workflow.sql instead.
+-- Kept for history only — do not run if applying 032.
 
 update public.partners
 set

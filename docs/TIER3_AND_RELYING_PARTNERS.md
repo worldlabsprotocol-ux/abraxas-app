@@ -76,11 +76,11 @@ One sample record (`ABX-DEMO-LAND-001`) is seeded as `is_demo_sample: true`.
 
 ## Migrations
 
-Run in order in Supabase SQL editor:
+See **`docs/MIGRATIONS.md`** for the full guide.
 
-1. `028_meridian_relying_partner.sql` — seeds sandbox partner + policy (filename is historical)
-2. `029_sandbox_honest_labeling.sql` — relabel + external asset applications
-3. `030_rename_legacy_sandbox_ids.sql` — **required if you previously ran an older 028 with meridian-* IDs**
+**Existing or unknown DB:** run **`032_reconcile_sandbox_and_cielo_operator_workflow.sql`** only (supersedes 029–031).
+
+**Fresh DB:** 018 → 024 → 025 → (optional 026) → **032**.
 
 ## Public language (until real external proof exists)
 

@@ -1,5 +1,6 @@
 -- 031_cielo_operator_workflow.sql
--- Cielo verified-rate operator workflow: events timeline + operator fields.
+-- SUPERSEDED: use 032_reconcile_sandbox_and_cielo_operator_workflow.sql instead.
+-- Kept for history only — do not run if applying 032.
 
 alter table public.cielo_verified_rate_requests
   add column if not exists assigned_to text,
@@ -37,6 +38,7 @@ create index if not exists cielo_verified_rate_requests_queue_idx
 alter table public.cielo_verified_rate_request_events enable row level security;
 
 -- Direct client access denied; API routes use service role.
+-- SUPERSEDED by 032 — do not run 031 if applying 032.
 create policy "cielo_vr_events_service_only"
   on public.cielo_verified_rate_request_events
   for all

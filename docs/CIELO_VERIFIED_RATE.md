@@ -53,7 +53,9 @@ User status page: `/cielo/verified-rate/confirmation?ref=CVR-…` (session must 
 
 Public `/verify/ABX-RE-HOSP-001` shows anonymized event lines only — no guest PII.
 
-## Database (migrations 026 + 031)
+## Database (migrations 026 + 032)
+
+See **`docs/MIGRATIONS.md`**. For operator workflow, run **`032_reconcile_sandbox_and_cielo_operator_workflow.sql`** (includes 031 changes; supersedes separate 029–031).
 
 - `partner_policies` — seeds `cielo-verified-guest-v1`
 - `cielo_verified_rate_requests` — pilot requests with decision/consent FKs
@@ -68,7 +70,7 @@ Set `CIELO_VERIFIED_RATE_FIXTURE=approved|manual_review|not_eligible` in env, or
 
 ## Local test checklist
 
-1. Run migrations **024**, **025**, **026**, **031** in Supabase
+1. Run **`032_reconcile_sandbox_and_cielo_operator_workflow.sql`** in Supabase (see `docs/MIGRATIONS.md`)
 2. Sign in at `/passport`, bind wallet, save profile at `/verify` (Profile tab)
 3. Visit `/cielo/verified-rate`, complete 3 steps
 4. Confirm `CVR-…` reference on confirmation page
