@@ -2,6 +2,7 @@
 // Relying party registry — internal sandbox demo + future external partners.
 
 import { SANDBOX_DISCLAIMER } from "@/lib/credentials/sandboxClaims";
+import { SANDBOX_PARTNER_ID, SANDBOX_POLICY_ID } from "@/lib/partner/sandboxPartner";
 
 export interface RelyingPartnerRecord {
   partner_id: string;
@@ -23,11 +24,11 @@ export interface RelyingPartnerRecord {
 /** Internal sandbox — demonstrates Tier 3 policy + consent flow. Not an external partner. */
 export const RELYING_PARTNERS: RelyingPartnerRecord[] = [
   {
-    partner_id: "meridian-private-credit",
+    partner_id: SANDBOX_PARTNER_ID,
     company: "Abraxas Partner Sandbox",
     category: "Sandbox / demonstration",
     status: "sandbox",
-    policy_id: "meridian-investor-gate-v1",
+    policy_id: SANDBOX_POLICY_ID,
     policy_name: "Partner sandbox eligibility (demo)",
     description:
       "Demonstration policy for testing transaction-specific eligibility. Exercises portable identity, wallet binding, and sandbox screening claims — not document re-upload.",

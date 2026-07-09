@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloVerifiedRateFlow.tsx
-// Step 3 closed loop — Passport → consent → eligibility → pilot booking request.
+// Step 3 verified-rate request loop — Passport → consent → eligibility → rate request (not booking/payment).
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";

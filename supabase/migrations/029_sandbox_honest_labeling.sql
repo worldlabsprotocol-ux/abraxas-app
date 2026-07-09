@@ -8,7 +8,7 @@ set
   status = 'sandbox',
   allowed_environments = array['sandbox'],
   updated_at = now()
-where partner_id = 'meridian-private-credit';
+where partner_id in ('meridian-private-credit', 'abraxas-partner-sandbox');
 
 update public.partner_policies
 set
@@ -21,8 +21,9 @@ set
       {"claim_type": "screening_outcome", "max_age_hours": 24, "must_equal": "clear"}
     ]
   }'::jsonb,
-  status = 'active'
-where id = 'meridian-investor-gate-v1';
+  status = 'active',
+  partner_id = 'abraxas-partner-sandbox'
+where id in ('meridian-investor-gate-v1', 'partner-sandbox-gate-v1');
 
 -- Partner onboarding fields for real future relying parties
 alter table public.partners

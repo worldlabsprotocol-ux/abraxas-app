@@ -1,6 +1,6 @@
-# Cielo Verified Rate — Step 3 Closed Loop
+# Cielo Verified Rate — Step 3 verified-rate request loop
 
-Pilot flow: Passport unlocks a **verified-rate request** at Cielo — not a confirmed reservation or payment settlement.
+Pilot flow: Passport unlocks a **verified-rate request** at Cielo — not a confirmed reservation, booking, or payment settlement.
 
 ## User flow
 

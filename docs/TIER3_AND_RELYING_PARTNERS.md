@@ -13,8 +13,8 @@ Do **not** present the sandbox as a live external relying party until a separate
 ## Abraxas Partner Sandbox
 
 - **Public name:** Abraxas Partner Sandbox
-- **Internal partner_id:** `meridian-private-credit` (legacy ID — not shown as third-party proof)
-- **Policy:** `meridian-investor-gate-v1` (`sandbox_only: true`)
+- **Partner ID:** `abraxas-partner-sandbox`
+- **Policy:** `partner-sandbox-gate-v1` (`sandbox_only: true`)
 - **Disclaimer:** Sandbox demonstration — not a live financial offering or external partner integration.
 
 Required claims (demo):
@@ -32,7 +32,9 @@ Required claims (demo):
 
 ## Sandbox screening
 
-When `PILOT_TIER3_SCREENING` is enabled (default off in production), demo screening claims include:
+**Production:** keep `PILOT_TIER3_SCREENING` unset or `false`. Demo screening is disabled in production by default.
+
+When enabled (non-production or explicit opt-in), demo screening claims include:
 
 - `issuer`: Abraxas Sandbox
 - `environment`: sandbox
@@ -72,13 +74,17 @@ One sample record (`ABX-DEMO-LAND-001`) is seeded as `is_demo_sample: true`.
 - Policy assignment + API key issuance and revocation
 - Usage logs via `partner_api_usage`
 
-## Migration
+## Migrations
 
-Run `supabase/migrations/029_sandbox_honest_labeling.sql` after 028:
+Run in order in Supabase SQL editor:
 
-- Relabels sandbox partner display name
-- Sets `sandbox_only: true` on investor gate policy
-- Adds external asset applications table + partner onboarding columns
+1. `028_meridian_relying_partner.sql` — seeds sandbox partner + policy (filename is historical)
+2. `029_sandbox_honest_labeling.sql` — relabel + external asset applications
+3. `030_rename_legacy_sandbox_ids.sql` — **required if you previously ran an older 028 with meridian-* IDs**
+
+## Public language (until real external proof exists)
+
+> Pilot-ready verification infrastructure for real assets. Public verification, consent-based Passport access, and partner policy APIs are live in pilot. External relying-party and external-originator onboarding is underway.
 
 ## QA checklist
 
@@ -88,3 +94,4 @@ Run `supabase/migrations/029_sandbox_honest_labeling.sql` after 028:
 4. `/integrations/relying-parties` — sandbox in demo section; external list empty
 5. `/api/partners/registry` → `count: 0`
 6. Production policy evaluation rejects sandbox screening claims
+7. No `meridian` strings in partner_id / policy_id after migration 030

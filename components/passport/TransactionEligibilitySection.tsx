@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Btn } from "@/components/redesign/ui";
 import { POLICY_DECISIONS, type PolicyDecision } from "@/lib/abraxasNetwork";
 import { SANDBOX_DISCLAIMER } from "@/lib/credentials/sandboxClaims";
+import { SANDBOX_POLICY_ID } from "@/lib/partner/sandboxPartner";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -88,7 +89,7 @@ export function TransactionEligibilitySection({ enabled }: { enabled: boolean })
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ policy_id: "meridian-investor-gate-v1" }),
+        body: JSON.stringify({ policy_id: SANDBOX_POLICY_ID }),
       });
       const json = await res.json() as { consent_url?: string; error?: string };
       if (!res.ok || !json.consent_url) throw new Error(json.error ?? "Request failed");

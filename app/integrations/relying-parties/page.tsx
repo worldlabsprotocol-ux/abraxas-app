@@ -35,6 +35,13 @@ export default function RelyingPartiesPage() {
         subtitle={RELYING_PARTY_DEFINITION}
       />
 
+      <ContentCard title="Current pilot status">
+        <p style={body}>
+          Pilot-ready verification infrastructure for real assets. Public verification, consent-based Passport access,
+          and partner policy APIs are live in pilot. External relying-party and external-originator onboarding is underway.
+        </p>
+      </ContentCard>
+
       <ContentCard title="Why this is the network-effect milestone">
         <p style={body}>
           Abraxas becomes infrastructure when an <strong>unaffiliated</strong> lender, marketplace, or protocol

@@ -123,6 +123,6 @@ Optional migration **027** adds `verify:requests` scope to existing partner keys
 
 ## Related
 
-- Step 3: Cielo verified-rate (first-party closed loop)
+- Step 3: Cielo verified-rate request loop (first-party pilot)
 - Step 2: Partner API keys (`/admin/partners`)
 - `/docs/credential-portability` — JWT verify + integrator endpoints
