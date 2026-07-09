@@ -1,27 +1,43 @@
 "use client";
 // FILE: lib/walletAuthority/client/useBindEvmWallet.ts
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   bindEvmWalletToPassport,
   type BindEvmWalletOptions,
   type BindEvmWalletResult,
 } from "@/lib/walletAuthority/client/bindEvmWallet";
+import type { EvmConnectionMethod } from "@/lib/walletAuthority/client/ethereumProvider";
+import {
+  resolveEvmConnectionUiStateFromWindow,
+  type EvmConnectionUiState,
+} from "@/lib/walletAuthority/client/evmConnectionUi";
 
 export function useBindEvmWallet(options: BindEvmWalletOptions = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BindEvmWalletResult | null>(null);
+  const [uiState, setUiState] = useState<EvmConnectionUiState>(() =>
+    resolveEvmConnectionUiStateFromWindow(),
+  );
+
   const expectedWalletAddress = options.expectedWalletAddress ?? null;
   const credentials = options.credentials ?? "include";
+  const chainId = options.chainId;
 
-  const bind = useCallback(async () => {
+  useEffect(() => {
+    setUiState(resolveEvmConnectionUiStateFromWindow());
+  }, []);
+
+  const bindWithMethod = useCallback(async (connectionMethod: EvmConnectionMethod) => {
     setLoading(true);
     setError(null);
     try {
       const bound = await bindEvmWalletToPassport({
         expectedWalletAddress,
         credentials,
+        connectionMethod,
+        chainId,
       });
       setResult(bound);
       return bound;
@@ -32,7 +48,33 @@ export function useBindEvmWallet(options: BindEvmWalletOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [expectedWalletAddress, credentials]);
+  }, [expectedWalletAddress, credentials, chainId]);
 
-  return { bind, loading, error, result, bound: Boolean(result) };
+  const bindInjected = useCallback(
+    () => bindWithMethod("injected"),
+    [bindWithMethod],
+  );
+
+  const bindWalletConnect = useCallback(
+    () => bindWithMethod("walletconnect"),
+    [bindWithMethod],
+  );
+
+  const bind = useCallback(async () => {
+    const state = resolveEvmConnectionUiStateFromWindow();
+    if (state.showInjected) return bindInjected();
+    if (state.showWalletConnect) return bindWalletConnect();
+    throw new Error(state.blockedHint ?? "No wallet connection method available in this browser.");
+  }, [bindInjected, bindWalletConnect]);
+
+  return {
+    bind,
+    bindInjected,
+    bindWalletConnect,
+    loading,
+    error,
+    result,
+    bound: Boolean(result),
+    uiState,
+  };
 }

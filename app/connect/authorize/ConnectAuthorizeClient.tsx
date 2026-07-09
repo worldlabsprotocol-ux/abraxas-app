@@ -3,7 +3,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { EvmWalletConnectActions } from "@/components/wallet/EvmWalletConnectActions";
 import { useBindEvmWallet } from "@/lib/walletAuthority/client/useBindEvmWallet";
+import { mapWalletApiError } from "@/lib/walletAuthority/client/sessionHints";
 
 interface ConnectPreview {
   authorization: {
@@ -28,11 +30,13 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
 
   const expectedWallet = preview?.authorization.wallet_address ?? null;
   const {
-    bind,
+    bindInjected,
+    bindWalletConnect,
     loading: bindLoading,
     error: bindError,
     result: bindResult,
     bound,
+    uiState,
   } = useBindEvmWallet({ expectedWalletAddress: expectedWallet, credentials: "include" });
 
   const load = useCallback(async () => {
@@ -55,7 +59,9 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
         credentials: "include",
       });
       const data = await res.json() as { redirect_url?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Consent failed");
+      if (!res.ok) {
+        throw new Error(mapWalletApiError(data.error ?? "Consent failed", res.status));
+      }
       if (data.redirect_url) {
         window.location.href = data.redirect_url;
       }
@@ -106,18 +112,21 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
       </div>
 
       {needsEvmBind && !bound && (
-        <button
-          type="button"
-          onClick={() => void bind().catch(() => undefined)}
-          disabled={loading}
-          style={{ width: "100%", padding: "0.65rem", marginBottom: "0.5rem", cursor: "pointer", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 6 }}
-        >
-          {bindLoading ? "Binding…" : "Bind MetaMask wallet to Passport"}
-        </button>
+        <EvmWalletConnectActions
+          uiState={uiState}
+          loading={bindLoading}
+          injectedLabel="Bind MetaMask"
+          walletConnectLabel="Bind via WalletConnect"
+          onInjected={() => void bindInjected().catch(() => undefined)}
+          onWalletConnect={() => void bindWalletConnect().catch(() => undefined)}
+        />
       )}
 
       {bound && bindResult && (
-        <p style={{ fontSize: "0.75rem", color: "#14F195" }}>Wallet bound: {bindResult.address.slice(0, 10)}…</p>
+        <p style={{ fontSize: "0.75rem", color: "#14F195", marginBottom: "0.5rem" }}>
+          Wallet bound: {bindResult.address.slice(0, 10)}…
+          {bindResult.connection_method === "walletconnect" ? " (WalletConnect)" : ""}
+        </p>
       )}
 
       <button
@@ -132,10 +141,10 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
       {error && <p style={{ color: "#f26b6b", fontSize: "0.8rem", marginTop: "0.75rem" }}>{error}</p>}
 
       <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", marginTop: "1rem" }}>
-        Sign in to Passport first if prompted. Expires {new Date(preview.authorization.expires_at).toLocaleString()}.
+        Sign in to Passport in this browser before binding. Expires {new Date(preview.authorization.expires_at).toLocaleString()}.
       </p>
 
-      <Link href="/passport" style={{ fontSize: "0.75rem", color: "#a78bfa" }}>Open Passport →</Link>
+      <Link href="/passport" style={{ fontSize: "0.75rem", color: "#a78bfa" }}>Open Passport in this browser →</Link>
     </div>
   );
 }

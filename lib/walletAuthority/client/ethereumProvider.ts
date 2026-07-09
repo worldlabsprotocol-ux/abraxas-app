@@ -1,9 +1,18 @@
 "use client";
 // FILE: lib/walletAuthority/client/ethereumProvider.ts
-// MetaMask / injected EVM provider — client only (no viem/ethers imports).
+// Injected EVM provider (window.ethereum) — client only.
 
 export interface EthereumProvider {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+}
+
+export type EvmConnectionMethod = "injected" | "walletconnect";
+
+export interface EvmWalletConnection {
+  provider: EthereumProvider;
+  address: string;
+  chainId: number;
+  method: EvmConnectionMethod;
 }
 
 export function getEthereumProvider(): EthereumProvider | undefined {
@@ -11,17 +20,15 @@ export function getEthereumProvider(): EthereumProvider | undefined {
   return (window as unknown as { ethereum?: EthereumProvider }).ethereum;
 }
 
-export interface EvmWalletConnection {
-  provider: EthereumProvider;
-  address: string;
-  chainId: number;
+export function hasInjectedEthereumProvider(): boolean {
+  return Boolean(getEthereumProvider());
 }
 
-/** Connect MetaMask and return address + chain — must complete before signing. */
-export async function connectEvmWallet(): Promise<EvmWalletConnection> {
+/** Connect via injected window.ethereum (desktop extension or wallet in-app browser). */
+export async function connectEvmWalletInjected(): Promise<EvmWalletConnection> {
   const provider = getEthereumProvider();
   if (!provider) {
-    throw new Error("MetaMask not detected. Install MetaMask to bind an EVM wallet.");
+    throw new Error("No injected wallet found in this browser.");
   }
 
   const accounts = await provider.request({ method: "eth_requestAccounts" });
@@ -32,7 +39,46 @@ export async function connectEvmWallet(): Promise<EvmWalletConnection> {
   const chainId = Number.parseInt(String(chainHex), 16);
   if (!Number.isFinite(chainId)) throw new Error("Could not read chain ID from wallet");
 
-  return { provider, address, chainId };
+  return { provider, address, chainId, method: "injected" };
+}
+
+/**
+ * Connect EVM wallet — injected when available, otherwise WalletConnect when requested.
+ */
+export async function connectEvmWallet(options?: {
+  method?: EvmConnectionMethod;
+  chainId?: number;
+}): Promise<EvmWalletConnection> {
+  const method = options?.method;
+  if (method === "walletconnect") {
+    const { connectEvmWalletViaWalletConnect } = await import(
+      "@/lib/walletAuthority/client/walletConnectProvider"
+    );
+    const connection = await connectEvmWalletViaWalletConnect(options?.chainId ?? 1);
+    return { ...connection, method: "walletconnect" };
+  }
+
+  if (hasInjectedEthereumProvider()) {
+    return connectEvmWalletInjected();
+  }
+
+  if (method === "injected") {
+    throw new Error("No injected wallet found in this browser.");
+  }
+
+  const { isMobileWalletContext } = await import("@/lib/walletAuthority/client/detectMobileBrowser");
+  const { walletConnectProjectIdConfigured } = await import(
+    "@/lib/walletAuthority/client/evmConnectionUi"
+  );
+  if (isMobileWalletContext() && walletConnectProjectIdConfigured()) {
+    const { connectEvmWalletViaWalletConnect } = await import(
+      "@/lib/walletAuthority/client/walletConnectProvider"
+    );
+    const connection = await connectEvmWalletViaWalletConnect(options?.chainId ?? 1);
+    return { ...connection, method: "walletconnect" };
+  }
+
+  throw new Error("No injected wallet found in this browser.");
 }
 
 /** Sign a SIWE challenge message via personal_sign (MetaMask-compatible). */

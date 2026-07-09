@@ -3,7 +3,9 @@
 // DEMO — tokenized asset access page; unlocks only after live receipt validation.
 
 import { useCallback, useEffect, useState } from "react";
+import { EvmWalletConnectActions } from "@/components/wallet/EvmWalletConnectActions";
 import { connectEvmWallet } from "@/lib/walletAuthority/client/bindEvmWallet";
+import { resolveEvmConnectionUiStateFromWindow } from "@/lib/walletAuthority/client/evmConnectionUi";
 
 export default function DemoPartnerClient() {
   const [wallet, setWallet] = useState<string | null>(null);
@@ -13,6 +15,12 @@ export default function DemoPartnerClient() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [connectLoading, setConnectLoading] = useState(false);
+  const [uiState, setUiState] = useState(resolveEvmConnectionUiStateFromWindow);
+
+  useEffect(() => {
+    setUiState(resolveEvmConnectionUiStateFromWindow());
+  }, []);
 
   const validate = useCallback(async (requestId: string) => {
     const res = await fetch(`/api/demo/partner-access/validate?authorization_request_id=${requestId}`);
@@ -37,20 +45,23 @@ export default function DemoPartnerClient() {
     if (st) setStatus(st);
   }, [validate]);
 
-  async function connectMetaMask() {
+  async function connectWithMethod(method: "injected" | "walletconnect") {
+    setConnectLoading(true);
     setError("");
     try {
-      const connection = await connectEvmWallet();
+      const connection = await connectEvmWallet({ method });
       setWallet(connection.address);
       setChainId(connection.chainId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "MetaMask connect failed");
+      setError(e instanceof Error ? e.message : "Wallet connect failed");
+    } finally {
+      setConnectLoading(false);
     }
   }
 
   async function startVerify() {
     if (!wallet) {
-      setError("Connect MetaMask first.");
+      setError("Connect a wallet first.");
       return;
     }
     setLoading(true);
@@ -82,9 +93,17 @@ export default function DemoPartnerClient() {
       </p>
 
       <div style={{ margin: "1.25rem 0", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <button type="button" onClick={() => void connectMetaMask()} style={{ padding: "0.6rem", cursor: "pointer", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#f0f0f0" }}>
-          {wallet ? `Connected: ${wallet.slice(0, 8)}…` : "Connect MetaMask"}
-        </button>
+        {!wallet ? (
+          <EvmWalletConnectActions
+            uiState={uiState}
+            loading={connectLoading}
+            connectOnly
+            onInjected={() => void connectWithMethod("injected")}
+            onWalletConnect={() => void connectWithMethod("walletconnect")}
+          />
+        ) : (
+          <p style={{ fontSize: "0.8rem", color: "#a78bfa" }}>Connected: {wallet.slice(0, 8)}… (chain {chainId})</p>
+        )}
         <button type="button" onClick={() => void startVerify()} disabled={loading || !wallet} style={{ padding: "0.65rem", cursor: "pointer", borderRadius: 6, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 600 }}>
           {loading ? "Starting…" : "Verify eligibility (Abraxas Connect)"}
         </button>
