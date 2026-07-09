@@ -188,7 +188,7 @@ export function PassportSetupPanel({
               <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
                 No seed phrase. Google sign-in creates your Abraxas account and Sui wallet automatically.
               </p>
-              <ZkLoginSignIn />
+              <ZkLoginSignIn returnPath={returnPath ? decodeURIComponent(returnPath) : undefined} />
             </div>
           )}
 

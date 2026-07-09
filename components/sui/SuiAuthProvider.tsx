@@ -31,7 +31,7 @@ interface SuiAuthContextValue {
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (options?: { returnPath?: string }) => Promise<void>;
   signOut: () => void;
 }
 
@@ -61,9 +61,9 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (options?: { returnPath?: string }) => {
     setError(null);
-    const result = await startGoogleZkLogin();
+    const result = await startGoogleZkLogin({ returnPath: options?.returnPath });
     if (!result.ok) setError(result.error);
   }, []);
 

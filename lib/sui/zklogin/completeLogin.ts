@@ -8,6 +8,8 @@ import {
   saveUserSession,
   type ZkLoginUserSession,
 } from "./session";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSessionClient";
+import { mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
 import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
@@ -75,15 +77,9 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
 
   clearPendingSession();
 
-  const sessionRes = await fetch("/api/auth/browser-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ sui_address: regData.sui_address }),
-  });
-  if (!sessionRes.ok) {
-    const errData = (await sessionRes.json().catch(() => ({}))) as { error?: string };
-    console.warn("[zkLogin] browser session cookie not set:", errData.error ?? sessionRes.status);
+  const sessionResult = await ensureBrowserSession(regData.sui_address);
+  if (!sessionResult.ok) {
+    throw new Error(mapBrowserSessionSetupFailure(sessionResult.reason, sessionResult.status));
   }
 
   return session;

@@ -8,8 +8,12 @@ import {
   ensureBrowserSession,
   probeBrowserSession,
 } from "@/lib/auth/ensureBrowserSessionClient";
-import { mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
+import {
+  CONNECT_SIGN_IN_PROMPT,
+  mapBrowserSessionSetupFailure,
+} from "@/lib/auth/sessionErrors";
 import { loadUserSession } from "@/lib/sui/zklogin/session";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { useBindEvmWallet } from "@/lib/walletAuthority/client/useBindEvmWallet";
 import { ensurePassportBrowserSessionForBind } from "@/lib/walletAuthority/client/bindEvmWallet";
 import { mapWalletApiError } from "@/lib/walletAuthority/client/sessionHints";
@@ -38,6 +42,10 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
   const [consentError, setConsentError] = useState("");
   const [sessionSync, setSessionSync] = useState<SessionSyncState>("loading");
   const [sessionSyncError, setSessionSyncError] = useState("");
+  const [signInBusy, setSignInBusy] = useState(false);
+
+  const connectReturnPath = `/connect/authorize?request=${requestId}`;
+  const { signInWithGoogle, isConfigured, error: authError } = useSuiAuth();
 
   const expectedWallet = preview?.authorization.wallet_address ?? null;
   const {
@@ -73,7 +81,7 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
     setSessionSync(after.authenticated ? "ready" : "error");
     if (!after.authenticated) {
       setSessionSyncError(
-        "Passport sign-in could not be confirmed in this browser. Open Passport here, sign in, then return.",
+        "Passport sign-in could not be confirmed in this browser. Sign in again on this page, then retry.",
       );
     }
   }, []);
@@ -89,6 +97,25 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
     void load().catch(e => setLoadError(e instanceof Error ? e.message : "Load failed"));
     void syncPassportSession();
   }, [load, syncPassportSession]);
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") {
+        void syncPassportSession();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [syncPassportSession]);
+
+  async function handleConnectSignIn() {
+    setSignInBusy(true);
+    try {
+      await signInWithGoogle({ returnPath: connectReturnPath });
+    } finally {
+      setSignInBusy(false);
+    }
+  }
 
   async function consent() {
     setConsentLoading(true);
@@ -122,25 +149,55 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
   }
 
   const needsEvmBind = preview.authorization.chain === "evm" && preview.authorization.wallet_address;
-  const loading = bindLoading || consentLoading || sessionSync === "loading";
-  const error = bindError ?? consentError ?? sessionSyncError;
-  const passportHref = `/passport?return=${encodeURIComponent(`/connect/authorize?request=${requestId}`)}`;
+  const sessionReady = sessionSync === "ready";
+  const sessionLoading = sessionSync === "loading";
+  const loading = bindLoading || consentLoading || sessionLoading || signInBusy;
+  const showBindError = bindError && !sessionLoading;
+  const showConsentError = consentError && !sessionLoading;
+  const showSessionError = sessionSyncError && sessionSync === "error";
+  const error = showBindError ?? showConsentError ?? (showSessionError ? sessionSyncError : "");
+  const passportHref = `/passport?return=${encodeURIComponent(connectReturnPath)}`;
 
   return (
     <div style={{ maxWidth: 520, margin: "2rem auto", padding: "1.5rem", fontFamily: "system-ui,sans-serif", color: "#f0f0f0", background: "#0d1017", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)" }}>
       <div style={{ fontSize: "0.7rem", color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 8 }}>ABRAXAS CONNECT</div>
       <h1 style={{ fontSize: "1.1rem", margin: "0 0 1rem" }}>Authorization request</h1>
 
-      {sessionSync === "needs_sign_in" && (
-        <p style={{ fontSize: "0.78rem", color: "#FBBF24", marginBottom: "0.75rem", lineHeight: 1.5 }}>
-          Sign in to Passport in this browser before binding or consenting.
+      {sessionLoading && (
+        <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", marginBottom: "0.75rem", lineHeight: 1.5 }}>
+          Confirming your Passport session…
         </p>
       )}
 
-      {sessionSync === "loading" && (
-        <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", marginBottom: "0.75rem" }}>
-          Confirming Passport session in this browser…
-        </p>
+      {sessionSync === "needs_sign_in" && !sessionLoading && (
+        <div style={{ marginBottom: "1rem", padding: "0.85rem", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 8 }}>
+          <p style={{ fontSize: "0.82rem", color: "#FBBF24", margin: "0 0 0.75rem", lineHeight: 1.5 }}>
+            {CONNECT_SIGN_IN_PROMPT}
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleConnectSignIn()}
+            disabled={signInBusy || !isConfigured}
+            style={{
+              width: "100%",
+              padding: "0.7rem",
+              cursor: isConfigured && !signInBusy ? "pointer" : "not-allowed",
+              background: isConfigured ? "#14F195" : "rgba(255,255,255,0.15)",
+              color: "#000",
+              border: "none",
+              borderRadius: 6,
+              fontWeight: 600,
+              fontSize: "0.85rem",
+            }}
+          >
+            {signInBusy ? "Redirecting to Google…" : "Continue with Google"}
+          </button>
+          {(authError || !isConfigured) && (
+            <p style={{ fontSize: "0.72rem", color: "#f26b6b", marginTop: "0.5rem", marginBottom: 0 }}>
+              {authError ?? "Google sign-in is not configured on this deployment."}
+            </p>
+          )}
+        </div>
       )}
 
       <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
@@ -165,7 +222,7 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
         ))}
       </div>
 
-      {needsEvmBind && !bound && sessionSync !== "needs_sign_in" && (
+      {needsEvmBind && !bound && sessionReady && (
         <EvmWalletConnectActions
           uiState={uiState}
           loading={bindLoading}
@@ -186,7 +243,7 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
       <button
         type="button"
         onClick={() => void consent()}
-        disabled={loading || (needsEvmBind && !bound) || preview.authorization.status === "expired" || sessionSync === "needs_sign_in"}
+        disabled={loading || (needsEvmBind && !bound) || preview.authorization.status === "expired" || !sessionReady}
         style={{ width: "100%", padding: "0.75rem", cursor: "pointer", background: "#14F195", color: "#000", border: "none", borderRadius: 6, fontWeight: 600 }}
       >
         {consentLoading ? "Processing…" : "Consent and evaluate policy"}
@@ -198,9 +255,11 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
         Expires {new Date(preview.authorization.expires_at).toLocaleString()}.
       </p>
 
-      <Link href={passportHref} style={{ fontSize: "0.75rem", color: "#a78bfa" }}>
-        Open Passport in this browser →
-      </Link>
+      {sessionSync !== "needs_sign_in" && (
+        <Link href={passportHref} style={{ fontSize: "0.75rem", color: "#a78bfa" }}>
+          Open Passport in this browser →
+        </Link>
+      )}
     </div>
   );
 }

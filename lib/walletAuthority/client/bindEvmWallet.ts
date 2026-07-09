@@ -6,7 +6,7 @@ import {
   ensureBrowserSession,
   probeBrowserSession,
 } from "@/lib/auth/ensureBrowserSessionClient";
-import { mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
+import { CONNECT_SIGN_IN_PROMPT, mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
 import { loadUserSession } from "@/lib/sui/zklogin/session";
 import {
   connectEvmWallet,
@@ -47,7 +47,7 @@ export async function ensurePassportBrowserSessionForBind(): Promise<void> {
 
   const zk = loadUserSession();
   if (!zk?.suiAddress) {
-    throw new Error("Sign in to Passport in this browser before binding your wallet.");
+    throw new Error(CONNECT_SIGN_IN_PROMPT);
   }
 
   const ensured = await ensureBrowserSession(zk.suiAddress);
@@ -58,7 +58,7 @@ export async function ensurePassportBrowserSessionForBind(): Promise<void> {
   const after = await probeBrowserSession();
   if (!after.authenticated) {
     throw new Error(
-      "Passport sign-in could not be confirmed in this browser. Open Passport on this page, sign in, then try binding again.",
+      "Passport sign-in could not be confirmed in this browser. Sign in again on this page, then retry binding.",
     );
   }
 }

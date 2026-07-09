@@ -59,6 +59,6 @@ describe("resolveEvmConnectionUiState", () => {
       hasInjectedProvider: true,
       isMobile: false,
     });
-    expect(state.sessionHint).toMatch(/this browser tab/i);
+    expect(state.sessionHint).toMatch(/Sign in on this page/i);
   });
 });
