@@ -1,20 +1,22 @@
 "use client";
 // FILE: components/passport/UnifiedWalletBindingsPanel.tsx
-// Single source of truth UI — all wallet bindings (Sui + EVM) for this Passport subject.
+// Canonical wallet list — Sui/zkLogin first; MetaMask optional.
 
 import { useCallback, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EvmWalletConnectActions } from "@/components/wallet/EvmWalletConnectActions";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import { useBindEvmWallet } from "@/lib/walletAuthority/client/useBindEvmWallet";
+import { mapEvmBindError } from "@/lib/walletAuthority/client/mapEvmBindError";
 import { Btn } from "@/components/redesign/ui";
 import { PassportStepPurpose } from "@/components/passport/PassportStepPurpose";
 import { PASSPORT_STEPS } from "@/lib/passport/passportStepCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 const RED = "#EF4444";
+
+const EVM_OPTIONAL = process.env.NEXT_PUBLIC_EVM_WALLET_OPTIONAL !== "false";
 
 export interface WalletBindingView {
   id: string;
@@ -35,10 +37,13 @@ async function fetchWalletBindings(): Promise<WalletBindingView[]> {
 }
 
 function formatAddress(chain: string, address: string): string {
-  if (chain === "evm") {
-    return `${address.slice(0, 6)}…${address.slice(-4)}`;
-  }
+  if (chain === "evm") return `${address.slice(0, 6)}…${address.slice(-4)}`;
   return truncateSuiAddress(address, 8, 6);
+}
+
+function chainLabel(chain: string): string {
+  if (chain === "evm") return "MetaMask / EVM";
+  return "Sui / Google sign-in";
 }
 
 function statusColor(status: string): string {
@@ -59,6 +64,7 @@ export function UnifiedWalletBindingsPanel({
   const queryClient = useQueryClient();
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
+  const [evmOpen, setEvmOpen] = useState(false);
 
   const { data: wallets = [], isLoading, refetch } = useQuery({
     queryKey: ["wallet-bindings", suiAddress],
@@ -90,7 +96,7 @@ export function UnifiedWalletBindingsPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: "user_revoked_binding" }),
       });
-      const data = await res.json() as { error?: string; revoked_claim_ids?: string[] };
+      const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Revoke failed");
       await refresh();
     } catch (e) {
@@ -102,6 +108,9 @@ export function UnifiedWalletBindingsPanel({
 
   const activeSui = wallets.find(w => w.chain === "sui" && w.binding_status === "active");
   const activeEvm = wallets.filter(w => w.chain === "evm" && w.binding_status === "active");
+  const suiReady = Boolean(activeSui);
+
+  const displayError = actionError || (evmBindError ? mapEvmBindError(evmBindError) : "");
 
   return (
     <section style={{
@@ -111,39 +120,25 @@ export function UnifiedWalletBindingsPanel({
       padding: "1.15rem 1.25rem",
       marginBottom: "1.25rem",
     }} aria-labelledby="unified-wallets-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.35rem",
-      }}>
-        Wallets
-      </div>
       <h2 id="unified-wallets-heading" style={{
         fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
-        color: "var(--text-primary)", margin: "0 0 0.5rem",
+        color: "var(--text-primary)", margin: "0 0 0.35rem",
       }}>
-        Connected wallets
+        Wallets
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 560,
       }}>
-        Every chain tied to this Passport. Remove a wallet anytime — partner access updates immediately.
+        Your Google sign-in creates a Sui wallet automatically. That is enough for pilot flows like Cielo.
+        MetaMask is optional for partners that need EVM.
       </p>
 
-      <PassportStepPurpose title={PASSPORT_STEPS.addWallet.title} purpose={PASSPORT_STEPS.addWallet.purpose} />
-
       {isLoading && (
-        <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading bindings…</p>
+        <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading…</p>
       )}
 
-      {!isLoading && wallets.length === 0 && (
-        <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-          No wallet bindings yet. Bind Sui or MetaMask below.
-        </p>
-      )}
-
-      {wallets.length > 0 && (
+      {!isLoading && wallets.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem", marginBottom: "1rem" }}>
           {wallets.map(w => (
             <div key={w.id} style={{
@@ -153,14 +148,13 @@ export function UnifiedWalletBindingsPanel({
             }}>
               <div style={{ flex: "1 1 180px", minWidth: 0 }}>
                 <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  {w.chain === "evm" ? "MetaMask / EVM" : "Sui / zkLogin"}
-                  {w.chain_id ? ` · chain ${w.chain_id}` : ""}
+                  {chainLabel(w.chain)}
                 </div>
-                <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", wordBreak: "break-all" }}>
+                <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", wordBreak: "break-all" }}>
                   {formatAddress(w.chain, w.wallet_address)}
                 </div>
                 <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", marginTop: 2 }}>
-                  Added {new Date(w.verified_at).toLocaleDateString()} · {w.binding_method}
+                  Added {new Date(w.verified_at).toLocaleDateString()} · {w.binding_status}
                 </div>
               </div>
               <div style={{
@@ -181,7 +175,7 @@ export function UnifiedWalletBindingsPanel({
                     cursor: revokingId === w.id ? "wait" : "pointer",
                   }}
                 >
-                  {revokingId === w.id ? "Revoking…" : "Revoke"}
+                  {revokingId === w.id ? "Removing…" : "Remove"}
                 </button>
               )}
             </div>
@@ -189,22 +183,45 @@ export function UnifiedWalletBindingsPanel({
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-        {!activeSui && onSuiBind && (
-          <div>
-            <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, marginBottom: "0.4rem" }}>
-              Add Sui wallet
-            </div>
-            <Btn size="sm" onClick={onSuiBind} loading={suiBindBusy} disabled={suiBindBusy}>
-              Sign to connect →
-            </Btn>
-          </div>
-        )}
+      {!suiReady && onSuiBind && (
+        <div style={{
+          padding: "0.85rem", borderRadius: 12,
+          background: "rgba(16,185,129,0.06)", border: `1px solid ${ACCENT}44`,
+          marginBottom: "1rem",
+        }}>
+          <PassportStepPurpose title={PASSPORT_STEPS.addWallet.title} purpose="Sign once to prove you control your Sui wallet. No funds move." />
+          <Btn size="lg" onClick={onSuiBind} loading={suiBindBusy} disabled={suiBindBusy}>
+            Sign to connect Sui wallet →
+          </Btn>
+        </div>
+      )}
 
-        <div>
-          <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, marginBottom: "0.4rem" }}>
-            Add MetaMask (EVM)
+      {suiReady && (
+        <div style={{
+          padding: "0.75rem 0.85rem", borderRadius: 12,
+          background: `${ACCENT}12`, border: `1px solid ${ACCENT}33`,
+          marginBottom: "1rem",
+        }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: ACCENT }}>
+            Sui wallet connected — ready for pilot actions
           </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>
+            You can use Cielo and partner demos without MetaMask.
+          </p>
+        </div>
+      )}
+
+      {EVM_OPTIONAL && (
+        <details open={evmOpen} onToggle={e => setEvmOpen((e.target as HTMLDetailsElement).open)}>
+          <summary style={{
+            fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
+            color: "var(--text-secondary)", cursor: "pointer", marginBottom: "0.5rem",
+          }}>
+            Optional — add MetaMask (EVM)
+          </summary>
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
+            Only needed when a partner requires an Ethereum wallet. Sui remains your primary Passport wallet.
+          </p>
           {!evmBound && (
             <EvmWalletConnectActions
               uiState={uiState}
@@ -217,15 +234,15 @@ export function UnifiedWalletBindingsPanel({
           )}
           {evmBound && activeEvm.length > 0 && (
             <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: 0 }}>
-              EVM wallet bound: {formatAddress("evm", activeEvm[0].wallet_address)}
+              EVM connected: {formatAddress("evm", activeEvm[0].wallet_address)}
             </p>
           )}
-        </div>
-      </div>
+        </details>
+      )}
 
-      {(actionError || evmBindError) && (
+      {displayError && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, marginTop: "0.75rem", marginBottom: 0 }}>
-          {actionError || evmBindError}
+          {displayError}
         </p>
       )}
     </section>

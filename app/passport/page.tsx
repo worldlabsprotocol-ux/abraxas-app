@@ -244,7 +244,7 @@ function PassportPageInner() {
               </p>
             )}
 
-            {setup.profileComplete && (
+            {searchParams.get("details") === "1" && setup.profileComplete && (
               <DeveloperDetails
               title="Technical details"
               summary="Built with zkLogin, W3C-compatible credentials, wallet binding, consent receipts, and Sui-based verification states."
@@ -297,11 +297,6 @@ function PassportPageInner() {
               </div>
             </DeveloperDetails>
             )}
-
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", paddingBottom: "3rem" }}>
-              <Btn href="/#registry">Browse registry →</Btn>
-              <Btn href="/build" variant="tertiary">Submit an asset</Btn>
-            </div>
           </>
         )}
       </div>

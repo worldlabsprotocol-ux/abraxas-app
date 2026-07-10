@@ -53,12 +53,13 @@ export function PassportProfileHeader({
           }}>
             {displayLabel}
           </h2>
-          {profile?.username && (
-            <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-              @{profile.username}
-            </span>
-          )}
         </div>
+
+        {profile?.username && (
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.35rem" }}>
+            @{profile.username}
+          </p>
+        )}
 
         {profile?.bio && (
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.35rem", lineHeight: 1.5 }}>
