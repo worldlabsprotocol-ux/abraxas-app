@@ -12,74 +12,86 @@ export interface ProductLoopStep {
   imageObjectPosition?: string;
   badge?: string;
   metrics?: { label: string; value: string }[];
-  cta?: string;
+  /** Real route for this step — wired from homepage demo. */
+  href: string;
+  ctaLabel: string;
 }
 
 export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "browse",
     title: "Browse verified assets",
-    subtitle: "Assurance levels and registry state — no login required.",
+    subtitle: "See assurance levels and registry records — no login required.",
     durationMs: 6000,
     image: "/assets/smyrna/011.webp",
     badge: "Public registry",
     metrics: [
       { label: "Assets", value: "4 listed" },
       { label: "Assurance", value: "L1–L4" },
-      { label: "ID check", value: "When needed" },
+      { label: "Login", value: "Not required" },
     ],
+    href: "/#registry",
+    ctaLabel: "Browse registry",
   },
   {
     id: "book",
-    title: "Book with Apple Pay or card",
-    subtitle: "Pick dates · pay in fiat · settles automatically on-chain.",
+    title: "Start a verified stay",
+    subtitle: "Pick dates at Cielo · Passport checks eligibility · share minimum proof.",
     durationMs: 6000,
     image: CIELO_PORCH_IMAGE.src,
     imageObjectPosition: "center 40%",
-    badge: "Seamless checkout",
+    badge: "Cielo pilot",
     metrics: [
-      { label: "Primary", value: "Apple Pay" },
-      { label: "Alt", value: "USDC" },
-      { label: "Est.", value: "~$1,240" },
+      { label: "Asset", value: "Cielo Sunrise" },
+      { label: "Proof", value: "Eligibility" },
+      { label: "Est.", value: "Verified rate" },
     ],
+    href: "/cielo/verified-rate",
+    ctaLabel: "Try Cielo verified rate",
   },
   {
     id: "signin",
     title: "Sign in with Google",
-    subtitle: "Your wallet is ready in one click — no seed phrase, no extension.",
+    subtitle: "Your Sui wallet is ready in one click — no seed phrase, no extension.",
     durationMs: 5000,
     badge: "Passport ready",
     metrics: [
       { label: "Account", value: "Google" },
-      { label: "Wallet", value: "Apple Wallet" },
+      { label: "Wallet", value: "Sui / zkLogin" },
       { label: "ID check", value: "Optional" },
     ],
+    href: "/passport",
+    ctaLabel: "Create Passport",
   },
   {
-    id: "pay",
-    title: "Pay without thinking about rails",
-    subtitle: "Fiat on-ramp or stablecoin · settlement captured · on-chain verify.",
+    id: "consent",
+    title: "Approve what gets shared",
+    subtitle: "Consent ceremony · partner sees eligibility only · receipt saved to Access.",
     durationMs: 6000,
     image: CIELO_HERO_IMAGE.src,
     imageObjectPosition: CIELO_HERO_IMAGE.objectPosition,
-    badge: "Payment captured",
+    badge: "Consent captured",
     metrics: [
-      { label: "Method", value: "Apple Pay" },
-      { label: "Settles", value: "USDC" },
-      { label: "Status", value: "Captured ✓" },
+      { label: "Shared", value: "Minimum proof" },
+      { label: "Stored", value: "Access tab" },
+      { label: "Status", value: "Approved ✓" },
     ],
+    href: "/passport?tab=access",
+    ctaLabel: "View Access tab",
   },
   {
     id: "verify",
     title: "Verify on the public registry",
-    subtitle: "Any partner checks your credential — assurance levels L1–L4, instant.",
+    subtitle: "Any partner checks the record — portable proof, instant lookup.",
     durationMs: 7000,
     badge: "✓ PORTABLE PROOF",
     metrics: [
-      { label: "Standard", value: "W3C VC" },
-      { label: "API", value: "/verify" },
+      { label: "Record", value: "ABX-RE-HOSP-001" },
+      { label: "Tool", value: "/verify" },
       { label: "Reuse", value: "Any partner" },
     ],
+    href: "/verify/ABX-RE-HOSP-001",
+    ctaLabel: "Verify Cielo record",
   },
 ];
 

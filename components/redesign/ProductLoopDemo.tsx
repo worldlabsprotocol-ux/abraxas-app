@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/redesign/ProductLoopDemo.tsx
-// ~30s auto-advancing product walkthrough: browse → book → sign-in → pay → verify.
+// Auto-advancing product walkthrough with real deep-links per step.
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PRODUCT_LOOP_STEPS } from "@/lib/productLoopSteps";
+import { PRODUCT_LOOP_STEPS, PRODUCT_LOOP_TOTAL_MS } from "@/lib/productLoopSteps";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { ProductLoopStepVisual } from "./ProductLoopStepVisual";
 import { Btn } from "./ui";
@@ -30,7 +31,7 @@ export function ProductLoopDemo() {
   const progress = ((index + 1) / PRODUCT_LOOP_STEPS.length) * 100;
 
   return (
-    <section>
+    <section id="product-loop" aria-labelledby="product-loop-heading">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
         <div>
           <div style={{
@@ -46,7 +47,7 @@ export function ProductLoopDemo() {
               Example proof loop — same engine partners integrate
             </span>
           </div>
-          <h2 style={{
+          <h2 id="product-loop-heading" style={{
             fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
             letterSpacing: "-0.03em", lineHeight: 1.05,
             color: "var(--text-primary)", margin: 0, maxWidth: 520,
@@ -57,7 +58,7 @@ export function ProductLoopDemo() {
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.6, maxWidth: 480, margin: "0.5rem 0 0",
           }}>
-            One reference journey — not a separate product line.
+            One reference journey — each step links to the live pilot.
           </p>
         </div>
         <button
@@ -149,7 +150,7 @@ export function ProductLoopDemo() {
                   {step.subtitle}
                 </div>
                 {step.metrics && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
                     {step.metrics.map(m => (
                       <div key={m.label} style={{
                         padding: "0.35rem 0.65rem", borderRadius: 8,
@@ -161,6 +162,18 @@ export function ProductLoopDemo() {
                     ))}
                   </div>
                 )}
+                <Link
+                  href={step.href}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "0.35rem",
+                    padding: "0.55rem 0.95rem", borderRadius: 999,
+                    background: ACCENT, color: "#04130C",
+                    fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800,
+                    textDecoration: "none",
+                  }}
+                >
+                  {step.ctaLabel} →
+                </Link>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -183,33 +196,39 @@ export function ProductLoopDemo() {
             Jump to step
           </div>
           {PRODUCT_LOOP_STEPS.map((s, i) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => { setIndex(i); setPaused(false); }}
-              style={{
-                textAlign: "left", padding: "0.65rem 0.75rem", borderRadius: 10,
-                border: `1px solid ${i === index ? "rgba(16,185,129,0.4)" : "var(--border)"}`,
-                background: i === index ? "rgba(16,185,129,0.1)" : "var(--surface)",
-                cursor: "pointer",
-              }}
-            >
-              <div style={{ fontFamily: MONO, fontSize: "0.52rem", color: i === index ? ACCENT : "var(--text-muted)", marginBottom: 2 }}>
-                0{i + 1}
-              </div>
-              <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: i === index ? 700 : 500, color: "var(--text-primary)" }}>
-                {s.title}
-              </div>
-            </button>
+            <div key={s.id} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+              <button
+                type="button"
+                onClick={() => { setIndex(i); setPaused(false); }}
+                style={{
+                  textAlign: "left", padding: "0.65rem 0.75rem", borderRadius: 10,
+                  border: `1px solid ${i === index ? "rgba(16,185,129,0.4)" : "var(--border)"}`,
+                  background: i === index ? "rgba(16,185,129,0.1)" : "var(--surface)",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ fontFamily: MONO, fontSize: "0.52rem", color: i === index ? ACCENT : "var(--text-muted)", marginBottom: 2 }}>
+                  0{i + 1}
+                </div>
+                <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: i === index ? 700 : 500, color: "var(--text-primary)" }}>
+                  {s.title}
+                </div>
+              </button>
+              {i === index && (
+                <Btn href={s.href} size="sm" variant="secondary">
+                  {s.ctaLabel} →
+                </Btn>
+              )}
+            </div>
           ))}
 
           <div style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href="/flagship" size="sm">Book genesis pilot →</Btn>
-            <Btn href="#test-network" variant="secondary" size="sm">Test the network</Btn>
+            <Btn href="/cielo/verified-rate" size="sm">Run full Cielo loop →</Btn>
+            <Btn href="/case-studies/cielo" variant="secondary" size="sm">Case study</Btn>
           </div>
 
           <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
-            Auto-advances every 5 to 7s · full loop ~{Math.round(PRODUCT_LOOP_STEPS.reduce((a, s) => a + s.durationMs, 0) / 1000)}s
+            Auto-advances every 5 to 7s · full loop ~{Math.round(PRODUCT_LOOP_TOTAL_MS / 1000)}s
           </p>
         </div>
       </div>

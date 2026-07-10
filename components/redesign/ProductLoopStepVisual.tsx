@@ -133,7 +133,7 @@ function SignInMock() {
             <span style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "#1f1f1f" }}>Continue with Google</span>
           </div>
           <div style={{ marginTop: "0.85rem", display: "flex", justifyContent: "center", gap: "0.35rem", flexWrap: "wrap" }}>
-            {["Passport ready", "Apple Wallet", "did:sui"].map(tag => (
+            {["Passport ready", "Sui wallet", "Optional ID"].map(tag => (
               <span
                 key={tag}
                 style={{
@@ -156,34 +156,44 @@ function SignInMock() {
   );
 }
 
-function PayMock() {
+function ConsentMock() {
   return (
     <PanelShell>
-      <Card width={270}>
-        <div style={{ padding: "1.1rem 1rem 0.85rem", textAlign: "center" }}>
+      <Card width={290}>
+        <div style={{ padding: "1.1rem 1rem 0.85rem" }}>
           <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.65rem" }}>
-            Confirm payment
+            Partner request
           </div>
-          <div style={{ fontFamily: FONT, fontSize: "1.65rem", fontWeight: 800, color: "#fff", marginBottom: "0.15rem" }}>$1,240.00</div>
-          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.55)", marginBottom: "1rem" }}>Cielo Sunrise · 3 nights</div>
+          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "#fff", marginBottom: "0.35rem" }}>
+            Cielo verified guest rate
+          </div>
+          <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.55, marginBottom: "0.85rem" }}>
+            Share eligibility proof only — not your full profile or documents.
+          </div>
+          {[
+            { k: "Shared", v: "Eligibility confirmed" },
+            { k: "Not shared", v: "ID documents" },
+            { k: "Receipt", v: "Saved to Access" },
+          ].map(row => (
+            <div key={row.k} style={{ display: "flex", justifyContent: "space-between", padding: "0.35rem 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)" }}>{row.k}</span>
+              <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#fff", fontWeight: 600 }}>{row.v}</span>
+            </div>
+          ))}
           <div
             style={{
-              padding: "0.75rem",
-              borderRadius: 12,
-              background: "#000",
-              border: "1px solid rgba(255,255,255,0.12)",
-              marginBottom: "0.65rem",
+              marginTop: "0.85rem",
+              padding: "0.65rem",
+              borderRadius: 10,
+              background: ACCENT,
+              textAlign: "center",
+              fontFamily: FONT,
+              fontSize: "0.82rem",
+              fontWeight: 800,
+              color: "#04130C",
             }}
           >
-            <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700, color: "#fff" }}> Pay with Pass</div>
-            <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Visa ··· 4242</div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem" }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: ACCENT, boxShadow: `0 0 8px ${ACCENT}` }} />
-            <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: ACCENT }}>Payment captured ✓</span>
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", marginTop: "0.65rem" }}>
-            Settlement · USDC · Sui testnet
+            Approve & share proof
           </div>
         </div>
       </Card>
@@ -282,8 +292,8 @@ export function ProductLoopStepVisual({ stepId }: { stepId: string }) {
       return <BookMock />;
     case "signin":
       return <SignInMock />;
-    case "pay":
-      return <PayMock />;
+    case "consent":
+      return <ConsentMock />;
     case "verify":
       return <VerifyMock />;
     default:
