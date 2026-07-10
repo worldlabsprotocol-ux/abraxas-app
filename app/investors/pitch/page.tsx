@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/investors/pitch/page.tsx
-// Web pitch deck — 12 slides for VC meetings.
+// Full-screen story deck — same slides as homepage mini deck.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -28,7 +28,7 @@ export default function PitchDeckPage() {
             Abraxas Protocol
           </h1>
         </div>
-        <Btn href="/investors" variant="secondary" size="sm">Data room</Btn>
+        <Btn href="/" variant="secondary" size="sm">Home</Btn>
       </div>
 
       <div style={{

@@ -52,7 +52,7 @@ export default function DocsPage() {
             { label: "AIL specification", href: "/docs/ail" },
             { label: "Sui integration", href: "/docs/sui" },
             { label: "Passport spec", href: "/docs/passport-spec" },
-            { label: "Investor data room", href: "/investors" },
+            { label: "Documentation hub", href: "/docs" },
             { label: "Live metrics", href: "/metrics" },
             { label: "Architecture", href: "/docs/architecture" },
             { label: "Roadmap", href: "/roadmap" },

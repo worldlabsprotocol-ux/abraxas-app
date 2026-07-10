@@ -134,7 +134,7 @@ export default function SmyrnaCaseStudyPage() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/case-studies/cielo" size="lg">Compare: Cielo →</Btn>
-        <Btn href="/investors" variant="secondary" size="lg">Capital partner intake</Btn>
+        <Btn href="/integrations/outreach" variant="secondary" size="lg">Partner outreach</Btn>
         <Link href="/#registry" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
           Public registry →
         </Link>

@@ -39,7 +39,11 @@ function HomeContent() {
         <HomeNetworkBrief />
         <TrustFrameworkTeaser />
         <div id="registry" style={{ paddingTop: "clamp(2rem, 5vw, 3rem)", borderTop: "1px solid var(--border-strong)" }}>
-          <AssetsExplorer title="Browse registry" compact />
+          <AssetsExplorer
+            title="Example verified assets"
+            eyebrow="Registry"
+            home
+          />
         </div>
         <HomeClosingBand />
       </div>

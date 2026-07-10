@@ -30,7 +30,7 @@ export const SMYRNA_CONFLICTS = {
       implication: "Metrics below are sourced from public records and owner statements; independent appraisal attestation is in progress.",
     },
     {
-      topic: "Capital partner structure",
+      topic: "Partner structure options",
       disclosure: "Deal structures (on-chain equity loan, fractional appreciation, STR income) are illustrative options — not offers. Securities counsel required before any investment solicitation.",
       implication: "Case study documents verification progress and asset quality, not a live offering.",
     },
@@ -79,7 +79,7 @@ export const SMYRNA_SOURCES = [
 export const SMYRNA_PROOF = [
   { label: "Public registry card", desc: "Asset explorer entry with verification state", href: "/#registry" },
   { label: "Verify asset ID", desc: "Registry lookup when pipeline stage advances", href: `/verify/${encodeURIComponent(SMYRNA_ASSET.id)}` },
-  { label: "Submit capital interest", desc: "Investor intake for verified partner flows", href: "/investors" },
+  { label: "Partner inquiry", desc: "Contact via integrations flow", href: "/integrations/outreach" },
   { label: "V5 pipeline docs", desc: "How assets move to MARKETPLACE_LIVE", href: "/build" },
 ] as const;
 
@@ -91,7 +91,7 @@ export const SMYRNA_STRUCTURES = [
   },
   {
     title: "Fractional appreciation share",
-    badge: "Investor option",
+    badge: "Structure option",
     desc: "Tokenized equity participation in Battery Atlanta corridor appreciation. Owner retains majority control.",
   },
   {

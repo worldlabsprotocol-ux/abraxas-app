@@ -38,7 +38,7 @@ Open to naming [Protocol Name] publicly after a successful pilot if that's usefu
 Best,
 [Your Name]
 [Title] · Abraxas Protocol
-https://abraxas-app.vercel.app/investors/strategy`;
+https://abraxas-app.vercel.app/roadmap`;
 
 export const OUTREACH_FOLLOWUP_TEMPLATE = `Subject: Re: Abraxas Passport pilot — quick verifier demo
 

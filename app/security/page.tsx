@@ -99,7 +99,7 @@ export default function SecurityPage() {
 
       <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", marginBottom: "2rem" }}>
         <Btn href="/security/bounty" size="lg">Bug bounty program →</Btn>
-        <Btn href="/investors/strategy" variant="secondary" size="lg">Strategic roadmap</Btn>
+        <Btn href="/roadmap" variant="secondary" size="lg">Roadmap</Btn>
       </div>
     </RedesignPage>
   );

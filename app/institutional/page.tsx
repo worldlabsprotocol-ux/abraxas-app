@@ -39,11 +39,11 @@ export default function InstitutionalPage() {
       <PageHeader
         eyebrow="Institutional"
         title="Built for scale. Honest about what is live."
-        subtitle="Diligence layer for funds, issuers, and design partners. Start at the data room for the full package."
+        subtitle="Diligence layer for funds, issuers, and design partners. Documentation and live proof paths below."
       />
 
       <ContentCard>
-        <Btn href="/investors" size="lg">Open investor data room →</Btn>
+        <Btn href="/integrations/outreach" size="lg">Partner outreach →</Btn>
       </ContentCard>
 
       <div style={{ display: "grid", gap: "1rem", marginBottom: "2rem" }}>

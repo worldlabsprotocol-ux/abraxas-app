@@ -136,7 +136,7 @@ export default function BugBountyPage() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/security" size="lg">Security overview →</Btn>
-        <Btn href="/investors/strategy" variant="secondary" size="lg">Strategic roadmap</Btn>
+        <Btn href="/roadmap" variant="secondary" size="lg">Roadmap</Btn>
       </div>
     </RedesignPage>
   );

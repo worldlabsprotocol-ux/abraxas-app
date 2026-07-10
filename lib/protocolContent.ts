@@ -116,8 +116,8 @@ export const DOCS_SECTIONS = [
     body: "GitHub: github.com/worldlabsprotocol-ux/abraxas-app. Litepaper: /docs/litepaper. Chain narrative: /docs/chain. Sui hub: /docs/sui. Operator setup: /docs/zklogin-setup. Passport spec: /docs/passport-spec. Machine-readable: GET /api/passport/spec.",
   },
   {
-    title: "Investor data room",
-    body: "Diligence hub at /investors — litepaper, live metrics, Cielo case study, tokenomics framework, security posture, and economics model.",
+    title: "Documentation hub",
+    body: "Technical and product docs at /docs — litepaper, live metrics, Cielo case study, security posture, and economics model.",
   },
 ] as const;
 

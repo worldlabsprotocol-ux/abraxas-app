@@ -199,9 +199,9 @@ export default function IntegrationsPage() {
       </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
-        <Btn href="/investors/pitch" size="lg">Pitch deck →</Btn>
+        <Btn href="/docs/why-verification" size="lg">Why verification →</Btn>
         <Btn href="/ops/cielo-e2e" variant="secondary" size="lg">Cielo E2E check</Btn>
-        <Link href="/investors" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center" }}>Data room →</Link>
+        <Link href="/roadmap" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center" }}>Roadmap →</Link>
       </div>
     </RedesignPage>
   );

@@ -140,8 +140,8 @@ export function RedesignFooter() {
           color: "var(--text-muted)",
           lineHeight: 1.6,
         }}>
-          © {new Date().getFullYear()} Abraxas Protocol, World Labs Protocol. Not investment advice.
-          RWA offerings may involve securities. Past performance does not guarantee future results.
+          © {new Date().getFullYear()} Abraxas Protocol, World Labs Protocol. Verification and attestation only — not financial advice.
+          Asset figures are sourced attestations, not guarantees. Nothing on this site is a securities offering.
         </div>
       </div>
     </footer>
