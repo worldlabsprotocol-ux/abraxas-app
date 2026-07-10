@@ -116,7 +116,7 @@ export function RedesignFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. Real assets with proof you can reuse, not another KYC form.
+              Verify once. Reuse proof where Abraxas is accepted — not another full KYC upload.
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
               Live at{" "}

@@ -156,7 +156,7 @@ export function UnifiedWalletBindingsPanel({
                   {formatAddress(w.chain, w.wallet_address)}
                 </div>
                 <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", marginTop: 2 }}>
-                  {w.binding_method} · {new Date(w.verified_at).toLocaleDateString()}
+                  Added {new Date(w.verified_at).toLocaleDateString()} · {w.binding_method}
                 </div>
               </div>
               <div style={{

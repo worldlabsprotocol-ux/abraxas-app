@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportSubTabs.tsx
-// Profile-area tabs — Overview, Wallets, Verifications, Activity.
+// Profile-area tabs — Overview, Wallets, Approvals, Activity.
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -8,12 +8,12 @@ import { usePathname, useSearchParams } from "next/navigation";
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
-export type PassportSubTab = "overview" | "wallets" | "verifications" | "activity";
+export type PassportSubTab = "overview" | "wallets" | "approvals" | "activity";
 
 const TABS: Array<{ id: PassportSubTab; label: string }> = [
   { id: "overview", label: "Overview" },
   { id: "wallets", label: "Wallets" },
-  { id: "verifications", label: "Verifications" },
+  { id: "approvals", label: "Approvals" },
   { id: "activity", label: "Activity" },
 ];
 
@@ -59,6 +59,7 @@ export function PassportSubTabs({ active }: { active: PassportSubTab }) {
 }
 
 export function parsePassportSubTab(value: string | null): PassportSubTab {
-  if (value === "wallets" || value === "verifications" || value === "activity") return value;
+  if (value === "wallets" || value === "approvals" || value === "activity") return value;
+  if (value === "verifications") return "approvals";
   return "overview";
 }

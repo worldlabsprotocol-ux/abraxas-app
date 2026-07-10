@@ -35,9 +35,15 @@ export function HomeSharpHero() {
           <p style={{
             fontFamily: FONT, fontSize: "clamp(0.92rem, 2vw, 1.02rem)",
             color: "var(--text-primary)", lineHeight: 1.65,
-            maxWidth: 560, margin: "0 0 1rem",
+            maxWidth: 560, margin: "0 0 0.65rem",
           }}>
-            Abraxas helps people prove what they control — and lets approved partners check only what they need.
+            Abraxas lets you prove what a platform needs — without repeatedly handing over everything else.
+          </p>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+            lineHeight: 1.55, maxWidth: 520, margin: "0 0 1rem",
+          }}>
+            Verify once. Reuse proof where Abraxas is accepted.
           </p>
           <p style={{
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",

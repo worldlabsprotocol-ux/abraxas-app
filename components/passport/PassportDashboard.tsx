@@ -170,6 +170,7 @@ export function PassportDashboard(props: Props) {
               progress={progress}
               returnPath={props.returnPath}
               profileComplete={props.setup.profileComplete}
+              walletBound={props.setup.walletBound}
             />
           )}
 
@@ -192,7 +193,7 @@ export function PassportDashboard(props: Props) {
             </>
           )}
 
-          {tab === "verifications" && (
+          {tab === "approvals" && (
             <>
               {props.setup.profileComplete ? (
                 <>
@@ -271,13 +272,31 @@ function OverviewTab({
   progress,
   returnPath,
   profileComplete,
+  walletBound,
 }: {
   progress: ReturnType<typeof buildPassportProgress>;
   returnPath?: string | null;
   profileComplete: boolean;
+  walletBound: boolean;
 }) {
   return (
     <>
+      {!walletBound && (
+        <section style={{
+          ...CARD,
+          border: "2px solid rgba(16,185,129,0.35)",
+          background: "rgba(16,185,129,0.06)",
+        }}>
+          <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
+            Add a wallet when you&apos;re ready
+          </h2>
+          <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.85rem" }}>
+            A wallet is optional until an action needs it — like a verified booking rate or partner request. One signature proves control; no funds move.
+          </p>
+          <Btn href="/passport?tab=wallets" size="lg">Add wallet →</Btn>
+        </section>
+      )}
+
       <section style={CARD}>
         <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem" }}>
           What you can do
@@ -310,7 +329,7 @@ function OverviewTab({
 
       <section style={{ ...CARD, background: "var(--surface-inset)" }}>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.65, margin: 0 }}>
-          Abraxas helps you prove what you control. Partners check only what their policy needs — you approve each share.
+          Abraxas lets you prove what a platform needs — without repeatedly handing over everything else.
           {" "}
           <Link href="/docs/why-verification" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>
             How verification works →

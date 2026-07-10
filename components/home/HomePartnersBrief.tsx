@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomePartnersBrief.tsx
-// One compact partner block — depth in docs.
+// Partner wedge — ask for the decision, not the document folder.
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
@@ -17,15 +17,15 @@ export function HomePartnersBrief() {
       <h2 id="partners-heading" style={{
         fontFamily: FONT, fontSize: "var(--fs-h3)", fontWeight: 800,
         letterSpacing: "-0.02em", color: "var(--text-primary)",
-        margin: "0 0 0.5rem", maxWidth: 480,
+        margin: "0 0 0.5rem", maxWidth: 520,
       }}>
-        For partners
+        Ask for the eligibility decision — not the customer&apos;s document folder.
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
         lineHeight: 1.65, maxWidth: 520, margin: "0 0 1rem",
       }}>
-        Check eligibility without re-KYC. Integrate in a few lines — approved, denied, or review with consent receipts.
+        Partners receive the minimum proof their policy requires: approved, denied, or review — with consent receipts, not raw KYC files.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         <Btn href="/integrations" variant="secondary" size="sm">Integrations →</Btn>

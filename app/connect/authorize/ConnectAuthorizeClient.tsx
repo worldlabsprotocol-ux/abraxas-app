@@ -17,6 +17,7 @@ import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { useBindEvmWallet } from "@/lib/walletAuthority/client/useBindEvmWallet";
 import { ensurePassportBrowserSessionForBind } from "@/lib/walletAuthority/client/bindEvmWallet";
 import { mapWalletApiError } from "@/lib/walletAuthority/client/sessionHints";
+import { WhatGetsSharedCard } from "@/components/consent/WhatGetsSharedCard";
 
 interface ConnectPreview {
   authorization: {
@@ -200,27 +201,28 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
         </div>
       )}
 
-      <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
-        Partner <strong>{preview.authorization.partner_id}</strong> is requesting eligibility verification
-        for policy <strong>{preview.policy_name}</strong>.
+      <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", marginBottom: "1rem" }}>
+        Review what <strong>{preview.authorization.partner_id}</strong> will receive before you approve.
       </p>
 
+      <WhatGetsSharedCard
+        partnerName={preview.authorization.partner_id}
+        policyName={preview.policy_name}
+        sharedLabels={[preview.policy_name]}
+        requestedAction={preview.authorization.requested_action}
+        willNotShareItems={preview.never_shared}
+        compact
+      />
+
       {preview.authorization.requested_action && (
-        <p style={{ fontSize: "0.8rem" }}>Action: {preview.authorization.requested_action}</p>
+        <p style={{ fontSize: "0.8rem", marginBottom: "0.75rem" }}>Action: {preview.authorization.requested_action.replace(/_/g, " ")}</p>
       )}
 
       {preview.authorization.wallet_address && (
-        <p style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "rgba(255,255,255,0.5)" }}>
-          Wallet: {preview.authorization.wallet_address}
+        <p style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "rgba(255,255,255,0.5)", marginBottom: "0.75rem" }}>
+          Wallet for this request: {preview.authorization.wallet_address.slice(0, 10)}…
         </p>
       )}
-
-      <div style={{ margin: "1rem 0", padding: "0.75rem", background: "rgba(255,255,255,0.04)", borderRadius: 6, fontSize: "0.75rem" }}>
-        <div style={{ fontWeight: 600, marginBottom: 4 }}>Never shared</div>
-        {preview.never_shared.map(item => (
-          <div key={item} style={{ color: "rgba(255,255,255,0.45)" }}>· {item}</div>
-        ))}
-      </div>
 
       {needsEvmBind && !bound && sessionReady && (
         <EvmWalletConnectActions
@@ -246,7 +248,7 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
         disabled={loading || (needsEvmBind && !bound) || preview.authorization.status === "expired" || !sessionReady}
         style={{ width: "100%", padding: "0.75rem", cursor: "pointer", background: "#14F195", color: "#000", border: "none", borderRadius: 6, fontWeight: 600 }}
       >
-        {consentLoading ? "Processing…" : "Consent and evaluate policy"}
+        {consentLoading ? "Processing…" : "Approve and continue →"}
       </button>
 
       {error && <p style={{ color: "#f26b6b", fontSize: "0.8rem", marginTop: "0.75rem" }}>{error}</p>}
