@@ -111,10 +111,10 @@ export default function TeamPage() {
       </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
-        <Btn href="/investors" size="lg">Data room →</Btn>
+        <Btn href="/docs" size="lg">Documentation →</Btn>
         <Btn href="/about" variant="secondary" size="lg">About explainer</Btn>
-        <Link href="/investors/strategy" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
-          Strategic roadmap →
+        <Link href="/roadmap" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
+          Roadmap →
         </Link>
       </div>
     </RedesignPage>

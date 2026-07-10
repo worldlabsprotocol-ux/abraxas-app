@@ -82,7 +82,7 @@ export default function LitepaperPage() {
       </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
-        <Btn href="/investors" size="lg">Full data room →</Btn>
+        <Btn href="/docs" size="lg">Full documentation →</Btn>
         <Btn href="/docs/chain" variant="secondary" size="lg">Chain architecture</Btn>
         <Btn href="/docs/ail" variant="ghost" size="lg">Technical spec (AIL)</Btn>
       </div>

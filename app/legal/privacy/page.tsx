@@ -53,7 +53,7 @@ export default function PrivacyPolicyPage() {
           submit documents for Business, Property, or Asset Owner
           verification, those documents are stored securely and reviewed by our team.</p>
           <p style={{ marginBottom:"0.5rem" }}><strong>Transaction information.</strong> When you
-          make a purchase, book a stay, or express investment interest, we collect your
+          make a purchase, book a stay, or submit a partner inquiry, we collect your
           email, the asset or item involved, the amount, and, where relevant, a
           shipping address or booking dates.</p>
           <p><strong>Automatically collected information.</strong> Like most websites, we

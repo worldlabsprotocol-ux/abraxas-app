@@ -190,15 +190,15 @@ export default function CieloCaseStudyPage() {
           "Airbnb listing bookable without Abraxas",
           "Payment digests in /transparency when captured",
           "Public verifier returns L1–L4 assurance taxonomy",
-          "E2E health check at /ops/cielo-e2e before investor demos",
+          "E2E health check at /ops/cielo-e2e before partner demos",
         ]} />
       </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
-        <Btn href="/investors/strategy" size="lg">Strategic roadmap →</Btn>
+        <Btn href="/roadmap" size="lg">Roadmap →</Btn>
         <Btn href="/verify/ABX-RE-HOSP-001" variant="secondary" size="lg">Verify asset</Btn>
-        <Link href="/investors" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
-          Data room →
+        <Link href="/integrations" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
+          Partner integrations →
         </Link>
       </div>
     </RedesignPage>

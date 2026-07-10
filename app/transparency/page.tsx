@@ -123,7 +123,7 @@ export default function TransparencyPage() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/metrics" size="lg">Full metrics dashboard →</Btn>
-        <Btn href="/investors" variant="secondary" size="lg">Data room</Btn>
+        <Btn href="/docs" variant="secondary" size="lg">Documentation</Btn>
         <Link href="/api/metrics/investor" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, alignSelf: "center" }}>
           API JSON →
         </Link>

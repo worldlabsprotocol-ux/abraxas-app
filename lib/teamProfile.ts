@@ -1,5 +1,5 @@
 // FILE: lib/teamProfile.ts
-// Execution & team transparency for investor diligence.
+// Execution & team transparency for partner diligence.
 
 export const TEAM_MISSION =
   "Abraxas is building reusable verification infrastructure for real-world assets — so identity and asset proof travel with the transaction, not trapped in PDFs and repeated KYC forms.";
@@ -13,14 +13,14 @@ export const CURRENT_TEAM = [
       { label: "LinkedIn", href: "https://www.linkedin.com/company/worldlabsprotocol/" },
       { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app" },
     ],
-    bio: "Built World Labs Protocol and Abraxas after running the same verification process on the founding team's own assets first. Ships full-stack: Move modules, credential engine, booking rails, and investor-facing packaging.",
+    bio: "Built World Labs Protocol and Abraxas after running the same verification process on the founding team's own assets first. Ships full-stack: Move modules, credential engine, booking rails, and partner-facing documentation.",
   },
 ] as const;
 
 export const PLANNED_ROLES = [
   {
     role: "Smart contract / Move engineer",
-    timing: "Post seed",
+    timing: "When needed",
     why: "Mainnet Passport deployment, external CPI integrations, escrow program containers",
   },
   {
@@ -54,11 +54,11 @@ export const ADVISOR_BENCH = {
 export const EXECUTION_PROOF = [
   { label: "Live product", href: "/", desc: "Three-door infrastructure homepage + public verifier" },
   { label: "Genesis asset", href: "/case-studies/cielo", desc: "Cielo Sunrise end-to-end with booking revenue" },
-  { label: "Open source", href: "https://github.com/worldlabsprotocol-ux/abraxas-app", desc: "Full Next.js app — VCs can clone and inspect" },
-  { label: "Data room", href: "/investors", desc: "Litepaper, metrics, pitch deck, transparency log" },
+  { label: "Open source", href: "https://github.com/worldlabsprotocol-ux/abraxas-app", desc: "Full Next.js app — clone and inspect locally" },
+  { label: "Documentation", href: "/docs", desc: "Architecture, litepaper, and technical specs" },
 ] as const;
 
 export const BUILDER_CONTEXT = {
   headline: "Solo builder today — protocol team tomorrow",
-  body: "Abraxas is early-stage infrastructure. The founding team ships vertically integrated proof (identity, assets, payments, docs) to de-risk the core thesis before scaling headcount. Fundraising targets first engineering and compliance hires tied to specific milestones: mainnet Passport, first external relying party, and audit completion.",
+  body: "Abraxas is early-stage infrastructure. The founding team ships vertically integrated proof (identity, assets, payments, docs) to de-risk the core thesis before scaling headcount. Milestones: mainnet Passport, first external relying party, and security audit completion.",
 } as const;

@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
       binding_status: w.binding_status,
       binding_method: w.binding_method,
       verified_at: w.verified_at,
+      revoked_at: w.revoked_at,
     })),
   });
 }

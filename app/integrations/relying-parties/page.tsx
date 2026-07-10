@@ -190,7 +190,7 @@ export default function RelyingPartiesPage() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/integrations" size="lg">Apply as design partner →</Btn>
-        <Btn href="/investors/strategy" variant="secondary" size="lg">Strategic roadmap</Btn>
+        <Btn href="/roadmap" variant="secondary" size="lg">Roadmap</Btn>
         <Link href="/docs/ail" style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
           AIL spec →
         </Link>

@@ -117,7 +117,7 @@ export default function TokenomicsPage() {
           Buy on Bags.fm →
         </a>
         <Btn href="/docs/litepaper" variant="secondary" size="sm">Litepaper</Btn>
-        <Btn href="/investors" variant="ghost" size="sm">Data room</Btn>
+        <Btn href="/docs/litepaper" variant="ghost" size="sm">Litepaper</Btn>
       </div>
     </RedesignPage>
   );

@@ -137,7 +137,7 @@ export default function AboutPage() {
           }}>
             TEAM & EXECUTION →
           </Link>
-          <Link href="/investors/strategy" style={{
+          <Link href="/roadmap" style={{
             padding: "0.75rem 1.5rem", borderRadius: 5,
             border: "1px solid rgba(59,130,246,0.4)",
             background: "rgba(59,130,246,0.08)",
@@ -145,7 +145,7 @@ export default function AboutPage() {
             textDecoration: "none", letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}>
-            STRATEGIC ROADMAP →
+            ROADMAP →
           </Link>
         </div>
         <div style={{ fontFamily: M, fontSize: "0.75rem",
