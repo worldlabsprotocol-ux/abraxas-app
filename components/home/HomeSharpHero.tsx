@@ -69,6 +69,10 @@ export function HomeSharpHero() {
             }}>
               Make your Passport. Connect your wallet. Verify more only when something actually needs it.
               {" "}
+              <a href="/#product-loop" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>
+                Watch the product loop
+              </a>
+              {" · "}
               <a href="/docs/why-verification" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>
                 Read the full explanation
               </a>

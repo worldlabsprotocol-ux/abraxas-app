@@ -9,9 +9,9 @@ import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
+import { ProductLoopDemo } from "./ProductLoopDemo";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
-import { HomeCieloLoop } from "@/components/home/HomeCieloLoop";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeValueProp } from "@/components/home/HomeValueProp";
 
@@ -27,7 +27,9 @@ function HomeContent() {
         <HomeSharpHero />
         <HomeValueProp />
         <HomeSignedInModule />
-        <HomeCieloLoop />
+        <div style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}>
+          <ProductLoopDemo />
+        </div>
         <div id="registry" style={{ paddingTop: "clamp(1.5rem, 4vw, 2rem)", borderTop: "1px solid var(--border-strong)" }}>
           <AssetsExplorer
             title="Example verified assets"
