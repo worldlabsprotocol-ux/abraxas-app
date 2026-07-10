@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/passport/PassportProfileHeader.tsx
-// Instagram-style profile header — identity, progress, one primary action.
+// Profile presentation only — trust summary links to canonical sections.
 
+import Link from "next/link";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
-import { buildPassportProgress } from "@/lib/passport/passportProgress";
-import type { PassportTierInput } from "@/lib/passport/passportTiers";
+import { buildTrustStatusLine } from "@/lib/passport/passportCanonicalState";
+import type { PassportCanonicalState } from "@/lib/passport/passportCanonicalState";
 import { Btn } from "@/components/redesign/ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -13,36 +14,21 @@ const ACCENT = "#10B981";
 interface Props {
   email: string;
   signedIn: boolean;
-  tierInput: PassportTierInput;
-  returnPath?: string | null;
+  canonical: PassportCanonicalState | null;
   onEditProfile: () => void;
-  onPrimaryAction?: () => void;
 }
 
 export function PassportProfileHeader({
   email,
   signedIn,
-  tierInput,
-  returnPath,
+  canonical,
   onEditProfile,
-  onPrimaryAction,
 }: Props) {
   const { data: profile } = useUserProfile();
-  const progress = buildPassportProgress(tierInput);
   const displayLabel = signedIn ? profileNavLabel(profile, email || null) : "Guest";
   const initial = profileInitial(profile, email || null);
   const avatarColor = profile?.avatar_color ?? ACCENT;
-
-  const primaryHref =
-    progress.primaryAction === "sign-in"
-      ? undefined
-      : progress.primaryAction === "add-wallet"
-        ? "/passport?tab=wallets"
-        : progress.primaryAction === "verify-identity"
-          ? "/passport?tab=verifications"
-          : returnPath
-            ? decodeURIComponent(returnPath)
-            : "/cielo/verified-rate";
+  const trustLine = canonical ? buildTrustStatusLine(canonical) : null;
 
   return (
     <header style={{
@@ -67,55 +53,42 @@ export function PassportProfileHeader({
           }}>
             {displayLabel}
           </h2>
-          {signedIn && (
-            <span style={{
-              fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
-              padding: "0.15rem 0.45rem", borderRadius: 999,
-              background: `${ACCENT}18`, color: ACCENT,
-            }}>
-              Passport {progress.statusLabel === "Ready to use" || progress.statusLabel === "Ready for pilot actions" ? "active" : "setup"}
+          {profile?.username && (
+            <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
+              @{profile.username}
             </span>
           )}
         </div>
 
+        {profile?.bio && (
+          <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.35rem", lineHeight: 1.5 }}>
+            {profile.bio}
+          </p>
+        )}
+
         <p style={{
           fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-          margin: "0 0 0.35rem", lineHeight: 1.5,
+          margin: "0 0 0.5rem", lineHeight: 1.5,
         }}>
           Partners only see what you approve.
         </p>
 
-        {signedIn && (
+        {signedIn && trustLine && (
           <p style={{
-            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+            fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
             margin: "0 0 0.65rem", lineHeight: 1.5,
           }}>
-            {progress.progressLine} · {progress.statusLabel}
+            {trustLine}
+            {" · "}
+            <Link href="/passport?tab=verification" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>Verification</Link>
+            {" · "}
+            <Link href="/passport?tab=wallets" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>Wallets</Link>
+            {" · "}
+            <Link href="/passport?tab=access" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>Access</Link>
           </p>
         )}
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "0.65rem" }}>
-          {progress.steps.map(step => (
-            <span key={step.id} style={{
-              fontFamily: FONT, fontSize: "0.62rem", fontWeight: 600,
-              padding: "0.2rem 0.5rem", borderRadius: 999,
-              background: step.done ? `${ACCENT}18` : "var(--surface-inset)",
-              color: step.done ? ACCENT : "var(--text-muted)",
-              border: `1px solid ${step.done ? `${ACCENT}44` : "var(--border)"}`,
-            }}>
-              {step.done ? "✓ " : ""}{step.label}{step.optional ? " (optional)" : ""}
-            </span>
-          ))}
-        </div>
-
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          {signedIn && progress.primaryAction !== "sign-in" && (
-            primaryHref ? (
-              <Btn href={primaryHref} size="sm" onClick={onPrimaryAction}>
-                {progress.primaryActionLabel} →
-              </Btn>
-            ) : null
-          )}
           {signedIn && (
             <Btn variant="secondary" size="sm" onClick={onEditProfile}>
               Edit profile

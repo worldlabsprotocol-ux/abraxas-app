@@ -18,6 +18,7 @@ import { useBindEvmWallet } from "@/lib/walletAuthority/client/useBindEvmWallet"
 import { ensurePassportBrowserSessionForBind } from "@/lib/walletAuthority/client/bindEvmWallet";
 import { mapWalletApiError } from "@/lib/walletAuthority/client/sessionHints";
 import { WhatGetsSharedCard } from "@/components/consent/WhatGetsSharedCard";
+import { passportWalletAddHref } from "@/lib/passport/passportWalletDeepLink";
 
 interface ConnectPreview {
   authorization: {
@@ -225,14 +226,22 @@ export default function ConnectAuthorizeClient({ requestId }: { requestId: strin
       )}
 
       {needsEvmBind && !bound && sessionReady && (
-        <EvmWalletConnectActions
-          uiState={uiState}
-          loading={bindLoading}
-          injectedLabel="Bind MetaMask"
-          walletConnectLabel="Bind via WalletConnect"
-          onInjected={() => void bindInjected().catch(() => undefined)}
-          onWalletConnect={() => void bindWalletConnect().catch(() => undefined)}
-        />
+        <>
+          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", marginBottom: "0.75rem", lineHeight: 1.5 }}>
+            To continue, add a wallet to your Passport. One signature proves control — no funds move.
+          </p>
+          <EvmWalletConnectActions
+            uiState={uiState}
+            loading={bindLoading}
+            injectedLabel="Connect MetaMask"
+            walletConnectLabel="Connect via WalletConnect"
+            onInjected={() => void bindInjected().catch(() => undefined)}
+            onWalletConnect={() => void bindWalletConnect().catch(() => undefined)}
+          />
+          <Link href={passportWalletAddHref(connectReturnPath)} style={{ display: "block", fontSize: "0.72rem", color: "#a78bfa", marginTop: "0.65rem" }}>
+            Manage wallets in Passport →
+          </Link>
+        </>
       )}
 
       {bound && bindResult && (

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportSubTabs.tsx
-// Profile-area tabs — Overview, Wallets, Approvals, Activity.
+// Four canonical sections — Profile, Verification, Wallets, Access.
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -8,14 +8,21 @@ import { usePathname, useSearchParams } from "next/navigation";
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
-export type PassportSubTab = "overview" | "wallets" | "approvals" | "activity";
+export type PassportSubTab = "profile" | "verification" | "wallets" | "access";
 
 const TABS: Array<{ id: PassportSubTab; label: string }> = [
-  { id: "overview", label: "Overview" },
+  { id: "profile", label: "Profile" },
+  { id: "verification", label: "Verification" },
   { id: "wallets", label: "Wallets" },
-  { id: "approvals", label: "Approvals" },
-  { id: "activity", label: "Activity" },
+  { id: "access", label: "Access" },
 ];
+
+const TAB_ALIASES: Record<string, PassportSubTab> = {
+  overview: "profile",
+  approvals: "verification",
+  verifications: "verification",
+  activity: "access",
+};
 
 export function PassportSubTabs({ active }: { active: PassportSubTab }) {
   const pathname = usePathname();
@@ -25,7 +32,7 @@ export function PassportSubTabs({ active }: { active: PassportSubTab }) {
   function tabHref(tab: PassportSubTab) {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("view");
-    if (tab === "overview") params.delete("tab");
+    if (tab === "profile") params.delete("tab");
     else params.set("tab", tab);
     const q = params.toString();
     return q ? `${base}?${q}` : base;
@@ -59,7 +66,10 @@ export function PassportSubTabs({ active }: { active: PassportSubTab }) {
 }
 
 export function parsePassportSubTab(value: string | null): PassportSubTab {
-  if (value === "wallets" || value === "approvals" || value === "activity") return value;
-  if (value === "verifications") return "approvals";
-  return "overview";
+  if (!value) return "profile";
+  if (value in TAB_ALIASES) return TAB_ALIASES[value];
+  if (value === "profile" || value === "verification" || value === "wallets" || value === "access") {
+    return value;
+  }
+  return "profile";
 }

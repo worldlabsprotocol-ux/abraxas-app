@@ -8,6 +8,8 @@ import { EvmWalletConnectActions } from "@/components/wallet/EvmWalletConnectAct
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import { useBindEvmWallet } from "@/lib/walletAuthority/client/useBindEvmWallet";
 import { Btn } from "@/components/redesign/ui";
+import { PassportStepPurpose } from "@/components/passport/PassportStepPurpose";
+import { PASSPORT_STEPS } from "@/lib/passport/passportStepCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -128,6 +130,8 @@ export function UnifiedWalletBindingsPanel({
       }}>
         Every chain tied to this Passport. Remove a wallet anytime — partner access updates immediately.
       </p>
+
+      <PassportStepPurpose title={PASSPORT_STEPS.addWallet.title} purpose={PASSPORT_STEPS.addWallet.purpose} />
 
       {isLoading && (
         <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading bindings…</p>

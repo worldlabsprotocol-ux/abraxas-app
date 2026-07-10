@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { NEVER_SHARED_WITH_PARTNERS, POLICY_DECISIONS, type PolicyDecision } from "@/lib/abraxasNetwork";
 import { consentVerificationRequest, declineVerificationRequest } from "@/lib/api/passport";
 import { WhatGetsSharedCard } from "@/components/consent/WhatGetsSharedCard";
+import { PassportStepPurpose } from "@/components/passport/PassportStepPurpose";
+import { PASSPORT_STEPS } from "@/lib/passport/passportStepCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -159,6 +161,8 @@ export function ConsentCeremony({
       <h3 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
         {preview.policy_name}
       </h3>
+
+      <PassportStepPurpose title={PASSPORT_STEPS.chooseShare.title} purpose={PASSPORT_STEPS.chooseShare.purpose} />
 
       <WhatGetsSharedCard
         partnerName={preview.partner_id}
