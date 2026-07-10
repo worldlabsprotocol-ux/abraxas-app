@@ -114,19 +114,19 @@ export function UnifiedWalletBindingsPanel({
         letterSpacing: "0.1em", textTransform: "uppercase",
         color: ACCENT, marginBottom: "0.35rem",
       }}>
-        Wallet authority
+        Wallets
       </div>
       <h2 id="unified-wallets-heading" style={{
         fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
         color: "var(--text-primary)", margin: "0 0 0.5rem",
       }}>
-        Your bound wallets
+        Connected wallets
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 560,
       }}>
-        All chains tied to this Passport. Revoking a binding also revokes its eligibility claim — partner access updates live.
+        Every chain tied to this Passport. Remove a wallet anytime — partner access updates immediately.
       </p>
 
       {isLoading && (
@@ -189,24 +189,24 @@ export function UnifiedWalletBindingsPanel({
         {!activeSui && onSuiBind && (
           <div>
             <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, marginBottom: "0.4rem" }}>
-              Bind Sui wallet
+              Add Sui wallet
             </div>
             <Btn size="sm" onClick={onSuiBind} loading={suiBindBusy} disabled={suiBindBusy}>
-              Sign to bind Sui wallet →
+              Sign to connect →
             </Btn>
           </div>
         )}
 
         <div>
           <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, marginBottom: "0.4rem" }}>
-            Bind MetaMask (EVM)
+            Add MetaMask (EVM)
           </div>
           {!evmBound && (
             <EvmWalletConnectActions
               uiState={uiState}
               loading={evmBindLoading}
-              injectedLabel="Bind MetaMask"
-              walletConnectLabel="Bind via WalletConnect"
+              injectedLabel="Connect MetaMask"
+              walletConnectLabel="Connect via WalletConnect"
               onInjected={() => void bindInjected().then(() => refresh()).catch(() => undefined)}
               onWalletConnect={() => void bindWalletConnect().then(() => refresh()).catch(() => undefined)}
             />

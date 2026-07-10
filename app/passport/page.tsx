@@ -5,7 +5,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { PassportDashboard } from "@/components/passport/PassportDashboard";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
@@ -180,15 +179,15 @@ function PassportPageInner() {
             fontFamily: S, fontSize: "clamp(1.35rem, 3.5vw, 1.85rem)", fontWeight: 800,
             lineHeight: 1.15, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 0.65rem",
           }}>
-            {pageView === "verify" ? "Verify records & credentials" : "Your reusable access layer"}
+            {pageView === "verify" ? "Verify a record" : "Your Passport"}
           </h1>
           <p style={{
             fontFamily: S, fontSize: "0.85rem", color: "var(--text-secondary)",
             lineHeight: 1.65, maxWidth: 560, margin: 0,
           }}>
             {pageView === "verify"
-              ? "Look up registry records, run policy checks, and verify credentials — same tools partners integrate server-side."
-              : "Bind a wallet once. Share only the proof a partner needs. Add identity verification only when a policy requires it."}
+              ? "Look up public records and run verification checks."
+              : "Prove what you control. Partners check only what you approve."}
           </p>
         </div>
 
@@ -246,43 +245,7 @@ function PassportPageInner() {
             )}
 
             {setup.profileComplete && (
-              <details id="stamps" style={{ marginBottom: "1.5rem" }}>
-                <summary style={{
-                  fontFamily: S, fontSize: "0.78rem", fontWeight: 600,
-                  color: "var(--text-muted)", cursor: "pointer",
-                }}>
-                  Business & asset-owner stamps
-                </summary>
-                <div style={{
-                  marginTop: "0.75rem", padding: "1rem 1.15rem", borderRadius: 16,
-                  background: "var(--surface-raised)", border: "1px solid var(--border)",
-                }}>
-                  <p style={{
-                    fontFamily: S, fontSize: "0.76rem", color: "var(--text-secondary)",
-                    lineHeight: 1.65, margin: "0 0 0.85rem",
-                  }}>
-                    Business verification and asset-owner attestation require identity credentials and document review.
-                  </p>
-                  <DocumentUpload
-                    email={email || suiAddress || ""}
-                    suiAddress={suiAddress}
-                    stampId="business"
-                    color="#3B82F6"
-                  />
-                  <Link
-                    href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"
-                    style={{
-                      display: "inline-block", marginTop: "0.75rem",
-                      fontFamily: S, fontSize: "0.76rem", fontWeight: 700, color: G, textDecoration: "none",
-                    }}
-                  >
-                    Contact support for asset-owner review →
-                  </Link>
-                </div>
-              </details>
-            )}
-
-            <DeveloperDetails
+              <DeveloperDetails
               title="Technical details"
               summary="Built with zkLogin, W3C-compatible credentials, wallet binding, consent receipts, and Sui-based verification states."
             >
@@ -333,6 +296,7 @@ function PassportPageInner() {
                 />
               </div>
             </DeveloperDetails>
+            )}
 
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", paddingBottom: "3rem" }}>
               <Btn href="/#registry">Browse registry →</Btn>
