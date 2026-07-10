@@ -16,6 +16,7 @@ import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { TransactionEligibilitySection } from "@/components/passport/TransactionEligibilitySection";
+import { UnifiedWalletBindingsPanel } from "@/components/passport/UnifiedWalletBindingsPanel";
 import {
   resolvePassportTier,
   TIER_LABELS,
@@ -89,6 +90,7 @@ export function PassportDashboard({
   returnPath,
 }: Props) {
   const [identityExpanded, setIdentityExpanded] = useState(false);
+  const [suiBindBusy, setSuiBindBusy] = useState(false);
   const manualMode = idvProvider === "manual";
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const assuranceLabel = manualMode ? "L2" : "L3";
@@ -119,6 +121,7 @@ export function PassportDashboard({
 
   async function bindWallet() {
     if (!suiAddress) return;
+    setSuiBindBusy(true);
     try {
       const secret = getEphemeralSecretKey();
       if (!secret) throw new Error("Sign in again to enable wallet signing.");
@@ -150,6 +153,8 @@ export function PassportDashboard({
       onWalletBound?.();
     } catch (e) {
       console.error(e);
+    } finally {
+      setSuiBindBusy(false);
     }
   }
 
@@ -171,6 +176,14 @@ export function PassportDashboard({
           </p>
           <ZkLoginSignIn returnPath={returnPath ? decodeURIComponent(returnPath) : undefined} />
         </section>
+      )}
+
+      {walletDone && (
+        <UnifiedWalletBindingsPanel
+          suiAddress={suiAddress}
+          onSuiBind={!setup.walletBound ? () => void bindWallet() : undefined}
+          suiBindBusy={suiBindBusy}
+        />
       )}
 
       {walletDone && !setup.walletBound && (
