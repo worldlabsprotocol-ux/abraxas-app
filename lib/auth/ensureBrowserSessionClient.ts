@@ -60,3 +60,10 @@ export async function ensureBrowserSession(suiAddress: string): Promise<EnsureBr
 
   return { ok: true };
 }
+
+export async function revokeBrowserSession(): Promise<void> {
+  await fetch("/api/auth/browser-session", {
+    method: "DELETE",
+    credentials: "include",
+  });
+}

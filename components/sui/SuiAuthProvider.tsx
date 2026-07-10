@@ -16,7 +16,7 @@ import {
   clearUserSession,
   type ZkLoginUserSession,
 } from "@/lib/sui/zklogin/session";
-import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSessionClient";
+import { ensureBrowserSession, revokeBrowserSession } from "@/lib/auth/ensureBrowserSessionClient";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
@@ -32,7 +32,7 @@ interface SuiAuthContextValue {
   isLoading: boolean;
   error: string | null;
   signInWithGoogle: (options?: { returnPath?: string }) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 }
 
 const SuiAuthContext = createContext<SuiAuthContextValue | null>(null);
@@ -67,7 +67,8 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     if (!result.ok) setError(result.error);
   }, []);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    await revokeBrowserSession().catch(() => undefined);
     clearUserSession();
     setSession(null);
     setCanSignTransactions(false);

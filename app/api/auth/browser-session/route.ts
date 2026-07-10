@@ -6,6 +6,7 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { createClient } from "@supabase/supabase-js";
 import {
   attachBrowserSessionCookie,
+  clearBrowserSessionCookie,
   issueBrowserSessionToken,
   resolveBrowserSession,
 } from "@/lib/auth/browserSession";
@@ -56,6 +57,14 @@ export async function POST(req: NextRequest) {
 
   const res = NextResponse.json({ ok: true, sui_address: sui });
   attachBrowserSessionCookie(res, token, {
+    secure: req.nextUrl.protocol === "https:",
+  });
+  return res;
+}
+
+export async function DELETE(req: NextRequest) {
+  const res = NextResponse.json({ ok: true });
+  clearBrowserSessionCookie(res, {
     secure: req.nextUrl.protocol === "https:",
   });
   return res;

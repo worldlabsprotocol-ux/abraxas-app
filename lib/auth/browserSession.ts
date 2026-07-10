@@ -47,6 +47,20 @@ export function attachBrowserSessionCookie(
   });
 }
 
+export function clearBrowserSessionCookie(
+  res: NextResponse,
+  options?: { secure?: boolean },
+): void {
+  const secure = options?.secure ?? process.env.NODE_ENV === "production";
+  res.cookies.set(BROWSER_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+}
+
 export async function resolveBrowserSession(req: NextRequest): Promise<BrowserSession | null> {
   const secret = sessionSecret();
   if (!secret) return null;
