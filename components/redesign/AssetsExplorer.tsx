@@ -57,11 +57,14 @@ export function AssetsExplorer({
   title = "Real assets. Proven on-chain.",
   eyebrow = "Verified Assets",
   compact = false,
+  home = false,
 }: {
   excludeIds?: string[];
   title?: string;
   eyebrow?: string;
   compact?: boolean;
+  /** Ultra-minimal homepage strip — plain copy, no dev metadata. */
+  home?: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<SortKey>("verified-first");
@@ -91,7 +94,8 @@ export function AssetsExplorer({
     return sortAssets(list, sort);
   }, [pool, filter, sort, query, assetClass]);
 
-  const displayAssets = compact ? assets.slice(0, 3) : assets;
+  const displayAssets = home ? assets.slice(0, 3) : compact ? assets.slice(0, 3) : assets;
+  const cardVariant = home ? "home" as const : compact ? "compact" as const : "default" as const;
 
   return (
     <section style={{ position: "relative", zIndex: 1 }}>
@@ -103,13 +107,21 @@ export function AssetsExplorer({
                          color: ACCENT, marginBottom: "0.5rem" }}>
             {eyebrow}
           </div>
-          <h2 style={{ fontFamily: FONT, fontSize: compact ? "var(--fs-h2)" : "var(--fs-h1)", fontWeight: 800,
+          <h2 style={{ fontFamily: FONT, fontSize: compact || home ? "var(--fs-h2)" : "var(--fs-h1)", fontWeight: 800,
                         letterSpacing: "-0.03em", lineHeight: 1.05,
                         color: "var(--text-primary)", margin: 0 }}>
             {title}
           </h2>
+          {home && (
+            <p style={{
+              fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+              maxWidth: 480, lineHeight: 1.6, margin: "0.5rem 0 0",
+            }}>
+              Real properties and references with a clear verification scope — no jargon required to browse.
+            </p>
+          )}
         </div>
-        {!compact && (
+        {!compact && !home && (
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
                        maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
             The canonical asset list — search, filter, and inspect verification scope per listing.
@@ -117,7 +129,7 @@ export function AssetsExplorer({
         )}
       </div>
 
-      {!compact && (
+      {!compact && !home && (
         <>
           <div style={{
             display: "flex", flexWrap: "wrap", gap: "0.65rem", alignItems: "center",
@@ -232,7 +244,7 @@ export function AssetsExplorer({
           fontFamily: FONT, fontSize: "0.82rem",
         }}>
           No assets match your search.{" "}
-          {!compact && (
+          {!compact && !home && (
             <button type="button" onClick={() => { setQuery(""); setFilter("all"); setAssetClass("all"); }}
               style={{ background: "none", border: "none", color: ACCENT, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
               Clear filters
@@ -241,14 +253,18 @@ export function AssetsExplorer({
         </div>
       ) : (
         <>
-          <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
-                         letterSpacing: "0.08em", marginBottom: "0.75rem" }}>
-            {displayAssets.length} ASSET{displayAssets.length === 1 ? "" : "S"}
-            {compact && assets.length > 3 ? ` · ${assets.length} total` : ""}
-          </div>
+          {!home && (
+            <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)",
+                           letterSpacing: "0.08em", marginBottom: "0.75rem" }}>
+              {displayAssets.length} ASSET{displayAssets.length === 1 ? "" : "S"}
+              {compact && assets.length > 3 ? ` · ${assets.length} total` : ""}
+            </div>
+          )}
           <motion.div layout={!reduce}
-            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                     gap: "1.1rem" }}>
+            style={{ display: "grid", gridTemplateColumns: home
+              ? "repeat(auto-fill, minmax(240px, 1fr))"
+              : "repeat(auto-fill, minmax(280px, 1fr))",
+                       gap: home ? "0.85rem" : "1.1rem" }}>
             <AnimatePresence mode="popLayout">
               {displayAssets.map(a => (
                 <motion.div key={a.id} layout={!reduce}
@@ -256,14 +272,16 @@ export function AssetsExplorer({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-                  <AssetExplorerCard asset={a} variant="compact" />
+                  <AssetExplorerCard asset={a} variant={cardVariant} />
                 </motion.div>
               ))}
             </AnimatePresence>
           </motion.div>
-          {compact && (
+          {(compact || home) && (
             <div style={{ marginTop: "1rem" }}>
-              <Btn href="/#registry" variant="ghost" size="sm">View all registry assets →</Btn>
+              <Btn href={home ? "/verify" : "/#registry"} variant="ghost" size="sm">
+                {home ? "Open verification registry →" : "View all registry assets →"}
+              </Btn>
             </div>
           )}
         </>
