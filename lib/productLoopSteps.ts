@@ -1,7 +1,7 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — visuals + mock UI per step.
+// Auto-advancing product walkthrough — distinct image/diagram per step.
 
-import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_DOME_DECK_IMAGE } from "@/lib/data/cieloMedia";
 
 export interface ProductLoopStep {
   id: string;
@@ -12,7 +12,6 @@ export interface ProductLoopStep {
   imageObjectPosition?: string;
   badge?: string;
   metrics?: { label: string; value: string }[];
-  /** Real route for this step — wired from homepage demo. */
   href: string;
   ctaLabel: string;
 }
@@ -21,9 +20,10 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "browse",
     title: "Browse verified assets",
-    subtitle: "See assurance levels and registry records — no login required.",
+    subtitle: "Registry records with assurance levels — no login required.",
     durationMs: 6000,
     image: "/assets/smyrna/011.webp",
+    imageObjectPosition: "center 35%",
     badge: "Public registry",
     metrics: [
       { label: "Assets", value: "4 listed" },
@@ -35,19 +35,19 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   },
   {
     id: "book",
-    title: "Start a verified stay",
-    subtitle: "Pick dates at Cielo · Passport checks eligibility · share minimum proof.",
+    title: "Book with USDC on Sui",
+    subtitle: "Pick dates at Cielo · pay in stablecoin · settlement on-chain today.",
     durationMs: 6000,
-    image: CIELO_PORCH_IMAGE.src,
-    imageObjectPosition: "center 40%",
-    badge: "Cielo pilot",
+    image: "/assets/cielo/07.jpg",
+    imageObjectPosition: "center 45%",
+    badge: "Stablecoin checkout",
     metrics: [
       { label: "Asset", value: "Cielo Sunrise" },
-      { label: "Proof", value: "Eligibility" },
-      { label: "Est.", value: "Verified rate" },
+      { label: "Pay", value: "USDC" },
+      { label: "Chain", value: "Sui" },
     ],
     href: "/cielo/verified-rate",
-    ctaLabel: "Try Cielo verified rate",
+    ctaLabel: "Start Cielo booking",
   },
   {
     id: "signin",
@@ -68,8 +68,6 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Approve what gets shared",
     subtitle: "Consent ceremony · partner sees eligibility only · receipt saved to Access.",
     durationMs: 6000,
-    image: CIELO_HERO_IMAGE.src,
-    imageObjectPosition: CIELO_HERO_IMAGE.objectPosition,
     badge: "Consent captured",
     metrics: [
       { label: "Shared", value: "Minimum proof" },
@@ -82,8 +80,10 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "verify",
     title: "Verify on the public registry",
-    subtitle: "Any partner checks the record — portable proof, instant lookup.",
+    subtitle: "Any partner checks ABX-RE-HOSP-001 — portable proof, instant lookup.",
     durationMs: 7000,
+    image: CIELO_DOME_DECK_IMAGE.src,
+    imageObjectPosition: CIELO_DOME_DECK_IMAGE.objectPosition,
     badge: "✓ PORTABLE PROOF",
     metrics: [
       { label: "Record", value: "ABX-RE-HOSP-001" },

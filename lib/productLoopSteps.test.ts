@@ -19,6 +19,7 @@ describe("productLoopSteps", () => {
 
   it("links Cielo pilot and registry verify", () => {
     expect(PRODUCT_LOOP_STEPS.find(s => s.id === "book")?.href).toBe("/cielo/verified-rate");
+    expect(PRODUCT_LOOP_STEPS.find(s => s.id === "book")?.title).toContain("USDC");
     expect(PRODUCT_LOOP_STEPS.find(s => s.id === "verify")?.href).toBe("/verify/ABX-RE-HOSP-001");
   });
 });

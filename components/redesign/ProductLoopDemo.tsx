@@ -6,8 +6,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCT_LOOP_STEPS, PRODUCT_LOOP_TOTAL_MS } from "@/lib/productLoopSteps";
+import { themeForStep } from "@/lib/productLoopStepThemes";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
-import { ProductLoopStepVisual } from "./ProductLoopStepVisual";
+import { ProductLoopDiagramBackdrop, ProductLoopStepVisual } from "./ProductLoopStepVisual";
 import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -19,6 +20,7 @@ export function ProductLoopDemo() {
   const [paused, setPaused] = useState(false);
 
   const step = PRODUCT_LOOP_STEPS[index];
+  const theme = themeForStep(step.id);
 
   useEffect(() => {
     if (paused) return;
@@ -104,23 +106,18 @@ export function ProductLoopDemo() {
                     height: "100%",
                     objectFit: "cover",
                     objectPosition: step.imageObjectPosition ?? "center",
+                    filter: theme.imageFilter,
                   }}
                 />
               ) : (
-                <div style={{
-                  width: "100%", height: "100%",
-                  background: `
-                    radial-gradient(ellipse 70% 55% at 15% 20%, rgba(16,185,129,0.22) 0%, transparent 55%),
-                    radial-gradient(ellipse 50% 45% at 85% 80%, rgba(59,130,246,0.14) 0%, transparent 50%),
-                    linear-gradient(160deg, #0d151c 0%, #06090B 100%)
-                  `,
-                }} />
+                <div style={{ width: "100%", height: "100%", background: theme.gradient }} />
               )}
+              <ProductLoopDiagramBackdrop stepId={step.id} />
               <div style={{
                 position: "absolute", inset: 0,
                 background: step.image
-                  ? "linear-gradient(to top, rgba(6,9,11,0.92) 0%, rgba(6,9,11,0.45) 50%, rgba(6,9,11,0.2) 100%)"
-                  : "linear-gradient(to top, rgba(6,9,11,0.55) 0%, rgba(6,9,11,0.15) 100%)",
+                  ? `linear-gradient(to top, rgba(6,9,11,${theme.overlayStrength + 0.15}) 0%, rgba(6,9,11,${theme.overlayStrength * 0.6}) 45%, rgba(6,9,11,${theme.overlayStrength * 0.25}) 100%)`
+                  : `linear-gradient(to top, rgba(6,9,11,${theme.overlayStrength + 0.2}) 0%, rgba(6,9,11,${theme.overlayStrength * 0.5}) 100%)`,
               }} />
               <ProductLoopStepVisual stepId={step.id} />
             </motion.div>
@@ -131,7 +128,7 @@ export function ProductLoopDemo() {
               fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
               padding: "0.3rem 0.6rem", borderRadius: 999,
               background: "rgba(0,0,0,0.55)", color: step.badge?.includes("✓") ? ACCENT : "#fff",
-              border: `1px solid ${step.badge?.includes("✓") ? "rgba(16,185,129,0.5)" : "rgba(255,255,255,0.2)"}`,
+              border: `1px solid ${step.badge?.includes("✓") ? "rgba(16,185,129,0.5)" : `${theme.accent}55`}`,
             }}>
               {step.badge}
             </span>
