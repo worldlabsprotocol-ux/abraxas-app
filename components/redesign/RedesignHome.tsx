@@ -14,6 +14,7 @@ import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeValueProp } from "@/components/home/HomeValueProp";
+import { HomeWorkflowCompare } from "@/components/home/HomeWorkflowCompare";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180, margin: "0 auto",
@@ -25,6 +26,7 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
+        <HomeWorkflowCompare />
         <HomeValueProp />
         <HomeSignedInModule />
         <div style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}>

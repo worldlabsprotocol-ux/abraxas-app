@@ -30,6 +30,7 @@ export function HomePartnersBrief() {
           List when you are ready; the Cielo pilot shows the guest-facing loop today.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+          <Btn href="/design-partner" variant="secondary" size="sm">Become a design partner →</Btn>
           <Btn href="/build" variant="ghost" size="sm">List your asset →</Btn>
           <Link href="/case-studies/cielo" style={{
             fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT,

@@ -25,6 +25,8 @@ const LINKS = {
     { label: "Dashboard", href: "/dashboard" },
   ],
   learn: [
+    { label: "North Star", href: "/north-star" },
+    { label: "Design partner", href: "/design-partner" },
     { label: "Why verification", href: "/docs/why-verification" },
     { label: "Cielo case study", href: "/case-studies/cielo" },
     { label: "FAQ", href: "/faq" },
@@ -33,6 +35,7 @@ const LINKS = {
   ],
   developers: [
     { label: "Documentation", href: "/docs" },
+    { label: "Design partner", href: "/design-partner" },
     { label: "Integrations", href: "/integrations" },
     { label: "Relying parties", href: "/integrations/relying-parties" },
     { label: "Trust Framework", href: "/trust-framework" },

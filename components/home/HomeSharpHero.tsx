@@ -1,9 +1,10 @@
 "use client";
 // FILE: components/home/HomeSharpHero.tsx
-// Three-action homepage opener — hero + optional story deck.
+// Outcome-first homepage — stop repeating verification.
 
 import { Btn } from "@/components/redesign/ui";
 import { HomePitchDeckMini } from "@/components/home/HomePitchDeckMini";
+import { ABRAXAS_HEADLINE, ABRAXAS_SUBHEAD } from "@/lib/northStar";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -21,40 +22,32 @@ export function HomeSharpHero() {
             letterSpacing: "0.14em", textTransform: "uppercase",
             color: ACCENT, marginBottom: "0.65rem",
           }}>
-            Abraxas
+            Reusable verification
           </div>
           <h1 id="home-hero-heading" style={{
             fontFamily: FONT, fontSize: "var(--fs-display)", fontWeight: 900,
             letterSpacing: "-0.045em", lineHeight: 0.98,
             color: "var(--text-primary)", margin: "0 0 1rem", maxWidth: 640,
           }}>
-            Real value lives off chain.
-            <br />
-            <span style={{ color: ACCENT }}>Proof has to bridge the gap.</span>
+            {ABRAXAS_HEADLINE}
           </h1>
           <p style={{
             fontFamily: FONT, fontSize: "clamp(0.92rem, 2vw, 1.02rem)",
             color: "var(--text-primary)", lineHeight: 1.65,
             maxWidth: 560, margin: "0 0 0.65rem",
           }}>
-            Abraxas lets you prove what a platform needs — without repeatedly handing over everything else.
+            {ABRAXAS_SUBHEAD}
           </p>
           <p style={{
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.55, maxWidth: 520, margin: "0 0 1rem",
           }}>
-            Verify once. Reuse proof where Abraxas is accepted.
-          </p>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-            lineHeight: 1.55, maxWidth: 520, margin: "0 0 1.25rem",
-          }}>
-            Pilot access for approved partners and verified use cases.
+            Stop uploading the same documents to every platform. Prove once — share only what they ask for.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "1rem" }}>
-            <Btn href="/passport" size="lg">Create Passport →</Btn>
-            <Btn href="/passport?view=verify" variant="secondary" size="lg">Verify a record →</Btn>
-            <Btn href="/#registry" variant="ghost" size="lg">Explore registry →</Btn>
+            <Btn href="/passport" size="lg">Get verified once →</Btn>
+            <Btn href="/#workflow" variant="secondary" size="lg">See the difference</Btn>
+            <Btn href="/cielo/verified-rate" variant="ghost" size="lg">Try Cielo pilot →</Btn>
           </div>
           <details style={{ maxWidth: 520 }}>
             <summary style={{
@@ -67,14 +60,14 @@ export function HomeSharpHero() {
               fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
               lineHeight: 1.65, margin: "0.65rem 0 0",
             }}>
-              Make your Passport. Connect your wallet. Verify more only when something actually needs it.
+              Google sign-in creates your Passport. Connect your wallet when needed. Approve one partner request at a time.
               {" "}
               <a href="/#product-loop" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>
                 Watch the product loop
               </a>
               {" · "}
-              <a href="/docs/why-verification" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>
-                Read the full explanation
+              <a href="/north-star" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>
+                North Star
               </a>
             </p>
           </details>
