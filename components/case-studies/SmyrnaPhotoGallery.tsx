@@ -1,14 +1,18 @@
 "use client";
 // FILE: components/case-studies/SmyrnaPhotoGallery.tsx
-// Loads /assets/smyrna/011.webp–018.webp — shows only files that exist.
+// Loads owner exterior + optional gallery files under /assets/smyrna/.
 
 import { useEffect, useState } from "react";
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
-const CANDIDATE_IMAGES = Array.from({ length: 8 }, (_, i) =>
-  `/assets/smyrna/${String(i + 11).padStart(3, "0")}.webp`,
-);
+const CANDIDATE_IMAGES = [
+  SMYRNA_TOWNHOME_IMAGE.src,
+  ...Array.from({ length: 7 }, (_, i) =>
+    `/assets/smyrna/${String(i + 12).padStart(3, "0")}.webp`,
+  ),
+];
 
 export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
   const [loaded, setLoaded] = useState<string[]>([]);
@@ -29,7 +33,7 @@ export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
         if (ok) found.push(src);
       }
       if (!cancelled) {
-        const foundLimited = found.length ? found.slice(0, 2) : ["/assets/smyrna/011.webp"];
+        const foundLimited = found.length ? found.slice(0, 2) : [SMYRNA_TOWNHOME_IMAGE.src];
         setLoaded(foundLimited);
       }
     }

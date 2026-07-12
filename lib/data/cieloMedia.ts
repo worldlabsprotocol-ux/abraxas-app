@@ -10,12 +10,6 @@ export const CIELO_HERO_IMAGE = {
   caption: "Sauna dome · red light · tri-state views",
 } as const;
 
-/** Covered mountain porch — secondary showcase, not the primary hero. */
-export const CIELO_PORCH_IMAGE = {
-  src: "/assets/cielo/08.jpg",
-  alt: "Covered porch with mountain views · Cielo Sunrise",
-} as const;
-
 /** Interior / deck with dome — case study gallery lead. */
 export const CIELO_DOME_DECK_IMAGE = {
   src: "/assets/cielo/01.jpg",
@@ -23,9 +17,12 @@ export const CIELO_DOME_DECK_IMAGE = {
   alt: "Wellness dome deck · Cielo Sunrise",
 } as const;
 
+/** @deprecated Use CIELO_DOME_DECK_IMAGE — 08.jpg had third-party header watermark. */
+export const CIELO_PORCH_IMAGE = CIELO_DOME_DECK_IMAGE;
+
 export const CIELO_GALLERY_IMAGES = [
   "/assets/cielo/04.jpg",
-  "/assets/cielo/08.jpg",
+  "/assets/cielo/01.jpg",
   "/assets/cielo/07.jpg",
   "/assets/cielo/14.jpg",
   "/assets/cielo/06.jpg",

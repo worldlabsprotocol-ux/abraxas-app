@@ -63,6 +63,13 @@ describe("bindEvmWalletToPassport", () => {
     vi.stubGlobal("window", { ethereum: createMockProvider() });
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo, init?: RequestInit) => {
       const url = String(input);
+      const method = init?.method ?? "GET";
+      if (url.includes("/api/auth/browser-session") && method === "GET") {
+        return new Response(JSON.stringify({ authenticated: true }), { status: 200 });
+      }
+      if (url.includes("/api/auth/browser-session") && method === "POST") {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
       if (url.includes("/api/wallet-authority/evm/challenge")) {
         return new Response(JSON.stringify({
           challenge_id: "ch_test",

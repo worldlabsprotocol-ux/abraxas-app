@@ -32,13 +32,32 @@ export async function issueBrowserSessionToken(suiAddress: string): Promise<stri
     .sign(secret);
 }
 
-export function attachBrowserSessionCookie(res: NextResponse, token: string): void {
+export function attachBrowserSessionCookie(
+  res: NextResponse,
+  token: string,
+  options?: { secure?: boolean },
+): void {
+  const secure = options?.secure ?? process.env.NODE_ENV === "production";
   res.cookies.set(BROWSER_SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_TTL_SEC,
+  });
+}
+
+export function clearBrowserSessionCookie(
+  res: NextResponse,
+  options?: { secure?: boolean },
+): void {
+  const secure = options?.secure ?? process.env.NODE_ENV === "production";
+  res.cookies.set(BROWSER_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
   });
 }
 
@@ -82,7 +101,7 @@ export async function requireBrowserSession(req: NextRequest): Promise<
 > {
   const session = await resolveBrowserSession(req);
   if (!session) {
-    return { ok: false, error: "Sign in required in this browser", status: 401 };
+    return { ok: false, error: "Sign in required", status: 401 };
   }
   return { ok: true, session };
 }

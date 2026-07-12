@@ -5,7 +5,7 @@
 // is honest per asset.
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
-import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_REGISTRY_IMAGE, SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
@@ -47,7 +47,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Cielo Sunrise",
     assetClass: "Real Estate · Hospitality",
     location: "Mineral Bluff, Georgia",
-    image: CIELO_PORCH_IMAGE.src,
+    image: CIELO_REGISTRY_IMAGE.src,
     primaryLabel: "Appraised value",
     primaryValue: "$1,100,000",
     primaryMeta: { level: 3, type: "appraised", asOf: "2025-12-01" },
@@ -68,7 +68,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Smyrna Townhome",
     assetClass: "Real Estate · Residential",
     location: "Smyrna, Georgia · Battery Atlanta",
-    image: "/assets/smyrna/011.webp",
+    image: SMYRNA_TOWNHOME_IMAGE.src,
     primaryLabel: "Appreciation",
     primaryValue: "$76.2K → $228K+",
     primaryMeta: { level: 1, type: "historical", asOf: "2024-06-01" },
