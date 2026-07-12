@@ -9,6 +9,8 @@ Every `[REAL PARTNER NAME]`, logo, or quote below must be replaced with approved
 | `app/design-partner/page.tsx` | Partners in execution section | Confirm status bucket per partner (closed vs final execution) |
 | `app/integrations/page.tsx` | Relying parties section | Partner logos + quotes when approved |
 | `components/home/HomePartnersBrief.tsx` | Partner strip | `[PARTNER LOGO]` assets when approved |
+| `content/press/*.md` | Press templates | Real partner names/quotes before any release |
+| `content/blog/partnership-announcement-template.md` | Blog template | Do not publish until partner cleared |
 
 **Before updating copy:** confirm with founder which bucket applies to each real partner:
 - **Closed / signed** — full confident language OK

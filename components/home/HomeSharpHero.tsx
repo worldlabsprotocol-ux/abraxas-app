@@ -50,6 +50,8 @@ export function HomeSharpHero() {
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0 }}>
         <a href="/#product-loop" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Watch the loop</a>
         {" · "}
+        <a href="/blog" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Learn</a>
+        {" · "}
         <a href="/north-star" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Our focus</a>
         {" · "}
         <a href="/design-partner" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Design partner</a>

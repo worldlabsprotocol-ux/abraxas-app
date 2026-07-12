@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { Btn } from "@/components/redesign/ui";
-import { ABRAXAS_CATEGORY, ABRAXAS_ONE_LINER } from "@/lib/northStar";
+import { ABRAXAS_CATEGORY, ABRAXAS_ONE_LINER, ABRAXAS_POSITIONING, ABRAXAS_TAGLINE } from "@/lib/northStar";
 import { partnersInExecutionCount } from "@/lib/partnerStatus";
 
 export const metadata: Metadata = {
@@ -19,7 +19,8 @@ export const metadata: Metadata = {
   },
 };
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const FONT = "'Inter',system-ui,sans-serif";
+const ACCENT = "#10B981";
 
 export default function AboutPage() {
   const partnerCount = partnersInExecutionCount();
@@ -41,8 +42,11 @@ export default function AboutPage() {
         }}>
           About Abraxas
         </h1>
-        <p style={{ fontFamily: FONT, fontSize: "0.92rem", color: "var(--text-primary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-          {ABRAXAS_ONE_LINER}
+        <p style={{ fontFamily: FONT, fontSize: "0.92rem", color: "var(--text-primary)", lineHeight: 1.65, margin: "0 0 0.35rem" }}>
+          {ABRAXAS_POSITIONING}
+        </p>
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, fontWeight: 700, margin: "0 0 0.75rem" }}>
+          {ABRAXAS_TAGLINE}
         </p>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1.5rem" }}>
           Abraxas is built by World Labs Protocol. We eliminate repeated verification so assets,

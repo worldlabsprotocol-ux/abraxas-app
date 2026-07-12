@@ -25,9 +25,11 @@ const PARTNERS = [
 ];
 
 const LEARN = [
+  { label: "Learn hub", href: "/blog" },
+  { label: "From the builder", href: "/blog/founder" },
   { label: "Our focus", href: "/north-star" },
   { label: "Cielo case study", href: "/case-studies/cielo" },
-  { label: "Why verification", href: "/docs/why-verification" },
+  { label: "Community", href: "/community" },
   { label: "About", href: "/about" },
 ];
 

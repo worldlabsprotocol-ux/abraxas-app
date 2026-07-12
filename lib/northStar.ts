@@ -17,6 +17,16 @@ export const ABRAXAS_HEADLINE = "Stop proving the same thing over and over.";
 export const ABRAXAS_SUBHEAD =
   "Abraxas creates reusable trust for assets, businesses, and people.";
 
+/** Secondary tagline — use after headline on marketing surfaces. */
+export const ABRAXAS_TAGLINE = "Verify once. Transact everywhere.";
+
+/** Category positioning for investor/partner surfaces. */
+export const ABRAXAS_POSITIONING =
+  "Abraxas is the reusable verification infrastructure for real-world assets.";
+
+export const ABRAXAS_PROBLEM_THESIS =
+  "Tokenization alone is not enough. Repeated verification is the hidden tax killing institutional adoption of RWAs.";
+
 export const ABRAXAS_BECKER_PITCH =
   "Every company keeps asking for the same information. We make that happen once.";
 
