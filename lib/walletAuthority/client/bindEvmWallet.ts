@@ -3,6 +3,12 @@
 // Single EVM wallet-bind flow for Connect, demo, and future Passport entry points.
 
 import {
+  ensureBrowserSession,
+  probeBrowserSession,
+} from "@/lib/auth/ensureBrowserSessionClient";
+import { CONNECT_SIGN_IN_PROMPT, mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
+import { loadUserSession } from "@/lib/sui/zklogin/session";
+import {
   connectEvmWallet,
   signEvmPersonalMessage,
   type EvmConnectionMethod,
@@ -34,13 +40,37 @@ async function parseApiError(res: Response, fallback: string): Promise<string> {
   return mapWalletApiError(data.error ?? fallback, res.status);
 }
 
+/** Ensure httpOnly session cookie exists before wallet-authority APIs (fixes MetaMask WebView race). */
+export async function ensurePassportBrowserSessionForBind(): Promise<void> {
+  const probe = await probeBrowserSession();
+  if (probe.authenticated) return;
+
+  const zk = loadUserSession();
+  if (!zk?.suiAddress) {
+    throw new Error(CONNECT_SIGN_IN_PROMPT);
+  }
+
+  const ensured = await ensureBrowserSession(zk.suiAddress);
+  if (!ensured.ok) {
+    throw new Error(mapBrowserSessionSetupFailure(ensured.reason, ensured.status));
+  }
+
+  const after = await probeBrowserSession();
+  if (!after.authenticated) {
+    throw new Error(
+      "Passport sign-in could not be confirmed in this browser. Sign in again on this page, then retry binding.",
+    );
+  }
+}
+
 /**
- * Full EVM SIWE bind: connect → challenge → sign → confirm.
- * Uses wallet-authority APIs (session cookie required in this browser).
+ * Full EVM SIWE bind: session sync → connect → challenge → sign → confirm.
  */
 export async function bindEvmWalletToPassport(
   options: BindEvmWalletOptions = {},
 ): Promise<BindEvmWalletResult> {
+  await ensurePassportBrowserSessionForBind();
+
   const connection = await connectEvmWallet({
     method: options.connectionMethod,
     chainId: options.chainId,

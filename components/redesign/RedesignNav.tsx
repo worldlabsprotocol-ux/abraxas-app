@@ -17,22 +17,20 @@ const MotionLink = motion.create(Link);
 const LINKS = [
   { href: "/", label: "Home", exact: true },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
+  { href: "/blog", label: "Learn", matchPrefixes: ["/blog", "/community"] },
 ];
 
 const MORE_LINKS = [
+  { href: "/blog", label: "Learn hub" },
+  { href: "/blog/founder", label: "From the builder" },
+  { href: "/community", label: "Community" },
   { href: "/#registry", label: "Browse assets" },
-  { href: "/account", label: "My account" },
-  { href: "/build", label: "Submit your asset" },
-  { href: "/investors/strategy", label: "Strategic roadmap" },
-  { href: "/integrations/relying-parties", label: "Relying parties" },
-  { href: "/integrations/outreach", label: "Partner outreach" },
-  { href: "/investors", label: "Investor data room" },
   { href: "/case-studies/cielo", label: "Cielo case study" },
+  { href: "/integrations", label: "Integrations" },
+  { href: "/design-partner", label: "Design partner" },
+  { href: "/account", label: "My account" },
   { href: "/docs", label: "Documentation" },
-  { href: "/docs/sui", label: "zkLogin / Sui docs" },
-  { href: "/roadmap", label: "Roadmap" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/about", label: "About" },
+  { href: "/developers/partner", label: "Partner docs" },
 ];
 
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {

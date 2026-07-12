@@ -1,85 +1,87 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — visuals + mock UI per step.
-
-import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+// Auto-advancing product walkthrough — diagram-only visuals, copy lives in sidebar.
 
 export interface ProductLoopStep {
   id: string;
   title: string;
   subtitle: string;
   durationMs: number;
-  image?: string;
-  imageObjectPosition?: string;
   badge?: string;
   metrics?: { label: string; value: string }[];
-  cta?: string;
+  href: string;
+  ctaLabel: string;
 }
 
 export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "browse",
     title: "Browse verified assets",
-    subtitle: "Assurance levels and registry state — no login required.",
+    subtitle: "Public registry with assurance levels — no login required.",
     durationMs: 6000,
-    image: "/assets/smyrna/011.webp",
     badge: "Public registry",
     metrics: [
       { label: "Assets", value: "4 listed" },
       { label: "Assurance", value: "L1–L4" },
-      { label: "ID check", value: "When needed" },
+      { label: "Login", value: "Not required" },
     ],
+    href: "/#registry",
+    ctaLabel: "Browse registry",
   },
   {
     id: "book",
-    title: "Book with Apple Pay or card",
-    subtitle: "Pick dates · pay in fiat · settles automatically on-chain.",
+    title: "Book with USDC on Sui",
+    subtitle: "Cielo pilot — stablecoin checkout with on-chain settlement.",
     durationMs: 6000,
-    image: CIELO_PORCH_IMAGE.src,
-    imageObjectPosition: "center 40%",
-    badge: "Seamless checkout",
+    badge: "Pilot · USDC",
     metrics: [
-      { label: "Primary", value: "Apple Pay" },
-      { label: "Alt", value: "USDC" },
-      { label: "Est.", value: "~$1,240" },
+      { label: "Asset", value: "Cielo Sunrise" },
+      { label: "Pay", value: "USDC" },
+      { label: "Chain", value: "Sui" },
     ],
+    href: "/cielo/verified-rate",
+    ctaLabel: "Start Cielo flow",
   },
   {
     id: "signin",
     title: "Sign in with Google",
-    subtitle: "Your wallet is ready in one click — no seed phrase, no extension.",
+    subtitle: "Sui wallet ready in one click — no seed phrase.",
     durationMs: 5000,
-    badge: "Passport ready",
+    badge: "Passport",
     metrics: [
       { label: "Account", value: "Google" },
-      { label: "Wallet", value: "Apple Wallet" },
-      { label: "ID check", value: "Optional" },
+      { label: "Wallet", value: "Sui / zkLogin" },
+      { label: "ID check", value: "When needed" },
     ],
+    href: "/passport",
+    ctaLabel: "Create Passport",
   },
   {
-    id: "pay",
-    title: "Pay without thinking about rails",
-    subtitle: "Fiat on-ramp or stablecoin · settlement captured · on-chain verify.",
+    id: "consent",
+    title: "Approve what gets shared",
+    subtitle: "Partner sees eligibility only — receipt saved to Access.",
     durationMs: 6000,
-    image: CIELO_HERO_IMAGE.src,
-    imageObjectPosition: CIELO_HERO_IMAGE.objectPosition,
-    badge: "Payment captured",
+    badge: "Consent",
     metrics: [
-      { label: "Method", value: "Apple Pay" },
-      { label: "Settles", value: "USDC" },
-      { label: "Status", value: "Captured ✓" },
+      { label: "Shared", value: "Minimum proof" },
+      { label: "Hidden", value: "ID documents" },
+      { label: "Receipt", value: "Access tab" },
     ],
+    href: "/passport?tab=access",
+    ctaLabel: "View Access tab",
   },
   {
     id: "verify",
     title: "Verify on the public registry",
-    subtitle: "Any partner checks your credential — assurance levels L1–L4, instant.",
+    subtitle: "Any partner checks ABX-RE-HOSP-001 — portable proof.",
     durationMs: 7000,
-    badge: "✓ PORTABLE PROOF",
+    badge: "Portable proof",
     metrics: [
-      { label: "Standard", value: "W3C VC" },
-      { label: "API", value: "/verify" },
+      { label: "Record", value: "ABX-RE-HOSP-001" },
+      { label: "Tool", value: "/verify" },
       { label: "Reuse", value: "Any partner" },
     ],
+    href: "/verify/ABX-RE-HOSP-001",
+    ctaLabel: "Verify Cielo record",
   },
 ];
 

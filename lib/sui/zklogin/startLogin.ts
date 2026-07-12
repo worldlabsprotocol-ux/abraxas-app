@@ -4,12 +4,20 @@
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { generateNonce, generateRandomness } from "@mysten/sui/zklogin";
 import { getSuiClient } from "@/lib/sui/client";
+import { savePostLoginReturn } from "@/lib/auth/postLoginReturn";
 import { buildGoogleOAuthUrl, isZkLoginConfigured } from "./config";
 import { savePendingSession } from "./session";
 
 const EPOCH_BUFFER = 10;
 
-export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; error: string }> {
+export interface StartGoogleZkLoginOptions {
+  /** Same-origin path to return to after OAuth (e.g. pending Connect request). */
+  returnPath?: string;
+}
+
+export async function startGoogleZkLogin(
+  options: StartGoogleZkLoginOptions = {},
+): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!isZkLoginConfigured()) {
     return {
       ok: false,
@@ -32,6 +40,10 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
     provider: "google",
     startedAt: new Date().toISOString(),
   });
+
+  if (options.returnPath) {
+    savePostLoginReturn(options.returnPath);
+  }
 
   const url = buildGoogleOAuthUrl(nonce);
   if (!url) {

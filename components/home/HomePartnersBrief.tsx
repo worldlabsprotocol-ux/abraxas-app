@@ -1,63 +1,76 @@
 "use client";
 // FILE: components/home/HomePartnersBrief.tsx
+// Issuers + partner wedge — verification first, integrations second.
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 export function HomePartnersBrief() {
   return (
-    <section style={{
-      padding: "clamp(2rem, 5vw, 3rem) 0",
-      borderTop: "1px solid var(--border-strong)",
-    }} aria-labelledby="partners-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700,
-        letterSpacing: "0.12em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.5rem",
-      }}>
-        Built for relying parties
-      </div>
-      <h2 id="partners-heading" style={{
-        fontFamily: FONT, fontSize: "var(--fs-h2)", fontWeight: 800,
-        letterSpacing: "-0.02em", color: "var(--text-primary)",
-        margin: "0 0 0.65rem", maxWidth: 560,
-      }}>
-        Partners receive the minimum proof their policy requires
-      </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, maxWidth: 560, margin: "0 0 1rem",
-      }}>
-        No passports, selfies, biometrics, or document folders by default — only the claims the policy needs.
-      </p>
-      <pre style={{
-        fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-secondary)",
-        padding: "0.85rem 1rem", borderRadius: 12,
-        background: "var(--surface-inset)", border: "1px solid var(--border)",
-        lineHeight: 1.55, margin: "0 0 1rem", overflow: "auto",
-      }}>
-{`Decision: Approved
-Policy: Cielo Verified Guest v1
-Wallet binding: Active
-Consent: Current
-Valid until: [time-bound status]`}
-      </pre>
-      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 1rem" }}>
-        Partner integrations are pilot-ready for approved organizations.
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href="/integrations" variant="secondary" size="sm">Developer documentation →</Btn>
-        <Link href="/integrations/relying-parties" style={{
-          fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT,
-          alignSelf: "center", textDecoration: "none",
+    <>
+      <section style={{
+        padding: "clamp(1.5rem, 4vw, 2rem) 0",
+        borderTop: "1px solid var(--border-strong)",
+      }} aria-labelledby="issuers-heading">
+        <h2 id="issuers-heading" style={{
+          fontFamily: FONT, fontSize: "var(--fs-h3)", fontWeight: 800,
+          letterSpacing: "-0.02em", color: "var(--text-primary)",
+          margin: "0 0 0.5rem", maxWidth: 520,
         }}>
-          Partner verification API →
-        </Link>
-      </div>
-    </section>
+          For asset & business owners
+        </h2>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
+          lineHeight: 1.65, maxWidth: 520, margin: "0 0 1rem",
+        }}>
+          Verification comes first — tokenization and partner access follow once your record is live.
+          List when you are ready; the Cielo pilot shows the guest-facing loop today.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+          <Btn href="/design-partner" variant="secondary" size="sm">Become a design partner →</Btn>
+          <Btn href="/build" variant="ghost" size="sm">List your asset →</Btn>
+          <Btn href="/blog" variant="ghost" size="sm">Learn hub →</Btn>
+          <Link href="/case-studies/cielo" style={{
+            fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT,
+            textDecoration: "none",
+          }}>
+            See Cielo case study →
+          </Link>
+        </div>
+      </section>
+
+      <section style={{
+        padding: "clamp(1.5rem, 4vw, 2rem) 0",
+        borderTop: "1px solid var(--border-strong)",
+      }} aria-labelledby="partners-heading">
+        <h2 id="partners-heading" style={{
+          fontFamily: FONT, fontSize: "var(--fs-h3)", fontWeight: 800,
+          letterSpacing: "-0.02em", color: "var(--text-primary)",
+          margin: "0 0 0.5rem", maxWidth: 520,
+        }}>
+          Ask for the eligibility decision — not the customer&apos;s document folder.
+        </h2>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
+          lineHeight: 1.65, maxWidth: 520, margin: "0 0 1rem",
+        }}>
+          Design partners are in final onboarding. Integrate once — every future credential becomes reusable.
+          Cielo shows the reference loop today.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/integrations" variant="secondary" size="sm">Integrations →</Btn>
+          <Btn href="/community" variant="ghost" size="sm">Community →</Btn>
+          <Link href="/docs" style={{
+            fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT,
+            alignSelf: "center", textDecoration: "none",
+          }}>
+            Documentation →
+          </Link>
+        </div>
+      </section>
+    </>
   );
 }

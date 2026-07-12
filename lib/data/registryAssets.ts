@@ -2,6 +2,7 @@
 // Canonical registry entries — maps explore catalog ↔ ABX IDs ↔ verifier responses.
 
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
+import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
 import { SMYRNA_ASSET } from "@/lib/smyrnaCaseStudy";
 import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
 import type { AssuranceBreakdown } from "@/lib/assuranceTaxonomy";
@@ -35,7 +36,7 @@ const CIELO: RegistryAssetDef = {
   name: FLAGSHIP_PROPERTY.title,
   assetClass: FLAGSHIP_PROPERTY.assetClass,
   location: "Mineral Bluff, Georgia",
-  image: "/assets/cielo/08.jpg",
+  image: CIELO_REGISTRY_IMAGE.src,
   verifyState: "verified",
   pipelineStage: "MARKETPLACE_LIVE",
   assuranceLevel: 3,
