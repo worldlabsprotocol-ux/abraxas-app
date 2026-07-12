@@ -77,6 +77,10 @@ function PassportPageInner() {
   });
 
   useEffect(() => {
+    document.getElementById("passport-seo-fallback")?.remove();
+  }, []);
+
+  useEffect(() => {
     if (searchParams.get("signed_in") === "1") refresh();
   }, [searchParams, refresh]);
 

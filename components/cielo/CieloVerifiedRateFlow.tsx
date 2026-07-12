@@ -81,6 +81,10 @@ export function CieloVerifiedRateFlow() {
   }, [suiAddress, fixture]);
 
   useEffect(() => {
+    document.getElementById("cielo-verified-rate-seo-fallback")?.remove();
+  }, []);
+
+  useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
 
