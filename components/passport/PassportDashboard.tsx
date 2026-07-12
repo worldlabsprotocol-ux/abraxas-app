@@ -135,12 +135,14 @@ export function PassportDashboard(props: Props) {
 
   return (
     <div>
-      <PassportProfileHeader
-        email={props.email}
-        signedIn={props.walletDone}
-        canonical={canonical}
-        onEditProfile={() => setEditProfileOpen(true)}
-      />
+      {props.walletDone && (
+        <PassportProfileHeader
+          email={props.email}
+          signedIn={props.walletDone}
+          canonical={canonical}
+          onEditProfile={() => setEditProfileOpen(true)}
+        />
+      )}
 
       {editProfileOpen && props.walletDone && (
         <PassportEditProfilePanel onClose={() => setEditProfileOpen(false)} />
