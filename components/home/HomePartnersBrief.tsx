@@ -56,7 +56,8 @@ export function HomePartnersBrief() {
           fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
           lineHeight: 1.65, maxWidth: 520, margin: "0 0 1rem",
         }}>
-          Partners receive the minimum proof their policy requires: approved, denied, or review — with consent receipts, not raw KYC files.
+          Design partners are in final onboarding. Integrate once — every future credential becomes reusable.
+          Cielo shows the reference loop today.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href="/integrations" variant="secondary" size="sm">Integrations →</Btn>

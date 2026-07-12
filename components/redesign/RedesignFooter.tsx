@@ -25,7 +25,7 @@ const PARTNERS = [
 ];
 
 const LEARN = [
-  { label: "North Star", href: "/north-star" },
+  { label: "Our focus", href: "/north-star" },
   { label: "Cielo case study", href: "/case-studies/cielo" },
   { label: "Why verification", href: "/docs/why-verification" },
   { label: "About", href: "/about" },
