@@ -17,17 +17,20 @@ const MotionLink = motion.create(Link);
 const LINKS = [
   { href: "/", label: "Home", exact: true },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
+  { href: "/blog", label: "Learn", matchPrefixes: ["/blog", "/community"] },
 ];
 
 const MORE_LINKS = [
+  { href: "/blog", label: "Learn hub" },
+  { href: "/blog/founder", label: "From the builder" },
+  { href: "/community", label: "Community" },
   { href: "/#registry", label: "Browse assets" },
-  { href: "/account", label: "My account" },
-  { href: "/demo/partner-access", label: "Connect demo" },
-  { href: "/integrations/relying-parties", label: "Relying parties" },
-  { href: "/developers/partner", label: "Partner docs" },
   { href: "/case-studies/cielo", label: "Cielo case study" },
-  { href: "/docs/passport-spec", label: "Passport spec" },
+  { href: "/integrations", label: "Integrations" },
+  { href: "/design-partner", label: "Design partner" },
+  { href: "/account", label: "My account" },
   { href: "/docs", label: "Documentation" },
+  { href: "/developers/partner", label: "Partner docs" },
 ];
 
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {

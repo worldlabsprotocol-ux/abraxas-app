@@ -44,15 +44,16 @@ export function HomeSharpHero() {
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "1rem" }}>
         <Btn href="/passport" size="lg">Get verified once →</Btn>
+        <Btn href="/blog" variant="secondary" size="lg">Learn hub →</Btn>
         <Btn href="/#workflow" variant="secondary" size="lg">See the difference</Btn>
         <Btn href="/cielo/verified-rate" variant="ghost" size="lg">Try Cielo pilot →</Btn>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0 }}>
+        <a href="/#learn" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Featured articles</a>
+        {" · "}
         <a href="/#product-loop" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Watch the loop</a>
         {" · "}
-        <a href="/blog" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Learn</a>
-        {" · "}
-        <a href="/north-star" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Our focus</a>
+        <a href="/#registry" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Registry</a>
         {" · "}
         <a href="/design-partner" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Design partner</a>
       </p>

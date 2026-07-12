@@ -32,6 +32,7 @@ export function HomePartnersBrief() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
           <Btn href="/design-partner" variant="secondary" size="sm">Become a design partner →</Btn>
           <Btn href="/build" variant="ghost" size="sm">List your asset →</Btn>
+          <Btn href="/blog" variant="ghost" size="sm">Learn hub →</Btn>
           <Link href="/case-studies/cielo" style={{
             fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT,
             textDecoration: "none",
@@ -61,6 +62,7 @@ export function HomePartnersBrief() {
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href="/integrations" variant="secondary" size="sm">Integrations →</Btn>
+          <Btn href="/community" variant="ghost" size="sm">Community →</Btn>
           <Link href="/docs" style={{
             fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT,
             alignSelf: "center", textDecoration: "none",
