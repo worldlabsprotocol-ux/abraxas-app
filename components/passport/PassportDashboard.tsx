@@ -315,7 +315,7 @@ function VerificationTab({
       <section style={CARD}>
         <PassportStepPurpose title={PASSPORT_STEPS.verifyIdentity.title} purpose={PASSPORT_STEPS.verifyIdentity.purpose} />
         <div style={{ display: "grid", gap: "0.35rem", marginBottom: "0.85rem" }}>
-          <Row label="Status" value={v?.label ?? "Not started"} />
+          <Row label="Status" value={v?.label ?? "Ready to verify"} />
           {v?.issuer && <Row label="Issuer" value={v.issuer} />}
           {v?.verifiedAt && <Row label="Verified" value={new Date(v.verifiedAt).toLocaleDateString()} />}
           {v?.expiresAt && <Row label="Expires" value={new Date(v.expiresAt).toLocaleDateString()} />}

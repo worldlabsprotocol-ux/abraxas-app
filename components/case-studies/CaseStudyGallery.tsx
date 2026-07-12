@@ -8,7 +8,6 @@ const BG = "#06090B";
 const OBJECT_POSITIONS: Record<string, string> = {
   "/assets/cielo/04.jpg": "78% center",
   "/assets/cielo/01.jpg": "50% 20%",
-  "/assets/cielo/08.jpg": "center 35%",
 };
 
 export function CaseStudyGallery({

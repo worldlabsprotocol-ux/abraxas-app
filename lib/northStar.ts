@@ -1,8 +1,10 @@
 // FILE: lib/northStar.ts
 // Abraxas North Star — one page every feature must satisfy.
 
+export const ABRAXAS_CATEGORY = "Trust Infrastructure Layer";
+
 export const ABRAXAS_ONE_LINER =
-  "Abraxas removes redundant verification so trusted people and trusted assets can move faster — with only the minimum information needed, shared only when it's needed.";
+  "We eliminate repeated verification so assets, people, and businesses can move faster.";
 
 export const ABRAXAS_CUDA =
   "Every credential issued today works everywhere tomorrow.";
@@ -10,10 +12,10 @@ export const ABRAXAS_CUDA =
 export const ABRAXAS_PRODUCT =
   "Trust as an API. Passport is the UX.";
 
-export const ABRAXAS_HEADLINE = "Stop repeating verification.";
+export const ABRAXAS_HEADLINE = "Stop proving the same thing over and over.";
 
 export const ABRAXAS_SUBHEAD =
-  "One identity. One asset record. One check. Use it everywhere.";
+  "Abraxas creates reusable trust for assets, businesses, and people.";
 
 export const ABRAXAS_BECKER_PITCH =
   "Every company keeps asking for the same information. We make that happen once.";

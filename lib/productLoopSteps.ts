@@ -2,6 +2,7 @@
 // Auto-advancing product walkthrough — distinct image/diagram per step.
 
 import { CIELO_DOME_DECK_IMAGE } from "@/lib/data/cieloMedia";
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 
 export interface ProductLoopStep {
   id: string;
@@ -22,7 +23,7 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Browse verified assets",
     subtitle: "Registry records with assurance levels — no login required.",
     durationMs: 6000,
-    image: "/assets/smyrna/011.webp",
+    image: SMYRNA_TOWNHOME_IMAGE.src,
     imageObjectPosition: "center 35%",
     badge: "Public registry",
     metrics: [

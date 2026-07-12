@@ -14,7 +14,7 @@ describe("northStar", () => {
   });
 
   it("uses outcome-first headline", () => {
-    expect(ABRAXAS_HEADLINE.toLowerCase()).toContain("stop repeating");
+    expect(ABRAXAS_HEADLINE.toLowerCase()).toContain("stop proving");
   });
 
   it("contrasts before/after workflows", () => {

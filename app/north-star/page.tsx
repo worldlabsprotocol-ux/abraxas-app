@@ -8,6 +8,7 @@ import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import {
   ABRAXAS_BECKER_PITCH,
+  ABRAXAS_CATEGORY,
   ABRAXAS_CUDA,
   ABRAXAS_ONE_LINER,
   ABRAXAS_PRODUCT,
@@ -23,7 +24,7 @@ export default function NorthStarPage() {
   return (
     <RedesignPage maxWidth={820}>
       <PageHeader
-        eyebrow="Abraxas North Star"
+        eyebrow={ABRAXAS_CATEGORY}
         title="Become inevitable — not bigger"
         subtitle="One page. Every feature, screen, and outreach email should satisfy these."
       />

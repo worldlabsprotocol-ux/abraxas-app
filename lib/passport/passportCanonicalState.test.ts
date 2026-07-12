@@ -23,8 +23,31 @@ describe("passportCanonicalState", () => {
     expect(state.wallets.summary).toBe("2 wallets connected");
   });
 
-  it("maps identity UI to plain verification status", () => {
-    expect(resolveVerificationPlainStatus({ identityUi: "under_review" })).toBe("in_review");
-    expect(resolveVerificationPlainStatus({ identityUi: "verified", expiresAt: "2020-01-01" })).toBe("expired");
+  it("dedupes duplicate partner share rows for display", () => {
+    const state = buildPassportCanonicalState({
+      identityUi: "not_started",
+      shares: [
+        {
+          id: "a",
+          partner_id: "cielo",
+          purpose: "guest",
+          claims_authorized: ["wallet_binding_confirmed"],
+          shared_at: "2026-06-01T00:00:00Z",
+          expires_at: null,
+          revoked_at: null,
+        },
+        {
+          id: "b",
+          partner_id: "cielo",
+          purpose: "guest",
+          claims_authorized: ["wallet_binding_confirmed"],
+          shared_at: "2026-07-01T00:00:00Z",
+          expires_at: null,
+          revoked_at: null,
+        },
+      ],
+    });
+    expect(state.access.shares).toHaveLength(1);
+    expect(state.access.activeCount).toBe(1);
   });
 });

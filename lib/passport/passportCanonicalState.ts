@@ -62,7 +62,7 @@ export function resolveVerificationPlainStatus(input: {
 }
 
 export const VERIFICATION_PLAIN_LABELS: Record<VerificationPlainStatus, string> = {
-  not_started: "Not started",
+  not_started: "Ready to verify",
   in_review: "In review",
   verified: "Verified",
   expired: "Expired",
@@ -78,6 +78,27 @@ export function formatSharedProof(claims: string[], purpose?: string | null): st
   if (claims.some(c => c.includes("identity"))) return "Identity verified (outcome only)";
   if (claims.length === 0) return "Policy decision only";
   return "Minimum proof shared";
+}
+
+/** Collapse duplicate partner+proof rows for UI (keeps newest receipt). */
+export function dedupeShareSummaries<T extends {
+  id: string;
+  partnerId: string;
+  proofLabel: string;
+  sharedAt: string;
+  revoked: boolean;
+}>(shares: T[]): T[] {
+  const byKey = new Map<string, T>();
+  for (const share of shares) {
+    const key = `${share.partnerId}::${share.proofLabel}::${share.revoked ? "revoked" : "active"}`;
+    const existing = byKey.get(key);
+    if (!existing || Date.parse(share.sharedAt) > Date.parse(existing.sharedAt)) {
+      byKey.set(key, share);
+    }
+  }
+  return Array.from(byKey.values()).sort(
+    (a, b) => Date.parse(b.sharedAt) - Date.parse(a.sharedAt),
+  );
 }
 
 export function buildPassportCanonicalState(input: {
@@ -116,7 +137,7 @@ export function buildPassportCanonicalState(input: {
   }));
   const activeWallets = bindings.filter(w => w.status === "active");
 
-  const shares = (input.shares ?? []).map(s => ({
+  const sharesRaw = (input.shares ?? []).map(s => ({
     id: s.id,
     partnerId: s.partner_id,
     proofLabel: formatSharedProof(s.claims_authorized, s.purpose),
@@ -124,6 +145,7 @@ export function buildPassportCanonicalState(input: {
     expiresAt: s.expires_at,
     revoked: Boolean(s.revoked_at),
   }));
+  const shares = dedupeShareSummaries(sharesRaw);
   const activeShares = shares.filter(s => !s.revoked);
 
   return {
