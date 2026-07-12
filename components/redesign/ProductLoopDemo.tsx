@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/ProductLoopDemo.tsx
-// Auto-advancing product walkthrough with real deep-links per step.
+// Clean diagram walkthrough — copy in sidebar, visuals stay minimal (1-1-1).
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -46,7 +46,7 @@ export function ProductLoopDemo() {
           <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap", marginBottom: "0.35rem" }}>
             <CapabilityStatusBadge status="pilot" size="xs" />
             <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-              Example proof loop — same engine partners integrate
+              Cielo reference loop — same engine partners integrate
             </span>
           </div>
           <h2 id="product-loop-heading" style={{
@@ -60,7 +60,7 @@ export function ProductLoopDemo() {
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.6, maxWidth: 480, margin: "0.5rem 0 0",
           }}>
-            One reference journey — each step links to the live pilot.
+            Five steps. One journey. Each links to the live pilot.
           </p>
         </div>
         <button
@@ -85,50 +85,28 @@ export function ProductLoopDemo() {
         border: "1px solid var(--border-strong)",
         background: "var(--surface-raised)",
       }}>
-        {/* Visual panel */}
-        <div style={{ position: "relative", minHeight: 320, background: "#0a0f14" }}>
+        {/* Visual panel — diagram only, no text overlay */}
+        <div style={{ position: "relative", minHeight: 300, background: "#0a0f14" }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={step.id}
-              initial={{ opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.45 }}
-              style={{ position: "absolute", inset: 0 }}
+              transition={{ duration: 0.35 }}
+              style={{ position: "absolute", inset: 0, background: theme.gradient }}
             >
-              {step.image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={step.image}
-                  alt=""
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    objectPosition: step.imageObjectPosition ?? "center",
-                    filter: theme.imageFilter,
-                  }}
-                />
-              ) : (
-                <div style={{ width: "100%", height: "100%", background: theme.gradient }} />
-              )}
               <ProductLoopDiagramBackdrop stepId={step.id} />
-              <div style={{
-                position: "absolute", inset: 0,
-                background: step.image
-                  ? `linear-gradient(to top, rgba(6,9,11,${theme.overlayStrength + 0.15}) 0%, rgba(6,9,11,${theme.overlayStrength * 0.6}) 45%, rgba(6,9,11,${theme.overlayStrength * 0.25}) 100%)`
-                  : `linear-gradient(to top, rgba(6,9,11,${theme.overlayStrength + 0.2}) 0%, rgba(6,9,11,${theme.overlayStrength * 0.5}) 100%)`,
-              }} />
               <ProductLoopStepVisual stepId={step.id} />
             </motion.div>
           </AnimatePresence>
 
-          <div style={{ position: "absolute", top: 16, left: 16, right: 16, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ position: "absolute", top: 16, left: 16, right: 16, display: "flex", justifyContent: "space-between", alignItems: "flex-start", pointerEvents: "none" }}>
             <span style={{
               fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
               padding: "0.3rem 0.6rem", borderRadius: 999,
-              background: "rgba(0,0,0,0.55)", color: step.badge?.includes("✓") ? ACCENT : "#fff",
-              border: `1px solid ${step.badge?.includes("✓") ? "rgba(16,185,129,0.5)" : `${theme.accent}55`}`,
+              background: "rgba(0,0,0,0.55)", color: "#fff",
+              border: `1px solid ${theme.accent}55`,
             }}>
               {step.badge}
             </span>
@@ -137,59 +115,20 @@ export function ProductLoopDemo() {
             </span>
           </div>
 
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "1.25rem" }}>
-            <AnimatePresence mode="wait">
-              <motion.div key={step.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800, color: "#fff", marginBottom: "0.35rem" }}>
-                  {step.title}
-                </div>
-                <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.75)", lineHeight: 1.55, marginBottom: "0.85rem" }}>
-                  {step.subtitle}
-                </div>
-                {step.metrics && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                    {step.metrics.map(m => (
-                      <div key={m.label} style={{
-                        padding: "0.35rem 0.65rem", borderRadius: 8,
-                        background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)",
-                      }}>
-                        <div style={{ fontFamily: MONO, fontSize: "0.48rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase" }}>{m.label}</div>
-                        <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: ACCENT }}>{m.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <Link
-                  href={step.href}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: "0.35rem",
-                    padding: "0.55rem 0.95rem", borderRadius: 999,
-                    background: ACCENT, color: "#04130C",
-                    fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800,
-                    textDecoration: "none",
-                  }}
-                >
-                  {step.ctaLabel} →
-                </Link>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Progress bar */}
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.08)" }}>
             <motion.div
               key={`${index}-${paused}`}
               initial={{ width: "0%" }}
-              animate={{ width: paused ? `${((index) / PRODUCT_LOOP_STEPS.length) * 100}%` : "100%" }}
+              animate={{ width: paused ? `${(index / PRODUCT_LOOP_STEPS.length) * 100}%` : "100%" }}
               transition={{ duration: paused ? 0 : step.durationMs / 1000, ease: "linear" }}
               style={{ height: "100%", background: ACCENT }}
             />
           </div>
         </div>
 
-        {/* Step picker */}
+        {/* Step picker + active step copy */}
         <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.35rem" }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.15rem" }}>
             Jump to step
           </div>
           {PRODUCT_LOOP_STEPS.map((s, i) => (
@@ -211,13 +150,46 @@ export function ProductLoopDemo() {
                   {s.title}
                 </div>
               </button>
-              {i === index && (
-                <Btn href={s.href} size="sm" variant="secondary">
-                  {s.ctaLabel} →
-                </Btn>
-              )}
             </div>
           ))}
+
+          {/* Active step detail — all copy lives here, not on the visual */}
+          <div style={{
+            marginTop: "0.5rem", padding: "1rem", borderRadius: 12,
+            border: "1px solid rgba(16,185,129,0.25)", background: "rgba(16,185,129,0.06)",
+          }}>
+            <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+              {step.title}
+            </div>
+            <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.75rem" }}>
+              {step.subtitle}
+            </p>
+            {step.metrics && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.85rem" }}>
+                {step.metrics.map(m => (
+                  <div key={m.label} style={{
+                    padding: "0.3rem 0.55rem", borderRadius: 8,
+                    background: "var(--surface)", border: "1px solid var(--border)",
+                  }}>
+                    <div style={{ fontFamily: MONO, fontSize: "0.48rem", color: "var(--text-muted)", textTransform: "uppercase" }}>{m.label}</div>
+                    <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: ACCENT }}>{m.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Link
+              href={step.href}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.35rem",
+                padding: "0.55rem 0.95rem", borderRadius: 999,
+                background: ACCENT, color: "#04130C",
+                fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800,
+                textDecoration: "none",
+              }}
+            >
+              {step.ctaLabel} →
+            </Link>
+          </div>
 
           <div style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Btn href="/cielo/verified-rate" size="sm">Run full Cielo loop →</Btn>
@@ -230,7 +202,6 @@ export function ProductLoopDemo() {
         </div>
       </div>
 
-      {/* Overall progress */}
       <div style={{ marginTop: "0.65rem", height: 2, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
         <div style={{ width: `${progress}%`, height: "100%", background: ACCENT, transition: "width 0.4s ease" }} />
       </div>

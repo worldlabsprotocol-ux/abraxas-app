@@ -14,7 +14,7 @@ function PanelShell({ children, align = "center" }: { children: React.ReactNode;
       position: "absolute", inset: 0,
       display: "flex", alignItems: align === "stretch" ? "stretch" : "center",
       justifyContent: "center",
-      padding: "1.5rem 1.25rem 5rem",
+      padding: "2.5rem 1.25rem 1.5rem",
       pointerEvents: "none",
     }}>
       {children}
@@ -96,35 +96,16 @@ function BrowseDiagram() {
 function BookMock() {
   return (
     <PanelShell>
-      <Card width={300} accent="#38BDF8">
-        <div style={{ padding: "0.85rem 1rem", borderBottom: "1px solid rgba(56,189,248,0.15)" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700, color: "#38BDF8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
-            Cielo Sunrise · USDC on Sui
+      <Card width={240} accent="#38BDF8">
+        <div style={{ padding: "1.1rem 1rem", textAlign: "center" }}>
+          <div style={{ fontFamily: FONT, fontSize: "1.35rem", fontWeight: 900, color: "#38BDF8", marginBottom: "0.35rem" }}>
+            1,240 USDC
           </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "#fff" }}>3-night wellness stay</div>
-        </div>
-        <div style={{ padding: "0.85rem 1rem", display: "grid", gap: "0.55rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>
-            <span>Check-in</span><span style={{ color: "#fff", fontWeight: 600 }}>Fri · Aug 14</span>
+          <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#fff", marginBottom: "0.25rem" }}>
+            Cielo · 3 nights
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>
-            <span>Check-out</span><span style={{ color: "#fff", fontWeight: 600 }}>Mon · Aug 17</span>
-          </div>
-          <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0.15rem 0" }} />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>Total</span>
-            <span style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "#38BDF8" }}>1,240 USDC</span>
-          </div>
-          <div style={{
-            marginTop: "0.35rem", padding: "0.65rem", borderRadius: 10,
-            background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.35)",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.45rem",
-          }}>
-            <span style={{ fontFamily: MONO, fontSize: "0.72rem", fontWeight: 800, color: "#38BDF8" }}>◎</span>
-            <span style={{ fontFamily: FONT, fontSize: "0.82rem", color: "#fff", fontWeight: 700 }}>Pay with USDC</span>
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.45)", textAlign: "center" }}>
-            Settles on Sui · Apple Pay coming later
+          <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "rgba(255,255,255,0.5)" }}>
+            Settles on Sui
           </div>
         </div>
       </Card>

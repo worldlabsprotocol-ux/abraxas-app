@@ -1,16 +1,11 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — distinct image/diagram per step.
-
-import { CIELO_DOME_DECK_IMAGE } from "@/lib/data/cieloMedia";
-import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+// Auto-advancing product walkthrough — diagram-only visuals, copy lives in sidebar.
 
 export interface ProductLoopStep {
   id: string;
   title: string;
   subtitle: string;
   durationMs: number;
-  image?: string;
-  imageObjectPosition?: string;
   badge?: string;
   metrics?: { label: string; value: string }[];
   href: string;
@@ -21,10 +16,8 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "browse",
     title: "Browse verified assets",
-    subtitle: "Registry records with assurance levels — no login required.",
+    subtitle: "Public registry with assurance levels — no login required.",
     durationMs: 6000,
-    image: SMYRNA_TOWNHOME_IMAGE.src,
-    imageObjectPosition: "center 35%",
     badge: "Public registry",
     metrics: [
       { label: "Assets", value: "4 listed" },
@@ -37,29 +30,27 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "book",
     title: "Book with USDC on Sui",
-    subtitle: "Pick dates at Cielo · pay in stablecoin · settlement on-chain today.",
+    subtitle: "Cielo pilot — stablecoin checkout with on-chain settlement.",
     durationMs: 6000,
-    image: "/assets/cielo/07.jpg",
-    imageObjectPosition: "center 45%",
-    badge: "Stablecoin checkout",
+    badge: "Pilot · USDC",
     metrics: [
       { label: "Asset", value: "Cielo Sunrise" },
       { label: "Pay", value: "USDC" },
       { label: "Chain", value: "Sui" },
     ],
     href: "/cielo/verified-rate",
-    ctaLabel: "Start Cielo booking",
+    ctaLabel: "Start Cielo flow",
   },
   {
     id: "signin",
     title: "Sign in with Google",
-    subtitle: "Your Sui wallet is ready in one click — no seed phrase, no extension.",
+    subtitle: "Sui wallet ready in one click — no seed phrase.",
     durationMs: 5000,
-    badge: "Passport ready",
+    badge: "Passport",
     metrics: [
       { label: "Account", value: "Google" },
       { label: "Wallet", value: "Sui / zkLogin" },
-      { label: "ID check", value: "Optional" },
+      { label: "ID check", value: "When needed" },
     ],
     href: "/passport",
     ctaLabel: "Create Passport",
@@ -67,13 +58,13 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "consent",
     title: "Approve what gets shared",
-    subtitle: "Consent ceremony · partner sees eligibility only · receipt saved to Access.",
+    subtitle: "Partner sees eligibility only — receipt saved to Access.",
     durationMs: 6000,
-    badge: "Consent captured",
+    badge: "Consent",
     metrics: [
       { label: "Shared", value: "Minimum proof" },
-      { label: "Stored", value: "Access tab" },
-      { label: "Status", value: "Approved ✓" },
+      { label: "Hidden", value: "ID documents" },
+      { label: "Receipt", value: "Access tab" },
     ],
     href: "/passport?tab=access",
     ctaLabel: "View Access tab",
@@ -81,11 +72,9 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "verify",
     title: "Verify on the public registry",
-    subtitle: "Any partner checks ABX-RE-HOSP-001 — portable proof, instant lookup.",
+    subtitle: "Any partner checks ABX-RE-HOSP-001 — portable proof.",
     durationMs: 7000,
-    image: CIELO_DOME_DECK_IMAGE.src,
-    imageObjectPosition: CIELO_DOME_DECK_IMAGE.objectPosition,
-    badge: "✓ PORTABLE PROOF",
+    badge: "Portable proof",
     metrics: [
       { label: "Record", value: "ABX-RE-HOSP-001" },
       { label: "Tool", value: "/verify" },
