@@ -146,8 +146,12 @@ export default function IntegrationsPage() {
 
       <ContentCard title="Become a design partner">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
-          RWA marketplaces, lenders, and DeFi protocols: pilot Abraxas Passport as your trust rail.
-          We prioritize partners with real volume and a clear conversion metric.
+          Looking for one flagship operator to co-design reusable verification — starting with hospitality.
+          Outcome-first collaboration, not a protocol pitch.
+        </p>
+        <Btn href="/design-partner" size="sm">Design partner page →</Btn>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.65, margin: "0.85rem 0 0.75rem" }}>
+          Technical integrations, SDK snippets, and protocol listings continue below for developer-led partners.
         </p>
         <BulletList items={[...DESIGN_PARTNER_CRITERIA]} />
 

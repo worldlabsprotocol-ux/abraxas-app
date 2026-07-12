@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { eachNight, estimateUsdc } from "@/lib/cielo/bookingValidation";
 import type { CieloVerifiedGuestEvaluation } from "@/lib/cielo/verifiedGuestPolicy";
+import { CieloLiveTrustStrip } from "@/components/cielo/CieloLiveTrustStrip";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -161,7 +162,10 @@ export function CieloVerifiedRateFlow() {
       background: "var(--surface-raised)",
       overflow: "hidden",
     }}>
-      <div style={{ padding: "1rem 1.15rem", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ padding: "1rem 1.15rem 0" }}>
+        <CieloLiveTrustStrip compact />
+      </div>
+      <div style={{ padding: "0 1.15rem 1rem", borderBottom: "1px solid var(--border)" }}>
         <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>
           Pilot · Verified rate request
         </div>

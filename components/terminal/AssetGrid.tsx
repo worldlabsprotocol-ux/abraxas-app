@@ -26,12 +26,13 @@ const CIELO_IMAGES: string[] = Array.from({ length: 20 }, (_, i) =>
   `/assets/cielo/${String(i + 1).padStart(2, "0")}.jpg`
 );
 
-// Smyrna, real photos of the actual property, uploaded as 011.webp
-// through 033.webp. If your actual filenames don't match this exact
-// range, adjust the numbers below, everything else works unchanged.
-const SMYRNA_IMAGES: string[] = Array.from({ length: 23 }, (_, i) =>
-  `/assets/smyrna/${String(i + 11).padStart(3, "0")}.webp`
+// Smyrna Townhome · 1736 — canonical exterior + optional gallery (012.webp+).
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+
+const SMYRNA_GALLERY_EXTRA: string[] = Array.from({ length: 22 }, (_, i) =>
+  `/assets/smyrna/${String(i + 12).padStart(3, "0")}.webp`,
 );
+const SMYRNA_IMAGES: string[] = [SMYRNA_TOWNHOME_IMAGE.src, ...SMYRNA_GALLERY_EXTRA];
 
 // Naj Tulum, a unit at a condo-hotel in Aldea Zama, Tulum, Mexico,
 // purchased 2023, owned outright. Four photos, naj.jpg through naj4.jpg.
