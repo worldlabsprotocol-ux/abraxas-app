@@ -45,22 +45,8 @@ export default function CpgGradyCaseStudyPage() {
       <PageHeader
         eyebrow="Case study · Active land partner"
         title={`${CPG_ASSET.name} (${CPG_ASSET.id})`}
-        subtitle="CPG Land Sales / Gabriel Corrales — ~270-acre Grady County subdivision with survey-backed verification scope. Abraxas provides trust infrastructure only; not a binding land sale."
+        subtitle="CPG Land Sales / Gabriel Corrales — ~270 acres, 11 surveyed lots, active on the Abraxas registry. Drone footage, surveys, and pricing below."
       />
-
-      <div style={{
-        padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1rem",
-        background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.28)",
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65,
-      }}>
-        <strong style={{ color: "var(--text-primary)" }}>Non-binding verification record.</strong>{" "}
-        Abraxas does not sell land, hold escrow, or guarantee pricing. Registry reference values include a
-        platform economics band (+20%) for verification scope — confirm all terms with{" "}
-        <Link href={CPG_PARTNER.website} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, fontWeight: 700 }}>
-          CPG Land Sales
-        </Link>{" "}
-        before any contract. Not investment advice · not a securities offering.
-      </div>
 
       <CaseStudyVideoHero
         src={CPG_ASSET.heroVideo}

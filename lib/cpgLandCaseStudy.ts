@@ -82,13 +82,19 @@ export const CPG_REGISTRY_VALUE = {
 } as const;
 
 export const CPG_CONFLICTS = {
-  headline: "Disclosure · not a binding offer",
+  headline: "Disclosure",
   items: [
     {
-      topic: "Abraxas role",
+      topic: "Who sells the land",
       disclosure:
-        "Abraxas provides verification infrastructure — identity, evidence scope, and reusable attestations for counterparties. Abraxas is not the seller, broker, escrow agent, or legal counsel. Nothing on this page constitutes a purchase agreement, LOI, or binding offer to sell land.",
-      implication: "All acquisition terms are negotiated directly with CPG Land Sales / Gabriel Corrales and closed through Oklahoma title (Washita Valley Abstract).",
+        "CPG Land Sales (Gabriel Corrales) is the seller. This listing is live on Abraxas — pricing, surveys, and lot status are shown for verified counterparty diligence. Contracts and closing run through CPG and Washita Valley Abstract, not Abraxas checkout.",
+      implication: "Abraxas hosts the verified record; Gabe handles the deal.",
+    },
+    {
+      topic: "What “non-binding” means on Abraxas",
+      disclosure:
+        "Browsing or verifying on Abraxas does not sign you up for a purchase. It is not a contract with Abraxas. The land sale itself is real — buyers work directly with CPG Land Sales like any other transaction.",
+      implication: "This protects Abraxas as verification infrastructure; it does not mean the property is off-market or unavailable.",
     },
     {
       topic: "Pricing display",
@@ -206,5 +212,5 @@ export const CPG_WHAT_THIS_PROVES = [
   "Verify-once sharing lets bulk buyers, lenders, and partners check diligence without re-forwarding plat PDFs through a chain.",
   "Honest L1/L2 labeling: partner seller ask vs Abraxas registry reference — no fake appraisal badges.",
   "Early retail traction (pre-full MLS) supports partner pricing statements without Abraxas guaranteeing outcomes.",
-  "Abraxas verification layer is non-binding — acquisition terms stay with CPG Land Sales and Oklahoma title.",
+  "Abraxas hosts the verified record; CPG Land Sales handles contracts and closing in Oklahoma.",
 ] as const;

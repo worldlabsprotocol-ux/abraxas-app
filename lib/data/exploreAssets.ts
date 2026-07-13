@@ -79,7 +79,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     state: "open",
     statusBadge: "pilot",
     offeringDisclaimer: true,
-    note: "Active land partner · CPG Land Sales. Abraxas verification only — not a binding sale. Registry ref includes +20% platform band.",
+    note: "Active land partner · CPG Land Sales · lots available. Contact Gabriel Corrales for acquisition terms.",
     href: "/case-studies/cpg-grady-270",
     verificationScopeHref: "/case-studies/cpg-grady-270#pricing",
     liveProof: { label: "CPG Land Sales", url: "https://www.cpglandsales.com/" },

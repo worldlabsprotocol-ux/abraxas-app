@@ -104,7 +104,7 @@ const CPG_GRADY: RegistryAssetDef = {
   },
   metadataUri: "/case-studies/cpg-grady-270",
   notice:
-    "Active land partner · CPG Land Sales (Gabriel Corrales). Abraxas verification infrastructure only — not a binding offer to sell. Seller ask is partner-provided; registry reference includes platform economics band.",
+    "Active land partner · CPG Land Sales (Gabriel Corrales). Live on Abraxas registry with survey-backed evidence. Seller ask is partner-provided; registry reference includes platform economics band.",
   tokenization: {
     standard: "Abraxas Registry Entry",
     chain: "Off-chain title · Sui settlement rail (planned)",

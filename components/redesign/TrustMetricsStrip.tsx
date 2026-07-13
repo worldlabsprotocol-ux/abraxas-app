@@ -57,7 +57,7 @@ export function TrustMetricsStrip() {
             lineHeight: 1.65,
             margin: 0,
           }}>
-            ~$3M attested registry scope: Cielo Sunrise (L3 appraised) plus CPG Land Sales Grady County 270 (L2 land partner). Verification infrastructure — not a binding sale.
+            ~$3M registry scope: Cielo Sunrise (L3 appraised) plus CPG Land Sales Grady County 270 — active land partner on Abraxas.
           </p>
         </div>
 
