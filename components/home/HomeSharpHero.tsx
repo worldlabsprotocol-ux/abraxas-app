@@ -3,7 +3,7 @@
 // Outcome-first homepage — trust infrastructure, not identity jargon.
 
 import { Btn } from "@/components/redesign/ui";
-import { ABRAXAS_HEADLINE, ABRAXAS_SUBHEAD } from "@/lib/northStar";
+import { ABRAXAS_HEADLINE, ABRAXAS_SUBHEAD, ABRAXAS_CATEGORY } from "@/lib/northStar";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -20,7 +20,7 @@ export function HomeSharpHero() {
         letterSpacing: "0.14em", textTransform: "uppercase",
         color: ACCENT, marginBottom: "0.65rem",
       }}>
-        Trust infrastructure
+        {ABRAXAS_CATEGORY}
       </div>
       <h1 id="home-hero-heading" style={{
         fontFamily: FONT, fontSize: "var(--fs-display)", fontWeight: 900,
@@ -35,12 +35,6 @@ export function HomeSharpHero() {
         margin: "0 0 0.65rem",
       }}>
         {ABRAXAS_SUBHEAD}
-      </p>
-      <p className="home-hero-secondary" style={{
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-        lineHeight: 1.55, margin: "0 0 1.25rem",
-      }}>
-        You prove something once. Then you never upload it again.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.75rem" }}>
         <Btn href="/#registry" size="lg">Browse assets →</Btn>
@@ -58,7 +52,6 @@ export function HomeSharpHero() {
       </p>
       <style jsx>{`
         @media (max-width: 640px) {
-          .home-hero-secondary,
           .home-hero-tertiary a[href="/#learn"],
           .home-hero-tertiary a[href="/design-partner"] {
             display: none;

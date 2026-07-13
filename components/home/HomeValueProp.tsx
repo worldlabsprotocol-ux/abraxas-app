@@ -7,9 +7,9 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 const POINTS = [
-  "Guest already verified — no document upload, no repeated KYC.",
-  "Partner asks a policy question — you tap Approve — they get yes or no.",
-  "Revoke access anytime. Proof stops traveling when you say so.",
+  "Faster approvals — partners get yes or no, not another document folder.",
+  "Fewer document requests — proof travels with the guest or buyer.",
+  "Less manual review — Trust Rules automate what each partner can ask for.",
 ];
 
 export function HomeValueProp() {
@@ -23,7 +23,7 @@ export function HomeValueProp() {
         letterSpacing: "0.08em", textTransform: "uppercase",
         color: ACCENT, margin: "0 0 0.5rem",
       }}>
-        {ABRAXAS_TAGLINE}
+        Under the hood
       </p>
       <h2 id="value-prop-heading" style={{
         fontFamily: FONT, fontSize: "var(--fs-h2)", fontWeight: 800,
@@ -36,7 +36,7 @@ export function HomeValueProp() {
         fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
         lineHeight: 1.55, margin: "0 0 0.75rem", maxWidth: 520,
       }}>
-        {ABRAXAS_CUDA}
+        {ABRAXAS_TAGLINE} · {ABRAXAS_CUDA}
       </p>
       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: "0.45rem", maxWidth: 480 }}>
         {POINTS.map(point => (

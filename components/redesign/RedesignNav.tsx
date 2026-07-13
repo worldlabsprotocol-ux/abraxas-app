@@ -16,10 +16,12 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
+  { href: "/operators", label: "Operators", matchPrefixes: ["/operators"] },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
 ];
 
 const MORE_LINKS = [
+  { href: "/operators", label: "Operators" },
   { href: "/portal", label: "Owner portal" },
   { href: "/blog", label: "Learn hub" },
   { href: "/blog/founder", label: "From the builder" },

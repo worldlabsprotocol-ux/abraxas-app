@@ -94,7 +94,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               lineHeight: 1.65,
               margin: "0 0 1.25rem",
             }}>
-              Closed-loop verification for real assets. Prove once — never re-forward the same documents.
+              Closed-loop reusable trust for real assets. Prove once — never re-forward the same documents.
             </p>
 
             <ul style={{

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Three-action homepage — assets first, closed-loop positioning.
+// Homepage answers one question: Why should I care? (Reusable Trust)
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -12,10 +12,15 @@ import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { ProductLoopDemo } from "./ProductLoopDemo";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeNorthStarMetric } from "@/components/home/HomeNorthStarMetric";
+import { HomePilotMetrics } from "@/components/home/HomePilotMetrics";
+import { HomeOperatorRoi } from "@/components/home/HomeOperatorRoi";
+import { PermissioningDemo } from "@/components/home/PermissioningDemo";
+import { HomeTrustFlywheel } from "@/components/home/HomeTrustFlywheel";
+import { TrustAuditTimeline } from "@/components/home/TrustAuditTimeline";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeValueProp } from "@/components/home/HomeValueProp";
-import { HomeWorkflowCompare } from "@/components/home/HomeWorkflowCompare";
 import { HomeLiveTodayStrip } from "@/components/home/HomeLiveTodayStrip";
 import { HomeLearnHub } from "@/components/home/HomeLearnHub";
 
@@ -24,7 +29,6 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-/** Active heavy hitters only — Smyrna stays in full registry, not homepage strip. */
 const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome"];
 
 function HomeContent() {
@@ -32,27 +36,32 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
+        <HomeNorthStarMetric />
+        <HomePilotMetrics />
         <div id="registry" style={{
           paddingTop: "clamp(0.5rem, 2vw, 1rem)",
           paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
           borderBottom: "1px solid var(--border-strong)",
         }}>
           <AssetsExplorer
-            title="Verified assets · acquire on Abraxas"
+            title="Real assets you can trust"
             eyebrow="Registry"
             home
             excludeIds={HOME_REGISTRY_EXCLUDE}
           />
         </div>
+        <HomeOperatorRoi />
+        <PermissioningDemo />
+        <HomeTrustFlywheel />
+        <TrustAuditTimeline />
         <HomeLiveTodayStrip />
         <HomePartnersBrief />
-        <HomeWorkflowCompare />
-        <HomeLearnHub />
-        <HomeValueProp />
-        <HomeSignedInModule />
         <div style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}>
           <ProductLoopDemo />
         </div>
+        <HomeLearnHub />
+        <HomeValueProp />
+        <HomeSignedInModule />
       </div>
     </main>
   );

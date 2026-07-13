@@ -1,7 +1,7 @@
 // FILE: lib/northStar.ts
 // Abraxas North Star — one page every feature must satisfy.
 
-export const ABRAXAS_CATEGORY = "Trust Infrastructure Layer";
+export const ABRAXAS_CATEGORY = "Reusable Trust";
 
 export const ABRAXAS_ONE_LINER =
   "We eliminate repeated verification so assets, people, and businesses can move faster.";
@@ -15,14 +15,14 @@ export const ABRAXAS_PRODUCT =
 export const ABRAXAS_HEADLINE = "Stop proving the same thing over and over.";
 
 export const ABRAXAS_SUBHEAD =
-  "Abraxas creates reusable trust for assets, businesses, and people.";
+  "Abraxas lets trusted verification move with people, businesses, and assets.";
 
 /** Secondary tagline — use after headline on marketing surfaces. */
 export const ABRAXAS_TAGLINE = "Verify once. Transact everywhere.";
 
 /** Category positioning for investor/partner surfaces. */
 export const ABRAXAS_POSITIONING =
-  "Abraxas is the reusable verification infrastructure for real-world assets.";
+  "Reusable trust for real assets — verify once, then every partner gets faster approvals with fewer document requests.";
 
 export const ABRAXAS_PROBLEM_THESIS =
   "Tokenization alone is not enough. Repeated verification is the hidden tax killing institutional adoption of RWAs.";

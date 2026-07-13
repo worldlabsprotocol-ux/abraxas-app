@@ -136,7 +136,7 @@ export function AssetsExplorer({
               fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
               maxWidth: 480, lineHeight: 1.6, margin: "0.5rem 0 0",
             }}>
-              Real properties and references with a clear verification scope — no jargon required to browse.
+              Real properties with clear trust scope — faster to browse than to read a whitepaper.
             </p>
           )}
         </div>

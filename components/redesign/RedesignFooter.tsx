@@ -11,6 +11,7 @@ const ACCENT = "#10B981";
 
 const PRODUCT = [
   { label: "Home", href: "/" },
+  { label: "Operators", href: "/operators" },
   { label: "Learn hub", href: "/blog" },
   { label: "Passport", href: "/passport" },
   { label: "Verify", href: "/verify" },
