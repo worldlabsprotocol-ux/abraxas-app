@@ -88,7 +88,7 @@ const SMYRNA: RegistryAssetDef = {
 
 const CPG_GRADY: RegistryAssetDef = {
   abxId: CPG_ASSET.id,
-  slug: "cpg-grady-270",
+  slug: "chickasaw-project",
   name: CPG_ASSET.name,
   assetClass: "REAL_ESTATE_LAND",
   location: CPG_ASSET.location,
@@ -102,7 +102,7 @@ const CPG_GRADY: RegistryAssetDef = {
     L3_ProfessionalAttestation: { status: "PENDING", timestamp: new Date().toISOString(), authority: "Independent_Appraisal" },
     L4_ActiveMonitoring: { status: "PENDING" },
   },
-  metadataUri: "/case-studies/cpg-grady-270",
+  metadataUri: CPG_ASSET.caseStudyPath,
   notice:
     "Chickasaw Project · CPG Land Sales · ~270 ac Grady County OK. Surveys complete, Phase I clean, contracts at asking.",
   tokenization: {
@@ -110,7 +110,7 @@ const CPG_GRADY: RegistryAssetDef = {
     chain: "Off-chain title · Sui settlement rail (planned)",
     status: "LAND_PARTNER_ACTIVE",
   },
-  aliases: ["cpg", "cpg-grady", "chickasaw-project", "chickasaw", "grady-270", "grady-county-270", "abx-re-land-006"],
+  aliases: ["cpg", "cpg-grady", "cpg-grady-270", "chickasaw", "grady-270", "grady-county-270", "abx-re-land-006"],
 };
 
 const NAJ: RegistryAssetDef = {

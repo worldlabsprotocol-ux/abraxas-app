@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCT_LOOP_STEPS, PRODUCT_LOOP_TOTAL_MS } from "@/lib/productLoopSteps";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import { themeForStep } from "@/lib/productLoopStepThemes";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { ProductLoopDiagramBackdrop, ProductLoopStepVisual } from "./ProductLoopStepVisual";
@@ -192,7 +193,7 @@ export function ProductLoopDemo() {
           </div>
 
           <div style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href="/case-studies/cpg-grady-270#acquire" size="sm">Acquire on Abraxas →</Btn>
+            <Btn href={CPG_ASSET.inquirePath} size="sm">Acquire on Abraxas →</Btn>
             <Btn href="/passport" variant="secondary" size="sm">Create Passport</Btn>
           </div>
 

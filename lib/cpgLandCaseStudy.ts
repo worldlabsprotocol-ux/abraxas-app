@@ -17,6 +17,9 @@ export const CPG_PARTNER = {
   updateModel: "Partner updates sync to Abraxas — buyers stay on-protocol.",
 } as const;
 
+/** Canonical public case study URL — legacy /cpg-grady-270 redirects here. */
+export const CPG_CASE_STUDY_PATH = "/case-studies/chickasaw-project" as const;
+
 export const CPG_ASSET = {
   id: "ABX-RE-LAND-006",
   designation: "ACTIVE LAND LISTING · CHICKASAW CORRIDOR",
@@ -30,7 +33,8 @@ export const CPG_ASSET = {
   heroVideoPoster: "/assets/cpg/hero-oklahoma-land.jpg",
   parentAcres: 270,
   availableLotsNote: "Strong early traction — Lots 1 & 5 under contract before full Abraxas launch. Remaining inventory moving fast.",
-  inquirePath: "/case-studies/cpg-grady-270#acquire",
+  caseStudyPath: CPG_CASE_STUDY_PATH,
+  inquirePath: `${CPG_CASE_STUDY_PATH}#acquire`,
   verifyPath: `/verify/ABX-RE-LAND-006`,
 } as const;
 
@@ -174,7 +178,7 @@ export const CPG_SOURCES = [
 /** Closed-loop next steps — all paths stay on Abraxas. */
 export const CPG_PROOF = [
   { label: "Acquire through Abraxas", desc: "Submit package interest · USDC settlement when deal-ready", href: CPG_ASSET.inquirePath },
-  { label: "Unlock diligence pack", desc: "Sign in with Passport · surveys, lot schedule, well maps", href: "/passport?return=/case-studies/cpg-grady-270" },
+  { label: "Unlock diligence pack", desc: "Sign in with Passport · surveys, lot schedule, well maps", href: `/passport?return=${CPG_CASE_STUDY_PATH}` },
   { label: "Abraxas verify record", desc: "Public registry · ABX-RE-LAND-006", href: CPG_ASSET.verifyPath },
   { label: "Partner sync", desc: `${CPG_PARTNER.contact} · ${CPG_PARTNER.updateModel}`, href: CPG_ASSET.inquirePath },
 ] as const;

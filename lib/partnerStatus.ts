@@ -40,7 +40,7 @@ export const REAL_PARTNERS: RealPartnerRecord[] = [
     verticalHeadline: "Oklahoma land development partner",
     summary: `Live — ${CPG_ASSET.name} (~270 ac, 11 lots · Grady County). Surveys, Phase I clean, contracts at asking. Verify-once sharing for bulk buyers and lenders.`,
     proofLabel: `${CPG_ASSET.name} case study`,
-    proofHref: "/case-studies/cpg-grady-270",
+    proofHref: CPG_ASSET.caseStudyPath,
   },
   {
     id: "relying-party-tribal-1",

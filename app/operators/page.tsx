@@ -23,7 +23,7 @@ const ACCENT = "#10B981";
 
 const VERTICALS = [
   { name: "Hotels & STR", example: "Cielo Sunrise — live pilot", href: "/case-studies/cielo" },
-  { name: "Land & deal rooms", example: CPG_ASSET.name, href: "/case-studies/cpg-grady-270" },
+  { name: "Land & deal rooms", example: CPG_ASSET.name, href: CPG_ASSET.caseStudyPath },
   { name: "Lenders", example: "Trust Requests · yes/no without document folders", href: "/verify" },
   { name: "Marketplaces", example: "Registry · trust before transact", href: "/#registry" },
   { name: "Property managers", example: "Guest proof travels across channels", href: "/passport" },

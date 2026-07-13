@@ -65,7 +65,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     cta: "View asset",
   },
   {
-    id: "cpg-grady-270",
+    id: "chickasaw-project",
     name: CPG_ASSET.name,
     assetClass: "Real Estate · Land",
     location: CPG_ASSET.location,
@@ -79,7 +79,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     state: "open",
     statusBadge: "pilot",
     note: "Contracts at asking pre-MLS · Phase I clean · surveys complete · CPG Land Sales",
-    href: "/case-studies/cpg-grady-270",
+    href: CPG_ASSET.caseStudyPath,
     liveProof: { label: "On Abraxas registry", url: "/verify/ABX-RE-LAND-006" },
     cta: "View listing",
   },

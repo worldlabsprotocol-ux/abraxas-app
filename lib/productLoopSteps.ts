@@ -1,6 +1,8 @@
 // FILE: lib/productLoopSteps.ts
 // Auto-advancing product walkthrough — re-verify pain → Abraxas closed loop.
 
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
+
 export interface ProductLoopStep {
   id: string;
   title: string;
@@ -80,7 +82,7 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
       { label: "Settle", value: "USDC · Sui" },
       { label: "Target", value: "$110M+ infra" },
     ],
-    href: "/case-studies/cpg-grady-270#acquire",
+    href: CPG_ASSET.inquirePath,
     ctaLabel: "Acquire on Abraxas",
   },
 ];
