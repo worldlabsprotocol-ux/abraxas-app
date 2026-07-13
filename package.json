@@ -14,7 +14,8 @@
     "cielo:e2e": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/cielo-e2e-check.ts",
     "cielo:e2e:remote": "BASE_URL=https://abraxas-app.vercel.app npx ts-node scripts/cielo-e2e-check.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "marketing:x-demo": "python3 scripts/generate-x-demo-video.py"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
