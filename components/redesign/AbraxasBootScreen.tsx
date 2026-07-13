@@ -1,28 +1,51 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// First-visit brand moment — deliberate tap, then localStorage bypass on return.
+// Session boot moment — desktop + mobile, main shell hidden until acknowledged.
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { partnersActiveCount } from "@/lib/partnerStatus";
+import { CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
-const STORAGE_KEY = "abraxas_boot_entered_v5";
+const STORAGE_KEY = "abraxas_boot_entered_v6";
 
-export function AbraxasBootScreen() {
+export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => void }) {
   const [visible, setVisible] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   const dismiss = useCallback(() => {
-    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
+    try { sessionStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
     setVisible(false);
-  }, []);
+    onReady?.(true);
+  }, [onReady]);
 
   useEffect(() => {
+    let skip = false;
     try {
-      if (localStorage.getItem(STORAGE_KEY)) return;
+      skip = Boolean(sessionStorage.getItem(STORAGE_KEY));
     } catch { /* ignore */ }
-    setVisible(true);
-  }, []);
+    if (skip) {
+      onReady?.(true);
+      setVisible(false);
+    } else {
+      setVisible(true);
+      onReady?.(false);
+    }
+    setChecked(true);
+  }, [onReady]);
+
+  if (!checked) {
+    return (
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "var(--bg, #06090B)",
+      }} aria-hidden />
+    );
+  }
+
+  const partnerCount = partnersActiveCount();
 
   return (
     <AnimatePresence>
@@ -50,7 +73,7 @@ export function AbraxasBootScreen() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.98, opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 2rem", maxWidth: 480 }}
+            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 2rem", maxWidth: 520 }}
           >
             <div style={{
               fontFamily: FONT,
@@ -69,10 +92,31 @@ export function AbraxasBootScreen() {
               fontSize: "clamp(0.82rem, 2.2vw, 0.95rem)",
               color: "var(--text-secondary, rgba(242,246,243,0.72))",
               lineHeight: 1.65,
-              margin: "0 0 1.75rem",
+              margin: "0 0 1.25rem",
             }}>
-              Verification infrastructure for permissioned on-chain finance.
+              Closed-loop verification for real assets. Prove once — never re-forward the same documents.
             </p>
+
+            <ul style={{
+              listStyle: "none", padding: 0, margin: "0 0 1.5rem",
+              textAlign: "left", display: "grid", gap: "0.55rem",
+            }}>
+              {[
+                `Cielo Sunrise · $1.1M appraised · live STR · USDC on Sui`,
+                `Grady County 270 · ${formatUsd(CPG_PRICING.fullProject)} · active land partner`,
+                `$2.7M+ attested registry · ${partnerCount} partners onboarded`,
+                `Partner updates sync here — buyers stay on Abraxas`,
+              ].map(line => (
+                <li key={line} style={{
+                  fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-primary)",
+                  padding: "0.45rem 0.65rem", borderRadius: 8,
+                  border: "1px solid var(--border)", background: "var(--surface)",
+                  lineHeight: 1.45,
+                }}>
+                  {line}
+                </li>
+              ))}
+            </ul>
 
             <button
               type="button"
@@ -101,8 +145,9 @@ export function AbraxasBootScreen() {
               color: "var(--text-muted, rgba(242,246,243,0.45))",
               letterSpacing: "0.04em",
               margin: 0,
+              lineHeight: 1.55,
             }}>
-              Public registry available without sign-in
+              Registry browsable without sign-in · Passport unlocks full diligence packs
             </p>
           </motion.div>
         </motion.div>

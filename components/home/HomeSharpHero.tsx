@@ -12,7 +12,7 @@ const ACCENT = "#10B981";
 export function HomeSharpHero() {
   return (
     <section id="top" aria-labelledby="home-hero-heading" style={{
-      padding: "clamp(2.5rem, 6vw, 4rem) 0 clamp(1.5rem, 3vw, 2rem)",
+      padding: "clamp(1.25rem, 4vw, 4rem) 0 clamp(0.75rem, 2vw, 1.25rem)",
       maxWidth: 720,
     }}>
       <div style={{
@@ -36,19 +36,18 @@ export function HomeSharpHero() {
       }}>
         {ABRAXAS_SUBHEAD}
       </p>
-      <p style={{
+      <p className="home-hero-secondary" style={{
         fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
         lineHeight: 1.55, margin: "0 0 1.25rem",
       }}>
         You prove something once. Then you never upload it again.
       </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "1rem" }}>
-        <Btn href="/passport" size="lg">Get verified once →</Btn>
-        <Btn href="/blog" variant="secondary" size="lg">Learn hub →</Btn>
-        <Btn href="/#workflow" variant="secondary" size="lg">See the difference</Btn>
-        <Btn href="/cielo/verified-rate" variant="ghost" size="lg">Try Cielo pilot →</Btn>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.75rem" }}>
+        <Btn href="/#registry" size="lg">Browse assets →</Btn>
+        <Btn href="/passport" variant="secondary" size="lg">Get verified once →</Btn>
+        <Btn href="/#product-loop" variant="ghost" size="lg">Watch the loop</Btn>
       </div>
-      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0 }}>
+      <p className="home-hero-tertiary" style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0 }}>
         <a href="/#learn" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Featured articles</a>
         {" · "}
         <a href="/#product-loop" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Watch the loop</a>
@@ -56,9 +55,16 @@ export function HomeSharpHero() {
         <a href="/#registry" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Registry</a>
         {" · "}
         <a href="/#partners" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Partners</a>
-        {" · "}
-        <a href="/design-partner" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Design partner</a>
       </p>
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .home-hero-secondary,
+          .home-hero-tertiary a[href="/#learn"],
+          .home-hero-tertiary a[href="/design-partner"] {
+            display: none;
+          }
+        }
+      `}</style>
     </section>
   );
 }

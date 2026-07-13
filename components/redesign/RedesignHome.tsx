@@ -1,7 +1,8 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Three-action homepage — progressive disclosure for everything else.
+// Three-action homepage — assets first, closed-loop positioning.
 
+import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { AmbientGlow } from "./AmbientGlow";
@@ -23,11 +24,26 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
+/** Active heavy hitters only — Smyrna stays in full registry, not homepage strip. */
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome"];
+
 function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
+        <div id="registry" style={{
+          paddingTop: "clamp(0.5rem, 2vw, 1rem)",
+          paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
+          borderBottom: "1px solid var(--border-strong)",
+        }}>
+          <AssetsExplorer
+            title="Verified assets · acquire on Abraxas"
+            eyebrow="Registry"
+            home
+            excludeIds={HOME_REGISTRY_EXCLUDE}
+          />
+        </div>
         <HomeLiveTodayStrip />
         <HomePartnersBrief />
         <HomeWorkflowCompare />
@@ -37,32 +53,29 @@ function HomeContent() {
         <div style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}>
           <ProductLoopDemo />
         </div>
-        <div id="registry" style={{ paddingTop: "clamp(1.5rem, 4vw, 2rem)", borderTop: "1px solid var(--border-strong)" }}>
-          <AssetsExplorer
-            title="Example verified assets"
-            eyebrow="Registry"
-            home
-          />
-        </div>
       </div>
     </main>
   );
 }
 
 export function RedesignHome() {
+  const [bootReady, setBootReady] = useState(false);
+
   return (
     <WalletContextProvider>
       <SuiAuthProvider>
-        <AbraxasBootScreen />
-        <div data-theme="dark" style={{
-          background: "var(--bg)", color: "var(--text-primary)",
-          minHeight: "100vh", position: "relative", overflowX: "hidden",
-        }}>
-          <AmbientGlow />
-          <RedesignNav />
-          <HomeContent />
-          <RedesignFooter />
-        </div>
+        <AbraxasBootScreen onReady={setBootReady} />
+        {bootReady && (
+          <div data-theme="dark" style={{
+            background: "var(--bg)", color: "var(--text-primary)",
+            minHeight: "100vh", position: "relative", overflowX: "hidden",
+          }}>
+            <AmbientGlow />
+            <RedesignNav />
+            <HomeContent />
+            <RedesignFooter />
+          </div>
+        )}
       </SuiAuthProvider>
     </WalletContextProvider>
   );

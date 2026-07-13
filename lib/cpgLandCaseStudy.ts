@@ -12,8 +12,9 @@ export function formatUsd(n: number): string {
 export const CPG_PARTNER = {
   name: "CPG Land Sales",
   contact: "Gabriel Corrales",
-  website: "https://www.cpglandsales.com/",
   titleCompany: "Washita Valley Abstract · Chickasha, OK",
+  /** Partner pushes status updates → Abraxas registry reflects automatically. */
+  updateModel: "Partner updates sync to Abraxas — buyers stay on-protocol.",
 } as const;
 
 export const CPG_ASSET = {
@@ -26,10 +27,31 @@ export const CPG_ASSET = {
   heroVideo: "/assets/cpg/cpg-drone.mp4",
   heroVideoPoster: "/assets/cpg/hero-oklahoma-land.jpg",
   parentAcres: 270,
-  availableLotsNote: "Strong early traction — Lots 1 & 5 under contract before full MLS launch. Remaining inventory moving fast.",
-  partnerSite: CPG_PARTNER.website,
-  idLandMap: "https://id.land/maps/a4f54df1718764c5e2c82ebabb5d353c/share",
-  lot4Mls: "https://www.zillow.com/homedetails/4-County-Street-2990-LOT-4-Blanchard-OK-73010/463636574_zpid/",
+  availableLotsNote: "Strong early traction — Lots 1 & 5 under contract before full Abraxas launch. Remaining inventory moving fast.",
+  inquirePath: "/case-studies/cpg-grady-270#acquire",
+  verifyPath: `/verify/ABX-RE-LAND-006`,
+} as const;
+
+/** Oil & gas diligence — partner attested, on-registry for bulk buyers. */
+export const CPG_OIL_GAS = {
+  headline: "Oil & gas · clean-lot context",
+  summary:
+    "Lots 2–4 (81.74 ac contiguous bundle) have no active oil or gas wells and no pipelines on tract. Other areas of the parent parcel may differ — full well schedule in Passport diligence pack.",
+  lots234Clean: true,
+  items: [
+    {
+      title: "Lots 2–4 bundle",
+      body: "No active oil/gas wells · no pipelines on these tracts — ideal for ag, homestead, or bulk acquisition without mineral encumbrance friction on the contiguous block.",
+    },
+    {
+      title: "Broader parent parcel",
+      body: "Remaining lots may have different mineral or pipeline context. Abraxas holds partner-attested well maps in the signed-in diligence pack — verify once, share to any counterparty.",
+    },
+    {
+      title: "Title & abstract",
+      body: "Washita Valley Abstract (Grady County seat) handles title. Surveys complete on all 11 splits — plat PDFs release through Passport.",
+    },
+  ],
 } as const;
 
 export interface CpgLotRow {
@@ -132,19 +154,27 @@ export const CPG_SOURCES = [
     asOf: "2026-06-01",
   },
   {
-    claim: "Lot 4 MLS",
-    value: "Live · Blanchard OK",
+    claim: "Lots 2–4 oil/gas",
+    value: "No active wells · no pipelines",
     level: "L2 Review",
-    source: "Zillow / MLS",
+    source: "CPG Land Sales · partner attested",
+    asOf: "2026-07-05",
+  },
+  {
+    claim: "Lot 4 traction",
+    value: "Offers incoming",
+    level: "L2 Review",
+    source: "CPG Land Sales · Abraxas registry",
     asOf: "2026-07-05",
   },
 ] as const;
 
+/** Closed-loop next steps — all paths stay on Abraxas. */
 export const CPG_PROOF = [
-  { label: "Contact Gabriel Corrales", desc: "CPG Land Sales — acquisition inquiries", href: CPG_PARTNER.website },
-  { label: "Lot 4 on MLS", desc: "Live listing · Blanchard, OK", href: CPG_ASSET.lot4Mls },
-  { label: "Interactive parcel map", desc: "Full tract layout", href: CPG_ASSET.idLandMap },
-  { label: "Abraxas verify record", desc: "Public registry · ABX-RE-LAND-006", href: `/verify/${encodeURIComponent(CPG_ASSET.id)}` },
+  { label: "Acquire through Abraxas", desc: "Submit package interest · USDC settlement when deal-ready", href: CPG_ASSET.inquirePath },
+  { label: "Unlock diligence pack", desc: "Sign in with Passport · surveys, lot schedule, well maps", href: "/passport?return=/case-studies/cpg-grady-270" },
+  { label: "Abraxas verify record", desc: "Public registry · ABX-RE-LAND-006", href: CPG_ASSET.verifyPath },
+  { label: "Partner sync", desc: `${CPG_PARTNER.contact} · ${CPG_PARTNER.updateModel}`, href: CPG_ASSET.inquirePath },
 ] as const;
 
 export const CPG_SURVEY_FILES: { lot: number; acres: number; label: string; href: string }[] = [
@@ -164,8 +194,8 @@ export const CPG_SURVEY_FILES: { lot: number; acres: number; label: string; href
 ];
 
 export const CPG_WHAT_THIS_PROVES = [
-  "Multi-lot Oklahoma land on Abraxas with drone footage, surveys, and live pricing — the proof model scales beyond hospitality.",
-  "Verify-once diligence: lenders and bulk buyers check one record instead of chasing plat PDFs through a chain.",
-  "Real retail traction before full MLS — contracts at asking price validate the market, not a spreadsheet.",
-  "CPG Land Sales + Abraxas = seller execution plus verified counterparty infrastructure.",
+  "Multi-lot Oklahoma land on Abraxas with drone footage, oil/gas diligence, and live pricing — the proof model scales beyond hospitality.",
+  "Verify-once diligence: lenders and bulk buyers check one record instead of re-forwarding plat PDFs to every counterparty.",
+  "Real traction at asking — contracts secured before full Abraxas launch validate demand, not a spreadsheet.",
+  "Abraxas spearheads the buyer loop; CPG provides updates that sync to the registry — closed loop, not a third-party funnel.",
 ] as const;

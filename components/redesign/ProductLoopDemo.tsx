@@ -41,12 +41,12 @@ export function ProductLoopDemo() {
             letterSpacing: "0.14em", textTransform: "uppercase",
             color: ACCENT, marginBottom: "0.5rem",
           }}>
-            End-to-end example
+            Stop re-forwarding documents
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap", marginBottom: "0.35rem" }}>
             <CapabilityStatusBadge status="pilot" size="xs" />
             <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-              Cielo reference loop — same engine partners integrate
+              Verify once · share globally · settle on Abraxas
             </span>
           </div>
           <h2 id="product-loop-heading" style={{
@@ -54,13 +54,13 @@ export function ProductLoopDemo() {
             letterSpacing: "-0.03em", lineHeight: 1.05,
             color: "var(--text-primary)", margin: 0, maxWidth: 520,
           }}>
-            See verification in action
+            From inbox chaos to closed-loop deals
           </h2>
           <p style={{
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.6, maxWidth: 480, margin: "0.5rem 0 0",
           }}>
-            Five steps. One journey. Each links to the live pilot.
+            Five steps. Email spam → Abraxas Passport → global buyers → USDC settlement.
           </p>
         </div>
         <button
@@ -192,8 +192,8 @@ export function ProductLoopDemo() {
           </div>
 
           <div style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href="/cielo/verified-rate" size="sm">Run full Cielo loop →</Btn>
-            <Btn href="/case-studies/cielo" variant="secondary" size="sm">Case study</Btn>
+            <Btn href="/case-studies/cpg-grady-270#acquire" size="sm">Acquire on Abraxas →</Btn>
+            <Btn href="/passport" variant="secondary" size="sm">Create Passport</Btn>
           </div>
 
           <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>

@@ -80,7 +80,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     statusBadge: "pilot",
     note: "Contracts at asking pre-MLS · Phase I clean · surveys complete · CPG Land Sales",
     href: "/case-studies/cpg-grady-270",
-    liveProof: { label: "CPG Land Sales", url: "https://www.cpglandsales.com/" },
+    liveProof: { label: "On Abraxas registry", url: "/verify/ABX-RE-LAND-006" },
     cta: "View listing",
   },
   {
