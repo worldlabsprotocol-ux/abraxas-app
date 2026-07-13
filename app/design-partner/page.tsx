@@ -28,6 +28,19 @@ export default function DesignPartnerPage() {
         subtitle="Design partners are onboarding now. We co-build reusable verification with measured outcomes — not another document portal."
       />
 
+      <ContentCard title="Land & tribal owners — start here">
+        <p style={bodyStyle}>
+          If you are onboarding as a land developer or tribal / mineral steward, use the owner portal:
+          submit once, track every stage, and control what approved parties see. This is the same verify-once
+          pattern as Cielo — applied to high-stakes land workflows.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/portal/apply" size="sm">Start intake →</Btn>
+          <Btn href="/portal/status" variant="secondary" size="sm">Track application →</Btn>
+          <Btn href="/portal" variant="ghost" size="sm">How the portal works →</Btn>
+        </div>
+      </ContentCard>
+
       {REAL_PARTNERS.length > 0 && (
         <ContentCard title="Partners in final onboarding">
           <p style={bodyStyle}>
