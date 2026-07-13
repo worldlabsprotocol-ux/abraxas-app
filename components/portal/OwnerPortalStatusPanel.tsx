@@ -200,6 +200,10 @@ export function OwnerPortalStatusPanel({
                 Public verify record →
               </Link>
             )}
+            <Link href={`/portal/journey?application_id=${encodeURIComponent(application?.application_id ?? applicationId)}&email=${encodeURIComponent(email)}`}
+              style={ctaBtn(ACCENT, "#000")}>
+              Full journey (wallet + USDC) →
+            </Link>
             <Link href="/case-studies/cielo" style={ctaBtn("transparent", ACCENT, ACCENT)}>
               See Cielo reference loop →
             </Link>

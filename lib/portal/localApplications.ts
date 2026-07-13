@@ -11,6 +11,10 @@ export interface LocalPortalApplication {
   description?: string;
   status: string;
   created_at: string;
+  linked_wallet?: string;
+  deal_status?: string;
+  settlement_amount_usdc?: number;
+  settlement_tx_digest?: string;
 }
 
 const STORAGE_KEY = "abraxas_portal_applications";
@@ -21,6 +25,20 @@ export function saveLocalPortalApplication(app: LocalPortalApplication): void {
   const next = existing.filter(a => a.application_id !== app.application_id);
   next.unshift(app);
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next.slice(0, 20)));
+}
+
+export function updateLocalPortalApplication(
+  applicationId: string,
+  patch: Partial<LocalPortalApplication>,
+): LocalPortalApplication | null {
+  if (typeof window === "undefined") return null;
+  const apps = loadLocalPortalApplications();
+  const idx = apps.findIndex(a => a.application_id === applicationId);
+  if (idx < 0) return null;
+  const updated = { ...apps[idx]!, ...patch };
+  apps[idx] = updated;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
+  return updated;
 }
 
 export function loadLocalPortalApplications(): LocalPortalApplication[] {

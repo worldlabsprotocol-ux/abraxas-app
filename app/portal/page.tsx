@@ -11,10 +11,10 @@ const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
 
 const OWNER_STEPS = [
-  "Submit your asset intake once — define evidence scope, not a blind document dump.",
-  "Track every review stage in this portal with your reference ID and email.",
-  "When verified, partners ask Abraxas for eligibility — you control scoped sharing.",
-  "Stop re-forwarding the same owner package through lenders, tribal review, and investors.",
+  "Submit intake once — define evidence scope, not a blind document dump.",
+  "Connect Passport (Google zkLogin) — your Sui wallet for on-chain settlement.",
+  "Get asset verified on the public registry — partners check Abraxas, not your inbox.",
+  "When the deal is ready, move USDC on Sui in one click — same rail as Cielo Sunrise.",
 ];
 
 export default function OwnerPortalPage() {
@@ -22,22 +22,26 @@ export default function OwnerPortalPage() {
     <RedesignPage maxWidth={820}>
       <PageHeader
         eyebrow="Owner portal"
-        title="Verify once. Stay in the loop."
-        subtitle="For land developers, tribal stewards, and asset owners — not a black-box form on someone else's site. You submit once, track progress, and control what approved parties can see."
+        title="Verify once. Settle on-chain."
+        subtitle="For land developers and tribal stewards — wallet, verified asset, deal ready, USDC settlement. End-to-end, whether you're crypto-native or not."
       />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "1.25rem" }}>
         <Btn href="/portal/apply" size="lg">Start land / asset intake →</Btn>
-        <Btn href="/portal/status" variant="secondary" size="lg">Track my application →</Btn>
+        <Btn href="/portal/journey" variant="secondary" size="lg">My full journey →</Btn>
+        <Btn href="/portal/status" variant="ghost" size="lg">Status only →</Btn>
       </div>
 
-      <ContentCard title="Why this exists">
-        <p style={body}>
-          The same bottleneck you hit in real deals — forwarding verified owner information through a chain
-          of command because every counterparty needs their own copy — is what Abraxas removes. You prove
-          once. Relying parties get minimum proof. Sensitive documents do not sit in every inbox.
-        </p>
-        <BulletList items={OWNER_STEPS} />
+      <ContentCard title="End-to-end loop">
+        <BulletList items={[
+          "Apply at /portal/apply — land, tribal, or mineral asset classes.",
+          "Passport creates your wallet (zkLogin) — link it to your application.",
+          "Abraxas verifies once; public /verify record goes live for partners.",
+          "Deal ready → Circle USDC on Sui captures to verified treasury.",
+        ]} />
+        <div style={{ marginTop: "0.75rem" }}>
+          <Btn href="/case-studies/cielo" variant="secondary" size="sm">See Cielo reference (hospitality) →</Btn>
+        </div>
       </ContentCard>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem", marginBottom: "1.25rem" }}>

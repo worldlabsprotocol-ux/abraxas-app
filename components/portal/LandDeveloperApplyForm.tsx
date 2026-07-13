@@ -70,7 +70,7 @@ export function LandDeveloperApplyForm() {
         application_id: json.application_id,
         email: form.contact_email.trim(),
       });
-      router.push(`/portal/status?${params.toString()}`);
+      router.push(`/portal/journey?${params.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed");
     } finally {

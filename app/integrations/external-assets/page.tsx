@@ -57,7 +57,7 @@ export default function ExternalAssetsPage() {
         });
       }
 
-      router.push(`/portal/status?application_id=${encodeURIComponent(json.application_id)}&email=${encodeURIComponent(email)}`);
+      router.push(`/portal/journey?application_id=${encodeURIComponent(json.application_id)}&email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed");
     } finally {
