@@ -7,7 +7,6 @@ import { SITE_URL } from "@/lib/siteUrl";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
 
 const PRODUCT = [
   { label: "Home", href: "/" },
@@ -78,7 +77,9 @@ export function RedesignFooter() {
           gap: "1.5rem", marginBottom: "2rem",
         }}>
           <div style={{ minWidth: 180 }}>
-            <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900, color: ACCENT, marginBottom: "0.5rem" }}>
+            <div className="abx-gradient-text" style={{
+              fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900, marginBottom: "0.5rem",
+            }}>
               ABRAXAS
             </div>
             <p style={{
@@ -88,7 +89,7 @@ export function RedesignFooter() {
               Reusable trust for people and assets — not another document upload.
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
-              <a href={SITE_URL} style={{ color: ACCENT, textDecoration: "none" }}>abraxas-app.vercel.app</a>
+              <a href={SITE_URL} style={{ color: "var(--accent)", textDecoration: "none" }}>abraxas-app.vercel.app</a>
             </p>
           </div>
           <Column title="Product" items={PRODUCT} />

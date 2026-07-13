@@ -23,7 +23,6 @@ import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
-const G = "#10B981";
 
 export default function PassportPage() {
   return (
@@ -162,10 +161,7 @@ function PassportPageInner() {
   }
 
   return (
-    <div data-theme="dark" style={{
-      background: "var(--bg)", minHeight: "100vh",
-      color: "var(--text-primary)", position: "relative", overflowX: "hidden",
-    }}>
+    <div data-theme="dark" className="abx-institutional-shell">
       <AmbientGlow />
       <div id="veriff-root" />
       <VeriffDeviceHint visible={showVeriffHint} />
@@ -176,14 +172,18 @@ function PassportPageInner() {
         padding: "clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)",
       }}>
         <div style={{ marginBottom: "1.5rem" }}>
-          <div style={{ fontFamily: S, fontSize: "0.72rem", fontWeight: 600, color: G, marginBottom: "0.625rem" }}>
+          <div className="abx-eyebrow-violet" style={{ marginBottom: "0.625rem" }}>
             Abraxas Passport
           </div>
           <h1 style={{
             fontFamily: S, fontSize: "clamp(1.35rem, 3.5vw, 1.85rem)", fontWeight: 800,
             lineHeight: 1.15, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 0.65rem",
           }}>
-            {pageView === "verify" ? "Verify a record" : "Your Passport"}
+            {pageView === "verify" ? (
+              <>Verify a <span className="abx-gradient-text">record</span></>
+            ) : (
+              <>Your <span className="abx-gradient-text">Passport</span></>
+            )}
           </h1>
           <p style={{
             fontFamily: S, fontSize: "0.85rem", color: "var(--text-secondary)",
@@ -278,8 +278,10 @@ function PassportPageInner() {
               </div>
               <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 <Link href="/docs/sui" style={{
-                  padding: "0.6rem 1.1rem", borderRadius: 999, background: G, color: "#000",
+                  padding: "0.6rem 1.1rem", borderRadius: 999,
+                  background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)",
                   fontFamily: S, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
+                  boxShadow: "var(--shadow-glow)",
                 }}>
                   Sui integration hub →
                 </Link>

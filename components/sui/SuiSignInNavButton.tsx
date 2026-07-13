@@ -10,8 +10,7 @@ import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
-const DEFAULT_AVATAR = "#10B981";
+const DEFAULT_AVATAR = "var(--accent)";
 
 const MENU_ITEM: React.CSSProperties = {
   display: "block",
@@ -104,11 +103,11 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
             gap: "0.45rem",
             padding: prominent ? "0.45rem 0.95rem 0.45rem 0.45rem" : "0.4rem 0.85rem 0.4rem 0.4rem",
             borderRadius: 999,
-            border: `1px solid ${hasProfile ? `${avatarColor}55` : `${ACCENT}44`}`,
-            background: menuOpen ? `${avatarColor}22` : hasProfile ? `${avatarColor}14` : `${ACCENT}12`,
+            border: `1px solid ${hasProfile ? `${avatarColor}55` : "var(--accent-border)"}`,
+            background: menuOpen ? `${avatarColor}22` : hasProfile ? `${avatarColor}14` : "var(--accent-faint)",
             fontFamily: FONT,
             fontSize: prominent ? "0.78rem" : "0.75rem",
-            color: hasProfile ? "var(--text-primary)" : ACCENT,
+            color: hasProfile ? "var(--text-primary)" : "var(--accent)",
             fontWeight: 700,
             maxWidth: prominent ? 200 : 168,
             cursor: "pointer",
@@ -137,7 +136,7 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
             {label}
           </span>
           {hasProfile && (
-            <span style={{ fontSize: "0.62rem", color: ACCENT, flexShrink: 0 }}>✓</span>
+            <span style={{ fontSize: "0.62rem", color: "var(--accent-verify)", flexShrink: 0 }}>✓</span>
           )}
         </button>
 
@@ -223,10 +222,10 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
         style={{
           display: "inline-flex", alignItems: "center", gap: "0.4rem",
           padding: "0.55rem 1rem", borderRadius: 999, border: "none",
-          background: ACCENT, color: "#000",
+          background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)",
           fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
           cursor: busy ? "wait" : "pointer", opacity: busy ? 0.75 : 1,
-          whiteSpace: "nowrap",
+          whiteSpace: "nowrap", boxShadow: "var(--shadow-glow)",
         }}>
         <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
         {busy ? "Redirecting…" : "Continue with Google"}
@@ -238,12 +237,12 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
     <Link href="/passport" style={{
       padding: prominent ? "0.55rem 1rem" : "0.45rem 0.95rem",
       borderRadius: 999,
-      border: configured ? `1px solid ${ACCENT}55` : "1px solid var(--border)",
-      background: configured ? `${ACCENT}14` : "var(--surface)",
+      border: configured ? "1px solid var(--accent-border)" : "1px solid var(--border)",
+      background: configured ? "var(--accent-faint)" : "var(--surface)",
       fontFamily: FONT,
       fontSize: prominent ? "0.82rem" : "0.78rem",
       fontWeight: 700,
-      color: configured ? ACCENT : "var(--text-secondary)",
+      color: configured ? "var(--accent)" : "var(--text-secondary)",
       textDecoration: "none",
       whiteSpace: "nowrap",
     }}>

@@ -9,8 +9,6 @@ import { partnersActiveLabel } from "@/lib/partnerStatus";
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
 
 export function HomePartnersBrief() {
   return (
@@ -18,17 +16,12 @@ export function HomePartnersBrief() {
       padding: "clamp(1.25rem, 3vw, 2rem) 0",
       borderTop: "1px solid var(--border-strong)",
     }}>
-      <div style={{
+      <div className="abx-glass-panel" style={{
         padding: "clamp(1rem, 3vw, 1.35rem)",
         borderRadius: 16,
-        border: `1px solid ${ACCENT}33`,
-        background: `linear-gradient(160deg, ${ACCENT}10 0%, var(--surface-raised) 45%, var(--surface) 100%)`,
+        border: "1px solid var(--border-strong)",
       }}>
-        <div style={{
-          fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-          letterSpacing: "0.12em", textTransform: "uppercase",
-          color: ACCENT, marginBottom: "0.45rem",
-        }}>
+        <div className="abx-eyebrow-violet" style={{ marginBottom: "0.45rem" }}>
           {partnersActiveLabel()}
         </div>
         <h2 id="partners-heading" style={{
@@ -36,7 +29,7 @@ export function HomePartnersBrief() {
           letterSpacing: "-0.02em", color: "var(--text-primary)",
           margin: "0 0 0.5rem", maxWidth: 640,
         }}>
-          Live partners · verify once, integrate once
+          Live partners · <span className="abx-gradient-text">verify once</span>
         </h2>
         <p className="partners-body" style={{
           fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)",
@@ -53,7 +46,7 @@ export function HomePartnersBrief() {
           <Btn href="/operators" size="sm">For operators →</Btn>
           <Btn href="/design-partner" variant="secondary" size="sm">Design partner →</Btn>
           <Link href="/case-studies/cielo" className="partners-extra-link" style={{
-            fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT, textDecoration: "none",
+            fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none",
           }}>
             Cielo case study →
           </Link>

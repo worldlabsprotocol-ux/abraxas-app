@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomePilotMetrics.tsx
-// Live Supabase metrics with pilot-labeled fallbacks.
+// Live Supabase metrics with pilot-labeled fallbacks — boot-screen stat tiles.
 
 import { useEffect, useState } from "react";
 import {
@@ -12,7 +12,8 @@ import {
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+
+const ACCENT_CYCLE = ["var(--accent)", "var(--accent-2)", "var(--accent)"] as const;
 
 export function HomePilotMetrics() {
   const [metrics, setMetrics] = useState<PilotMetric[]>(PILOT_METRICS);
@@ -34,15 +35,15 @@ export function HomePilotMetrics() {
         gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
         gap: "0.65rem",
       }}>
-        {metrics.map(m => (
-          <div key={m.label} style={{
-            padding: "0.85rem 0.9rem", borderRadius: 12,
-            border: "1px solid var(--border-strong)",
-            background: "var(--surface-raised)",
+        {metrics.map((m, i) => (
+          <div key={m.label} className="abx-glass-panel" style={{
+            padding: "0.85rem 0.9rem", borderRadius: 14,
           }}>
             <div style={{
               fontFamily: FONT, fontSize: "clamp(1.1rem, 3vw, 1.35rem)",
-              fontWeight: 900, color: ACCENT, letterSpacing: "-0.03em",
+              fontWeight: 900,
+              color: ACCENT_CYCLE[i % ACCENT_CYCLE.length],
+              letterSpacing: "-0.03em",
               marginBottom: "0.25rem",
             }}>
               {m.value}

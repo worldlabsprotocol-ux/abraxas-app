@@ -11,7 +11,6 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
@@ -54,6 +53,8 @@ export function RedesignNav() {
     <nav style={{
       position: "sticky", top: 0, zIndex: 200,
       background: "var(--nav-bg-solid)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
       borderBottom: "1px solid var(--border)",
       display: "flex", alignItems: "center",
       padding: "0 clamp(0.9rem, 2.5vw, 1.9rem)",
@@ -82,11 +83,11 @@ export function RedesignNav() {
               style={{ position: "relative", padding: "0.45rem 0.9rem", borderRadius: 999,
                        textDecoration: "none", fontFamily: FONT, fontSize: "0.85rem",
                        fontWeight: active ? 700 : 500,
-                       color: active ? ACCENT : "var(--text-secondary)" }}>
+                       color: active ? "var(--accent)" : "var(--text-secondary)" }}>
               {active && (
                 <motion.span layoutId="rdNavPill" style={{ position: "absolute", inset: 0,
-                  borderRadius: 999, background: "rgba(16,185,129,0.12)",
-                  border: "1px solid rgba(16,185,129,0.25)", zIndex: -1 }} />
+                  borderRadius: 999, background: "var(--accent-faint)",
+                  border: "1px solid var(--accent-border)", zIndex: -1 }} />
               )}
               {l.label}
             </MotionLink>
@@ -101,10 +102,10 @@ export function RedesignNav() {
         {!onHome && (
           <Link href="/" style={{
             padding: "0.4rem 0.85rem", borderRadius: 999,
-            border: "1px solid rgba(16,185,129,0.35)",
-            background: "rgba(16,185,129,0.1)",
+            border: "1px solid var(--accent-border)",
+            background: "var(--accent-faint)",
             fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
-            color: ACCENT, textDecoration: "none",
+            color: "var(--accent)", textDecoration: "none",
           }}>
             ← Home
           </Link>
@@ -124,10 +125,10 @@ export function RedesignNav() {
         {!onHome && (
           <Link href="/" style={{
             padding: "0.35rem 0.65rem", borderRadius: 999,
-            border: "1px solid rgba(16,185,129,0.35)",
-            background: "rgba(16,185,129,0.1)",
+            border: "1px solid var(--accent-border)",
+            background: "var(--accent-faint)",
             fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700,
-            color: ACCENT, textDecoration: "none",
+            color: "var(--accent)", textDecoration: "none",
           }}>
             Home
           </Link>
@@ -156,7 +157,7 @@ export function RedesignNav() {
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
                 style={{ padding: "0.7rem 0.5rem", borderRadius: 10, textDecoration: "none",
                          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 600,
-                         color: isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined) ? ACCENT : "var(--text-primary)" }}>
+                         color: isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined) ? "var(--accent)" : "var(--text-primary)" }}>
                 {l.label}
               </Link>
             ))}
@@ -165,7 +166,7 @@ export function RedesignNav() {
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
                 style={{ padding: "0.55rem 0.5rem", borderRadius: 10, textDecoration: "none",
                          fontFamily: FONT, fontSize: "0.85rem", fontWeight: 500,
-                         color: pathname?.startsWith(l.href.split("#")[0]) ? ACCENT : "var(--text-secondary)" }}>
+                         color: pathname?.startsWith(l.href.split("#")[0]) ? "var(--accent)" : "var(--text-secondary)" }}>
                 {l.label}
               </Link>
             ))}

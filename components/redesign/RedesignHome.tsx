@@ -75,10 +75,7 @@ export function RedesignHome() {
       <SuiAuthProvider>
         <AbraxasBootScreen onReady={setBootReady} />
         {bootReady && (
-          <div data-theme="dark" style={{
-            background: "var(--bg)", color: "var(--text-primary)",
-            minHeight: "100vh", position: "relative", overflowX: "hidden",
-          }}>
+          <div data-theme="dark" className="abx-institutional-shell">
             <AmbientGlow />
             <RedesignNav />
             <HomeContent />

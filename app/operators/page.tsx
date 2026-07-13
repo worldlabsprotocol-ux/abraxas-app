@@ -19,7 +19,6 @@ import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_OPERATOR_OUTCOME } from "@/lib/northStar";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
 
 const VERTICALS = [
   { name: "Hotels & STR", example: "Cielo Sunrise — live pilot", href: "/case-studies/cielo" },
@@ -36,12 +35,13 @@ export default function OperatorsPage() {
       <PageHeader
         eyebrow="For operators"
         title="What changes Monday morning?"
+        titleAccent="Monday morning?"
         subtitle="Abraxas is reusable trust infrastructure — not another KYC upload form. Faster approvals, fewer document requests, less manual review."
       />
 
       <ContentCard title="North Star">
         <p style={{ ...body, marginTop: 0 }}>
-          <strong style={{ color: ACCENT }}>{NORTH_STAR_METRIC.name}</strong> — {NORTH_STAR_METRIC.description}
+          <strong style={{ color: "var(--accent)" }}>{NORTH_STAR_METRIC.name}</strong> — {NORTH_STAR_METRIC.description}
         </p>
         <p style={{ ...body, margin: 0 }}>{ABRAXAS_OPERATOR_OUTCOME}</p>
       </ContentCard>
@@ -79,7 +79,7 @@ export default function OperatorsPage() {
                   {v.example}
                 </div>
               </div>
-              <span style={{ color: ACCENT, alignSelf: "center" }}>→</span>
+              <span style={{ color: "var(--accent)", alignSelf: "center" }}>→</span>
             </a>
           ))}
         </div>
@@ -89,7 +89,7 @@ export default function OperatorsPage() {
         <p style={{ ...body, marginTop: 0 }}>
           On primary journeys we say <strong>{ABRAXAS_VOCAB.proof}</strong>, <strong>{ABRAXAS_VOCAB.trustRequest}</strong>, and <strong>{ABRAXAS_VOCAB.trustRules}</strong>.
           Technical terms like {ABRAXAS_VOCAB.docs.assuranceLevel} live in{" "}
-          <a href="/docs" style={{ color: ACCENT }}>Documentation</a>.
+          <a href="/docs" style={{ color: "var(--accent)" }}>Documentation</a>.
         </p>
       </ContentCard>
 

@@ -10,7 +10,6 @@ import { Btn } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
 
 type Filter = "all" | VerifyState;
 type SortKey = "verified-first" | "name-asc" | "yield-desc";
@@ -121,9 +120,7 @@ export function AssetsExplorer({
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between",
                      flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
         <div>
-          <div style={{ fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
-                         letterSpacing: "0.14em", textTransform: "uppercase",
-                         color: ACCENT, marginBottom: "0.5rem" }}>
+          <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
             {eyebrow}
           </div>
           <h2 style={{ fontFamily: FONT, fontSize: compact || home ? "var(--fs-h2)" : "var(--fs-h1)", fontWeight: 800,
@@ -212,8 +209,8 @@ export function AssetsExplorer({
                   aria-pressed={active}
                   style={{ position: "relative", padding: "0.5rem 1rem", borderRadius: 999,
                            border: `1px solid ${active ? "var(--border-strong)" : "var(--border)"}`,
-                           background: active ? "rgba(16,185,129,0.12)" : "transparent",
-                           color: active ? ACCENT : "var(--text-secondary)",
+                           background: active ? "var(--accent-faint)" : "transparent",
+                           color: active ? "var(--accent)" : "var(--text-secondary)",
                            fontFamily: FONT, fontSize: "0.8rem", fontWeight: active ? 700 : 500,
                            cursor: "pointer", letterSpacing: "-0.01em", minHeight: 44 }}>
                   {f.label}
@@ -227,9 +224,9 @@ export function AssetsExplorer({
               aria-pressed={assetClass === "all"}
               style={{
                 padding: "0.35rem 0.75rem", borderRadius: 999,
-                border: `1px solid ${assetClass === "all" ? ACCENT : "var(--border)"}`,
-                background: assetClass === "all" ? "rgba(16,185,129,0.1)" : "transparent",
-                color: assetClass === "all" ? ACCENT : "var(--text-muted)",
+                border: `1px solid ${assetClass === "all" ? "var(--accent-border)" : "var(--border)"}`,
+                background: assetClass === "all" ? "var(--accent-faint)" : "transparent",
+                color: assetClass === "all" ? "var(--accent)" : "var(--text-muted)",
                 fontFamily: MONO, fontSize: "0.62rem", fontWeight: 700,
                 letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
               }}>
@@ -242,9 +239,9 @@ export function AssetsExplorer({
                   aria-pressed={active}
                   style={{
                     padding: "0.35rem 0.75rem", borderRadius: 999,
-                    border: `1px solid ${active ? ACCENT : "var(--border)"}`,
-                    background: active ? "rgba(16,185,129,0.1)" : "transparent",
-                    color: active ? ACCENT : "var(--text-muted)",
+                    border: `1px solid ${active ? "var(--accent-border)" : "var(--border)"}`,
+                    background: active ? "var(--accent-faint)" : "transparent",
+                    color: active ? "var(--accent)" : "var(--text-muted)",
                     fontFamily: MONO, fontSize: "0.62rem", fontWeight: 700,
                     letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
                   }}>
@@ -265,7 +262,7 @@ export function AssetsExplorer({
           No assets match your search.{" "}
           {!compact && !home && (
             <button type="button" onClick={() => { setQuery(""); setFilter("all"); setAssetClass("all"); }}
-              style={{ background: "none", border: "none", color: ACCENT, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+              style={{ background: "none", border: "none", color: "var(--accent)", fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
               Clear filters
             </button>
           )}
