@@ -57,7 +57,7 @@ export function TrustMetricsStrip() {
             lineHeight: 1.65,
             margin: 0,
           }}>
-            ~$3M registry scope: Cielo Sunrise (L3 appraised) plus CPG Land Sales Grady County 270 — active land partner on Abraxas.
+            ~$2.7M in verified assets on Abraxas: Cielo Sunrise live STR plus Grady County 270 — 270 acres, surveys, drone footage, contracts at asking.
           </p>
         </div>
 

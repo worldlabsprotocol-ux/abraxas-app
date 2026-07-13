@@ -36,7 +36,7 @@ export const REAL_PARTNERS: RealPartnerRecord[] = [
     statusBucket: "closed",
     vertical: "Land development · Oklahoma",
     verticalHeadline: "Oklahoma land development partner",
-    summary: "Onboarded — Grady County 270 (~270 ac, 11 lots). Survey-backed verify-once sharing for bulk buyers and lenders. Abraxas verification only; acquisition terms with Gabriel Corrales / CPG.",
+    summary: "Live — Grady County 270 (~270 ac, 11 lots). Surveys, Phase I clean, contracts at asking. Verify-once sharing for bulk buyers and lenders.",
     proofLabel: "Grady County 270 case study",
     proofHref: "/case-studies/cpg-grady-270",
   },

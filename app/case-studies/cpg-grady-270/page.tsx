@@ -1,25 +1,23 @@
 "use client";
 // FILE: app/case-studies/cpg-grady-270/page.tsx
-// CPG Land Sales · Grady County 270 — active Oklahoma land partner case study.
+// CPG Land Sales · Grady County 270 — bullish land partner listing.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, KeyValueTable, BulletList } from "@/components/redesign/RedesignContent";
-import { CaseStudyPhotoHero, CaseStudyVideoHero } from "@/components/case-studies/CaseStudyGallery";
+import { CaseStudyVideoHero } from "@/components/case-studies/CaseStudyGallery";
 import {
   CPG_ASSET,
   CPG_PARTNER,
-  CPG_CONFLICTS,
   CPG_SOURCES,
   CPG_PROOF,
   CPG_DILIGENCE,
   CPG_LOTS,
   CPG_PRICING,
-  CPG_REGISTRY_VALUE,
   CPG_SURVEY_FILES,
   CPG_WHAT_THIS_PROVES,
+  CPG_HIGHLIGHTS,
   formatUsd,
-  abraxasRegistryReference,
 } from "@/lib/cpgLandCaseStudy";
 import { Btn } from "@/components/redesign/ui";
 
@@ -43,9 +41,9 @@ export default function CpgGradyCaseStudyPage() {
   return (
     <RedesignPage maxWidth={920}>
       <PageHeader
-        eyebrow="Case study · Active land partner"
-        title={`${CPG_ASSET.name} (${CPG_ASSET.id})`}
-        subtitle="CPG Land Sales / Gabriel Corrales — ~270 acres, 11 surveyed lots, active on the Abraxas registry. Drone footage, surveys, and pricing below."
+        eyebrow="Active land listing · Verified partner"
+        title={`${CPG_ASSET.name}`}
+        subtitle="~270 acres across 11 surveyed tracts in Grady County, OK — Oklahoma City growth corridor. Drone footage, completed surveys, Phase I clean, and contracts at asking before full MLS launch."
       />
 
       <CaseStudyVideoHero
@@ -57,46 +55,61 @@ export default function CpgGradyCaseStudyPage() {
         subtitle={CPG_ASSET.subtitle}
       />
 
-      <ContentCard title="Asset snapshot">
+      <div style={{
+        display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem",
+      }}>
+        <Btn href={CPG_PARTNER.website} newTab size="lg">Inquire with CPG Land Sales →</Btn>
+        <Btn href={CPG_ASSET.lot4Mls} newTab variant="secondary" size="sm">Lot 4 on MLS →</Btn>
+        <Btn href={`/verify/${encodeURIComponent(CPG_ASSET.id)}`} variant="ghost" size="sm">Verify record →</Btn>
+      </div>
+
+      <ContentCard title="At a glance">
         <KeyValueTable rows={[
           { k: "Registry ID", v: CPG_ASSET.id, mono: true },
-          { k: "Partner", v: `${CPG_PARTNER.name} · ${CPG_PARTNER.contact}` },
+          { k: "Seller", v: `${CPG_PARTNER.name} · ${CPG_PARTNER.contact}` },
           { k: "Location", v: CPG_ASSET.location },
-          { k: "Parent parcel", v: `~${CPG_ASSET.parentAcres} acres · 11 surveyed lots` },
-          { k: "Seller ask (aggregate)", v: formatUsd(CPG_PRICING.fullProjectSellerAsk) },
-          { k: "Abraxas registry reference", v: formatUsd(CPG_REGISTRY_VALUE.fullProjectReference) },
-          { k: "Assurance", v: "L2 review in progress · surveys + Phase I on file" },
-          { k: "Title / closing", v: CPG_PARTNER.titleCompany },
+          { k: "Size", v: `~${CPG_ASSET.parentAcres} acres · 11 surveyed lots` },
+          { k: "Full project", v: formatUsd(CPG_PRICING.fullProject) },
+          { k: "Bulk package", v: `${formatUsd(CPG_PRICING.bulkFullProject)} (full project convenience)` },
+          { k: "Lots 2–4 bundle", v: `${formatUsd(CPG_PRICING.lots234Bundle)} · 81.74 ac contiguous` },
+          { k: "Closing", v: CPG_PARTNER.titleCompany },
         ]} />
       </ContentCard>
 
-      <ContentCard title="What this proves">
-        <BulletList items={[...CPG_WHAT_THIS_PROVES]} />
+      <ContentCard title="Why this land">
+        <div style={{ display: "grid", gap: "0.85rem" }}>
+          {CPG_HIGHLIGHTS.map(h => (
+            <div key={h.title} style={{
+              padding: "0.85rem 1rem", borderRadius: 12,
+              border: `1px solid ${ACCENT}33`, background: `${ACCENT}08`,
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                {h.title}
+              </div>
+              <p style={{ ...body, margin: 0 }}>{h.body}</p>
+            </div>
+          ))}
+        </div>
       </ContentCard>
 
-      <ContentCard title="Pricing · seller ask vs Abraxas registry reference">
-        <p style={body}>
-          Seller ask figures come from CPG Land Sales (L1 partner reference). Abraxas registry reference
-          applies a <strong>20% platform band</strong> (within the 10–40% policy range) for verification-scope
-          economics — <em>not</em> the price at closing.
-        </p>
+      <ContentCard title="Pricing & packages">
         <KeyValueTable rows={[
-          { k: "Full project (11 lots)", v: `${formatUsd(CPG_PRICING.fullProjectSellerAsk)} ask → ${formatUsd(CPG_REGISTRY_VALUE.fullProjectReference)} ref` },
-          { k: "Bulk convenience (partner)", v: `${formatUsd(CPG_PRICING.bulkFullProjectSellerAsk)} ask → ${formatUsd(CPG_REGISTRY_VALUE.bulkReference)} ref` },
-          { k: "Remaining 9 lots (2–4, 6–11)", v: `${formatUsd(CPG_PRICING.remaining9LotsSellerAsk)} ask → ${formatUsd(CPG_REGISTRY_VALUE.remaining9Reference)} ref` },
-          { k: "Seller approval threshold (9 lots)", v: `≥ ${formatUsd(CPG_PRICING.remaining9LotsApprovalThreshold)} per partner` },
-          { k: "Lots 2–4 bundle (81.74 ac)", v: `${formatUsd(CPG_PRICING.lots234BundleSellerAsk)} ask → ${formatUsd(CPG_REGISTRY_VALUE.lots234BundleReference)} ref` },
-          { k: "10 lots / ~235 ac (if Lot 1 open)", v: `${formatUsd(CPG_PRICING.tenLot235AcresSellerAsk)} ask → ${formatUsd(abraxasRegistryReference(CPG_PRICING.tenLot235AcresSellerAsk))} ref` },
+          { k: "Full project (11 lots · ~270 ac)", v: formatUsd(CPG_PRICING.fullProject) },
+          { k: "Bulk acquisition (partner convenience)", v: formatUsd(CPG_PRICING.bulkFullProject) },
+          { k: "Remaining 9 lots (2–4, 6–11)", v: formatUsd(CPG_PRICING.remaining9Lots) },
+          { k: "Fast approval threshold (9 lots)", v: `≥ ${formatUsd(CPG_PRICING.remaining9LotsFastApproval)}` },
+          { k: "Lots 2–4 contiguous bundle", v: `${formatUsd(CPG_PRICING.lots234Bundle)} (list ${formatUsd(CPG_PRICING.lots234List)})` },
+          { k: "10 lots · ~235 ac (if Lot 1 available)", v: formatUsd(CPG_PRICING.tenLots235Acres) },
         ]} />
       </ContentCard>
 
-      <ContentCard title="Lot schedule (partner-provided)">
+      <ContentCard title="Lot schedule">
         <p style={{ ...body, marginTop: 0 }}>{CPG_ASSET.availableLotsNote}</p>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.72rem" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                {["Lot", "Acres", "Seller ask", "Abraxas ref (+20%)", "Status", "Notes"].map(h => (
+                {["Lot", "Acres", "Price", "Status", "Notes"].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "0.5rem", color: "var(--text-muted)", fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
@@ -106,12 +119,11 @@ export default function CpgGradyCaseStudyPage() {
                 <tr key={row.lot} style={{ borderBottom: "1px solid var(--border)" }}>
                   <td style={{ padding: "0.5rem", fontWeight: 700 }}>{row.lot}</td>
                   <td style={{ padding: "0.5rem" }}>{row.acres}</td>
-                  <td style={{ padding: "0.5rem" }}>{row.sellerAskUsd > 0 ? formatUsd(row.sellerAskUsd) : "Per schedule"}</td>
-                  <td style={{ padding: "0.5rem", color: ACCENT, fontWeight: 600 }}>
-                    {row.sellerAskUsd > 0 ? formatUsd(abraxasRegistryReference(row.sellerAskUsd)) : "—"}
+                  <td style={{ padding: "0.5rem", color: ACCENT, fontWeight: 700 }}>
+                    {row.priceUsd > 0 ? formatUsd(row.priceUsd) : "On request"}
                   </td>
                   <td style={{ padding: "0.5rem" }}>{STATUS_LABEL[row.status] ?? row.status}</td>
-                  <td style={{ padding: "0.5rem", color: "var(--text-muted)", maxWidth: 200 }}>{row.notes ?? "—"}</td>
+                  <td style={{ padding: "0.5rem", color: "var(--text-muted)", maxWidth: 220 }}>{row.notes ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -119,25 +131,15 @@ export default function CpgGradyCaseStudyPage() {
         </div>
       </ContentCard>
 
-      <ContentCard title="Due diligence completed (partner attestation)">
+      <ContentCard title="Due diligence complete">
         <BulletList items={[...CPG_DILIGENCE]} />
       </ContentCard>
 
-      <ContentCard title={CPG_CONFLICTS.headline}>
-        {CPG_CONFLICTS.items.map(item => (
-          <div key={item.topic} style={{ marginBottom: "1rem" }}>
-            <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-              {item.topic}
-            </div>
-            <p style={body}>{item.disclosure}</p>
-            <p style={{ ...body, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
-              {item.implication}
-            </p>
-          </div>
-        ))}
+      <ContentCard title="What this proves for Abraxas">
+        <BulletList items={[...CPG_WHAT_THIS_PROVES]} />
       </ContentCard>
 
-      <ContentCard title="Survey & title evidence (PDF)">
+      <ContentCard title="Survey & title (PDF)">
         <div style={{ display: "grid", gap: "0.45rem" }}>
           {CPG_SURVEY_FILES.map(file => (
             <Link key={file.href} href={file.href} target="_blank" rel="noopener noreferrer"
@@ -155,12 +157,9 @@ export default function CpgGradyCaseStudyPage() {
             </Link>
           ))}
         </div>
-        <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0, fontSize: "0.74rem" }}>
-          Drone walkthrough plays above (owner-captured). Additional clips can be appended as partner supplies assets.
-        </p>
       </ContentCard>
 
-      <ContentCard title="Sourced metrics">
+      <ContentCard title="Sourced facts">
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.72rem" }}>
             <thead>
@@ -193,7 +192,7 @@ export default function CpgGradyCaseStudyPage() {
         </div>
       </ContentCard>
 
-      <ContentCard title="Proof links">
+      <ContentCard title="Next steps">
         <div style={{ display: "grid", gap: "0.65rem" }}>
           {CPG_PROOF.map(proof => (
             <Link key={proof.label} href={proof.href}
@@ -215,9 +214,8 @@ export default function CpgGradyCaseStudyPage() {
       </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
-        <Btn href={`/verify/${encodeURIComponent(CPG_ASSET.id)}`} size="lg">Public verify record →</Btn>
-        <Btn href={CPG_PARTNER.website} newTab variant="secondary" size="lg">CPG Land Sales →</Btn>
-        <Btn href="/portal/apply" variant="ghost" size="sm">Owner portal →</Btn>
+        <Btn href={CPG_PARTNER.website} newTab size="lg">Inquire · CPG Land Sales →</Btn>
+        <Btn href={`/verify/${encodeURIComponent(CPG_ASSET.id)}`} variant="secondary" size="lg">Verify record</Btn>
       </div>
     </RedesignPage>
   );

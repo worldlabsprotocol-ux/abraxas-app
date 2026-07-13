@@ -97,14 +97,14 @@ const CPG_GRADY: RegistryAssetDef = {
   pipelineStage: "LAND_PARTNER_ACTIVE",
   assuranceLevel: 2,
   assuranceTaxonomy: {
-    L1_IdentityClaim: { status: "VERIFIED", timestamp: "2026-07-05T00:00:00Z", provider: "CPG_Land_Sales_Partner" },
-    L2_LegalReview: { status: "REVIEW", timestamp: "2026-07-13T00:00:00Z", provider: "Survey_Plat_Phase_I_Scope" },
+    L1_IdentityClaim: { status: "VERIFIED", timestamp: "2026-07-05T00:00:00Z", provider: "CPG_Land_Sales" },
+    L2_LegalReview: { status: "VERIFIED", timestamp: "2026-07-13T00:00:00Z", provider: "Survey_Plat_Phase_I" },
     L3_ProfessionalAttestation: { status: "PENDING", timestamp: new Date().toISOString(), authority: "Independent_Appraisal" },
     L4_ActiveMonitoring: { status: "PENDING" },
   },
   metadataUri: "/case-studies/cpg-grady-270",
   notice:
-    "Active land partner · CPG Land Sales (Gabriel Corrales). Live on Abraxas registry with survey-backed evidence. Seller ask is partner-provided; registry reference includes platform economics band.",
+    "Active land listing · CPG Land Sales · ~270 ac Grady County OK. Surveys complete, Phase I clean, contracts at asking pre-MLS.",
   tokenization: {
     standard: "Abraxas Registry Entry",
     chain: "Off-chain title · Sui settlement rail (planned)",

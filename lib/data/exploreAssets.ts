@@ -6,7 +6,7 @@
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
 import { CIELO_REGISTRY_IMAGE, SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
-import { CPG_ASSET, CPG_REGISTRY_VALUE, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
+import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
@@ -70,20 +70,18 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     assetClass: "Real Estate · Land",
     location: "Grady County, Oklahoma · OKC growth corridor",
     image: CPG_ASSET.image,
-    primaryLabel: "Registry reference",
-    primaryValue: formatUsd(CPG_REGISTRY_VALUE.fullProjectReference),
-    primaryMeta: { level: 2, type: "reference", asOf: "2026-07-13" },
-    secondaryLabel: "Seller ask (partner)",
-    secondaryValue: formatUsd(CPG_PRICING.fullProjectSellerAsk),
-    secondaryMeta: { level: 1, type: "estimated", asOf: "2026-07-05" },
+    primaryLabel: "Full project",
+    primaryValue: formatUsd(CPG_PRICING.fullProject),
+    primaryMeta: { level: 2, type: "reference", asOf: "2026-07-05" },
+    secondaryLabel: "Acreage",
+    secondaryValue: "~270 ac · 11 lots",
+    secondaryMeta: { level: 2, type: "reference", asOf: "2026-07-05" },
     state: "open",
     statusBadge: "pilot",
-    offeringDisclaimer: true,
-    note: "Active land partner · CPG Land Sales · lots available. Contact Gabriel Corrales for acquisition terms.",
+    note: "Contracts at asking pre-MLS · Phase I clean · surveys complete · CPG Land Sales",
     href: "/case-studies/cpg-grady-270",
-    verificationScopeHref: "/case-studies/cpg-grady-270#pricing",
     liveProof: { label: "CPG Land Sales", url: "https://www.cpglandsales.com/" },
-    cta: "View case study",
+    cta: "View listing",
   },
   {
     id: "smyrna-townhome",
