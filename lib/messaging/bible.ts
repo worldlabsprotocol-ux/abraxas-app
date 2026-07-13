@@ -12,7 +12,7 @@ export const ABRAXAS_PROBLEM_THESIS =
 export const APPROVED_PROOF_POINTS = [
   "Public registry — browse verified assets without login (Cielo, Smyrna, Naj Tulum)",
   "Cielo Sunrise genesis pilot — $1.1M independent appraisal, live STR, Superhost, USDC settlement on Sui",
-  "Design partners in final onboarding — names published when approved",
+  "Active design partners — names published when approved",
   "W3C-compatible credentials, zkLogin, policy engine, selective disclosure",
   "Live integration surfaces: Passport, AIL API, Cielo stablecoin checkout (pilot)",
 ] as const;

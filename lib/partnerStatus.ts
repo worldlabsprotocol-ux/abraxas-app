@@ -23,22 +23,22 @@ export const REAL_PARTNERS: RealPartnerRecord[] = [
   {
     id: "relying-party-hospitality-1",
     publicName: PARTNER_NAME_PLACEHOLDER,
-    statusBucket: "final_execution",
+    statusBucket: "closed",
     vertical: "Hospitality",
     verticalHeadline: "Short-term rental operator",
-    summary: "Final onboarding — reusable guest verification for high-frequency booking workflows. Cielo Sunrise is the reference loop.",
+    summary: "Onboarded — reusable guest verification live via Cielo Sunrise. Book, verify, and settle USDC on Sui today.",
     proofLabel: "See Cielo reference loop",
     proofHref: "/case-studies/cielo",
   },
   {
     id: "relying-party-tribal-1",
     publicName: PARTNER_NAME_PLACEHOLDER,
-    statusBucket: "final_execution",
+    statusBucket: "closed",
     vertical: "Tribal land & mineral rights",
     verticalHeadline: "Land & mineral development partner",
-    summary: "Final execution — verify once for tribal land and mineral workflows. Owner portal intake live today.",
-    proofLabel: "Owner portal intake",
-    proofHref: "/portal/apply",
+    summary: "Onboarded — owner portal intake, verify-once sharing, and USDC settlement rail for high-stakes land workflows.",
+    proofLabel: "Owner portal",
+    proofHref: "/portal",
   },
 ];
 
@@ -54,13 +54,14 @@ export function partnerDisplayName(p: RealPartnerRecord): string {
 
 export function partnerDisplaySubtitle(p: RealPartnerRecord): string | null {
   if (isPartnerNamePublic(p.publicName)) return p.vertical;
+  if (p.statusBucket === "closed") return `${p.vertical} · active on Abraxas`;
   return `${p.vertical} · name publishing on partner approval`;
 }
 
 export function partnerStatusLabel(bucket: PartnerStatusBucket): string {
   switch (bucket) {
     case "closed":
-      return "In production";
+      return "Active partner";
     case "final_execution":
       return "In final onboarding";
     case "pipeline":
@@ -70,4 +71,14 @@ export function partnerStatusLabel(bucket: PartnerStatusBucket): string {
 
 export function partnersInExecutionCount(): number {
   return REAL_PARTNERS.filter(p => p.statusBucket === "closed" || p.statusBucket === "final_execution").length;
+}
+
+export function partnersActiveCount(): number {
+  return REAL_PARTNERS.filter(p => p.statusBucket === "closed").length;
+}
+
+export function partnersActiveLabel(): string {
+  const n = partnersActiveCount();
+  if (n === 0) return "Design partners onboarding";
+  return `${n} active design partner${n === 1 ? "" : "s"}`;
 }

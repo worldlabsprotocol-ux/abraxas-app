@@ -26,8 +26,8 @@ export default function DesignPartnerPage() {
     <RedesignPage maxWidth={820}>
       <PageHeader
         eyebrow="Design partners"
-        title="Real partners in execution — program still open"
-        subtitle="Design partners are onboarding now. We co-build reusable verification with measured outcomes — not another document portal."
+        title="Real partners in production — program still open"
+        subtitle="Active design partners co-build reusable verification with measured outcomes — not another document portal."
       />
 
       <ContentCard title="Land & tribal owners — start here">
@@ -44,9 +44,9 @@ export default function DesignPartnerPage() {
       </ContentCard>
 
       {REAL_PARTNERS.length > 0 && (
-        <ContentCard title="Partners in final onboarding">
+        <ContentCard title="Active design partners">
           <p style={bodyStyle}>
-            Status reflects confirmed buckets only — vertical headlines show until a partner approves public naming.
+            Partners below are onboarded on Abraxas — vertical headlines show until a partner approves public naming.
           </p>
           <PartnerExecutionCards />
         </ContentCard>

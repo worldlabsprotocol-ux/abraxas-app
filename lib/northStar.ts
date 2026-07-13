@@ -169,8 +169,8 @@ export const VERTICAL_SEQUENCE: {
   {
     order: 2,
     name: "Tribal land & mineral rights",
-    why: "Design partner in final execution — owner portal intake and verify-once sharing for high-stakes land.",
-    status: "in_execution",
+    why: "Active design partner — owner portal intake and verify-once sharing for high-stakes land.",
+    status: "active",
   },
   {
     order: 3,

@@ -15,7 +15,7 @@ import {
   STATUS_COLOR,
   type IntegrationStatus,
 } from "@/lib/protocolIntegrations";
-import { REAL_PARTNERS, partnersInExecutionCount } from "@/lib/partnerStatus";
+import { REAL_PARTNERS, partnersActiveCount } from "@/lib/partnerStatus";
 import { PartnerExecutionCards } from "@/components/partners/PartnerExecutionCards";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -53,18 +53,18 @@ export default function IntegrationsPage() {
   }
 
   const liveCount = PROTOCOL_INTEGRATIONS.filter(p => p.status === "live").length;
-  const partnerCount = partnersInExecutionCount();
+  const partnerCount = partnersActiveCount();
 
   return (
     <RedesignPage maxWidth={900}>
       <PageHeader
         eyebrow="Integrations"
         title="Reusable verification — live surfaces + partners onboarding"
-        subtitle={`${liveCount} first-party integration surfaces live today. ${partnerCount} design partner${partnerCount === 1 ? "" : "s"} in final onboarding.`}
+        subtitle={`${liveCount} first-party integration surfaces live today. ${partnerCount} active design partner${partnerCount === 1 ? "" : "s"}.`}
       />
 
       {REAL_PARTNERS.length > 0 && (
-        <ContentCard title="Relying parties in execution">
+        <ContentCard title="Active relying parties">
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
             External operators integrating Abraxas verification — status per confirmed bucket, not aspirational.
           </p>

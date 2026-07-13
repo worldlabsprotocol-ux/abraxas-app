@@ -2,18 +2,18 @@
 // FILE: components/home/HomeLiveTodayStrip.tsx
 // Verifiable facts only — no invented traction.
 
-import { partnersInExecutionCount } from "@/lib/partnerStatus";
+import { partnersActiveCount } from "@/lib/partnerStatus";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
-const partnerCount = partnersInExecutionCount();
+const partnerCount = partnersActiveCount();
 
 const LIVE_FACTS = [
   { label: "Public registry", value: "Browse without login" },
-  { label: "Cielo Sunrise", value: "$1.1M appraised · pilot" },
-  { label: "Design partners", value: `${partnerCount} in final onboarding` },
+  { label: "Cielo Sunrise", value: "$1.1M appraised · live" },
+  { label: "Design partners", value: `${partnerCount} active` },
   { label: "Booking rail", value: "USDC settles on Sui" },
 ] as const;
 

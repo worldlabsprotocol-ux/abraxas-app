@@ -6,7 +6,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_CATEGORY, ABRAXAS_ONE_LINER, ABRAXAS_POSITIONING, ABRAXAS_TAGLINE } from "@/lib/northStar";
-import { partnersInExecutionCount } from "@/lib/partnerStatus";
+import { partnersActiveCount } from "@/lib/partnerStatus";
 
 export const metadata: Metadata = {
   title: "About Abraxas",
@@ -23,7 +23,7 @@ const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
 
 export default function AboutPage() {
-  const partnerCount = partnersInExecutionCount();
+  const partnerCount = partnersActiveCount();
 
   return (
     <RedesignPage maxWidth={760}>
@@ -60,7 +60,7 @@ export default function AboutPage() {
             <li>USDC-on-Sui settlement rail for the Cielo reference booking flow (pilot)</li>
             <li>Abraxas Passport — Google sign-in, wallet binding, consent receipts, reusable proof</li>
             {partnerCount > 0 && (
-              <li>{partnerCount} design partner{partnerCount === 1 ? "" : "s"} in final onboarding — names published when approved</li>
+              <li>{partnerCount} active design partner{partnerCount === 1 ? "" : "s"} — names published when approved</li>
             )}
           </ul>
         </Section>

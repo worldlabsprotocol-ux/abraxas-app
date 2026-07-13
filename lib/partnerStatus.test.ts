@@ -24,5 +24,6 @@ describe("partnerDisplayName", () => {
   it("includes vertical in subtitle when name hidden", () => {
     const sub = partnerDisplaySubtitle(REAL_PARTNERS[1]!);
     expect(sub).toContain("Tribal land");
+    expect(sub).toContain("active on Abraxas");
   });
 });

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { partnersInExecutionCount } from "@/lib/partnerStatus";
+import { partnersActiveCount } from "@/lib/partnerStatus";
 import { ABRAXAS_TAGLINE } from "@/lib/messaging/bible";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function CommunityPage() {
-  const partnerCount = partnersInExecutionCount();
+  const partnerCount = partnersActiveCount();
 
   return (
     <RedesignPage maxWidth={820}>
@@ -36,7 +36,7 @@ export default function CommunityPage() {
       <ContentCard title="Ecosystem status (accurate)">
         <p style={body}>
           Genesis proof: Cielo Sunrise — $1.1M appraisal, live STR, Superhost, USDC-on-Sui pilot.
-          {partnerCount > 0 && ` ${partnerCount} design partner${partnerCount === 1 ? "" : "s"} in final onboarding.`}
+          {partnerCount > 0 && ` ${partnerCount} active design partner${partnerCount === 1 ? "" : "s"}.`}
           {" "}Names publish when approved.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>

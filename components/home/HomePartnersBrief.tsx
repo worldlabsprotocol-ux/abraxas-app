@@ -5,14 +5,14 @@
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { PartnerExecutionCards } from "@/components/partners/PartnerExecutionCards";
-import { partnersInExecutionCount } from "@/lib/partnerStatus";
+import { partnersActiveCount, partnersActiveLabel } from "@/lib/partnerStatus";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 export function HomePartnersBrief() {
-  const count = partnersInExecutionCount();
+  const count = partnersActiveCount();
 
   return (
     <section id="partners" aria-labelledby="partners-heading" style={{
@@ -30,7 +30,7 @@ export function HomePartnersBrief() {
           letterSpacing: "0.12em", textTransform: "uppercase",
           color: ACCENT, marginBottom: "0.45rem",
         }}>
-          {count} design partner{count === 1 ? "" : "s"} in final onboarding
+          {partnersActiveLabel()}
         </div>
         <h2 id="partners-heading" style={{
           fontFamily: FONT, fontSize: "var(--fs-h3)", fontWeight: 800,
