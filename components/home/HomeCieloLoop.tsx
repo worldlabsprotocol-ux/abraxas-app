@@ -1,54 +1,50 @@
 "use client";
 // FILE: components/home/HomeCieloLoop.tsx
+// Compact proof card — detail lives on case study page.
 
+import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
-
-const STEPS = [
-  "Browse the asset",
-  "Create a Passport",
-  "Bind your wallet",
-  "Consent to the policy",
-  "Request a verified rate",
-];
 
 export function HomeCieloLoop() {
   return (
     <section style={{
-      padding: "clamp(2rem, 5vw, 3rem) 0",
+      padding: "clamp(1.5rem, 4vw, 2rem) 0",
       borderTop: "1px solid var(--border-strong)",
     }} aria-labelledby="cielo-loop-heading">
       <div style={{
-        fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700,
-        letterSpacing: "0.12em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.5rem",
+        padding: "1.15rem 1.25rem", borderRadius: 16,
+        background: "var(--surface-raised)", border: "1px solid var(--border-strong)",
+        display: "grid", gap: "0.75rem",
+        gridTemplateColumns: "minmax(0, 1fr) auto",
+        alignItems: "center",
       }}>
-        The first live loop
+        <div>
+          <h2 id="cielo-loop-heading" style={{
+            fontFamily: FONT, fontSize: "1rem", fontWeight: 800,
+            letterSpacing: "-0.02em", color: "var(--text-primary)",
+            margin: "0 0 0.35rem",
+          }}>
+            Live proof: Cielo verified rate
+          </h2>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+            lineHeight: 1.6, margin: 0, maxWidth: 520,
+          }}>
+            A real hospitality asset with Passport, wallet, consent, and a verified guest rate — the first end-to-end loop.
+          </p>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", alignItems: "flex-start" }}>
+          <Btn href="/cielo/verified-rate" size="sm">Try it →</Btn>
+          <Link href="/case-studies/cielo" style={{
+            fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: ACCENT, textDecoration: "none",
+          }}>
+            See how it works →
+          </Link>
+        </div>
       </div>
-      <h2 id="cielo-loop-heading" style={{
-        fontFamily: FONT, fontSize: "var(--fs-h2)", fontWeight: 800,
-        letterSpacing: "-0.02em", color: "var(--text-primary)",
-        margin: "0 0 0.65rem",
-      }}>
-        Cielo is the first Abraxas access loop
-      </h2>
-      <ol style={{ margin: "0 0 1rem", paddingLeft: "1.2rem" }}>
-        {STEPS.map(s => (
-          <li key={s} style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, marginBottom: 4 }}>
-            {s}
-          </li>
-        ))}
-      </ol>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
-        lineHeight: 1.6, maxWidth: 560, margin: "0 0 1.25rem",
-      }}>
-        The Passport does not guarantee a reservation. It proves whether a guest meets the current policy for that request.
-      </p>
-      <Btn href="/cielo/verified-rate" size="md">Open Cielo verified rate →</Btn>
     </section>
   );
 }

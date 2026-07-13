@@ -10,7 +10,14 @@ import { consumerCopy } from "@/lib/consumerCopy";
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
-export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
+export function ZkLoginSignIn({
+  compact = false,
+  returnPath,
+}: {
+  compact?: boolean;
+  /** Same-origin path to restore after OAuth (Connect, Cielo, etc.). */
+  returnPath?: string | null;
+}) {
   const { isAuthenticated, suiAddress, isConfigured, signInWithGoogle, signOut, error } = useSuiAuth();
   const [busy, setBusy] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
@@ -18,7 +25,7 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
   async function handleSignIn() {
     setBusy(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle({ returnPath: returnPath ?? undefined });
     } finally {
       setBusy(false);
     }

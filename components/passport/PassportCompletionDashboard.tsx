@@ -20,7 +20,7 @@ const STATUS_LABELS: Record<string, string> = {
   verified: "Verified",
   pending: "Pending",
   optional: "Optional",
-  not_started: "Not started",
+  not_started: "Ready to verify",
 };
 
 export function PassportCompletionDashboard({

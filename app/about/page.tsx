@@ -1,160 +1,136 @@
 // FILE: app/about/page.tsx
-// Public explainer page. uses the IG carousel slides as scrollable sections.
-// Shareable URL for newcomers, lifts the IG content into the web product.
+// What is actually true today — no fabricated traction.
+
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
+import { RedesignPage } from "@/components/redesign/RedesignPage";
+import { Btn } from "@/components/redesign/ui";
+import { ABRAXAS_CATEGORY, ABRAXAS_ONE_LINER, ABRAXAS_POSITIONING, ABRAXAS_TAGLINE } from "@/lib/northStar";
+import { partnersActiveCount } from "@/lib/partnerStatus";
 
 export const metadata: Metadata = {
   title: "About Abraxas",
-  description: "Where assets become collateral. A plain-English explainer of Abraxas Protocol. the verification and collateral intelligence OS for real-world assets.",
+  description:
+    "Abraxas is the trust infrastructure layer from World Labs — reusable verification for assets, businesses, and people.",
+  openGraph: {
+    title: "About Abraxas",
+    description: ABRAXAS_ONE_LINER,
+    type: "website",
+  },
 };
 
-const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const S = "system-ui,-apple-system,sans-serif";
-
-const SLIDES = [
-  { src: "/about/01_cover.png",      alt: "Cover. Where assets become collateral" },
-  { src: "/about/02_problem.png",    alt: "The problem. you own a valuable thing" },
-  { src: "/about/03_broken.png",     alt: "Why tokenized RWA keeps failing" },
-  { src: "/about/04_approach.png",   alt: "The Abraxas approach. verify first" },
-  { src: "/about/05_pipeline.png",   alt: "The 7-step verification pipeline" },
-  { src: "/about/06_genesis.png",    alt: "Genesis Asset. Cielo Sunrise" },
-  { src: "/about/07_verticals.png",  alt: "Asset verticals. tribal, housing, royalties" },
-  { src: "/about/08_cta.png",        alt: "Verification is the trust layer" },
-];
+const FONT = "'Inter',system-ui,sans-serif";
+const ACCENT = "#10B981";
 
 export default function AboutPage() {
+  const partnerCount = partnersActiveCount();
+
   return (
-    <div style={{ background: "#040608", minHeight: "100vh",
-                   color: "#F8FAFC", fontFamily: S }}>
-
-      {/* Status strip */}
-      <div style={{ background: "#020406", borderBottom: "1px solid #0F1929",
-                     padding: "0 clamp(0.75rem,2.5vw,1.5rem)",
-                     height: 28, display: "flex", alignItems: "center",
-                     gap: "1rem", overflowX: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%",
-                         background: "#10B981",
-                         boxShadow: "0 0 5px rgba(16,185,129,0.8)" }}/>
-          <span style={{ fontFamily: M, fontSize: "0.65rem", fontWeight: 700,
-                          color: "rgba(255,255,255,0.3)",
-                          letterSpacing: "0.12em",
-                          textTransform: "uppercase" }}>
-            ABRAXAS · ABOUT
-          </span>
-        </div>
-        <div style={{ flex: 1 }}/>
-        <Link href="/" style={{ fontFamily: M, fontSize: "0.7rem",
-                                          color: "#10B981", textDecoration: "none",
-                                          letterSpacing: "0.1em",
-                                          textTransform: "uppercase" }}>
-          OPEN APP →
-        </Link>
-        <Link href="/about/team" style={{ fontFamily: M, fontSize: "0.7rem",
-                                          color: "rgba(255,255,255,0.4)", textDecoration: "none",
-                                          letterSpacing: "0.1em",
-                                          textTransform: "uppercase" }}>
-          TEAM →
-        </Link>
-      </div>
-
-      {/* Header */}
-      <div style={{ padding: "3rem clamp(1rem,3vw,2rem) 1rem",
-                     textAlign: "center", maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ fontFamily: M, fontSize: "0.8rem", fontWeight: 700,
-                       color: "rgba(16,185,129,0.7)",
-                       textTransform: "uppercase", letterSpacing: "0.25em",
-                       marginBottom: "1rem" }}>
-          ABRAXAS PROTOCOL · INSTITUTIONAL EXPLAINER
-        </div>
-        <h1 style={{ fontFamily: "Georgia, serif",
-                      fontSize: "clamp(2rem, 6vw, 4rem)",
-                      fontWeight: 800, color: "#F8FAFC",
-                      margin: "0 0 0.75rem", letterSpacing: "-0.02em",
-                      lineHeight: 1.1 }}>
-          Where assets<br/>
-          <span style={{ color: "#10B981" }}>become collateral.</span>
-        </h1>
-        <p style={{ fontFamily: S, fontSize: "clamp(0.9rem,1.8vw,1.1rem)",
-                     color: "rgba(255,255,255,0.5)", lineHeight: 1.75,
-                     margin: "1rem auto", maxWidth: 620 }}>
-          Plain-English explainer of how Abraxas verifies real-world assets
-          before they become programmable collateral on Sui. Eight sections.
-          Scroll or swipe.
+    <RedesignPage maxWidth={760}>
+      <div style={{ paddingBottom: "2.5rem" }}>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
+          letterSpacing: "0.14em", textTransform: "uppercase",
+          color: "#10B981", marginBottom: "0.5rem",
+        }}>
+          {ABRAXAS_CATEGORY}
         </p>
-      </div>
+        <h1 style={{
+          fontFamily: FONT, fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 900,
+          letterSpacing: "-0.03em", lineHeight: 1.1,
+          color: "var(--text-primary)", margin: "0 0 1rem",
+        }}>
+          About Abraxas
+        </h1>
+        <p style={{ fontFamily: FONT, fontSize: "0.92rem", color: "var(--text-primary)", lineHeight: 1.65, margin: "0 0 0.35rem" }}>
+          {ABRAXAS_POSITIONING}
+        </p>
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, fontWeight: 700, margin: "0 0 0.75rem" }}>
+          {ABRAXAS_TAGLINE}
+        </p>
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1.5rem" }}>
+          Abraxas is built by World Labs Protocol. We eliminate repeated verification so assets,
+          people, and businesses can move faster — not another identity protocol, not a tokenization headline.
+        </p>
 
-      {/* Slides. vertical scroll layout */}
-      <div style={{ maxWidth: 700, margin: "0 auto",
-                     padding: "1rem clamp(1rem,3vw,2rem) 3rem",
-                     display: "flex", flexDirection: "column",
-                     gap: "1.5rem" }}>
-        {SLIDES.map((slide, i) => (
-          <div key={slide.src} style={{
-            borderRadius: 12, overflow: "hidden",
-            border: "1px solid #1C2333",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
-            position: "relative",
-            aspectRatio: "1 / 1",
-          }}>
-            <Image
-              src={slide.src}
-              alt={slide.alt}
-              width={1080}
-              height={1080}
-              priority={i < 2}
-              style={{ width: "100%", height: "auto", display: "block" }}
-            />
+        <Section title="What is live today">
+          <ul style={listStyle}>
+            <li>Public asset registry — browse Cielo Sunrise, Smyrna Townhome, and Naj Tulum without login</li>
+            <li>Cielo Sunrise genesis pilot — World Labs–owned hospitality asset, $1.1M independent appraisal on record</li>
+            <li>USDC-on-Sui settlement rail for the Cielo reference booking flow (pilot)</li>
+            <li>Abraxas Passport — Google sign-in, wallet binding, consent receipts, reusable proof</li>
+            {partnerCount > 0 && (
+              <li>{partnerCount} active design partner{partnerCount === 1 ? "" : "s"} — names published when approved</li>
+            )}
+          </ul>
+        </Section>
+
+        <Section title="Cielo Sunrise — genesis dogfood">
+          <p style={bodyStyle}>
+            Cielo Sunrise is our owned proof point: a live short-term rental in Mineral Bluff, Georgia,
+            with public assurance metrics, registry record ABX-RE-HOSP-001, and the reference loop
+            partners integrate against. It is a pilot — not a claim that every workflow is production-scale yet.
+          </p>
+          <Btn href="/flagship" size="sm" variant="secondary">View Cielo asset →</Btn>
+        </Section>
+
+        <Section title="Registry">
+          <p style={bodyStyle}>
+            Verified assets publish assurance levels (L1–L4) with honest scope labels. Numbers on cards
+            come from appraisals, public records, or owner statements — each labeled on the asset detail page.
+          </p>
+          <Btn href="/#registry" size="sm" variant="secondary">Browse registry →</Btn>
+        </Section>
+
+        <Section title="Partners">
+          <p style={{ ...bodyStyle, marginBottom: "0.75rem" }}>
+            Two design partners are active on Abraxas today — hospitality (Cielo Sunrise) and tribal land & mineral
+            (owner portal). We name them publicly only with approval; the program stays open for selective future slots.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Btn href="/design-partner" size="sm">Design partners →</Btn>
+            <Btn href="/integrations" size="sm" variant="secondary">Integrations →</Btn>
           </div>
-        ))}
-      </div>
+        </Section>
 
-      {/* Footer CTAs */}
-      <div style={{ borderTop: "1px solid #1C2333",
-                     padding: "3rem clamp(1rem,3vw,2rem)",
-                     background: "#070A0F",
-                     textAlign: "center" }}>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap",
-                       justifyContent: "center", marginBottom: "2rem" }}>
-          <Link href="/" style={{
-            padding: "0.75rem 1.5rem", borderRadius: 5,
-            background: "#10B981", color: "#000",
-            fontFamily: M, fontSize: "1rem", fontWeight: 900,
-            textDecoration: "none", letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}>
-            OPEN APP →
+        <div style={{ marginTop: "2rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/passport" size="lg">Get verified once →</Btn>
+          <Link href="/about/team" style={{ fontFamily: FONT, fontSize: "0.82rem", color: "#10B981", alignSelf: "center", textDecoration: "none" }}>
+            Team →
           </Link>
-          <Link href="/about/team" style={{
-            padding: "0.75rem 1.5rem", borderRadius: 5,
-            border: "1px solid rgba(16,185,129,0.4)",
-            background: "rgba(16,185,129,0.08)",
-            color: "#10B981", fontFamily: M, fontSize: "1rem", fontWeight: 700,
-            textDecoration: "none", letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}>
-            TEAM & EXECUTION →
-          </Link>
-          <Link href="/investors/strategy" style={{
-            padding: "0.75rem 1.5rem", borderRadius: 5,
-            border: "1px solid rgba(59,130,246,0.4)",
-            background: "rgba(59,130,246,0.08)",
-            color: "#3B82F6", fontFamily: M, fontSize: "1rem", fontWeight: 700,
-            textDecoration: "none", letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}>
-            STRATEGIC ROADMAP →
-          </Link>
-        </div>
-        <div style={{ fontFamily: M, fontSize: "0.75rem",
-                       color: "rgba(255,255,255,0.3)",
-                       letterSpacing: "0.15em",
-                       textTransform: "uppercase" }}>
-          @abraxasxyz · @pabloretroworld · abraxas-app.vercel.app · $ABRA
         </div>
       </div>
-    </div>
+    </RedesignPage>
   );
 }
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginBottom: "1.5rem" }}>
+      <h2 style={{
+        fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
+        color: "var(--text-primary)", margin: "0 0 0.65rem",
+      }}>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+const bodyStyle: React.CSSProperties = {
+  fontFamily: FONT,
+  fontSize: "0.82rem",
+  color: "var(--text-secondary)",
+  lineHeight: 1.7,
+  margin: "0 0 0.75rem",
+};
+
+const listStyle: React.CSSProperties = {
+  fontFamily: FONT,
+  fontSize: "0.82rem",
+  color: "var(--text-secondary)",
+  lineHeight: 1.75,
+  margin: 0,
+  paddingLeft: "1.15rem",
+};

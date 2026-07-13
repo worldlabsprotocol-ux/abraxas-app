@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Sharp homepage — one action, supporting proof. Full depth lives on Trust Framework / docs.
+// Three-action homepage — progressive disclosure for everything else.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
@@ -9,16 +9,14 @@ import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
-import { TrustFrameworkTeaser } from "@/components/vision/TrustFrameworkTeaser";
+import { ProductLoopDemo } from "./ProductLoopDemo";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
-import { HomeProofSection } from "@/components/home/HomeProofSection";
-import { HomePassportIntro } from "@/components/home/HomePassportIntro";
-import { HomePublicProof } from "@/components/home/HomePublicProof";
-import { HomeCieloLoop } from "@/components/home/HomeCieloLoop";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
-import { HomeNetworkBrief } from "@/components/home/HomeNetworkBrief";
-import { HomeClosingBand } from "@/components/home/HomeClosingBand";
+import { HomeValueProp } from "@/components/home/HomeValueProp";
+import { HomeWorkflowCompare } from "@/components/home/HomeWorkflowCompare";
+import { HomeLiveTodayStrip } from "@/components/home/HomeLiveTodayStrip";
+import { HomeLearnHub } from "@/components/home/HomeLearnHub";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180, margin: "0 auto",
@@ -30,18 +28,22 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
-        <HomeSignedInModule />
-        <HomeProofSection />
-        <HomePassportIntro />
-        <HomePublicProof />
-        <HomeCieloLoop />
+        <HomeLiveTodayStrip />
         <HomePartnersBrief />
-        <HomeNetworkBrief />
-        <TrustFrameworkTeaser />
-        <div id="registry" style={{ paddingTop: "clamp(2rem, 5vw, 3rem)", borderTop: "1px solid var(--border-strong)" }}>
-          <AssetsExplorer title="Browse registry" compact />
+        <HomeWorkflowCompare />
+        <HomeLearnHub />
+        <HomeValueProp />
+        <HomeSignedInModule />
+        <div style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}>
+          <ProductLoopDemo />
         </div>
-        <HomeClosingBand />
+        <div id="registry" style={{ paddingTop: "clamp(1.5rem, 4vw, 2rem)", borderTop: "1px solid var(--border-strong)" }}>
+          <AssetsExplorer
+            title="Example verified assets"
+            eyebrow="Registry"
+            home
+          />
+        </div>
       </div>
     </main>
   );

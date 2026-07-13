@@ -5,11 +5,11 @@
 // is honest per asset.
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
-import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_REGISTRY_IMAGE, SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
-export type VerifyState = "verified" | "reference" | "open" | "owned";
+export type VerifyState = "verified" | "reference" | "open" | "owned" | "listed";
 
 export interface MetricMeta {
   level?: AssuranceLevel;
@@ -47,7 +47,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Cielo Sunrise",
     assetClass: "Real Estate · Hospitality",
     location: "Mineral Bluff, Georgia",
-    image: CIELO_PORCH_IMAGE.src,
+    image: CIELO_REGISTRY_IMAGE.src,
     primaryLabel: "Appraised value",
     primaryValue: "$1,100,000",
     primaryMeta: { level: 3, type: "appraised", asOf: "2025-12-01" },
@@ -68,7 +68,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Smyrna Townhome",
     assetClass: "Real Estate · Residential",
     location: "Smyrna, Georgia · Battery Atlanta",
-    image: "/assets/smyrna/011.webp",
+    image: SMYRNA_TOWNHOME_IMAGE.src,
     primaryLabel: "Appreciation",
     primaryValue: "$76.2K → $228K+",
     primaryMeta: { level: 1, type: "historical", asOf: "2024-06-01" },
@@ -118,4 +118,5 @@ export const VERIFY_META: Record<VerifyState, { label: string; color: string }> 
   open:      { label: "Open · Ownership clear", color: "#3B82F6" },
   owned:     { label: "Owned · Not open",    color: "#F59E0B" },
   reference: { label: "Reference · Completed", color: "#8B5CF6" },
+  listed:    { label: "Owner listed · L1",   color: "#64748B" },
 };
