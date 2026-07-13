@@ -59,7 +59,7 @@ export default function IntegrationsPage() {
     <RedesignPage maxWidth={900}>
       <PageHeader
         eyebrow="Integrations"
-        title="Reusable verification — live surfaces + partners onboarding"
+        title="Reusable verification — live surfaces + active partners"
         subtitle={`${liveCount} first-party integration surfaces live today. ${partnerCount} active design partner${partnerCount === 1 ? "" : "s"}.`}
       />
 
@@ -75,7 +75,7 @@ export default function IntegrationsPage() {
       <ContentCard title="Relying party program">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
           Partners configure eligibility rules — Abraxas returns <strong>approved / denied / manual review</strong> with consent receipts and audit references.
-          Cielo is first-party dogfood; external relying parties are onboarding now.
+          Cielo is first-party dogfood; two external design partners are onboarded and live in production.
         </p>
         <Btn href="/integrations/relying-parties" size="sm">Relying party onboarding →</Btn>
         <Btn href="/integrations/outreach" variant="secondary" size="sm">Outreach templates</Btn>
@@ -158,7 +158,7 @@ export default function IntegrationsPage() {
 
       <ContentCard title="Apply for a selective future slot">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
-          Design partners are in final execution. The program stays open for selective future operators —
+          Two design partners are active today. The program stays open for selective future operators —
           outcome-first collaboration, not a protocol pitch.
         </p>
         <Btn href="/design-partner" size="sm">Design partner page →</Btn>

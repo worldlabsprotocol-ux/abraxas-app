@@ -20,7 +20,7 @@ const ACCENT = "#10B981";
 
 const CURRENT_FOCUS = [
   "Finish the Cielo reference loop — sign in, consent, verify, book with USDC on Sui",
-  "Onboard design partners in final execution (hospitality and tribal/mineral verticals)",
+  "Support active design partners in hospitality and tribal/mineral verticals",
   "Measure time saved, documents avoided, and repeat verification eliminated",
   "Keep the public registry honest — real numbers, clear assurance scope",
 ];
@@ -28,7 +28,7 @@ const CURRENT_FOCUS = [
 const WHATS_NEXT = [
   "Publish partner case studies with approved names and metrics",
   "Expand relying parties beyond first-party Cielo dogfood",
-  "Tribal land and mineral rights workflows after hospitality proof is undeniable",
+  "Expand financial-asset vertical once hospitality and land partner metrics compound",
 ];
 
 export default function NorthStarPage() {

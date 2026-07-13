@@ -64,8 +64,8 @@ export default function DesignPartnerPage() {
 
       <ContentCard title="Vertical execution">
         <p style={bodyStyle}>
-          Cielo Sunrise is genesis dogfood in hospitality. Tribal land and mineral partners are in execution now —
-          same verify-once infrastructure, different evidence scope.
+          Cielo Sunrise is genesis dogfood in hospitality. Tribal land and mineral partners are active on the same
+          verify-once infrastructure — different evidence scope, same trust rails.
         </p>
         <div style={{ display: "grid", gap: "0.55rem" }}>
           {VERTICAL_SEQUENCE.map(v => (
@@ -110,8 +110,8 @@ export default function DesignPartnerPage() {
 
       <ContentCard title="Apply for a future selective slot">
         <p style={{ ...bodyStyle, marginBottom: "1rem" }}>
-          Integrate once. Every future credential becomes reusable. New partners join selectively —
-          after current onboarding completes.
+          Integrate once. Every future credential becomes reusable. New partners join selectively as capacity allows —
+          current design partners are already live in production.
         </p>
         <DesignPartnerApplyForm defaultIntegrationType="passport_gate" />
       </ContentCard>

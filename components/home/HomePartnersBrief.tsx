@@ -44,7 +44,7 @@ export function HomePartnersBrief() {
           lineHeight: 1.65, maxWidth: 640, margin: "0 0 1.1rem",
         }}>
           Integrate once. Owners verify once. Partners ask for the eligibility decision — not the customer&apos;s
-          document folder. Cielo proves the loop in hospitality; land and mineral partners are in execution now.
+          document folder. Cielo proves the loop in hospitality; land and mineral partners are active on the owner portal.
         </p>
 
         <PartnerExecutionCards />

@@ -84,8 +84,8 @@ export default function AboutPage() {
 
         <Section title="Partners">
           <p style={{ ...bodyStyle, marginBottom: "0.75rem" }}>
-            Real relying parties and design partners are in final execution. We name them publicly only
-            with approval — the program remains open for selective future slots.
+            Two design partners are active on Abraxas today — hospitality (Cielo Sunrise) and tribal land & mineral
+            (owner portal). We name them publicly only with approval; the program stays open for selective future slots.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Btn href="/design-partner" size="sm">Design partners →</Btn>
