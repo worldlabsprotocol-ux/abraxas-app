@@ -35,10 +35,21 @@ export const INSTITUTIONAL_GLASS = {
   backdropFilter: "blur(8px)",
 } as const;
 
-/** Inline style helper for gradient headline spans */
+/** High-contrast text on institutional dark backgrounds (WCAG AA+) */
+export const TEXT_ON_DARK = {
+  primary: "#FAFAFA",
+  secondary: "#D4D4D8",
+  caption: "#A1A1AA",
+  eyebrow: "#C4B5FD",
+  gold: "#F5E6A8",
+  violet: "#C4B5FD",
+} as const;
+
+/** Inline style helper for gradient headline spans — includes solid fallback color */
 export const gradientTextStyle: CSSProperties = {
+  color: INSTITUTIONAL_GOLD_PALE,
   background: INSTITUTIONAL_GRADIENT_TEXT,
   WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
   backgroundClip: "text",
 };
+

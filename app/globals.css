@@ -41,17 +41,18 @@
   --surface-glass:  rgba(255, 255, 255, 0.04);
   --border:         rgba(255, 255, 255, 0.09);
   --border-strong:  rgba(232, 197, 71, 0.32);
-  --text-primary:   #F4F4F5;
-  --text-secondary: rgba(244, 244, 245, 0.72);
-  --text-muted:     rgba(244, 244, 245, 0.46);
+  --text-primary:   #FAFAFA;
+  --text-secondary: #D4D4D8;
+  --text-muted:     #A1A1AA;
+  --text-caption:   #71717A;
   --accent:         #E8C547;
   --accent-pale:    #F5E6A8;
   --accent-deep:    #C9A227;
   --accent-bright:  #F5E6A8;
   --accent-faint:   rgba(232, 197, 71, 0.12);
   --accent-border:  rgba(232, 197, 71, 0.45);
-  --accent-2:       #A78BFA;
-  --accent-2-deep:  #8B5CF6;
+  --accent-2:       #C4B5FD;
+  --accent-2-deep:  #A78BFA;
   --accent-2-faint: rgba(167, 139, 250, 0.14);
   --accent-verify:  #10B981;
   --accent-verify-faint: rgba(16, 185, 129, 0.12);
@@ -171,10 +172,17 @@ details > summary::-webkit-details-marker {
 }
 
 .abx-gradient-text {
+  /* Solid fallback — gradient clip can render invisible on some mobile browsers */
+  color: var(--accent-pale);
   background: var(--gradient-text);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+@supports (-webkit-background-clip: text) {
+  .abx-gradient-text {
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 .abx-glass-panel {
@@ -191,4 +199,6 @@ details > summary::-webkit-details-marker {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent-2);
+  /* Small caps on dark — keep violet legible */
+  text-shadow: 0 0 24px rgba(196, 181, 253, 0.35);
 }

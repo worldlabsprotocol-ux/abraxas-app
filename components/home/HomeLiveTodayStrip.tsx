@@ -33,7 +33,7 @@ export function HomeLiveTodayStrip() {
       }}>
         {liveFacts.map(f => (
           <div key={f.label}>
-            <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: 2 }}>
+            <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-secondary)", marginBottom: 2 }}>
               {f.label}
             </div>
             <div style={{

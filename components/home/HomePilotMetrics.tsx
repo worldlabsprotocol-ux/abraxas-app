@@ -55,7 +55,7 @@ export function HomePilotMetrics() {
               {m.label}
             </div>
             <div style={{
-              fontFamily: MONO, fontSize: "0.5rem", color: "var(--text-muted)",
+              fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-caption, var(--text-muted))",
               letterSpacing: "0.04em", textTransform: "uppercase",
             }}>
               {m.pilot ? "Pilot · " : ""}{m.note}

@@ -25,7 +25,7 @@ export function HomeSharpHero() {
         color: "var(--text-primary)", margin: "0 0 1rem",
       }}>
         {headlineBase}{" "}
-        <span className="abx-gradient-text">{HEADLINE_ACCENT}</span>
+        <span style={{ color: "var(--accent-pale)" }} className="abx-gradient-text">{HEADLINE_ACCENT}</span>
       </h1>
       <p style={{
         fontFamily: FONT, fontSize: "clamp(0.92rem, 2vw, 1.02rem)",
