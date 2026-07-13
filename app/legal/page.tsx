@@ -2,7 +2,7 @@ export const metadata = { title: "Legal Overview. Abraxas" };
 
 export default function LegalPage() {
   return (
-    <div style={{ maxWidth: "780px", margin: "0 auto", padding: "3rem 1.25rem 5rem" }}>
+    <div style={{ paddingBottom: "2rem" }}>
       <div style={{ marginBottom: "2.5rem" }}>
         <p style={{ fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.5rem" }}>Legal</p>
         <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "2.25rem", letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>Legal Overview</h1>
@@ -87,9 +87,9 @@ export default function LegalPage() {
         <p style={{ fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.7 }}>
           If you represent a label, CRE owner, factoring desk, or other institutional asset originator and want to discuss the legal structure in detail before committing assets. reach out directly. We will provide the full legal framework documentation, current SPV status, and jurisdiction-specific analysis for your asset class.
         </p>
-        <a href="https://twitter.com/pabloretroworld" target="_blank" rel="noopener noreferrer"
+        <a href="https://twitter.com/pabloretroworld"
           style={{ display: "inline-block", marginTop: "0.875rem", fontSize: "0.78rem", color: "var(--gold)", textDecoration: "none" }}>
-          Contact: @pabloretroworld on X ↗
+          Contact: @pabloretroworld on X →
         </a>
       </div>
     </div>

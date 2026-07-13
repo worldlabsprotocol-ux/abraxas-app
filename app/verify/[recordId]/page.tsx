@@ -1,12 +1,15 @@
 // FILE: app/verify/[recordId]/page.tsx
-// Stable public record URLs — e.g. /verify/ABX-RE-HOSP-001
+// Stable public record URLs — static catalog + owner self-serve listings.
 
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { VerifyRecordStatic } from "@/components/verify/VerifyRecordStatic";
 import { REGISTRY_ASSETS, resolveRegistryAsset } from "@/lib/data/registryAssets";
+import { resolveExternalRegistryAsset } from "@/lib/portal/externalRegistry";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: { recordId: string };
@@ -16,8 +19,13 @@ export function generateStaticParams() {
   return REGISTRY_ASSETS.map(asset => ({ recordId: asset.abxId }));
 }
 
+async function resolveRecord(recordId: string) {
+  const decoded = decodeURIComponent(recordId);
+  return resolveRegistryAsset(decoded) ?? await resolveExternalRegistryAsset(decoded);
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const asset = resolveRegistryAsset(params.recordId);
+  const asset = await resolveRecord(params.recordId);
   if (!asset) {
     return { title: "Record not found · Abraxas Verify" };
   }
@@ -36,16 +44,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
-    openGraph: {
-      title,
-      description,
-      type: "website",
-    },
+    openGraph: { title, description, type: "website" },
   };
 }
 
-export default function VerifyRecordPage({ params }: PageProps) {
-  const asset = resolveRegistryAsset(params.recordId);
+export default async function VerifyRecordPage({ params }: PageProps) {
+  const asset = await resolveRecord(params.recordId);
   if (!asset) notFound();
 
   return (

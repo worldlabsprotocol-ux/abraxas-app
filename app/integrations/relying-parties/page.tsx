@@ -38,7 +38,7 @@ export default function RelyingPartiesPage() {
       <ContentCard title="Current pilot status">
         <p style={body}>
           Pilot-ready verification infrastructure for real assets. Public verification, consent-based Passport access,
-          and partner policy APIs are live in pilot. External relying-party and external-originator onboarding is underway.
+          and partner policy APIs are live in pilot. Two external design partners are onboarded — hospitality and tribal land & mineral.
         </p>
       </ContentCard>
 

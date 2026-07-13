@@ -14,12 +14,15 @@ export default function DocsPage() {
     <RedesignPage maxWidth={820}>
       <PageHeader
         eyebrow="Documentation"
-        title="Technical overview"
-        subtitle="Abraxas Identity Layer (AIL). trust orchestration, not KYC. Licensed providers verify; Abraxas distributes cryptographic proof."
+        title="Reusable verification — technical overview"
+        subtitle="Abraxas is the reusable verification infrastructure for real-world assets. Licensed providers verify; Abraxas distributes cryptographic proof partners can rely on."
       />
       <ContentCard title="Start here">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
-          Read the full product specification:{" "}
+          Problem-first context:{" "}
+          <Link href="/blog/why-tokenization-alone-isnt-enough" style={{ color: ACCENT, fontWeight: 600 }}>Why tokenization alone isn&apos;t enough →</Link>
+          {" · "}
+          Full spec:{" "}
           <Link href="/docs/ail" style={{ color: ACCENT, fontWeight: 600 }}>Abraxas Identity Layer (AIL) →</Link>
         </p>
       </ContentCard>

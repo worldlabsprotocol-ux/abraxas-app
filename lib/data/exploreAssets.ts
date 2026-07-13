@@ -5,11 +5,12 @@
 // is honest per asset.
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
-import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_REGISTRY_IMAGE, SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
-export type VerifyState = "verified" | "reference" | "open" | "owned";
+export type VerifyState = "verified" | "reference" | "open" | "owned" | "listed";
 
 export interface MetricMeta {
   level?: AssuranceLevel;
@@ -47,7 +48,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Cielo Sunrise",
     assetClass: "Real Estate · Hospitality",
     location: "Mineral Bluff, Georgia",
-    image: CIELO_PORCH_IMAGE.src,
+    image: CIELO_REGISTRY_IMAGE.src,
     primaryLabel: "Appraised value",
     primaryValue: "$1,100,000",
     primaryMeta: { level: 3, type: "appraised", asOf: "2025-12-01" },
@@ -64,11 +65,30 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     cta: "View asset",
   },
   {
+    id: "cpg-grady-270",
+    name: "Grady County 270",
+    assetClass: "Real Estate · Land",
+    location: "Grady County, Oklahoma · OKC growth corridor",
+    image: CPG_ASSET.image,
+    primaryLabel: "Full project",
+    primaryValue: formatUsd(CPG_PRICING.fullProject),
+    primaryMeta: { level: 2, type: "reference", asOf: "2026-07-05" },
+    secondaryLabel: "Acreage",
+    secondaryValue: "~270 ac · 11 lots",
+    secondaryMeta: { level: 2, type: "reference", asOf: "2026-07-05" },
+    state: "open",
+    statusBadge: "pilot",
+    note: "Contracts at asking pre-MLS · Phase I clean · surveys complete · CPG Land Sales",
+    href: "/case-studies/cpg-grady-270",
+    liveProof: { label: "On Abraxas registry", url: "/verify/ABX-RE-LAND-006" },
+    cta: "View listing",
+  },
+  {
     id: "smyrna-townhome",
     name: "Smyrna Townhome",
     assetClass: "Real Estate · Residential",
     location: "Smyrna, Georgia · Battery Atlanta",
-    image: "/assets/smyrna/011.webp",
+    image: SMYRNA_TOWNHOME_IMAGE.src,
     primaryLabel: "Appreciation",
     primaryValue: "$76.2K → $228K+",
     primaryMeta: { level: 1, type: "historical", asOf: "2024-06-01" },
@@ -118,4 +138,5 @@ export const VERIFY_META: Record<VerifyState, { label: string; color: string }> 
   open:      { label: "Open · Ownership clear", color: "#3B82F6" },
   owned:     { label: "Owned · Not open",    color: "#F59E0B" },
   reference: { label: "Reference · Completed", color: "#8B5CF6" },
+  listed:    { label: "Owner listed · L1",   color: "#64748B" },
 };

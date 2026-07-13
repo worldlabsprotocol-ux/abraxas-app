@@ -1,85 +1,87 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — visuals + mock UI per step.
-
-import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+// Auto-advancing product walkthrough — re-verify pain → Abraxas closed loop.
 
 export interface ProductLoopStep {
   id: string;
   title: string;
   subtitle: string;
   durationMs: number;
-  image?: string;
-  imageObjectPosition?: string;
   badge?: string;
   metrics?: { label: string; value: string }[];
-  cta?: string;
+  href: string;
+  ctaLabel: string;
 }
 
 export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
-    id: "browse",
-    title: "Browse verified assets",
-    subtitle: "Assurance levels and registry state — no login required.",
-    durationMs: 6000,
-    image: "/assets/smyrna/011.webp",
-    badge: "Public registry",
+    id: "spam",
+    title: "Stop the re-verify email spiral",
+    subtitle: "Every new client asks for the same survey, deed, and ID — your inbox becomes a forwarding loop.",
+    durationMs: 6500,
+    badge: "The pain",
     metrics: [
-      { label: "Assets", value: "4 listed" },
-      { label: "Assurance", value: "L1–L4" },
-      { label: "ID check", value: "When needed" },
+      { label: "Trigger", value: "New buyer" },
+      { label: "Action", value: "Re-send PDFs" },
+      { label: "Cost", value: "Hours × deals" },
     ],
+    href: "/#product-loop",
+    ctaLabel: "See the fix",
   },
   {
-    id: "book",
-    title: "Book with Apple Pay or card",
-    subtitle: "Pick dates · pay in fiat · settles automatically on-chain.",
-    durationMs: 6000,
-    image: CIELO_PORCH_IMAGE.src,
-    imageObjectPosition: "center 40%",
-    badge: "Seamless checkout",
+    id: "pain",
+    title: "We need a solution moment",
+    subtitle: "Important diligence buried under duplicate requests — trust erodes before the deal even starts.",
+    durationMs: 5500,
+    badge: "Breaking point",
     metrics: [
-      { label: "Primary", value: "Apple Pay" },
-      { label: "Alt", value: "USDC" },
-      { label: "Est.", value: "~$1,240" },
+      { label: "Docs", value: "Same 11 plats" },
+      { label: "Clients", value: "Global buyers" },
+      { label: "Risk", value: "Version drift" },
     ],
+    href: "/passport",
+    ctaLabel: "Enter Passport",
   },
   {
-    id: "signin",
-    title: "Sign in with Google",
-    subtitle: "Your wallet is ready in one click — no seed phrase, no extension.",
-    durationMs: 5000,
-    badge: "Passport ready",
+    id: "verify-once",
+    title: "Upload once on Abraxas Passport",
+    subtitle: "Surveys, environmental, title — verified on-registry. Share permissioned proof, not attachments.",
+    durationMs: 6500,
+    badge: "Verify once",
     metrics: [
-      { label: "Account", value: "Google" },
-      { label: "Wallet", value: "Apple Wallet" },
-      { label: "ID check", value: "Optional" },
+      { label: "Record", value: "ABX-RE-LAND-006" },
+      { label: "Reuse", value: "Any counterparty" },
+      { label: "Login", value: "Google · zkLogin" },
     ],
+    href: "/passport",
+    ctaLabel: "Create Passport",
   },
   {
-    id: "pay",
-    title: "Pay without thinking about rails",
-    subtitle: "Fiat on-ramp or stablecoin · settlement captured · on-chain verify.",
-    durationMs: 6000,
-    image: CIELO_HERO_IMAGE.src,
-    imageObjectPosition: CIELO_HERO_IMAGE.objectPosition,
-    badge: "Payment captured",
-    metrics: [
-      { label: "Method", value: "Apple Pay" },
-      { label: "Settles", value: "USDC" },
-      { label: "Status", value: "Captured ✓" },
-    ],
-  },
-  {
-    id: "verify",
-    title: "Verify on the public registry",
-    subtitle: "Any partner checks your credential — assurance levels L1–L4, instant.",
+    id: "global",
+    title: "Share to global buyers from one profile",
+    subtitle: "International land, hospitality, capital — one assurance record opens doors without re-forwarding.",
     durationMs: 7000,
-    badge: "✓ PORTABLE PROOF",
+    badge: "Global reach",
     metrics: [
-      { label: "Standard", value: "W3C VC" },
-      { label: "API", value: "/verify" },
-      { label: "Reuse", value: "Any partner" },
+      { label: "Registry", value: "$2.7M+ scope" },
+      { label: "Partners", value: "Active sync" },
+      { label: "Chain", value: "Portable proof" },
     ],
+    href: "/#registry",
+    ctaLabel: "Browse registry",
+  },
+  {
+    id: "settle",
+    title: "Close in USDC on Sui — closed loop",
+    subtitle: "Acquire on Abraxas, partner updates sync automatically, settlement stays on-protocol — institutional scale.",
+    durationMs: 7000,
+    badge: "Closed loop",
+    metrics: [
+      { label: "Acquire", value: "On Abraxas" },
+      { label: "Settle", value: "USDC · Sui" },
+      { label: "Target", value: "$110M+ infra" },
+    ],
+    href: "/case-studies/cpg-grady-270#acquire",
+    ctaLabel: "Acquire on Abraxas",
   },
 ];
 

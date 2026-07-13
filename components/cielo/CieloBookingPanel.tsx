@@ -206,8 +206,7 @@ export function CieloBookingPanel({
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
                        lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 420 }}>
-            Pick dates on the Protocol Calendar. Pay with Apple Pay or your card after we confirm —
-            conversion is handled in checkout.
+            Pick check-in and check-out dates below. Pay with Apple Pay or USDC after we confirm your request.
           </p>
         </div>
         {variant !== "inline" && (

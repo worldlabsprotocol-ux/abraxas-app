@@ -148,11 +148,25 @@ export async function resolveVerifierQuery(rawQuery: string): Promise<VerifierRe
   if (registryAsset) {
     return assetResponse(registryAsset, query);
   }
+
+  // Owner self-serve listings (dynamic DB)
+  if (/^abx-/i.test(query.trim())) {
+    const { resolveExternalRegistryAsset } = await import("@/lib/portal/externalRegistry");
+    const external = await resolveExternalRegistryAsset(query);
+    if (external) {
+      return assetResponse(external, query);
+    }
+  }
   if (query === FLAGSHIP_PROPERTY.id || query.toLowerCase().includes("cielo")) {
     return cieloAssetResponse(query);
   }
 
   if (isLikelyAssetId(query)) {
+    const { resolveExternalRegistryAsset } = await import("@/lib/portal/externalRegistry");
+    const external = await resolveExternalRegistryAsset(query);
+    if (external) {
+      return assetResponse(external, query);
+    }
     return nullState(query, "Asset ID format recognized but not found in the Abraxas registry.");
   }
 

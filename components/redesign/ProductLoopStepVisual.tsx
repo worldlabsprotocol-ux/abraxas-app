@@ -1,241 +1,213 @@
 "use client";
 // FILE: components/redesign/ProductLoopStepVisual.tsx
-// Step-specific mock UI for the product loop — fills the visual panel after step 1.
+// Step-specific visuals — distinct photo overlays and diagram modes per step.
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
+const BLUE = "#4285F4";
+const RED = "#F87171";
+const AMBER = "#F59E0B";
 
-function PanelShell({ children }: { children: React.ReactNode }) {
+function PanelShell({ children, align = "center" }: { children: React.ReactNode; align?: "center" | "stretch" }) {
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1.5rem 1.25rem 4.5rem",
-        pointerEvents: "none",
-      }}
-    >
+    <div style={{
+      position: "absolute", inset: 0,
+      display: "flex", alignItems: align === "stretch" ? "stretch" : "center",
+      justifyContent: "center",
+      padding: "2.5rem 1.25rem 1.5rem",
+      pointerEvents: "none",
+    }}>
       {children}
     </div>
   );
 }
 
-function Card({ children, width = 280 }: { children: React.ReactNode; width?: number }) {
+function Card({ children, width = 280, accent = ACCENT }: { children: React.ReactNode; width?: number; accent?: string }) {
   return (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: width,
-        borderRadius: 16,
-        background: "rgba(12,18,24,0.92)",
-        border: "1px solid rgba(255,255,255,0.14)",
-        boxShadow: "0 24px 48px rgba(0,0,0,0.45)",
-        backdropFilter: "blur(12px)",
-        overflow: "hidden",
-      }}
-    >
+    <div style={{
+      width: "100%", maxWidth: width, borderRadius: 16,
+      background: "rgba(10,14,20,0.94)",
+      border: `1px solid ${accent}33`,
+      boxShadow: "0 24px 48px rgba(0,0,0,0.5)",
+      backdropFilter: "blur(14px)",
+      overflow: "hidden",
+    }}>
       {children}
     </div>
   );
 }
 
-function BookMock() {
+function FlowNode({ label, sub, color }: { label: string; sub?: string; color: string }) {
   return (
-    <PanelShell>
-      <Card width={300}>
-        <div style={{ padding: "0.85rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
-            Cielo Sunrise · Genesis pilot
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "#fff" }}>3-night wellness stay</div>
-        </div>
-        <div style={{ padding: "0.85rem 1rem", display: "grid", gap: "0.55rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>
-            <span>Check-in</span>
-            <span style={{ color: "#fff", fontWeight: 600 }}>Fri · Aug 14</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>
-            <span>Check-out</span>
-            <span style={{ color: "#fff", fontWeight: 600 }}>Mon · Aug 17</span>
-          </div>
-          <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0.15rem 0" }} />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>Total</span>
-            <span style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800, color: ACCENT }}>$1,240</span>
-          </div>
-          <div
-            style={{
-              marginTop: "0.35rem",
-              padding: "0.65rem",
-              borderRadius: 10,
-              background: "#000",
-              border: "1px solid rgba(255,255,255,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.45rem",
-            }}
-          >
-            <span style={{ fontFamily: FONT, fontSize: "0.95rem", color: "#fff", fontWeight: 600 }}> Pay</span>
-            <span style={{ fontFamily: FONT, fontSize: "0.82rem", color: "#fff", fontWeight: 700 }}>Apple Pay</span>
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.45)", textAlign: "center" }}>
-            Fiat on-ramp · settles USDC on-chain
-          </div>
-        </div>
-      </Card>
-    </PanelShell>
+    <div style={{
+      padding: "0.5rem 0.65rem", borderRadius: 10,
+      background: `${color}18`, border: `1px solid ${color}44`,
+      textAlign: "center", minWidth: 72,
+    }}>
+      <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 800, color }}>{label}</div>
+      {sub && <div style={{ fontFamily: MONO, fontSize: "0.48rem", color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{sub}</div>}
+    </div>
   );
 }
 
-function SignInMock() {
+function FlowArrow() {
   return (
-    <PanelShell>
-      <Card width={290}>
-        <div style={{ padding: "1.25rem 1.15rem 1.1rem", textAlign: "center" }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              margin: "0 auto 0.85rem",
-              background: "rgba(16,185,129,0.15)",
-              border: "1px solid rgba(16,185,129,0.35)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <ImageMark />
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "#fff", marginBottom: "0.35rem" }}>
-            Sign in to Abraxas
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.55, marginBottom: "1rem" }}>
-            One click creates your wallet — no seed phrase, no extension.
-          </div>
-          <div
-            style={{
-              padding: "0.65rem 1rem",
-              borderRadius: 999,
-              background: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.55rem",
-            }}
-          >
-            <span style={{ fontFamily: FONT, fontSize: "1rem", fontWeight: 800, color: "#4285F4" }}>G</span>
-            <span style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "#1f1f1f" }}>Continue with Google</span>
-          </div>
-          <div style={{ marginTop: "0.85rem", display: "flex", justifyContent: "center", gap: "0.35rem", flexWrap: "wrap" }}>
-            {["Passport ready", "Apple Wallet", "did:sui"].map(tag => (
-              <span
-                key={tag}
-                style={{
-                  fontFamily: MONO,
-                  fontSize: "0.48rem",
-                  padding: "0.25rem 0.45rem",
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "rgba(255,255,255,0.55)",
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </Card>
-    </PanelShell>
+    <span style={{ fontFamily: MONO, fontSize: "0.85rem", color: "rgba(255,255,255,0.35)", padding: "0 0.15rem" }}>→</span>
   );
 }
 
-function PayMock() {
+/** Email re-verify spam — the pain before Abraxas */
+function EmailSpamDiagram() {
+  const emails = [
+    { from: "Buyer · Singapore", subject: "Please re-send survey plat Lot 4", urgent: true },
+    { from: "Lender · Dallas", subject: "Need Phase I again — wrong version", urgent: true },
+    { from: "Buyer · Singapore", subject: "Following up — documents?", urgent: false },
+    { from: "Counsel · NYC", subject: "Warranty deed PDF expired link", urgent: false },
+    { from: "Buyer · Singapore", subject: "URGENT: due diligence today", urgent: true },
+  ];
   return (
-    <PanelShell>
-      <Card width={270}>
-        <div style={{ padding: "1.1rem 1rem 0.85rem", textAlign: "center" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.65rem" }}>
-            Confirm payment
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "1.65rem", fontWeight: 800, color: "#fff", marginBottom: "0.15rem" }}>$1,240.00</div>
-          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.55)", marginBottom: "1rem" }}>Cielo Sunrise · 3 nights</div>
-          <div
-            style={{
-              padding: "0.75rem",
-              borderRadius: 12,
-              background: "#000",
-              border: "1px solid rgba(255,255,255,0.12)",
-              marginBottom: "0.65rem",
-            }}
-          >
-            <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700, color: "#fff" }}> Pay with Pass</div>
-            <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Visa ··· 4242</div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem" }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: ACCENT, boxShadow: `0 0 8px ${ACCENT}` }} />
-            <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: ACCENT }}>Payment captured ✓</span>
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", marginTop: "0.65rem" }}>
-            Settlement · USDC · Sui testnet
-          </div>
+    <PanelShell align="stretch">
+      <Card width={320} accent={RED}>
+        <div style={{ padding: "0.65rem 0.85rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800, color: "#fff" }}>Inbox</span>
+          <span style={{ fontFamily: MONO, fontSize: "0.55rem", color: RED, fontWeight: 700 }}>47 unread</span>
         </div>
-      </Card>
-    </PanelShell>
-  );
-}
-
-function VerifyMock() {
-  return (
-    <PanelShell>
-      <Card width={310}>
-        <div style={{ padding: "0.85rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontFamily: MONO, fontSize: "0.52rem", color: "rgba(255,255,255,0.5)" }}>POST /api/credentials/verify</span>
-          <span style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, padding: "0.2rem 0.45rem", borderRadius: 999, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.35)" }}>
-            200 OK
-          </span>
-        </div>
-        <div style={{ padding: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", marginBottom: "0.85rem" }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: "rgba(16,185,129,0.15)",
-                border: "1px solid rgba(16,185,129,0.4)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: ACCENT,
-                fontSize: "1rem",
-                fontWeight: 800,
-              }}
-            >
-              ✓
-            </div>
-            <div>
-              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "#fff" }}>Credential valid</div>
-              <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "rgba(255,255,255,0.55)" }}>Portable proof · any partner</div>
-            </div>
-          </div>
-          {[
-            { k: "Subject", v: "did:sui:…abx7f2" },
-            { k: "Level", v: "identity:L2" },
-            { k: "Screening", v: "clear" },
-            { k: "Policy", v: "approved" },
-          ].map(row => (
-            <div key={row.k} style={{ display: "flex", justifyContent: "space-between", padding: "0.35rem 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)" }}>{row.k}</span>
-              <span style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT, fontWeight: 600 }}>{row.v}</span>
+        <div style={{ maxHeight: 200, overflow: "hidden" }}>
+          {emails.map((e, i) => (
+            <div key={i} style={{
+              padding: "0.55rem 0.85rem", borderBottom: "1px solid rgba(255,255,255,0.05)",
+              background: e.urgent ? "rgba(248,113,113,0.08)" : "transparent",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.45)" }}>{e.from}</div>
+              <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: e.urgent ? 700 : 500, color: e.urgent ? RED : "#fff" }}>
+                {e.subject}
+              </div>
             </div>
           ))}
+        </div>
+        <div style={{ padding: "0.5rem 0.85rem", fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.5)", textAlign: "center" }}>
+          Same PDFs · every client · every time
+        </div>
+      </Card>
+    </PanelShell>
+  );
+}
+
+function PainMomentDiagram() {
+  return (
+    <PanelShell>
+      <Card width={300} accent={AMBER}>
+        <div style={{ padding: "1.25rem 1rem", textAlign: "center" }}>
+          <div style={{ fontFamily: FONT, fontSize: "2rem", marginBottom: "0.35rem" }}>⚠</div>
+          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 900, color: AMBER, marginBottom: "0.45rem" }}>
+            We need a solution
+          </div>
+          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+            Important diligence lost in email threads. Global buyers waiting. Trust stalling before $1.6M closes.
+          </div>
+        </div>
+      </Card>
+    </PanelShell>
+  );
+}
+
+function VerifyOnceDiagram() {
+  return (
+    <PanelShell align="stretch">
+      <div style={{ width: "100%", maxWidth: 340, alignSelf: "center" }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap",
+          gap: "0.35rem", marginBottom: "0.85rem",
+        }}>
+          <FlowNode label="Google" sub="OAuth" color={BLUE} />
+          <FlowArrow />
+          <FlowNode label="zkLogin" sub="Sui" color={ACCENT} />
+          <FlowArrow />
+          <FlowNode label="Passport" sub="ready" color={ACCENT} />
+        </div>
+        <Card width={300} accent={BLUE}>
+          <div style={{ padding: "1.1rem 1rem", textAlign: "center" }}>
+            <ImageMark />
+            <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "#fff", margin: "0.65rem 0 0.35rem" }}>
+              Verify once on Abraxas
+            </div>
+            <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>
+              11 plats · Phase I · title — on-registry, not in email
+            </div>
+          </div>
+        </Card>
+      </div>
+    </PanelShell>
+  );
+}
+
+function GlobalShareDiagram() {
+  const buyers = [
+    { label: "SG fund", color: "#38BDF8" },
+    { label: "US lender", color: ACCENT },
+    { label: "EU family", color: AMBER },
+    { label: "OK local", color: BLUE },
+  ];
+  return (
+    <PanelShell align="stretch">
+      <div style={{ width: "100%", maxWidth: 340, alignSelf: "center" }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap",
+          gap: "0.35rem", marginBottom: "0.85rem",
+        }}>
+          <FlowNode label="Profile" sub="Passport" color={ACCENT} />
+          <FlowArrow />
+          <FlowNode label="Proof" sub="ABX record" color={BLUE} />
+          <FlowArrow />
+          <FlowNode label="Buyers" sub="global" color="#38BDF8" />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem" }}>
+          {buyers.map(b => (
+            <div key={b.label} style={{
+              padding: "0.55rem", borderRadius: 10, textAlign: "center",
+              background: `${b.color}12`, border: `1px solid ${b.color}33`,
+              fontFamily: FONT, fontSize: "0.65rem", fontWeight: 700, color: b.color,
+            }}>
+              {b.label} ✓
+            </div>
+          ))}
+        </div>
+        <div style={{
+          marginTop: "0.55rem", padding: "0.5rem", borderRadius: 8, textAlign: "center",
+          fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.55)",
+        }}>
+          One upload · permissioned share · no re-forward
+        </div>
+      </div>
+    </PanelShell>
+  );
+}
+
+function SettleClosedLoopDiagram() {
+  return (
+    <PanelShell>
+      <Card width={310} accent={ACCENT}>
+        <div style={{ padding: "1rem", textAlign: "center" }}>
+          <div style={{ fontFamily: FONT, fontSize: "1.5rem", fontWeight: 900, color: ACCENT, marginBottom: "0.25rem" }}>
+            $1,639,000
+          </div>
+          <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#fff", marginBottom: "0.35rem" }}>
+            Grady County 270 · USDC on Sui
+          </div>
+          <div style={{
+            display: "flex", justifyContent: "center", gap: "0.35rem", flexWrap: "wrap",
+            marginBottom: "0.75rem",
+          }}>
+            <FlowNode label="Inquire" sub="Abraxas" color={ACCENT} />
+            <FlowArrow />
+            <FlowNode label="Verify" sub="once" color={BLUE} />
+            <FlowArrow />
+            <FlowNode label="Settle" sub="closed" color={ACCENT} />
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "rgba(255,255,255,0.5)" }}>
+            Institutional infrastructure · $110M+ trajectory
+          </div>
         </div>
       </Card>
     </PanelShell>
@@ -245,48 +217,51 @@ function VerifyMock() {
 function ImageMark() {
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
-    <img src="/icon-48.png" alt="" width={22} height={22} style={{ borderRadius: 5 }} />
-  );
-}
-
-function BrowseOverlay() {
-  return (
-    <PanelShell>
-      <div
-        style={{
-          alignSelf: "flex-end",
-          width: "100%",
-          maxWidth: 260,
-          padding: "0.65rem 0.75rem",
-          borderRadius: 12,
-          background: "rgba(0,0,0,0.55)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
-          Public registry
-        </div>
-        <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#fff" }}>Smyrna · L3 assurance</div>
-        <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "rgba(255,255,255,0.55)", marginTop: 2 }}>No login · browse first</div>
-      </div>
-    </PanelShell>
+    <img src="/icon-48.png" alt="" width={36} height={36} style={{ borderRadius: 8, margin: "0 auto", display: "block" }} />
   );
 }
 
 export function ProductLoopStepVisual({ stepId }: { stepId: string }) {
   switch (stepId) {
-    case "browse":
-      return <BrowseOverlay />;
-    case "book":
-      return <BookMock />;
-    case "signin":
-      return <SignInMock />;
-    case "pay":
-      return <PayMock />;
-    case "verify":
-      return <VerifyMock />;
+    case "spam":
+      return <EmailSpamDiagram />;
+    case "pain":
+      return <PainMomentDiagram />;
+    case "verify-once":
+      return <VerifyOnceDiagram />;
+    case "global":
+      return <GlobalShareDiagram />;
+    case "settle":
+      return <SettleClosedLoopDiagram />;
     default:
       return null;
   }
+}
+
+export function ProductLoopDiagramBackdrop({ stepId }: { stepId: string }) {
+  if (stepId === "verify-once") {
+    return (
+      <div style={{ position: "absolute", inset: 0, opacity: 0.35 }}>
+        <svg width="100%" height="100%" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" aria-hidden>
+          <circle cx="60" cy="60" r="80" fill="rgba(66,133,244,0.08)" />
+          <circle cx="340" cy="260" r="100" fill="rgba(16,185,129,0.06)" />
+          {[0, 1, 2].map(i => (
+            <line key={i} x1={80 + i * 120} y1="160" x2={140 + i * 120} y2="160" stroke="rgba(255,255,255,0.06)" strokeWidth="2" strokeDasharray="6 8" />
+          ))}
+        </svg>
+      </div>
+    );
+  }
+  if (stepId === "global") {
+    return (
+      <div style={{ position: "absolute", inset: 0, opacity: 0.4 }}>
+        <svg width="100%" height="100%" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" aria-hidden>
+          <rect x="40" y="80" width="100" height="60" rx="12" fill="rgba(56,189,248,0.08)" stroke="rgba(56,189,248,0.15)" />
+          <rect x="150" y="140" width="100" height="60" rx="12" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.15)" />
+          <rect x="260" y="80" width="100" height="60" rx="12" fill="rgba(16,185,129,0.08)" stroke="rgba(16,185,129,0.15)" />
+        </svg>
+      </div>
+    );
+  }
+  return null;
 }

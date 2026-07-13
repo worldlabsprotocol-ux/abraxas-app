@@ -12,6 +12,7 @@ import {
   CIELO_ONCHAIN_PROOF,
   CIELO_TIMELINE,
   CIELO_PHOTOS,
+  CIELO_WHAT_THIS_PROVES,
 } from "@/lib/cieloCaseStudy";
 import { CaseStudyGallery, CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
 import { Btn } from "@/components/redesign/ui";
@@ -47,12 +48,16 @@ export default function CieloCaseStudyPage() {
         subtitle="Mineral Bluff, GA · $1.1M appraised · Live STR + Abraxas booking"
       />
 
-      <ContentCard title="Property evidence (photos)">
-        <CaseStudyGallery images={CIELO_PHOTOS} altPrefix="Cielo Sunrise" />
-        <p style={{ ...body, marginTop: "0.65rem", marginBottom: 0 }}>
-          Cross-check the public Airbnb listing for additional angles and guest reviews.
+      <div style={{ marginBottom: "1.25rem" }}>
+        <CaseStudyGallery images={CIELO_PHOTOS} altPrefix="Cielo Sunrise" variant="mosaic" />
+        <p style={{ ...body, marginTop: "0.5rem", marginBottom: 0, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+          Wellness dome, ridgeline decks, and hot tub — cross-check the{" "}
+          <Link href={D.airbnbUrl} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, fontWeight: 600 }}>
+            public Airbnb listing
+          </Link>{" "}
+          for more angles and guest reviews.
         </p>
-      </ContentCard>
+      </div>
 
       <ContentCard title="Asset snapshot">
         <KeyValueTable rows={[
@@ -63,6 +68,14 @@ export default function CieloCaseStudyPage() {
           { k: "Registry ID", v: D.id, mono: true },
           { k: "Payment rail", v: "USDC on Sui (live booking)" },
         ]} />
+      </ContentCard>
+
+      <ContentCard title="What this proves">
+        <BulletList items={[...CIELO_WHAT_THIS_PROVES]} />
+        <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0 }}>
+          Read the full article:{" "}
+          <Link href="/blog/cielo-sunrise-proof-model-works" style={{ color: ACCENT }}>Cielo Sunrise — proof the model works →</Link>
+        </p>
       </ContentCard>
 
       <ContentCard title={CIELO_CONFLICTS.headline}>
