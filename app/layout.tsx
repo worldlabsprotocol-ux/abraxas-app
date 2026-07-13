@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { SITE_URL } from "@/lib/siteUrl";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Abraxas, Verify Once. Transact Everywhere.",
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppProviders>
           {children}
         </AppProviders>
+        <Analytics />
       </body>
     </html>
   );
