@@ -5,11 +5,12 @@
 import { useState }             from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FLAGSHIP_PROPERTY }    from "@/lib/data/flagshipProperty";
-import { CieloFlagshipActions } from "@/components/cielo/CieloFlagshipActions";
+import { CieloFlagshipBookSection } from "@/components/cielo/CieloFlagshipBookSection";
 import { CieloGuestReviews } from "@/components/cielo/CieloGuestReviews";
 import { AssetVerificationScopePanel } from "@/components/redesign/AssetVerificationScopePanel";
 
 const M      = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const FONT   = "'Inter',system-ui,-apple-system,sans-serif";
 // Dark premium restyle (redesign). Data/content unchanged.
 const BG     = "#06090B";
 const CARD   = "#121A16";
@@ -33,10 +34,10 @@ function Section({ title, icon, children }: { title:string; icon:string; childre
       <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
                      marginBottom:"1rem", paddingBottom:"0.625rem",
                      borderBottom:"1px solid " + BORDER }}>
-        <span style={{ color:GREEN, fontSize:"0.7rem" }}>{icon}</span>
-        <span style={{ fontFamily:M, fontSize:"0.36rem", fontWeight:700,
-                        color:"rgba(242,246,243,0.3)", textTransform:"uppercase",
-                        letterSpacing:"0.2em" }}>{title}</span>
+        <span style={{ color:GREEN, fontSize:"0.85rem" }}>{icon}</span>
+        <span style={{ fontFamily:FONT, fontSize:"0.75rem", fontWeight:700,
+                        color:"rgba(242,246,243,0.55)", textTransform:"uppercase",
+                        letterSpacing:"0.08em" }}>{title}</span>
       </div>
       {children}
     </div>
@@ -45,15 +46,15 @@ function Section({ title, icon, children }: { title:string; icon:string; childre
 
 function Metric({ label, value, sub, color = "#F2F6F3" }: { label:string; value:string; sub?:string; color?:string }) {
   return (
-    <div style={{ padding:"1rem", background:CARD, border:"1px solid " + BORDER, borderRadius:"6px" }}>
-      <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(242,246,243,0.2)",
-                     textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"0.35rem" }}>
+    <div style={{ padding:"1rem", background:CARD, border:"1px solid " + BORDER, borderRadius:"8px" }}>
+      <div style={{ fontFamily:FONT, fontSize:"0.68rem", fontWeight:600, color:"rgba(242,246,243,0.45)",
+                     textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"0.35rem" }}>
         {label}
       </div>
-      <div style={{ fontFamily:M, fontSize:"clamp(0.9rem,2.5vw,1.3rem)", fontWeight:900, color, lineHeight:1 }}>
+      <div style={{ fontFamily:FONT, fontSize:"clamp(1.1rem,2.5vw,1.45rem)", fontWeight:800, color, lineHeight:1.1 }}>
         {value}
       </div>
-      {sub && <div style={{ fontFamily:M, fontSize:"0.3rem", color:"rgba(242,246,243,0.2)", marginTop:"0.25rem" }}>{sub}</div>}
+      {sub && <div style={{ fontFamily:FONT, fontSize:"0.72rem", color:"rgba(242,246,243,0.4)", marginTop:"0.3rem" }}>{sub}</div>}
     </div>
   );
 }
@@ -119,36 +120,36 @@ export function FlagshipAssetPage() {
             { label:"● LIVE ON AIRBNB",            color:GREEN },
           ].map(b => (
             <span key={b.label} style={{
-              padding:"3px 10px", borderRadius:"3px",
+              padding:"4px 12px", borderRadius:"6px",
               background: b.color + "15", border:"1px solid " + b.color + "35",
-              fontFamily:M, fontSize:"0.3rem", fontWeight:900,
-              color:b.color, textTransform:"uppercase", letterSpacing:"0.12em",
+              fontFamily:FONT, fontSize:"0.68rem", fontWeight:700,
+              color:b.color, textTransform:"uppercase", letterSpacing:"0.06em",
             }}>{b.label}</span>
           ))}
           {/* USDC on Sui */}
           <span style={{
-            padding:"3px 10px", borderRadius:"3px",
+            padding:"4px 12px", borderRadius:"6px",
             background:"rgba(37,99,235,0.12)", border:"1px solid rgba(37,99,235,0.3)",
-            fontFamily:M, fontSize:"0.3rem", fontWeight:900,
-            color:BLUE, textTransform:"uppercase", letterSpacing:"0.12em",
+            fontFamily:FONT, fontSize:"0.68rem", fontWeight:700,
+            color:BLUE, textTransform:"uppercase", letterSpacing:"0.06em",
           }}>
             USDC ON SUI · LIVE
           </span>
         </div>
 
         {/* Billboard headline */}
-        <h1 style={{ fontFamily:M, fontSize:"clamp(2rem,6vw,4.5rem)", fontWeight:900,
+        <h1 style={{ fontFamily:FONT, fontSize:"clamp(2.25rem,6vw,3.75rem)", fontWeight:900,
                       color:"#F2F6F3", margin:"0 0 0.5rem",
-                      letterSpacing:"-0.04em", lineHeight:1 }}>
-          CIELO SUNRISE
+                      letterSpacing:"-0.03em", lineHeight:1.05 }}>
+          Cielo Sunrise
         </h1>
-        <div style={{ fontFamily:M, fontSize:"clamp(0.52rem,1.6vw,0.76rem)",
-                       color:"rgba(242,246,243,0.35)", marginBottom:"0.5rem" }}>
+        <div style={{ fontFamily:FONT, fontSize:"clamp(1rem,2vw,1.15rem)",
+                       color:"rgba(242,246,243,0.7)", marginBottom:"0.35rem", fontWeight:600 }}>
           Private Mountain Wellness Retreat · Mineral Bluff, Georgia
         </div>
-        <div style={{ fontFamily:M, fontSize:"clamp(0.4rem,1.2vw,0.52rem)",
-                       color:"rgba(242,246,243,0.2)", marginBottom:"2.5rem" }}>
-          12 guests · 4 bedrooms · 5 beds · 3.5 baths · 2,800-ft ridgeline · Tri-state views
+        <div style={{ fontFamily:FONT, fontSize:"0.88rem",
+                       color:"rgba(242,246,243,0.5)", marginBottom:"2rem", lineHeight:1.5 }}>
+          {D.tagline} · 12 guests · 4 bedrooms · 2,800-ft ridgeline · Tri-state views
         </div>
 
         {/* Hero metrics */}
@@ -164,29 +165,27 @@ export function FlagshipAssetPage() {
         {/* CTAs */}
         <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", alignItems:"center" }}>
           <a href={D.airbnbUrl} target="_blank" rel="noopener noreferrer"
-            style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",
+            style={{ padding:"0.75rem 1.5rem", borderRadius:"8px",
                       border:"1px solid " + GREEN + "50", background:GREEN + "18",
-                      fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                      color:GREEN, textDecoration:"none",
-                      letterSpacing:"0.06em", boxShadow:"0 0 20px " + GREEN + "25" }}>
-            VIEW LIVE AIRBNB LISTING →
+                      fontFamily:FONT, fontSize:"0.82rem", fontWeight:700,
+                      color:GREEN, textDecoration:"none" }}>
+            View live Airbnb listing →
           </a>
-          <span style={{ fontFamily:M, fontSize:"0.38rem", color:"rgba(242,246,243,0.35)",
-                         letterSpacing:"0.06em", maxWidth:280, lineHeight:1.5 }}>
-            Real Superhost property in Mineral Bluff, GA. bookable today. Not a mock asset.
+          <span style={{ fontFamily:FONT, fontSize:"0.82rem", color:"rgba(242,246,243,0.5)",
+                         maxWidth:320, lineHeight:1.55 }}>
+            Real Superhost property — bookable today on Abraxas or Airbnb.
           </span>
           <a href={D.instagramUrl} target="_blank" rel="noopener noreferrer"
-            style={{ padding:"0.75rem 1.75rem", borderRadius:"5px",
+            style={{ padding:"0.65rem 1.25rem", borderRadius:"8px",
                       border:"1px solid rgba(168,85,247,0.3)",
                       background:"rgba(168,85,247,0.06)",
-                      fontFamily:M, fontSize:"0.5rem", fontWeight:700,
-                      color:"rgba(168,85,247,0.7)", textDecoration:"none",
-                      letterSpacing:"0.06em" }}>
-            @CIELOSUNRISE ↗
+                      fontFamily:FONT, fontSize:"0.82rem", fontWeight:700,
+                      color:"rgba(168,85,247,0.85)", textDecoration:"none" }}>
+            @cielosunrise ↗
           </a>
         </div>
 
-        <CieloFlagshipActions />
+        <CieloFlagshipBookSection />
       </div>
 
       {/* ── TAB NAV ───────────────────────────────────────────────────── */}
@@ -198,7 +197,7 @@ export function FlagshipAssetPage() {
             background: tab === t.id ? BLUE + "12" : "transparent",
             border:"none",
             borderBottom: tab === t.id ? "2px solid " + BLUE : "2px solid transparent",
-            fontFamily:M, fontSize:"clamp(0.3rem,1vw,0.38rem)", fontWeight:700,
+            fontFamily:FONT, fontSize:"0.78rem", fontWeight:700,
             color: tab === t.id ? BLUE : "rgba(242,246,243,0.3)",
             cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.12em",
             whiteSpace:"nowrap", transition:"all 0.15s",
@@ -228,11 +227,11 @@ export function FlagshipAssetPage() {
                   ["WiFi",           "1 Gig fiber"],
                   ["Parking",        "6+ vehicles, free"],
                 ].map(([k, v]) => (
-                  <div key={k} style={{ padding:"0.625rem", background:CARD,
-                                          border:"1px solid " + BORDER, borderRadius:"4px" }}>
-                    <div style={{ fontFamily:M, fontSize:"0.28rem", color:"rgba(242,246,243,0.2)",
-                                   textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:2 }}>{k}</div>
-                    <div style={{ fontFamily:M, fontSize:"0.48rem", fontWeight:700, color:"#F2F6F3" }}>{v}</div>
+                  <div key={k} style={{ padding:"0.75rem", background:CARD,
+                                          border:"1px solid " + BORDER, borderRadius:"8px" }}>
+                    <div style={{ fontFamily:FONT, fontSize:"0.65rem", fontWeight:600, color:"rgba(242,246,243,0.45)",
+                                   textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:4 }}>{k}</div>
+                    <div style={{ fontFamily:FONT, fontSize:"0.88rem", fontWeight:700, color:"#F2F6F3" }}>{v}</div>
                   </div>
                 ))}
               </div>
@@ -242,27 +241,27 @@ export function FlagshipAssetPage() {
               <div style={{ padding:"1rem", background:"rgba(16,185,129,0.05)",
                              border:"1px solid rgba(16,185,129,0.15)", borderRadius:"6px",
                              marginBottom:"0.875rem" }}>
-                <div style={{ fontFamily:M, fontSize:"0.44rem", fontWeight:800,
+                <div style={{ fontFamily:FONT, fontSize:"0.92rem", fontWeight:800,
                                color:GREEN, marginBottom:"0.4rem" }}>
-                  ✨ Mirrored Geodesic Wellness Dome
+                  Mirrored Geodesic Wellness Dome
                 </div>
-                <div style={{ fontFamily:M, fontSize:"0.44rem", color:"rgba(242,246,243,0.4)", lineHeight:1.7 }}>
+                <div style={{ fontFamily:FONT, fontSize:"0.85rem", color:"rgba(242,246,243,0.65)", lineHeight:1.65 }}>
                   The dome is the signature experience. Set on its own elevated deck overlooking the mountains.
                   Lay-down infrared sauna · Red light therapy · Climate control · Queen sleeper sofa.
                   By day, the reflective exterior mirrors the ridgeline.
                 </div>
               </div>
-              <div style={{ fontFamily:M, fontSize:"0.38rem", fontWeight:700,
-                             color:"rgba(242,246,243,0.3)", marginBottom:"0.5rem",
-                             textTransform:"uppercase", letterSpacing:"0.1em" }}>
-                Wellness Circuit
+              <div style={{ fontFamily:FONT, fontSize:"0.72rem", fontWeight:700,
+                             color:"rgba(242,246,243,0.5)", marginBottom:"0.5rem",
+                             textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                Wellness circuit
               </div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:"0.375rem" }}>
                 {D.property.amenities.wellness.map(a => (
-                  <span key={a} style={{ padding:"3px 8px", borderRadius:"3px",
+                  <span key={a} style={{ padding:"4px 10px", borderRadius:"6px",
                                           background:GREEN + "08", border:"1px solid " + GREEN + "20",
-                                          fontFamily:M, fontSize:"0.38rem",
-                                          color:"rgba(242,246,243,0.45)" }}>{a}</span>
+                                          fontFamily:FONT, fontSize:"0.75rem",
+                                          color:"rgba(242,246,243,0.7)" }}>{a}</span>
                 ))}
               </div>
             </Section>
@@ -274,16 +273,16 @@ export function FlagshipAssetPage() {
                                              borderRadius:"5px" }}>
                   <div style={{ display:"flex", justifyContent:"space-between",
                                  alignItems:"baseline", marginBottom:"0.25rem" }}>
-                    <span style={{ fontFamily:M, fontSize:"0.48rem", fontWeight:700, color:"#F2F6F3" }}>
+                    <span style={{ fontFamily:FONT, fontSize:"0.88rem", fontWeight:700, color:"#F2F6F3" }}>
                       {r.name}
                     </span>
-                    <span style={{ fontFamily:M, fontSize:"0.32rem",
-                                    color:"rgba(242,246,243,0.25)" }}>
+                    <span style={{ fontFamily:FONT, fontSize:"0.72rem",
+                                    color:"rgba(242,246,243,0.45)" }}>
                       {r.guests} guests · {r.beds}
                     </span>
                   </div>
-                  <div style={{ fontFamily:M, fontSize:"0.38rem",
-                                 color:"rgba(242,246,243,0.35)", lineHeight:1.6 }}>
+                  <div style={{ fontFamily:FONT, fontSize:"0.82rem",
+                                 color:"rgba(242,246,243,0.6)", lineHeight:1.6 }}>
                     {r.desc}
                   </div>
                 </div>
@@ -328,8 +327,8 @@ export function FlagshipAssetPage() {
                 <div key={k} style={{ display:"flex", justifyContent:"space-between",
                                        padding:"0.5rem 0",
                                        borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-                  <span style={{ fontFamily:M, fontSize:"0.38rem", color:"rgba(242,246,243,0.3)" }}>{k}</span>
-                  <span style={{ fontFamily:M, fontSize:"0.38rem", fontWeight:700,
+                  <span style={{ fontFamily:FONT, fontSize:"0.82rem", color:"rgba(242,246,243,0.55)" }}>{k}</span>
+                  <span style={{ fontFamily:FONT, fontSize:"0.82rem", fontWeight:700,
                                   color: v.includes("CLEAR") ? GREEN : "#F2F6F3",
                                   textAlign:"right", maxWidth:"55%" }}>{v}</span>
                 </div>
