@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { PartnerExecutionCards } from "@/components/partners/PartnerExecutionCards";
 import { partnersActiveLabel } from "@/lib/partnerStatus";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -41,7 +42,7 @@ export function HomePartnersBrief() {
           fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)",
           lineHeight: 1.65, maxWidth: 640, margin: "0 0 1.1rem",
         }}>
-          Cielo and Grady 270 prove the loop. Partners get yes or no — not document folders.
+          Cielo and {CPG_ASSET.name} prove the loop. Partners get yes or no — not document folders.
         </p>
 
         <div className="partners-cards">

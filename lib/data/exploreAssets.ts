@@ -66,9 +66,9 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
   },
   {
     id: "cpg-grady-270",
-    name: "Grady County 270",
+    name: CPG_ASSET.name,
     assetClass: "Real Estate · Land",
-    location: "Grady County, Oklahoma · OKC growth corridor",
+    location: CPG_ASSET.location,
     image: CPG_ASSET.image,
     primaryLabel: "Full project",
     primaryValue: formatUsd(CPG_PRICING.fullProject),

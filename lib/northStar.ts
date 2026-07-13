@@ -1,6 +1,8 @@
 // FILE: lib/northStar.ts
 // Abraxas North Star — one page every feature must satisfy.
 
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
+
 export const ABRAXAS_CATEGORY = "Reusable Trust";
 
 export const ABRAXAS_ONE_LINER =
@@ -169,7 +171,7 @@ export const VERTICAL_SEQUENCE: {
   {
     order: 2,
     name: "Tribal land & mineral rights",
-    why: "CPG Land Sales Grady County 270 live + owner portal verify-once for tribal/mineral and bulk land workflows.",
+    why: `${CPG_ASSET.name} (CPG Land Sales) live + owner portal verify-once for tribal/mineral and bulk land workflows.`,
     status: "active",
   },
   {

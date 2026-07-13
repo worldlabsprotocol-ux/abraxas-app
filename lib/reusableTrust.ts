@@ -1,6 +1,8 @@
 // FILE: lib/reusableTrust.ts
 // Category, vocabulary, flywheel, and pilot metrics — one source for marketing surfaces.
 
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
+
 /** North Star metric — rally every team and surface around this. */
 export const NORTH_STAR_METRIC = {
   name: "Repeated verifications eliminated",
@@ -80,7 +82,7 @@ export const PILOT_METRICS: PilotMetric[] = [
   {
     value: "$2.7M+",
     label: "Attested registry scope",
-    note: "Cielo + Grady 270 · live partners",
+    note: `Cielo + ${CPG_ASSET.name} · live partners`,
     pilot: false,
   },
 ];
@@ -139,7 +141,7 @@ export function buildPilotMetricsFromPublic(api: PublicMetricsPayload | null): P
     {
       value: registryLabel.replace(/\s+attested$/i, "").replace(/\s+registry$/i, "") || registryLabel,
       label: "Attested registry scope",
-      note: vn?.data_available ? "Live · registry stats" : "Cielo + Grady 270",
+      note: vn?.data_available ? "Live · registry stats" : `Cielo + ${CPG_ASSET.name}`,
       pilot: false,
     },
   ];
@@ -163,7 +165,7 @@ export const PERMISSIONING_DEMO = {
 export const TRUST_AUDIT_TRAIL_EXAMPLE = [
   { step: "Passport created", detail: "Google sign-in · wallet ready" },
   { step: "Identity verified", detail: "One-time check · proof stored" },
-  { step: "Land survey verified", detail: "Grady 270 · 11 plats on file" },
+  { step: "Land survey verified", detail: `${CPG_ASSET.name} · 11 plats on file` },
   { step: "Environmental clean", detail: "Phase I complete" },
   { step: "Approved by partner", detail: "Trust Request answered" },
   { step: "Accepted by registry", detail: "ABX record live" },

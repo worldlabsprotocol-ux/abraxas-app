@@ -1,5 +1,5 @@
 // FILE: lib/cpgLandCaseStudy.ts
-// CPG Land Sales · Grady County 270 — active Oklahoma land partner listing.
+// CPG Land Sales · Chickasaw Project — active Oklahoma land partner listing.
 
 export function formatUsd(n: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -19,10 +19,12 @@ export const CPG_PARTNER = {
 
 export const CPG_ASSET = {
   id: "ABX-RE-LAND-006",
-  designation: "ACTIVE LAND LISTING · VERIFIED PARTNER",
-  name: "Grady County 270",
-  subtitle: "~270 acres · 11 surveyed tracts · Oklahoma City growth corridor",
-  location: "Grady County, Oklahoma · Blanchard / Chickasha area",
+  designation: "ACTIVE LAND LISTING · CHICKASAW CORRIDOR",
+  /** Public Abraxas registry name — Grady County / Chickasha partner parcel (~270 ac). */
+  name: "Chickasaw Project",
+  legacyName: "Grady County 270",
+  subtitle: "~270 acres · 11 surveyed tracts · Chickasha · Oklahoma growth corridor",
+  location: "Grady County, Oklahoma · Chickasha / Blanchard area",
   image: "/assets/cpg/hero-oklahoma-land.jpg",
   heroVideo: "/assets/cpg/cpg-drone.mp4",
   heroVideoPoster: "/assets/cpg/hero-oklahoma-land.jpg",

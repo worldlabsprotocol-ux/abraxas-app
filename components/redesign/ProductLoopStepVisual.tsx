@@ -193,7 +193,7 @@ function SettleClosedLoopDiagram() {
             $1,639,000
           </div>
           <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#fff", marginBottom: "0.35rem" }}>
-            Grady County 270 · USDC on Sui
+            Chickasaw Project · USDC on Sui
           </div>
           <div style={{
             display: "flex", justifyContent: "center", gap: "0.35rem", flexWrap: "wrap",

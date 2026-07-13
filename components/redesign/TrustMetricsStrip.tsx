@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -48,7 +49,7 @@ export function TrustMetricsStrip() {
             margin: "0.65rem 0 0.45rem",
             lineHeight: 1.2,
           }}>
-            Live registry — Cielo + Grady County 270 land partner
+            Live registry — Cielo + {CPG_ASSET.name}
           </h2>
           <p style={{
             fontFamily: FONT,
@@ -57,7 +58,7 @@ export function TrustMetricsStrip() {
             lineHeight: 1.65,
             margin: 0,
           }}>
-            ~$2.7M in verified assets on Abraxas: Cielo Sunrise live STR plus Grady County 270 — 270 acres, surveys, drone footage, contracts at asking.
+            ~$2.7M in verified assets on Abraxas: Cielo Sunrise live STR plus {CPG_ASSET.name} — ~270 acres, Chickasha corridor, surveys, drone footage, contracts at asking.
           </p>
         </div>
 

@@ -19,6 +19,8 @@ export interface RealPartnerRecord {
   proofHref: string;
 }
 
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
+
 export const REAL_PARTNERS: RealPartnerRecord[] = [
   {
     id: "relying-party-hospitality-1",
@@ -36,8 +38,8 @@ export const REAL_PARTNERS: RealPartnerRecord[] = [
     statusBucket: "closed",
     vertical: "Land development · Oklahoma",
     verticalHeadline: "Oklahoma land development partner",
-    summary: "Live — Grady County 270 (~270 ac, 11 lots). Surveys, Phase I clean, contracts at asking. Verify-once sharing for bulk buyers and lenders.",
-    proofLabel: "Grady County 270 case study",
+    summary: `Live — ${CPG_ASSET.name} (~270 ac, 11 lots · Grady County). Surveys, Phase I clean, contracts at asking. Verify-once sharing for bulk buyers and lenders.`,
+    proofLabel: `${CPG_ASSET.name} case study`,
     proofHref: "/case-studies/cpg-grady-270",
   },
   {

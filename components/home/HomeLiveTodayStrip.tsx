@@ -3,22 +3,22 @@
 // Verifiable facts only — no invented traction.
 
 import { partnersActiveCount } from "@/lib/partnerStatus";
-import { CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
+import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
-const partnerCount = partnersActiveCount();
-
-const LIVE_FACTS = [
-  { label: "Registry attested scope", value: "$2.7M+ · Cielo + Grady 270" },
-  { label: "Cielo Sunrise", value: "$1.1M appraised · live STR" },
-  { label: "Grady County 270", value: `${formatUsd(CPG_PRICING.fullProject)} · land listing` },
-  { label: "Active partners", value: `${partnerCount} onboarded` },
-] as const;
-
 export function HomeLiveTodayStrip() {
+  const partnerCount = partnersActiveCount();
+
+  const liveFacts = [
+    { label: "Registry attested scope", value: `$2.7M+ · Cielo + ${CPG_ASSET.name}` },
+    { label: "Cielo Sunrise", value: "$1.1M appraised · live STR" },
+    { label: CPG_ASSET.name, value: `${formatUsd(CPG_PRICING.fullProject)} · land listing` },
+    { label: "Active partners", value: `${partnerCount} onboarded` },
+  ];
+
   return (
     <section aria-label="What is live today" style={{
       margin: "0 0 clamp(1.25rem, 3vw, 2rem)",
@@ -39,7 +39,7 @@ export function HomeLiveTodayStrip() {
         gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
         gap: "0.65rem",
       }}>
-        {LIVE_FACTS.map(f => (
+        {liveFacts.map(f => (
           <div key={f.label}>
             <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: 2 }}>
               {f.label}

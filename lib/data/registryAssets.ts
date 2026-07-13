@@ -104,13 +104,13 @@ const CPG_GRADY: RegistryAssetDef = {
   },
   metadataUri: "/case-studies/cpg-grady-270",
   notice:
-    "Active land listing · CPG Land Sales · ~270 ac Grady County OK. Surveys complete, Phase I clean, contracts at asking pre-MLS.",
+    "Chickasaw Project · CPG Land Sales · ~270 ac Grady County OK. Surveys complete, Phase I clean, contracts at asking.",
   tokenization: {
     standard: "Abraxas Registry Entry",
     chain: "Off-chain title · Sui settlement rail (planned)",
     status: "LAND_PARTNER_ACTIVE",
   },
-  aliases: ["cpg", "cpg-grady", "grady-270", "grady-county-270", "abx-re-land-006"],
+  aliases: ["cpg", "cpg-grady", "chickasaw-project", "chickasaw", "grady-270", "grady-county-270", "abx-re-land-006"],
 };
 
 const NAJ: RegistryAssetDef = {

@@ -8,6 +8,7 @@ import { OperatorRoiCalculator } from "@/components/operators/OperatorRoiCalcula
 import { PermissioningDemo } from "@/components/home/PermissioningDemo";
 import { TrustAuditTimeline } from "@/components/home/TrustAuditTimeline";
 import { HomeTrustFlywheel } from "@/components/home/HomeTrustFlywheel";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import {
   OPERATOR_WITHOUT_ABRAXAS,
   OPERATOR_WITH_ABRAXAS,
@@ -22,7 +23,7 @@ const ACCENT = "#10B981";
 
 const VERTICALS = [
   { name: "Hotels & STR", example: "Cielo Sunrise — live pilot", href: "/case-studies/cielo" },
-  { name: "Land & deal rooms", example: "Grady County 270", href: "/case-studies/cpg-grady-270" },
+  { name: "Land & deal rooms", example: CPG_ASSET.name, href: "/case-studies/cpg-grady-270" },
   { name: "Lenders", example: "Trust Requests · yes/no without document folders", href: "/verify" },
   { name: "Marketplaces", example: "Registry · trust before transact", href: "/#registry" },
   { name: "Property managers", example: "Guest proof travels across channels", href: "/passport" },

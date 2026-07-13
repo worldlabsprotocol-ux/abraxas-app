@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/case-studies/cpg-grady-270/page.tsx
-// CPG Land Sales · Grady County 270 — closed-loop Abraxas land listing.
+// CPG Land Sales · Chickasaw Project — closed-loop Abraxas land listing.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -49,13 +49,13 @@ function CpgGradyCaseStudyContent() {
       <PageHeader
         eyebrow="Active land listing · Verified partner"
         title={`${CPG_ASSET.name}`}
-        subtitle="~270 acres across 11 surveyed tracts in Grady County, OK — Oklahoma City growth corridor. Abraxas spearheads acquisition; partner updates sync here. Drone footage, Phase I clean, contracts at asking."
+        subtitle="~270 acres across 11 surveyed tracts in the Chickasha corridor, Grady County OK — Abraxas spearheads acquisition; partner updates sync here. Drone footage, Phase I clean, contracts at asking."
       />
 
       <CaseStudyVideoHero
         src={CPG_ASSET.heroVideo}
         poster={CPG_ASSET.heroVideoPoster}
-        alt="Drone footage · Grady County 270 Oklahoma land"
+        alt={`Drone footage · ${CPG_ASSET.name} Oklahoma land`}
         badge={CPG_ASSET.designation}
         title={CPG_ASSET.name}
         subtitle={CPG_ASSET.subtitle}

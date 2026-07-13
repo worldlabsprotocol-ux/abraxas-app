@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { partnersActiveCount } from "@/lib/partnerStatus";
-import { CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
+import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -103,7 +103,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
             }}>
               {[
                 `Cielo Sunrise · $1.1M appraised · live STR · USDC on Sui`,
-                `Grady County 270 · ${formatUsd(CPG_PRICING.fullProject)} · active land partner`,
+                `${CPG_ASSET.name} · ${formatUsd(CPG_PRICING.fullProject)} · active land partner`,
                 `$2.7M+ attested registry · ${partnerCount} partners onboarded`,
                 `Partner updates sync here — buyers stay on Abraxas`,
               ].map(line => (
