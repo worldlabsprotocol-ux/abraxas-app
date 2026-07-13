@@ -9,7 +9,7 @@ import { CIELO_REGISTRY_IMAGE, SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registry
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
-export type VerifyState = "verified" | "reference" | "open" | "owned";
+export type VerifyState = "verified" | "reference" | "open" | "owned" | "listed";
 
 export interface MetricMeta {
   level?: AssuranceLevel;
@@ -118,4 +118,5 @@ export const VERIFY_META: Record<VerifyState, { label: string; color: string }> 
   open:      { label: "Open · Ownership clear", color: "#3B82F6" },
   owned:     { label: "Owned · Not open",    color: "#F59E0B" },
   reference: { label: "Reference · Completed", color: "#8B5CF6" },
+  listed:    { label: "Owner listed · L1",   color: "#64748B" },
 };

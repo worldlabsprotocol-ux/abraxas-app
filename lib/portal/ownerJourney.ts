@@ -124,14 +124,16 @@ export function buildOwnerJourney(
     },
     {
       id: "verify",
-      label: "Asset verified on registry",
+      label: lifecycle.listed ? "Listing on registry" : "Asset verified on registry",
       detail: verificationComplete && lifecycle.verify_url
         ? `Public record live — partners check ${row.public_verify_slug} without your document folder.`
-        : "Named reviewer sign-off publishes your verify URL when evidence scope is approved.",
+        : lifecycle.listed && lifecycle.verify_url
+          ? `Your L1 listing is live at ${row.public_verify_slug}. Request Abraxas review when you want full verification.`
+          : "Named reviewer sign-off publishes your verify URL when evidence scope is approved.",
       complete: verificationComplete,
-      current: walletComplete && !verificationComplete,
+      current: walletComplete && !verificationComplete && !lifecycle.listed,
       action: lifecycle.verify_url ? {
-        label: "View verify record →",
+        label: verificationComplete ? "View verify record →" : "View your listing →",
         href: lifecycle.verify_url,
       } : undefined,
     },

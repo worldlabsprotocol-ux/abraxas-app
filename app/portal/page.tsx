@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/portal/page.tsx
-// Owner portal hub — verify once, track progress, control what partners see.
+// Owner portal hub — self-serve launch, verify once, settle on-chain.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -11,10 +11,11 @@ const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
 
 const OWNER_STEPS = [
-  "Submit intake once — define evidence scope, not a blind document dump.",
-  "Connect Passport (Google zkLogin) — your Sui wallet for on-chain settlement.",
-  "Get asset verified on the public registry — partners check Abraxas, not your inbox.",
-  "When the deal is ready, move USDC on Sui in one click — same rail as Cielo Sunrise.",
+  "Sign in with Google (same as Passport) — no seed phrase.",
+  "Name your asset or business — publish to the registry instantly (L1 owner-listed).",
+  "Connect wallet and complete Passport verification when you're ready for partners.",
+  "Optional Abraxas review upgrades assurance — not required to get started.",
+  "When a deal is ready, move USDC on Sui — same rail as Cielo Sunrise.",
 ];
 
 export default function OwnerPortalPage() {
@@ -22,21 +23,22 @@ export default function OwnerPortalPage() {
     <RedesignPage maxWidth={820}>
       <PageHeader
         eyebrow="Owner portal"
-        title="Verify once. Settle on-chain."
-        subtitle="For land developers and tribal stewards — wallet, verified asset, deal ready, USDC settlement. End-to-end, whether you're crypto-native or not."
+        title="List now. Verify once. Settle on-chain."
+        subtitle="No waiting queue — your asset or business appears on the public registry immediately. Abraxas review is an upgrade path, not a gate to getting started."
       />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "1.25rem" }}>
-        <Btn href="/portal/apply" size="lg">Start land / asset intake →</Btn>
+        <Btn href="/portal/apply" size="lg">Launch your listing →</Btn>
         <Btn href="/portal/journey" variant="secondary" size="lg">My full journey →</Btn>
-        <Btn href="/portal/status" variant="ghost" size="lg">Status only →</Btn>
+        <Btn href="/portal/status" variant="ghost" size="lg">Track status →</Btn>
       </div>
 
       <ContentCard title="End-to-end loop">
         <BulletList items={[
-          "Apply at /portal/apply — land, tribal, or mineral asset classes.",
-          "Passport creates your wallet (zkLogin) — link it to your application.",
-          "Abraxas verifies once; public /verify record goes live for partners.",
+          "Launch at /portal/apply — land, business, tribal, or mineral classes.",
+          "Listing goes live on /verify and the homepage registry explorer immediately.",
+          "Passport wallet (zkLogin) links to your application for settlement.",
+          "Request Abraxas review when you want full verification — honest L1 → L3 upgrade.",
           "Deal ready → Circle USDC on Sui captures to verified treasury.",
         ]} />
         <div style={{ marginTop: "0.75rem" }}>

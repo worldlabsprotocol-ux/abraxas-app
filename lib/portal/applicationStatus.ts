@@ -19,6 +19,7 @@ export interface ApplicationLifecycle {
   status: ApplicationDbStatus;
   steps: ApplicationStatusStep[];
   verified: boolean;
+  listed: boolean;
   verify_url: string | null;
   status_url: string;
 }
@@ -33,6 +34,7 @@ export interface ApplicationRowFields {
   named_reviewer?: string | null;
   review_signed_at?: string | null;
   public_verify_slug?: string | null;
+  registry_published_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -52,6 +54,7 @@ export function buildApplicationLifecycle(
   const signed = Boolean(row.review_signed_at);
   const hasSlug = Boolean(row.public_verify_slug?.trim());
   const verified = status === "verified" || (signed && hasSlug);
+  const listed = hasSlug;
 
   const statusUrl = `/portal/status?application_id=${encodeURIComponent(applicationId)}`;
   const verifyUrl = hasSlug
@@ -59,9 +62,10 @@ export function buildApplicationLifecycle(
     : null;
 
   const submitted = true;
+  const registryLive = listed;
   const evidenceReviewed = hasReviewer || status !== "pending_review" || signed || verified;
   const reviewerSigned = signed || verified;
-  const recordLive = verified;
+  const recordVerified = verified;
 
   const steps: ApplicationStatusStep[] = [
     {
@@ -71,7 +75,16 @@ export function buildApplicationLifecycle(
         ? `Submitted ${formatShortDate(row.created_at)} — you will not need to re-send this intake to every counterparty.`
         : "Your intake is on file. Abraxas holds the evidence scope you defined.",
       complete: submitted,
-      current: !declined && !evidenceReviewed,
+      current: !declined && !registryLive,
+    },
+    {
+      id: "registry",
+      label: "Registry listing live",
+      detail: registryLive && hasSlug
+        ? `Public reference ${row.public_verify_slug} — visible on the registry now. L1 owner-listed until Abraxas review upgrades assurance.`
+        : "Your listing publishes immediately after launch — no waiting to get started.",
+      complete: registryLive,
+      current: !declined && submitted && !registryLive,
     },
     {
       id: "evidence",
@@ -80,9 +93,9 @@ export function buildApplicationLifecycle(
         ? "This application was not approved for verification."
         : hasReviewer
           ? `Reviewer assigned: ${row.named_reviewer}`
-          : "Abraxas validates jurisdiction, asset class, and what you agreed to share — not a blind document dump.",
+          : "Optional upgrade — Abraxas validates jurisdiction, asset class, and what you agreed to share.",
       complete: evidenceReviewed && !declined,
-      current: !declined && submitted && !evidenceReviewed,
+      current: !declined && registryLive && !evidenceReviewed,
     },
     {
       id: "signoff",
@@ -91,34 +104,28 @@ export function buildApplicationLifecycle(
         ? "Contact Abraxas if you believe this was in error."
         : signed
           ? `Signed ${formatShortDate(row.review_signed_at!)}`
-          : "Public VERIFIED status requires a named reviewer — never automatic on submit.",
+          : "Full Abraxas VERIFIED status requires named reviewer sign-off — not required to start.",
       complete: reviewerSigned && !declined,
       current: !declined && evidenceReviewed && !reviewerSigned,
     },
     {
-      id: "registry",
-      label: "Registry record live",
-      detail: recordLive && hasSlug
-        ? `Public reference ${row.public_verify_slug} — partners ask Abraxas for eligibility, not your full dossier.`
-        : "When approved, your record gets a stable verify URL for relying parties.",
-      complete: recordLive,
-      current: !declined && reviewerSigned && !recordLive,
-    },
-    {
       id: "share",
       label: "You control what partners see",
-      detail: recordLive
+      detail: recordVerified
         ? "Share minimum proof with approved investors, lenders, and developers — consent stays with you."
-        : "After verification, you choose which relying parties receive scoped attestations.",
-      complete: recordLive,
-      current: recordLive,
+        : listed
+          ? "Your listing is live. Partners can discover you — scoped attestations unlock after verification upgrade."
+          : "After verification, you choose which relying parties receive scoped attestations.",
+      complete: recordVerified || listed,
+      current: listed && !recordVerified,
     },
   ];
 
   return {
     status,
     steps,
-    verified: recordLive,
+    verified: recordVerified,
+    listed,
     verify_url: verifyUrl,
     status_url: statusUrl,
   };
@@ -132,9 +139,11 @@ export function sanitizeApplicationForOwner(row: ApplicationRowFields) {
     jurisdiction: row.jurisdiction ?? null,
     evidence_scope: row.evidence_scope ?? null,
     status: normalizeApplicationStatus(row.status),
+    listed: Boolean(row.public_verify_slug?.trim()),
+    public_verify_slug: row.public_verify_slug ?? null,
     named_reviewer: row.named_reviewer ?? null,
     review_signed_at: row.review_signed_at ?? null,
-    public_verify_slug: row.public_verify_slug ?? null,
+    registry_published_at: row.registry_published_at ?? null,
     created_at: row.created_at ?? null,
     updated_at: row.updated_at ?? null,
   };

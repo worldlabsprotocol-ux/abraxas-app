@@ -2,9 +2,9 @@
 // FILE: components/redesign/AssetsExplorer.tsx
 // Verified Assets Explorer with search, filters, sort, and premium asset grid.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
+import { EXPLORE_ASSETS, type ExploreAsset, type VerifyState } from "@/lib/data/exploreAssets";
 import { AssetExplorerCard } from "./AssetExplorerCard";
 import { Btn } from "./ui";
 
@@ -18,6 +18,7 @@ type SortKey = "verified-first" | "name-asc" | "yield-desc";
 const FILTERS: { id: Filter; label: string }[] = [
   { id: "all",       label: "All assets" },
   { id: "verified",  label: "Verified" },
+  { id: "listed",    label: "Owner listed" },
   { id: "open",      label: "Open" },
   { id: "owned",     label: "Owned" },
   { id: "reference", label: "Reference" },
@@ -29,14 +30,12 @@ const SORTS: { id: SortKey; label: string }[] = [
   { id: "yield-desc",     label: "Yield (high → low)" },
 ];
 
-const ASSET_CLASSES = Array.from(new Set(EXPLORE_ASSETS.map(a => a.assetClass.split(" · ")[0])));
-
 function parseYield(value: string): number {
   const m = value.match(/([\d.]+)\s*%/);
   return m ? parseFloat(m[1]) : 0;
 }
 
-function sortAssets(assets: typeof EXPLORE_ASSETS, sort: SortKey) {
+function sortAssets(assets: ExploreAsset[], sort: SortKey) {
   const copy = [...assets];
   if (sort === "name-asc") {
     return copy.sort((a, b) => a.name.localeCompare(b.name));
@@ -47,7 +46,7 @@ function sortAssets(assets: typeof EXPLORE_ASSETS, sort: SortKey) {
   return copy.sort((a, b) => {
     if (a.id === "genesis-asset") return -1;
     if (b.id === "genesis-asset") return 1;
-    const order: Record<VerifyState, number> = { verified: 0, open: 1, owned: 2, reference: 3 };
+    const order: Record<VerifyState, number> = { verified: 0, open: 1, listed: 2, owned: 3, reference: 4 };
     return order[a.state] - order[b.state];
   });
 }
@@ -70,9 +69,29 @@ export function AssetsExplorer({
   const [sort, setSort] = useState<SortKey>("verified-first");
   const [query, setQuery] = useState("");
   const [assetClass, setAssetClass] = useState<string>("all");
+  const [dynamicAssets, setDynamicAssets] = useState<ExploreAsset[]>([]);
   const reduce = useReducedMotion();
 
-  const pool = EXPLORE_ASSETS.filter(a => !excludeIds.includes(a.id));
+  useEffect(() => {
+    fetch("/api/registry/explore")
+      .then(r => r.json())
+      .then((data: { assets?: ExploreAsset[] }) => {
+        if (Array.isArray(data.assets)) setDynamicAssets(data.assets);
+      })
+      .catch(() => { /* static catalog fallback */ });
+  }, []);
+
+  const staticIds = useMemo(() => new Set(EXPLORE_ASSETS.map(a => a.id)), []);
+  const mergedPool = useMemo(() => {
+    const extra = dynamicAssets.filter(a => !staticIds.has(a.id));
+    return [...EXPLORE_ASSETS, ...extra];
+  }, [dynamicAssets, staticIds]);
+
+  const pool = mergedPool.filter(a => !excludeIds.includes(a.id));
+  const assetClassOptions = useMemo(
+    () => Array.from(new Set(pool.map(a => a.assetClass.split(" · ")[0]))),
+    [pool],
+  );
 
   const assets = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -216,7 +235,7 @@ export function AssetsExplorer({
               }}>
               All classes
             </button>
-            {ASSET_CLASSES.map(cls => {
+            {assetClassOptions.map(cls => {
               const active = assetClass === cls;
               return (
                 <button key={cls} type="button" onClick={() => setAssetClass(cls)}

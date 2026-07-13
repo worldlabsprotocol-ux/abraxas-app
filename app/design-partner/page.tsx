@@ -37,7 +37,7 @@ export default function DesignPartnerPage() {
           pattern as Cielo — applied to high-stakes land workflows.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href="/portal/apply" size="sm">Start intake →</Btn>
+          <Btn href="/portal/apply" size="sm">Launch listing →</Btn>
           <Btn href="/portal/status" variant="secondary" size="sm">Track application →</Btn>
           <Btn href="/portal" variant="ghost" size="sm">How the portal works →</Btn>
         </div>

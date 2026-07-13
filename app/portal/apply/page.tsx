@@ -1,29 +1,46 @@
 "use client";
 // FILE: app/portal/apply/page.tsx
-// Land developer / owner intake with post-submit status tracking.
+// Self-serve owner launch — zkLogin + instant registry listing (no waiting queue).
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
-import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
+import { PageHeader } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { LandDeveloperApplyForm } from "@/components/portal/LandDeveloperApplyForm";
+import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
+import { OwnerAssetLaunchWizard } from "@/components/portal/OwnerAssetLaunchWizard";
 
-export default function PortalApplyPage() {
+function ApplyContent() {
+  const searchParams = useSearchParams();
+  const fromOAuth = searchParams.get("step") === "asset";
+
   return (
     <RedesignPage maxWidth={720}>
       <PageHeader
-        eyebrow="Owner portal · Intake"
-        title="Land & asset owner application"
-        subtitle="Submit once for Abraxas registry review. You will land on your status page immediately — save the link."
+        eyebrow="Owner portal · Launch"
+        title={fromOAuth ? "Welcome back — finish your listing" : "List your asset or business"}
+        subtitle="Same sign-in as Passport. Publish to the Abraxas registry in minutes — your listing appears on the homepage explorer immediately. Abraxas review is optional when you want full verification."
       />
 
-      <ContentCard title="Before you submit">
-        <LandDeveloperApplyForm />
-      </ContentCard>
+      <Suspense fallback={null}>
+        <OwnerAssetLaunchWizard />
+      </Suspense>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "2rem" }}>
-        <Btn href="/portal/status" variant="secondary" size="sm">Already submitted? Track status →</Btn>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1.25rem", marginBottom: "2rem" }}>
+        <Btn href="/portal/journey" variant="secondary" size="sm">Continue journey →</Btn>
+        <Btn href="/portal/status" variant="secondary" size="sm">Track status →</Btn>
         <Btn href="/portal" variant="ghost" size="sm">← Owner portal</Btn>
       </div>
     </RedesignPage>
+  );
+}
+
+export default function PortalApplyPage() {
+  return (
+    <SuiAuthProvider>
+      <Suspense fallback={null}>
+        <ApplyContent />
+      </Suspense>
+    </SuiAuthProvider>
   );
 }

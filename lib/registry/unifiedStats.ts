@@ -3,6 +3,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
+import { fetchPublishedExternalApplications } from "@/lib/portal/externalRegistry";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { getVerificationNetworkMetrics, type VerificationNetworkMetrics } from "@/lib/metrics/verificationMetrics";
@@ -30,9 +31,14 @@ export interface UnifiedRegistryStats {
 }
 
 export async function getUnifiedRegistryStats(): Promise<UnifiedRegistryStats> {
-  const registryAssets = EXPLORE_ASSETS.length;
+  const publishedExternal = await fetchPublishedExternalApplications(100);
+  const ownerListedCount = publishedExternal.filter(r => !r.is_demo_sample).length;
+  const registryAssets = EXPLORE_ASSETS.length + ownerListedCount;
   const verifiedInCatalog = EXPLORE_ASSETS.filter(a => a.state === "verified").length;
-  const assetClasses = new Set(EXPLORE_ASSETS.map(a => a.assetClass.split(" · ")[0])).size;
+  const assetClasses = new Set([
+    ...EXPLORE_ASSETS.map(a => a.assetClass.split(" · ")[0]),
+    ...publishedExternal.map(r => r.asset_class),
+  ]).size;
 
   let zkloginWallets = 0;
   let activeCredentials = 0;

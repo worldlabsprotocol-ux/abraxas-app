@@ -75,7 +75,7 @@ export function HomePartnersBrief() {
           Submit once, track every stage, control what gets shared. The owner portal is live for land and mineral intake.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href="/portal/apply" variant="secondary" size="sm">Start intake →</Btn>
+          <Btn href="/portal/apply" variant="secondary" size="sm">Launch your listing →</Btn>
           <Btn href="/portal/status" variant="ghost" size="sm">Track application →</Btn>
           <Btn href="/build" variant="ghost" size="sm">List your asset →</Btn>
         </div>
