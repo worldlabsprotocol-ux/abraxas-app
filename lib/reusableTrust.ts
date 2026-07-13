@@ -57,6 +57,7 @@ export interface PilotMetric {
   pilot: boolean;
 }
 
+/** Static fallbacks when /api/metrics/public is unavailable. */
 export const PILOT_METRICS: PilotMetric[] = [
   {
     value: "~80%",
@@ -71,9 +72,9 @@ export const PILOT_METRICS: PilotMetric[] = [
     pilot: true,
   },
   {
-    value: "1×",
-    label: "Upload — then reuse everywhere",
-    note: "vs. re-forward per counterparty",
+    value: "USDC",
+    label: "Settlement live on Sui",
+    note: "Cielo pilot · available today",
     pilot: true,
   },
   {
@@ -83,6 +84,66 @@ export const PILOT_METRICS: PilotMetric[] = [
     pilot: false,
   },
 ];
+
+export interface PublicMetricsPayload {
+  ok?: boolean;
+  metrics?: {
+    verified_assets?: number;
+    attested_value_label?: string;
+    zklogin_wallets?: number;
+    active_credentials?: number;
+    captured_cielo_bookings?: number;
+    cielo_revenue_usdc?: number;
+    verification_network?: {
+      total_presentations?: number;
+      presentations_30d?: number;
+      credentials_issued_30d?: number;
+      data_available?: boolean;
+    };
+  };
+}
+
+/** Merge live Supabase counters with pilot-labeled fallbacks. */
+export function buildPilotMetricsFromPublic(api: PublicMetricsPayload | null): PilotMetric[] {
+  const m = api?.metrics;
+  if (!api?.ok || !m) return PILOT_METRICS;
+
+  const vn = m.verification_network;
+  const presentations = vn?.total_presentations ?? 0;
+  const passports = m.zklogin_wallets ?? 0;
+  const usdcRev = m.cielo_revenue_usdc ?? 0;
+  const bookings = m.captured_cielo_bookings ?? 0;
+  const registryLabel = m.attested_value_label ?? "$2.7M+ attested";
+
+  return [
+    {
+      value: presentations > 0 ? String(presentations) : "~80%",
+      label: presentations > 0 ? "Trust Requests answered" : "Fewer duplicate uploads",
+      note: presentations > 0 ? "Live · Supabase" : "Pilot target · Cielo loop",
+      pilot: presentations === 0,
+    },
+    {
+      value: passports > 0 ? String(passports) : "~2 min",
+      label: passports > 0 ? "Passports created" : "Onboarding to verified booking",
+      note: passports > 0 ? "Live · zkLogin wallets" : "Cielo verified-rate flow",
+      pilot: passports === 0,
+    },
+    {
+      value: usdcRev > 0 ? `$${Math.round(usdcRev).toLocaleString()}` : "USDC",
+      label: usdcRev > 0 ? "Captured on Sui" : "Settlement live today",
+      note: usdcRev > 0
+        ? `${bookings} booking${bookings === 1 ? "" : "s"} · Sui`
+        : "Cielo pilot · on-protocol",
+      pilot: usdcRev === 0,
+    },
+    {
+      value: registryLabel.replace(/\s+attested$/i, "").replace(/\s+registry$/i, "") || registryLabel,
+      label: "Attested registry scope",
+      note: vn?.data_available ? "Live · registry stats" : "Cielo + Grady 270",
+      pilot: false,
+    },
+  ];
+}
 
 /** Permissioning demo — visual selective disclosure (not jargon). */
 export const PERMISSIONING_DEMO = {

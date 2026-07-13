@@ -133,7 +133,7 @@ function Inner() {
             fontFamily: FONT, fontSize: "0.72rem", color: "rgba(242,246,243,0.4)",
             lineHeight: 1.55, margin: "0.65rem 0 0", textAlign: "center",
           }}>
-            Pick dates above · pay with Apple Pay or USDC after confirmation ·{" "}
+            Pick dates above · USDC on Sui live today · Apple Pay optional ·{" "}
             <Link href="/cielo/status" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
               track your stay
             </Link>

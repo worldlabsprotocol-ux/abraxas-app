@@ -187,7 +187,7 @@ export function TransactionEligibilitySection({ enabled }: { enabled: boolean })
                 {data.sandbox_partner.disclaimer || SANDBOX_DISCLAIMER}
               </p>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
-                Policy: {data.sandbox_partner.policy_id} ·{" "}
+                Trust Rules: {data.sandbox_partner.policy_id} ·{" "}
                 <span style={{ color: POLICY_DECISIONS[data.sandbox_partner.decision]?.color ?? "inherit", fontWeight: 700 }}>
                   {POLICY_DECISIONS[data.sandbox_partner.decision]?.label ?? data.sandbox_partner.decision}
                 </span>

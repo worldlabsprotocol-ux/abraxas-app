@@ -1,14 +1,29 @@
 "use client";
 // FILE: components/home/HomePilotMetrics.tsx
-// Undeniable proof — pilot-labeled numbers where we have data.
+// Live Supabase metrics with pilot-labeled fallbacks.
 
-import { PILOT_METRICS } from "@/lib/reusableTrust";
+import { useEffect, useState } from "react";
+import {
+  buildPilotMetricsFromPublic,
+  type PilotMetric,
+  type PublicMetricsPayload,
+  PILOT_METRICS,
+} from "@/lib/reusableTrust";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 export function HomePilotMetrics() {
+  const [metrics, setMetrics] = useState<PilotMetric[]>(PILOT_METRICS);
+
+  useEffect(() => {
+    fetch("/api/metrics/public")
+      .then(r => r.json())
+      .then((data: PublicMetricsPayload) => setMetrics(buildPilotMetricsFromPublic(data)))
+      .catch(() => { /* static fallbacks */ });
+  }, []);
+
   return (
     <section aria-labelledby="pilot-metrics-heading" style={{
       padding: "clamp(1rem, 2.5vw, 1.5rem) 0",
@@ -19,7 +34,7 @@ export function HomePilotMetrics() {
         gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
         gap: "0.65rem",
       }}>
-        {PILOT_METRICS.map(m => (
+        {metrics.map(m => (
           <div key={m.label} style={{
             padding: "0.85rem 0.9rem", borderRadius: 12,
             border: "1px solid var(--border-strong)",

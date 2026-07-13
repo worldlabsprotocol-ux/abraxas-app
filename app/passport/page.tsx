@@ -190,8 +190,8 @@ function PassportPageInner() {
             lineHeight: 1.65, maxWidth: 560, margin: 0,
           }}>
             {pageView === "verify"
-              ? "Look up public records and run verification checks."
-              : "Prove what you control. Partners check only what you approve."}
+              ? "Look up a public record — scope and status only."
+              : "Get verified once. Approve Trust Requests when partners need proof."}
           </p>
         </div>
 

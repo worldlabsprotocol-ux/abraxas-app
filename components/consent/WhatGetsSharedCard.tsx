@@ -36,7 +36,7 @@ export function WhatGetsSharedCard({
     "ID document images",
     "Biometric scans",
     "Full KYC provider payloads",
-    "Home address (unless a policy explicitly requires it)",
+    "Home address (unless Trust Rules explicitly require it)",
   ];
 
   return (

@@ -17,6 +17,6 @@ describe("whatGetsShared", () => {
       partnerName: "Demo Partner",
       sharedLabels: [],
     });
-    expect(copy.needsLine).toContain("meet the policy");
+    expect(copy.needsLine).toContain("Trust Rules");
   });
 });

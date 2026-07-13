@@ -1,5 +1,5 @@
 // FILE: components/verify/VerifyPageIntro.tsx
-// Server-rendered intro — visible to crawlers and first paint before client hydrates.
+// Verify page — one question: How do I trust an asset?
 
 export function VerifyPageIntro() {
   return (
@@ -17,25 +17,14 @@ export function VerifyPageIntro() {
         letterSpacing: "-0.03em", color: "var(--text-primary)",
         margin: "0 0 0.75rem", lineHeight: 1.1,
       }}>
-        Verify an Abraxas record
+        Trust an asset before you transact
       </h1>
       <p style={{
         fontFamily: "'Inter',system-ui,sans-serif",
         fontSize: "0.9rem", color: "var(--text-secondary)",
-        lineHeight: 1.7, maxWidth: 720, margin: "0 0 0.5rem",
+        lineHeight: 1.7, maxWidth: 560, margin: 0,
       }}>
-        Browse tokenized assets (Cielo, Smyrna, and more), create your public profile, or paste a credential JWT.
-        Sample checks run in under 15 seconds without signing in.
-      </p>
-      <p style={{
-        fontFamily: "'Inter',system-ui,sans-serif",
-        fontSize: "0.78rem", color: "var(--text-muted)",
-        lineHeight: 1.65, maxWidth: 720, margin: "0 0 1.25rem",
-      }}>
-        Four modes: <strong style={{ color: "var(--text-secondary)" }}>Registry</strong> ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Profile</strong> ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Credential</strong> ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Policy</strong>
+        Look up any Abraxas registry record — scope, status, and what was verified. No sign-in required.
       </p>
     </div>
   );

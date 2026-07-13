@@ -11,7 +11,7 @@ const CLAIM_PLAIN: Record<string, string> = {
   profile_complete: "your account profile is ready",
 };
 
-const DEFAULT_NEEDS = "whether you meet the policy for this action";
+const DEFAULT_NEEDS = "whether you meet the Trust Rules for this action";
 
 export function plainClaimLabels(claimTypes: string[], fallbackLabels?: string[]): string[] {
   if (fallbackLabels?.length) return fallbackLabels;

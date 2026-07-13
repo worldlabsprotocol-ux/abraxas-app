@@ -139,7 +139,7 @@ export function PassportSetupPanel({
             lineHeight: 1.6, margin: "0 0 0.75rem", maxWidth: 520,
           }}>
             Your reusable eligibility profile. Bind your wallet to finish setup —
-            ID verification is optional until a partner policy requires it.
+            ID verification is optional until a partner&apos;s Trust Rules require it.
           </p>
           <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>
             Setup progress: {completedCount} of 3 complete · {setup.stepLabel}
@@ -393,7 +393,7 @@ export function PassportSetupPanel({
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
                 <Btn href="/verify?mode=credential" size="sm">Verify credential publicly →</Btn>
-                <Btn href="/verify?mode=policy" variant="secondary" size="sm">Run policy check</Btn>
+                <Btn href="/verify?mode=policy" variant="secondary" size="sm">Run Trust Rules check →</Btn>
                 <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
                 <Btn href="/#registry" variant="ghost" size="sm">Browse registry</Btn>
               </div>

@@ -24,8 +24,8 @@ export async function GET() {
       captured_cielo_bookings: stats.captured_bookings,
       cielo_revenue_usdc: stats.cielo_revenue_usdc,
       cielo_revenue_label: stats.cielo_revenue_usdc > 0
-        ? `$${stats.cielo_revenue_usdc.toLocaleString()} captured`
-        : "Apple Pay ready",
+        ? `$${stats.cielo_revenue_usdc.toLocaleString()} USDC on Sui`
+        : "USDC settlement live on Sui",
       phase: stats.phase,
       verification_network: stats.verification_network,
     },

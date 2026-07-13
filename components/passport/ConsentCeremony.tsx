@@ -156,7 +156,7 @@ export function ConsentCeremony({
         fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
         color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.35rem",
       }}>
-        Partner request
+        Partner Trust Request
       </div>
       <h3 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
         {preview.policy_name}
@@ -187,7 +187,7 @@ export function ConsentCeremony({
             </div>
           )) : (
             <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-              Policy decision only — no personal documents
+              Trust Rules decision only — no personal documents
             </div>
           )}
         </div>
@@ -228,7 +228,7 @@ export function ConsentCeremony({
         </button>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.55rem 0 0", lineHeight: 1.5 }}>
-        Expires {new Date(preview.expires_at).toLocaleString()} · Policy {preview.policy_id}
+        Expires {new Date(preview.expires_at).toLocaleString()} · Trust Rules {preview.policy_id}
       </p>
     </div>
   );

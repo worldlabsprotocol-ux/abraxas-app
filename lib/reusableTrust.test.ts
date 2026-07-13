@@ -1,7 +1,7 @@
 // FILE: lib/reusableTrust.test.ts
 
 import { describe, expect, it } from "vitest";
-import { computeOperatorRoi, TRUST_FLYWHEEL_STEPS } from "./reusableTrust";
+import { buildPilotMetricsFromPublic, computeOperatorRoi, PILOT_METRICS, TRUST_FLYWHEEL_STEPS } from "./reusableTrust";
 
 describe("reusableTrust", () => {
   it("defines a closed trust flywheel loop", () => {
@@ -20,5 +20,26 @@ describe("reusableTrust", () => {
     expect(roi.hoursSaved).toBeGreaterThan(0);
     expect(roi.laborSavedUsd).toBeGreaterThan(0);
     expect(roi.documentsAvoided).toBeGreaterThan(0);
+  });
+
+  it("falls back to static pilot metrics without API", () => {
+    expect(buildPilotMetricsFromPublic(null)).toEqual(PILOT_METRICS);
+  });
+
+  it("merges live Supabase counters when available", () => {
+    const live = buildPilotMetricsFromPublic({
+      ok: true,
+      metrics: {
+        attested_value_label: "$2.7M+ attested",
+        zklogin_wallets: 42,
+        cielo_revenue_usdc: 1200,
+        captured_cielo_bookings: 3,
+        verification_network: { total_presentations: 17, data_available: true },
+      },
+    });
+    expect(live[0].value).toBe("17");
+    expect(live[1].value).toBe("42");
+    expect(live[2].value).toBe("$1,200");
+    expect(live[3].pilot).toBe(false);
   });
 });
