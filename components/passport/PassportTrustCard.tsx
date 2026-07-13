@@ -21,7 +21,7 @@ function formatIdentityStatus(status: string) {
   if (status === "approved") return "Verified";
   if (status === "pending") return "In review";
   if (status === "declined") return "Not verified";
-  return "Not started";
+  return "Ready to verify";
 }
 
 export function PassportTrustCard({

@@ -52,8 +52,8 @@ export function useUserProfile() {
 }
 
 export function profileNavLabel(profile: UserProfile | null | undefined, email: string | null): string {
-  if (profile?.username) return `@${profile.username}`;
   if (profile?.display_name) return profile.display_name;
+  if (profile?.username) return `@${profile.username}`;
   if (email) return email.split("@")[0] ?? "Account";
   return "Account";
 }

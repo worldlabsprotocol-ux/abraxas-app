@@ -2,6 +2,7 @@
 // FILE: lib/walletAuthority/client/evmConnectionUi.ts
 // Pure UI routing for injected vs WalletConnect (testable without React).
 
+import { BROWSER_SESSION_HINT } from "@/lib/auth/sessionErrors";
 import { isMobileWalletContext } from "@/lib/walletAuthority/client/detectMobileBrowser";
 
 export interface EvmConnectionUiState {
@@ -9,7 +10,6 @@ export interface EvmConnectionUiState {
   showWalletConnect: boolean;
   /** Shown when neither path is available (e.g. desktop without extension). */
   blockedHint: string | null;
-  /** Shown on mobile without injected provider — explains separate browser sandboxes. */
   sessionHint: string;
 }
 
@@ -24,9 +24,7 @@ export function resolveEvmConnectionUiState(input: {
 }): EvmConnectionUiState {
   const isMobile = input.isMobile ?? false;
   const wcConfigured = input.walletConnectConfigured ?? walletConnectProjectIdConfigured();
-
-  const sessionHint =
-    "Passport sign-in applies to this browser only. If you signed in elsewhere (e.g. Brave), sign in again here — sessions do not carry across apps.";
+  const sessionHint = BROWSER_SESSION_HINT;
 
   if (input.hasInjectedProvider) {
     return {

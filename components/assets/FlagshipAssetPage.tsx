@@ -6,6 +6,7 @@ import { useState }             from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FLAGSHIP_PROPERTY }    from "@/lib/data/flagshipProperty";
 import { CieloFlagshipActions } from "@/components/cielo/CieloFlagshipActions";
+import { CieloGuestReviews } from "@/components/cielo/CieloGuestReviews";
 import { AssetVerificationScopePanel } from "@/components/redesign/AssetVerificationScopePanel";
 
 const M      = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -290,38 +291,7 @@ export function FlagshipAssetPage() {
             </Section>
 
             <Section title="Guest Intelligence" icon="◆">
-              <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem" }}>
-                <div style={{ fontFamily:M, fontSize:"2.8rem", fontWeight:900, color:GREEN }}>5.0</div>
-                <div>
-                  <div style={{ fontFamily:M, fontSize:"0.52rem", fontWeight:700, color:"#F2F6F3" }}>
-                    {D.guestProfile.totalReviews} Reviews
-                  </div>
-                  <div style={{ fontFamily:M, fontSize:"0.38rem", color:AMBER, fontWeight:700 }}>
-                    ★ SUPERHOST · Response: {D.guestProfile.responseTime}
-                  </div>
-                </div>
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
-                {D.guestProfile.reviews.map((r, i) => (
-                  <div key={i} style={{ padding:"0.75rem", background:CARD,
-                                          border:"1px solid " + BORDER, borderRadius:"5px" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between",
-                                   marginBottom:"0.35rem" }}>
-                      <span style={{ fontFamily:M, fontSize:"0.44rem", fontWeight:700, color:"#F2F6F3" }}>
-                        {r.name}
-                      </span>
-                      <span style={{ fontFamily:M, fontSize:"0.32rem", color:"rgba(242,246,243,0.2)" }}>
-                        {r.when} · ★★★★★
-                      </span>
-                    </div>
-                    <div style={{ fontFamily:M, fontSize:"0.4rem",
-                                   color:"rgba(242,246,243,0.35)", lineHeight:1.65,
-                                   fontStyle:"italic" }}>
-                      "{r.highlight}"
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <CieloGuestReviews tone="flagship" />
             </Section>
 
             <Section title="Full Amenities, 64 Offerings" icon="◈">

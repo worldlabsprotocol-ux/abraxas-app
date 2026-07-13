@@ -54,11 +54,11 @@ describe("resolveEvmConnectionUiState", () => {
     expect(state.blockedHint).toMatch(/extension/i);
   });
 
-  it("includes cross-browser session hint", () => {
+  it("includes browser session hint", () => {
     const state = resolveEvmConnectionUiState({
       hasInjectedProvider: true,
       isMobile: false,
     });
-    expect(state.sessionHint).toMatch(/this browser only/i);
+    expect(state.sessionHint).toMatch(/Sign in on this page/i);
   });
 });
