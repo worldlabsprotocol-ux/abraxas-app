@@ -3,40 +3,66 @@
 
 export type PartnerStatusBucket = "closed" | "final_execution" | "pipeline";
 
+export const PARTNER_NAME_PLACEHOLDER = "[REAL PARTNER NAME]";
+
 export interface RealPartnerRecord {
   id: string;
-  /** Replace with approved public name — see TODO_PARTNER_ASSETS.md */
+  /** Approved public name — see TODO_PARTNER_ASSETS.md */
   publicName: string;
   statusBucket: PartnerStatusBucket;
   vertical: string;
   /** Accurate description for the confirmed bucket only */
   summary: string;
+  /** Shown when public name is not yet approved */
+  verticalHeadline: string;
+  proofLabel: string;
+  proofHref: string;
 }
 
-/** Placeholder until each partner confirms public-use approval and status bucket. */
 export const REAL_PARTNERS: RealPartnerRecord[] = [
   {
     id: "relying-party-hospitality-1",
-    publicName: "[REAL PARTNER NAME]",
+    publicName: PARTNER_NAME_PLACEHOLDER,
     statusBucket: "final_execution",
     vertical: "Hospitality",
-    summary: "Onboarding in final stages — reusable guest verification for short-term rental workflows.",
+    verticalHeadline: "Short-term rental operator",
+    summary: "Final onboarding — reusable guest verification for high-frequency booking workflows. Cielo Sunrise is the reference loop.",
+    proofLabel: "See Cielo reference loop",
+    proofHref: "/case-studies/cielo",
   },
   {
     id: "relying-party-tribal-1",
-    publicName: "[REAL PARTNER NAME]",
+    publicName: PARTNER_NAME_PLACEHOLDER,
     statusBucket: "final_execution",
     vertical: "Tribal land & mineral rights",
-    summary: "Design partnership in final execution — document reuse for high-stakes land and mineral workflows.",
+    verticalHeadline: "Land & mineral development partner",
+    summary: "Final execution — verify once for tribal land and mineral workflows. Owner portal intake live today.",
+    proofLabel: "Owner portal intake",
+    proofHref: "/portal/apply",
   },
 ];
+
+export function isPartnerNamePublic(name: string): boolean {
+  const trimmed = name.trim();
+  return trimmed.length > 0 && trimmed !== PARTNER_NAME_PLACEHOLDER;
+}
+
+/** Public-safe display — never renders bracket placeholders. */
+export function partnerDisplayName(p: RealPartnerRecord): string {
+  return isPartnerNamePublic(p.publicName) ? p.publicName : p.verticalHeadline;
+}
+
+export function partnerDisplaySubtitle(p: RealPartnerRecord): string | null {
+  if (isPartnerNamePublic(p.publicName)) return p.vertical;
+  return `${p.vertical} · name publishing on partner approval`;
+}
 
 export function partnerStatusLabel(bucket: PartnerStatusBucket): string {
   switch (bucket) {
     case "closed":
       return "In production";
     case "final_execution":
-      return "Final onboarding";
+      return "In final onboarding";
     case "pipeline":
       return "In discussion";
   }

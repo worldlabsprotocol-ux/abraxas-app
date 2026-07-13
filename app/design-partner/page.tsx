@@ -13,8 +13,10 @@ import {
   DESIGN_PARTNER_OFFER,
   DESIGN_PARTNER_PROFILE,
   VERTICAL_SEQUENCE,
+  verticalStatusLabel,
 } from "@/lib/northStar";
-import { REAL_PARTNERS, partnerStatusLabel } from "@/lib/partnerStatus";
+import { PartnerExecutionCards } from "@/components/partners/PartnerExecutionCards";
+import { REAL_PARTNERS } from "@/lib/partnerStatus";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
@@ -44,35 +46,9 @@ export default function DesignPartnerPage() {
       {REAL_PARTNERS.length > 0 && (
         <ContentCard title="Partners in final onboarding">
           <p style={bodyStyle}>
-            Names publish when approved for public use. Status reflects confirmed buckets only —
-            not every partner is at the same stage.
+            Status reflects confirmed buckets only — vertical headlines show until a partner approves public naming.
           </p>
-          <div style={{ display: "grid", gap: "0.55rem" }}>
-            {REAL_PARTNERS.map(p => (
-              <div key={p.id} style={{
-                padding: "0.75rem 0.85rem", borderRadius: 12,
-                border: "1px solid var(--border)", background: "var(--surface)",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                    {p.publicName}
-                  </span>
-                  <span style={{
-                    fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase",
-                    color: ACCENT,
-                  }}>
-                    {partnerStatusLabel(p.statusBucket)}
-                  </span>
-                </div>
-                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.25rem 0 0.35rem" }}>
-                  {p.vertical}
-                </p>
-                <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
-                  {p.summary}
-                </p>
-              </div>
-            ))}
-          </div>
+          <PartnerExecutionCards />
         </ContentCard>
       )}
 
@@ -86,17 +62,17 @@ export default function DesignPartnerPage() {
         </p>
       </ContentCard>
 
-      <ContentCard title="Why hospitality first">
+      <ContentCard title="Vertical execution">
         <p style={bodyStyle}>
-          High-frequency guests mean fast learning. Cielo Sunrise is our genesis dogfood asset;
-          external operators follow once the loop is undeniable.
+          Cielo Sunrise is genesis dogfood in hospitality. Tribal land and mineral partners are in execution now —
+          same verify-once infrastructure, different evidence scope.
         </p>
         <div style={{ display: "grid", gap: "0.55rem" }}>
           {VERTICAL_SEQUENCE.map(v => (
             <div key={v.name} style={{
               padding: "0.75rem 0.85rem", borderRadius: 12,
-              border: `1px solid ${v.status === "active" ? `${ACCENT}44` : "var(--border)"}`,
-              background: v.status === "active" ? `${ACCENT}08` : "var(--surface)",
+              border: `1px solid ${v.status === "active" || v.status === "in_execution" ? `${ACCENT}44` : "var(--border)"}`,
+              background: v.status === "active" || v.status === "in_execution" ? `${ACCENT}08` : "var(--surface)",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}>
                 <span style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, color: "var(--text-primary)" }}>
@@ -104,9 +80,9 @@ export default function DesignPartnerPage() {
                 </span>
                 <span style={{
                   fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase",
-                  color: v.status === "active" ? ACCENT : "var(--text-muted)",
+                  color: v.status === "roadmap" ? "var(--text-muted)" : ACCENT,
                 }}>
-                  {v.status === "active" ? "Active pilot" : v.status === "next" ? "Next" : "Later"}
+                  {verticalStatusLabel(v.status)}
                 </span>
               </div>
               <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>

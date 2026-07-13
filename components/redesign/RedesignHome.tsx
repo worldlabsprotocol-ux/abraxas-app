@@ -29,6 +29,7 @@ function HomeContent() {
       <div style={MAXW}>
         <HomeSharpHero />
         <HomeLiveTodayStrip />
+        <HomePartnersBrief />
         <HomeWorkflowCompare />
         <HomeLearnHub />
         <HomeValueProp />
@@ -43,7 +44,6 @@ function HomeContent() {
             home
           />
         </div>
-        <HomePartnersBrief />
       </div>
     </main>
   );

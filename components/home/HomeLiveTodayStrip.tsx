@@ -2,14 +2,18 @@
 // FILE: components/home/HomeLiveTodayStrip.tsx
 // Verifiable facts only — no invented traction.
 
+import { partnersInExecutionCount } from "@/lib/partnerStatus";
+
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
+const partnerCount = partnersInExecutionCount();
+
 const LIVE_FACTS = [
   { label: "Public registry", value: "Browse without login" },
   { label: "Cielo Sunrise", value: "$1.1M appraised · pilot" },
-  { label: "Smyrna Townhome", value: "$76.2K → $228K+ · open" },
+  { label: "Design partners", value: `${partnerCount} in final onboarding` },
   { label: "Booking rail", value: "USDC settles on Sui" },
 ] as const;
 

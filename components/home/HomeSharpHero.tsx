@@ -55,6 +55,8 @@ export function HomeSharpHero() {
         {" · "}
         <a href="/#registry" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Registry</a>
         {" · "}
+        <a href="/#partners" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Partners</a>
+        {" · "}
         <a href="/design-partner" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Design partner</a>
       </p>
     </section>

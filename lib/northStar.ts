@@ -152,26 +152,44 @@ export const NORTH_STAR_PHASES: NorthStarPhase[] = [
   },
 ];
 
-export const VERTICAL_SEQUENCE = [
+export type VerticalExecutionStatus = "active" | "in_execution" | "roadmap";
+
+export const VERTICAL_SEQUENCE: {
+  order: number;
+  name: string;
+  why: string;
+  status: VerticalExecutionStatus;
+}[] = [
   {
     order: 1,
     name: "Hospitality",
-    why: "High-frequency verification — learn fast (Cielo and similar operators).",
-    status: "active" as const,
+    why: "High-frequency verification — Cielo Sunrise is the live reference loop.",
+    status: "active",
   },
   {
     order: 2,
     name: "Tribal land & mineral rights",
-    why: "High-stakes documents — after hospitality loop is undeniable.",
-    status: "next" as const,
+    why: "Design partner in final execution — owner portal intake and verify-once sharing for high-stakes land.",
+    status: "in_execution",
   },
   {
     order: 3,
     name: "Financial assets",
-    why: "Reuse the same trust engine once identity + asset proof compound.",
-    status: "later" as const,
+    why: "Reuse the same trust engine once identity and asset proof compound across partners.",
+    status: "roadmap",
   },
 ];
+
+export function verticalStatusLabel(status: VerticalExecutionStatus): string {
+  switch (status) {
+    case "active":
+      return "Live pilot";
+    case "in_execution":
+      return "In execution";
+    case "roadmap":
+      return "Roadmap";
+  }
+}
 
 export const DESIGN_PARTNER_PROFILE = [
   "Verify people repeatedly",

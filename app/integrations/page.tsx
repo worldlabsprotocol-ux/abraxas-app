@@ -15,7 +15,8 @@ import {
   STATUS_COLOR,
   type IntegrationStatus,
 } from "@/lib/protocolIntegrations";
-import { REAL_PARTNERS, partnerStatusLabel, partnersInExecutionCount } from "@/lib/partnerStatus";
+import { REAL_PARTNERS, partnersInExecutionCount } from "@/lib/partnerStatus";
+import { PartnerExecutionCards } from "@/components/partners/PartnerExecutionCards";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -59,7 +60,7 @@ export default function IntegrationsPage() {
       <PageHeader
         eyebrow="Integrations"
         title="Reusable verification — live surfaces + partners onboarding"
-        subtitle={`${liveCount} first-party integration surfaces live today. ${partnerCount} design partner${partnerCount === 1 ? "" : "s"} in final onboarding — names when approved.`}
+        subtitle={`${liveCount} first-party integration surfaces live today. ${partnerCount} design partner${partnerCount === 1 ? "" : "s"} in final onboarding.`}
       />
 
       {REAL_PARTNERS.length > 0 && (
@@ -67,23 +68,7 @@ export default function IntegrationsPage() {
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
             External operators integrating Abraxas verification — status per confirmed bucket, not aspirational.
           </p>
-          {REAL_PARTNERS.map(p => (
-            <div key={p.id} style={{
-              padding: "0.75rem 0", borderBottom: "1px solid var(--border)",
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}>
-                <span style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  {p.publicName}
-                </span>
-                <span style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase" }}>
-                  {partnerStatusLabel(p.statusBucket)}
-                </span>
-              </div>
-              <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
-                {p.vertical} — {p.summary}
-              </p>
-            </div>
-          ))}
+          <PartnerExecutionCards />
         </ContentCard>
       )}
 
