@@ -19,13 +19,13 @@ export function EarlyAccessBanner() {
         color: "#3B82F6", padding: "0.2rem 0.5rem", borderRadius: 6,
         background: "rgba(59,130,246,0.12)",
       }}>
-        Design partner phase
+        Active partners
       </span>
       <p style={{
         fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
         lineHeight: 1.55, margin: 0, flex: "1 1 200px",
       }}>
-        Building the verification layer with design partners. Browse the registry, create your passport, and book with Apple Pay.
+        Two design partners live in production. Browse the registry, create your passport, and book with Apple Pay.
       </p>
       <Link href="/integrations" style={{
         fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700,

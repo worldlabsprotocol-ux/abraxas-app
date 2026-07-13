@@ -3,15 +3,18 @@
 // External asset owner application — Step 5 intake (pending review until signed).
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { saveLocalPortalApplication } from "@/lib/portal/localApplications";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 export default function ExternalAssetsPage() {
+  const router = useRouter();
   const [form, setForm] = useState({
     asset_name: "",
     asset_class: "REAL_ESTATE",
@@ -24,34 +27,37 @@ export default function ExternalAssetsPage() {
     description: "",
   });
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    setResult(null);
     try {
       const res = await fetch("/api/external-assets/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, originator: "external" }),
       });
-      const json = await res.json() as { error?: string; message?: string; application_id?: string };
-      if (!res.ok) throw new Error(json.error ?? "Submit failed");
-      setResult(json.message ?? `Application ${json.application_id} received — status Pending review.`);
-      setForm({
-        asset_name: "",
-        asset_class: "REAL_ESTATE",
-        jurisdiction: "",
-        estimated_value: "",
-        evidence_scope: "",
-        contact_name: "",
-        contact_email: "",
-        contact_wallet: "",
-        description: "",
-      });
+      const json = await res.json() as { error?: string; message?: string; application_id?: string; status?: string };
+      if (!res.ok || !json.application_id) throw new Error(json.error ?? "Submit failed");
+
+      const email = form.contact_email.trim();
+      if (json.application_id.startsWith("local-")) {
+        saveLocalPortalApplication({
+          application_id: json.application_id,
+          contact_email: email,
+          asset_name: form.asset_name.trim(),
+          asset_class: form.asset_class,
+          jurisdiction: form.jurisdiction.trim() || undefined,
+          evidence_scope: form.evidence_scope.trim() || undefined,
+          description: form.description.trim() || undefined,
+          status: json.status ?? "pending_review",
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      router.push(`/portal/journey?application_id=${encodeURIComponent(json.application_id)}&email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed");
     } finally {
@@ -64,8 +70,12 @@ export default function ExternalAssetsPage() {
       <PageHeader
         eyebrow="External asset owners"
         title="Apply for Abraxas registry review"
-        subtitle="Submit an asset for verification review. Public VERIFIED status requires a named reviewer, evidence scope, expiry, and verify URL — not automatic on submit."
+        subtitle="Submit an asset for verification review. After submit you land on the owner portal to track progress — public VERIFIED status requires a named reviewer, not automatic intake."
       />
+
+      <div style={{ marginBottom: "1rem" }}>
+        <Btn href="/portal" variant="secondary" size="sm">Land developers: use owner portal →</Btn>
+      </div>
 
       <ContentCard title="Before you apply">
         <p style={body}>
@@ -123,11 +133,6 @@ export default function ExternalAssetsPage() {
             {busy ? "Submitting…" : "Submit application →"}
           </button>
         </form>
-        {result && (
-          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, marginTop: "0.75rem", lineHeight: 1.6 }}>
-            {result}
-          </p>
-        )}
         {error && (
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", marginTop: "0.75rem" }}>{error}</p>
         )}
