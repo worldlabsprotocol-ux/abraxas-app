@@ -48,7 +48,7 @@ export function TrustMetricsStrip() {
             margin: "0.65rem 0 0.45rem",
             lineHeight: 1.2,
           }}>
-            Live registry — two design partners in production
+            Live registry — Cielo + Grady County 270 land partner
           </h2>
           <p style={{
             fontFamily: FONT,
@@ -57,7 +57,7 @@ export function TrustMetricsStrip() {
             lineHeight: 1.65,
             margin: 0,
           }}>
-            Real assets, live booking rails, and verified passports — hospitality and land partners onboarded on Abraxas.
+            ~$3M attested registry scope: Cielo Sunrise (L3 appraised) plus CPG Land Sales Grady County 270 (L2 land partner). Verification infrastructure — not a binding sale.
           </p>
         </div>
 

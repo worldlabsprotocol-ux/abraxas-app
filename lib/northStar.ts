@@ -169,7 +169,7 @@ export const VERTICAL_SEQUENCE: {
   {
     order: 2,
     name: "Tribal land & mineral rights",
-    why: "Active design partner — owner portal intake and verify-once sharing for high-stakes land.",
+    why: "CPG Land Sales Grady County 270 live + owner portal verify-once for tribal/mineral and bulk land workflows.",
     status: "active",
   },
   {

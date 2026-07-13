@@ -22,8 +22,14 @@ describe("partnerDisplayName", () => {
   });
 
   it("includes vertical in subtitle when name hidden", () => {
-    const sub = partnerDisplaySubtitle(REAL_PARTNERS[1]!);
+    const sub = partnerDisplaySubtitle(REAL_PARTNERS[2]!);
     expect(sub).toContain("Tribal land");
     expect(sub).toContain("active on Abraxas");
+  });
+
+  it("shows approved public name for CPG Land Sales", () => {
+    const cpg = REAL_PARTNERS.find(p => p.id === "relying-party-land-ok-1");
+    expect(cpg).toBeDefined();
+    expect(partnerDisplayName(cpg!)).toBe("CPG Land Sales");
   });
 });

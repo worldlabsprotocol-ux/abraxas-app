@@ -6,6 +6,7 @@
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
 import { CIELO_REGISTRY_IMAGE, SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+import { CPG_ASSET, CPG_REGISTRY_VALUE, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
@@ -62,6 +63,27 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     offeringDisclaimer: true,
     liveProof: { label: "Live on Airbnb", url: CIELO_AIRBNB_URL },
     cta: "View asset",
+  },
+  {
+    id: "cpg-grady-270",
+    name: "Grady County 270",
+    assetClass: "Real Estate · Land",
+    location: "Grady County, Oklahoma · OKC growth corridor",
+    image: CPG_ASSET.image,
+    primaryLabel: "Registry reference",
+    primaryValue: formatUsd(CPG_REGISTRY_VALUE.fullProjectReference),
+    primaryMeta: { level: 2, type: "reference", asOf: "2026-07-13" },
+    secondaryLabel: "Seller ask (partner)",
+    secondaryValue: formatUsd(CPG_PRICING.fullProjectSellerAsk),
+    secondaryMeta: { level: 1, type: "estimated", asOf: "2026-07-05" },
+    state: "open",
+    statusBadge: "pilot",
+    offeringDisclaimer: true,
+    note: "Active land partner · CPG Land Sales. Abraxas verification only — not a binding sale. Registry ref includes +20% platform band.",
+    href: "/case-studies/cpg-grady-270",
+    verificationScopeHref: "/case-studies/cpg-grady-270#pricing",
+    liveProof: { label: "CPG Land Sales", url: "https://www.cpglandsales.com/" },
+    cta: "View case study",
   },
   {
     id: "smyrna-townhome",

@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
 import { fetchPublishedExternalApplications } from "@/lib/portal/externalRegistry";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
+import { CPG_REGISTRY_VALUE } from "@/lib/cpgLandCaseStudy";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { getVerificationNetworkMetrics, type VerificationNetworkMetrics } from "@/lib/metrics/verificationMetrics";
 
@@ -78,8 +79,8 @@ export async function getUnifiedRegistryStats(): Promise<UnifiedRegistryStats> {
     registry_assets: registryAssets,
     verified_assets: verifiedAssets,
     asset_classes: assetClasses,
-    attested_value_usd: FLAGSHIP_PROPERTY.financials.estimatedValue,
-    attested_value_label: "$1.1M+",
+  attested_value_usd: FLAGSHIP_PROPERTY.financials.estimatedValue + CPG_REGISTRY_VALUE.fullProjectReference,
+  attested_value_label: "$3.0M+",
     live_booking_assets: liveBookingAssets,
     zklogin_wallets: zkloginWallets,
     active_credentials: activeCredentials,

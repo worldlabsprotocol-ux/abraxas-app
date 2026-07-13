@@ -3,6 +3,7 @@
 // Verifiable facts only — no invented traction.
 
 import { partnersActiveCount } from "@/lib/partnerStatus";
+import { CPG_REGISTRY_VALUE, formatUsd } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -11,10 +12,10 @@ const ACCENT = "#10B981";
 const partnerCount = partnersActiveCount();
 
 const LIVE_FACTS = [
-  { label: "Public registry", value: "Browse without login" },
-  { label: "Cielo Sunrise", value: "$1.1M appraised · live" },
-  { label: "Design partners", value: `${partnerCount} active` },
-  { label: "Booking rail", value: "USDC settles on Sui" },
+  { label: "Registry attested scope", value: "$3.0M+ · Cielo + Grady 270" },
+  { label: "Cielo Sunrise", value: "$1.1M appraised · live STR" },
+  { label: "Grady County 270", value: `${formatUsd(CPG_REGISTRY_VALUE.fullProjectReference)} ref · land partner` },
+  { label: "Active partners", value: `${partnerCount} onboarded` },
 ] as const;
 
 export function HomeLiveTodayStrip() {
