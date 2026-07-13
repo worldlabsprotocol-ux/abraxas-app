@@ -15,6 +15,8 @@ import {
   STATUS_COLOR,
   type IntegrationStatus,
 } from "@/lib/protocolIntegrations";
+import { REAL_PARTNERS, partnersInExecutionCount } from "@/lib/partnerStatus";
+import { PartnerExecutionCards } from "@/components/partners/PartnerExecutionCards";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -51,19 +53,29 @@ export default function IntegrationsPage() {
   }
 
   const liveCount = PROTOCOL_INTEGRATIONS.filter(p => p.status === "live").length;
+  const partnerCount = partnersInExecutionCount();
 
   return (
     <RedesignPage maxWidth={900}>
       <PageHeader
         eyebrow="Integrations"
-        title="The reusable verification primitive"
-        subtitle={`${liveCount} live integration surfaces today. External protocols integrate Abraxas Passport in ~4 lines — no re-KYC for users.`}
+        title="Reusable verification — live surfaces + partners onboarding"
+        subtitle={`${liveCount} first-party integration surfaces live today. ${partnerCount} design partner${partnerCount === 1 ? "" : "s"} in final onboarding.`}
       />
+
+      {REAL_PARTNERS.length > 0 && (
+        <ContentCard title="Relying parties in execution">
+          <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
+            External operators integrating Abraxas verification — status per confirmed bucket, not aspirational.
+          </p>
+          <PartnerExecutionCards />
+        </ContentCard>
+      )}
 
       <ContentCard title="Relying party program">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
-          The network-effect milestone: an unaffiliated lender, marketplace, or protocol checks Abraxas credentials in production.
           Partners configure eligibility rules — Abraxas returns <strong>approved / denied / manual review</strong> with consent receipts and audit references.
+          Cielo is first-party dogfood; external relying parties are onboarding now.
         </p>
         <Btn href="/integrations/relying-parties" size="sm">Relying party onboarding →</Btn>
         <Btn href="/integrations/outreach" variant="secondary" size="sm">Outreach templates</Btn>
@@ -144,10 +156,14 @@ export default function IntegrationsPage() {
         ))}
       </ContentCard>
 
-      <ContentCard title="Become a design partner">
+      <ContentCard title="Apply for a selective future slot">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
-          RWA marketplaces, lenders, and DeFi protocols: pilot Abraxas Passport as your trust rail.
-          We prioritize partners with real volume and a clear conversion metric.
+          Design partners are in final execution. The program stays open for selective future operators —
+          outcome-first collaboration, not a protocol pitch.
+        </p>
+        <Btn href="/design-partner" size="sm">Design partner page →</Btn>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.65, margin: "0.85rem 0 0.75rem" }}>
+          Technical integrations, SDK snippets, and protocol listings continue below for developer-led partners.
         </p>
         <BulletList items={[...DESIGN_PARTNER_CRITERIA]} />
 

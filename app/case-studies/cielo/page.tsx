@@ -12,6 +12,7 @@ import {
   CIELO_ONCHAIN_PROOF,
   CIELO_TIMELINE,
   CIELO_PHOTOS,
+  CIELO_WHAT_THIS_PROVES,
 } from "@/lib/cieloCaseStudy";
 import { CaseStudyGallery, CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
 import { Btn } from "@/components/redesign/ui";
@@ -63,6 +64,14 @@ export default function CieloCaseStudyPage() {
           { k: "Registry ID", v: D.id, mono: true },
           { k: "Payment rail", v: "USDC on Sui (live booking)" },
         ]} />
+      </ContentCard>
+
+      <ContentCard title="What this proves">
+        <BulletList items={[...CIELO_WHAT_THIS_PROVES]} />
+        <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0 }}>
+          Read the full article:{" "}
+          <Link href="/blog/cielo-sunrise-proof-model-works" style={{ color: ACCENT }}>Cielo Sunrise — proof the model works →</Link>
+        </p>
       </ContentCard>
 
       <ContentCard title={CIELO_CONFLICTS.headline}>

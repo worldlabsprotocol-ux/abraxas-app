@@ -238,7 +238,7 @@ export const FLAGSHIP_PROPERTY = {
     metadataUri:       "ipfs://QmCielo5unrise1Genesis001/metadata.json",
     totalSupply:       1,
     status:            "COLLATERAL_ELIGIBLE",
-    stablecoinBooking: "USDC booking integration, coming soon",
+    stablecoinBooking: "USDC on Sui · live on /flagship",
   },
 
   guestProfile: {

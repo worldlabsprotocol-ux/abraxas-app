@@ -1,8 +1,9 @@
 "use client";
 // FILE: components/home/HomeSharpHero.tsx
-// Five-second homepage opener — one message, two actions.
+// Outcome-first homepage — trust infrastructure, not identity jargon.
 
 import { Btn } from "@/components/redesign/ui";
+import { ABRAXAS_HEADLINE, ABRAXAS_SUBHEAD } from "@/lib/northStar";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -11,48 +12,53 @@ const ACCENT = "#10B981";
 export function HomeSharpHero() {
   return (
     <section id="top" aria-labelledby="home-hero-heading" style={{
-      padding: "clamp(2.5rem, 6vw, 4rem) 0 clamp(2rem, 4vw, 3rem)",
+      padding: "clamp(2.5rem, 6vw, 4rem) 0 clamp(1.5rem, 3vw, 2rem)",
+      maxWidth: 720,
     }}>
       <div style={{
         fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700,
         letterSpacing: "0.14em", textTransform: "uppercase",
         color: ACCENT, marginBottom: "0.65rem",
       }}>
-        Abraxas
+        Trust infrastructure
       </div>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)",
-        lineHeight: 1.6, maxWidth: 520, margin: "0 0 1.25rem",
-      }}>
-        Verification infrastructure for real-world assets.
-      </p>
       <h1 id="home-hero-heading" style={{
         fontFamily: FONT, fontSize: "var(--fs-display)", fontWeight: 900,
         letterSpacing: "-0.045em", lineHeight: 0.98,
-        color: "var(--text-primary)", margin: "0 0 1rem", maxWidth: 640,
+        color: "var(--text-primary)", margin: "0 0 1rem",
       }}>
-        Verify once.
-        <br />
-        <span style={{ color: ACCENT }}>Use proof where it matters.</span>
+        {ABRAXAS_HEADLINE}
       </h1>
       <p style={{
         fontFamily: FONT, fontSize: "clamp(0.92rem, 2vw, 1.02rem)",
         color: "var(--text-primary)", lineHeight: 1.65,
-        maxWidth: 560, margin: "0 0 1rem",
+        margin: "0 0 0.65rem",
       }}>
-        Abraxas lets people, wallets, and assets carry reusable verification — not document folders.
+        {ABRAXAS_SUBHEAD}
       </p>
       <p style={{
-        fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, maxWidth: 520, margin: "0 0 1.75rem",
+        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+        lineHeight: 1.55, margin: "0 0 1.25rem",
       }}>
-        A partner asks for a specific proof. You approve what gets shared. The policy engine returns a decision —
-        approved, denied, or review required.
+        You prove something once. Then you never upload it again.
       </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
-        <Btn href="/passport" size="lg">Create Passport →</Btn>
-        <Btn href="/passport?view=verify" variant="secondary" size="lg">Verify a record →</Btn>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "1rem" }}>
+        <Btn href="/passport" size="lg">Get verified once →</Btn>
+        <Btn href="/blog" variant="secondary" size="lg">Learn hub →</Btn>
+        <Btn href="/#workflow" variant="secondary" size="lg">See the difference</Btn>
+        <Btn href="/cielo/verified-rate" variant="ghost" size="lg">Try Cielo pilot →</Btn>
       </div>
+      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0 }}>
+        <a href="/#learn" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Featured articles</a>
+        {" · "}
+        <a href="/#product-loop" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Watch the loop</a>
+        {" · "}
+        <a href="/#registry" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Registry</a>
+        {" · "}
+        <a href="/#partners" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Partners</a>
+        {" · "}
+        <a href="/design-partner" style={{ color: ACCENT, fontWeight: 700, textDecoration: "none" }}>Design partner</a>
+      </p>
     </section>
   );
 }
