@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, KeyValueTable, BulletList } from "@/components/redesign/RedesignContent";
-import { CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
+import { CaseStudyPhotoHero, CaseStudyVideoHero } from "@/components/case-studies/CaseStudyGallery";
 import {
   CPG_ASSET,
   CPG_PARTNER,
@@ -62,9 +62,10 @@ export default function CpgGradyCaseStudyPage() {
         before any contract. Not investment advice · not a securities offering.
       </div>
 
-      <CaseStudyPhotoHero
-        src={CPG_ASSET.image}
-        alt="Oklahoma land · Grady County 270"
+      <CaseStudyVideoHero
+        src={CPG_ASSET.heroVideo}
+        poster={CPG_ASSET.heroVideoPoster}
+        alt="Drone footage · Grady County 270 Oklahoma land"
         badge={CPG_ASSET.designation}
         title={CPG_ASSET.name}
         subtitle={CPG_ASSET.subtitle}
@@ -169,7 +170,7 @@ export default function CpgGradyCaseStudyPage() {
           ))}
         </div>
         <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0, fontSize: "0.74rem" }}>
-          Video walkthrough and additional media can be appended to this record as partner supplies assets.
+          Drone walkthrough plays above (owner-captured). Additional clips can be appended as partner supplies assets.
         </p>
       </ContentCard>
 

@@ -31,6 +31,8 @@ export const CPG_ASSET = {
   subtitle: "~270 acres · 11 surveyed tracts · Oklahoma City growth corridor",
   location: "Grady County, Oklahoma · Blanchard / Chickasha area",
   image: "/assets/cpg/hero-oklahoma-land.jpg",
+  heroVideo: "/assets/cpg/cpg-drone.mp4",
+  heroVideoPoster: "/assets/cpg/hero-oklahoma-land.jpg",
   parentAcres: 270,
   availableLotsNote: "Lots 1 & 5 under contract as of Jul 2026 — remaining inventory per partner update",
   partnerSite: CPG_PARTNER.website,

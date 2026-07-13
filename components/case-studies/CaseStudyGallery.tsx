@@ -143,3 +143,65 @@ export function CaseStudyPhotoHero({
     </div>
   );
 }
+
+export function CaseStudyVideoHero({
+  src,
+  poster,
+  alt,
+  badge,
+  title,
+  subtitle,
+}: {
+  src: string;
+  poster?: string;
+  alt: string;
+  badge: string;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div style={{
+      position: "relative", borderRadius: 18, overflow: "hidden",
+      marginBottom: "0.65rem",
+      aspectRatio: "16/9",
+      background: BG,
+    }}>
+      <video
+        src={src}
+        poster={poster}
+        autoPlay
+        muted
+        loop
+        playsInline
+        aria-label={alt}
+        style={{
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%",
+          objectFit: "cover", display: "block",
+        }}
+      />
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(to top, rgba(6,9,11,0.92) 0%, rgba(6,9,11,0.35) 50%, rgba(6,9,11,0.15) 100%)",
+        pointerEvents: "none",
+      }} />
+      <div style={{ position: "absolute", bottom: 20, left: 20, right: 20, pointerEvents: "none" }}>
+        <span style={{
+          display: "inline-block", fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
+          padding: "0.3rem 0.6rem", borderRadius: 999, marginBottom: "0.5rem",
+          background: "rgba(16,185,129,0.2)", color: "#10B981", border: "1px solid rgba(16,185,129,0.4)",
+        }}>
+          {badge}
+        </span>
+        <div style={{ fontFamily: FONT, fontSize: "clamp(1.4rem, 4vw, 2rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
+          {title}
+        </div>
+        {subtitle && (
+          <div style={{ fontFamily: FONT, fontSize: "0.85rem", color: "rgba(255,255,255,0.75)", marginTop: "0.35rem" }}>
+            {subtitle}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
