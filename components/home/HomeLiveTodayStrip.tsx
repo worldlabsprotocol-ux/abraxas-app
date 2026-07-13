@@ -1,0 +1,50 @@
+"use client";
+// FILE: components/home/HomeLiveTodayStrip.tsx
+// Verifiable facts only — no invented traction.
+
+const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const ACCENT = "#10B981";
+
+const LIVE_FACTS = [
+  { label: "Public registry", value: "Browse without login" },
+  { label: "Cielo Sunrise", value: "$1.1M appraised · pilot" },
+  { label: "Smyrna Townhome", value: "$76.2K → $228K+ · open" },
+  { label: "Booking rail", value: "USDC settles on Sui" },
+] as const;
+
+export function HomeLiveTodayStrip() {
+  return (
+    <section aria-label="What is live today" style={{
+      margin: "0 0 clamp(1.25rem, 3vw, 2rem)",
+      padding: "0.85rem 1rem",
+      borderRadius: 14,
+      border: "1px solid var(--border-strong)",
+      background: "var(--surface-raised)",
+    }}>
+      <div style={{
+        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
+        letterSpacing: "0.12em", textTransform: "uppercase",
+        color: ACCENT, marginBottom: "0.65rem",
+      }}>
+        What&apos;s live today
+      </div>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gap: "0.65rem",
+      }}>
+        {LIVE_FACTS.map(f => (
+          <div key={f.label}>
+            <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: 2 }}>
+              {f.label}
+            </div>
+            <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.35 }}>
+              {f.value}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
