@@ -1,5 +1,5 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — re-verify pain → Abraxas closed loop.
+// Auto-advancing product walkthrough — Becker pain → Yan closed loop.
 
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
@@ -7,6 +7,8 @@ export interface ProductLoopStep {
   id: string;
   title: string;
   subtitle: string;
+  /** One-line hook on the visual — demo format (Ansem punch, Becker clarity). */
+  hook: string;
   durationMs: number;
   badge?: string;
   metrics?: { label: string; value: string }[];
@@ -17,27 +19,29 @@ export interface ProductLoopStep {
 export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
     id: "spam",
-    title: "Stop the re-verify email spiral",
-    subtitle: "Every new client asks for the same survey, deed, and ID — your inbox becomes a forwarding loop.",
+    title: "Stop re-verifying the same asset",
+    subtitle: "Every buyer asks for the same deed, survey, and ID. Your inbox becomes a forwarding loop — that is the hidden tax on RWAs.",
+    hook: "47 emails. Same PDFs. Every time.",
     durationMs: 6500,
-    badge: "The pain",
+    badge: "The tax",
     metrics: [
       { label: "Trigger", value: "New buyer" },
-      { label: "Action", value: "Re-send PDFs" },
+      { label: "Action", value: "Re-send docs" },
       { label: "Cost", value: "Hours × deals" },
     ],
     href: "/#demo",
-    ctaLabel: "Watch demo",
+    ctaLabel: "See the loop",
   },
   {
     id: "pain",
-    title: "We need a solution moment",
-    subtitle: "Important diligence buried under duplicate requests — trust erodes before the deal even starts.",
+    title: "Crypto had repeated KYC. RWAs had it worse.",
+    subtitle: "Diligence buried in threads. Global buyers waiting. Trust stalls before the deal closes.",
+    hook: "$1.6M on the line. Still in inbox.",
     durationMs: 5500,
     badge: "Breaking point",
     metrics: [
       { label: "Docs", value: "Same 11 plats" },
-      { label: "Clients", value: "Global buyers" },
+      { label: "Buyers", value: "Global" },
       { label: "Risk", value: "Version drift" },
     ],
     href: "/passport",
@@ -45,13 +49,14 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   },
   {
     id: "verify-once",
-    title: "Upload once on Abraxas Passport",
-    subtitle: "Surveys, environmental, title — verified on-registry. Share permissioned proof, not attachments.",
+    title: "Verify once on Abraxas Passport",
+    subtitle: "Surveys, environmental, title — attested on-registry. Share permissioned proof, not attachments.",
+    hook: "One upload. Every counterparty.",
     durationMs: 6500,
     badge: "Verify once",
     metrics: [
       { label: "Record", value: "ABX-RE-LAND-006" },
-      { label: "Reuse", value: "Any counterparty" },
+      { label: "Reuse", value: "Any partner" },
       { label: "Login", value: "Google · zkLogin" },
     ],
     href: "/passport",
@@ -59,10 +64,11 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   },
   {
     id: "global",
-    title: "Share to global buyers from one profile",
-    subtitle: "International land, hospitality, capital — one assurance record opens doors without re-forwarding.",
+    title: "One profile. Every counterparty.",
+    subtitle: "Land, hospitality, capital — one assurance record opens doors without re-forwarding.",
+    hook: "$2.7M+ live on-registry",
     durationMs: 7000,
-    badge: "Global reach",
+    badge: "Portable proof",
     metrics: [
       { label: "Registry", value: "$2.7M+ scope" },
       { label: "Partners", value: "Active sync" },
@@ -73,14 +79,15 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   },
   {
     id: "settle",
-    title: "Close in USDC on Sui — closed loop",
-    subtitle: "Acquire on Abraxas, partner updates sync automatically, settlement stays on-protocol — institutional scale.",
+    title: "Inquire → verify → settle on Sui",
+    subtitle: "Acquire on Abraxas. Partner updates sync on-protocol. USDC settlement — institutional closed loop.",
+    hook: "Trust layer for real-world assets",
     durationMs: 7000,
     badge: "Closed loop",
     metrics: [
       { label: "Acquire", value: "On Abraxas" },
       { label: "Settle", value: "USDC · Sui" },
-      { label: "Target", value: "$110M+ infra" },
+      { label: "Live", value: CPG_ASSET.name },
     ],
     href: CPG_ASSET.inquirePath,
     ctaLabel: "Acquire on Abraxas",
@@ -88,3 +95,6 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
 ];
 
 export const PRODUCT_LOOP_TOTAL_MS = PRODUCT_LOOP_STEPS.reduce((s, step) => s + step.durationMs, 0);
+
+export const PRODUCT_LOOP_HOME_PITCH =
+  "Every company keeps asking for the same information. Abraxas makes that happen once.";

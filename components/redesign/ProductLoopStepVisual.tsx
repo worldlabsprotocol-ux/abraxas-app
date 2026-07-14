@@ -1,6 +1,8 @@
 "use client";
 // FILE: components/redesign/ProductLoopStepVisual.tsx
-// Step-specific visuals — distinct photo overlays and diagram modes per step.
+// Step visuals — institutional gold on home demo, diagram clarity on operators.
+
+import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -57,8 +59,8 @@ function FlowArrow() {
   );
 }
 
-/** Email re-verify spam — the pain before Abraxas */
-function EmailSpamDiagram() {
+/** Email re-verify spam — Becker pain framing */
+function EmailSpamDiagram({ home }: { home?: boolean }) {
   const emails = [
     { from: "Buyer · Singapore", subject: "Please re-send survey plat Lot 4", urgent: true },
     { from: "Lender · Dallas", subject: "Need Phase I again — wrong version", urgent: true },
@@ -86,25 +88,29 @@ function EmailSpamDiagram() {
             </div>
           ))}
         </div>
-        <div style={{ padding: "0.5rem 0.85rem", fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.5)", textAlign: "center" }}>
-          Same PDFs · every client · every time
+        <div style={{ padding: "0.5rem 0.85rem", fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.55)", textAlign: "center" }}>
+          {home ? "Hidden tax on every RWA deal" : "Same PDFs · every client · every time"}
         </div>
       </Card>
     </PanelShell>
   );
 }
 
-function PainMomentDiagram() {
+function PainMomentDiagram({ home }: { home?: boolean }) {
   return (
     <PanelShell>
       <Card width={300} accent={AMBER}>
         <div style={{ padding: "1.25rem 1rem", textAlign: "center" }}>
-          <div style={{ fontFamily: FONT, fontSize: "2rem", marginBottom: "0.35rem" }}>⚠</div>
-          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 900, color: AMBER, marginBottom: "0.45rem" }}>
-            We need a solution
+          <div style={{ fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.12em", color: AMBER, marginBottom: "0.5rem" }}>
+            BREAKING POINT
           </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-            Important diligence lost in email threads. Global buyers waiting. Trust stalling before $1.6M closes.
+          <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 900, color: AMBER, marginBottom: "0.45rem" }}>
+            {home ? "Deal stalling. Trust not shipping." : "We need a solution"}
+          </div>
+          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.62)", lineHeight: 1.6 }}>
+            {home
+              ? "Global buyers waiting. Same diligence in email threads. Version drift kills momentum."
+              : "Important diligence lost in email threads. Global buyers waiting. Trust stalling before $1.6M closes."}
           </div>
         </div>
       </Card>
@@ -112,7 +118,9 @@ function PainMomentDiagram() {
   );
 }
 
-function VerifyOnceDiagram() {
+function VerifyOnceDiagram({ home }: { home?: boolean }) {
+  const accent = home ? INSTITUTIONAL_GOLD : BLUE;
+  const flowAccent = home ? INSTITUTIONAL_GOLD : ACCENT;
   return (
     <PanelShell align="stretch">
       <div style={{ width: "100%", maxWidth: 340, alignSelf: "center" }}>
@@ -122,18 +130,18 @@ function VerifyOnceDiagram() {
         }}>
           <FlowNode label="Google" sub="OAuth" color={BLUE} />
           <FlowArrow />
-          <FlowNode label="zkLogin" sub="Sui" color={ACCENT} />
+          <FlowNode label="zkLogin" sub="Sui" color={flowAccent} />
           <FlowArrow />
-          <FlowNode label="Passport" sub="ready" color={ACCENT} />
+          <FlowNode label="Passport" sub="ready" color={flowAccent} />
         </div>
-        <Card width={300} accent={BLUE}>
+        <Card width={300} accent={accent}>
           <div style={{ padding: "1.1rem 1rem", textAlign: "center" }}>
             <ImageMark />
             <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "#fff", margin: "0.65rem 0 0.35rem" }}>
               Verify once on Abraxas
             </div>
-            <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>
-              11 plats · Phase I · title — on-registry, not in email
+            <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: home ? INSTITUTIONAL_GOLD_PALE : "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>
+              {home ? "On-registry · permissioned · reusable" : "11 plats · Phase I · title — on-registry, not in email"}
             </div>
           </div>
         </Card>
@@ -142,10 +150,10 @@ function VerifyOnceDiagram() {
   );
 }
 
-function GlobalShareDiagram() {
+function GlobalShareDiagram({ home }: { home?: boolean }) {
   const buyers = [
     { label: "SG fund", color: "#38BDF8" },
-    { label: "US lender", color: ACCENT },
+    { label: "US lender", color: home ? INSTITUTIONAL_GOLD : ACCENT },
     { label: "EU family", color: AMBER },
     { label: "OK local", color: BLUE },
   ];
@@ -156,7 +164,7 @@ function GlobalShareDiagram() {
           display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap",
           gap: "0.35rem", marginBottom: "0.85rem",
         }}>
-          <FlowNode label="Profile" sub="Passport" color={ACCENT} />
+          <FlowNode label="Profile" sub="Passport" color={home ? INSTITUTIONAL_GOLD : ACCENT} />
           <FlowArrow />
           <FlowNode label="Proof" sub="ABX record" color={BLUE} />
           <FlowArrow />
@@ -177,19 +185,20 @@ function GlobalShareDiagram() {
           marginTop: "0.55rem", padding: "0.5rem", borderRadius: 8, textAlign: "center",
           fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.55)",
         }}>
-          One upload · permissioned share · no re-forward
+          {home ? "Permissioned proof · zero re-forward" : "One upload · permissioned share · no re-forward"}
         </div>
       </div>
     </PanelShell>
   );
 }
 
-function SettleClosedLoopDiagram() {
+function SettleClosedLoopDiagram({ home }: { home?: boolean }) {
+  const accent = home ? INSTITUTIONAL_GOLD : ACCENT;
   return (
     <PanelShell>
-      <Card width={310} accent={ACCENT}>
+      <Card width={310} accent={accent}>
         <div style={{ padding: "1rem", textAlign: "center" }}>
-          <div style={{ fontFamily: FONT, fontSize: "1.5rem", fontWeight: 900, color: ACCENT, marginBottom: "0.25rem" }}>
+          <div style={{ fontFamily: FONT, fontSize: "1.5rem", fontWeight: 900, color: accent, marginBottom: "0.25rem" }}>
             $1,639,000
           </div>
           <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#fff", marginBottom: "0.35rem" }}>
@@ -199,14 +208,14 @@ function SettleClosedLoopDiagram() {
             display: "flex", justifyContent: "center", gap: "0.35rem", flexWrap: "wrap",
             marginBottom: "0.75rem",
           }}>
-            <FlowNode label="Inquire" sub="Abraxas" color={ACCENT} />
+            <FlowNode label="Inquire" sub="Abraxas" color={accent} />
             <FlowArrow />
             <FlowNode label="Verify" sub="once" color={BLUE} />
             <FlowArrow />
-            <FlowNode label="Settle" sub="closed" color={ACCENT} />
+            <FlowNode label="Settle" sub="closed" color={accent} />
           </div>
-          <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "rgba(255,255,255,0.5)" }}>
-            Institutional infrastructure · $110M+ trajectory
+          <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: home ? INSTITUTIONAL_VIOLET : "rgba(255,255,255,0.5)" }}>
+            {home ? "Closed loop · on-protocol · institutional" : "Institutional infrastructure · $110M+ trajectory"}
           </div>
         </div>
       </Card>
@@ -221,18 +230,18 @@ function ImageMark() {
   );
 }
 
-export function ProductLoopStepVisual({ stepId }: { stepId: string }) {
+export function ProductLoopStepVisual({ stepId, home = false }: { stepId: string; home?: boolean }) {
   switch (stepId) {
     case "spam":
-      return <EmailSpamDiagram />;
+      return <EmailSpamDiagram home={home} />;
     case "pain":
-      return <PainMomentDiagram />;
+      return <PainMomentDiagram home={home} />;
     case "verify-once":
-      return <VerifyOnceDiagram />;
+      return <VerifyOnceDiagram home={home} />;
     case "global":
-      return <GlobalShareDiagram />;
+      return <GlobalShareDiagram home={home} />;
     case "settle":
-      return <SettleClosedLoopDiagram />;
+      return <SettleClosedLoopDiagram home={home} />;
     default:
       return null;
   }
