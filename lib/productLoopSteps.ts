@@ -26,8 +26,8 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
       { label: "Action", value: "Re-send PDFs" },
       { label: "Cost", value: "Hours × deals" },
     ],
-    href: "/#product-loop",
-    ctaLabel: "See the fix",
+    href: "/#demo",
+    ctaLabel: "Watch demo",
   },
   {
     id: "pain",

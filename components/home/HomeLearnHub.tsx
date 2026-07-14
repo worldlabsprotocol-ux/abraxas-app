@@ -39,16 +39,10 @@ export function HomeLearnHub() {
           <h2 id="learn-heading" style={{
             fontFamily: FONT, fontSize: "var(--fs-h2)", fontWeight: 800,
             letterSpacing: "-0.02em", lineHeight: 1.1,
-            color: "var(--text-primary)", margin: "0 0 0.35rem",
+            color: "var(--text-primary)", margin: 0,
           }}>
-            Why reusable trust matters
+            Deep dives
           </h2>
-          <p className="learn-thesis" style={{
-            fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
-            lineHeight: 1.65, margin: 0,
-          }}>
-            Repeated verification is the hidden tax on every deal. Abraxas removes it.
-          </p>
         </div>
         <Btn href="/blog" size="lg">Learn hub →</Btn>
       </div>
@@ -125,9 +119,6 @@ export function HomeLearnHub() {
 
       <style jsx>{`
         @media (max-width: 640px) {
-          .home-learn-hub :global(.learn-thesis) {
-            display: none;
-          }
           .home-learn-hub :global(.learn-articles-full) {
             display: none;
           }

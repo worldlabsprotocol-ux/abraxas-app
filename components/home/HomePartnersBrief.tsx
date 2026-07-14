@@ -35,7 +35,7 @@ export function HomePartnersBrief() {
           fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)",
           lineHeight: 1.65, maxWidth: 640, margin: "0 0 1.1rem",
         }}>
-          Cielo and {CPG_ASSET.name} prove the loop. Partners get yes or no — not document folders.
+          Cielo and {CPG_ASSET.name} on-registry today.
         </p>
 
         <div className="partners-cards">
@@ -64,7 +64,7 @@ export function HomePartnersBrief() {
           fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
           lineHeight: 1.65, maxWidth: 560, margin: "0 0 0.85rem",
         }}>
-          Publish to the registry in minutes — verify once, share everywhere.
+          Owner self-serve launch · syncs to the public registry.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href="/portal/apply" variant="secondary" size="sm">Launch listing →</Btn>

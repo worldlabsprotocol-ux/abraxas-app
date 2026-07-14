@@ -133,7 +133,7 @@ export function AssetsExplorer({
               fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
               maxWidth: 480, lineHeight: 1.6, margin: "0.5rem 0 0",
             }}>
-              Real properties with clear trust scope — faster to browse than to read a whitepaper.
+              Live on-registry properties · dated attestations · scope per listing.
             </p>
           )}
         </div>

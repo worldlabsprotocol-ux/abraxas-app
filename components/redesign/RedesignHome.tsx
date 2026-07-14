@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage answers one question: Why should I care? (Reusable Trust)
+// Homepage: hook → demo video → live registry → partners & learn.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -10,17 +10,10 @@ import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
-import { ProductLoopDemo } from "./ProductLoopDemo";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
-import { HomeNorthStarMetric } from "@/components/home/HomeNorthStarMetric";
-import { HomePilotMetrics } from "@/components/home/HomePilotMetrics";
-import { HomeOperatorRoi } from "@/components/home/HomeOperatorRoi";
-import { PermissioningDemo } from "@/components/home/PermissioningDemo";
-import { HomeTrustFlywheel } from "@/components/home/HomeTrustFlywheel";
-import { TrustAuditTimeline } from "@/components/home/TrustAuditTimeline";
+import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
-import { HomeValueProp } from "@/components/home/HomeValueProp";
 import { HomeLearnHub } from "@/components/home/HomeLearnHub";
 
 const MAXW: React.CSSProperties = {
@@ -35,8 +28,7 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
-        <HomeNorthStarMetric />
-        <HomePilotMetrics />
+        <HomeDemoVideo />
         <div id="registry" style={{
           paddingTop: "clamp(0.5rem, 2vw, 1rem)",
           paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
@@ -49,16 +41,8 @@ function HomeContent() {
             excludeIds={HOME_REGISTRY_EXCLUDE}
           />
         </div>
-        <HomeOperatorRoi />
-        <PermissioningDemo />
-        <HomeTrustFlywheel />
-        <TrustAuditTimeline />
         <HomePartnersBrief />
-        <div style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}>
-          <ProductLoopDemo />
-        </div>
         <HomeLearnHub />
-        <HomeValueProp />
         <HomeSignedInModule />
       </div>
     </main>
