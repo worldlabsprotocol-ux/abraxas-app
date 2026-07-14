@@ -12,6 +12,7 @@ import {
   normalizeEvmAddress,
   verifyEvmBindingSignature,
 } from "@/lib/walletAuthority/evmSiwe";
+import { revokeClaimsForWalletBinding } from "@/lib/walletAuthority/revokeCascade";
 import type { WalletBindingRecord, WalletBindingStatus, WalletChain } from "@/lib/walletAuthority/types";
 
 function mapBinding(row: Record<string, unknown>): WalletBindingRecord {
@@ -237,11 +238,20 @@ export async function revokeWalletBinding(input: {
   bindingId: string;
   reason: string;
   status?: "revoked" | "compromised";
-}): Promise<boolean> {
+}): Promise<{ ok: true; revoked_claim_ids: string[] } | { ok: false }> {
   const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(input.subjectId);
   const status = input.status ?? "revoked";
   const now = new Date().toISOString();
+
+  const { data: existing } = await sb
+    .from("wallet_bindings")
+    .select("*")
+    .eq("id", input.bindingId)
+    .eq("subject_id", subject)
+    .maybeSingle();
+
+  if (!existing) return { ok: false };
 
   const { data } = await sb
     .from("wallet_bindings")
@@ -255,7 +265,19 @@ export async function revokeWalletBinding(input: {
     .select("id")
     .maybeSingle();
 
-  if (!data) return false;
+  if (!data) return { ok: false };
+
+  const chain = (existing.chain as WalletChain) ?? "sui";
+  const walletAddress = existing.wallet_address as string;
+
+  const revokedClaimIds = await revokeClaimsForWalletBinding({
+    subjectId: subject,
+    chain,
+    walletAddress,
+    reason: input.reason,
+    changedBy: `subject:${subject}`,
+    bindingId: input.bindingId,
+  });
 
   await appendAuditEvent({
     actor_type: "subject",
@@ -263,10 +285,15 @@ export async function revokeWalletBinding(input: {
     action: `wallet.${status}`,
     object_type: "wallet_binding",
     object_id: input.bindingId,
-    metadata: { reason: input.reason },
+    metadata: {
+      reason: input.reason,
+      revoked_claim_ids: revokedClaimIds,
+      chain,
+      wallet_address: walletAddress,
+    },
   });
 
-  return true;
+  return { ok: true, revoked_claim_ids: revokedClaimIds };
 }
 
 export function isWalletAuthorizedForRequest(

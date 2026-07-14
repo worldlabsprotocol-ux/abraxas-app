@@ -11,10 +11,7 @@ import { RedesignNav } from "./RedesignNav";
 export function RedesignShell({ children }: { children: React.ReactNode }) {
   return (
     <WalletContextProvider>
-      <div data-theme="dark" style={{
-        background: "var(--bg)", color: "var(--text-primary)",
-        minHeight: "100vh", position: "relative", overflowX: "hidden",
-      }}>
+      <div data-theme="dark" className="abx-institutional-shell">
         <AmbientGlow />
         <RedesignNav />
         <main style={{ position: "relative", zIndex: 1 }}>

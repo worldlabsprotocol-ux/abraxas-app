@@ -4,6 +4,7 @@
 // state. Used on asset cards and trust surfaces.
 
 import { motion, useReducedMotion } from "framer-motion";
+import { INSTITUTIONAL_GOLD } from "@/lib/design/institutionalTheme";
 
 interface VerificationBadgeProps {
   label: string;
@@ -12,7 +13,7 @@ interface VerificationBadgeProps {
   check?: boolean;
 }
 
-export function VerificationBadge({ label, color = "#10B981", check = false }: VerificationBadgeProps) {
+export function VerificationBadge({ label, color = INSTITUTIONAL_GOLD, check = false }: VerificationBadgeProps) {
   const reduce = useReducedMotion();
   return (
     <span style={{

@@ -8,6 +8,9 @@ import {
   saveUserSession,
   type ZkLoginUserSession,
 } from "./session";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSessionClient";
+import { mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
+import { assertZkLoginAccountAllowed } from "@/lib/auth/zkLoginErrors";
 import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
@@ -15,6 +18,8 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   if (!pending) {
     throw new Error("Login session expired. Please sign in again.");
   }
+
+  assertZkLoginAccountAllowed(idToken);
 
   const decoded = decodeJwt(idToken);
   const sub = decoded.sub;
@@ -74,11 +79,11 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   }
 
   clearPendingSession();
-  void fetch("/api/auth/browser-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ sui_address: regData.sui_address }),
-  }).catch(() => { /* best-effort */ });
+
+  const sessionResult = await ensureBrowserSession(regData.sui_address);
+  if (!sessionResult.ok) {
+    throw new Error(mapBrowserSessionSetupFailure(sessionResult.reason, sessionResult.status));
+  }
+
   return session;
 }

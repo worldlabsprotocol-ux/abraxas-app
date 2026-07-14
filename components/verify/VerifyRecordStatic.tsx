@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
 import { resolveRegistryAsset } from "@/lib/data/registryAssets";
+import { resolveExternalRegistryAsset } from "@/lib/portal/externalRegistry";
 import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
 import { CIELO_RECORD_ID } from "@/lib/cielo/verifiedGuestPolicy";
 import { getPublicRegistryEvents } from "@/lib/cielo/verifiedRateService";
@@ -11,7 +12,10 @@ import { VerifierResultCard } from "./VerifierResultCard";
 import { recordDetailRows, RECORD_DETAIL_FONT, RECORD_DETAIL_MONO } from "@/lib/verify/recordScope";
 
 export async function VerifyRecordStatic({ recordId }: { recordId: string }) {
-  const asset = resolveRegistryAsset(recordId);
+  let asset = resolveRegistryAsset(recordId);
+  if (!asset) {
+    asset = await resolveExternalRegistryAsset(recordId);
+  }
   const abxId = asset?.abxId ?? recordId.toUpperCase();
   const result = await resolveVerifierQuery(abxId);
   const heroImage = asset?.abxId === "ABX-RE-HOSP-001" ? CIELO_HERO_IMAGE.src : asset?.image;

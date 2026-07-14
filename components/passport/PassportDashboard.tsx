@@ -1,11 +1,11 @@
 "use client";
 // FILE: components/passport/PassportDashboard.tsx
-// State-driven Passport control center — tier status, one identity card, credentials.
+// Four canonical sections: Profile · Verification · Wallets · Access.
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
-import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
 import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
@@ -14,22 +14,21 @@ import type { StoredCredential } from "@/lib/credentials/storage";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
-import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
-import { TransactionEligibilitySection } from "@/components/passport/TransactionEligibilitySection";
-import {
-  resolvePassportTier,
-  TIER_LABELS,
-  tierCapabilities,
-  type PassportTier,
-} from "@/lib/passport/passportTiers";
+import { UnifiedWalletBindingsPanel } from "@/components/passport/UnifiedWalletBindingsPanel";
+import { PassportProfileHeader } from "@/components/passport/PassportProfileHeader";
+import { PassportSubTabs, parsePassportSubTab } from "@/components/passport/PassportSubTabs";
+import { PassportEditProfilePanel } from "@/components/passport/PassportEditProfilePanel";
+import { PassportStepPurpose } from "@/components/passport/PassportStepPurpose";
+import { PASSPORT_STEPS } from "@/lib/passport/passportStepCopy";
+import { buildPassportProgress } from "@/lib/passport/passportProgress";
+import { usePassportCanonicalState } from "@/lib/hooks/usePassportCanonicalState";
+import type { PassportTierInput } from "@/lib/passport/passportTiers";
 import {
   resolveIdentityUiState,
-  IDENTITY_UI_LABELS,
   type IdentityUiState,
 } from "@/lib/passport/identityUiState";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 const AMBER = "#F59E0B";
 const RED = "#EF4444";
@@ -41,13 +40,6 @@ const CARD: React.CSSProperties = {
   padding: "1.15rem 1.25rem",
   marginBottom: "1.25rem",
 };
-
-const IDENTITY_UNLOCKS = [
-  "Enhanced payment and settlement flows",
-  "Verified asset submissions",
-  "Partner policies requiring identity assurance",
-  "Investor, business, or sanctions-gated workflows",
-];
 
 interface Props {
   walletDone: boolean;
@@ -69,56 +61,41 @@ interface Props {
   returnPath?: string | null;
 }
 
-export function PassportDashboard({
-  walletDone,
-  suiAddress,
-  email,
-  setup,
-  identityStatus,
-  credential,
-  via,
-  isRefreshing,
-  starting,
-  error,
-  idvProvider,
-  veriffConfigured,
-  walletBindingL3,
-  onStartIdCheck,
-  onRefresh,
-  onWalletBound,
-  returnPath,
-}: Props) {
+export function PassportDashboard(props: Props) {
+  const searchParams = useSearchParams();
+  const tab = parsePassportSubTab(searchParams.get("tab"));
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [identityExpanded, setIdentityExpanded] = useState(false);
-  const manualMode = idvProvider === "manual";
-  const hasCredential = Boolean(credential) && identityStatus === "earned";
-  const assuranceLabel = manualMode ? "L2" : "L3";
+  const [suiBindBusy, setSuiBindBusy] = useState(false);
 
-  const tierInput = {
-    accountActive: setup.accountComplete,
-    profileComplete: setup.profileComplete,
-    walletBound: setup.walletBound,
-    walletBindingFresh: setup.walletBound,
-    identityCredentialActive: setup.identityComplete,
-  };
-  const tier = resolvePassportTier(tierInput);
-  const availableNow = tier >= 1
-    ? [
-        "Browse the public registry",
-        "Save your profile and manage your wallet",
-        "Use the Cielo verified-rate pilot",
-        "Access partner flows that require wallet binding only",
-      ]
-    : tierCapabilities(tierInput).filter(c => c.unlocked).map(c => c.label);
-
+  const manualMode = props.idvProvider === "manual";
+  const hasCredential = Boolean(props.credential) && props.identityStatus === "earned";
   const identityUi = resolveIdentityUiState({
-    identityStatus,
+    identityStatus: props.identityStatus,
     hasCredential,
-    idvProvider,
-    via,
+    idvProvider: props.idvProvider,
+    via: props.via,
   });
 
+  const { state: canonical, refetch: refetchCanonical } = usePassportCanonicalState({
+    suiAddress: props.suiAddress,
+    identityUi,
+    credentialExpiresAt: props.credential?.expires_at,
+    idvProvider: props.idvProvider,
+  });
+
+  const tierInput: PassportTierInput = {
+    accountActive: props.setup.accountComplete,
+    profileComplete: props.setup.profileComplete,
+    walletBound: props.setup.walletBound,
+    walletBindingFresh: props.setup.walletBound,
+    identityCredentialActive: props.setup.identityComplete,
+  };
+  const progress = buildPassportProgress(tierInput);
+
   async function bindWallet() {
-    if (!suiAddress) return;
+    if (!props.suiAddress) return;
+    setSuiBindBusy(true);
     try {
       const secret = getEphemeralSecretKey();
       if (!secret) throw new Error("Sign in again to enable wallet signing.");
@@ -126,7 +103,7 @@ export function PassportDashboard({
       const chRes = await fetch("/api/wallet/binding/challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress }),
+        body: JSON.stringify({ sui_address: props.suiAddress }),
       });
       const challenge = await chRes.json() as { challenge_id?: string; message?: string; error?: string };
       if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
@@ -139,7 +116,7 @@ export function PassportDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           challenge_id: challenge.challenge_id,
-          sui_address: suiAddress,
+          sui_address: props.suiAddress,
           message: challenge.message,
           signature,
           public_key: publicKey,
@@ -147,265 +124,261 @@ export function PassportDashboard({
       });
       const result = await confirmRes.json() as { ok?: boolean; error?: string };
       if (!confirmRes.ok) throw new Error(result.error ?? "Confirm failed");
-      onWalletBound?.();
+      props.onWalletBound?.();
+      await refetchCanonical();
     } catch (e) {
       console.error(e);
+    } finally {
+      setSuiBindBusy(false);
     }
   }
 
   return (
     <div>
-      {!walletDone && (
-        <section style={CARD} aria-labelledby="passport-signin-heading">
-          <h2 id="passport-signin-heading" style={{
-            fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
-            color: "var(--text-primary)", margin: "0 0 0.5rem",
-          }}>
-            Create your Passport
-          </h2>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-            lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 520,
-          }}>
-            Sign in with Google. Bind a wallet when you&apos;re ready. Identity verification only appears when it unlocks a specific action.
-          </p>
-          <ZkLoginSignIn />
-        </section>
+      {props.walletDone && (
+        <PassportProfileHeader
+          email={props.email}
+          signedIn={props.walletDone}
+          canonical={canonical}
+          onEditProfile={() => setEditProfileOpen(true)}
+        />
       )}
 
-      {walletDone && !setup.walletBound && (
-        <section style={CARD} aria-labelledby="passport-bind-heading">
-          <h2 id="passport-bind-heading" style={{
-            fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
-            color: "var(--text-primary)", margin: "0 0 0.5rem",
-          }}>
-            Bind your wallet
-          </h2>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-            lineHeight: 1.65, margin: "0 0 1rem",
-          }}>
-            One signature proves wallet control. No funds move. This unlocks Tier 1 pilots like Cielo verified rate.
-          </p>
-          {suiAddress && (
-            <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
-              {truncateSuiAddress(suiAddress, 8, 6)}
-            </div>
-          )}
-          <Btn size="lg" fullWidth onClick={() => void bindWallet()}>
-            Sign to bind wallet →
-          </Btn>
-        </section>
+      {editProfileOpen && props.walletDone && (
+        <PassportEditProfilePanel onClose={() => setEditProfileOpen(false)} />
       )}
 
-      {setup.profileComplete && (
+      {!props.walletDone ? (
+        <section style={CARD}>
+          <PassportStepPurpose title={PASSPORT_STEPS.create.title} purpose={PASSPORT_STEPS.create.purpose} />
+          <ZkLoginSignIn returnPath={props.returnPath ? decodeURIComponent(props.returnPath) : undefined} />
+        </section>
+      ) : (
         <>
-          <PassportStatusCard
-            tier={tier}
-            suiAddress={suiAddress}
-            walletBindingL3={walletBindingL3}
-            identityUi={identityUi}
-            assuranceLabel={assuranceLabel}
-            availableNow={availableNow}
-            returnPath={returnPath}
-          />
+          <PassportSubTabs active={tab} />
 
-          {identityUi !== "verified" && (
-            <IdentityUnlockSection
-              identityUi={identityUi}
-              manualMode={manualMode}
-              veriffConfigured={veriffConfigured}
-              expanded={identityExpanded}
-              onExpand={() => setIdentityExpanded(true)}
-              onDismiss={() => setIdentityExpanded(false)}
-              email={email}
-              suiAddress={suiAddress}
-              starting={starting}
-              isRefreshing={isRefreshing}
-              error={error}
-              onStartIdCheck={onStartIdCheck}
-              onRefresh={onRefresh}
+          {tab === "profile" && (
+            <ProfileTab
+              progress={progress}
+              canonical={canonical}
+              returnPath={props.returnPath}
+              walletBound={props.setup.walletBound}
             />
           )}
 
-          <CredentialsSection
-            walletBindingL3={walletBindingL3}
-            identityUi={identityUi}
-            assuranceLabel={assuranceLabel}
-            manualMode={manualMode}
-            credential={credential}
-          />
+          {tab === "wallets" && (
+            <WalletsTab
+              canonical={canonical}
+              progress={progress}
+              walletBound={props.setup.walletBound}
+              suiAddress={props.suiAddress}
+              onSuiBind={!props.setup.walletBound ? () => void bindWallet() : undefined}
+              suiBindBusy={suiBindBusy}
+            />
+          )}
 
-          <TransactionEligibilitySection enabled={setup.profileComplete} />
+          {tab === "verification" && (
+            <VerificationTab
+              identityUi={identityUi}
+              canonical={canonical}
+              manualMode={manualMode}
+              veriffConfigured={props.veriffConfigured}
+              expanded={identityExpanded}
+              onExpand={() => setIdentityExpanded(true)}
+              onDismiss={() => setIdentityExpanded(false)}
+              email={props.email}
+              suiAddress={props.suiAddress}
+              starting={props.starting}
+              isRefreshing={props.isRefreshing}
+              error={props.error}
+              onStartIdCheck={props.onStartIdCheck}
+              onRefresh={props.onRefresh}
+              profileComplete={props.setup.profileComplete}
+            />
+          )}
 
-          <PartnerAccessSection suiAddress={suiAddress} />
-
-          <section style={CARD} aria-labelledby="passport-security-heading">
-            <div style={{
-              fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: ACCENT, marginBottom: "0.45rem",
-            }}>
-              Security
-            </div>
-            <h2 id="passport-security-heading" style={{
-              fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-              color: "var(--text-primary)", margin: "0 0 0.35rem",
-            }}>
-              Confirm wallet control
-            </h2>
-            <p style={{
-              fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
-              lineHeight: 1.6, margin: "0 0 0.85rem",
-            }}>
-              Optional session security check. Signs a message proving you control your connected wallet — not an identity check.
-            </p>
-            <PassportIntentCard suiAddress={suiAddress} />
-          </section>
-
-          <section style={{ ...CARD, marginBottom: "1.5rem" }} aria-labelledby="passport-business-heading">
-            <div style={{
-              fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: ACCENT, marginBottom: "0.45rem",
-            }}>
-              For businesses and asset owners
-            </div>
-            <h2 id="passport-business-heading" style={{
-              fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-              color: "var(--text-primary)", margin: "0 0 0.85rem",
-            }}>
-              Need a business credential, asset-owner proof, or issuer attestation?
-            </h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              <Btn href="/passport#stamps" variant="secondary" size="sm">Stamp a credential →</Btn>
-              <Btn href="/build" variant="ghost" size="sm">Submit an asset →</Btn>
-            </div>
-          </section>
+          {tab === "access" && (
+            <AccessTab suiAddress={props.suiAddress} profileComplete={props.setup.profileComplete} />
+          )}
         </>
       )}
     </div>
   );
 }
 
-function PassportStatusCard({
-  tier,
+function WalletsTab({
+  canonical,
+  progress,
+  walletBound,
   suiAddress,
-  walletBindingL3,
-  identityUi,
-  assuranceLabel,
-  availableNow,
-  returnPath,
+  onSuiBind,
+  suiBindBusy,
 }: {
-  tier: PassportTier;
+  canonical: ReturnType<typeof usePassportCanonicalState>["state"];
+  progress: ReturnType<typeof buildPassportProgress>;
+  walletBound: boolean;
   suiAddress: string | null;
-  walletBindingL3: boolean;
-  identityUi: IdentityUiState;
-  assuranceLabel: string;
-  availableNow: string[];
-  returnPath?: string | null;
+  onSuiBind?: () => void;
+  suiBindBusy?: boolean;
 }) {
+  const suiCount = canonical?.wallets.activeCount ?? 0;
+  const evmCount = canonical?.wallets.bindings.filter(w => w.chain === "evm" && w.status === "active").length ?? 0;
+
   return (
-    <section style={{
-      ...CARD,
-      border: "2px solid rgba(16,185,129,0.28)",
-      background: "rgba(16,185,129,0.04)",
-    }} aria-labelledby="passport-status-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.45rem",
-      }}>
-        Passport status
-      </div>
-      <h2 id="passport-status-heading" style={{
-        fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800,
-        color: "var(--text-primary)", margin: "0 0 0.25rem",
-      }}>
-        {TIER_LABELS[tier]}
-      </h2>
-      <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT, marginBottom: "0.65rem" }}>
-        Tier {tier} · Active
-      </div>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 560,
-      }}>
-        Your account and wallet are ready for Abraxas applications that accept wallet-bound access.
-      </p>
-
-      {suiAddress && (
-        <div style={{
-          padding: "0.65rem 0.75rem", borderRadius: 10,
-          background: "var(--surface-inset)", border: "1px solid var(--border)",
-          marginBottom: "0.85rem",
-        }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-            Wallet
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-secondary)" }}>
-            {truncateSuiAddress(suiAddress, 8, 6)}
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: walletBindingL3 ? ACCENT : "var(--text-muted)", marginTop: 4 }}>
-            Control proof: {walletBindingL3 ? "Active" : "zkLogin session"}
-          </div>
-        </div>
-      )}
-
-      <div style={{
-        padding: "0.65rem 0.75rem", borderRadius: 10,
-        background: "var(--surface-inset)", border: "1px solid var(--border)",
-        marginBottom: "1rem",
-      }}>
-        <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-          Identity credential
-        </div>
-        <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: identityUi === "verified" ? ACCENT : "var(--text-secondary)" }}>
-          {IDENTITY_UI_LABELS[identityUi]}
-          {identityUi === "verified" && ` · Assurance ${assuranceLabel}`}
-        </div>
-        {identityUi !== "verified" && (
-          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>
-            Optional until required by a specific partner or transaction.
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{
-          fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700,
-          letterSpacing: "0.08em", textTransform: "uppercase",
-          color: "var(--text-muted)", marginBottom: "0.45rem",
-        }}>
-          What you can do now
-        </div>
-        <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-          {availableNow.slice(0, 5).map(label => (
-            <li key={label} style={{
-              fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
-              lineHeight: 1.6, marginBottom: 4,
+    <>
+      <section className="abx-glass-panel" style={{ ...CARD, marginBottom: "1rem" }}>
+        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem" }}>
+          Wallet dashboard
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.65rem" }}>
+          {[
+            { label: "Sui wallet", value: walletBound ? "Connected" : "Not linked" },
+            { label: "Active bindings", value: walletBound ? String(suiCount || 1) : "0" },
+            { label: "EVM wallets", value: String(evmCount) },
+            { label: "Passport tier", value: progress.statusLabel },
+          ].map(row => (
+            <div key={row.label} style={{
+              padding: "0.65rem 0.75rem", borderRadius: 12,
+              border: "1px solid var(--border)", background: "var(--surface)",
             }}>
-              {label}
-            </li>
+              <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                {row.label}
+              </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                {row.value}
+              </div>
+            </div>
           ))}
-        </ul>
-      </div>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        {returnPath ? (
-          <Btn href={decodeURIComponent(returnPath)} size="sm">Return to flow →</Btn>
-        ) : (
-          <Btn href="/cielo/verified-rate" size="sm">Try Cielo verified rate →</Btn>
+        </div>
+        {walletBound && (
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, fontWeight: 600, margin: "0.85rem 0 0", lineHeight: 1.55 }}>
+            Your Sui wallet is linked. Partners can verify ownership without moving funds.
+          </p>
         )}
-        <Btn href="/#registry" variant="secondary" size="sm">Browse registry →</Btn>
-        <Btn href="/passport?view=verify" variant="ghost" size="sm">Verify a record →</Btn>
-      </div>
-    </section>
+      </section>
+
+      <UnifiedWalletBindingsPanel
+        suiAddress={suiAddress}
+        onSuiBind={onSuiBind}
+        suiBindBusy={suiBindBusy}
+      />
+
+      {walletBound && (
+        <section style={CARD}>
+          <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>Registry access</h2>
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.85rem" }}>
+            Your wallet unlocks diligence packs and partner flows on live assets.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Btn href="/#registry" size="sm">Browse registry →</Btn>
+            <Btn href="/flagship" variant="secondary" size="sm">Cielo Sunrise →</Btn>
+            <Btn href="/case-studies/chickasaw-project" variant="secondary" size="sm">Chickasaw Project →</Btn>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 
-function IdentityUnlockSection({
+function ProfileTab({
+  progress,
+  canonical,
+  returnPath,
+  walletBound,
+}: {
+  progress: ReturnType<typeof buildPassportProgress>;
+  canonical: ReturnType<typeof usePassportCanonicalState>["state"];
+  returnPath?: string | null;
+  walletBound: boolean;
+}) {
+  const walletCount = canonical?.wallets.activeCount ?? 0;
+  const verificationLabel = canonical?.verification.label ?? "Not started";
+  const shareCount = canonical?.access.shares.filter(s => !s.revoked).length ?? 0;
+
+  return (
+    <>
+      <section className="abx-glass-panel" style={{ ...CARD, marginBottom: "1rem" }}>
+        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem" }}>
+          Your account
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.65rem" }}>
+          {[
+            { label: "Passport tier", value: progress.statusLabel },
+            { label: "Wallets linked", value: walletBound ? String(walletCount || 1) : "0" },
+            { label: "Identity", value: verificationLabel },
+            { label: "Active shares", value: String(shareCount) },
+          ].map(row => (
+            <div key={row.label} style={{
+              padding: "0.65rem 0.75rem", borderRadius: 12,
+              border: "1px solid var(--border)", background: "var(--surface)",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                {row.label}
+              </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                {row.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {!walletBound && (
+        <section style={{ ...CARD, border: "2px solid var(--accent-border)", background: "var(--accent-faint)" }}>
+          <PassportStepPurpose title={PASSPORT_STEPS.addWallet.title} purpose={PASSPORT_STEPS.addWallet.purpose} />
+          <Btn href="/passport?tab=wallets" size="lg">Connect wallet →</Btn>
+        </section>
+      )}
+
+      <section style={CARD}>
+        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>Unlocked for you</h2>
+        {progress.unlockedSummary.length > 0 ? (
+          <ul style={{ margin: "0 0 1rem", paddingLeft: "1.1rem" }}>
+            {progress.unlockedSummary.map(label => (
+              <li key={label} style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 4 }}>
+                {label}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 1rem" }}>
+            Connect a wallet to unlock registry actions and partner flows.
+          </p>
+        )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          {returnPath ? (
+            <Btn href={decodeURIComponent(returnPath)} size="sm">Return to request →</Btn>
+          ) : (
+            <>
+              <Btn href="/#registry" size="sm">Browse registry →</Btn>
+              {walletBound && (
+                <Btn href="/cielo/verified-rate" variant="secondary" size="sm">Cielo booking →</Btn>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      {canonical && canonical.access.shares.length > 0 && (
+        <section style={CARD}>
+          <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>Recent shares</h2>
+          {canonical.access.shares.slice(0, 3).map(s => (
+            <div key={s.id} style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", marginBottom: 6 }}>
+              {s.partnerId}: {s.proofLabel}{s.revoked ? " (revoked)" : ""}
+            </div>
+          ))}
+          <Link href="/passport?tab=access" style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
+            View all access →
+          </Link>
+        </section>
+      )}
+    </>
+  );
+}
+
+function VerificationTab({
   identityUi,
+  canonical,
   manualMode,
   veriffConfigured,
   expanded,
@@ -418,7 +391,84 @@ function IdentityUnlockSection({
   error,
   onStartIdCheck,
   onRefresh,
+  profileComplete,
 }: {
+  identityUi: IdentityUiState;
+  canonical: ReturnType<typeof usePassportCanonicalState>["state"];
+  manualMode: boolean;
+  veriffConfigured: boolean;
+  expanded: boolean;
+  onExpand: () => void;
+  onDismiss: () => void;
+  email: string;
+  suiAddress: string | null;
+  starting: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+  onStartIdCheck: () => void;
+  onRefresh: () => void;
+  profileComplete: boolean;
+}) {
+  if (!profileComplete) {
+    return (
+      <EmptyState
+        title="Add a wallet first"
+        body="Identity verification is optional and lives here. Connect a wallet in the Wallets tab first."
+        actionHref="/passport?tab=wallets"
+        actionLabel="Add wallet"
+      />
+    );
+  }
+
+  const v = canonical?.verification;
+
+  return (
+    <>
+      <section style={CARD}>
+        <PassportStepPurpose title={PASSPORT_STEPS.verifyIdentity.title} purpose={PASSPORT_STEPS.verifyIdentity.purpose} />
+        <div style={{ display: "grid", gap: "0.35rem", marginBottom: "0.85rem" }}>
+          <Row label="Status" value={v?.label ?? "Ready to verify"} />
+          {v?.issuer && <Row label="Issuer" value={v.issuer} />}
+          {v?.verifiedAt && <Row label="Verified" value={new Date(v.verifiedAt).toLocaleDateString()} />}
+          {v?.expiresAt && <Row label="Expires" value={new Date(v.expiresAt).toLocaleDateString()} />}
+        </div>
+        <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.85rem", lineHeight: 1.55 }}>
+          Wallet proof is managed in{" "}
+          <Link href="/passport?tab=wallets" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>Wallets</Link>
+          {" "}in Wallets, not here.
+        </p>
+      </section>
+
+      {identityUi !== "verified" && (
+        <IdentityActions
+          identityUi={identityUi}
+          manualMode={manualMode}
+          veriffConfigured={veriffConfigured}
+          expanded={expanded}
+          onExpand={onExpand}
+          onDismiss={onDismiss}
+          email={email}
+          suiAddress={suiAddress}
+          starting={starting}
+          isRefreshing={isRefreshing}
+          error={error}
+          onStartIdCheck={onStartIdCheck}
+          onRefresh={onRefresh}
+        />
+      )}
+    </>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)" }}>
+      <span style={{ color: "var(--text-muted)" }}>{label}: </span>{value}
+    </div>
+  );
+}
+
+function IdentityActions(props: {
   identityUi: IdentityUiState;
   manualMode: boolean;
   veriffConfigured: boolean;
@@ -433,61 +483,28 @@ function IdentityUnlockSection({
   onStartIdCheck: () => void;
   onRefresh: () => void;
 }) {
+  const {
+    identityUi, manualMode, veriffConfigured, expanded, onExpand, onDismiss,
+    email, suiAddress, starting, isRefreshing, error, onStartIdCheck, onRefresh,
+  } = props;
+
   if (identityUi === "under_review") {
     return (
-      <section style={CARD} aria-labelledby="identity-review-heading">
-        <h2 id="identity-review-heading" style={{
-          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-          color: AMBER, margin: "0 0 0.5rem",
-        }}>
-          Identity review in progress
-        </h2>
-        <p style={{
-          fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
-          lineHeight: 1.65, margin: "0 0 0.85rem",
-        }}>
-          {manualMode
-            ? "Our team is reviewing your uploaded ID. You can continue using your Passport while you wait."
-            : "Your identity provider is reviewing your submission. Your Passport stays active."}
-        </p>
-        <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>
-          Check status now
-        </Btn>
+      <section style={CARD}>
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: AMBER, margin: "0 0 0.85rem" }}>In review. Your Passport stays active.</p>
+        <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>Check status</Btn>
       </section>
     );
   }
 
   if (identityUi === "needs_action") {
     return (
-      <section style={{
-        ...CARD,
-        border: `1px solid ${RED}40`,
-        background: "rgba(239,68,68,0.06)",
-      }} aria-labelledby="identity-action-heading">
-        <h2 id="identity-action-heading" style={{
-          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-          color: RED, margin: "0 0 0.5rem",
-        }}>
-          Identity verification needs action
-        </h2>
-        <p style={{
-          fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
-          lineHeight: 1.65, margin: "0 0 0.85rem",
-        }}>
-          Your last submission was not approved. Try again with a different document or contact support.
-        </p>
+      <section style={{ ...CARD, border: `1px solid ${RED}40` }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", margin: "0 0 0.85rem" }}>Verification needs action. Try again.</p>
         {manualMode ? (
-          <DocumentUpload
-            email={email}
-            suiAddress={suiAddress}
-            stampId="identity"
-            color={ACCENT}
-            onUploaded={onRefresh}
-          />
+          <DocumentUpload email={email} suiAddress={suiAddress} stampId="identity" color={ACCENT} onUploaded={onRefresh} />
         ) : (
-          <Btn size="sm" loading={starting} onClick={onStartIdCheck}>
-            Retry identity verification →
-          </Btn>
+          <Btn size="sm" loading={starting} onClick={onStartIdCheck}>Retry verification →</Btn>
         )}
       </section>
     );
@@ -495,106 +512,23 @@ function IdentityUnlockSection({
 
   if (!expanded) {
     return (
-      <section style={CARD} aria-labelledby="identity-unlock-heading">
-        <div style={{
-          fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-          letterSpacing: "0.1em", textTransform: "uppercase",
-          color: ACCENT, marginBottom: "0.45rem",
-        }}>
-          Your next unlock
-        </div>
-        <h2 id="identity-unlock-heading" style={{
-          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-          color: "var(--text-primary)", margin: "0 0 0.5rem",
-        }}>
-          Add identity verification when you need it
-        </h2>
-        <p style={{
-          fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
-          lineHeight: 1.65, margin: "0 0 0.85rem",
-        }}>
-          Identity verification is not required to use your Passport. Some actions may require enhanced trust — Abraxas asks only for the claims needed for that action.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn size="sm" onClick={onExpand}>Add identity verification →</Btn>
-          <Btn variant="ghost" size="sm" href="/cielo/verified-rate">Not now</Btn>
-        </div>
+      <section style={CARD}>
+        <Btn size="sm" onClick={onExpand}>Verify identity →</Btn>
+        <Btn variant="ghost" size="sm" href="/passport?tab=profile" style={{ marginLeft: "0.5rem" }}>Not now</Btn>
       </section>
     );
   }
 
   return (
-    <section style={CARD} aria-labelledby="identity-add-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.45rem",
-      }}>
-        Your next unlock
-      </div>
-      <h2 id="identity-add-heading" style={{
-        fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-        color: "var(--text-primary)", margin: "0 0 0.5rem",
-      }}>
-        Add identity verification
-      </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, margin: "0 0 0.85rem",
-      }}>
-        When required, identity verification can unlock:
-      </p>
-      <ul style={{ margin: "0 0 1rem", paddingLeft: "1.1rem" }}>
-        {IDENTITY_UNLOCKS.map(u => (
-          <li key={u} style={{
-            fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)",
-            lineHeight: 1.6, marginBottom: 4,
-          }}>
-            {u}
-          </li>
-        ))}
-      </ul>
-
+    <section style={CARD}>
       {manualMode ? (
-        <>
-          <DocumentUpload
-            email={email}
-            suiAddress={suiAddress}
-            stampId="identity"
-            color={ACCENT}
-            onUploaded={onRefresh}
-          />
-          <p style={{
-            fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
-            margin: "0.65rem 0 0", lineHeight: 1.55,
-          }}>
-            Pilot manual review · Assurance L2. Abraxas uses the verification outcome, not your documents, as the reusable credential.
-          </p>
-        </>
+        <DocumentUpload email={email} suiAddress={suiAddress} stampId="identity" color={ACCENT} onUploaded={onRefresh} />
       ) : veriffConfigured ? (
-        <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>
-          Start identity verification →
-        </Btn>
+        <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Verify identity →</Btn>
       ) : (
-        <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: AMBER, margin: "0 0 0.65rem" }}>
-          Automated ID check is not configured. Upload for pilot manual review below.
-        </p>
+        <DocumentUpload email={email} suiAddress={suiAddress} stampId="identity" color={ACCENT} onUploaded={onRefresh} />
       )}
-
-      {!manualMode && !veriffConfigured && (
-        <DocumentUpload
-          email={email}
-          suiAddress={suiAddress}
-          stampId="identity"
-          color={ACCENT}
-          onUploaded={onRefresh}
-        />
-      )}
-
-      {error && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, margin: "0.65rem 0 0" }}>{error}</p>
-      )}
-
+      {error && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, margin: "0.65rem 0 0" }}>{error}</p>}
       <div style={{ marginTop: "0.85rem" }}>
         <Btn variant="ghost" size="sm" onClick={onDismiss}>Not now</Btn>
       </div>
@@ -602,107 +536,7 @@ function IdentityUnlockSection({
   );
 }
 
-function CredentialsSection({
-  walletBindingL3,
-  identityUi,
-  assuranceLabel,
-  manualMode,
-  credential,
-}: {
-  walletBindingL3: boolean;
-  identityUi: IdentityUiState;
-  assuranceLabel: string;
-  manualMode: boolean;
-  credential: StoredCredential | null;
-}) {
-  return (
-    <section style={CARD} aria-labelledby="credentials-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.45rem",
-      }}>
-        Credentials
-      </div>
-      <h2 id="credentials-heading" style={{
-        fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-        color: "var(--text-primary)", margin: "0 0 0.35rem",
-      }}>
-        Time-bound proofs — not one generic KYC badge
-      </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-        lineHeight: 1.55, margin: "0 0 1rem",
-      }}>
-        Credentials are separate, time-bound proofs issued by approved authorities.
-      </p>
-
-      <CredentialRow
-        title="Wallet binding"
-        issuer="Abraxas"
-        assurance={walletBindingL3 ? "L3" : "L2"}
-        status={walletBindingL3 ? "Active" : "Session"}
-        refresh="Every 30 days or before high-value actions"
-      />
-      <CredentialRow
-        title="Identity verification"
-        issuer={identityUi === "verified" ? (manualMode ? "Abraxas pilot review" : "Approved identity provider") : "—"}
-        assurance={identityUi === "verified" ? assuranceLabel : "—"}
-        status={IDENTITY_UI_LABELS[identityUi]}
-        refresh={identityUi === "verified" && credential?.expires_at
-          ? `Expires ${new Date(credential.expires_at).toLocaleDateString()}`
-          : "Only when a partner policy requires it"}
-      />
-
-      <Link href="/passport?view=verify&mode=credential" style={{
-        display: "inline-block", marginTop: "0.65rem",
-        fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: ACCENT, textDecoration: "none",
-      }}>
-        View all credentials →
-      </Link>
-    </section>
-  );
-}
-
-function CredentialRow({
-  title,
-  issuer,
-  assurance,
-  status,
-  refresh,
-}: {
-  title: string;
-  issuer: string;
-  assurance: string;
-  status: string;
-  refresh: string;
-}) {
-  return (
-    <div style={{
-      padding: "0.75rem 0.85rem", borderRadius: 10,
-      background: "var(--surface-inset)", border: "1px solid var(--border)",
-      marginBottom: "0.5rem",
-    }}>
-      <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-        {title}
-      </div>
-      <div style={{ display: "grid", gap: "0.2rem" }}>
-        {[
-          ["Issuer", issuer],
-          ["Assurance", assurance],
-          ["Status", status],
-          ["Refresh", refresh],
-        ].map(([k, v]) => (
-          <div key={k} style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)" }}>
-            <span style={{ color: "var(--text-muted)" }}>{k}: </span>{v}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
+function AccessTab({ suiAddress, profileComplete }: { suiAddress: string | null; profileComplete: boolean }) {
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
 
@@ -726,41 +560,47 @@ function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
     }
   }
 
+  if (!profileComplete) {
+    return (
+      <EmptyState
+        title="No access yet"
+        body="Partner permissions appear here after you connect a wallet and approve a request."
+        actionHref="/passport?tab=wallets"
+        actionLabel="Add wallet"
+      />
+    );
+  }
+
   return (
-    <section style={{ marginBottom: "1.25rem" }} aria-labelledby="partner-access-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.45rem",
-      }}>
-        Partner access
-      </div>
-      <h2 id="partner-access-heading" style={{
-        fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-        color: "var(--text-primary)", margin: "0 0 0.5rem",
-      }}>
-        Partners never receive your raw documents by default
-      </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, margin: "0 0 0.85rem",
-      }}>
-        When a partner requests eligibility, you see which claims they need, why, how long approval is valid, and what action the decision unlocks.
-      </p>
-      {suiAddress && (
-        <div style={{ marginBottom: "0.85rem" }}>
-          <Btn size="sm" variant="secondary" loading={demoBusy} onClick={() => void startDemoRequest()}>
-            Test portable reuse loop →
-          </Btn>
-          {demoError && (
-            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: RED, margin: "0.45rem 0 0" }}>{demoError}</p>
-          )}
-          <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.45rem 0 0", lineHeight: 1.5 }}>
-            Pilot demo — simulates a partner consent request without an API key in your browser.
-          </p>
-        </div>
-      )}
-      <PassportShareHistoryCard suiAddress={suiAddress} />
+    <>
+      <section style={CARD}>
+        <PassportStepPurpose title={PASSPORT_STEPS.chooseShare.title} purpose={PASSPORT_STEPS.chooseShare.purpose} />
+        <Btn size="sm" variant="secondary" loading={demoBusy} onClick={() => void startDemoRequest()}>
+          Try demo partner request →
+        </Btn>
+        {demoError && <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: RED, margin: "0.45rem 0 0" }}>{demoError}</p>}
+      </section>
+      <PassportShareHistoryCard suiAddress={suiAddress} showTimeline />
+    </>
+  );
+}
+
+function EmptyState({
+  title,
+  body,
+  actionHref,
+  actionLabel,
+}: {
+  title: string;
+  body: string;
+  actionHref: string;
+  actionLabel: string;
+}) {
+  return (
+    <section style={CARD}>
+      <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.35rem" }}>{title}</h2>
+      <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.85rem" }}>{body}</p>
+      <Btn href={actionHref} size="sm">{actionLabel} →</Btn>
     </section>
   );
 }
