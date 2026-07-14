@@ -13,13 +13,13 @@ describe("registryAssetImages", () => {
     expect(SMYRNA_TOWNHOME_IMAGE.src).not.toBe(SMYRNA_LEGACY_STADIUM_PATH);
   });
 
-  it("uses cielo hero sunset for registry card", () => {
-    expect(CIELO_REGISTRY_IMAGE.src).toBe("/assets/cielo/hero-sunset.jpg");
+  it("uses cielo registry card exterior for home thumbnails", () => {
+    expect(CIELO_REGISTRY_IMAGE.src).toBe("/assets/cielo/registry-card-exterior.jpg");
     expect(CIELO_REGISTRY_IMAGE.src).not.toContain("08.jpg");
   });
 
   it("keeps explore and registry catalogs on audited image paths", () => {
-    const forbidden = ["08.jpg", "011.webp"];
+    const forbidden = ["08.jpg", "011.webp", "/assets/cielo/20.jpg", "/assets/cielo/01.jpg"];
     for (const asset of EXPLORE_ASSETS) {
       for (const bad of forbidden) {
         expect(asset.image).not.toContain(bad);

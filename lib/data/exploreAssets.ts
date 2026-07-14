@@ -5,7 +5,9 @@
 // is honest per asset.
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
-import { CIELO_REGISTRY_IMAGE, SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
+import { NAJ_TULUM_REGISTRY_IMAGE } from "@/lib/data/najTulumMedia";
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
@@ -106,7 +108,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Naj Tulum",
     assetClass: "Real Estate · International",
     location: "Aldea Zama, Tulum, Mexico",
-    image: "/assets/worldwearables/naj.jpg",
+    image: NAJ_TULUM_REGISTRY_IMAGE.src,
     primaryLabel: "Ownership",
     primaryValue: "Owned outright",
     secondaryLabel: "Monthly income",

@@ -22,6 +22,7 @@ interface AssetGridProps {
 // Files live in /public/assets/{folder}/. Add filenames below to add more.
 
 import { CIELO_GALLERY_IMAGES } from "@/lib/data/cieloMedia";
+import { NAJ_TULUM_GALLERY_IMAGES } from "@/lib/data/najTulumMedia";
 
 const CIELO_IMAGES: string[] = [...CIELO_GALLERY_IMAGES];
 
@@ -35,12 +36,7 @@ const SMYRNA_IMAGES: string[] = [SMYRNA_TOWNHOME_IMAGE.src, ...SMYRNA_GALLERY_EX
 
 // Naj Tulum, a unit at a condo-hotel in Aldea Zama, Tulum, Mexico,
 // purchased 2023, owned outright. Four photos, naj.jpg through naj4.jpg.
-const NAJ_TULUM_IMAGES: string[] = [
-  "/assets/worldwearables/naj.jpg",
-  "/assets/worldwearables/naj2.jpg",
-  "/assets/worldwearables/naj3.jpg",
-  "/assets/worldwearables/naj4.jpg",
-];
+const NAJ_TULUM_IMAGES: string[] = [...NAJ_TULUM_GALLERY_IMAGES];
 
 // BUY NOW SELECTABLE OPTIONS
 // Generic, honest tiers since exact individual book titles aren't set

@@ -3,6 +3,7 @@
 
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
+import { NAJ_TULUM_REGISTRY_IMAGE } from "@/lib/data/najTulumMedia";
 import { SMYRNA_ASSET } from "@/lib/smyrnaCaseStudy";
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
@@ -119,7 +120,7 @@ const NAJ: RegistryAssetDef = {
   name: "Naj Tulum",
   assetClass: "REAL_ESTATE_INTERNATIONAL",
   location: "Aldea Zama, Tulum, Mexico",
-  image: "/assets/worldwearables/naj.jpg",
+  image: NAJ_TULUM_REGISTRY_IMAGE.src,
   verifyState: "owned",
   pipelineStage: "OWNED_NOT_OPEN",
   assuranceLevel: 1,
@@ -143,7 +144,7 @@ const DEMO_EXTERNAL: RegistryAssetDef = {
   name: "Sample Riverside Parcel (DEMO)",
   assetClass: "REAL_ESTATE_LAND",
   location: "Lane County, Oregon",
-  image: "/assets/worldwearables/naj.jpg",
+  image: NAJ_TULUM_REGISTRY_IMAGE.src,
   verifyState: "reference",
   pipelineStage: "DEMO_SAMPLE",
   assuranceLevel: 0,

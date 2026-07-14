@@ -48,7 +48,8 @@ export function AssetThumbnail({
 }
 
 export function assetThumbObjectPosition(assetId: string): string {
-  if (assetId === "genesis-asset") return "50% 12%";
+  if (assetId === "genesis-asset") return "58% 42%";
+  if (assetId === "naj-tulum") return "50% 35%";
   if (assetId === "smyrna-townhome") return "center center";
   return "center";
 }

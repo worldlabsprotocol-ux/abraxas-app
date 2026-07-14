@@ -37,7 +37,7 @@ export function AssetExplorerCard({
       }}
     >
       {!isCompact ? (
-        <div style={{ position: "relative", height: 220, background: "#06090B" }}>
+        <div style={{ position: "relative", height: isHome ? 168 : 220, background: "#06090B" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={asset.image}
@@ -47,7 +47,13 @@ export function AssetExplorerCard({
               objectPosition: assetThumbObjectPosition(asset.id),
             }}
           />
-          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+          {isHome && (
+            <div style={{
+              position: "absolute", inset: 0, pointerEvents: "none",
+              background: "linear-gradient(to top, rgba(6,9,11,0.88) 0%, rgba(6,9,11,0.15) 42%, rgba(6,9,11,0.35) 100%)",
+            }} />
+          )}
+          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: "0.35rem", flexWrap: "wrap", zIndex: 1 }}>
             <VerificationBadge label={meta.label} color={meta.color} />
             {asset.statusBadge && <CapabilityStatusBadge status={asset.statusBadge} size="xs" />}
           </div>

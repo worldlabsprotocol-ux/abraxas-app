@@ -9,15 +9,9 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const BG = "#06090B";
 
 const OBJECT_POSITIONS: Record<string, string> = {
-  "/assets/cielo/hero-sunset.jpg": "50% 38%",
-  "/assets/cielo/property-dusk.jpg": "50% 42%",
-  "/assets/cielo/cabin-porch-dusk.jpg": "50% 35%",
-  "/assets/cielo/dome-deck-sunset.jpg": "50% 30%",
-  "/assets/cielo/04.jpg": "78% center",
-  "/assets/cielo/01.jpg": "50% 20%",
-  "/assets/cielo/06.jpg": "50% 30%",
-  "/assets/cielo/14.jpg": "50% 40%",
-  "/assets/cielo/20.jpg": "center",
+  "/assets/cielo/hero-exterior-dusk.jpg": "50% 52%",
+  "/assets/cielo/registry-card-exterior.jpg": "58% 42%",
+  "/assets/cielo/porch-deck-sunset.jpg": "50% 38%",
 };
 
 const SKIP_IMAGES = new Set<string>(CIELO_SKIP_IMAGES);
