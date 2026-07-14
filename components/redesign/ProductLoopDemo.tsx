@@ -15,12 +15,14 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
-export function ProductLoopDemo() {
+export function ProductLoopDemo({ home = false }: { home?: boolean }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
   const step = PRODUCT_LOOP_STEPS[index];
   const theme = themeForStep(step.id);
+  const sectionId = home ? "demo" : "product-loop";
+  const headingId = home ? "demo-heading" : "product-loop-heading";
 
   useEffect(() => {
     if (paused) return;
@@ -33,28 +35,34 @@ export function ProductLoopDemo() {
   const progress = ((index + 1) / PRODUCT_LOOP_STEPS.length) * 100;
 
   return (
-    <section id="product-loop" aria-labelledby="product-loop-heading">
+    <section id={sectionId} aria-labelledby={headingId} className={home ? "product-loop-home" : undefined}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
         <div>
           <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-            Stop re-forwarding documents
+            {home ? "See it work" : "Stop re-forwarding documents"}
           </div>
-          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.35rem" }}>
-            Verify once · share globally · settle on Abraxas
-          </p>
-          <h2 id="product-loop-heading" style={{
-            fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
-            letterSpacing: "-0.03em", lineHeight: 1.05,
+          {!home && (
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.35rem" }}>
+              Verify once · share globally · settle on Abraxas
+            </p>
+          )}
+          <h2 id={headingId} style={{
+            fontFamily: FONT,
+            fontSize: home ? "var(--fs-h2)" : "var(--fs-h1)",
+            fontWeight: 800,
+            letterSpacing: "-0.03em", lineHeight: home ? 1.1 : 1.05,
             color: "var(--text-primary)", margin: 0, maxWidth: 520,
           }}>
-            From inbox chaos to closed-loop deals
+            {home ? "Verify once. Reuse everywhere." : "From inbox chaos to closed-loop deals"}
           </h2>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-            lineHeight: 1.6, maxWidth: 480, margin: "0.5rem 0 0",
-          }}>
-            Five steps. Email spam → Abraxas Passport → global buyers → USDC settlement.
-          </p>
+          {!home && (
+            <p style={{
+              fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+              lineHeight: 1.6, maxWidth: 480, margin: "0.5rem 0 0",
+            }}>
+              Five steps. Email spam → Abraxas Passport → global buyers → USDC settlement.
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -79,7 +87,12 @@ export function ProductLoopDemo() {
         background: "var(--surface-raised)",
       }}>
         {/* Visual panel — diagram only, no text overlay */}
-        <div style={{ position: "relative", minHeight: 300, background: "#0a0f14" }}>
+        <div style={{
+          position: "relative",
+          minHeight: home ? undefined : 300,
+          aspectRatio: home ? "16 / 9" : undefined,
+          background: "#0a0f14",
+        }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={step.id}
@@ -120,10 +133,11 @@ export function ProductLoopDemo() {
         </div>
 
         {/* Step picker + active step copy */}
-        <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.15rem" }}>
+        <div className="product-loop-sidebar" style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div className="product-loop-step-list-label" style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.15rem" }}>
             Jump to step
           </div>
+          <div className="product-loop-step-list">
           {PRODUCT_LOOP_STEPS.map((s, i) => (
             <div key={s.id} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
               <button
@@ -145,6 +159,7 @@ export function ProductLoopDemo() {
               </button>
             </div>
           ))}
+          </div>
 
           {/* Active step detail — all copy lives here, not on the visual */}
           <div style={{
@@ -184,12 +199,13 @@ export function ProductLoopDemo() {
             </Link>
           </div>
 
-          <div style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div className="product-loop-footer-ctas" style={{ marginTop: "auto", paddingTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Btn href={CPG_ASSET.inquirePath} size="sm">Acquire on Abraxas →</Btn>
             <Btn href="/passport" variant="secondary" size="sm">Create Passport</Btn>
+            {home && <Btn href="/#registry" variant="ghost" size="sm">Browse assets →</Btn>}
           </div>
 
-          <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
+          <p className="product-loop-timing" style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
             Auto-advances every 5 to 7s · full loop ~{Math.round(PRODUCT_LOOP_TOTAL_MS / 1000)}s
           </p>
         </div>
@@ -198,6 +214,23 @@ export function ProductLoopDemo() {
       <div style={{ marginTop: "0.65rem", height: 2, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
         <div style={{ width: `${progress}%`, height: "100%", background: ACCENT, transition: "width 0.4s ease" }} />
       </div>
+
+      {home && (
+        <style jsx>{`
+          @media (max-width: 720px) {
+            .product-loop-home :global(.product-loop-step-list-label),
+            .product-loop-home :global(.product-loop-step-list) {
+              display: none;
+            }
+            .product-loop-home :global(.product-loop-sidebar) {
+              padding-top: 0.85rem;
+            }
+            .product-loop-home :global(.product-loop-footer-ctas) {
+              padding-top: 0.35rem;
+            }
+          }
+        `}</style>
+      )}
     </section>
   );
 }

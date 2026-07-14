@@ -1,5 +1,5 @@
 // FILE: lib/marketing/demoVideo.ts
-// Homepage demo — same cut as X launch (public/assets/marketing).
+// X/social export metadata — homepage uses interactive ProductLoopDemo instead.
 
 export const DEMO_VIDEO = {
   src: "/assets/marketing/abraxas-demo-16x9.mp4",
