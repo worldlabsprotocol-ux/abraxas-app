@@ -99,12 +99,12 @@ export function CieloGuestReviews({ tone = "default" }: { tone?: "default" | "fl
             background: "transparent", color: textPrimary,
             fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer",
           }}>
-            {expanded ? "Show fewer reviews" : `Show all ${G.reviews.length} reviews`}
+            {expanded ? "Show fewer" : `Show ${G.reviews.length} featured reviews`}
           </button>
         )}
         <Link href={FLAGSHIP_PROPERTY.airbnbUrl} target="_blank" rel="noopener noreferrer"
           style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: ACCENT, textDecoration: "none" }}>
-          Read on Airbnb →
+          All {G.totalReviews} reviews on Airbnb →
         </Link>
       </div>
     </div>

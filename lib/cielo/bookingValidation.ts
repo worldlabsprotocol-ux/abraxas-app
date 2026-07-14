@@ -1,5 +1,6 @@
 // FILE: lib/cielo/bookingValidation.ts
 import type { BlockedDate } from "@/lib/cielo/types";
+import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 
 export type { BlockedDate };
 
@@ -36,11 +37,18 @@ export function rangesOverlap(
   return blockedNightsInRange(checkIn, checkOut, blocked).length > 0;
 }
 
+export const CIELO_SAMPLE_QUOTE = {
+  nights: 2,
+  totalUsd: FLAGSHIP_PROPERTY.financials.twoNightsAllIn,
+  label: "2 nights · all fees included",
+} as const;
+
 export const CIELO_RATES = { weeknight: 299, weekend: 349, week: 1799 } as const;
 
 export function estimateUsdc(checkIn: string, checkOut: string): number {
   const nights = eachNight(checkIn, checkOut).length;
   if (nights === 0) return 0;
+  if (nights === 2) return CIELO_SAMPLE_QUOTE.totalUsd;
   if (nights >= 7) return Math.round(nights / 7) * CIELO_RATES.week;
   return nights * CIELO_RATES.weeknight;
 }

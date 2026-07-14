@@ -3,11 +3,16 @@
 // Photo evidence — validates assets load; skips collage panels that read as placeholders.
 
 import { useEffect, useState } from "react";
+import { CIELO_SKIP_IMAGES } from "@/lib/data/cieloMedia";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const BG = "#06090B";
 
 const OBJECT_POSITIONS: Record<string, string> = {
+  "/assets/cielo/hero-sunset.jpg": "50% 38%",
+  "/assets/cielo/property-dusk.jpg": "50% 42%",
+  "/assets/cielo/cabin-porch-dusk.jpg": "50% 35%",
+  "/assets/cielo/dome-deck-sunset.jpg": "50% 30%",
   "/assets/cielo/04.jpg": "78% center",
   "/assets/cielo/01.jpg": "50% 20%",
   "/assets/cielo/06.jpg": "50% 30%",
@@ -15,8 +20,7 @@ const OBJECT_POSITIONS: Record<string, string> = {
   "/assets/cielo/20.jpg": "center",
 };
 
-/** Airbnb collage exports — crop badly in tight mosaics */
-const SKIP_IMAGES = new Set(["/assets/cielo/07.jpg"]);
+const SKIP_IMAGES = new Set<string>(CIELO_SKIP_IMAGES);
 
 function probeImage(src: string): Promise<string | null> {
   return new Promise(resolve => {

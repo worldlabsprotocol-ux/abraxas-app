@@ -2,6 +2,7 @@
 // Institutional case study data — dated sources, conflicts, on-chain proof.
 
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
+import { CIELO_GALLERY_IMAGES } from "@/lib/data/cieloMedia";
 
 const D = FLAGSHIP_PROPERTY;
 const SUI_EXPLORER = "https://suiscan.xyz/mainnet/tx";
@@ -138,9 +139,5 @@ export const CIELO_ONCHAIN_PROOF = [
 
 export const CIELO_TIMELINE = D.verification.provenanceTimeline;
 
-/** Supplemental gallery shots (hero uses 04.jpg separately). */
-export const CIELO_PHOTOS = [
-  "/assets/cielo/01.jpg",
-  "/assets/cielo/06.jpg",
-  "/assets/cielo/14.jpg",
-] as const;
+/** Supplemental gallery (hero uses first image separately on case study). */
+export const CIELO_PHOTOS = CIELO_GALLERY_IMAGES.slice(1);

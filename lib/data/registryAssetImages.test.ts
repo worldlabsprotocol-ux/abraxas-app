@@ -13,8 +13,8 @@ describe("registryAssetImages", () => {
     expect(SMYRNA_TOWNHOME_IMAGE.src).not.toBe(SMYRNA_LEGACY_STADIUM_PATH);
   });
 
-  it("uses cielo dome deck for registry card", () => {
-    expect(CIELO_REGISTRY_IMAGE.src).toBe("/assets/cielo/01.jpg");
+  it("uses cielo hero sunset for registry card", () => {
+    expect(CIELO_REGISTRY_IMAGE.src).toBe("/assets/cielo/hero-sunset.jpg");
     expect(CIELO_REGISTRY_IMAGE.src).not.toContain("08.jpg");
   });
 

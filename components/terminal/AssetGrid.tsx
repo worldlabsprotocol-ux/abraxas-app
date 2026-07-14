@@ -21,10 +21,9 @@ interface AssetGridProps {
 // REAL PHOTO GALLERIES
 // Files live in /public/assets/{folder}/. Add filenames below to add more.
 
-// Cielo Sunrise, 20 photos at /public/assets/cielo/01.jpg … 20.jpg
-const CIELO_IMAGES: string[] = Array.from({ length: 20 }, (_, i) =>
-  `/assets/cielo/${String(i + 1).padStart(2, "0")}.jpg`
-);
+import { CIELO_GALLERY_IMAGES } from "@/lib/data/cieloMedia";
+
+const CIELO_IMAGES: string[] = [...CIELO_GALLERY_IMAGES];
 
 // Smyrna Townhome · 1736 — canonical exterior + optional gallery (012.webp+).
 import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";

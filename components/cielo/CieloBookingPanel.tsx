@@ -262,7 +262,8 @@ export function CieloBookingPanel({
                     ~${est.toLocaleString()} USD
                   </div>
                   <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-                    {nights.length} nights · from ${CIELO_RATES.weeknight}/night on Abraxas
+                    {nights.length} nights
+                    {nights.length === 2 ? " · all fees included" : ` · from $${CIELO_RATES.weeknight}/night on Abraxas`}
                   </div>
                 </div>
                 <PaymentMethodChooser

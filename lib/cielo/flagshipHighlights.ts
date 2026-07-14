@@ -33,6 +33,6 @@ export const CIELO_GUEST_ESSENTIALS = [
   { label: "Layout", value: CIELO_BOOKING_HIGHLIGHTS.beds },
   { label: "Check-in", value: `${CIELO_BOOKING_HIGHLIGHTS.checkIn} · keypad` },
   { label: "Check-out", value: CIELO_BOOKING_HIGHLIGHTS.checkOut },
-  { label: "From", value: `~$${F.nightlyRateOff}/night` },
+  { label: "Two nights", value: `$${F.twoNightsAllIn.toLocaleString()} incl. all fees` },
   { label: "Guests say", value: CIELO_BOOKING_HIGHLIGHTS.rating },
 ] as const;

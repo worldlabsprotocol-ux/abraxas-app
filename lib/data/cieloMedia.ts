@@ -1,29 +1,55 @@
 // FILE: lib/data/cieloMedia.ts
-// Canonical Cielo Sunrise imagery — one hero (wellness dome), avoid repeating
-// the same shot across hero / flagship / verifier / loop demo.
+// Canonical Cielo Sunrise imagery — curated dusk/exterior set (no Airbnb collages).
 
-/** Mirrored geodesic wellness dome at sunrise (right panel of 04.jpg). */
+/** Full property at sunset — cabin, wellness dome, ridgeline. */
 export const CIELO_HERO_IMAGE = {
-  src: "/assets/cielo/04.jpg",
-  objectPosition: "78% center",
-  alt: "Mirrored wellness dome at sunrise · Cielo Sunrise",
-  caption: "Sauna dome · red light · tri-state views",
+  src: "/assets/cielo/hero-sunset.jpg",
+  objectPosition: "50% 38%",
+  alt: "Cielo Sunrise at dusk · log cabin, wellness dome, tri-state views",
+  caption: "Private ridgeline retreat · Mineral Bluff, GA",
 } as const;
 
-/** Interior / deck with dome — case study gallery lead. */
+/** Wide dusk angle — dome deck and main cabin. */
+export const CIELO_PROPERTY_DUSK_IMAGE = {
+  src: "/assets/cielo/property-dusk.jpg",
+  objectPosition: "50% 42%",
+  alt: "Cielo Sunrise property at dusk",
+} as const;
+
+/** Porch string lights and geodesic dome at twilight. */
+export const CIELO_PORCH_DUSK_IMAGE = {
+  src: "/assets/cielo/cabin-porch-dusk.jpg",
+  objectPosition: "50% 35%",
+  alt: "Cielo Sunrise cabin porch at twilight",
+} as const;
+
+/** Wellness dome deck with sunset ridgeline. */
 export const CIELO_DOME_DECK_IMAGE = {
-  src: "/assets/cielo/01.jpg",
-  objectPosition: "50% 12%",
-  alt: "Wellness dome deck · Cielo Sunrise",
+  src: "/assets/cielo/dome-deck-sunset.jpg",
+  objectPosition: "50% 30%",
+  alt: "Wellness dome deck at sunset · Cielo Sunrise",
 } as const;
 
-/** @deprecated Use CIELO_DOME_DECK_IMAGE — 08.jpg had third-party header watermark. */
-export const CIELO_PORCH_IMAGE = CIELO_DOME_DECK_IMAGE;
+/** @deprecated Use CIELO_PORCH_DUSK_IMAGE */
+export const CIELO_PORCH_IMAGE = CIELO_PORCH_DUSK_IMAGE;
 
+/** Registry cards, explorer thumbnails, product loop. */
+export const CIELO_REGISTRY_IMAGE = {
+  src: CIELO_HERO_IMAGE.src,
+  objectPosition: "50% 32%",
+  alt: CIELO_HERO_IMAGE.alt,
+} as const;
+
+/** All approved UI surfaces — order matters for galleries. */
 export const CIELO_GALLERY_IMAGES = [
-  "/assets/cielo/04.jpg",
-  "/assets/cielo/01.jpg",
-  "/assets/cielo/14.jpg",
-  "/assets/cielo/06.jpg",
-  "/assets/cielo/20.jpg",
+  CIELO_HERO_IMAGE.src,
+  CIELO_PROPERTY_DUSK_IMAGE.src,
+  CIELO_PORCH_DUSK_IMAGE.src,
+  CIELO_DOME_DECK_IMAGE.src,
+] as const;
+
+/** Skip Airbnb collage panels and legacy watermarked exports. */
+export const CIELO_SKIP_IMAGES = [
+  "/assets/cielo/07.jpg",
+  "/assets/cielo/08.jpg",
 ] as const;
