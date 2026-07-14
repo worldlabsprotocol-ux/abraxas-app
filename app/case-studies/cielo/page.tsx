@@ -36,7 +36,7 @@ export default function CieloCaseStudyPage() {
       <PageHeader
         eyebrow="Case study · Genesis asset"
         title="Cielo Sunrise (ABX-RE-HOSP-001)"
-        subtitle="Institutional diligence pack: dated sources, conflict disclosures, assurance levels, and on-chain proof links. Eat-your-own-dogfood — not a mockup."
+        subtitle="Institutional diligence pack: dated sources, conflict disclosures, assurance levels, and on-chain proof links. Eat-your-own-dogfood, not a mockup."
       />
 
       <CaseStudyPhotoHero
@@ -49,9 +49,9 @@ export default function CieloCaseStudyPage() {
       />
 
       <div style={{ marginBottom: "1.25rem" }}>
-        <CaseStudyGallery images={CIELO_PHOTOS} altPrefix="Cielo Sunrise" variant="mosaic" />
+        <CaseStudyGallery images={CIELO_PHOTOS} altPrefix="Cielo Sunrise" variant="grid" />
         <p style={{ ...body, marginTop: "0.5rem", marginBottom: 0, fontSize: "0.78rem", color: "var(--text-muted)" }}>
-          Wellness dome, ridgeline decks, and hot tub — cross-check the{" "}
+          Wellness dome, ridgeline decks, and hot tub. Cross-check the{" "}
           <Link href={D.airbnbUrl} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, fontWeight: 600 }}>
             public Airbnb listing
           </Link>{" "}
@@ -74,7 +74,7 @@ export default function CieloCaseStudyPage() {
         <BulletList items={[...CIELO_WHAT_THIS_PROVES]} />
         <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0 }}>
           Read the full article:{" "}
-          <Link href="/blog/cielo-sunrise-proof-model-works" style={{ color: ACCENT }}>Cielo Sunrise — proof the model works →</Link>
+          <Link href="/blog/cielo-sunrise-proof-model-works" style={{ color: ACCENT }}>Cielo Sunrise: proof the model works →</Link>
         </p>
       </ContentCard>
 

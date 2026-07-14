@@ -21,7 +21,7 @@ import { ABRAXAS_OPERATOR_OUTCOME } from "@/lib/northStar";
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 const VERTICALS = [
-  { name: "Hotels & STR", example: "Cielo Sunrise — live pilot", href: "/case-studies/cielo" },
+  { name: "Hotels & STR", example: "Cielo Sunrise · live STR booking", href: "/case-studies/cielo" },
   { name: "Land & deal rooms", example: CPG_ASSET.name, href: CPG_ASSET.caseStudyPath },
   { name: "Lenders", example: "Trust Requests · yes/no without document folders", href: "/verify" },
   { name: "Marketplaces", example: "Registry · trust before transact", href: "/#registry" },

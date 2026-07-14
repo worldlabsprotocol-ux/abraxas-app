@@ -1,12 +1,10 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// Session boot moment — desktop + mobile, main shell hidden until acknowledged.
+// Session boot — one message only; details live on the homepage after enter.
 
 import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { partnersActiveCount } from "@/lib/partnerStatus";
-import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 import {
   INSTITUTIONAL_SHELL_BG,
   INSTITUTIONAL_PRIMARY_BTN_BG,
@@ -15,23 +13,14 @@ import {
 } from "@/lib/design/institutionalTheme";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const STORAGE_KEY = "abraxas_boot_entered_v7";
+const STORAGE_KEY = "abraxas_boot_entered_v8";
 
-const BOOT_STATS = [
-  { value: "$2.7M+", label: "Attested on-registry", accent: TEXT_ON_DARK.gold },
-  { value: "2", label: "Live assets · Cielo + land", accent: TEXT_ON_DARK.violet },
-  { value: "USDC", label: "Settle on Sui today", accent: TEXT_ON_DARK.gold },
-] as const;
-
-/** Force dark tokens on boot overlay — html may still be light theme until user enters app */
 const BOOT_THEME: CSSProperties = {
   ["--text-primary" as string]: TEXT_ON_DARK.primary,
   ["--text-secondary" as string]: TEXT_ON_DARK.secondary,
   ["--text-muted" as string]: TEXT_ON_DARK.caption,
   ["--accent" as string]: "#E8C547",
   ["--accent-2" as string]: TEXT_ON_DARK.violet,
-  ["--accent-pale" as string]: TEXT_ON_DARK.gold,
-  ["--shadow-glow" as string]: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
 };
 
 export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => void }) {
@@ -68,8 +57,6 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
     );
   }
 
-  const partnerCount = partnersActiveCount();
-
   return (
     <AnimatePresence>
       {visible && (
@@ -102,7 +89,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.98, opacity: 0, y: -6 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 1.5rem", maxWidth: 560, width: "100%" }}
+            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 1.5rem", maxWidth: 520, width: "100%" }}
           >
             <div style={{
               fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
@@ -122,7 +109,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               fontWeight: 900,
               letterSpacing: "-0.05em",
               lineHeight: 1.05,
-              marginBottom: "0.65rem",
+              marginBottom: "0.85rem",
             }}>
               <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Stop proving</span>
               <span style={{ color: TEXT_ON_DARK.gold }}>the same asset </span>
@@ -131,66 +118,16 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
 
             <p style={{
               fontFamily: FONT,
-              fontSize: "clamp(0.88rem, 2.4vw, 1rem)",
+              fontSize: "clamp(0.92rem, 2.4vw, 1.02rem)",
               fontWeight: 500,
               color: TEXT_ON_DARK.secondary,
               lineHeight: 1.55,
-              margin: "0 0 1.75rem",
-              maxWidth: 420,
+              margin: "0 0 2rem",
+              maxWidth: 400,
               marginLeft: "auto",
               marginRight: "auto",
             }}>
-              Verify once. Every partner gets the same answer — no more re-forwarding plats and IDs.
-            </p>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-              gap: "0.55rem",
-              marginBottom: "1.35rem",
-            }}>
-              {BOOT_STATS.map(stat => (
-                <div key={stat.label} className="abx-glass-panel" style={{
-                  padding: "0.85rem 0.5rem",
-                  borderRadius: 14,
-                }}>
-                  <div style={{
-                    fontFamily: FONT,
-                    fontSize: "clamp(1.1rem, 3.5vw, 1.35rem)",
-                    fontWeight: 900,
-                    letterSpacing: "-0.03em",
-                    color: stat.accent,
-                    lineHeight: 1,
-                    marginBottom: "0.35rem",
-                  }}>
-                    {stat.value}
-                  </div>
-                  <div style={{
-                    fontFamily: FONT,
-                    fontSize: "0.65rem",
-                    fontWeight: 600,
-                    color: TEXT_ON_DARK.secondary,
-                    lineHeight: 1.4,
-                  }}>
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <p style={{
-              fontFamily: FONT,
-              fontSize: "0.75rem",
-              fontWeight: 500,
-              color: TEXT_ON_DARK.caption,
-              lineHeight: 1.55,
-              margin: "0 0 1.5rem",
-            }}>
-              Cielo Sunrise · live STR · USDC on Sui
-              <span style={{ color: TEXT_ON_DARK.secondary, margin: "0 0.35rem" }}> · </span>
-              {CPG_ASSET.name} · {formatUsd(CPG_PRICING.fullProject)}
-              <span style={{ color: TEXT_ON_DARK.secondary, margin: "0 0.35rem" }}> · </span>
-              {partnerCount} partners onboarded
+              Verify once. Reuse everywhere. The registry and diligence packs are inside.
             </p>
 
             <button
@@ -205,9 +142,8 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
                 fontFamily: FONT,
                 fontSize: "0.82rem",
                 fontWeight: 800,
-                letterSpacing: "0.02em",
                 cursor: "pointer",
-                marginBottom: "1.1rem",
+                marginBottom: "1rem",
                 boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
               }}
             >
@@ -219,11 +155,10 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               fontSize: "0.72rem",
               fontWeight: 500,
               color: TEXT_ON_DARK.caption,
-              letterSpacing: "0.02em",
               margin: 0,
               lineHeight: 1.55,
             }}>
-              Browse the registry free · Passport unlocks full diligence packs
+              Browse free · Passport unlocks full diligence
             </p>
           </motion.div>
         </motion.div>

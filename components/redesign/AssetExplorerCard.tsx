@@ -146,7 +146,7 @@ export function AssetExplorerCard({
             lineHeight: 1.5, margin: "0 0 0.65rem", padding: "0.45rem 0.55rem",
             borderRadius: 8, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.22)",
           }}>
-            Not an offering · not investment advice · no solicitation. Figures are attestations or estimates — see verification scope.
+            Not an offering · not investment advice · no solicitation. Figures are attestations or estimates. See verification scope.
           </p>
         )}
 
@@ -180,7 +180,7 @@ export function AssetExplorerCard({
             href={asset.href}
             newTab={!!asset.external}
             onClick={asset.href ? undefined : () => { window.location.href = "/passport"; }}
-            variant={asset.state === "verified" ? "primary" : "secondary"}
+            variant={asset.href ? "primary" : "secondary"}
             size="sm"
             fullWidth
           >

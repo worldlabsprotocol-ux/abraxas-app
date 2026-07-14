@@ -58,7 +58,7 @@ export function HomePilotMetrics() {
               fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-caption, var(--text-muted))",
               letterSpacing: "0.04em", textTransform: "uppercase",
             }}>
-              {m.pilot ? "Pilot · " : ""}{m.note}
+              {m.note.replace(/^Pilot · /i, "")}
             </div>
           </div>
         ))}

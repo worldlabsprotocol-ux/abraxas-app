@@ -23,7 +23,7 @@ export interface PassportProgressView {
 
 const UNLOCKED_WALLET = [
   "Browse the public registry",
-  "Use the Cielo verified-rate pilot",
+  "Use the Cielo verified-rate flow",
   "Respond to partner requests that need wallet proof",
 ];
 
@@ -53,7 +53,7 @@ export function buildPassportProgress(input: PassportTierInput): PassportProgres
     primaryAction = "sign-in";
     primaryActionLabel = "Sign in with Google";
   } else if (!input.walletBound || !input.walletBindingFresh) {
-    statusLabel = "Account ready — connect a wallet";
+    statusLabel = "Account ready · connect a wallet";
     primaryAction = "add-wallet";
     primaryActionLabel = "Add wallet";
     unlockedSummary.push("Browse the public registry");
@@ -62,9 +62,9 @@ export function buildPassportProgress(input: PassportTierInput): PassportProgres
     primaryAction = "add-wallet";
     primaryActionLabel = "Complete wallet binding";
   } else {
-    statusLabel = input.identityCredentialActive ? "Ready to use" : "Ready for pilot actions";
+    statusLabel = input.identityCredentialActive ? "Ready to use" : "Ready for partner flows";
     primaryAction = input.identityCredentialActive ? "ready" : "verify-identity";
-    primaryActionLabel = input.identityCredentialActive ? "Open Cielo pilot" : "Add identity when needed";
+    primaryActionLabel = input.identityCredentialActive ? "Open Cielo booking" : "Add identity when needed";
     unlockedSummary.push(...UNLOCKED_WALLET);
     if (input.identityCredentialActive) unlockedSummary.push(...UNLOCKED_IDENTITY);
   }

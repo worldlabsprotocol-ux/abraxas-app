@@ -1,6 +1,8 @@
 "use client";
 // FILE: components/case-studies/CaseStudyGallery.tsx
-// Photo evidence — borderless mosaic, no card-in-card clutter.
+// Photo evidence — validates assets load; skips collage panels that read as placeholders.
+
+import { useEffect, useState } from "react";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const BG = "#06090B";
@@ -8,10 +10,22 @@ const BG = "#06090B";
 const OBJECT_POSITIONS: Record<string, string> = {
   "/assets/cielo/04.jpg": "78% center",
   "/assets/cielo/01.jpg": "50% 20%",
-  "/assets/cielo/07.jpg": "50% 35%",
-  "/assets/cielo/14.jpg": "50% 40%",
   "/assets/cielo/06.jpg": "50% 30%",
+  "/assets/cielo/14.jpg": "50% 40%",
+  "/assets/cielo/20.jpg": "center",
 };
+
+/** Airbnb collage exports — crop badly in tight mosaics */
+const SKIP_IMAGES = new Set(["/assets/cielo/07.jpg"]);
+
+function probeImage(src: string): Promise<string | null> {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(src);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
 
 export function CaseStudyGallery({
   images,
@@ -24,8 +38,31 @@ export function CaseStudyGallery({
   maxImages?: number;
   variant?: "mosaic" | "grid";
 }) {
-  const shown = maxImages != null ? images.slice(0, maxImages) : images;
-  if (!shown.length) return null;
+  const [valid, setValid] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const candidates = images.filter(src => !SKIP_IMAGES.has(src));
+    Promise.all(candidates.map(probeImage)).then(results => {
+      if (cancelled) return;
+      const loaded = results.filter((r): r is string => r !== null);
+      setValid(maxImages != null ? loaded.slice(0, maxImages) : loaded);
+    });
+    return () => { cancelled = true; };
+  }, [images, maxImages]);
+
+  if (valid === null) {
+    return (
+      <div style={{
+        height: 120, borderRadius: 16, background: "var(--surface)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>Loading gallery…</span>
+      </div>
+    );
+  }
+
+  if (!valid.length) return null;
 
   if (variant === "grid") {
     return (
@@ -34,7 +71,7 @@ export function CaseStudyGallery({
         gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
         gap: "0.5rem",
       }}>
-        {shown.map((src, i) => (
+        {valid.map((src, i) => (
           <PhotoTile key={src} src={src} alt={`${altPrefix} ${i + 1}`} rounded />
         ))}
       </div>
@@ -44,15 +81,15 @@ export function CaseStudyGallery({
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: shown.length === 1 ? "1fr" : shown.length === 2 ? "1fr 1fr" : "repeat(3, 1fr)",
+      gridTemplateColumns: valid.length === 1 ? "1fr" : valid.length === 2 ? "1fr 1fr" : "repeat(3, 1fr)",
       gap: 3,
       borderRadius: 16,
       overflow: "hidden",
       background: BG,
-      aspectRatio: shown.length <= 2 ? "21/9" : "16/7",
+      aspectRatio: valid.length <= 2 ? "21/9" : "16/7",
       maxHeight: 280,
     }}>
-      {shown.map((src, i) => (
+      {valid.map((src, i) => (
         <div key={src} style={{ position: "relative", minHeight: 0, height: "100%" }}>
           <PhotoTile src={src} alt={`${altPrefix} ${i + 1}`} />
         </div>
@@ -127,7 +164,8 @@ export function CaseStudyPhotoHero({
         <span style={{
           display: "inline-block", fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
           padding: "0.3rem 0.6rem", borderRadius: 999, marginBottom: "0.5rem",
-          background: "rgba(16,185,129,0.2)", color: "#10B981", border: "1px solid rgba(16,185,129,0.4)",
+          background: "rgba(232,197,71,0.2)", color: "var(--accent, #E8C547)",
+          border: "1px solid var(--accent-border, rgba(232,197,71,0.4))",
         }}>
           {badge}
         </span>
@@ -189,7 +227,8 @@ export function CaseStudyVideoHero({
         <span style={{
           display: "inline-block", fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
           padding: "0.3rem 0.6rem", borderRadius: 999, marginBottom: "0.5rem",
-          background: "rgba(16,185,129,0.2)", color: "#10B981", border: "1px solid rgba(16,185,129,0.4)",
+          background: "rgba(232,197,71,0.2)", color: "var(--accent, #E8C547)",
+          border: "1px solid var(--accent-border, rgba(232,197,71,0.4))",
         }}>
           {badge}
         </span>

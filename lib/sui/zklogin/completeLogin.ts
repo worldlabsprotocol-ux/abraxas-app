@@ -10,6 +10,7 @@ import {
 } from "./session";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSessionClient";
 import { mapBrowserSessionSetupFailure } from "@/lib/auth/sessionErrors";
+import { assertZkLoginAccountAllowed } from "@/lib/auth/zkLoginErrors";
 import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
@@ -17,6 +18,8 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   if (!pending) {
     throw new Error("Login session expired. Please sign in again.");
   }
+
+  assertZkLoginAccountAllowed(idToken);
 
   const decoded = decodeJwt(idToken);
   const sub = decoded.sub;

@@ -23,7 +23,6 @@ export const CIELO_PORCH_IMAGE = CIELO_DOME_DECK_IMAGE;
 export const CIELO_GALLERY_IMAGES = [
   "/assets/cielo/04.jpg",
   "/assets/cielo/01.jpg",
-  "/assets/cielo/07.jpg",
   "/assets/cielo/14.jpg",
   "/assets/cielo/06.jpg",
   "/assets/cielo/20.jpg",

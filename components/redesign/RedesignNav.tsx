@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
+import { ProtocolBetaBadge } from "./ProtocolBetaBadge";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MotionLink = motion.create(Link);
@@ -64,6 +65,7 @@ export function RedesignNav() {
         display: "flex", alignItems: "center", gap: "0.55rem",
         textDecoration: "none", flexShrink: 0,
       }}>
+        <ProtocolBetaBadge compact />
         <Image src="/icon-48.png" alt="" width={30} height={30} priority
           style={{ display: "block", borderRadius: 8 }} />
         <span style={{ fontFamily: FONT, fontSize: "clamp(1.05rem,1.6vw,1.25rem)",

@@ -14,7 +14,7 @@ const PRODUCT = [
   { label: "Learn hub", href: "/blog" },
   { label: "Passport", href: "/passport" },
   { label: "Verify", href: "/verify" },
-  { label: "Cielo pilot", href: "/cielo/verified-rate" },
+  { label: "Cielo booking", href: "/cielo/verified-rate" },
   { label: "Registry", href: "/#registry" },
 ];
 

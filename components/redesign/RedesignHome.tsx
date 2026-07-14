@@ -21,7 +21,6 @@ import { TrustAuditTimeline } from "@/components/home/TrustAuditTimeline";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeValueProp } from "@/components/home/HomeValueProp";
-import { HomeLiveTodayStrip } from "@/components/home/HomeLiveTodayStrip";
 import { HomeLearnHub } from "@/components/home/HomeLearnHub";
 
 const MAXW: React.CSSProperties = {
@@ -54,7 +53,6 @@ function HomeContent() {
         <PermissioningDemo />
         <HomeTrustFlywheel />
         <TrustAuditTimeline />
-        <HomeLiveTodayStrip />
         <HomePartnersBrief />
         <div style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}>
           <ProductLoopDemo />

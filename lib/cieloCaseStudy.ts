@@ -138,8 +138,9 @@ export const CIELO_ONCHAIN_PROOF = [
 
 export const CIELO_TIMELINE = D.verification.provenanceTimeline;
 
+/** Supplemental gallery shots (hero uses 04.jpg separately). */
 export const CIELO_PHOTOS = [
-  "/assets/cielo/07.jpg",
-  "/assets/cielo/14.jpg",
+  "/assets/cielo/01.jpg",
   "/assets/cielo/06.jpg",
+  "/assets/cielo/14.jpg",
 ] as const;

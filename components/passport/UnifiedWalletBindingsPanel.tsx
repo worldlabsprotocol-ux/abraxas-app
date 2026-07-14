@@ -130,8 +130,7 @@ export function UnifiedWalletBindingsPanel({
         fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 560,
       }}>
-        Your Google sign-in creates a Sui wallet automatically. That is enough for pilot flows like Cielo.
-        MetaMask is optional for partners that need EVM.
+        Your Google sign-in creates a Sui wallet automatically. MetaMask is optional for partners that need EVM.
       </p>
 
       {isLoading && (
@@ -203,7 +202,7 @@ export function UnifiedWalletBindingsPanel({
           marginBottom: "1rem",
         }}>
           <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: ACCENT }}>
-            Sui wallet connected — ready for pilot actions
+            Sui wallet connected · ready for registry and booking flows
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>
             You can use Cielo and partner demos without MetaMask.
@@ -217,7 +216,7 @@ export function UnifiedWalletBindingsPanel({
             fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
             color: "var(--text-secondary)", cursor: "pointer", marginBottom: "0.5rem",
           }}>
-            Optional — add MetaMask (EVM)
+            Optional: add MetaMask (EVM)
           </summary>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
             Only needed when a partner requires an Ethereum wallet. Sui remains your primary Passport wallet.

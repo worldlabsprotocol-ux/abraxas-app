@@ -167,7 +167,10 @@ export function PassportDashboard(props: Props) {
           )}
 
           {tab === "wallets" && (
-            <UnifiedWalletBindingsPanel
+            <WalletsTab
+              canonical={canonical}
+              progress={progress}
+              walletBound={props.setup.walletBound}
               suiAddress={props.suiAddress}
               onSuiBind={!props.setup.walletBound ? () => void bindWallet() : undefined}
               suiBindBusy={suiBindBusy}
@@ -203,6 +206,80 @@ export function PassportDashboard(props: Props) {
   );
 }
 
+function WalletsTab({
+  canonical,
+  progress,
+  walletBound,
+  suiAddress,
+  onSuiBind,
+  suiBindBusy,
+}: {
+  canonical: ReturnType<typeof usePassportCanonicalState>["state"];
+  progress: ReturnType<typeof buildPassportProgress>;
+  walletBound: boolean;
+  suiAddress: string | null;
+  onSuiBind?: () => void;
+  suiBindBusy?: boolean;
+}) {
+  const suiCount = canonical?.wallets.activeCount ?? 0;
+  const evmCount = canonical?.wallets.bindings.filter(w => w.chain === "evm" && w.status === "active").length ?? 0;
+
+  return (
+    <>
+      <section className="abx-glass-panel" style={{ ...CARD, marginBottom: "1rem" }}>
+        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem" }}>
+          Wallet dashboard
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.65rem" }}>
+          {[
+            { label: "Sui wallet", value: walletBound ? "Connected" : "Not linked" },
+            { label: "Active bindings", value: walletBound ? String(suiCount || 1) : "0" },
+            { label: "EVM wallets", value: String(evmCount) },
+            { label: "Passport tier", value: progress.statusLabel },
+          ].map(row => (
+            <div key={row.label} style={{
+              padding: "0.65rem 0.75rem", borderRadius: 12,
+              border: "1px solid var(--border)", background: "var(--surface)",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                {row.label}
+              </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                {row.value}
+              </div>
+            </div>
+          ))}
+        </div>
+        {walletBound && (
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, fontWeight: 600, margin: "0.85rem 0 0", lineHeight: 1.55 }}>
+            Your Sui wallet is linked. Partners can verify ownership without moving funds.
+          </p>
+        )}
+      </section>
+
+      <UnifiedWalletBindingsPanel
+        suiAddress={suiAddress}
+        onSuiBind={onSuiBind}
+        suiBindBusy={suiBindBusy}
+      />
+
+      {walletBound && (
+        <section style={CARD}>
+          <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>Registry access</h2>
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.85rem" }}>
+            Your wallet unlocks diligence packs and partner flows on live assets.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Btn href="/#registry" size="sm">Browse registry →</Btn>
+            <Btn href="/flagship" variant="secondary" size="sm">Cielo Sunrise →</Btn>
+            <Btn href="/case-studies/chickasaw-project" variant="secondary" size="sm">Chickasaw Project →</Btn>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
 function ProfileTab({
   progress,
   canonical,
@@ -214,17 +291,47 @@ function ProfileTab({
   returnPath?: string | null;
   walletBound: boolean;
 }) {
+  const walletCount = canonical?.wallets.activeCount ?? 0;
+  const verificationLabel = canonical?.verification.label ?? "Not started";
+  const shareCount = canonical?.access.shares.filter(s => !s.revoked).length ?? 0;
+
   return (
     <>
+      <section className="abx-glass-panel" style={{ ...CARD, marginBottom: "1rem" }}>
+        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem" }}>
+          Your account
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.65rem" }}>
+          {[
+            { label: "Passport tier", value: progress.statusLabel },
+            { label: "Wallets linked", value: walletBound ? String(walletCount || 1) : "0" },
+            { label: "Identity", value: verificationLabel },
+            { label: "Active shares", value: String(shareCount) },
+          ].map(row => (
+            <div key={row.label} style={{
+              padding: "0.65rem 0.75rem", borderRadius: 12,
+              border: "1px solid var(--border)", background: "var(--surface)",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                {row.label}
+              </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                {row.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {!walletBound && (
-        <section style={{ ...CARD, border: "2px solid rgba(16,185,129,0.35)", background: "rgba(16,185,129,0.06)" }}>
+        <section style={{ ...CARD, border: "2px solid var(--accent-border)", background: "var(--accent-faint)" }}>
           <PassportStepPurpose title={PASSPORT_STEPS.addWallet.title} purpose={PASSPORT_STEPS.addWallet.purpose} />
-          <Btn href="/passport?tab=wallets" size="lg">Add wallet →</Btn>
+          <Btn href="/passport?tab=wallets" size="lg">Connect wallet →</Btn>
         </section>
       )}
 
       <section style={CARD}>
-        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>What you can do</h2>
+        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>Unlocked for you</h2>
         {progress.unlockedSummary.length > 0 ? (
           <ul style={{ margin: "0 0 1rem", paddingLeft: "1.1rem" }}>
             {progress.unlockedSummary.map(label => (
@@ -235,29 +342,32 @@ function ProfileTab({
           </ul>
         ) : (
           <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 1rem" }}>
-            Add a wallet when an action requires it.
+            Connect a wallet to unlock registry actions and partner flows.
           </p>
         )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {returnPath ? (
             <Btn href={decodeURIComponent(returnPath)} size="sm">Return to request →</Btn>
-          ) : walletBound ? (
-            <Btn href="/cielo/verified-rate" size="sm">Try Cielo pilot →</Btn>
           ) : (
-            <Btn href="/passport?tab=wallets" size="sm">Add wallet →</Btn>
+            <>
+              <Btn href="/#registry" size="sm">Browse registry →</Btn>
+              {walletBound && (
+                <Btn href="/cielo/verified-rate" variant="secondary" size="sm">Cielo booking →</Btn>
+              )}
+            </>
           )}
         </div>
       </section>
 
       {canonical && canonical.access.shares.length > 0 && (
         <section style={CARD}>
-          <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>What you have shared</h2>
+          <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}>Recent shares</h2>
           {canonical.access.shares.slice(0, 3).map(s => (
             <div key={s.id} style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", marginBottom: 6 }}>
               {s.partnerId}: {s.proofLabel}{s.revoked ? " (revoked)" : ""}
             </div>
           ))}
-          <Link href="/passport?tab=access" style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: ACCENT, textDecoration: "none" }}>
+          <Link href="/passport?tab=access" style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
             View all access →
           </Link>
         </section>
@@ -303,7 +413,7 @@ function VerificationTab({
     return (
       <EmptyState
         title="Add a wallet first"
-        body="Identity verification is optional and lives here — connect a wallet in the Wallets tab first."
+        body="Identity verification is optional and lives here. Connect a wallet in the Wallets tab first."
         actionHref="/passport?tab=wallets"
         actionLabel="Add wallet"
       />
@@ -325,7 +435,7 @@ function VerificationTab({
         <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.85rem", lineHeight: 1.55 }}>
           Wallet proof is managed in{" "}
           <Link href="/passport?tab=wallets" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>Wallets</Link>
-          {" "}— not here.
+          {" "}in Wallets, not here.
         </p>
       </section>
 
@@ -381,7 +491,7 @@ function IdentityActions(props: {
   if (identityUi === "under_review") {
     return (
       <section style={CARD}>
-        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: AMBER, margin: "0 0 0.85rem" }}>In review — your Passport stays active.</p>
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: AMBER, margin: "0 0 0.85rem" }}>In review. Your Passport stays active.</p>
         <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>Check status</Btn>
       </section>
     );

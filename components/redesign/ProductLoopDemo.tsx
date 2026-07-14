@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCT_LOOP_STEPS, PRODUCT_LOOP_TOTAL_MS } from "@/lib/productLoopSteps";
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import { themeForStep } from "@/lib/productLoopStepThemes";
-import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { ProductLoopDiagramBackdrop, ProductLoopStepVisual } from "./ProductLoopStepVisual";
 import { Btn } from "./ui";
 
@@ -37,19 +36,12 @@ export function ProductLoopDemo() {
     <section id="product-loop" aria-labelledby="product-loop-heading">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
         <div>
-          <div style={{
-            fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700,
-            letterSpacing: "0.14em", textTransform: "uppercase",
-            color: ACCENT, marginBottom: "0.5rem",
-          }}>
+          <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
             Stop re-forwarding documents
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap", marginBottom: "0.35rem" }}>
-            <CapabilityStatusBadge status="pilot" size="xs" />
-            <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-              Verify once · share globally · settle on Abraxas
-            </span>
-          </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.35rem" }}>
+            Verify once · share globally · settle on Abraxas
+          </p>
           <h2 id="product-loop-heading" style={{
             fontFamily: FONT, fontSize: "var(--fs-h1)", fontWeight: 800,
             letterSpacing: "-0.03em", lineHeight: 1.05,
