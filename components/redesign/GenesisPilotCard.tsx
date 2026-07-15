@@ -56,7 +56,7 @@ export function GenesisPilotCard() {
             {D.title}
           </h3>
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
-            $1.1M appraised · live Airbnb · book with Apple Pay or USDC on Sui.
+            $1.1M appraised · live STR · settle in USDC on Sui (Apple Pay optional).
           </p>
         </div>
 
@@ -73,7 +73,7 @@ export function GenesisPilotCard() {
             fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
             color: ACCENT, alignSelf: "center", textDecoration: "none",
           }}>
-            Pay with Apple Pay →
+            Book with USDC →
           </Link>
         </div>
       </div>

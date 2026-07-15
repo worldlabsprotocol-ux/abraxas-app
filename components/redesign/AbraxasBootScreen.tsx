@@ -1,28 +1,61 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// First-visit brand moment — deliberate tap, then localStorage bypass on return.
+// Session boot — one message only; details live on the homepage after enter.
 
 import { useState, useEffect, useCallback } from "react";
+import type { CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  INSTITUTIONAL_SHELL_BG,
+  INSTITUTIONAL_PRIMARY_BTN_BG,
+  INSTITUTIONAL_PRIMARY_BTN_TEXT,
+  TEXT_ON_DARK,
+} from "@/lib/design/institutionalTheme";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
-const STORAGE_KEY = "abraxas_boot_entered_v5";
+const STORAGE_KEY = "abraxas_boot_entered_v8";
 
-export function AbraxasBootScreen() {
+const BOOT_THEME: CSSProperties = {
+  ["--text-primary" as string]: TEXT_ON_DARK.primary,
+  ["--text-secondary" as string]: TEXT_ON_DARK.secondary,
+  ["--text-muted" as string]: TEXT_ON_DARK.caption,
+  ["--accent" as string]: "#E8C547",
+  ["--accent-2" as string]: TEXT_ON_DARK.violet,
+};
+
+export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => void }) {
   const [visible, setVisible] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   const dismiss = useCallback(() => {
-    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
+    try { sessionStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
     setVisible(false);
-  }, []);
+    onReady?.(true);
+  }, [onReady]);
 
   useEffect(() => {
+    let skip = false;
     try {
-      if (localStorage.getItem(STORAGE_KEY)) return;
+      skip = Boolean(sessionStorage.getItem(STORAGE_KEY));
     } catch { /* ignore */ }
-    setVisible(true);
-  }, []);
+    if (skip) {
+      onReady?.(true);
+      setVisible(false);
+    } else {
+      setVisible(true);
+      onReady?.(false);
+    }
+    setChecked(true);
+  }, [onReady]);
+
+  if (!checked) {
+    return (
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "#04050A",
+      }} aria-hidden />
+    );
+  }
 
   return (
     <AnimatePresence>
@@ -30,10 +63,13 @@ export function AbraxasBootScreen() {
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.45 }}
+          data-theme="dark"
           style={{
+            ...BOOT_THEME,
             position: "fixed", inset: 0, zIndex: 9999,
-            background: "var(--bg, #06090B)",
+            background: INSTITUTIONAL_SHELL_BG,
+            color: TEXT_ON_DARK.primary,
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
             overflow: "hidden",
@@ -41,68 +77,95 @@ export function AbraxasBootScreen() {
         >
           <div style={{
             position: "absolute", inset: 0,
-            background: "radial-gradient(ellipse 55% 45% at 50% 50%, rgba(16,185,129,0.14) 0%, transparent 70%)",
+            background: `
+              radial-gradient(ellipse 50% 40% at 50% 38%, rgba(232,197,71,0.12) 0%, transparent 65%),
+              radial-gradient(ellipse 45% 35% at 80% 70%, rgba(167,139,250,0.1) 0%, transparent 60%)
+            `,
             pointerEvents: "none",
           }} />
 
           <motion.div
-            initial={{ scale: 0.94, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.98, opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 2rem", maxWidth: 480 }}
+            initial={{ scale: 0.96, opacity: 0, y: 12 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.98, opacity: 0, y: -6 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 1.5rem", maxWidth: 520, width: "100%" }}
           >
             <div style={{
-              fontFamily: FONT,
-              fontSize: "clamp(1.5rem, 5vw, 2.25rem)",
-              fontWeight: 900,
-              letterSpacing: "-0.04em",
-              lineHeight: 1.05,
-              color: ACCENT,
-              marginBottom: "0.85rem",
+              fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: TEXT_ON_DARK.eyebrow,
+              marginBottom: "1rem",
             }}>
-              ABRAXAS
+              Trust infrastructure · tokenized assets
+            </div>
+
+            <div style={{
+              fontFamily: FONT,
+              fontSize: "clamp(1.65rem, 6vw, 2.65rem)",
+              fontWeight: 900,
+              letterSpacing: "-0.05em",
+              lineHeight: 1.05,
+              marginBottom: "0.65rem",
+            }}>
+              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Stop proving your assets</span>
+              <span style={{ color: TEXT_ON_DARK.gold }}>over and over.</span>
             </div>
 
             <p style={{
               fontFamily: FONT,
-              fontSize: "clamp(0.82rem, 2.2vw, 0.95rem)",
-              color: "var(--text-secondary, rgba(242,246,243,0.72))",
-              lineHeight: 1.65,
-              margin: "0 0 1.75rem",
+              fontSize: "clamp(0.88rem, 2.2vw, 1rem)",
+              fontWeight: 600,
+              color: TEXT_ON_DARK.secondary,
+              lineHeight: 1.45,
+              margin: "0 0 0.35rem",
             }}>
-              Verification infrastructure for permissioned on-chain finance.
+              One verification. Unlimited applications.
+            </p>
+
+            <p style={{
+              fontFamily: FONT,
+              fontSize: "clamp(0.82rem, 2vw, 0.95rem)",
+              fontWeight: 700,
+              color: TEXT_ON_DARK.gold,
+              lineHeight: 1.4,
+              margin: "0 0 2rem",
+            }}>
+              Verify once. Transact everywhere.
             </p>
 
             <button
               type="button"
               onClick={dismiss}
               style={{
-                padding: "0.75rem 1.75rem",
+                padding: "0.85rem 2rem",
                 borderRadius: 999,
-                border: `1.5px solid ${ACCENT}`,
-                background: "transparent",
-                color: ACCENT,
+                border: "none",
+                background: INSTITUTIONAL_PRIMARY_BTN_BG,
+                color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
                 fontFamily: FONT,
-                fontSize: "0.72rem",
+                fontSize: "0.82rem",
                 fontWeight: 800,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
                 cursor: "pointer",
-                marginBottom: "1.25rem",
+                marginBottom: "1rem",
+                boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
               }}
             >
-              Enter the Protocol
+              Enter Abraxas →
             </button>
 
             <p style={{
               fontFamily: FONT,
-              fontSize: "0.68rem",
-              color: "var(--text-muted, rgba(242,246,243,0.45))",
-              letterSpacing: "0.04em",
+              fontSize: "0.72rem",
+              fontWeight: 500,
+              color: TEXT_ON_DARK.caption,
               margin: 0,
+              lineHeight: 1.55,
             }}>
-              Public registry available without sign-in
+              Browse free · Passport unlocks full diligence
             </p>
           </motion.div>
         </motion.div>

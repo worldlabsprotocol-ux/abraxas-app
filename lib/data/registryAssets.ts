@@ -2,7 +2,10 @@
 // Canonical registry entries — maps explore catalog ↔ ABX IDs ↔ verifier responses.
 
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
+import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
+import { NAJ_TULUM_REGISTRY_IMAGE } from "@/lib/data/najTulumMedia";
 import { SMYRNA_ASSET } from "@/lib/smyrnaCaseStudy";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
 import type { AssuranceBreakdown } from "@/lib/assuranceTaxonomy";
 
@@ -35,7 +38,7 @@ const CIELO: RegistryAssetDef = {
   name: FLAGSHIP_PROPERTY.title,
   assetClass: FLAGSHIP_PROPERTY.assetClass,
   location: "Mineral Bluff, Georgia",
-  image: "/assets/cielo/08.jpg",
+  image: CIELO_REGISTRY_IMAGE.src,
   verifyState: "verified",
   pipelineStage: "MARKETPLACE_LIVE",
   assuranceLevel: 3,
@@ -84,13 +87,40 @@ const SMYRNA: RegistryAssetDef = {
   aliases: ["smyrna", "smyrna-townhome"],
 };
 
+const CPG_GRADY: RegistryAssetDef = {
+  abxId: CPG_ASSET.id,
+  slug: "chickasaw-project",
+  name: CPG_ASSET.name,
+  assetClass: "REAL_ESTATE_LAND",
+  location: CPG_ASSET.location,
+  image: CPG_ASSET.image,
+  verifyState: "open",
+  pipelineStage: "LAND_PARTNER_ACTIVE",
+  assuranceLevel: 2,
+  assuranceTaxonomy: {
+    L1_IdentityClaim: { status: "VERIFIED", timestamp: "2026-07-05T00:00:00Z", provider: "CPG_Land_Sales" },
+    L2_LegalReview: { status: "VERIFIED", timestamp: "2026-07-13T00:00:00Z", provider: "Survey_Plat_Phase_I" },
+    L3_ProfessionalAttestation: { status: "PENDING", timestamp: new Date().toISOString(), authority: "Independent_Appraisal" },
+    L4_ActiveMonitoring: { status: "PENDING" },
+  },
+  metadataUri: CPG_ASSET.caseStudyPath,
+  notice:
+    "Chickasaw Project · CPG Land Sales · ~270 ac Grady County OK. Surveys complete, Phase I clean, contracts at asking.",
+  tokenization: {
+    standard: "Abraxas Registry Entry",
+    chain: "Off-chain title · Sui settlement rail (planned)",
+    status: "LAND_PARTNER_ACTIVE",
+  },
+  aliases: ["cpg", "cpg-grady", "cpg-grady-270", "chickasaw", "grady-270", "grady-county-270", "abx-re-land-006"],
+};
+
 const NAJ: RegistryAssetDef = {
   abxId: "ABX-RE-INT-003",
   slug: "naj-tulum",
   name: "Naj Tulum",
   assetClass: "REAL_ESTATE_INTERNATIONAL",
   location: "Aldea Zama, Tulum, Mexico",
-  image: "/assets/worldwearables/naj.jpg",
+  image: NAJ_TULUM_REGISTRY_IMAGE.src,
   verifyState: "owned",
   pipelineStage: "OWNED_NOT_OPEN",
   assuranceLevel: 1,
@@ -114,7 +144,7 @@ const DEMO_EXTERNAL: RegistryAssetDef = {
   name: "Sample Riverside Parcel (DEMO)",
   assetClass: "REAL_ESTATE_LAND",
   location: "Lane County, Oregon",
-  image: "/assets/worldwearables/naj.jpg",
+  image: NAJ_TULUM_REGISTRY_IMAGE.src,
   verifyState: "reference",
   pipelineStage: "DEMO_SAMPLE",
   assuranceLevel: 0,
@@ -156,7 +186,7 @@ const CLOVE: RegistryAssetDef = {
   aliases: ["clove", "the-clove"],
 };
 
-export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, NAJ, DEMO_EXTERNAL, CLOVE];
+export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, CPG_GRADY, SMYRNA, NAJ, DEMO_EXTERNAL, CLOVE];
 
 const BY_KEY = new Map<string, RegistryAssetDef>();
 for (const asset of REGISTRY_ASSETS) {

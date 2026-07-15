@@ -52,10 +52,10 @@ export function PolicyCheckPanel({ suiAddress }: { suiAddress?: string | null })
         }),
       });
       const data = await res.json() as CheckLevelResponse & { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Policy check failed");
+      if (!res.ok) throw new Error(data.error ?? "Trust Rules check failed");
       setResult(data);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Policy check failed");
+      setErr(e instanceof Error ? e.message : "Trust Rules check failed");
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ export function PolicyCheckPanel({ suiAddress }: { suiAddress?: string | null })
           ))}
         </ul>
         <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
-          Policy ID: <code style={{ fontFamily: MONO }}>{POLICY.id}</code>
+          Trust Rules ID: <code style={{ fontFamily: MONO }}>{POLICY.id}</code>
         </p>
       </div>
 
@@ -109,7 +109,7 @@ export function PolicyCheckPanel({ suiAddress }: { suiAddress?: string | null })
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
         <Btn onClick={() => void runCheck(wallet)} loading={loading} disabled={!wallet.trim()}>
-          Run policy check →
+          Run Trust Rules check →
         </Btn>
         {suiAddress && (
           <Btn variant="secondary" onClick={() => { setWallet(suiAddress); void runCheck(suiAddress); }}>
@@ -135,7 +135,7 @@ export function PolicyCheckPanel({ suiAddress }: { suiAddress?: string | null })
               : "Denied — missing requirements"
             }
           >
-            Policy {result.policy_id ?? POLICY.id} · Level {result.currentLevel}
+            Trust Rules {result.policy_id ?? POLICY.id} · Level {result.currentLevel}
           </StatusBanner>
 
           <div style={{
@@ -169,8 +169,8 @@ export function PolicyCheckPanel({ suiAddress }: { suiAddress?: string | null })
 
       {!result && !err && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
-          This is the reference closed loop: Passport issues claims → policy engine evaluates → partner gets a decision.
-          Complete setup on <Link href="/passport" style={{ color: ACCENT }}>Passport</Link>, then re-run the check here.
+          Passport issues proof → Trust Rules evaluate → partner gets a yes/no decision.
+          Complete setup on <Link href="/passport" style={{ color: ACCENT }}>Passport</Link>, then re-run here.
         </p>
       )}
     </div>

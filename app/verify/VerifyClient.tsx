@@ -36,8 +36,8 @@ function VerifyTabs({ tab, setTab }: { tab: VerifyTab; setTab: (t: VerifyTab) =>
   const tabs: Array<[VerifyTab, string]> = [
     ["registry", "Registry"],
     ["profile", "Profile"],
-    ["credential", "Credential"],
-    ["policy", "Policy"],
+    ["credential", "Proof"],
+    ["policy", "Trust Rules"],
   ];
 
   return (

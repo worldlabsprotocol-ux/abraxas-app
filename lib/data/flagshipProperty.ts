@@ -160,6 +160,8 @@ export const FLAGSHIP_PROPERTY = {
     cashYield:            0.146,
     projectedRev2025:     145_000,
     projectedRev2026:     158_000,
+    /** Published sample quote — two nights, all fees included (Abraxas + Airbnb parity). */
+    twoNightsAllIn:       988,
     monthlyRevenue: [
       { month:"Jun 2024", rev:15200, occ:0.90, nights:27 },
       { month:"Jul 2024", rev:18500, occ:0.97, nights:30 },
@@ -238,11 +240,11 @@ export const FLAGSHIP_PROPERTY = {
     metadataUri:       "ipfs://QmCielo5unrise1Genesis001/metadata.json",
     totalSupply:       1,
     status:            "COLLATERAL_ELIGIBLE",
-    stablecoinBooking: "USDC booking integration, coming soon",
+    stablecoinBooking: "USDC on Sui · live on /flagship",
   },
 
   guestProfile: {
-    totalReviews:  5,
+    totalReviews:  16,
     avgRating:     5.0,
     cleanliness:   5.0,
     accuracy:      5.0,

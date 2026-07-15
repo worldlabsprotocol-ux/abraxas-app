@@ -98,7 +98,7 @@ export default function MetricsPage() {
           background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.22)",
           fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6,
         }}>
-          <strong style={{ color: "var(--text-primary)" }}>Design partner phase.</strong>{" "}
+          <strong style={{ color: "var(--text-primary)" }}>Active partners.</strong>{" "}
           Verification call counts start at zero until partners and the public tester hit{" "}
           <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>POST /api/credentials/verify</code>.
           Try the{" "}

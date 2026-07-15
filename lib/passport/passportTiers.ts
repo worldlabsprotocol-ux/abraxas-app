@@ -37,7 +37,7 @@ export const TIER_DESCRIPTIONS: Record<PassportTier, string> = {
   0: "Google zkLogin or email/passkey · terms accepted · profile created",
   1: "Wallet connected · signature verified · wallet_binding_confirmed credential",
   2: "Voluntary Veriff or manual review · active identity claims only when issued",
-  3: "Sanctions, investor, KYB, or asset-specific checks per partner policy",
+  3: "Sanctions, investor, KYB, or asset-specific checks per partner Trust Rules",
 };
 
 export function resolvePassportTier(input: PassportTierInput): PassportTier {

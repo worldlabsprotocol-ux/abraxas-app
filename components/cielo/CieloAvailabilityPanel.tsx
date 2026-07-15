@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/cielo/CieloAvailabilityPanel.tsx
-// Abraxas Protocol Calendar — our own availability layer for crypto bookings.
+// Abraxas Protocol Calendar — labeled grid with open / pending / blocked states.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
+import { buildCalendarGrid } from "@/lib/cielo/calendarDates";
 import type { BlockedDate } from "@/lib/cielo/types";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -49,28 +50,33 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
       .finally(() => setLoading(false));
   }, []);
 
-  const today = new Date();
-  const days = Array.from({ length: compact ? 21 : 35 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    return d.toISOString().slice(0, 10);
-  });
+  const grid = useMemo(() => buildCalendarGrid(compact ? 28 : 42), [compact]);
 
-  function blockStyle(dateIso: string): string {
-    if (!blocked) return "rgba(255,255,255,0.06)";
+  function cellColors(dateIso: string): { bg: string; border: string; text: string } {
+    if (!blocked) {
+      return { bg: "rgba(255,255,255,0.06)", border: "transparent", text: "var(--text-muted)" };
+    }
     const hit = blocked.find(b => dateIso >= b.start && dateIso < b.end);
-    if (!hit) return `${ACCENT}35`;
-    if (hit.source === "abraxas_pending") return `${PENDING}88`;
-    return `${BLOCKED}88`;
+    if (!hit) {
+      return { bg: `${ACCENT}22`, border: `${ACCENT}44`, text: "var(--text-primary)" };
+    }
+    if (hit.source === "abraxas_pending") {
+      return { bg: `${PENDING}33`, border: `${PENDING}66`, text: "#FDE68A" };
+    }
+    return { bg: `${BLOCKED}44`, border: `${BLOCKED}77`, text: "#FECACA" };
+  }
+
+  function statusLabel(dateIso: string): string {
+    if (!blocked) return dateIso;
+    const hit = blocked.find(b => dateIso >= b.start && dateIso < b.end);
+    if (!hit) return `${dateIso} · Open on Abraxas`;
+    if (hit.source === "abraxas_pending") return `${dateIso} · Pending request`;
+    return `${dateIso} · Confirmed / blocked`;
   }
 
   if (loading) {
     return (
-      <div id="protocol-calendar" style={{
-        padding: compact ? "0.85rem" : "1rem 1.1rem", borderRadius: 14,
-        background: "var(--surface-raised)", border: "1px solid var(--border)",
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
-      }}>
+      <div id="protocol-calendar" style={shellStyle(compact)}>
         Loading Abraxas Protocol Calendar…
       </div>
     );
@@ -78,11 +84,7 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
 
   if (error || blocked === null) {
     return (
-      <div id="protocol-calendar" style={{
-        padding: compact ? "0.85rem" : "1rem 1.1rem", borderRadius: 14,
-        background: "var(--surface-raised)", border: "1px dashed var(--border)",
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6,
-      }}>
+      <div id="protocol-calendar" style={{ ...shellStyle(compact), borderStyle: "dashed" }}>
         {error ?? "Calendar unavailable."}{" "}
         <Link href="/cielo/status" style={{ color: ACCENT }}>Track a booking</Link>
       </div>
@@ -90,24 +92,19 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
   }
 
   return (
-    <div id="protocol-calendar" style={{
-      padding: compact ? "0.85rem" : "1rem 1.1rem",
-      borderRadius: 14,
-      background: "var(--surface-raised)",
-      border: "1px solid var(--border)",
-    }}>
-      <div style={{ marginBottom: "0.65rem" }}>
+    <div id="protocol-calendar" style={shellStyle(compact)}>
+      <div style={{ marginBottom: "0.75rem" }}>
         <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT,
                        letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.25rem" }}>
           Abraxas Protocol Calendar
         </div>
         <div style={{ fontFamily: FONT, fontSize: compact ? "0.78rem" : "0.85rem", fontWeight: 700,
                        color: "var(--text-primary)" }}>
-          Our calendar. our crypto bookings.
+          {grid.monthLabel} · USDC stays on Abraxas
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
                      lineHeight: 1.6, margin: "0.35rem 0 0" }}>
-          USDC stays on Abraxas run on this calendar — not Airbnb&apos;s host tools.
+          Dates with numbers show availability on our calendar — not Airbnb host tools.
           Cross-check the{" "}
           <Link href={CIELO_AIRBNB_URL} target="_blank" rel="noopener noreferrer"
             style={{ color: ACCENT, textDecoration: "underline" }}>
@@ -119,28 +116,83 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
 
       <div style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${compact ? 7 : 10}, 1fr)`,
-        gap: 3,
-        marginBottom: "0.65rem",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        gap: 4,
+        marginBottom: 4,
       }}>
-        {days.map(d => (
-          <div key={d} title={d} style={{ aspectRatio: "1", borderRadius: 4, background: blockStyle(d) }} />
+        {grid.weekdayLabels.map(w => (
+          <div key={w} style={{
+            fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700,
+            color: "var(--text-muted)", textAlign: "center", padding: "0.15rem 0",
+          }}>
+            {w}
+          </div>
         ))}
       </div>
 
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        gap: 4,
+        marginBottom: "0.75rem",
+      }}>
+        {grid.cells.map((cell, i) => {
+          if (!cell.dateIso || cell.dayOfMonth == null) {
+            return <div key={`pad-${i}`} style={{ aspectRatio: "1", minHeight: compact ? 28 : 34 }} />;
+          }
+          const colors = cellColors(cell.dateIso);
+          return (
+            <div
+              key={cell.dateIso}
+              title={statusLabel(cell.dateIso)}
+              aria-label={statusLabel(cell.dateIso)}
+              style={{
+                aspectRatio: "1",
+                minHeight: compact ? 28 : 34,
+                borderRadius: 6,
+                background: colors.bg,
+                border: `1px solid ${cell.isToday ? ACCENT : colors.border}`,
+                boxShadow: cell.isToday ? `0 0 0 1px ${ACCENT}` : undefined,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: FONT,
+                fontSize: compact ? "0.68rem" : "0.74rem",
+                fontWeight: cell.isToday ? 800 : 600,
+                color: colors.text,
+              }}
+            >
+              {cell.dayOfMonth}
+            </div>
+          );
+        })}
+      </div>
+
       <div style={{ display: "flex", gap: "0.85rem", flexWrap: "wrap", marginBottom: meta ? "0.5rem" : 0 }}>
-        <Legend color={`${ACCENT}35`} label="Open on Abraxas" />
+        <Legend color={`${ACCENT}44`} label="Open on Abraxas" />
         <Legend color={`${PENDING}88`} label="Pending request" />
         <Legend color={`${BLOCKED}88`} label="Confirmed / blocked" />
       </div>
 
       {meta && (
         <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "var(--text-muted)" }}>
-          {meta.operator_blocks} operator blocks · {meta.pending_bookings} pending · calendar v1
+          {meta.operator_blocks} operator blocks · {meta.pending_bookings} pending · {meta.confirmed_bookings} confirmed
         </div>
       )}
     </div>
   );
+}
+
+function shellStyle(compact: boolean): React.CSSProperties {
+  return {
+    padding: compact ? "0.85rem" : "1rem 1.1rem",
+    borderRadius: 14,
+    background: "var(--surface-raised)",
+    border: "1px solid var(--border)",
+    fontFamily: FONT,
+    fontSize: "0.78rem",
+    color: "var(--text-muted)",
+  };
 }
 
 function Legend({ color, label }: { color: string; label: string }) {

@@ -1,15 +1,17 @@
 // FILE: lib/smyrnaCaseStudy.ts
 // Second verified asset case study template — capital partner / equity loan narrative.
 
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+
 export const SMYRNA_ASSET = {
   id: "ABX-RE-RES-002",
   designation: "VERIFIED RESIDENTIAL · SERIES B",
   name: "Smyrna Townhome",
   subtitle: "2BD/2BA · Battery Atlanta corridor · Clear title, paid off",
   location: "Smyrna, Georgia 30080 · 6 min from Truist Park",
-  image: "/assets/smyrna/011.webp",
+  image: SMYRNA_TOWNHOME_IMAGE.src,
   gallery: [
-    "/assets/smyrna/011.webp",
+    SMYRNA_TOWNHOME_IMAGE.src,
   ] as const,
   stats: {
     purchase1999: "$76,200",

@@ -4,29 +4,25 @@
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
 
 export function PageHeader({
   eyebrow,
   title,
   subtitle,
+  titleAccent,
 }: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  /** Optional gradient-highlighted suffix (e.g. last phrase of headline) */
+  titleAccent?: string;
 }) {
+  const baseTitle = titleAccent ? title.replace(titleAccent, "").trim() : title;
+
   return (
     <header style={{ marginBottom: "2rem" }}>
       {eyebrow && (
-        <div style={{
-          fontFamily: MONO,
-          fontSize: "0.62rem",
-          fontWeight: 700,
-          color: ACCENT,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          marginBottom: "0.5rem",
-        }}>
+        <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
           {eyebrow}
         </div>
       )}
@@ -38,7 +34,12 @@ export function PageHeader({
         margin: "0 0 0.75rem",
         color: "var(--text-primary)",
       }}>
-        {title}
+        {titleAccent ? (
+          <>
+            {baseTitle}{" "}
+            <span className="abx-gradient-text">{titleAccent}</span>
+          </>
+        ) : title}
       </h1>
       {subtitle && (
         <p style={{
@@ -57,20 +58,20 @@ export function PageHeader({
 }
 
 export function ContentCard({
+  id,
   title,
   children,
 }: {
+  id?: string;
   title?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section style={{
+    <section id={id} className="abx-glass-panel" style={{
       marginBottom: "1.25rem",
       padding: "1.25rem",
       borderRadius: "var(--radius-lg)",
-      border: "1px solid var(--border)",
-      background: "var(--surface-raised)",
-      boxShadow: "var(--shadow-card)",
+      boxShadow: "var(--shadow-soft)",
     }}>
       {title && (
         <h2 style={{
@@ -135,7 +136,7 @@ export function KeyValueTable({
           <span style={{
             fontFamily: row.mono ? MONO : FONT,
             fontSize: "0.82rem",
-            color: "var(--text-primary)",
+            color: row.mono ? "var(--accent)" : "var(--text-primary)",
             wordBreak: "break-word",
             lineHeight: 1.55,
           }}>

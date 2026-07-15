@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloBookingPanel.tsx
-// Book Cielo — Apple Pay / card first; advanced crypto optional.
+// Book Cielo — USDC on Sui first; Apple Pay / card as convenience.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -48,7 +48,7 @@ export function CieloBookingPanel({
   const [blocked, setBlocked] = useState<BlockedDate[]>([]);
   const [checkoutInfo, setCheckoutInfo] = useState<string[]>([]);
   const [payUrl, setPayUrl] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("fiat");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("crypto");
   const [verification, setVerification] = useState<CheckLevelState>({
     loading: false,
     needsDeepVerification: false,
@@ -202,12 +202,11 @@ export function CieloBookingPanel({
             Book on Abraxas
           </div>
           <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
-            Book with Apple Pay — like any modern travel app.
+            Settle in USDC on Sui
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
                        lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 420 }}>
-            Pick dates on the Protocol Calendar. Pay with Apple Pay or your card after we confirm —
-            conversion is handled in checkout.
+            Pick dates below. USDC settlement is live on Abraxas — Apple Pay or card available as convenience at checkout.
           </p>
         </div>
         {variant !== "inline" && (
@@ -263,7 +262,8 @@ export function CieloBookingPanel({
                     ~${est.toLocaleString()} USD
                   </div>
                   <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-                    {nights.length} nights · from ${CIELO_RATES.weeknight}/night on Abraxas
+                    {nights.length} nights
+                    {nights.length === 2 ? " · all fees included" : ` · from $${CIELO_RATES.weeknight}/night on Abraxas`}
                   </div>
                 </div>
                 <PaymentMethodChooser
@@ -323,7 +323,7 @@ export function CieloBookingPanel({
               </div>
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.75rem" }}>
-              Identity verification is optional for this pilot. Add it later only if a partner policy requires Tier 2.
+              Identity verification is optional for this pilot. Add it later only if partner Trust Rules require Tier 2.
             </p>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button type="button" onClick={() => setStep("dates")} style={ghostBtn}>← Back</button>
@@ -338,8 +338,8 @@ export function CieloBookingPanel({
           <>
             <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-secondary)",
                          lineHeight: 1.65, margin: "0 0 0.875rem" }}>
-              We confirm within 24 hours. You&apos;ll pay with{" "}
-              {paymentMethod === "fiat" ? "Apple Pay / card" : "existing balance"} using the link we email.
+              We confirm within 24 hours. You&apos;ll settle with{" "}
+              {paymentMethod === "crypto" ? "USDC on Sui" : "Apple Pay / card (convenience)"} using the link we email.
               {!wallet.trim() && !suiAddress && (
                 <>{" "}<Link href="/passport" style={{ color: ACCENT, fontWeight: 600 }}>Sign in with Google</Link> to pre-fill your wallet.</>
               )}
@@ -388,7 +388,7 @@ export function CieloBookingPanel({
               </>
             )}
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-              Your dates are on the live calendar. Once confirmed, pay with Apple Pay or your card.
+              Your dates are on the live calendar. Once confirmed, settle in USDC on Sui — or use Apple Pay / card if you prefer.
             </p>
             {refId && est > 0 && (
               <div style={{ marginBottom: "1rem", textAlign: "left" }}>
@@ -413,7 +413,7 @@ export function CieloBookingPanel({
                 color: paymentMethod === "fiat" ? "#fff" : "#000",
                 fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
               }}>
-                {paymentMethod === "fiat" ? "Pay with Apple Pay / card →" : "Continue to payment →"}
+                {paymentMethod === "fiat" ? "Pay with Apple Pay / card →" : "Continue to USDC payment →"}
               </a>
             )}
             {checkoutInfo.length > 0 && (

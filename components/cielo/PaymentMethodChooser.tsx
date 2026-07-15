@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/PaymentMethodChooser.tsx
-// Fiat-first checkout — MoonPay headless Apple Pay default; Ramp fallback; crypto secondary.
+// USDC on Sui first — Apple Pay / card as convenience layer.
 
 import { useEffect, useState } from "react";
 import { PAYMENT_METHOD_COPY } from "@/lib/payments/ramp";
@@ -13,6 +13,40 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 export type PaymentMethod = "fiat" | "crypto";
+
+function MethodToggle({
+  value,
+  onChange,
+}: {
+  value: PaymentMethod;
+  onChange: (m: PaymentMethod) => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: "0.35rem", marginBottom: "0.65rem" }}>
+      {(["crypto", "fiat"] as const).map(id => {
+        const active = value === id;
+        const label = id === "crypto" ? "USDC on Sui" : "Card / Apple Pay";
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onChange(id)}
+            style={{
+              flex: 1, padding: "0.45rem 0.65rem", borderRadius: 999,
+              border: `1px solid ${active ? `${ACCENT}66` : "var(--border)"}`,
+              background: active ? `${ACCENT}14` : "transparent",
+              color: active ? ACCENT : "var(--text-muted)",
+              fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function PaymentMethodChooser({
   amountUsdc,
@@ -43,7 +77,6 @@ export function PaymentMethodChooser({
   const [providerLoading, setProviderLoading] = useState(true);
   const [rampBusy, setRampBusy] = useState(false);
   const [rampMsg, setRampMsg] = useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     fetch("/api/payments/provider")
@@ -86,7 +119,7 @@ export function PaymentMethodChooser({
         return;
       }
 
-      setRampMsg(data.message ?? "Card checkout is being enabled. We'll email you a payment link.");
+      setRampMsg(data.message ?? "Card checkout opens after confirmation — we'll email a secure link.");
       onRampReady?.(null, data.message);
     } catch {
       setRampMsg("Could not open checkout. We'll send a payment link by email.");
@@ -97,45 +130,7 @@ export function PaymentMethodChooser({
   }
 
   const crypto = PAYMENT_METHOD_COPY.crypto;
-
-  if (value === "crypto" && showAdvanced) {
-    return (
-      <div style={{ marginBottom: compact ? 0 : "0.85rem" }}>
-        <button type="button" onClick={() => { onChange("fiat"); setShowAdvanced(false); }}
-          style={{
-            background: "none", border: "none", padding: 0, cursor: "pointer",
-            fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, fontWeight: 600, marginBottom: "0.5rem",
-          }}>
-          ← Back to Apple Pay / card
-        </button>
-        <div style={{
-          padding: "0.75rem", borderRadius: 12,
-          border: "1px solid var(--border)", background: "var(--surface-raised)",
-        }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-            {crypto.title}
-          </div>
-          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
-            {crypto.subtitle}
-          </p>
-          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-            Continue on the payment page after your booking is confirmed.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const cryptoLink = (
-    <button type="button" onClick={() => { setShowAdvanced(true); onChange("crypto"); }}
-      style={{
-        marginTop: "0.55rem", background: "none", border: "none", padding: 0,
-        cursor: "pointer", fontFamily: FONT, fontSize: "0.68rem",
-        color: "var(--text-muted)", textDecoration: "underline",
-      }}>
-      Pay with crypto instead
-    </button>
-  );
+  const fiat = PAYMENT_METHOD_COPY.fiat;
 
   if (providerLoading) {
     return (
@@ -146,9 +141,45 @@ export function PaymentMethodChooser({
     );
   }
 
-  if (provider === "moonpay") {
+  if (value === "crypto") {
     return (
       <div style={{ marginBottom: compact ? 0 : "0.85rem" }}>
+        <MethodToggle value={value} onChange={onChange} />
+        <div style={{
+          padding: compact ? "0.65rem 0" : "0.85rem",
+          borderRadius: 14,
+          background: compact ? "transparent" : `${ACCENT}08`,
+          border: compact ? "none" : `1px solid ${ACCENT}33`,
+        }}>
+          <div style={{ fontFamily: FONT, fontSize: compact ? "0.82rem" : "0.92rem", fontWeight: 800, color: ACCENT, marginBottom: "0.35rem" }}>
+            {crypto.title}
+          </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.6 }}>
+            Pay <strong style={{ color: "var(--text-primary)" }}>{amountUsdc.toFixed(2)} USDC</strong>
+            {" "}— settles on Sui after confirmation. Live today on the Cielo pilot.
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+            {crypto.subtitle}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: compact ? 0 : "0.85rem" }}>
+      <MethodToggle value={value} onChange={onChange} />
+      {!compact && (
+        <div style={{
+          fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700,
+          letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--text-muted)", marginBottom: "0.5rem",
+        }}>
+          Convenience checkout
+        </div>
+      )}
+
+      {provider === "moonpay" ? (
         <MoonPayAppleCheckout
           amountUsd={amountUsdc}
           suiAddress={suiAddress}
@@ -158,60 +189,39 @@ export function PaymentMethodChooser({
           compact={compact}
           onComplete={() => onFiatComplete?.()}
         />
-        {cryptoLink}
-      </div>
-    );
-  }
-
-  const fiat = PAYMENT_METHOD_COPY.fiat;
-
-  return (
-    <div style={{ marginBottom: compact ? 0 : "0.85rem" }}>
-      {!compact && (
+      ) : (
         <div style={{
-          fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700,
-          letterSpacing: "0.1em", textTransform: "uppercase",
-          color: "var(--text-muted)", marginBottom: "0.5rem",
+          padding: compact ? "0.65rem 0" : "0.85rem",
+          borderRadius: 14,
+          background: compact ? "transparent" : "rgba(59,130,246,0.06)",
+          border: compact ? "none" : "1px solid rgba(59,130,246,0.22)",
         }}>
-          Payment
+          <div style={{ fontFamily: FONT, fontSize: compact ? "0.82rem" : "0.92rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+            {fiat.title}
+          </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.6 }}>
+            {fiat.subtitle} · <strong style={{ color: "var(--text-primary)" }}>${amountUsdc.toFixed(2)}</strong>
+          </p>
+          <button type="button" onClick={startRamp} disabled={rampBusy}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "0.5rem",
+              width: compact ? "100%" : "auto",
+              justifyContent: "center",
+              padding: "0.7rem 1.25rem", borderRadius: 999, border: "none",
+              background: rampBusy ? "#333" : "#000", color: "#fff",
+              fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700,
+              cursor: rampBusy ? "wait" : "pointer", minHeight: 48,
+            }}>
+            {rampBusy ? <Spinner size={16} color="#fff" /> : <ContactlessPayIcon size={18} color="#fff" />}
+            {rampBusy ? "Opening checkout…" : fiat.cta}
+          </button>
+          {rampMsg && (
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
+              {rampMsg}
+            </p>
+          )}
         </div>
       )}
-
-      <div style={{
-        padding: compact ? "0.65rem 0" : "0.85rem",
-        borderRadius: 14,
-        background: compact ? "transparent" : "rgba(59,130,246,0.06)",
-        border: compact ? "none" : "1px solid rgba(59,130,246,0.22)",
-      }}>
-        <div style={{ fontFamily: FONT, fontSize: compact ? "0.82rem" : "0.92rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-          {fiat.title}
-        </div>
-        <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.6 }}>
-          Pay <strong style={{ color: "var(--text-primary)" }}>${amountUsdc.toFixed(2)}</strong>
-          {" "}in your currency — we handle the rest. No wallet setup needed.
-        </p>
-        <button type="button" onClick={startRamp} disabled={rampBusy}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: "0.5rem",
-            width: compact ? "100%" : "auto",
-            justifyContent: "center",
-            padding: "0.7rem 1.25rem", borderRadius: 999, border: "none",
-            background: rampBusy ? "#333" : "#000", color: "#fff",
-            fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700,
-            cursor: rampBusy ? "wait" : "pointer", minHeight: 48,
-            boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
-          }}>
-          {rampBusy ? <Spinner size={16} color="#fff" /> : <ContactlessPayIcon size={18} color="#fff" />}
-          {rampBusy ? "Opening checkout…" : "Pay with Apple Pay — we handle the rest"}
-        </button>
-        {rampMsg && (
-          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>
-            {rampMsg}
-          </p>
-        )}
-      </div>
-
-      {cryptoLink}
     </div>
   );
 }
