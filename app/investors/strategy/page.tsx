@@ -7,11 +7,14 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { STRATEGIC_PILLARS, PILLAR_STATUS_COLOR } from "@/lib/strategicPriorities";
+import { mainnetReadinessProgress } from "@/lib/mainnetReadiness";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 export default function StrategyPage() {
+  const mainnet = mainnetReadinessProgress();
+
   return (
     <RedesignPage maxWidth={900}>
       <PageHeader
@@ -19,6 +22,20 @@ export default function StrategyPage() {
         title="Four pillars to $100M protocol credibility"
         subtitle="Honest milestone sequencing — no timeline promises. Each pillar has live evidence or an explicit in-progress state."
       />
+
+      <div style={{
+        padding: "1rem 1.15rem", borderRadius: 14,
+        border: "1px solid var(--border-strong)", background: "var(--surface-raised)",
+        marginBottom: "1.25rem",
+      }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.65rem" }}>
+          Mainnet readiness: <strong style={{ color: "var(--text-primary)" }}>{mainnet.done}/{mainnet.total} gates</strong> complete.
+          Pillars below map to the public checklist on the roadmap.
+        </p>
+        <Btn href="/roadmap#mainnet-readiness" size="sm" variant="secondary">
+          View mainnet checklist →
+        </Btn>
+      </div>
 
       <div style={{ display: "grid", gap: "1.25rem", marginBottom: "2rem" }}>
         {STRATEGIC_PILLARS.map(pillar => (

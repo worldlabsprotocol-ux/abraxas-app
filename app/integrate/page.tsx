@@ -18,6 +18,7 @@ import {
 } from "@/lib/infrastructurePositioning";
 import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
 import { INTEGRATE_COUNTERPARTY_TRUST } from "@/lib/trustTransfer";
+import { TRUST_IS_TIME_BOUND_HEADLINE, TRUST_VERIFY_ONCE_HONEST } from "@/lib/trustOverTime";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -68,6 +69,13 @@ export default function IntegratePage() {
           {INTEGRATE_COUNTERPARTY_TRUST.body}
         </p>
         <BulletList items={[...INTEGRATE_COUNTERPARTY_TRUST.bullets]} />
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0.85rem 0 0" }}>
+          <strong style={{ color: "var(--text-primary)" }}>{TRUST_IS_TIME_BOUND_HEADLINE}.</strong>{" "}
+          {TRUST_VERIFY_ONCE_HONEST}{" "}
+          <Link href="/trust-framework#trust-over-time" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+            Real estate refresh triggers →
+          </Link>
+        </p>
       </ContentCard>
 
       <ContentCard title="What you integrate">
