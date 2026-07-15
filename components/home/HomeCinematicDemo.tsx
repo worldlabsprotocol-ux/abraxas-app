@@ -11,12 +11,12 @@ import {
 } from "framer-motion";
 import {
   ABRAXAS_INFRA_EMOTION,
-  ABRAXAS_INFRA_MECHANISM,
   CINEMATIC_PHASE_MS,
   CINEMATIC_LOOP_MS,
   CINEMATIC_MERGE_LINE,
   CINEMATIC_HOLD_LINE,
 } from "@/lib/infrastructurePositioning";
+import { TRUST_TRANSFER_HEADLINE, CINEMATIC_TRUST_TRANSFER_LINE } from "@/lib/trustTransfer";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE } from "@/lib/design/institutionalTheme";
 import {
   KycPassportDoc,
@@ -26,6 +26,7 @@ import {
   AbraxasPassportVc,
   LandDeedDoc,
   RwaAssetDoc,
+  CounterpartyVerifierCard,
   ConnectionBeam,
 } from "./cinematic/KycDocumentCards";
 
@@ -166,8 +167,8 @@ function PhaseConsolidation() {
 
 function PhaseLandUnlock() {
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 1rem" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem", flexWrap: "wrap", maxWidth: 420 }}>
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 0.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem", flexWrap: "wrap", maxWidth: 520 }}>
         <motion.div
           initial={{ opacity: 0, x: -24, scale: 0.9 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -194,41 +195,55 @@ function PhaseLandUnlock() {
           <LandDeedDoc />
           <RwaAssetDoc />
         </motion.div>
-      </div>
 
-      {/* Stamp pulse on land cards */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: [0, 1, 0.6], scale: [0.5, 1.15, 1] }}
-        transition={{ delay: 1.2, duration: 0.5, type: "spring" }}
-        style={{
-          position: "absolute",
-          right: "12%",
-          top: "38%",
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          border: "2px solid #10B981",
-          background: "rgba(16,185,129,0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "1rem",
-          color: "#10B981",
-          boxShadow: "0 0 20px rgba(16,185,129,0.4)",
-        }}
-      >
-        ✓
-      </motion.div>
+        {/* Trust transfer — third party verifies without re-KYC */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.85 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ ...SPRING_SNAPPY, delay: 1.5 }}
+          style={{ position: "relative" }}
+        >
+          <svg width="32" height="16" viewBox="0 0 32 16" aria-hidden style={{ position: "absolute", left: -28, top: "40%" }}>
+            <motion.path
+              d="M 0 8 L 28 8"
+              stroke="rgba(16,185,129,0.5)"
+              strokeWidth="1.5"
+              strokeDasharray="3 3"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ delay: 1.6, duration: 0.5 }}
+            />
+          </svg>
+          <CounterpartyVerifierCard label="Lender" />
+        </motion.div>
+      </div>
 
       <motion.p
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ ...SPRING, delay: 1.4 }}
+        transition={{ ...SPRING, delay: 1.85 }}
         style={{
-          marginTop: "1.25rem",
+          marginTop: "0.85rem",
           fontFamily: FONT,
-          fontSize: "clamp(0.78rem, 2vw, 0.92rem)",
+          fontSize: "clamp(0.72rem, 1.9vw, 0.88rem)",
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          color: "#10B981",
+          textAlign: "center",
+          maxWidth: 400,
+        }}
+      >
+        {CINEMATIC_TRUST_TRANSFER_LINE}
+      </motion.p>
+
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...SPRING, delay: 2.05 }}
+        style={{
+          marginTop: "0.35rem",
+          fontFamily: FONT,
+          fontSize: "clamp(0.72rem, 1.9vw, 0.85rem)",
           fontWeight: 800,
           letterSpacing: "-0.02em",
           color: "#FAFAFA",
@@ -242,16 +257,17 @@ function PhaseLandUnlock() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2 }}
+        transition={{ delay: 2.3 }}
         style={{
-          marginTop: "0.45rem",
+          marginTop: "0.35rem",
           fontFamily: MONO,
-          fontSize: "0.46rem",
+          fontSize: "0.44rem",
           letterSpacing: "0.1em",
           color: "rgba(16,185,129,0.75)",
+          textAlign: "center",
         }}
       >
-        PORTABLE · LAND · RWAs · ANY APP
+        W3C VC · ED25519 · INDEPENDENT VERIFY
       </motion.div>
     </div>
   );
@@ -287,7 +303,7 @@ export function HomeCinematicDemo() {
   const progress = Math.min(100, (totalElapsed / CINEMATIC_LOOP_MS) * 100);
   const loopSec = Math.round(CINEMATIC_LOOP_MS / 1000);
 
-  const phaseLabels = ["Repeated KYC", "One Passport", "Land & RWAs unlock"];
+  const phaseLabels = ["Repeated KYC", "One Passport", "Trust transfer"];
 
   return (
     <section
@@ -332,13 +348,14 @@ export function HomeCinematicDemo() {
               <p
                 style={{
                   fontFamily: FONT,
-                  fontSize: "0.78rem",
+                  fontSize: "0.72rem",
                   color: "var(--text-secondary)",
-                  margin: 0,
+                  margin: "0.35rem 0 0",
                   lineHeight: 1.5,
+                  maxWidth: 480,
                 }}
               >
-                {ABRAXAS_INFRA_MECHANISM}
+                {TRUST_TRANSFER_HEADLINE}
               </p>
             </div>
             <button

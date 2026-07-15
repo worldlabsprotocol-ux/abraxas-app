@@ -234,6 +234,41 @@ export function RwaAssetDoc() {
   );
 }
 
+/** Third party — verifies credential without re-KYC */
+export function CounterpartyVerifierCard({ label = "Lender" }: { label?: string }) {
+  return (
+    <DocShell width={108} height={92} accent="#10B981">
+      <div style={{ padding: "8px 9px", textAlign: "center" }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8, margin: "0 auto 6px",
+          background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.45)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden fill="none">
+            <rect x="1" y="5" width="12" height="8" rx="1" stroke="#6EE7B7" strokeWidth="1.2" />
+            <path d="M4 5V3.5a3 3 0 0 1 6 0V5" stroke="#6EE7B7" strokeWidth="1.2" strokeLinecap="round" />
+            <circle cx="7" cy="9" r="1" fill="#6EE7B7" />
+          </svg>
+        </div>
+        <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 800, color: "#FAFAFA" }}>
+          {label}
+        </div>
+        <div style={{
+          marginTop: 6, padding: "4px 6px", borderRadius: 6,
+          background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.5)",
+        }}>
+          <div style={{ fontFamily: MONO, fontSize: "0.38rem", color: "#6EE7B7", letterSpacing: "0.04em" }}>
+            CRYPTO VERIFIED ✓
+          </div>
+          <div style={{ fontFamily: FONT, fontSize: "0.36rem", color: "rgba(255,255,255,0.55)", marginTop: 3 }}>
+            No re-KYC
+          </div>
+        </div>
+      </div>
+    </DocShell>
+  );
+}
+
 export function ConnectionBeam() {
   return (
     <svg width="48" height="24" viewBox="0 0 48 24" aria-hidden style={{ overflow: "visible" }}>

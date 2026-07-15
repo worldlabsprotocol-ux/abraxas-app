@@ -17,6 +17,7 @@ import {
   RWA_STACK_LAYERS,
 } from "@/lib/infrastructurePositioning";
 import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
+import { INTEGRATE_COUNTERPARTY_TRUST } from "@/lib/trustTransfer";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -60,6 +61,13 @@ export default function IntegratePage() {
             </div>
           ))}
         </div>
+      </ContentCard>
+
+      <ContentCard id="counterparty-trust" title={INTEGRATE_COUNTERPARTY_TRUST.title}>
+        <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
+          {INTEGRATE_COUNTERPARTY_TRUST.body}
+        </p>
+        <BulletList items={[...INTEGRATE_COUNTERPARTY_TRUST.bullets]} />
       </ContentCard>
 
       <ContentCard title="What you integrate">

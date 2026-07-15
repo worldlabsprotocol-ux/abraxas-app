@@ -21,6 +21,7 @@ import { computePassportSetupState } from "@/lib/idv/identityVerificationStates"
 import { VerifyClient } from "@/app/verify/VerifyClient";
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
+import { PassportTrustTransferPanel } from "@/components/passport/PassportTrustTransferPanel";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -241,6 +242,8 @@ function PassportPageInner() {
               onWalletBound={refresh}
               returnPath={searchParams.get("return")}
             />
+
+            <PassportTrustTransferPanel hasCredential={hasCredential} />
 
             {!walletDone && verificationLoading && (
               <p style={{ fontFamily: S, fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center" }}>

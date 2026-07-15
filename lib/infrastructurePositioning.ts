@@ -121,7 +121,7 @@ export const CINEMATIC_MERGE_LINE = "One proof. Every future.";
 export const CINEMATIC_HOLD_LINE = "One Passport. Zero repeated diligence.";
 
 export const HOME_BUILD_BRIDGE =
-  "Build once. Verify once. Use everywhere — including land deals and real-world assets.";
+  "Build once. Verify once. Counterparties verify the cryptographic proof — not your reputation.";
 
 export const BUILD_WITH_OUTCOMES: { label: string; outcome: string }[] = [
   { label: "Verification API", outcome: "Policy decisions in one call" },
