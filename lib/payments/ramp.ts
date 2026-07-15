@@ -51,13 +51,14 @@ export function buildRampSession(req: RampSessionRequest): RampSessionResponse {
 
 export const PAYMENT_METHOD_COPY = {
   fiat: {
-    title: "Pay with Apple Pay or card",
-    subtitle: "Pay in your local currency — we convert automatically. No wallet setup needed.",
-    badge: "Recommended",
+    title: "Apple Pay or card",
+    subtitle: "Convenience checkout — we convert to USDC on Sui behind the scenes.",
+    badge: "Convenience",
+    cta: "Pay with Apple Pay / card →",
   },
   crypto: {
-    title: "Pay with crypto instead",
-    subtitle: "For users who already hold stablecoins in their Abraxas wallet.",
-    badge: "Advanced",
+    title: "USDC on Sui — live today",
+    subtitle: "On-protocol settlement on the Cielo pilot. Sign in with Passport to pre-fill your wallet.",
+    badge: "Recommended",
   },
 } as const;

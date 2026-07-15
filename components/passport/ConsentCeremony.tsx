@@ -5,6 +5,9 @@
 import { useEffect, useState } from "react";
 import { NEVER_SHARED_WITH_PARTNERS, POLICY_DECISIONS, type PolicyDecision } from "@/lib/abraxasNetwork";
 import { consentVerificationRequest, declineVerificationRequest } from "@/lib/api/passport";
+import { WhatGetsSharedCard } from "@/components/consent/WhatGetsSharedCard";
+import { PassportStepPurpose } from "@/components/passport/PassportStepPurpose";
+import { PASSPORT_STEPS } from "@/lib/passport/passportStepCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -153,35 +156,44 @@ export function ConsentCeremony({
         fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
         color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.35rem",
       }}>
-        Partner consent · selective disclosure
+        Partner Trust Request
       </div>
       <h3 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
         {preview.policy_name}
       </h3>
-      <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
-        <strong>{preview.partner_id}</strong>
-        {preview.requested_action ? ` requests access for: ${preview.requested_action.replace(/_/g, " ")}` : " requests eligibility claims."}
-        {" "}Review what will be shared — not your raw documents.
+
+      <PassportStepPurpose title={PASSPORT_STEPS.chooseShare.title} purpose={PASSPORT_STEPS.chooseShare.purpose} />
+
+      <WhatGetsSharedCard
+        partnerName={preview.partner_id}
+        policyName={preview.policy_name}
+        sharedLabels={preview.claim_labels.filter(c => c.will_share).map(c => c.label)}
+        requestedAction={preview.requested_action}
+        willNotShareItems={NEVER_SHARED_WITH_PARTNERS.slice(0, 6)}
+      />
+
+      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.85rem", lineHeight: 1.55 }}>
+        Approve one request at a time. You can revoke wallet access later from Passport → Wallets.
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
         <div>
           <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: ACCENT, marginBottom: "0.35rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Will share (claims only)
+            Claim outcomes only
           </div>
-          {preview.claim_labels.length > 0 ? preview.claim_labels.map(c => (
+          {preview.claim_labels.length > 0 ? preview.claim_labels.filter(c => c.will_share).map(c => (
             <div key={c.claim_type} style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-primary)", marginBottom: 4 }}>
               ✓ {c.label}
             </div>
           )) : (
             <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-              Policy outcome only — no personal documents
+              Trust Rules decision only — no personal documents
             </div>
           )}
         </div>
         <div>
           <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "var(--text-muted)", marginBottom: "0.35rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Will NOT share
+            Never shared
           </div>
           {NEVER_SHARED_WITH_PARTNERS.slice(0, 6).map(item => (
             <div key={item} style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: 3 }}>
@@ -203,7 +215,7 @@ export function ConsentCeremony({
             fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800,
             cursor: busy ? "wait" : "pointer",
           }}>
-          {busy ? "Processing…" : "Approve & share claims →"}
+          {busy ? "Processing…" : "Approve this request →"}
         </button>
         <button type="button" onClick={() => void decline()} disabled={busy}
           style={{
@@ -216,7 +228,7 @@ export function ConsentCeremony({
         </button>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.55rem 0 0", lineHeight: 1.5 }}>
-        Expires {new Date(preview.expires_at).toLocaleString()} · Policy {preview.policy_id}
+        Expires {new Date(preview.expires_at).toLocaleString()} · Trust Rules {preview.policy_id}
       </p>
     </div>
   );

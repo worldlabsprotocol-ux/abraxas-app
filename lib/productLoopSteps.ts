@@ -1,86 +1,100 @@
 // FILE: lib/productLoopSteps.ts
-// Auto-advancing product walkthrough — visuals + mock UI per step.
+// Auto-advancing product walkthrough — Becker pain → Yan closed loop.
 
-import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
 export interface ProductLoopStep {
   id: string;
   title: string;
   subtitle: string;
+  /** One-line hook on the visual — demo format (Ansem punch, Becker clarity). */
+  hook: string;
   durationMs: number;
-  image?: string;
-  imageObjectPosition?: string;
   badge?: string;
   metrics?: { label: string; value: string }[];
-  cta?: string;
+  href: string;
+  ctaLabel: string;
 }
 
 export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
   {
-    id: "browse",
-    title: "Browse verified assets",
-    subtitle: "Assurance levels and registry state — no login required.",
-    durationMs: 6000,
-    image: "/assets/smyrna/011.webp",
-    badge: "Public registry",
+    id: "spam",
+    title: "Stop re-verifying the same asset",
+    subtitle: "Every buyer asks for the same deed, survey, and ID. Your inbox becomes a forwarding loop — that is the hidden tax on RWAs.",
+    hook: "47 emails. Same PDFs. Every time.",
+    durationMs: 6500,
+    badge: "The tax",
     metrics: [
-      { label: "Assets", value: "4 listed" },
-      { label: "Assurance", value: "L1–L4" },
-      { label: "ID check", value: "When needed" },
+      { label: "Trigger", value: "New buyer" },
+      { label: "Action", value: "Re-send docs" },
+      { label: "Cost", value: "Hours × deals" },
     ],
+    href: "/#demo",
+    ctaLabel: "See the loop",
   },
   {
-    id: "book",
-    title: "Book with Apple Pay or card",
-    subtitle: "Pick dates · pay in fiat · settles automatically on-chain.",
-    durationMs: 6000,
-    image: CIELO_PORCH_IMAGE.src,
-    imageObjectPosition: "center 40%",
-    badge: "Seamless checkout",
+    id: "pain",
+    title: "Crypto had repeated KYC. RWAs had it worse.",
+    subtitle: "Diligence buried in threads. Global buyers waiting. Trust stalls before the deal closes.",
+    hook: "$1.6M on the line. Still in inbox.",
+    durationMs: 5500,
+    badge: "Breaking point",
     metrics: [
-      { label: "Primary", value: "Apple Pay" },
-      { label: "Alt", value: "USDC" },
-      { label: "Est.", value: "~$1,240" },
+      { label: "Docs", value: "Same 11 plats" },
+      { label: "Buyers", value: "Global" },
+      { label: "Risk", value: "Version drift" },
     ],
+    href: "/passport",
+    ctaLabel: "Enter Passport",
   },
   {
-    id: "signin",
-    title: "Sign in with Google",
-    subtitle: "Your wallet is ready in one click — no seed phrase, no extension.",
-    durationMs: 5000,
-    badge: "Passport ready",
+    id: "verify-once",
+    title: "Verify once on Abraxas Passport",
+    subtitle: "Surveys, environmental, title — attested on-registry. Share permissioned proof, not attachments.",
+    hook: "One upload. Every counterparty.",
+    durationMs: 6500,
+    badge: "Verify once",
     metrics: [
-      { label: "Account", value: "Google" },
-      { label: "Wallet", value: "Apple Wallet" },
-      { label: "ID check", value: "Optional" },
-    ],
-  },
-  {
-    id: "pay",
-    title: "Pay without thinking about rails",
-    subtitle: "Fiat on-ramp or stablecoin · settlement captured · on-chain verify.",
-    durationMs: 6000,
-    image: CIELO_HERO_IMAGE.src,
-    imageObjectPosition: CIELO_HERO_IMAGE.objectPosition,
-    badge: "Payment captured",
-    metrics: [
-      { label: "Method", value: "Apple Pay" },
-      { label: "Settles", value: "USDC" },
-      { label: "Status", value: "Captured ✓" },
-    ],
-  },
-  {
-    id: "verify",
-    title: "Verify on the public registry",
-    subtitle: "Any partner checks your credential — assurance levels L1–L4, instant.",
-    durationMs: 7000,
-    badge: "✓ PORTABLE PROOF",
-    metrics: [
-      { label: "Standard", value: "W3C VC" },
-      { label: "API", value: "/verify" },
+      { label: "Record", value: "ABX-RE-LAND-006" },
       { label: "Reuse", value: "Any partner" },
+      { label: "Login", value: "Google · zkLogin" },
     ],
+    href: "/passport",
+    ctaLabel: "Create Passport",
+  },
+  {
+    id: "global",
+    title: "One profile. Every counterparty.",
+    subtitle: "Land, hospitality, capital — one assurance record opens doors without re-forwarding.",
+    hook: "$2.7M+ live on-registry",
+    durationMs: 7000,
+    badge: "Portable proof",
+    metrics: [
+      { label: "Registry", value: "$2.7M+ scope" },
+      { label: "Partners", value: "Active sync" },
+      { label: "Chain", value: "Portable proof" },
+    ],
+    href: "/#registry",
+    ctaLabel: "Browse registry",
+  },
+  {
+    id: "settle",
+    title: "Inquire → verify → settle on Sui",
+    subtitle: "Acquire on Abraxas. Partner updates sync on-protocol. USDC settlement — institutional closed loop.",
+    hook: "Trust layer for real-world assets",
+    durationMs: 7000,
+    badge: "Closed loop",
+    metrics: [
+      { label: "Acquire", value: "On Abraxas" },
+      { label: "Settle", value: "USDC · Sui" },
+      { label: "Live", value: CPG_ASSET.name },
+    ],
+    href: CPG_ASSET.inquirePath,
+    ctaLabel: "Acquire on Abraxas",
   },
 ];
 
 export const PRODUCT_LOOP_TOTAL_MS = PRODUCT_LOOP_STEPS.reduce((s, step) => s + step.durationMs, 0);
+
+export const PRODUCT_LOOP_HOME_PITCH =
+  "Every RWA platform rebuilds trust from scratch. Abraxas makes trust portable — verify once, reuse across every app.";

@@ -3,7 +3,9 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
+import { fetchPublishedExternalApplications } from "@/lib/portal/externalRegistry";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
+import { CPG_REGISTRY_VALUE_USD } from "@/lib/cpgLandCaseStudy";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { getVerificationNetworkMetrics, type VerificationNetworkMetrics } from "@/lib/metrics/verificationMetrics";
 
@@ -30,9 +32,14 @@ export interface UnifiedRegistryStats {
 }
 
 export async function getUnifiedRegistryStats(): Promise<UnifiedRegistryStats> {
-  const registryAssets = EXPLORE_ASSETS.length;
+  const publishedExternal = await fetchPublishedExternalApplications(100);
+  const ownerListedCount = publishedExternal.filter(r => !r.is_demo_sample).length;
+  const registryAssets = EXPLORE_ASSETS.length + ownerListedCount;
   const verifiedInCatalog = EXPLORE_ASSETS.filter(a => a.state === "verified").length;
-  const assetClasses = new Set(EXPLORE_ASSETS.map(a => a.assetClass.split(" · ")[0])).size;
+  const assetClasses = new Set([
+    ...EXPLORE_ASSETS.map(a => a.assetClass.split(" · ")[0]),
+    ...publishedExternal.map(r => r.asset_class),
+  ]).size;
 
   let zkloginWallets = 0;
   let activeCredentials = 0;
@@ -72,8 +79,8 @@ export async function getUnifiedRegistryStats(): Promise<UnifiedRegistryStats> {
     registry_assets: registryAssets,
     verified_assets: verifiedAssets,
     asset_classes: assetClasses,
-    attested_value_usd: FLAGSHIP_PROPERTY.financials.estimatedValue,
-    attested_value_label: "$1.1M+",
+  attested_value_usd: FLAGSHIP_PROPERTY.financials.estimatedValue + CPG_REGISTRY_VALUE_USD,
+  attested_value_label: "$2.7M+",
     live_booking_assets: liveBookingAssets,
     zklogin_wallets: zkloginWallets,
     active_credentials: activeCredentials,

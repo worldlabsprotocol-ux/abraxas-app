@@ -10,7 +10,7 @@ import { FlagshipAssetPage } from "@/components/assets/FlagshipAssetPage";
 export default function FlagshipPage() {
   return (
     <WalletContextProvider>
-      <div data-theme="dark" style={{
+      <div data-theme="dark" className="abx-institutional-shell" style={{
         background: "var(--bg)", color: "var(--text-primary)",
         minHeight: "100vh", position: "relative", overflowX: "hidden",
       }}>
@@ -19,11 +19,11 @@ export default function FlagshipPage() {
         <main style={{ position: "relative", zIndex: 1 }}>
           <div style={{ maxWidth: 1180, margin: "0 auto",
                          padding: "0.75rem clamp(1rem,3vw,2rem) 0" }}>
-            <a href="/terminal#assets" style={{
+            <a href="/#registry" style={{
               fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.8rem",
               fontWeight: 600, color: "var(--text-muted)", textDecoration: "none",
             }}>
-              ← Back to verified assets
+              ← Back to registry
             </a>
           </div>
           <FlagshipAssetPage />

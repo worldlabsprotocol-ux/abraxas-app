@@ -88,6 +88,14 @@ export const CIELO_SOURCES = [
   },
 ] as const;
 
+export const CIELO_WHAT_THIS_PROVES = [
+  "Verification before tokenization — trust and assurance records precede any liquidity narrative",
+  "Real numbers with honest assurance labels — every metric has date, level, and refresh window",
+  "Live operational proof — Airbnb bookable independently; Abraxas adds reusable guest verification",
+  "Technical stack works end-to-end — zkLogin, credentials, policy decisions, USDC-on-Sui pilot rail",
+  "Same pipeline external issuers and relying partners integrate — Cielo is reference, not exception",
+] as const;
+
 export const CIELO_ONCHAIN_PROOF = [
   {
     label: "Public registry verifier",
@@ -131,6 +139,5 @@ export const CIELO_ONCHAIN_PROOF = [
 
 export const CIELO_TIMELINE = D.verification.provenanceTimeline;
 
-export const CIELO_PHOTOS = [
-  ...CIELO_GALLERY_IMAGES.slice(0, 2),
-] as const;
+/** Supplemental gallery (hero uses first image separately on case study). */
+export const CIELO_PHOTOS = CIELO_GALLERY_IMAGES.slice(1);

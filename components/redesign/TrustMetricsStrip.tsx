@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { AddToAppleWalletButton } from "@/components/ui/AddToAppleWalletButton";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -37,7 +38,7 @@ export function TrustMetricsStrip() {
             background: "rgba(59,130,246,0.12)",
             border: "1px solid rgba(59,130,246,0.25)",
           }}>
-            Design partner phase
+            Active partners
           </span>
           <h2 style={{
             fontFamily: FONT,
@@ -48,7 +49,7 @@ export function TrustMetricsStrip() {
             margin: "0.65rem 0 0.45rem",
             lineHeight: 1.2,
           }}>
-            Early access registry — growing with design partners
+            Live registry — Cielo + {CPG_ASSET.name}
           </h2>
           <p style={{
             fontFamily: FONT,
@@ -57,7 +58,7 @@ export function TrustMetricsStrip() {
             lineHeight: 1.65,
             margin: 0,
           }}>
-            Real assets, live booking rails, and verified passports — more partners onboarding as audits complete.
+            ~$2.7M in verified assets on Abraxas: Cielo Sunrise live STR plus {CPG_ASSET.name} — ~270 acres, Chickasha corridor, surveys, drone footage, contracts at asking.
           </p>
         </div>
 

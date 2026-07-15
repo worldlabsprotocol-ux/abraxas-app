@@ -1,15 +1,14 @@
 "use client";
 // FILE: components/redesign/ui.tsx
-// Redesign primitives: Button + StatTile. Dark premium, framer-motion
-// micro-interactions, reduced-motion safe.
+// Redesign primitives: Button + StatTile. Institutional gold primary, glass stats.
 
 import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode, CSSProperties } from "react";
 import { AnimatedCounter } from "@/lib/motion/AnimatedCounter";
 import { Spinner } from "@/components/ui/Spinner";
+import { INSTITUTIONAL_PRIMARY_BTN_TEXT } from "@/lib/design/institutionalTheme";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
 
 type Variant = "primary" | "secondary" | "ghost" | "tertiary";
 type Size = "sm" | "md" | "lg";
@@ -53,25 +52,37 @@ export function Btn({
   const skin: CSSProperties =
     variant === "primary"
       ? {
-          background: ACCENT, color: "#04130C", border: "none",
-          boxShadow: isDisabled ? "none" : "0 0 0 1px rgba(16,185,129,0.3), 0 10px 30px rgba(16,185,129,0.25)",
+          background: "var(--btn-primary-bg)",
+          color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
+          border: "none",
+          boxShadow: isDisabled ? "none" : "var(--shadow-glow)",
         }
       : variant === "secondary"
-      ? { background: "transparent", color: "var(--text-primary)", border: "1px solid var(--border)" }
+      ? {
+          background: "rgba(255,255,255,0.03)",
+          color: "var(--text-primary)",
+          border: "1px solid var(--border-strong)",
+          backdropFilter: "blur(8px)",
+        }
       : variant === "tertiary"
       ? { background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }
       : { background: "transparent", color: "var(--text-secondary)", border: "none" };
 
   const hover = reduce || isDisabled ? undefined : variant === "primary"
-    ? { scale: 1.035, boxShadow: "0 0 0 1px rgba(16,185,129,0.5), 0 14px 40px rgba(16,185,129,0.4)" }
+    ? { scale: 1.035, boxShadow: "0 0 0 1px rgba(232,197,71,0.5), 0 12px 36px rgba(232,197,71,0.28)" }
     : variant === "secondary"
-    ? { scale: 1.02, borderColor: "var(--border-strong)" }
+    ? { scale: 1.02, borderColor: "var(--accent-border)" }
     : { scale: 1.02 };
   const tap = reduce || isDisabled ? undefined : { scale: 0.97 };
 
   const content = (
     <>
-      {loading && <Spinner size={size === "sm" ? 14 : 16} color={variant === "primary" ? "#04130C" : ACCENT} />}
+      {loading && (
+        <Spinner
+          size={size === "sm" ? 14 : 16}
+          color={variant === "primary" ? INSTITUTIONAL_PRIMARY_BTN_TEXT : "var(--accent)"}
+        />
+      )}
       {children}
     </>
   );
@@ -109,19 +120,24 @@ interface StatTileProps {
   label: string;
   sub?: string;
   accent?: boolean;
+  /** Alternate accent — violet stat tile */
+  accentVariant?: "gold" | "violet";
 }
 
-export function StatTile({ value, label, sub, accent }: StatTileProps) {
+export function StatTile({ value, label, sub, accent, accentVariant = "gold" }: StatTileProps) {
+  const valueColor = accent
+    ? accentVariant === "violet" ? "var(--accent-2)" : "var(--accent)"
+    : "var(--text-primary)";
+
   return (
-    <div style={{
+    <div className="abx-glass-panel" style={{
       padding: "1rem 1.15rem", borderRadius: 14,
-      background: "var(--surface-raised)", border: "1px solid var(--border)",
       minWidth: 130,
     }}>
       <div style={{
         fontFamily: "'Space Grotesk',var(--font-fallback,'Inter'),sans-serif",
         fontSize: "1.6rem", fontWeight: 700, letterSpacing: "-0.02em",
-        color: accent ? ACCENT : "var(--text-primary)", lineHeight: 1.05,
+        color: valueColor, lineHeight: 1.05,
       }}>
         <AnimatedCounter value={value} />
       </div>
@@ -130,7 +146,7 @@ export function StatTile({ value, label, sub, accent }: StatTileProps) {
         {label}
       </div>
       {sub && (
-        <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: ACCENT, marginTop: 2 }}>
+        <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--accent)", marginTop: 2 }}>
           {sub}
         </div>
       )}
