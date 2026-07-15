@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: infrastructure hook → demo → stack → network → integrate → proof registry.
+// Homepage: emotion → demo → build → ecosystem → proof.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -12,13 +12,12 @@ import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
+import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
-import { HomeIntegrateSection } from "@/components/home/HomeIntegrateSection";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeLearnHub } from "@/components/home/HomeLearnHub";
-import { IntegratorStrip } from "./IntegratorStrip";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180, margin: "0 auto",
@@ -33,9 +32,9 @@ function HomeContent() {
       <div style={MAXW}>
         <HomeSharpHero />
         <HomeDemoVideo />
+        <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />
-        <HomeIntegrateSection />
         <div id="registry" style={{
           paddingTop: "clamp(0.5rem, 2vw, 1rem)",
           paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
@@ -49,12 +48,6 @@ function HomeContent() {
           />
         </div>
         <HomePartnersBrief />
-        <div style={{
-          padding: "clamp(1.25rem, 3vw, 2rem) 0",
-          borderTop: "1px solid var(--border-strong)",
-        }}>
-          <IntegratorStrip />
-        </div>
         <HomeLearnHub />
         <HomeSignedInModule />
       </div>

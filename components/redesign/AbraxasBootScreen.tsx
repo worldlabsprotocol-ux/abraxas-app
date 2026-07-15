@@ -100,34 +100,41 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               color: TEXT_ON_DARK.eyebrow,
               marginBottom: "1rem",
             }}>
-              Trust infrastructure · RWAs
+              Trust infrastructure · tokenized assets
             </div>
 
             <div style={{
               fontFamily: FONT,
-              fontSize: "clamp(2rem, 7vw, 3rem)",
+              fontSize: "clamp(1.65rem, 6vw, 2.65rem)",
               fontWeight: 900,
               letterSpacing: "-0.05em",
               lineHeight: 1.05,
-              marginBottom: "0.85rem",
+              marginBottom: "0.65rem",
             }}>
-              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Verify once.</span>
-              <span style={{ color: TEXT_ON_DARK.gold }}>Transact </span>
-              <span style={{ color: TEXT_ON_DARK.violet }}>everywhere.</span>
+              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Stop proving your assets</span>
+              <span style={{ color: TEXT_ON_DARK.gold }}>over and over.</span>
             </div>
 
             <p style={{
               fontFamily: FONT,
-              fontSize: "clamp(0.92rem, 2.4vw, 1.02rem)",
-              fontWeight: 500,
+              fontSize: "clamp(0.88rem, 2.2vw, 1rem)",
+              fontWeight: 600,
               color: TEXT_ON_DARK.secondary,
-              lineHeight: 1.55,
-              margin: "0 0 2rem",
-              maxWidth: 420,
-              marginLeft: "auto",
-              marginRight: "auto",
+              lineHeight: 1.45,
+              margin: "0 0 0.35rem",
             }}>
-              The trust layer every RWA application plugs into — not another marketplace.
+              One verification. Unlimited applications.
+            </p>
+
+            <p style={{
+              fontFamily: FONT,
+              fontSize: "clamp(0.82rem, 2vw, 0.95rem)",
+              fontWeight: 700,
+              color: TEXT_ON_DARK.gold,
+              lineHeight: 1.4,
+              margin: "0 0 2rem",
+            }}>
+              Verify once. Transact everywhere.
             </p>
 
             <button

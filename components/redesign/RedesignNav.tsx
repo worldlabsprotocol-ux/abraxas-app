@@ -31,6 +31,7 @@ const MORE_LINKS = [
   { href: "/community", label: "Community" },
   { href: "/#registry", label: "Browse assets" },
   { href: "/case-studies/cielo", label: "Cielo case study" },
+  { href: "/tokenized-stocks", label: "Tokenized stocks" },
   { href: "/design-partner", label: "Design partner" },
   { href: "/account", label: "My account" },
   { href: "/developers/partner", label: "Partner dashboard" },

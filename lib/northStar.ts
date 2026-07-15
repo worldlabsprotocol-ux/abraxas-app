@@ -3,7 +3,7 @@
 
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
-export const ABRAXAS_CATEGORY = "Trust infrastructure for RWAs";
+export const ABRAXAS_CATEGORY = "Trust infrastructure for tokenized assets";
 
 export const ABRAXAS_ONE_LINER =
   "We eliminate repeated verification so assets, people, and businesses can move faster.";
@@ -14,14 +14,20 @@ export const ABRAXAS_CUDA =
 export const ABRAXAS_PRODUCT =
   "Trust as an API. Passport is the UX.";
 
-/** Primary homepage headline — one sentence. */
+/** Homepage layer 1 — emotion (Becker: 5-second problem). */
+export const ABRAXAS_EMOTION_HEADLINE = "Stop proving your assets over and over.";
+
+/** Homepage layer 2 — mechanism. */
+export const ABRAXAS_MECHANISM = "One verification. Unlimited applications.";
+
+/** Homepage layer 3 — tagline / payoff. */
 export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
 
-export const ABRAXAS_SUBHEAD =
-  "Every RWA app rebuilds trust from scratch. Abraxas makes trust portable — the verification layer issuers, marketplaces, and lenders plug into.";
+/** @deprecated Use ABRAXAS_EMOTION_HEADLINE + layers on marketing surfaces. */
+export const ABRAXAS_TAGLINE = ABRAXAS_HEADLINE;
 
-/** Secondary tagline — same as headline; kept for imports that expect TAGLINE. */
-export const ABRAXAS_TAGLINE = "Verify once. Transact everywhere.";
+export const ABRAXAS_SUBHEAD =
+  "The universal trust layer for RWAs — embed Passport so verified assets move across marketplaces, lenders, custodians, and embedded finance without repeating due diligence.";
 
 /** Category positioning for investor/partner surfaces. */
 export const ABRAXAS_POSITIONING =

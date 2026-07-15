@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   ABRAXAS_HEADLINE,
+  ABRAXAS_EMOTION_HEADLINE,
+  ABRAXAS_MECHANISM,
   NORTH_STAR_PRINCIPLES,
   NORTH_STAR_PHASES,
   WORKFLOW_AFTER,
@@ -15,6 +17,11 @@ describe("northStar", () => {
 
   it("uses infrastructure headline", () => {
     expect(ABRAXAS_HEADLINE.toLowerCase()).toContain("verify once");
+  });
+
+  it("layers emotion before tagline", () => {
+    expect(ABRAXAS_EMOTION_HEADLINE.toLowerCase()).toContain("stop proving");
+    expect(ABRAXAS_MECHANISM.toLowerCase()).toContain("one verification");
   });
 
   it("contrasts before/after workflows", () => {

@@ -1,7 +1,11 @@
 // FILE: lib/infrastructurePositioning.ts
 // Infrastructure narrative — trust layer under the RWA stack (not another marketplace).
 
-export const ABRAXAS_INFRA_CATEGORY = "Trust infrastructure for RWAs";
+export const ABRAXAS_INFRA_CATEGORY = "Trust infrastructure for tokenized assets";
+
+export const ABRAXAS_INFRA_EMOTION = "Stop proving your assets over and over.";
+
+export const ABRAXAS_INFRA_MECHANISM = "One verification. Unlimited applications.";
 
 export const ABRAXAS_INFRA_HEADLINE = "Verify once. Transact everywhere.";
 
@@ -65,6 +69,15 @@ export const NETWORK_EFFECT_STEPS = [
   },
 ] as const;
 
+export const BUILD_WITH_CAPABILITIES = [
+  "Verification API",
+  "Passport SDK",
+  "W3C Credentials",
+  "Reusable Compliance",
+  "Portable Identity",
+  "Zero repeated due diligence",
+] as const;
+
 export const INTEGRATE_CAPABILITIES = [
   "Universal Asset Passport",
   "Verification API",
@@ -85,6 +98,18 @@ export const NOT_FOR_AUDIENCES = [
   "Teams looking for a retail RWA marketplace",
   "Issuers who only need a one-off listing with no reuse",
   "Protocols that want to rebuild KYC from scratch per app",
+] as const;
+
+export const TOKENIZED_STOCKS_PITCH =
+  "Abraxas lets your application reuse verified assets across marketplaces, lenders, custodians, and financial institutions. Instead of verifying every asset again — verify once, then integrate everywhere.";
+
+export const CINEMATIC_UNLOCK_TARGETS = [
+  "Marketplace",
+  "Custodian",
+  "Robinhood",
+  "Lender",
+  "Wallet",
+  "Exchange",
 ] as const;
 
 export const DEVELOPER_QUICKSTARTS = [
