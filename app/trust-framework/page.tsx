@@ -12,7 +12,7 @@ export default function TrustFrameworkPage() {
       <PageHeader
         eyebrow="Verification standards"
         title="Abraxas Trust Framework"
-        subtitle="Claim-based verification for permissioned finance — separate issuers, assurance levels, expiry, and refresh when records change."
+        subtitle="Separate issuers, assurance levels, and expiry — plus how trust stays current when records change."
       />
       <TrustIsTimeBoundSection />
       <TrustFrameworkSection />

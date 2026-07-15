@@ -11,6 +11,7 @@ import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
@@ -31,6 +32,7 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
+        <HomeHonestStatusStrip />
         <HomeDemoVideo />
         <HomeBuildWithSection />
         <HomeStackPosition />

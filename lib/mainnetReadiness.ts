@@ -1,6 +1,7 @@
 // FILE: lib/mainnetReadiness.ts
 // Boolean gates for "100% capacity mainnet" — internal + public checklist. No calendar dates.
 
+import { CONFIDENT_STATUS_FRAMING } from "./currentStatus";
 import { MAINNET_FOUNDER_PITCH } from "./positioningStrategy";
 
 export interface MainnetMilestone {
@@ -73,12 +74,12 @@ export const MAINNET_READINESS_MILESTONES: MainnetMilestone[] = [
 
 export const MAINNET_READINESS_HEADLINE = "What full mainnet means";
 
-export const MAINNET_READINESS_SUMMARY = MAINNET_FOUNDER_PITCH;
+export const MAINNET_READINESS_SUMMARY = CONFIDENT_STATUS_FRAMING;
 
 export const MAINNET_CURRENT_STAGE = {
-  label: "Where we are today",
-  stage: "Soft production — pilot partners live",
-  body: "Passport and verification work for real assets today. On-chain Passport is still on devnet. Audits, external relying-party proof, and automated asset refresh are the remaining gates before open self-serve.",
+  label: "Where we are",
+  stage: "Pilot production — real assets live",
+  body: MAINNET_FOUNDER_PITCH,
 } as const;
 
 export function mainnetReadinessProgress(): {
