@@ -42,6 +42,17 @@ Approved core lines, proof points, and do-not-use language. Import programmatica
 - Leading with tokenization or "decentralized identity"
 - Guaranteed yield or investment returns
 - Superhost / rating claims without confirming current Airbnb status
+- **Trust Orchestration Network** / **Trust Coordination Layer** as public positioning (premature)
+- TTL, revocation, or cryptographic nuance in homepage hero (belongs in docs)
+- **Execution risk** framing — use progress and inevitability instead
+
+## Marketing vs documentation
+
+| Surface | Tone | Example |
+|---------|------|---------|
+| Homepage hero | Simple, Passport-forward | Verify once. Transact everywhere. |
+| Trust framework / docs | Honest mechanics | Verify once, reuse what remains valid, refresh what changed |
+| North star | Relying party adoption | Apps that accept Passport proof |
 
 ## CTAs (priority order)
 
@@ -62,7 +73,9 @@ Approved core lines, proof points, and do-not-use language. Import programmatica
 
 ## Page alignment checklist
 
-- [ ] Homepage hero matches headline + subhead
+- [ ] Homepage hero matches headline + subhead (simple — no TTL/revocation in hero)
+- [ ] Refresh/revocation honesty lives in `/trust-framework`, `/developers`, relying-party docs
+- [ ] Relying party adoption framed as north star on homepage network section
 - [ ] /about lists only verifiable live facts
 - [ ] /design-partner uses partner status buckets
 - [ ] /integrations distinguishes live first-party vs partner onboarding

@@ -44,6 +44,7 @@ export const FEATURED_LEARN_ARTICLES: FeaturedLearnArticle[] = [
 
 export const LEARN_HUB_LINKS = [
   { label: "All articles", href: "/blog" },
+  { label: "Trust over time", href: "/trust-framework#trust-over-time" },
   { label: "From the builder", href: "/blog/founder" },
   { label: "Community", href: "/community" },
   { label: "Cielo case study", href: "/case-studies/cielo" },

@@ -34,17 +34,17 @@ export const TIMELINE_FRAMINGS: readonly TimelineFraming[] = [
   {
     id: "confident",
     label: "Confident (operators / builders)",
-    headline: "The trust layer is live — mainnet scale is sequencing, not starting from zero",
+    headline: "Passport is live — integrate on pilot rails while we close the remaining gates",
     body:
-      "Use when speaking to tokenization platforms, embedded finance teams, or design partners who can ship on pilot rails now while mainnet hardening completes.",
+      "Use when speaking to operators with land deals, hospitality, or tokenization workflows who can start on the design partner program today.",
     bullets: [
-      "Real assets and partners already on-registry — Cielo, land deals, integration SDK patterns",
-      "Cryptographic trust transfer: counterparties verify credentials, not Abraxas reputation",
-      "Integrate now via design partner program; self-serve opens after audit + bounty",
-      "On-chain Passport moves to mainnet as audits complete — not a rebuild",
-      "Verify once means reuse valid proof — refresh on expiry or material state change",
+      "Real assets on-registry — Cielo Sunrise, Chickasaw land, CPG workflows",
+      "Embed Passport instead of rebuilding KYC — integration patterns documented",
+      "Design partner program open now; self-serve after audit + first external relying party",
+      "On-chain Passport moves to mainnet as audits complete",
+      "Full refresh/revocation mechanics documented at /trust-framework — not hidden",
     ],
-    whenToUse: "Integrate page, operator outreach, builder community, X threads",
+    whenToUse: "Operator outreach, land/hospitality partners, design partner recruiting",
   },
 ] as const;
 

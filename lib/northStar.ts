@@ -17,8 +17,8 @@ export const ABRAXAS_PRODUCT =
 /** Homepage layer 1 — emotion (Becker: 5-second problem). */
 export const ABRAXAS_EMOTION_HEADLINE = "Stop proving your assets over and over.";
 
-/** Homepage layer 2 — mechanism (cryptographic trust transfer). */
-export const ABRAXAS_MECHANISM = "One verification. Cryptographically portable.";
+/** Homepage layer 2 — mechanism (marketing: simple). */
+export const ABRAXAS_MECHANISM = "One verification. Unlimited applications.";
 
 /** Homepage layer 3 — tagline / payoff. */
 export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
@@ -27,7 +27,11 @@ export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
 export const ABRAXAS_TAGLINE = ABRAXAS_HEADLINE;
 
 export const ABRAXAS_SUBHEAD =
-  "The universal trust layer for RWAs — verify once, then counterparties verify the credential themselves. No reputation games. No repeated document collection.";
+  "Get your Abraxas Passport once. Reuse verified proof across marketplaces, lenders, and operators — without repeating due diligence.";
+
+/** North star metric — relying party adoption compounds the network. */
+export const ABRAXAS_NORTH_STAR_METRIC =
+  "Applications that accept and act on Passport proof — that's what compounds.";
 
 /** Category positioning for investor/partner surfaces. */
 export const ABRAXAS_POSITIONING =

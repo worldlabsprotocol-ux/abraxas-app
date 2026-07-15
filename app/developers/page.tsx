@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/developers/page.tsx
-// Public developer portal — docs, APIs, quickstarts, architecture.
+// For builders — proof-first, then APIs and architecture.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -11,7 +11,8 @@ import {
   DEVELOPER_QUICKSTARTS,
   NOT_FOR_AUDIENCES,
 } from "@/lib/infrastructurePositioning";
-import { ABRAXAS_POSITIONING } from "@/lib/northStar";
+import { ABRAXAS_SUBHEAD } from "@/lib/northStar";
+import { BUILDER_PROOF_EXAMPLES, RELYING_PARTY_NORTH_STAR } from "@/lib/positioningStrategy";
 import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
 import { DOCS_SECTIONS } from "@/lib/protocolContent";
 
@@ -33,10 +34,41 @@ export default function DevelopersPage() {
   return (
     <RedesignPage maxWidth={900}>
       <PageHeader
-        eyebrow="Developers"
-        title="Build on the trust layer"
-        subtitle={ABRAXAS_POSITIONING}
+        eyebrow="For builders"
+        title="Build with Passport"
+        subtitle={ABRAXAS_SUBHEAD}
       />
+
+      <ContentCard title="Real proof — saved engineering time">
+        <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.85rem" }}>
+          {RELYING_PARTY_NORTH_STAR}
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "0.55rem", marginBottom: "0.75rem" }}>
+          {BUILDER_PROOF_EXAMPLES.map(ex => (
+            <Link
+              key={ex.name}
+              href={ex.href}
+              style={{
+                display: "block",
+                padding: "0.85rem 1rem",
+                borderRadius: 12,
+                border: "1px solid rgba(16,185,129,0.28)",
+                background: "rgba(16,185,129,0.06)",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.3rem" }}>
+                {ex.name} →
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
+                {ex.outcome}
+              </p>
+            </Link>
+          ))}
+        </div>
+        <Btn href="/integrate" size="sm">Integrate overview →</Btn>
+      </ContentCard>
 
       <ContentCard title="Quickstarts">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "0.65rem" }}>
@@ -85,13 +117,6 @@ export default function DevelopersPage() {
         <Btn href="/docs/sui" size="sm">Sui integration hub →</Btn>
       </ContentCard>
 
-      <ContentCard title="Live API endpoints">
-        <BulletList items={LIVE_ENDPOINTS} />
-        <div style={{ marginTop: "0.75rem" }}>
-          <Btn href="/docs" variant="secondary" size="sm">Full documentation →</Btn>
-        </div>
-      </ContentCard>
-
       <ContentCard title="Architecture & trust model">
         {DOCS_SECTIONS.slice(0, 4).map(section => (
           <div key={section.title} style={{ marginBottom: "0.85rem" }}>
@@ -103,7 +128,22 @@ export default function DevelopersPage() {
             </p>
           </div>
         ))}
-        <Btn href="/docs/architecture" size="sm">Architecture docs →</Btn>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/docs/architecture" size="sm">Architecture docs →</Btn>
+          <Btn href="/trust-framework#trust-over-time" variant="secondary" size="sm">
+            Trust over time (TTL & refresh) →
+          </Btn>
+        </div>
+      </ContentCard>
+
+      <ContentCard title="Live API endpoints">
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
+          Technical reference for approved partners. Start with quickstarts and proof examples above.
+        </p>
+        <BulletList items={LIVE_ENDPOINTS} />
+        <div style={{ marginTop: "0.75rem" }}>
+          <Btn href="/docs" variant="secondary" size="sm">Full documentation →</Btn>
+        </div>
       </ContentCard>
 
       <ContentCard title="Who this is for">
@@ -116,7 +156,7 @@ export default function DevelopersPage() {
 
       <ContentCard title="Integration program">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
-          Approved partners receive API keys, sandbox policy IDs, and white-glove onboarding for production relying-party flows.
+          Design partners receive API keys, sandbox policy IDs, and white-glove onboarding. Self-serve opens after audits and the first unaffiliated relying party proof.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href="/design-partner" size="sm">Apply →</Btn>

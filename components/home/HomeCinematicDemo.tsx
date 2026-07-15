@@ -15,8 +15,9 @@ import {
   CINEMATIC_LOOP_MS,
   CINEMATIC_MERGE_LINE,
   CINEMATIC_HOLD_LINE,
+  ABRAXAS_INFRA_MECHANISM,
 } from "@/lib/infrastructurePositioning";
-import { TRUST_TRANSFER_HEADLINE, CINEMATIC_TRUST_TRANSFER_LINE } from "@/lib/trustTransfer";
+import { CINEMATIC_TRUST_TRANSFER_LINE } from "@/lib/trustTransfer";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE } from "@/lib/design/institutionalTheme";
 import {
   KycPassportDoc,
@@ -355,7 +356,7 @@ export function HomeCinematicDemo() {
                   maxWidth: 480,
                 }}
               >
-                {TRUST_TRANSFER_HEADLINE}
+                {ABRAXAS_INFRA_MECHANISM}
               </p>
             </div>
             <button

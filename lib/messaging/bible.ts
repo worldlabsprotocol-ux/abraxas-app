@@ -24,7 +24,19 @@ export const DO_NOT_USE = [
   "Leading with tokenization or identity protocol jargon",
   "Guaranteed yield or investment return language",
   "Claiming third-party relying parties without signed approval",
+  "Trust Orchestration Network / Trust Coordination Layer (premature public rebrand)",
+  "Hero copy about TTL, revocation, or cryptographic mechanics — belongs in docs",
+  "Execution risk framing publicly — project progress and inevitability instead",
 ] as const;
+
+/** Marketing surfaces: simple hero. Docs: honest refresh/revocation. */
+export const POSITIONING_SPLIT = {
+  marketing: "Verify once. Transact everywhere. — Passport-forward, high-signal hero.",
+  documentation: "TTL, refresh triggers, fail-closed verify — trust-framework and relying-party docs.",
+} as const;
+
+export const NORTH_STAR_METRIC =
+  "Applications that accept and act on Abraxas Passport proof — relying party adoption.";
 
 export const PRIMARY_CTAS = {
   registry: { label: "Browse the registry", href: "/#registry" },

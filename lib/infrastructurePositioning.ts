@@ -50,22 +50,22 @@ export const NETWORK_EFFECT_STEPS = [
   {
     step: "01",
     title: "First issuer verifies",
-    body: "Surveys, title, KYC, and asset scope attested on-registry once.",
+    body: "Veriff, title, surveys, and asset scope — attested once, separate claims per issuer.",
   },
   {
     step: "02",
-    title: "Second platform accepts",
-    body: "A marketplace or ATS reads the same Passport — no document resend.",
+    title: "First app accepts Passport",
+    body: "A marketplace or operator reads the same credential — no document resend.",
   },
   {
     step: "03",
-    title: "Third lender finances",
-    body: "Credit and eligibility policies evaluate live claims, not email PDFs.",
+    title: "Second app accepts Passport",
+    body: "Each new relying party is the moat. Network value = apps that trust the proof.",
   },
   {
     step: "04",
-    title: "Fourth marketplace lists",
-    body: "Each participant makes every Passport more valuable. That compounding is the moat.",
+    title: "Compounding reuse",
+    body: "More accepting applications → more valuable Passport. That adoption curve is the north star.",
   },
 ] as const;
 
@@ -121,15 +121,15 @@ export const CINEMATIC_MERGE_LINE = "One proof. Every future.";
 export const CINEMATIC_HOLD_LINE = "One Passport. Zero repeated diligence.";
 
 export const HOME_BUILD_BRIDGE =
-  "Build once. Verify once. Counterparties verify the cryptographic proof — not your reputation.";
+  "Ship faster with proof that already worked — Cielo bookings, land deals, and registry assets are live references. Embed Passport instead of rebuilding KYC per app.";
 
 export const BUILD_WITH_OUTCOMES: { label: string; outcome: string }[] = [
-  { label: "Verification API", outcome: "Policy decisions in one call" },
-  { label: "Passport SDK", outcome: "Embed trust in days, not quarters" },
-  { label: "W3C Credentials", outcome: "Portable proof, not PDF attachments" },
-  { label: "Reusable Compliance", outcome: "Works across every counterparty" },
-  { label: "Portable Identity", outcome: "Travels with every deal" },
-  { label: "Zero repeated due diligence", outcome: "Never prove the same thing twice" },
+  { label: "Cielo Sunrise", outcome: "Verified guest in minutes — live STR + USDC booking" },
+  { label: "Land & mineral deals", outcome: "Title scope attested once across portal workflows" },
+  { label: "Passport embed", outcome: "Days to integrate — not quarters of bespoke KYC" },
+  { label: "Policy decisions", outcome: "Approved / denied in one API call" },
+  { label: "Portable proof", outcome: "W3C credentials — not email PDF attachments" },
+  { label: "Multi-issuer claims", outcome: "Veriff, title, appraisers — separate trust rules each" },
 ];
 
 export const DEVELOPER_QUICKSTARTS = [

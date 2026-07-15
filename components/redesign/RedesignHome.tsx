@@ -12,7 +12,6 @@ import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
-import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
@@ -33,7 +32,6 @@ function HomeContent() {
       <div style={MAXW}>
         <HomeSharpHero />
         <HomeDemoVideo />
-        <HomeTrustTransferStrip />
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />

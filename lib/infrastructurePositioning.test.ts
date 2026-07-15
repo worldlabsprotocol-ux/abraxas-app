@@ -23,7 +23,7 @@ describe("infrastructurePositioning", () => {
   });
 
   it("lists build-with capabilities for developer section", () => {
-    expect(BUILD_WITH_OUTCOMES.some(o => o.label === "Passport SDK")).toBe(true);
+    expect(BUILD_WITH_OUTCOMES.some(o => o.label === "Cielo Sunrise")).toBe(true);
     expect(BUILD_WITH_OUTCOMES.length).toBe(6);
   });
 

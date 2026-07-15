@@ -1,6 +1,8 @@
 // FILE: lib/mainnetReadiness.ts
 // Boolean gates for "100% capacity mainnet" — internal + public checklist. No calendar dates.
 
+import { MAINNET_FOUNDER_PITCH } from "./positioningStrategy";
+
 export interface MainnetMilestone {
   id: string;
   label: string;
@@ -69,15 +71,14 @@ export const MAINNET_READINESS_MILESTONES: MainnetMilestone[] = [
   },
 ];
 
-export const MAINNET_READINESS_HEADLINE = "What “mainnet ready” means for Abraxas";
+export const MAINNET_READINESS_HEADLINE = "What full mainnet means";
 
-export const MAINNET_READINESS_SUMMARY =
-  "Soft production is already live — real Passport flows, pilot partners, and cryptographic verify. Full capacity mainnet means every gate below is true: audits published, mainnet on-chain, external reliance proven, and trust refresh automated.";
+export const MAINNET_READINESS_SUMMARY = MAINNET_FOUNDER_PITCH;
 
 export const MAINNET_CURRENT_STAGE = {
-  label: "Current stage",
-  stage: "Soft production / limited mainnet",
-  body: "Core verification and pilot partner workflows run in production today. On-chain Passport remains on devnet; external relying-party proof and asset monitoring v1 are still open.",
+  label: "Where we are today",
+  stage: "Soft production — pilot partners live",
+  body: "Passport and verification work for real assets today. On-chain Passport is still on devnet. Audits, external relying-party proof, and automated asset refresh are the remaining gates before open self-serve.",
 } as const;
 
 export function mainnetReadinessProgress(): {

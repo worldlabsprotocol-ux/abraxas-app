@@ -12,6 +12,6 @@ describe("roadmapTimeline", () => {
   });
 
   it("returns framing by variant", () => {
-    expect(getTimelineFraming("confident").headline.toLowerCase()).toContain("live");
+    expect(getTimelineFraming("confident").headline.toLowerCase()).toContain("passport");
   });
 });

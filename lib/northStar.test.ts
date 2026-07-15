@@ -21,7 +21,7 @@ describe("northStar", () => {
 
   it("layers emotion before tagline", () => {
     expect(ABRAXAS_EMOTION_HEADLINE.toLowerCase()).toContain("stop proving");
-    expect(ABRAXAS_MECHANISM.toLowerCase()).toContain("cryptographically");
+    expect(ABRAXAS_MECHANISM.toLowerCase()).toContain("one verification");
   });
 
   it("contrasts before/after workflows", () => {

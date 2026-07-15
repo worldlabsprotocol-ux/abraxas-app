@@ -4,6 +4,7 @@
 
 import { Btn } from "@/components/redesign/ui";
 import { BUILD_WITH_OUTCOMES, HOME_BUILD_BRIDGE } from "@/lib/infrastructurePositioning";
+import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -51,7 +52,7 @@ export function HomeBuildWithSection() {
             marginBottom: "0.5rem",
           }}
         >
-          Trusted by builders · Robinhood · Plume · Securitize · Figure · Ondo
+          Live proof · Cielo · land deals · registry
         </div>
 
         <h2
@@ -79,8 +80,38 @@ export function HomeBuildWithSection() {
             maxWidth: 520,
           }}
         >
-          Embed trust into your application.
+          Embed Passport into your application.
         </p>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
+          gap: "0.5rem",
+          marginBottom: "1.15rem",
+        }}>
+          {BUILDER_PROOF_EXAMPLES.map(ex => (
+            <a
+              key={ex.name}
+              href={ex.href}
+              style={{
+                display: "block",
+                padding: "0.65rem 0.75rem",
+                borderRadius: 10,
+                border: "1px solid rgba(16,185,129,0.28)",
+                background: "rgba(16,185,129,0.06)",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
+                {ex.name} →
+              </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.45 }}>
+                {ex.outcome}
+              </div>
+            </a>
+          ))}
+        </div>
 
         <ul
           style={{
