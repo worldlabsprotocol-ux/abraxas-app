@@ -1,9 +1,9 @@
 "use client";
 // FILE: components/home/HomeBuildWithSection.tsx
-// Developer-first — can I integrate this next week?
+// Developer-first — bridge from product story to integration.
 
 import { Btn } from "@/components/redesign/ui";
-import { BUILD_WITH_CAPABILITIES } from "@/lib/infrastructurePositioning";
+import { BUILD_WITH_OUTCOMES, HOME_BUILD_BRIDGE } from "@/lib/infrastructurePositioning";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -18,6 +18,19 @@ export function HomeBuildWithSection() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
+      <p
+        style={{
+          fontFamily: FONT,
+          fontSize: "0.88rem",
+          color: "var(--text-secondary)",
+          lineHeight: 1.65,
+          margin: "0 0 1.15rem",
+          maxWidth: 640,
+        }}
+      >
+        {HOME_BUILD_BRIDGE}
+      </p>
+
       <div
         style={{
           padding: "clamp(1.25rem, 3vw, 1.75rem)",
@@ -38,7 +51,7 @@ export function HomeBuildWithSection() {
             marginBottom: "0.5rem",
           }}
         >
-          For Robinhood · Plume · Securitize · Figure · Ondo
+          Trusted by builders · Robinhood · Plume · Securitize · Figure · Ondo
         </div>
 
         <h2
@@ -75,44 +88,34 @@ export function HomeBuildWithSection() {
             margin: "0 0 1.35rem",
             padding: 0,
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
             gap: "0.5rem",
           }}
         >
-          {BUILD_WITH_CAPABILITIES.map(item => (
+          {BUILD_WITH_OUTCOMES.map(item => (
             <li
-              key={item}
+              key={item.label}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                fontFamily: FONT,
-                fontSize: "0.82rem",
-                fontWeight: 600,
-                color: "var(--text-primary)",
-                padding: "0.55rem 0.7rem",
+                padding: "0.6rem 0.75rem",
                 borderRadius: 10,
                 background: "rgba(0,0,0,0.25)",
                 border: "1px solid var(--border)",
               }}
             >
-              <span style={{ color: "#10B981", fontWeight: 800, fontSize: "0.9rem" }}>✓</span>
-              {item}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "0.45rem" }}>
+                <span style={{ color: "#10B981", fontWeight: 800, fontSize: "0.85rem", lineHeight: 1.4 }}>✓</span>
+                <div>
+                  <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2, lineHeight: 1.45 }}>
+                    {item.outcome}
+                  </div>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
-
-        <p
-          style={{
-            fontFamily: FONT,
-            fontSize: "0.78rem",
-            color: "var(--text-muted)",
-            margin: "0 0 1rem",
-            lineHeight: 1.55,
-          }}
-        >
-          Integrate next week — live APIs, partner SDK patterns, and white-glove onboarding for approved builders.
-        </p>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
           <Btn href="/developers" size="lg">
@@ -121,8 +124,8 @@ export function HomeBuildWithSection() {
           <Btn href="/design-partner" variant="secondary" size="lg">
             Book integration →
           </Btn>
-          <Btn href="/tokenized-stocks" variant="ghost" size="lg">
-            Tokenized stocks →
+          <Btn href="/passport" variant="ghost" size="lg">
+            Launch app →
           </Btn>
         </div>
       </div>

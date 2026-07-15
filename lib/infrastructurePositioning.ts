@@ -112,6 +112,26 @@ export const CINEMATIC_UNLOCK_TARGETS = [
   "Exchange",
 ] as const;
 
+export const CINEMATIC_LOOP_MS = 24000;
+
+export const CINEMATIC_PHASE_MS = [7000, 7000, 10000] as const;
+
+export const CINEMATIC_MERGE_LINE = "One proof. Every future.";
+
+export const CINEMATIC_HOLD_LINE = "One Passport. Zero repeated diligence.";
+
+export const HOME_BUILD_BRIDGE =
+  "Build once. Verify once. Use everywhere — including land deals and real-world assets.";
+
+export const BUILD_WITH_OUTCOMES: { label: string; outcome: string }[] = [
+  { label: "Verification API", outcome: "Policy decisions in one call" },
+  { label: "Passport SDK", outcome: "Embed trust in days, not quarters" },
+  { label: "W3C Credentials", outcome: "Portable proof, not PDF attachments" },
+  { label: "Reusable Compliance", outcome: "Works across every counterparty" },
+  { label: "Portable Identity", outcome: "Travels with every deal" },
+  { label: "Zero repeated due diligence", outcome: "Never prove the same thing twice" },
+];
+
 export const DEVELOPER_QUICKSTARTS = [
   {
     title: "5-minute trust check",

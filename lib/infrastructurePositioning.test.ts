@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ABRAXAS_INFRA_HEADLINE,
-  BUILD_WITH_CAPABILITIES,
+  BUILD_WITH_OUTCOMES,
   INTEGRATE_CAPABILITIES,
   NETWORK_EFFECT_STEPS,
   RWA_STACK_LAYERS,
@@ -23,8 +23,8 @@ describe("infrastructurePositioning", () => {
   });
 
   it("lists build-with capabilities for developer section", () => {
-    expect(BUILD_WITH_CAPABILITIES).toContain("Passport SDK");
-    expect(BUILD_WITH_CAPABILITIES.length).toBe(6);
+    expect(BUILD_WITH_OUTCOMES.some(o => o.label === "Passport SDK")).toBe(true);
+    expect(BUILD_WITH_OUTCOMES.length).toBe(6);
   });
 
   it("lists integrate capabilities for builder section", () => {

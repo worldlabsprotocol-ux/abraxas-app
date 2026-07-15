@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeCinematicDemo.tsx
-// Cinematic product story — keynote motion, zero static dashboards.
+// 24s KYC chaos → Passport merge → Land/RWA unlock (keynote product story).
 
 import { useEffect, useState, useCallback } from "react";
 import {
@@ -11,340 +11,247 @@ import {
 } from "framer-motion";
 import {
   ABRAXAS_INFRA_EMOTION,
-  CINEMATIC_UNLOCK_TARGETS,
+  ABRAXAS_INFRA_MECHANISM,
+  CINEMATIC_PHASE_MS,
+  CINEMATIC_LOOP_MS,
+  CINEMATIC_MERGE_LINE,
+  CINEMATIC_HOLD_LINE,
 } from "@/lib/infrastructurePositioning";
-import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
+import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE } from "@/lib/design/institutionalTheme";
+import {
+  KycPassportDoc,
+  KycDriverLicenseDoc,
+  KycSsnFormDoc,
+  KycVerifyModalDoc,
+  AbraxasPassportVc,
+  LandDeedDoc,
+  RwaAssetDoc,
+  ConnectionBeam,
+} from "./cinematic/KycDocumentCards";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
-const SPRING: Transition = { type: "spring", stiffness: 140, damping: 16, mass: 0.85 };
-const SPRING_SNAPPY: Transition = { type: "spring", stiffness: 220, damping: 18, mass: 0.7 };
+const SPRING: Transition = { type: "spring", stiffness: 120, damping: 14, mass: 0.9 };
+const SPRING_FLOAT: Transition = { type: "spring", stiffness: 40, damping: 12 };
+const SPRING_SNAPPY: Transition = { type: "spring", stiffness: 200, damping: 18, mass: 0.75 };
 
-const SCENE_MS = [4800, 4200, 5200, 4800, 4500] as const;
-const TOTAL_MS = SCENE_MS.reduce((a, b) => a + b, 0);
+const KYC_ITEMS = [
+  { id: "passport", x: -105, y: -35, rot: -12, delay: 0, component: KycPassportDoc },
+  { id: "license", x: 95, y: -45, rot: 8, delay: 0.08, component: KycDriverLicenseDoc },
+  { id: "ssn", x: -55, y: 42, rot: -5, delay: 0.16, component: KycSsnFormDoc },
+  { id: "modal1", x: 70, y: 28, rot: 6, delay: 0.22, component: () => <KycVerifyModalDoc repeat /> },
+  { id: "modal2", x: -15, y: -58, rot: -3, delay: 0.28, component: () => <KycVerifyModalDoc /> },
+  { id: "passport2", x: 115, y: -8, rot: 14, delay: 0.34, component: KycPassportDoc },
+] as const;
 
-function DocIcon({ x, y, delay, frozen }: { x: number; y: number; delay: number; frozen?: boolean }) {
+function PhaseKycChaos() {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.6, x, y, rotate: -8 }}
-      animate={{
-        opacity: frozen ? 0.35 : [0, 1, 1],
-        scale: frozen ? 0.85 : [0.6, 1.05, 1],
-        x,
-        y: frozen ? y : [y + 20, y - 4, y],
-        rotate: frozen ? 0 : [-8, 2, 0],
-      }}
-      transition={{ ...SPRING, delay, duration: frozen ? 0.3 : undefined }}
-      style={{
-        position: "absolute",
-        left: "50%",
-        top: "50%",
-        width: 52,
-        height: 66,
-        marginLeft: -26,
-        marginTop: -33,
-        borderRadius: 8,
-        border: "1px solid rgba(232,197,71,0.35)",
-        background: "linear-gradient(145deg, rgba(30,30,36,0.95) 0%, rgba(12,12,16,0.98) 100%)",
-        boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
-      }}
-    >
-      <div style={{ height: 8, margin: "8px 8px 0", borderRadius: 2, background: "rgba(232,197,71,0.25)" }} />
-      <div style={{ height: 3, margin: "6px 10px", borderRadius: 2, background: "rgba(255,255,255,0.08)" }} />
-      <div style={{ height: 3, margin: "4px 10px", borderRadius: 2, background: "rgba(255,255,255,0.06)", width: "70%" }} />
-    </motion.div>
-  );
-}
-
-function PassportCard({ scale = 1, glow = false }: { scale?: number; glow?: boolean }) {
-  return (
-    <motion.div
-      animate={{ scale }}
-      transition={SPRING}
-      style={{
-        width: 200,
-        height: 124,
-        borderRadius: 16,
-        border: `2px solid ${glow ? INSTITUTIONAL_GOLD : "rgba(232,197,71,0.5)"}`,
-        background: "linear-gradient(155deg, #121018 0%, #06090B 100%)",
-        boxShadow: glow
-          ? `0 0 60px rgba(232,197,71,0.35), 0 24px 48px rgba(0,0,0,0.5)`
-          : "0 20px 40px rgba(0,0,0,0.45)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        position: "relative",
-        zIndex: 2,
-      }}
-    >
-      <div style={{ fontFamily: MONO, fontSize: "0.48rem", letterSpacing: "0.14em", color: INSTITUTIONAL_VIOLET }}>
-        ABRAXAS
-      </div>
-      <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, color: INSTITUTIONAL_GOLD_PALE }}>
-        Passport
-      </div>
-      <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.5)" }}>
-        Verified once ✓
-      </div>
-    </motion.div>
-  );
-}
-
-function ScenePain() {
-  const [frozen, setFrozen] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setFrozen(true), 2400);
-    return () => clearTimeout(t);
-  }, []);
-  const docs = [
-    { x: -90, y: -30, d: 0.1 },
-    { x: 70, y: -50, d: 0.25 },
-    { x: -40, y: 40, d: 0.4 },
-    { x: 100, y: 20, d: 0.55 },
-    { x: 0, y: -70, d: 0.7 },
-    { x: -120, y: 10, d: 0.85 },
-  ];
-  return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-      <motion.p
-        initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        transition={{ ...SPRING, delay: 0.15 }}
-        style={{
-          fontFamily: FONT,
-          fontSize: "clamp(1rem, 2.8vw, 1.35rem)",
-          fontWeight: 800,
-          letterSpacing: "-0.03em",
-          color: "#FAFAFA",
-          textAlign: "center",
-          maxWidth: 420,
-          margin: "0 0 2rem",
-          padding: "0 1rem",
-          lineHeight: 1.2,
-          zIndex: 3,
-        }}
-      >
-        {ABRAXAS_INFRA_EMOTION}
-      </motion.p>
-      <div style={{ position: "relative", width: 280, height: 160 }}>
-        {docs.map((doc, i) => (
-          <DocIcon key={i} x={doc.x} y={doc.y} delay={doc.d} frozen={frozen} />
-        ))}
-        <AnimatePresence>
-          {frozen && (
+    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "relative", width: 320, height: 200 }}>
+        {KYC_ITEMS.map(item => {
+          const Comp = item.component;
+          return (
             <motion.div
-              initial={{ opacity: 0, scale: 0.7, filter: "blur(12px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              transition={SPRING_SNAPPY}
-              style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", zIndex: 5 }}
+              key={item.id}
+              initial={{ opacity: 0, scale: 0.75, x: item.x, y: item.y + 30, rotate: item.rot }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                x: [item.x, item.x + 6, item.x - 4, item.x],
+                y: [item.y, item.y - 8, item.y + 5, item.y],
+                rotate: [item.rot, item.rot + 3, item.rot - 2, item.rot],
+              }}
+              transition={{
+                opacity: { delay: item.delay, duration: 0.35 },
+                scale: { ...SPRING_SNAPPY, delay: item.delay },
+                x: { duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: item.delay },
+                y: { duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: item.delay + 0.2 },
+                rotate: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: item.delay },
+              }}
+              style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
             >
-              <PassportCard glow />
+              <Comp />
             </motion.div>
-          )}
-        </AnimatePresence>
+          );
+        })}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.7, 0.7] }}
+          transition={{ delay: 1.2, duration: 0.5 }}
+          style={{
+            position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
+            fontFamily: MONO, fontSize: "0.48rem", letterSpacing: "0.1em",
+            color: "rgba(248,113,113,0.85)", whiteSpace: "nowrap",
+          }}
+        >
+          SAME KYC · OVER AND OVER
+        </motion.div>
       </div>
     </div>
   );
 }
 
-function SceneDedupe() {
-  const particles = Array.from({ length: 12 }, (_, i) => ({
-    angle: (i / 12) * Math.PI * 2,
-    delay: i * 0.04,
-  }));
+function PhaseConsolidation() {
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", perspective: 800 }}>
-      <motion.div
-        initial={{ scale: 0.85, rotateX: 8 }}
-        animate={{ scale: 1.12, rotateX: 0 }}
-        transition={SPRING}
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        <PassportCard glow scale={1} />
-      </motion.div>
-      {particles.map((p, i) => (
+    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* Incoming KYC shrinking toward center */}
+      {KYC_ITEMS.map((item, i) => (
         <motion.div
-          key={i}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{
-            opacity: [0, 1, 0.6],
-            scale: [0, 1.2, 1],
-            x: Math.cos(p.angle) * 90,
-            y: Math.sin(p.angle) * 70,
-          }}
-          transition={{ ...SPRING, delay: 0.2 + p.delay }}
+          key={`merge-${item.id}`}
+          initial={{ opacity: 0.7, x: item.x, y: item.y, scale: 1, rotate: item.rot }}
+          animate={{ opacity: 0, x: 0, y: 0, scale: 0.2, rotate: 0 }}
+          transition={{ ...SPRING, delay: i * 0.06, duration: 0.85 }}
+          style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none" }}
+        >
+          <item.component />
+        </motion.div>
+      ))}
+
+      {/* Merge streaks */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <motion.div
+          key={`streak-${i}`}
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: [0, 0.8, 0], scaleX: [0, 1, 1.2] }}
+          transition={{ delay: 0.35 + i * 0.05, duration: 0.6 }}
           style={{
             position: "absolute",
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            background: INSTITUTIONAL_GOLD,
-            boxShadow: `0 0 12px ${INSTITUTIONAL_GOLD}`,
+            width: 80,
+            height: 2,
+            background: `linear-gradient(90deg, transparent, ${INSTITUTIONAL_GOLD}, transparent)`,
+            transform: `rotate(${i * 45}deg)`,
+            transformOrigin: "center",
           }}
         />
       ))}
-    </div>
-  );
-}
 
-function SceneUnlocks() {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "0.65rem",
-        padding: "clamp(1.5rem, 4vw, 2.5rem)",
-        alignContent: "center",
-        maxWidth: 480,
-        margin: "0 auto",
-        left: 0,
-        right: 0,
-      }}
-    >
-      {CINEMATIC_UNLOCK_TARGETS.map((label, i) => (
-        <motion.div
-          key={label}
-          initial={{ opacity: 0.25, scale: 0.92, filter: "blur(4px)" }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          transition={{ ...SPRING_SNAPPY, delay: 0.15 + i * 0.12 }}
-          style={{
-            padding: "0.75rem 0.5rem",
-            borderRadius: 12,
-            textAlign: "center",
-            border: "1px solid rgba(16,185,129,0.45)",
-            background: "linear-gradient(145deg, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.06) 100%)",
-            boxShadow: "0 0 24px rgba(16,185,129,0.15)",
-          }}
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: [0, 1.15, 1] }}
-            transition={{ ...SPRING_SNAPPY, delay: 0.2 + i * 0.12 }}
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "#10B981",
-              margin: "0 auto 0.4rem",
-              boxShadow: "0 0 10px #10B981",
-            }}
-          />
-          <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 800, color: "#FAFAFA" }}>{label}</div>
-          <div style={{ fontFamily: MONO, fontSize: "0.45rem", color: "rgba(16,185,129,0.85)", marginTop: 4 }}>
-            UNLOCKED
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-function SceneNetwork() {
-  const nodes = Array.from({ length: 8 }, (_, i) => {
-    const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
-    const r = 38;
-    return { x: 50 + Math.cos(a) * r, y: 50 + Math.sin(a) * r, i };
-  });
-  return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <motion.div
-        initial={{ scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={SPRING}
-        style={{ width: "min(340px, 85vw)", aspectRatio: "1", position: "relative" }}
+        initial={{ opacity: 0, scale: 0.5, filter: "blur(16px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        transition={{ ...SPRING, delay: 0.55 }}
+        style={{ position: "relative", zIndex: 5 }}
       >
-        <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%", overflow: "visible" }} aria-hidden>
-          <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.2 }}>
-            {nodes.map((n, i) =>
-              nodes.slice(i + 1).map((m, j) => (
-                <line
-                  key={`${i}-${j}`}
-                  x1={n.x}
-                  y1={n.y}
-                  x2={m.x}
-                  y2={m.y}
-                  stroke="rgba(232,197,71,0.22)"
-                  strokeWidth="0.35"
-                />
-              )),
-            )}
-          </motion.g>
-          {nodes.map((n, i) => (
-            <motion.circle
-              key={i}
-              cx={n.x}
-              cy={n.y}
-              r="2.5"
-              fill={INSTITUTIONAL_GOLD}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [0, 1.3, 1], opacity: 1 }}
-              transition={{ ...SPRING_SNAPPY, delay: 0.05 * i }}
-            />
-          ))}
-        </svg>
+        <AbraxasPassportVc pulse />
+      </motion.div>
+
+      <AnimatePresence>
         <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...SPRING, delay: 0.5 }}
+          key="merge-line"
+          initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+          animate={{ opacity: [0, 1, 1, 0], y: [12, 0, 0, -8] }}
+          transition={{ delay: 1.1, duration: 2.8, times: [0, 0.15, 0.75, 1] }}
           style={{
             position: "absolute",
-            bottom: -8,
+            bottom: "18%",
             left: 0,
             right: 0,
             textAlign: "center",
-            fontFamily: MONO,
-            fontSize: "0.52rem",
-            letterSpacing: "0.12em",
-            color: "rgba(255,255,255,0.45)",
+            fontFamily: FONT,
+            fontSize: "clamp(0.82rem, 2.2vw, 1rem)",
+            fontWeight: 700,
+            fontStyle: "italic",
+            letterSpacing: "-0.01em",
+            color: INSTITUTIONAL_GOLD_PALE,
+            textShadow: "0 2px 20px rgba(0,0,0,0.8)",
+            padding: "0 1rem",
           }}
         >
-          TRUST NETWORK GROWING
+          {CINEMATIC_MERGE_LINE}
         </motion.p>
-      </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
 
-function ScenePayoff() {
+function PhaseLandUnlock() {
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem", flexWrap: "wrap", maxWidth: 420 }}>
+        <motion.div
+          initial={{ opacity: 0, x: -24, scale: 0.9 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ ...SPRING, delay: 0.1 }}
+        >
+          <AbraxasPassportVc pulse />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...SPRING_SNAPPY, delay: 0.45 }}
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <ConnectionBeam />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 24, scale: 0.88, filter: "blur(8px)" }}
+          animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
+          transition={{ ...SPRING, delay: 0.55 }}
+          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+        >
+          <LandDeedDoc />
+          <RwaAssetDoc />
+        </motion.div>
+      </div>
+
+      {/* Stamp pulse on land cards */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.88, filter: "blur(10px)" }}
-        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-        transition={SPRING}
-        style={{ textAlign: "center" }}
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: [0, 1, 0.6], scale: [0.5, 1.15, 1] }}
+        transition={{ delay: 1.2, duration: 0.5, type: "spring" }}
+        style={{
+          position: "absolute",
+          right: "12%",
+          top: "38%",
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          border: "2px solid #10B981",
+          background: "rgba(16,185,129,0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "1rem",
+          color: "#10B981",
+          boxShadow: "0 0 20px rgba(16,185,129,0.4)",
+        }}
       >
-        <div
-          style={{
-            fontFamily: FONT,
-            fontSize: "clamp(1.75rem, 6vw, 3.25rem)",
-            fontWeight: 900,
-            letterSpacing: "-0.04em",
-            lineHeight: 0.95,
-            color: INSTITUTIONAL_GOLD_PALE,
-            marginBottom: "0.35rem",
-          }}
-        >
-          VERIFY ONCE.
-        </div>
-        <div
-          className="abx-gradient-text"
-          style={{
-            fontFamily: FONT,
-            fontSize: "clamp(1.75rem, 6vw, 3.25rem)",
-            fontWeight: 900,
-            letterSpacing: "-0.04em",
-            lineHeight: 0.95,
-          }}
-        >
-          TRANSACT EVERYWHERE.
-        </div>
+        ✓
+      </motion.div>
+
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...SPRING, delay: 1.4 }}
+        style={{
+          marginTop: "1.25rem",
+          fontFamily: FONT,
+          fontSize: "clamp(0.78rem, 2vw, 0.92rem)",
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          color: "#FAFAFA",
+          textAlign: "center",
+          maxWidth: 380,
+        }}
+      >
+        {CINEMATIC_HOLD_LINE}
+      </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+        style={{
+          marginTop: "0.45rem",
+          fontFamily: MONO,
+          fontSize: "0.46rem",
+          letterSpacing: "0.1em",
+          color: "rgba(16,185,129,0.75)",
+        }}
+      >
+        PORTABLE · LAND · RWAs · ANY APP
       </motion.div>
     </div>
   );
@@ -352,113 +259,195 @@ function ScenePayoff() {
 
 export function HomeCinematicDemo() {
   const reduce = useReducedMotion();
-  const [scene, setScene] = useState(0);
+  const [phase, setPhase] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [phaseElapsed, setPhaseElapsed] = useState(0);
+
+  const phaseOffsets = [0, CINEMATIC_PHASE_MS[0], CINEMATIC_PHASE_MS[0] + CINEMATIC_PHASE_MS[1]];
 
   const advance = useCallback(() => {
-    setScene(s => (s + 1) % 5);
+    setPhase(p => (p + 1) % 3);
   }, []);
 
   useEffect(() => {
     if (paused || reduce) return;
-    const t = setTimeout(advance, SCENE_MS[scene]);
+    const t = setTimeout(advance, CINEMATIC_PHASE_MS[phase]);
     return () => clearTimeout(t);
-  }, [scene, paused, reduce, advance]);
+  }, [phase, paused, reduce, advance]);
 
-  const progress = ((scene + 1) / 5) * 100;
+  useEffect(() => {
+    if (paused) return;
+    const start = Date.now();
+    setPhaseElapsed(0);
+    const id = setInterval(() => setPhaseElapsed(Date.now() - start), 40);
+    return () => clearInterval(id);
+  }, [phase, paused]);
+
+  const totalElapsed = phaseOffsets[phase] + Math.min(phaseElapsed, CINEMATIC_PHASE_MS[phase]);
+  const progress = Math.min(100, (totalElapsed / CINEMATIC_LOOP_MS) * 100);
+  const loopSec = Math.round(CINEMATIC_LOOP_MS / 1000);
+
+  const phaseLabels = ["Repeated KYC", "One Passport", "Land & RWAs unlock"];
 
   return (
-    <section id="demo" aria-label="Abraxas product story" style={{ padding: "clamp(0.5rem, 2vw, 1rem) 0 clamp(1.25rem, 3vw, 2rem)", borderBottom: "1px solid var(--border-strong)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
-        <div className="abx-eyebrow-violet">Product story · ~{Math.round(TOTAL_MS / 1000)}s</div>
-        <button
-          type="button"
-          onClick={() => setPaused(p => !p)}
-          aria-pressed={paused}
-          style={{
-            padding: "0.4rem 0.75rem",
-            borderRadius: 999,
-            border: "1px solid rgba(232,197,71,0.35)",
-            background: "rgba(232,197,71,0.08)",
-            fontFamily: FONT,
-            fontSize: "0.68rem",
-            fontWeight: 600,
-            color: INSTITUTIONAL_GOLD_PALE,
-            cursor: "pointer",
-          }}
-        >
-          {paused ? "Resume ▶" : "Pause ⏸"}
-        </button>
-      </div>
-
+    <section
+      id="demo"
+      aria-label="Abraxas product story"
+      style={{
+        padding: "clamp(0.5rem, 2vw, 1rem) 0 clamp(1.25rem, 3vw, 2rem)",
+        borderBottom: "1px solid var(--border-strong)",
+      }}
+    >
       <div
         className="abx-glass-panel"
         style={{
-          position: "relative",
-          aspectRatio: "16 / 9",
-          borderRadius: 18,
+          borderRadius: 20,
           overflow: "hidden",
           border: "1px solid var(--border-strong)",
-          background: "#030408",
+          background: "linear-gradient(180deg, rgba(10,8,20,0.5) 0%, #030408 100%)",
           boxShadow: "var(--shadow-soft)",
         }}
       >
+        {/* Hook copy inside the card */}
+        <div style={{ padding: "clamp(1rem, 3vw, 1.35rem) clamp(1rem, 3vw, 1.35rem) 0.65rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div>
+              <div className="abx-eyebrow-violet" style={{ marginBottom: "0.45rem" }}>
+                Product story · ~{loopSec}s
+              </div>
+              <h2
+                style={{
+                  fontFamily: FONT,
+                  fontSize: "clamp(1.15rem, 3.2vw, 1.5rem)",
+                  fontWeight: 900,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1.15,
+                  color: "var(--text-primary)",
+                  margin: "0 0 0.35rem",
+                  maxWidth: 480,
+                }}
+              >
+                {ABRAXAS_INFRA_EMOTION}
+              </h2>
+              <p
+                style={{
+                  fontFamily: FONT,
+                  fontSize: "0.78rem",
+                  color: "var(--text-secondary)",
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                {ABRAXAS_INFRA_MECHANISM}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPaused(p => !p)}
+              aria-pressed={paused}
+              style={{
+                padding: "0.4rem 0.75rem",
+                borderRadius: 999,
+                border: "1px solid rgba(232,197,71,0.35)",
+                background: "rgba(232,197,71,0.08)",
+                fontFamily: FONT,
+                fontSize: "0.68rem",
+                fontWeight: 600,
+                color: INSTITUTIONAL_GOLD_PALE,
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              {paused ? "Resume ▶" : "Pause ⏸"}
+            </button>
+          </div>
+        </div>
+
+        {/* Animation viewport — taller on desktop */}
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            background: `
-              radial-gradient(ellipse 70% 50% at 50% 40%, rgba(232,197,71,0.08) 0%, transparent 60%),
-              radial-gradient(ellipse 50% 40% at 80% 80%, rgba(167,139,250,0.06) 0%, transparent 55%)
-            `,
-            pointerEvents: "none",
+            position: "relative",
+            aspectRatio: "16 / 10",
+            minHeight: 220,
+            maxHeight: 420,
+            margin: "0 clamp(0.65rem, 2vw, 1rem) clamp(0.65rem, 2vw, 1rem)",
+            borderRadius: 14,
+            overflow: "hidden",
+            background: "#030408",
+            border: "1px solid rgba(255,255,255,0.06)",
           }}
-        />
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={scene}
-            initial={{ opacity: 0, scale: 0.98, filter: reduce ? "none" : "blur(6px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 1.02, filter: reduce ? "none" : "blur(8px)" }}
-            transition={reduce ? { duration: 0.2 } : SPRING}
-            style={{ position: "absolute", inset: 0 }}
-          >
-            {scene === 0 && <ScenePain />}
-            {scene === 1 && <SceneDedupe />}
-            {scene === 2 && <SceneUnlocks />}
-            {scene === 3 && <SceneNetwork />}
-            {scene === 4 && <ScenePayoff />}
-          </motion.div>
-        </AnimatePresence>
-
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.06)" }}>
-          <motion.div
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.4 }}
-            style={{ height: "100%", background: INSTITUTIONAL_GOLD }}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.65rem", justifyContent: "center" }}>
-        {[0, 1, 2, 3, 4].map(i => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Scene ${i + 1}`}
-            onClick={() => { setScene(i); setPaused(false); }}
+        >
+          <div
             style={{
-              width: i === scene ? 22 : 8,
-              height: 8,
-              borderRadius: 999,
-              border: "none",
-              background: i === scene ? INSTITUTIONAL_GOLD : "rgba(255,255,255,0.15)",
-              cursor: "pointer",
-              transition: "width 0.3s ease",
+              position: "absolute",
+              inset: 0,
+              background: `
+                radial-gradient(ellipse 70% 50% at 50% 45%, rgba(232,197,71,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 45% 35% at 85% 75%, rgba(167,139,250,0.05) 0%, transparent 55%),
+                radial-gradient(circle at 20% 80%, rgba(248,113,113,0.04) 0%, transparent 40%)
+              `,
+              pointerEvents: "none",
             }}
           />
-        ))}
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={phase}
+              initial={{ opacity: 0, filter: reduce ? "none" : "blur(8px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, filter: reduce ? "none" : "blur(6px)" }}
+              transition={reduce ? { duration: 0.25 } : SPRING}
+              style={{ position: "absolute", inset: 0 }}
+            >
+              {phase === 0 && <PhaseKycChaos />}
+              {phase === 1 && <PhaseConsolidation />}
+              {phase === 2 && <PhaseLandUnlock />}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Continuous progress bar */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.06)" }}>
+            <motion.div
+              style={{ height: "100%", background: INSTITUTIONAL_GOLD, width: `${progress}%` }}
+              transition={{ duration: 0.05 }}
+            />
+          </div>
+        </div>
+
+        {/* Phase dots */}
+        <div style={{ display: "flex", gap: "0.35rem", justifyContent: "center", paddingBottom: "1rem", flexWrap: "wrap" }}>
+          {phaseLabels.map((label, i) => (
+            <button
+              key={label}
+              type="button"
+              aria-label={label}
+              aria-current={i === phase ? "step" : undefined}
+              onClick={() => { setPhase(i); setPaused(false); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.35rem",
+                padding: "0.35rem 0.65rem",
+                borderRadius: 999,
+                border: i === phase ? "1px solid rgba(232,197,71,0.45)" : "1px solid var(--border)",
+                background: i === phase ? "rgba(232,197,71,0.1)" : "transparent",
+                cursor: "pointer",
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: i === phase ? INSTITUTIONAL_GOLD : "rgba(255,255,255,0.2)",
+                }}
+              />
+              <span style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: i === phase ? 700 : 500, color: "var(--text-secondary)" }}>
+                {label}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );
