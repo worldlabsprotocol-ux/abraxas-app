@@ -383,7 +383,7 @@ export function ProductLoopDemo({ home = false }: { home?: boolean }) {
       >
         <div style={{ maxWidth: home ? 620 : 520 }}>
           <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-            {home ? "Protocol demo · live loop" : "Stop re-forwarding documents"}
+            {home ? "Protocol demo · 5-step loop" : "Stop re-forwarding documents"}
           </div>
           {!home && (
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.35rem" }}>

@@ -16,23 +16,24 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
-  { href: "/operators", label: "Operators", matchPrefixes: ["/operators"] },
+  { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/integrations", "/developers"] },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
 ];
 
 const MORE_LINKS = [
   { href: "/operators", label: "Operators" },
+  { href: "/developers", label: "Developers" },
+  { href: "/docs", label: "Documentation" },
+  { href: "/integrations", label: "Integration hub" },
   { href: "/portal", label: "Owner portal" },
   { href: "/blog", label: "Learn hub" },
   { href: "/blog/founder", label: "From the builder" },
   { href: "/community", label: "Community" },
   { href: "/#registry", label: "Browse assets" },
   { href: "/case-studies/cielo", label: "Cielo case study" },
-  { href: "/integrations", label: "Integrations" },
   { href: "/design-partner", label: "Design partner" },
   { href: "/account", label: "My account" },
-  { href: "/docs", label: "Documentation" },
-  { href: "/developers/partner", label: "Partner docs" },
+  { href: "/developers/partner", label: "Partner dashboard" },
 ];
 
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {

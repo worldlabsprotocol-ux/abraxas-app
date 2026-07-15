@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomePartnersBrief.tsx
-// Active partners — compact on mobile.
+// Integration partners — infrastructure social proof, owners secondary.
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
@@ -29,13 +29,13 @@ export function HomePartnersBrief() {
           letterSpacing: "-0.02em", color: "var(--text-primary)",
           margin: "0 0 0.5rem", maxWidth: 640,
         }}>
-          Live partners · <span className="abx-gradient-text">verify once</span>
+          Relying parties · <span className="abx-gradient-text">live today</span>
         </h2>
         <p className="partners-body" style={{
           fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)",
           lineHeight: 1.65, maxWidth: 640, margin: "0 0 1.1rem",
         }}>
-          Cielo and {CPG_ASSET.name} on-registry today.
+          Cielo and {CPG_ASSET.name} accept Abraxas verification in production — proof the trust layer works outside first-party dogfood.
         </p>
 
         <div className="partners-cards">
@@ -43,8 +43,8 @@ export function HomePartnersBrief() {
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "1.1rem", alignItems: "center" }}>
-          <Btn href="/operators" size="sm">For operators →</Btn>
-          <Btn href="/design-partner" variant="secondary" size="sm">Design partner →</Btn>
+          <Btn href="/integrate" size="sm">Integrate Abraxas →</Btn>
+          <Btn href="/integrations/relying-parties" variant="secondary" size="sm">Relying party program →</Btn>
           <Link href="/case-studies/cielo" className="partners-extra-link" style={{
             fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none",
           }}>
@@ -58,17 +58,17 @@ export function HomePartnersBrief() {
           fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
           color: "var(--text-primary)", margin: "0 0 0.45rem",
         }}>
-          List your asset
+          Issuing an asset?
         </h3>
         <p style={{
           fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
           lineHeight: 1.65, maxWidth: 560, margin: "0 0 0.85rem",
         }}>
-          Owner self-serve launch · syncs to the public registry.
+          Self-serve owner launch syncs to the public registry — verification becomes reusable for every counterparty.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href="/portal/apply" variant="secondary" size="sm">Launch listing →</Btn>
-          <Btn href="/build" variant="ghost" size="sm">Build →</Btn>
+          <Btn href="/operators" variant="ghost" size="sm">For operators →</Btn>
         </div>
       </div>
 

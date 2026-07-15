@@ -101,10 +101,10 @@ export const consumerCopy = {
     donePay: "Pay now →",
   },
   integrator: {
-    eyebrow: "For developers",
-    title: "Building on Abraxas?",
-    body: "Integrate trust checks into your app. Users consent once — you receive signed proof, never raw documents.",
-    cta: "Read the integration docs →",
+    eyebrow: "Developer API",
+    title: "Trust as an API — live endpoints today",
+    body: "Policy evaluation, credential verify, Passport read, and partner verification requests. Integrate once — users consent, you receive signed proof.",
+    cta: "Developer portal →",
   },
   packages: {
     intro:

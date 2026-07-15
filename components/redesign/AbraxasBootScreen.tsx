@@ -100,7 +100,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               color: TEXT_ON_DARK.eyebrow,
               marginBottom: "1rem",
             }}>
-              Reusable trust · real assets
+              Trust infrastructure · RWAs
             </div>
 
             <div style={{
@@ -111,9 +111,9 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               lineHeight: 1.05,
               marginBottom: "0.85rem",
             }}>
-              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Stop proving</span>
-              <span style={{ color: TEXT_ON_DARK.gold }}>the same asset </span>
-              <span style={{ color: TEXT_ON_DARK.violet }}>twice.</span>
+              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Verify once.</span>
+              <span style={{ color: TEXT_ON_DARK.gold }}>Transact </span>
+              <span style={{ color: TEXT_ON_DARK.violet }}>everywhere.</span>
             </div>
 
             <p style={{
@@ -123,11 +123,11 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               color: TEXT_ON_DARK.secondary,
               lineHeight: 1.55,
               margin: "0 0 2rem",
-              maxWidth: 400,
+              maxWidth: 420,
               marginLeft: "auto",
               marginRight: "auto",
             }}>
-              Verify once. Reuse everywhere. The registry and diligence packs are inside.
+              The trust layer every RWA application plugs into — not another marketplace.
             </p>
 
             <button

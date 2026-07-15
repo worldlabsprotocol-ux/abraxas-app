@@ -3,7 +3,7 @@
 
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
-export const ABRAXAS_CATEGORY = "Reusable Trust";
+export const ABRAXAS_CATEGORY = "Trust infrastructure for RWAs";
 
 export const ABRAXAS_ONE_LINER =
   "We eliminate repeated verification so assets, people, and businesses can move faster.";
@@ -14,23 +14,24 @@ export const ABRAXAS_CUDA =
 export const ABRAXAS_PRODUCT =
   "Trust as an API. Passport is the UX.";
 
-export const ABRAXAS_HEADLINE = "Stop proving the same thing over and over.";
+/** Primary homepage headline — one sentence. */
+export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
 
 export const ABRAXAS_SUBHEAD =
-  "Abraxas lets trusted verification move with people, businesses, and assets.";
+  "Every RWA app rebuilds trust from scratch. Abraxas makes trust portable — the verification layer issuers, marketplaces, and lenders plug into.";
 
-/** Secondary tagline — use after headline on marketing surfaces. */
+/** Secondary tagline — same as headline; kept for imports that expect TAGLINE. */
 export const ABRAXAS_TAGLINE = "Verify once. Transact everywhere.";
 
 /** Category positioning for investor/partner surfaces. */
 export const ABRAXAS_POSITIONING =
-  "Reusable trust for real assets — verify once, then every partner gets faster approvals with fewer document requests.";
+  "Abraxas is the reusable verification infrastructure for real-world assets — verify once, then every partner gets faster approvals with fewer document requests.";
 
 export const ABRAXAS_PROBLEM_THESIS =
   "Tokenization alone is not enough. Repeated verification is the hidden tax killing institutional adoption of RWAs.";
 
 export const ABRAXAS_BECKER_PITCH =
-  "Every company keeps asking for the same information. We make that happen once.";
+  "Every RWA platform needs this. Not another marketplace — the trust layer underneath all of them.";
 
 export const ABRAXAS_OPERATOR_OUTCOME =
   "Your guests go from sign-up to verified booking in under two minutes — and sensitive documents never sit in your inbox.";

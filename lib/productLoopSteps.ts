@@ -97,4 +97,4 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
 export const PRODUCT_LOOP_TOTAL_MS = PRODUCT_LOOP_STEPS.reduce((s, step) => s + step.durationMs, 0);
 
 export const PRODUCT_LOOP_HOME_PITCH =
-  "Every company keeps asking for the same information. Abraxas makes that happen once.";
+  "Every RWA platform rebuilds trust from scratch. Abraxas makes trust portable — verify once, reuse across every app.";

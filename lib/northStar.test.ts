@@ -13,8 +13,8 @@ describe("northStar", () => {
     expect(NORTH_STAR_PHASES.map(p => p.letter)).toEqual(["A", "B", "C", "D"]);
   });
 
-  it("uses outcome-first headline", () => {
-    expect(ABRAXAS_HEADLINE.toLowerCase()).toContain("stop proving");
+  it("uses infrastructure headline", () => {
+    expect(ABRAXAS_HEADLINE.toLowerCase()).toContain("verify once");
   });
 
   it("contrasts before/after workflows", () => {

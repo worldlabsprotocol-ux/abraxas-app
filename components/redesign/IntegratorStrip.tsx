@@ -46,7 +46,7 @@ export function IntegratorStrip() {
       </div>
 
       <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-        <Btn href="/docs/ail" size="sm">{consumerCopy.integrator.cta}</Btn>
+        <Btn href="/developers" size="sm">{consumerCopy.integrator.cta}</Btn>
         <button
           type="button"
           onClick={() => setShowApi(v => !v)}

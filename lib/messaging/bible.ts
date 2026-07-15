@@ -2,7 +2,7 @@
 // Approved core messaging — import in pages; full doc at content/MESSAGING_BIBLE.md
 
 export const ABRAXAS_POSITIONING =
-  "Abraxas is the reusable verification infrastructure for real-world assets.";
+  "Abraxas is the reusable verification infrastructure for real-world assets — the trust layer every tokenized asset application plugs into.";
 
 export const ABRAXAS_TAGLINE = "Verify once. Transact everywhere.";
 
@@ -31,6 +31,7 @@ export const PRIMARY_CTAS = {
   cielo: { label: "Cielo case study", href: "/case-studies/cielo" },
   passport: { label: "Get verified once", href: "/passport" },
   docs: { label: "Developer docs", href: "/docs" },
-  integrations: { label: "Integrations", href: "/integrations" },
+  integrations: { label: "Integrate Abraxas", href: "/integrate" },
+  developers: { label: "Developer docs", href: "/developers" },
   designPartner: { label: "Talk to the team", href: "/design-partner" },
 } as const;

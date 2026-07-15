@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: hook → demo video → live registry → partners & learn.
+// Homepage: infrastructure hook → demo → stack → network → integrate → proof registry.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -12,9 +12,13 @@ import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
+import { HomeStackPosition } from "@/components/home/HomeStackPosition";
+import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
+import { HomeIntegrateSection } from "@/components/home/HomeIntegrateSection";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeLearnHub } from "@/components/home/HomeLearnHub";
+import { IntegratorStrip } from "./IntegratorStrip";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180, margin: "0 auto",
@@ -29,19 +33,28 @@ function HomeContent() {
       <div style={MAXW}>
         <HomeSharpHero />
         <HomeDemoVideo />
+        <HomeStackPosition />
+        <HomeNetworkEffect />
+        <HomeIntegrateSection />
         <div id="registry" style={{
           paddingTop: "clamp(0.5rem, 2vw, 1rem)",
           paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
           borderBottom: "1px solid var(--border-strong)",
         }}>
           <AssetsExplorer
-            title="Real assets you can trust"
-            eyebrow="Registry"
+            title="Live proof on-registry"
+            eyebrow="Reference assets"
             home
             excludeIds={HOME_REGISTRY_EXCLUDE}
           />
         </div>
         <HomePartnersBrief />
+        <div style={{
+          padding: "clamp(1.25rem, 3vw, 2rem) 0",
+          borderTop: "1px solid var(--border-strong)",
+        }}>
+          <IntegratorStrip />
+        </div>
         <HomeLearnHub />
         <HomeSignedInModule />
       </div>
