@@ -59,4 +59,5 @@ Historical receipt payloads and signatures are **never mutated**. Validity is co
 
 ## Next milestone
 
-One **real external issuer pilot** + one **real relying-party pilot** outside Abraxas first-party flows.
+1. **Asset monitoring v1** — `POST /api/admin/asset-signals` ingests material state-change signals (ownership, lien, appraisal TTL) and applies validated claim transitions (preview or apply). Full automation (MLS/title feeds) is still in progress.
+2. One **real external issuer pilot** + one **real relying-party pilot** outside Abraxas first-party flows.
