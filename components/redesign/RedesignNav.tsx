@@ -11,16 +11,16 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
+  { href: "/integrate", label: "Integrate" },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
 ];
 
 const MORE_LINKS = [
-  { href: "/integrate", label: "Integrate" },
   { href: "/trust-framework", label: "Trust framework" },
   { href: "/#registry", label: "Browse assets" },
   { href: "/account", label: "My account" },

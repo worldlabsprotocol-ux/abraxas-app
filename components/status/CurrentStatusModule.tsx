@@ -39,7 +39,7 @@ export function CurrentStatusModule({
         padding: variant === "compact" ? "1rem 1.15rem" : "clamp(1.15rem, 3vw, 1.5rem)",
         borderRadius: 18,
         border: "1px solid var(--border-strong)",
-        background: "linear-gradient(160deg, rgba(16,185,129,0.05) 0%, var(--surface-raised) 55%, rgba(10,8,20,0.4) 100%)",
+        background: "linear-gradient(160deg, rgba(232,197,71,0.06) 0%, var(--surface-raised) 55%, rgba(10,8,20,0.4) 100%)",
         boxShadow: "var(--shadow-soft)",
       }}
     >
@@ -87,7 +87,7 @@ export function CurrentStatusModule({
 
       {variant === "full" && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginTop: "1rem", paddingTop: "0.85rem", borderTop: "1px solid var(--border)" }}>
-          <Link href="/trust-framework#trust-over-time" style={{ fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: "#10B981", textDecoration: "none" }}>
+          <Link href="/trust-framework#trust-over-time" style={{ fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
             How trust stays current →
           </Link>
           <Link href="/roadmap#mainnet-readiness" style={{ fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: "var(--text-muted)", textDecoration: "none" }}>
@@ -106,7 +106,7 @@ function ProgressBadge({ done, total, pct }: { done: number; total: number; pct:
         MAINNET GATES · {done}/{total}
       </div>
       <div style={{ height: 6, borderRadius: 999, background: "var(--border)", overflow: "hidden", marginBottom: 6 }}>
-        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, #10B981, #6EE7B7)" }} />
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--accent-deep, #C9A227), var(--accent-pale, #F5E6A8))" }} />
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
         Pilot production live · open mainnet sequencing
@@ -158,8 +158,8 @@ function StatusRow({ item }: { item: CurrentStatusItem }) {
     alignItems: "start",
     padding: "0.65rem 0.75rem",
     borderRadius: 12,
-    border: item.state === "live" ? "1px solid rgba(16,185,129,0.28)" : "1px solid var(--border)",
-    background: item.state === "live" ? "rgba(16,185,129,0.05)" : "var(--surface)",
+    border: item.state === "live" ? "1px solid rgba(16,185,129,0.32)" : "1px solid var(--border)",
+    background: item.state === "live" ? "var(--accent-verify-faint, rgba(16,185,129,0.05))" : "var(--surface)",
   };
 
   if (item.href) {

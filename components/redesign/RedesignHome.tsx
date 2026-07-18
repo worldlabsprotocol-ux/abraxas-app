@@ -54,10 +54,7 @@ export function RedesignHome() {
     <WalletContextProvider>
       <SuiAuthProvider>
         <AbraxasBootScreen />
-        <div data-theme="dark" style={{
-          background: "var(--bg)", color: "var(--text-primary)",
-          minHeight: "100vh", position: "relative", overflowX: "hidden",
-        }}>
+        <div data-theme="dark" className="abx-institutional-shell">
           <AmbientGlow />
           <RedesignNav />
           <HomeContent />

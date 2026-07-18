@@ -7,7 +7,7 @@ import { SITE_URL } from "@/lib/siteUrl";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 
 const LINKS = {
   protocol: [

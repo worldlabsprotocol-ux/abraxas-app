@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeHonestStatusStrip.tsx
-// Founder-level status under hero — honest, confident, not defensive.
+// Founder-level status under hero — institutional gold/violet, confident tone.
 
 import Link from "next/link";
 import {
@@ -31,8 +31,8 @@ export function HomeHonestStatusStrip() {
         style={{
           padding: "clamp(0.9rem, 2.5vw, 1.15rem) clamp(1rem, 3vw, 1.25rem)",
           borderRadius: 16,
-          border: "1px solid rgba(16,185,129,0.22)",
-          background: "linear-gradient(155deg, rgba(16,185,129,0.06) 0%, var(--surface-raised) 100%)",
+          border: "1px solid var(--border-strong)",
+          background: "linear-gradient(155deg, rgba(232,197,71,0.08) 0%, var(--surface-raised) 100%)",
         }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.55rem" }}>
@@ -41,8 +41,8 @@ export function HomeHonestStatusStrip() {
           </div>
           <span style={{
             fontFamily: MONO, fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.08em",
-            color: "#10B981", padding: "0.2rem 0.5rem", borderRadius: 999,
-            border: "1px solid rgba(16,185,129,0.35)", background: "rgba(16,185,129,0.08)",
+            color: "var(--accent)", padding: "0.2rem 0.5rem", borderRadius: 999,
+            border: "1px solid var(--accent-border)", background: "var(--accent-faint)",
           }}>
             {done}/{total} MAINNET GATES
           </span>
@@ -73,7 +73,7 @@ export function HomeHonestStatusStrip() {
           fontFamily: FONT,
           fontSize: "0.72rem",
           fontWeight: 700,
-          color: "#10B981",
+          color: "var(--accent-pale, var(--accent))",
           margin: "0 0 0.65rem",
         }}>
           {HOMEPAGE_STATUS_PROOF}
