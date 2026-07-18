@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { adminEmailShell, adminEmailTable, sendAdminEmail } from "@/lib/notify/adminResend";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -45,6 +46,22 @@ export async function POST(req: NextRequest) {
   } else {
     console.info("[asset_inquire]", JSON.stringify(record));
   }
+
+  void sendAdminEmail({
+    subject: `Asset inquiry — ${assetName} · ${body.package_interest ?? "general"}`,
+    html: adminEmailShell(
+      "New Asset Acquisition Inquiry",
+      adminEmailTable({
+        Asset: assetName,
+        "Asset ID": assetId,
+        Package: body.package_interest ?? "—",
+        Email: email,
+        Wallet: body.wallet ?? "—",
+        Message: body.message?.trim() ?? "—",
+        Time: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+      }),
+    ),
+  });
 
   return NextResponse.json({
     ok: true,

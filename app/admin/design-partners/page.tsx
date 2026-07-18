@@ -189,7 +189,8 @@ export default function AdminDesignPartnersPage() {
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
         After sandbox pilot: promote to production at{" "}
         <Link href="/admin/partners" style={{ color: "var(--accent)" }}>/admin/partners</Link>
-        {" "}(set allowed_environments + issue abx_live_ key).
+        {" "}(set allowed_environments + issue abx_live_ key).{" "}
+        <Link href="/admin/inquiries" style={{ color: "var(--accent)" }}>Asset inquiries →</Link>
       </p>
     </RedesignPage>
   );

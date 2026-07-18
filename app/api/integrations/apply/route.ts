@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { adminEmailShell, adminEmailTable, sendAdminEmail } from "@/lib/notify/adminResend";
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,6 +47,23 @@ export async function POST(req: NextRequest) {
       console.error("[integrations/apply]", error.message);
       return NextResponse.json({ error: "Could not save application" }, { status: 500 });
     }
+
+    void sendAdminEmail({
+      subject: `Design partner application — ${company}`,
+      html: adminEmailShell(
+        "New Design Partner Application",
+        adminEmailTable({
+          Company: company,
+          Contact: body.contact_name?.trim() ?? "—",
+          Email: email,
+          Website: body.website?.trim() ?? "—",
+          "Use case": body.use_case?.trim() ?? "—",
+          Volume: body.monthly_volume?.trim() ?? "—",
+          Integration: body.integration_type?.trim() ?? "passport_gate",
+          "Public name OK": body.public_name_ok ? "yes" : "no",
+        }),
+      ),
+    });
 
     return NextResponse.json({ ok: true });
   } catch {
