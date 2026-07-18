@@ -27,6 +27,7 @@ const LINKS = {
   learn: [
     { label: "Why verification", href: "/docs/why-verification" },
     { label: "Cielo case study", href: "/case-studies/cielo" },
+    { label: "Chickasaw Project", href: "/case-studies/chickasaw-project" },
     { label: "FAQ", href: "/faq" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "About", href: "/about" },
