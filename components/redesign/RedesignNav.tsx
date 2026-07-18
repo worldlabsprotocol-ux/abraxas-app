@@ -20,6 +20,8 @@ const LINKS = [
 ];
 
 const MORE_LINKS = [
+  { href: "/integrate", label: "Integrate" },
+  { href: "/trust-framework", label: "Trust framework" },
   { href: "/#registry", label: "Browse assets" },
   { href: "/account", label: "My account" },
   { href: "/build", label: "Submit your asset" },

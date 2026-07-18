@@ -32,6 +32,7 @@ const LINKS = {
     { label: "About", href: "/about" },
   ],
   developers: [
+    { label: "Integrate", href: "/integrate" },
     { label: "Documentation", href: "/docs" },
     { label: "Integrations", href: "/integrations" },
     { label: "Relying parties", href: "/integrations/relying-parties" },

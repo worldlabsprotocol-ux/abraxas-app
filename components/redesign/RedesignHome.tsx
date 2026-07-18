@@ -11,6 +11,7 @@ import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { TrustFrameworkTeaser } from "@/components/vision/TrustFrameworkTeaser";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomeProofSection } from "@/components/home/HomeProofSection";
 import { HomePassportIntro } from "@/components/home/HomePassportIntro";
@@ -30,6 +31,7 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
+        <HomeHonestStatusStrip />
         <HomeSignedInModule />
         <HomeProofSection />
         <HomePassportIntro />
