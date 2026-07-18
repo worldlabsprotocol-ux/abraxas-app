@@ -6,25 +6,27 @@ export const ROADMAP = [
     phase: "Live now",
     color: "#10B981",
     items: [
+      "Core verification + Passport issuance in production",
       "Verified credential system (W3C VC, Ed25519 signed JWT)",
-      "Social verification via Reclaim Protocol (LinkedIn, X, GitHub, Gmail)",
       "Identity verification via Veriff in-context SDK",
-      "Wyoming LLC formation flow",
+      "Social verification via Reclaim Protocol (LinkedIn, X, GitHub, Gmail)",
       "Asset verification pipeline (10-stage V5 lifecycle)",
-      "Music royalty audit intake",
       "Cielo Sunrise verified asset with real gallery and stablecoin booking",
+      "Land deal pipeline with on-registry proof",
       "Stablecoin checkout (Buy Now / Book Now)",
-      "Dark premium homepage redesign",
+      "Wyoming LLC formation flow",
+      "Music royalty audit intake",
     ],
   },
   {
-    phase: "In progress",
+    phase: "Final gates",
     color: "#F59E0B",
     items: [
-      "Wallet sign-in (Phantom, Solflare)",
-      "Document review for Business, Accredited, and Asset Owner stamps",
-      "Self-serve purchase lifecycle status for buyers",
-      "Reclaim callback confirmation against real production payloads",
+      "Automated asset state monitoring (refresh / revoke on change)",
+      "Sui Passport on mainnet (deployment after security audit)",
+      "First fully external relying party production transaction",
+      "Published security audits (Move Passport + Credential API)",
+      "Self-serve integrate + public bug bounty",
     ],
   },
   {
@@ -32,11 +34,9 @@ export const ROADMAP = [
     color: "#3B82F6",
     items: [
       "Institutional-grade secure storage integration (Utila)",
-      "Passport accepted on external protocols",
-      "First external protocol integration",
+      "Passport accepted across external protocols at scale",
       "Automated on-chain payment verification",
-      "Smart contract audit publication",
-      "Public bug bounty program",
+      "Document review automation for Business, Accredited, and Asset Owner stamps",
     ],
   },
 ] as const;
@@ -72,7 +72,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "How do partners integrate the Passport?",
-    a: "Integrators call POST /api/credentials/verify with a presentation proof. Public keys are at /api/credentials/public-key. Full integration notes are on the Docs page. First external live integration is still on the roadmap.",
+    a: "Core verification is live today. Integrators call POST /api/credentials/verify with a presentation proof; public keys are at /api/credentials/public-key. Partner integrations are active — see /integrate for the verify API, trust model, and design partner program. Full self-serve onboarding opens after the final mainnet gates.",
   },
 ] as const;
 
@@ -116,11 +116,11 @@ export const SECURITY_ITEMS = [
     ],
   },
   {
-    title: "In progress",
+    title: "Final gates",
     items: [
-      "Smart contract audit before first external protocol integration",
+      "Sui Passport Move contract audit (in progress)",
       "Formal security review of credential verification API",
-      "Public bug bounty program (planned post-audit)",
+      "Public bug bounty program (opens post-audit)",
     ],
   },
   {

@@ -30,6 +30,8 @@ export default function IntegratePage() {
         ]} />
       </ContentCard>
 
+      <CurrentStatusModule />
+
       <div id="counterparty-trust">
         <ContentCard title={INTEGRATE_COUNTERPARTY_TRUST.title}>
           <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.85rem" }}>
@@ -43,8 +45,6 @@ export default function IntegratePage() {
           </p>
         </ContentCard>
       </div>
-
-      <CurrentStatusModule />
 
       <ContentCard title="Start integrating">
         <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.85rem" }}>

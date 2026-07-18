@@ -82,9 +82,14 @@ export function RedesignHome() {
               One credential. Every door it opens.
             </h2>
             <p style={{ fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
-                         lineHeight: 1.7, maxWidth: 620, margin: "0 0 1.75rem" }}>
+                         lineHeight: 1.7, maxWidth: 620, margin: "0 0 0.5rem" }}>
               Your verification lives as a portable, soul-bound credential. Below is a fully
               verified Passport, yours starts empty and fills in as you complete each stamp.
+            </p>
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0 0 1.75rem" }}>
+              <a href="/trust-framework#trust-over-time" style={{ color: "#10B981", fontWeight: 700, textDecoration: "none" }}>
+                How verification stays current over time →
+              </a>
             </p>
             <AbraxasPassport
               onGetVerified={() => { window.location.href = "/passport"; }}

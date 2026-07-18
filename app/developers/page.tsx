@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { CATEGORY_POSITIONING } from "@/lib/categoryInfrastructure";
 import { DOCS_SECTIONS } from "@/lib/protocolContent";
+import { PRODUCTION_STATUS_HEADLINE } from "@/lib/currentStatus";
 
 export const metadata: Metadata = {
   title: "Developers — Verification API & Passport SDK | Abraxas",
@@ -23,7 +23,7 @@ export default function DevelopersPage() {
       <PageHeader
         eyebrow="For builders"
         title="Build with Passport"
-        subtitle={CATEGORY_POSITIONING.elevator}
+        subtitle={PRODUCTION_STATUS_HEADLINE}
       />
 
       <ContentCard title="I'm building a tokenized asset platform. How do I integrate?">
@@ -31,8 +31,9 @@ export default function DevelopersPage() {
           Embed Passport for holder UX. Call the verify API when you need to clear a transaction. Map your risk tiers to assurance levels — you verify the credential, not Abraxas reputation.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href="/learn/verification-infrastructure" size="sm">Verification infrastructure →</Btn>
-          <Btn href="/comparisons/passport-vs-repeated-kyc" variant="secondary" size="sm">vs repeated KYC →</Btn>
+          <Btn href="/integrate" size="sm">Integrate guide →</Btn>
+          <Btn href="/trust-framework" variant="secondary" size="sm">Trust over time →</Btn>
+          <Btn href="/learn/verification-infrastructure" variant="ghost" size="sm">Verification infrastructure →</Btn>
           <Btn href="/partners" variant="ghost" size="sm">Design partner program →</Btn>
         </div>
       </ContentCard>

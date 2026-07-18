@@ -15,7 +15,7 @@ export default function SecurityPage() {
       <PageHeader
         eyebrow="Security"
         title="Security and trust practices"
-        subtitle="What Abraxas does today to protect credentials and payments, and what is planned before institutional-scale integrations go live."
+        subtitle="Core verification runs in production today. These are the security practices behind credentials and payments — plus the focused audits completing before full open mainnet."
       />
       {SECURITY_ITEMS.map(section => (
         <ContentCard key={section.title} title={section.title}>
