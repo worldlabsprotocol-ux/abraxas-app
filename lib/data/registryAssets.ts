@@ -3,6 +3,7 @@
 
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import { SMYRNA_ASSET } from "@/lib/smyrnaCaseStudy";
 import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
 import type { AssuranceBreakdown } from "@/lib/assuranceTaxonomy";
@@ -133,6 +134,37 @@ const DEMO_EXTERNAL: RegistryAssetDef = {
   aliases: ["demo-land", "abx-demo-land-001"],
 };
 
+const CPG: RegistryAssetDef = {
+  abxId: CPG_ASSET.id,
+  slug: "chickasaw-project",
+  name: CPG_ASSET.name,
+  assetClass: "REAL_ESTATE_LAND",
+  location: CPG_ASSET.location,
+  image: CPG_ASSET.image,
+  verifyState: "listed",
+  pipelineStage: "MARKETPLACE_LIVE",
+  assuranceLevel: 2,
+  assuranceTaxonomy: {
+    L1_IdentityClaim: { status: "VERIFIED", provider: "Partner_Attestation" },
+    L2_LegalReview: { status: "VERIFIED", provider: "Washita_Valley_Abstract" },
+    L3_ProfessionalAttestation: { status: "VERIFIED", authority: "Survey_Plat_Complete" },
+    L4_ActiveMonitoring: {
+      status: "ACTIVE",
+      lastSync: new Date().toISOString(),
+      oracleSource: "CPG_Partner_Lot_Status",
+    },
+  },
+  metadataUri: CPG_ASSET.caseStudyPath,
+  notice:
+    "Active Oklahoma land partner listing · lot status synced from CPG Land Sales · surveys on file.",
+  tokenization: {
+    standard: "Abraxas Registry Entry",
+    chain: "Off-chain title",
+    status: "LISTED",
+  },
+  aliases: ["chickasaw", "chickasaw-project", "cpg-grady-270", "grady-270"],
+};
+
 const CLOVE: RegistryAssetDef = {
   abxId: "ABX-RE-VIL-004",
   slug: "the-clove",
@@ -157,7 +189,7 @@ const CLOVE: RegistryAssetDef = {
   aliases: ["clove", "the-clove"],
 };
 
-export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, NAJ, DEMO_EXTERNAL, CLOVE];
+export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, CPG, NAJ, DEMO_EXTERNAL, CLOVE];
 
 const BY_KEY = new Map<string, RegistryAssetDef>();
 for (const asset of REGISTRY_ASSETS) {

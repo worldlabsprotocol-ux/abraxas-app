@@ -67,6 +67,13 @@ Historical receipt payloads and signatures are **never mutated**. Validity is co
 
 Set `ASSET_MONITORING_AUTO_APPLY=true` to auto-apply claim transitions from cron feeds.
 
+**Automated feeds (daily cron):**
+- `credential_expiry_feed` — active claims past `expires_at`
+- `listing_status_feed` — pipeline stage, STR listing, and CPG lot-status drift (snapshot diff)
+- `registry_assurance_feed` — L4 monitoring PENDING or stale sync
+
+Partners can also push listing/title events via `POST /api/v1/asset-signals` with `signal_type: listing_status_change`.
+
 ## External relying party proof
 
 | Endpoint | Auth | Purpose |
@@ -77,5 +84,5 @@ Production verify calls from external `abx_live_` partners with `decision: appro
 
 ## Next milestone
 
-1. **Asset monitoring v1** — `POST /api/admin/asset-signals` ingests material state-change signals (ownership, lien, appraisal TTL) and applies validated claim transitions (preview or apply). Full automation (MLS/title feeds) is still in progress.
+1. **Asset monitoring v1** — automated feeds + partner webhook live; county recorder / live MLS API hooks next.
 2. One **real external issuer pilot** + one **real relying-party pilot** outside Abraxas first-party flows.

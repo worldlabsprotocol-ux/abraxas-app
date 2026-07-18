@@ -3,6 +3,7 @@
 
 import { applyAssetSignal } from "@/lib/assetMonitoring/apply";
 import { runCredentialExpiryFeed } from "@/lib/assetMonitoring/feeds/credentialExpiryFeed";
+import { runListingStatusFeed } from "@/lib/assetMonitoring/feeds/listingStatusFeed";
 import { runRegistryAssuranceFeed } from "@/lib/assetMonitoring/feeds/registryAssuranceFeed";
 import { resolveClaimIdsForAsset } from "@/lib/assetMonitoring/resolveClaims";
 import type { AssetSignal } from "@/lib/assetMonitoring/types";
@@ -26,7 +27,8 @@ export async function runAssetMonitoringFeeds(input?: {
 
   const registrySignals = runRegistryAssuranceFeed(observedAt);
   const expirySignals = await runCredentialExpiryFeed(observedAt);
-  const signals = [...expirySignals, ...registrySignals];
+  const listingSignals = await runListingStatusFeed(observedAt);
+  const signals = [...expirySignals, ...listingSignals, ...registrySignals];
 
   const results: FeedRunResult[] = [];
 

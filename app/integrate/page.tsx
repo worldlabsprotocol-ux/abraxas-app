@@ -22,6 +22,8 @@ import { INTEGRATE_COUNTERPARTY_TRUST } from "@/lib/trustTransfer";
 import { TRUST_IS_TIME_BOUND_HEADLINE, TRUST_VERIFY_ONCE_HONEST } from "@/lib/trustOverTime";
 import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
 import { INTEGRATE_PRODUCTION_NOTE } from "@/lib/currentStatus";
+import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
+import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -143,6 +145,19 @@ export default function IntegratePage() {
         >
           {INTEGRATION_SDK_SNIPPET}
         </pre>
+      </ContentCard>
+
+      <ContentCard title="Become an external relying party">
+        <RelyingPartyProofStatus />
+        <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
+          Your first approved production verify call with an <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_</code> key
+          logs toward our mainnet gate — not sandbox flows or first-party Cielo/Passport paths.
+        </p>
+        <BulletList items={PRODUCTION_INTEGRATION_PATH.map((step, i) => `${i + 1}. ${step}`)} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+          <Btn href="/integrations/relying-parties" size="sm">Full program + webhooks →</Btn>
+          <Btn href="/design-partner" variant="secondary" size="sm">Request abx_live_ key →</Btn>
+        </div>
       </ContentCard>
 
       <ContentCard title="Active relying parties">

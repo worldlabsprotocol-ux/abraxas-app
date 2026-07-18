@@ -58,7 +58,7 @@ export const MAINNET_READINESS_MILESTONES: MainnetMilestone[] = [
     id: "asset-monitoring-v1",
     label: "Asset monitoring v1 (state-change → refresh or revoke)",
     description:
-      "Automated signal when a record materially changes (sale, lien, listing drift) — credentials fail closed or trigger refresh.",
+      "Automated listing/pipeline drift feeds, credential TTL, and partner webhooks — credentials fail closed or trigger refresh on material change.",
     done: false,
     href: "/trust-framework#trust-over-time",
   },
