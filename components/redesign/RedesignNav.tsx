@@ -21,14 +21,15 @@ const MotionLink = motion.create(Link);
 const LINKS = [
   { href: "/terminal",   label: "Assets" },
   { href: "/passport",   label: "Passport" },
+  { href: "/integrate",  label: "Integrate" },
   { href: "/platform",   label: "Platform" },
   { href: "/solutions",  label: "Solutions" },
   { href: "/learn",      label: "Learn" },
   { href: "/developers", label: "Developers" },
-  { href: "/docs",       label: "Docs" },
 ];
 
 const MORE_LINKS = [
+  { href: "/trust-framework", label: "Trust framework" },
   { href: "/comparisons", label: "Comparisons" },
   { href: "/research",    label: "Research" },
   { href: "/tools/verification-cost-calculator", label: "Tools" },

@@ -13,7 +13,7 @@ export default function RoadmapPage() {
       <PageHeader
         eyebrow="Roadmap"
         title="Where the protocol stands"
-        subtitle="Public milestones with honest status labels. Timelines shift when real diligence or partner consent requires it."
+        subtitle="Core verification is live in production. The remaining work is focused — final mainnet gates for Sui Passport, automated monitoring, and external relying party proof."
       />
       {ROADMAP.map(phase => (
         <ContentCard key={phase.phase} title={phase.phase}>

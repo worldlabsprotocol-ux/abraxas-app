@@ -18,6 +18,7 @@ import { MusicRoyaltySection } from "./MusicRoyaltySection";
 import { ProtocolVisionSection } from "@/components/terminal/ProtocolVisionSection";
 import { RoadmapCTA } from "./RoadmapCTA";
 import { CategoryLearnStrip } from "@/components/home/CategoryLearnStrip";
+import { HomeProductionStatusStrip } from "@/components/home/HomeProductionStatusStrip";
 import { RedesignFAQ } from "./RedesignFAQ";
 import { RedesignFooter } from "./RedesignFooter";
 
@@ -53,6 +54,7 @@ export function RedesignHome() {
           {/* 1 · Hero + primary CTA */}
           <div style={MAXW}>
             <RedesignHero />
+            <HomeProductionStatusStrip />
             <CategoryLearnStrip />
           </div>
 

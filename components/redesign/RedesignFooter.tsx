@@ -13,6 +13,8 @@ const LINKS = {
   product: [
     { label: "Assets", href: "/terminal" },
     { label: "Passport", href: "/passport" },
+    { label: "Integrate", href: "/integrate" },
+    { label: "Trust framework", href: "/trust-framework" },
     { label: "Platform", href: "/platform" },
     { label: "Solutions", href: "/solutions" },
     { label: "Developers", href: "/developers" },

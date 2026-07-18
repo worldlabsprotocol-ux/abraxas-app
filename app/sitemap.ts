@@ -16,6 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/research",
     "/tools/verification-cost-calculator",
     "/docs",
+    "/integrate",
+    "/trust-framework",
     "/roadmap",
     "/about",
   ];

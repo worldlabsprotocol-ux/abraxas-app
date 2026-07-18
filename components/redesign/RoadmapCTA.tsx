@@ -49,8 +49,8 @@ export function RoadmapCTA() {
           fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
           lineHeight: 1.6, margin: 0, maxWidth: 420,
         }}>
-          Full roadmap with honest status labels. What shipped, what is in progress,
-          and what is next.
+          Core verification is live. See what's shipped and the focused final gates
+          for full open mainnet.
         </p>
       </div>
       <Link href="/roadmap" style={{

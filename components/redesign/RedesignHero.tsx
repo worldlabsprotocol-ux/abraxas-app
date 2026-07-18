@@ -118,25 +118,32 @@ export function RedesignHero() {
           <motion.h1 variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "var(--fs-display)", fontWeight: 800,
             letterSpacing: "-0.04em", lineHeight: 0.98, color: "var(--text-primary)",
+            margin: "0 0 0.65rem",
+          }}>
+            Stop proving your assets over and over.
+          </motion.h1>
+
+          <motion.p variants={staggerItem} style={{
+            fontFamily: FONT, fontSize: "clamp(1.15rem, 2.5vw, 1.45rem)", fontWeight: 700,
+            letterSpacing: "-0.02em", lineHeight: 1.2, color: ACCENT,
             margin: "0 0 1.2rem",
           }}>
-            Verify once.<br />
-            <span style={{ color: ACCENT }}>Transact everywhere.</span>
-          </motion.h1>
+            Verify once. Transact everywhere.
+          </motion.p>
 
           <motion.p variants={staggerItem} style={{
             fontFamily: FONT, fontSize: "var(--fs-body)", color: "var(--text-secondary)",
             lineHeight: 1.7, maxWidth: 540, margin: "0 0 1.75rem",
           }}>
-            One identity check. One asset attestation. A portable, on-chain credential
-            that every protocol, lender, and marketplace accepts, no re-KYC, no redundant
-            uploads, no re-proving who you are.
+            One identity check. One asset attestation. A portable credential
+            that every protocol, lender, and marketplace accepts — no re-KYC,
+            no redundant uploads, no re-proving who you are.
           </motion.p>
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",
                                                        flexWrap: "wrap", marginBottom: "2rem" }}>
             <Btn href="/passport" size="lg">Launch app →</Btn>
-            <Btn href="/developers" variant="secondary" size="lg">Build with Abraxas →</Btn>
+            <Btn href="/integrate" variant="secondary" size="lg">Integrate Abraxas →</Btn>
             <Btn href="#assets" variant="ghost" size="lg">Explore verified assets</Btn>
             <Btn href="/terminal?demo=1" variant="ghost" size="lg">Take a tour</Btn>
           </motion.div>
