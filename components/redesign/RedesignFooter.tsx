@@ -13,11 +13,16 @@ const LINKS = {
   product: [
     { label: "Assets", href: "/terminal" },
     { label: "Passport", href: "/passport" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Build", href: "/build" },
-    { label: "Swap", href: "/swap" },
+    { label: "Platform", href: "/platform" },
+    { label: "Solutions", href: "/solutions" },
+    { label: "Developers", href: "/developers" },
   ],
   learn: [
+    { label: "Learn hub", href: "/learn" },
+    { label: "Trust infrastructure", href: "/learn/trust-infrastructure" },
+    { label: "Comparisons", href: "/comparisons" },
+    { label: "Research", href: "/research" },
+    { label: "Tools", href: "/tools/verification-cost-calculator" },
     { label: "Documentation", href: "/docs" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "Tokenomics", href: "/tokenomics" },
@@ -102,7 +107,7 @@ export function RedesignFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. The verification layer for real-world assets on Solana.
+              Verify once. Transact everywhere. Trust infrastructure for tokenized assets.
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
               Live at{" "}

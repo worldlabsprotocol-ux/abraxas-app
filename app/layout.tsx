@@ -6,8 +6,8 @@ import { ThemeProvider } from "@/components/ThemeContext";
 import { SITE_URL } from "@/lib/siteUrl";
 
 export const metadata: Metadata = {
-  title: "Abraxas, Verify Once. Transact Everywhere.",
-  description: "The verification and identity layer for real-world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
+  title: "Abraxas — Trust Infrastructure for Tokenized Assets",
+  description: "Verify once. Transact everywhere. The trust infrastructure layer for RWAs — Passport, verify API, and reusable verification across marketplaces, lenders, and custodians.",
   metadataBase: new URL(SITE_URL),
   openGraph: {
     title: "Abraxas, Verify Once. Transact Everywhere.",

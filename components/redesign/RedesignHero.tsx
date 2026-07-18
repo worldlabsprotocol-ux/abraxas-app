@@ -112,7 +112,7 @@ export function RedesignHero() {
                                               gap: "clamp(2rem, 5vw, 3.5rem)", alignItems: "center" }}>
         <motion.div variants={staggerContainer(0.1, 0.05)} initial="hidden" animate="show">
           <motion.div variants={staggerItem} style={{ marginBottom: "1.25rem" }}>
-            <VerificationBadge label="The verification layer for real-world assets" color={ACCENT} />
+            <VerificationBadge label="Trust infrastructure for tokenized assets" color={ACCENT} />
           </motion.div>
 
           <motion.h1 variants={staggerItem} style={{
@@ -135,8 +135,9 @@ export function RedesignHero() {
 
           <motion.div variants={staggerItem} style={{ display: "flex", gap: "0.75rem",
                                                        flexWrap: "wrap", marginBottom: "2rem" }}>
-            <Btn href="/passport" size="lg">Get verified →</Btn>
-            <Btn href="#assets" variant="secondary" size="lg">Explore verified assets</Btn>
+            <Btn href="/passport" size="lg">Launch app →</Btn>
+            <Btn href="/developers" variant="secondary" size="lg">Build with Abraxas →</Btn>
+            <Btn href="#assets" variant="ghost" size="lg">Explore verified assets</Btn>
             <Btn href="/terminal?demo=1" variant="ghost" size="lg">Take a tour</Btn>
           </motion.div>
           <motion.p variants={staggerItem} style={{

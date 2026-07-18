@@ -17,6 +17,7 @@ import { CloveCaseStudy } from "@/components/terminal/CloveCaseStudy";
 import { MusicRoyaltySection } from "./MusicRoyaltySection";
 import { ProtocolVisionSection } from "@/components/terminal/ProtocolVisionSection";
 import { RoadmapCTA } from "./RoadmapCTA";
+import { CategoryLearnStrip } from "@/components/home/CategoryLearnStrip";
 import { RedesignFAQ } from "./RedesignFAQ";
 import { RedesignFooter } from "./RedesignFooter";
 
@@ -52,6 +53,7 @@ export function RedesignHome() {
           {/* 1 · Hero + primary CTA */}
           <div style={MAXW}>
             <RedesignHero />
+            <CategoryLearnStrip />
           </div>
 
           {/* 2 · Trust metrics */}
