@@ -1,8 +1,9 @@
 "use client";
 // FILE: components/home/HomeHonestStatusStrip.tsx
-// Founder-level status under hero — institutional gold/violet, confident tone.
+// Founder-level status under hero — institutional gold/violet, live gate telemetry.
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   HOMEPAGE_STATUS_LEAD,
   HOMEPAGE_STATUS_ROLLOUT,
@@ -10,12 +11,30 @@ import {
   DEEP_DIVE_LINKS,
 } from "@/lib/currentStatus";
 import { mainnetReadinessProgress } from "@/lib/mainnetReadiness";
+import type { MainnetMilestone } from "@/lib/mainnetReadiness";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
 export function HomeHonestStatusStrip() {
-  const { done, total } = mainnetReadinessProgress();
+  const staticProgress = mainnetReadinessProgress();
+  const [done, setDone] = useState(staticProgress.done);
+  const [total] = useState(staticProgress.total);
+  const [liveGates, setLiveGates] = useState<MainnetMilestone[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/mainnet/readiness")
+      .then(r => r.json())
+      .then(data => {
+        if (typeof data.done === "number") setDone(data.done);
+        if (Array.isArray(data.milestones)) setLiveGates(data.milestones);
+      })
+      .catch(() => {
+        /* static fallback */
+      });
+  }, []);
+
+  const rpMet = liveGates?.find(m => m.id === "unaffiliated-rp")?.done;
 
   return (
     <section
@@ -44,7 +63,7 @@ export function HomeHonestStatusStrip() {
             color: "var(--accent)", padding: "0.2rem 0.5rem", borderRadius: 999,
             border: "1px solid var(--accent-border)", background: "var(--accent-faint)",
           }}>
-            {done}/{total} MAINNET GATES
+            {done}/{total} MAINNET GATES{rpMet ? " · RP LIVE" : ""}
           </span>
         </div>
 

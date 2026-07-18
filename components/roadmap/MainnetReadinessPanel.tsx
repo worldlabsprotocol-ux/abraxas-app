@@ -2,19 +2,36 @@
 // FILE: components/roadmap/MainnetReadinessPanel.tsx
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   MAINNET_READINESS_MILESTONES,
   MAINNET_READINESS_HEADLINE,
   mainnetReadinessProgress,
+  type MainnetMilestone,
 } from "@/lib/mainnetReadiness";
 import { CURRENT_STATUS_LIVE } from "@/lib/currentStatus";
 import { CurrentStatusModule } from "@/components/status/CurrentStatusModule";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 
 export function MainnetReadinessPanel() {
-  const { done, total } = mainnetReadinessProgress();
+  const staticProgress = mainnetReadinessProgress();
+  const [milestones, setMilestones] = useState<MainnetMilestone[]>(MAINNET_READINESS_MILESTONES);
+  const [done, setDone] = useState(staticProgress.done);
+  const total = staticProgress.total;
+
+  useEffect(() => {
+    fetch("/api/mainnet/readiness")
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.milestones)) setMilestones(data.milestones);
+        if (typeof data.done === "number") setDone(data.done);
+      })
+      .catch(() => {
+        /* static fallback */
+      });
+  }, []);
 
   return (
     <section id="mainnet-readiness" aria-labelledby="mainnet-readiness-heading">
@@ -60,8 +77,8 @@ export function MainnetReadinessPanel() {
                 fontSize: "0.72rem",
                 fontWeight: 700,
                 color: ACCENT,
-                background: "rgba(16,185,129,0.1)",
-                border: "1px solid rgba(16,185,129,0.28)",
+                background: "rgba(232,197,71,0.1)",
+                border: "1px solid rgba(232,197,71,0.28)",
               }}
             >
               ✓ {item.label}
@@ -70,7 +87,7 @@ export function MainnetReadinessPanel() {
         </div>
 
         <div style={{ display: "grid", gap: "0.45rem" }}>
-          {MAINNET_READINESS_MILESTONES.map(m => (
+          {milestones.map(m => (
             <Link
               key={m.id}
               href={m.href}
@@ -78,38 +95,22 @@ export function MainnetReadinessPanel() {
                 display: "grid",
                 gridTemplateColumns: "auto 1fr",
                 gap: "0.65rem",
-                alignItems: "start",
-                padding: "0.75rem 0.9rem",
+                padding: "0.75rem 0.85rem",
                 borderRadius: 12,
-                border: `1px solid ${m.done ? "rgba(16,185,129,0.35)" : "var(--border)"}`,
-                background: m.done ? "rgba(16,185,129,0.06)" : "var(--surface)",
+                border: `1px solid ${m.done ? "rgba(232,197,71,0.35)" : "var(--border)"}`,
+                background: m.done ? "rgba(232,197,71,0.06)" : "var(--surface)",
                 textDecoration: "none",
-                transition: "border-color 0.15s ease",
+                color: "inherit",
               }}
             >
-              <span
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  marginTop: 2,
-                  background: m.done ? `${ACCENT}22` : "var(--surface-raised)",
-                  border: `1.5px solid ${m.done ? ACCENT : "var(--border-strong)"}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "0.62rem",
-                  color: m.done ? ACCENT : "var(--text-muted)",
-                }}
-              >
-                {m.done ? "✓" : ""}
+              <span style={{ fontFamily: FONT, fontSize: "0.9rem", color: m.done ? ACCENT : "var(--text-muted)" }}>
+                {m.done ? "✓" : "○"}
               </span>
               <div>
-                <div style={{ fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+                <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
                   {m.label}
                 </div>
-                <div style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
                   {m.description}
                 </div>
               </div>

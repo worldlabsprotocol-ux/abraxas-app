@@ -1,0 +1,44 @@
+"use client";
+// FILE: components/home/HomePositioningStrip.tsx
+// Tokenization positioning — act now, not after legacy premium.
+
+import Link from "next/link";
+import { ASSET_POSITIONING_BODY, ASSET_POSITIONING_HEADLINE } from "@/lib/assetPositioning";
+import { Btn } from "@/components/redesign/ui";
+
+const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+
+export function HomePositioningStrip() {
+  return (
+    <section
+      aria-label="Asset positioning"
+      style={{
+        padding: "0.85rem 0 1rem",
+        borderBottom: "1px solid var(--border-strong)",
+      }}
+    >
+      <div
+        className="abx-glass-panel"
+        style={{
+          padding: "0.85rem 1rem",
+          borderRadius: 14,
+          border: "1px solid rgba(232,197,71,0.28)",
+          background: "linear-gradient(135deg, rgba(232,197,71,0.06) 0%, var(--surface-raised) 100%)",
+        }}
+      >
+        <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+          {ASSET_POSITIONING_HEADLINE}
+        </div>
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem", maxWidth: 640 }}>
+          {ASSET_POSITIONING_BODY}
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", alignItems: "center" }}>
+          <Btn href="/build" size="sm">Position your asset →</Btn>
+          <Link href="/why" style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
+            Why now →
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
