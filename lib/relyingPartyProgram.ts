@@ -84,8 +84,8 @@ export const DESIGN_PARTNER_SLOTS = [
   { category: "Corporate registry", need: "Wyoming LLC + asset binding check", api: "GET /api/trust/status" },
 ] as const;
 
-export const ASSET_SIGNAL_WEBHOOK_EXAMPLE = `// Partner webhook — report material asset state change
-const res = await fetch("https://abraxas-app.vercel.app/api/v1/asset-signals", {
+export const ASSET_SIGNAL_WEBHOOK_EXAMPLE = `// Partner webhook — report lot status change (MLS sync)
+const res = await fetch("https://abraxas-app.vercel.app/api/v1/listings/lot-status", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -93,13 +93,30 @@ const res = await fetch("https://abraxas-app.vercel.app/api/v1/asset-signals", {
   },
   body: JSON.stringify({
     asset_id: "ABX-RE-LAND-006",
-    signal_type: "ownership_transfer",
-    detail: "County recorder deed transfer filed",
-    apply: false,
+    idempotency_key: "cpg:2026-07-18:lot4",
+    lots: [
+      { lot: 4, status: "under_contract", notes: "MLS offer accepted" },
+    ],
   }),
 });
 
-const result = await res.json();`;
+const result = await res.json();
+// { ok: true, fingerprint, changed, results[] }
+
+// Or via asset-signals with credential review:
+await fetch("https://abraxas-app.vercel.app/api/v1/asset-signals", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer abx_live_YOUR_KEY",
+  },
+  body: JSON.stringify({
+    asset_id: "ABX-RE-LAND-006",
+    signal_type: "listing_status_change",
+    apply: true,
+    lots: [{ lot: 4, status: "under_contract" }],
+  }),
+});`;
 
 export const PRODUCTION_INTEGRATION_PATH = [
   "Issue abx_live_ key with verify:credential scope",

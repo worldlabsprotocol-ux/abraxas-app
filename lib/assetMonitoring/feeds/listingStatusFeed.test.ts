@@ -4,9 +4,10 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { runListingStatusFeed } from "@/lib/assetMonitoring/feeds/listingStatusFeed";
 import { resetListingSnapshotsForTests } from "@/lib/assetMonitoring/listingStatus/snapshotStore";
 import {
-  cpgLotStatusFingerprint,
   LISTING_MONITOR_CONFIGS,
 } from "@/lib/assetMonitoring/listingStatus/sources";
+import { getStaticLotInventory } from "@/lib/listingInventory/staticLots";
+import { lotStatusFingerprint } from "@/lib/listingInventory/lotInventory";
 import { listingSnapshotKey } from "@/lib/assetMonitoring/listingStatus/types";
 import { loadListingSnapshots, saveListingSnapshots } from "@/lib/assetMonitoring/listingStatus/snapshotStore";
 
@@ -51,6 +52,7 @@ describe("runListingStatusFeed", () => {
   it("monitors CPG lot fingerprint from static registry", () => {
     const cpg = LISTING_MONITOR_CONFIGS.find(c => c.assetId === "ABX-RE-LAND-006");
     expect(cpg).toBeDefined();
-    expect(cpgLotStatusFingerprint()).toContain("under_contract");
+    const fp = lotStatusFingerprint(getStaticLotInventory("ABX-RE-LAND-006"));
+    expect(fp).toContain("under_contract");
   });
 });

@@ -45,7 +45,7 @@ const CIELO: RegistryAssetDef = {
     L1_IdentityClaim: { status: "VERIFIED", timestamp: "2025-11-01T00:00:00Z", provider: "Veriff_Biometric_IDV" },
     L2_LegalReview: { status: "VERIFIED", timestamp: "2025-11-15T00:00:00Z", provider: "Fannin_County_Deed_Review" },
     L3_ProfessionalAttestation: { status: "VERIFIED", timestamp: "2025-12-01T00:00:00Z", authority: "Independent_Appraisal_V5" },
-    L4_ActiveMonitoring: { status: "ACTIVE", lastSync: new Date().toISOString(), oracleSource: "Airbnb_Listing_CrossCheck" },
+    L4_ActiveMonitoring: { status: "ACTIVE", lastSync: "2026-07-18T00:00:00.000Z", oracleSource: "Airbnb_Listing_CrossCheck" },
   },
   metadataUri: "/flagship",
   notice:
@@ -150,7 +150,7 @@ const CPG: RegistryAssetDef = {
     L3_ProfessionalAttestation: { status: "VERIFIED", authority: "Survey_Plat_Complete" },
     L4_ActiveMonitoring: {
       status: "ACTIVE",
-      lastSync: new Date().toISOString(),
+      lastSync: "2026-07-18T00:00:00.000Z",
       oracleSource: "CPG_Partner_Lot_Status",
     },
   },

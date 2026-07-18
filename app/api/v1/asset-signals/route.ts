@@ -6,6 +6,9 @@ import { applyAssetSignal } from "@/lib/assetMonitoring/apply";
 import { evaluateAssetSignal } from "@/lib/assetMonitoring/evaluate";
 import { resolveClaimIdsForAsset } from "@/lib/assetMonitoring/resolveClaims";
 import type { AssetSignal, AssetSignalType } from "@/lib/assetMonitoring/types";
+import { applyLotStatusUpdates } from "@/lib/listingInventory/applyLotUpdates";
+import { isMonitoredLotAsset } from "@/lib/listingInventory/staticLots";
+import type { LotStatusUpdate } from "@/lib/listingInventory/types";
 import { authenticatePartner } from "@/lib/partner/partnerAuth";
 
 const SIGNAL_TYPES: AssetSignalType[] = [
@@ -33,10 +36,25 @@ export async function POST(req: NextRequest) {
     claim_ids?: string[];
     apply?: boolean;
     observed_at?: string;
+    lots?: LotStatusUpdate[];
+    idempotency_key?: string;
   };
 
   if (!body.asset_id || !body.signal_type || !SIGNAL_TYPES.includes(body.signal_type)) {
     return NextResponse.json({ error: "asset_id and valid signal_type required" }, { status: 400 });
+  }
+
+  let lotUpdate: Awaited<ReturnType<typeof applyLotStatusUpdates>> | null = null;
+
+  if (body.signal_type === "listing_status_change" && body.lots?.length && isMonitoredLotAsset(body.asset_id)) {
+    lotUpdate = await applyLotStatusUpdates({
+      assetId: body.asset_id,
+      updates: body.lots,
+      source: `partner_push:${auth.ctx.partnerId}`,
+      partnerId: auth.ctx.partnerId,
+      idempotencyKey: body.idempotency_key,
+      observedAt: body.observed_at,
+    });
   }
 
   const signal: AssetSignal = {
@@ -44,14 +62,24 @@ export async function POST(req: NextRequest) {
     signalType: body.signal_type,
     observedAt: body.observed_at ?? new Date().toISOString(),
     source: `partner:${auth.ctx.partnerId}`,
-    detail: body.detail,
+    detail:
+      body.detail ??
+      (lotUpdate?.changed
+        ? `Lot inventory updated (${lotUpdate.results.filter(r => r.changed).length} lots)`
+        : undefined),
     claimIds: body.claim_ids,
   };
 
   const preview = evaluateAssetSignal(signal);
 
   if (!body.apply) {
-    return NextResponse.json({ ok: true, mode: "preview", signal, decision: preview });
+    return NextResponse.json({
+      ok: true,
+      mode: "preview",
+      signal,
+      decision: preview,
+      lot_update: lotUpdate,
+    });
   }
 
   const claimIds = body.claim_ids?.length
@@ -59,7 +87,13 @@ export async function POST(req: NextRequest) {
     : await resolveClaimIdsForAsset(body.asset_id);
 
   if (!claimIds.length) {
-    return NextResponse.json({ error: "No active claims found for asset_id" }, { status: 404 });
+    return NextResponse.json({
+      ok: true,
+      mode: "lot_only",
+      signal,
+      lot_update: lotUpdate,
+      message: "Lot inventory updated; no active claims to transition",
+    });
   }
 
   const applied = await applyAssetSignal({
@@ -75,5 +109,6 @@ export async function POST(req: NextRequest) {
     signal,
     decision: applied.decision,
     results: applied.results,
+    lot_update: lotUpdate,
   });
 }

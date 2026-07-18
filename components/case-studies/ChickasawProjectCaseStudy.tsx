@@ -3,6 +3,7 @@
 // CPG Land Sales · Chickasaw Project — closed-loop Abraxas land listing.
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, KeyValueTable, BulletList } from "@/components/redesign/RedesignContent";
 import { CaseStudyVideoHero } from "@/components/case-studies/CaseStudyGallery";
@@ -42,6 +43,38 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export function ChickasawProjectCaseStudy() {
+  const [lots, setLots] = useState(CPG_LOTS);
+  const [lotsAsOf, setLotsAsOf] = useState<string | null>(null);
+  const [lotsSource, setLotsSource] = useState<"database" | "static_fallback">("static_fallback");
+
+  useEffect(() => {
+    fetch(`/api/v1/assets/${CPG_ASSET.id}/lots`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (!data?.lots?.length) return;
+        setLots(
+          data.lots.map((row: {
+            lot: number;
+            acres: number;
+            priceUsd: number;
+            status: typeof CPG_LOTS[number]["status"];
+            notes?: string;
+          }) => ({
+            lot: row.lot,
+            acres: row.acres,
+            priceUsd: row.priceUsd,
+            status: row.status,
+            notes: row.notes,
+          })),
+        );
+        setLotsAsOf(data.asOf ?? null);
+        setLotsSource(data.source ?? "static_fallback");
+      })
+      .catch(() => {
+        /* static fallback */
+      });
+  }, []);
+
   return (
     <RedesignPage maxWidth={920}>
       <PageHeader
@@ -73,6 +106,10 @@ export function ChickasawProjectCaseStudy() {
           { k: "Partner", v: `${CPG_PARTNER.name} · ${CPG_PARTNER.contact}` },
           { k: "Location", v: CPG_ASSET.location },
           { k: "Size", v: `~${CPG_ASSET.parentAcres} acres · 11 surveyed lots` },
+          {
+            k: "Lot status",
+            v: `${lots.filter(l => l.status === "available").length} available · ${lots.filter(l => l.status === "under_contract").length} under contract`,
+          },
           { k: "Full project", v: formatUsd(CPG_PRICING.fullProject) },
           { k: "Lots 2–4 bundle", v: `${formatUsd(CPG_PRICING.lots234Bundle)} · 81.74 ac · no active wells` },
           { k: "Closing", v: CPG_PARTNER.titleCompany },
@@ -143,6 +180,11 @@ export function ChickasawProjectCaseStudy() {
               { k: "10 lots · ~235 ac (if Lot 1 available)", v: formatUsd(CPG_PRICING.tenLots235Acres) },
             ]} />
             <p style={{ ...body, margin: "1rem 0 0.5rem" }}>{CPG_ASSET.availableLotsNote}</p>
+            {lotsAsOf && (
+              <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0 0 0.65rem" }}>
+                Lot status as of {new Date(lotsAsOf).toLocaleString()} · {lotsSource === "database" ? "live registry" : "static seed"}
+              </p>
+            )}
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.72rem" }}>
                 <thead>
@@ -153,7 +195,7 @@ export function ChickasawProjectCaseStudy() {
                   </tr>
                 </thead>
                 <tbody>
-                  {CPG_LOTS.map(row => (
+                  {lots.map(row => (
                     <tr key={row.lot} style={{ borderBottom: "1px solid var(--border)" }}>
                       <td style={{ padding: "0.5rem", fontWeight: 700 }}>{row.lot}</td>
                       <td style={{ padding: "0.5rem" }}>{row.acres}</td>

@@ -1,9 +1,10 @@
 // FILE: lib/assetMonitoring/listingStatus/sources.ts
-// Per-asset listing monitor config — static v1, extensible to live MLS/STR checks.
+// Per-asset listing monitor config — DB-backed MLS lots + pipeline stages.
 
-import { CPG_ASSET, CPG_LOTS } from "@/lib/cpgLandCaseStudy";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { REGISTRY_ASSETS } from "@/lib/data/registryAssets";
+import { getLotInventory, lotStatusFingerprint } from "@/lib/listingInventory/lotInventory";
 import type { ListingChannel, ListingSnapshot } from "@/lib/assetMonitoring/listingStatus/types";
 
 export interface ListingMonitorChannel {
@@ -14,10 +15,6 @@ export interface ListingMonitorChannel {
 export interface ListingMonitorConfig {
   assetId: string;
   channels: ListingMonitorChannel[];
-}
-
-export function cpgLotStatusFingerprint(): string {
-  return CPG_LOTS.map(lot => `${lot.lot}:${lot.status}`).join("|");
 }
 
 function pipelineSnapshot(assetId: string, stage: string, name: string): ListingSnapshot {
@@ -61,14 +58,34 @@ export const LISTING_MONITOR_CONFIGS: ListingMonitorConfig[] = [
     channels: [
       {
         channel: "mls_lot_status",
-        getCurrent: () => ({
-          assetId: CPG_ASSET.id,
-          channel: "mls_lot_status",
-          status: cpgLotStatusFingerprint(),
-          observedAt: new Date().toISOString(),
-          detail: `${CPG_LOTS.filter(l => l.status === "available").length} lots available · ${CPG_LOTS.filter(l => l.status === "under_contract").length} under contract`,
-        }),
+        getCurrent: async () => {
+          const inventory = await getLotInventory(CPG_ASSET.id);
+          return {
+            assetId: CPG_ASSET.id,
+            channel: "mls_lot_status",
+            status: lotStatusFingerprint(inventory.lots),
+            observedAt: inventory.asOf,
+            detail: `${inventory.summary.available} lots available · ${inventory.summary.underContract} under contract · source: ${inventory.source}`,
+          };
+        },
+      },
+      {
+        channel: "partner_push",
+        getCurrent: async () => {
+          const inventory = await getLotInventory(CPG_ASSET.id);
+          if (inventory.source !== "database") return null;
+          return {
+            assetId: CPG_ASSET.id,
+            channel: "partner_push",
+            status: lotStatusFingerprint(inventory.lots),
+            observedAt: inventory.asOf,
+            detail: "Partner-pushed lot inventory active",
+          };
+        },
       },
     ],
   },
 ];
+
+// Re-export for tests that import cpgLotStatusFingerprint
+export { lotStatusFingerprint as cpgLotStatusFingerprint } from "@/lib/listingInventory/lotInventory";
