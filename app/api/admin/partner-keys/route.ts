@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkAdmin } from "@/lib/adminAuth";
 import { generatePartnerKey, type PartnerScope } from "@/lib/partner/partnerAuth";
+import { validatePartnerKeyIssuance } from "@/lib/partner/validatePartnerKeyIssuance";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -54,7 +55,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "partner_id and display_name required" }, { status: 400 });
   }
 
-  const { raw, prefix, hash } = generatePartnerKey(body.environment ?? "live");
+  const environment = body.environment ?? "live";
+  const validation = await validatePartnerKeyIssuance(partnerId, environment);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: validation.status ?? 400 });
+  }
+
+  const { raw, prefix, hash } = generatePartnerKey(environment);
   const scopes = body.scopes?.length ? body.scopes : DEFAULT_SCOPES;
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
