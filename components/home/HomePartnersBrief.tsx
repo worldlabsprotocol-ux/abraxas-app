@@ -6,7 +6,7 @@ import { Btn } from "@/components/redesign/ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 
 export function HomePartnersBrief() {
   return (
@@ -50,12 +50,12 @@ Valid until: [time-bound status]`}
         Partner integrations are pilot-ready for approved organizations.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href="/integrations" variant="secondary" size="sm">Developer documentation →</Btn>
-        <Link href="/integrations/relying-parties" style={{
+        <Btn href="/design-partner" variant="secondary" size="sm">Become a relying party →</Btn>
+        <Link href="/integrate" style={{
           fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: ACCENT,
           alignSelf: "center", textDecoration: "none",
         }}>
-          Partner verification API →
+          Integrate Abraxas →
         </Link>
       </div>
     </section>

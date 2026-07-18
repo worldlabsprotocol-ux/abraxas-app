@@ -85,6 +85,15 @@ Partners can also push listing/title events via `POST /api/v1/asset-signals` wit
 
 Production verify calls from external `abx_live_` partners with `decision: approved` count toward the gate.
 
+## Relying party onboarding
+
+| Step | Path | Purpose |
+|------|------|---------|
+| Apply | `/design-partner` → `/integrations#apply` | Submit integration application |
+| Admin review | `/admin/design-partners` | Approve + promote → org + `abx_test_` key |
+| Partner portal | `/developers/partner` | Usage stats + onboarding checklist |
+| Production | `/admin/partners` | Promote to production + issue `abx_live_` key |
+
 ## Next milestone
 
 1. **Asset monitoring v1** — MLS lot push + live inventory complete; county recorder hooks next.
