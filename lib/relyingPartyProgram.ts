@@ -83,3 +83,27 @@ export const DESIGN_PARTNER_SLOTS = [
   { category: "Music / IP platform", need: "Catalog ownership attestation", api: "GET /api/verify/registry" },
   { category: "Corporate registry", need: "Wyoming LLC + asset binding check", api: "GET /api/trust/status" },
 ] as const;
+
+export const ASSET_SIGNAL_WEBHOOK_EXAMPLE = `// Partner webhook — report material asset state change
+const res = await fetch("https://abraxas-app.vercel.app/api/v1/asset-signals", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer abx_live_YOUR_KEY",
+  },
+  body: JSON.stringify({
+    asset_id: "ABX-RE-LAND-006",
+    signal_type: "ownership_transfer",
+    detail: "County recorder deed transfer filed",
+    apply: false,
+  }),
+});
+
+const result = await res.json();`;
+
+export const PRODUCTION_INTEGRATION_PATH = [
+  "Issue abx_live_ key with verify:credential scope",
+  "Implement server-side POST /api/credentials/verify at your transaction gate",
+  "Run 30-day pilot with one narrow workflow + success metric",
+  "First approved production verify logs toward the external RP mainnet gate",
+] as const;

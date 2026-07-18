@@ -57,6 +57,24 @@ Historical receipt payloads and signatures are **never mutated**. Validity is co
 - External issuer pilots (next milestone after deploy)
 - On-chain enforcement
 
+## Asset monitoring v1
+
+| Endpoint | Auth | Purpose |
+|----------|------|---------|
+| `POST /api/admin/asset-signals` | Admin PIN | Preview or apply signals (operator) |
+| `POST /api/v1/asset-signals` | Partner `abx_live_` key | Partner webhook for material state changes |
+| `GET /api/cron/asset-monitoring` | `CRON_SECRET` | Daily automated feeds (also runs inside `/api/cron/bags-sync`) |
+
+Set `ASSET_MONITORING_AUTO_APPLY=true` to auto-apply claim transitions from cron feeds.
+
+## External relying party proof
+
+| Endpoint | Auth | Purpose |
+|----------|------|---------|
+| `GET /api/integrations/relying-party-proof` | Public | Live status of mainnet gate #5 |
+
+Production verify calls from external `abx_live_` partners with `decision: approved` count toward the gate.
+
 ## Next milestone
 
 1. **Asset monitoring v1** — `POST /api/admin/asset-signals` ingests material state-change signals (ownership, lien, appraisal TTL) and applies validated claim transitions (preview or apply). Full automation (MLS/title feeds) is still in progress.

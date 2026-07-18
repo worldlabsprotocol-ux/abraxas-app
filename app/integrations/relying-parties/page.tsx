@@ -14,13 +14,16 @@ import {
   REGISTRY_VERIFY_EXAMPLE,
   RELYING_PARTY_LIMITATIONS,
   DESIGN_PARTNER_SLOTS,
+  ASSET_SIGNAL_WEBHOOK_EXAMPLE,
+  PRODUCTION_INTEGRATION_PATH,
 } from "@/lib/relyingPartyProgram";
 import { getExternalRelyingPartners, getSandboxPartners } from "@/lib/relyingPartners";
 import { SANDBOX_DISCLAIMER } from "@/lib/credentials/sandboxClaims";
+import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 const SANDBOX_ACCENT = "#F59E0B";
 
 export default function RelyingPartiesPage() {
@@ -36,6 +39,7 @@ export default function RelyingPartiesPage() {
       />
 
       <ContentCard title="Current pilot status">
+        <RelyingPartyProofStatus />
         <p style={body}>
           Pilot-ready verification infrastructure for real assets. Public verification, consent-based Passport access,
           and partner policy APIs are live in pilot. External relying-party and external-originator onboarding is underway.
@@ -144,6 +148,22 @@ export default function RelyingPartiesPage() {
             </div>
           ))}
         </div>
+      </ContentCard>
+
+      <ContentCard title="Production integration path">
+        <BulletList items={[...PRODUCTION_INTEGRATION_PATH]} />
+        <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0 }}>
+          Gate status updates automatically when an external <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_</code> partner
+          receives <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>decision: approved</code> on a production verify call.
+        </p>
+      </ContentCard>
+
+      <ContentCard title="Asset monitoring webhook (partners)">
+        <p style={{ ...body, marginBottom: "0.65rem" }}>
+          Title companies, registries, and operators can push material state-change signals.
+          Abraxas maps them to credential refresh or suspend — fail-closed at transaction time.
+        </p>
+        <CodeBlock>{ASSET_SIGNAL_WEBHOOK_EXAMPLE}</CodeBlock>
       </ContentCard>
 
       <ContentCard title="API reference — credential verify">
