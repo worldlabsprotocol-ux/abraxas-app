@@ -14,7 +14,6 @@ import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
 import { HomePositioningStrip } from "@/components/home/HomePositioningStrip";
 import { HomeMarketTicker } from "@/components/home/HomeMarketTicker";
-import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
@@ -34,7 +33,6 @@ function HomeContent() {
         <HomeHonestStatusStrip />
         <HomePositioningStrip />
         <HomeMarketTicker />
-        <HomeDemoVideo />
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />
