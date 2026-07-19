@@ -236,7 +236,7 @@ export function HomeCinematicDemo() {
                   </div>
 
                   <motion.div
-                    className="cine-act3-proof w-full max-w-[min(100%,340px)] shrink-0"
+                    className="cine-act3-proof w-full max-w-[min(100%,300px)] shrink-0 md:max-w-[min(100%,320px)]"
                     initial={{ opacity: 0, scale: 0.94 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.15, duration: 0.55, ease: actEase }}
