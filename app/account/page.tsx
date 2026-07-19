@@ -127,7 +127,7 @@ function AccountInner() {
           <ContentCard title="Quick actions">
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               <Btn href="/passport" size="sm">Passport dashboard</Btn>
-              <Btn href="/#registry" variant="secondary" size="sm">Browse assets</Btn>
+              <Btn href="/verify" variant="secondary" size="sm">Verify records</Btn>
               <Btn href="/flagship" variant="secondary" size="sm">Book Cielo</Btn>
               <Btn href="/verify" variant="ghost" size="sm">Share credential</Btn>
             </div>

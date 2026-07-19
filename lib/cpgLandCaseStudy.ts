@@ -182,7 +182,7 @@ export const CPG_SOURCES = [
 export const CPG_PROOF = [
   { label: "Acquire through Abraxas", desc: "Submit package interest · USDC settlement when deal-ready", href: CPG_ASSET.inquirePath },
   { label: "Unlock diligence pack", desc: "Sign in with Passport · surveys, lot schedule, well maps", href: `/passport?return=${CPG_CASE_STUDY_PATH}` },
-  { label: "Abraxas verify record", desc: "Public registry · ABX-RE-LAND-006", href: CPG_ASSET.verifyPath },
+  { label: "Abraxas verify record", desc: "Independent verification · ABX-RE-LAND-006", href: CPG_ASSET.verifyPath },
   { label: "Partner sync", desc: "Status updates sync on-protocol · disclosed to qualified buyers", href: CPG_ASSET.inquirePath },
 ] as const;
 

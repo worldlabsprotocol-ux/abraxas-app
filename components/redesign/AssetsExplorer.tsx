@@ -295,8 +295,8 @@ export function AssetsExplorer({
           </motion.div>
           {(compact || home) && (
             <div style={{ marginTop: "1rem" }}>
-              <Btn href={home ? "/verify" : "/#registry"} variant="ghost" size="sm">
-                {home ? "Open verification registry →" : "View all registry assets →"}
+              <Btn href="/verify" variant="ghost" size="sm">
+                {home ? "How verification works →" : "View all reference records →"}
               </Btn>
             </div>
           )}

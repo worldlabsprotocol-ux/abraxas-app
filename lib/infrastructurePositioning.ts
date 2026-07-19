@@ -121,11 +121,11 @@ export const CINEMATIC_MERGE_LINE = "One proof. Every future.";
 export const CINEMATIC_HOLD_LINE = "One Passport. Zero repeated diligence.";
 
 export const HOME_BUILD_BRIDGE =
-  "Ship faster with proof that already worked — Cielo bookings, land deals, and registry assets are live references. Embed Passport instead of rebuilding KYC per app.";
+  "Ship faster with proof that already worked — Cielo bookings and Chickasaw land diligence are live references. Embed Passport instead of rebuilding KYC per app.";
 
 export const BUILD_WITH_OUTCOMES: { label: string; outcome: string }[] = [
   { label: "Cielo Sunrise", outcome: "Verified guest in minutes — live STR + USDC booking" },
-  { label: "Land & mineral deals", outcome: "Title scope attested once across portal workflows" },
+  { label: "Chickasaw land diligence", outcome: "Title scope attested once — scoped disclosure for qualified counterparties" },
   { label: "Passport embed", outcome: "Days to integrate — not quarters of bespoke KYC" },
   { label: "Policy decisions", outcome: "Approved / denied in one API call" },
   { label: "Portable proof", outcome: "W3C credentials — not email PDF attachments" },

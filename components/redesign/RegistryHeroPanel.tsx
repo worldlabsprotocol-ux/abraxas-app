@@ -75,7 +75,7 @@ export function RegistryHeroPanel() {
             {EXPLORE_ASSETS.map(asset => {
               const meta = VERIFY_META[asset.state];
               return (
-                <Link key={asset.id} href={asset.href ?? "#registry"} style={{ textDecoration: "none", color: "inherit" }}>
+                <Link key={asset.id} href={asset.href ?? "/verify"} style={{ textDecoration: "none", color: "inherit" }}>
                   <div style={{
                     display: "flex", alignItems: "center", gap: "0.5rem",
                     padding: "0.4rem 0.5rem", borderRadius: 10,
@@ -106,7 +106,7 @@ export function RegistryHeroPanel() {
           </div>
 
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <Btn href="#registry" size="sm">Browse registry →</Btn>
+            <Btn href="/verify" size="sm">Verify records →</Btn>
             <Btn href="/passport" variant="tertiary" size="sm">Create passport</Btn>
           </div>
         </div>

@@ -36,9 +36,9 @@ export const TIMELINE_FRAMINGS: readonly TimelineFraming[] = [
     label: "Confident (operators / builders)",
     headline: "Passport is live — integrate on pilot rails while we close the remaining gates",
     body:
-      "Use when speaking to operators with land deals, hospitality, or tokenization workflows who can start on the design partner program today.",
+      "Use when speaking to operators with land diligence, hospitality, or tokenization workflows who can start on the design partner program today.",
     bullets: [
-      "Real assets on-registry — Cielo Sunrise, Chickasaw land, CPG workflows",
+      "Real reference loops — Cielo Sunrise hospitality and Chickasaw land diligence",
       "Embed Passport instead of rebuilding KYC — integration patterns documented",
       "Design partner program open now; self-serve after audit + first external relying party",
       "On-chain Passport moves to mainnet as audits complete",

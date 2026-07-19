@@ -9,14 +9,14 @@ export const HOMEPAGE_STATUS_ROLLOUT =
   "We're in a staged rollout toward full open mainnet: Sui mainnet Passport, published audits, first external relying party transactions, and automated asset monitoring.";
 
 export const HOMEPAGE_STATUS_PROOF =
-  "Cielo Sunrise and land deals are live proof — not a demo.";
+  "Cielo Sunrise and Chickasaw land diligence are live proof — not a demo.";
 
 /** Balanced external framing — progress + gates, not apologetic. */
 export const CONFIDENT_STATUS_FRAMING =
   "Core verification and Passport issuance are live in production with real assets and pilot partners. We're deliberately taking a staged approach to full open mainnet — the remaining gates are Sui mainnet Passport deployment, published audits, first external relying party transactions, and automated asset state monitoring.";
 
 export const INTEGRATE_PRODUCTION_NOTE =
-  "Abraxas is already used in production with real assets — Cielo Sunrise, Chickasaw land, and CPG workflows. Design partners integrate today; full open self-serve mainnet follows audits, mainnet Passport, and asset monitoring v1.";
+  "Abraxas is already used in production with real assets — Cielo Sunrise and Chickasaw land diligence. Design partners integrate today; full open self-serve mainnet follows audits, mainnet Passport, and asset monitoring v1.";
 
 export type StatusItemState = "live" | "in_progress" | "planned";
 
@@ -71,7 +71,7 @@ export const CURRENT_STATUS_LIVE: CurrentStatusItem[] = [
   {
     id: "pilot-proof",
     label: "Live reference assets",
-    detail: "Cielo STR booking, land portal, on-registry proof",
+    detail: "Cielo STR booking, Chickasaw diligence loop, on-chain proof",
     state: "live",
     href: "/case-studies/cielo",
   },

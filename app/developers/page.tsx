@@ -45,7 +45,7 @@ export default function DevelopersPage() {
         <div style={{ display: "grid", gap: "0.45rem", fontFamily: FONT, fontSize: "0.78rem" }}>
           {[
             { label: "Credential verify", href: "/docs/partner-verification-requests" },
-            { label: "Public registry", href: "/verify" },
+            { label: "Record verifier", href: "/verify" },
             { label: "Sui deployment status", href: "/api/sui/status" },
             { label: "Mainnet readiness", href: "/api/mainnet/readiness" },
             { label: "Positioning loop", href: "/api/positioning/loop" },

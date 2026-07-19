@@ -397,7 +397,7 @@ function PassportStatusCard({
         ) : (
           <Btn href="/cielo/verified-rate" size="sm">Try Cielo verified rate →</Btn>
         )}
-        <Btn href="/#registry" variant="secondary" size="sm">Browse registry →</Btn>
+              <Btn href="/verify" variant="secondary" size="sm">Verify records →</Btn>
         <Btn href="/passport?view=verify" variant="ghost" size="sm">Verify a record →</Btn>
       </div>
     </section>

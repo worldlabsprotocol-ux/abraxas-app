@@ -115,7 +115,7 @@ export function HomeBillboardHero() {
           >
             <Btn href="#get-started" size="lg">Create my Passport →</Btn>
             <Btn href="#test-network" variant="secondary" size="lg">Test the network</Btn>
-            <Btn href="#registry" variant="tertiary" size="lg">Browse registry</Btn>
+            <Btn href="/verify" variant="tertiary" size="lg">Verify records</Btn>
           </motion.div>
         </motion.div>
 

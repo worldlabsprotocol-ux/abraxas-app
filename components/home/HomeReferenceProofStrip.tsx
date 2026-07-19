@@ -129,7 +129,7 @@ export function HomeReferenceProofStrip() {
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href="/verify" variant="secondary" size="sm">Open verification registry →</Btn>
+        <Btn href="/verify" variant="secondary" size="sm">How verification works →</Btn>
         <Btn href="/build" variant="ghost" size="sm">Position your asset →</Btn>
       </div>
     </section>

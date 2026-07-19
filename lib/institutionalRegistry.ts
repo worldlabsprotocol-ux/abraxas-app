@@ -14,3 +14,10 @@ export const HOME_REFERENCE_PROOF_BODY =
 
 export const HOME_REFERENCE_PROOF_DISCLAIMER =
   "Reference assets illustrate the protocol. They are not an offer to sell securities or a public MLS.";
+
+export const VERIFY_SHOWCASE_EYEBROW = "Reference records";
+
+export const VERIFY_SHOWCASE_HEADLINE = "Verify attested records";
+
+export const VERIFY_SHOWCASE_BODY =
+  "Reference pilots resolve here — assurance levels, pipeline stage, and authentication proofs. Owner submissions do not auto-publish; this is verification infrastructure, not a listing board.";

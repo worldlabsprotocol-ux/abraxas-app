@@ -335,7 +335,7 @@ function PassportPageInner() {
             </DeveloperDetails>
 
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", paddingBottom: "3rem" }}>
-              <Btn href="/#registry">Browse registry →</Btn>
+              <Btn href="/verify">Verify records →</Btn>
               <Btn href="/build" variant="tertiary">Submit an asset</Btn>
             </div>
           </>

@@ -82,8 +82,8 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     statusBadge: undefined,
     note: "Phase I clean · surveys on file · qualified buyer workflow via Abraxas",
     href: CPG_ASSET.caseStudyPath,
-    liveProof: { label: "On Abraxas registry", url: "/verify/ABX-RE-LAND-006" },
-    cta: "View listing",
+    liveProof: { label: "Verify record", url: "/verify/ABX-RE-LAND-006" },
+    cta: "View case study",
   },
   {
     id: "smyrna-townhome",

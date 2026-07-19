@@ -22,7 +22,7 @@ const LINKS = [
 
 const MORE_LINKS = [
   { href: "/trust-framework", label: "Trust framework" },
-  { href: "/#registry", label: "Browse assets" },
+  { href: "/verify", label: "Verify records" },
   { href: "/account", label: "My account" },
   { href: "/build", label: "Submit your asset" },
   { href: "/investors/strategy", label: "Strategic roadmap" },
