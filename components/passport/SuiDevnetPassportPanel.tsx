@@ -245,13 +245,19 @@ export function SuiDevnetPassportPanel({
 
       <div style={{ fontFamily: MONO, fontSize: "0.65rem", color: "var(--text-muted)", marginBottom: "1rem", lineHeight: 1.6 }}>
         Package {truncateId(SUI_DEVNET.packageId, 10, 8)} ·{" "}
-        <Link href={suiExplorerTx(SUI_DEVNET.publishTxDigest)} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>
-          publish tx ↗
-        </Link>
-        {" · "}
-        <Link href={suiExplorerTx(SUI_DEVNET.demoBootstrapTxDigest)} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>
-          bootstrap tx ↗
-        </Link>
+        {SUI_DEVNET.publishTxDigest && (
+          <Link href={suiExplorerTx(SUI_DEVNET.publishTxDigest)} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>
+            publish tx ↗
+          </Link>
+        )}
+        {SUI_DEVNET.demoBootstrapTxDigest && (
+          <>
+            {" · "}
+            <Link href={suiExplorerTx(SUI_DEVNET.demoBootstrapTxDigest)} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>
+              bootstrap tx ↗
+            </Link>
+          </>
+        )}
       </div>
 
       {error && !passport && (

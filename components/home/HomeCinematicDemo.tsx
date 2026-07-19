@@ -18,18 +18,18 @@ import {
   ABRAXAS_INFRA_MECHANISM,
 } from "@/lib/infrastructurePositioning";
 import { CINEMATIC_TRUST_TRANSFER_LINE } from "@/lib/trustTransfer";
-import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE } from "@/lib/design/institutionalTheme";
+import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
 import {
-  KycPassportDoc,
-  KycDriverLicenseDoc,
-  KycSsnFormDoc,
-  KycVerifyModalDoc,
   AbraxasPassportVc,
+  AppVerificationPortal,
+  ConnectionBeam,
+  CounterpartyVerifierCard,
+  DocumentStackMini,
   LandDeedDoc,
   RwaAssetDoc,
-  CounterpartyVerifierCard,
-  ConnectionBeam,
+  VerificationBurdenCounter,
 } from "./cinematic/KycDocumentCards";
+import { INSTITUTIONAL_VERIFY } from "@/lib/design/institutionalTheme";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -38,56 +38,108 @@ const SPRING: Transition = { type: "spring", stiffness: 120, damping: 14, mass: 
 const SPRING_FLOAT: Transition = { type: "spring", stiffness: 40, damping: 12 };
 const SPRING_SNAPPY: Transition = { type: "spring", stiffness: 200, damping: 18, mass: 0.75 };
 
-const KYC_ITEMS = [
-  { id: "passport", x: -105, y: -35, rot: -12, delay: 0, component: KycPassportDoc },
-  { id: "license", x: 95, y: -45, rot: 8, delay: 0.08, component: KycDriverLicenseDoc },
-  { id: "ssn", x: -55, y: 42, rot: -5, delay: 0.16, component: KycSsnFormDoc },
-  { id: "modal1", x: 70, y: 28, rot: 6, delay: 0.22, component: () => <KycVerifyModalDoc repeat /> },
-  { id: "modal2", x: -15, y: -58, rot: -3, delay: 0.28, component: () => <KycVerifyModalDoc /> },
-  { id: "passport2", x: 115, y: -8, rot: 14, delay: 0.34, component: KycPassportDoc },
+const APP_PORTALS = [
+  { id: "marketplace", name: "RWA Market", icon: "◈", accent: INSTITUTIONAL_VIOLET, delay: 0, uploadN: 2 },
+  { id: "lender", name: "Private Lender", icon: "◇", accent: "#60A5FA", delay: 0.15, uploadN: 3 },
+  { id: "booking", name: "Hospitality", icon: "◎", accent: INSTITUTIONAL_GOLD, delay: 0.3, uploadN: 4 },
 ] as const;
 
 function PhaseKycChaos() {
+  const [burden, setBurden] = useState(2);
+
+  useEffect(() => {
+    const id = setInterval(() => setBurden(c => (c >= 6 ? 2 : c + 1)), 1400);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ position: "relative", width: 320, height: 200 }}>
-        {KYC_ITEMS.map(item => {
-          const Comp = item.component;
-          return (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, scale: 0.75, x: item.x, y: item.y + 30, rotate: item.rot }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                x: [item.x, item.x + 6, item.x - 4, item.x],
-                y: [item.y, item.y - 8, item.y + 5, item.y],
-                rotate: [item.rot, item.rot + 3, item.rot - 2, item.rot],
-              }}
-              transition={{
-                opacity: { delay: item.delay, duration: 0.35 },
-                scale: { ...SPRING_SNAPPY, delay: item.delay },
-                x: { duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: item.delay },
-                y: { duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: item.delay + 0.2 },
-                rotate: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: item.delay },
-              }}
-              style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
-            >
-              <Comp />
-            </motion.div>
-          );
-        })}
+    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "0.5rem" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.65rem", maxWidth: 420, width: "100%" }}>
         <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <VerificationBurdenCounter count={burden} />
+        </motion.div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", width: "100%" }}>
+          <motion.div
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ ...SPRING_SNAPPY, delay: 0.2 }}
+            style={{ flexShrink: 0 }}
+          >
+            <DocumentStackMini copies={burden} />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: [0, 0.6, 0.6], scaleX: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            style={{ display: "flex", gap: 3, alignItems: "center" }}
+          >
+            {Array.from({ length: 3 }, (_, i) => (
+              <motion.div
+                key={i}
+                animate={{ opacity: [0.3, 1, 0.3], x: [0, 4, 8] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: INSTITUTIONAL_GOLD,
+                }}
+              />
+            ))}
+          </motion.div>
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+            {APP_PORTALS.map((portal, i) => (
+              <motion.div
+                key={portal.id}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ ...SPRING_SNAPPY, delay: portal.delay }}
+              >
+                <AppVerificationPortal
+                  name={portal.name}
+                  icon={portal.icon}
+                  accent={portal.accent}
+                  pulse={i === burden % 3}
+                  uploadN={portal.uploadN}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        <motion.p
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.7, 0.7] }}
-          transition={{ delay: 1.2, duration: 0.5 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
           style={{
-            position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
-            fontFamily: MONO, fontSize: "0.48rem", letterSpacing: "0.1em",
-            color: "rgba(248,113,113,0.85)", whiteSpace: "nowrap",
+            fontFamily: FONT,
+            fontSize: "clamp(0.68rem, 1.8vw, 0.78rem)",
+            fontWeight: 600,
+            color: "var(--text-secondary)",
+            textAlign: "center",
+            margin: 0,
+            lineHeight: 1.5,
+            maxWidth: 340,
           }}
         >
-          SAME KYC · OVER AND OVER
+          Every platform rebuilds trust from zero — same passport, same bank statements, same wait.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.85, 0.85] }}
+          transition={{ delay: 1.1, duration: 0.5 }}
+          style={{
+            fontFamily: MONO, fontSize: "0.44rem", letterSpacing: "0.12em",
+            color: "rgba(248,113,113,0.8)", textTransform: "uppercase",
+          }}
+        >
+          Verification debt · not asset proof
         </motion.div>
       </div>
     </div>
@@ -97,16 +149,15 @@ function PhaseKycChaos() {
 function PhaseConsolidation() {
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      {/* Incoming KYC shrinking toward center */}
-      {KYC_ITEMS.map((item, i) => (
+      {APP_PORTALS.map((portal, i) => (
         <motion.div
-          key={`merge-${item.id}`}
-          initial={{ opacity: 0.7, x: item.x, y: item.y, scale: 1, rotate: item.rot }}
-          animate={{ opacity: 0, x: 0, y: 0, scale: 0.2, rotate: 0 }}
-          transition={{ ...SPRING, delay: i * 0.06, duration: 0.85 }}
+          key={`merge-${portal.id}`}
+          initial={{ opacity: 0.85, x: (i - 1) * 90, y: 0, scale: 1 }}
+          animate={{ opacity: 0, x: 0, y: 0, scale: 0.25 }}
+          transition={{ ...SPRING, delay: i * 0.08, duration: 0.85 }}
           style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none" }}
         >
-          <item.component />
+          <AppVerificationPortal name={portal.name} icon={portal.icon} accent={portal.accent} />
         </motion.div>
       ))}
 
@@ -229,7 +280,7 @@ function PhaseLandUnlock() {
           fontSize: "clamp(0.72rem, 1.9vw, 0.88rem)",
           fontWeight: 800,
           letterSpacing: "-0.02em",
-          color: "#10B981",
+          color: INSTITUTIONAL_VERIFY,
           textAlign: "center",
           maxWidth: 400,
         }}
@@ -304,7 +355,7 @@ export function HomeCinematicDemo() {
   const progress = Math.min(100, (totalElapsed / CINEMATIC_LOOP_MS) * 100);
   const loopSec = Math.round(CINEMATIC_LOOP_MS / 1000);
 
-  const phaseLabels = ["Repeated KYC", "One Passport", "Trust transfer"];
+  const phaseLabels = ["Verification debt", "One Passport", "Trust transfer"];
 
   return (
     <section

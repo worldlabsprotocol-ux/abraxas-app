@@ -46,6 +46,9 @@ export default function DevelopersPage() {
           {[
             { label: "Credential verify", href: "/docs/partner-verification-requests" },
             { label: "Public registry", href: "/verify" },
+            { label: "Sui deployment status", href: "/api/sui/status" },
+            { label: "Mainnet readiness", href: "/api/mainnet/readiness" },
+            { label: "Positioning loop", href: "/api/positioning/loop" },
             { label: "Asset signals webhook", href: "/integrations/relying-parties" },
             { label: "MLS lot status push", href: "/integrations/relying-parties" },
             { label: "Trust layer docs", href: "/trust-framework" },

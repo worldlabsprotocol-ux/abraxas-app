@@ -9,8 +9,8 @@ import {
   provisionOnChainPassport,
   VERIFF_PASSPORT_STAMPS,
 } from "@/lib/sui/passportIssuer";
-import { getSuiDevnetClient } from "@/lib/sui/client";
-import { SUI_DEVNET, passportTypeFilter, suiExplorerObject, suiExplorerTx } from "@/lib/sui/config";
+import { getSuiClient } from "@/lib/sui/client";
+import { getSuiDeployment, getActiveSuiNetwork, passportTypeFilter, suiExplorerObject, suiExplorerTx } from "@/lib/sui/config";
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -48,7 +48,7 @@ async function saveDbRecord(
   await sb.from("sui_passport_objects").upsert({
     sui_address: sui,
     object_id: result.objectId,
-    network: SUI_DEVNET.network,
+    network: getActiveSuiNetwork(),
     stamp_bitmask: result.stampBitmask,
     create_tx_digest: result.createTxDigest ?? null,
     stamps_tx_digest: result.stampsTxDigest ?? null,
@@ -61,7 +61,7 @@ async function readOnChainPassport(
   sui: string,
   db: Awaited<ReturnType<typeof loadDbRecord>>,
 ) {
-  const client = getSuiDevnetClient();
+  const client = getSuiClient();
   if (db?.object_id) {
     const obj = await client.getObject({ id: db.object_id, options: { showContent: true, showType: true } });
     if (obj.data) {
@@ -98,7 +98,7 @@ function statusPayload(
     : false;
 
   return {
-    network: SUI_DEVNET.network,
+    network: getActiveSuiNetwork(),
     sui_address: sui,
     issuer_configured: issuerConfigured,
     eligible_for_provision: eligibleForProvision,

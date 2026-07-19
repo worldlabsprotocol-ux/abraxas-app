@@ -108,22 +108,155 @@ export function KycSsnFormDoc() {
 
 export function KycVerifyModalDoc({ repeat }: { repeat?: boolean }) {
   return (
-    <DocShell width={88} height={64} accent={repeat ? "#F59E0B" : undefined}>
+    <DocShell width={88} height={64} accent={repeat ? INSTITUTIONAL_GOLD : undefined}>
       <div style={{ padding: "6px 7px", textAlign: "center" }}>
-        <div style={{ fontSize: "0.65rem", marginBottom: 2 }}>{repeat ? "⚠" : "○"}</div>
-        <div style={{ fontFamily: FONT, fontSize: "0.46rem", fontWeight: 800, color: repeat ? "#FBBF24" : "#fff" }}>
+        <div style={{ fontSize: "0.65rem", marginBottom: 2 }}>{repeat ? "↻" : "○"}</div>
+        <div style={{ fontFamily: FONT, fontSize: "0.46rem", fontWeight: 800, color: repeat ? INSTITUTIONAL_GOLD_PALE : "#fff" }}>
           Verify Identity
         </div>
         <div style={{
           marginTop: 5, padding: "3px 8px", borderRadius: 999,
-          background: repeat ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.1)",
+          background: repeat ? "rgba(232,197,71,0.18)" : "rgba(255,255,255,0.1)",
           fontFamily: FONT, fontSize: "0.38rem", fontWeight: 700,
-          color: repeat ? "#FCD34D" : "rgba(255,255,255,0.6)",
+          color: repeat ? INSTITUTIONAL_GOLD : "rgba(255,255,255,0.6)",
         }}>
           Submit again
         </div>
       </div>
     </DocShell>
+  );
+}
+
+/** Institutional app portal — each platform re-requests the same proof */
+export function AppVerificationPortal({
+  name,
+  icon,
+  accent = INSTITUTIONAL_VIOLET,
+  pulse = false,
+  uploadN,
+}: {
+  name: string;
+  icon: string;
+  accent?: string;
+  pulse?: boolean;
+  uploadN?: number;
+}) {
+  return (
+    <motion.div
+      animate={pulse ? { y: [0, -3, 0], boxShadow: [
+        `0 12px 32px rgba(0,0,0,0.45)`,
+        `0 16px 40px ${accent}33`,
+        `0 12px 32px rgba(0,0,0,0.45)`,
+      ] } : undefined}
+      transition={pulse ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : undefined}
+      style={{
+        width: 108,
+        borderRadius: 12,
+        border: `1px solid ${accent}44`,
+        background: "linear-gradient(165deg, rgba(20,16,28,0.95) 0%, rgba(8,8,14,0.98) 100%)",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{
+        padding: "5px 8px",
+        borderBottom: `1px solid ${accent}22`,
+        display: "flex", alignItems: "center", gap: 5,
+        background: `linear-gradient(90deg, ${accent}12, transparent)`,
+      }}>
+        <span style={{ fontSize: "0.7rem" }}>{icon}</span>
+        <span style={{ fontFamily: FONT, fontSize: "0.48rem", fontWeight: 800, color: "#FAFAFA", letterSpacing: "-0.02em" }}>
+          {name}
+        </span>
+      </div>
+      <div style={{ padding: "7px 8px 8px" }}>
+        <div style={{
+          padding: "4px 6px", borderRadius: 6, marginBottom: 5,
+          border: "1px dashed rgba(248,113,113,0.35)",
+          background: "rgba(248,113,113,0.06)",
+        }}>
+          <div style={{ fontFamily: MONO, fontSize: "0.34rem", color: "rgba(248,113,113,0.85)", letterSpacing: "0.06em" }}>
+            ID · SELFIE · PROOF OF ADDR
+          </div>
+        </div>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4,
+        }}>
+          <span style={{
+            fontFamily: FONT, fontSize: "0.4rem", fontWeight: 800,
+            color: INSTITUTIONAL_GOLD, letterSpacing: "0.04em",
+          }}>
+            VERIFY AGAIN
+          </span>
+          {uploadN != null && (
+            <span style={{
+              fontFamily: MONO, fontSize: "0.34rem", padding: "2px 5px", borderRadius: 4,
+              background: "rgba(232,197,71,0.12)", color: INSTITUTIONAL_GOLD_PALE,
+              border: "1px solid rgba(232,197,71,0.28)",
+            }}>
+              #{uploadN}
+            </span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Animated burden counter — uploads stacking across apps */
+export function VerificationBurdenCounter({ count }: { count: number }) {
+  return (
+    <div style={{
+      padding: "6px 12px", borderRadius: 999,
+      border: "1px solid rgba(248,113,113,0.35)",
+      background: "rgba(248,113,113,0.08)",
+      display: "inline-flex", alignItems: "center", gap: 8,
+    }}>
+      <span style={{ fontFamily: MONO, fontSize: "0.42rem", color: "rgba(248,113,113,0.9)", letterSpacing: "0.08em" }}>
+        SAME DOCUMENTS
+      </span>
+      <motion.span
+        key={count}
+        initial={{ scale: 1.3, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        style={{
+          fontFamily: FONT, fontSize: "0.72rem", fontWeight: 900,
+          color: "#FCA5A5", minWidth: 28, textAlign: "center",
+        }}
+      >
+        ×{count}
+      </motion.span>
+    </div>
+  );
+}
+
+/** Compact document stack being copied to each portal */
+export function DocumentStackMini({ copies }: { copies: number }) {
+  return (
+    <div style={{ position: "relative", width: 72, height: 56 }}>
+      {Array.from({ length: Math.min(copies, 4) }, (_, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: i * 4,
+            top: i * 3,
+            width: 56,
+            height: 40,
+            borderRadius: 6,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "linear-gradient(160deg, #1a1a22 0%, #0c0c12 100%)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            opacity: 1 - i * 0.12,
+          }}
+        >
+          <div style={{ padding: "4px 5px" }}>
+            <div style={{ height: 2, background: "rgba(255,255,255,0.15)", borderRadius: 1, marginBottom: 2, width: "80%" }} />
+            <div style={{ height: 2, background: "rgba(255,255,255,0.08)", borderRadius: 1, width: "60%" }} />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

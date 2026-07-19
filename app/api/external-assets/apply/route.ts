@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { adminEmailShell, adminEmailTable, sendAdminEmail } from "@/lib/notify/adminResend";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -65,11 +66,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const notify = await sendAdminEmail({
+    subject: `External asset application — ${assetName}`,
+    html: adminEmailShell(
+      "New External Asset Application",
+      adminEmailTable({
+        Asset: assetName,
+        Class: assetClass,
+        Jurisdiction: body.jurisdiction?.trim() ?? "—",
+        Value: body.estimated_value?.trim() ?? "—",
+        Email: contactEmail,
+        Wallet: body.contact_wallet?.trim() ?? "—",
+        "Application ID": data.id,
+      }),
+    ),
+  });
+
   return NextResponse.json({
     ok: true,
     application_id: data.id,
     status: data.status,
     public_verify_slug: data.public_verify_slug,
+    notify,
     message: "Application received. Status is Pending review until a named reviewer signs the claim.",
   });
 }

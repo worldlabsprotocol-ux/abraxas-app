@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not save application" }, { status: 500 });
     }
 
-    void sendAdminEmail({
+    const notify = await sendAdminEmail({
       subject: `Design partner application — ${company}`,
       html: adminEmailShell(
         "New Design Partner Application",
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       ),
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, notify });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }

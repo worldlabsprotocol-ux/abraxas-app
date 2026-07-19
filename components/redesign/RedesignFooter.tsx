@@ -45,7 +45,7 @@ const LINKS = {
     { label: "Legal overview", href: "/legal" },
     { label: "Privacy Policy", href: "/legal/privacy" },
     { label: "Terms of Service", href: "/legal/terms" },
-    { label: "Settlement disclosure", href: "/legal#settlement" },
+    { label: "Settlement disclosure", href: "/legal/terms#settlement" },
   ],
   social: [
     { label: "Discord", href: "https://discord.gg/sHK8EWbnXH" },
