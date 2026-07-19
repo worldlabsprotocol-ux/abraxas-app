@@ -3,116 +3,91 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { actEase, CinematicDemoShell } from "@/components/home/cinematic/CinematicDemoShell";
 import { useCinematicTimer } from "@/components/home/cinematic/useCinematicTimer";
-import { DossierFolder } from "@/components/home/cinematic/DemoVisualPrimitives";
+import {
+  AssetHeroCard,
+  PremiumGlassCard,
+  VerifyResultHero,
+} from "@/components/home/cinematic/PremiumDemoPrimitives";
+import { ACCENT } from "@/components/home/cinematic/demoPremium";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const ACT_MS = [4500, 5000, 4500];
 
-const ACT_MS = [5000, 5000, 5000];
-
-const DILIGENCE = [
-  "Guest policy attestation",
-  "STR / operator credentialing",
-  "USDC settlement path",
-  "Monitoring feed active",
-];
-
-const actTransition = {
-  initial: { opacity: 0, rotateX: 8 },
-  animate: { opacity: 1, rotateX: 0 },
-  exit: { opacity: 0, rotateX: -6 },
-  transition: { duration: 0.5, ease: actEase },
-};
+const CHECKS = ["Guest policy attested", "Operator credentialing", "USDC settlement path", "Monitoring active"];
 
 export function ReferenceProofCinematicDemo({ compact = false }: { compact?: boolean }) {
-  const { containerRef, elapsed, totalMs, act, actCount, actProgress, reducedMotion } =
-    useCinematicTimer(ACT_MS);
+  const { containerRef, act, actCount, actProgress } = useCinematicTimer(ACT_MS);
 
-  const checksDone = Math.min(DILIGENCE.length, Math.floor(actProgress * (DILIGENCE.length + 0.5)));
+  const captions = [
+    "Cielo Sunrise — live hospitality reference in production.",
+    "Diligence complete. Policy scope attested on Abraxas.",
+    "ABX-RE-HOSP-001 — publicly verifiable case study.",
+  ];
+  const labels = ["Live asset", "Diligence", "On registry"];
 
-  const actLabel =
-    act === 1 ? "Live asset" : act === 2 ? "Diligence" : "On registry";
-
-  const actCaption =
-    act === 1
-      ? "Cielo Sunrise — hospitality reference asset in production."
-      : act === 2
-        ? "Assurance tiers and operator policies — attested, not re-uploaded."
-        : "ABX-RE-HOSP-001 is publicly verifiable — case study + verify path.";
+  const checksDone = Math.min(CHECKS.length, Math.floor(actProgress * (CHECKS.length + 1)));
 
   return (
     <CinematicDemoShell
       containerRef={containerRef}
       act={act}
       actCount={actCount}
-      actLabel={actLabel}
-      actCaption={actCaption}
-      elapsed={elapsed}
-      totalMs={totalMs}
-      reducedMotion={reducedMotion}
+      actLabel={labels[act - 1] ?? ""}
+      actCaption={captions[act - 1] ?? ""}
       variant="dossier"
       compact={compact}
       minHeight={compact ? 250 : 300}
     >
       <AnimatePresence mode="wait">
         {act === 1 && (
-          <motion.div key="d1" {...actTransition} className="flex h-full items-center justify-center">
-            <DossierFolder
+          <motion.div key="r1" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="flex justify-center"
+          >
+            <AssetHeroCard
               title="Cielo Sunrise"
-              subtitle="ABX-RE-HOSP-001 · Mineral Bluff, GA"
-              imageGradient="linear-gradient(135deg, #2d4a3e 0%, #1a2e28 40%, #0f1a16 100%)"
+              id="ABX-RE-HOSP-001"
+              location="Mineral Bluff, Georgia"
+              gradient="linear-gradient(135deg, #1e3a32 0%, #0f1f1a 50%, #0a1410 100%)"
+              badge="LIVE REFERENCE"
             />
           </motion.div>
         )}
         {act === 2 && (
-          <motion.div key="d2" {...actTransition} className="flex h-full flex-col items-center justify-center gap-3">
-            <div style={{
-              width: "100%", maxWidth: 320, padding: "12px 14px", borderRadius: 10,
-              border: "1px solid rgba(251,191,36,0.25)", background: "rgba(0,0,0,0.35)",
-            }}>
-              <div style={{ fontFamily: MONO, fontSize: "0.38rem", color: "#FCD34D", marginBottom: 10 }}>
-                DILIGENCE CHECKLIST
-              </div>
-              {DILIGENCE.map((item, i) => (
+          <motion.div key="r2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="mx-auto w-full max-w-sm"
+          >
+            <PremiumGlassCard accent={ACCENT.gold}>
+              {CHECKS.map((c, i) => (
                 <motion.div
-                  key={item}
-                  animate={{ opacity: i < checksDone ? 1 : 0.35 }}
+                  key={c}
+                  animate={{ opacity: i < checksDone ? 1 : 0.3 }}
                   style={{
-                    display: "flex", alignItems: "center", gap: 8, marginBottom: 6,
-                    fontFamily: FONT, fontSize: "0.62rem", color: "#FAFAFA",
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "8px 0", fontSize: "0.72rem", fontWeight: 700, color: "#FAFAFA",
+                    borderBottom: i < CHECKS.length - 1 ? "1px solid rgba(255,255,255,0.06)" : undefined,
                   }}
                 >
-                  <span style={{ color: i < checksDone ? "#6EE7B7" : "rgba(255,255,255,0.25)" }}>
+                  <span style={{ color: i < checksDone ? "#6EE7B7" : "rgba(255,255,255,0.2)" }}>
                     {i < checksDone ? "✓" : "○"}
                   </span>
-                  {item}
+                  {c}
                 </motion.div>
               ))}
-            </div>
+            </PremiumGlassCard>
           </motion.div>
         )}
         {act === 3 && (
-          <motion.div key="d3" {...actTransition} className="flex h-full flex-col items-center justify-center gap-4">
-            <motion.div
-              animate={{ rotate: actProgress > 0.3 ? -8 : 0 }}
-              style={{
-                padding: "12px 20px", borderRadius: 8,
-                border: "3px double rgba(251,191,36,0.5)",
-                fontFamily: MONO, fontSize: "0.48rem", fontWeight: 800,
-                color: "#FDE68A", letterSpacing: "0.12em",
-                background: "rgba(251,191,36,0.08)",
-              }}
-            >
-              LIVE REFERENCE
-            </motion.div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, color: "#FAFAFA" }}>
-                ABX-RE-HOSP-001
+          <motion.div key="r3" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <PremiumGlassCard accent={ACCENT.gold} glow style={{ textAlign: "center", maxWidth: 320, width: "100%" }}>
+              <div style={{ fontSize: "0.48rem", letterSpacing: "0.14em", color: ACCENT.gold, fontWeight: 800, marginBottom: 8 }}>
+                PRODUCTION RECORD
               </div>
-              <div style={{ fontFamily: MONO, fontSize: "0.4rem", color: "rgba(251,191,36,0.75)", marginTop: 6 }}>
-                /verify/ABX-RE-HOSP-001 · /case-studies/cielo
+              <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "#FAFAFA" }}>ABX-RE-HOSP-001</div>
+              <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.45)", marginTop: 10 }}>
+                /verify · /case-studies/cielo
               </div>
-            </div>
+            </PremiumGlassCard>
           </motion.div>
         )}
       </AnimatePresence>

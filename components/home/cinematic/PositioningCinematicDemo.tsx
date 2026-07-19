@@ -3,114 +3,84 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { actEase, CinematicDemoShell } from "@/components/home/cinematic/CinematicDemoShell";
 import { useCinematicTimer } from "@/components/home/cinematic/useCinematicTimer";
-import { ASSET_POSITIONING_STEPS } from "@/lib/assetPositioning";
 import {
-  DossierFolder,
-  MarketTimeline,
-} from "@/components/home/cinematic/DemoVisualPrimitives";
+  PremiumGlassCard,
+  PremiumStat,
+  SplitCompare,
+} from "@/components/home/cinematic/PremiumDemoPrimitives";
+import { ACCENT } from "@/components/home/cinematic/demoPremium";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-
-const ACT_MS = [5000, 5000, 5000];
-
-const actTransition = {
-  initial: { opacity: 0, x: 20 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -16 },
-  transition: { duration: 0.5, ease: actEase },
-};
+const ACT_MS = [5500, 5500, 5500];
 
 export function PositioningCinematicDemo({ compact = false }: { compact?: boolean }) {
-  const { containerRef, elapsed, totalMs, act, actCount, actProgress, reducedMotion } =
-    useCinematicTimer(ACT_MS);
+  const { containerRef, act, actCount, actProgress } = useCinematicTimer(ACT_MS);
 
-  const step = ASSET_POSITIONING_STEPS[act - 1];
-  const actLabel = step?.title ?? "Position";
-  const actCaption = step?.body ?? "";
+  const captions = [
+    "Position before the chain — not after the premium.",
+    "Registry-ready record. Monitoring on. Partners can see status now.",
+    "Collateral, sale, or tokenize — credentials travel with you.",
+  ];
+  const labels = ["Act now", "Registry", "Options"];
 
   return (
     <CinematicDemoShell
       containerRef={containerRef}
       act={act}
       actCount={actCount}
-      actLabel={actLabel}
-      actCaption={actCaption}
-      elapsed={elapsed}
-      totalMs={totalMs}
-      reducedMotion={reducedMotion}
+      actLabel={labels[act - 1] ?? ""}
+      actCaption={captions[act - 1] ?? ""}
       variant="market"
       compact={compact}
-      minHeight={compact ? 240 : 290}
+      minHeight={compact ? 220 : 280}
     >
       <AnimatePresence mode="wait">
         {act === 1 && (
-          <motion.div key="m1" {...actTransition} className="flex h-full flex-col items-center justify-center gap-5">
-            <MarketTimeline
-              activeIndex={actProgress > 0.5 ? 1 : 0}
-              phases={[
-                { year: "Legacy", label: "Quiet tokenize", tone: "muted" },
-                { year: "Now", label: "Proof-first", tone: "active" },
-                { year: "Window", label: "Act before premium", tone: "future" },
-              ]}
+          <motion.div key="p1" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, ease: actEase }}
+            className="flex flex-col items-center gap-6"
+          >
+            <SplitCompare
+              accent={ACCENT.rose}
+              leftLabel="Legacy"
+              rightLabel="Abraxas"
+              left={
+                <PremiumGlassCard style={{ opacity: 0.6, padding: "14px 16px" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "rgba(255,255,255,0.5)" }}>Tokenize quietly</div>
+                  <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: 6 }}>Pay premium later</div>
+                </PremiumGlassCard>
+              }
+              right={
+                <PremiumGlassCard accent={ACCENT.rose} glow style={{ padding: "14px 16px" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#FAFAFA" }}>Proof-first</div>
+                  <div style={{ fontSize: "0.55rem", color: ACCENT.rose, marginTop: 6 }}>Act before the window closes</div>
+                </PremiumGlassCard>
+              }
             />
-            <div style={{
-              padding: "12px 16px", borderRadius: 12, width: "100%", maxWidth: 360,
-              border: "1px solid rgba(244,114,182,0.3)",
-              background: "rgba(244,114,182,0.06)",
-            }}>
-              <div style={{ fontFamily: MONO, fontSize: "0.38rem", color: "#F9A8D4", marginBottom: 6 }}>
-                STEP 01 · REGISTER
-              </div>
-              <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: "#FDF2F8" }}>
-                Submit asset · bind wallet · start assurance tiers
-              </div>
-            </div>
+            <PremiumStat value={`${Math.min(3, 1 + Math.floor(actProgress * 3))}/3`} label="Positioning steps" accent={ACCENT.rose} />
           </motion.div>
         )}
         {act === 2 && (
-          <motion.div key="m2" {...actTransition} className="flex h-full flex-col items-center justify-center gap-4">
-            <DossierFolder
-              title="Your ABX record"
-              subtitle="ABX-RE-… · monitoring active"
-              imageGradient="linear-gradient(135deg, #3b2f4a 0%, #1a1520 50%, #0f172a 100%)"
-              stamps={actProgress > 0.3 ? ["REGISTRY-READY", "MONITORING ON"] : []}
-            />
-            <div style={{ fontFamily: MONO, fontSize: "0.4rem", color: "rgba(251,207,232,0.7)" }}>
-              Public record before MLS / token noise
-            </div>
+          <motion.div key="p2" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <PremiumGlassCard accent={ACCENT.rose} glow style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
+              <div style={{ fontSize: "0.5rem", letterSpacing: "0.14em", color: ACCENT.rose, fontWeight: 700, marginBottom: 8 }}>ABX RECORD LIVE</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#FAFAFA", letterSpacing: "-0.03em" }}>Registry-ready</div>
+              <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.45)", marginTop: 8 }}>Monitoring · public verify path · partner-visible</div>
+            </PremiumGlassCard>
           </motion.div>
         )}
         {act === 3 && (
-          <motion.div key="m3" {...actTransition} className="flex h-full flex-col items-center justify-center gap-3">
-            <div style={{
-              display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
-              width: "100%", maxWidth: 360,
-            }}>
-              {["Collateral", "Sale", "Tokenize"].map((path, i) => (
-                <motion.div
-                  key={path}
-                  animate={{ opacity: actProgress > i * 0.25 ? 1 : 0.3, y: actProgress > i * 0.25 ? 0 : 8 }}
-                  style={{
-                    padding: "10px 8px", borderRadius: 10, textAlign: "center",
-                    border: "1px solid rgba(244,114,182,0.35)",
-                    background: "rgba(244,114,182,0.08)",
-                  }}
-                >
-                  <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 800, color: "#FDF2F8" }}>{path}</div>
-                  <div style={{ fontFamily: MONO, fontSize: "0.3rem", color: "rgba(251,207,232,0.6)", marginTop: 4 }}>
-                    credentials travel
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            <div style={{
-              fontFamily: MONO, fontSize: "0.42rem", color: "#F472B6",
-              padding: "6px 12px", borderRadius: 8,
-              border: "1px dashed rgba(244,114,182,0.4)",
-            }}>
-              Exercise when the window opens — not when incumbents allow
-            </div>
+          <motion.div key="p3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="grid w-full max-w-md grid-cols-3 gap-3 mx-auto"
+          >
+            {["Collateral", "Sale", "Tokenize"].map((path, i) => (
+              <motion.div
+                key={path}
+                animate={{ opacity: actProgress > i * 0.2 ? 1 : 0.35, y: actProgress > i * 0.2 ? 0 : 8 }}
+              >
+                <PremiumStat value="→" label={path} accent={ACCENT.rose} pulse={actProgress > i * 0.2 && actProgress < i * 0.2 + 0.35} />
+              </motion.div>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>

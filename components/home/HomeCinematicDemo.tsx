@@ -15,6 +15,8 @@ import {
   VerificationDebtMeter,
 } from '@/components/home/cinematic/KycDocumentCards';
 import { CINEMATIC_NO_RELAY_LINE, CINEMATIC_PROOF_ISSUED_LINE } from '@/lib/intersectionThesis';
+import { PremiumEyebrow, PremiumHeadline, PremiumMeshBg } from '@/components/home/cinematic/PremiumDemoPrimitives';
+import { ACCENT } from '@/components/home/cinematic/demoPremium';
 
 const ACT1_MS = 8000;
 const ACT2_MS = 7000;
@@ -92,47 +94,25 @@ export function HomeCinematicDemo() {
     transition: { duration: 0.65, ease: actEase },
   };
 
+  const meshKey = act === 1 ? 'danger' : act === 2 ? 'gold' : 'emerald';
+  const accent = act === 1 ? ACCENT.danger : act === 2 ? ACCENT.gold : ACCENT.emerald;
+
   return (
     <div className="cinematic-demo relative mx-auto w-full max-w-5xl">
       <div
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-90"
+        className="relative overflow-hidden rounded-3xl"
         style={{
-          background:
-            act === 1
-              ? 'radial-gradient(ellipse 80% 55% at 50% 42%, rgba(239,68,68,0.07), transparent 62%)'
-              : act === 2
-                ? 'radial-gradient(ellipse 75% 50% at 50% 45%, rgba(212,175,55,0.1), transparent 58%)'
-                : 'radial-gradient(ellipse 80% 55% at 50% 40%, rgba(34,197,94,0.09), transparent 60%)',
-          transition: 'background 0.8s ease',
+          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 32px 100px rgba(0,0,0,0.55)',
         }}
-        aria-hidden
-      />
+      >
+        <PremiumMeshBg mesh={meshKey} />
 
-      <div className="relative rounded-2xl border border-white/[0.08] bg-[#080a10]/90 p-4 shadow-2xl backdrop-blur-sm sm:p-6 md:p-8">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:mb-5">
-          <div className="flex items-center gap-2">
-            {[1, 2, 3].map((n) => (
-              <span
-                key={n}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  act === n ? 'w-8 bg-gold' : act > n ? 'w-4 bg-gold/40' : 'w-4 bg-white/10'
-                }`}
-              />
-            ))}
-            <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/40 sm:text-xs">
-              {actLabel}
-            </span>
-          </div>
-          <span className="font-mono text-[10px] tabular-nums text-white/25">
-            {reducedMotion ? 'Paused' : `${Math.ceil((TOTAL_MS - elapsed) / 1000)}s`}
-          </span>
-        </div>
+        <div className="relative z-10 px-5 py-6 sm:px-8 sm:py-8">
+          <PremiumEyebrow accent={accent}>{actLabel}</PremiumEyebrow>
+          <PremiumHeadline mesh={meshKey}>{actCaption}</PremiumHeadline>
 
-        <p className="mb-5 min-h-[2.75rem] text-center text-sm font-medium leading-snug text-white/85 sm:mb-6 sm:min-h-[2rem] sm:text-base md:text-lg">
-          {actCaption}
-        </p>
-
-        <div className="relative min-h-[300px] sm:min-h-[340px] md:min-h-[380px]">
+          <div className="relative mt-6 min-h-[300px] sm:mt-8 sm:min-h-[340px] md:min-h-[380px]">
           <AnimatePresence mode="wait">
             {act === 1 && (
               <motion.div key="act1" {...actTransition} className="absolute inset-0 flex flex-col">
@@ -282,6 +262,19 @@ export function HomeCinematicDemo() {
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="relative z-10 h-px bg-white/[0.04]">
+          <motion.div
+            className="h-full"
+            animate={{ width: `${(act / 3) * 100}%` }}
+            transition={{ duration: 0.6, ease: actEase }}
+            style={{
+              background: `linear-gradient(90deg, ${accent}, transparent)`,
+              boxShadow: `0 0 12px ${accent}66`,
+            }}
+          />
         </div>
       </div>
 

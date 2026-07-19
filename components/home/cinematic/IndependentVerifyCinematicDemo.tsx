@@ -3,132 +3,90 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { actEase, CinematicDemoShell } from "@/components/home/cinematic/CinematicDemoShell";
 import { useCinematicTimer } from "@/components/home/cinematic/useCinematicTimer";
-import { BrowserVerifierFrame } from "@/components/home/cinematic/DemoVisualPrimitives";
-
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+import {
+  ClaimRow,
+  PremiumGlassCard,
+  VerifyResultHero,
+} from "@/components/home/cinematic/PremiumDemoPrimitives";
+import { ACCENT } from "@/components/home/cinematic/demoPremium";
 
 const ACT_MS = [4500, 5000, 4500];
 
-const CHECK_STEPS = [
-  "Fetch payload + signature",
-  "Load Abraxas public key",
-  "Ed25519 verify locally",
-  "Check proof_status / anchor",
+const CLAIMS = [
+  { label: "proof_id", value: "aprx_7f3a9c2e…", redacted: false },
+  { label: "signature_valid", value: "true", redacted: false },
+  { label: "public_key", value: "published", redacted: false },
+  { label: "anchor_status", value: "signed", redacted: false },
 ];
 
-const actTransition = {
-  initial: { opacity: 0, scale: 0.98 },
-  animate: { opacity: 1, scale: 1 },
-  exit: { opacity: 0, scale: 1.02 },
-  transition: { duration: 0.45, ease: actEase },
-};
-
 export function IndependentVerifyCinematicDemo({ compact = false }: { compact?: boolean }) {
-  const { containerRef, elapsed, totalMs, act, actCount, actProgress, reducedMotion } =
-    useCinematicTimer(ACT_MS);
+  const { containerRef, act, actCount, actProgress } = useCinematicTimer(ACT_MS);
 
-  const checksLit = Math.min(CHECK_STEPS.length, Math.floor(actProgress * (CHECK_STEPS.length + 1)));
+  const captions = [
+    "Anyone pastes a proof ID. No account. No Abraxas login.",
+    "Verifier checks Ed25519 signature with the published public key.",
+    "Valid or invalid — determined on your machine. Not our servers.",
+  ];
+  const labels = ["Lookup", "Verify", "Trust math"];
 
-  const actLabel =
-    act === 1 ? "Public verifier" : act === 2 ? "Crypto check" : "Trust the math";
-
-  const actCaption =
-    act === 1
-      ? "Paste any aprx_ proof ID — no sign-in, no Abraxas account."
-      : act === 2
-        ? "Verifier runs signature check with published public key."
-        : "Valid or invalid — determined locally. Servers are not in the trust path.";
+  const revealed = act === 1 ? 1 : act === 2 ? 3 : 4;
 
   return (
     <CinematicDemoShell
       containerRef={containerRef}
       act={act}
       actCount={actCount}
-      actLabel={actLabel}
-      actCaption={actCaption}
-      elapsed={elapsed}
-      totalMs={totalMs}
-      reducedMotion={reducedMotion}
+      actLabel={labels[act - 1] ?? ""}
+      actCaption={captions[act - 1] ?? ""}
       variant="auditor"
       compact={compact}
       minHeight={compact ? 240 : 290}
     >
       <AnimatePresence mode="wait">
         {act === 1 && (
-          <motion.div key="a1" {...actTransition} className="flex h-full items-center justify-center">
-            <BrowserVerifierFrame url="abraxas.app/api/proof/aprx_7f3a9c2e…">
-              <div style={{ marginBottom: 10, fontFamily: MONO, fontSize: "0.38rem", color: "rgba(255,255,255,0.45)" }}>
-                Independent proof lookup
+          <motion.div key="v1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="flex justify-center"
+          >
+            <PremiumGlassCard accent={ACCENT.emerald} glow style={{ width: "100%", maxWidth: 360 }}>
+              <div style={{ fontSize: "0.48rem", letterSpacing: "0.12em", color: ACCENT.emerald, marginBottom: 12, fontWeight: 700 }}>
+                PUBLIC VERIFIER
               </div>
               <div style={{
-                padding: "8px 10px", borderRadius: 6, marginBottom: 10,
-                border: "1px solid rgba(16,185,129,0.35)", background: "rgba(0,0,0,0.35)",
-                fontFamily: MONO, fontSize: "0.42rem", color: "#6EE7B7",
+                padding: "12px 14px", borderRadius: 10,
+                background: "rgba(0,0,0,0.35)", border: "1px solid rgba(52,211,153,0.25)",
+                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.55rem", color: "#6EE7B7",
               }}>
                 aprx_7f3a9c2e1b4d8f6a
               </div>
               <motion.div
-                animate={{ opacity: actProgress > 0.5 ? 1 : 0.4 }}
+                animate={{ opacity: actProgress > 0.5 ? 1 : 0.5 }}
                 style={{
-                  padding: "6px 12px", borderRadius: 6, display: "inline-block",
-                  background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.4)",
-                  fontFamily: MONO, fontSize: "0.36rem", color: "#A7F3D0", fontWeight: 700,
+                  marginTop: 14, padding: "10px", borderRadius: 8, textAlign: "center",
+                  background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.35)",
+                  fontSize: "0.62rem", fontWeight: 800, color: "#A7F3D0",
                 }}
               >
-                Verify proof →
+                Verify independently →
               </motion.div>
-            </BrowserVerifierFrame>
+            </PremiumGlassCard>
           </motion.div>
         )}
         {act === 2 && (
-          <motion.div key="a2" {...actTransition} className="flex h-full flex-col items-center justify-center gap-2">
-            {CHECK_STEPS.map((step, i) => (
-              <motion.div
-                key={step}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: i < checksLit ? 1 : 0.3, x: 0 }}
-                transition={{ delay: i * 0.08 }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  width: "100%", maxWidth: 320, padding: "6px 10px", borderRadius: 8,
-                  border: `1px solid ${i < checksLit ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.08)"}`,
-                  background: i < checksLit ? "rgba(16,185,129,0.08)" : "transparent",
-                }}
-              >
-                <span style={{
-                  width: 18, height: 18, borderRadius: 4, display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  fontSize: "0.55rem", fontWeight: 800,
-                  background: i < checksLit ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.06)",
-                  color: i < checksLit ? "#6EE7B7" : "rgba(255,255,255,0.3)",
-                }}>
-                  {i < checksLit ? "✓" : "·"}
-                </span>
-                <span style={{ fontFamily: MONO, fontSize: "0.4rem", color: i < checksLit ? "#D1FAE5" : "rgba(255,255,255,0.4)" }}>
-                  {step}
-                </span>
-              </motion.div>
-            ))}
+          <motion.div key="v2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="mx-auto w-full max-w-sm"
+          >
+            <PremiumGlassCard>
+              {CLAIMS.map((c, i) => (
+                <ClaimRow key={c.label} label={c.label} value={c.value} visible={i < revealed} />
+              ))}
+            </PremiumGlassCard>
           </motion.div>
         )}
         {act === 3 && (
-          <motion.div key="a3" {...actTransition} className="flex h-full flex-col items-center justify-center gap-4">
-            <div style={{
-              padding: "14px 20px", borderRadius: 12, textAlign: "center",
-              border: "2px solid rgba(16,185,129,0.5)",
-              background: "linear-gradient(180deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))",
-              boxShadow: "0 0 40px rgba(16,185,129,0.2)",
-            }}>
-              <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 800, color: "#6EE7B7", letterSpacing: "0.08em" }}>
-                SIGNATURE VALID
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: "0.36rem", color: "rgba(255,255,255,0.55)", marginTop: 8 }}>
-                public_key published · proof_reliable: true
-              </div>
-            </div>
-            <div style={{ fontFamily: MONO, fontSize: "0.34rem", color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
-              No inbox · no relay · verify without trusting our servers
-            </div>
+          <motion.div key="v3" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            className="flex justify-center"
+          >
+            <VerifyResultHero valid />
           </motion.div>
         )}
       </AnimatePresence>
