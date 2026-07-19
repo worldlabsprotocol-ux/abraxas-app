@@ -3,18 +3,30 @@
 
 import { transitionClaimStatus } from "@/lib/trust/credentialStatusRegistry";
 import { evaluateAssetSignal, monitoringActionToClaimStatus } from "./evaluate";
+import { issueAssetStateChangeProof } from "./stateChangeProof";
 import type { AssetSignal, MonitoringApplyResult } from "./types";
+import type { IssuedAuthenticationProof } from "@/lib/authenticationProof/types";
 
 export async function applyAssetSignal(input: {
   signal: AssetSignal;
   claimIds: string[];
   changedBy: string;
   idempotencyPrefix?: string;
-}): Promise<{ decision: ReturnType<typeof evaluateAssetSignal>; results: MonitoringApplyResult[] }> {
+}): Promise<{
+  decision: ReturnType<typeof evaluateAssetSignal>;
+  results: MonitoringApplyResult[];
+  state_change_proof?: IssuedAuthenticationProof;
+}> {
   const decision = evaluateAssetSignal(input.signal);
   const targetStatus = monitoringActionToClaimStatus(decision);
 
   if (!targetStatus || !input.claimIds.length) {
+    const state_change_proof = await issueAssetStateChangeProof({
+      signal: input.signal,
+      decision,
+      changedBy: input.changedBy,
+    }).catch(() => undefined);
+
     return {
       decision,
       results: input.claimIds.map(claimId => ({
@@ -22,6 +34,7 @@ export async function applyAssetSignal(input: {
         ok: true,
         action: decision.action,
       })),
+      state_change_proof,
     };
   }
 
@@ -55,5 +68,11 @@ export async function applyAssetSignal(input: {
     });
   }
 
-  return { decision, results };
+  const state_change_proof = await issueAssetStateChangeProof({
+    signal: input.signal,
+    decision,
+    changedBy: input.changedBy,
+  }).catch(() => undefined);
+
+  return { decision, results, state_change_proof };
 }

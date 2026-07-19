@@ -9,7 +9,9 @@ export type AuthenticationEventType =
   | "external_asset_apply"
   | "security_report"
   | "tokenization_request"
-  | "asset_submission";
+  | "asset_submission"
+  | "credential_verify"
+  | "asset_state_change";
 
 export type AnchorStatus = "signed" | "anchored" | "anchor_failed";
 
@@ -34,6 +36,9 @@ export interface AuthenticationProofRecord {
   sui_network: string | null;
   anchor_status: AnchorStatus;
   explorer_url: string | null;
+  issued_at: string;
+  schema_version: string;
+  network: string;
   created_at: string;
 }
 
@@ -46,4 +51,8 @@ export interface IssuedAuthenticationProof {
   sui_tx_digest: string | null;
   explorer_url: string | null;
   verify_url: string;
+  issued_at: string;
+  event_type: AuthenticationEventType;
+  record_id: string;
+  network: string;
 }

@@ -79,3 +79,13 @@ export async function anchorAuthenticationProofOnSui(input: {
     };
   }
 }
+
+/**
+ * On-chain anchor requires:
+ * 1. Move package redeployed with `anchor_authentication_proof` entry function
+ * 2. SUI_SPONSOR_SECRET_KEY (or SUI_ISSUER_SECRET_KEY) + issuance cap configured
+ * 3. ON_CHAIN_ANCHOR_ENABLED !== "false"
+ *
+ * Until then proofs are issued with anchor_status `signed` (or `anchor_failed` if tx errors).
+ * Proof lookup at GET /api/proof/[id] remains valid via Ed25519 signature verification.
+ */

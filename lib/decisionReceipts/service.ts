@@ -297,6 +297,7 @@ export async function issueReceiptForDecision(input: {
   evaluatedClaimRefs: IssueDecisionReceiptInput["evaluatedClaimRefs"];
   expiresAt?: string | null;
   decisionContext?: DecisionReceiptContext;
+  anchorReference?: string | null;
 }): Promise<DecisionReceiptRecord | null> {
   try {
     return await issueDecisionReceipt({
@@ -312,6 +313,7 @@ export async function issueReceiptForDecision(input: {
       expiresAt: input.expiresAt,
       decisionContext: input.decisionContext,
       idempotencyKey: input.decisionId,
+      anchorReference: input.anchorReference ?? null,
     });
   } catch (e) {
     console.error("[decision_receipt]", e instanceof Error ? e.message : e);

@@ -73,5 +73,7 @@ export async function POST(req: NextRequest) {
     signal,
     decision: applied.decision,
     results: applied.results,
+    state_change_proof: applied.state_change_proof ?? null,
+    proof_verify_url: applied.state_change_proof?.verify_url ?? null,
   });
 }

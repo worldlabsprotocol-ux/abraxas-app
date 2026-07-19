@@ -10,6 +10,8 @@ import { getBountyGateStatus } from "@/lib/security/bountyGateStatus";
 import { getAuditGateStatus } from "@/lib/security/auditGateStatus";
 import { getPublicSuiConfig } from "@/lib/sui/network";
 import { isSuiMainnetDeployed } from "@/lib/sui/config";
+import { AUTHENTICATION_PROOF_LOOP_STATUS } from "@/lib/authenticationProof/loopStatus";
+import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,10 @@ export async function GET() {
       externalRp: rpGate,
       assetMonitoring: monitoringGate,
       bounty: bountyGate,
+      authenticationProof: {
+        signing_configured: Boolean(loadReceiptSigningKey()),
+        loop: AUTHENTICATION_PROOF_LOOP_STATUS,
+      },
       notify_configured: Boolean(process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL),
       positioningLoop: {
         loopClosed: positioning.loopClosed,

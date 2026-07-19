@@ -76,6 +76,7 @@ export async function issueAuthenticationProof(input: {
 
   const suiTxDigest = anchor.txDigest ?? null;
   const explorerUrl = suiTxDigest ? suiExplorerTxUrl(suiTxDigest) : null;
+  const network = getActiveSuiNetwork();
 
   if (SB_URL && SB_KEY) {
     const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
@@ -87,9 +88,12 @@ export async function issueAuthenticationProof(input: {
       signature: signature || "unsigned",
       signing_key_id: signingKeyId,
       sui_tx_digest: suiTxDigest,
-      sui_network: getActiveSuiNetwork(),
+      sui_network: network,
       anchor_status: anchorStatus,
       explorer_url: explorerUrl,
+      issued_at: authPayload.issued_at,
+      schema_version: authPayload.schema_version,
+      network,
     });
   }
 
@@ -102,6 +106,10 @@ export async function issueAuthenticationProof(input: {
     sui_tx_digest: suiTxDigest,
     explorer_url: explorerUrl,
     verify_url: `/api/proof/${authPayload.proof_id}`,
+    issued_at: authPayload.issued_at,
+    event_type: input.eventType,
+    record_id: input.recordId,
+    network,
   };
 }
 
@@ -114,6 +122,7 @@ export async function getAuthenticationProof(id: string): Promise<Authentication
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
+  const createdAt = data.created_at as string;
   return {
     id: data.id as string,
     event_type: data.event_type as AuthenticationProofRecord["event_type"],
@@ -125,6 +134,9 @@ export async function getAuthenticationProof(id: string): Promise<Authentication
     sui_network: (data.sui_network as string | null) ?? null,
     anchor_status: data.anchor_status as AuthenticationProofRecord["anchor_status"],
     explorer_url: (data.explorer_url as string | null) ?? null,
-    created_at: data.created_at as string,
+    issued_at: (data.issued_at as string | null) ?? createdAt,
+    schema_version: (data.schema_version as string | null) ?? AUTH_PROOF_SCHEMA_VERSION,
+    network: (data.network as string | null) ?? (data.sui_network as string | null) ?? getActiveSuiNetwork(),
+    created_at: createdAt,
   };
 }

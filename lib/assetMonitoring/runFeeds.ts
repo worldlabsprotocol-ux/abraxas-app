@@ -13,6 +13,7 @@ export interface FeedRunResult {
   applied: boolean;
   claimResults?: Awaited<ReturnType<typeof applyAssetSignal>>["results"];
   decision?: Awaited<ReturnType<typeof applyAssetSignal>>["decision"];
+  stateChangeProofId?: string;
   error?: string;
 }
 
@@ -60,6 +61,7 @@ export async function runAssetMonitoringFeeds(input?: {
         applied: true,
         claimResults: applied.results,
         decision: applied.decision,
+        stateChangeProofId: applied.state_change_proof?.proof_id,
       });
     } catch (err) {
       results.push({
