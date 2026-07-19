@@ -9,7 +9,7 @@ import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
-import { AssetsExplorer } from "./AssetsExplorer";
+import { HomeReferenceProofStrip } from "@/components/home/HomeReferenceProofStrip";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
 import { HomePositioningStrip } from "@/components/home/HomePositioningStrip";
@@ -26,8 +26,6 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome"];
-
 function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
@@ -40,18 +38,7 @@ function HomeContent() {
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />
-        <div id="registry" style={{
-          paddingTop: "clamp(0.5rem, 2vw, 1rem)",
-          paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
-          borderBottom: "1px solid var(--border-strong)",
-        }}>
-          <AssetsExplorer
-            title="Live proof on-registry"
-            eyebrow="Reference assets"
-            home
-            excludeIds={HOME_REGISTRY_EXCLUDE}
-          />
-        </div>
+        <HomeReferenceProofStrip />
         <HomePartnersBrief />
         <HomeSignedInModule />
       </div>

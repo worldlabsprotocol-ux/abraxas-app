@@ -7,7 +7,7 @@ export function VerifyPageIntro() {
       <div style={{
         fontFamily: "'JetBrains Mono',monospace",
         fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.14em",
-        textTransform: "uppercase", color: "#10B981", marginBottom: "0.75rem",
+        textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.75rem",
       }}>
         Public verifier
       </div>
@@ -24,8 +24,8 @@ export function VerifyPageIntro() {
         fontSize: "0.9rem", color: "var(--text-secondary)",
         lineHeight: 1.7, maxWidth: 720, margin: "0 0 0.5rem",
       }}>
-        Browse tokenized assets (Cielo, Smyrna, and more), create your public profile, or paste a credential JWT.
-        Sample checks run in under 15 seconds without signing in.
+        Independent verification of Abraxas attestations — credentials, policy decisions, and reference asset records.
+        Cryptographic proofs are verifiable without signing in; owner submissions are not auto-published here.
       </p>
       <p style={{
         fontFamily: "'Inter',system-ui,sans-serif",

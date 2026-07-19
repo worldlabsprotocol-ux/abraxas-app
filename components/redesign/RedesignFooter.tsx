@@ -16,7 +16,7 @@ const LINKS = {
     { label: "Verify", href: "/verify" },
     { label: "My account", href: "/account" },
     { label: "Submit your asset", href: "/build" },
-    { label: "Browse registry", href: "/#registry" },
+    { label: "Verification registry", href: "/verify" },
   ],
   apps: [
     { label: "Cielo pilot", href: "/apps/cielo-sunrise" },

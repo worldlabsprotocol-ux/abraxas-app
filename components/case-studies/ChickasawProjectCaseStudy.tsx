@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/case-studies/ChickasawProjectCaseStudy.tsx
-// CPG Land Sales · Chickasaw Project — closed-loop Abraxas land listing.
+// Chickasaw Project — Abraxas land reference loop.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import { PassportGate } from "@/components/passport/PassportGate";
 import {
   CPG_ASSET,
   CPG_PARTNER,
+  CHICKASAW_PARTNER_PUBLIC,
   CPG_SOURCES,
   CPG_PROOF,
   CPG_DILIGENCE,
@@ -78,9 +79,9 @@ export function ChickasawProjectCaseStudy() {
   return (
     <RedesignPage maxWidth={920}>
       <PageHeader
-        eyebrow="Active land listing · Verified partner"
+        eyebrow="Reference land loop · consent-gated"
         title={`${CPG_ASSET.name}`}
-        subtitle="~270 acres across 11 surveyed tracts in the Chickasha corridor, Grady County OK — Abraxas spearheads acquisition; partner updates sync here. Drone footage, Phase I clean, contracts at asking."
+        subtitle="~270 acres across 11 surveyed tracts in the Chickasha corridor — Abraxas verification and acquisition flow. Drone footage, Phase I clean, qualified-buyer workflow."
       />
 
       <CaseStudyVideoHero
@@ -103,7 +104,7 @@ export function ChickasawProjectCaseStudy() {
       <ContentCard title="At a glance">
         <KeyValueTable rows={[
           { k: "Registry ID", v: CPG_ASSET.id, mono: true },
-          { k: "Partner", v: `${CPG_PARTNER.name} · ${CPG_PARTNER.contact}` },
+          { k: "Listing partner", v: CHICKASAW_PARTNER_PUBLIC },
           { k: "Location", v: CPG_ASSET.location },
           { k: "Size", v: `~${CPG_ASSET.parentAcres} acres · 11 surveyed lots` },
           {
@@ -121,7 +122,7 @@ export function ChickasawProjectCaseStudy() {
         <AssetInquirePanel
           assetId={CPG_ASSET.id}
           assetName={CPG_ASSET.name}
-          partnerName={CPG_PARTNER.name}
+          partnerName={CHICKASAW_PARTNER_PUBLIC}
         />
       </div>
 

@@ -1,5 +1,5 @@
 // FILE: lib/cpgLandCaseStudy.ts
-// CPG Land Sales · Chickasaw Project — active Oklahoma land partner listing.
+// Chickasaw Project — Oklahoma land reference loop (partner identity consent-gated).
 
 export function formatUsd(n: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -9,7 +9,10 @@ export function formatUsd(n: number): string {
   }).format(n);
 }
 
+export const CHICKASAW_PARTNER_PUBLIC = "Authorized Oklahoma land partner";
+
 export const CPG_PARTNER = {
+  /** Internal operator reference — not promoted on Abraxas marketing surfaces. */
   name: "CPG Land Sales",
   contact: "Gabriel Corrales",
   titleCompany: "Washita Valley Abstract · Chickasha, OK",
@@ -135,21 +138,21 @@ export const CPG_SOURCES = [
     claim: "Full project price",
     value: formatUsd(CPG_PRICING.fullProject),
     level: "L2 Review",
-    source: "CPG Land Sales",
+    source: "Authorized listing partner",
     asOf: "2026-07-05",
   },
   {
     claim: "Lots 2–4 bundle",
     value: formatUsd(CPG_PRICING.lots234Bundle),
     level: "L2 Review",
-    source: "CPG Land Sales · 81.74 ac contiguous",
+    source: "Authorized listing partner · 81.74 ac contiguous",
     asOf: "2026-07-05",
   },
   {
     claim: "Remaining 9 lots",
     value: formatUsd(CPG_PRICING.remaining9Lots),
     level: "L2 Review",
-    source: "CPG Land Sales",
+    source: "Authorized listing partner",
     asOf: "2026-07-05",
   },
   {
@@ -163,14 +166,14 @@ export const CPG_SOURCES = [
     claim: "Lots 2–4 oil/gas",
     value: "No active wells · no pipelines",
     level: "L2 Review",
-    source: "CPG Land Sales · partner attested",
+    source: "Authorized listing partner · partner attested",
     asOf: "2026-07-05",
   },
   {
     claim: "Lot 4 traction",
     value: "Offers incoming",
     level: "L2 Review",
-    source: "CPG Land Sales · Abraxas registry",
+    source: "Authorized listing partner · Abraxas registry",
     asOf: "2026-07-05",
   },
 ] as const;
@@ -180,7 +183,7 @@ export const CPG_PROOF = [
   { label: "Acquire through Abraxas", desc: "Submit package interest · USDC settlement when deal-ready", href: CPG_ASSET.inquirePath },
   { label: "Unlock diligence pack", desc: "Sign in with Passport · surveys, lot schedule, well maps", href: `/passport?return=${CPG_CASE_STUDY_PATH}` },
   { label: "Abraxas verify record", desc: "Public registry · ABX-RE-LAND-006", href: CPG_ASSET.verifyPath },
-  { label: "Partner sync", desc: `${CPG_PARTNER.contact} · ${CPG_PARTNER.updateModel}`, href: CPG_ASSET.inquirePath },
+  { label: "Partner sync", desc: "Status updates sync on-protocol · disclosed to qualified buyers", href: CPG_ASSET.inquirePath },
 ] as const;
 
 export const CPG_SURVEY_FILES: { lot: number; acres: number; label: string; href: string }[] = [
@@ -203,5 +206,5 @@ export const CPG_WHAT_THIS_PROVES = [
   "Multi-lot Oklahoma land on Abraxas with drone footage, oil/gas diligence, and live pricing — the proof model scales beyond hospitality.",
   "Verify-once diligence: lenders and bulk buyers check one record instead of re-forwarding plat PDFs to every counterparty.",
   "Real traction at asking — contracts secured before full Abraxas launch validate demand, not a spreadsheet.",
-  "Abraxas spearheads the buyer loop; CPG provides updates that sync to the registry — closed loop, not a third-party funnel.",
+  "Abraxas spearheads the buyer loop; authorized partner updates sync on-chain — closed loop, not a third-party funnel.",
 ] as const;

@@ -182,7 +182,7 @@ export const VERTICAL_SEQUENCE: {
   {
     order: 2,
     name: "Tribal land & mineral rights",
-    why: `${CPG_ASSET.name} (CPG Land Sales) live + owner portal verify-once for tribal/mineral and bulk land workflows.`,
+    why: `${CPG_ASSET.name} live — verify-once land diligence for qualified counterparties (consent-gated, not public listing).`,
     status: "active",
   },
   {

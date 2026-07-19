@@ -22,7 +22,7 @@ describe("positioningStrategy", () => {
 
   it("lists real builder proof examples", () => {
     expect(BUILDER_PROOF_EXAMPLES.some(e => e.name.includes("Cielo"))).toBe(true);
-    expect(BUILDER_PROOF_EXAMPLES.length).toBeGreaterThanOrEqual(3);
+    expect(BUILDER_PROOF_EXAMPLES.length).toBe(2);
   });
 
   it("parks premature orchestration rebrand", () => {

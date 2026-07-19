@@ -27,9 +27,9 @@ describe("partnerDisplayName", () => {
     expect(sub).toContain("active on Abraxas");
   });
 
-  it("shows approved public name for CPG Land Sales", () => {
-    const cpg = REAL_PARTNERS.find(p => p.id === "relying-party-land-ok-1");
-    expect(cpg).toBeDefined();
-    expect(partnerDisplayName(cpg!)).toBe("CPG Land Sales");
+  it("uses vertical headline for Oklahoma land partner", () => {
+    const land = REAL_PARTNERS.find(p => p.id === "relying-party-land-ok-1");
+    expect(land).toBeDefined();
+    expect(partnerDisplayName(land!)).toBe(land!.verticalHeadline);
   });
 });

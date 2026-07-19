@@ -151,12 +151,12 @@ const CPG: RegistryAssetDef = {
     L4_ActiveMonitoring: {
       status: "ACTIVE",
       lastSync: "2026-07-18T00:00:00.000Z",
-      oracleSource: "CPG_Partner_Lot_Status",
+      oracleSource: "Partner_Lot_Status_Feed",
     },
   },
   metadataUri: CPG_ASSET.caseStudyPath,
   notice:
-    "Active Oklahoma land partner listing · lot status synced from CPG Land Sales · surveys on file.",
+    "Oklahoma land reference loop · lot status monitoring · surveys on file · partner identity disclosed under diligence.",
   tokenization: {
     standard: "Abraxas Registry Entry",
     chain: "Off-chain title",

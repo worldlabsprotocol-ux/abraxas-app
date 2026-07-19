@@ -113,7 +113,7 @@ export default function AdminInquiriesPage() {
       <ContentCard title={`Inquiries (${inquiries.length})`}>
         {inquiries.length === 0 ? (
           <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
-            No inquiries yet — Chickasaw / CPG inquire panels POST to /api/assets/inquire.
+            No inquiries yet — Chickasaw inquire panel POSTs to /api/assets/inquire with on-chain proof.
           </p>
         ) : (
           <div style={{ display: "grid", gap: "0.75rem" }}>

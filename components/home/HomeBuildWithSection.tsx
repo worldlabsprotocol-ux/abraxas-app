@@ -52,7 +52,7 @@ export function HomeBuildWithSection() {
             marginBottom: "0.5rem",
           }}
         >
-          Live proof · Cielo · land deals · registry
+          Live proof · Cielo · Chickasaw reference
         </div>
 
         <h2
@@ -97,8 +97,8 @@ export function HomeBuildWithSection() {
                 display: "block",
                 padding: "0.65rem 0.75rem",
                 borderRadius: 10,
-                border: "1px solid rgba(16,185,129,0.28)",
-                background: "rgba(16,185,129,0.06)",
+                border: "1px solid rgba(232,197,71,0.28)",
+                background: "rgba(232,197,71,0.06)",
                 textDecoration: "none",
                 color: "inherit",
               }}

@@ -34,11 +34,11 @@ export const REAL_PARTNERS: RealPartnerRecord[] = [
   },
   {
     id: "relying-party-land-ok-1",
-    publicName: "CPG Land Sales",
+    publicName: PARTNER_NAME_PLACEHOLDER,
     statusBucket: "closed",
     vertical: "Land development · Oklahoma",
     verticalHeadline: "Oklahoma land development partner",
-    summary: `Live — ${CPG_ASSET.name} (~270 ac, 11 lots · Grady County). Surveys, Phase I clean, contracts at asking. Verify-once sharing for bulk buyers and lenders.`,
+    summary: `Live — ${CPG_ASSET.name} (~270 ac, 11 lots · Grady County). Scoped attestations for qualified bulk buyers — partner identity disclosed under NDA.`,
     proofLabel: `${CPG_ASSET.name} case study`,
     proofHref: CPG_ASSET.caseStudyPath,
   },

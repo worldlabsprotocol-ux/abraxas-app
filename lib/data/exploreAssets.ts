@@ -80,7 +80,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryMeta: { level: 2, type: "reference", asOf: "2026-07-05" },
     state: "open",
     statusBadge: undefined,
-    note: "Contracts at asking pre-MLS · Phase I clean · surveys complete · CPG Land Sales",
+    note: "Phase I clean · surveys on file · qualified buyer workflow via Abraxas",
     href: CPG_ASSET.caseStudyPath,
     liveProof: { label: "On Abraxas registry", url: "/verify/ABX-RE-LAND-006" },
     cta: "View listing",

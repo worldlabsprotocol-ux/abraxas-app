@@ -26,14 +26,9 @@ export const BUILDER_PROOF_EXAMPLES = [
     href: "/case-studies/cielo",
   },
   {
-    name: "Chickasaw land deals",
-    outcome: "Title and owner scope attested once — reused across portal and registry",
+    name: "Chickasaw Project",
+    outcome: "Land diligence attested once — scoped disclosure for qualified counterparties",
     href: "/case-studies/chickasaw-project",
-  },
-  {
-    name: "CPG land sales",
-    outcome: "Bulk land workflows with scoped attestations instead of document folders",
-    href: "/case-studies/cpg-grady-270",
   },
 ] as const;
 
