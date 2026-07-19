@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { adminEmailShell, adminEmailTable, sendAdminEmail } from "@/lib/notify/adminResend";
+import { issueAuthenticationProof } from "@/lib/authenticationProof/issue";
 import { BUG_BOUNTY } from "@/lib/securityProgram";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -57,26 +57,24 @@ export async function POST(req: NextRequest) {
     reportId = data.id as string;
   }
 
-  const notify = await sendAdminEmail({
-    subject: `[${severity.toUpperCase()}] ${BUG_BOUNTY.reportSubject}${title}`,
-    html: adminEmailShell(
-      "Security Report — Pre-registration",
-      adminEmailTable({
-        Title: title,
-        Severity: severity,
-        Email: email,
-        "Report ID": reportId ?? "local",
-        Reproduction: body.reproduction?.trim() ?? "—",
-        Description: description.slice(0, 500),
-      }),
-    ),
-  });
+  const proof = reportId
+    ? await issueAuthenticationProof({
+        eventType: "security_report",
+        recordId: reportId,
+        recordPayload: { title, severity, description, report_id: reportId },
+      })
+    : null;
+
+  if (SB_URL && SB_KEY && reportId && proof?.proof_id) {
+    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+    await sb.from("security_reports").update({ proof_id: proof.proof_id }).eq("id", reportId);
+  }
 
   return NextResponse.json({
     ok: true,
     report_id: reportId,
     phase: BUG_BOUNTY.phase,
-    notify,
-    message: "Report received. Do not publicly disclose until we acknowledge.",
+    proof,
+    message: "Report authenticated on-protocol. Do not publicly disclose until we acknowledge.",
   });
 }

@@ -1,9 +1,11 @@
 // FILE: app/api/assets/inquire/route.ts
-// Asset acquisition inquiry — persists + optional admin notify.
+// Asset acquisition inquiry — on-chain authentication proof (primary).
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { adminEmailShell, adminEmailTable, sendAdminEmail } from "@/lib/notify/adminResend";
+import { issueAuthenticationProof } from "@/lib/authenticationProof/issue";
+import { maybeLegacyAdminEmail } from "@/lib/notify/legacyEmail";
+import { adminEmailShell, adminEmailTable } from "@/lib/notify/adminResend";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -36,35 +38,38 @@ export async function POST(req: NextRequest) {
     status: "submitted",
   };
 
+  let recordId = `local-${Date.now()}`;
+
   if (SB_URL && SB_KEY) {
     const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-    const { error } = await sb.from("asset_inquiries").insert(record);
+    const { data, error } = await sb.from("asset_inquiries").insert(record).select("id").single();
     if (error) {
       console.error("asset_inquiries insert:", error.message);
       return NextResponse.json({ error: "Could not save inquiry" }, { status: 500 });
     }
-  } else {
-    console.info("[asset_inquire]", JSON.stringify(record));
+    recordId = data.id as string;
   }
 
-  void sendAdminEmail({
-    subject: `Asset inquiry — ${assetName} · ${body.package_interest ?? "general"}`,
-    html: adminEmailShell(
-      "New Asset Acquisition Inquiry",
-      adminEmailTable({
-        Asset: assetName,
-        "Asset ID": assetId,
-        Package: body.package_interest ?? "—",
-        Email: email,
-        Wallet: body.wallet ?? "—",
-        Message: body.message?.trim() ?? "—",
-        Time: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
-      }),
-    ),
+  const proof = await issueAuthenticationProof({
+    eventType: "asset_inquiry",
+    recordId,
+    recordPayload: { ...record, record_id: recordId },
+  });
+
+  if (SB_URL && SB_KEY && proof.proof_id) {
+    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+    await sb.from("asset_inquiries").update({ proof_id: proof.proof_id }).eq("id", recordId);
+  }
+
+  void maybeLegacyAdminEmail({
+    subject: `Asset inquiry — ${assetName}`,
+    html: adminEmailShell("Legacy notify", adminEmailTable({ "Proof ID": proof.proof_id, Asset: assetName })),
   });
 
   return NextResponse.json({
     ok: true,
-    message: "Inquiry received — Abraxas routes qualified buyers to the partner on-protocol.",
+    record_id: recordId,
+    proof,
+    message: "Inquiry authenticated on-protocol — verify proof independently.",
   });
 }

@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { ASSET_POSITIONING_BODY, ASSET_POSITIONING_HEADLINE } from "@/lib/assetPositioning";
+import { INTERSECTION_BODY } from "@/lib/intersectionThesis";
 import { Btn } from "@/components/redesign/ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -32,7 +33,10 @@ export function HomePositioningStrip() {
         <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem", maxWidth: 640 }}>
           {ASSET_POSITIONING_BODY}
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", alignItems: "center" }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.55, maxWidth: 640 }}>
+          {INTERSECTION_BODY}
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", alignItems: "center", marginTop: "0.65rem" }}>
           <Btn href="/build" size="sm">Position your asset →</Btn>
           <Link href="/why" style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
             Why now →

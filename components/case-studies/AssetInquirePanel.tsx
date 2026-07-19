@@ -7,6 +7,7 @@ import { useSuiAuth, truncateSuiAddress } from "@/components/sui/SuiAuthProvider
 import { Btn } from "@/components/redesign/ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const PACKAGES = [
@@ -32,6 +33,7 @@ export function AssetInquirePanel({
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [proofId, setProofId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const inputStyle: React.CSSProperties = {
@@ -62,9 +64,10 @@ export function AssetInquirePanel({
           message: message.trim() || null,
         }),
       });
-      const data = await res.json() as { ok?: boolean; error?: string };
+      const data = await res.json() as { ok?: boolean; error?: string; proof?: { proof_id: string; verify_url: string; explorer_url?: string | null } };
       if (data.ok) {
         setSent(true);
+        if (data.proof?.proof_id) setProofId(data.proof.proof_id);
       } else {
         setError(data.error ?? "Could not submit — try again.");
       }
@@ -84,10 +87,15 @@ export function AssetInquirePanel({
         <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: ACCENT, marginBottom: "0.35rem" }}>
           Inquiry received on Abraxas
         </div>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.5rem" }}>
           {partnerName} gets your package interest through the protocol. Partner status updates sync here automatically —
           no third-party funnel. USDC settlement opens when the deal is ready.
         </p>
+        {proofId && (
+          <p style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--accent)", margin: 0 }}>
+            On-chain proof · <a href={`/api/proof/${proofId}`} style={{ color: "var(--accent)" }}>{proofId}</a>
+          </p>
+        )}
       </div>
     );
   }
