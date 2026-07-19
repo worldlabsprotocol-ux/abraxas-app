@@ -367,34 +367,132 @@ export function RwaAssetDoc() {
   );
 }
 
-/** Third party — verifies credential without re-KYC */
+/** On-chain authentication proof — core Abraxas artifact */
+export function AuthenticationProofArtifact({ pulse = false }: { pulse?: boolean }) {
+  return (
+    <motion.div
+      animate={pulse ? {
+        boxShadow: [
+          "0 0 32px rgba(232,197,71,0.25), 0 16px 40px rgba(0,0,0,0.5)",
+          "0 0 56px rgba(16,185,129,0.35), 0 20px 48px rgba(0,0,0,0.55)",
+          "0 0 32px rgba(232,197,71,0.25), 0 16px 40px rgba(0,0,0,0.5)",
+        ],
+      } : undefined}
+      transition={pulse ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : undefined}
+      style={{
+        width: 156,
+        borderRadius: 12,
+        border: `1.5px solid ${INSTITUTIONAL_GOLD}`,
+        background: "linear-gradient(155deg, #12101a 0%, #06080c 100%)",
+        boxShadow: "0 0 40px rgba(232,197,71,0.22), 0 16px 40px rgba(0,0,0,0.5)",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{
+        padding: "5px 8px",
+        borderBottom: "1px solid rgba(232,197,71,0.22)",
+        background: "rgba(232,197,71,0.08)",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.38rem", letterSpacing: "0.1em", color: INSTITUTIONAL_GOLD }}>
+          AUTH PROOF
+        </span>
+        <motion.span
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.8, repeat: Infinity }}
+          style={{
+            fontFamily: MONO, fontSize: "0.32rem", padding: "2px 5px", borderRadius: 4,
+            background: "rgba(16,185,129,0.15)", color: "#6EE7B7",
+            border: "1px solid rgba(16,185,129,0.35)",
+          }}
+        >
+          SUI · ANCHOR
+        </motion.span>
+      </div>
+      <div style={{ padding: "8px 9px 9px" }}>
+        <div style={{ fontFamily: MONO, fontSize: "0.48rem", color: INSTITUTIONAL_GOLD_PALE, marginBottom: 5, letterSpacing: "-0.02em" }}>
+          aprx_7f3a9c2e1b4d8f6a
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: "0.55rem", color: "#10B981" }}>✓</span>
+            <span style={{ fontFamily: MONO, fontSize: "0.34rem", color: "rgba(255,255,255,0.55)" }}>
+              ED25519 SIGNED
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: "0.55rem", color: "#10B981" }}>✓</span>
+            <span style={{ fontFamily: MONO, fontSize: "0.34rem", color: "rgba(255,255,255,0.55)" }}>
+              PAYLOAD HASH MATCH
+            </span>
+          </div>
+        </div>
+        <div style={{
+          marginTop: 7, padding: "4px 6px", borderRadius: 6,
+          border: "1px dashed rgba(255,255,255,0.12)",
+          fontFamily: FONT, fontSize: "0.34rem", color: "rgba(255,255,255,0.45)",
+          textAlign: "center",
+        }}>
+          No email · no relay
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Compact reference context — diligence or booking triggers proof */
+export function ReferenceContextCard({
+  label,
+  sublabel,
+  accent = "#10B981",
+}: {
+  label: string;
+  sublabel: string;
+  accent?: string;
+}) {
+  return (
+    <DocShell width={112} height={64} accent={accent}>
+      <div style={{ padding: "6px 8px" }}>
+        <div style={{ fontFamily: MONO, fontSize: "0.34rem", color: accent, letterSpacing: "0.06em", marginBottom: 3 }}>
+          REFERENCE LOOP
+        </div>
+        <div style={{ fontFamily: FONT, fontSize: "0.56rem", fontWeight: 800, color: "#FAFAFA", lineHeight: 1.2 }}>
+          {label}
+        </div>
+        <div style={{ fontFamily: FONT, fontSize: "0.4rem", color: "rgba(255,255,255,0.5)", marginTop: 3, lineHeight: 1.35 }}>
+          {sublabel}
+        </div>
+      </div>
+    </DocShell>
+  );
+}
+
+/** Third party — verifies proof artifact without re-KYC */
 export function CounterpartyVerifierCard({ label = "Lender" }: { label?: string }) {
   return (
-    <DocShell width={108} height={92} accent="#10B981">
-      <div style={{ padding: "8px 9px", textAlign: "center" }}>
+    <DocShell width={118} height={100} accent="#10B981">
+      <div style={{ padding: "7px 9px", textAlign: "center" }}>
         <div style={{
-          width: 28, height: 28, borderRadius: 8, margin: "0 auto 6px",
+          width: 28, height: 28, borderRadius: 8, margin: "0 auto 5px",
           background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.45)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden fill="none">
-            <rect x="1" y="5" width="12" height="8" rx="1" stroke="#6EE7B7" strokeWidth="1.2" />
-            <path d="M4 5V3.5a3 3 0 0 1 6 0V5" stroke="#6EE7B7" strokeWidth="1.2" strokeLinecap="round" />
-            <circle cx="7" cy="9" r="1" fill="#6EE7B7" />
+            <path d="M2 7l3 3 7-7" stroke="#6EE7B7" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 800, color: "#FAFAFA" }}>
           {label}
         </div>
         <div style={{
-          marginTop: 6, padding: "4px 6px", borderRadius: 6,
+          marginTop: 5, padding: "5px 6px", borderRadius: 6,
           background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.5)",
         }}>
-          <div style={{ fontFamily: MONO, fontSize: "0.38rem", color: "#6EE7B7", letterSpacing: "0.04em" }}>
-            CRYPTO VERIFIED ✓
+          <div style={{ fontFamily: MONO, fontSize: "0.34rem", color: "#6EE7B7", letterSpacing: "0.04em" }}>
+            DECISION: APPROVED
           </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.36rem", color: "rgba(255,255,255,0.55)", marginTop: 3 }}>
-            No re-KYC
+          <div style={{ fontFamily: MONO, fontSize: "0.32rem", color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+            GET /api/proof/…
           </div>
         </div>
       </div>

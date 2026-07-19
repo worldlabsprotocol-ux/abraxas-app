@@ -12,3 +12,9 @@ export const ON_CHAIN_PROOF_THESIS =
 
 export const PROOF_OVER_RELAY =
   "No Resend. No inbox. On-chain event + Ed25519 signature — anyone can verify without trusting our servers.";
+
+/** Homepage cinematic act 3 — proof artifact, not asset unlock */
+export const CINEMATIC_PROOF_ISSUED_LINE = "Proof issued. Anyone can verify.";
+
+export const CINEMATIC_NO_RELAY_LINE =
+  "No inbox relay — signed proof + optional Sui anchor.";

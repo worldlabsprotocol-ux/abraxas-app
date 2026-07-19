@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeCinematicDemo.tsx
-// 24s KYC chaos → Passport merge → Land/RWA unlock (keynote product story).
+// 24s KYC chaos → Passport merge → authentication proof issued (keynote product story).
 
 import { useEffect, useState, useCallback } from "react";
 import {
@@ -18,15 +18,19 @@ import {
   ABRAXAS_INFRA_MECHANISM,
 } from "@/lib/infrastructurePositioning";
 import { CINEMATIC_TRUST_TRANSFER_LINE } from "@/lib/trustTransfer";
+import {
+  CINEMATIC_NO_RELAY_LINE,
+  CINEMATIC_PROOF_ISSUED_LINE,
+} from "@/lib/intersectionThesis";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
 import {
   AbraxasPassportVc,
   AppVerificationPortal,
+  AuthenticationProofArtifact,
   ConnectionBeam,
   CounterpartyVerifierCard,
   DocumentStackMini,
-  LandDeedDoc,
-  RwaAssetDoc,
+  ReferenceContextCard,
   VerificationBurdenCounter,
 } from "./cinematic/KycDocumentCards";
 import { INSTITUTIONAL_VERIFY } from "@/lib/design/institutionalTheme";
@@ -217,69 +221,104 @@ function PhaseConsolidation() {
   );
 }
 
-function PhaseLandUnlock() {
+function PhaseProofIssued() {
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 0.5rem" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem", flexWrap: "wrap", maxWidth: 520 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        style={{ display: "flex", gap: 6, marginBottom: "0.55rem", flexWrap: "wrap", justifyContent: "center" }}
+      >
+        <ReferenceContextCard
+          label="Chickasaw Project"
+          sublabel="Scoped diligence · qualified counterparty"
+          accent="#10B981"
+        />
+        <ReferenceContextCard
+          label="Cielo Sunrise"
+          sublabel="Verified guest · hospitality loop"
+          accent={INSTITUTIONAL_GOLD}
+        />
+      </motion.div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.2rem", flexWrap: "wrap", maxWidth: 560 }}>
         <motion.div
-          initial={{ opacity: 0, x: -24, scale: 0.9 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          transition={{ ...SPRING, delay: 0.1 }}
+          initial={{ opacity: 0, scale: 0.88 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...SPRING, delay: 0.25 }}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
         >
-          <AbraxasPassportVc pulse />
+          <div style={{ fontFamily: MONO, fontSize: "0.38rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em" }}>
+            INQUIRE / POLICY CHECK
+          </div>
+          <svg width="20" height="28" viewBox="0 0 20 28" aria-hidden>
+            <motion.path
+              d="M 10 0 L 10 22 M 4 16 L 10 22 L 16 16"
+              stroke="rgba(232,197,71,0.5)"
+              strokeWidth="1.5"
+              fill="none"
+              strokeLinecap="round"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ delay: 0.45, duration: 0.5 }}
+            />
+          </svg>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.75, filter: "blur(10px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          transition={{ ...SPRING, delay: 0.55 }}
+        >
+          <AuthenticationProofArtifact pulse />
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ ...SPRING_SNAPPY, delay: 0.45 }}
+          transition={{ ...SPRING_SNAPPY, delay: 0.85 }}
           style={{ display: "flex", alignItems: "center" }}
         >
           <ConnectionBeam />
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, x: 24, scale: 0.88, filter: "blur(8px)" }}
-          animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
-          transition={{ ...SPRING, delay: 0.55 }}
-          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+          initial={{ opacity: 0, x: 20, scale: 0.88 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ ...SPRING, delay: 1.05 }}
         >
-          <LandDeedDoc />
-          <RwaAssetDoc />
-        </motion.div>
-
-        {/* Trust transfer — third party verifies without re-KYC */}
-        <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.85 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ ...SPRING_SNAPPY, delay: 1.5 }}
-          style={{ position: "relative" }}
-        >
-          <svg width="32" height="16" viewBox="0 0 32 16" aria-hidden style={{ position: "absolute", left: -28, top: "40%" }}>
-            <motion.path
-              d="M 0 8 L 28 8"
-              stroke="rgba(16,185,129,0.5)"
-              strokeWidth="1.5"
-              strokeDasharray="3 3"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ delay: 1.6, duration: 0.5 }}
-            />
-          </svg>
-          <CounterpartyVerifierCard label="Lender" />
+          <CounterpartyVerifierCard label="Relying party" />
         </motion.div>
       </div>
 
       <motion.p
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ ...SPRING, delay: 1.85 }}
+        transition={{ ...SPRING, delay: 1.35 }}
         style={{
-          marginTop: "0.85rem",
+          marginTop: "0.75rem",
           fontFamily: FONT,
-          fontSize: "clamp(0.72rem, 1.9vw, 0.88rem)",
+          fontSize: "clamp(0.78rem, 2vw, 0.92rem)",
           fontWeight: 800,
           letterSpacing: "-0.02em",
+          color: INSTITUTIONAL_GOLD_PALE,
+          textAlign: "center",
+          maxWidth: 420,
+        }}
+      >
+        {CINEMATIC_PROOF_ISSUED_LINE}
+      </motion.p>
+
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...SPRING, delay: 1.55 }}
+        style={{
+          marginTop: "0.3rem",
+          fontFamily: FONT,
+          fontSize: "clamp(0.68rem, 1.8vw, 0.8rem)",
+          fontWeight: 600,
           color: INSTITUTIONAL_VERIFY,
           textAlign: "center",
           maxWidth: 400,
@@ -289,15 +328,14 @@ function PhaseLandUnlock() {
       </motion.p>
 
       <motion.p
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ ...SPRING, delay: 2.05 }}
+        transition={{ ...SPRING, delay: 1.75 }}
         style={{
-          marginTop: "0.35rem",
+          marginTop: "0.25rem",
           fontFamily: FONT,
-          fontSize: "clamp(0.72rem, 1.9vw, 0.85rem)",
-          fontWeight: 800,
-          letterSpacing: "-0.02em",
+          fontSize: "clamp(0.68rem, 1.8vw, 0.82rem)",
+          fontWeight: 700,
           color: "#FAFAFA",
           textAlign: "center",
           maxWidth: 380,
@@ -309,17 +347,17 @@ function PhaseLandUnlock() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.3 }}
+        transition={{ delay: 2 }}
         style={{
           marginTop: "0.35rem",
           fontFamily: MONO,
-          fontSize: "0.44rem",
+          fontSize: "0.42rem",
           letterSpacing: "0.1em",
           color: "rgba(16,185,129,0.75)",
           textAlign: "center",
         }}
       >
-        W3C VC · ED25519 · INDEPENDENT VERIFY
+        {CINEMATIC_NO_RELAY_LINE.toUpperCase()}
       </motion.div>
     </div>
   );
@@ -355,7 +393,7 @@ export function HomeCinematicDemo() {
   const progress = Math.min(100, (totalElapsed / CINEMATIC_LOOP_MS) * 100);
   const loopSec = Math.round(CINEMATIC_LOOP_MS / 1000);
 
-  const phaseLabels = ["Verification debt", "One Passport", "Trust transfer"];
+  const phaseLabels = ["Verification debt", "One Passport", "Proof issued"];
 
   return (
     <section
@@ -470,7 +508,7 @@ export function HomeCinematicDemo() {
             >
               {phase === 0 && <PhaseKycChaos />}
               {phase === 1 && <PhaseConsolidation />}
-              {phase === 2 && <PhaseLandUnlock />}
+              {phase === 2 && <PhaseProofIssued />}
             </motion.div>
           </AnimatePresence>
 

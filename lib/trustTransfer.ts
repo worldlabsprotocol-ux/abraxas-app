@@ -54,4 +54,5 @@ export const INTEGRATE_COUNTERPARTY_TRUST = {
   ],
 } as const;
 
-export const CINEMATIC_TRUST_TRANSFER_LINE = "Cryptographically verified — no re-KYC required.";
+export const CINEMATIC_TRUST_TRANSFER_LINE =
+  "Counterparty verifies the proof — not your documents.";

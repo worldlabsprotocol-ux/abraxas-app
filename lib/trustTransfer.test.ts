@@ -30,6 +30,6 @@ describe("trustTransfer", () => {
   });
 
   it("uses cinematic trust-transfer line for animation", () => {
-    expect(CINEMATIC_TRUST_TRANSFER_LINE.toLowerCase()).toContain("no re-kyc");
+    expect(CINEMATIC_TRUST_TRANSFER_LINE.toLowerCase()).toContain("verifies the proof");
   });
 });
