@@ -7,7 +7,9 @@ export const AUTHENTICATION_PROOF_LOOP_STATUS = {
     "GET /api/proof/[id] returns signature_valid + public_key for independent verification",
     "GET /api/proof/reference/[assetId] issues production reference proof (Cielo · Chickasaw)",
     "Intake flows (inquire, apply, bounty) issue signed authentication proofs",
-    "Asset monitoring apply path issues asset_state_change proofs",
+    "Asset monitoring apply path issues asset_state_change proofs and marks prior proofs refresh_required/superseded",
+    "GET /api/asset-monitoring/preview — testable evaluate path without admin apply",
+    "GET /api/proof/loop — live vs pending deploy status",
   ],
   requiresMoveRedeploy: [
     "anchor_status: anchored on Sui (needs anchor_authentication_proof in deployed Move package)",

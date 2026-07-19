@@ -5,7 +5,8 @@ import { loadReceiptVerificationKey, getReceiptSigningKeyId } from "@/lib/decisi
 import { getAuthenticationProof } from "./issue";
 import { proofRecordToPayload } from "./reconstruct";
 import { verifyAuthProofSignature } from "./signing";
-import type { AuthenticationProofPayload, AuthenticationProofRecord, AnchorStatus } from "./types";
+import { proofStillReliable } from "./proofLifecycle";
+import type { AuthenticationProofPayload, AuthenticationProofRecord, AnchorStatus, ProofLifecycleStatus } from "./types";
 
 export interface SelfVerifiedAuthenticationProof {
   artifact_type: "authentication_proof";
@@ -25,6 +26,10 @@ export interface SelfVerifiedAuthenticationProof {
   record_id: string;
   independently_verifiable: true;
   anchor_note: string;
+  proof_status: ProofLifecycleStatus;
+  proof_reliable: boolean;
+  superseded_by: string | null;
+  asset_abx_id: string | null;
 }
 
 const ANCHOR_NOTE_LIVE =
@@ -69,6 +74,10 @@ export function verifyAuthenticationProofRecord(
     event_type: record.event_type,
     record_id: record.record_id,
     anchor_note: anchorStatusNote(record.anchor_status),
+    proof_status: record.status,
+    proof_reliable: proofStillReliable(record.status) && signatureValid,
+    superseded_by: record.superseded_by,
+    asset_abx_id: record.asset_abx_id,
   };
 }
 

@@ -15,6 +15,8 @@ export type AuthenticationEventType =
 
 export type AnchorStatus = "signed" | "anchored" | "anchor_failed";
 
+export type ProofLifecycleStatus = "active" | "refresh_required" | "superseded";
+
 export interface AuthenticationProofPayload {
   proof_id: string;
   schema_version: string;
@@ -40,6 +42,9 @@ export interface AuthenticationProofRecord {
   schema_version: string;
   network: string;
   created_at: string;
+  status: ProofLifecycleStatus;
+  asset_abx_id: string | null;
+  superseded_by: string | null;
 }
 
 export interface IssuedAuthenticationProof {
@@ -55,4 +60,5 @@ export interface IssuedAuthenticationProof {
   event_type: AuthenticationEventType;
   record_id: string;
   network: string;
+  status?: ProofLifecycleStatus;
 }

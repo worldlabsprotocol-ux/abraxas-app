@@ -31,6 +31,7 @@ describe("issueAssetStateChangeProof", () => {
     expect(proof.event_type).toBe("asset_state_change");
     expect(proof.proof_id).toMatch(/^aprx_/);
     expect(proof.verify_url).toContain(proof.proof_id);
+    expect(proof.prior_proofs_marked).toBe(0);
 
     delete process.env.ABRAXAS_SIGNING_KEY;
     delete process.env.ABRAXAS_PUBLIC_KEY;

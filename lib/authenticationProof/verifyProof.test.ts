@@ -36,6 +36,9 @@ describe("verifyAuthenticationProofRecord", () => {
       schema_version: payload.schema_version,
       network: "devnet",
       created_at: payload.issued_at,
+      status: "active",
+      asset_abx_id: "ABX-RE-HOSP-001",
+      superseded_by: null,
     };
 
     const verified = verifyAuthenticationProofRecord(record);

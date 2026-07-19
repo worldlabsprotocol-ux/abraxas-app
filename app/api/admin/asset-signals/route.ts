@@ -75,5 +75,6 @@ export async function POST(req: NextRequest) {
     results: applied.results,
     state_change_proof: applied.state_change_proof ?? null,
     proof_verify_url: applied.state_change_proof?.verify_url ?? null,
+    prior_proofs_marked: applied.state_change_proof?.prior_proofs_marked ?? 0,
   });
 }

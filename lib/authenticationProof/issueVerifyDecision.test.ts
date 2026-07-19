@@ -50,6 +50,9 @@ describe("issueVerifyDecisionArtifacts", () => {
       schema_version: "1.0.0",
       network: artifacts.authentication_proof.network,
       created_at: artifacts.authentication_proof.issued_at,
+      status: "active",
+      asset_abx_id: "ABX-RE-HOSP-001",
+      superseded_by: null,
     });
 
     expect(verified.signature_valid).toBe(true);

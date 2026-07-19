@@ -129,6 +129,7 @@ export async function POST(
     policyId: response.policy_id,
     policyVersion: response.policy_version ?? DEFAULT_POLICY_VERSION,
     decision: response.decision,
+    proofId: payload.proof_id,
   });
 
   return NextResponse.json(payload, { status: httpStatus });

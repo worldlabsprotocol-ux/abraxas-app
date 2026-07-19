@@ -77,6 +77,7 @@ export async function issueVerifyDecisionArtifacts(input: {
   const authentication_proof = await issueAuthenticationProof({
     eventType: "credential_verify",
     recordId: decisionId,
+    assetAbxId: response.record_id?.startsWith("ABX-") ? response.record_id : null,
     recordPayload,
   });
 

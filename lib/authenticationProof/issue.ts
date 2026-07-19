@@ -8,6 +8,7 @@ import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { suiExplorerTxUrl } from "@/lib/sui/network";
 import { anchorAuthenticationProofOnSui } from "@/lib/sui/anchorAuthenticationProof";
 import { signAuthProofPayload } from "./signing";
+import { extractAssetAbxId } from "./proofLifecycle";
 import type {
   AuthenticationEventType,
   AuthenticationProofPayload,
@@ -50,8 +51,10 @@ export async function issueAuthenticationProof(input: {
   eventType: AuthenticationEventType;
   recordId: string;
   recordPayload: Record<string, unknown>;
+  assetAbxId?: string | null;
 }): Promise<IssuedAuthenticationProof> {
   const recordHash = hashRecordPayload(input.recordPayload);
+  const assetAbxId = input.assetAbxId ?? extractAssetAbxId(input.recordPayload, input.recordId);
   const authPayload = buildAuthProofPayload({
     eventType: input.eventType,
     recordId: input.recordId,
@@ -94,6 +97,9 @@ export async function issueAuthenticationProof(input: {
       issued_at: authPayload.issued_at,
       schema_version: authPayload.schema_version,
       network,
+      status: "active",
+      asset_abx_id: assetAbxId,
+      superseded_by: null,
     });
   }
 
@@ -110,6 +116,7 @@ export async function issueAuthenticationProof(input: {
     event_type: input.eventType,
     record_id: input.recordId,
     network,
+    status: "active",
   };
 }
 
@@ -138,5 +145,8 @@ export async function getAuthenticationProof(id: string): Promise<Authentication
     schema_version: (data.schema_version as string | null) ?? AUTH_PROOF_SCHEMA_VERSION,
     network: (data.network as string | null) ?? (data.sui_network as string | null) ?? getActiveSuiNetwork(),
     created_at: createdAt,
+    status: (data.status as AuthenticationProofRecord["status"] | null) ?? "active",
+    asset_abx_id: (data.asset_abx_id as string | null) ?? null,
+    superseded_by: (data.superseded_by as string | null) ?? null,
   };
 }

@@ -15,7 +15,7 @@ export async function applyAssetSignal(input: {
 }): Promise<{
   decision: ReturnType<typeof evaluateAssetSignal>;
   results: MonitoringApplyResult[];
-  state_change_proof?: IssuedAuthenticationProof;
+  state_change_proof?: IssuedAuthenticationProof & { prior_proofs_marked?: number };
 }> {
   const decision = evaluateAssetSignal(input.signal);
   const targetStatus = monitoringActionToClaimStatus(decision);
