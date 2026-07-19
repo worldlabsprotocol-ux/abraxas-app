@@ -5,6 +5,7 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
 import { TrustFrameworkSection } from "@/components/vision/TrustFrameworkSection";
 import { TrustIsTimeBoundSection } from "@/components/vision/TrustIsTimeBoundSection";
+import { TrustFrameworkDemo } from "@/components/vision/TrustFrameworkDemo";
 
 export default function TrustFrameworkPage() {
   return (
@@ -14,6 +15,7 @@ export default function TrustFrameworkPage() {
         title="Abraxas Trust Framework"
         subtitle="Separate issuers, assurance levels, and expiry — plus how trust stays current when records change."
       />
+      <TrustFrameworkDemo />
       <TrustIsTimeBoundSection />
       <TrustFrameworkSection />
     </RedesignPage>

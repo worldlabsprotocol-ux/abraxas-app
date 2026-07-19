@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
+import { VerifyPageIntroDemo } from "@/components/verify/VerifyPageIntroDemo";
 import { VerifyStaticSample } from "@/components/verify/VerifyStaticSample";
 import { VerifyClient } from "./VerifyClient";
 import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
@@ -27,6 +28,7 @@ export default function VerifyPage({ searchParams }: PageProps) {
   return (
     <RedesignShell>
       <VerifyPageIntro />
+      <VerifyPageIntroDemo />
       <VerifyStaticSample />
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
         <Suspense fallback={null}>

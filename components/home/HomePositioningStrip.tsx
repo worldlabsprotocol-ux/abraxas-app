@@ -1,11 +1,13 @@
 "use client";
 // FILE: components/home/HomePositioningStrip.tsx
-// Tokenization positioning — act now, not after legacy premium.
+// Tokenization positioning — demo first, then supporting copy.
 
 import Link from "next/link";
-import { ASSET_POSITIONING_BODY, ASSET_POSITIONING_HEADLINE } from "@/lib/assetPositioning";
+import { ASSET_POSITIONING_BODY } from "@/lib/assetPositioning";
 import { INTERSECTION_BODY } from "@/lib/intersectionThesis";
 import { Btn } from "@/components/redesign/ui";
+import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
+import { PositioningCinematicDemo } from "@/components/home/cinematic/PositioningCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -18,6 +20,8 @@ export function HomePositioningStrip() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
+      <ConceptDemoVideo demo={PositioningCinematicDemo} compact />
+
       <div
         className="abx-glass-panel"
         style={{
@@ -27,13 +31,10 @@ export function HomePositioningStrip() {
           background: "linear-gradient(135deg, rgba(232,197,71,0.06) 0%, var(--surface-raised) 100%)",
         }}
       >
-        <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-          {ASSET_POSITIONING_HEADLINE}
-        </div>
         <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem", maxWidth: 640 }}>
           {ASSET_POSITIONING_BODY}
         </p>
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.55, maxWidth: 640 }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55, maxWidth: 640 }}>
           {INTERSECTION_BODY}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", alignItems: "center", marginTop: "0.65rem" }}>

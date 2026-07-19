@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeReferenceProofStrip.tsx
-// Homepage proof strip — Cielo + Chickasaw only. Institutional, not a public registry grid.
+// Homepage proof strip — demo first, Cielo + Chickasaw reference cards.
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
@@ -12,6 +12,8 @@ import {
   HOME_REFERENCE_PROOF_HEADLINE,
   REGISTRY_INSTITUTIONAL_BODY,
 } from "@/lib/institutionalRegistry";
+import { ConceptDemoLead, ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
+import { ReferenceProofCinematicDemo } from "@/components/home/cinematic/ReferenceProofCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -50,34 +52,14 @@ export function HomeReferenceProofStrip() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
-      <div className="abx-eyebrow-violet" style={{ marginBottom: "0.45rem" }}>
-        Protocol reference
-      </div>
-      <h2
-        id="reference-proof-heading"
-        style={{
-          fontFamily: FONT,
-          fontSize: "var(--fs-h2)",
-          fontWeight: 800,
-          letterSpacing: "-0.03em",
-          color: "var(--text-primary)",
-          margin: "0 0 0.4rem",
-        }}
-      >
-        {HOME_REFERENCE_PROOF_HEADLINE}
-      </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, maxWidth: 560, margin: "0 0 0.35rem",
-      }}>
-        {HOME_REFERENCE_PROOF_BODY}
-      </p>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-        lineHeight: 1.55, maxWidth: 560, margin: "0 0 1rem",
-      }}>
-        {REGISTRY_INSTITUTIONAL_BODY}
-      </p>
+      <ConceptDemoLead
+        eyebrow="Protocol reference"
+        headingId="reference-proof-heading"
+        title={HOME_REFERENCE_PROOF_HEADLINE}
+        body={`${HOME_REFERENCE_PROOF_BODY} ${REGISTRY_INSTITUTIONAL_BODY}`}
+      />
+
+      <ConceptDemoVideo demo={ReferenceProofCinematicDemo} id="reference-demo" />
 
       <div style={{
         display: "grid",

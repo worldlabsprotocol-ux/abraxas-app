@@ -24,6 +24,10 @@ import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
 import { INTEGRATE_PRODUCTION_NOTE } from "@/lib/currentStatus";
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
+import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
+import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
+import { StackLayerCinematicDemo } from "@/components/home/cinematic/StackLayerCinematicDemo";
+import { IndependentVerifyCinematicDemo } from "@/components/home/cinematic/IndependentVerifyCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -36,6 +40,8 @@ export default function IntegratePage() {
         title="Embed Passport — don't rebuild KYC"
         subtitle={INTEGRATE_PRODUCTION_NOTE}
       />
+
+      <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="integrate-demo" />
 
       <ContentCard title="Live proof">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "0.55rem" }}>
@@ -69,6 +75,7 @@ export default function IntegratePage() {
       </div>
 
       <div id="counterparty-trust">
+      <ConceptDemoVideo demo={IndependentVerifyCinematicDemo} compact />
       <ContentCard title={INTEGRATE_COUNTERPARTY_TRUST.title}>
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
           {INTEGRATE_COUNTERPARTY_TRUST.body}
@@ -94,6 +101,7 @@ export default function IntegratePage() {
       </ContentCard>
 
       <ContentCard title="Where Abraxas sits">
+        <ConceptDemoVideo demo={StackLayerCinematicDemo} compact />
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           {RWA_STACK_LAYERS.map(layer => (
             <div

@@ -1,13 +1,14 @@
 "use client";
 // FILE: components/home/HomeBuildWithSection.tsx
-// Developer-first — bridge from product story to integration.
+// Developer-first — demo shows the integration loop, then depth.
 
 import { Btn } from "@/components/redesign/ui";
 import { BUILD_WITH_OUTCOMES, HOME_BUILD_BRIDGE } from "@/lib/infrastructurePositioning";
 import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
+import { ConceptDemoLead, ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
+import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
 export function HomeBuildWithSection() {
   return (
@@ -19,63 +20,30 @@ export function HomeBuildWithSection() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
-      <p
-        style={{
-          fontFamily: FONT,
-          fontSize: "0.88rem",
-          color: "var(--text-secondary)",
-          lineHeight: 1.65,
-          margin: "0 0 1.15rem",
-          maxWidth: 640,
-        }}
-      >
-        {HOME_BUILD_BRIDGE}
-      </p>
+      <ConceptDemoLead
+        eyebrow="Live proof · Cielo · Chickasaw reference"
+        title="Build with Abraxas"
+        body={HOME_BUILD_BRIDGE}
+      />
+
+      <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="build-demo" />
 
       <div
         style={{
-          padding: "clamp(1.25rem, 3vw, 1.75rem)",
-          borderRadius: 20,
-          border: "1px solid rgba(232,197,71,0.32)",
-          background: "linear-gradient(160deg, rgba(232,197,71,0.1) 0%, rgba(10,8,20,0.6) 45%, var(--surface-raised) 100%)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
+          padding: "clamp(1rem, 2.5vw, 1.35rem)",
+          borderRadius: 16,
+          border: "1px solid rgba(232,197,71,0.28)",
+          background: "rgba(232,197,71,0.04)",
         }}
       >
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: "0.58rem",
-            fontWeight: 700,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "var(--accent)",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Live proof · Cielo · Chickasaw reference
-        </div>
-
-        <h2
+        <p
           id="build-heading"
           style={{
             fontFamily: FONT,
-            fontSize: "clamp(1.5rem, 4vw, var(--fs-h1))",
-            fontWeight: 900,
-            letterSpacing: "-0.035em",
-            lineHeight: 1.05,
-            color: "var(--text-primary)",
-            margin: "0 0 0.35rem",
-          }}
-        >
-          Build with Abraxas
-        </h2>
-        <p
-          style={{
-            fontFamily: FONT,
-            fontSize: "clamp(1rem, 2.5vw, 1.15rem)",
-            fontWeight: 600,
+            fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
+            fontWeight: 700,
             color: "var(--text-secondary)",
-            margin: "0 0 1.15rem",
+            margin: "0 0 1rem",
             lineHeight: 1.4,
             maxWidth: 520,
           }}
@@ -87,7 +55,7 @@ export function HomeBuildWithSection() {
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
           gap: "0.5rem",
-          marginBottom: "1.15rem",
+          marginBottom: "1rem",
         }}>
           {BUILDER_PROOF_EXAMPLES.map(ex => (
             <a
@@ -116,7 +84,7 @@ export function HomeBuildWithSection() {
         <ul
           style={{
             listStyle: "none",
-            margin: "0 0 1.35rem",
+            margin: "0 0 1.15rem",
             padding: 0,
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
