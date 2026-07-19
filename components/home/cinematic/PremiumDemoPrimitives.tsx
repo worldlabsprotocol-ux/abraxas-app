@@ -20,13 +20,14 @@ export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   );
 }
 
-export function PremiumEyebrow({ children, accent }: { children: ReactNode; accent: string }) {
+export function PremiumEyebrow({ children, accent, centered }: { children: ReactNode; accent: string; centered?: boolean }) {
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 8,
+        justifyContent: centered ? "center" : undefined,
         fontFamily: PREMIUM_MONO,
         fontSize: "0.58rem",
         fontWeight: 700,
@@ -41,7 +42,7 @@ export function PremiumEyebrow({ children, accent }: { children: ReactNode; acce
   );
 }
 
-export function PremiumHeadline({ children, mesh }: { children: ReactNode; mesh: MeshKey }) {
+export function PremiumHeadline({ children, mesh, centered = false }: { children: ReactNode; mesh: MeshKey; centered?: boolean }) {
   return (
     <h3
       style={{
@@ -51,6 +52,10 @@ export function PremiumHeadline({ children, mesh }: { children: ReactNode; mesh:
         letterSpacing: "-0.03em",
         lineHeight: 1.2,
         margin: "0.5rem 0 0",
+        textAlign: centered ? "center" : undefined,
+        maxWidth: centered ? 640 : undefined,
+        marginLeft: centered ? "auto" : undefined,
+        marginRight: centered ? "auto" : undefined,
         background: GRADIENT_TEXT[mesh],
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",

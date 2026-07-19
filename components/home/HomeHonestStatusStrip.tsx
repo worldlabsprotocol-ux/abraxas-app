@@ -1,17 +1,17 @@
 "use client";
 // FILE: components/home/HomeHonestStatusStrip.tsx
-// Founder-level status under hero — institutional gold/violet, live gate telemetry.
+// Founder-level status — demo visualizes legacy trap → loop → live production.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  HOMEPAGE_STATUS_LEAD,
-  HOMEPAGE_STATUS_ROLLOUT,
   HOMEPAGE_STATUS_PROOF,
   DEEP_DIVE_LINKS,
 } from "@/lib/currentStatus";
 import { mainnetReadinessProgress } from "@/lib/mainnetReadiness";
 import type { MainnetMilestone } from "@/lib/mainnetReadiness";
+import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
+import { ProductionStatusCinematicDemo } from "@/components/home/cinematic/ProductionStatusCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -45,6 +45,8 @@ export function HomeHonestStatusStrip() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
+      <ConceptDemoVideo demo={ProductionStatusCinematicDemo} id="production-status-demo" />
+
       <div
         className="abx-glass-panel"
         style={{
@@ -67,27 +69,6 @@ export function HomeHonestStatusStrip() {
           </span>
         </div>
 
-        <p style={{
-          fontFamily: FONT,
-          fontSize: "clamp(0.82rem, 2vw, 0.9rem)",
-          fontWeight: 600,
-          color: "var(--text-primary)",
-          lineHeight: 1.55,
-          margin: "0 0 0.4rem",
-          maxWidth: 680,
-        }}>
-          {HOMEPAGE_STATUS_LEAD}
-        </p>
-        <p style={{
-          fontFamily: FONT,
-          fontSize: "0.8rem",
-          color: "var(--text-secondary)",
-          lineHeight: 1.65,
-          margin: "0 0 0.45rem",
-          maxWidth: 680,
-        }}>
-          {HOMEPAGE_STATUS_ROLLOUT}
-        </p>
         <p style={{
           fontFamily: FONT,
           fontSize: "0.72rem",

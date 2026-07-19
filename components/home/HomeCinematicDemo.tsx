@@ -31,7 +31,7 @@ const ACT1_PORTALS = [
 
 const actEase = [0.22, 1, 0.36, 1] as const;
 
-export function HomeCinematicDemo() {
+export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
   const startRef = useRef<number | null>(null);
@@ -98,7 +98,7 @@ export function HomeCinematicDemo() {
   const accent = act === 1 ? ACCENT.danger : act === 2 ? ACCENT.gold : ACCENT.emerald;
 
   return (
-    <div className="cinematic-demo relative mx-auto w-full max-w-5xl">
+    <div className={`cinematic-demo relative mx-auto w-full ${hero ? "max-w-[1120px]" : "max-w-5xl"}`}>
       <div
         className="relative overflow-hidden rounded-3xl"
         style={{
@@ -108,19 +108,21 @@ export function HomeCinematicDemo() {
       >
         <PremiumMeshBg mesh={meshKey} />
 
-        <div className="relative z-10 px-5 py-6 sm:px-8 sm:py-8">
-          <PremiumEyebrow accent={accent}>{actLabel}</PremiumEyebrow>
-          <PremiumHeadline mesh={meshKey}>{actCaption}</PremiumHeadline>
+        <div className={`relative z-10 ${hero ? "px-6 py-7 sm:px-10 sm:py-9" : "px-5 py-6 sm:px-8 sm:py-8"}`}>
+          <div className="flex flex-col items-center text-center">
+            <PremiumEyebrow accent={accent} centered>{actLabel}</PremiumEyebrow>
+            <PremiumHeadline mesh={meshKey} centered>{actCaption}</PremiumHeadline>
+          </div>
 
-          <div className="relative mt-6 min-h-[300px] sm:mt-8 sm:min-h-[340px] md:min-h-[380px]">
+          <div className={`relative mt-6 sm:mt-8 ${hero ? "min-h-[340px] sm:min-h-[400px] md:min-h-[440px]" : "min-h-[300px] sm:min-h-[340px] md:min-h-[380px]"}`}>
           <AnimatePresence mode="wait">
             {act === 1 && (
-              <motion.div key="act1" {...actTransition} className="absolute inset-0 flex flex-col">
-                <div className="mb-3 flex justify-center sm:mb-4">
+              <motion.div key="act1" {...actTransition} className="absolute inset-0 flex flex-col items-center">
+                <div className="mb-4 flex w-full max-w-md justify-center sm:mb-5">
                   <VerificationDebtMeter count={debtCount} />
                 </div>
 
-                <div className="cine-act1-portals relative flex flex-1 flex-col items-center justify-center gap-3 sm:gap-4">
+                <div className="cine-act1-portals relative flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 sm:gap-5">
                   <motion.div
                     className="cine-act1-source w-full max-w-[200px] sm:max-w-[220px]"
                     initial={{ opacity: 0, y: 8 }}
@@ -132,10 +134,11 @@ export function HomeCinematicDemo() {
 
                   <DuplicateArrows active={act1Progress > 0.1} />
 
-                  <div className="grid w-full max-w-2xl grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+                  <div className="grid w-full max-w-2xl grid-cols-1 justify-items-center gap-3 sm:grid-cols-3 sm:gap-4">
                     {ACT1_PORTALS.map((portal, i) => (
                       <motion.div
                         key={portal.name}
+                        className="w-full max-w-[148px]"
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 + i * 0.1, duration: 0.45 }}
@@ -159,7 +162,7 @@ export function HomeCinematicDemo() {
               <motion.div
                 key="act2"
                 {...actTransition}
-                className="absolute inset-0 flex flex-col items-center justify-center"
+                className="absolute inset-0 flex flex-col items-center justify-center px-4"
               >
                 <motion.div
                   className="relative flex w-full max-w-lg flex-col items-center"
@@ -180,12 +183,12 @@ export function HomeCinematicDemo() {
 
                   <motion.div
                     animate={{
-                      scale: 0.88 + mergeProgress * 0.12,
+                      scale: (hero ? 0.95 : 0.88) + mergeProgress * (hero ? 0.1 : 0.12),
                       opacity: 0.4 + mergeProgress * 0.6,
                     }}
                     transition={{ duration: 0.6, ease: actEase }}
                   >
-                    <AbraxasPassportVc large pulse={mergeProgress > 0.55} />
+                    <AbraxasPassportVc large={hero || mergeProgress > 0.3} pulse={mergeProgress > 0.55} />
                   </motion.div>
 
                   <motion.p

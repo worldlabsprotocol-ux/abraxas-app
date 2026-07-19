@@ -1,13 +1,11 @@
 "use client";
 // FILE: components/home/HomePositioningStrip.tsx
-// Tokenization positioning — demo first, then supporting copy.
+// Tokenization positioning — copy only (demo lives in status strip).
 
 import Link from "next/link";
 import { ASSET_POSITIONING_BODY } from "@/lib/assetPositioning";
 import { INTERSECTION_BODY } from "@/lib/intersectionThesis";
 import { Btn } from "@/components/redesign/ui";
-import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
-import { PositioningCinematicDemo } from "@/components/home/cinematic/PositioningCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -20,8 +18,6 @@ export function HomePositioningStrip() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
-      <ConceptDemoVideo demo={PositioningCinematicDemo} compact />
-
       <div
         className="abx-glass-panel"
         style={{
