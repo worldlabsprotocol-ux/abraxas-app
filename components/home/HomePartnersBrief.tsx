@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { ConceptDemoLead, ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
-import { IndependentVerifyCinematicDemo } from "@/components/home/cinematic/IndependentVerifyCinematicDemo";
+import { PolicyClaimsCinematicDemo } from "@/components/home/cinematic/PolicyClaimsCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -21,7 +21,7 @@ export function HomePartnersBrief() {
         body="No passports, selfies, biometrics, or document folders by default — only the claims the policy needs."
       />
 
-      <ConceptDemoVideo demo={IndependentVerifyCinematicDemo} compact id="partners-demo" />
+      <ConceptDemoVideo demo={PolicyClaimsCinematicDemo} compact id="partners-demo" />
 
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 1rem" }}>
         Partner integrations are pilot-ready for approved organizations.

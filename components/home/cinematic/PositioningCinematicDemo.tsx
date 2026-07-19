@@ -1,22 +1,23 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { AppVerificationPortal, DuplicateArrows, IdentitySourceScreen } from "@/components/home/cinematic/KycDocumentCards";
 import { actEase, CinematicDemoShell } from "@/components/home/cinematic/CinematicDemoShell";
 import { useCinematicTimer } from "@/components/home/cinematic/useCinematicTimer";
-import { ASSET_POSITIONING_HEADLINE } from "@/lib/assetPositioning";
+import { ASSET_POSITIONING_STEPS } from "@/lib/assetPositioning";
+import {
+  DossierFolder,
+  MarketTimeline,
+} from "@/components/home/cinematic/DemoVisualPrimitives";
 
-const ACT_MS = [5500, 5500];
+const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
-const PORTALS = [
-  { name: "RWA marketplace", context: "List now", accent: "violet" as const },
-  { name: "Lender portal", context: "Underwrite", accent: "gold" as const },
-];
+const ACT_MS = [5000, 5000, 5000];
 
 const actTransition = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -6 },
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -16 },
   transition: { duration: 0.5, ease: actEase },
 };
 
@@ -24,11 +25,9 @@ export function PositioningCinematicDemo({ compact = false }: { compact?: boolea
   const { containerRef, elapsed, totalMs, act, actCount, actProgress, reducedMotion } =
     useCinematicTimer(ACT_MS);
 
-  const actLabel = act === 1 ? "Tokenize now" : "Proof travels";
-  const actCaption =
-    act === 1
-      ? ASSET_POSITIONING_HEADLINE
-      : "Cryptographic proof persists — chains and apps diverge, verification does not.";
+  const step = ASSET_POSITIONING_STEPS[act - 1];
+  const actLabel = step?.title ?? "Position";
+  const actCaption = step?.body ?? "";
 
   return (
     <CinematicDemoShell
@@ -40,46 +39,77 @@ export function PositioningCinematicDemo({ compact = false }: { compact?: boolea
       elapsed={elapsed}
       totalMs={totalMs}
       reducedMotion={reducedMotion}
-      mood={act === 1 ? "danger" : "success"}
+      variant="market"
       compact={compact}
-      minHeight={compact ? 220 : 260}
+      minHeight={compact ? 240 : 290}
     >
       <AnimatePresence mode="wait">
         {act === 1 && (
-          <motion.div key="p1" {...actTransition} className="flex flex-col items-center gap-3">
+          <motion.div key="m1" {...actTransition} className="flex h-full flex-col items-center justify-center gap-5">
+            <MarketTimeline
+              activeIndex={actProgress > 0.5 ? 1 : 0}
+              phases={[
+                { year: "Legacy", label: "Quiet tokenize", tone: "muted" },
+                { year: "Now", label: "Proof-first", tone: "active" },
+                { year: "Window", label: "Act before premium", tone: "future" },
+              ]}
+            />
             <div style={{
-              fontFamily: "'Inter',sans-serif", fontSize: "0.72rem", fontWeight: 800,
-              color: "#FCA5A5", letterSpacing: "0.04em",
+              padding: "12px 16px", borderRadius: 12, width: "100%", maxWidth: 360,
+              border: "1px solid rgba(244,114,182,0.3)",
+              background: "rgba(244,114,182,0.06)",
             }}>
-              EVERY PLATFORM REBUILDS TRUST FROM ZERO
-            </div>
-            <div className="grid w-full max-w-md grid-cols-2 gap-2">
-              {PORTALS.map((p, i) => (
-                <AppVerificationPortal
-                  key={p.name}
-                  name={p.name}
-                  context={p.context}
-                  accent={p.accent}
-                  pulse={Math.floor(actProgress * 4) % 2 === i}
-                  showModal={actProgress > 0.3 && i === 0}
-                  uploadN={3}
-                />
-              ))}
+              <div style={{ fontFamily: MONO, fontSize: "0.38rem", color: "#F9A8D4", marginBottom: 6 }}>
+                STEP 01 · REGISTER
+              </div>
+              <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: "#FDF2F8" }}>
+                Submit asset · bind wallet · start assurance tiers
+              </div>
             </div>
           </motion.div>
         )}
         {act === 2 && (
-          <motion.div key="p2" {...actTransition} className="flex flex-col items-center gap-3">
-            <IdentitySourceScreen copies={3} />
-            <DuplicateArrows active={actProgress > 0.15} />
+          <motion.div key="m2" {...actTransition} className="flex h-full flex-col items-center justify-center gap-4">
+            <DossierFolder
+              title="Your ABX record"
+              subtitle="ABX-RE-… · monitoring active"
+              imageGradient="linear-gradient(135deg, #3b2f4a 0%, #1a1520 50%, #0f172a 100%)"
+              stamps={actProgress > 0.3 ? ["REGISTRY-READY", "MONITORING ON"] : []}
+            />
+            <div style={{ fontFamily: MONO, fontSize: "0.4rem", color: "rgba(251,207,232,0.7)" }}>
+              Public record before MLS / token noise
+            </div>
+          </motion.div>
+        )}
+        {act === 3 && (
+          <motion.div key="m3" {...actTransition} className="flex h-full flex-col items-center justify-center gap-3">
             <div style={{
-              padding: "8px 12px", borderRadius: 10,
-              border: "1px solid rgba(16,185,129,0.4)",
-              background: "rgba(16,185,129,0.1)",
-              fontFamily: "'JetBrains Mono',monospace",
-              fontSize: "0.42rem", color: "#6EE7B7", fontWeight: 700,
+              display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
+              width: "100%", maxWidth: 360,
             }}>
-              aprx_… · independently verifiable on any chain
+              {["Collateral", "Sale", "Tokenize"].map((path, i) => (
+                <motion.div
+                  key={path}
+                  animate={{ opacity: actProgress > i * 0.25 ? 1 : 0.3, y: actProgress > i * 0.25 ? 0 : 8 }}
+                  style={{
+                    padding: "10px 8px", borderRadius: 10, textAlign: "center",
+                    border: "1px solid rgba(244,114,182,0.35)",
+                    background: "rgba(244,114,182,0.08)",
+                  }}
+                >
+                  <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 800, color: "#FDF2F8" }}>{path}</div>
+                  <div style={{ fontFamily: MONO, fontSize: "0.3rem", color: "rgba(251,207,232,0.6)", marginTop: 4 }}>
+                    credentials travel
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            <div style={{
+              fontFamily: MONO, fontSize: "0.42rem", color: "#F472B6",
+              padding: "6px 12px", borderRadius: 8,
+              border: "1px dashed rgba(244,114,182,0.4)",
+            }}>
+              Exercise when the window opens — not when incumbents allow
             </div>
           </motion.div>
         )}

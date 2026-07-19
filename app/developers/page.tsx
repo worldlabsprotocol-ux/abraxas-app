@@ -10,7 +10,6 @@ import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
 import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
-import { IndependentVerifyCinematicDemo } from "@/components/home/cinematic/IndependentVerifyCinematicDemo";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -47,7 +46,6 @@ export default function DevelopersPage() {
       </ContentCard>
 
       <ContentCard title="API reference">
-        <ConceptDemoVideo demo={IndependentVerifyCinematicDemo} compact />
         <div style={{ display: "grid", gap: "0.45rem", fontFamily: FONT, fontSize: "0.78rem" }}>
           {[
             { label: "Credential verify", href: "/docs/partner-verification-requests" },
