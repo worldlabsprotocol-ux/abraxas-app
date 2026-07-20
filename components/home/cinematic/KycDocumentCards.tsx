@@ -4,6 +4,7 @@
 
 import { motion } from "framer-motion";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
+import { DEMO_TYPE } from "./demoPremium";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -60,14 +61,14 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
       }}>
         <div>
           <span style={{
-            fontFamily: MONO, fontSize: "clamp(0.5rem, 1.5vw, 0.58rem)",
+            fontFamily: MONO, fontSize: DEMO_TYPE.debtLabel,
             color: "rgba(248,113,113,0.95)", letterSpacing: "0.12em", fontWeight: 800,
             display: "block",
           }}>
             VERIFICATION DEBT
           </span>
           <span style={{
-            fontFamily: FONT, fontSize: "clamp(0.55rem, 1.6vw, 0.65rem)",
+            fontFamily: FONT, fontSize: DEMO_TYPE.debtSub,
             color: "rgba(255,255,255,0.45)", marginTop: 4, display: "block",
           }}>
             Not asset proof — repeated trust rebuilds
@@ -79,7 +80,7 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
           animate={{ scale: 1, opacity: 1, color: "#FCA5A5" }}
           transition={{ type: "spring", stiffness: 200, damping: 14 }}
           style={{
-            fontFamily: FONT, fontSize: "clamp(1.1rem, 3.5vw, 1.45rem)", fontWeight: 900,
+            fontFamily: FONT, fontSize: DEMO_TYPE.counter, fontWeight: 900,
             letterSpacing: "-0.04em", lineHeight: 1,
           }}
         >
@@ -113,7 +114,7 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
       </div>
       <div style={{
         display: "flex", justifyContent: "space-between", marginTop: 6,
-        fontFamily: MONO, fontSize: "0.38rem", color: "rgba(248,113,113,0.55)",
+        fontFamily: MONO, fontSize: DEMO_TYPE.micro, color: "rgba(248,113,113,0.55)",
       }}>
         {milestones.map(m => (
           <span key={m} style={{ opacity: count >= m ? 1 : 0.4 }}>×{m}</span>
@@ -143,7 +144,7 @@ export function BurdenStackLayer({ count }: { count: number }) {
             border: "1px solid rgba(248,113,113,0.35)",
             background: "rgba(248,113,113,0.08)",
             fontFamily: MONO,
-            fontSize: "0.42rem",
+            fontSize: DEMO_TYPE.sm,
             fontWeight: 800,
             color: "#FCA5A5",
             letterSpacing: "0.08em",
@@ -271,11 +272,11 @@ export function AppVerificationPortal({
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: "1rem", marginBottom: 6 }}>↻</div>
-            <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 900, color: "#fff" }}>
+            <div style={{ fontSize: "1.15rem", marginBottom: 6 }}>↻</div>
+            <div style={{ fontFamily: FONT, fontSize: DEMO_TYPE.md, fontWeight: 900, color: "#fff" }}>
               Verify again
             </div>
-            <div style={{ fontFamily: FONT, fontSize: "0.42rem", color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
+            <div style={{ fontFamily: FONT, fontSize: DEMO_TYPE.sm, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
               Re-upload identity + asset proof
             </div>
           </motion.div>
@@ -290,14 +291,14 @@ export function AppVerificationPortal({
         <div style={{ minWidth: 0, flex: 1 }}>
           <span style={{
             display: "block", fontFamily: FONT,
-            fontSize: "clamp(0.5rem, 1.4vw, 0.58rem)",
+            fontSize: DEMO_TYPE.portalTitle,
             fontWeight: 800, color: "#FAFAFA", lineHeight: 1.2,
           }}>
             {name}
           </span>
           {context && (
             <span style={{
-              display: "block", fontFamily: FONT, fontSize: "0.38rem",
+              display: "block", fontFamily: FONT, fontSize: DEMO_TYPE.micro,
               color: "rgba(255,255,255,0.42)", marginTop: 2,
             }}>
               {context}
@@ -311,23 +312,23 @@ export function AppVerificationPortal({
           border: "1px solid rgba(248,113,113,0.4)",
           background: "rgba(248,113,113,0.09)",
         }}>
-          <div style={{ fontFamily: MONO, fontSize: "0.36rem", color: "#FCA5A5", letterSpacing: "0.06em", fontWeight: 700 }}>
+          <div style={{ fontFamily: MONO, fontSize: DEMO_TYPE.micro, color: "#FCA5A5", letterSpacing: "0.06em", fontWeight: 700 }}>
             REQUESTING
           </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.46rem", color: "rgba(255,255,255,0.75)", marginTop: 4, lineHeight: 1.35 }}>
+          <div style={{ fontFamily: FONT, fontSize: DEMO_TYPE.sm, color: "rgba(255,255,255,0.75)", marginTop: 4, lineHeight: 1.35 }}>
             ID · selfie · proof of address · asset docs
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{
-            fontFamily: FONT, fontSize: "0.46rem", fontWeight: 900,
+            fontFamily: FONT, fontSize: DEMO_TYPE.sm, fontWeight: 900,
             color: INSTITUTIONAL_GOLD, letterSpacing: "0.08em",
           }}>
             VERIFY AGAIN
           </span>
           {uploadN != null && (
             <span style={{
-              fontFamily: MONO, fontSize: "0.4rem", padding: "3px 8px", borderRadius: 6,
+              fontFamily: MONO, fontSize: DEMO_TYPE.xs, padding: "3px 8px", borderRadius: 6,
               background: "rgba(248,113,113,0.18)", color: "#FCA5A5",
               border: "1px solid rgba(248,113,113,0.4)", fontWeight: 700,
             }}>
@@ -357,8 +358,8 @@ export function AbraxasPassportVc({
   large?: boolean;
   merge?: boolean;
 }) {
-  const w = large ? 220 : 168;
-  const h = large ? 138 : 108;
+  const w = large ? 240 : 180;
+  const h = large ? 150 : 118;
   return (
     <motion.div
       initial={merge ? { scale: 0.7, opacity: 0 } : false}
@@ -403,22 +404,22 @@ export function AbraxasPassportVc({
       }}>
         ✓
       </div>
-      <div style={{ fontFamily: MONO, fontSize: "0.52rem", letterSpacing: "0.16em", color: INSTITUTIONAL_VIOLET }}>
+      <div style={{ fontFamily: MONO, fontSize: DEMO_TYPE.md, letterSpacing: "0.16em", color: INSTITUTIONAL_VIOLET }}>
         ABRAXAS
       </div>
       <div style={{
         fontFamily: FONT,
-        fontSize: large ? "1.15rem" : "0.92rem",
+        fontSize: large ? "1.35rem" : "1.05rem",
         fontWeight: 900,
         color: INSTITUTIONAL_GOLD_PALE,
         letterSpacing: "-0.03em",
       }}>
         Passport
       </div>
-      <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.65)" }}>
+      <div style={{ fontFamily: FONT, fontSize: DEMO_TYPE.md, color: "rgba(255,255,255,0.65)" }}>
         Verified once · portable
       </div>
-      <div style={{ fontFamily: MONO, fontSize: "0.4rem", color: "rgba(16,185,129,0.95)", marginTop: 2 }}>
+      <div style={{ fontFamily: MONO, fontSize: DEMO_TYPE.xs, color: "rgba(16,185,129,0.95)", marginTop: 2 }}>
         W3C VC · ED25519
       </div>
     </motion.div>
@@ -439,7 +440,7 @@ export function AuthenticationProofArtifact({
   issued?: boolean;
   proofId?: string;
 }) {
-  const width = hero ? "min(100%, 400px)" : 168;
+  const width = hero ? "min(100%, 440px)" : 180;
   const shortId = proofId.length > 28 ? `${proofId.slice(0, 24)}…` : proofId;
 
   return (
@@ -474,7 +475,7 @@ export function AuthenticationProofArtifact({
             padding: "6px 12px", borderRadius: 6,
             border: "2px solid rgba(16,185,129,0.6)",
             background: "rgba(16,185,129,0.15)",
-            fontFamily: MONO, fontSize: "0.48rem", fontWeight: 900,
+            fontFamily: MONO, fontSize: DEMO_TYPE.sm, fontWeight: 900,
             color: "#6EE7B7", letterSpacing: "0.14em",
           }}
         >
@@ -488,13 +489,13 @@ export function AuthenticationProofArtifact({
         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
       }}>
         <span style={{
-          fontFamily: MONO, fontSize: hero ? "0.52rem" : "0.4rem",
+          fontFamily: MONO, fontSize: hero ? DEMO_TYPE.md : DEMO_TYPE.xs,
           letterSpacing: "0.14em", color: INSTITUTIONAL_GOLD, fontWeight: 800,
         }}>
           AUTHENTICATION PROOF
         </span>
         <span style={{
-          fontFamily: MONO, fontSize: "0.38rem", padding: "3px 8px", borderRadius: 6,
+          fontFamily: MONO, fontSize: DEMO_TYPE.micro, padding: "4px 10px", borderRadius: 6,
           background: "rgba(16,185,129,0.22)", color: "#6EE7B7",
           border: "1px solid rgba(16,185,129,0.45)", fontWeight: 700,
         }}>
@@ -504,7 +505,7 @@ export function AuthenticationProofArtifact({
       <div style={{ padding: hero ? "16px 16px 18px" : "10px 11px 11px" }}>
         <div style={{
           fontFamily: MONO,
-          fontSize: hero ? "clamp(0.72rem, 2.2vw, 0.88rem)" : "0.5rem",
+          fontSize: DEMO_TYPE.proofId,
           color: INSTITUTIONAL_GOLD_PALE,
           marginBottom: hero ? 14 : 8,
           letterSpacing: "-0.02em",
@@ -516,7 +517,7 @@ export function AuthenticationProofArtifact({
           <div style={{
             padding: "8px 10px", borderRadius: 8, marginBottom: 12,
             background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.08)",
-            fontFamily: MONO, fontSize: "0.42rem", color: "rgba(255,255,255,0.55)",
+            fontFamily: MONO, fontSize: DEMO_TYPE.sm, color: "rgba(255,255,255,0.55)",
           }}>
             GET /api/proof/{proofId}
           </div>
@@ -537,7 +538,7 @@ export function AuthenticationProofArtifact({
               }}>✓</span>
               <span style={{
                 fontFamily: MONO,
-                fontSize: hero ? "clamp(0.42rem, 1.2vw, 0.48rem)" : "0.34rem",
+                fontSize: hero ? DEMO_TYPE.proofRow : DEMO_TYPE.micro,
                 color: "rgba(255,255,255,0.72)",
               }}>
                 {label}
@@ -560,7 +561,7 @@ export function NoRelayBadge({ compact = false }: { compact?: boolean }) {
     }}>
       <span style={{ fontSize: "0.75rem", opacity: 0.4, textDecoration: "line-through" }}>✉</span>
       <span style={{
-        fontFamily: FONT, fontSize: compact ? "0.42rem" : "clamp(0.44rem, 1.2vw, 0.52rem)",
+        fontFamily: FONT, fontSize: compact ? DEMO_TYPE.sm : DEMO_TYPE.noRelay,
         fontWeight: 800, color: "rgba(255,255,255,0.7)", letterSpacing: "0.03em",
       }}>
         No inbox · no relay · no trust in Abraxas servers
@@ -589,19 +590,19 @@ export function ReferenceContextCard({
         }} />
         <div style={{ padding: "12px 14px" }}>
           <div style={{
-            fontFamily: MONO, fontSize: "0.38rem", color: accent,
+            fontFamily: MONO, fontSize: DEMO_TYPE.micro, color: accent,
             letterSpacing: "0.1em", marginBottom: 6, fontWeight: 800,
           }}>
             LIVE REFERENCE
           </div>
           <div style={{
-            fontFamily: FONT, fontSize: "clamp(0.72rem, 2vw, 0.85rem)",
+            fontFamily: FONT, fontSize: DEMO_TYPE.cardTitle,
             fontWeight: 900, color: "#FAFAFA", lineHeight: 1.2,
           }}>
             {label}
           </div>
           <div style={{
-            fontFamily: FONT, fontSize: "0.48rem", color: "rgba(255,255,255,0.5)",
+            fontFamily: FONT, fontSize: DEMO_TYPE.sm, color: "rgba(255,255,255,0.5)",
             marginTop: 6, lineHeight: 1.4,
           }}>
             {sublabel}
@@ -643,12 +644,12 @@ export function CounterpartyVerifierCard({
             </svg>
           </div>
           <div style={{
-            fontFamily: FONT, fontSize: "clamp(0.62rem, 1.6vw, 0.75rem)",
+            fontFamily: FONT, fontSize: DEMO_TYPE.verifierTitle,
             fontWeight: 800, color: "#FAFAFA",
           }}>
             {label}
           </div>
-          <div style={{ fontFamily: MONO, fontSize: "0.36rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+          <div style={{ fontFamily: MONO, fontSize: DEMO_TYPE.micro, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
             Relying party
           </div>
           <motion.div
@@ -661,13 +662,13 @@ export function CounterpartyVerifierCard({
             }}
           >
             <div style={{
-              fontFamily: MONO, fontSize: "0.44rem", color: "#6EE7B7",
+              fontFamily: MONO, fontSize: DEMO_TYPE.sm, color: "#6EE7B7",
               letterSpacing: "0.08em", fontWeight: 800,
             }}>
               {active ? "DECISION: APPROVED" : "VERIFYING PROOF…"}
             </div>
             <div style={{
-              fontFamily: MONO, fontSize: "0.38rem", color: "rgba(255,255,255,0.55)",
+              fontFamily: MONO, fontSize: DEMO_TYPE.micro, color: "rgba(255,255,255,0.55)",
               marginTop: 6,
             }}>
               Independent signature check

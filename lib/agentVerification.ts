@@ -79,6 +79,8 @@ export const AGENT_ONE_PAGER = {
     "agent.proceed and agent.valid booleans for minimal branching logic",
   ],
   principle: "Agents should not have to trust Abraxas. They should be able to verify the proof.",
+  mcp_note:
+    "Compatible with agentic trading and MCP-connected agents (e.g. Robinhood Agentic Trading) — predictable JSON, agent.proceed / agent.valid gates, no UI required.",
 } as const;
 
 function proofIsSigned(proof: PartnerVerifyResponseWithProof["authentication_proof"]): boolean {

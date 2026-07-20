@@ -106,6 +106,18 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     ],
   };
 
+  const agentReadiness: VerificationLayerItem = {
+    id: "agent-readiness",
+    label: "AI agent / MCP-ready verify + proof envelopes",
+    status: statusFromFlags(signingConfigured && verificationKeyConfigured, signingConfigured || verificationKeyConfigured),
+    detail:
+      "POST /api/credentials/verify and GET /api/proof/[id] return agent.proceed / agent.valid. See GET /api/verify/e2e and /api/docs/agents.",
+    blockers: [
+      ...(!signingConfigured ? ["ABRAXAS_SIGNING_KEY"] : []),
+      ...(!verificationKeyConfigured ? ["ABRAXAS_PUBLIC_KEY"] : []),
+    ],
+  };
+
   const assetMonitoring: VerificationLayerItem = {
     id: "asset-monitoring",
     label: "Asset monitoring → refresh/revoke proof path",
@@ -123,6 +135,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     proofLookup,
     suiAnchoring,
     productionDemo,
+    agentReadiness,
     assetMonitoring,
   ];
 
@@ -131,7 +144,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
 
   const summary =
     liveCount === items.length
-      ? "All five verification-layer items are production-ready."
+      ? "All verification-layer items are production-ready."
       : liveCount + partialCount > 0
         ? `${liveCount} live, ${partialCount} partial — see blockers per item.`
         : "Verification layer code exists but production keys and persistence are not configured.";

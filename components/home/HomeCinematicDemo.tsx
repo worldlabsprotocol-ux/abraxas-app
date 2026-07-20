@@ -160,10 +160,10 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
         <div className={`relative z-10 ${hero ? 'px-6 py-7 sm:px-10 sm:py-9' : 'px-5 py-6 sm:px-8 sm:py-8'}`}>
           <div className="flex flex-col items-center text-center">
-            <PremiumEyebrow accent={accent} centered>
+            <PremiumEyebrow accent={accent} centered large={hero}>
               {actLabel}
             </PremiumEyebrow>
-            <PremiumHeadline mesh={meshKey} centered>
+            <PremiumHeadline mesh={meshKey} centered large={hero}>
               {actCaption}
             </PremiumHeadline>
           </div>
@@ -260,7 +260,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                     </motion.div>
 
                     <motion.p
-                      className="mt-4 text-center text-xs text-white/55 sm:text-sm"
+                      className="mt-4 text-center text-sm text-white/60 sm:text-base"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: mergeProgress > 0.72 ? 1 : 0 }}
                     >
@@ -291,7 +291,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                     </div>
 
                     <motion.div
-                      className="cine-act3-proof w-full max-w-[min(100%,400px)] shrink-0"
+                      className="cine-act3-proof w-full max-w-[min(100%,440px)] shrink-0"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{
                         opacity: proofIssued ? 1 : 0.35,
@@ -333,8 +333,21 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                     )}
                   </AnimatePresence>
 
+                  {showFinalLine && (
+                    <motion.div
+                      className="mx-auto mt-4 max-w-lg rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-center sm:mt-5"
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.5, ease: actEase }}
+                    >
+                      <p className="font-semibold tracking-tight text-amber-100/95 text-sm sm:text-base md:text-lg">
+                        {CINEMATIC_PROOF_ISSUED_LINE}
+                      </p>
+                    </motion.div>
+                  )}
+
                   <motion.p
-                    className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-emerald-400/70 sm:text-xs"
+                    className="mt-3 text-center font-mono text-xs uppercase tracking-[0.14em] text-emerald-400/80 sm:text-sm"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: showNoRelay ? 1 : 0 }}
                   >

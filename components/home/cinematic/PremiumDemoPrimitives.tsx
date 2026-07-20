@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
-import { ACCENT, GLASS, GRADIENT_TEXT, MESH, type MeshKey, PREMIUM_FONT, PREMIUM_MONO } from "./demoPremium";
+import { ACCENT, GLASS, GRADIENT_TEXT, MESH, type MeshKey, PREMIUM_FONT, PREMIUM_MONO, DEMO_TYPE } from "./demoPremium";
 
 export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   return (
@@ -20,7 +20,7 @@ export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   );
 }
 
-export function PremiumEyebrow({ children, accent, centered }: { children: ReactNode; accent: string; centered?: boolean }) {
+export function PremiumEyebrow({ children, accent, centered, large }: { children: ReactNode; accent: string; centered?: boolean; large?: boolean }) {
   return (
     <span
       style={{
@@ -29,7 +29,7 @@ export function PremiumEyebrow({ children, accent, centered }: { children: React
         gap: 8,
         justifyContent: centered ? "center" : undefined,
         fontFamily: PREMIUM_MONO,
-        fontSize: "0.58rem",
+        fontSize: large ? DEMO_TYPE.eyebrow : "0.64rem",
         fontWeight: 700,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
@@ -42,12 +42,12 @@ export function PremiumEyebrow({ children, accent, centered }: { children: React
   );
 }
 
-export function PremiumHeadline({ children, mesh, centered = false }: { children: ReactNode; mesh: MeshKey; centered?: boolean }) {
+export function PremiumHeadline({ children, mesh, centered = false, large = false }: { children: ReactNode; mesh: MeshKey; centered?: boolean; large?: boolean }) {
   return (
     <h3
       style={{
         fontFamily: PREMIUM_FONT,
-        fontSize: "clamp(1rem, 2.8vw, 1.35rem)",
+        fontSize: large ? DEMO_TYPE.headlineHero : DEMO_TYPE.headline,
         fontWeight: 800,
         letterSpacing: "-0.03em",
         lineHeight: 1.2,
@@ -106,7 +106,7 @@ export function PremiumStat({
       <div
         style={{
           fontFamily: PREMIUM_MONO,
-          fontSize: "0.48rem",
+          fontSize: "0.54rem",
           fontWeight: 600,
           letterSpacing: "0.1em",
           textTransform: "uppercase",

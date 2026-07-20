@@ -45,3 +45,25 @@ export const ACCENT: Record<MeshKey, string> = {
   slate: "#94A3B8",
   danger: "#F87171",
 };
+
+/** Legible demo typography — tuned for hero cinematic + mobile (~20% larger than v1). */
+export const DEMO_TYPE = {
+  micro: "0.48rem",
+  xs: "0.56rem",
+  sm: "0.64rem",
+  md: "0.72rem",
+  lg: "0.82rem",
+  xl: "0.95rem",
+  counter: "clamp(1.3rem, 4.2vw, 1.75rem)",
+  debtLabel: "clamp(0.58rem, 1.65vw, 0.7rem)",
+  debtSub: "clamp(0.65rem, 1.8vw, 0.78rem)",
+  portalTitle: "clamp(0.6rem, 1.7vw, 0.75rem)",
+  proofId: "clamp(0.88rem, 2.6vw, 1.08rem)",
+  proofRow: "clamp(0.54rem, 1.5vw, 0.64rem)",
+  cardTitle: "clamp(0.85rem, 2.35vw, 1rem)",
+  verifierTitle: "clamp(0.75rem, 1.9vw, 0.92rem)",
+  noRelay: "clamp(0.54rem, 1.5vw, 0.65rem)",
+  eyebrow: "0.7rem",
+  headline: "clamp(1.12rem, 3.1vw, 1.55rem)",
+  headlineHero: "clamp(1.2rem, 3.4vw, 1.65rem)",
+} as const;
