@@ -31,7 +31,7 @@ describe("issueVerifyDecisionArtifacts", () => {
     });
 
     expect(artifacts.proof_id).toMatch(/^aprx_/);
-    expect(artifacts.verify_url).toBe(`/api/proof/${artifacts.proof_id}`);
+    expect(artifacts.verify_url).toContain(`/api/proof/${artifacts.proof_id}`);
     expect(artifacts.authentication_proof.event_type).toBe("credential_verify");
     expect(artifacts.authentication_proof.signature).toBeTruthy();
 

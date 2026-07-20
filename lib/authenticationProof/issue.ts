@@ -6,6 +6,7 @@ import { createHash } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { suiExplorerTxUrl } from "@/lib/sui/network";
+import { siteUrl } from "@/lib/siteUrl";
 import { anchorAuthenticationProofOnSui } from "@/lib/sui/anchorAuthenticationProof";
 import { signAuthProofPayload } from "./signing";
 import { extractAssetAbxId } from "./proofLifecycle";
@@ -111,7 +112,7 @@ export async function issueAuthenticationProof(input: {
     anchor_status: anchorStatus,
     sui_tx_digest: suiTxDigest,
     explorer_url: explorerUrl,
-    verify_url: `/api/proof/${authPayload.proof_id}`,
+    verify_url: siteUrl(`/api/proof/${authPayload.proof_id}`),
     issued_at: authPayload.issued_at,
     event_type: input.eventType,
     record_id: input.recordId,

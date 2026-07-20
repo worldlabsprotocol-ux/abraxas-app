@@ -9,7 +9,8 @@ import {
 } from "@/lib/partner/partnerDecision";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
 import { issueVerifyDecisionArtifacts } from "./issueVerifyDecision";
-import { getSelfVerifiedAuthenticationProof } from "./verifyProof";
+import { verifyAuthenticationProofRecord } from "./verifyProof";
+import type { AuthenticationProofRecord } from "./types";
 
 export const PRODUCTION_REFERENCE_ASSETS = {
   cielo: {
@@ -61,13 +62,39 @@ export async function issueProductionReferenceProof(assetId: string) {
   });
 
   const bundle = attachVerifyProof(response, artifacts);
-  const verified = await getSelfVerifiedAuthenticationProof(artifacts.proof_id);
+
+  const record: AuthenticationProofRecord = {
+    id: artifacts.proof_id,
+    event_type: artifacts.authentication_proof.event_type,
+    record_id: artifacts.authentication_proof.record_id,
+    payload_hash: artifacts.authentication_proof.payload_hash,
+    signature: artifacts.authentication_proof.signature,
+    signing_key_id: artifacts.authentication_proof.signing_key_id,
+    sui_tx_digest: artifacts.authentication_proof.sui_tx_digest,
+    sui_network: artifacts.authentication_proof.network,
+    anchor_status: artifacts.authentication_proof.anchor_status,
+    explorer_url: artifacts.authentication_proof.explorer_url,
+    issued_at: artifacts.authentication_proof.issued_at,
+    schema_version: "1.0.0",
+    network: artifacts.authentication_proof.network,
+    created_at: artifacts.authentication_proof.issued_at,
+    status: artifacts.authentication_proof.status,
+    asset_abx_id: meta.abxId,
+    superseded_by: null,
+  };
+
+  const verifiedFields = verifyAuthenticationProofRecord(record);
+  const self_verified_proof = {
+    artifact_type: "authentication_proof" as const,
+    independently_verifiable: true as const,
+    ...verifiedFields,
+  };
 
   return {
     asset: meta,
     registry_state: registry.state,
     verify_response: bundle,
-    self_verified_proof: verified,
+    self_verified_proof,
     how_to_reproduce: {
       method: "POST",
       path: "/api/credentials/verify",

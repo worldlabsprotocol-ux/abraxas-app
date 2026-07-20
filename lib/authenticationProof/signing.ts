@@ -1,7 +1,7 @@
 // FILE: lib/authenticationProof/signing.ts
 
 import nacl from "tweetnacl";
-import { loadReceiptSigningKey, getReceiptSigningKeyId } from "@/lib/decisionReceipts/signing";
+import { loadReceiptSigningKey, loadReceiptVerificationKey, getReceiptSigningKeyId } from "@/lib/decisionReceipts/signing";
 import { hashAuthProofPayload } from "./canonical";
 import type { AuthenticationProofPayload } from "./types";
 
@@ -33,12 +33,12 @@ export function signAuthProofPayload(payload: AuthenticationProofPayload): {
 }
 
 export function verifyAuthProofSignature(payload: AuthenticationProofPayload, signature: string): boolean {
-  const key = loadReceiptSigningKey();
-  if (!key?.publicKeyJwk.x) return false;
+  const publicKeyJwk = loadReceiptVerificationKey();
+  if (!publicKeyJwk?.x) return false;
 
   const payloadHash = hashAuthProofPayload(payload);
   const message = Buffer.from(payloadHash, "hex");
-  const pubKey = base64UrlDecode(key.publicKeyJwk.x);
+  const pubKey = base64UrlDecode(publicKeyJwk.x);
   let sig: Uint8Array;
   try {
     sig = base64UrlDecode(signature);

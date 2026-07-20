@@ -3,6 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { AUTHENTICATION_PROOF_LOOP_STATUS } from "@/lib/authenticationProof/loopStatus";
+import { getVerificationLayerStatus } from "@/lib/authenticationProof/verificationLayerStatus";
 import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
