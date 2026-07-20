@@ -9,7 +9,8 @@ import {
 } from "@/lib/partner/partnerDecision";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
 import { issueVerifyDecisionArtifacts } from "./issueVerifyDecision";
-import { verifyAuthenticationProofRecord } from "./verifyProof";
+import { verifyAuthenticationProofRecord, type SelfVerifiedAuthenticationProof } from "./verifyProof";
+import { toAgentProofView, toAgentVerifyView } from "@/lib/agentVerification";
 import type { AuthenticationProofRecord } from "./types";
 
 export const PRODUCTION_REFERENCE_ASSETS = {
@@ -84,17 +85,17 @@ export async function issueProductionReferenceProof(assetId: string) {
   };
 
   const verifiedFields = verifyAuthenticationProofRecord(record);
-  const self_verified_proof = {
-    artifact_type: "authentication_proof" as const,
-    independently_verifiable: true as const,
+  const self_verified_proof: SelfVerifiedAuthenticationProof = {
+    artifact_type: "authentication_proof",
+    independently_verifiable: true,
     ...verifiedFields,
   };
 
   return {
     asset: meta,
     registry_state: registry.state,
-    verify_response: bundle,
-    self_verified_proof,
+    verify_response: { ...bundle, agent: toAgentVerifyView(bundle) },
+    self_verified_proof: { ...self_verified_proof, agent: toAgentProofView(self_verified_proof) },
     how_to_reproduce: {
       method: "POST",
       path: "/api/credentials/verify",

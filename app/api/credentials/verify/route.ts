@@ -23,6 +23,7 @@ import {
   type PartnerVerifyResponseWithProof,
 } from "@/lib/partner/partnerDecision";
 import { issueVerifyDecisionArtifacts, type VerifyDecisionMode } from "@/lib/authenticationProof/issueVerifyDecision";
+import { toAgentVerifyView, toAgentVerifyViewWithoutProof } from "@/lib/agentVerification";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -113,7 +114,10 @@ export async function POST(
     payload = attachVerifyProof(response, artifacts);
   } catch (err) {
     console.error("[credentials/verify] proof issuance failed:", err instanceof Error ? err.message : err);
-    return NextResponse.json(response, { status: httpStatus });
+    return NextResponse.json(
+      { ...response, agent: toAgentVerifyViewWithoutProof(response) },
+      { status: httpStatus },
+    );
   }
 
   void logPartnerUsage({
@@ -132,7 +136,10 @@ export async function POST(
     proofId: payload.proof_id,
   });
 
-  return NextResponse.json(payload, { status: httpStatus });
+  return NextResponse.json(
+    { ...payload, agent: toAgentVerifyView(payload) },
+    { status: httpStatus },
+  );
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {

@@ -261,13 +261,17 @@ export function getExternalRelyingPartyIntegrationGuide() {
         valid_requested_actions: VALID_REQUESTED_ACTIONS,
         http_status: VERIFY_HTTP_STATUS,
         example_response: EXAMPLE_VERIFY_RESPONSE_APPROVED,
+        agent_field: "agent",
+        agent_proceed_when: "agent.proceed === true (then confirm via GET verify_url)",
       },
       proof_lookup: {
         method: "GET",
         path: "/api/proof/{proof_id}",
         auth: "None — public, self-verifying",
         example_response: EXAMPLE_PROOF_LOOKUP_RESPONSE,
-        fields_to_check: ["signature_valid", "proof_reliable", "anchor_status", "proof_status"],
+        key_fields: ["signature_valid", "proof_reliable", "public_key", "payload", "agent"],
+        agent_field: "agent",
+        agent_proceed_when: "agent.valid === true",
       },
       public_key: {
         method: "GET",
@@ -297,5 +301,6 @@ export function getExternalRelyingPartyIntegrationGuide() {
     errors: EXTERNAL_RP_ERRORS,
     apply: `${EXTERNAL_RP_BASE_URL}/design-partner`,
     docs_page: `${EXTERNAL_RP_BASE_URL}/docs/relying-party-verify`,
+    agent_docs: `${EXTERNAL_RP_BASE_URL}/docs/ai-agents`,
   };
 }

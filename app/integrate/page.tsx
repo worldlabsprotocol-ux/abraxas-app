@@ -23,6 +23,7 @@ import { TRUST_IS_TIME_BOUND_HEADLINE, TRUST_VERIFY_ONCE_HONEST } from "@/lib/tr
 import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
 import { INTEGRATE_PRODUCTION_NOTE } from "@/lib/currentStatus";
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
+import { AGENT_POSITIONING_LONG, AGENT_POSITIONING_SHORT } from "@/lib/agentVerification";
 import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
 import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
 import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
@@ -42,6 +43,19 @@ export default function IntegratePage() {
       />
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="integrate-demo" />
+
+      <ContentCard title="Built for humans and agents">
+        <p style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
+          {AGENT_POSITIONING_SHORT}
+        </p>
+        <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
+          {AGENT_POSITIONING_LONG}
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/docs/ai-agents" size="sm">For AI agents →</Btn>
+          <Btn href="/api/docs/agents" variant="secondary" size="sm">JSON agent guide →</Btn>
+        </div>
+      </ContentCard>
 
       <ContentCard title="Live proof">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "0.55rem" }}>
