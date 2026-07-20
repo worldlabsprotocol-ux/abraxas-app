@@ -8,6 +8,7 @@
 
 import type { PartnerDecision, PartnerVerifyResponse, PartnerVerifyResponseWithProof } from "@/lib/partner/partnerDecision";
 import type { SelfVerifiedAuthenticationProof } from "@/lib/authenticationProof/verifyProof";
+import { getAgenticFinanceStack } from "@/lib/agenticFinancePositioning";
 import { siteUrl } from "@/lib/siteUrl";
 
 export const AGENT_VERIFY_SCHEMA = "abraxas.agent.verify.v1" as const;
@@ -80,7 +81,7 @@ export const AGENT_ONE_PAGER = {
   ],
   principle: "Agents should not have to trust Abraxas. They should be able to verify the proof.",
   mcp_note:
-    "Compatible with agentic trading and MCP-connected agents (e.g. Robinhood Agentic Trading) — predictable JSON, agent.proceed / agent.valid gates, no UI required.",
+    "Composes with act-layer MCPs (e.g. Robinhood Agentic Trading at agent.robinhood.com/mcp/trading) — verify with Abraxas first, then act. Predictable JSON, agent.proceed / agent.valid gates, no UI required.",
 } as const;
 
 function proofIsSigned(proof: PartnerVerifyResponseWithProof["authentication_proof"]): boolean {
@@ -222,5 +223,6 @@ export function getAgentVerificationGuide() {
     },
     docs_page: siteUrl("/docs/ai-agents"),
     relying_party_docs: siteUrl("/docs/relying-party-verify"),
+    agentic_finance_stack: getAgenticFinanceStack(),
   };
 }

@@ -13,6 +13,13 @@ import {
   AGENT_POSITIONING_SHORT,
   getAgentVerificationGuide,
 } from "@/lib/agentVerification";
+import {
+  AGENTIC_FINANCE_COMPOSE_FLOW,
+  AGENTIC_FINANCE_INDEPENDENCE_NOTE,
+  AGENTIC_FINANCE_SUBHEAD,
+  ROBINHOOD_AGENTIC_TRADING_REFERENCE,
+  getAgenticFinanceStack,
+} from "@/lib/agenticFinancePositioning";
 import { MINIMAL_RP_INTEGRATION_EXAMPLE } from "@/lib/externalRelyingPartyIntegration";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -20,6 +27,7 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 const guide = getAgentVerificationGuide();
+const agenticStack = getAgenticFinanceStack();
 
 export default function AiAgentsDocsPage() {
   return (
@@ -30,9 +38,44 @@ export default function AiAgentsDocsPage() {
         subtitle={AGENT_POSITIONING_SHORT}
       />
 
+      <ContentCard title="Agentic finance stack">
+        <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)" }}>{AGENTIC_FINANCE_SUBHEAD}</p>
+        <p style={{ ...body, marginTop: "0.65rem" }}>{AGENTIC_FINANCE_INDEPENDENCE_NOTE}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", margin: "0.85rem 0" }}>
+          {agenticStack.stack.map(layer => (
+            <div
+              key={layer.id}
+              style={{
+                padding: "0.65rem 0.75rem",
+                borderRadius: 10,
+                border: layer.abraxas ? "1px solid rgba(16,185,129,0.35)" : "1px solid var(--border)",
+                background: layer.abraxas ? "rgba(16,185,129,0.06)" : "transparent",
+              }}
+            >
+              <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                {layer.label}
+              </div>
+              <p style={{ ...body, fontSize: "0.78rem", marginTop: "0.35rem" }}>{layer.role}</p>
+              <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0.35rem 0 0" }}>
+                {layer.examples}
+              </p>
+            </div>
+          ))}
+        </div>
+        <BulletList items={[...AGENTIC_FINANCE_COMPOSE_FLOW]} />
+        <p style={{ ...body, marginTop: "0.65rem", fontSize: "0.78rem" }}>
+          <strong style={{ color: "var(--text-primary)" }}>Robinhood reference (act layer).</strong>{" "}
+          Their Trading MCP is at{" "}
+          <code style={inlineCode}>{ROBINHOOD_AGENTIC_TRADING_REFERENCE.mcp_url}</code>
+          {" "}— OAuth, isolated Agentic account, equities and rolling options support per their docs.{" "}
+          Abraxas does not operate that server; compose verify → act in your agent policy.
+        </p>
+      </ContentCard>
+
       <ContentCard title="Design principle">
         <p style={body}>{AGENT_ONE_PAGER.principle}</p>
         <p style={{ ...body, marginTop: "0.65rem" }}>{AGENT_POSITIONING_LONG}</p>
+        <p style={{ ...body, marginTop: "0.65rem", fontSize: "0.78rem" }}>{AGENT_ONE_PAGER.mcp_note}</p>
       </ContentCard>
 
       <ContentCard title="What Abraxas provides">

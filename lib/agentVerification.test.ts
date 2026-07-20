@@ -122,5 +122,7 @@ describe("agentVerification", () => {
     const guide = getAgentVerificationGuide();
     expect(guide.endpoints.verify.agent_schema).toBe(AGENT_VERIFY_SCHEMA);
     expect(guide.recommended_flow).toHaveLength(4);
+    expect(guide.agentic_finance_stack.schema).toBe("abraxas.agentic_finance.v1");
+    expect(guide.agentic_finance_stack.robinhood_reference.mcp_url).toContain("agent.robinhood.com");
   });
 });

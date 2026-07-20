@@ -24,6 +24,12 @@ import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
 import { INTEGRATE_PRODUCTION_NOTE } from "@/lib/currentStatus";
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { AGENT_POSITIONING_LONG, AGENT_POSITIONING_SHORT } from "@/lib/agentVerification";
+import {
+  AGENTIC_FINANCE_COMPOSE_FLOW,
+  AGENTIC_FINANCE_HEADLINE,
+  AGENTIC_FINANCE_INDEPENDENCE_NOTE,
+  getAgenticFinanceStack,
+} from "@/lib/agenticFinancePositioning";
 import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
 import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
 import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
@@ -44,17 +50,24 @@ export default function IntegratePage() {
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="integrate-demo" />
 
-      <ContentCard title="Built for humans and agents">
+      <ContentCard title={AGENTIC_FINANCE_HEADLINE}>
         <p style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
           {AGENT_POSITIONING_SHORT}
         </p>
-        <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
           {AGENT_POSITIONING_LONG}
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
+          {AGENTIC_FINANCE_INDEPENDENCE_NOTE}
+        </p>
+        <BulletList items={[...AGENTIC_FINANCE_COMPOSE_FLOW]} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
           <Btn href="/docs/ai-agents" size="sm">For AI agents →</Btn>
           <Btn href="/api/docs/agents" variant="secondary" size="sm">JSON agent guide →</Btn>
         </div>
+        <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0.65rem 0 0" }}>
+          agentic_finance_stack in GET /api/docs/agents · {getAgenticFinanceStack().schema}
+        </p>
       </ContentCard>
 
       <ContentCard title="Live proof">
