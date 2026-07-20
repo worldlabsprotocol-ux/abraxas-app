@@ -6,10 +6,9 @@ import {
   AbraxasPassportVc,
   AppVerificationPortal,
   AuthenticationProofArtifact,
+  BurdenStackLayer,
   ConnectionBeam,
   CounterpartyVerifierCard,
-  DuplicateArrows,
-  IdentitySourceScreen,
   NoRelayBadge,
   ReferenceContextCard,
   VerificationDebtMeter,
@@ -25,11 +24,44 @@ const TOTAL_MS = ACT1_MS + ACT2_MS + ACT3_MS;
 
 const ACT1_PORTALS = [
   { name: 'RWA marketplace', context: 'Asset onboarding', accent: 'violet' as const },
-  { name: 'Lender portal', context: 'Credit underwriting', accent: 'gold' as const },
+  { name: 'Private lender', context: 'Credit underwriting', accent: 'gold' as const },
   { name: 'Hospitality ops', context: 'Operator credentialing', accent: 'violet' as const },
+  { name: 'Custody', context: 'Beneficial owner proof', accent: 'gold' as const },
+];
+
+const BURDEN_STEPS = [
+  { at: 0, count: 1 },
+  { at: 1000, count: 2 },
+  { at: 2400, count: 3 },
+  { at: 3800, count: 4 },
+  { at: 5200, count: 5 },
+  { at: 6400, count: 6 },
+  { at: 7200, count: 7 },
 ];
 
 const actEase = [0.22, 1, 0.36, 1] as const;
+
+function debtCountAt(ms: number): number {
+  let count = 1;
+  for (const step of BURDEN_STEPS) {
+    if (ms >= step.at) count = step.count;
+  }
+  return count;
+}
+
+function activePortalIndex(ms: number): number {
+  if (ms < 1400) return 0;
+  if (ms < 3000) return 1;
+  if (ms < 4600) return 2;
+  return 3;
+}
+
+function act3Phase(ms: number): 'context' | 'issue' | 'verify' | 'land' {
+  if (ms < 2000) return 'context';
+  if (ms < 4500) return 'issue';
+  if (ms < 7000) return 'verify';
+  return 'land';
+}
 
 export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   const [elapsed, setElapsed] = useState(0);
@@ -63,19 +95,25 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   }, [reducedMotion]);
 
   const act = elapsed < ACT1_MS ? 1 : elapsed < ACT1_MS + ACT2_MS ? 2 : 3;
-  const act1Progress = Math.min(1, elapsed / ACT1_MS);
+  const act1Local = Math.min(elapsed, ACT1_MS);
   const act2Local = Math.max(0, elapsed - ACT1_MS);
-  const act2Progress = Math.min(1, act2Local / ACT2_MS);
   const act3Local = Math.max(0, elapsed - ACT1_MS - ACT2_MS);
+  const act1Progress = Math.min(1, act1Local / ACT1_MS);
+  const act2Progress = Math.min(1, act2Local / ACT2_MS);
   const act3Progress = Math.min(1, act3Local / ACT3_MS);
 
-  const debtCount = Math.min(12, Math.floor(act1Progress * 14));
-  const portalPulse = Math.floor(act1Progress * 9) % 3;
-  const showModal = act1Progress > 0.22 && act1Progress < 0.88;
+  const debtCount = debtCountAt(act1Local);
+  const portalPulse = act === 1 ? activePortalIndex(act1Local) : -1;
+  const showModal = act === 1 && act1Local > 800 && act1Local < 7400;
+  const phase3 = act === 3 ? act3Phase(act3Local) : 'context';
+
   const mergeProgress = act2Progress;
-  const proofPulse = act3Progress > 0.12 && act3Progress < 0.55;
-  const verifierLit = act3Progress > 0.38;
-  const showNoRelay = act3Progress > 0.52;
+  const passportRevealed = act2Progress > 0.42;
+  const proofIssued = phase3 !== 'context';
+  const proofPulse = phase3 === 'issue';
+  const verifierLit = phase3 === 'verify' || phase3 === 'land';
+  const showNoRelay = phase3 === 'land' || act3Progress > 0.55;
+  const showFinalLine = phase3 === 'land';
 
   const actLabel =
     act === 1 ? 'Verification debt' : act === 2 ? 'One Passport' : 'Proof issued';
@@ -85,7 +123,9 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
       ? 'Every platform rebuilds trust from zero. Verification debt — not asset proof.'
       : act === 2
         ? 'One portable Passport resolves the repeated asks.'
-        : CINEMATIC_PROOF_ISSUED_LINE;
+        : showFinalLine
+          ? CINEMATIC_PROOF_ISSUED_LINE
+          : 'Cryptographic proof anyone can verify independently.';
 
   const actTransition = {
     initial: { opacity: 0, filter: 'blur(10px)', scale: 0.985 },
@@ -98,7 +138,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   const accent = act === 1 ? ACCENT.danger : act === 2 ? ACCENT.gold : ACCENT.emerald;
 
   return (
-    <div className={`cinematic-demo relative mx-auto w-full ${hero ? "max-w-[1120px]" : "max-w-5xl"}`}>
+    <div className={`cinematic-demo relative mx-auto w-full ${hero ? 'max-w-[1120px]' : 'max-w-5xl'}`}>
       <div
         className="relative overflow-hidden rounded-3xl"
         style={{
@@ -108,163 +148,201 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
       >
         <PremiumMeshBg mesh={meshKey} />
 
-        <div className={`relative z-10 ${hero ? "px-6 py-7 sm:px-10 sm:py-9" : "px-5 py-6 sm:px-8 sm:py-8"}`}>
+        {act === 1 && (
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] transition-opacity duration-700"
+            style={{
+              background:
+                'radial-gradient(ellipse 75% 55% at 50% 35%, rgba(220,38,38,0.14) 0%, transparent 68%)',
+            }}
+          />
+        )}
+
+        <div className={`relative z-10 ${hero ? 'px-6 py-7 sm:px-10 sm:py-9' : 'px-5 py-6 sm:px-8 sm:py-8'}`}>
           <div className="flex flex-col items-center text-center">
-            <PremiumEyebrow accent={accent} centered>{actLabel}</PremiumEyebrow>
-            <PremiumHeadline mesh={meshKey} centered>{actCaption}</PremiumHeadline>
+            <PremiumEyebrow accent={accent} centered>
+              {actLabel}
+            </PremiumEyebrow>
+            <PremiumHeadline mesh={meshKey} centered>
+              {actCaption}
+            </PremiumHeadline>
           </div>
 
-          <div className={`relative mt-6 sm:mt-8 ${hero ? "min-h-[340px] sm:min-h-[400px] md:min-h-[440px]" : "min-h-[300px] sm:min-h-[340px] md:min-h-[380px]"}`}>
-          <AnimatePresence mode="wait">
-            {act === 1 && (
-              <motion.div key="act1" {...actTransition} className="absolute inset-0 flex flex-col items-center">
-                <div className="mb-4 flex w-full max-w-md justify-center sm:mb-5">
-                  <VerificationDebtMeter count={debtCount} />
-                </div>
-
-                <div className="cine-act1-portals relative flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 sm:gap-5">
-                  <motion.div
-                    className="cine-act1-source w-full max-w-[200px] sm:max-w-[220px]"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15, duration: 0.5 }}
-                  >
-                    <IdentitySourceScreen copies={Math.max(1, Math.floor(debtCount / 2))} />
-                  </motion.div>
-
-                  <DuplicateArrows active={act1Progress > 0.1} />
-
-                  <div className="grid w-full max-w-2xl grid-cols-1 justify-items-center gap-3 sm:grid-cols-3 sm:gap-4">
-                    {ACT1_PORTALS.map((portal, i) => (
-                      <motion.div
-                        key={portal.name}
-                        className="w-full max-w-[148px]"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + i * 0.1, duration: 0.45 }}
-                      >
-                        <AppVerificationPortal
-                          name={portal.name}
-                          context={portal.context}
-                          accent={portal.accent}
-                          pulse={portalPulse === i}
-                          showModal={showModal && portalPulse === i}
-                          uploadN={debtCount}
-                        />
-                      </motion.div>
-                    ))}
+          <div
+            className={`relative mt-6 sm:mt-8 ${
+              hero ? 'min-h-[340px] sm:min-h-[400px] md:min-h-[440px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
+            }`}
+          >
+            <AnimatePresence mode="wait">
+              {act === 1 && (
+                <motion.div key="act1" {...actTransition} className="absolute inset-0 flex flex-col items-center">
+                  <div className="mb-4 flex w-full max-w-md justify-center sm:mb-5">
+                    <VerificationDebtMeter count={debtCount} max={7} />
                   </div>
-                </div>
-              </motion.div>
-            )}
 
-            {act === 2 && (
-              <motion.div
-                key="act2"
-                {...actTransition}
-                className="absolute inset-0 flex flex-col items-center justify-center px-4"
-              >
+                  <div className="cine-act1-portals relative flex w-full max-w-4xl flex-1 flex-col items-center justify-center">
+                    <BurdenStackLayer count={debtCount} />
+                    <div className="grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+                      {ACT1_PORTALS.map((portal, i) => (
+                        <motion.div
+                          key={portal.name}
+                          className="w-full"
+                          initial={{ opacity: 0, y: 14 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.15 + i * 0.08, duration: 0.45 }}
+                        >
+                          <AppVerificationPortal
+                            name={portal.name}
+                            context={portal.context}
+                            accent={portal.accent}
+                            pulse={portalPulse === i}
+                            showModal={showModal && portalPulse === i}
+                            uploadN={debtCount}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {act === 2 && (
                 <motion.div
-                  className="relative flex w-full max-w-lg flex-col items-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  key="act2"
+                  {...actTransition}
+                  className="absolute inset-0 flex flex-col items-center justify-center px-4"
                 >
                   <motion.div
-                    className="absolute inset-0 flex items-center justify-center gap-3 opacity-30 sm:gap-4"
-                    animate={{ opacity: 1 - mergeProgress * 0.85, scale: 1 - mergeProgress * 0.15 }}
+                    className="relative flex w-full max-w-lg flex-col items-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                   >
-                    {ACT1_PORTALS.map((p) => (
-                      <div
-                        key={p.name}
-                        className="h-16 w-[72px] rounded-lg border border-white/10 bg-white/[0.03] sm:h-20 sm:w-24"
-                      />
-                    ))}
-                  </motion.div>
+                    <motion.div
+                      className="absolute inset-0 grid grid-cols-2 gap-2 p-2 sm:grid-cols-2"
+                      animate={{
+                        opacity: 1 - mergeProgress * 0.9,
+                        scale: 1 - mergeProgress * 0.12,
+                        filter: mergeProgress > 0.5 ? 'blur(6px)' : 'blur(0px)',
+                      }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      {ACT1_PORTALS.map((portal, i) => (
+                        <motion.div
+                          key={portal.name}
+                          animate={{
+                            x: (1.5 - i) * mergeProgress * 28,
+                            y: (i - 1.5) * mergeProgress * 18,
+                            opacity: 1 - mergeProgress,
+                          }}
+                        >
+                          <AppVerificationPortal
+                            name={portal.name}
+                            context={portal.context}
+                            accent={portal.accent}
+                            pulse={false}
+                          />
+                        </motion.div>
+                      ))}
+                    </motion.div>
 
-                  <motion.div
-                    animate={{
-                      scale: (hero ? 0.95 : 0.88) + mergeProgress * (hero ? 0.1 : 0.12),
-                      opacity: 0.4 + mergeProgress * 0.6,
-                    }}
-                    transition={{ duration: 0.6, ease: actEase }}
-                  >
-                    <AbraxasPassportVc large={hero || mergeProgress > 0.3} pulse={mergeProgress > 0.55} />
+                    <motion.div
+                      animate={{
+                        scale: (hero ? 0.92 : 0.85) + mergeProgress * (hero ? 0.1 : 0.12),
+                        opacity: passportRevealed ? 1 : 0.25,
+                      }}
+                      transition={{ duration: 0.65, ease: actEase }}
+                    >
+                      <AbraxasPassportVc
+                        large={hero || passportRevealed}
+                        pulse={mergeProgress > 0.65}
+                        merge={passportRevealed}
+                      />
+                    </motion.div>
+
+                    <motion.p
+                      className="mt-4 text-center text-xs text-white/55 sm:text-sm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: mergeProgress > 0.72 ? 1 : 0 }}
+                    >
+                      One portable identity. Verified once.
+                    </motion.p>
                   </motion.div>
+                </motion.div>
+              )}
+
+              {act === 3 && (
+                <motion.div key="act3" {...actTransition} className="absolute inset-0">
+                  <div className="cine-act3-flow flex h-full flex-col items-center justify-center gap-4 md:flex-row md:gap-5">
+                    <motion.div
+                      className="cine-act3-ref w-full max-w-[200px] shrink-0 md:max-w-[210px]"
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{
+                        opacity: phase3 === 'context' ? 1 : 0.55,
+                        x: 0,
+                        scale: phase3 === 'land' ? 0.96 : 1,
+                      }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <ReferenceContextCard highlight={phase3 === 'context'} />
+                    </motion.div>
+
+                    <div className="cine-act3-beam flex items-center justify-center py-1 md:py-0">
+                      <ConnectionBeam active={proofIssued} vertical animated={phase3 === 'verify'} />
+                    </div>
+
+                    <motion.div
+                      className="cine-act3-proof w-full max-w-[min(100%,400px)] shrink-0"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{
+                        opacity: proofIssued ? 1 : 0.35,
+                        scale: proofIssued ? 1 : 0.92,
+                      }}
+                      transition={{ duration: 0.55, ease: actEase }}
+                    >
+                      <AuthenticationProofArtifact pulse={proofPulse} hero issued={proofIssued} />
+                    </motion.div>
+
+                    <div className="cine-act3-beam flex items-center justify-center py-1 md:py-0">
+                      <ConnectionBeam active={verifierLit} vertical animated={phase3 === 'verify'} />
+                    </div>
+
+                    <motion.div
+                      className="cine-act3-verifier w-full max-w-[240px] shrink-0"
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{
+                        opacity: verifierLit ? 1 : 0.3,
+                        x: 0,
+                      }}
+                      transition={{ delay: verifierLit ? 0.15 : 0, duration: 0.5 }}
+                    >
+                      <CounterpartyVerifierCard active={verifierLit} />
+                    </motion.div>
+                  </div>
+
+                  <AnimatePresence>
+                    {showNoRelay && (
+                      <motion.div
+                        className="mt-4 flex justify-center sm:mt-5"
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        <NoRelayBadge />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   <motion.p
-                    className="mt-4 text-center text-xs text-white/50 sm:text-sm"
+                    className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-emerald-400/70 sm:text-xs"
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: mergeProgress > 0.7 ? 1 : 0 }}
+                    animate={{ opacity: showNoRelay ? 1 : 0 }}
                   >
-                    Same identity. One cryptographic credential.
+                    {CINEMATIC_NO_RELAY_LINE}
                   </motion.p>
                 </motion.div>
-              </motion.div>
-            )}
-
-            {act === 3 && (
-              <motion.div key="act3" {...actTransition} className="absolute inset-0">
-                <div className="cine-act3-flow flex h-full flex-col items-center justify-center gap-4 md:flex-row md:gap-5">
-                  <motion.div
-                    className="cine-act3-ref w-full max-w-[200px] shrink-0 md:max-w-[210px]"
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1, duration: 0.5 }}
-                  >
-                    <ReferenceContextCard />
-                  </motion.div>
-
-                  <div className="cine-act3-beam flex items-center justify-center py-1 md:py-0">
-                    <ConnectionBeam active={act3Progress > 0.08} vertical />
-                  </div>
-
-                  <motion.div
-                    className="cine-act3-proof w-full max-w-[min(100%,300px)] shrink-0 md:max-w-[min(100%,320px)]"
-                    initial={{ opacity: 0, scale: 0.94 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.15, duration: 0.55, ease: actEase }}
-                  >
-                    <AuthenticationProofArtifact pulse={proofPulse} hero />
-                  </motion.div>
-
-                  <div className="cine-act3-beam flex items-center justify-center py-1 md:py-0">
-                    <ConnectionBeam active={verifierLit} vertical />
-                  </div>
-
-                  <motion.div
-                    className="cine-act3-verifier w-full max-w-[220px] shrink-0"
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.25, duration: 0.5 }}
-                  >
-                    <CounterpartyVerifierCard active={verifierLit} />
-                  </motion.div>
-                </div>
-
-                <AnimatePresence>
-                  {showNoRelay && (
-                    <motion.div
-                      className="mt-4 flex justify-center sm:mt-5"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.4 }}
-                    >
-                      <NoRelayBadge />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <motion.p
-                  className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-emerald-400/70 sm:text-xs"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: act3Progress > 0.72 ? 1 : 0 }}
-                >
-                  {CINEMATIC_NO_RELAY_LINE}
-                </motion.p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

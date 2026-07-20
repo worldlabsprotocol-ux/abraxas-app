@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/cinematic/KycDocumentCards.tsx
-// Institutional demo visuals — app screens, proof artifact, passport.
+// Institutional demo visuals — premium app screens, proof artifact, passport.
 
 import { motion } from "framer-motion";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
@@ -8,7 +8,8 @@ import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } fro
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
-const CARD_SHADOW = "0 20px 48px rgba(0,0,0,0.55)";
+const CARD_SHADOW = "0 24px 64px rgba(0,0,0,0.6)";
+const HERO_SHADOW = "0 32px 90px rgba(0,0,0,0.65)";
 
 function DocShell({
   children,
@@ -17,6 +18,7 @@ function DocShell({
   border = "1px solid rgba(255,255,255,0.1)",
   accent,
   className,
+  style,
 }: {
   children: React.ReactNode;
   width?: number | string;
@@ -24,6 +26,7 @@ function DocShell({
   border?: string;
   accent?: string;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
@@ -31,12 +34,13 @@ function DocShell({
       style={{
         width: width ?? "100%",
         height,
-        borderRadius: 12,
+        borderRadius: 14,
         border: accent ? `1px solid ${accent}55` : border,
         background: "linear-gradient(165deg, rgba(22,18,30,0.98) 0%, rgba(8,8,14,0.99) 100%)",
         boxShadow: CARD_SHADOW,
         overflow: "hidden",
         position: "relative",
+        ...style,
       }}
     >
       {children}
@@ -44,109 +48,168 @@ function DocShell({
   );
 }
 
-/** Rising burden meter — verification debt accumulating */
+/** Rising burden — oppressive counter with milestone ticks */
 export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?: number }) {
   const pct = Math.min(100, (count / max) * 100);
+  const milestones = [2, 4, 7];
   return (
-    <div style={{ width: "100%", maxWidth: 340 }}>
+    <div style={{ width: "100%", maxWidth: 420 }}>
       <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "baseline",
-        marginBottom: 6, gap: 8, flexWrap: "wrap",
+        display: "flex", justifyContent: "space-between", alignItems: "flex-end",
+        marginBottom: 8, gap: 8, flexWrap: "wrap",
       }}>
-        <span style={{
-          fontFamily: MONO, fontSize: "clamp(0.48rem, 1.4vw, 0.55rem)",
-          color: "rgba(248,113,113,0.95)", letterSpacing: "0.1em", fontWeight: 700,
-        }}>
-          VERIFICATION DEBT
-        </span>
+        <div>
+          <span style={{
+            fontFamily: MONO, fontSize: "clamp(0.5rem, 1.5vw, 0.58rem)",
+            color: "rgba(248,113,113,0.95)", letterSpacing: "0.12em", fontWeight: 800,
+            display: "block",
+          }}>
+            VERIFICATION DEBT
+          </span>
+          <span style={{
+            fontFamily: FONT, fontSize: "clamp(0.55rem, 1.6vw, 0.65rem)",
+            color: "rgba(255,255,255,0.45)", marginTop: 4, display: "block",
+          }}>
+            Not asset proof — repeated trust rebuilds
+          </span>
+        </div>
         <motion.span
           key={count}
-          initial={{ scale: 1.25, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          initial={{ scale: 1.35, opacity: 0, color: "#fff" }}
+          animate={{ scale: 1, opacity: 1, color: "#FCA5A5" }}
+          transition={{ type: "spring", stiffness: 200, damping: 14 }}
           style={{
-            fontFamily: FONT, fontSize: "clamp(0.85rem, 2.5vw, 1rem)", fontWeight: 900,
-            color: "#FCA5A5", letterSpacing: "-0.03em",
+            fontFamily: FONT, fontSize: "clamp(1.1rem, 3.5vw, 1.45rem)", fontWeight: 900,
+            letterSpacing: "-0.04em", lineHeight: 1,
           }}
         >
-          Same proof ×{count}
+          ×{count}
         </motion.span>
       </div>
       <div style={{
-        height: 6, borderRadius: 999, background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(248,113,113,0.2)", overflow: "hidden",
+        height: 8, borderRadius: 999, background: "rgba(255,255,255,0.05)",
+        border: "1px solid rgba(248,113,113,0.25)", overflow: "hidden", position: "relative",
       }}>
         <motion.div
           animate={{ width: `${pct}%` }}
-          transition={{ type: "spring", stiffness: 120, damping: 18 }}
+          transition={{ type: "spring", stiffness: 90, damping: 16 }}
           style={{
             height: "100%",
             borderRadius: 999,
-            background: "linear-gradient(90deg, #F87171 0%, #FCA5A5 50%, rgba(248,113,113,0.5) 100%)",
-            boxShadow: "0 0 12px rgba(248,113,113,0.45)",
+            background: "linear-gradient(90deg, #DC2626 0%, #F87171 40%, #FCA5A5 100%)",
+            boxShadow: "0 0 20px rgba(248,113,113,0.55)",
           }}
         />
+        {milestones.map(m => (
+          <div
+            key={m}
+            style={{
+              position: "absolute", top: 0, bottom: 0,
+              left: `${(m / max) * 100}%`,
+              width: 1, background: count >= m ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.1)",
+            }}
+          />
+        ))}
+      </div>
+      <div style={{
+        display: "flex", justifyContent: "space-between", marginTop: 6,
+        fontFamily: MONO, fontSize: "0.38rem", color: "rgba(248,113,113,0.55)",
+      }}>
+        {milestones.map(m => (
+          <span key={m} style={{ opacity: count >= m ? 1 : 0.4 }}>×{m}</span>
+        ))}
       </div>
     </div>
   );
 }
 
-/** Source identity — the one proof every platform re-requests */
+/** Floating verify-again badges that stack with burden */
+export function BurdenStackLayer({ count }: { count: number }) {
+  const badges = Math.min(5, Math.floor(count / 2));
+  if (badges < 1) return null;
+  return (
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+      {Array.from({ length: badges }, (_, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          animate={{ opacity: 0.15 + i * 0.08, y: i * 6, scale: 1 }}
+          style={{
+            position: "absolute",
+            top: `${8 + i * 4}%`,
+            left: `${10 + i * 6}%`,
+            padding: "4px 10px",
+            borderRadius: 6,
+            border: "1px solid rgba(248,113,113,0.35)",
+            background: "rgba(248,113,113,0.08)",
+            fontFamily: MONO,
+            fontSize: "0.42rem",
+            fontWeight: 800,
+            color: "#FCA5A5",
+            letterSpacing: "0.08em",
+            transform: `rotate(${-4 + i * 2}deg)`,
+          }}
+        >
+          VERIFY AGAIN
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 export function IdentitySourceScreen({ copies = 3 }: { copies?: number }) {
   return (
-    <DocShell width={118} height={108} accent={INSTITUTIONAL_VIOLET}>
+    <DocShell width="100%" accent={INSTITUTIONAL_VIOLET} style={{ maxWidth: 200 }}>
       <div style={{
-        padding: "5px 8px", borderBottom: "1px solid rgba(167,139,250,0.2)",
+        padding: "6px 10px", borderBottom: "1px solid rgba(167,139,250,0.2)",
         display: "flex", alignItems: "center", gap: 6,
         background: "rgba(167,139,250,0.06)",
       }}>
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F87171" }} />
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: INSTITUTIONAL_GOLD, opacity: 0.6 }} />
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", opacity: 0.6 }} />
-        <span style={{ fontFamily: MONO, fontSize: "0.34rem", color: "rgba(255,255,255,0.45)", marginLeft: "auto" }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#F87171" }} />
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: INSTITUTIONAL_GOLD, opacity: 0.6 }} />
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10B981", opacity: 0.6 }} />
+        <span style={{ fontFamily: MONO, fontSize: "0.38rem", color: "rgba(255,255,255,0.45)", marginLeft: "auto" }}>
           YOUR VAULT
         </span>
       </div>
-      <div style={{ padding: "8px 9px" }}>
-        <div style={{ fontFamily: FONT, fontSize: "0.52rem", fontWeight: 800, color: "#FAFAFA", marginBottom: 6 }}>
+      <div style={{ padding: "10px 12px" }}>
+        <div style={{ fontFamily: FONT, fontSize: "0.62rem", fontWeight: 800, color: "#FAFAFA", marginBottom: 8 }}>
           Identity + asset proof
         </div>
         {["Government ID", "Selfie / liveness", "Bank statements"].map((row, i) => (
           <div key={row} style={{
-            display: "flex", alignItems: "center", gap: 6, marginBottom: 4,
+            display: "flex", alignItems: "center", gap: 8, marginBottom: 5,
             opacity: i < Math.min(copies, 3) ? 1 : 0.35,
           }}>
-            <span style={{ fontSize: "0.5rem", color: "#10B981" }}>✓</span>
-            <span style={{ fontFamily: FONT, fontSize: "0.4rem", color: "rgba(255,255,255,0.65)" }}>{row}</span>
+            <span style={{ fontSize: "0.55rem", color: "#10B981" }}>✓</span>
+            <span style={{ fontFamily: FONT, fontSize: "0.48rem", color: "rgba(255,255,255,0.7)" }}>{row}</span>
           </div>
         ))}
         <motion.div
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.6, repeat: Infinity }}
+          animate={{ opacity: [0.45, 1, 0.45], scale: [1, 1.02, 1] }}
+          transition={{ duration: 1.4, repeat: Infinity }}
           style={{
-            marginTop: 6, padding: "4px 6px", borderRadius: 6, textAlign: "center",
-            border: "1px dashed rgba(232,197,71,0.35)", background: "rgba(232,197,71,0.06)",
-            fontFamily: MONO, fontSize: "0.32rem", color: INSTITUTIONAL_GOLD_PALE,
+            marginTop: 8, padding: "6px 8px", borderRadius: 8, textAlign: "center",
+            border: "1px dashed rgba(232,197,71,0.4)", background: "rgba(232,197,71,0.08)",
+            fontFamily: MONO, fontSize: "0.4rem", color: INSTITUTIONAL_GOLD_PALE, fontWeight: 700,
           }}
         >
-          Copied {copies}× today
+          Same files sent {copies}× today
         </motion.div>
       </div>
     </DocShell>
   );
 }
 
-const ACCENT_MAP = {
-  violet: INSTITUTIONAL_VIOLET,
-  gold: INSTITUTIONAL_GOLD,
-} as const;
+const ACCENT_MAP = { violet: INSTITUTIONAL_VIOLET, gold: INSTITUTIONAL_GOLD } as const;
 
 const PORTAL_ICONS: Record<string, string> = {
   "RWA marketplace": "◈",
-  "Lender portal": "◇",
+  "Private lender": "◇",
   "Hospitality ops": "✦",
+  "Custody": "⬡",
 };
 
-/** App screen demanding the same verification again */
 export function AppVerificationPortal({
   name,
   context,
@@ -164,111 +227,109 @@ export function AppVerificationPortal({
   uploadN?: number;
   showModal?: boolean;
 }) {
-  const accentColor =
-    accent === "violet" || accent === "gold" ? ACCENT_MAP[accent] : (accent as string);
+  const accentColor = accent === "violet" || accent === "gold" ? ACCENT_MAP[accent] : (accent as string);
   const portalIcon = icon ?? PORTAL_ICONS[name] ?? "▣";
+
   return (
     <motion.div
-      className="cine-portal-card"
       animate={pulse ? {
-        y: [0, -4, 0],
+        y: [0, -5, 0],
         boxShadow: [
-          `0 14px 36px rgba(0,0,0,0.5)`,
-          `0 20px 48px ${accentColor}40`,
-          `0 14px 36px rgba(0,0,0,0.5)`,
+          `0 16px 40px rgba(0,0,0,0.5)`,
+          `0 24px 56px ${accentColor}50`,
+          `0 16px 40px rgba(0,0,0,0.5)`,
         ],
       } : undefined}
-      transition={pulse ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : undefined}
+      transition={pulse ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : undefined}
       style={{
         width: "100%",
-        minWidth: 100,
-        maxWidth: 132,
-        borderRadius: 12,
-        border: pulse ? `1.5px solid ${accentColor}88` : `1px solid ${accentColor}44`,
-        background: "linear-gradient(165deg, rgba(18,14,26,0.98) 0%, rgba(6,6,12,0.99) 100%)",
-        boxShadow: pulse ? `0 0 24px ${accentColor}22` : "0 12px 32px rgba(0,0,0,0.45)",
+        borderRadius: 14,
+        border: pulse ? `2px solid ${accentColor}99` : `1px solid ${accentColor}44`,
+        background: "linear-gradient(165deg, rgba(20,16,28,0.99) 0%, rgba(6,6,12,0.99) 100%)",
+        boxShadow: pulse ? `0 0 32px ${accentColor}28` : CARD_SHADOW,
         overflow: "hidden",
         position: "relative",
       }}
     >
       {showModal && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           style={{
-            position: "absolute", inset: 0, zIndex: 2,
-            background: "rgba(0,0,0,0.72)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 8,
+            position: "absolute", inset: 0, zIndex: 3,
+            background: "rgba(0,0,0,0.78)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 10,
           }}
         >
-          <div style={{
-            padding: "8px 10px", borderRadius: 10, width: "100%",
-            border: `1px solid ${accentColor}66`,
-            background: "linear-gradient(160deg, #1a1524, #0c0a12)",
-            textAlign: "center",
-          }}>
-            <div style={{ fontSize: "0.75rem", marginBottom: 4 }}>↻</div>
-            <div style={{ fontFamily: FONT, fontSize: "0.5rem", fontWeight: 800, color: "#fff" }}>
+          <motion.div
+            animate={{ scale: [1, 1.03, 1] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+            style={{
+              padding: "12px 14px", borderRadius: 12, width: "100%",
+              border: `2px solid ${accentColor}88`,
+              background: "linear-gradient(160deg, #1a1524, #0c0a12)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "1rem", marginBottom: 6 }}>↻</div>
+            <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 900, color: "#fff" }}>
               Verify again
             </div>
-            <div style={{ fontFamily: FONT, fontSize: "0.38rem", color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
-              Re-upload required
+            <div style={{ fontFamily: FONT, fontSize: "0.42rem", color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
+              Re-upload identity + asset proof
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       )}
       <div style={{
-        padding: "5px 8px", borderBottom: `1px solid ${accentColor}22`,
-        display: "flex", alignItems: "center", gap: 5,
-        background: `linear-gradient(90deg, ${accentColor}14, transparent)`,
+        padding: "6px 10px", borderBottom: `1px solid ${accentColor}22`,
+        display: "flex", alignItems: "center", gap: 6,
+        background: `linear-gradient(90deg, ${accentColor}16, transparent)`,
       }}>
-        <span style={{ fontSize: "0.72rem" }}>{portalIcon}</span>
-        <div style={{ minWidth: 0 }}>
+        <span style={{ fontSize: "0.8rem" }}>{portalIcon}</span>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <span style={{
-            display: "block",
-            fontFamily: FONT, fontSize: "clamp(0.46rem, 1.3vw, 0.52rem)",
-            fontWeight: 800, color: "#FAFAFA", letterSpacing: "-0.02em",
-            lineHeight: 1.2,
+            display: "block", fontFamily: FONT,
+            fontSize: "clamp(0.5rem, 1.4vw, 0.58rem)",
+            fontWeight: 800, color: "#FAFAFA", lineHeight: 1.2,
           }}>
             {name}
           </span>
           {context && (
             <span style={{
-              display: "block",
-              fontFamily: FONT, fontSize: "0.34rem", color: "rgba(255,255,255,0.42)",
-              marginTop: 1,
+              display: "block", fontFamily: FONT, fontSize: "0.38rem",
+              color: "rgba(255,255,255,0.42)", marginTop: 2,
             }}>
               {context}
             </span>
           )}
         </div>
       </div>
-      <div style={{ padding: "8px 9px 9px" }}>
+      <div style={{ padding: "10px 11px 11px" }}>
         <div style={{
-          padding: "5px 7px", borderRadius: 8, marginBottom: 6,
-          border: "1px solid rgba(248,113,113,0.35)",
-          background: "rgba(248,113,113,0.07)",
+          padding: "6px 8px", borderRadius: 8, marginBottom: 8,
+          border: "1px solid rgba(248,113,113,0.4)",
+          background: "rgba(248,113,113,0.09)",
         }}>
-          <div style={{ fontFamily: MONO, fontSize: "0.34rem", color: "rgba(248,113,113,0.9)", letterSpacing: "0.05em" }}>
+          <div style={{ fontFamily: MONO, fontSize: "0.36rem", color: "#FCA5A5", letterSpacing: "0.06em", fontWeight: 700 }}>
             REQUESTING
           </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.42rem", color: "rgba(255,255,255,0.7)", marginTop: 3, lineHeight: 1.35 }}>
-            ID · selfie · proof of address
+          <div style={{ fontFamily: FONT, fontSize: "0.46rem", color: "rgba(255,255,255,0.75)", marginTop: 4, lineHeight: 1.35 }}>
+            ID · selfie · proof of address · asset docs
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{
-            fontFamily: FONT, fontSize: "0.42rem", fontWeight: 800,
-            color: INSTITUTIONAL_GOLD, letterSpacing: "0.06em",
+            fontFamily: FONT, fontSize: "0.46rem", fontWeight: 900,
+            color: INSTITUTIONAL_GOLD, letterSpacing: "0.08em",
           }}>
             VERIFY AGAIN
           </span>
           {uploadN != null && (
             <span style={{
-              fontFamily: MONO, fontSize: "0.36rem", padding: "2px 6px", borderRadius: 4,
-              background: "rgba(248,113,113,0.15)", color: "#FCA5A5",
-              border: "1px solid rgba(248,113,113,0.35)",
+              fontFamily: MONO, fontSize: "0.4rem", padding: "3px 8px", borderRadius: 6,
+              background: "rgba(248,113,113,0.18)", color: "#FCA5A5",
+              border: "1px solid rgba(248,113,113,0.4)", fontWeight: 700,
             }}>
               #{uploadN}
             </span>
@@ -287,158 +348,203 @@ export function DocumentStackMini({ copies }: { copies: number }) {
   return <IdentitySourceScreen copies={copies} />;
 }
 
-export function AbraxasPassportVc({ pulse = false, large = false }: { pulse?: boolean; large?: boolean }) {
-  const w = large ? 188 : 168;
-  const h = large ? 118 : 108;
+export function AbraxasPassportVc({
+  pulse = false,
+  large = false,
+  merge = false,
+}: {
+  pulse?: boolean;
+  large?: boolean;
+  merge?: boolean;
+}) {
+  const w = large ? 220 : 168;
+  const h = large ? 138 : 108;
   return (
     <motion.div
+      initial={merge ? { scale: 0.7, opacity: 0 } : false}
       animate={pulse ? {
         boxShadow: [
-          `0 0 48px rgba(232,197,71,0.4), 0 24px 56px rgba(0,0,0,0.55)`,
-          `0 0 80px rgba(232,197,71,0.55), 0 28px 64px rgba(0,0,0,0.6)`,
-          `0 0 48px rgba(232,197,71,0.4), 0 24px 56px rgba(0,0,0,0.55)`,
+          `0 0 56px rgba(232,197,71,0.45), 0 28px 64px rgba(0,0,0,0.55)`,
+          `0 0 96px rgba(232,197,71,0.65), 0 32px 72px rgba(0,0,0,0.6)`,
+          `0 0 56px rgba(232,197,71,0.45), 0 28px 64px rgba(0,0,0,0.55)`,
         ],
       } : undefined}
-      transition={pulse ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : undefined}
+      transition={pulse ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : { type: "spring", stiffness: 120 }}
       style={{
         width: w,
         height: h,
-        borderRadius: 16,
+        borderRadius: 18,
         border: `2px solid ${INSTITUTIONAL_GOLD}`,
-        background: "linear-gradient(155deg, #16121e 0%, #06090B 100%)",
-        boxShadow: `0 0 56px rgba(232,197,71,0.35), 0 28px 52px rgba(0,0,0,0.55)`,
+        background: "linear-gradient(155deg, #18141f 0%, #05080a 100%)",
+        boxShadow: `0 0 64px rgba(232,197,71,0.4), 0 32px 60px rgba(0,0,0,0.55)`,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 5,
+        gap: 6,
         position: "relative",
       }}
     >
       <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
         style={{
-          position: "absolute", inset: -4, borderRadius: 20,
-          border: `1px solid rgba(232,197,71,0.25)`,
+          position: "absolute", inset: -6, borderRadius: 22,
+          border: "1px dashed rgba(232,197,71,0.2)",
           pointerEvents: "none",
         }}
       />
       <div style={{
-        position: "absolute", top: 10, right: 10,
-        width: 24, height: 24, borderRadius: "50%",
-        background: "rgba(16,185,129,0.22)", border: "1px solid #10B981",
+        position: "absolute", top: 12, right: 12,
+        width: 28, height: 28, borderRadius: "50%",
+        background: "rgba(16,185,129,0.25)", border: "2px solid #10B981",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: "0.7rem", color: "#10B981", fontWeight: 800,
+        fontSize: "0.75rem", color: "#10B981", fontWeight: 800,
       }}>
         ✓
       </div>
-      <div style={{ fontFamily: MONO, fontSize: "0.48rem", letterSpacing: "0.14em", color: INSTITUTIONAL_VIOLET }}>
+      <div style={{ fontFamily: MONO, fontSize: "0.52rem", letterSpacing: "0.16em", color: INSTITUTIONAL_VIOLET }}>
         ABRAXAS
       </div>
       <div style={{
         fontFamily: FONT,
-        fontSize: large ? "1rem" : "0.92rem",
+        fontSize: large ? "1.15rem" : "0.92rem",
         fontWeight: 900,
         color: INSTITUTIONAL_GOLD_PALE,
         letterSpacing: "-0.03em",
       }}>
         Passport
       </div>
-      <div style={{ fontFamily: FONT, fontSize: "0.54rem", color: "rgba(255,255,255,0.6)" }}>
+      <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.65)" }}>
         Verified once · portable
       </div>
-      <div style={{ fontFamily: MONO, fontSize: "0.38rem", color: "rgba(16,185,129,0.9)", marginTop: 2 }}>
+      <div style={{ fontFamily: MONO, fontSize: "0.4rem", color: "rgba(16,185,129,0.95)", marginTop: 2 }}>
         W3C VC · ED25519
       </div>
     </motion.div>
   );
 }
 
-/** Hero authentication proof — independently verifiable */
+/** Hero authentication proof — centerpiece of Act 3 */
+const DEFAULT_PROOF_ID = "aprx_cielo_sunrise_7f3a9c2e";
+
 export function AuthenticationProofArtifact({
   pulse = false,
   hero = false,
+  issued = false,
+  proofId = DEFAULT_PROOF_ID,
 }: {
   pulse?: boolean;
   hero?: boolean;
+  issued?: boolean;
+  proofId?: string;
 }) {
-  const width = hero ? "min(100%, 280px)" : 168;
+  const width = hero ? "min(100%, 400px)" : 168;
+  const shortId = proofId.length > 28 ? `${proofId.slice(0, 24)}…` : proofId;
+
   return (
     <motion.div
       className="cine-proof-hero"
+      initial={issued ? { scale: 0.88, opacity: 0 } : false}
       animate={pulse ? {
         boxShadow: [
-          "0 0 40px rgba(232,197,71,0.3), 0 24px 56px rgba(0,0,0,0.55)",
-          "0 0 72px rgba(16,185,129,0.4), 0 28px 64px rgba(0,0,0,0.6)",
-          "0 0 40px rgba(232,197,71,0.3), 0 24px 56px rgba(0,0,0,0.55)",
+          "0 0 48px rgba(232,197,71,0.35), 0 28px 72px rgba(0,0,0,0.55)",
+          "0 0 88px rgba(16,185,129,0.45), 0 32px 80px rgba(0,0,0,0.6)",
+          "0 0 48px rgba(232,197,71,0.35), 0 28px 72px rgba(0,0,0,0.55)",
         ],
       } : undefined}
-      transition={pulse ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : undefined}
+      transition={pulse ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.55, type: "spring" }}
       style={{
         width,
-        borderRadius: 14,
+        borderRadius: hero ? 18 : 14,
         border: `2px solid ${INSTITUTIONAL_GOLD}`,
-        background: "linear-gradient(155deg, #14101c 0%, #05070a 100%)",
-        boxShadow: "0 0 48px rgba(232,197,71,0.28), 0 20px 48px rgba(0,0,0,0.55)",
+        background: "linear-gradient(155deg, #16121c 0%, #040608 100%)",
+        boxShadow: hero ? "0 0 72px rgba(232,197,71,0.35), 0 32px 80px rgba(0,0,0,0.6)" : HERO_SHADOW,
         overflow: "hidden",
+        position: "relative",
       }}
     >
+      {issued && (
+        <motion.div
+          initial={{ scale: 1.8, opacity: 0, rotate: -12 }}
+          animate={{ scale: 1, opacity: 1, rotate: -8 }}
+          transition={{ type: "spring", stiffness: 200, damping: 14 }}
+          style={{
+            position: "absolute", top: 12, right: 12, zIndex: 2,
+            padding: "6px 12px", borderRadius: 6,
+            border: "2px solid rgba(16,185,129,0.6)",
+            background: "rgba(16,185,129,0.15)",
+            fontFamily: MONO, fontSize: "0.48rem", fontWeight: 900,
+            color: "#6EE7B7", letterSpacing: "0.14em",
+          }}
+        >
+          ISSUED
+        </motion.div>
+      )}
       <div style={{
-        padding: "6px 10px",
-        borderBottom: "1px solid rgba(232,197,71,0.25)",
-        background: "linear-gradient(90deg, rgba(232,197,71,0.12), rgba(16,185,129,0.08))",
-        display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6,
+        padding: hero ? "10px 14px" : "6px 10px",
+        borderBottom: "1px solid rgba(232,197,71,0.28)",
+        background: "linear-gradient(90deg, rgba(232,197,71,0.14), rgba(16,185,129,0.1))",
+        display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
       }}>
         <span style={{
-          fontFamily: MONO, fontSize: "clamp(0.4rem, 1.2vw, 0.46rem)",
-          letterSpacing: "0.12em", color: INSTITUTIONAL_GOLD, fontWeight: 700,
+          fontFamily: MONO, fontSize: hero ? "0.52rem" : "0.4rem",
+          letterSpacing: "0.14em", color: INSTITUTIONAL_GOLD, fontWeight: 800,
         }}>
           AUTHENTICATION PROOF
         </span>
         <span style={{
-          fontFamily: MONO, fontSize: "0.34rem", padding: "2px 6px", borderRadius: 4,
-          background: "rgba(16,185,129,0.2)", color: "#6EE7B7",
-          border: "1px solid rgba(16,185,129,0.4)",
+          fontFamily: MONO, fontSize: "0.38rem", padding: "3px 8px", borderRadius: 6,
+          background: "rgba(16,185,129,0.22)", color: "#6EE7B7",
+          border: "1px solid rgba(16,185,129,0.45)", fontWeight: 700,
         }}>
-          INDEPENDENT VERIFY
+          ANYONE CAN VERIFY
         </span>
       </div>
-      <div style={{ padding: "10px 11px 11px" }}>
+      <div style={{ padding: hero ? "16px 16px 18px" : "10px 11px 11px" }}>
         <div style={{
           fontFamily: MONO,
-          fontSize: hero ? "clamp(0.58rem, 1.8vw, 0.68rem)" : "0.5rem",
+          fontSize: hero ? "clamp(0.72rem, 2.2vw, 0.88rem)" : "0.5rem",
           color: INSTITUTIONAL_GOLD_PALE,
-          marginBottom: 8,
+          marginBottom: hero ? 14 : 8,
           letterSpacing: "-0.02em",
-          wordBreak: "break-all",
+          fontWeight: 700,
         }}>
-          aprx_7f3a9c2e1b4d8f6a
+          {shortId}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        {hero && (
+          <div style={{
+            padding: "8px 10px", borderRadius: 8, marginBottom: 12,
+            background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.08)",
+            fontFamily: MONO, fontSize: "0.42rem", color: "rgba(255,255,255,0.55)",
+          }}>
+            GET /api/proof/{proofId}
+          </div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: hero ? 8 : 5 }}>
           {[
-            "ED25519 SIGNED",
-            "signature_valid: true",
-            "SUI ANCHOR · optional",
-          ].map((label) => (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            { label: "ED25519 SIGNED", ok: true },
+            { label: "signature_valid: true", ok: true },
+            { label: "Sui anchor · optional pulse", ok: true },
+          ].map(({ label, ok }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{
-                width: 14, height: 14, borderRadius: 4, fontSize: "0.5rem",
-                background: "rgba(16,185,129,0.2)", color: "#10B981",
+                width: hero ? 18 : 14, height: hero ? 18 : 14, borderRadius: 5,
+                fontSize: hero ? "0.6rem" : "0.5rem",
+                background: ok ? "rgba(16,185,129,0.22)" : "rgba(255,255,255,0.06)",
+                color: ok ? "#10B981" : "rgba(255,255,255,0.4)",
                 display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800,
               }}>✓</span>
               <span style={{
                 fontFamily: MONO,
-                fontSize: "clamp(0.34rem, 1vw, 0.38rem)",
-                color: "rgba(255,255,255,0.65)",
+                fontSize: hero ? "clamp(0.42rem, 1.2vw, 0.48rem)" : "0.34rem",
+                color: "rgba(255,255,255,0.72)",
               }}>
                 {label}
               </span>
             </div>
           ))}
         </div>
-        {!hero && <NoRelayBadge compact />}
       </div>
     </motion.div>
   );
@@ -447,17 +553,17 @@ export function AuthenticationProofArtifact({
 export function NoRelayBadge({ compact = false }: { compact?: boolean }) {
   return (
     <div style={{
-      marginTop: compact ? 0 : 9, padding: compact ? "4px 7px" : "5px 8px", borderRadius: 8,
-      background: "rgba(0,0,0,0.35)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+      marginTop: compact ? 0 : 12, padding: compact ? "8px 12px" : "10px 14px", borderRadius: 10,
+      background: "rgba(0,0,0,0.4)",
+      border: "1px solid rgba(16,185,129,0.25)",
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
     }}>
-      <span style={{ fontSize: "0.65rem", opacity: 0.45, textDecoration: "line-through" }}>✉</span>
+      <span style={{ fontSize: "0.75rem", opacity: 0.4, textDecoration: "line-through" }}>✉</span>
       <span style={{
-        fontFamily: FONT, fontSize: "clamp(0.36rem, 1vw, 0.42rem)",
-        fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.02em",
+        fontFamily: FONT, fontSize: compact ? "0.42rem" : "clamp(0.44rem, 1.2vw, 0.52rem)",
+        fontWeight: 800, color: "rgba(255,255,255,0.7)", letterSpacing: "0.03em",
       }}>
-        No inbox · no relay · no trust required
+        No inbox · no relay · no trust in Abraxas servers
       </span>
     </div>
   );
@@ -467,39 +573,47 @@ export function ReferenceContextCard({
   label = "Cielo Sunrise",
   sublabel = "ABX-RE-HOSP-001 · Hospitality",
   accent = INSTITUTIONAL_GOLD,
+  highlight = false,
 }: {
   label?: string;
   sublabel?: string;
   accent?: string;
+  highlight?: boolean;
 }) {
   return (
-    <DocShell width={120} height={58} accent={accent}>
-      <div style={{ padding: "6px 9px" }}>
+    <motion.div animate={highlight ? { scale: [1, 1.02, 1] } : undefined} transition={{ duration: 2, repeat: Infinity }}>
+      <DocShell width="100%" accent={accent} style={{ maxWidth: 220 }}>
         <div style={{
-          fontFamily: MONO, fontSize: "0.32rem", color: accent,
-          letterSpacing: "0.08em", marginBottom: 3, fontWeight: 700,
-        }}>
-          REFERENCE
+          height: 4,
+          background: `linear-gradient(90deg, ${accent}, transparent)`,
+        }} />
+        <div style={{ padding: "12px 14px" }}>
+          <div style={{
+            fontFamily: MONO, fontSize: "0.38rem", color: accent,
+            letterSpacing: "0.1em", marginBottom: 6, fontWeight: 800,
+          }}>
+            LIVE REFERENCE
+          </div>
+          <div style={{
+            fontFamily: FONT, fontSize: "clamp(0.72rem, 2vw, 0.85rem)",
+            fontWeight: 900, color: "#FAFAFA", lineHeight: 1.2,
+          }}>
+            {label}
+          </div>
+          <div style={{
+            fontFamily: FONT, fontSize: "0.48rem", color: "rgba(255,255,255,0.5)",
+            marginTop: 6, lineHeight: 1.4,
+          }}>
+            {sublabel}
+          </div>
         </div>
-        <div style={{
-          fontFamily: FONT, fontSize: "clamp(0.5rem, 1.4vw, 0.58rem)",
-          fontWeight: 800, color: "#FAFAFA", lineHeight: 1.2,
-        }}>
-          {label}
-        </div>
-        <div style={{
-          fontFamily: FONT, fontSize: "0.38rem", color: "rgba(255,255,255,0.48)",
-          marginTop: 2, lineHeight: 1.3,
-        }}>
-          {sublabel}
-        </div>
-      </div>
-    </DocShell>
+      </DocShell>
+    </motion.div>
   );
 }
 
 export function CounterpartyVerifierCard({
-  label = "Cielo operator",
+  label = "Private lender",
   active = false,
 }: {
   label?: string;
@@ -509,50 +623,58 @@ export function CounterpartyVerifierCard({
     <motion.div
       animate={active ? {
         boxShadow: [
-          "0 20px 48px rgba(0,0,0,0.55)",
-          "0 0 32px rgba(16,185,129,0.35), 0 24px 56px rgba(0,0,0,0.55)",
-          "0 20px 48px rgba(0,0,0,0.55)",
+          "0 24px 56px rgba(0,0,0,0.55)",
+          "0 0 48px rgba(16,185,129,0.4), 0 28px 64px rgba(0,0,0,0.55)",
+          "0 24px 56px rgba(0,0,0,0.55)",
         ],
       } : undefined}
-      transition={active ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : undefined}
+      transition={active ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : undefined}
     >
-    <DocShell width="100%" height={108} accent="#10B981">
-      <div style={{ padding: "8px 10px", textAlign: "center" }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 10, margin: "0 auto 6px",
-          background: "rgba(16,185,129,0.22)", border: "1px solid rgba(16,185,129,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <svg width="16" height="16" viewBox="0 0 14 14" aria-hidden fill="none">
-            <path d="M2 7l3 3 7-7" stroke="#6EE7B7" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <div style={{
-          fontFamily: FONT, fontSize: "clamp(0.54rem, 1.5vw, 0.62rem)",
-          fontWeight: 800, color: "#FAFAFA",
-        }}>
-          {label}
-        </div>
-        <div style={{
-          marginTop: 6, padding: "6px 8px", borderRadius: 8,
-          background: active ? "rgba(16,185,129,0.28)" : "rgba(16,185,129,0.18)",
-          border: `1px solid rgba(16,185,129,${active ? "0.65" : "0.45"})`,
-        }}>
+      <DocShell width="100%" accent="#10B981" style={{ maxWidth: 240 }}>
+        <div style={{ padding: "14px 16px", textAlign: "center" }}>
           <div style={{
-            fontFamily: MONO, fontSize: "0.36rem", color: "#6EE7B7",
-            letterSpacing: "0.06em", fontWeight: 700,
+            width: 40, height: 40, borderRadius: 12, margin: "0 auto 8px",
+            background: active ? "rgba(16,185,129,0.3)" : "rgba(16,185,129,0.18)",
+            border: `2px solid rgba(16,185,129,${active ? "0.7" : "0.45"})`,
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            {active ? "DECISION: APPROVED" : "PENDING VERIFY"}
+            <svg width="20" height="20" viewBox="0 0 14 14" aria-hidden fill="none">
+              <path d="M2 7l3 3 7-7" stroke="#6EE7B7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
           <div style={{
-            fontFamily: MONO, fontSize: "0.32rem", color: "rgba(255,255,255,0.5)",
-            marginTop: 4,
+            fontFamily: FONT, fontSize: "clamp(0.62rem, 1.6vw, 0.75rem)",
+            fontWeight: 800, color: "#FAFAFA",
           }}>
-            GET /api/proof/…
+            {label}
           </div>
+          <div style={{ fontFamily: MONO, fontSize: "0.36rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+            Relying party
+          </div>
+          <motion.div
+            animate={active ? { scale: [1, 1.02, 1] } : undefined}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            style={{
+              marginTop: 10, padding: "10px 12px", borderRadius: 10,
+              background: active ? "rgba(16,185,129,0.28)" : "rgba(16,185,129,0.12)",
+              border: `1px solid rgba(16,185,129,${active ? "0.65" : "0.35"})`,
+            }}
+          >
+            <div style={{
+              fontFamily: MONO, fontSize: "0.44rem", color: "#6EE7B7",
+              letterSpacing: "0.08em", fontWeight: 800,
+            }}>
+              {active ? "DECISION: APPROVED" : "VERIFYING PROOF…"}
+            </div>
+            <div style={{
+              fontFamily: MONO, fontSize: "0.38rem", color: "rgba(255,255,255,0.55)",
+              marginTop: 6,
+            }}>
+              Independent signature check
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </DocShell>
+      </DocShell>
     </motion.div>
   );
 }
@@ -560,49 +682,63 @@ export function CounterpartyVerifierCard({
 export function ConnectionBeam({
   vertical = false,
   active = true,
+  animated = false,
 }: {
   vertical?: boolean;
   active?: boolean;
+  animated?: boolean;
 }) {
+  const gradId = vertical ? "beamV" : "beamH";
   if (vertical) {
     return (
-      <svg width="24" height={active ? 40 : 28} viewBox="0 0 24 40" aria-hidden style={{ overflow: "visible", opacity: active ? 1 : 0.25 }}>
+      <svg width="28" height={48} viewBox="0 0 28 48" aria-hidden style={{ overflow: "visible", opacity: active ? 1 : 0.2 }}>
         <motion.path
-          d="M 12 0 Q 16 20 12 40"
+          d="M 14 0 Q 20 24 14 48"
           fill="none"
-          stroke="url(#beamV)"
-          strokeWidth="2"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={active ? { pathLength: 1, opacity: 1 } : { pathLength: 0.3, opacity: 0.35 }}
-          transition={{ duration: 0.7, type: "spring", stiffness: 80 }}
+          stroke={`url(#${gradId})`}
+          strokeWidth="2.5"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: active ? 1 : 0.2 }}
+          transition={{ duration: 0.8, type: "spring", stiffness: 70 }}
         />
+        {animated && active && (
+          <motion.circle
+            r="4"
+            fill={INSTITUTIONAL_GOLD}
+            animate={{ offsetDistance: ["0%", "100%"] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+            style={{ offsetPath: 'path("M 14 0 Q 20 24 14 48")' }}
+          />
+        )}
         <defs>
           <linearGradient id="beamV" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#E8C547" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#10B981" stopOpacity="0.9" />
+            <stop offset="0%" stopColor="#E8C547" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#10B981" stopOpacity="0.95" />
           </linearGradient>
         </defs>
       </svg>
     );
   }
   return (
-    <svg width="52" height="28" viewBox="0 0 52 28" aria-hidden style={{ overflow: "visible", flexShrink: 0, opacity: active ? 1 : 0.25 }}>
+    <svg width="64" height="32" viewBox="0 0 64 32" aria-hidden style={{ overflow: "visible", flexShrink: 0, opacity: active ? 1 : 0.2 }}>
       <motion.path
-        d="M 0 14 Q 26 2 52 14"
+        d="M 0 16 Q 32 4 64 16"
         fill="none"
-        stroke="url(#beamH)"
+        stroke={`url(#${gradId})`}
         strokeWidth="2.5"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={active ? { pathLength: 1, opacity: 1 } : { pathLength: 0.3, opacity: 0.35 }}
-        transition={{ duration: 0.8, type: "spring", stiffness: 80 }}
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: active ? 1 : 0.2 }}
+        transition={{ duration: 0.8, type: "spring", stiffness: 70 }}
       />
-      <motion.circle
-        r="3"
-        fill={INSTITUTIONAL_GOLD}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1, 1], offsetDistance: "100%" }}
-        style={{ offsetPath: 'path("M 0 14 Q 26 2 52 14")' }}
-      />
+      {animated && active && (
+        <motion.circle
+          r="4"
+          fill={INSTITUTIONAL_GOLD}
+          animate={{ offsetDistance: ["0%", "100%"] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+          style={{ offsetPath: 'path("M 0 16 Q 32 4 64 16")' }}
+        />
+      )}
       <defs>
         <linearGradient id="beamH" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#E8C547" stopOpacity="0.95" />
@@ -615,28 +751,26 @@ export function ConnectionBeam({
 
 export function DuplicateArrows({ active = true }: { active?: boolean }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", padding: "0 4px" }}>
+    <div style={{ display: "flex", gap: 4, alignItems: "center", padding: "4px 0" }}>
       {[0, 1, 2].map(i => (
-        <motion.div
+        <motion.span
           key={i}
-          animate={active ? { opacity: [0.25, 1, 0.25], x: [0, 6, 12] } : { opacity: 0.3 }}
-          transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
-          style={{ display: "flex", alignItems: "center", gap: 2 }}
+          animate={active ? { opacity: [0.2, 1, 0.2], x: [0, 4, 8] } : { opacity: 0.3 }}
+          transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
+          style={{ fontFamily: MONO, fontSize: "0.65rem", color: INSTITUTIONAL_GOLD, fontWeight: 800 }}
         >
-          <span style={{ fontFamily: MONO, fontSize: "0.5rem", color: INSTITUTIONAL_GOLD }}>→</span>
-          <span style={{ fontFamily: MONO, fontSize: "0.5rem", color: INSTITUTIONAL_GOLD }}>→</span>
-        </motion.div>
+          →
+        </motion.span>
       ))}
     </div>
   );
 }
 
-// Legacy exports for any other imports
 export function KycPassportDoc() {
   return <IdentitySourceScreen copies={1} />;
 }
 export function LandDeedDoc() {
-  return <ReferenceContextCard label="Chickasaw Project" sublabel="Land diligence" accent="#10B981" />;
+  return <ReferenceContextCard label="Chickasaw Project" sublabel="ABX-RE-LAND-006 · Land diligence" accent="#10B981" />;
 }
 export function RwaAssetDoc() {
   return <ReferenceContextCard label="Cielo Sunrise" sublabel="Hospitality" accent={INSTITUTIONAL_GOLD} />;
