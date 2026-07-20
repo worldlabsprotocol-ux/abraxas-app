@@ -16,7 +16,7 @@ import {
 }                              from "@/lib/protocol";
 import type { VerificationRecord } from "@/lib/protocol/verificationEngine";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
+const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "";
 const MONO      = "'JetBrains Mono',monospace";
 
 function fmtUsd(n:number) {

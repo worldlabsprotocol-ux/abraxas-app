@@ -3,7 +3,10 @@
 
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { SMYRNA_ASSET } from "@/lib/smyrnaCaseStudy";
+import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
+import { CIELO_SUNRISE } from "@/lib/assets";
 import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
+import { isDemoMode } from "@/lib/demoMode";
 import type { AssuranceBreakdown } from "@/lib/assuranceTaxonomy";
 
 export interface RegistryAssetDef {
@@ -35,7 +38,7 @@ const CIELO: RegistryAssetDef = {
   name: FLAGSHIP_PROPERTY.title,
   assetClass: FLAGSHIP_PROPERTY.assetClass,
   location: "Mineral Bluff, Georgia",
-  image: "/assets/cielo/08.jpg",
+  image: CIELO_SUNRISE.image.src,
   verifyState: "verified",
   pipelineStage: "MARKETPLACE_LIVE",
   assuranceLevel: 3,
@@ -108,6 +111,31 @@ const NAJ: RegistryAssetDef = {
   aliases: ["naj", "naj-tulum"],
 };
 
+const CHICKASAW: RegistryAssetDef = {
+  abxId: CPG_ASSET.id,
+  slug: "chickasaw-project",
+  name: CPG_ASSET.name,
+  assetClass: "REAL_ESTATE_LAND",
+  location: CPG_ASSET.location,
+  image: CPG_ASSET.image,
+  verifyState: "verified",
+  pipelineStage: "REGISTRY_LIVE",
+  assuranceLevel: 2,
+  assuranceTaxonomy: {
+    L1_IdentityClaim: { status: "VERIFIED", provider: "Partner_Attestation" },
+    L2_LegalReview: { status: "VERIFIED", provider: "Title_Abstract_Review" },
+    L3_ProfessionalAttestation: { status: "ACTIVE", authority: "Survey_Plat_Review" },
+  },
+  metadataUri: CPG_ASSET.caseStudyPath,
+  notice: "Live Oklahoma land reference · partner-synced registry · not a securities offering.",
+  tokenization: {
+    standard: "Abraxas Registry Entry",
+    chain: "Off-chain diligence",
+    status: "REGISTRY_LIVE",
+  },
+  aliases: ["chickasaw", "chickasaw-project", "cpg-grady-270", "abx-re-land-006"],
+};
+
 const DEMO_EXTERNAL: RegistryAssetDef = {
   abxId: "ABX-DEMO-LAND-001",
   slug: "demo-riverside-parcel",
@@ -156,7 +184,14 @@ const CLOVE: RegistryAssetDef = {
   aliases: ["clove", "the-clove"],
 };
 
-export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, NAJ, DEMO_EXTERNAL, CLOVE];
+export const REGISTRY_ASSETS: RegistryAssetDef[] = [
+  CIELO,
+  CHICKASAW,
+  SMYRNA,
+  ...(isDemoMode() ? [DEMO_EXTERNAL] : []),
+  NAJ,
+  CLOVE,
+];
 
 const BY_KEY = new Map<string, RegistryAssetDef>();
 for (const asset of REGISTRY_ASSETS) {

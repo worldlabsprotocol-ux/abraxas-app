@@ -11,6 +11,7 @@ import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
+import { showPublicDemoSurfaces } from "@/lib/demoMode";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
@@ -747,7 +748,7 @@ function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
       }}>
         When a partner requests eligibility, you see which claims they need, why, how long approval is valid, and what action the decision unlocks.
       </p>
-      {suiAddress && (
+      {suiAddress && showPublicDemoSurfaces() && (
         <div style={{ marginBottom: "0.85rem" }}>
           <Btn size="sm" variant="secondary" loading={demoBusy} onClick={() => void startDemoRequest()}>
             Test portable reuse loop →

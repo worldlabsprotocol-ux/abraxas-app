@@ -29,7 +29,7 @@ export const CIELO_VERIFIER_PREVIEW: VerifierResponse = {
 
 export const NOT_FOUND_VERIFIER_PREVIEW: VerifierResponse = {
   state: "NULL_STATE",
-  query: "ABX-DEMO-NOT-FOUND",
+  query: "ABX-UNKNOWN-000",
   resolved_type: "unknown",
   did: null,
   entity_label: null,
@@ -41,7 +41,7 @@ export const NOT_FOUND_VERIFIER_PREVIEW: VerifierResponse = {
   assurance_level: 0,
   assurance_taxonomy: {},
   anchor_block: null,
-  notice: "Demo — no registry record exists for this identifier. Real lookups return the same shape when an ID is unknown.",
+  notice: "Example — no registry record exists for this identifier.",
 };
 
 export const REVOKED_VERIFIER_PREVIEW: VerifierResponse = {
@@ -49,7 +49,7 @@ export const REVOKED_VERIFIER_PREVIEW: VerifierResponse = {
   query: "did:sui:demo-revoked-credential",
   resolved_type: "passport",
   did: "did:sui:demo-revoked-credential",
-  entity_label: "Demo identity credential",
+  entity_label: "Revoked credential (example)",
   asset_class: null,
   verification_status: "REVOKED",
   current_pipeline_stage: null,
@@ -61,5 +61,5 @@ export const REVOKED_VERIFIER_PREVIEW: VerifierResponse = {
   },
   anchor_block: null,
   revocation_reason_code: "credential_expired",
-  notice: "Demo — shows how revoked or expired credentials fail closed. Partners must deny gated actions.",
+  notice: "Example — shows how revoked credentials fail closed.",
 };

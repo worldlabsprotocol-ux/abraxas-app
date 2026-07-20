@@ -9,7 +9,8 @@ import { AnimatedCounter } from "@/lib/motion/AnimatedCounter";
 import { Spinner } from "@/components/ui/Spinner";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
+const ACCENT = "var(--brand-gold)";
+const ACCENT_ON = "#0A0804";
 
 type Variant = "primary" | "secondary" | "ghost" | "tertiary";
 type Size = "sm" | "md" | "lg";
@@ -53,8 +54,8 @@ export function Btn({
   const skin: CSSProperties =
     variant === "primary"
       ? {
-          background: ACCENT, color: "#04130C", border: "none",
-          boxShadow: isDisabled ? "none" : "0 0 0 1px rgba(16,185,129,0.3), 0 10px 30px rgba(16,185,129,0.25)",
+          background: ACCENT, color: ACCENT_ON, border: "none",
+          boxShadow: isDisabled ? "none" : "0 0 0 1px rgba(232,197,71,0.35), 0 10px 30px rgba(232,197,71,0.18)",
         }
       : variant === "secondary"
       ? { background: "transparent", color: "var(--text-primary)", border: "1px solid var(--border)" }
@@ -63,7 +64,7 @@ export function Btn({
       : { background: "transparent", color: "var(--text-secondary)", border: "none" };
 
   const hover = reduce || isDisabled ? undefined : variant === "primary"
-    ? { scale: 1.035, boxShadow: "0 0 0 1px rgba(16,185,129,0.5), 0 14px 40px rgba(16,185,129,0.4)" }
+    ? { scale: 1.035, boxShadow: "0 0 0 1px rgba(232,197,71,0.5), 0 14px 40px rgba(232,197,71,0.28)" }
     : variant === "secondary"
     ? { scale: 1.02, borderColor: "var(--border-strong)" }
     : { scale: 1.02 };
