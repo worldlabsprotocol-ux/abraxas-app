@@ -78,7 +78,7 @@ export async function issueProductionReferenceProof(assetId: string) {
     schema_version: "1.0.0",
     network: artifacts.authentication_proof.network,
     created_at: artifacts.authentication_proof.issued_at,
-    status: artifacts.authentication_proof.status,
+    status: artifacts.authentication_proof.status ?? "active",
     asset_abx_id: meta.abxId,
     superseded_by: null,
   };
