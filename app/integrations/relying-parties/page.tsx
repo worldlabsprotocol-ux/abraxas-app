@@ -38,6 +38,24 @@ export default function RelyingPartiesPage() {
         subtitle={RELYING_PARTY_DEFINITION}
       />
 
+      <ContentCard title="Minimal integration path">
+        <p style={body}>
+          External relying parties: one verify call → cryptographic proof → independent check.
+          Full guide with copy-paste examples at{" "}
+          <Link href="/docs/relying-party-verify" style={{ color: ACCENT, fontWeight: 600 }}>
+            /docs/relying-party-verify
+          </Link>
+          {" · "}
+          <Link href="/api/docs/relying-party" style={{ color: ACCENT, fontWeight: 600 }}>
+            JSON API
+          </Link>
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.65rem" }}>
+          <Btn href="/docs/relying-party-verify" size="sm">Start integration →</Btn>
+          <Btn href="/api/proof/reference/ABX-RE-HOSP-001" variant="secondary" size="sm">Live Cielo demo →</Btn>
+        </div>
+      </ContentCard>
+
       <ContentCard title="Current pilot status">
         <RelyingPartyProofStatus />
         <p style={body}>

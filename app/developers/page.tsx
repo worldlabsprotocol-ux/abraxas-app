@@ -28,6 +28,7 @@ export default function DevelopersPage() {
       <ContentCard title="Start here">
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((s, i) => `${i + 1}. ${s}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+          <Btn href="/docs/relying-party-verify" size="sm">External RP guide →</Btn>
           <Btn href="/design-partner" size="sm">Request API key →</Btn>
           <Btn href="/developers/partner" variant="secondary" size="sm">Partner portal →</Btn>
           <Btn href="/integrate" variant="ghost" size="sm">Full integrate guide →</Btn>
@@ -48,7 +49,9 @@ export default function DevelopersPage() {
       <ContentCard title="API reference">
         <div style={{ display: "grid", gap: "0.45rem", fontFamily: FONT, fontSize: "0.78rem" }}>
           {[
-            { label: "Credential verify", href: "/docs/partner-verification-requests" },
+            { label: "External RP verify + proof", href: "/docs/relying-party-verify" },
+            { label: "JSON integration guide", href: "/api/docs/relying-party" },
+            { label: "Consent verification requests", href: "/docs/partner-verification-requests" },
             { label: "Record verifier", href: "/verify" },
             { label: "Sui deployment status", href: "/api/sui/status" },
             { label: "Mainnet readiness", href: "/api/mainnet/readiness" },

@@ -11,8 +11,11 @@ import { getActiveSuiNetwork } from "@/lib/sui/config";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const verificationLayer = await getVerificationLayerStatus();
+
   return NextResponse.json({
     ...AUTHENTICATION_PROOF_LOOP_STATUS,
+    verification_layer: verificationLayer,
     runtime: {
       signing_configured: Boolean(loadReceiptSigningKey()),
       sui_network: getActiveSuiNetwork(),

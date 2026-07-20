@@ -33,7 +33,9 @@ export default function DocsPage() {
       ))}
       <ContentCard title="API endpoints (live today)">
         <BulletList items={[
-          "POST /api/credentials/verify",
+          "POST /api/credentials/verify — decision + authentication proof",
+          "GET /api/proof/{proof_id} — independent proof verification",
+          "GET /api/docs/relying-party — JSON integration guide",
           "GET /api/credentials/public-key",
           "POST /api/auth/zklogin/register",
           "GET /api/sui/passport",
@@ -45,6 +47,7 @@ export default function DocsPage() {
       <ContentCard title="Related">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {[
+            { label: "Relying party verify", href: "/docs/relying-party-verify" },
             { label: "Why verification", href: "/docs/why-verification" },
             { label: "Credential portability", href: "/docs/credential-portability" },
             { label: "Litepaper", href: "/docs/litepaper" },
