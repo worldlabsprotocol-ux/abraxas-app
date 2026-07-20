@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
+const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "";
 const MONO = "'JetBrains Mono',monospace";
 
 interface ReceiptRow {

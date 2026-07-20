@@ -4,8 +4,8 @@
 // CloveCaseStudy, AssetGrid). No fabricated figures. Verification state
 // is honest per asset.
 
+import { CIELO_SUNRISE } from "@/lib/assets";
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
-import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
@@ -47,7 +47,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Cielo Sunrise",
     assetClass: "Real Estate · Hospitality",
     location: "Mineral Bluff, Georgia",
-    image: CIELO_PORCH_IMAGE.src,
+    image: CIELO_SUNRISE.image.src,
     primaryLabel: "Appraised value",
     primaryValue: "$1,100,000",
     primaryMeta: { level: 3, type: "appraised", asOf: "2025-12-01" },

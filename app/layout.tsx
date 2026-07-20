@@ -59,6 +59,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" translate="no" suppressHydrationWarning>
       <head>
         <meta name="google" content="notranslate" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon-32.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/apple-icon-180.png" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
       </head>

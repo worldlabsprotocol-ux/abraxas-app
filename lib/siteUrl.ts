@@ -1,9 +1,17 @@
 // FILE: lib/siteUrl.ts
-// Single canonical production URL for Abraxas. All fallbacks use this.
+// Canonical site URL — set NEXT_PUBLIC_SITE_URL when moving off *.vercel.app.
 
-export const SITE_URL = "https://abraxas-app.vercel.app";
+const FALLBACK = "https://abraxas-app.vercel.app";
 
 export function siteUrl(path = ""): string {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? FALLBACK).replace(/\/$/, "");
   const clean = path.startsWith("/") ? path : path ? `/${path}` : "";
-  return `${SITE_URL}${clean}`;
+  return `${base}${clean}`;
 }
+
+/** For metadata / OG — same as siteUrl() without path. */
+export function canonicalOrigin(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? FALLBACK).replace(/\/$/, "");
+}
+
+export const SITE_URL = canonicalOrigin();

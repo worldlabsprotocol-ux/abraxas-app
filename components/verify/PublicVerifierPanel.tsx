@@ -11,6 +11,7 @@ import { VerifierResultCard } from "./VerifierResultCard";
 import { VerifyAssetsShowcase } from "./VerifyAssetsShowcase";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
+import { showPublicDemoSurfacesClient } from "@/lib/demoMode";
 import { Skeleton } from "@/lib/motion/Skeleton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -76,10 +77,13 @@ export function PublicVerifierPanel() {
     : sampleKind === "revoked" ? REVOKED_VERIFIER_PREVIEW
     : null;
 
+  const showDemoTests = showPublicDemoSurfacesClient();
+
   return (
     <div>
       <VerifyAssetsShowcase onSelectAsset={abxId => { setQuery(abxId); void runVerify(abxId); }} />
 
+      {showDemoTests && (
       <div style={{
         padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1.25rem",
         background: "var(--surface-inset)", border: "1px solid var(--border)",
@@ -90,11 +94,12 @@ export function PublicVerifierPanel() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
           <Btn size="sm" onClick={() => showSample("valid")} disabled={loading}>Cielo (ABX-RE-HOSP-001)</Btn>
           <Btn size="sm" variant="secondary" onClick={() => { setQuery("ABX-RE-RES-002"); void runVerify("ABX-RE-RES-002"); }} disabled={loading}>Smyrna townhome</Btn>
-          <Btn size="sm" variant="secondary" onClick={() => showSample("not_found")} disabled={loading}>Not found demo</Btn>
-          <Btn size="sm" variant="tertiary" onClick={() => showSample("revoked")} disabled={loading}>Revoked demo</Btn>
-          <Btn href="/verify?mode=policy" variant="ghost" size="sm">Policy gate demo</Btn>
+          <Btn size="sm" variant="secondary" onClick={() => showSample("not_found")} disabled={loading}>Not found example</Btn>
+          <Btn size="sm" variant="tertiary" onClick={() => showSample("revoked")} disabled={loading}>Revoked example</Btn>
+          <Btn href="/verify?mode=policy" variant="ghost" size="sm">Policy gate example</Btn>
         </div>
       </div>
+      )}
 
       <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "stretch" }}>
         <input
