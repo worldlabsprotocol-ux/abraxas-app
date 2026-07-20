@@ -163,8 +163,9 @@ export default function IntegratePage() {
         </p>
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((step, i) => `${i + 1}. ${step}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/integrations/relying-parties" size="sm">Full program + webhooks →</Btn>
-          <Btn href="/design-partner" variant="secondary" size="sm">Request abx_live_ key →</Btn>
+          <Btn href="/docs/relying-party-verify" size="sm">Integration guide →</Btn>
+          <Btn href="/integrations/relying-parties" variant="secondary" size="sm">Full program + webhooks →</Btn>
+          <Btn href="/design-partner" variant="ghost" size="sm">Request abx_live_ key →</Btn>
         </div>
       </ContentCard>
 

@@ -25,6 +25,18 @@ export default function DesignPartnerPage() {
         subtitle={RELYING_PARTY_DEFINITION}
       />
 
+      <ContentCard title="Integration guide (start here)">
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
+          One API call → decision + cryptographic proof → independent verification. Copy-paste examples,
+          curl commands, and JSON schemas — everything an external developer needs before you apply.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/docs/relying-party-verify" size="sm">Read integration guide →</Btn>
+          <Btn href="/api/docs/relying-party" variant="secondary" size="sm">JSON API →</Btn>
+          <Btn href="/api/proof/reference/ABX-RE-HOSP-001" variant="ghost" size="sm">Live Cielo demo →</Btn>
+        </div>
+      </ContentCard>
+
       <ContentCard title="Mainnet gate status">
         <RelyingPartyProofStatus />
       </ContentCard>
