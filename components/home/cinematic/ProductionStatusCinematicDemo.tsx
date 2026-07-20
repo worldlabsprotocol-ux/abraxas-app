@@ -8,7 +8,7 @@ import {
   PremiumStat,
   SplitCompare,
 } from "@/components/home/cinematic/PremiumDemoPrimitives";
-import { ACCENT } from "@/components/home/cinematic/demoPremium";
+import { ACCENT, CONCEPT_TYPE } from "@/components/home/cinematic/demoPremium";
 import { ASSET_POSITIONING_BODY } from "@/lib/assetPositioning";
 import {
   HOMEPAGE_STATUS_LEAD,
@@ -64,27 +64,27 @@ export function ProductionStatusCinematicDemo({ compact = false }: { compact?: b
               rightLabel="Your window"
               left={
                 <PremiumGlassCard style={{ opacity: 0.55, padding: "16px 18px", textAlign: "center" }}>
-                  <div style={{ fontSize: "0.8rem", fontWeight: 900, color: "rgba(255,255,255,0.45)" }}>
+                  <div style={{ fontSize: CONCEPT_TYPE.stat, fontWeight: 900, color: "rgba(255,255,255,0.45)" }}>
                     Tokenize quietly
                   </div>
-                  <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
+                  <div style={{ fontSize: CONCEPT_TYPE.sub, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
                     Premium to act later
                   </div>
                 </PremiumGlassCard>
               }
               right={
                 <PremiumGlassCard accent={ACCENT.gold} glow style={{ padding: "16px 18px", textAlign: "center" }}>
-                  <div style={{ fontSize: "0.8rem", fontWeight: 900, color: "#FAFAFA" }}>
+                  <div style={{ fontSize: CONCEPT_TYPE.stat, fontWeight: 900, color: "#FAFAFA" }}>
                     Position now
                   </div>
-                  <div style={{ fontSize: "0.58rem", color: ACCENT.gold, marginTop: 8 }}>
+                  <div style={{ fontSize: CONCEPT_TYPE.sub, color: ACCENT.gold, marginTop: 8 }}>
                     Proof-first · registry-ready
                   </div>
                 </PremiumGlassCard>
               }
             />
             <p style={{
-              fontFamily: "'Inter',sans-serif", fontSize: "0.62rem", color: "rgba(255,255,255,0.4)",
+              fontFamily: "'Inter',sans-serif", fontSize: CONCEPT_TYPE.sub, color: "rgba(255,255,255,0.4)",
               textAlign: "center", maxWidth: 400, lineHeight: 1.55, margin: 0,
             }}>
               {ASSET_POSITIONING_BODY.split(".")[0]}.
@@ -113,11 +113,11 @@ export function ProductionStatusCinematicDemo({ compact = false }: { compact?: b
                   glow={i === stepsLit - 1}
                   style={{ padding: "14px 12px", textAlign: "center", height: "100%" }}
                 >
-                  <div style={{ fontSize: "0.48rem", letterSpacing: "0.1em", color: ACCENT.gold, fontWeight: 800, marginBottom: 6 }}>
+                  <div style={{ fontSize: CONCEPT_TYPE.label, letterSpacing: "0.1em", color: ACCENT.gold, fontWeight: 800, marginBottom: 6 }}>
                     {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div style={{ fontSize: "0.72rem", fontWeight: 900, color: "#FAFAFA" }}>{step.label}</div>
-                  <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.45)", marginTop: 6, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: CONCEPT_TYPE.body, fontWeight: 900, color: "#FAFAFA" }}>{step.label}</div>
+                  <div style={{ fontSize: CONCEPT_TYPE.monoSm, color: "rgba(255,255,255,0.45)", marginTop: 6, lineHeight: 1.4 }}>
                     {step.sub}
                   </div>
                 </PremiumGlassCard>
@@ -139,7 +139,7 @@ export function ProductionStatusCinematicDemo({ compact = false }: { compact?: b
               <PremiumStat value={`${done}/${total}`} label="Mainnet gates" accent={ACCENT.gold} />
             </div>
             <PremiumGlassCard accent={ACCENT.gold} style={{ maxWidth: 420, textAlign: "center" }}>
-              <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.85)", lineHeight: 1.6 }}>
+              <div style={{ fontSize: CONCEPT_TYPE.body, fontWeight: 700, color: "rgba(255,255,255,0.85)", lineHeight: 1.6 }}>
                 {HOMEPAGE_STATUS_ROLLOUT}
               </div>
             </PremiumGlassCard>

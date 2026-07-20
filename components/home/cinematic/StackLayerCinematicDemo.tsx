@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { CinematicDemoShell } from "@/components/home/cinematic/CinematicDemoShell";
 import { useCinematicTimer } from "@/components/home/cinematic/useCinematicTimer";
 import { StackSlab } from "@/components/home/cinematic/PremiumDemoPrimitives";
-import { ACCENT } from "@/components/home/cinematic/demoPremium";
+import { ACCENT, CONCEPT_TYPE } from "@/components/home/cinematic/demoPremium";
 
 const ACT_MS = [5500, 5500, 5500];
 
@@ -56,7 +56,7 @@ export function StackLayerCinematicDemo({ compact = false }: { compact?: boolean
             style={{
               position: "absolute", top: "8%",
               fontFamily: "'JetBrains Mono',monospace",
-              fontSize: "0.42rem", letterSpacing: "0.14em",
+              fontSize: CONCEPT_TYPE.label, letterSpacing: "0.14em",
               color: "rgba(147,197,253,0.7)",
             }}
           >

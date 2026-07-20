@@ -8,7 +8,7 @@ import {
   PremiumStat,
   SplitCompare,
 } from "@/components/home/cinematic/PremiumDemoPrimitives";
-import { ACCENT } from "@/components/home/cinematic/demoPremium";
+import { ACCENT, CONCEPT_TYPE } from "@/components/home/cinematic/demoPremium";
 
 const ACT_MS = [5500, 5500, 5500];
 
@@ -44,14 +44,14 @@ export function PositioningCinematicDemo({ compact = false }: { compact?: boolea
               rightLabel="Abraxas"
               left={
                 <PremiumGlassCard style={{ opacity: 0.6, padding: "14px 16px" }}>
-                  <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "rgba(255,255,255,0.5)" }}>Tokenize quietly</div>
-                  <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: 6 }}>Pay premium later</div>
+                  <div style={{ fontSize: CONCEPT_TYPE.body, fontWeight: 800, color: "rgba(255,255,255,0.5)" }}>Tokenize quietly</div>
+                  <div style={{ fontSize: CONCEPT_TYPE.mono, color: "rgba(255,255,255,0.3)", marginTop: 6 }}>Pay premium later</div>
                 </PremiumGlassCard>
               }
               right={
                 <PremiumGlassCard accent={ACCENT.rose} glow style={{ padding: "14px 16px" }}>
-                  <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#FAFAFA" }}>Proof-first</div>
-                  <div style={{ fontSize: "0.55rem", color: ACCENT.rose, marginTop: 6 }}>Act before the window closes</div>
+                  <div style={{ fontSize: CONCEPT_TYPE.body, fontWeight: 800, color: "#FAFAFA" }}>Proof-first</div>
+                  <div style={{ fontSize: CONCEPT_TYPE.mono, color: ACCENT.rose, marginTop: 6 }}>Act before the window closes</div>
                 </PremiumGlassCard>
               }
             />
@@ -63,9 +63,9 @@ export function PositioningCinematicDemo({ compact = false }: { compact?: boolea
             className="flex flex-col items-center gap-4"
           >
             <PremiumGlassCard accent={ACCENT.rose} glow style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
-              <div style={{ fontSize: "0.5rem", letterSpacing: "0.14em", color: ACCENT.rose, fontWeight: 700, marginBottom: 8 }}>ABX RECORD LIVE</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#FAFAFA", letterSpacing: "-0.03em" }}>Registry-ready</div>
-              <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.45)", marginTop: 8 }}>Monitoring · public verify path · partner-visible</div>
+              <div style={{ fontSize: CONCEPT_TYPE.label, letterSpacing: "0.14em", color: ACCENT.rose, fontWeight: 700, marginBottom: 8 }}>ABX RECORD LIVE</div>
+              <div style={{ fontSize: CONCEPT_TYPE.hero, fontWeight: 900, color: "#FAFAFA", letterSpacing: "-0.03em" }}>Registry-ready</div>
+              <div style={{ fontSize: CONCEPT_TYPE.sub, color: "rgba(255,255,255,0.45)", marginTop: 8 }}>Monitoring · public verify path · partner-visible</div>
             </PremiumGlassCard>
           </motion.div>
         )}

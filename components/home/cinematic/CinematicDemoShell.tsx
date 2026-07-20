@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ACCENT, type MeshKey } from "./demoPremium";
-import { PremiumEyebrow, PremiumHeadline, PremiumMeshBg } from "./PremiumDemoPrimitives";
+import { DemoActProgress, PremiumEyebrow, PremiumHeadline, PremiumMeshBg } from "./PremiumDemoPrimitives";
 
 const actEase = [0.22, 1, 0.36, 1] as const;
 export { actEase };
@@ -28,6 +28,7 @@ export function CinematicDemoShell({
   compact = false,
   minHeight = 260,
   containerRef,
+  actPillLabels,
   children,
 }: {
   act: number;
@@ -38,6 +39,7 @@ export function CinematicDemoShell({
   compact?: boolean;
   minHeight?: number;
   containerRef?: React.Ref<HTMLDivElement>;
+  actPillLabels?: string[];
   children: ReactNode;
 }) {
   const mesh = MESH_BY_VARIANT[variant] ?? "gold";
@@ -58,6 +60,9 @@ export function CinematicDemoShell({
         <div className={`relative z-10 ${compact ? "px-4 py-5 sm:px-5" : "px-5 py-6 sm:px-8 sm:py-8"}`}>
           <PremiumEyebrow accent={accent}>{actLabel}</PremiumEyebrow>
           <PremiumHeadline mesh={mesh}>{actCaption}</PremiumHeadline>
+          {actPillLabels && actPillLabels.length > 0 && (
+            <DemoActProgress act={act} actCount={actCount} accent={accent} labels={actPillLabels} />
+          )}
 
           <div className="relative mt-6 sm:mt-8" style={{ minHeight }}>
             {children}

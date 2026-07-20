@@ -358,8 +358,8 @@ export function AbraxasPassportVc({
   large?: boolean;
   merge?: boolean;
 }) {
-  const w = large ? 240 : 180;
-  const h = large ? 150 : 118;
+  const w = large ? 260 : 200;
+  const h = large ? 162 : 128;
   return (
     <motion.div
       initial={merge ? { scale: 0.7, opacity: 0 } : false}
@@ -409,7 +409,7 @@ export function AbraxasPassportVc({
       </div>
       <div style={{
         fontFamily: FONT,
-        fontSize: large ? "1.35rem" : "1.05rem",
+        fontSize: large ? "1.5rem" : "1.15rem",
         fontWeight: 900,
         color: INSTITUTIONAL_GOLD_PALE,
         letterSpacing: "-0.03em",
@@ -440,7 +440,7 @@ export function AuthenticationProofArtifact({
   issued?: boolean;
   proofId?: string;
 }) {
-  const width = hero ? "min(100%, 440px)" : 180;
+  const width = hero ? "min(100%, 460px)" : 200;
   const shortId = proofId.length > 28 ? `${proofId.slice(0, 24)}…` : proofId;
 
   return (

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { actEase, CinematicDemoShell } from "@/components/home/cinematic/CinematicDemoShell";
 import { useCinematicTimer } from "@/components/home/cinematic/useCinematicTimer";
 import { ClaimRow, PremiumGlassCard } from "@/components/home/cinematic/PremiumDemoPrimitives";
-import { ACCENT } from "@/components/home/cinematic/demoPremium";
+import { ACCENT, CONCEPT_TYPE } from "@/components/home/cinematic/demoPremium";
 
 const ACT_MS = [5000, 5000, 5000];
 
@@ -42,7 +42,7 @@ export function PolicyClaimsCinematicDemo({ compact = false }: { compact?: boole
     >
       <div className="mx-auto w-full max-w-sm">
         <PremiumGlassCard accent={ACCENT.slate}>
-          <div style={{ fontSize: "0.48rem", letterSpacing: "0.12em", color: ACCENT.slate, fontWeight: 700, marginBottom: 12 }}>
+          <div style={{ fontSize: CONCEPT_TYPE.label, letterSpacing: "0.12em", color: ACCENT.slate, fontWeight: 700, marginBottom: 12 }}>
             POLICY OUTPUT
           </div>
           {CLAIMS.map((c, i) => (
@@ -64,7 +64,7 @@ export function PolicyClaimsCinematicDemo({ compact = false }: { compact?: boole
               marginTop: 16, textAlign: "center",
               padding: "12px 16px", borderRadius: 12,
               background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.35)",
-              fontSize: "0.72rem", fontWeight: 800, color: "#6EE7B7",
+              fontSize: CONCEPT_TYPE.body, fontWeight: 800, color: "#6EE7B7",
               letterSpacing: "0.04em",
             }}
           >

@@ -14,8 +14,8 @@ import {
   VerificationDebtMeter,
 } from '@/components/home/cinematic/KycDocumentCards';
 import { CINEMATIC_NO_RELAY_LINE, CINEMATIC_PROOF_ISSUED_LINE } from '@/lib/intersectionThesis';
-import { PremiumEyebrow, PremiumHeadline, PremiumMeshBg } from '@/components/home/cinematic/PremiumDemoPrimitives';
-import { ACCENT } from '@/components/home/cinematic/demoPremium';
+import { PremiumEyebrow, PremiumHeadline, PremiumMeshBg, DemoActProgress } from '@/components/home/cinematic/PremiumDemoPrimitives';
+import { ACCENT, DEMO_TYPE } from '@/components/home/cinematic/demoPremium';
 
 const ACT1_MS = 8000;
 const ACT2_MS = 7000;
@@ -136,6 +136,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
   const meshKey = act === 1 ? 'danger' : act === 2 ? 'gold' : 'emerald';
   const accent = act === 1 ? ACCENT.danger : act === 2 ? ACCENT.gold : ACCENT.emerald;
+  const actPillLabels = ['Debt', 'Passport', 'Proof'];
 
   return (
     <div className={`cinematic-demo relative mx-auto w-full ${hero ? 'max-w-[1120px]' : 'max-w-5xl'}`}>
@@ -166,11 +167,18 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
             <PremiumHeadline mesh={meshKey} centered large={hero}>
               {actCaption}
             </PremiumHeadline>
+            <DemoActProgress
+              act={act}
+              actCount={3}
+              accent={accent}
+              labels={actPillLabels}
+              centered
+            />
           </div>
 
           <div
             className={`relative mt-6 sm:mt-8 ${
-              hero ? 'min-h-[340px] sm:min-h-[400px] md:min-h-[440px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
+              hero ? 'min-h-[360px] sm:min-h-[420px] md:min-h-[460px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
             }`}
           >
             <AnimatePresence mode="wait">
@@ -182,7 +190,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
                   <div className="cine-act1-portals relative flex w-full max-w-4xl flex-1 flex-col items-center justify-center">
                     <BurdenStackLayer count={debtCount} />
-                    <div className="grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+                    <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3.5">
                       {ACT1_PORTALS.map((portal, i) => (
                         <motion.div
                           key={portal.name}
@@ -260,7 +268,8 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                     </motion.div>
 
                     <motion.p
-                      className="mt-4 text-center text-sm text-white/60 sm:text-base"
+                      className="mt-4 text-center font-semibold text-white/70"
+                      style={{ fontSize: DEMO_TYPE.lg }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: mergeProgress > 0.72 ? 1 : 0 }}
                     >
@@ -291,7 +300,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                     </div>
 
                     <motion.div
-                      className="cine-act3-proof w-full max-w-[min(100%,440px)] shrink-0"
+                      className="cine-act3-proof w-full max-w-[min(100%,460px)] shrink-0"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{
                         opacity: proofIssued ? 1 : 0.35,
@@ -335,19 +344,24 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
                   {showFinalLine && (
                     <motion.div
-                      className="mx-auto mt-4 max-w-lg rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-center sm:mt-5"
+                      className="mx-auto mt-4 max-w-lg rounded-xl border border-amber-400/30 bg-amber-400/12 px-5 py-3.5 text-center sm:mt-5"
                       initial={{ opacity: 0, y: 8, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ duration: 0.5, ease: actEase }}
+                      style={{ boxShadow: '0 0 40px rgba(251,191,36,0.12)' }}
                     >
-                      <p className="font-semibold tracking-tight text-amber-100/95 text-sm sm:text-base md:text-lg">
+                      <p
+                        className="font-semibold tracking-tight text-amber-100/95"
+                        style={{ fontSize: DEMO_TYPE.finalLine }}
+                      >
                         {CINEMATIC_PROOF_ISSUED_LINE}
                       </p>
                     </motion.div>
                   )}
 
                   <motion.p
-                    className="mt-3 text-center font-mono text-xs uppercase tracking-[0.14em] text-emerald-400/80 sm:text-sm"
+                    className="mt-3 text-center font-mono uppercase tracking-[0.14em] text-emerald-400/85"
+                    style={{ fontSize: DEMO_TYPE.sm }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: showNoRelay ? 1 : 0 }}
                   >

@@ -8,7 +8,7 @@ import {
   PremiumGlassCard,
   VerifyResultHero,
 } from "@/components/home/cinematic/PremiumDemoPrimitives";
-import { ACCENT } from "@/components/home/cinematic/demoPremium";
+import { ACCENT, CONCEPT_TYPE } from "@/components/home/cinematic/demoPremium";
 
 const ACT_MS = [4500, 5000, 4500];
 
@@ -62,7 +62,7 @@ export function ReferenceProofCinematicDemo({ compact = false }: { compact?: boo
                   animate={{ opacity: i < checksDone ? 1 : 0.3 }}
                   style={{
                     display: "flex", alignItems: "center", gap: 10,
-                    padding: "8px 0", fontSize: "0.72rem", fontWeight: 700, color: "#FAFAFA",
+                    padding: "8px 0", fontSize: CONCEPT_TYPE.body, fontWeight: 700, color: "#FAFAFA",
                     borderBottom: i < CHECKS.length - 1 ? "1px solid rgba(255,255,255,0.06)" : undefined,
                   }}
                 >
@@ -80,11 +80,11 @@ export function ReferenceProofCinematicDemo({ compact = false }: { compact?: boo
             className="flex flex-col items-center gap-4"
           >
             <PremiumGlassCard accent={ACCENT.gold} glow style={{ textAlign: "center", maxWidth: 320, width: "100%" }}>
-              <div style={{ fontSize: "0.48rem", letterSpacing: "0.14em", color: ACCENT.gold, fontWeight: 800, marginBottom: 8 }}>
+              <div style={{ fontSize: CONCEPT_TYPE.label, letterSpacing: "0.14em", color: ACCENT.gold, fontWeight: 800, marginBottom: 8 }}>
                 PRODUCTION RECORD
               </div>
-              <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "#FAFAFA" }}>ABX-RE-HOSP-001</div>
-              <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.45)", marginTop: 10 }}>
+              <div style={{ fontSize: CONCEPT_TYPE.hero, fontWeight: 900, color: "#FAFAFA" }}>ABX-RE-HOSP-001</div>
+              <div style={{ fontSize: CONCEPT_TYPE.mono, color: "rgba(255,255,255,0.45)", marginTop: 10 }}>
                 /verify · /case-studies/cielo
               </div>
             </PremiumGlassCard>

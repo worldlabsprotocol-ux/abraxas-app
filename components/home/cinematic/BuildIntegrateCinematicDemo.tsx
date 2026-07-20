@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { actEase, CinematicDemoShell } from "@/components/home/cinematic/CinematicDemoShell";
 import { useCinematicTimer } from "@/components/home/cinematic/useCinematicTimer";
 import { ApiGlowPanel, PremiumGlassCard } from "@/components/home/cinematic/PremiumDemoPrimitives";
-import { ACCENT } from "@/components/home/cinematic/demoPremium";
+import { ACCENT, CONCEPT_TYPE } from "@/components/home/cinematic/demoPremium";
 
 const ACT_MS = [5000, 5500, 5000];
 
@@ -37,10 +37,10 @@ export function BuildIntegrateCinematicDemo({ compact = false }: { compact?: boo
             className="flex h-full items-center justify-center"
           >
             <PremiumGlassCard accent={ACCENT.emerald} glow style={{ maxWidth: 360, width: "100%" }}>
-              <div style={{ fontSize: "0.48rem", letterSpacing: "0.12em", color: ACCENT.emerald, fontWeight: 700, marginBottom: 12 }}>
+              <div style={{ fontSize: CONCEPT_TYPE.label, letterSpacing: "0.12em", color: ACCENT.emerald, fontWeight: 700, marginBottom: 12 }}>
                 DEVELOPER PATH
               </div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.55rem", lineHeight: 1.8, color: "rgba(255,255,255,0.7)" }}>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: CONCEPT_TYPE.mono, lineHeight: 1.8, color: "rgba(255,255,255,0.7)" }}>
                 <span style={{ color: ACCENT.emerald }}>→</span> npm install @abraxas/verify-client<br />
                 <span style={{ color: actProgress > 0.4 ? ACCENT.emerald : "rgba(255,255,255,0.3)" }}>→</span> abx_live_ API key<br />
                 <span style={{ color: actProgress > 0.7 ? ACCENT.emerald : "rgba(255,255,255,0.3)" }}>→</span> embed in your app

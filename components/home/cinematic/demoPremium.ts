@@ -46,24 +46,38 @@ export const ACCENT: Record<MeshKey, string> = {
   danger: "#F87171",
 };
 
-/** Legible demo typography — tuned for hero cinematic + mobile (~20% larger than v1). */
+/** Legible demo typography — hero cinematic + mobile (v3: ~15% larger than v2). */
 export const DEMO_TYPE = {
-  micro: "0.48rem",
-  xs: "0.56rem",
-  sm: "0.64rem",
-  md: "0.72rem",
-  lg: "0.82rem",
-  xl: "0.95rem",
-  counter: "clamp(1.3rem, 4.2vw, 1.75rem)",
-  debtLabel: "clamp(0.58rem, 1.65vw, 0.7rem)",
-  debtSub: "clamp(0.65rem, 1.8vw, 0.78rem)",
-  portalTitle: "clamp(0.6rem, 1.7vw, 0.75rem)",
-  proofId: "clamp(0.88rem, 2.6vw, 1.08rem)",
-  proofRow: "clamp(0.54rem, 1.5vw, 0.64rem)",
-  cardTitle: "clamp(0.85rem, 2.35vw, 1rem)",
-  verifierTitle: "clamp(0.75rem, 1.9vw, 0.92rem)",
-  noRelay: "clamp(0.54rem, 1.5vw, 0.65rem)",
-  eyebrow: "0.7rem",
-  headline: "clamp(1.12rem, 3.1vw, 1.55rem)",
-  headlineHero: "clamp(1.2rem, 3.4vw, 1.65rem)",
+  micro: "0.55rem",
+  xs: "0.64rem",
+  sm: "0.74rem",
+  md: "0.84rem",
+  lg: "0.96rem",
+  xl: "1.08rem",
+  counter: "clamp(1.45rem, 4.6vw, 2rem)",
+  debtLabel: "clamp(0.66rem, 1.85vw, 0.82rem)",
+  debtSub: "clamp(0.74rem, 2vw, 0.9rem)",
+  portalTitle: "clamp(0.7rem, 1.95vw, 0.88rem)",
+  proofId: "clamp(1rem, 2.9vw, 1.24rem)",
+  proofRow: "clamp(0.62rem, 1.7vw, 0.76rem)",
+  cardTitle: "clamp(0.96rem, 2.65vw, 1.15rem)",
+  verifierTitle: "clamp(0.86rem, 2.15vw, 1.06rem)",
+  noRelay: "clamp(0.62rem, 1.7vw, 0.76rem)",
+  eyebrow: "0.78rem",
+  headline: "clamp(1.24rem, 3.4vw, 1.72rem)",
+  headlineHero: "clamp(1.32rem, 3.7vw, 1.88rem)",
+  finalLine: "clamp(0.95rem, 2.4vw, 1.2rem)",
+  actPill: "0.62rem",
+} as const;
+
+/** Secondary concept demos — shared legible scale (replaces scattered 0.42–0.72rem values). */
+export const CONCEPT_TYPE = {
+  label: "0.68rem",
+  body: "0.84rem",
+  title: "1rem",
+  hero: "1.32rem",
+  mono: "0.68rem",
+  monoSm: "0.6rem",
+  stat: "0.8rem",
+  sub: "0.72rem",
 } as const;

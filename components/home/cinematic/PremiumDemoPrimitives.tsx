@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
-import { ACCENT, GLASS, GRADIENT_TEXT, MESH, type MeshKey, PREMIUM_FONT, PREMIUM_MONO, DEMO_TYPE } from "./demoPremium";
+import { ACCENT, CONCEPT_TYPE, GLASS, GRADIENT_TEXT, MESH, type MeshKey, PREMIUM_FONT, PREMIUM_MONO, DEMO_TYPE } from "./demoPremium";
 
 export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   return (
@@ -20,6 +20,65 @@ export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   );
 }
 
+/** Act progress pills — shows which chapter of the demo is playing. */
+export function DemoActProgress({
+  act,
+  actCount,
+  accent,
+  labels,
+  centered = true,
+}: {
+  act: number;
+  actCount: number;
+  accent: string;
+  labels?: string[];
+  centered?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: centered ? "center" : "flex-start",
+        gap: 6,
+        marginTop: 10,
+        flexWrap: "wrap",
+      }}
+    >
+      {Array.from({ length: actCount }, (_, i) => {
+        const n = i + 1;
+        const active = n === act;
+        const done = n < act;
+        return (
+          <motion.span
+            key={n}
+            animate={{
+              opacity: active ? 1 : done ? 0.7 : 0.35,
+              scale: active ? 1.02 : 1,
+            }}
+            transition={{ duration: 0.35 }}
+            style={{
+              fontFamily: PREMIUM_MONO,
+              fontSize: DEMO_TYPE.actPill,
+              fontWeight: active ? 800 : 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              padding: "5px 10px",
+              borderRadius: 999,
+              color: active ? accent : done ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.35)",
+              border: `1px solid ${active ? `${accent}66` : "rgba(255,255,255,0.08)"}`,
+              background: active ? `${accent}18` : "rgba(0,0,0,0.2)",
+              boxShadow: active ? `0 0 16px ${accent}22` : undefined,
+            }}
+          >
+            {labels?.[i] ?? `Act ${n}`}
+          </motion.span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PremiumEyebrow({ children, accent, centered, large }: { children: ReactNode; accent: string; centered?: boolean; large?: boolean }) {
   return (
     <span
@@ -29,7 +88,7 @@ export function PremiumEyebrow({ children, accent, centered, large }: { children
         gap: 8,
         justifyContent: centered ? "center" : undefined,
         fontFamily: PREMIUM_MONO,
-        fontSize: large ? DEMO_TYPE.eyebrow : "0.64rem",
+        fontSize: large ? DEMO_TYPE.eyebrow : DEMO_TYPE.sm,
         fontWeight: 700,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
@@ -106,7 +165,7 @@ export function PremiumStat({
       <div
         style={{
           fontFamily: PREMIUM_MONO,
-          fontSize: "0.54rem",
+          fontSize: CONCEPT_TYPE.monoSm,
           fontWeight: 600,
           letterSpacing: "0.1em",
           textTransform: "uppercase",
@@ -182,14 +241,14 @@ export function SplitCompare({
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "stretch", width: "100%", maxWidth: 480 }}>
       <div>
-        <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.42rem", color: "rgba(255,255,255,0.35)", marginBottom: 8, letterSpacing: "0.1em" }}>
+        <div style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: "rgba(255,255,255,0.35)", marginBottom: 8, letterSpacing: "0.1em" }}>
           {leftLabel}
         </div>
         {left}
       </div>
       <FlowArrow accent={accent} />
       <div>
-        <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.42rem", color: accent, marginBottom: 8, letterSpacing: "0.1em" }}>
+        <div style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: accent, marginBottom: 8, letterSpacing: "0.1em" }}>
           {rightLabel}
         </div>
         {right}
@@ -218,14 +277,14 @@ export function ApiGlowPanel({
         background: "rgba(0,0,0,0.25)",
       }}>
         <span style={{
-          fontFamily: PREMIUM_MONO, fontSize: "0.5rem", fontWeight: 800,
+          fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.mono, fontWeight: 800,
           padding: "3px 8px", borderRadius: 6,
           background: "rgba(52,211,153,0.15)", color: "#6EE7B7",
           border: "1px solid rgba(52,211,153,0.3)",
         }}>
           {method}
         </span>
-        <span style={{ fontFamily: PREMIUM_MONO, fontSize: "0.48rem", color: "rgba(255,255,255,0.5)" }}>{path}</span>
+        <span style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: "rgba(255,255,255,0.5)" }}>{path}</span>
       </div>
       <div style={{ padding: "14px 16px" }}>
         {fields.map((f, i) => (
@@ -239,8 +298,8 @@ export function ApiGlowPanel({
               border: litField === i ? "1px solid rgba(52,211,153,0.25)" : "1px solid transparent",
             }}
           >
-            <span style={{ fontFamily: PREMIUM_MONO, fontSize: "0.44rem", color: "rgba(255,255,255,0.4)" }}>{f.key}</span>
-            <span style={{ fontFamily: PREMIUM_MONO, fontSize: "0.44rem", fontWeight: 700, color: litField === i ? "#A7F3D0" : "rgba(255,255,255,0.7)" }}>
+            <span style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: "rgba(255,255,255,0.4)" }}>{f.key}</span>
+            <span style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, fontWeight: 700, color: litField === i ? "#A7F3D0" : "rgba(255,255,255,0.7)" }}>
               {f.value}
             </span>
           </motion.div>
@@ -283,10 +342,10 @@ export function StackSlab({
         boxShadow: foundation ? `0 0 40px ${accent}20, 0 20px 50px rgba(0,0,0,0.4)` : GLASS.boxShadow,
       }}
     >
-      <div style={{ fontFamily: PREMIUM_FONT, fontSize: foundation ? "0.88rem" : "0.72rem", fontWeight: 800, color: foundation ? "#FAFAFA" : "rgba(255,255,255,0.85)" }}>
+      <div style={{ fontFamily: PREMIUM_FONT, fontSize: foundation ? CONCEPT_TYPE.title : CONCEPT_TYPE.body, fontWeight: 800, color: foundation ? "#FAFAFA" : "rgba(255,255,255,0.85)" }}>
         {label}
       </div>
-      <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.4rem", color: "rgba(255,255,255,0.4)", marginTop: 6, letterSpacing: "0.04em" }}>
+      <div style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: "rgba(255,255,255,0.4)", marginTop: 6, letterSpacing: "0.04em" }}>
         {sub}
       </div>
     </motion.div>
@@ -345,7 +404,7 @@ export function OrbitHub({
         }}
       >
         <span style={{ fontFamily: PREMIUM_FONT, fontSize: "1.25rem", fontWeight: 900, color: "#FAFAFA" }}>{count}</span>
-        <span style={{ fontFamily: PREMIUM_MONO, fontSize: "0.32rem", color: accent, letterSpacing: "0.08em" }}>{label}</span>
+        <span style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: accent, letterSpacing: "0.08em" }}>{label}</span>
       </motion.div>
       {nodes.map(n => {
         const rad = (n.angle * Math.PI) / 180;
@@ -362,7 +421,7 @@ export function OrbitHub({
               padding: "8px 14px",
               borderRadius: 999,
               fontFamily: PREMIUM_FONT,
-              fontSize: "0.58rem",
+              fontSize: CONCEPT_TYPE.body,
               fontWeight: 800,
               whiteSpace: "nowrap",
               color: n.active ? "#FAFAFA" : "rgba(255,255,255,0.35)",
@@ -398,7 +457,7 @@ export function AssetHeroCard({
         {badge && (
           <span style={{
             position: "absolute", top: 12, left: 12,
-            fontFamily: PREMIUM_MONO, fontSize: "0.42rem", fontWeight: 800,
+            fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, fontWeight: 800,
             padding: "4px 10px", borderRadius: 999,
             background: "rgba(0,0,0,0.5)", border: "1px solid rgba(232,197,71,0.4)",
             color: "#F5E6A8", letterSpacing: "0.1em",
@@ -408,11 +467,11 @@ export function AssetHeroCard({
         )}
       </div>
       <div style={{ padding: "16px 18px" }}>
-        <div style={{ fontFamily: PREMIUM_FONT, fontSize: "1.05rem", fontWeight: 900, letterSpacing: "-0.02em", color: "#FAFAFA" }}>
+        <div style={{ fontFamily: PREMIUM_FONT, fontSize: CONCEPT_TYPE.title, fontWeight: 900, letterSpacing: "-0.02em", color: "#FAFAFA" }}>
           {title}
         </div>
-        <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.48rem", color: ACCENT.gold, marginTop: 6 }}>{id}</div>
-        <div style={{ fontFamily: PREMIUM_FONT, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>{location}</div>
+        <div style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.mono, color: ACCENT.gold, marginTop: 6 }}>{id}</div>
+        <div style={{ fontFamily: PREMIUM_FONT, fontSize: CONCEPT_TYPE.sub, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>{location}</div>
       </div>
     </PremiumGlassCard>
   );
@@ -441,10 +500,10 @@ export function VerifyResultHero({ valid }: { valid: boolean }) {
       }}>
         {valid ? "✓" : "×"}
       </div>
-      <div style={{ fontFamily: PREMIUM_FONT, fontSize: "1.1rem", fontWeight: 900, color: "#FAFAFA", letterSpacing: "-0.02em" }}>
+      <div style={{ fontFamily: PREMIUM_FONT, fontSize: CONCEPT_TYPE.title, fontWeight: 900, color: "#FAFAFA", letterSpacing: "-0.02em" }}>
         {valid ? "Cryptographically valid" : "Invalid signature"}
       </div>
-      <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.44rem", color: "rgba(255,255,255,0.45)", marginTop: 10, letterSpacing: "0.06em" }}>
+      <div style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: "rgba(255,255,255,0.45)", marginTop: 10, letterSpacing: "0.06em" }}>
         Verified locally · no server trust required
       </div>
     </motion.div>
@@ -470,11 +529,11 @@ export function ClaimRow({
         padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)",
       }}
     >
-      <span style={{ fontFamily: PREMIUM_MONO, fontSize: "0.46rem", color: "rgba(148,163,184,0.9)", letterSpacing: "0.04em" }}>
+      <span style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.mono, color: "rgba(148,163,184,0.9)", letterSpacing: "0.04em" }}>
         {label}
       </span>
       <span style={{
-        fontFamily: PREMIUM_MONO, fontSize: "0.46rem", fontWeight: 700,
+        fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.mono, fontWeight: 700,
         color: redacted ? "rgba(255,255,255,0.2)" : "#E2E8F0",
       }}>
         {redacted ? "████████" : value}

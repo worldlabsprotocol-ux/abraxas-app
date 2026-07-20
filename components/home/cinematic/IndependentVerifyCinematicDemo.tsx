@@ -8,7 +8,7 @@ import {
   PremiumGlassCard,
   VerifyResultHero,
 } from "@/components/home/cinematic/PremiumDemoPrimitives";
-import { ACCENT } from "@/components/home/cinematic/demoPremium";
+import { ACCENT, CONCEPT_TYPE } from "@/components/home/cinematic/demoPremium";
 
 const ACT_MS = [4500, 5000, 4500];
 
@@ -48,13 +48,13 @@ export function IndependentVerifyCinematicDemo({ compact = false }: { compact?: 
             className="flex justify-center"
           >
             <PremiumGlassCard accent={ACCENT.emerald} glow style={{ width: "100%", maxWidth: 360 }}>
-              <div style={{ fontSize: "0.48rem", letterSpacing: "0.12em", color: ACCENT.emerald, marginBottom: 12, fontWeight: 700 }}>
+              <div style={{ fontSize: CONCEPT_TYPE.label, letterSpacing: "0.12em", color: ACCENT.emerald, marginBottom: 12, fontWeight: 700 }}>
                 PUBLIC VERIFIER
               </div>
               <div style={{
                 padding: "12px 14px", borderRadius: 10,
                 background: "rgba(0,0,0,0.35)", border: "1px solid rgba(52,211,153,0.25)",
-                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.55rem", color: "#6EE7B7",
+                fontFamily: "'JetBrains Mono',monospace", fontSize: CONCEPT_TYPE.mono, color: "#6EE7B7",
               }}>
                 aprx_7f3a9c2e1b4d8f6a
               </div>
@@ -63,7 +63,7 @@ export function IndependentVerifyCinematicDemo({ compact = false }: { compact?: 
                 style={{
                   marginTop: 14, padding: "10px", borderRadius: 8, textAlign: "center",
                   background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.35)",
-                  fontSize: "0.62rem", fontWeight: 800, color: "#A7F3D0",
+                  fontSize: CONCEPT_TYPE.body, fontWeight: 800, color: "#A7F3D0",
                 }}
               >
                 Verify independently →
