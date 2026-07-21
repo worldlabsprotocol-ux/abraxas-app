@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { consumePostLoginReturn } from "@/lib/auth/postLoginReturn";
 import { parseIdTokenFromCallbackHash } from "@/lib/sui/zklogin/session";
 import { completeGoogleZkLogin } from "@/lib/sui/zklogin/completeLogin";
 
@@ -20,7 +21,8 @@ export default function ZkLoginCallbackPage() {
           throw new Error("No id_token in callback URL. Check Google OAuth redirect settings.");
         }
         await completeGoogleZkLogin(idToken);
-        router.replace("/passport?signed_in=1");
+        const returnPath = consumePostLoginReturn();
+        router.replace(returnPath ?? "/passport?signed_in=1");
       } catch (err) {
         setStatus("error");
         setErrorMsg(err instanceof Error ? err.message : "Sign-in failed");

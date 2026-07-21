@@ -25,17 +25,12 @@ const MORE_LINKS = [
   { href: "/docs/ai-agents", label: "AI agents (Robinhood MCP stack)" },
   { href: "/verify", label: "Verify records" },
   { href: "/account", label: "My account" },
-  { href: "/build", label: "Submit your asset" },
-  { href: "/investors/strategy", label: "Strategic roadmap" },
+  { href: "/demo/partner-access", label: "Connect demo" },
   { href: "/integrations/relying-parties", label: "Relying parties" },
-  { href: "/integrations/outreach", label: "Partner outreach" },
-  { href: "/investors", label: "Investor data room" },
+  { href: "/developers/partner", label: "Partner docs" },
   { href: "/case-studies/cielo", label: "Cielo case study" },
+  { href: "/docs/passport-spec", label: "Passport spec" },
   { href: "/docs", label: "Documentation" },
-  { href: "/docs/sui", label: "zkLogin / Sui docs" },
-  { href: "/roadmap", label: "Roadmap" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/about", label: "About" },
 ];
 
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {

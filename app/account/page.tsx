@@ -3,6 +3,8 @@
 // Read-only account hub — verification status, quick actions, passport progress.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -19,8 +21,21 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 function AccountInner() {
-  const { suiAddress, session, isAuthenticated, signInWithGoogle } = useSuiAuth();
+  const { suiAddress, session, isAuthenticated, signInWithGoogle, signOut } = useSuiAuth();
+  const router = useRouter();
   const email = session?.email;
+  const [signOutBusy, setSignOutBusy] = useState(false);
+
+  async function handleSignOut() {
+    setSignOutBusy(true);
+    try {
+      await signOut();
+      router.push("/");
+      router.refresh();
+    } finally {
+      setSignOutBusy(false);
+    }
+  }
 
   const { data: trust, isLoading } = useQuery({
     queryKey: passportQueryKeys.trust(suiAddress ?? ""),
@@ -130,6 +145,9 @@ function AccountInner() {
               <Btn href="/verify" variant="secondary" size="sm">Verify records</Btn>
               <Btn href="/flagship" variant="secondary" size="sm">Book Cielo</Btn>
               <Btn href="/verify" variant="ghost" size="sm">Share credential</Btn>
+              <Btn onClick={() => void handleSignOut()} variant="ghost" size="sm" disabled={signOutBusy}>
+                {signOutBusy ? "Signing out…" : "Sign out"}
+              </Btn>
             </div>
           </ContentCard>
 
