@@ -1,10 +1,9 @@
 "use client";
 // FILE: components/home/HomeNetworkEffect.tsx
-// Compounding network — demo first, investor moat narrative.
 
-import { RELYING_PARTY_NORTH_STAR } from "@/lib/positioningStrategy";
-import { ConceptDemoLead, ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
-import { NetworkEffectCinematicDemo } from "@/components/home/cinematic/NetworkEffectCinematicDemo";
+import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
+import { EliteSectionLead } from "@/components/home/elite/EliteSectionLead";
+import { NETWORK_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 
 export function HomeNetworkEffect() {
   return (
@@ -16,18 +15,18 @@ export function HomeNetworkEffect() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
-      <ConceptDemoLead
-        eyebrow="North star · relying party adoption"
+      <EliteSectionLead
+        eyebrow="Network"
         title={
           <>
-            <span id="network-heading">Each app that accepts Passport makes the network </span>
-            <span className="abx-gradient-text">more valuable</span>
+            <span id="network-heading">Each RP </span>
+            <span className="abx-gradient-text">compounds</span>
           </>
         }
-        body={RELYING_PARTY_NORTH_STAR}
+        headingId="network-heading"
       />
 
-      <ConceptDemoVideo demo={NetworkEffectCinematicDemo} id="network-demo" />
+      <EliteConceptDemo config={NETWORK_ELITE_DEMO} id="network-demo" compact />
     </section>
   );
 }

@@ -31,10 +31,8 @@ import {
   getAgenticFinanceStack,
 } from "@/lib/agenticFinancePositioning";
 import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
-import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
-import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
-import { StackLayerCinematicDemo } from "@/components/home/cinematic/StackLayerCinematicDemo";
-import { IndependentVerifyCinematicDemo } from "@/components/home/cinematic/IndependentVerifyCinematicDemo";
+import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
+import { BUILD_ELITE_DEMO, STACK_ELITE_DEMO, REFERENCE_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -48,7 +46,7 @@ export default function IntegratePage() {
         subtitle={INTEGRATE_PRODUCTION_NOTE}
       />
 
-      <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="integrate-demo" />
+      <EliteConceptDemo config={BUILD_ELITE_DEMO} id="integrate-demo" />
 
       <ContentCard title={AGENTIC_FINANCE_HEADLINE}>
         <p style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
@@ -102,7 +100,7 @@ export default function IntegratePage() {
       </div>
 
       <div id="counterparty-trust">
-      <ConceptDemoVideo demo={IndependentVerifyCinematicDemo} compact />
+      <EliteConceptDemo config={REFERENCE_ELITE_DEMO} compact />
       <ContentCard title={INTEGRATE_COUNTERPARTY_TRUST.title}>
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
           {INTEGRATE_COUNTERPARTY_TRUST.body}
@@ -128,7 +126,7 @@ export default function IntegratePage() {
       </ContentCard>
 
       <ContentCard title="Where Abraxas sits">
-        <ConceptDemoVideo demo={StackLayerCinematicDemo} compact />
+        <EliteConceptDemo config={STACK_ELITE_DEMO} compact />
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           {RWA_STACK_LAYERS.map(layer => (
             <div

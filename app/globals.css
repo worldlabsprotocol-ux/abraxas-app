@@ -56,6 +56,12 @@
   --accent-2-faint: rgba(167, 139, 250, 0.14);
   --accent-verify:  #10B981;
   --accent-verify-faint: rgba(16, 185, 129, 0.12);
+  --cosmic-cyan:    #22D3EE;
+  --cosmic-cyan-faint: rgba(34, 211, 238, 0.12);
+  --cosmic-void:    #050508;
+  --cosmic-glow-gold: 0 0 60px rgba(232, 197, 71, 0.2);
+  --cosmic-glow-violet: 0 0 80px rgba(167, 139, 250, 0.15);
+  --cosmic-glow-cyan: 0 0 48px rgba(34, 211, 238, 0.18);
   --nav-bg:         rgba(4, 5, 10, 0.88);
   --nav-bg-solid:   rgba(4, 5, 10, 0.96);
   --shadow-soft:    0 18px 60px rgba(0, 0, 0, 0.65);
@@ -67,7 +73,7 @@
   --glass-blur:     12px;
   --radius-lg:      20px;
   --radius-pill:    999px;
-  --shell-gradient: linear-gradient(165deg, #04050A 0%, #0A0814 45%, #050508 100%);
+  --shell-gradient: linear-gradient(165deg, #050508 0%, #0A0814 40%, #06040c 70%, #050508 100%);
   --btn-primary-bg: linear-gradient(135deg, #E8C547 0%, #C9A227 100%);
   --btn-primary-text: #0A0814;
   --gradient-text: linear-gradient(90deg, #E8C547 0%, #F5E6A8 50%, #A78BFA 100%);
@@ -198,7 +204,24 @@ details > summary::-webkit-details-marker {
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--accent-2);
-  /* Small caps on dark — keep violet legible */
-  text-shadow: 0 0 24px rgba(196, 181, 253, 0.35);
+  color: var(--cosmic-cyan, var(--accent-2));
+  text-shadow: 0 0 24px rgba(34, 211, 238, 0.35);
+}
+
+.abx-cosmic-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.35) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.abx-cosmic-card:hover {
+  border-color: rgba(232, 197, 71, 0.35);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.5), var(--cosmic-glow-gold);
+}
+
+.abx-elite-demo {
+  isolation: isolate;
 }

@@ -1,10 +1,10 @@
 "use client";
 // FILE: components/home/HomeStackPosition.tsx
-// Where Abraxas sits in the RWA stack — demo first.
 
 import { ABRAXAS_INFRA_POSITIONING } from "@/lib/infrastructurePositioning";
-import { ConceptDemoLead, ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
-import { StackLayerCinematicDemo } from "@/components/home/cinematic/StackLayerCinematicDemo";
+import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
+import { EliteSectionLead } from "@/components/home/elite/EliteSectionLead";
+import { STACK_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 
 export function HomeStackPosition() {
   return (
@@ -16,18 +16,22 @@ export function HomeStackPosition() {
         borderBottom: "1px solid var(--border-strong)",
       }}
     >
-      <ConceptDemoLead
-        eyebrow="Ecosystem position"
+      <EliteSectionLead
+        eyebrow="Stack"
         title={
           <>
-            <span id="stack-heading">Who sits underneath </span>
-            <span className="abx-gradient-text">all of them?</span>
+            <span id="stack-heading">Trust underneath </span>
+            <span className="abx-gradient-text">everything</span>
           </>
         }
-        body={ABRAXAS_INFRA_POSITIONING}
+        headingId="stack-heading"
       />
 
-      <ConceptDemoVideo demo={StackLayerCinematicDemo} id="stack-demo" />
+      <EliteConceptDemo config={STACK_ELITE_DEMO} id="stack-demo" compact />
+
+      <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.65rem 0 0", maxWidth: 480, lineHeight: 1.5 }}>
+        {ABRAXAS_INFRA_POSITIONING}
+      </p>
     </section>
   );
 }
