@@ -4,6 +4,7 @@
 
 import { motion } from "framer-motion";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
+import { CosmicParticleField } from "./CosmicDemoEffects";
 import { DEMO_TYPE } from "./demoPremium";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -384,8 +385,10 @@ export function AbraxasPassportVc({
         justifyContent: "center",
         gap: 6,
         position: "relative",
+        overflow: "hidden",
       }}
     >
+      {(pulse || merge) && <CosmicParticleField accent={INSTITUTIONAL_GOLD} count={12} />}
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
@@ -465,6 +468,7 @@ export function AuthenticationProofArtifact({
         position: "relative",
       }}
     >
+      {(pulse || issued) && <CosmicParticleField accent={INSTITUTIONAL_GOLD} count={issued ? 16 : 10} />}
       {issued && (
         <motion.div
           initial={{ scale: 1.8, opacity: 0, rotate: -12 }}

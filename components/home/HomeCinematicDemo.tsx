@@ -15,6 +15,7 @@ import {
 } from '@/components/home/cinematic/KycDocumentCards';
 import { CINEMATIC_NO_RELAY_LINE, CINEMATIC_PROOF_ISSUED_LINE } from '@/lib/intersectionThesis';
 import { PremiumEyebrow, PremiumHeadline, PremiumMeshBg, DemoActProgress } from '@/components/home/cinematic/PremiumDemoPrimitives';
+import { CosmicParticleField } from '@/components/home/cinematic/CosmicDemoEffects';
 import { ACCENT, DEMO_TYPE } from '@/components/home/cinematic/demoPremium';
 
 const ACT1_MS = 8000;
@@ -144,10 +145,11 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
         className="relative overflow-hidden rounded-3xl"
         style={{
           border: '1px solid rgba(255,255,255,0.06)',
-          boxShadow: '0 32px 100px rgba(0,0,0,0.55)',
+          boxShadow: `0 32px 100px rgba(0,0,0,0.55), 0 0 72px ${accent}14`,
         }}
       >
         <PremiumMeshBg mesh={meshKey} />
+        <CosmicParticleField accent={accent} count={hero ? 20 : 14} />
 
         {act === 1 && (
           <div

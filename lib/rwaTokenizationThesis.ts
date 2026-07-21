@@ -50,3 +50,57 @@ export const RWA_THESIS_ACTS = [
 
 export const RWA_THESIS_ABRAXAS_CLOSE =
   "Tokenization provides the digital representation. Abraxas provides the trust infrastructure that lets those assets move securely, compliantly, and with proof across markets.";
+
+export interface RwaThesisSlide {
+  id: string;
+  label: string;
+  headline: string;
+  body: string;
+  visual: "market" | "define" | "steps" | "gap" | "examples" | "abraxas";
+}
+
+/** Homepage slideshow — full essay without long scroll. */
+export const RWA_THESIS_SLIDES: RwaThesisSlide[] = [
+  {
+    id: "market",
+    label: "01 · Market",
+    headline: "Institutional RWA tokenization is measured in trillions.",
+    body: "From ~$1.8T in 2025 toward multi-trillion projections by 2033. Banks, asset managers, and fintechs are moving past experiments into production infrastructure.",
+    visual: "market",
+  },
+  {
+    id: "define",
+    label: "02 · Definition",
+    headline: "Tokenization converts ownership into on-chain representation.",
+    body: "Real estate, bonds, private credit, metals, carbon credits, and art become digital tokens — transparent records instead of siloed paper and databases.",
+    visual: "define",
+  },
+  {
+    id: "steps",
+    label: "03 · Process",
+    headline: "Seven institutional steps from asset to market.",
+    body: "Select → structure → value → mint → onboard investors → manage lifecycle → enable secondary trading where permitted.",
+    visual: "steps",
+  },
+  {
+    id: "gap",
+    label: "04 · The gap",
+    headline: "Token creation alone is not enough.",
+    body: "Every counterparty still asks who owns the asset, whether eligibility passed, and if compliance can travel — or be reused instead of repeated.",
+    visual: "gap",
+  },
+  {
+    id: "examples",
+    label: "05 · Proof",
+    headline: "This is already happening — and on Abraxas.",
+    body: "BlackRock BUIDL, private credit pools, and tokenized real estate show the market is real. Cielo Sunrise and Chickasaw diligence are live verify records on Abraxas today.",
+    visual: "examples",
+  },
+  {
+    id: "abraxas",
+    label: "06 · Abraxas",
+    headline: "The verification layer beyond tokenization.",
+    body: RWA_THESIS_ABRAXAS_CLOSE,
+    visual: "abraxas",
+  },
+];

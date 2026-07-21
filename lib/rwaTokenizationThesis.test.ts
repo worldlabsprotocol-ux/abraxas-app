@@ -5,6 +5,7 @@ import {
   RWA_THESIS_MEDIUM_URL,
   RWA_THESIS_SLUG,
   RWA_THESIS_ACTS,
+  RWA_THESIS_SLIDES,
   RWA_TOKENIZATION_STEPS,
 } from "./rwaTokenizationThesis";
 import { getBlogArticle, getFeaturedThesisArticle } from "./content/blogArticles";
@@ -20,6 +21,12 @@ describe("rwaTokenizationThesis", () => {
 
   it("lists seven tokenization steps", () => {
     expect(RWA_TOKENIZATION_STEPS).toHaveLength(7);
+  });
+
+  it("defines six homepage slideshow slides", () => {
+    expect(RWA_THESIS_SLIDES).toHaveLength(6);
+    expect(RWA_THESIS_SLIDES[0].visual).toBe("market");
+    expect(RWA_THESIS_SLIDES[5].visual).toBe("abraxas");
   });
 
   it("has matching featured blog article", () => {
