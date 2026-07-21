@@ -1,11 +1,14 @@
 "use client";
 
 import type { ComponentType, ReactNode } from "react";
+import { EliteDemoSlideshow } from "@/components/home/elite/EliteDemoSlideshow";
+import type { EliteDemoConfig } from "@/lib/eliteDemoSlides";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 type DemoProps = { compact?: boolean };
 
+/** @deprecated Prefer EliteConceptDemo with slide config */
 export function ConceptDemoVideo({
   demo: Demo,
   compact = false,
@@ -18,6 +21,23 @@ export function ConceptDemoVideo({
   return (
     <div id={id} style={{ margin: compact ? "0.85rem 0 1rem" : "1rem 0 1.25rem" }}>
       <Demo compact={compact} />
+    </div>
+  );
+}
+
+/** Premium elite slideshow — site-wide demo standard */
+export function EliteConceptDemo({
+  config,
+  compact = false,
+  id,
+}: {
+  config: EliteDemoConfig;
+  compact?: boolean;
+  id?: string;
+}) {
+  return (
+    <div id={id} style={{ margin: compact ? "0.85rem 0 1rem" : "1rem 0 1.25rem" }}>
+      <EliteDemoSlideshow config={config} compact={compact} />
     </div>
   );
 }

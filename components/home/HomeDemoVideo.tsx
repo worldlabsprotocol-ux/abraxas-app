@@ -1,8 +1,9 @@
 "use client";
 // FILE: components/home/HomeDemoVideo.tsx
-// Homepage hero demo — full-width, centered breakout.
+// Homepage hero — elite verify loop slideshow.
 
-import { HomeCinematicDemo } from "./HomeCinematicDemo";
+import { EliteConceptDemo } from "./ConceptDemoVideo";
+import { HERO_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 
 export function HomeDemoVideo() {
   return (
@@ -17,7 +18,7 @@ export function HomeDemoVideo() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 1120 }}>
-        <HomeCinematicDemo hero />
+        <EliteConceptDemo config={HERO_ELITE_DEMO} id="hero-elite-demo" />
       </div>
       <style jsx>{`
         @media (min-width: 900px) {

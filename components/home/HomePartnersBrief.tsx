@@ -3,36 +3,30 @@
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
-import { ConceptDemoLead, ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
-import { PolicyClaimsCinematicDemo } from "@/components/home/cinematic/PolicyClaimsCinematicDemo";
+import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
+import { EliteSectionLead } from "@/components/home/elite/EliteSectionLead";
+import { PARTNERS_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export function HomePartnersBrief() {
   return (
-    <section style={{
-      padding: "clamp(2rem, 5vw, 3rem) 0",
-      borderTop: "1px solid var(--border-strong)",
-    }} aria-labelledby="partners-heading">
-      <ConceptDemoLead
-        eyebrow="Built for relying parties"
+    <section
+      style={{ padding: "clamp(1.25rem, 3vw, 2rem) 0", borderTop: "1px solid var(--border-strong)" }}
+      aria-labelledby="partners-heading"
+    >
+      <EliteSectionLead
+        eyebrow="Partners"
+        title={<span id="partners-heading">Minimum proof</span>}
         headingId="partners-heading"
-        title="Partners receive the minimum proof their policy requires"
-        body="No passports, selfies, biometrics, or document folders by default — only the claims the policy needs."
       />
 
-      <ConceptDemoVideo demo={PolicyClaimsCinematicDemo} compact id="partners-demo" />
+      <EliteConceptDemo config={PARTNERS_ELITE_DEMO} compact id="partners-demo" />
 
-      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 1rem" }}>
-        Partner integrations are pilot-ready for approved organizations.
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href="/design-partner" variant="secondary" size="sm">Become a relying party →</Btn>
-        <Link href="/integrate" style={{
-          fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, color: "var(--accent)",
-          alignSelf: "center", textDecoration: "none",
-        }}>
-          Integrate Abraxas →
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.65rem" }}>
+        <Btn href="/design-partner" variant="secondary" size="sm">Relying party →</Btn>
+        <Link href="/integrate" style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center", textDecoration: "none" }}>
+          Integrate →
         </Link>
       </div>
     </section>

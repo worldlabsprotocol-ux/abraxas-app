@@ -43,6 +43,17 @@ export function AmbientGlow() {
           filter: "blur(34px)",
         }}
       />
+      <motion.div
+        initial={false}
+        animate={reduce ? undefined : { opacity: [0.4, 0.65, 0.4] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        style={{
+          position: "absolute", top: "35%", left: "20%",
+          width: 480, height: 380,
+          background: "radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,0.1) 0%, rgba(34,211,238,0.03) 45%, rgba(4,5,10,0) 72%)",
+          filter: "blur(36px)",
+        }}
+      />
     </div>
   );
 }
