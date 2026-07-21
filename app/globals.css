@@ -225,3 +225,22 @@ details > summary::-webkit-details-marker {
 .abx-elite-demo {
   isolation: isolate;
 }
+
+/* Institutional master slideshow — side nav on desktop, bottom bar on mobile */
+.abx-institutional-slideshow .abx-side-nav {
+  display: none;
+}
+.abx-institutional-slideshow .abx-bottom-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+@media (min-width: 640px) {
+  .abx-institutional-slideshow .abx-side-nav {
+    display: flex;
+  }
+  .abx-institutional-slideshow .abx-bottom-nav {
+    display: none;
+  }
+}

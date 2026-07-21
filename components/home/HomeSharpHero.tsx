@@ -4,7 +4,6 @@
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
-import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
 import { AGENTIC_FINANCE_HERO_PILL } from "@/lib/agenticFinancePositioning";
 import { RWA_THESIS_HERO_PILL } from "@/lib/rwaTokenizationThesis";
 import {
@@ -33,7 +32,7 @@ export function HomeSharpHero() {
       <div style={TEXT_COL}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", marginBottom: "0.85rem" }}>
           <Link
-            href="/#thesis"
+            href="/#institutional-story"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -73,7 +72,7 @@ export function HomeSharpHero() {
             </span>
           </Link>
           <Link
-            href="/#agentic-finance"
+            href="/#institutional-story"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -130,8 +129,6 @@ export function HomeSharpHero() {
         </h1>
       </div>
 
-      <HomeDemoVideo />
-
       <div style={TEXT_COL}>
         <p
           style={{
@@ -179,14 +176,14 @@ export function HomeSharpHero() {
         </p>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>
-          <Btn href="/#demo" size="lg">
-            Watch demo →
+          <Btn href="/#institutional-story" size="lg">
+            Institutional deck →
+          </Btn>
+          <Btn href="/#product-demo" variant="secondary" size="lg">
+            Product demo →
           </Btn>
           <Btn href="/integrate" variant="secondary" size="lg">
             Build with Abraxas →
-          </Btn>
-          <Btn href="/#agentic-finance" variant="secondary" size="lg">
-            Robinhood + AI agents →
           </Btn>
           <Btn href="/developers" variant="ghost" size="lg">
             Read docs →

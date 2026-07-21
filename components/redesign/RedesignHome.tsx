@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: emotion → demo → build → ecosystem → proof.
+// Homepage: hero → one institutional deck → product demo → essentials.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -9,19 +9,12 @@ import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
-import { HomeReferenceProofStrip } from "@/components/home/HomeReferenceProofStrip";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
-import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
-import { HomePositioningStrip } from "@/components/home/HomePositioningStrip";
-import { HomeAgenticFinanceStrip } from "@/components/home/HomeAgenticFinanceStrip";
+import { HomeInstitutionalShowcase } from "@/components/home/HomeInstitutionalShowcase";
 import { HomeProductVisualSection } from "@/components/home/HomeProductVisualSection";
-import { HomeThesisEssaySection } from "@/components/home/HomeThesisEssaySection";
 import { HomeMarketTicker } from "@/components/home/HomeMarketTicker";
-import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
-import { HomeStackPosition } from "@/components/home/HomeStackPosition";
-import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
-import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
+import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180, margin: "0 auto",
@@ -33,16 +26,9 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
-        <HomeAgenticFinanceStrip />
+        <HomeInstitutionalShowcase />
         <HomeProductVisualSection />
-        <HomeThesisEssaySection />
-        <HomeHonestStatusStrip />
-        <HomePositioningStrip />
         <HomeMarketTicker />
-        <HomeBuildWithSection />
-        <HomeStackPosition />
-        <HomeNetworkEffect />
-        <HomeReferenceProofStrip />
         <HomePartnersBrief />
         <HomeSignedInModule />
       </div>
