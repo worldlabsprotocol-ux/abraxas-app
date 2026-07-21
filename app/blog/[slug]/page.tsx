@@ -35,6 +35,13 @@ export default async function BlogArticlePage({
         {article.relatedHref && (
           <Btn href={article.relatedHref} size="sm">Continue reading →</Btn>
         )}
+        {article.mediumUrl && (
+          <div style={{ marginTop: "0.85rem" }}>
+            <Btn href={article.mediumUrl} variant="secondary" size="sm">
+              Read on Medium →
+            </Btn>
+          </div>
+        )}
         <div style={{ marginTop: "1.25rem" }}>
           <Link href="/blog" style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
             ← All articles
