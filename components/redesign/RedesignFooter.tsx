@@ -24,6 +24,7 @@ const LINKS = {
     { label: "Dashboard", href: "/dashboard" },
   ],
   learn: [
+    { label: "RWA tokenization essay", href: "/blog/what-is-real-world-asset-tokenization" },
     { label: "Why verification", href: "/docs/why-verification" },
     { label: "Cielo case study", href: "/case-studies/cielo" },
     { label: "Chickasaw Project", href: "/case-studies/chickasaw-project" },

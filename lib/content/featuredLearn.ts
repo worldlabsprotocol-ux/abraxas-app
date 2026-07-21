@@ -13,6 +13,22 @@ export interface FeaturedLearnArticle {
 
 export const FEATURED_LEARN_ARTICLES: FeaturedLearnArticle[] = [
   {
+    slug: "what-is-real-world-asset-tokenization",
+    title: "What Is Real-World Asset Tokenization?",
+    description:
+      "The verification layer institutions need beyond tokenization — market context, seven steps, and why minting alone is not enough.",
+    category: "product",
+    readingTime: "12 min",
+  },
+  {
+    slug: "verify-before-agents-act",
+    title: "Verify Before Agents Act",
+    description:
+      "Robinhood opened agentic trading. Abraxas is the trust layer upstream — cryptographic proof before any MCP agent moves capital on RWAs.",
+    category: "product",
+    readingTime: "8 min",
+  },
+  {
     slug: "why-tokenization-alone-isnt-enough",
     title: "Why Tokenization Alone Isn't Enough",
     description: "Minting an asset on-chain does not create institutional trust. The gap is repeated verification.",
@@ -43,6 +59,9 @@ export const FEATURED_LEARN_ARTICLES: FeaturedLearnArticle[] = [
 ];
 
 export const LEARN_HUB_LINKS = [
+  { label: "RWA tokenization essay", href: "/blog/what-is-real-world-asset-tokenization" },
+  { label: "Thesis on Medium", href: "https://medium.com/@worldlabsprotocol/what-is-real-world-asset-tokenization-13d6c8d0a595" },
+  { label: "Verify before agents act", href: "/blog/verify-before-agents-act" },
   { label: "All articles", href: "/blog" },
   { label: "Trust over time", href: "/trust-framework#trust-over-time" },
   { label: "From the builder", href: "/blog/founder" },
