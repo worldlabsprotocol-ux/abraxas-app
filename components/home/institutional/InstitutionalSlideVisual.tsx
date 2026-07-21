@@ -6,7 +6,6 @@ import { ACCENT, CONCEPT_TYPE, PREMIUM_FONT, PREMIUM_MONO } from "@/components/h
 import { GlowOrb } from "@/components/home/productVisual/ProductVisualPrimitives";
 import { COSMIC_PALETTE, DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
 import type { InstitutionalSlide } from "@/lib/institutionalMasterSlides";
-import { DASHBOARD_ASSETS } from "@/lib/productVisualDemo";
 import {
   RWA_INSTITUTION_QUESTIONS,
   RWA_THESIS_MARKET_STATS,
@@ -219,7 +218,7 @@ export function InstitutionalSlideVisual({ slide, accent = ACCENT_CYAN }: Props)
     case "hero-proof":
       return <AuthenticationProofArtifact hero issued pulse />;
 
-    case "live-proof-panel":
+    case "proof-flow":
       return (
         <div
           style={{
@@ -227,46 +226,60 @@ export function InstitutionalSlideVisual({ slide, accent = ACCENT_CYAN }: Props)
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 14,
+            gap: 16,
             width: "100%",
-            maxWidth: 440,
+            maxWidth: 360,
             margin: "0 auto",
           }}
         >
-          <div style={{ transform: "scale(0.9)", transformOrigin: "center center" }}>
+          <div style={{ transform: "scale(0.92)", transformOrigin: "center center" }}>
             <AuthenticationProofArtifact hero issued pulse />
           </div>
-          <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.58rem", color: accent, letterSpacing: "0.06em", textAlign: "center" }}>
-            proof_8f3a…c21 · agent.valid · issued
+          <div
+            style={{
+              fontFamily: DEMO_TYPOGRAPHY.fontMono,
+              fontSize: "0.68rem",
+              color: accent,
+              textAlign: "center",
+              lineHeight: 2,
+              width: "100%",
+            }}
+          >
+            <div>POST /api/credentials/verify</div>
+            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+              ↓
+            </motion.div>
+            <div>GET /api/proof/:id</div>
+            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}>
+              ↓
+            </motion.div>
+            <div style={{ color: COSMIC_PALETTE.emerald }}>agent.valid → proceed</div>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", width: "100%" }}>
-            {[
-              { name: "Cielo Sunrise", tag: "Hospitality · live", icon: "🏨" },
-              { name: "Chickasaw", tag: "270 ac · verified", icon: "🌾" },
-            ].map((r, i) => (
-              <motion.div
-                key={r.name}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 + i * 0.1 }}
-                style={{
-                  ...visualCard(COSMIC_PALETTE.emerald),
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  textAlign: "left",
-                  flex: "1 1 160px",
-                  maxWidth: 200,
-                }}
-              >
-                <span style={{ fontSize: "1.35rem" }}>{r.icon}</span>
-                <div>
-                  <div style={{ fontFamily: PREMIUM_FONT, fontSize: "0.78rem", fontWeight: 800, color: "#FAFAFA" }}>{r.name}</div>
-                  <div style={{ ...microLabel, marginTop: 3, color: COSMIC_PALETTE.emerald }}>{r.tag}</div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+        </div>
+      );
+
+    case "trust-silo":
+      return (
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", width: "100%", maxWidth: 420 }}>
+          {["Issuer", "Bank", "Platform"].map((node, i) => (
+            <motion.div
+              key={node}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.12 }}
+              style={{ ...visualCard(COSMIC_PALETTE.rose), minWidth: 100, flex: "1 1 100px" }}
+            >
+              <div style={{ fontFamily: PREMIUM_FONT, fontSize: "0.78rem", fontWeight: 800, color: "#FAFAFA" }}>{node}</div>
+              <div style={{ ...microLabel, marginTop: 6, color: COSMIC_PALETTE.rose }}>KYC again</div>
+            </motion.div>
+          ))}
+          <motion.div
+            animate={{ opacity: [0.4, 0.9, 0.4] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            style={{ width: "100%", textAlign: "center", fontFamily: PREMIUM_MONO, fontSize: "0.55rem", color: COSMIC_PALETTE.textMuted, marginTop: 4 }}
+          >
+            siloed checks · no reusable proof
+          </motion.div>
         </div>
       );
 
@@ -298,13 +311,6 @@ export function InstitutionalSlideVisual({ slide, accent = ACCENT_CYAN }: Props)
               transition={{ duration: 1 }}
               style={{ height: "100%", background: `linear-gradient(90deg, ${COSMIC_PALETTE.gold}, ${COSMIC_PALETTE.violet})` }}
             />
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 10 }}>
-            {DASHBOARD_ASSETS.map((a) => (
-              <span key={a.id} style={pill(a.accent)}>
-                {a.icon} {a.name.split(" ")[0]}
-              </span>
-            ))}
           </div>
         </div>
       );

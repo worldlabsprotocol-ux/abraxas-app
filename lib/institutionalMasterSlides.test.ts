@@ -7,10 +7,9 @@ import {
 } from '@/lib/institutionalMasterSlides';
 
 describe('institutionalMasterSlides', () => {
-  it('defines six chapters', () => {
-    expect(INSTITUTIONAL_CHAPTERS).toHaveLength(6);
+  it('defines five product-focused chapters (no market — article owns thesis)', () => {
+    expect(INSTITUTIONAL_CHAPTERS).toHaveLength(5);
     expect(INSTITUTIONAL_CHAPTERS.map((c) => c.id)).toEqual([
-      'market',
       'problem',
       'abraxas',
       'live',
@@ -19,19 +18,22 @@ describe('institutionalMasterSlides', () => {
     ]);
   });
 
-  it('includes article market slides plus product live proof embeds', () => {
-    expect(INSTITUTIONAL_MASTER_SLIDES.length).toBeGreaterThanOrEqual(20);
-    expect(INSTITUTIONAL_MASTER_SLIDES[0].chapter).toBe('market');
-    expect(INSTITUTIONAL_MASTER_SLIDES[0].eyebrow).toContain('Article');
-    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'live-proof-panel')).toBe(true);
-    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'embed-passport')).toBe(true);
-    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'embed-dashboard')).toBe(true);
+  it('does not duplicate article visuals (stats, steps, market slides)', () => {
+    const visuals = INSTITUTIONAL_MASTER_SLIDES.map((s) => s.visual);
+    expect(visuals).not.toContain('market');
+    expect(visuals).not.toContain('steps');
+    expect(visuals).not.toContain('gap');
+    expect(visuals).not.toContain('examples');
+    expect(visuals).not.toContain('abraxas');
+    expect(visuals).toContain('proof-flow');
+    expect(visuals).toContain('embed-passport');
+    expect(visuals).toContain('trust-silo');
   });
 
   it('maps chapter start indices', () => {
-    expect(getChapterStartIndex('market')).toBe(0);
+    expect(getChapterStartIndex('problem')).toBe(0);
     expect(getChapterStartIndex('build')).toBeGreaterThan(getChapterStartIndex('ecosystem'));
-    expect(getSlideChapterIndex(getChapterStartIndex('problem'))).toBe(1);
+    expect(getSlideChapterIndex(getChapterStartIndex('abraxas'))).toBe(1);
   });
 
   it('every slide has a visual type', () => {

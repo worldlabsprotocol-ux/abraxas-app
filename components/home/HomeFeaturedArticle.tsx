@@ -184,14 +184,30 @@ export function HomeFeaturedArticle() {
         <p
           style={{
             fontFamily: FONT,
-            fontSize: "1rem",
+            fontSize: "0.95rem",
             fontWeight: 600,
             color: "var(--text-secondary)",
             lineHeight: 1.55,
-            margin: "0 0 1.5rem",
+            margin: "0 0 0.75rem",
           }}
         >
           {article.description}
+        </p>
+        <p
+          style={{
+            fontFamily: FONT,
+            fontSize: "0.88rem",
+            color: "var(--text-muted)",
+            lineHeight: 1.6,
+            margin: "0 0 1.5rem",
+            padding: "0.75rem 1rem",
+            borderRadius: 12,
+            border: "1px solid var(--border-strong)",
+            background: "rgba(0,0,0,0.2)",
+          }}
+        >
+          Market data, institutional steps, diligence questions, and live asset references appear here only — not
+          repeated in the product deck above.
         </p>
 
         <article
@@ -218,25 +234,7 @@ export function HomeFeaturedArticle() {
             </div>
           ))}
 
-          <div
-            style={{
-              marginTop: "1.5rem",
-              padding: "1rem 1.1rem",
-              borderRadius: 14,
-              border: `1px solid ${COSMIC_PALETTE.emerald}55`,
-              background: `linear-gradient(135deg, ${COSMIC_PALETTE.emerald}12, transparent)`,
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.12em", color: COSMIC_PALETTE.emerald }}>
-              VERIFY LAYER
-            </div>
-            <div style={{ fontFamily: FONT, fontSize: "1.15rem", fontWeight: 900, color: "var(--text-primary)", margin: "6px 0" }}>
-              Verify once. Transact everywhere.
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginTop: "1.35rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border-strong)" }}>
             {article.relatedHref && <Btn href={article.relatedHref} size="sm">Integrate →</Btn>}
             <Btn href="/passport" variant="secondary" size="sm">Open passport →</Btn>
             {article.mediumUrl && (

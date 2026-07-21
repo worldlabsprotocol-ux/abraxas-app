@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// Session boot — one message only; details live on the homepage after enter.
+// Session boot — routes to deck (product) or article (thesis). No duplicated data.
 
 import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties } from "react";
@@ -13,7 +13,7 @@ import {
 } from "@/lib/design/institutionalTheme";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const STORAGE_KEY = "abraxas_boot_entered_v8";
+const STORAGE_KEY = "abraxas_boot_entered_v9";
 
 const BOOT_THEME: CSSProperties = {
   ["--text-primary" as string]: TEXT_ON_DARK.primary,
@@ -78,7 +78,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
           <div style={{
             position: "absolute", inset: 0,
             background: `
-              radial-gradient(ellipse 50% 40% at 50% 38%, rgba(232,197,71,0.12) 0%, transparent 65%),
+              radial-gradient(ellipse 50% 40% at 50% 38%, rgba(34,211,238,0.1) 0%, transparent 65%),
               radial-gradient(ellipse 45% 35% at 80% 70%, rgba(167,139,250,0.1) 0%, transparent 60%)
             `,
             pointerEvents: "none",
@@ -89,7 +89,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.98, opacity: 0, y: -6 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 1.5rem", maxWidth: 520, width: "100%" }}
+            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 1.5rem", maxWidth: 540, width: "100%" }}
           >
             <div style={{
               fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
@@ -100,73 +100,66 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               color: TEXT_ON_DARK.eyebrow,
               marginBottom: "1rem",
             }}>
-              Trust infrastructure · tokenized assets
+              Abraxas · World Labs Protocol
             </div>
 
             <div style={{
               fontFamily: FONT,
-              fontSize: "clamp(1.65rem, 6vw, 2.65rem)",
+              fontSize: "clamp(1.65rem, 6vw, 2.5rem)",
               fontWeight: 900,
               letterSpacing: "-0.05em",
-              lineHeight: 1.05,
-              marginBottom: "0.65rem",
+              lineHeight: 1.08,
+              marginBottom: "0.75rem",
             }}>
-              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Stop proving your assets</span>
-              <span style={{ color: TEXT_ON_DARK.gold }}>over and over.</span>
+              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Product deck up front.</span>
+              <span style={{ color: TEXT_ON_DARK.gold }}>Full article below.</span>
             </div>
 
             <p style={{
               fontFamily: FONT,
               fontSize: "clamp(0.88rem, 2.2vw, 1rem)",
-              fontWeight: 600,
-              color: TEXT_ON_DARK.secondary,
-              lineHeight: 1.45,
-              margin: "0 0 0.35rem",
-            }}>
-              One verification. Unlimited applications.
-            </p>
-
-            <p style={{
-              fontFamily: FONT,
-              fontSize: "clamp(0.82rem, 2vw, 0.95rem)",
-              fontWeight: 700,
-              color: TEXT_ON_DARK.gold,
-              lineHeight: 1.4,
-              margin: "0 0 2rem",
-            }}>
-              Verify once. Transact everywhere.
-            </p>
-
-            <button
-              type="button"
-              onClick={dismiss}
-              style={{
-                padding: "0.85rem 2rem",
-                borderRadius: 999,
-                border: "none",
-                background: INSTITUTIONAL_PRIMARY_BTN_BG,
-                color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
-                fontFamily: FONT,
-                fontSize: "0.82rem",
-                fontWeight: 800,
-                cursor: "pointer",
-                marginBottom: "1rem",
-                boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
-              }}
-            >
-              Enter Abraxas →
-            </button>
-
-            <p style={{
-              fontFamily: FONT,
-              fontSize: "0.72rem",
               fontWeight: 500,
-              color: TEXT_ON_DARK.caption,
-              margin: 0,
+              color: TEXT_ON_DARK.secondary,
               lineHeight: 1.55,
+              margin: "0 0 1.75rem",
+              maxWidth: 420,
+              marginLeft: "auto",
+              marginRight: "auto",
             }}>
-              Browse free · Passport unlocks full diligence
+              Each section shows its part once — slides for product proof, article for market thesis and live references.
             </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={dismiss}
+                style={{
+                  padding: "0.85rem 2rem",
+                  borderRadius: 999,
+                  border: "none",
+                  background: INSTITUTIONAL_PRIMARY_BTN_BG,
+                  color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
+                  fontFamily: FONT,
+                  fontSize: "0.82rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
+                }}
+              >
+                Enter Abraxas →
+              </button>
+
+              <p style={{
+                fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+                fontSize: "0.58rem",
+                fontWeight: 600,
+                color: TEXT_ON_DARK.caption,
+                margin: 0,
+                letterSpacing: "0.06em",
+              }}>
+                Deck → #institutional-story · Article → #article
+              </p>
+            </div>
           </motion.div>
         </motion.div>
       )}

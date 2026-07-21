@@ -19,7 +19,7 @@ export function HomeInstitutionalShowcase() {
     >
       <div style={{ textAlign: "center", marginBottom: "clamp(1.5rem, 4vw, 2.25rem)" }}>
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-          Institutional story · one deck
+          Product proof deck
         </div>
         <h2
           id="institutional-story-heading"
@@ -33,7 +33,7 @@ export function HomeInstitutionalShowcase() {
             lineHeight: 1.15,
           }}
         >
-          Market thesis → verify layer → live proof
+          See the product — not the thesis again
         </h2>
         <p
           style={{
@@ -41,16 +41,16 @@ export function HomeInstitutionalShowcase() {
             fontSize: "0.88rem",
             color: "var(--text-secondary)",
             lineHeight: 1.6,
-            maxWidth: 560,
+            maxWidth: 520,
             margin: "0 auto 0.75rem",
           }}
         >
-          One slideshow — article visuals, product flows, and live verify records. Scroll down for the full
-          article without leaving the site.
+          Passport, unlock, signed receipts, and stack position. Market stats, tokenization steps, and live
+          asset references are in the article below — shown once.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", justifyContent: "center", alignItems: "center" }}>
-          <Btn href="/#article" size="sm">
-            Read full article →
+          <Btn href="/#article" variant="secondary" size="sm">
+            Read article →
           </Btn>
           <Link
             href="/demo/institutional"

@@ -1,6 +1,7 @@
 /**
- * Single institutional master slideshow — market thesis through product proof.
- * Featured article is the market diagram chapter; visuals at every level.
+ * Institutional master slideshow — product proof & mechanics only.
+ * Market stats, tokenization steps, institution questions, and live asset
+ * references live exclusively in HomeFeaturedArticle (#article).
  */
 
 import {
@@ -8,14 +9,8 @@ import {
   AGENTIC_FINANCE_HOME_TITLE,
   AGENTIC_FINANCE_SUBHEAD,
 } from '@/lib/agenticFinancePositioning';
-import {
-  RWA_INSTITUTION_QUESTIONS,
-  RWA_THESIS_MEDIUM_URL,
-  RWA_THESIS_SLIDES,
-} from '@/lib/rwaTokenizationThesis';
 
 export type InstitutionalChapterId =
-  | 'market'
   | 'problem'
   | 'abraxas'
   | 'live'
@@ -31,14 +26,12 @@ export type InstitutionalSlide = {
   subtitle?: string;
   visual: string;
   visualProps?: Record<string, unknown>;
-  /** Taller frame for embedded product demos */
   layout?: 'standard' | 'embed';
   cta?: { label: string; href: string };
   ctaSecondary?: { label: string; href: string };
 };
 
 export const INSTITUTIONAL_CHAPTERS: { id: InstitutionalChapterId; label: string }[] = [
-  { id: 'market', label: 'Market' },
   { id: 'problem', label: 'Problem' },
   { id: 'abraxas', label: 'Abraxas' },
   { id: 'live', label: 'Live proof' },
@@ -46,38 +39,16 @@ export const INSTITUTIONAL_CHAPTERS: { id: InstitutionalChapterId; label: string
   { id: 'build', label: 'Build' },
 ];
 
-/** Article slides — the market diagram chapter */
-const marketFromArticle: InstitutionalSlide[] = RWA_THESIS_SLIDES.map((s, i) => ({
-  id: `market-${s.id}`,
-  chapter: 'market' as const,
-  chapterLabel: 'Market',
-  eyebrow: i === 0 ? 'Article · RWA thesis' : s.label.replace(/^\d+ · /, ''),
-  title: s.headline,
-  subtitle: s.body,
-  visual: s.visual,
-  cta:
-    i === RWA_THESIS_SLIDES.length - 1
-      ? { label: 'Read full article', href: '/#article' }
-      : undefined,
-  ctaSecondary:
-    i === RWA_THESIS_SLIDES.length - 1
-      ? { label: 'Also on Medium', href: RWA_THESIS_MEDIUM_URL }
-      : undefined,
-}));
-
 export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
-  ...marketFromArticle,
-
   {
-    id: 'problem-friction',
+    id: 'problem-silo',
     chapter: 'problem',
     chapterLabel: 'Problem',
-    eyebrow: 'Institutional reality',
-    title: 'Tokenization without trust infrastructure stalls',
+    eyebrow: 'Repeated diligence',
+    title: 'Every counterparty re-runs the same checks',
     subtitle:
-      'Issuers, banks, and platforms need identity, compliance, and audit — not another token wrapper.',
-    visual: 'institution-questions',
-    visualProps: { questions: [...RWA_INSTITUTION_QUESTIONS] },
+      'KYC, title, appraisal — siloed at each handoff. That friction is where deals stall, not at the token.',
+    visual: 'trust-silo',
   },
   {
     id: 'problem-retail',
@@ -132,13 +103,13 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     id: 'live-proof',
     chapter: 'live',
     chapterLabel: 'Live proof',
-    eyebrow: 'Sandbox today',
-    title: 'Signed decision receipts — verifiable offline',
+    eyebrow: 'Signed receipts',
+    title: 'Cryptographic proof you can verify offline',
     subtitle:
-      'Every allow/deny produces a proof ID. Partners audit without calling Abraxas again. Cielo Sunrise and Chickasaw are live verify records.',
-    visual: 'live-proof-panel',
+      'Allow or deny — every decision gets a proof ID. Partners check agent.valid without calling back.',
+    visual: 'proof-flow',
     cta: { label: 'Verify records', href: '/verify' },
-    ctaSecondary: { label: 'GET /proof/:id', href: '/docs/ai-agents' },
+    ctaSecondary: { label: 'API docs', href: '/docs/ai-agents' },
   },
   {
     id: 'live-passport',
@@ -146,7 +117,7 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     chapterLabel: 'Live proof',
     eyebrow: 'Product · Passport',
     title: 'Wallet → verify → credential',
-    subtitle: 'Sui zkLogin, Veriff KYC, W3C verifiable credential — one front door for every partner.',
+    subtitle: 'Sui zkLogin, Veriff KYC, W3C verifiable credential — the connect flow in motion.',
     visual: 'embed-passport',
     layout: 'embed',
     cta: { label: 'Open passport', href: '/passport' },
@@ -157,7 +128,7 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     chapterLabel: 'Live proof',
     eyebrow: 'Product · RWA unlock',
     title: 'Gated → proof → unlocked',
-    subtitle: 'Policy check, signed proof, then transact. Debt, equity, and fund flows on the same rail.',
+    subtitle: 'Policy check, signed proof, then transact. Debt, equity, and fund on one rail.',
     visual: 'embed-unlock',
     layout: 'embed',
   },
@@ -166,11 +137,10 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     chapter: 'live',
     chapterLabel: 'Live proof',
     eyebrow: 'Product · Dashboard',
-    title: 'Live yield · verified assets',
-    subtitle: 'Cielo Sunrise hospitality, Chickasaw land, music royalties — portfolio view after verify.',
+    title: 'Portfolio after verify',
+    subtitle: 'Yield, verified holdings, and activity — what the holder sees once gates pass.',
     visual: 'embed-dashboard',
     layout: 'embed',
-    cta: { label: 'Cielo case study', href: '/case-studies/cielo' },
   },
   {
     id: 'live-status',
@@ -181,6 +151,7 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     subtitle: 'We ship what works and label what is next — no fake production claims.',
     visual: 'live-status-panel',
     cta: { label: 'Mainnet readiness', href: '/api/mainnet/readiness' },
+    ctaSecondary: { label: 'Live references', href: '/#article' },
   },
 
   {
