@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Consumer nav: Home · Passport · Verify — assets via Home photos.
+// Simplified nav — Home · Passport · Integrate · Mainnet + More menu.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -18,34 +18,24 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
-  { href: "/#product-demo", label: "Product demo" },
-  { href: "/#minimum-proof", label: "Minimum proof" },
-  { href: "/#mainnet-readiness", label: "Mainnet gates" },
-  { href: "/blog", label: "Blog" },
-  { href: "/integrate", label: "Integrate" },
-  { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
+  { href: "/passport", label: "Passport", matchPrefixes: ["/passport", "/verify"] },
+  { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
+  { href: "/mainnet", label: "Mainnet" },
 ];
 
 const MORE_LINKS = [
-  { href: "/docs/ai-agents", label: "AI agents (Robinhood MCP stack)" },
-  { href: "/verify", label: "Verify records" },
-  { href: "/account", label: "My account" },
-  { href: "/build", label: "Submit your asset" },
-  { href: "/investors/strategy", label: "Strategic roadmap" },
-  { href: "/integrations/relying-parties", label: "Relying parties" },
-  { href: "/integrations/outreach", label: "Partner outreach" },
-  { href: "/investors", label: "Investor data room" },
-  { href: "/case-studies/cielo", label: "Cielo case study" },
+  { href: "/#learn-more", label: "Deep dive (deck & article)" },
+  { href: "/blog", label: "Blog" },
   { href: "/docs", label: "Documentation" },
-  { href: "/docs/sui", label: "zkLogin / Sui docs" },
+  { href: "/integrations/relying-parties", label: "Relying parties" },
   { href: "/roadmap", label: "Roadmap" },
-  { href: "/faq", label: "FAQ" },
   { href: "/about", label: "About" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {
   if (matchPrefixes?.length) {
-    return matchPrefixes.some(p => pathname === p || (pathname?.startsWith(p + "/") ?? false));
+    return matchPrefixes.some((p) => pathname === p || (pathname?.startsWith(p + "/") ?? false));
   }
   if (href === "/") return pathname === "/" || pathname === "/terminal";
   if (exact) return pathname === href;
@@ -56,96 +46,202 @@ export function RedesignNav() {
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const onHome = isLinkActive(pathname, "/", true);
 
   return (
-    <nav style={{
-      position: "sticky", top: 0, zIndex: 200,
-      background: "var(--nav-bg-solid)",
-      borderBottom: "1px solid var(--border)",
-      display: "flex", alignItems: "center",
-      padding: "0 clamp(0.9rem, 2.5vw, 1.9rem)",
-      height: "clamp(60px, 8vw, 72px)", gap: "0.85rem",
-    }}>
-      <Link href="/" aria-label="Abraxas home" style={{
-        display: "flex", alignItems: "center", gap: "0.55rem",
-        textDecoration: "none", flexShrink: 0,
-      }}>
-        <Image src="/icon-48.png" alt="" width={30} height={30} priority
-          style={{ display: "block", borderRadius: 8 }} />
-        <span style={{ fontFamily: FONT, fontSize: "clamp(1.05rem,1.6vw,1.25rem)",
-                        fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+    <nav
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 200,
+        background: "var(--nav-bg-solid)",
+        borderBottom: "1px solid var(--border)",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 clamp(0.9rem, 2.5vw, 1.9rem)",
+        height: "clamp(60px, 8vw, 72px)",
+        gap: "0.85rem",
+      }}
+    >
+      <Link
+        href="/"
+        aria-label="Abraxas home"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.55rem",
+          textDecoration: "none",
+          flexShrink: 0,
+        }}
+      >
+        <Image src="/icon-48.png" alt="" width={30} height={30} priority style={{ display: "block", borderRadius: 8 }} />
+        <span
+          style={{
+            fontFamily: FONT,
+            fontSize: "clamp(1.05rem,1.6vw,1.25rem)",
+            fontWeight: 800,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.02em",
+          }}
+        >
           Abraxas
         </span>
       </Link>
 
-      <div className="rd-nav-links" style={{ display: "none", flex: 1,
-                                              justifyContent: "center", gap: "0.25rem" }}>
-        {LINKS.map(l => {
-          const active = isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined);
+      <div
+        className="rd-nav-links"
+        style={{ display: "none", flex: 1, justifyContent: "center", gap: "0.25rem", alignItems: "center" }}
+      >
+        {LINKS.map((l) => {
+          const active = isLinkActive(
+            pathname,
+            l.href,
+            l.exact,
+            "matchPrefixes" in l ? l.matchPrefixes : undefined,
+          );
           return (
-            <MotionLink key={l.href} href={l.href}
+            <MotionLink
+              key={l.href}
+              href={l.href}
               whileHover={reduce ? undefined : { scale: 1.06 }}
               whileTap={reduce ? undefined : { scale: 0.95 }}
-              style={{ position: "relative", padding: "0.45rem 0.9rem", borderRadius: 999,
-                       textDecoration: "none", fontFamily: FONT, fontSize: "0.85rem",
-                       fontWeight: active ? 700 : 500,
-                       color: active ? ACCENT : "var(--text-secondary)" }}>
+              style={{
+                position: "relative",
+                padding: "0.45rem 0.9rem",
+                borderRadius: 999,
+                textDecoration: "none",
+                fontFamily: FONT,
+                fontSize: "0.85rem",
+                fontWeight: active ? 700 : 500,
+                color: active ? ACCENT : "var(--text-secondary)",
+              }}
+            >
               {active && (
-                <motion.span layoutId="rdNavPill" style={{ position: "absolute", inset: 0,
-                  borderRadius: 999, background: "rgba(16,185,129,0.12)",
-                  border: "1px solid rgba(16,185,129,0.25)", zIndex: -1 }} />
+                <motion.span
+                  layoutId="rdNavPill"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: 999,
+                    background: "rgba(16,185,129,0.12)",
+                    border: "1px solid rgba(16,185,129,0.25)",
+                    zIndex: -1,
+                  }}
+                />
               )}
               {l.label}
             </MotionLink>
           );
         })}
+        <div style={{ position: "relative" }}>
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-expanded={moreOpen}
+            style={{
+              padding: "0.45rem 0.9rem",
+              borderRadius: 999,
+              border: "1px solid var(--border)",
+              background: moreOpen ? "var(--surface-raised)" : "transparent",
+              fontFamily: FONT,
+              fontSize: "0.85rem",
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+            }}
+          >
+            More ▾
+          </button>
+          <AnimatePresence>
+            {moreOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  minWidth: 220,
+                  padding: "0.5rem",
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--nav-bg-solid)",
+                  boxShadow: "var(--shadow-soft)",
+                  zIndex: 300,
+                }}
+              >
+                {MORE_LINKS.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setMoreOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "0.55rem 0.65rem",
+                      borderRadius: 8,
+                      textDecoration: "none",
+                      fontFamily: FONT,
+                      fontSize: "0.82rem",
+                      fontWeight: 500,
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
-      <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem",
-                                              flexShrink: 0 }}>
+      <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
         {!onHome && (
-          <Link href="/" style={{
-            padding: "0.4rem 0.85rem", borderRadius: 999,
-            border: "1px solid rgba(16,185,129,0.35)",
-            background: "rgba(16,185,129,0.1)",
-            fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
-            color: ACCENT, textDecoration: "none",
-          }}>
+          <Link
+            href="/"
+            style={{
+              padding: "0.4rem 0.85rem",
+              borderRadius: 999,
+              border: "1px solid rgba(16,185,129,0.35)",
+              background: "rgba(16,185,129,0.1)",
+              fontFamily: FONT,
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              color: ACCENT,
+              textDecoration: "none",
+            }}
+          >
             ← Home
           </Link>
         )}
-        <Link href="/docs" style={{
-          fontFamily: FONT, fontSize: "0.78rem", fontWeight: 500,
-          color: "var(--text-secondary)", textDecoration: "none", padding: "0.35rem 0.6rem",
-        }}>
-          Docs
-        </Link>
         <LanguageSelector />
         <SuiSignInNavButton prominent />
       </div>
 
-      <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem",
-                                               marginLeft: "auto" }}>
-        {!onHome && (
-          <Link href="/" style={{
-            padding: "0.35rem 0.65rem", borderRadius: 999,
-            border: "1px solid rgba(16,185,129,0.35)",
-            background: "rgba(16,185,129,0.1)",
-            fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700,
-            color: ACCENT, textDecoration: "none",
-          }}>
-            Home
-          </Link>
-        )}
+      <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
         <LanguageSelector />
-        <button onClick={() => setOpen(o => !o)} aria-label="Menu"
-          style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid var(--border)",
-                   background: "var(--surface-raised)", color: "var(--text-primary)",
-                   cursor: "pointer", display: "flex", alignItems: "center",
-                   justifyContent: "center", flexDirection: "column", gap: 4 }}>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-label="Menu"
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            background: "var(--surface-raised)",
+            color: "var(--text-primary)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            gap: 4,
+          }}
+        >
           <span style={{ width: 16, height: 2, background: "currentColor", borderRadius: 2 }} />
           <span style={{ width: 16, height: 2, background: "currentColor", borderRadius: 2 }} />
         </button>
@@ -154,26 +250,64 @@ export function RedesignNav() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            style={{ position: "absolute", top: "100%", left: 0, right: 0,
-                     background: "var(--nav-bg-solid)", borderBottom: "1px solid var(--border)",
-                     padding: "0.75rem clamp(0.9rem,2.5vw,1.9rem) 1.1rem",
-                     display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-            {LINKS.map(l => (
-              <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-                style={{ padding: "0.7rem 0.5rem", borderRadius: 10, textDecoration: "none",
-                         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 600,
-                         color: isLinkActive(pathname, l.href, l.exact, "matchPrefixes" in l ? l.matchPrefixes : undefined) ? ACCENT : "var(--text-primary)" }}>
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              background: "var(--nav-bg-solid)",
+              borderBottom: "1px solid var(--border)",
+              padding: "0.75rem clamp(0.9rem,2.5vw,1.9rem) 1.1rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.35rem",
+            }}
+          >
+            {LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                style={{
+                  padding: "0.7rem 0.5rem",
+                  borderRadius: 10,
+                  textDecoration: "none",
+                  fontFamily: FONT,
+                  fontSize: "0.95rem",
+                  fontWeight: 600,
+                  color: isLinkActive(
+                    pathname,
+                    l.href,
+                    l.exact,
+                    "matchPrefixes" in l ? l.matchPrefixes : undefined,
+                  )
+                    ? ACCENT
+                    : "var(--text-primary)",
+                }}
+              >
                 {l.label}
               </Link>
             ))}
             <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
-            {MORE_LINKS.map(l => (
-              <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-                style={{ padding: "0.55rem 0.5rem", borderRadius: 10, textDecoration: "none",
-                         fontFamily: FONT, fontSize: "0.85rem", fontWeight: 500,
-                         color: pathname?.startsWith(l.href.split("#")[0]) ? ACCENT : "var(--text-secondary)" }}>
+            {MORE_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                style={{
+                  padding: "0.55rem 0.5rem",
+                  borderRadius: 10,
+                  textDecoration: "none",
+                  fontFamily: FONT,
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  color: "var(--text-secondary)",
+                }}
+              >
                 {l.label}
               </Link>
             ))}

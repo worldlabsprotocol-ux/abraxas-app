@@ -15,7 +15,7 @@ import {
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
-const STORAGE_KEY = "abraxas_boot_entered_v9";
+const STORAGE_KEY = "abraxas_boot_entered_v10";
 
 const BOOT_THEME: CSSProperties = {
   ["--text-primary" as string]: TEXT_ON_DARK.primary,
@@ -113,8 +113,8 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               lineHeight: 1.08,
               marginBottom: "0.75rem",
             }}>
-              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Product deck up front.</span>
-              <span style={{ color: TEXT_ON_DARK.gold }}>Full article below.</span>
+              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Connect wallet.</span>
+              <span style={{ color: TEXT_ON_DARK.gold }}>See proof in 10 seconds.</span>
             </div>
 
             <p style={{
@@ -128,7 +128,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               marginLeft: "auto",
               marginRight: "auto",
             }}>
-              Each section shows its part once — slides for product proof, article for market thesis and live references.
+              Minimum proof up front. Deck, article, and market desk under Learn more.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
@@ -159,7 +159,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               margin: 0,
               letterSpacing: "0.06em",
             }}>
-              Minimum proof demo → #minimum-proof · Mainnet gates → #mainnet-readiness
+              Wallet → proof frame → minimum proof · Mainnet at /mainnet
             </p>
             </div>
           </motion.div>

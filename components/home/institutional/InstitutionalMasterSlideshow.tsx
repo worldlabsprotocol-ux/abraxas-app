@@ -142,9 +142,9 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
 
             <h3
               style={{
-                fontFamily: DEMO_TYPOGRAPHY.fontSans,
+                fontFamily: DEMO_TYPOGRAPHY.fontDisplay,
                 fontSize: fullScreen ? "clamp(1.25rem, 2.5vw, 1.65rem)" : "clamp(1.1rem, 2.4vw, 1.4rem)",
-                fontWeight: 900,
+                fontWeight: 800,
                 letterSpacing: "-0.04em",
                 color: COSMIC_PALETTE.textPrimary,
                 margin: "0 0 0.4rem",

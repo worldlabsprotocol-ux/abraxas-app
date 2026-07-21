@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
 import { PARTNERS_ELITE_DEMO } from "@/lib/eliteDemoSlides";
@@ -62,25 +61,12 @@ export function HomeMinimumProofDemo() {
           marginTop: "1.25rem",
         }}
       >
-        <Btn href="/design-partner" size="sm">
-          Relying party program →
-        </Btn>
-        <Btn href="/integrate" variant="secondary" size="sm">
+        <Btn href="/integrate" size="sm">
           Integrate →
         </Btn>
-        <Link
-          href="/#mainnet-readiness"
-          style={{
-            fontFamily: FONT,
-            fontSize: "0.74rem",
-            fontWeight: 700,
-            color: "var(--accent)",
-            alignSelf: "center",
-            textDecoration: "none",
-          }}
-        >
-          Mainnet gates →
-        </Link>
+        <Btn href="/mainnet" variant="secondary" size="sm">
+          Mainnet scoreboard →
+        </Btn>
       </div>
     </section>
   );
