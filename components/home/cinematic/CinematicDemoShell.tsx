@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ACCENT, type MeshKey } from "./demoPremium";
 import { DemoActProgress, PremiumEyebrow, PremiumHeadline, PremiumMeshBg } from "./PremiumDemoPrimitives";
+import { CosmicParticleField } from "./CosmicDemoEffects";
 
 const actEase = [0.22, 1, 0.36, 1] as const;
 export { actEase };
@@ -52,10 +53,11 @@ export function CinematicDemoShell({
         className="relative overflow-hidden rounded-3xl"
         style={{
           border: "1px solid rgba(255,255,255,0.06)",
-          boxShadow: "0 32px 100px rgba(0,0,0,0.55)",
+          boxShadow: `0 32px 100px rgba(0,0,0,0.55), 0 0 80px ${accent}12`,
         }}
       >
         <PremiumMeshBg mesh={mesh} />
+        <CosmicParticleField accent={accent} count={compact ? 10 : 16} />
 
         <div className={`relative z-10 ${compact ? "px-4 py-5 sm:px-5" : "px-5 py-6 sm:px-8 sm:py-8"}`}>
           <PremiumEyebrow accent={accent}>{actLabel}</PremiumEyebrow>
