@@ -78,6 +78,8 @@ export const CURRENT_STATUS_LIVE: CurrentStatusItem[] = [
 ];
 
 export const DEEP_DIVE_LINKS = [
+  { label: "Robinhood + agentic finance", href: "/#agentic-finance" },
+  { label: "AI agent integration", href: "/docs/ai-agents" },
   { label: "How trust stays current", href: "/trust-framework#trust-over-time" },
   { label: "Mainnet gates", href: "/roadmap#mainnet-readiness" },
   { label: "Relying party program", href: "/integrations/relying-parties" },

@@ -33,6 +33,7 @@ const LINKS = {
   ],
   developers: [
     { label: "Integrate", href: "/integrate" },
+    { label: "AI agents · Robinhood MCP", href: "/docs/ai-agents" },
     { label: "Documentation", href: "/docs" },
     { label: "Integrations", href: "/integrations" },
     { label: "Relying parties", href: "/integrations/relying-parties" },

@@ -31,9 +31,9 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
+        <HomeAgenticFinanceStrip />
         <HomeHonestStatusStrip />
         <HomePositioningStrip />
-        <HomeAgenticFinanceStrip />
         <HomeMarketTicker />
         <HomeBuildWithSection />
         <HomeStackPosition />
