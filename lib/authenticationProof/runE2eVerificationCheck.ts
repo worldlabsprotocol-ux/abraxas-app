@@ -110,6 +110,21 @@ export async function runE2eVerificationCheck(): Promise<E2eVerificationCheckRes
         passed: Boolean(result.verify_response.agent && result.self_verified_proof.agent),
         detail: "verify_response.agent and self_verified_proof.agent attached",
       });
+
+      if (supabaseConfigured && signingConfigured) {
+        const { getSelfVerifiedAuthenticationProof } = await import("./verifyProof");
+        const lookedUp = await getSelfVerifiedAuthenticationProof(result.verify_response.proof_id);
+        const roundtripPassed = Boolean(lookedUp?.signature_valid && lookedUp.proof_reliable);
+        steps.push({
+          id: "proof-lookup-roundtrip",
+          label: "GET /api/proof/[id] persistence roundtrip",
+          passed: roundtripPassed,
+          detail: roundtripPassed
+            ? `proof_id ${result.verify_response.proof_id} retrieved with signature_valid=true`
+            : "Proof issued but lookup failed — check authentication_proofs table",
+        });
+        if (!roundtripPassed) blockers.push("authentication_proofs persistence roundtrip");
+      }
     }
   } finally {
     if (!signingConfigured) {
@@ -121,7 +136,13 @@ export async function runE2eVerificationCheck(): Promise<E2eVerificationCheckRes
   }
 
   const corePassed = steps.filter(s => s.id !== "supabase").every(s => s.passed);
-  const fullyLive = signingConfigured && verificationKeyConfigured && supabaseConfigured && referencePassed;
+  const roundtripStep = steps.find(s => s.id === "proof-lookup-roundtrip");
+  const fullyLive =
+    signingConfigured &&
+    verificationKeyConfigured &&
+    supabaseConfigured &&
+    referencePassed &&
+    (roundtripStep ? roundtripStep.passed : true);
 
   return {
     ok: corePassed,

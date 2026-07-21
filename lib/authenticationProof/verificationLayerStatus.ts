@@ -1,5 +1,5 @@
 // FILE: lib/authenticationProof/verificationLayerStatus.ts
-// Honest runtime status for the five critical verification-layer items.
+// Honest runtime status for the seven verification-layer items.
 
 import { getAssetMonitoringGateStatus } from "@/lib/assetMonitoring/gateStatus";
 import { loadReceiptSigningKey, loadReceiptVerificationKey } from "@/lib/decisionReceipts/signing";
@@ -126,7 +126,28 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
       "GET /api/asset-monitoring/preview evaluates signals; apply path issues asset_state_change proofs and supersedes prior proofs.",
     blockers: [
       ...(!monitoringGate.autoApply ? ["ASSET_MONITORING_AUTO_APPLY=true for automated worker"] : []),
-      ...(monitoringGate.lotInventoryRows === 0 ? ["asset_lot_inventory rows in production DB"] : []),
+      ...(monitoringGate.lotInventoryRows === 0 ? ["asset_lot_inventory rows in production DB (run migration 045 or bootstrap script)"] : []),
+    ],
+  };
+
+  const e2eLoop: VerificationLayerItem = {
+    id: "e2e-loop",
+    label: "Closed E2E loop: verify → persist → lookup → agent.valid",
+    status: statusFromFlags(
+      credentialsVerify.status === "live" &&
+        proofLookup.status === "live" &&
+        productionDemo.status === "live" &&
+        agentReadiness.status === "live",
+      credentialsVerify.status === "partial" ||
+        proofLookup.status === "partial" ||
+        productionDemo.status === "partial" ||
+        agentReadiness.status === "partial",
+    ),
+    detail:
+      "GET /api/verify/e2e runs production reference path and confirms agent.proceed + agent.valid with persistence roundtrip.",
+    blockers: [
+      ...credentialsVerify.blockers,
+      ...proofLookup.blockers.filter((b) => !credentialsVerify.blockers.includes(b)),
     ],
   };
 
@@ -137,6 +158,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     productionDemo,
     agentReadiness,
     assetMonitoring,
+    e2eLoop,
   ];
 
   const liveCount = items.filter(i => i.status === "live").length;

@@ -277,8 +277,13 @@ export function MainnetScoreboard({ variant = "full" }: { variant?: Variant }) {
           </div>
           {verificationLayer && (
             <>
-              <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em", color: COSMIC_PALETTE.textMuted, marginBottom: 8 }}>
-                VERIFICATION LAYER ({verificationLayer.items.filter((i) => i.status === "live").length}/{verificationLayer.items.length} live)
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em", color: COSMIC_PALETTE.textMuted }}>
+                  VERIFICATION LAYER ({verificationLayer.items.filter((i) => i.status === "live").length}/{verificationLayer.items.length} live)
+                </div>
+                <Link href="/verification" style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
+                  Full scoreboard →
+                </Link>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 {verificationLayer.items.map((item) => (

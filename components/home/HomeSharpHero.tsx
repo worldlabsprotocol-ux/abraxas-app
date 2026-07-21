@@ -166,12 +166,12 @@ export function HomeSharpHero() {
           )}
 
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.75rem 0 0", lineHeight: 1.5 }}>
-            <Link href="/mainnet" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>
-              Mainnet scoreboard
+            <Link href="/verification" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>
+              Verification scoreboard
             </Link>
             {" · "}
-            <Link href="/#learn-more" style={{ color: "var(--text-secondary)", textDecoration: "none" }}>
-              Deep dive
+            <Link href="/mainnet" style={{ color: "var(--text-secondary)", textDecoration: "none" }}>
+              Mainnet gates
             </Link>
           </p>
         </div>

@@ -21,6 +21,7 @@ const LINKS = [
   { href: "/passport", label: "Passport", matchPrefixes: ["/passport", "/verify"] },
   { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
   { href: "/mainnet", label: "Mainnet" },
+  { href: "/verification", label: "Verification" },
 ];
 
 const MORE_LINKS = [

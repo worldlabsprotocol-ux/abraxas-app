@@ -12,6 +12,7 @@ import { getPublicSuiConfig } from "@/lib/sui/network";
 import { isSuiMainnetDeployed } from "@/lib/sui/config";
 import { AUTHENTICATION_PROOF_LOOP_STATUS } from "@/lib/authenticationProof/loopStatus";
 import { getVerificationLayerStatus } from "@/lib/authenticationProof/verificationLayerStatus";
+import { verificationLayerProgress } from "@/lib/authenticationProof/verificationLayerProgress";
 import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +30,11 @@ export async function GET() {
   ]);
 
   const sui = getPublicSuiConfig();
+  const layerProgress = verificationLayerProgress(verificationLayer);
 
   return NextResponse.json({
     ...progress,
+    verification_layer_progress: layerProgress,
     telemetry: {
       sui: { ...sui, mainnet_deployed: isSuiMainnetDeployed() },
       audits,
