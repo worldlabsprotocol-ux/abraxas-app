@@ -26,7 +26,7 @@ export function HomeSharpHero() {
       id="top"
       aria-labelledby="home-hero-heading"
       style={{
-        padding: "clamp(1.25rem, 4vw, 3.5rem) 0 clamp(0.75rem, 2vw, 1rem)",
+        padding: "clamp(2rem, 5vw, 3.5rem) 0 clamp(1.25rem, 3vw, 1.75rem)",
       }}
     >
       <div style={TEXT_COL}>

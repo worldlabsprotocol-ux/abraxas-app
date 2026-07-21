@@ -30,8 +30,8 @@ export function HomeMarketTicker() {
     <section
       aria-label="Market intelligence"
       style={{
-        padding: "0.65rem 0 0.85rem",
-        borderBottom: "1px solid var(--border-strong)",
+        padding: "clamp(1.5rem, 4vw, 2.5rem) 0",
+        borderTop: "1px solid var(--border-strong)",
       }}
     >
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center", marginBottom: "0.45rem" }}>

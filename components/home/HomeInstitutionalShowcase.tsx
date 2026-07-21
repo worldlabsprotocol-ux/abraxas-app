@@ -12,12 +12,12 @@ export function HomeInstitutionalShowcase() {
     <section
       id="institutional-story"
       aria-labelledby="institutional-story-heading"
+      className="abx-home-section"
       style={{
-        padding: "clamp(1.5rem, 4vw, 2.5rem) 0",
-        borderBottom: "1px solid var(--border-strong)",
+        paddingBottom: "clamp(2.5rem, 6vw, 4rem)",
       }}
     >
-      <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
+      <div style={{ textAlign: "center", marginBottom: "clamp(1.5rem, 4vw, 2.25rem)" }}>
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
           Institutional story · one deck
         </div>

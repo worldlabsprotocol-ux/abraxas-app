@@ -5,9 +5,9 @@ import { RwaUnlockVisual } from "@/components/home/productVisual/RwaUnlockVisual
 import { DashboardVisual } from "@/components/home/productVisual/DashboardVisual";
 
 const EMBED: Record<string, { Component: React.ComponentType; scale: number; width: number }> = {
-  passport: { Component: PassportFlowVisual, scale: 0.48, width: 360 },
-  unlock: { Component: RwaUnlockVisual, scale: 0.48, width: 360 },
-  dashboard: { Component: DashboardVisual, scale: 0.42, width: 480 },
+  passport: { Component: PassportFlowVisual, scale: 0.52, width: 340 },
+  unlock: { Component: RwaUnlockVisual, scale: 0.52, width: 340 },
+  dashboard: { Component: DashboardVisual, scale: 0.46, width: 460 },
 };
 
 export function InstitutionalProductEmbed({ type }: { type: keyof typeof EMBED }) {
@@ -16,17 +16,17 @@ export function InstitutionalProductEmbed({ type }: { type: keyof typeof EMBED }
     <div
       style={{
         width: "100%",
+        height: "100%",
+        minHeight: 280,
         display: "flex",
+        alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden",
-        maxHeight: 260,
-        marginTop: -8,
       }}
     >
       <div
         style={{
           transform: `scale(${scale})`,
-          transformOrigin: "top center",
+          transformOrigin: "center center",
           width,
           pointerEvents: "none",
         }}

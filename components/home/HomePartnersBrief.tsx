@@ -12,7 +12,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 export function HomePartnersBrief() {
   return (
     <section
-      style={{ padding: "clamp(1.25rem, 3vw, 2rem) 0", borderTop: "1px solid var(--border-strong)" }}
+      style={{ padding: "clamp(1.5rem, 4vw, 2.5rem) 0", borderTop: "1px solid var(--border-strong)" }}
       aria-labelledby="partners-heading"
     >
       <EliteSectionLead

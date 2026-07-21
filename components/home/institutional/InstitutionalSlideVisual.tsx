@@ -221,14 +221,25 @@ export function InstitutionalSlideVisual({ slide, accent = ACCENT_CYAN }: Props)
 
     case "live-proof-panel":
       return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%", maxWidth: 420 }}>
-          <div style={{ transform: "scale(0.85)", transformOrigin: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 14,
+            width: "100%",
+            maxWidth: 440,
+            margin: "0 auto",
+          }}
+        >
+          <div style={{ transform: "scale(0.9)", transformOrigin: "center center" }}>
             <AuthenticationProofArtifact hero issued pulse />
           </div>
-          <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.55rem", color: accent, letterSpacing: "0.06em" }}>
+          <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.58rem", color: accent, letterSpacing: "0.06em", textAlign: "center" }}>
             proof_8f3a…c21 · agent.valid · issued
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", width: "100%" }}>
             {[
               { name: "Cielo Sunrise", tag: "Hospitality · live", icon: "🏨" },
               { name: "Chickasaw", tag: "270 ac · verified", icon: "🌾" },
@@ -237,38 +248,32 @@ export function InstitutionalSlideVisual({ slide, accent = ACCENT_CYAN }: Props)
                 key={r.name}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.12 }}
+                transition={{ delay: 0.15 + i * 0.1 }}
                 style={{
                   ...visualCard(COSMIC_PALETTE.emerald),
                   display: "flex",
                   alignItems: "center",
-                  gap: 8,
+                  gap: 10,
                   textAlign: "left",
-                  minWidth: 140,
+                  flex: "1 1 160px",
+                  maxWidth: 200,
                 }}
               >
-                <span style={{ fontSize: "1.25rem" }}>{r.icon}</span>
+                <span style={{ fontSize: "1.35rem" }}>{r.icon}</span>
                 <div>
-                  <div style={{ fontFamily: PREMIUM_FONT, fontSize: "0.72rem", fontWeight: 800, color: "#FAFAFA" }}>{r.name}</div>
-                  <div style={{ ...microLabel, marginTop: 2, color: COSMIC_PALETTE.emerald }}>{r.tag}</div>
+                  <div style={{ fontFamily: PREMIUM_FONT, fontSize: "0.78rem", fontWeight: 800, color: "#FAFAFA" }}>{r.name}</div>
+                  <div style={{ ...microLabel, marginTop: 3, color: COSMIC_PALETTE.emerald }}>{r.tag}</div>
                 </div>
               </motion.div>
             ))}
           </div>
-          <motion.div
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            style={{ fontFamily: PREMIUM_MONO, fontSize: "0.52rem", color: COSMIC_PALETTE.textMuted }}
-          >
-            POST /verify → GET /proof/:id → partner proceeds
-          </motion.div>
         </div>
       );
 
     case "live-status-panel":
       return (
-        <div style={{ width: "100%", maxWidth: 380 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
+        <div style={{ width: "100%", maxWidth: 400, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 14 }}>
             {[
               { label: "Sandbox", value: "Live", color: COSMIC_PALETTE.emerald },
               { label: "Signed proofs", value: "On", color: accent },

@@ -22,7 +22,7 @@ function ArticleStats() {
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
         gap: 10,
-        margin: "1.25rem 0",
+        margin: "1.75rem 0",
       }}
     >
       {RWA_THESIS_MARKET_STATS.map((s) => (
@@ -51,7 +51,7 @@ function ArticleSteps() {
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
         gap: 8,
-        margin: "1.25rem 0",
+        margin: "1.75rem 0",
       }}
     >
       {RWA_TOKENIZATION_STEPS.map((s) => (
@@ -105,7 +105,7 @@ function ArticleLiveProof() {
     <div
       className="abx-cosmic-card"
       style={{
-        margin: "1.25rem 0",
+        margin: "1.75rem 0",
         padding: "1.1rem 1.25rem",
         borderRadius: 16,
         border: `1px solid ${COSMIC_PALETTE.emerald}44`,
@@ -157,12 +157,13 @@ export function HomeFeaturedArticle() {
     <section
       id="article"
       aria-labelledby="article-heading"
+      className="abx-home-section"
       style={{
-        padding: "clamp(2rem, 5vw, 3rem) 0",
-        borderBottom: "1px solid var(--border-strong)",
+        paddingTop: "clamp(2.5rem, 6vw, 4rem)",
+        paddingBottom: "clamp(2.5rem, 6vw, 4rem)",
       }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 clamp(0.5rem, 2vw, 1rem)" }}>
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
           {BLOG_CATEGORY_LABELS[article.category]} · {article.readingTime}
         </div>
@@ -208,7 +209,7 @@ export function HomeFeaturedArticle() {
                   fontSize: "0.92rem",
                   color: "var(--text-secondary)",
                   lineHeight: 1.8,
-                  margin: "0 0 1.1rem",
+                  margin: "0 0 1.35rem",
                 }}
               >
                 {para}

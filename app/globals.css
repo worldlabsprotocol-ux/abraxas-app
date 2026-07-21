@@ -226,15 +226,18 @@ details > summary::-webkit-details-marker {
   isolation: isolate;
 }
 
-/* Institutional master slideshow — side nav on desktop, bottom bar on mobile */
+/* Institutional master slideshow — controls above canvas */
 .abx-institutional-slideshow .abx-side-nav {
   display: none;
 }
 .abx-institutional-slideshow .abx-bottom-nav {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 16px;
+  margin-top: 4px;
+}
+.abx-slideshow-control-deck {
+  padding-bottom: 4px;
 }
 @media (min-width: 640px) {
   .abx-institutional-slideshow .abx-side-nav {
@@ -243,4 +246,12 @@ details > summary::-webkit-details-marker {
   .abx-institutional-slideshow .abx-bottom-nav {
     display: none;
   }
+}
+
+/* Homepage section rhythm — breathable vertical spacing */
+.abx-home-section {
+  padding: clamp(2rem, 5vw, 3.5rem) 0;
+}
+.abx-home-section + .abx-home-section {
+  border-top: 1px solid var(--border-strong);
 }

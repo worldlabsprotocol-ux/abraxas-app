@@ -24,6 +24,7 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
   const slide = INSTITUTIONAL_MASTER_SLIDES[index];
   const chapterIdx = getSlideChapterIndex(index);
   const isEmbed = slide.layout === "embed";
+  const canvasMinH = fullScreen ? (isEmbed ? 480 : 400) : isEmbed ? 400 : 320;
 
   const go = useCallback((n: number) => {
     setIndex((n + TOTAL) % TOTAL);
@@ -56,11 +57,158 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
         position: "relative",
         display: "flex",
         flexDirection: "column",
-        alignItems: "stretch",
-        gap: fullScreen ? 16 : 12,
+        gap: fullScreen ? 20 : 16,
         width: "100%",
       }}
     >
+      {/* ── Control deck: all navigation + copy lives ABOVE the slide ── */}
+      <div className="abx-slideshow-control-deck" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div
+          role="tablist"
+          aria-label="Slideshow chapters"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            justifyContent: "center",
+          }}
+        >
+          {INSTITUTIONAL_CHAPTERS.map((ch, i) => {
+            const active = i === chapterIdx;
+            return (
+              <button
+                key={ch.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => goChapter(ch.id)}
+                style={{
+                  fontFamily: DEMO_TYPOGRAPHY.fontMono,
+                  fontSize: "0.58rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  padding: "8px 14px",
+                  borderRadius: 999,
+                  border: `1px solid ${active ? ACCENT : "rgba(255,255,255,0.12)"}`,
+                  background: active ? `${ACCENT}18` : "rgba(0,0,0,0.25)",
+                  color: active ? ACCENT : COSMIC_PALETTE.textMuted,
+                  cursor: "pointer",
+                  transition: "all 0.25s",
+                }}
+              >
+                {ch.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={slide.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.3, ease: DEMO_MOTION.easeOut }}
+            style={{ textAlign: "center", padding: "0 0.5rem" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: DEMO_TYPOGRAPHY.fontMono,
+                  fontSize: "0.58rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: ACCENT,
+                }}
+              >
+                {slide.eyebrow}
+              </span>
+              <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
+              <span style={{ fontFamily: DEMO_TYPOGRAPHY.fontMono, fontSize: "0.58rem", color: COSMIC_PALETTE.textMuted }}>
+                {index + 1} / {TOTAL}
+              </span>
+            </div>
+
+            <h3
+              style={{
+                fontFamily: DEMO_TYPOGRAPHY.fontSans,
+                fontSize: fullScreen ? "clamp(1.25rem, 2.5vw, 1.65rem)" : "clamp(1.1rem, 2.4vw, 1.4rem)",
+                fontWeight: 900,
+                letterSpacing: "-0.04em",
+                color: COSMIC_PALETTE.textPrimary,
+                margin: "0 0 0.4rem",
+                maxWidth: 640,
+                marginLeft: "auto",
+                marginRight: "auto",
+                lineHeight: 1.2,
+              }}
+            >
+              {slide.title}
+            </h3>
+
+            {slide.subtitle && (
+              <p
+                style={{
+                  fontFamily: DEMO_TYPOGRAPHY.fontSans,
+                  fontSize: "0.84rem",
+                  lineHeight: 1.6,
+                  color: COSMIC_PALETTE.textSecondary,
+                  margin: "0 auto",
+                  maxWidth: 520,
+                }}
+              >
+                {slide.subtitle}
+              </p>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+          <div
+            style={{
+              flex: 1,
+              height: 4,
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.08)",
+              overflow: "hidden",
+            }}
+          >
+            <motion.div
+              key={slide.id}
+              initial={{ width: `${(index / TOTAL) * 100}%` }}
+              animate={{ width: `${((index + 1) / TOTAL) * 100}%` }}
+              transition={{ duration: 0.35 }}
+              style={{
+                height: "100%",
+                background: `linear-gradient(90deg, ${ACCENT}, ${COSMIC_PALETTE.violet})`,
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontFamily: DEMO_TYPOGRAPHY.fontMono,
+              fontSize: "0.5rem",
+              color: COSMIC_PALETTE.textMuted,
+              flexShrink: 0,
+            }}
+          >
+            ← →
+          </span>
+        </div>
+      </div>
+
+      {/* ── Slide canvas: visual only, centered ── */}
       <div
         style={{
           display: "flex",
@@ -69,209 +217,69 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
           width: "100%",
         }}
       >
-      <NavButton direction="prev" onClick={() => go(index - 1)} large={fullScreen} className="abx-side-nav" />
-
-      <div
-        style={{
-          flex: 1,
-          position: "relative",
-          minWidth: 0,
-          aspectRatio: fullScreen ? "16 / 9" : isEmbed ? "16 / 11" : "16 / 10",
-          maxHeight: fullScreen ? "min(72vh, 640px)" : isEmbed ? 540 : 480,
-          borderRadius: fullScreen ? 28 : 24,
-          border: `1px solid ${ACCENT}44`,
-          overflow: "hidden",
-          boxShadow: `0 40px 120px rgba(0,0,0,0.55), 0 0 80px ${ACCENT}12`,
-        }}
-      >
-        <PremiumMeshBg mesh="ice" />
-        <CosmicParticleField accent={ACCENT} count={fullScreen ? 22 : 16} />
-        <CosmicCornerGlow color={ACCENT} />
+        <NavButton direction="prev" onClick={() => go(index - 1)} large={fullScreen} className="abx-side-nav" />
 
         <div
           style={{
+            flex: 1,
             position: "relative",
-            zIndex: 2,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            padding: fullScreen ? "clamp(1.25rem, 2.5vw, 1.75rem)" : "clamp(1rem, 2vw, 1.35rem)",
+            minWidth: 0,
+            minHeight: canvasMinH,
+            borderRadius: fullScreen ? 28 : 24,
+            border: `1px solid ${ACCENT}33`,
+            overflow: "hidden",
+            boxShadow: `0 32px 80px rgba(0,0,0,0.45), 0 0 60px ${ACCENT}0c`,
           }}
         >
-          {/* Chapter rail */}
+          <PremiumMeshBg mesh="ice" />
+          <CosmicParticleField accent={ACCENT} count={fullScreen ? 18 : 12} />
+          <CosmicCornerGlow color={ACCENT} />
+
           <div
-            role="tablist"
-            aria-label="Slideshow chapters"
             style={{
+              position: "relative",
+              zIndex: 2,
+              height: "100%",
+              minHeight: canvasMinH,
               display: "flex",
-              flexWrap: "wrap",
-              gap: 6,
-              marginBottom: 12,
+              alignItems: "center",
               justifyContent: "center",
+              padding: fullScreen ? "1.5rem 1.75rem" : "1.25rem 1.5rem",
             }}
           >
-            {INSTITUTIONAL_CHAPTERS.map((ch, i) => {
-              const active = i === chapterIdx;
-              return (
-                <button
-                  key={ch.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => goChapter(ch.id)}
-                  style={{
-                    fontFamily: DEMO_TYPOGRAPHY.fontMono,
-                    fontSize: "0.55rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    padding: "6px 12px",
-                    borderRadius: 999,
-                    border: `1px solid ${active ? ACCENT : "rgba(255,255,255,0.12)"}`,
-                    background: active ? `${ACCENT}22` : "rgba(0,0,0,0.3)",
-                    color: active ? ACCENT : COSMIC_PALETTE.textMuted,
-                    cursor: "pointer",
-                    transition: "all 0.25s",
-                  }}
-                >
-                  {ch.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                fontFamily: DEMO_TYPOGRAPHY.fontMono,
-                fontSize: "0.55rem",
-                fontWeight: 700,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: ACCENT,
-              }}
-            >
-              {slide.eyebrow}
-            </span>
-            <span style={{ fontFamily: DEMO_TYPOGRAPHY.fontMono, fontSize: "0.55rem", color: COSMIC_PALETTE.textMuted }}>
-              {index + 1} / {TOTAL}
-            </span>
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={slide.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.4, ease: DEMO_MOTION.easeOut }}
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                padding: "0.5rem 0",
-                minHeight: 0,
-              }}
-            >
-              <h3
-                style={{
-                  fontFamily: DEMO_TYPOGRAPHY.fontSans,
-                  fontSize: fullScreen ? "clamp(1.35rem, 3vw, 2rem)" : "clamp(1.15rem, 2.8vw, 1.55rem)",
-                  fontWeight: 900,
-                  letterSpacing: "-0.04em",
-                  color: COSMIC_PALETTE.textPrimary,
-                  margin: "0.4rem 0 0.5rem",
-                  maxWidth: 640,
-                  lineHeight: 1.15,
-                }}
-              >
-                {slide.title}
-              </h3>
-              {slide.subtitle && !isEmbed && (
-                <p
-                  style={{
-                    fontFamily: DEMO_TYPOGRAPHY.fontSans,
-                    fontSize: "0.82rem",
-                    lineHeight: 1.55,
-                    color: COSMIC_PALETTE.textSecondary,
-                    margin: "0 0 1rem",
-                    maxWidth: 520,
-                  }}
-                >
-                  {slide.subtitle}
-                </p>
-              )}
-              <InstitutionalSlideVisual slide={slide} accent={ACCENT} />
-            </motion.div>
-          </AnimatePresence>
-
-          {(slide.cta || slide.ctaSecondary) && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 8 }}>
-              {slide.cta && <Btn href={slide.cta.href} size="sm">{slide.cta.label} →</Btn>}
-              {slide.ctaSecondary && (
-                <Btn href={slide.ctaSecondary.href} variant="secondary" size="sm">
-                  {slide.ctaSecondary.label} →
-                </Btn>
-              )}
-            </div>
-          )}
-
-          {/* Bottom progress + dot rail */}
-          <div style={{ marginTop: "auto", paddingTop: 12 }}>
-            <div
-              style={{
-                height: 3,
-                borderRadius: 999,
-                background: "rgba(255,255,255,0.08)",
-                overflow: "hidden",
-                marginBottom: 10,
-              }}
-            >
+            <AnimatePresence mode="wait">
               <motion.div
                 key={slide.id}
-                initial={{ width: `${(index / TOTAL) * 100}%` }}
-                animate={{ width: `${((index + 1) / TOTAL) * 100}%` }}
-                transition={{ duration: 0.35 }}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.02 }}
+                transition={{ duration: 0.35, ease: DEMO_MOTION.easeOut }}
                 style={{
-                  height: "100%",
-                  background: `linear-gradient(90deg, ${ACCENT}, ${COSMIC_PALETTE.violet})`,
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", flex: 1 }}>
-                {INSTITUTIONAL_MASTER_SLIDES.map((s, i) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    aria-label={`Slide ${i + 1}: ${s.title}`}
-                    onClick={() => setIndex(i)}
-                    style={{
-                      width: i === index ? 18 : 6,
-                      height: 6,
-                      borderRadius: 999,
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      background: i === index ? ACCENT : "rgba(255,255,255,0.18)",
-                      transition: "width 0.25s, background 0.25s",
-                    }}
-                  />
-                ))}
-              </div>
-              <span style={{ fontFamily: DEMO_TYPOGRAPHY.fontMono, fontSize: "0.5rem", color: COSMIC_PALETTE.textMuted, flexShrink: 0 }}>
-                ← → keys
-              </span>
-            </div>
+              >
+                <InstitutionalSlideVisual slide={slide} accent={ACCENT} />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
+
+        <NavButton direction="next" onClick={() => go(index + 1)} large={fullScreen} className="abx-side-nav" />
       </div>
 
-      <NavButton direction="next" onClick={() => go(index + 1)} large={fullScreen} className="abx-side-nav" />
-      </div>
+      {(slide.cta || slide.ctaSecondary) && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", paddingTop: 4 }}>
+          {slide.cta && <Btn href={slide.cta.href} size="sm">{slide.cta.label} →</Btn>}
+          {slide.ctaSecondary && (
+            <Btn href={slide.ctaSecondary.href} variant="secondary" size="sm">
+              {slide.ctaSecondary.label} →
+            </Btn>
+          )}
+        </div>
+      )}
 
       <div className="abx-bottom-nav" style={{ width: "100%", justifyContent: "center", gap: 16 }}>
         <NavButton direction="prev" onClick={() => go(index - 1)} />
@@ -294,7 +302,7 @@ function NavButton({
 }) {
   const label = direction === "prev" ? "Previous slide" : "Next slide";
   const symbol = direction === "prev" ? "‹" : "›";
-  const size = large ? 56 : 48;
+  const size = large ? 52 : 44;
 
   return (
     <button
@@ -306,24 +314,23 @@ function NavButton({
         flexShrink: 0,
         alignSelf: "center",
         width: size,
-        height: size * 1.4,
-        borderRadius: 16,
-        border: `1px solid ${ACCENT}55`,
-        background: `linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.75))`,
+        height: size * 1.35,
+        borderRadius: 14,
+        border: `1px solid ${ACCENT}44`,
+        background: "rgba(0,0,0,0.4)",
         color: "#FAFAFA",
-        fontSize: large ? "2rem" : "1.6rem",
+        fontSize: large ? "1.75rem" : "1.45rem",
         fontWeight: 300,
         lineHeight: 1,
         cursor: "pointer",
-        boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${ACCENT}22`,
         transition: "transform 0.2s, border-color 0.2s",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = ACCENT;
-        e.currentTarget.style.transform = "scale(1.05)";
+        e.currentTarget.style.transform = "scale(1.04)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = `${ACCENT}55`;
+        e.currentTarget.style.borderColor = `${ACCENT}44`;
         e.currentTarget.style.transform = "scale(1)";
       }}
     >
