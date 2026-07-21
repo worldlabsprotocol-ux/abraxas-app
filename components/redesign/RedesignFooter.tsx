@@ -7,7 +7,7 @@ import { SITE_URL } from "@/lib/siteUrl";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 
 const LINKS = {
   protocol: [
@@ -16,7 +16,6 @@ const LINKS = {
     { label: "Verify", href: "/verify" },
     { label: "My account", href: "/account" },
     { label: "Submit your asset", href: "/build" },
-    { label: "Browse registry", href: "/#registry" },
   ],
   apps: [
     { label: "Cielo pilot", href: "/apps/cielo-sunrise" },
@@ -27,11 +26,13 @@ const LINKS = {
   learn: [
     { label: "Why verification", href: "/docs/why-verification" },
     { label: "Cielo case study", href: "/case-studies/cielo" },
+    { label: "Chickasaw Project", href: "/case-studies/chickasaw-project" },
     { label: "FAQ", href: "/faq" },
     { label: "Roadmap", href: "/roadmap" },
     { label: "About", href: "/about" },
   ],
   developers: [
+    { label: "Integrate", href: "/integrate" },
     { label: "Documentation", href: "/docs" },
     { label: "Integrations", href: "/integrations" },
     { label: "Relying parties", href: "/integrations/relying-parties" },
@@ -43,7 +44,7 @@ const LINKS = {
     { label: "Legal overview", href: "/legal" },
     { label: "Privacy Policy", href: "/legal/privacy" },
     { label: "Terms of Service", href: "/legal/terms" },
-    { label: "Settlement disclosure", href: "/legal#settlement" },
+    { label: "Settlement disclosure", href: "/legal/terms#settlement" },
   ],
   social: [
     { label: "Discord", href: "https://discord.gg/sHK8EWbnXH" },

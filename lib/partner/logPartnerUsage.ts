@@ -20,6 +20,7 @@ export interface PartnerUsageEntry {
   policyId?: string;
   policyVersion?: string;
   decision?: string;
+  proofId?: string;
 }
 
 export async function logPartnerUsage(entry: PartnerUsageEntry): Promise<void> {
@@ -40,6 +41,7 @@ export async function logPartnerUsage(entry: PartnerUsageEntry): Promise<void> {
     policy_id: entry.policyId ?? null,
     policy_version: entry.policyVersion ?? null,
     decision: entry.decision ?? null,
+    proof_id: entry.proofId ?? null,
   });
 
   if (error) {

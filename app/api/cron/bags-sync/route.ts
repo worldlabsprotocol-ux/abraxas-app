@@ -5,6 +5,7 @@
 // Protected with CRON_SECRET env var.
 import { NextRequest, NextResponse } from "next/server";
 import { syncBagsRevenue }           from "@/lib/services/bagsService";
+import { runAssetMonitoringFeeds } from "@/lib/assetMonitoring/runFeeds";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +18,22 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await syncBagsRevenue();
+    const bags = await syncBagsRevenue();
+    const monitoringApply = process.env.ASSET_MONITORING_AUTO_APPLY === "true";
+    const monitoring = await runAssetMonitoringFeeds({
+      apply: monitoringApply,
+      changedBy: "cron:daily-ops",
+    });
+
     return NextResponse.json({
       success:  true,
-      synced:   result.synced,
-      failed:   result.failed,
       syncedAt: new Date().toISOString(),
+      bags,
+      assetMonitoring: {
+        apply: monitoringApply,
+        signalCount: monitoring.signals.length,
+        results: monitoring.results,
+      },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

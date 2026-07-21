@@ -64,7 +64,7 @@ export function HomePublicProof() {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         <Btn href="/passport?view=verify" variant="secondary" size="sm">Test the network →</Btn>
-        <Btn href="/#registry" variant="ghost" size="sm">Browse full registry →</Btn>
+        <Btn href="/verify" variant="ghost" size="sm">Verify reference records →</Btn>
       </div>
     </section>
   );

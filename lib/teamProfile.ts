@@ -8,12 +8,14 @@ export const CURRENT_TEAM = [
   {
     name: "Sae'Von Holloway",
     role: "Founder & Protocol Lead",
-    focus: "Product, verification architecture, V5 pipeline, and first-party asset pilots (including Cielo Sunrise)",
+    location: "American reservation · United States",
+    focus: "Twenty years in markets · full-stack protocol · genesis asset pilots (Cielo, Chickasaw, Smyrna)",
     links: [
       { label: "LinkedIn", href: "https://www.linkedin.com/company/worldlabsprotocol/" },
       { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app" },
+      { label: "From the builder", href: "/blog/founder" },
     ],
-    bio: "Built World Labs Protocol and Abraxas after running the same verification process on the founding team's own assets first. Ships full-stack: Move modules, credential engine, booking rails, and investor-facing packaging.",
+    bio: "Trader and builder — not a slide-deck founder. Built World Labs Protocol and Abraxas after running verification on the team's own assets first. Ships Move modules, credential engine, booking rails, MLS monitoring, and partner APIs. The protocol speaks; the builder stands behind it.",
   },
 ] as const;
 
@@ -60,5 +62,5 @@ export const EXECUTION_PROOF = [
 
 export const BUILDER_CONTEXT = {
   headline: "Solo builder today — protocol team tomorrow",
-  body: "Abraxas is early-stage infrastructure. The founding team ships vertically integrated proof (identity, assets, payments, docs) to de-risk the core thesis before scaling headcount. Fundraising targets first engineering and compliance hires tied to specific milestones: mainnet Passport, first external relying party, and audit completion.",
+  body: "Abraxas is early-stage infrastructure built with the discipline of two decades in markets: position before the crowd, verify before you transact, close every loop before you pitch. Fundraising targets engineering and compliance hires tied to mainnet Passport, first external relying party, and audit completion.",
 } as const;

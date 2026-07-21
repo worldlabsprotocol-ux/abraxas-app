@@ -144,6 +144,7 @@ export default function IntegrationsPage() {
         ))}
       </ContentCard>
 
+      <div id="apply" style={{ scrollMarginTop: 96 }}>
       <ContentCard title="Become a design partner">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
           RWA marketplaces, lenders, and DeFi protocols: pilot Abraxas Passport as your trust rail.
@@ -197,6 +198,7 @@ export default function IntegrationsPage() {
           </form>
         )}
       </ContentCard>
+      </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/investors/pitch" size="lg">Pitch deck →</Btn>

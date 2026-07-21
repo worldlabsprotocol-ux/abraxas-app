@@ -16,7 +16,7 @@ import {
 } from "@/lib/teamProfile";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 
 export default function TeamPage() {
   return (
@@ -40,8 +40,8 @@ export default function TeamPage() {
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600, color: ACCENT, marginBottom: "0.35rem" }}>
               {member.role}
             </div>
-            <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
-              {member.focus}
+            <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.35rem" }}>
+              {"location" in member && member.location ? `${member.location} · ` : ""}{member.focus}
             </div>
             <p style={{ ...body, marginBottom: "0.65rem" }}>{member.bio}</p>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>

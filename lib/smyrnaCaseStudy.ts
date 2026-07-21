@@ -1,15 +1,17 @@
 // FILE: lib/smyrnaCaseStudy.ts
 // Second verified asset case study template — capital partner / equity loan narrative.
 
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+
 export const SMYRNA_ASSET = {
   id: "ABX-RE-RES-002",
   designation: "VERIFIED RESIDENTIAL · SERIES B",
   name: "Smyrna Townhome",
   subtitle: "2BD/2BA · Battery Atlanta corridor · Clear title, paid off",
   location: "Smyrna, Georgia 30080 · 6 min from Truist Park",
-  image: "/assets/smyrna/011.webp",
+  image: SMYRNA_TOWNHOME_IMAGE.src,
   gallery: [
-    "/assets/smyrna/011.webp",
+    SMYRNA_TOWNHOME_IMAGE.src,
   ] as const,
   stats: {
     purchase1999: "$76,200",
@@ -77,7 +79,7 @@ export const SMYRNA_SOURCES = [
 ] as const;
 
 export const SMYRNA_PROOF = [
-  { label: "Public registry card", desc: "Asset explorer entry with verification state", href: "/#registry" },
+  { label: "Verify record", desc: "Independent verification on Abraxas", href: "/verify" },
   { label: "Verify asset ID", desc: "Registry lookup when pipeline stage advances", href: `/verify/${encodeURIComponent(SMYRNA_ASSET.id)}` },
   { label: "Submit capital interest", desc: "Investor intake for verified partner flows", href: "/investors" },
   { label: "V5 pipeline docs", desc: "How assets move to MARKETPLACE_LIVE", href: "/build" },

@@ -28,7 +28,7 @@ export function HomeClosingBand() {
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         <Btn href="/passport" size="md">Create Passport →</Btn>
-        <Btn href="/#registry" variant="secondary" size="md">Browse registry →</Btn>
+        <Btn href="/verify" variant="secondary" size="md">Verify records →</Btn>
         <Btn href="/passport?view=verify" variant="ghost" size="md">Verify a record →</Btn>
       </div>
     </section>

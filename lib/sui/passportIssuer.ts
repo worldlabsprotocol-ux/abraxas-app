@@ -7,7 +7,7 @@ import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import type { SuiTransactionBlockResponse } from "@mysten/sui/client";
 import { getSuiDevnetClient } from "@/lib/sui/client";
-import { SUI_DEVNET, passportTypeFilter } from "@/lib/sui/config";
+import { SUI_DEVNET, getSuiDeployment, passportTypeFilter } from "@/lib/sui/config";
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";
 import { stampsToBitmask } from "@/lib/passport/stamps";
 
@@ -142,7 +142,8 @@ export async function provisionOnChainPassport(holder: string): Promise<Provisio
   const issuerAddr = keypair.getPublicKey().toSuiAddress();
   const authorityBytes = addressToAuthorityBytes(issuerAddr);
   const capId = getCapId();
-  const packageId = SUI_DEVNET.packageId;
+  const deployment = getSuiDeployment();
+  const packageId = deployment.packageId;
 
   let objectId = await findPassportForOwner(normalized);
   let createTxDigest: string | undefined;

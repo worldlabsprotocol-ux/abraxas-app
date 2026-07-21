@@ -51,7 +51,7 @@ export function VisualProofSection() {
         {EXPLORE_ASSETS.map(asset => {
           const meta = VERIFY_META[asset.state];
           return (
-            <Link key={asset.id} href={asset.href ?? "#registry"}
+            <Link key={asset.id} href={asset.href ?? "/verify"}
               style={{ textDecoration: "none", color: "inherit" }}>
               <div style={{
                 borderRadius: 14, padding: "0.85rem 0.95rem",
@@ -98,7 +98,7 @@ export function VisualProofSection() {
       </div>
 
       <div style={{ marginTop: "1.25rem", display: "flex", gap: "0.625rem", flexWrap: "wrap" }}>
-        <Btn href="#registry" size="sm">Open full registry →</Btn>
+        <Btn href="/verify" size="sm">Open verifier →</Btn>
       </div>
     </section>
   );

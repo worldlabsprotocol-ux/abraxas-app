@@ -3,7 +3,10 @@
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
+import { MainnetReadinessPanel } from "@/components/roadmap/MainnetReadinessPanel";
+import { TimelineFramingPanel } from "@/components/roadmap/TimelineFramingPanel";
 import { ROADMAP } from "@/lib/protocolContent";
+import { TIMELINE_DISCLAIMER } from "@/lib/roadmapTimeline";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -13,8 +16,12 @@ export default function RoadmapPage() {
       <PageHeader
         eyebrow="Roadmap"
         title="Where the protocol stands"
-        subtitle="Public milestones with honest status labels. Timelines shift when real diligence or partner consent requires it."
+        subtitle={TIMELINE_DISCLAIMER}
       />
+
+      <MainnetReadinessPanel />
+      <TimelineFramingPanel />
+
       {ROADMAP.map(phase => (
         <ContentCard key={phase.phase} title={phase.phase}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>

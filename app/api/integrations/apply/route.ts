@@ -1,8 +1,9 @@
 // FILE: app/api/integrations/apply/route.ts
-// Design partner / external protocol integration applications.
+// Design partner application — on-chain authentication proof (primary).
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { issueAuthenticationProof } from "@/lib/authenticationProof/issue";
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,8 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
 
-    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-    const { error } = await sb.from("design_partners").insert({
+    const row = {
       company,
       contact_name: body.contact_name?.trim() ?? null,
       email,
@@ -40,14 +40,24 @@ export async function POST(req: NextRequest) {
       integration_type: body.integration_type?.trim() ?? "passport_gate",
       public_name_ok: Boolean(body.public_name_ok),
       status: "submitted",
-    });
+    };
+
+    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+    const { data, error } = await sb.from("design_partners").insert(row).select("id").single();
 
     if (error) {
       console.error("[integrations/apply]", error.message);
       return NextResponse.json({ error: "Could not save application" }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    const recordId = data.id as string;
+    const proof = await issueAuthenticationProof({
+      eventType: "design_partner_apply",
+      recordId,
+      recordPayload: { ...row, record_id: recordId },
+    });
+
+    return NextResponse.json({ ok: true, record_id: recordId, proof });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }

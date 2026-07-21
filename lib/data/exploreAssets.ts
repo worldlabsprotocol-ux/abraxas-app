@@ -5,11 +5,14 @@
 // is honest per asset.
 
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
-import { CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
+import { NAJ_TULUM_REGISTRY_IMAGE } from "@/lib/data/najTulumMedia";
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
+import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
-export type VerifyState = "verified" | "reference" | "open" | "owned";
+export type VerifyState = "verified" | "reference" | "open" | "owned" | "listed";
 
 export interface MetricMeta {
   level?: AssuranceLevel;
@@ -47,7 +50,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Cielo Sunrise",
     assetClass: "Real Estate · Hospitality",
     location: "Mineral Bluff, Georgia",
-    image: CIELO_PORCH_IMAGE.src,
+    image: CIELO_REGISTRY_IMAGE.src,
     primaryLabel: "Appraised value",
     primaryValue: "$1,100,000",
     primaryMeta: { level: 3, type: "appraised", asOf: "2025-12-01" },
@@ -56,7 +59,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryMeta: { level: 1, type: "projected", asOf: "2026-01-15" },
     score: "96",
     state: "verified",
-    statusBadge: "pilot",
+    statusBadge: undefined,
     href: "/flagship",
     verificationScopeHref: "/flagship#verification-scope",
     offeringDisclaimer: true,
@@ -64,11 +67,30 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     cta: "View asset",
   },
   {
+    id: "chickasaw-project",
+    name: CPG_ASSET.name,
+    assetClass: "Real Estate · Land",
+    location: CPG_ASSET.location,
+    image: CPG_ASSET.image,
+    primaryLabel: "Full project",
+    primaryValue: formatUsd(CPG_PRICING.fullProject),
+    primaryMeta: { level: 2, type: "reference", asOf: "2026-07-05" },
+    secondaryLabel: "Acreage",
+    secondaryValue: "~270 ac · 11 lots",
+    secondaryMeta: { level: 2, type: "reference", asOf: "2026-07-05" },
+    state: "open",
+    statusBadge: undefined,
+    note: "Phase I clean · surveys on file · qualified buyer workflow via Abraxas",
+    href: CPG_ASSET.caseStudyPath,
+    liveProof: { label: "Verify record", url: "/verify/ABX-RE-LAND-006" },
+    cta: "View case study",
+  },
+  {
     id: "smyrna-townhome",
     name: "Smyrna Townhome",
     assetClass: "Real Estate · Residential",
     location: "Smyrna, Georgia · Battery Atlanta",
-    image: "/assets/smyrna/011.webp",
+    image: SMYRNA_TOWNHOME_IMAGE.src,
     primaryLabel: "Appreciation",
     primaryValue: "$76.2K → $228K+",
     primaryMeta: { level: 1, type: "historical", asOf: "2024-06-01" },
@@ -86,7 +108,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     name: "Naj Tulum",
     assetClass: "Real Estate · International",
     location: "Aldea Zama, Tulum, Mexico",
-    image: "/assets/worldwearables/naj.jpg",
+    image: NAJ_TULUM_REGISTRY_IMAGE.src,
     primaryLabel: "Ownership",
     primaryValue: "Owned outright",
     secondaryLabel: "Monthly income",
@@ -118,4 +140,5 @@ export const VERIFY_META: Record<VerifyState, { label: string; color: string }> 
   open:      { label: "Open · Ownership clear", color: "#3B82F6" },
   owned:     { label: "Owned · Not open",    color: "#F59E0B" },
   reference: { label: "Reference · Completed", color: "#8B5CF6" },
+  listed:    { label: "Owner listed · L1",   color: "#64748B" },
 };

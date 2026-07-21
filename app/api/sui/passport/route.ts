@@ -2,8 +2,9 @@
 // Query Abraxas Passport objects on Sui devnet by object ID or owner address.
 
 import { NextResponse } from "next/server";
-import { getSuiDevnetClient } from "@/lib/sui/client";
-import { SUI_DEVNET, passportTypeFilter } from "@/lib/sui/config";
+import { getSuiClient } from "@/lib/sui/client";
+import { getSuiDeployment, passportTypeFilter } from "@/lib/sui/config";
+import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,9 @@ export async function GET(req: Request) {
   const objectId = searchParams.get("objectId");
   const owner = searchParams.get("owner");
 
-  const sui = getSuiDevnetClient();
+  const sui = getSuiClient();
+  const deployment = getSuiDeployment();
+  const network = getActiveSuiNetwork();
 
   try {
     if (objectId) {
@@ -32,10 +35,14 @@ export async function GET(req: Request) {
       if (!parsed) {
         return NextResponse.json({ error: "Not a Passport object" }, { status: 400 });
       }
-      return NextResponse.json({ network: "devnet", deployment: SUI_DEVNET, passport: parsed });
+      return NextResponse.json({ network, deployment, passport: parsed });
     }
 
-    const lookupOwner = owner || SUI_DEVNET.demoOwnerAddress;
+    const lookupOwner = owner || deployment.demoOwnerAddress;
+    if (!lookupOwner) {
+      return NextResponse.json({ error: "owner query param required" }, { status: 400 });
+    }
+
     const owned = await sui.getOwnedObjects({
       owner: lookupOwner,
       filter: { StructType: passportTypeFilter() },
@@ -54,8 +61,8 @@ export async function GET(req: Request) {
       .filter(Boolean);
 
     return NextResponse.json({
-      network: "devnet",
-      deployment: SUI_DEVNET,
+      network,
+      deployment,
       owner: lookupOwner,
       count: passports.length,
       passports,

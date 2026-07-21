@@ -116,3 +116,42 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ partner: data });
 }
+
+export async function PATCH(req: NextRequest) {
+  if (!checkAdmin(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!SB_URL || !SB_KEY) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
+  const body = (await req.json().catch(() => ({}))) as {
+    partner_id?: string;
+    status?: string;
+    allowed_environments?: string[];
+    public_listing_ok?: boolean;
+  };
+
+  if (!body.partner_id) {
+    return NextResponse.json({ error: "partner_id required" }, { status: 400 });
+  }
+
+  const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (body.status) updates.status = body.status;
+  if (body.allowed_environments) updates.allowed_environments = body.allowed_environments;
+  if (typeof body.public_listing_ok === "boolean") updates.public_listing_ok = body.public_listing_ok;
+
+  const { data, error } = await sb
+    .from("partners")
+    .update(updates)
+    .eq("partner_id", body.partner_id)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ partner: data });
+}

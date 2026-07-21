@@ -2,6 +2,8 @@
 // Partner-scoped usage stats for the developer dashboard.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { computeOnboardingProgress } from "@/lib/partner/partnerOnboarding";
+import type { RpOnboardingProgress } from "@/lib/partner/partnerOnboarding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -31,6 +33,11 @@ export interface PartnerDashboardData {
     response_time_ms: number | null;
     created_at: string;
   }>;
+  onboarding: RpOnboardingProgress;
+  mainnet_gate: {
+    eligible: boolean;
+    criteria: string;
+  };
 }
 
 function sb(): SupabaseClient | null {
@@ -77,6 +84,15 @@ export async function getPartnerDashboard(
 
   const usage30 = usage30Res.data ?? [];
   const success30 = usage30.filter(r => r.success).length;
+  const recent = (recentRes.data ?? []) as PartnerDashboardData["recent_events"];
+  const approvedCount = recent.filter(r => r.decision === "approved").length;
+
+  const onboarding = computeOnboardingProgress({
+    hasKey: true,
+    keyPrefix,
+    calls30d: usage30.length,
+    approvedDecisions: approvedCount,
+  });
 
   return {
     partner_id: partnerId,
@@ -91,6 +107,12 @@ export async function getPartnerDashboard(
       success_rate: usage30.length > 0 ? Math.round((success30 / usage30.length) * 100) : null,
       calls_7d: usage7Count.count ?? 0,
     },
-    recent_events: (recentRes.data ?? []) as PartnerDashboardData["recent_events"],
+    recent_events: recent,
+    onboarding,
+    mainnet_gate: {
+      eligible: onboarding.productionGateEligible,
+      criteria:
+        "Unaffiliated abx_live_ partner with decision: approved on a production verify call.",
+    },
   };
 }

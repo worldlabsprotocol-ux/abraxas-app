@@ -4,6 +4,7 @@
 module abraxas_passport::passport {
     use std::vector;
     use sui::bcs;
+    use sui::event;
     use sui::object::{Self, UID};
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
@@ -31,6 +32,16 @@ module abraxas_passport::passport {
     const E_REVOKED: u64 = 1;
     const E_MISSING_STAMPS: u64 = 2;
     const E_BAD_AUTHORITY: u64 = 3;
+    const E_BAD_HASH: u64 = 4;
+
+    /// On-chain authentication proof event — Abraxas core thesis.
+    public struct AuthenticationProofEvent has copy, drop {
+        event_type: vector<u8>,
+        record_id: vector<u8>,
+        payload_hash: vector<u8>,
+        timestamp_ms: u64,
+        anchor: address,
+    }
 
     /// Stamp bits aligned with lib/passport/stamps.ts
     const STAMP_IDENTITY: u16 = 1;
@@ -69,6 +80,23 @@ module abraxas_passport::passport {
         new_stamps: u16,
     ) {
         issue_stamps(passport, new_stamps);
+    }
+
+    /// Anchor proof-of-authentication hash on-chain (no third-party relay).
+    entry fun anchor_authentication_proof(
+        event_type: vector<u8>,
+        record_id: vector<u8>,
+        payload_hash: vector<u8>,
+        ctx: &mut TxContext,
+    ) {
+        assert!(vector::length(&payload_hash) == 32, E_BAD_HASH);
+        event::emit(AuthenticationProofEvent {
+            event_type,
+            record_id,
+            payload_hash,
+            timestamp_ms: tx_context::epoch_timestamp_ms(ctx),
+            anchor: tx_context::sender(ctx),
+        });
     }
 
     /// Devnet bootstrap: cap + passport with identity + biometric + social for `subject`

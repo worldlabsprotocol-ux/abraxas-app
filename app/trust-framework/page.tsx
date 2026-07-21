@@ -4,6 +4,8 @@
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
 import { TrustFrameworkSection } from "@/components/vision/TrustFrameworkSection";
+import { TrustIsTimeBoundSection } from "@/components/vision/TrustIsTimeBoundSection";
+import { TrustFrameworkDemo } from "@/components/vision/TrustFrameworkDemo";
 
 export default function TrustFrameworkPage() {
   return (
@@ -11,8 +13,10 @@ export default function TrustFrameworkPage() {
       <PageHeader
         eyebrow="Verification standards"
         title="Abraxas Trust Framework"
-        subtitle="Claim-based verification for permissioned finance — separate issuers, assurance levels, and expiry per decision domain."
+        subtitle="Separate issuers, assurance levels, and expiry — plus how trust stays current when records change."
       />
+      <TrustFrameworkDemo />
+      <TrustIsTimeBoundSection />
       <TrustFrameworkSection />
     </RedesignPage>
   );

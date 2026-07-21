@@ -57,6 +57,44 @@ Historical receipt payloads and signatures are **never mutated**. Validity is co
 - External issuer pilots (next milestone after deploy)
 - On-chain enforcement
 
+## Asset monitoring v1
+
+| Endpoint | Auth | Purpose |
+|----------|------|---------|
+| `POST /api/admin/asset-signals` | Admin PIN | Preview or apply signals (operator) |
+| `POST /api/v1/asset-signals` | Partner `abx_live_` key | Material state-change webhook + optional lot payload |
+| `POST /api/v1/listings/lot-status` | Partner `abx_live_` key | MLS lot inventory push (CPG Chickasaw) |
+| `GET /api/v1/assets/:assetId/lots` | Public | Live lot inventory read |
+| `GET/POST /api/admin/listings/lots` | Admin PIN | Operator lot override + event log |
+| `GET /api/cron/asset-monitoring` | `CRON_SECRET` | Daily automated feeds (also runs inside `/api/cron/bags-sync`) |
+
+Set `ASSET_MONITORING_AUTO_APPLY=true` to auto-apply claim transitions from cron feeds.
+
+**Automated feeds (daily cron):**
+- `credential_expiry_feed` — active claims past `expires_at`
+- `listing_status_feed` — pipeline stage, STR listing, and CPG lot-status drift (snapshot diff)
+- `registry_assurance_feed` — L4 monitoring PENDING or stale sync
+
+Partners can also push listing/title events via `POST /api/v1/asset-signals` with `signal_type: listing_status_change`, or update lot inventory directly via `POST /api/v1/listings/lot-status`. Public read: `GET /api/v1/assets/ABX-RE-LAND-006/lots`.
+
+## External relying party proof
+
+| Endpoint | Auth | Purpose |
+|----------|------|---------|
+| `GET /api/integrations/relying-party-proof` | Public | Live status of mainnet gate #5 |
+
+Production verify calls from external `abx_live_` partners with `decision: approved` count toward the gate.
+
+## Relying party onboarding
+
+| Step | Path | Purpose |
+|------|------|---------|
+| Apply | `/design-partner` → `/integrations#apply` | Submit integration application |
+| Admin review | `/admin/design-partners` | Approve + promote → org + `abx_test_` key |
+| Partner portal | `/developers/partner` | Usage stats + onboarding checklist |
+| Production | `/admin/partners` | Promote to production + issue `abx_live_` key |
+
 ## Next milestone
 
-One **real external issuer pilot** + one **real relying-party pilot** outside Abraxas first-party flows.
+1. **Asset monitoring v1** — MLS lot push + live inventory complete; county recorder hooks next.
+2. One **real external issuer pilot** + one **real relying-party pilot** outside Abraxas first-party flows.

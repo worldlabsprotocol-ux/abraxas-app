@@ -14,17 +14,20 @@ import {
   REGISTRY_VERIFY_EXAMPLE,
   RELYING_PARTY_LIMITATIONS,
   DESIGN_PARTNER_SLOTS,
+  ASSET_SIGNAL_WEBHOOK_EXAMPLE,
+  PRODUCTION_INTEGRATION_PATH,
 } from "@/lib/relyingPartyProgram";
-import { getExternalRelyingPartners, getSandboxPartners } from "@/lib/relyingPartners";
+import { getSandboxPartners } from "@/lib/relyingPartners";
 import { SANDBOX_DISCLAIMER } from "@/lib/credentials/sandboxClaims";
+import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
+import { ExternalRelyingPartnersList } from "@/components/integrations/ExternalRelyingPartnersList";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
 const SANDBOX_ACCENT = "#F59E0B";
 
 export default function RelyingPartiesPage() {
-  const externalPartners = getExternalRelyingPartners();
   const sandboxPartners = getSandboxPartners();
 
   return (
@@ -35,7 +38,26 @@ export default function RelyingPartiesPage() {
         subtitle={RELYING_PARTY_DEFINITION}
       />
 
+      <ContentCard title="Minimal integration path">
+        <p style={body}>
+          External relying parties: one verify call → cryptographic proof → independent check.
+          Full guide with copy-paste examples at{" "}
+          <Link href="/docs/relying-party-verify" style={{ color: ACCENT, fontWeight: 600 }}>
+            /docs/relying-party-verify
+          </Link>
+          {" · "}
+          <Link href="/api/docs/relying-party" style={{ color: ACCENT, fontWeight: 600 }}>
+            JSON API
+          </Link>
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.65rem" }}>
+          <Btn href="/docs/relying-party-verify" size="sm">Start integration →</Btn>
+          <Btn href="/api/proof/reference/ABX-RE-HOSP-001" variant="secondary" size="sm">Live Cielo demo →</Btn>
+        </div>
+      </ContentCard>
+
       <ContentCard title="Current pilot status">
+        <RelyingPartyProofStatus />
         <p style={body}>
           Pilot-ready verification infrastructure for real assets. Public verification, consent-based Passport access,
           and partner policy APIs are live in pilot. External relying-party and external-originator onboarding is underway.
@@ -92,32 +114,11 @@ export default function RelyingPartiesPage() {
       </ContentCard>
 
       <ContentCard title="External relying parties">
-        {externalPartners.length === 0 ? (
-          <p style={body}>
-            No external relying parties are publicly listed yet. Abraxas is pilot-ready — recruiting the first
-            unaffiliated organization to operate with an issued <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_</code> key
-            for one narrow workflow.
-          </p>
-        ) : (
-          externalPartners.map(partner => (
-            <div key={partner.partner_id} style={{
-              padding: "0.85rem", borderRadius: 12,
-              background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.28)",
-              marginBottom: "0.65rem",
-            }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: ACCENT, marginBottom: 4 }}>
-                {partner.company}
-              </div>
-              <p style={{ ...body, margin: "0 0 0.5rem" }}>{partner.description}</p>
-              <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", marginBottom: "0.65rem" }}>
-                Policy {partner.policy_id} · {partner.api_entry} · Status {partner.status}
-              </div>
-            </div>
-          ))
-        )}
+        <ExternalRelyingPartnersList />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-          <Btn href="/integrations/outreach" size="sm">Recruitment templates →</Btn>
-          <Btn href="/integrations/external-assets" variant="secondary" size="sm">External asset intake →</Btn>
+          <Btn href="/design-partner" size="sm">Start onboarding →</Btn>
+          <Btn href="/integrations/outreach" variant="secondary" size="sm">Recruitment templates →</Btn>
+          <Btn href="/integrations/external-assets" variant="ghost" size="sm">External asset intake →</Btn>
         </div>
       </ContentCard>
 
@@ -144,6 +145,22 @@ export default function RelyingPartiesPage() {
             </div>
           ))}
         </div>
+      </ContentCard>
+
+      <ContentCard title="Production integration path">
+        <BulletList items={[...PRODUCTION_INTEGRATION_PATH]} />
+        <p style={{ ...body, marginTop: "0.75rem", marginBottom: 0 }}>
+          Gate status updates automatically when an external <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_</code> partner
+          receives <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>decision: approved</code> on a production verify call.
+        </p>
+      </ContentCard>
+
+      <ContentCard title="Asset monitoring webhook (partners)">
+        <p style={{ ...body, marginBottom: "0.65rem" }}>
+          Title companies, registries, and operators can push material state-change signals.
+          Abraxas maps them to credential refresh or suspend — fail-closed at transaction time.
+        </p>
+        <CodeBlock>{ASSET_SIGNAL_WEBHOOK_EXAMPLE}</CodeBlock>
       </ContentCard>
 
       <ContentCard title="API reference — credential verify">

@@ -27,7 +27,7 @@ export const RELYING_PARTY_CHECKLIST = [
   },
 ] as const;
 
-export const CREDENTIAL_VERIFY_EXAMPLE = `// Server-side: partner decision envelope (record, credential, or policy)
+export const CREDENTIAL_VERIFY_EXAMPLE = `// Server-side: verify → decision + cryptographic proof
 const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify", {
   method: "POST",
   headers: {
@@ -36,16 +36,18 @@ const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify",
   },
   body: JSON.stringify({
     record_id: "ABX-RE-HOSP-001",
-    policy_id: "abraxas-booking-v1",
+    policy_id: "abraxas-verify-v1",
   }),
 });
 
 const result = await res.json();
-// { decision: "approved"|"denied"|"manual_review", status, assurance_level,
-//   policy_version, decision_reference, valid_until, ... }
+// decision, proof_id, verify_url, authentication_proof, decision_receipt
 
 if (result.decision === "approved") {
-  // Clear gated action — user or asset already verified via Abraxas
+  const proof = await fetch(result.verify_url).then(r => r.json());
+  if (proof.signature_valid && proof.proof_reliable) {
+    // Clear gated action — independently verifiable proof on record
+  }
 }`;
 
 export const TRUST_STATUS_EXAMPLE = `// Lightweight gate: does this Sui wallet have an Abraxas account + ID?
@@ -82,4 +84,46 @@ export const DESIGN_PARTNER_SLOTS = [
   { category: "Private credit / lending", need: "Collateral + identity tier for borrow", api: "GET /api/verify/registry" },
   { category: "Music / IP platform", need: "Catalog ownership attestation", api: "GET /api/verify/registry" },
   { category: "Corporate registry", need: "Wyoming LLC + asset binding check", api: "GET /api/trust/status" },
+] as const;
+
+export const ASSET_SIGNAL_WEBHOOK_EXAMPLE = `// Partner webhook — report lot status change (MLS sync)
+const res = await fetch("https://abraxas-app.vercel.app/api/v1/listings/lot-status", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer abx_live_YOUR_KEY",
+  },
+  body: JSON.stringify({
+    asset_id: "ABX-RE-LAND-006",
+    idempotency_key: "cpg:2026-07-18:lot4",
+    lots: [
+      { lot: 4, status: "under_contract", notes: "MLS offer accepted" },
+    ],
+  }),
+});
+
+const result = await res.json();
+// { ok: true, fingerprint, changed, results[] }
+
+// Or via asset-signals with credential review:
+await fetch("https://abraxas-app.vercel.app/api/v1/asset-signals", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer abx_live_YOUR_KEY",
+  },
+  body: JSON.stringify({
+    asset_id: "ABX-RE-LAND-006",
+    signal_type: "listing_status_change",
+    apply: true,
+    lots: [{ lot: 4, status: "under_contract" }],
+  }),
+});`;
+
+export const PRODUCTION_INTEGRATION_PATH = [
+  "Read /docs/relying-party-verify — one verify call → proof → independent check",
+  "Issue abx_live_ key with verify:credential scope",
+  "Implement server-side POST /api/credentials/verify at your transaction gate",
+  "Confirm GET /api/proof/{proof_id} returns signature_valid: true",
+  "First approved production verify logs toward the external RP mainnet gate",
 ] as const;

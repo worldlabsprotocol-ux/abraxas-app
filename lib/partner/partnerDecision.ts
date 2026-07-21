@@ -4,6 +4,9 @@
 import type { VerificationResult } from "@/lib/credentials/types";
 import type { VerifierResponse } from "@/lib/verifyRegistry";
 import type { VerificationAction } from "@/lib/verification/checkLevel";
+import type { VerifyDecisionArtifacts } from "@/lib/authenticationProof/issueVerifyDecision";
+import type { IssuedAuthenticationProof } from "@/lib/authenticationProof/types";
+import type { DecisionReceiptPublicView } from "@/lib/decisionReceipts/types";
 import { randomUUID } from "crypto";
 
 export type PartnerDecision = "approved" | "denied" | "manual_review";
@@ -27,6 +30,26 @@ export interface PartnerVerifyResponse {
   jurisdiction?: string;
   verification_level?: VerificationResult["verification_level"];
   error?: string;
+}
+
+export type PartnerVerifyResponseWithProof = PartnerVerifyResponse & {
+  proof_id: string;
+  verify_url: string;
+  authentication_proof: IssuedAuthenticationProof;
+  decision_receipt: DecisionReceiptPublicView | null;
+};
+
+export function attachVerifyProof(
+  response: PartnerVerifyResponse,
+  artifacts: VerifyDecisionArtifacts,
+): PartnerVerifyResponseWithProof {
+  return {
+    ...response,
+    proof_id: artifacts.proof_id,
+    verify_url: artifacts.verify_url,
+    authentication_proof: artifacts.authentication_proof,
+    decision_receipt: artifacts.decision_receipt,
+  };
 }
 
 export const DEFAULT_POLICY_ID = "abraxas-verify-v1";

@@ -3,6 +3,7 @@
 // Bug bounty pre-registration + full scope.
 
 import Link from "next/link";
+import { useState } from "react";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
@@ -10,7 +11,78 @@ import { AUDIT_TRACKER, AUDIT_STATUS_COLOR, BUG_BOUNTY } from "@/lib/securityPro
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+const ACCENT = "var(--accent)";
+
+function BountyReportForm() {
+  const [title, setTitle] = useState("");
+  const [severity, setSeverity] = useState("medium");
+  const [description, setDescription] = useState("");
+  const [reproduction, setReproduction] = useState("");
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [msg, setMsg] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    setMsg("");
+    try {
+      const res = await fetch("/api/security/bounty/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, severity, description, reproduction, contact_email: email }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string; message?: string };
+      if (data.ok) {
+        setStatus("sent");
+        setMsg(data.message ?? "Report received.");
+      } else {
+        setStatus("error");
+        setMsg(data.error ?? "Could not submit.");
+      }
+    } catch {
+      setStatus("error");
+      setMsg("Network error — try email fallback below.");
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "0.6rem 0.75rem", borderRadius: 10,
+    border: "1px solid var(--border)", background: "var(--surface)",
+    color: "var(--text-primary)", fontFamily: FONT, fontSize: "16px",
+    boxSizing: "border-box", marginBottom: "0.5rem",
+  };
+
+  if (status === "sent") {
+    return (
+      <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: ACCENT, margin: 0, lineHeight: 1.65 }}>
+        {msg}
+      </p>
+    );
+  }
+
+  return (
+    <form onSubmit={e => void submit(e)}>
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title *" required style={inputStyle} />
+      <select value={severity} onChange={e => setSeverity(e.target.value)} style={inputStyle}>
+        {["critical", "high", "medium", "low", "informational"].map(s => (
+          <option key={s} value={s}>{s}</option>
+        ))}
+      </select>
+      <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Description *" required rows={4} style={{ ...inputStyle, resize: "vertical" }} />
+      <textarea value={reproduction} onChange={e => setReproduction(e.target.value)} placeholder="Reproduction steps" rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+      <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="Contact email *" required style={inputStyle} />
+      {msg && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#F87171", margin: "0 0 0.5rem" }}>{msg}</p>}
+      <button type="submit" disabled={status === "sending"} style={{
+        padding: "0.65rem 1.25rem", borderRadius: 999, border: "none",
+        background: ACCENT, color: "#1a1400", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800,
+        cursor: status === "sending" ? "wait" : "pointer", opacity: status === "sending" ? 0.7 : 1,
+      }}>
+        {status === "sending" ? "Submitting…" : "Submit report on-protocol →"}
+      </button>
+    </form>
+  );
+}
 
 export default function BugBountyPage() {
   const mailto = `mailto:${BUG_BOUNTY.reportEmail}?subject=${encodeURIComponent(BUG_BOUNTY.reportSubject)}`;
@@ -114,13 +186,20 @@ export default function BugBountyPage() {
         <BulletList items={[...BUG_BOUNTY.launchCriteria]} />
       </ContentCard>
 
+      <ContentCard title="Submit via API (pre-registration)">
+        <p style={{ ...body, marginBottom: "0.85rem" }}>
+          Reports persist in Abraxas ops queue and notify the security inbox. Email fallback remains below.
+        </p>
+        <BountyReportForm />
+      </ContentCard>
+
       <div style={{
         padding: "1.25rem", borderRadius: 14, marginBottom: "1.5rem",
         background: "var(--surface-raised)", border: "1px solid var(--border-strong)",
         textAlign: "center",
       }}>
         <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
-          Report a vulnerability
+          Report a vulnerability (email)
         </div>
         <p style={{ ...body, marginBottom: "1rem" }}>
           Email findings with reproduction steps. Do not publicly disclose before we acknowledge.

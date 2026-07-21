@@ -5,6 +5,11 @@
 import Link from "next/link";
 import { registryAssetsForShowcase } from "@/lib/data/registryAssets";
 import { VERIFY_META } from "@/lib/data/exploreAssets";
+import {
+  VERIFY_SHOWCASE_BODY,
+  VERIFY_SHOWCASE_EYEBROW,
+  VERIFY_SHOWCASE_HEADLINE,
+} from "@/lib/institutionalRegistry";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "@/components/redesign/ui";
 
@@ -24,17 +29,16 @@ export function VerifyAssetsShowcase({ onSelectAsset }: Props) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1rem" }}>
         <div>
           <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: ACCENT, marginBottom: "0.35rem" }}>
-            Tokenized registry
+            {VERIFY_SHOWCASE_EYEBROW}
           </div>
           <h2 id="verify-assets-heading" style={{ fontFamily: FONT, fontSize: "var(--fs-h2)", fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>
-            Verify real assets
+            {VERIFY_SHOWCASE_HEADLINE}
           </h2>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 520, margin: "0.4rem 0 0" }}>
-            Each entry resolves on the public registry — assurance levels, pipeline stage, and tokenization status.
-            Music IP and vertical apps live under Apps; real-estate pilots are here.
+            {VERIFY_SHOWCASE_BODY}
           </p>
         </div>
-        <Btn href="/#registry" variant="secondary" size="sm">Full registry →</Btn>
+        <Btn href="/trust-framework" variant="secondary" size="sm">Trust framework →</Btn>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "0.75rem" }}>

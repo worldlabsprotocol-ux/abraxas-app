@@ -2,6 +2,7 @@
 // Auto-advancing product walkthrough — visuals + mock UI per step.
 
 import { CIELO_HERO_IMAGE, CIELO_PORCH_IMAGE } from "@/lib/data/cieloMedia";
+import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 
 export interface ProductLoopStep {
   id: string;
@@ -21,7 +22,7 @@ export const PRODUCT_LOOP_STEPS: ProductLoopStep[] = [
     title: "Browse verified assets",
     subtitle: "Assurance levels and registry state — no login required.",
     durationMs: 6000,
-    image: "/assets/smyrna/011.webp",
+    image: SMYRNA_TOWNHOME_IMAGE.src,
     badge: "Public registry",
     metrics: [
       { label: "Assets", value: "4 listed" },

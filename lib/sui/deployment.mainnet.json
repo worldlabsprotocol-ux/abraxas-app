@@ -1,0 +1,13 @@
+{
+  "network": "mainnet",
+  "rpcUrl": "https://fullnode.mainnet.sui.io:443",
+  "explorerBase": "https://suiscan.xyz/mainnet",
+  "packageId": "",
+  "module": "passport",
+  "publishedAt": null,
+  "publishTxDigest": null,
+  "demoPassportObjectId": "",
+  "demoIssuanceCapObjectId": "",
+  "demoOwnerAddress": "",
+  "_readme": "Populate packageId and cap after mainnet Passport deploy + audit. Until then SUI_NETWORK=mainnet falls back to devnet deployment for reads."
+}

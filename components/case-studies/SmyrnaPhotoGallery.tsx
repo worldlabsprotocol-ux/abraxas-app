@@ -1,14 +1,24 @@
 "use client";
 // FILE: components/case-studies/SmyrnaPhotoGallery.tsx
-// Loads /assets/smyrna/011.webp–018.webp — shows only files that exist.
+// Smyrna Townhome — canonical owner exterior + optional supplemental angles.
 
 import { useEffect, useState } from "react";
+import { SMYRNA_TOWNHOME_IMAGE, SMYRNA_LEGACY_STADIUM_PATH } from "@/lib/data/registryAssetImages";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
-const CANDIDATE_IMAGES = Array.from({ length: 8 }, (_, i) =>
-  `/assets/smyrna/${String(i + 11).padStart(3, "0")}.webp`,
+const SUPPLEMENTAL_IMAGES = Array.from({ length: 7 }, (_, i) =>
+  `/assets/smyrna/${String(i + 12).padStart(3, "0")}.webp`,
 );
+
+function probeImage(src: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
+}
 
 export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
   const [loaded, setLoaded] = useState<string[]>([]);
@@ -16,25 +26,24 @@ export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    const found: string[] = [];
 
-    async function probe() {
-      for (const src of CANDIDATE_IMAGES) {
-        const ok = await new Promise<boolean>(resolve => {
-          const img = new Image();
-          img.onload = () => resolve(true);
-          img.onerror = () => resolve(false);
-          img.src = src;
-        });
-        if (ok) found.push(src);
+    async function load() {
+      const canonical = await probeImage(SMYRNA_TOWNHOME_IMAGE.src);
+      const supplemental: string[] = [];
+      for (const src of SUPPLEMENTAL_IMAGES) {
+        if (await probeImage(src)) supplemental.push(src);
       }
-      if (!cancelled) {
-        const foundLimited = found.length ? found.slice(0, 2) : ["/assets/smyrna/011.webp"];
-        setLoaded(foundLimited);
-      }
+
+      const images = canonical
+        ? [SMYRNA_TOWNHOME_IMAGE.src, ...supplemental.filter(s => s !== SMYRNA_LEGACY_STADIUM_PATH)]
+        : supplemental.length
+          ? supplemental
+          : (await probeImage(SMYRNA_LEGACY_STADIUM_PATH) ? [SMYRNA_LEGACY_STADIUM_PATH] : []);
+
+      if (!cancelled) setLoaded(images);
     }
 
-    void probe();
+    void load();
     return () => { cancelled = true; };
   }, []);
 
@@ -50,7 +59,11 @@ export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
         background: "var(--surface)",
       }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={main} alt={`${altPrefix} ${active + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <img
+          src={main}
+          alt={`${altPrefix} ${active + 1}`}
+          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: SMYRNA_TOWNHOME_IMAGE.objectPosition, display: "block" }}
+        />
       </div>
 
       {loaded.length > 1 && (
@@ -61,7 +74,7 @@ export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
               type="button"
               onClick={() => setActive(i)}
               style={{
-                padding: 0, border: `2px solid ${i === active ? "#06B6D4" : "var(--border)"}`,
+                padding: 0, border: `2px solid ${i === active ? "var(--accent)" : "var(--border)"}`,
                 borderRadius: 8, overflow: "hidden", width: 72, height: 52, cursor: "pointer",
                 opacity: i === active ? 1 : 0.7,
               }}
@@ -75,16 +88,15 @@ export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
 
       {loaded.length === 1 && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
-          Additional property angles upload to <code style={{ fontFamily: "monospace", color: "#06B6D4" }}>/public/assets/smyrna/012.webp</code> and up — they appear here automatically.
+          Additional property angles can be added under <code style={{ fontFamily: "monospace", color: "var(--accent-2)" }}>/public/assets/smyrna/012.webp</code> and up.
         </p>
       )}
 
-      {/* Location context cards (visual proof without fake photos) */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.5rem" }}>
         {[
           { label: "Truist Park", value: "~6 min drive", sub: "Braves · concerts · events" },
           { label: "The Battery", value: "$1B+ district", sub: "3M+ visitors / year" },
-          { label: "Title", value: "Clear · Paid off", sub: "Fannin/Cobb records" },
+          { label: "Title", value: "Clear · Paid off", sub: "Fulton/Cobb records" },
         ].map(card => (
           <div key={card.label} style={{
             padding: "0.65rem", borderRadius: 10,
@@ -93,7 +105,7 @@ export function SmyrnaPhotoGallery({ altPrefix }: { altPrefix: string }) {
             <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 4 }}>
               {card.label}
             </div>
-            <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: "#06B6D4" }}>{card.value}</div>
+            <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: "var(--accent)" }}>{card.value}</div>
             <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", marginTop: 2 }}>{card.sub}</div>
           </div>
         ))}
