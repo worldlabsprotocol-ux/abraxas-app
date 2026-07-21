@@ -16,6 +16,7 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
+  { href: "/#product-demo", label: "Product demo" },
   { href: "/#thesis", label: "RWA Thesis" },
   { href: "/#agentic-finance", label: "AI Agents" },
   { href: "/integrate", label: "Integrate" },

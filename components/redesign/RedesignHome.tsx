@@ -14,6 +14,7 @@ import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
 import { HomePositioningStrip } from "@/components/home/HomePositioningStrip";
 import { HomeAgenticFinanceStrip } from "@/components/home/HomeAgenticFinanceStrip";
+import { HomeProductVisualSection } from "@/components/home/HomeProductVisualSection";
 import { HomeThesisEssaySection } from "@/components/home/HomeThesisEssaySection";
 import { HomeMarketTicker } from "@/components/home/HomeMarketTicker";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
@@ -33,6 +34,7 @@ function HomeContent() {
       <div style={MAXW}>
         <HomeSharpHero />
         <HomeAgenticFinanceStrip />
+        <HomeProductVisualSection />
         <HomeThesisEssaySection />
         <HomeHonestStatusStrip />
         <HomePositioningStrip />
