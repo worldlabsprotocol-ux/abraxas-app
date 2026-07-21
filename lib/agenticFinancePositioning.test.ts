@@ -18,6 +18,7 @@ describe("agenticFinancePositioning", () => {
     expect(stack.schema).toBe("abraxas.agentic_finance.v1");
     expect(stack.headline).toBe(AGENTIC_FINANCE_HEADLINE);
     expect(stack.stack).toHaveLength(2);
+    expect(stack.stack[0].id).toBe("verify");
     expect(stack.stack.find(l => l.id === "verify")?.abraxas).toBe(true);
     expect(stack.stack.find(l => l.id === "act")?.abraxas).toBe(false);
   });

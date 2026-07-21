@@ -9,6 +9,15 @@ export const ROBINHOOD_TRADING_MCP_URL = "https://agent.robinhood.com/mcp/tradin
 
 export const AGENTIC_FINANCE_HEADLINE = "Verify before agents act.";
 
+/** Homepage — names Robinhood explicitly so the movement is visible above the fold. */
+export const AGENTIC_FINANCE_HOME_TITLE =
+  "Robinhood opened agentic trading. Abraxas verifies before agents act.";
+
+export const AGENTIC_FINANCE_HOME_BADGE = "Agentic finance · July 2026";
+
+export const AGENTIC_FINANCE_HERO_PILL =
+  "Robinhood Agentic Trading MCP is live — Abraxas is the verify layer upstream";
+
 export const AGENTIC_FINANCE_SUBHEAD =
   "Robinhood's Agentic Trading MCP lets agents trade. Abraxas gives those agents cryptographic proof to check before they move capital or accept an asset.";
 
@@ -20,18 +29,20 @@ export const AGENTIC_FINANCE_INDEPENDENCE_NOTE =
 
 export const AGENTIC_FINANCE_STACK_LAYERS = [
   {
-    id: "act",
-    label: "Act — execution & distribution",
-    role: "Agents place orders, move capital, and interact with brokerage or app APIs",
-    examples: "Robinhood Agentic Trading MCP · embedded finance · custodians",
-    abraxas: false,
+    id: "verify",
+    label: "1 · Verify — Abraxas",
+    role: "Cryptographic proof that a person or asset passed policy — agent.proceed / agent.valid",
+    examples: "POST /api/credentials/verify · GET /api/proof/{id}",
+    abraxas: true,
+    step: 1,
   },
   {
-    id: "verify",
-    label: "Verify — trust before action",
-    role: "Cryptographic proof that a person or asset passed policy — independently checkable",
-    examples: "Abraxas verify API · proof lookup · agent.proceed / agent.valid",
-    abraxas: true,
+    id: "act",
+    label: "2 · Act — Robinhood MCP",
+    role: "Agents place orders via Robinhood's Trading MCP — Claude, ChatGPT, Cursor, and more",
+    examples: "agent.robinhood.com/mcp/trading · isolated Agentic account",
+    abraxas: false,
+    step: 2,
   },
 ] as const;
 

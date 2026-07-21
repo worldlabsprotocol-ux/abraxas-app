@@ -2,8 +2,10 @@
 // FILE: components/home/HomeSharpHero.tsx
 // Three-layer hierarchy — emotion · mechanism · category (10-second read).
 
+import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
+import { AGENTIC_FINANCE_HERO_PILL } from "@/lib/agenticFinancePositioning";
 import {
   ABRAXAS_CATEGORY,
   ABRAXAS_EMOTION_HEADLINE,
@@ -28,6 +30,47 @@ export function HomeSharpHero() {
       }}
     >
       <div style={TEXT_COL}>
+        <Link
+          href="/#agentic-finance"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            marginBottom: "0.85rem",
+            padding: "0.45rem 0.75rem",
+            borderRadius: 999,
+            border: "1px solid rgba(16,185,129,0.45)",
+            background: "rgba(16,185,129,0.1)",
+            textDecoration: "none",
+            maxWidth: "100%",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+              fontSize: "0.52rem",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#34D399",
+              flexShrink: 0,
+            }}
+          >
+            New
+          </span>
+          <span
+            style={{
+              fontFamily: FONT,
+              fontSize: "clamp(0.72rem, 1.8vw, 0.82rem)",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              lineHeight: 1.35,
+            }}
+          >
+            {AGENTIC_FINANCE_HERO_PILL} →
+          </span>
+        </Link>
+
         <h1
           id="home-hero-heading"
           style={{
@@ -98,6 +141,9 @@ export function HomeSharpHero() {
           </Btn>
           <Btn href="/integrate" variant="secondary" size="lg">
             Build with Abraxas →
+          </Btn>
+          <Btn href="/#agentic-finance" variant="secondary" size="lg">
+            Robinhood + AI agents →
           </Btn>
           <Btn href="/developers" variant="ghost" size="lg">
             Read docs →

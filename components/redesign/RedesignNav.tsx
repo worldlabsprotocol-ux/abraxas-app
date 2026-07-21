@@ -16,12 +16,13 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
+  { href: "/#agentic-finance", label: "AI Agents" },
   { href: "/integrate", label: "Integrate" },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
 ];
 
 const MORE_LINKS = [
-  { href: "/trust-framework", label: "Trust framework" },
+  { href: "/docs/ai-agents", label: "AI agents (Robinhood MCP stack)" },
   { href: "/verify", label: "Verify records" },
   { href: "/account", label: "My account" },
   { href: "/build", label: "Submit your asset" },
