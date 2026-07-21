@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: hero → institutional deck → full article → essentials.
+// Homepage: hero → minimum proof → mainnet E2E → deck → article.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -10,10 +10,11 @@ import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeMinimumProofDemo } from "@/components/home/HomeMinimumProofDemo";
+import { HomeMainnetVerificationStrip } from "@/components/home/HomeMainnetVerificationStrip";
 import { HomeInstitutionalShowcase } from "@/components/home/HomeInstitutionalShowcase";
 import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 import { HomeMarketTicker } from "@/components/home/HomeMarketTicker";
-import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 
 const MAXW: React.CSSProperties = {
@@ -26,12 +27,13 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
+        <HomeMinimumProofDemo />
+        <HomeMainnetVerificationStrip />
         <HomeInstitutionalShowcase />
       </div>
       <HomeFeaturedArticle />
       <div style={MAXW}>
         <HomeMarketTicker />
-        <HomePartnersBrief />
         <HomeSignedInModule />
       </div>
     </main>

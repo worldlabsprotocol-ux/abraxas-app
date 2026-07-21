@@ -17,8 +17,8 @@ const MotionLink = motion.create(Link);
 const LINKS = [
   { href: "/", label: "Home", exact: true },
   { href: "/#product-demo", label: "Product demo" },
-  { href: "/#institutional-story", label: "Institutional deck" },
-  { href: "/#article", label: "Article" },
+  { href: "/#minimum-proof", label: "Minimum proof" },
+  { href: "/#mainnet-readiness", label: "Mainnet gates" },
   { href: "/blog", label: "Blog" },
   { href: "/integrate", label: "Integrate" },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },

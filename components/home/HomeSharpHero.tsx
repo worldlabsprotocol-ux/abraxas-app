@@ -176,11 +176,11 @@ export function HomeSharpHero() {
         </p>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>
-          <Btn href="/#institutional-story" size="lg">
-            Institutional deck →
+          <Btn href="/#minimum-proof" size="lg">
+            Minimum proof →
           </Btn>
-          <Btn href="/#article" variant="secondary" size="lg">
-            Read article →
+          <Btn href="/#mainnet-readiness" variant="secondary" size="lg">
+            Mainnet gates →
           </Btn>
           <Btn href="/integrate" variant="secondary" size="lg">
             Build with Abraxas →

@@ -149,16 +149,16 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
                 Enter Abraxas →
               </button>
 
-              <p style={{
-                fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
-                fontSize: "0.58rem",
-                fontWeight: 600,
-                color: TEXT_ON_DARK.caption,
-                margin: 0,
-                letterSpacing: "0.06em",
-              }}>
-                Deck → #institutional-story · Article → #article
-              </p>
+            <p style={{
+              fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+              fontSize: "0.58rem",
+              fontWeight: 600,
+              color: TEXT_ON_DARK.caption,
+              margin: 0,
+              letterSpacing: "0.06em",
+            }}>
+              Minimum proof demo → #minimum-proof · Mainnet gates → #mainnet-readiness
+            </p>
             </div>
           </motion.div>
         </motion.div>

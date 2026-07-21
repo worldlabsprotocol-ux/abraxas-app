@@ -150,8 +150,8 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     title: 'Sandbox live · mainnet gated',
     subtitle: 'We ship what works and label what is next — no fake production claims.',
     visual: 'live-status-panel',
-    cta: { label: 'Mainnet readiness', href: '/api/mainnet/readiness' },
-    ctaSecondary: { label: 'Live references', href: '/#article' },
+    cta: { label: 'Mainnet roadmap', href: '/#mainnet-readiness' },
+    ctaSecondary: { label: 'E2E verify check', href: '/api/verify/e2e' },
   },
 
   {
