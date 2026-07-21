@@ -12,7 +12,9 @@ import {
   TEXT_ON_DARK,
 } from "@/lib/design/institutionalTheme";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+
+const FONT = ABRAXAS_FONT_SANS;
 const STORAGE_KEY = "abraxas_boot_entered_v9";
 
 const BOOT_THEME: CSSProperties = {

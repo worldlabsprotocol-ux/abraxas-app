@@ -1,9 +1,31 @@
 // FILE: app/layout.tsx
 // Root layout. Light default, dark via ThemeContext toggle.
 import type { Metadata } from "next";
+import { DM_Sans, IBM_Plex_Mono, Syne } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { SITE_URL } from "@/lib/siteUrl";
+
+const syne = Syne({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const ibmMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Abraxas, Verify Once. Transact Everywhere.",
@@ -56,7 +78,12 @@ const langInitScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" translate="no" suppressHydrationWarning>
+    <html
+      lang="en"
+      translate="no"
+      suppressHydrationWarning
+      className={`${syne.variable} ${dmSans.variable} ${ibmMono.variable}`}
+    >
       <head>
         <meta name="google" content="notranslate" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

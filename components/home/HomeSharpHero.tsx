@@ -14,7 +14,13 @@ import {
   ABRAXAS_SUBHEAD,
 } from "@/lib/northStar";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+import {
+  ABRAXAS_FONT_DISPLAY,
+  ABRAXAS_FONT_MONO,
+  ABRAXAS_FONT_SANS,
+} from "@/lib/abraxasTypography";
+
+const FONT = ABRAXAS_FONT_SANS;
 
 const TEXT_COL: React.CSSProperties = { maxWidth: 780 };
 
@@ -48,7 +54,7 @@ export function HomeSharpHero() {
           >
             <span
               style={{
-                fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+                fontFamily: ABRAXAS_FONT_MONO,
                 fontSize: "0.52rem",
                 fontWeight: 800,
                 letterSpacing: "0.08em",
@@ -88,7 +94,7 @@ export function HomeSharpHero() {
           >
             <span
               style={{
-                fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+                fontFamily: ABRAXAS_FONT_MONO,
                 fontSize: "0.52rem",
                 fontWeight: 800,
                 letterSpacing: "0.08em",
@@ -116,9 +122,9 @@ export function HomeSharpHero() {
         <h1
           id="home-hero-heading"
           style={{
-            fontFamily: FONT,
+            fontFamily: ABRAXAS_FONT_DISPLAY,
             fontSize: "clamp(2rem, 5.5vw, var(--fs-display))",
-            fontWeight: 900,
+            fontWeight: 800,
             letterSpacing: "-0.045em",
             lineHeight: 1.02,
             color: "var(--text-primary)",

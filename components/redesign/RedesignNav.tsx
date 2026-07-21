@@ -10,7 +10,9 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+
+const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "var(--accent)";
 const MotionLink = motion.create(Link);
 

@@ -2,9 +2,15 @@
 // Premium DeFi-native demo tokens — glass, mesh, bold type (institutional × crypto-native).
 
 import type { CSSProperties } from "react";
+import {
+  ABRAXAS_FONT_DISPLAY,
+  ABRAXAS_FONT_MONO,
+  ABRAXAS_FONT_SANS,
+} from "@/lib/abraxasTypography";
 
-export const PREMIUM_FONT = "'Inter', system-ui, -apple-system, sans-serif";
-export const PREMIUM_MONO = "'JetBrains Mono', 'SF Mono', ui-monospace, monospace";
+export const PREMIUM_FONT = ABRAXAS_FONT_SANS;
+export const PREMIUM_DISPLAY = ABRAXAS_FONT_DISPLAY;
+export const PREMIUM_MONO = ABRAXAS_FONT_MONO;
 
 export const GLASS: CSSProperties = {
   background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
