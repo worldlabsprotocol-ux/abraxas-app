@@ -18,7 +18,8 @@ const LINKS = [
   { href: "/", label: "Home", exact: true },
   { href: "/#product-demo", label: "Product demo" },
   { href: "/#institutional-story", label: "Institutional deck" },
-  { href: "/docs/ai-agents", label: "AI Agents" },
+  { href: "/#article", label: "Article" },
+  { href: "/blog", label: "Blog" },
   { href: "/integrate", label: "Integrate" },
   { href: "/passport", label: "Passport & Verify", matchPrefixes: ["/passport", "/verify"] },
 ];

@@ -6,11 +6,13 @@ import { ACCENT, CONCEPT_TYPE, PREMIUM_FONT, PREMIUM_MONO } from "@/components/h
 import { GlowOrb } from "@/components/home/productVisual/ProductVisualPrimitives";
 import { COSMIC_PALETTE, DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
 import type { InstitutionalSlide } from "@/lib/institutionalMasterSlides";
+import { DASHBOARD_ASSETS } from "@/lib/productVisualDemo";
 import {
   RWA_INSTITUTION_QUESTIONS,
   RWA_THESIS_MARKET_STATS,
   RWA_TOKENIZATION_STEPS,
 } from "@/lib/rwaTokenizationThesis";
+import { InstitutionalProductEmbed } from "./InstitutionalProductEmbed";
 
 const ACCENT_CYAN = COSMIC_PALETTE.cyan;
 
@@ -216,6 +218,100 @@ export function InstitutionalSlideVisual({ slide, accent = ACCENT_CYAN }: Props)
 
     case "hero-proof":
       return <AuthenticationProofArtifact hero issued pulse />;
+
+    case "live-proof-panel":
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%", maxWidth: 420 }}>
+          <div style={{ transform: "scale(0.85)", transformOrigin: "center" }}>
+            <AuthenticationProofArtifact hero issued pulse />
+          </div>
+          <div style={{ fontFamily: PREMIUM_MONO, fontSize: "0.55rem", color: accent, letterSpacing: "0.06em" }}>
+            proof_8f3a…c21 · agent.valid · issued
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+            {[
+              { name: "Cielo Sunrise", tag: "Hospitality · live", icon: "🏨" },
+              { name: "Chickasaw", tag: "270 ac · verified", icon: "🌾" },
+            ].map((r, i) => (
+              <motion.div
+                key={r.name}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.12 }}
+                style={{
+                  ...visualCard(COSMIC_PALETTE.emerald),
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  textAlign: "left",
+                  minWidth: 140,
+                }}
+              >
+                <span style={{ fontSize: "1.25rem" }}>{r.icon}</span>
+                <div>
+                  <div style={{ fontFamily: PREMIUM_FONT, fontSize: "0.72rem", fontWeight: 800, color: "#FAFAFA" }}>{r.name}</div>
+                  <div style={{ ...microLabel, marginTop: 2, color: COSMIC_PALETTE.emerald }}>{r.tag}</div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          <motion.div
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            style={{ fontFamily: PREMIUM_MONO, fontSize: "0.52rem", color: COSMIC_PALETTE.textMuted }}
+          >
+            POST /verify → GET /proof/:id → partner proceeds
+          </motion.div>
+        </div>
+      );
+
+    case "live-status-panel":
+      return (
+        <div style={{ width: "100%", maxWidth: 380 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
+            {[
+              { label: "Sandbox", value: "Live", color: COSMIC_PALETTE.emerald },
+              { label: "Signed proofs", value: "On", color: accent },
+              { label: "Mainnet gates", value: "1/7", color: COSMIC_PALETTE.gold },
+            ].map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+                style={{ ...visualCard(s.color) }}
+              >
+                <div style={microLabel}>{s.label}</div>
+                <div style={{ fontFamily: PREMIUM_FONT, fontSize: "1rem", fontWeight: 900, color: "#FAFAFA" }}>{s.value}</div>
+              </motion.div>
+            ))}
+          </div>
+          <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "14%" }}
+              transition={{ duration: 1 }}
+              style={{ height: "100%", background: `linear-gradient(90deg, ${COSMIC_PALETTE.gold}, ${COSMIC_PALETTE.violet})` }}
+            />
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 10 }}>
+            {DASHBOARD_ASSETS.map((a) => (
+              <span key={a.id} style={pill(a.accent)}>
+                {a.icon} {a.name.split(" ")[0]}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+
+    case "embed-passport":
+      return <InstitutionalProductEmbed type="passport" />;
+
+    case "embed-unlock":
+      return <InstitutionalProductEmbed type="unlock" />;
+
+    case "embed-dashboard":
+      return <InstitutionalProductEmbed type="dashboard" />;
 
     case "stat-row": {
       const stats = (props.stats as { label: string; value: string }[]) ?? [];

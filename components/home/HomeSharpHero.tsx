@@ -32,7 +32,7 @@ export function HomeSharpHero() {
       <div style={TEXT_COL}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", marginBottom: "0.85rem" }}>
           <Link
-            href="/#institutional-story"
+            href="/#article"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -57,7 +57,7 @@ export function HomeSharpHero() {
                 flexShrink: 0,
               }}
             >
-              Essay
+              Article
             </span>
             <span
               style={{
@@ -179,8 +179,8 @@ export function HomeSharpHero() {
           <Btn href="/#institutional-story" size="lg">
             Institutional deck →
           </Btn>
-          <Btn href="/#product-demo" variant="secondary" size="lg">
-            Product demo →
+          <Btn href="/#article" variant="secondary" size="lg">
+            Read article →
           </Btn>
           <Btn href="/integrate" variant="secondary" size="lg">
             Build with Abraxas →

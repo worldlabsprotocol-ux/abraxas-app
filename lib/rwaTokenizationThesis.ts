@@ -15,7 +15,7 @@ export const RWA_THESIS_HOME_LEAD =
   "The RWA market is moving from experimentation to institutional adoption. Tokenization creates digital ownership — but institutions still need trusted verification before capital moves.";
 
 export const RWA_THESIS_HERO_PILL =
-  "New essay: What is RWA tokenization? — verification beyond minting";
+  "New article: What is RWA tokenization? — verification beyond minting";
 
 export const RWA_THESIS_MARKET_STATS = [
   { label: "2025 market", value: "$1.8T", detail: "RWA tokenization (industry estimates)" },

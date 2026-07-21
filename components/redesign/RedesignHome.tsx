@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: hero → one institutional deck → product demo → essentials.
+// Homepage: hero → institutional deck → full article → essentials.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -11,7 +11,7 @@ import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeInstitutionalShowcase } from "@/components/home/HomeInstitutionalShowcase";
-import { HomeProductVisualSection } from "@/components/home/HomeProductVisualSection";
+import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 import { HomeMarketTicker } from "@/components/home/HomeMarketTicker";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
@@ -27,7 +27,9 @@ function HomeContent() {
       <div style={MAXW}>
         <HomeSharpHero />
         <HomeInstitutionalShowcase />
-        <HomeProductVisualSection />
+      </div>
+      <HomeFeaturedArticle />
+      <div style={MAXW}>
         <HomeMarketTicker />
         <HomePartnersBrief />
         <HomeSignedInModule />

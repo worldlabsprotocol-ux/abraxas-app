@@ -245,7 +245,7 @@ export function ThesisEssaySlideshow() {
             animate={{ opacity: 1, y: 0 }}
             style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}
           >
-            <Btn href={`/blog/${RWA_THESIS_SLUG}`} size="sm">Full essay →</Btn>
+            <Btn href={`/blog/${RWA_THESIS_SLUG}`} size="sm">Full article →</Btn>
             <Btn href={RWA_THESIS_MEDIUM_URL} variant="secondary" size="sm">Medium →</Btn>
             <Link href="/integrate" style={{ fontFamily: PREMIUM_FONT, fontSize: "0.74rem", fontWeight: 700, color: ACCENT.emerald, alignSelf: "center", textDecoration: "none" }}>
               Integrate →

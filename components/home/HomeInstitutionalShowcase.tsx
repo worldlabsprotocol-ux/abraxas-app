@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { InstitutionalMasterSlideshow } from "@/components/home/institutional/InstitutionalMasterSlideshow";
-import { RWA_THESIS_MEDIUM_URL } from "@/lib/rwaTokenizationThesis";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -46,12 +45,12 @@ export function HomeInstitutionalShowcase() {
             margin: "0 auto 0.75rem",
           }}
         >
-          One slideshow for investors, institutions, builders, and agents. Medium RWA essay as the market
-          diagram — visuals at every level, not just numbers.
+          One slideshow — article visuals, product flows, and live verify records. Scroll down for the full
+          article without leaving the site.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", justifyContent: "center", alignItems: "center" }}>
-          <Btn href={RWA_THESIS_MEDIUM_URL} variant="secondary" size="sm">
-            Medium essay →
+          <Btn href="/#article" size="sm">
+            Read full article →
           </Btn>
           <Link
             href="/demo/institutional"

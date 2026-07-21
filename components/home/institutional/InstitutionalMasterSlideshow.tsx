@@ -23,6 +23,7 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
   const containerRef = useRef<HTMLDivElement>(null);
   const slide = INSTITUTIONAL_MASTER_SLIDES[index];
   const chapterIdx = getSlideChapterIndex(index);
+  const isEmbed = slide.layout === "embed";
 
   const go = useCallback((n: number) => {
     setIndex((n + TOTAL) % TOTAL);
@@ -75,8 +76,8 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
           flex: 1,
           position: "relative",
           minWidth: 0,
-          aspectRatio: fullScreen ? "16 / 9" : "16 / 10",
-          maxHeight: fullScreen ? "min(72vh, 640px)" : 480,
+          aspectRatio: fullScreen ? "16 / 9" : isEmbed ? "16 / 11" : "16 / 10",
+          maxHeight: fullScreen ? "min(72vh, 640px)" : isEmbed ? 540 : 480,
           borderRadius: fullScreen ? 28 : 24,
           border: `1px solid ${ACCENT}44`,
           overflow: "hidden",
@@ -189,7 +190,7 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
               >
                 {slide.title}
               </h3>
-              {slide.subtitle && (
+              {slide.subtitle && !isEmbed && (
                 <p
                   style={{
                     fontFamily: DEMO_TYPOGRAPHY.fontSans,

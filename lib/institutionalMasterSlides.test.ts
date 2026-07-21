@@ -19,13 +19,13 @@ describe('institutionalMasterSlides', () => {
     ]);
   });
 
-  it('includes Medium thesis market slides plus product chapters', () => {
-    expect(INSTITUTIONAL_MASTER_SLIDES.length).toBeGreaterThanOrEqual(14);
+  it('includes article market slides plus product live proof embeds', () => {
+    expect(INSTITUTIONAL_MASTER_SLIDES.length).toBeGreaterThanOrEqual(20);
     expect(INSTITUTIONAL_MASTER_SLIDES[0].chapter).toBe('market');
-    expect(INSTITUTIONAL_MASTER_SLIDES[0].eyebrow).toContain('Medium');
-    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'steps')).toBe(true);
-    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'audience-map')).toBe(true);
-    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'verify-loop')).toBe(true);
+    expect(INSTITUTIONAL_MASTER_SLIDES[0].eyebrow).toContain('Article');
+    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'live-proof-panel')).toBe(true);
+    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'embed-passport')).toBe(true);
+    expect(INSTITUTIONAL_MASTER_SLIDES.some((s) => s.visual === 'embed-dashboard')).toBe(true);
   });
 
   it('maps chapter start indices', () => {

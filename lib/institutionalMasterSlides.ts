@@ -1,6 +1,6 @@
 /**
  * Single institutional master slideshow — market thesis through product proof.
- * Medium essay is the market diagram chapter; visuals at every level.
+ * Featured article is the market diagram chapter; visuals at every level.
  */
 
 import {
@@ -31,6 +31,8 @@ export type InstitutionalSlide = {
   subtitle?: string;
   visual: string;
   visualProps?: Record<string, unknown>;
+  /** Taller frame for embedded product demos */
+  layout?: 'standard' | 'embed';
   cta?: { label: string; href: string };
   ctaSecondary?: { label: string; href: string };
 };
@@ -44,27 +46,27 @@ export const INSTITUTIONAL_CHAPTERS: { id: InstitutionalChapterId; label: string
   { id: 'build', label: 'Build' },
 ];
 
-/** Medium essay slides — the market diagram chapter */
-const marketFromMedium: InstitutionalSlide[] = RWA_THESIS_SLIDES.map((s, i) => ({
+/** Article slides — the market diagram chapter */
+const marketFromArticle: InstitutionalSlide[] = RWA_THESIS_SLIDES.map((s, i) => ({
   id: `market-${s.id}`,
   chapter: 'market' as const,
   chapterLabel: 'Market',
-  eyebrow: i === 0 ? 'Medium · RWA thesis' : s.label.replace(/^\d+ · /, ''),
+  eyebrow: i === 0 ? 'Article · RWA thesis' : s.label.replace(/^\d+ · /, ''),
   title: s.headline,
   subtitle: s.body,
   visual: s.visual,
   cta:
     i === RWA_THESIS_SLIDES.length - 1
-      ? { label: 'Read on Medium', href: RWA_THESIS_MEDIUM_URL }
+      ? { label: 'Read full article', href: '/#article' }
       : undefined,
   ctaSecondary:
     i === RWA_THESIS_SLIDES.length - 1
-      ? { label: 'Full essay', href: '/blog/what-is-real-world-asset-tokenization' }
+      ? { label: 'Also on Medium', href: RWA_THESIS_MEDIUM_URL }
       : undefined,
 }));
 
 export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
-  ...marketFromMedium,
+  ...marketFromArticle,
 
   {
     id: 'problem-friction',
@@ -133,19 +135,42 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     eyebrow: 'Sandbox today',
     title: 'Signed decision receipts — verifiable offline',
     subtitle:
-      'Every allow/deny produces a proof ID partners can audit without calling Abraxas again.',
-    visual: 'hero-proof',
+      'Every allow/deny produces a proof ID. Partners audit without calling Abraxas again. Cielo Sunrise and Chickasaw are live verify records.',
+    visual: 'live-proof-panel',
+    cta: { label: 'Verify records', href: '/verify' },
+    ctaSecondary: { label: 'GET /proof/:id', href: '/docs/ai-agents' },
+  },
+  {
+    id: 'live-passport',
+    chapter: 'live',
+    chapterLabel: 'Live proof',
+    eyebrow: 'Product · Passport',
+    title: 'Wallet → verify → credential',
+    subtitle: 'Sui zkLogin, Veriff KYC, W3C verifiable credential — one front door for every partner.',
+    visual: 'embed-passport',
+    layout: 'embed',
+    cta: { label: 'Open passport', href: '/passport' },
   },
   {
     id: 'live-unlock',
     chapter: 'live',
     chapterLabel: 'Live proof',
-    eyebrow: 'RWA unlock',
-    title: 'Debt & equity flows on the same rail',
-    subtitle: 'Flagship book demo: passport → gate → unlock → dashboard.',
-    visual: 'unlock-row',
-    visualProps: { assets: ['Debt', 'Equity', 'Fund'] },
-    cta: { label: 'Product demo', href: '/#product-demo' },
+    eyebrow: 'Product · RWA unlock',
+    title: 'Gated → proof → unlocked',
+    subtitle: 'Policy check, signed proof, then transact. Debt, equity, and fund flows on the same rail.',
+    visual: 'embed-unlock',
+    layout: 'embed',
+  },
+  {
+    id: 'live-dashboard',
+    chapter: 'live',
+    chapterLabel: 'Live proof',
+    eyebrow: 'Product · Dashboard',
+    title: 'Live yield · verified assets',
+    subtitle: 'Cielo Sunrise hospitality, Chickasaw land, music royalties — portfolio view after verify.',
+    visual: 'embed-dashboard',
+    layout: 'embed',
+    cta: { label: 'Cielo case study', href: '/case-studies/cielo' },
   },
   {
     id: 'live-status',
@@ -154,14 +179,7 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     eyebrow: 'Honest status',
     title: 'Sandbox live · mainnet gated',
     subtitle: 'We ship what works and label what is next — no fake production claims.',
-    visual: 'stat-row',
-    visualProps: {
-      stats: [
-        { label: 'Sandbox', value: 'Live' },
-        { label: 'Signed proofs', value: 'On' },
-        { label: 'Mainnet gates', value: 'Gated' },
-      ],
-    },
+    visual: 'live-status-panel',
     cta: { label: 'Mainnet readiness', href: '/api/mainnet/readiness' },
   },
 
@@ -230,7 +248,7 @@ export const INSTITUTIONAL_MASTER_SLIDES: InstitutionalSlide[] = [
     visual: 'icon-hero',
     visualProps: { icon: '◆', glow: 'cyan' },
     cta: { label: 'Open passport', href: '/passport' },
-    ctaSecondary: { label: 'Watch product demo', href: '/#product-demo' },
+    ctaSecondary: { label: 'Read article', href: '/#article' },
   },
 ];
 
