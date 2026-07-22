@@ -12,6 +12,8 @@
     "sui:deploy:devnet": "bash scripts/sui/deploy-devnet.sh",
     "sui:deploy:mainnet": "bash scripts/sui/deploy-mainnet.sh",
     "sui:mint-cap": "bash scripts/sui/mint-issuance-cap.sh",
+    "sui:install-cli": "bash scripts/sui/install-cli.sh",
+    "sui:setup-devnet": "bash scripts/sui/setup-sponsor-devnet.sh",
     "cielo:e2e": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/cielo-e2e-check.ts",
     "cielo:e2e:remote": "BASE_URL=https://abraxas-app.vercel.app npx ts-node scripts/cielo-e2e-check.ts",
     "test": "vitest run",

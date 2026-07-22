@@ -38,6 +38,7 @@ fix_*.py
 
 # Sui CLI + build artifacts
 /.sui-bin/
+/.sui-config/
 /sui/**/build/
 /sui/**/Pub.devnet.toml
 /sui/**/Move.lock
