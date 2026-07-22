@@ -5,6 +5,7 @@
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
 import { MainnetScoreboard } from "@/components/mainnet/MainnetScoreboard";
+import { SuiMainnetDeployPanel } from "@/components/mainnet/SuiMainnetDeployPanel";
 import { MAINNET_CURRENT_STAGE } from "@/lib/mainnetReadiness";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -56,6 +57,8 @@ export default function MainnetPage() {
           {MAINNET_CURRENT_STAGE.body}
         </p>
       </div>
+
+      <SuiMainnetDeployPanel />
 
       <MainnetScoreboard variant="full" />
     </RedesignPage>
