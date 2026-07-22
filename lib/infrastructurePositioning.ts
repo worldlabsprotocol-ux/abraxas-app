@@ -54,18 +54,18 @@ export const NETWORK_EFFECT_STEPS = [
   },
   {
     step: "02",
-    title: "First app accepts Passport",
+    title: "First app accepts proof",
     body: "A marketplace or operator reads the same credential — no document resend.",
   },
   {
     step: "03",
-    title: "Second app accepts Passport",
+    title: "Second app accepts proof",
     body: "Each new relying party is the moat. Network value = apps that trust the proof.",
   },
   {
     step: "04",
     title: "Compounding reuse",
-    body: "More accepting applications → more valuable Passport. That adoption curve is the north star.",
+    body: "More accepting applications → more valuable verification. That adoption curve is the north star.",
   },
 ] as const;
 

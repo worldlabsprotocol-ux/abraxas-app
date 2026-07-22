@@ -25,6 +25,7 @@ const LINKS = [
 const MORE_LINKS = [
   { href: "/#registry", label: "Browse assets" },
   { href: "/#demo", label: "Watch demo" },
+  { href: "/#article", label: "RWA thesis" },
   { href: "/blog", label: "Blog" },
   { href: "/docs", label: "Documentation" },
   { href: "/mainnet", label: "Mainnet scoreboard" },

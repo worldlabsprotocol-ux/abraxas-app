@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: infrastructure flow — hero → demo → trust → build → registry → learn.
+// Homepage: infrastructure flow — hero → demo → trust → build → thesis → registry → learn.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -20,6 +20,7 @@ import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeLearnHub } from "@/components/home/HomeLearnHub";
 import { HomeMainnetVerificationStrip } from "@/components/home/HomeMainnetVerificationStrip";
+import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180,
@@ -39,6 +40,9 @@ function HomeContent() {
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />
+      </div>
+      <HomeFeaturedArticle />
+      <div style={MAXW}>
         <HomeMainnetVerificationStrip />
         <div
           id="registry"

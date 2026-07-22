@@ -127,10 +127,10 @@ function SlideVisual({ slide }: { slide: RwaThesisSlide }) {
             VERIFY LAYER
           </div>
           <div style={{ fontFamily: PREMIUM_FONT, fontSize: CONCEPT_TYPE.hero, fontWeight: 900, color: COSMIC_PALETTE.textPrimary }}>
-            Abraxas Passport
+            Verification layer
           </div>
           <div style={{ fontFamily: PREMIUM_MONO, fontSize: CONCEPT_TYPE.monoSm, color: COSMIC_PALETTE.textMuted, marginTop: 4 }}>
-            agent.proceed · agent.valid · W3C VC
+            Reusable proof · agent.valid · W3C VC
           </div>
         </div>
       );

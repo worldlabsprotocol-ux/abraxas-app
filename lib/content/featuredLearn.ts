@@ -16,7 +16,7 @@ export const FEATURED_LEARN_ARTICLES: FeaturedLearnArticle[] = [
     slug: "what-is-real-world-asset-tokenization",
     title: "What Is Real-World Asset Tokenization?",
     description:
-      "Real world asset tokenization guide — RWA infrastructure, asset verification, and why tokenization companies need digital asset verification beyond minting alone.",
+      "Seven institutional steps, diligence questions, and why minting alone is not enough — the full thesis.",
     category: "product",
     readingTime: "12 min",
   },

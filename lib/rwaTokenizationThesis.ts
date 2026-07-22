@@ -11,6 +11,12 @@ export const RWA_THESIS_TITLE = "What Is Real-World Asset Tokenization?";
 export const RWA_THESIS_SUBTITLE =
   "Abraxas: the verification layer institutions need beyond tokenization.";
 
+export const RWA_THESIS_SECTION_INTRO =
+  "Market context, institutional steps, diligence questions, and why minting alone is not enough.";
+
+export const RWA_THESIS_SECTION_NOTE =
+  "Market data, institutional steps, diligence questions, and live asset references appear here only — not repeated in the product deck above.";
+
 export const RWA_THESIS_HOME_LEAD =
   "The RWA market is moving from experimentation to institutional adoption. Tokenization creates digital ownership — but institutions still need trusted verification before capital moves.";
 

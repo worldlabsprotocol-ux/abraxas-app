@@ -21,7 +21,7 @@ export function HomeBuildWithSection() {
     >
       <EliteSectionLead
         eyebrow="Build"
-        title={<span id="build-heading">Embed Passport</span>}
+        title={<span id="build-heading">Embed verification</span>}
         headingId="build-heading"
       />
 

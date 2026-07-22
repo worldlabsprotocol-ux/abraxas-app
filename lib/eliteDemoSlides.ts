@@ -56,10 +56,10 @@ export const HERO_ELITE_DEMO: EliteDemoConfig = {
     },
     {
       id: "passport",
-      label: "02 · Passport",
-      headline: "One credential.",
+      label: "02 · Credential",
+      headline: "One verification.",
       visual: "hero-passport",
-      micro: "Verify once",
+      micro: "Issued once",
     },
     {
       id: "proof",
@@ -84,9 +84,9 @@ export const STATUS_ELITE_DEMO: EliteDemoConfig = {
       visual: "icon-hero",
       micro: "Cielo · Chickasaw",
       stats: [
-        { label: "Passport", value: "Live" },
         { label: "Verify API", value: "Live" },
         { label: "Proof", value: "Signed" },
+        { label: "Registry", value: "Live" },
       ],
     },
     {
@@ -115,7 +115,7 @@ export const BUILD_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "embed",
       label: "Embed",
-      headline: "Drop in Passport.",
+      headline: "Verify API in your app.",
       visual: "api-flow",
       micro: "SDK · REST",
     },
@@ -130,7 +130,7 @@ export const BUILD_ELITE_DEMO: EliteDemoConfig = {
       id: "reuse",
       label: "Reuse",
       headline: "Zero re-KYC.",
-      visual: "hero-passport",
+      visual: "unlock-row",
       micro: "Cross-app",
     },
   ],
@@ -164,7 +164,7 @@ export const STACK_ELITE_DEMO: EliteDemoConfig = {
       id: "abraxas",
       label: "Trust",
       headline: "Abraxas underneath.",
-      visual: "hero-passport",
+      visual: "layer-stack",
       micro: "Verify once",
     },
   ],
@@ -186,7 +186,7 @@ export const NETWORK_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "second",
       label: "02",
-      headline: "Apps accept Passport.",
+      headline: "Apps accept proof.",
       visual: "unlock-row",
       micro: "No resend",
     },
@@ -253,8 +253,8 @@ export const PARTNERS_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "reuse",
       label: "Reuse",
-      headline: "Portable trust.",
-      visual: "hero-passport",
+      headline: "Portable proof.",
+      visual: "hero-proof",
     },
   ],
 };

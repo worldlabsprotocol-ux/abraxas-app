@@ -27,7 +27,7 @@ export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
 export const ABRAXAS_TAGLINE = ABRAXAS_HEADLINE;
 
 export const ABRAXAS_SUBHEAD =
-  "The RWA app for reusable verification — get your Abraxas Passport once, then reuse asset verification across marketplaces, lenders, and tokenization companies without repeating due diligence.";
+  "The RWA verification app — reusable proof across marketplaces, lenders, and tokenization companies without repeating due diligence.";
 
 /** North star metric — relying party adoption compounds the network. */
 export const ABRAXAS_NORTH_STAR_METRIC =

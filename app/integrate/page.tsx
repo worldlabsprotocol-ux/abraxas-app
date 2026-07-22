@@ -42,7 +42,7 @@ export default function IntegratePage() {
     <RedesignPage maxWidth={880}>
       <PageHeader
         eyebrow="Integrate Abraxas"
-        title="Embed Passport — don't rebuild KYC"
+        title="Embed verification — don't rebuild KYC"
         subtitle={INTEGRATE_PRODUCTION_NOTE}
       />
 

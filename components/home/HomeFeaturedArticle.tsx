@@ -2,18 +2,27 @@
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
-import { COSMIC_PALETTE, DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
+import { COSMIC_PALETTE } from "@/lib/demoDesignSystem";
 import { getFeaturedThesisArticle } from "@/lib/content/blogArticles";
 import { BLOG_CATEGORY_LABELS } from "@/lib/content/types";
 import {
   RWA_INSTITUTION_QUESTIONS,
   RWA_THESIS_MARKET_STATS,
+  RWA_THESIS_SECTION_INTRO,
+  RWA_THESIS_SECTION_NOTE,
   RWA_THESIS_SLUG,
+  RWA_THESIS_SUBTITLE,
   RWA_TOKENIZATION_STEPS,
 } from "@/lib/rwaTokenizationThesis";
+import {
+  ABRAXAS_FONT_DISPLAY,
+  ABRAXAS_FONT_MONO,
+  ABRAXAS_FONT_SANS,
+} from "@/lib/abraxasTypography";
 
-const FONT = DEMO_TYPOGRAPHY.fontSans;
-const MONO = DEMO_TYPOGRAPHY.fontMono;
+const FONT = ABRAXAS_FONT_SANS;
+const DISPLAY = ABRAXAS_FONT_DISPLAY;
+const MONO = ABRAXAS_FONT_MONO;
 
 function ArticleStats() {
   return (
@@ -170,7 +179,7 @@ export function HomeFeaturedArticle() {
         <h2
           id="article-heading"
           style={{
-            fontFamily: FONT,
+            fontFamily: DISPLAY,
             fontSize: "clamp(1.5rem, 4vw, 2.1rem)",
             fontWeight: 900,
             letterSpacing: "-0.04em",
@@ -185,18 +194,30 @@ export function HomeFeaturedArticle() {
           style={{
             fontFamily: FONT,
             fontSize: "0.95rem",
+            fontWeight: 700,
+            color: "var(--accent-pale, var(--accent))",
+            lineHeight: 1.55,
+            margin: "0 0 0.35rem",
+          }}
+        >
+          {RWA_THESIS_SUBTITLE}
+        </p>
+        <p
+          style={{
+            fontFamily: FONT,
+            fontSize: "0.88rem",
             fontWeight: 600,
             color: "var(--text-secondary)",
             lineHeight: 1.55,
             margin: "0 0 0.75rem",
           }}
         >
-          {article.description}
+          {RWA_THESIS_SECTION_INTRO}
         </p>
         <p
           style={{
             fontFamily: FONT,
-            fontSize: "0.88rem",
+            fontSize: "0.84rem",
             color: "var(--text-muted)",
             lineHeight: 1.6,
             margin: "0 0 1.5rem",
@@ -206,8 +227,7 @@ export function HomeFeaturedArticle() {
             background: "rgba(0,0,0,0.2)",
           }}
         >
-          Market data, institutional steps, diligence questions, and live asset references appear here only — not
-          repeated in the product deck above.
+          {RWA_THESIS_SECTION_NOTE}
         </p>
 
         <article
@@ -236,7 +256,7 @@ export function HomeFeaturedArticle() {
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border-strong)" }}>
             {article.relatedHref && <Btn href={article.relatedHref} size="sm">Integrate →</Btn>}
-            <Btn href="/passport" variant="secondary" size="sm">Open passport →</Btn>
+            <Btn href="/verification" variant="secondary" size="sm">Verification layer →</Btn>
             {article.mediumUrl && (
               <Btn href={article.mediumUrl} variant="ghost" size="sm">Also on Medium →</Btn>
             )}
