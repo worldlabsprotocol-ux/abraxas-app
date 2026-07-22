@@ -23,7 +23,8 @@ const LINKS = [
 ];
 
 const MORE_LINKS = [
-  { href: "/#institutional-story", label: "Master deck (home)" },
+  { href: "/#registry", label: "Browse assets" },
+  { href: "/#demo", label: "Watch demo" },
   { href: "/blog", label: "Blog" },
   { href: "/docs", label: "Documentation" },
   { href: "/mainnet", label: "Mainnet scoreboard" },

@@ -1,26 +1,26 @@
 // FILE: app/layout.tsx
 // Root layout. Light default, dark via ThemeContext toggle.
 import type { Metadata } from "next";
-import { DM_Sans, IBM_Plex_Mono, Syne } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { siteMetadata } from "@/lib/seo/metadata";
 
-const syne = Syne({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-sans",
   weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const dmSans = DM_Sans({
+const plusJakartaDisplay = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-display",
+  weight: ["700", "800"],
   display: "swap",
 });
 
-const ibmMono = IBM_Plex_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   weight: ["400", "500", "600"],
@@ -64,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       translate="no"
       suppressHydrationWarning
-      className={`${syne.variable} ${dmSans.variable} ${ibmMono.variable}`}
+      className={`${plusJakarta.variable} ${plusJakartaDisplay.variable} ${jetbrainsMono.variable}`}
     >
       <head>
         <meta name="google" content="notranslate" />
