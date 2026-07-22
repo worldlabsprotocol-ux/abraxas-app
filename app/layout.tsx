@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { DM_Sans, IBM_Plex_Mono, Syne } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
-import { SITE_URL } from "@/lib/siteUrl";
+import { siteMetadata } from "@/lib/seo/metadata";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -27,25 +27,7 @@ const ibmMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Abraxas, Verify Once. Transact Everywhere.",
-  description: "The verification and identity layer for real-world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
-  metadataBase: new URL(SITE_URL),
-  openGraph: {
-    title: "Abraxas, Verify Once. Transact Everywhere.",
-    description: "The verification and identity layer for real-world assets onchain.",
-    url: SITE_URL,
-    siteName: "Abraxas",
-    images: ["/og-image.jpg"],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Abraxas, Verify Once. Transact Everywhere.",
-    description: "The verification and identity layer for real-world assets onchain.",
-    images: ["/og-image.jpg"],
-  },
-};
+export const metadata: Metadata = siteMetadata();
 
 const themeInitScript = `
 (function(){

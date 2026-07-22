@@ -30,7 +30,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     slug: "what-is-real-world-asset-tokenization",
     title: "What Is Real-World Asset Tokenization?",
     description:
-      "Abraxas: the verification layer institutions need beyond tokenization. Market context, seven institutional steps, and why minting alone is not enough.",
+      "Real world asset tokenization explained — RWA infrastructure, asset verification, and why tokenization companies need reusable verification beyond minting.",
     category: "product",
     readingTime: "12 min",
     featured: true,
@@ -81,7 +81,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
   {
     slug: "why-tokenization-alone-isnt-enough",
     title: "Why Tokenization Alone Isn't Enough",
-    description: "Minting an asset on-chain does not create institutional trust.",
+    description: "Minting tokenized real-world assets on-chain does not create institutional trust — the gap is repeated asset verification.",
     category: "problem",
     readingTime: "6 min",
     body: [
@@ -119,7 +119,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
   {
     slug: "reusable-trust-institutional-finance",
     title: "How Reusable Trust Changes Institutional Finance",
-    description: "W3C credentials, zkLogin, policy engine.",
+    description: "Reusable verification infrastructure — W3C credentials, zkLogin, and blockchain verification across institutional RWA counterparties.",
     category: "product",
     readingTime: "8 min",
     body: [

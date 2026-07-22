@@ -1,7 +1,7 @@
 // FILE: lib/infrastructurePositioning.ts
 // Infrastructure narrative — trust layer under the RWA stack (not another marketplace).
 
-export const ABRAXAS_INFRA_CATEGORY = "Trust infrastructure for tokenized assets";
+export const ABRAXAS_INFRA_CATEGORY = "RWA infrastructure · verification for tokenized real-world assets";
 
 export const ABRAXAS_INFRA_EMOTION = "Stop proving your assets over and over.";
 
@@ -10,10 +10,10 @@ export const ABRAXAS_INFRA_MECHANISM = "One verification. Unlimited applications
 export const ABRAXAS_INFRA_HEADLINE = "Verify once. Transact everywhere.";
 
 export const ABRAXAS_INFRA_NARRATIVE =
-  "Every RWA app is rebuilding trust from scratch. Abraxas makes trust portable.";
+  "Every RWA app and asset tokenization platform rebuilds trust from scratch. Abraxas is the verification infrastructure that makes proof portable.";
 
 export const ABRAXAS_INFRA_POSITIONING =
-  "Not another issuer. Not another marketplace. Not another chain. The identity and verification layer every tokenized asset application plugs into.";
+  "Not another issuer. Not another marketplace. The RWA verification app and digital asset verification layer every tokenized real-world asset application plugs into.";
 
 export const ABRAXAS_EMBED_PITCH =
   "Already issuing tokenized assets? Embed Abraxas Passport so verified assets move across applications without repeating due diligence.";

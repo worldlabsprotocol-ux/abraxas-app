@@ -3,7 +3,7 @@
 
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
-export const ABRAXAS_CATEGORY = "Trust infrastructure for tokenized assets";
+export const ABRAXAS_CATEGORY = "RWA verification app · trust infrastructure for tokenized assets";
 
 export const ABRAXAS_ONE_LINER =
   "We eliminate repeated verification so assets, people, and businesses can move faster.";
@@ -27,7 +27,7 @@ export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
 export const ABRAXAS_TAGLINE = ABRAXAS_HEADLINE;
 
 export const ABRAXAS_SUBHEAD =
-  "Get your Abraxas Passport once. Reuse verified proof across marketplaces, lenders, and operators — without repeating due diligence.";
+  "The RWA app for reusable verification — get your Abraxas Passport once, then reuse asset verification across marketplaces, lenders, and tokenization companies without repeating due diligence.";
 
 /** North star metric — relying party adoption compounds the network. */
 export const ABRAXAS_NORTH_STAR_METRIC =
@@ -35,7 +35,7 @@ export const ABRAXAS_NORTH_STAR_METRIC =
 
 /** Category positioning for investor/partner surfaces. */
 export const ABRAXAS_POSITIONING =
-  "Abraxas is the reusable verification infrastructure for real-world assets — verify once, then every partner gets faster approvals with fewer document requests.";
+  "Abraxas is reusable verification infrastructure for real-world assets — the RWA verification layer tokenization companies plug into for digital asset verification, blockchain verification, and institutional RWA compliance.";
 
 export const ABRAXAS_PROBLEM_THESIS =
   "Tokenization alone is not enough. Repeated verification is the hidden tax killing institutional adoption of RWAs.";

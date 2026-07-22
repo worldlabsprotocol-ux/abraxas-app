@@ -37,7 +37,7 @@ export default function VerificationPage() {
       <PageHeader
         eyebrow="Verification layer"
         title="7/7 production scoreboard"
-        subtitle="The cryptographic verify → proof → lookup loop Abraxas is built on. Each item flips live when production keys, persistence, and feeds are configured — no calendar dates."
+        subtitle="Digital asset verification and blockchain verification for tokenized real-world assets — the cryptographic verify → proof → lookup loop behind the RWA verification app."
       />
 
       <VerificationLayerScoreboard />
