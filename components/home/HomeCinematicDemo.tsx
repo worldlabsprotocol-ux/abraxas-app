@@ -117,16 +117,16 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   const showFinalLine = phase3 === 'land';
 
   const actLabel =
-    act === 1 ? 'Verification debt' : act === 2 ? 'One Passport' : 'Proof issued';
+    act === 1 ? 'Verification debt' : act === 2 ? 'Verify once' : 'Proof issued';
 
   const actCaption =
     act === 1
-      ? 'Every platform rebuilds trust from zero. Verification debt — not asset proof.'
+      ? 'Every platform rebuilds trust from zero. Seven asks for the same person — not asset proof.'
       : act === 2
-        ? 'One portable Passport resolves the repeated asks.'
+        ? 'One portable credential resolves the repeated asks.'
         : showFinalLine
           ? CINEMATIC_PROOF_ISSUED_LINE
-          : 'Cryptographic proof anyone can verify independently.';
+          : 'Cryptographic proof anyone can verify independently — on-chain authentication, not another token.';
 
   const actTransition = {
     initial: { opacity: 0, filter: 'blur(10px)', scale: 0.985 },
@@ -137,7 +137,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
   const meshKey = act === 1 ? 'danger' : act === 2 ? 'gold' : 'emerald';
   const accent = act === 1 ? ACCENT.danger : act === 2 ? ACCENT.gold : ACCENT.emerald;
-  const actPillLabels = ['Debt', 'Passport', 'Proof'];
+  const actPillLabels = ['7× debt', 'Verify once', 'Proof'];
 
   return (
     <div className={`cinematic-demo relative mx-auto w-full ${hero ? 'max-w-[1120px]' : 'max-w-5xl'}`}>

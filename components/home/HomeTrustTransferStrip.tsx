@@ -3,6 +3,7 @@
 // Trust transfer messaging — portable cryptographic proof.
 
 import { TRUST_TRANSFER_HEADLINE, TRUST_TRANSFER_SUBLINE, COUNTERPARTY_TRUST_BLURB } from "@/lib/trustTransfer";
+import { BLOCKCHAIN_VS_COINS_LINE } from "@/lib/intersectionThesis";
 
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
@@ -57,6 +58,19 @@ export function HomeTrustTransferStrip() {
           }}
         >
           {TRUST_TRANSFER_SUBLINE}
+        </p>
+        <p
+          style={{
+            fontFamily: FONT,
+            fontSize: "0.78rem",
+            color: "var(--text-muted)",
+            lineHeight: 1.6,
+            margin: "0 0 0.45rem",
+            maxWidth: 640,
+            fontStyle: "italic",
+          }}
+        >
+          {BLOCKCHAIN_VS_COINS_LINE}
         </p>
         <p
           style={{

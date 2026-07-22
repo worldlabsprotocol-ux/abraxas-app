@@ -1,25 +1,36 @@
 "use client";
 // FILE: components/home/HomeDemoVideo.tsx
-// Homepage hero — elite verify loop slideshow.
+// Homepage demo — cinematic 7× verification debt → verify once → cryptographic proof.
 
-import { EliteConceptDemo } from "./ConceptDemoVideo";
-import { HERO_ELITE_DEMO } from "@/lib/eliteDemoSlides";
+import { HomeCinematicDemo } from "./HomeCinematicDemo";
+import { ConceptDemoLead } from "./ConceptDemoVideo";
+import {
+  BLOCKCHAIN_ORIGINAL_THESIS,
+  CINEMATIC_DEMO_LEAD,
+} from "@/lib/intersectionThesis";
 
 export function HomeDemoVideo() {
   return (
-    <div
+    <section
       id="demo"
+      aria-labelledby="demo-heading"
       className="hero-demo-breakout"
       style={{
-        margin: "clamp(1.5rem, 4vw, 2.25rem) 0 clamp(1.75rem, 4vw, 2.5rem)",
+        margin: "clamp(1.25rem, 3vw, 2rem) 0 clamp(1.75rem, 4vw, 2.5rem)",
         width: "100%",
-        display: "flex",
-        justifyContent: "center",
       }}
     >
-      <div style={{ width: "100%", maxWidth: 1120 }}>
-        <EliteConceptDemo config={HERO_ELITE_DEMO} id="hero-elite-demo" />
-      </div>
+      <ConceptDemoLead
+        eyebrow="The problem"
+        headingId="demo-heading"
+        title={
+          <>
+            You verify <span style={{ color: "var(--accent)" }}>7×</span>. You should verify once.
+          </>
+        }
+        body={`${CINEMATIC_DEMO_LEAD} ${BLOCKCHAIN_ORIGINAL_THESIS}`}
+      />
+      <HomeCinematicDemo hero />
       <style jsx>{`
         @media (min-width: 900px) {
           .hero-demo-breakout {
@@ -29,6 +40,6 @@ export function HomeDemoVideo() {
           }
         }
       `}</style>
-    </div>
+    </section>
   );
 }
