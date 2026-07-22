@@ -4,32 +4,7 @@
 
 WITH
 write_probe AS (
-  INSERT INTO authentication_proofs (
-    id, event_type, record_id, payload_hash, signature,
-    signing_key_id, anchor_status, issued_at, schema_version, network, status
-  )
-  SELECT
-    'aprx_audit_' || replace(gen_random_uuid()::text, '-', ''),
-    'credential_verify',
-    'supabase-audit-probe',
-    repeat('0', 64),
-    'audit-probe-signature',
-    'audit-probe',
-    'signed',
-    now(),
-    '1.0.0',
-    'devnet',
-    'active'
-  WHERE EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'authentication_proofs'
-  )
-  RETURNING id
-),
-write_cleanup AS (
-  DELETE FROM authentication_proofs
-  WHERE id IN (SELECT id FROM write_probe)
-  RETURNING id
+  SELECT public.abraxas_audit_proof_write_probe() AS ok
 ),
 checks AS (
   SELECT 1 AS sort_order, 'table' AS category, t.table_name AS check_name,
@@ -131,14 +106,10 @@ checks AS (
 
   SELECT 6, 'write_probe', 'authentication_proofs insert+delete',
     CASE
-      WHEN NOT EXISTS (
-        SELECT 1 FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name = 'authentication_proofs'
-      ) THEN 'FAIL'
-      WHEN EXISTS (SELECT 1 FROM write_cleanup) THEN 'PASS'
-      ELSE 'FAIL'
+      WHEN (SELECT ok FROM write_probe) THEN 'PASS'
+      ELSE 'FAIL — run migration 048_authentication_proofs_write_probe.sql first'
     END,
-    'Service role / RLS write path works'
+    'RLS-safe write probe (SECURITY DEFINER)'
 
   UNION ALL
 
