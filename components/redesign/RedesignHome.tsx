@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: infrastructure flow — hero → demo → trust → build → thesis → registry → learn.
+// Homepage: infrastructure flow — hero → demo → trust → build → thesis → registry.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -16,9 +16,7 @@ import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
-import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
-import { HomeLearnHub } from "@/components/home/HomeLearnHub";
 import { HomeMainnetVerificationStrip } from "@/components/home/HomeMainnetVerificationStrip";
 import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 
@@ -60,8 +58,6 @@ function HomeContent() {
           />
         </div>
         <HomePartnersBrief />
-        <HomeLearnHub />
-        <HomeSignedInModule />
       </div>
     </main>
   );

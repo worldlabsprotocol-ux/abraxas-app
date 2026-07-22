@@ -71,9 +71,12 @@ export const DEMO_TYPE = {
   noRelay: "clamp(0.62rem, 1.7vw, 0.76rem)",
   eyebrow: "0.78rem",
   headline: "clamp(1.24rem, 3.4vw, 1.72rem)",
-  headlineHero: "clamp(1.32rem, 3.7vw, 1.88rem)",
-  finalLine: "clamp(0.95rem, 2.4vw, 1.2rem)",
+  headlineHero: "clamp(1.5rem, 4.2vw, 2.15rem)",
+  finalLine: "clamp(1rem, 2.5vw, 1.28rem)",
   actPill: "0.62rem",
+  actPillHero: "0.72rem",
+  eyebrow: "0.78rem",
+  eyebrowHero: "0.82rem",
 } as const;
 
 /** Secondary concept demos — shared legible scale (replaces scattered 0.42–0.72rem values). */

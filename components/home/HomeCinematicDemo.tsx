@@ -175,6 +175,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
               accent={accent}
               labels={actPillLabels}
               centered
+              large={hero}
             />
           </div>
 

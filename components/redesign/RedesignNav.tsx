@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Minimal nav — Home · Passport · Integrate · More.
+// Streamlined nav — Home · Integrate · profile menu (Passport when signed in).
 
 import Link from "next/link";
 import Image from "next/image";
@@ -8,8 +8,8 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
-
+import { NavProfileMenu, NavSignInButton } from "@/components/sui/NavProfileMenu";
+import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -18,22 +18,7 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
-  { href: "/passport", label: "Passport", matchPrefixes: ["/passport", "/verify"] },
   { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
-];
-
-const MORE_LINKS = [
-  { href: "/#registry", label: "Browse assets" },
-  { href: "/#demo", label: "Watch demo" },
-  { href: "/#article", label: "RWA thesis" },
-  { href: "/blog", label: "Blog" },
-  { href: "/docs", label: "Documentation" },
-  { href: "/mainnet", label: "Mainnet scoreboard" },
-  { href: "/verification", label: "Verification layer" },
-  { href: "/roadmap", label: "Roadmap" },
-  { href: "/integrations/relying-parties", label: "Relying parties" },
-  { href: "/about", label: "About" },
-  { href: "/faq", label: "FAQ" },
 ];
 
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {
@@ -42,16 +27,16 @@ function isLinkActive(pathname: string | null, href: string, exact?: boolean, ma
   }
   if (href === "/") return pathname === "/" || pathname === "/terminal";
   if (exact) return pathname === href;
-  if (href.startsWith("/#")) return false;
   return pathname === href || (pathname?.startsWith(href + "/") ?? false);
 }
 
 export function RedesignNav() {
   const pathname = usePathname();
   const reduce = useReducedMotion();
+  const auth = useSuiAuthOptional();
   const [open, setOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const onHome = isLinkActive(pathname, "/", true);
+  const signedIn = Boolean(auth?.suiAddress);
 
   return (
     <nav
@@ -116,7 +101,7 @@ export function RedesignNav() {
                 borderRadius: 999,
                 textDecoration: "none",
                 fontFamily: FONT,
-                fontSize: "0.85rem",
+                fontSize: "0.88rem",
                 fontWeight: active ? 700 : 500,
                 color: active ? ACCENT : "var(--text-secondary)",
               }}
@@ -138,67 +123,6 @@ export function RedesignNav() {
             </MotionLink>
           );
         })}
-        <div style={{ position: "relative" }}>
-          <button
-            type="button"
-            onClick={() => setMoreOpen((v) => !v)}
-            aria-expanded={moreOpen}
-            style={{
-              padding: "0.45rem 0.9rem",
-              borderRadius: 999,
-              border: "1px solid var(--border)",
-              background: moreOpen ? "var(--surface-raised)" : "transparent",
-              fontFamily: FONT,
-              fontSize: "0.85rem",
-              fontWeight: 500,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
-          >
-            More ▾
-          </button>
-          <AnimatePresence>
-            {moreOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: 0,
-                  minWidth: 220,
-                  padding: "0.5rem",
-                  borderRadius: 12,
-                  border: "1px solid var(--border)",
-                  background: "var(--nav-bg-solid)",
-                  boxShadow: "var(--shadow-soft)",
-                  zIndex: 300,
-                }}
-              >
-                {MORE_LINKS.map((l) => (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    onClick={() => setMoreOpen(false)}
-                    style={{
-                      display: "block",
-                      padding: "0.55rem 0.65rem",
-                      borderRadius: 8,
-                      textDecoration: "none",
-                      fontFamily: FONT,
-                      fontSize: "0.82rem",
-                      fontWeight: 500,
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
 
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
@@ -223,11 +147,11 @@ export function RedesignNav() {
           </Link>
         )}
         <LanguageSelector />
-        <SuiSignInNavButton prominent />
+        {signedIn ? <NavProfileMenu prominent /> : <NavSignInButton prominent />}
       </div>
 
       <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
-        <LanguageSelector />
+        {signedIn ? <NavProfileMenu /> : <NavSignInButton />}
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label="Menu"
@@ -296,28 +220,14 @@ export function RedesignNav() {
                 {l.label}
               </Link>
             ))}
-            <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
-            {MORE_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                style={{
-                  padding: "0.55rem 0.5rem",
-                  borderRadius: 10,
-                  textDecoration: "none",
-                  fontFamily: FONT,
-                  fontSize: "0.85rem",
-                  fontWeight: 500,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {l.label}
-              </Link>
-            ))}
-            <div style={{ marginTop: "0.5rem" }}>
-              <SuiSignInNavButton prominent />
-            </div>
+            {signedIn && (
+              <>
+                <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
+                <Link href="/passport" onClick={() => setOpen(false)} style={mobileSubLink}>Passport</Link>
+                <Link href="/account" onClick={() => setOpen(false)} style={mobileSubLink}>My account</Link>
+                <Link href="/build" onClick={() => setOpen(false)} style={mobileSubLink}>Submit asset</Link>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -333,3 +243,13 @@ export function RedesignNav() {
     </nav>
   );
 }
+
+const mobileSubLink: React.CSSProperties = {
+  padding: "0.55rem 0.5rem",
+  borderRadius: 10,
+  textDecoration: "none",
+  fontFamily: ABRAXAS_FONT_SANS,
+  fontSize: "0.88rem",
+  fontWeight: 500,
+  color: "var(--text-secondary)",
+};
