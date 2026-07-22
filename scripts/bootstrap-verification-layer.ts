@@ -85,7 +85,7 @@ async function main() {
   for (const item of layer.items) {
     if (item.status !== "live") item.blockers.forEach((b) => allBlockers.add(b));
   }
-  for (const b of allBlockers) console.log(`  → ${b}`);
+  allBlockers.forEach((b) => console.log(`  → ${b}`));
 
   if (!process.env.ABRAXAS_SIGNING_KEY) {
     console.log("\nTip: node scripts/generate-abraxas-key.js\n");
