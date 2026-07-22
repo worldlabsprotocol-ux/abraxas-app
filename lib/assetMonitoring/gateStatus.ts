@@ -2,6 +2,7 @@
 // Mainnet gate #6 telemetry — asset monitoring v1 production readiness.
 
 import { createClient } from "@supabase/supabase-js";
+import { parseEnvBool } from "@/lib/env/parseEnvBool";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -18,7 +19,7 @@ export interface AssetMonitoringGateStatus {
 }
 
 export async function getAssetMonitoringGateStatus(): Promise<AssetMonitoringGateStatus> {
-  const autoApply = process.env.ASSET_MONITORING_AUTO_APPLY === "true";
+  const autoApply = parseEnvBool(process.env.ASSET_MONITORING_AUTO_APPLY);
   let lotInventoryRows = 0;
   let recentStatusEvents = 0;
 

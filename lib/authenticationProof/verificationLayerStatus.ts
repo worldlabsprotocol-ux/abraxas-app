@@ -1,8 +1,10 @@
 // FILE: lib/authenticationProof/verificationLayerStatus.ts
 // Honest runtime status for the seven verification-layer items.
 
+import { parseEnvBool } from "@/lib/env/parseEnvBool";
 import { getAssetMonitoringGateStatus } from "@/lib/assetMonitoring/gateStatus";
 import { loadReceiptSigningKey, loadReceiptVerificationKey } from "@/lib/decisionReceipts/signing";
+import { checkAuthenticationProofsTable } from "@/lib/authenticationProof/persistAuthenticationProof";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { isProductionReferenceAsset } from "./productionReference";
@@ -42,12 +44,14 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
   const anchorEnabled = process.env.ON_CHAIN_ANCHOR_ENABLED !== "false";
   const suiIssuerConfigured = isPassportIssuerConfigured();
   const monitoringGate = await getAssetMonitoringGateStatus();
+  const proofsTable = await checkAuthenticationProofsTable();
+  const persistenceLive = proofsTable.writable;
 
   const credentialsVerify: VerificationLayerItem = {
     id: "credentials-verify",
     label: "POST /api/credentials/verify returns proof bundle on every decision",
     status: statusFromFlags(
-      signingConfigured && supabaseConfigured,
+      signingConfigured && supabaseConfigured && persistenceLive,
       signingConfigured || supabaseConfigured,
     ),
     detail: signingConfigured
@@ -56,6 +60,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     blockers: [
       ...(!signingConfigured ? ["ABRAXAS_SIGNING_KEY"] : []),
       ...(!supabaseConfigured ? ["NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY for proof persistence"] : []),
+      ...(!persistenceLive ? [proofsTable.hint ?? "Run migration 042_authentication_proofs.sql"] : []),
     ],
   };
 
@@ -63,15 +68,16 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     id: "proof-lookup",
     label: "GET /api/proof/[id] is fully self-verifying",
     status: statusFromFlags(
-      signingConfigured && verificationKeyConfigured && supabaseConfigured,
-      verificationKeyConfigured,
+      signingConfigured && verificationKeyConfigured && supabaseConfigured && persistenceLive,
+      verificationKeyConfigured || signingConfigured,
     ),
-    detail: verificationKeyConfigured
+    detail: persistenceLive
       ? "Returns payload, signature, public_key, signature_valid, anchor_status, and Sui fields when present."
-      : "ABRAXAS_PUBLIC_KEY (or ABRAXAS_SIGNING_KEY) required for signature_valid checks.",
+      : "Env configured but proofs are not persisting — run migrations 042–044 in Supabase.",
     blockers: [
       ...(!verificationKeyConfigured ? ["ABRAXAS_PUBLIC_KEY or ABRAXAS_SIGNING_KEY"] : []),
-      ...(!supabaseConfigured ? ["Supabase authentication_proofs table for lookup by proof_id"] : []),
+      ...(!supabaseConfigured ? ["NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY"] : []),
+      ...(!persistenceLive ? [proofsTable.hint ?? "authentication_proofs table not writable — run migration 042"] : []),
     ],
   };
 
@@ -125,7 +131,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     detail:
       "GET /api/asset-monitoring/preview evaluates signals; apply path issues asset_state_change proofs and supersedes prior proofs.",
     blockers: [
-      ...(!monitoringGate.autoApply ? ["ASSET_MONITORING_AUTO_APPLY=true for automated worker"] : []),
+      ...(!monitoringGate.autoApply ? ["ASSET_MONITORING_AUTO_APPLY=true (redeploy Vercel after setting)"] : []),
       ...(monitoringGate.lotInventoryRows === 0 ? ["asset_lot_inventory rows in production DB (run migration 045 or bootstrap script)"] : []),
     ],
   };
@@ -137,7 +143,8 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
       credentialsVerify.status === "live" &&
         proofLookup.status === "live" &&
         productionDemo.status === "live" &&
-        agentReadiness.status === "live",
+        agentReadiness.status === "live" &&
+        persistenceLive,
       credentialsVerify.status === "partial" ||
         proofLookup.status === "partial" ||
         productionDemo.status === "partial" ||

@@ -3,13 +3,13 @@
 
 import { randomUUID } from "crypto";
 import { createHash } from "crypto";
-import { createClient } from "@supabase/supabase-js";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { suiExplorerTxUrl } from "@/lib/sui/network";
 import { siteUrl } from "@/lib/siteUrl";
 import { anchorAuthenticationProofOnSui } from "@/lib/sui/anchorAuthenticationProof";
 import { signAuthProofPayload } from "./signing";
 import { extractAssetAbxId } from "./proofLifecycle";
+import { persistAuthenticationProof } from "./persistAuthenticationProof";
 import type {
   AuthenticationEventType,
   AuthenticationProofPayload,
@@ -83,8 +83,7 @@ export async function issueAuthenticationProof(input: {
   const network = getActiveSuiNetwork();
 
   if (SB_URL && SB_KEY) {
-    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-    await sb.from("authentication_proofs").insert({
+    const persisted = await persistAuthenticationProof({
       id: authPayload.proof_id,
       event_type: input.eventType,
       record_id: input.recordId,
@@ -102,6 +101,9 @@ export async function issueAuthenticationProof(input: {
       asset_abx_id: assetAbxId,
       superseded_by: null,
     });
+    if (!persisted.ok) {
+      console.error("[issueAuthenticationProof] persist failed:", persisted.error, persisted.hint);
+    }
   }
 
   return {

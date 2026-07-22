@@ -16,18 +16,18 @@ const BOOTSTRAP_STEPS = [
   },
   {
     n: 2,
-    title: "Confirm Supabase persistence",
-    body: "NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY. Run migration 045 for production reference lot inventory.",
+    title: "Run Supabase migrations 042–045",
+    body: "authentication_proofs table + lot inventory. Paste SQL from supabase/migrations/ in Supabase SQL editor.",
   },
   {
     n: 3,
-    title: "Enable asset monitoring worker",
-    body: "ASSET_MONITORING_AUTO_APPLY=true + Vercel cron on GET /api/cron/asset-monitoring.",
+    title: "Bootstrap production",
+    body: "GET /api/verify/bootstrap for diagnostics. POST with Authorization: Bearer CRON_SECRET to seed lot inventory.",
   },
   {
     n: 4,
-    title: "Run E2E check",
-    body: "GET /api/verify/e2e — all steps green including proof-lookup-roundtrip.",
+    title: "Confirm E2E",
+    body: "GET /api/verify/e2e — all steps green including proof-lookup-roundtrip. Target: /verification shows 7/7.",
   },
 ];
 

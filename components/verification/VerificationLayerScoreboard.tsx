@@ -191,9 +191,9 @@ export function VerificationLayerScoreboard({ compact = false }: { compact?: boo
           <Btn href="/api/verify/e2e" size="sm">
             E2E check (JSON) →
           </Btn>
-          <Btn href="/api/verify/layer" variant="secondary" size="sm">
-            Layer status (JSON) →
-          </Btn>
+        <Btn href="/api/verify/bootstrap" variant="secondary" size="sm">
+          Bootstrap diagnostics (JSON) →
+        </Btn>
           <Btn href="/mainnet" variant="ghost" size="sm">
             Mainnet gates →
           </Btn>
