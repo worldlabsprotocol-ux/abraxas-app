@@ -75,7 +75,6 @@ export const DEMO_TYPE = {
   finalLine: "clamp(1rem, 2.5vw, 1.28rem)",
   actPill: "0.62rem",
   actPillHero: "0.72rem",
-  eyebrow: "0.78rem",
   eyebrowHero: "0.82rem",
 } as const;
 
