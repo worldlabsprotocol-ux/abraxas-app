@@ -128,7 +128,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               marginLeft: "auto",
               marginRight: "auto",
             }}>
-              Minimum proof up front. Deck, article, and market desk under Learn more.
+              Minimum proof up front. Pick a path — arrow through product, thesis, build, and pulse.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
@@ -159,7 +159,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               margin: 0,
               letterSpacing: "0.06em",
             }}>
-              Wallet → proof frame → minimum proof · Mainnet at /mainnet
+              Wallet → proof → pick your path · Blog in Pulse chapter
             </p>
             </div>
           </motion.div>

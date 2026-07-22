@@ -14,15 +14,21 @@ import {
   type InstitutionalChapterId,
 } from "@/lib/institutionalMasterSlides";
 import { InstitutionalSlideVisual } from "./InstitutionalSlideVisual";
+import { HomePickPath } from "./HomePickPath";
 
 const ACCENT = COSMIC_PALETTE.cyan;
 const TOTAL = INSTITUTIONAL_MASTER_SLIDES.length;
 
-export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScreen?: boolean }) {
+export function InstitutionalMasterSlideshow({
+  fullScreen = false,
+}: {
+  fullScreen?: boolean;
+}) {
   const [index, setIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const slide = INSTITUTIONAL_MASTER_SLIDES[index];
   const chapterIdx = getSlideChapterIndex(index);
+  const activeChapter = INSTITUTIONAL_CHAPTERS[chapterIdx]?.id ?? "problem";
   const isEmbed = slide.layout === "embed";
   const canvasMinH = fullScreen ? (isEmbed ? 480 : 400) : isEmbed ? 400 : 320;
 
@@ -61,6 +67,11 @@ export function InstitutionalMasterSlideshow({ fullScreen = false }: { fullScree
         width: "100%",
       }}
     >
+      {/* ── Pick your path (sour.gg style) ── */}
+      {!fullScreen && (
+        <HomePickPath activeChapter={activeChapter} onSelect={goChapter} />
+      )}
+
       {/* ── Control deck: all navigation + copy lives ABOVE the slide ── */}
       <div className="abx-slideshow-control-deck" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Simplified nav — Home · Passport · Integrate · Mainnet + More menu.
+// Minimal nav — Home · Passport · Integrate · More.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -20,16 +20,16 @@ const LINKS = [
   { href: "/", label: "Home", exact: true },
   { href: "/passport", label: "Passport", matchPrefixes: ["/passport", "/verify"] },
   { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
-  { href: "/mainnet", label: "Mainnet" },
-  { href: "/verification", label: "Verification" },
 ];
 
 const MORE_LINKS = [
-  { href: "/#learn-more", label: "Deep dive (deck & article)" },
+  { href: "/#institutional-story", label: "Master deck (home)" },
   { href: "/blog", label: "Blog" },
   { href: "/docs", label: "Documentation" },
-  { href: "/integrations/relying-parties", label: "Relying parties" },
+  { href: "/mainnet", label: "Mainnet scoreboard" },
+  { href: "/verification", label: "Verification layer" },
   { href: "/roadmap", label: "Roadmap" },
+  { href: "/integrations/relying-parties", label: "Relying parties" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
 ];
@@ -40,6 +40,7 @@ function isLinkActive(pathname: string | null, href: string, exact?: boolean, ma
   }
   if (href === "/") return pathname === "/" || pathname === "/terminal";
   if (exact) return pathname === href;
+  if (href.startsWith("/#")) return false;
   return pathname === href || (pathname?.startsWith(href + "/") ?? false);
 }
 

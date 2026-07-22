@@ -12,6 +12,12 @@ import {
   RWA_TOKENIZATION_STEPS,
 } from "@/lib/rwaTokenizationThesis";
 import { InstitutionalProductEmbed } from "./InstitutionalProductEmbed";
+import {
+  BlogFeaturedVisual,
+  MarketPulseVisual,
+  ReadinessGatesVisual,
+  ReadinessVerificationVisual,
+} from "./PulseSlideVisuals";
 
 const ACCENT_CYAN = COSMIC_PALETTE.cyan;
 
@@ -521,8 +527,22 @@ export function InstitutionalSlideVisual({ slide, accent = ACCENT_CYAN }: Props)
     }
 
     case "icon-hero":
-    default:
       return <GlowOrb accent={accent} icon={(props.icon as string) ?? "◆"} size={100} />;
+
+    case "readiness-gates":
+      return <ReadinessGatesVisual />;
+
+    case "readiness-verification":
+      return <ReadinessVerificationVisual />;
+
+    case "market-pulse":
+      return <MarketPulseVisual />;
+
+    case "blog-featured":
+      return <BlogFeaturedVisual />;
+
+    default:
+      return <GlowOrb accent={accent} icon="◆" size={100} />;
   }
 }
 

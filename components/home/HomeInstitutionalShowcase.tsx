@@ -17,9 +17,9 @@ export function HomeInstitutionalShowcase() {
         paddingBottom: "clamp(2.5rem, 6vw, 4rem)",
       }}
     >
-      <div style={{ textAlign: "center", marginBottom: "clamp(1.5rem, 4vw, 2.25rem)" }}>
+      <div style={{ textAlign: "center", marginBottom: "clamp(1.25rem, 3vw, 1.75rem)" }}>
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-          Product proof deck
+          Pick your path
         </div>
         <h2
           id="institutional-story-heading"
@@ -33,7 +33,7 @@ export function HomeInstitutionalShowcase() {
             lineHeight: 1.15,
           }}
         >
-          See the product — not the thesis again
+          Arrow through everything — at your pace
         </h2>
         <p
           style={{
@@ -41,16 +41,16 @@ export function HomeInstitutionalShowcase() {
             fontSize: "0.88rem",
             color: "var(--text-secondary)",
             lineHeight: 1.6,
-            maxWidth: 520,
+            maxWidth: 560,
             margin: "0 auto 0.75rem",
           }}
         >
-          Passport, unlock, signed receipts, and stack position. Market stats, tokenization steps, and live
-          asset references are in the article below — shown once.
+          Product demos, RWA thesis, build docs, mainnet gates, blog, and market pulse — one deck.
+          Use ← → or tap a path. No buried tabs.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", justifyContent: "center", alignItems: "center" }}>
-          <Btn href="/#article" variant="secondary" size="sm">
-            Read article →
+          <Btn href="/blog" variant="secondary" size="sm">
+            Blog →
           </Btn>
           <Link
             href="/demo/institutional"
