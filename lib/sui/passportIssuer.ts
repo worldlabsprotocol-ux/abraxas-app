@@ -52,6 +52,40 @@ export function getSponsorAddressFromEnv(): string | null {
   }
 }
 
+export type SponsorKeyStatus = "missing" | "invalid" | "valid";
+
+/** Honest diagnostics for /api/sui/passport/sponsor — no secrets exposed. */
+export function getSponsorEnvDiagnostics() {
+  const capRaw = process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim() ?? "";
+  const sponsorRaw = process.env.SUI_SPONSOR_SECRET_KEY?.trim() ?? "";
+  const issuerRaw = process.env.SUI_ISSUER_SECRET_KEY?.trim() ?? "";
+  const keyRaw = sponsorRaw || issuerRaw;
+
+  let sponsor_key_status: SponsorKeyStatus = "missing";
+  if (keyRaw) {
+    sponsor_key_status = getSponsorAddressFromEnv() ? "valid" : "invalid";
+  }
+
+  const cap_length = capRaw.length;
+  const cap_length_ok = /^0x[a-fA-F0-9]{64}$/.test(capRaw);
+
+  return {
+    sui_network: process.env.SUI_NETWORK ?? process.env.NEXT_PUBLIC_SUI_NETWORK ?? "devnet",
+    env_flags: {
+      SUI_SPONSOR_SECRET_KEY_set: Boolean(sponsorRaw),
+      SUI_ISSUER_SECRET_KEY_set: Boolean(issuerRaw),
+      SUI_ISSUANCE_CAP_OBJECT_ID_set: Boolean(capRaw),
+      SUI_NETWORK: process.env.SUI_NETWORK ?? null,
+      NEXT_PUBLIC_SUI_NETWORK: process.env.NEXT_PUBLIC_SUI_NETWORK ?? null,
+    },
+    sponsor_key_status,
+    issuance_cap_length: cap_length,
+    issuance_cap_length_ok: cap_length_ok,
+    issuance_cap_expected_length: 66,
+    issuer_fully_configured: sponsor_key_status === "valid" && cap_length_ok,
+  };
+}
+
 export function getSponsorConfig() {
   const sponsorAddress = getSponsorAddressFromEnv();
   const capFromEnv = process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim() ?? null;
