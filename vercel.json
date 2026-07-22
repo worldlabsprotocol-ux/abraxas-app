@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/bags-sync",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/asset-monitoring",
+      "schedule": "0 6 * * *"
     }
   ]
 }
