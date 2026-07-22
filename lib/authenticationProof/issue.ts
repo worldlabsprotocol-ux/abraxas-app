@@ -3,6 +3,7 @@
 
 import { randomUUID } from "crypto";
 import { createHash } from "crypto";
+import { createClient } from "@supabase/supabase-js";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { suiExplorerTxUrl } from "@/lib/sui/network";
 import { siteUrl } from "@/lib/siteUrl";
