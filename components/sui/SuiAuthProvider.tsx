@@ -11,7 +11,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { loadUserSession, clearUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
+import {
+  loadUserSession,
+  clearUserSession,
+  type ZkLoginUserSession,
+} from "@/lib/sui/zklogin/session";
+import { ensureBrowserSession, revokeBrowserSession } from "@/lib/auth/ensureBrowserSessionClient";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
@@ -26,8 +31,8 @@ interface SuiAuthContextValue {
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => void;
+  signInWithGoogle: (options?: { returnPath?: string }) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const SuiAuthContext = createContext<SuiAuthContextValue | null>(null);
@@ -48,22 +53,22 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setCanSignTransactions(canSignZkLoginTransactions(session?.suiAddress));
     if (session?.suiAddress) {
-      void fetch("/api/auth/browser-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ sui_address: session.suiAddress }),
-      }).catch(() => { /* best-effort */ });
+      void ensureBrowserSession(session.suiAddress).then(result => {
+        if (!result.ok) {
+          console.warn("[SuiAuth] browser session sync failed:", result.reason);
+        }
+      });
     }
   }, [session]);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (options?: { returnPath?: string }) => {
     setError(null);
-    const result = await startGoogleZkLogin();
+    const result = await startGoogleZkLogin({ returnPath: options?.returnPath });
     if (!result.ok) setError(result.error);
   }, []);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    await revokeBrowserSession().catch(() => undefined);
     clearUserSession();
     setSession(null);
     setCanSignTransactions(false);

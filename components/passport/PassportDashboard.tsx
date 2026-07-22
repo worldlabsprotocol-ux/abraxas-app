@@ -169,7 +169,7 @@ export function PassportDashboard({
           }}>
             Sign in with Google. Bind a wallet when you&apos;re ready. Identity verification only appears when it unlocks a specific action.
           </p>
-          <ZkLoginSignIn />
+          <ZkLoginSignIn returnPath={returnPath ? decodeURIComponent(returnPath) : undefined} />
         </section>
       )}
 
