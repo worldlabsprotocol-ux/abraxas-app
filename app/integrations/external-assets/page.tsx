@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/integrations/external-assets/page.tsx
-// External asset owner application — Step 5 intake (pending review until signed).
+// External asset owner application. Step 5 intake (pending review until signed).
 
 import { useState } from "react";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -40,7 +40,7 @@ export default function ExternalAssetsPage() {
       });
       const json = await res.json() as { error?: string; message?: string; application_id?: string };
       if (!res.ok) throw new Error(json.error ?? "Submit failed");
-      setResult(json.message ?? `Application ${json.application_id} received — status Pending review.`);
+      setResult(json.message ?? `Application ${json.application_id} received. status Pending review.`);
       setForm({
         asset_name: "",
         asset_class: "REAL_ESTATE",
@@ -64,7 +64,7 @@ export default function ExternalAssetsPage() {
       <PageHeader
         eyebrow="External asset owners"
         title="Apply for Abraxas registry review"
-        subtitle="Submit an asset for verification review. Public VERIFIED status requires a named reviewer, evidence scope, expiry, and verify URL — not automatic on submit."
+        subtitle="Submit an asset for verification review. Public VERIFIED status requires a named reviewer, evidence scope, expiry, and verify URL. not automatic on submit."
       />
 
       <ContentCard title="Before you apply">
@@ -75,7 +75,7 @@ export default function ExternalAssetsPage() {
         </p>
         <p style={{ ...body, marginTop: "0.65rem", fontSize: "0.72rem", color: "var(--text-muted)" }}>
           Sample record <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>ABX-DEMO-LAND-001</code> illustrates
-          the intake flow — clearly labeled DEMO, not a real external owner.
+          the intake flow. clearly labeled DEMO, not a real external owner.
         </p>
       </ContentCard>
 

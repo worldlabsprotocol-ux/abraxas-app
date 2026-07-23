@@ -69,7 +69,7 @@ export function PassportCompletionDashboard({
             Passport dashboard
           </div>
           <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            {completion.percent === 100 ? "Fully verified — ready to reuse" : completion.percent >= 25 ? "In progress" : "Get started"}
+            {completion.percent === 100 ? "Fully verified. ready to reuse" : completion.percent >= 25 ? "In progress" : "Get started"}
           </div>
         </div>
         <div style={{ textAlign: "right" }}>

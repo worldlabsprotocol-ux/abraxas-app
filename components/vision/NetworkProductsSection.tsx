@@ -32,7 +32,7 @@ export function NetworkProductsSection() {
           letterSpacing: "-0.02em", lineHeight: 1.15,
           color: "var(--text-primary)", margin: "0 0 0.45rem", maxWidth: 620,
         }}>
-          Three layers — one verification network
+          Three layers. one verification network
         </h2>
         <p style={{
           fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",

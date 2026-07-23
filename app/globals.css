@@ -103,8 +103,20 @@
 body {
   background: var(--bg);
   color: var(--text-primary);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.abx-display,
+.abx-eyebrow-violet {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+}
+
+code, pre, kbd, .abx-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 
 *:not(img):not(svg):not(path) {
@@ -224,4 +236,34 @@ details > summary::-webkit-details-marker {
 
 .abx-elite-demo {
   isolation: isolate;
+}
+
+/* Institutional master slideshow — controls above canvas */
+.abx-institutional-slideshow .abx-side-nav {
+  display: none;
+}
+.abx-institutional-slideshow .abx-bottom-nav {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+.abx-slideshow-control-deck {
+  padding-bottom: 4px;
+}
+@media (min-width: 640px) {
+  .abx-institutional-slideshow .abx-side-nav {
+    display: flex;
+  }
+  .abx-institutional-slideshow .abx-bottom-nav {
+    display: none;
+  }
+}
+
+/* Homepage section rhythm — breathable vertical spacing */
+.abx-home-section {
+  padding: clamp(2rem, 5vw, 3.5rem) 0;
+}
+.abx-home-section + .abx-home-section {
+  border-top: 1px solid var(--border-strong);
 }

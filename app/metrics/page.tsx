@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/metrics/page.tsx
-// Public protocol metrics dashboard — real Supabase counters including verification network.
+// Public protocol metrics dashboard. real Supabase counters including verification network.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -57,7 +57,7 @@ function Metric({ label, value, sub, highlight }: { label: string; value: string
 }
 
 function fmtRelative(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return ", ";
   const d = new Date(iso);
   const diff = Date.now() - d.getTime();
   if (diff < 60_000) return "just now";
@@ -89,7 +89,7 @@ export default function MetricsPage() {
       <PageHeader
         eyebrow="Transparency"
         title="Live protocol metrics"
-        subtitle="Real counters from Supabase — credentials issued, verification API calls, bookings, and partner interest. Updated every ~2 minutes."
+        subtitle="Real counters from Supabase. credentials issued, verification API calls, bookings, and partner interest. Updated every ~2 minutes."
       />
 
       {!hasVerifyActivity && (
@@ -117,11 +117,11 @@ export default function MetricsPage() {
         <ContentCard title="Verification network (live)">
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
             Every call to <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>/api/credentials/verify</code> is logged in{" "}
-            <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>credential_presentations</code> — the same audit trail relying parties use.
+            <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>credential_presentations</code>. the same audit trail relying parties use.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
             <Metric label="Checks (30d)" value={String(v.presentations_30d)} sub={`${v.presentations_7d} in last 7d`} highlight />
-            <Metric label="Success rate (30d)" value={v.success_rate_30d != null ? `${v.success_rate_30d}%` : "—"} sub={`${v.accepted_30d} accepted · ${v.rejected_30d} denied`} />
+            <Metric label="Success rate (30d)" value={v.success_rate_30d != null ? `${v.success_rate_30d}%` : ", "} sub={`${v.accepted_30d} accepted · ${v.rejected_30d} denied`} />
             <Metric label="Relying parties (30d)" value={String(v.unique_verifiers_30d)} sub={`${v.unique_verifiers_all_time} all-time`} />
             <Metric label="Credentials issued (30d)" value={String(v.credentials_issued_30d)} sub={`${m?.active_credentials ?? 0} active total`} />
             <Metric label="Last verification" value={fmtRelative(v.last_presentation_at)} sub={v.last_presentation_at ? new Date(v.last_presentation_at).toLocaleString() : "No checks yet"} />
@@ -231,7 +231,7 @@ export default function MetricsPage() {
               <br />
               Verification log: credential_presentations · Partner API: partner_api_usage · Manual IDV: passport_documents
               <br />
-              Last updated: {data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : "—"}
+              Last updated: {data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : ", "}
             </div>
           </ContentCard>
         </>

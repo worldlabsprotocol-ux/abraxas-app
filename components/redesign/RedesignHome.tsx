@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: emotion → demo → build → ecosystem → proof.
+// Homepage: infrastructure flow. hero → demo → trust → build → thesis → registry.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -9,42 +9,54 @@ import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
-import { HomeReferenceProofStrip } from "@/components/home/HomeReferenceProofStrip";
+import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
-import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
-import { HomePositioningStrip } from "@/components/home/HomePositioningStrip";
-import { HomeAgenticFinanceStrip } from "@/components/home/HomeAgenticFinanceStrip";
-import { HomeProductVisualSection } from "@/components/home/HomeProductVisualSection";
-import { HomeThesisEssaySection } from "@/components/home/HomeThesisEssaySection";
-import { HomeMarketTicker } from "@/components/home/HomeMarketTicker";
+import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
+import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
-import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
+import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 
 const MAXW: React.CSSProperties = {
-  maxWidth: 1180, margin: "0 auto",
+  maxWidth: 1180,
+  margin: "0 auto",
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
+
+// Reorder: Cielo + Chickasaw first, then new asset-class pilots (CMN, Good Trouble)
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove"];
 
 function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
-        <HomeAgenticFinanceStrip />
-        <HomeProductVisualSection />
-        <HomeThesisEssaySection />
-        <HomeHonestStatusStrip />
-        <HomePositioningStrip />
-        <HomeMarketTicker />
+        <HomeDemoVideo />
+        <HomeTrustTransferStrip />
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />
-        <HomeReferenceProofStrip />
+      </div>
+      <HomeFeaturedArticle />
+      <div style={MAXW}>
+        <div
+          id="registry"
+          style={{
+            paddingTop: "clamp(0.5rem, 2vw, 1rem)",
+            paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
+            borderBottom: "1px solid var(--border-strong)",
+          }}
+        >
+          <AssetsExplorer
+            title="Live proof on-registry"
+            eyebrow="Reference assets"
+            home
+            excludeIds={HOME_REGISTRY_EXCLUDE}
+          />
+        </div>
         <HomePartnersBrief />
-        <HomeSignedInModule />
       </div>
     </main>
   );

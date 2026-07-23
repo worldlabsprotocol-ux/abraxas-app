@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportDashboard.tsx
-// State-driven Passport control center — tier status, one identity card, credentials.
+// State-driven Passport control center. tier status, one identity card, credentials.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -258,7 +258,7 @@ export function PassportDashboard({
               fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
               lineHeight: 1.6, margin: "0 0 0.85rem",
             }}>
-              Optional session security check. Signs a message proving you control your connected wallet — not an identity check.
+              Optional session security check. Signs a message proving you control your connected wallet. not an identity check.
             </p>
             <PassportIntentCard suiAddress={suiAddress} />
           </section>
@@ -513,7 +513,7 @@ function IdentityUnlockSection({
           fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)",
           lineHeight: 1.65, margin: "0 0 0.85rem",
         }}>
-          Identity verification is not required to use your Passport. Some actions may require enhanced trust — Abraxas asks only for the claims needed for that action.
+          Identity verification is not required to use your Passport. Some actions may require enhanced trust. Abraxas asks only for the claims needed for that action.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn size="sm" onClick={onExpand}>Add identity verification →</Btn>
@@ -628,7 +628,7 @@ function CredentialsSection({
         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
         color: "var(--text-primary)", margin: "0 0 0.35rem",
       }}>
-        Time-bound proofs — not one generic KYC badge
+        Time-bound proofs. not one generic KYC badge
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
@@ -646,8 +646,8 @@ function CredentialsSection({
       />
       <CredentialRow
         title="Identity verification"
-        issuer={identityUi === "verified" ? (manualMode ? "Abraxas pilot review" : "Approved identity provider") : "—"}
-        assurance={identityUi === "verified" ? assuranceLabel : "—"}
+        issuer={identityUi === "verified" ? (manualMode ? "Abraxas pilot review" : "Approved identity provider") : ", "}
+        assurance={identityUi === "verified" ? assuranceLabel : ", "}
         status={IDENTITY_UI_LABELS[identityUi]}
         refresh={identityUi === "verified" && credential?.expires_at
           ? `Expires ${new Date(credential.expires_at).toLocaleDateString()}`
@@ -756,7 +756,7 @@ function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: RED, margin: "0.45rem 0 0" }}>{demoError}</p>
           )}
           <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.45rem 0 0", lineHeight: 1.5 }}>
-            Pilot demo — simulates a partner consent request without an API key in your browser.
+            Pilot demo. simulates a partner consent request without an API key in your browser.
           </p>
         </div>
       )}

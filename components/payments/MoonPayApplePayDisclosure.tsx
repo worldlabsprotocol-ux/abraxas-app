@@ -1,5 +1,5 @@
 "use client";
-// MoonPay compliance copy — visible above Apple Pay frame (Going Live requirements).
+// MoonPay compliance copy. visible above Apple Pay frame (Going Live requirements).
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 

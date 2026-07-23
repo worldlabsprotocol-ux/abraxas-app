@@ -57,12 +57,12 @@ export const FLAGSHIP_PROPERTY = {
     signatureFeature: "Mirrored Geodesic Wellness Dome, lay-down infrared sauna, red light therapy, tri-state views",
 
     rooms: [
-      { name:"🍃 The Earth Room",     type:"Primary King Suite",  guests:2, beds:"1 king", desc:"Main-level king suite. Ensuite with dual vanities, glass shower & jetted soaking tub. Walk-out patio. Custom WFH desk. Limewashed walls, grounding design." },
-      { name:"☁️ The Air Room",       type:"Upper King Bedroom",  guests:2, beds:"1 king", desc:"Private covered balcony with curtains. Seasonal sunset view. Closet storage, luggage rack, dedicated workspace nook. Full bath adjacent." },
-      { name:"🔥 The Fire Room",      type:"Upper King Bedroom",  guests:2, beds:"1 king", desc:"Upper king bedroom." },
-      { name:"💧 The Water Room",     type:"Lower Double Bedroom", guests:4, beds:"2 full", desc:"Two full beds. Direct access to terrace amenities: hot tub, cold plunge, wellness dome, fire pit." },
-      { name:"🌌 The Sauna Solarium", type:"Wellness Dome",       guests:2, beds:"1 queen sleeper", desc:"Climate-controlled mirrored geodesic dome. Queen sleeper sofa. Infrared sauna, red light therapy, ridgeline views." },
-      { name:"Lower-Level Lounge",    type:"Flex Sleeping",       guests:3, beds:"2 couches + futon", desc:"Additional flex sleeping, 2 couches and a futon." },
+      { name:"The Earth Room",     tag:"EARTH",  type:"Primary King Suite",  guests:2, beds:"1 king", desc:"Main-level king suite. Ensuite with dual vanities, glass shower and jetted soaking tub. Walk-out patio. Custom WFH desk. Limewashed walls, grounding design." },
+      { name:"The Air Room",       tag:"AIR",    type:"Upper King Bedroom",  guests:2, beds:"1 king", desc:"Private covered balcony with curtains. Seasonal sunset view. Closet storage, luggage rack, dedicated workspace nook. Full bath adjacent." },
+      { name:"The Fire Room",      tag:"FIRE",   type:"Upper King Bedroom",  guests:2, beds:"1 king", desc:"Upper king bedroom." },
+      { name:"The Water Room",     tag:"WATER",  type:"Lower Double Bedroom", guests:4, beds:"2 full", desc:"Two full beds. Direct access to terrace amenities: hot tub, cold plunge, wellness dome, fire pit." },
+      { name:"The Sauna Solarium", tag:"DOME",   type:"Wellness Dome",       guests:2, beds:"1 queen sleeper", desc:"Climate-controlled mirrored geodesic dome. Queen sleeper sofa. Infrared sauna, red light therapy, ridgeline views." },
+      { name:"Lower-Level Lounge", tag:"FLEX",   type:"Flex Sleeping",       guests:3, beds:"2 couches + futon", desc:"Additional flex sleeping, 2 couches and a futon." },
     ],
 
     bathrooms_detail: [
@@ -238,12 +238,13 @@ export const FLAGSHIP_PROPERTY = {
     metadataUri:       "ipfs://QmCielo5unrise1Genesis001/metadata.json",
     totalSupply:       1,
     status:            "COLLATERAL_ELIGIBLE",
-    stablecoinBooking: "USDC booking integration, coming soon",
+    stablecoinBooking: "USDC on Sui · primary booking rail",
   },
 
   guestProfile: {
-    totalReviews:  5,
+    totalReviews:  17,
     avgRating:     5.0,
+    reviewSource:  "Airbnb public listing · Jul 2026",
     cleanliness:   5.0,
     accuracy:      5.0,
     communication: 5.0,

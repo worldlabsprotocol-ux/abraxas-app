@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { registryAssetsForShowcase } from "@/lib/data/registryAssets";
 import { VERIFY_META } from "@/lib/data/exploreAssets";
+import { CmnRegistrySlideshow } from "@/components/registry/CmnRegistrySlideshow";
 import {
   VERIFY_SHOWCASE_BODY,
   VERIFY_SHOWCASE_EYEBROW,
@@ -57,8 +58,12 @@ export function VerifyAssetsShowcase({ onSelectAsset }: Props) {
               }}
             >
               <div style={{ position: "relative", height: 140, background: "#0a0f14" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={asset.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                {asset.abxId === "ABX-COL-PSA-007" ? (
+                  <CmnRegistrySlideshow alt={asset.name} height={140} showDots={false} />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={asset.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                )}
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,9,11,0.85) 0%, transparent 55%)" }} />
                 <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
                   <span style={{ fontFamily: FONT, fontSize: "0.55rem", fontWeight: 700, padding: "0.25rem 0.5rem", borderRadius: 999, background: "rgba(0,0,0,0.55)", color: meta.color, border: `1px solid ${meta.color}55` }}>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/vision/TrustFrameworkSection.tsx
-// Institutional trust framework — decision domains + operating model.
+// Institutional trust framework. decision domains + operating model.
 
 import { CLAIM_STACK, TRUST_FRAMEWORK_DOMAINS, TRUST_FRAMEWORK_OPERATING_MODEL } from "@/lib/abraxasNetwork";
 import { ProductStatusBadge } from "@/components/ui/ProductStatusBadge";

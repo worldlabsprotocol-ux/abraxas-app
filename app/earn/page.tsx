@@ -96,7 +96,7 @@ export default function EarnPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem", marginBottom: "2rem" }}>
         {[
           { label: "System AUM",      value: portfolio.loading ? "…" : formatCurrency(portfolio.systemAUM) },
-          { label: "Avg Pool APY",    value: "7.4–12.8%"  },
+          { label: "Avg Pool APY",    value: "7.4-12.8%"  },
           { label: "Min Deposit",     value: "$50 USDC"   },
         ].map((s) => (
           <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "10px", padding: "0.875rem 1.25rem", textAlign: "center" }}>

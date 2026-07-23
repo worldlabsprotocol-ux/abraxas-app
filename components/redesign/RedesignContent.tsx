@@ -2,9 +2,11 @@
 // FILE: components/redesign/RedesignContent.tsx
 // Page building blocks for docs, roadmap, tokenomics, etc.
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
+import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+
+const FONT = ABRAXAS_FONT_SANS;
+const MONO = ABRAXAS_FONT_MONO;
+const ACCENT = "var(--accent, #E8C547)";
 
 export function PageHeader({
   eyebrow,
@@ -58,13 +60,15 @@ export function PageHeader({
 
 export function ContentCard({
   title,
+  id,
   children,
 }: {
   title?: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section style={{
+    <section id={id} style={{
       marginBottom: "1.25rem",
       padding: "1.25rem",
       borderRadius: "var(--radius-lg)",

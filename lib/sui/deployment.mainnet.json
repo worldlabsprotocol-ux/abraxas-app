@@ -9,5 +9,5 @@
   "demoPassportObjectId": "",
   "demoIssuanceCapObjectId": "",
   "demoOwnerAddress": "",
-  "_readme": "Populate packageId and cap after mainnet Passport deploy + audit. Until then SUI_NETWORK=mainnet falls back to devnet deployment for reads."
+  "_readme": "Populate packageId after gate #2 audit + CONFIRM_MAINNET=1 npm run sui:deploy:mainnet. App no longer falls back to devnet packageId when SUI_NETWORK=mainnet."
 }

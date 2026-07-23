@@ -15,7 +15,7 @@ export default function CredentialPortabilityPage() {
       <PageHeader
         eyebrow="Integrators"
         title="Portable credentials & verification API"
-        subtitle="W3C Verifiable Credentials as Ed25519-signed JWTs. Verify once — rely on cryptographic proof, not re-KYC."
+        subtitle="W3C Verifiable Credentials as Ed25519-signed JWTs. Verify once. rely on cryptographic proof, not re-KYC."
       />
 
       <ContentCard title="Example credential claims">
@@ -53,10 +53,10 @@ export default function CredentialPortabilityPage() {
       <ContentCard title="Best practices for relying parties">
         <BulletList items={[
           "Verify Ed25519 signature against GET /api/credentials/public-key",
-          "Check assurance level on each claim — do not treat L1 the same as L4",
-          "Respect refreshDue dates — stale appraisals may need re-attestation",
-          "Support selective disclosure — request only claims needed for the action",
-          "Handle revocation — credentials can be revoked server-side",
+          "Check assurance level on each claim. do not treat L1 the same as L4",
+          "Respect refreshDue dates. stale appraisals may need re-attestation",
+          "Support selective disclosure. request only claims needed for the action",
+          "Handle revocation. credentials can be revoked server-side",
         ]} />
       </ContentCard>
 

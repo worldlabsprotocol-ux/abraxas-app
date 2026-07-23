@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/verify/RelyingPartyVerifyPanel.tsx
-// Live tester for POST /api/credentials/verify — partner integration demos.
+// Live tester for POST /api/credentials/verify. partner integration demos.
 
 import { useState, type CSSProperties } from "react";
 import type { VerificationResult } from "@/lib/credentials/types";
@@ -112,7 +112,7 @@ export function RelyingPartyVerifyPanel({ suiAddress }: { suiAddress?: string | 
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
       }}>
         Relying parties call this server-side with a user&apos;s Abraxas credential JWT.
-        This public tester verifies the JWT cryptographically — no partner API key required.
+        This public tester verifies the JWT cryptographically. no partner API key required.
       </p>
 
       <div style={{ display: "grid", gap: "0.85rem", marginBottom: "1rem" }}>
@@ -207,7 +207,7 @@ export function RelyingPartyVerifyPanel({ suiAddress }: { suiAddress?: string | 
             color: result.verified ? "#04130C" : "#fff",
             fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, letterSpacing: "0.04em",
           }}>
-            {result.verified ? "✓ VERIFIED — gate would open" : "✗ NOT VERIFIED — gate stays closed"}
+            {result.verified ? "✓ VERIFIED. gate would open" : "✗ NOT VERIFIED. gate stays closed"}
           </div>
 
           <div style={{ padding: "1.15rem 1.25rem" }}>
@@ -224,11 +224,11 @@ export function RelyingPartyVerifyPanel({ suiAddress }: { suiAddress?: string | 
               marginBottom: "0.85rem",
             }}>
               {[
-                ["Holder", result.sui_address ?? result.holder_address ?? "—"],
-                ["Jurisdiction", result.jurisdiction ?? "—"],
-                ["Level", result.verification_level ?? "—"],
-                ["Expires", result.expires_at ? new Date(result.expires_at).toLocaleDateString() : "—"],
-                ["JTI", result.credential_jti ? `${result.credential_jti.slice(0, 28)}…` : "—"],
+                ["Holder", result.sui_address ?? result.holder_address ?? ", "],
+                ["Jurisdiction", result.jurisdiction ?? ", "],
+                ["Level", result.verification_level ?? ", "],
+                ["Expires", result.expires_at ? new Date(result.expires_at).toLocaleDateString() : ", "],
+                ["JTI", result.credential_jti ? `${result.credential_jti.slice(0, 28)}…` : ", "],
               ].map(([k, v]) => (
                 <div key={k} style={{
                   padding: "0.55rem 0.65rem", borderRadius: 8,

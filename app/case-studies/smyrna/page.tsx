@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/case-studies/smyrna/page.tsx
-// Second asset case study — capital partner / equity verification template.
+// Second asset case study. capital partner / equity verification template.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -31,7 +31,7 @@ export default function SmyrnaCaseStudyPage() {
       <PageHeader
         eyebrow="Case study · Verified residential"
         title={SMYRNA_ASSET.name}
-        subtitle="Second asset template: clear title, Battery Atlanta corridor, capital partner pipeline. Honest stage — not yet MARKETPLACE_LIVE like Cielo."
+        subtitle="Second asset template: clear title, Battery Atlanta corridor, capital partner pipeline. Honest stage. not yet MARKETPLACE_LIVE like Cielo."
       />
 
       <CaseStudyPhotoHero

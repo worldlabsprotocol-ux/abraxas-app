@@ -49,7 +49,7 @@ export function RelyingPartyProofStatus() {
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: status.met ? "var(--accent-verify, #10B981)" : "var(--accent)", margin: 0 }}>
         {status.met
           ? `✓ ${status.approvedProductionChecks} approved production check(s) logged`
-          : `In progress — ${status.approvedProductionChecks} external production approvals logged`}
+          : `In progress. ${status.approvedProductionChecks} external production approvals logged`}
       </p>
       {status.latest && (
         <p style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.5rem 0 0" }}>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/vision/TrustFrameworkTeaser.tsx
-// Short homepage teaser — full claim stack lives on /trust-framework.
+// Short homepage teaser. full claim stack lives on /trust-framework.
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";

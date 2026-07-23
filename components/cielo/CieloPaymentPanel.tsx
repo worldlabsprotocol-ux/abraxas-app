@@ -239,13 +239,13 @@ export function CieloPaymentPanel({
         {consumerCopy.cielo.payBadge}
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-        Complete your booking — ${payment.amount_usdc.toFixed(2)}
+        Complete your booking. ${payment.amount_usdc.toFixed(2)}
       </div>
 
       <div style={{ marginBottom: "0.85rem" }}>
         <NonCustodialDisclosure
           variant="compact"
-          settlementNote="Payment routes to the verified asset settlement account. Abraxas attests to payment state — it is not the counterparty or custodian."
+          settlementNote="Payment routes to the verified asset settlement account. Abraxas attests to payment state. it is not the counterparty or custodian."
         />
       </div>
 

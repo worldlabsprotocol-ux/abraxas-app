@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/partners/PartnerExecutionCards.tsx
-// Shared partner cards — no placeholder names in public UI.
+// Shared partner cards. no placeholder names in public UI.
 
 import Link from "next/link";
 import {

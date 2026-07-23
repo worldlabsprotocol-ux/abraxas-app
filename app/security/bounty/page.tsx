@@ -42,7 +42,7 @@ function BountyReportForm() {
       }
     } catch {
       setStatus("error");
-      setMsg("Network error — try email fallback below.");
+      setMsg("Network error. try email fallback below.");
     }
   }
 

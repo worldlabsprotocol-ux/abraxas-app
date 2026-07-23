@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/case-studies/SmyrnaPhotoGallery.tsx
-// Smyrna Townhome — canonical owner exterior + optional supplemental angles.
+// Smyrna Townhome. canonical owner exterior + optional supplemental angles.
 
 import { useEffect, useState } from "react";
 import { SMYRNA_TOWNHOME_IMAGE, SMYRNA_LEGACY_STADIUM_PATH } from "@/lib/data/registryAssetImages";

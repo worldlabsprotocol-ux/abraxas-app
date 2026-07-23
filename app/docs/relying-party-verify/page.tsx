@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/docs/relying-party-verify/page.tsx
-// Minimal external relying party path — verify → proof → independent check.
+// Minimal external relying party path. verify → proof → independent check.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -32,7 +32,7 @@ export default function RelyingPartyVerifyDocsPage() {
       <PageHeader
         eyebrow="External relying party"
         title={EXTERNAL_RP_HEADLINE}
-        subtitle="One main API call. Decision + cryptographic proof. Independent verification — no inbox, no relay."
+        subtitle="One main API call. Decision + cryptographic proof. Independent verification. no inbox, no relay."
       />
 
       <ContentCard title="Four steps">
@@ -116,7 +116,7 @@ export default function RelyingPartyVerifyDocsPage() {
         <CodeBlock>{`${CURL_VERIFY_EXAMPLE}\n\n${CURL_PROOF_EXAMPLE}`}</CodeBlock>
       </ContentCard>
 
-      <ContentCard title="Verify modes — pick one">
+      <ContentCard title="Verify modes. pick one">
         {VERIFY_MODE_GUIDE.map(mode => (
           <div key={mode.mode} style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
             <div style={{ fontFamily: MONO, fontSize: "0.62rem", fontWeight: 800, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
@@ -138,7 +138,7 @@ export default function RelyingPartyVerifyDocsPage() {
         <div style={{ fontFamily: MONO, fontSize: "0.65rem", lineHeight: 1.8, color: "var(--text-secondary)" }}>
           {Object.entries(VERIFY_HTTP_STATUS).map(([code, desc]) => (
             <div key={code}>
-              <span style={{ color: ACCENT, fontWeight: 700 }}>{code}</span> — {desc}
+              <span style={{ color: ACCENT, fontWeight: 700 }}>{code}</span>. {desc}
             </div>
           ))}
         </div>

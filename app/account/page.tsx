@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/account/page.tsx
-// Read-only account hub — verification status, quick actions, passport progress.
+// Read-only account hub. verification status, quick actions, passport progress.
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -38,7 +38,7 @@ function AccountInner() {
         />
         <ContentCard>
           <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-            No wallet to manage — zkLogin creates your Sui address from Google OAuth.
+            No wallet to manage. zkLogin creates your Sui address from Google OAuth.
           </p>
           <Btn onClick={() => signInWithGoogle()} size="lg">Sign in with Google →</Btn>
         </ContentCard>
@@ -85,7 +85,7 @@ function AccountInner() {
       <PageHeader
         eyebrow="Account"
         title="My verified assets"
-        subtitle="Your passport, booking activity, and what you can do next — one place."
+        subtitle="Your passport, booking activity, and what you can do next. one place."
       />
 
       {isLoading ? (
@@ -101,7 +101,7 @@ function AccountInner() {
             gap: "0.75rem", marginBottom: "1rem",
           }}>
             <Stat label="Completion" value={`${completion.percent}%`} accent />
-            <Stat label="Identity" value={trust?.identity.status ?? "—"} />
+            <Stat label="Identity" value={trust?.identity.status ?? ", "} />
             <Stat label="Credential" value={trust?.credential.active ? "Active" : "None"} />
             <Stat label="Ready to transact" value={trust?.ready_to_transact ? "Yes" : "Pending"} />
           </div>

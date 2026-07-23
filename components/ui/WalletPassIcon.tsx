@@ -1,4 +1,4 @@
-// Stylized wallet pass icon — not Apple trademark artwork.
+// Stylized wallet pass icon. not Apple trademark artwork.
 
 import type { CSSProperties } from "react";
 
