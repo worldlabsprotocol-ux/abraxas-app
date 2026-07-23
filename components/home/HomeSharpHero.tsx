@@ -91,14 +91,8 @@ export function HomeSharpHero() {
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>
-        <Btn href="/#demo" size="lg">
-          Watch demo →
-        </Btn>
-        <Btn href="/integrate" variant="secondary" size="lg">
-          Build with Abraxas →
-        </Btn>
-        <Btn href="/developers" variant="ghost" size="lg">
-          Read docs →
+        <Btn href="/integrate" size="lg">
+          Build with Abraxas
         </Btn>
       </div>
     </section>

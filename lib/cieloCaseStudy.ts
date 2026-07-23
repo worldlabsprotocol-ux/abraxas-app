@@ -70,7 +70,7 @@ export const CIELO_SOURCES = [
   },
   {
     claim: "Live STR listing",
-    value: "5.0 ★ Superhost",
+    value: "5.0 · 17 reviews · Superhost",
     level: "L4 Monitored",
     source: "Airbnb public listing",
     asOf: "2026-07-01",
@@ -132,5 +132,5 @@ export const CIELO_ONCHAIN_PROOF = [
 export const CIELO_TIMELINE = D.verification.provenanceTimeline;
 
 export const CIELO_PHOTOS = [
-  ...CIELO_GALLERY_IMAGES.slice(0, 2),
+  ...CIELO_GALLERY_IMAGES,
 ] as const;

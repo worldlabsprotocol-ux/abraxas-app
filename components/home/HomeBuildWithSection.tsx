@@ -7,7 +7,9 @@ import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
 import { EliteSectionLead } from "@/components/home/elite/EliteSectionLead";
 import { BUILD_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+
+const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeBuildWithSection() {
   return (
@@ -44,11 +46,6 @@ export function HomeBuildWithSection() {
             <div style={{ fontFamily: FONT, fontSize: "0.76rem", fontWeight: 800, color: "var(--text-primary)" }}>{ex.name} →</div>
           </a>
         ))}
-      </div>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href="/developers" size="lg">Docs →</Btn>
-        <Btn href="/design-partner" variant="secondary" size="lg">Integrate →</Btn>
       </div>
     </section>
   );

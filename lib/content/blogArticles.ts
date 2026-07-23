@@ -21,11 +21,44 @@ export interface BlogArticle {
 
 export const FEATURED_THESIS_BLOG_SLUG = "what-is-real-world-asset-tokenization" as const;
 
+/** Homepage article carousel — newest first */
+export const HOMEPAGE_ARTICLE_SLUGS = [
+  "top-5-rwa-verification-platforms",
+  "what-is-real-world-asset-tokenization",
+  "verify-before-agents-act",
+] as const;
+
+export function getHomepageArticles(): BlogArticle[] {
+  return HOMEPAGE_ARTICLE_SLUGS
+    .map(slug => BLOG_ARTICLES.find(a => a.slug === slug))
+    .filter((a): a is BlogArticle => a != null);
+}
+
 export function getFeaturedThesisArticle(): BlogArticle | undefined {
   return BLOG_ARTICLES.find(a => a.slug === FEATURED_THESIS_BLOG_SLUG) ?? BLOG_ARTICLES.find(a => a.featured);
 }
 
 export const BLOG_ARTICLES: BlogArticle[] = [
+  {
+    slug: "top-5-rwa-verification-platforms",
+    title: "Top 5 RWA Verification Platforms for Real-World Asset Tokenization",
+    description:
+      "What RWA verification platforms do, why they matter before minting, and how Abraxas fits the institutional stack alongside identity, custody, and compliance vendors.",
+    category: "product",
+    readingTime: "7 min",
+    featured: true,
+    mediumUrl:
+      "https://medium.com/@worldlabsprotocol/top-5-rwa-verification-platforms-for-real-world-asset-tokenization-35c1f5d82a49",
+    body: [
+      "The market for real-world asset tokenization is growing rapidly as governments, financial institutions, investment firms, and blockchain companies bring physical and financial assets onto the blockchain. From real estate and private credit to gold, carbon credits, and government bonds, tokenized real-world assets promise greater liquidity, transparency, and accessibility.",
+      "However, tokenization alone is not enough. Before any asset can be trusted on-chain, someone must verify that it actually exists, confirm legal ownership, validate supporting documentation, and ensure regulatory compliance. This is where RWA verification platforms play a critical role.",
+      "RWA verification platforms focus on proving that underlying information can be trusted. They may verify asset ownership, legal documentation, identity (KYC), business verification (KYB), AML compliance, wallet screening, audit trails, verifiable credentials, and regulatory requirements.",
+      "For example, before a commercial building is tokenized, its title deeds, ownership records, valuation reports, and legal documents should be validated. Likewise, investors purchasing tokenized real-world assets often need to complete identity verification before participating.",
+      "As institutional RWA adoption increases, verification is becoming just as important as blockchain infrastructure itself. Abraxas positions at this layer: reusable cryptographic proof before capital moves, with live proof on Cielo Sunrise and Chickasaw land diligence today.",
+      "The full comparison of five platforms — including where verification, tokenization, custody, and compliance intersect — is published on Medium. On Abraxas we ship the verify layer first: public records, assurance levels, and honest scope on every asset.",
+    ],
+    relatedHref: "/integrate",
+  },
   {
     slug: "what-is-real-world-asset-tokenization",
     title: "What Is Real-World Asset Tokenization?",

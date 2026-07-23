@@ -17,7 +17,6 @@ import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
-import { HomeMainnetVerificationStrip } from "@/components/home/HomeMainnetVerificationStrip";
 import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 
 const MAXW: React.CSSProperties = {
@@ -41,7 +40,6 @@ function HomeContent() {
       </div>
       <HomeFeaturedArticle />
       <div style={MAXW}>
-        <HomeMainnetVerificationStrip />
         <div
           id="registry"
           style={{

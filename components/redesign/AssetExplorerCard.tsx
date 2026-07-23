@@ -190,7 +190,7 @@ export function AssetExplorerCard({
             size="sm"
             fullWidth
           >
-            {isHome ? "View record" : asset.cta} →
+            {isHome ? (asset.href ? "View record" : asset.cta) : asset.cta} →
           </Btn>
           {asset.liveProof && !isHome && (
             <Btn href={asset.liveProof.url} newTab variant="ghost" size="sm" fullWidth>

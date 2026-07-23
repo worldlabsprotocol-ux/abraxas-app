@@ -11,8 +11,10 @@ import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
 import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+
+const FONT = ABRAXAS_FONT_SANS;
+const MONO = ABRAXAS_FONT_MONO;
 
 export default function DevelopersPage() {
   return (

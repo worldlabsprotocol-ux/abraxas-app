@@ -35,7 +35,6 @@ export function RedesignNav() {
   const reduce = useReducedMotion();
   const auth = useSuiAuthOptional();
   const [open, setOpen] = useState(false);
-  const onHome = isLinkActive(pathname, "/", true);
   const signedIn = Boolean(auth?.suiAddress);
 
   return (
@@ -128,24 +127,6 @@ export function RedesignNav() {
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
       <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
-        {!onHome && (
-          <Link
-            href="/"
-            style={{
-              padding: "0.4rem 0.85rem",
-              borderRadius: 999,
-              border: "1px solid rgba(16,185,129,0.35)",
-              background: "rgba(16,185,129,0.1)",
-              fontFamily: FONT,
-              fontSize: "0.78rem",
-              fontWeight: 700,
-              color: ACCENT,
-              textDecoration: "none",
-            }}
-          >
-            ← Home
-          </Link>
-        )}
         <LanguageSelector />
         {signedIn ? <NavProfileMenu prominent /> : <NavSignInButton prominent />}
       </div>

@@ -114,8 +114,9 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryLabel: "Monthly income",
     secondaryValue: "$1,500 / mo",
     state: "owned",
-    note: "Held via fideicomiso. Not open to outside investors.",
-    cta: "Verify to view",
+    note: "Held via fideicomiso. Acquired 2023. Not open to outside investors.",
+    href: "/verify/ABX-RE-INT-003",
+    cta: "View verify record",
   },
   {
     id: "the-clove",

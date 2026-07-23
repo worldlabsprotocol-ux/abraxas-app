@@ -30,12 +30,12 @@ import {
   AGENTIC_FINANCE_INDEPENDENCE_NOTE,
   getAgenticFinanceStack,
 } from "@/lib/agenticFinancePositioning";
-import { RelyingPartyProofStatus } from "@/components/integrations/RelyingPartyProofStatus";
 import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
+import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { BUILD_ELITE_DEMO, STACK_ELITE_DEMO, REFERENCE_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const FONT = ABRAXAS_FONT_SANS;
+const MONO = ABRAXAS_FONT_MONO;
 
 export default function IntegratePage() {
   return (
@@ -180,17 +180,16 @@ export default function IntegratePage() {
         </pre>
       </ContentCard>
 
-      <ContentCard title="Become an external relying party">
-        <RelyingPartyProofStatus />
+      <ContentCard title="Design partner program">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
-          Your first approved production verify call with an <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_</code> key
-          logs toward our mainnet gate — not sandbox flows or first-party Cielo/Passport paths.
+          Production relying party onboarding opens as verification gates clear. Today: sandbox credentials, documented verify paths, and hands on support for design partners.
+          External production keys ship when your integration passes the same gates we hold ourselves to.
         </p>
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((step, i) => `${i + 1}. ${step}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/docs/relying-party-verify" size="sm">Integration guide →</Btn>
-          <Btn href="/integrations/relying-parties" variant="secondary" size="sm">Full program + webhooks →</Btn>
-          <Btn href="/design-partner" variant="ghost" size="sm">Request abx_live_ key →</Btn>
+          <Btn href="/design-partner" size="sm">Apply for integration program</Btn>
+          <Btn href="/docs/relying-party-verify" variant="secondary" size="sm">Integration guide</Btn>
+          <Btn href="/integrations/relying-parties" variant="ghost" size="sm">Program details</Btn>
         </div>
       </ContentCard>
 
@@ -198,19 +197,25 @@ export default function IntegratePage() {
         <PartnerExecutionCards />
       </ContentCard>
 
-      <ContentCard title="Built for">
-        <BulletList items={[...BUILD_FOR_AUDIENCES]} />
-      </ContentCard>
-
-      <ContentCard title="Not a fit if">
-        <BulletList items={[...NOT_FOR_AUDIENCES]} />
-      </ContentCard>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        gap: "0.85rem",
+        marginBottom: "1.25rem",
+      }}>
+        <ContentCard title="Built for">
+          <BulletList items={[...BUILD_FOR_AUDIENCES]} />
+        </ContentCard>
+        <ContentCard title="Not a fit if">
+          <BulletList items={[...NOT_FOR_AUDIENCES]} />
+        </ContentCard>
+      </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
-        <Btn href="/design-partner" size="lg">Apply for integration program →</Btn>
-        <Btn href="/trust-framework#trust-over-time" variant="secondary" size="lg">How trust stays current →</Btn>
-        <Link href="/roadmap#mainnet-readiness" style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center", textDecoration: "none" }}>
-          Mainnet checklist →
+        <Btn href="/design-partner" size="lg">Apply for integration program</Btn>
+        <Btn href="/trust-framework#trust-over-time" variant="secondary" size="lg">How trust stays current</Btn>
+        <Link href="/developers" style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center", textDecoration: "none" }}>
+          Developer hub
         </Link>
       </div>
     </RedesignPage>
