@@ -13,7 +13,7 @@ export const ABRAXAS_INFRA_NARRATIVE =
   "Every RWA app and asset tokenization platform rebuilds trust from scratch. Abraxas is the verification infrastructure that makes proof portable.";
 
 export const ABRAXAS_INFRA_POSITIONING =
-  "Not another issuer. Not another marketplace. The RWA verification app and digital asset verification layer every tokenized real-world asset application plugs into.";
+  "Not another issuer. Not another marketplace. Abraxas is the trust check every token app plugs into.";
 
 export const ABRAXAS_EMBED_PITCH =
   "Already issuing tokenized assets? Embed Abraxas Passport so verified assets move across applications without repeating due diligence.";

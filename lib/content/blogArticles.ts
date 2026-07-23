@@ -3,6 +3,16 @@
 
 import type { BlogCategory } from "./types";
 
+export interface PlatformReview {
+  rank: number;
+  name: string;
+  tagline: string;
+  body: string;
+  bestFor: string[];
+  /** Highlight Abraxas on homepage */
+  featured?: boolean;
+}
+
 export interface BlogArticle {
   slug: string;
   title: string;
@@ -14,7 +24,12 @@ export interface BlogArticle {
   thesisActs?: string[];
   featured?: boolean;
   mediumUrl?: string;
+  /** Structured platform cards for comparison articles */
+  platformReviews?: PlatformReview[];
+  platformSectionTitle?: string;
 }
+
+export const TOP5_PLATFORMS_SLUG = "top-5-rwa-verification-platforms" as const;
 
 export const FEATURED_THESIS_BLOG_SLUG = "what-is-real-world-asset-tokenization" as const;
 
@@ -46,28 +61,62 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     mediumUrl:
       "https://medium.com/@worldlabsprotocol/top-5-rwa-verification-platforms-for-real-world-asset-tokenization-35c1f5d82a49",
     body: [
-      "The market for real-world asset tokenization is growing rapidly as governments, financial institutions, investment firms, and blockchain companies bring physical and financial assets onto the blockchain. From real estate and private credit to gold, carbon credits, and government bonds, tokenized real-world assets promise greater liquidity, transparency, and accessibility.",
-      "However, tokenization alone is not enough.",
-      "Before any asset can be trusted on-chain, someone must verify that it actually exists, confirm legal ownership, validate supporting documentation, and ensure regulatory compliance. This is where RWA Verification Platforms play a critical role.",
-      "Without proper verification, even the most advanced blockchain cannot guarantee that a token truly represents the underlying asset. For institutions managing millions or even billions of dollars in institutional RWA investments, trust begins long before the first token is minted.",
-      "In this guide, we explain what RWA Verification Platforms are, why they matter, and review five platforms helping build trust for the next generation of asset tokenization.",
-      "RWA Verification Platforms are technology solutions that verify the identity, ownership, authenticity, and compliance of assets before or during real-world asset tokenization.",
-      "Unlike tokenization platforms that issue digital tokens, RWA Verification Platforms focus on proving that the underlying information can be trusted. They may verify asset ownership, legal documentation, identity (KYC), business verification (KYB), AML compliance, wallet screening, audit trails, verifiable credentials, and regulatory requirements.",
-      "For example, before a commercial building is tokenized, its title deeds, ownership records, valuation reports, and legal documents should be validated. Likewise, investors purchasing tokenized real-world assets often need to complete identity verification before participating.",
-      "As institutional RWA adoption increases, verification is becoming just as important as blockchain infrastructure itself.",
-      "Blockchain provides transparency, but it cannot independently determine whether an off-chain asset is genuine.",
-      "Consider a token representing one kilogram of gold. The blockchain can prove who owns the token, but it cannot confirm whether the gold actually exists in a vault, whether ownership documents are authentic, or whether the asset has already been pledged elsewhere.",
-      "This trust gap is one of the biggest challenges facing real-world asset tokenization.",
-      "RWA Verification Platforms help bridge that gap by creating reliable links between physical assets and their digital representations. They also help organizations reduce fraud, improve compliance, speed up investor onboarding, support regulatory reporting, increase confidence among institutional investors, simplify audits, and strengthen trust in tokenized real-world assets.",
-      "In real estate, property ownership documents must be validated before ownership interests can be tokenized. For gold-backed tokens, independent vault audits and proof of reserves help establish confidence that the physical metal exists. Carbon credit projects require verification to confirm that environmental claims are legitimate before credits become tokenized real-world assets. Private credit funds need verified borrower information, loan documentation, and legal agreements before participating in asset tokenization initiatives.",
-      "1. Abraxas. Abraxas is an emerging RWA Verification Platform designed to solve one of the biggest inefficiencies in real-world asset tokenization: repeated verification. Instead of requiring organizations to verify the same documents repeatedly across different platforms, Abraxas focuses on reusable verification. Once an asset, business, or participant has been verified, that verification can be reused under defined policies, reducing duplicated work while maintaining auditability. Best for enterprise RWA ecosystems, government-backed projects, institutional verification, and reusable trust infrastructure.",
-      "2. Didit. Didit has established itself as a strong compliance-focused RWA Verification Platform by combining identity verification with AML, KYB, wallet screening, and regulatory compliance. For companies issuing tokenized real-world assets, onboarding investors safely is just as important as verifying the underlying assets. Best for KYC, KYB, AML screening, investor verification, and compliance automation.",
-      "3. Humanity Protocol. Humanity Protocol takes a privacy-first approach to digital identity. Rather than exposing unnecessary personal information, the platform uses privacy-preserving technologies that allow users to prove eligibility without revealing excessive data. Best for privacy-preserving identity, decentralized credentials, institutional compliance, and cross-border verification.",
-      "4. Veriff. Although Veriff was not built exclusively for blockchain, it has become one of the most trusted enterprise identity verification providers worldwide. Banks, fintech companies, payment providers, and regulated businesses use Veriff to verify customer identities quickly while reducing fraud. Best for enterprise identity verification, financial institutions, fraud prevention, and digital onboarding.",
-      "5. Sumsub. Sumsub offers a comprehensive compliance platform covering KYC, KYB, AML monitoring, transaction monitoring, and fraud prevention. Its extensive global coverage makes it particularly useful for organizations serving international investors interested in tokenized real-world assets. Best for global compliance, AML monitoring, international onboarding, and cross-border RWA projects.",
-      "When evaluating RWA Verification Platforms, consider whether the platform verifies both assets and participants, whether verification can be reused across multiple applications, whether it supports KYC, KYB, and AML compliance, whether there is an auditable verification history, whether it integrates with existing tokenization platforms, whether it supports enterprise-scale deployments, and whether it can meet local regulatory requirements.",
-      "As real-world asset tokenization continues to reshape global finance, trust will increasingly determine which projects succeed. While blockchain delivers transparency and efficiency, it cannot independently verify ownership, legal rights, or compliance. That responsibility belongs to RWA Verification Platforms, which form the trust layer connecting physical assets with digital markets.",
-      "For organizations building the future of institutional RWA, choosing the right RWA Verification Platform is a strategic decision. Strong verification reduces risk, improves investor confidence, and lays the foundation for a more secure and scalable ecosystem of tokenized real-world assets.",
+      "Real-world assets are moving onto blockchains fast. Real estate, gold, bonds, and more can become digital tokens.",
+      "But making a token is not enough.",
+      "Someone still has to check: Does the asset exist? Who owns it? Are the papers real? Do the rules pass?",
+      "That job belongs to RWA verification platforms. They prove the facts before anyone mints a token.",
+      "Without that check, even the best blockchain cannot promise the token matches something real.",
+      "This guide explains what these platforms do, why they matter, and compares five leaders in the space.",
+      "A verification platform checks ownership, legal papers, identity (KYC), business records (KYB), AML rules, wallets, audit trails, and credentials.",
+      "Example: before a building is tokenized, title deeds and appraisals should be checked. Before investors buy in, their identity should be checked too.",
+      "Blockchain shows who holds a token. It cannot tell you if the gold is in the vault or if the deed is fake. Verification platforms close that gap.",
+      "Real estate needs title checks. Gold needs vault proof. Carbon credits need real environmental proof. Private credit needs real loan files.",
+      "Pick a platform that checks both the asset and the people involved. Look for reuse across apps, clear audit history, and rules that fit your country.",
+      "Trust wins in tokenized finance. Blockchain moves fast. Verification makes sure what moves is real.",
+    ],
+    platformSectionTitle: "Top 5 RWA verification platforms",
+    platformReviews: [
+      {
+        rank: 1,
+        name: "Abraxas",
+        tagline: "Verify once. Use the proof again.",
+        body:
+          "Abraxas fixes repeated checks. Teams stop uploading the same papers to every app. One verified record can be reused under clear rules, with a trail anyone can audit.",
+        bestFor: ["Enterprise RWA", "Government projects", "Reusable trust"],
+        featured: true,
+      },
+      {
+        rank: 2,
+        name: "Didit",
+        tagline: "Identity and compliance in one place.",
+        body:
+          "Didit combines KYC, KYB, AML, and wallet screening. Strong fit when you must onboard investors safely before they touch tokenized assets.",
+        bestFor: ["KYC", "KYB", "AML screening", "Investor onboarding"],
+      },
+      {
+        rank: 3,
+        name: "Humanity Protocol",
+        tagline: "Prove who you are with less data exposed.",
+        body:
+          "Humanity Protocol uses privacy-first identity. Users can prove they qualify without sharing more personal data than needed.",
+        bestFor: ["Privacy-first ID", "Decentralized credentials", "Cross-border rules"],
+      },
+      {
+        rank: 4,
+        name: "Veriff",
+        tagline: "Enterprise identity checks at speed.",
+        body:
+          "Veriff is trusted by banks and fintechs worldwide. Fast customer ID checks with fraud controls, easy to plug into tokenization workflows.",
+        bestFor: ["Banks", "Fintech", "Fraud prevention", "Digital onboarding"],
+      },
+      {
+        rank: 5,
+        name: "Sumsub",
+        tagline: "Global compliance for many countries.",
+        body:
+          "Sumsub covers KYC, KYB, AML monitoring, and fraud tools across borders. Useful when your investors live in many jurisdictions.",
+        bestFor: ["Global compliance", "AML monitoring", "International investors"],
+      },
     ],
     relatedHref: "/integrate",
   },

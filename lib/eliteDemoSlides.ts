@@ -1,5 +1,5 @@
 // FILE: lib/eliteDemoSlides.ts
-// Elite visual slideshow configs. minimal text, cosmic frames.
+// Elite visual slideshow configs. Short words. Big headlines.
 
 import type { MeshKey } from "@/components/home/cinematic/demoPremium";
 import { COSMIC_PALETTE } from "@/lib/demoDesignSystem";
@@ -24,7 +24,6 @@ export interface EliteSlide {
   label: string;
   headline: string;
   visual: EliteSlideVisual;
-  /** Optional micro copy. one line max */
   micro?: string;
   stats?: { label: string; value: string }[];
   pills?: string[];
@@ -48,25 +47,25 @@ export const HERO_ELITE_DEMO: EliteDemoConfig = {
   slides: [
     {
       id: "debt",
-      label: "01 · Debt",
-      headline: "Every app rebuilds trust.",
+      label: "01 · Problem",
+      headline: "Every app asks again.",
       visual: "hero-debt",
-      micro: "7× repeated verification",
-      pills: ["Marketplace", "Lender", "Custody", "Ops"],
+      micro: "Same checks, seven times",
+      pills: ["Store", "Bank", "Hotel", "Custody"],
     },
     {
       id: "passport",
-      label: "02 · Credential",
-      headline: "One verification.",
+      label: "02 · Fix",
+      headline: "Check once.",
       visual: "hero-passport",
-      micro: "Issued once",
+      micro: "Save the proof",
     },
     {
       id: "proof",
-      label: "03 · Proof",
-      headline: "Anyone verifies.",
+      label: "03 · Result",
+      headline: "Anyone can check it.",
       visual: "hero-proof",
-      micro: "No relay required",
+      micro: "No inbox needed",
     },
   ],
 };
@@ -80,28 +79,28 @@ export const STATUS_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "live",
       label: "Live",
-      headline: "Production today.",
+      headline: "Working today.",
       visual: "icon-hero",
       micro: "Cielo · Chickasaw",
       stats: [
-        { label: "Verify API", value: "Live" },
+        { label: "Verify", value: "Live" },
         { label: "Proof", value: "Signed" },
         { label: "Registry", value: "Live" },
       ],
     },
     {
-      id: "gates",
-      label: "Gates",
-      headline: "Staged mainnet.",
-      visual: "gates",
-      micro: "Honest rollout",
+      id: "grow",
+      label: "Grow",
+      headline: "More partners join.",
+      visual: "network-ring",
+      micro: "Trust spreads",
     },
     {
       id: "rp",
-      label: "RP",
-      headline: "External verify path.",
+      label: "Check",
+      headline: "Apps read the proof.",
       visual: "api-flow",
-      micro: "abx_live_ key",
+      micro: "One API call",
     },
   ],
 };
@@ -114,24 +113,24 @@ export const BUILD_ELITE_DEMO: EliteDemoConfig = {
   slides: [
     {
       id: "embed",
-      label: "Embed",
-      headline: "Verify API in your app.",
+      label: "Step 1",
+      headline: "Add verify to your app.",
       visual: "api-flow",
-      micro: "REST · verify",
+      micro: "Simple API",
     },
     {
       id: "verify",
-      label: "Verify",
-      headline: "Policy decision.",
+      label: "Step 2",
+      headline: "Get yes or no.",
       visual: "hero-proof",
-      micro: "agent.proceed",
+      micro: "Clear decision",
     },
     {
       id: "reuse",
-      label: "Reuse",
-      headline: "Zero re-KYC.",
+      label: "Step 3",
+      headline: "Use the same proof again.",
       visual: "unlock-row",
-      micro: "Cross-app",
+      micro: "No repeat KYC",
     },
   ],
 };
@@ -144,26 +143,26 @@ export const STACK_ELITE_DEMO: EliteDemoConfig = {
   slides: [
     {
       id: "apps",
-      label: "Apps",
-      headline: "Distribution layer.",
+      label: "Top",
+      headline: "Apps people use.",
       visual: "layer-stack",
-      pills: ["Robinhood", "Marketplaces", "Lenders"],
+      pills: ["Trade", "Market", "Lend"],
     },
     {
       id: "issuance",
-      label: "Mint",
-      headline: "Tokenization.",
+      label: "Middle",
+      headline: "Tokens get made.",
       visual: "stat-row",
       stats: [
-        { label: "Figure", value: "RWA" },
-        { label: "Ondo", value: "Credit" },
-        { label: "Plume", value: "Chain" },
+        { label: "Credit", value: "Pools" },
+        { label: "Real estate", value: "SPVs" },
+        { label: "Funds", value: "On-chain" },
       ],
     },
     {
       id: "abraxas",
-      label: "Trust",
-      headline: "Abraxas underneath.",
+      label: "Base",
+      headline: "Abraxas checks trust.",
       visual: "layer-stack",
       micro: "Verify once",
     },
@@ -179,23 +178,23 @@ export const NETWORK_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "first",
       label: "01",
-      headline: "First issuer verifies.",
+      headline: "Someone checks first.",
       visual: "network-ring",
-      micro: "Attest once",
+      micro: "One proof",
     },
     {
       id: "second",
       label: "02",
-      headline: "Apps accept proof.",
+      headline: "Other apps trust it.",
       visual: "unlock-row",
-      micro: "No resend",
+      micro: "No re-upload",
     },
     {
       id: "compound",
       label: "03",
-      headline: "Moat compounds.",
+      headline: "More apps join.",
       visual: "network-ring",
-      micro: "Each RP adds value",
+      micro: "Trust grows",
     },
   ],
 };
@@ -208,24 +207,24 @@ export const REFERENCE_ELITE_DEMO: EliteDemoConfig = {
   slides: [
     {
       id: "cielo",
-      label: "Cielo",
-      headline: "$1.1M · live STR.",
+      label: "Hotel",
+      headline: "Cielo is real.",
       visual: "asset-pair",
-      micro: "ABX-RE-HOSP-001",
+      micro: "Live bookings",
     },
     {
       id: "chickasaw",
       label: "Land",
-      headline: "270 ac · surveyed.",
+      headline: "Land files checked.",
       visual: "asset-pair",
-      micro: "ABX-RE-LAND-006",
+      micro: "270 acres",
     },
     {
       id: "verify",
       label: "Proof",
-      headline: "Independent check.",
+      headline: "You can check it.",
       visual: "hero-proof",
-      micro: "GET /api/proof",
+      micro: "Public record",
     },
   ],
 };
@@ -239,21 +238,21 @@ export const PARTNERS_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "claims",
       label: "Claims",
-      headline: "Separate attestations.",
+      headline: "ID. Asset. Rules.",
       visual: "claims",
       pills: ["Identity", "Asset", "Policy"],
     },
     {
       id: "engine",
-      label: "Policy",
-      headline: "Server-side gates.",
+      label: "Gate",
+      headline: "Server says yes or no.",
       visual: "api-flow",
       micro: "Fail closed",
     },
     {
       id: "reuse",
       label: "Reuse",
-      headline: "Portable proof.",
+      headline: "Proof travels with you.",
       visual: "hero-proof",
     },
   ],
@@ -268,23 +267,23 @@ export const AGENTIC_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "robinhood",
       label: "Act",
-      headline: "Robinhood MCP.",
+      headline: "Agents can trade.",
       visual: "agentic-duo",
-      micro: "Agents trade",
+      micro: "Execution layer",
     },
     {
       id: "verify",
       label: "Verify",
-      headline: "Abraxas proof.",
+      headline: "Abraxas checks first.",
       visual: "hero-proof",
-      micro: "agent.valid",
+      micro: "Proof gate",
     },
     {
       id: "compose",
-      label: "Stack",
-      headline: "Verify → act.",
+      label: "Order",
+      headline: "Check. Then act.",
       visual: "unlock-row",
-      micro: "Fail closed",
+      micro: "Safe by default",
     },
   ],
 };

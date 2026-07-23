@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
+import { ABRAXAS_FONT_DISPLAY } from "@/lib/abraxasTypography";
 
 /** Minimal section lead. eyebrow + short title only. */
 export function EliteSectionLead({
@@ -36,8 +37,8 @@ export function EliteSectionLead({
       <h2
         id={headingId}
         style={{
-          fontFamily: DEMO_TYPOGRAPHY.fontSans,
-          fontSize: "clamp(1.05rem, 2.6vw, 1.35rem)",
+          fontFamily: ABRAXAS_FONT_DISPLAY,
+          fontSize: "clamp(1.15rem, 2.8vw, 1.45rem)",
           fontWeight: 900,
           letterSpacing: "-0.03em",
           lineHeight: 1.15,

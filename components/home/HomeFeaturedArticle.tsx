@@ -4,7 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { COSMIC_PALETTE } from "@/lib/demoDesignSystem";
-import { getHomepageArticles } from "@/lib/content/blogArticles";
+import {
+  getHomepageArticles,
+  TOP5_PLATFORMS_SLUG,
+  type PlatformReview,
+} from "@/lib/content/blogArticles";
 import { BLOG_CATEGORY_LABELS } from "@/lib/content/types";
 import {
   RWA_INSTITUTION_QUESTIONS,
@@ -79,8 +83,8 @@ function ArticleLiveProof() {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
         {[
-          { name: "Cielo Sunrise", desc: "Hospitality · appraisal · STR revenue", href: "/flagship" },
-          { name: "Chickasaw", desc: "270 acre land · diligence verified", href: "/verify" },
+          { name: "Cielo Sunrise", desc: "Hotel · appraised · live bookings", href: "/flagship" },
+          { name: "Chickasaw", desc: "270 acre land · verified records", href: "/verify" },
         ].map((r) => (
           <Link key={r.name} href={r.href} style={{
             flex: "1 1 180px", padding: "12px 14px", borderRadius: 12,
@@ -91,6 +95,102 @@ function ArticleLiveProof() {
           </Link>
         ))}
       </div>
+    </div>
+  );
+}
+
+function PlatformReviewCard({ platform }: { platform: PlatformReview }) {
+  const accent = platform.featured ? COSMIC_PALETTE.gold : "var(--accent-2, var(--accent))";
+
+  return (
+    <article
+      style={{
+        padding: "1.15rem 1.2rem",
+        borderRadius: 16,
+        marginBottom: "1rem",
+        border: platform.featured
+          ? `1px solid ${COSMIC_PALETTE.gold}55`
+          : "1px solid var(--border-strong)",
+        background: platform.featured
+          ? "linear-gradient(160deg, rgba(232,197,71,0.08) 0%, rgba(0,0,0,0.25) 100%)"
+          : "rgba(0,0,0,0.2)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: "0.65rem", flexWrap: "wrap", marginBottom: "0.35rem" }}>
+        <span style={{
+          fontFamily: MONO,
+          fontSize: "0.58rem",
+          fontWeight: 800,
+          letterSpacing: "0.12em",
+          color: accent,
+          padding: "0.2rem 0.45rem",
+          borderRadius: 6,
+          border: `1px solid ${accent}44`,
+        }}>
+          #{platform.rank}
+        </span>
+        <h3 style={{
+          fontFamily: DISPLAY,
+          fontSize: "clamp(1.35rem, 3.5vw, 1.85rem)",
+          fontWeight: 900,
+          letterSpacing: "-0.04em",
+          lineHeight: 1.05,
+          color: "var(--text-primary)",
+          margin: 0,
+        }}>
+          {platform.name}
+        </h3>
+      </div>
+      <p style={{
+        fontFamily: FONT,
+        fontSize: "0.92rem",
+        fontWeight: 700,
+        color: accent,
+        lineHeight: 1.4,
+        margin: "0 0 0.65rem",
+      }}>
+        {platform.tagline}
+      </p>
+      <p style={{
+        fontFamily: FONT,
+        fontSize: "0.9rem",
+        color: "var(--text-secondary)",
+        lineHeight: 1.75,
+        margin: "0 0 0.75rem",
+      }}>
+        {platform.body}
+      </p>
+      <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "var(--text-muted)", letterSpacing: "0.06em", lineHeight: 1.6 }}>
+        <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>BEST FOR </span>
+        {platform.bestFor.join(" · ")}
+      </div>
+    </article>
+  );
+}
+
+function PlatformReviewsSection({
+  title,
+  platforms,
+}: {
+  title: string;
+  platforms: PlatformReview[];
+}) {
+  return (
+    <div style={{ margin: "1.75rem 0 0.5rem" }}>
+      <h3 style={{
+        fontFamily: DISPLAY,
+        fontSize: "clamp(1.4rem, 3.8vw, 2rem)",
+        fontWeight: 900,
+        letterSpacing: "-0.04em",
+        color: "var(--text-primary)",
+        margin: "0 0 1rem",
+        lineHeight: 1.1,
+      }}>
+        {title}
+      </h3>
+      {platforms.map(platform => (
+        <PlatformReviewCard key={platform.name} platform={platform} />
+      ))}
     </div>
   );
 }
@@ -109,6 +209,8 @@ export function HomeFeaturedArticle() {
 
   const article = articles[index];
   const isThesis = article.slug === RWA_THESIS_SLUG;
+  const isTop5 = article.slug === TOP5_PLATFORMS_SLUG;
+  const platformInsertAt = isTop5 ? 10 : -1;
 
   function prev() {
     setIndex(i => (i - 1 + articles.length) % articles.length);
@@ -165,13 +267,19 @@ export function HomeFeaturedArticle() {
           </>
         )}
 
-        <article className="abx-cosmic-card" style={{ padding: "clamp(1.25rem, 3vw, 1.75rem)", borderRadius: 20 }}>
+        <div className="abx-cosmic-card" style={{ padding: "clamp(1.25rem, 3vw, 1.75rem)", borderRadius: 20 }}>
           {article.body.map((para, i) => (
             <div key={i}>
               <p style={{ fontFamily: FONT, fontSize: "0.92rem", color: "var(--text-secondary)", lineHeight: 1.8, margin: "0 0 1.35rem" }}>
                 {para}
               </p>
               {isThesis && THESIS_VISUALS[i]}
+              {isTop5 && i === platformInsertAt && article.platformReviews && article.platformSectionTitle && (
+                <PlatformReviewsSection
+                  title={article.platformSectionTitle}
+                  platforms={article.platformReviews}
+                />
+              )}
             </div>
           ))}
 
@@ -183,7 +291,7 @@ export function HomeFeaturedArticle() {
               Permalink
             </Link>
           </div>
-        </article>
+        </div>
       </div>
     </section>
   );

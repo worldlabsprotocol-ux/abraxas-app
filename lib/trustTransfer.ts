@@ -2,16 +2,16 @@
 // Trust transfer. cryptographic proof others verify independently (not reputation).
 
 export const TRUST_TRANSFER_HEADLINE =
-  "One verification. Cryptographically portable. Others can trust it without re-doing the work.";
+  "One check. Portable proof. Others can trust it without doing the work again.";
 
 export const TRUST_TRANSFER_SUBLINE =
-  "Your verification becomes trust that counterparties can verify themselves. not reputation, not blind faith.";
+  "Your verification becomes proof others can check. Not reputation. Not blind faith.";
 
 export const TRUST_TRANSFER_ANSWER =
-  "W3C Verifiable Credentials + Ed25519 signatures. Relying parties verify the proof cryptographically via Abraxas or on-chain. they never need to re-collect your documents.";
+  "Signed credentials plus optional Sui anchor. Partners check the proof. They do not need your documents again.";
 
 export const COUNTERPARTY_TRUST_BLURB =
-  "Counterparties don't need to re-verify. They verify the credential.";
+  "Partners do not re-verify. They check the proof.";
 
 export const VERIFICATION_CHAIN_STEPS = [
   {

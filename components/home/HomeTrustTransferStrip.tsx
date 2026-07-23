@@ -30,7 +30,7 @@ export function HomeTrustTransferStrip() {
         }}
       >
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.45rem" }}>
-          Trust transfer · not reputation
+          Portable proof
         </div>
         <h2
           id="trust-transfer-heading"
