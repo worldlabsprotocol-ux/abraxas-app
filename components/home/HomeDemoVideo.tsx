@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeDemoVideo.tsx
-// Homepage demo — cinematic 7× verification debt (hero typography).
+// Homepage demo. cinematic 7× verification debt (hero typography).
 
 import { HomeCinematicDemo } from "./HomeCinematicDemo";
 import { CINEMATIC_DEMO_LEAD } from "@/lib/intersectionThesis";

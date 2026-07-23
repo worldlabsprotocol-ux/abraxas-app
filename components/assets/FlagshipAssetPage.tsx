@@ -1,11 +1,11 @@
 "use client";
 // FILE: components/assets/FlagshipAssetPage.tsx
-// Cielo Sunrise genesis dossier — streamlined institutional UX.
+// Cielo Sunrise genesis dossier. streamlined institutional UX.
 
 import { useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { PageHeader, ContentCard, KeyValueTable, BulletList } from "@/components/redesign/RedesignContent";
+import { PageHeader, ContentCard, KeyValueTable } from "@/components/redesign/RedesignContent";
 import { Btn, StatTile } from "@/components/redesign/ui";
 import { AssetVerificationScopePanel } from "@/components/redesign/AssetVerificationScopePanel";
 import { CaseStudyGallery, CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";

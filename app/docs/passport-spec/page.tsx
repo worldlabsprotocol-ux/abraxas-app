@@ -40,7 +40,7 @@ export default function PassportSpecPage() {
       <ContentCard title={`52-byte fixed layout (${PASSPORT_SERIALIZED_SIZE} bytes LE)`}>
         <KeyValueTable rows={[
           { k: "version", v: "u8. start at 1", mono: true },
-          { k: "stamps", v: "u16 bitmask. 10 verification gates (bits 0–9)", mono: true },
+          { k: "stamps", v: "u16 bitmask. 10 verification gates (bits 0-9)", mono: true },
           { k: "authority", v: "32 bytes. issuance authority pubkey/address", mono: true },
           { k: "expires_at", v: "u64 unix seconds. 0 = no expiration", mono: true },
           { k: "revoked", v: "u8. 0 active, 1 irreversible revoke", mono: true },

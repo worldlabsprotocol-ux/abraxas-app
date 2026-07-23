@@ -121,12 +121,12 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
   const actCaption =
     act === 1
-      ? 'Every platform rebuilds trust from zero. Seven asks for the same person — not asset proof.'
+      ? 'Every platform rebuilds trust from zero. Seven asks for the same person. not asset proof.'
       : act === 2
         ? 'One portable credential resolves the repeated asks.'
         : showFinalLine
           ? CINEMATIC_PROOF_ISSUED_LINE
-          : 'Cryptographic proof anyone can verify independently — on-chain authentication, not another token.';
+          : 'Cryptographic proof anyone can verify independently. on-chain authentication, not another token.';
 
   const actTransition = {
     initial: { opacity: 0, filter: 'blur(10px)', scale: 0.985 },

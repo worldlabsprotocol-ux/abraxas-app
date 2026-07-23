@@ -1,5 +1,5 @@
 // FILE: lib/eliteDemoSlides.ts
-// Elite visual slideshow configs — minimal text, cosmic frames.
+// Elite visual slideshow configs. minimal text, cosmic frames.
 
 import type { MeshKey } from "@/components/home/cinematic/demoPremium";
 import { COSMIC_PALETTE } from "@/lib/demoDesignSystem";
@@ -24,7 +24,7 @@ export interface EliteSlide {
   label: string;
   headline: string;
   visual: EliteSlideVisual;
-  /** Optional micro copy — one line max */
+  /** Optional micro copy. one line max */
   micro?: string;
   stats?: { label: string; value: string }[];
   pills?: string[];
@@ -117,7 +117,7 @@ export const BUILD_ELITE_DEMO: EliteDemoConfig = {
       label: "Embed",
       headline: "Verify API in your app.",
       visual: "api-flow",
-      micro: "SDK · REST",
+      micro: "REST · verify",
     },
     {
       id: "verify",

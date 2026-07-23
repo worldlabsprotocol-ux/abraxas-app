@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/sui/ZkLoginSignIn.tsx
-// Sign in with Google — Abraxas wallet under the hood. No seed phrase required.
+// Sign in with Google. Abraxas wallet under the hood. No seed phrase required.
 
 import { useState } from "react";
 import { useSuiAuth, truncateSuiAddress } from "./SuiAuthProvider";

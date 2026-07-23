@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignFooter.tsx
-// Protocol footer — curated columns, no link sprawl.
+// Protocol footer. curated columns, no link sprawl.
 
 import Link from "next/link";
 

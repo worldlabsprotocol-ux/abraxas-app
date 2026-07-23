@@ -16,7 +16,7 @@ export default function MainnetPage() {
       <PageHeader
         eyebrow="Mainnet readiness"
         title="Scoreboard"
-        subtitle="Seven boolean gates before open, self-serve, audit-complete mainnet. No calendar dates — only shipped proof."
+        subtitle="Seven boolean gates before open, self-serve, audit-complete mainnet. No calendar dates. only shipped proof."
       />
 
       <div
@@ -29,11 +29,11 @@ export default function MainnetPage() {
         }}
       >
         <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "#60A5FA", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
-          Sui mainnet — not Solana
+          Sui mainnet. not Solana
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
           Abraxas verification (Passport, credentials, proofs) runs on <strong style={{ color: "var(--text-primary)" }}>Sui</strong>.
-          Older Solana vault/mint UI in the repo is legacy — not what these gates measure.
+          Older Solana vault/mint UI in the repo is legacy. not what these gates measure.
           Passport Move package is on Sui devnet today; mainnet deploy is gate #3 after audit.
         </p>
       </div>

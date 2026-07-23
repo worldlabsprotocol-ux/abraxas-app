@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/mainnet/SuiMainnetDeployPanel.tsx
-// Live Sui mainnet deploy checklist — gates #2 audit + #3 publish.
+// Live Sui mainnet deploy checklist. gates #2 audit + #3 publish.
 
 import { useEffect, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
@@ -83,7 +83,7 @@ export function SuiMainnetDeployPanel() {
             Sui mainnet path
           </div>
           <h2 id="sui-mainnet-path-heading" style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 6px" }}>
-            Gates #2 + #3 — audit then deploy
+            Gates #2 + #3. audit then deploy
           </h2>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0, maxWidth: 560 }}>
             {data.summary}

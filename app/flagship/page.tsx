@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/flagship/page.tsx
-// Cielo Sunrise genesis asset dossier — institutional redesign shell.
+// Cielo Sunrise genesis asset dossier. institutional redesign shell.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";

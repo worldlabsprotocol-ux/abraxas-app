@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/PaymentMethodChooser.tsx
-// Fiat-first checkout — MoonPay headless Apple Pay default; Ramp fallback; crypto secondary.
+// Fiat-first checkout. MoonPay headless Apple Pay default; Ramp fallback; crypto secondary.
 
 import { useEffect, useState } from "react";
 import { PAYMENT_METHOD_COPY } from "@/lib/payments/ramp";
@@ -57,7 +57,7 @@ export function PaymentMethodChooser({
 
   async function startRamp() {
     if (!suiAddress) {
-      setRampMsg("Sign in with Google first — we'll handle the rest at checkout.");
+      setRampMsg("Sign in with Google first. we'll handle the rest at checkout.");
       onRampReady?.(null, "Sign in required");
       return;
     }
@@ -190,7 +190,7 @@ export function PaymentMethodChooser({
         </div>
         <p style={{ fontFamily: CIELO_FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.6 }}>
           Pay <strong style={{ color: "var(--text-primary)" }}>${amountUsdc.toFixed(2)}</strong>
-          {" "}in your currency — we handle the rest. No wallet setup needed.
+          {" "}in your currency. we handle the rest. No wallet setup needed.
         </p>
         <button type="button" onClick={startRamp} disabled={rampBusy}
           style={{
@@ -204,7 +204,7 @@ export function PaymentMethodChooser({
             boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
           }}>
           {rampBusy ? <Spinner size={16} color="#fff" /> : <ContactlessPayIcon size={18} color="#fff" />}
-          {rampBusy ? "Opening checkout…" : "Pay with Apple Pay — we handle the rest"}
+          {rampBusy ? "Opening checkout…" : "Pay with Apple Pay. we handle the rest"}
         </button>
         {rampMsg && (
           <p style={{ fontFamily: CIELO_FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.5rem 0 0", lineHeight: 1.5 }}>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloAvailabilityPanel.tsx
-// Protocol Calendar — month grid aligned with institutional redesign.
+// Protocol Calendar. month grid aligned with institutional redesign.
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -172,7 +172,7 @@ export function CieloAvailabilityPanel({
           lineHeight: 1.65,
           margin: 0,
         }}>
-          Crypto stays run on this calendar — not Airbnb host tools. Cross-check the{" "}
+          Crypto stays run on this calendar. not Airbnb host tools. Cross-check the{" "}
           <Link href={CIELO_AIRBNB_URL} target="_blank" rel="noopener noreferrer" style={{ color: CIELO_VERIFY }}>
             public listing
           </Link>{" "}

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
 
-/** Minimal section lead — eyebrow + short title only. */
+/** Minimal section lead. eyebrow + short title only. */
 export function EliteSectionLead({
   eyebrow,
   title,

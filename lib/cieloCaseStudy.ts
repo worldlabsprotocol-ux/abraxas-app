@@ -1,5 +1,5 @@
 // FILE: lib/cieloCaseStudy.ts
-// Institutional case study data — dated sources, conflicts, on-chain proof.
+// Institutional case study data. dated sources, conflicts, on-chain proof.
 
 import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { CIELO_GALLERY_IMAGES } from "@/lib/data/cieloMedia";
@@ -13,19 +13,19 @@ export const CIELO_CONFLICTS = {
     {
       topic: "Asset ownership",
       disclosure:
-        "Cielo Sunrise is owned and operated by World Labs Protocol / the Abraxas founding team. This is intentional eat-your-own-dogfood — the first verified asset on the platform is our own property, not a third-party pilot.",
+        "Cielo Sunrise is owned and operated by World Labs Protocol / the Abraxas founding team. This is intentional eat-your-own-dogfood. the first verified asset on the platform is our own property, not a third-party pilot.",
       implication: "Independent third-party asset pilots are a separate milestone on the roadmap.",
     },
     {
       topic: "Verification issuer",
       disclosure:
         "Abraxas Verification Network issued the AAS-1 certificate for an asset owned by the same organizational family. High-tier attestation steps use the same V5 pipeline external issuers will follow, with additional public scrutiny on this asset.",
-      implication: "L3 appraisals and title review are documented with source dates below — not self-attested without evidence.",
+      implication: "L3 appraisals and title review are documented with source dates below. not self-attested without evidence.",
     },
     {
       topic: "Yield projections",
       disclosure:
-        "14.6% cash yield is an owner operating model projection based on trailing occupancy assumptions. It is labeled L1 reference in the assurance taxonomy — not a guaranteed return.",
+        "14.6% cash yield is an owner operating model projection based on trailing occupancy assumptions. It is labeled L1 reference in the assurance taxonomy. not a guaranteed return.",
       implication: "See /verify for assurance level per metric.",
     },
   ],
@@ -56,7 +56,7 @@ export const CIELO_SOURCES = [
     level: "L1 Reference",
     source: "Owner projection model",
     asOf: "2026-01-15",
-    method: "NOI / appraised value — not guaranteed",
+    method: "NOI / appraised value. not guaranteed",
     expires: "2026-07-01",
   },
   {
@@ -123,7 +123,7 @@ export const CIELO_ONCHAIN_PROOF = [
   },
   {
     label: "Airbnb listing (independent)",
-    desc: "Bookable without Abraxas — cross-check availability",
+    desc: "Bookable without Abraxas. cross-check availability",
     href: D.airbnbUrl,
     type: "external",
   },

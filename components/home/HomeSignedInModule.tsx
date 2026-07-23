@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeSignedInModule.tsx
-// Signed-in product preview — reads canonical state, no tier jargon.
+// Signed-in product preview. reads canonical state, no tier jargon.
 
 import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";

@@ -1,5 +1,5 @@
 // FILE: components/cielo/cieloBookingStyles.ts
-// Shared styles for Cielo booking / calendar — institutional redesign.
+// Shared styles for Cielo booking / calendar. institutional redesign.
 
 import type { CSSProperties } from "react";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";

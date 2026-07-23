@@ -26,7 +26,7 @@ const GAPS = [
   {
     icon: "◈",
     problem: "Cross-chain fragmentation.",
-    stat: "1–3% pricing gaps",
+    stat: "1-3% pricing gaps",
     statSub: "for identical assets across chains",
     solution: "Abraxas verification is Sui-native. zkLogin sign-in, low-cost transactions, sponsored gas for verified tiers, and Move Passport objects on-chain. One verification layer. One credential.",
     color: "rgba(107,140,255,0.07)",
@@ -73,11 +73,11 @@ const LANDSCAPE = [
 const FAQS = [
   {
     q: "What does 'operating the income stream' actually mean?",
-    a: "Every royalty, rent payment, or invoice settlement has a gap between when it's earned and when it's paid out. typically 30–90 days. During that gap, your money sits in a distributor's account earning nothing. Abraxas's agent monitors that income stream and deploys capital against it, capturing distributions the moment they clear. The agent doesn't just hold. it continuously rebalances, reinvests, and defends your position. That's the difference between tokenization and operation.",
+    a: "Every royalty, rent payment, or invoice settlement has a gap between when it's earned and when it's paid out. typically 30-90 days. During that gap, your money sits in a distributor's account earning nothing. Abraxas's agent monitors that income stream and deploys capital against it, capturing distributions the moment they clear. The agent doesn't just hold. it continuously rebalances, reinvests, and defends your position. That's the difference between tokenization and operation.",
   },
   {
     q: "How is this different from just holding tokenized assets?",
-    a: "Holding a tokenized asset passively is identical to holding the original asset. you wait for distributions, you receive them quarterly, you do nothing in between. Abraxas operates the position: distributions are reinvested immediately, income-stream velocity is monitored continuously, and circuit defense triggers if risk crosses a threshold. Over 12 months, the difference between passive holding and active operation at 8–12% APY is compounding. not speculation.",
+    a: "Holding a tokenized asset passively is identical to holding the original asset. you wait for distributions, you receive them quarterly, you do nothing in between. Abraxas operates the position: distributions are reinvested immediately, income-stream velocity is monitored continuously, and circuit defense triggers if risk crosses a threshold. Over 12 months, the difference between passive holding and active operation at 8-12% APY is compounding. not speculation.",
   },
   {
     q: "Why does Sui matter for this use case?",
@@ -85,7 +85,7 @@ const FAQS = [
   },
   {
     q: "What stops the system from collapsing in a down market?",
-    a: "Three layers: circuit defense triggers before losses reach principal, a 15–20% reserve buffer absorbs shocks without touching deployed capital, and Abraxas never uses leverage on underlying assets. Yield comes from operating income. royalties, rent, invoice spreads. not speculation. When streaming revenue drops 30%, yield adjusts proportionally. Principal doesn't collapse because it was never in a leveraged position.",
+    a: "Three layers: circuit defense triggers before losses reach principal, a 15-20% reserve buffer absorbs shocks without touching deployed capital, and Abraxas never uses leverage on underlying assets. Yield comes from operating income. royalties, rent, invoice spreads. not speculation. When streaming revenue drops 30%, yield adjusts proportionally. Principal doesn't collapse because it was never in a leveraged position.",
   },
   {
     q: "Who is this actually for?",

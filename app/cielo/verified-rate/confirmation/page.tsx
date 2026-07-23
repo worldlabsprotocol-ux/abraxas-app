@@ -1,5 +1,5 @@
 // FILE: app/cielo/verified-rate/confirmation/page.tsx
-// User-facing verified-rate request status — not a reservation confirmation.
+// User-facing verified-rate request status. not a reservation confirmation.
 
 import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { VerifiedRateConfirmationClient } from "@/components/cielo/VerifiedRateConfirmationClient";

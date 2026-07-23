@@ -1,5 +1,5 @@
 // FILE: components/LanguageSelector.tsx
-// Language selector — English by default. Translation is opt-in only.
+// Language selector. English by default. Translation is opt-in only.
 // Fixes: stale googtrans cookies, failed English reset, browser auto-translate flash.
 "use client";
 
@@ -18,15 +18,15 @@ import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-interface Lang { code: string; name: string; flag: string; }
+interface Lang { code: string; name: string; badge: string; }
 
 const LANGS: Lang[] = [
-  { code: "en", name: "English",   flag: "🇺🇸" },
-  { code: "es", name: "Español",   flag: "🇪🇸" },
-  { code: "pt", name: "Português", flag: "🇧🇷" },
-  { code: "fr", name: "Français",  flag: "🇫🇷" },
-  { code: "de", name: "Deutsch",   flag: "🇩🇪" },
-  { code: "zh-CN", name: "中文",   flag: "🇨🇳" },
+  { code: "en", name: "English",   badge: "EN" },
+  { code: "es", name: "Español",   badge: "ES" },
+  { code: "pt", name: "Português", badge: "PT" },
+  { code: "fr", name: "Français",  badge: "FR" },
+  { code: "de", name: "Deutsch",   badge: "DE" },
+  { code: "zh-CN", name: "中文",   badge: "ZH" },
 ];
 
 declare global {
@@ -199,8 +199,18 @@ export function LanguageSelector() {
         aria-expanded={open}
         aria-busy={busy || undefined}
       >
-        <span role="img" aria-label={current.name} style={{ fontSize: "1rem" }}>
-          {current.flag}
+        <span style={{
+          fontFamily: MONO,
+          fontSize: "0.58rem",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          padding: "0.2rem 0.45rem",
+          borderRadius: 6,
+          border: "1px solid var(--border)",
+          color: "var(--accent)",
+          background: "rgba(232,197,71,0.08)",
+        }}>
+          {current.badge}
         </span>
         <span style={{ letterSpacing: "0.06em" }}>
           {current.code === "zh-CN" ? "ZH" : current.code.toUpperCase()}
@@ -249,7 +259,19 @@ export function LanguageSelector() {
                   gap: "0.75rem", textAlign: "left", minHeight: 44,
                 }}
               >
-                <span style={{ fontSize: "1.125rem" }}>{lang.flag}</span>
+                <span style={{
+                  fontFamily: MONO,
+                  fontSize: "0.58rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  padding: "0.2rem 0.4rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  color: active ? "var(--accent)" : "var(--text-muted)",
+                  background: active ? "rgba(232,197,71,0.08)" : "transparent",
+                }}>
+                  {lang.badge}
+                </span>
                 <span style={{ flex: 1 }}>{lang.name}</span>
                 {active && <span style={{ color: "var(--accent)", fontWeight: 900, fontSize: "0.8rem" }}>✓</span>}
               </button>

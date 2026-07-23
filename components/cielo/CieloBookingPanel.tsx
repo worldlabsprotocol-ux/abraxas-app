@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloBookingPanel.tsx
-// Book Cielo — institutional multi-step flow (dates → passport → contact → done).
+// Book Cielo. institutional multi-step flow (dates → passport → contact → done).
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -137,7 +137,7 @@ export function CieloBookingPanel({
     } catch {
       setVerification({ loading: false, needsDeepVerification: true, decision: "manual_review", missingClaims: ["policy_unavailable"] });
       setStep("verification");
-      setErr("Eligibility check unavailable — complete Passport setup or try again.");
+      setErr("Eligibility check unavailable. complete Passport setup or try again.");
     }
   }
 
@@ -340,7 +340,7 @@ export function CieloBookingPanel({
                 Complete Tier 1 Passport
               </div>
               <p style={{ fontFamily: CIELO_FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.5rem" }}>
-                Verified-rate pilot requires account, profile, and wallet binding — not identity verification.
+                Verified-rate pilot requires account, profile, and wallet binding. not identity verification.
                 Policy <span style={{ fontFamily: CIELO_MONO, fontSize: "0.62rem" }}>cielo-verified-guest-v1</span>.
               </p>
               {verification.missingClaims.length > 0 && (

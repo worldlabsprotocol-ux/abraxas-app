@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Streamlined nav — Home · Integrate · profile menu (Passport when signed in).
+// Streamlined nav. Home · Integrate · profile menu (Passport when signed in).
 
 import Link from "next/link";
 import Image from "next/image";

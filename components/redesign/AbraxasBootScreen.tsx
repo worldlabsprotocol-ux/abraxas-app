@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// Session boot — routes to deck (product) or article (thesis). No duplicated data.
+// Session boot. routes to deck (product) or article (thesis). No duplicated data.
 
 import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties } from "react";
@@ -128,7 +128,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               marginLeft: "auto",
               marginRight: "auto",
             }}>
-              Minimum proof up front. Pick a path — arrow through product, thesis, build, and pulse.
+              Minimum proof up front. Pick a path. arrow through product, thesis, build, and pulse.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>

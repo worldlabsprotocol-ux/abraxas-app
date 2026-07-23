@@ -109,7 +109,7 @@ export function DocumentUpload({ email, suiAddress, stampId, color, onUploaded }
       )}
       <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.66rem",
                      color:"var(--text-muted)", marginTop:"0.625rem", lineHeight:1.5 }}>
-        PDF, JPG, or PNG. Reviewed by our team — not processed automatically.
+        PDF, JPG, or PNG. Reviewed by our team. not processed automatically.
         {stampId === "identity" && " Documents are stored securely and deleted after review."}
       </div>
     </div>

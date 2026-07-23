@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AssetExplorerCard.tsx
-// Premium asset card — full photo (default) or compact with small thumbnail.
+// Premium asset card. full photo (default) or compact with small thumbnail.
 
 import { MotionCard } from "@/lib/motion/MotionCard";
 import { VerificationBadge } from "./VerificationBadge";

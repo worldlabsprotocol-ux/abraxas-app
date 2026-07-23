@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/admin/trust/page.tsx
-// Minimal trust layer inspector — credentials, issuers, receipt validity.
+// Minimal trust layer inspector. credentials, issuers, receipt validity.
 
 export const dynamic = "force-dynamic";
 

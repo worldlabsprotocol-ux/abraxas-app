@@ -1,13 +1,11 @@
 "use client";
 // FILE: app/integrate/page.tsx
-// Integrate Abraxas — proof first, honest status, then technical depth.
+// Integrate Abraxas: proof first, then technical depth.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { PartnerExecutionCards } from "@/components/partners/PartnerExecutionCards";
-import { CurrentStatusModule } from "@/components/status/CurrentStatusModule";
 import {
   ABRAXAS_EMBED_PITCH,
   ABRAXAS_INFRA_NARRATIVE,
@@ -17,7 +15,6 @@ import {
   NOT_FOR_AUDIENCES,
   RWA_STACK_LAYERS,
 } from "@/lib/infrastructurePositioning";
-import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
 import { INTEGRATE_COUNTERPARTY_TRUST } from "@/lib/trustTransfer";
 import { TRUST_IS_TIME_BOUND_HEADLINE, TRUST_VERIFY_ONCE_HONEST } from "@/lib/trustOverTime";
 import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
@@ -42,7 +39,7 @@ export default function IntegratePage() {
     <RedesignPage maxWidth={880}>
       <PageHeader
         eyebrow="Integrate Abraxas"
-        title="Embed verification — don't rebuild KYC"
+        title="Embed verification. Don't rebuild KYC."
         subtitle={INTEGRATE_PRODUCTION_NOTE}
       />
 
@@ -60,8 +57,8 @@ export default function IntegratePage() {
         </p>
         <BulletList items={[...AGENTIC_FINANCE_COMPOSE_FLOW]} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/docs/ai-agents" size="sm">For AI agents →</Btn>
-          <Btn href="/api/docs/agents" variant="secondary" size="sm">JSON agent guide →</Btn>
+          <Btn href="/docs/ai-agents" size="sm">For AI agents</Btn>
+          <Btn href="/api/docs/agents" variant="secondary" size="sm">JSON agent guide</Btn>
         </div>
         <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0.65rem 0 0" }}>
           agentic_finance_stack in GET /api/docs/agents · {getAgenticFinanceStack().schema}
@@ -85,7 +82,7 @@ export default function IntegratePage() {
               }}
             >
               <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.3rem" }}>
-                {ex.name} →
+                {ex.name}
               </div>
               <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
                 {ex.outcome}
@@ -94,10 +91,6 @@ export default function IntegratePage() {
           ))}
         </div>
       </ContentCard>
-
-      <div style={{ marginBottom: "1.25rem" }}>
-        <CurrentStatusModule id="integrate-status" variant="full" />
-      </div>
 
       <div id="counterparty-trust">
       <EliteConceptDemo config={REFERENCE_ELITE_DEMO} compact />
@@ -110,7 +103,7 @@ export default function IntegratePage() {
           <strong style={{ color: "var(--text-primary)" }}>{TRUST_IS_TIME_BOUND_HEADLINE}.</strong>{" "}
           {TRUST_VERIFY_ONCE_HONEST}{" "}
           <Link href="/trust-framework#trust-over-time" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
-            Full explanation →
+            Full explanation
           </Link>
         </p>
       </ContentCard>
@@ -155,46 +148,21 @@ export default function IntegratePage() {
         </p>
         <BulletList items={[...INTEGRATE_CAPABILITIES]} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/developers" size="sm">For builders →</Btn>
-          <Btn href="/docs/partner-verification-requests" variant="secondary" size="sm">Partner API →</Btn>
-          <Btn href="/integrations/relying-parties" variant="ghost" size="sm">Relying party program →</Btn>
+          <Btn href="/docs/partner-verification-requests" size="sm">Partner API docs</Btn>
+          <Btn href="/docs/relying-party-verify" variant="secondary" size="sm">Integration guide</Btn>
         </div>
-      </ContentCard>
-
-      <ContentCard title="Quick integration (SDK pattern)">
-        <pre
-          style={{
-            fontFamily: MONO,
-            fontSize: "0.62rem",
-            lineHeight: 1.55,
-            padding: "1rem",
-            borderRadius: 12,
-            overflow: "auto",
-            background: "#06090B",
-            border: "1px solid var(--border-strong)",
-            color: "var(--text-secondary)",
-            margin: 0,
-          }}
-        >
-          {INTEGRATION_SDK_SNIPPET}
-        </pre>
       </ContentCard>
 
       <ContentCard title="Design partner program">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
-          Production relying party onboarding opens as verification gates clear. Today: sandbox credentials, documented verify paths, and hands on support for design partners.
-          External production keys ship when your integration passes the same gates we hold ourselves to.
+          Design partners get sandbox credentials, documented verify paths, and hands-on support while wiring production flows.
+          External production keys ship when your integration passes the same verification gates we hold ourselves to.
         </p>
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((step, i) => `${i + 1}. ${step}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
           <Btn href="/design-partner" size="sm">Apply for integration program</Btn>
           <Btn href="/docs/relying-party-verify" variant="secondary" size="sm">Integration guide</Btn>
-          <Btn href="/integrations/relying-parties" variant="ghost" size="sm">Program details</Btn>
         </div>
-      </ContentCard>
-
-      <ContentCard title="Active relying parties">
-        <PartnerExecutionCards />
       </ContentCard>
 
       <div style={{
@@ -214,8 +182,8 @@ export default function IntegratePage() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
         <Btn href="/design-partner" size="lg">Apply for integration program</Btn>
         <Btn href="/trust-framework#trust-over-time" variant="secondary" size="lg">How trust stays current</Btn>
-        <Link href="/developers" style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center", textDecoration: "none" }}>
-          Developer hub
+        <Link href="/docs" style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center", textDecoration: "none" }}>
+          Documentation
         </Link>
       </div>
     </RedesignPage>

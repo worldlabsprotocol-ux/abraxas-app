@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/elite/EliteDemoSlideshow.tsx
-// Site-wide elite visual demo — cosmic frame, auto slides, minimal text.
+// Site-wide elite visual demo. cosmic frame, auto slides, minimal text.
 
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/case-studies/cielo/page.tsx
-// VC-grade case study — dated sources, conflicts, on-chain proof.
+// VC-grade case study. dated sources, conflicts, on-chain proof.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -35,7 +35,7 @@ export default function CieloCaseStudyPage() {
       <PageHeader
         eyebrow="Case study · Genesis asset"
         title="Cielo Sunrise (ABX-RE-HOSP-001)"
-        subtitle="Institutional diligence pack: dated sources, conflict disclosures, assurance levels, and on-chain proof links. Eat-your-own-dogfood — not a mockup."
+        subtitle="Institutional diligence pack: dated sources, conflict disclosures, assurance levels, and on-chain proof links. Eat-your-own-dogfood. not a mockup."
       />
 
       <CaseStudyPhotoHero
@@ -186,7 +186,7 @@ export default function CieloCaseStudyPage() {
       <ContentCard title="Evidence checklist">
         <BulletList items={[
           "Every metric in the sourced table has a date, level, and refresh window",
-          "Conflict of interest disclosed — founding team owns the genesis asset",
+          "Conflict of interest disclosed. founding team owns the genesis asset",
           "Airbnb listing bookable without Abraxas",
           "Payment digests in /transparency when captured",
           "Public verifier returns L1–L4 assurance taxonomy",

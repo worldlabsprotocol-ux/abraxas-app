@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/sui/NavProfileMenu.tsx
-// Signed-in profile menu — Passport, account, submit asset (replaces nav Passport tab).
+// Signed-in profile menu. Passport, account, submit asset (replaces nav Passport tab).
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";

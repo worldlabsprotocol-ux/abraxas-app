@@ -25,7 +25,7 @@ export interface AgentVerifyView {
   schema: typeof AGENT_VERIFY_SCHEMA;
   /** Single gate: approved decision AND signed proof issued */
   proceed: boolean;
-  /** Decision is approved — still requires independent proof check before acting */
+  /** Decision is approved. still requires independent proof check before acting */
   action_allowed: boolean;
   decision: PartnerDecision;
   proof_id: string | null;
@@ -51,7 +51,7 @@ export interface AgentProofView {
 
 export const AGENT_FLOW_STEPS = [
   "Call POST /api/credentials/verify with record_id, credential_jwt, or sui_address + requested_action",
-  "Read response.agent — check action_allowed and proof_available",
+  "Read response.agent. check action_allowed and proof_available",
   "GET response.verify_url (no API key) and read response.agent.valid",
   "Proceed only when verify agent.next_step is verify_proof AND proof agent.proceed is true",
 ] as const;
@@ -60,11 +60,11 @@ export const AGENT_POSITIONING_SHORT =
   "Built for humans and agents. Abraxas issues cryptographic proofs that both people and AI agents can independently verify before acting on real-world assets.";
 
 export const AGENT_POSITIONING_LONG =
-  "As AI agents begin executing real financial and asset actions, they need more than data — they need independently verifiable proof. Abraxas provides portable, cryptographic verification that agents can check before they act.";
+  "As AI agents begin executing real financial and asset actions, they need more than data. they need independently verifiable proof. Abraxas provides portable, cryptographic verification that agents can check before they act.";
 
 export const AGENT_ONE_PAGER = {
   title: "Abraxas for AI Agents",
-  what: "Abraxas gives AI agents a way to check whether a person or asset has already been verified — without needing the original documents and without trusting a central server's word alone.",
+  what: "Abraxas gives AI agents a way to check whether a person or asset has already been verified. without needing the original documents and without trusting a central server's word alone.",
   flow: [
     "Agent calls the Abraxas verify endpoint.",
     "Abraxas returns a decision + a cryptographic proof.",
@@ -81,7 +81,7 @@ export const AGENT_ONE_PAGER = {
   ],
   principle: "Agents should not have to trust Abraxas. They should be able to verify the proof.",
   mcp_note:
-    "Composes with act-layer MCPs (e.g. Robinhood Agentic Trading at agent.robinhood.com/mcp/trading) — verify with Abraxas first, then act. Predictable JSON, agent.proceed / agent.valid gates, no UI required.",
+    "Composes with act-layer MCPs (e.g. Robinhood Agentic Trading at agent.robinhood.com/mcp/trading). verify with Abraxas first, then act. Predictable JSON, agent.proceed / agent.valid gates, no UI required.",
 } as const;
 
 function proofIsSigned(proof: PartnerVerifyResponseWithProof["authentication_proof"]): boolean {
@@ -214,7 +214,7 @@ export function getAgentVerificationGuide() {
         "agent.next_step === verify_proof": "GET verify_url, check agent.valid",
         "agent.next_step === deny": "Do not proceed",
         "agent.next_step === manual_review": "Escalate or hold",
-        "agent.next_step === retry": "Decision approved but proof missing — retry or fail closed",
+        "agent.next_step === retry": "Decision approved but proof missing. retry or fail closed",
       },
       proof_response: {
         "agent.valid === true": "Safe to proceed (subject to your policy)",

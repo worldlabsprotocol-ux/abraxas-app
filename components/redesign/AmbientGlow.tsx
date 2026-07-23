@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AmbientGlow.tsx
-// Gold + violet ambient glow — institutional shell continuity from boot screen.
+// Gold + violet ambient glow. institutional shell continuity from boot screen.
 
 import { motion, useReducedMotion } from "framer-motion";
 

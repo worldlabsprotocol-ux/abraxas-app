@@ -121,7 +121,7 @@ interface StatTileProps {
   label: string;
   sub?: string;
   accent?: boolean;
-  /** Alternate accent — violet stat tile */
+  /** Alternate accent. violet stat tile */
   accentVariant?: "gold" | "violet";
 }
 

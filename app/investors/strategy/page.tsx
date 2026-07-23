@@ -17,7 +17,7 @@ export default function StrategyPage() {
       <PageHeader
         eyebrow="Strategic roadmap"
         title="Four pillars to $100M protocol credibility"
-        subtitle="Honest milestone sequencing — no timeline promises. Each pillar has live evidence or an explicit in-progress state."
+        subtitle="Honest milestone sequencing. no timeline promises. Each pillar has live evidence or an explicit in-progress state."
       />
 
       <div style={{ display: "grid", gap: "1.25rem", marginBottom: "2rem" }}>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/case-studies/CaseStudyGallery.tsx
-// Photo evidence — validates assets load; skips collage panels that read as placeholders.
+// Photo evidence. validates assets load; skips collage panels that read as placeholders.
 
 import { useEffect, useState } from "react";
 import { CIELO_SKIP_IMAGES } from "@/lib/data/cieloMedia";

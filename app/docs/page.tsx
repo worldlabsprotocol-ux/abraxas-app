@@ -33,10 +33,10 @@ export default function DocsPage() {
       ))}
       <ContentCard title="API endpoints (live today)">
         <BulletList items={[
-          "POST /api/credentials/verify — decision + authentication proof",
-          "GET /api/proof/{proof_id} — independent proof verification",
-          "GET /api/docs/agents — AI agent integration guide (JSON)",
-          "GET /api/docs/relying-party — external RP integration guide (JSON)",
+          "POST /api/credentials/verify. decision + authentication proof",
+          "GET /api/proof/{proof_id}. independent proof verification",
+          "GET /api/docs/agents. AI agent integration guide (JSON)",
+          "GET /api/docs/relying-party. external RP integration guide (JSON)",
           "GET /api/credentials/public-key",
           "POST /api/auth/zklogin/register",
           "GET /api/sui/passport",

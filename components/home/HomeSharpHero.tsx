@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeSharpHero.tsx
-// Three-layer hierarchy — emotion · mechanism · category (10-second read).
+// Three-layer hierarchy. emotion · mechanism · category (10-second read).
 
 import { Btn } from "@/components/redesign/ui";
 import {

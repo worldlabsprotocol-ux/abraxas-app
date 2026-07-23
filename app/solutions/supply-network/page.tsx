@@ -23,7 +23,7 @@ export default function SupplyNetworkPage() {
         </p>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
           The same trust primitives that verify Cielo Sunrise can verify suppliers, contracts, lead times,
-          and delivery performance — one shared version of the truth across aerospace, automotive, defense, energy, and medical devices.
+          and delivery performance. one shared version of the truth across aerospace, automotive, defense, energy, and medical devices.
         </p>
       </ContentCard>
 

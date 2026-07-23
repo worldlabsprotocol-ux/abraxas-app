@@ -1,5 +1,5 @@
 // FILE: components/home/cinematic/demoPremium.ts
-// Premium DeFi-native demo tokens — glass, mesh, bold type (institutional × crypto-native).
+// Premium DeFi-native demo tokens. glass, mesh, bold type (institutional × crypto-native).
 
 import type { CSSProperties } from "react";
 import {
@@ -52,7 +52,7 @@ export const ACCENT: Record<MeshKey, string> = {
   danger: "#F87171",
 };
 
-/** Legible demo typography — hero cinematic + mobile (v3: ~15% larger than v2). */
+/** Legible demo typography. hero cinematic + mobile (v3: ~15% larger than v2). */
 export const DEMO_TYPE = {
   micro: "0.55rem",
   xs: "0.64rem",
@@ -78,7 +78,7 @@ export const DEMO_TYPE = {
   eyebrowHero: "0.82rem",
 } as const;
 
-/** Secondary concept demos — shared legible scale (replaces scattered 0.42–0.72rem values). */
+/** Secondary concept demos. shared legible scale (replaces scattered 0.42-0.72rem values). */
 export const CONCEPT_TYPE = {
   label: "0.68rem",
   body: "0.84rem",

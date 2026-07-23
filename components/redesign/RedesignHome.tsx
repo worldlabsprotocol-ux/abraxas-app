@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: infrastructure flow — hero → demo → trust → build → thesis → registry.
+// Homepage: infrastructure flow. hero → demo → trust → build → thesis → registry.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";

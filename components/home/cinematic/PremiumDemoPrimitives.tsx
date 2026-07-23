@@ -20,7 +20,7 @@ export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   );
 }
 
-/** Act progress pills — shows which chapter of the demo is playing. */
+/** Act progress pills. shows which chapter of the demo is playing. */
 export function DemoActProgress({
   act,
   actCount,

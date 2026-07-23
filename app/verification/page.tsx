@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/verification/page.tsx
-// Verification layer scoreboard — seven items to production-ready.
+// Verification layer scoreboard. seven items to production-ready.
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
@@ -12,11 +12,11 @@ const BOOTSTRAP_STEPS = [
   {
     n: 1,
     title: "Generate signing keys",
-    body: "Run node scripts/generate-abraxas-key.js — paste ABRAXAS_SIGNING_KEY and ABRAXAS_PUBLIC_KEY into Vercel.",
+    body: "Run node scripts/generate-abraxas-key.js. paste ABRAXAS_SIGNING_KEY and ABRAXAS_PUBLIC_KEY into Vercel.",
   },
   {
     n: 2,
-    title: "Run Supabase migrations 042–045",
+    title: "Run Supabase migrations 042-045",
     body: "authentication_proofs table + lot inventory. Paste SQL from supabase/migrations/ in Supabase SQL editor.",
   },
   {
@@ -27,7 +27,7 @@ const BOOTSTRAP_STEPS = [
   {
     n: 4,
     title: "Confirm E2E",
-    body: "GET /api/verify/e2e — all steps green including proof-lookup-roundtrip. Target: /verification shows 7/7.",
+    body: "GET /api/verify/e2e. all steps green including proof-lookup-roundtrip. Target: /verification shows 7/7.",
   },
 ];
 
@@ -37,7 +37,7 @@ export default function VerificationPage() {
       <PageHeader
         eyebrow="Verification layer"
         title="7/7 production scoreboard"
-        subtitle="Digital asset verification and blockchain verification for tokenized real-world assets — the cryptographic verify → proof → lookup loop behind the RWA verification app."
+        subtitle="Digital asset verification and blockchain verification for tokenized real-world assets. the cryptographic verify → proof → lookup loop behind the RWA verification app."
       />
 
       <VerificationLayerScoreboard />

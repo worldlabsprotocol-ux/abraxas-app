@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/verify/VerifyAssetsShowcase.tsx
-// Tokenized / registry assets on the verify page — browse → lookup.
+// Tokenized / registry assets on the verify page. browse → lookup.
 
 import Link from "next/link";
 import { registryAssetsForShowcase } from "@/lib/data/registryAssets";

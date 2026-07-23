@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeTrustTransferStrip.tsx
-// Trust transfer messaging — portable cryptographic proof.
+// Trust transfer messaging. portable cryptographic proof.
 
 import { TRUST_TRANSFER_HEADLINE, TRUST_TRANSFER_SUBLINE, COUNTERPARTY_TRUST_BLURB } from "@/lib/trustTransfer";
 import { BLOCKCHAIN_VS_COINS_LINE } from "@/lib/intersectionThesis";

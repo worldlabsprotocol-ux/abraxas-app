@@ -1,22 +1,22 @@
 // FILE: lib/currentStatus.ts
-// Honest current state — confident founder voice, shared across homepage and integrate.
+// Honest current state. confident founder voice, shared across homepage and integrate.
 
-/** Homepage strip — 3–4 lines max, not a status report. */
+/** Homepage strip. 3-4 lines max, not a status report. */
 export const HOMEPAGE_STATUS_LEAD =
-  "Core verification and Passport issuance are live in production — real assets, real pilot partners.";
+  "Core verification and Passport issuance are live in production. real assets, real pilot partners.";
 
 export const HOMEPAGE_STATUS_ROLLOUT =
   "We're in a staged rollout toward full open mainnet: Sui mainnet Passport, published audits, first external relying party transactions, and automated asset monitoring.";
 
 export const HOMEPAGE_STATUS_PROOF =
-  "Cielo Sunrise and Chickasaw land diligence are live proof — not a demo.";
+  "Cielo Sunrise and Chickasaw land diligence are live proof. not a demo.";
 
-/** Balanced external framing — progress + gates, not apologetic. */
+/** Balanced external framing. progress + gates, not apologetic. */
 export const CONFIDENT_STATUS_FRAMING =
-  "Core verification and Passport issuance are live in production with real assets and pilot partners. We're deliberately taking a staged approach to full open mainnet — the remaining gates are Sui mainnet Passport deployment, published audits, first external relying party transactions, and automated asset state monitoring.";
+  "Core verification and Passport issuance are live in production with real assets and pilot partners. We're deliberately taking a staged approach to full open mainnet. the remaining gates are Sui mainnet Passport deployment, published audits, first external relying party transactions, and automated asset state monitoring.";
 
 export const INTEGRATE_PRODUCTION_NOTE =
-  "Abraxas is already used in production with real assets — Cielo Sunrise and Chickasaw land diligence. Design partners integrate today; full open self-serve mainnet follows audits, mainnet Passport, and asset monitoring v1.";
+  "Abraxas is in production with real assets. Cielo Sunrise and Chickasaw land diligence are live reference integrations for design partners embedding verification today.";
 
 export type StatusItemState = "live" | "in_progress" | "planned";
 
@@ -28,7 +28,7 @@ export interface CurrentStatusItem {
   href?: string;
 }
 
-/** Top 4 remaining items — simple language for partners. */
+/** Top 4 remaining items. simple language for partners. */
 export const CURRENT_STATUS_IN_PROGRESS: CurrentStatusItem[] = [
   {
     id: "asset-monitoring",
@@ -64,7 +64,7 @@ export const CURRENT_STATUS_LIVE: CurrentStatusItem[] = [
   {
     id: "passport-live",
     label: "Passport + verification",
-    detail: "zkLogin, Veriff, W3C credentials, verify API — in production",
+    detail: "zkLogin, Veriff, W3C credentials, verify API. in production",
     state: "live",
     href: "/passport",
   },

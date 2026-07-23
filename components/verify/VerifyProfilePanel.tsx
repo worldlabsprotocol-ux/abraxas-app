@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/verify/VerifyProfilePanel.tsx
-// Profile creation on /verify — username, display name, avatar color.
+// Profile creation on /verify. username, display name, avatar color.
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";

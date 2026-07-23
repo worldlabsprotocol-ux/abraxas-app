@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/ConsentCeremony.tsx
-// Selective disclosure consent — holder sees exactly what will be shared.
+// Selective disclosure consent. holder sees exactly what will be shared.
 
 import { useEffect, useState } from "react";
 import { NEVER_SHARED_WITH_PARTNERS, POLICY_DECISIONS, type PolicyDecision } from "@/lib/abraxasNetwork";
@@ -161,7 +161,7 @@ export function ConsentCeremony({
       <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
         <strong>{preview.partner_id}</strong>
         {preview.requested_action ? ` requests access for: ${preview.requested_action.replace(/_/g, " ")}` : " requests eligibility claims."}
-        {" "}Review what will be shared — not your raw documents.
+        {" "}Review what will be shared. not your raw documents.
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
@@ -175,7 +175,7 @@ export function ConsentCeremony({
             </div>
           )) : (
             <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-              Policy outcome only — no personal documents
+              Policy outcome only. no personal documents
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/developers/page.tsx
-// Developer hub — routes to integrate, partner portal, API docs.
+// Developer hub. routes to integrate, partner portal, API docs.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -22,7 +22,7 @@ export default function DevelopersPage() {
       <PageHeader
         eyebrow="Developers"
         title="Build on Abraxas verification"
-        subtitle="Server-side credential verify, registry lookup, and asset monitoring webhooks — passport-grade trust without rebuilding KYC."
+        subtitle="Server-side credential verify, registry lookup, and asset monitoring webhooks. passport-grade trust without rebuilding KYC."
       />
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="developers-demo" />

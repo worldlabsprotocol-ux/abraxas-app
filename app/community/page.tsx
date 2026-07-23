@@ -13,7 +13,7 @@ export default function CommunityPage() {
       <PageHeader
         eyebrow="Community"
         title="Build with us"
-        subtitle="Design partners, asset owners, and relying parties — the Abraxas network grows through real integrations, not hype."
+        subtitle="Design partners, asset owners, and relying parties. the Abraxas network grows through real integrations, not hype."
       />
       <ContentCard title="Join the loop">
         <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>

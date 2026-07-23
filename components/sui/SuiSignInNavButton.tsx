@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/sui/SuiSignInNavButton.tsx
-// Nav identity — sign in, then @username / avatar as profile progresses.
+// Nav identity. sign in, then @username / avatar as profile progresses.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";

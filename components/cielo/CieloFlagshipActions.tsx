@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloFlagshipActions.tsx
-// Unified booking hub — calendar + reservation flow in institutional layout.
+// Unified booking hub. calendar + reservation flow in institutional layout.
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
@@ -45,7 +45,7 @@ function Inner() {
             Passport verified-rate pilot
           </div>
           <p style={{ fontFamily: CIELO_FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
-            Account + wallet bind unlock a rate request — not a confirmed booking.
+            Account + wallet bind unlock a rate request. not a confirmed booking.
           </p>
         </div>
         <Btn href="/cielo/verified-rate" variant="secondary" size="sm">

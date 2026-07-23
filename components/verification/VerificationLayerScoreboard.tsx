@@ -90,7 +90,7 @@ export function VerificationLayerScoreboard({ compact = false }: { compact?: boo
             {progress.done}/{progress.total} VERIFICATION LAYER
           </span>
           <span style={{ fontFamily: MONO, fontSize: "0.58rem", color: COSMIC_PALETTE.textMuted }}>
-            {progress.percent}% production-ready · Sui {data?.sui_network ?? "—"}
+            {progress.percent}% production-ready · Sui {data?.sui_network ?? ", "}
           </span>
         </div>
 

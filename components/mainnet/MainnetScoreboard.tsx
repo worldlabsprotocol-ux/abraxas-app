@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/mainnet/MainnetScoreboard.tsx
-// Public mainnet gate tracker — compact teaser or full scoreboard.
+// Public mainnet gate tracker. compact teaser or full scoreboard.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
