@@ -11,7 +11,7 @@ import { REGISTRY_ASSETS } from "@/lib/data/registryAssets";
 
 describe("cmnDesignsMedia", () => {
   it("uses cmn21.jpg as registry hero", () => {
-    expect(CMN_DESIGNS_REGISTRY_IMAGE.src).toBe("/assets/cmn-designs/cmn21.jpg");
+    expect(CMN_DESIGNS_REGISTRY_IMAGE.src).toBe("/assets/cmn21.jpg");
     expect(CMN_DESIGNS_HERO_NUMBER).toBe(21);
   });
 
@@ -22,7 +22,7 @@ describe("cmnDesignsMedia", () => {
 
   it("starts slideshow with hero image", () => {
     const paths = cmnDesignsSlideshowPaths();
-    expect(paths[0]).toBe("/assets/cmn-designs/cmn21.jpg");
+    expect(paths[0]).toBe("/assets/cmn21.jpg");
     expect(paths).toHaveLength(28);
   });
 
@@ -31,6 +31,6 @@ describe("cmnDesignsMedia", () => {
     const registry = REGISTRY_ASSETS.find(a => a.abxId === CMN_POKEMON_ASSET.id);
     expect(explore?.image).toBe(CMN_DESIGNS_REGISTRY_IMAGE.src);
     expect(registry?.slug).toBe("cmn-pokemon-collection");
-    expect(registry?.verifyState).toBe("owned");
+    expect(registry?.verifyState).toBe("verified");
   });
 });

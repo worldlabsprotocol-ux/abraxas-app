@@ -1,7 +1,7 @@
 // FILE: lib/cmnDesignsMedia.ts
-// CMN Designs · PSA Pokémon slab photos (public/assets/cmn-designs/cmn{N}.jpg)
+// CMN Designs · PSA Pokémon slab photos (public/assets/cmn{N}.jpg)
 
-const BASE = "/assets/cmn-designs";
+const BASE = "/assets";
 
 /** Slot numbers on disk — cmn8.jpg intentionally missing */
 export const CMN_DESIGNS_PHOTO_NUMBERS = [

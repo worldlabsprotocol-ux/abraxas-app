@@ -198,7 +198,7 @@ const CMN_POKEMON: RegistryAssetDef = {
   assetClass: "COLLECTIBLE_GRADED_CARD",
   location: CMN_POKEMON_ASSET.location,
   image: CMN_POKEMON_ASSET.image,
-  verifyState: "owned",
+  verifyState: "verified",
   pipelineStage: "OWNED_NOT_OPEN",
   assuranceLevel: 2,
   assuranceTaxonomy: {
@@ -225,7 +225,7 @@ const GOOD_TROUBLE: RegistryAssetDef = {
   assetClass: "REGULATED_CANNABIS_BATCH",
   location: GOOD_TROUBLE_ASSET.location,
   image: GOOD_TROUBLE_ASSET.image,
-  verifyState: "owned",
+  verifyState: "verified",
   pipelineStage: "PILOT_RELYING_PARTY",
   assuranceLevel: 1,
   assuranceTaxonomy: {

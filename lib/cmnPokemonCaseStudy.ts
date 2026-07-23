@@ -19,7 +19,7 @@ export interface CmnPokemonCardRow {
 }
 
 /**
- * Add one row per slab when ready. Photos map to cmn{N}.jpg in public/assets/cmn-designs/.
+ * Add one row per slab when ready. Photos map to cmn{N}.jpg in public/assets/.
  */
 export const CMN_POKEMON_CARDS: CmnPokemonCardRow[] = [];
 

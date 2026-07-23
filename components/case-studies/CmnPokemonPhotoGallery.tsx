@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/case-studies/CmnPokemonPhotoGallery.tsx
-// CMN Designs PSA slabs — cmn1.jpg … cmn29.jpg (no cmn8) under public/assets/cmn-designs/
+// CMN Designs PSA slabs — cmn1.jpg … cmn29.jpg (no cmn8) under public/assets/
 
 import { useEffect, useState } from "react";
 import { CMN_POKEMON_ASSET, CMN_POKEMON_GALLERY_PATHS } from "@/lib/cmnPokemonCaseStudy";
@@ -44,7 +44,7 @@ export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
         background: "var(--surface)", border: "1px dashed var(--border-strong)",
       }}>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
-          Add photos to <code style={{ fontFamily: "monospace" }}>public/assets/cmn-designs/</code> as{" "}
+          Add photos to <code style={{ fontFamily: "monospace" }}>public/assets/</code> as{" "}
           <code style={{ fontFamily: "monospace" }}>cmn1.jpg</code> through <code style={{ fontFamily: "monospace" }}>cmn29.jpg</code> (no cmn8).
         </p>
       </div>
