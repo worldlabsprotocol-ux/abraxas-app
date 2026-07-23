@@ -112,7 +112,7 @@ export function AssetsExplorer({
     return sortAssets(list, sort);
   }, [pool, filter, sort, query, assetClass]);
 
-  const displayAssets = home ? assets.slice(0, 3) : compact ? assets.slice(0, 3) : assets;
+  const displayAssets = home ? assets.slice(0, 4) : compact ? assets.slice(0, 3) : assets;
   const cardVariant = home ? "home" as const : compact ? "compact" as const : "default" as const;
 
   return (

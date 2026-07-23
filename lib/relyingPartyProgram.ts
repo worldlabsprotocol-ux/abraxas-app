@@ -83,6 +83,7 @@ export const DESIGN_PARTNER_SLOTS = [
   { category: "RWA marketplace", need: "Investor eligibility gate without re-KYC", api: "POST /api/credentials/verify" },
   { category: "Private credit / lending", need: "Collateral + identity tier for borrow", api: "GET /api/verify/registry" },
   { category: "Music / IP platform", need: "Catalog ownership attestation", api: "GET /api/verify/registry" },
+  { category: "Regulated retail (cannabis)", need: "Age-gated Passport + batch COA provenance", api: "POST /api/credentials/verify" },
   { category: "Corporate registry", need: "Wyoming LLC + asset binding check", api: "GET /api/trust/status" },
 ] as const;
 

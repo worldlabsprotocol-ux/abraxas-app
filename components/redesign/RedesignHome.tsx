@@ -25,7 +25,8 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome"];
+// Reorder: Cielo + Chickasaw first, then new asset-class pilots (CMN, Good Trouble)
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove"];
 
 function HomeContent() {
   return (
