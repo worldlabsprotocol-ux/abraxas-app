@@ -9,6 +9,8 @@ import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
 import { NAJ_TULUM_REGISTRY_IMAGE } from "@/lib/data/najTulumMedia";
 import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
+import { CMN_POKEMON_ASSET } from "@/lib/cmnPokemonCaseStudy";
+import { CMN_DESIGNS_REGISTRY_IMAGE } from "@/lib/cmnDesignsMedia";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
@@ -102,6 +104,24 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     note: "Clear title, paid off. Seeking a verified capital partner.",
     href: "/case-studies/smyrna",
     cta: "View case study",
+  },
+  {
+    id: "cmn-pokemon-collection",
+    name: CMN_POKEMON_ASSET.name,
+    assetClass: "Collectibles · Graded Card",
+    location: CMN_POKEMON_ASSET.location,
+    image: CMN_DESIGNS_REGISTRY_IMAGE.src,
+    primaryLabel: "Owner",
+    primaryValue: CMN_POKEMON_ASSET.owner,
+    primaryMeta: { level: 1, type: "reference", asOf: "2026-07-23" },
+    secondaryLabel: "Slabs",
+    secondaryValue: "28 photographed",
+    secondaryMeta: { level: 3, type: "reference", asOf: "2026-07-23" },
+    state: "owned",
+    note: "CMN Designs custody · registry reference · not for sale · demonstrates collectibles on Abraxas.",
+    href: CMN_POKEMON_ASSET.caseStudyPath,
+    liveProof: { label: "Verify record", url: CMN_POKEMON_ASSET.verifyPath },
+    cta: "View collection",
   },
   {
     id: "naj-tulum",

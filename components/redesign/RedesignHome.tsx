@@ -25,7 +25,7 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome"];
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove"];
 
 function HomeContent() {
   return (
