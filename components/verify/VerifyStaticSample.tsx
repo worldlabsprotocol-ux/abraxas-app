@@ -1,5 +1,5 @@
 // FILE: components/verify/VerifyStaticSample.tsx
-// Server-rendered Cielo sample — links to canonical record URL.
+// Server-rendered Cielo sample. links to canonical record URL.
 
 import Link from "next/link";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
@@ -36,7 +36,7 @@ export async function VerifyStaticSample() {
             margin: 0,
           }}
         >
-          Sample result — Cielo Sunrise ({CIELO_ID})
+          Sample result. Cielo Sunrise ({CIELO_ID})
         </h2>
         <Link
           href={`/verify/${CIELO_ID}`}

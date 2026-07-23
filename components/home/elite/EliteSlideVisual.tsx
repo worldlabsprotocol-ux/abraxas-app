@@ -88,14 +88,22 @@ export function EliteSlideVisual({ slide, accent }: { slide: EliteSlide; accent:
     case "asset-pair":
       return (
         <div style={{ display: "flex", gap: 12, justifyContent: "center", width: "100%" }}>
-          {["🏨", "🌾"].map((icon, i) => (
+          {[
+            { label: "HOSP", sub: "Cielo" },
+            { label: "LAND", sub: "Chickasaw" },
+          ].map((asset, i) => (
             <motion.div
-              key={icon}
+              key={asset.label}
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-              style={{ ...statCard(accent), fontSize: "2rem", padding: "16px 20px" }}
+              style={{ ...statCard(accent), padding: "14px 18px", textAlign: "center" }}
             >
-              {icon}
+              <div style={{ fontFamily: DEMO_TYPOGRAPHY.fontMono, fontSize: "0.62rem", fontWeight: 800, letterSpacing: "0.1em", color: accent }}>
+                {asset.label}
+              </div>
+              <div style={{ fontFamily: DEMO_TYPOGRAPHY.fontSans, fontSize: "0.68rem", fontWeight: 700, color: COSMIC_PALETTE.textMuted, marginTop: 4 }}>
+                {asset.sub}
+              </div>
             </motion.div>
           ))}
         </div>

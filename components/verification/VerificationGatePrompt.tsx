@@ -40,7 +40,7 @@ export function VerificationGatePrompt({
         fontFamily: FONT, fontSize: compact ? "0.72rem" : "0.78rem",
         color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.6,
       }}>
-        {actionLabel} requires a verified Passport. Complete a quick ID check — we only share
+        {actionLabel} requires a verified Passport. Complete a quick ID check. we only share
         what partners need, not your full document.
       </p>
       {missingClaims.length > 0 && (

@@ -184,18 +184,18 @@ export function MoonPayAppleCheckout({
             const txnId = txn.id;
             if (!txnId) {
               setPhase("done");
-              setMsg("Payment accepted — confirming your booking…");
+              setMsg("Payment accepted. confirming your booking…");
               await reconcileBooking();
               onComplete?.({ bookingId });
               break;
             }
 
             setPhase("polling");
-            setMsg("Payment processing — confirming delivery…");
+            setMsg("Payment processing. confirming delivery…");
             const poll = await pollMoonPayTransaction(client, txnId);
             if (poll.ok) {
               setPhase("done");
-              setMsg("Payment complete — confirming your booking…");
+              setMsg("Payment complete. confirming your booking…");
               await reconcileBooking();
               onComplete?.({ moonpayTxnId: txnId, bookingId });
             } else if (poll.status === "failed") {
@@ -204,7 +204,7 @@ export function MoonPayAppleCheckout({
               onError?.("Transaction failed");
             } else {
               setPhase("done");
-              setMsg("Payment submitted — we'll confirm when settlement completes.");
+              setMsg("Payment submitted. we'll confirm when settlement completes.");
               await reconcileBooking();
               onComplete?.({ moonpayTxnId: txnId, bookingId });
             }
@@ -218,7 +218,7 @@ export function MoonPayAppleCheckout({
                 const poll = await pollMoonPayTransaction(client, txnId);
                 if (poll.ok || poll.status === "pending") {
                   setPhase("done");
-                  setMsg("Payment complete — confirming your booking…");
+                  setMsg("Payment complete. confirming your booking…");
                   await reconcileBooking();
                   onComplete?.({ moonpayTxnId: txnId, bookingId });
                 } else {
@@ -234,7 +234,7 @@ export function MoonPayAppleCheckout({
             if (refreshed.ok && refreshed.value.data.executable) {
               applePayFrameRef.current?.setQuote(refreshed.value.data.signature);
             } else {
-              setMsg("Quote expired — tap try again.");
+              setMsg("Quote expired. tap try again.");
               setPhase("error");
             }
             break;
@@ -272,7 +272,7 @@ export function MoonPayAppleCheckout({
   ): Promise<boolean> => {
     if (connection.status === "active") return true;
 
-    // Guest checkout — skip connect when capability present and session has guest fields
+    // Guest checkout. skip connect when capability present and session has guest fields
     if (connection.capabilities?.guestCheckout && guestCheckoutReady) {
       return true;
     }
@@ -309,7 +309,7 @@ export function MoonPayAppleCheckout({
 
   const startCheckout = useCallback(async () => {
     if (!suiAddress) {
-      const m = "Sign in with Google first — we'll handle the rest at checkout.";
+      const m = "Sign in with Google first. we'll handle the rest at checkout.";
       setMsg(m);
       setPhase("error");
       onError?.(m);
@@ -446,7 +446,7 @@ export function MoonPayAppleCheckout({
           color: "var(--text-primary)",
           marginBottom: "0.35rem",
         }}>
-          Pay with Apple Pay — we handle the rest
+          Pay with Apple Pay. we handle the rest
         </div>
         <p style={{
           fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
@@ -456,7 +456,7 @@ export function MoonPayAppleCheckout({
           {" "}in your currency. Conversion and delivery happen automatically.
           {testMode && (
             <span style={{ display: "block", marginTop: 4, fontSize: "0.65rem", color: "var(--text-muted)" }}>
-              Test mode — mock Apple Pay button (Ok/Cancel dialog).
+              Test mode. mock Apple Pay button (Ok/Cancel dialog).
             </span>
           )}
         </p>

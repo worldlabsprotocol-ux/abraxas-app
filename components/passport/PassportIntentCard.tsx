@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportIntentCard.tsx
-// Quick security check after sign-in — no payment required.
+// Quick security check after sign-in. no payment required.
 
 import { useState } from "react";
 import { loadEphemeralSecretKey } from "@/lib/sui/zklogin/session";

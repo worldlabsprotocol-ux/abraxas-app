@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AssetExplorerCard.tsx
-// Premium asset card — full photo (default) or compact with small thumbnail.
+// Premium asset card. full photo (default) or compact with small thumbnail.
 
 import { MotionCard } from "@/lib/motion/MotionCard";
 import { VerificationBadge } from "./VerificationBadge";
@@ -190,7 +190,7 @@ export function AssetExplorerCard({
             size="sm"
             fullWidth
           >
-            {isHome ? "View record" : asset.cta} →
+            {isHome ? (asset.href ? "View record" : asset.cta) : asset.cta} →
           </Btn>
           {asset.liveProof && !isHome && (
             <Btn href={asset.liveProof.url} newTab variant="ghost" size="sm" fullWidth>

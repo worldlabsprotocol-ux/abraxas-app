@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/case-studies/AssetInquirePanel.tsx
-// Closed-loop acquisition interest — stays on Abraxas, routes to partner via protocol.
+// Closed-loop acquisition interest. stays on Abraxas, routes to partner via protocol.
 
 import { useState } from "react";
 import { useSuiAuth, truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
@@ -13,7 +13,7 @@ const ACCENT = "#10B981";
 const PACKAGES = [
   { id: "full_project", label: "Full project (~270 ac · 11 lots)" },
   { id: "remaining_9", label: "Remaining 9 lots package" },
-  { id: "lots_234", label: "Lots 2–4 contiguous bundle" },
+  { id: "lots_234", label: "Lots 2-4 contiguous bundle" },
   { id: "single_lot", label: "Single lot / custom structure" },
   { id: "usdc_settle", label: "USDC settlement · deal-ready" },
 ] as const;
@@ -46,7 +46,7 @@ export function AssetInquirePanel({
   async function submit() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !trimmedEmail.includes("@")) {
-      setError("Valid email required — Abraxas routes your inquiry to the partner.");
+      setError("Valid email required. Abraxas routes your inquiry to the partner.");
       return;
     }
     setSending(true);
@@ -69,10 +69,10 @@ export function AssetInquirePanel({
         setSent(true);
         if (data.proof?.proof_id) setProofId(data.proof.proof_id);
       } else {
-        setError(data.error ?? "Could not submit — try again.");
+        setError(data.error ?? "Could not submit. try again.");
       }
     } catch {
-      setError("Network error — try again.");
+      setError("Network error. try again.");
     } finally {
       setSending(false);
     }
@@ -88,7 +88,7 @@ export function AssetInquirePanel({
           Inquiry received on Abraxas
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.5rem" }}>
-          {partnerName} gets your package interest through the protocol. Partner status updates sync here automatically —
+          {partnerName} gets your package interest through the protocol. Partner status updates sync here automatically , 
           no third-party funnel. USDC settlement opens when the deal is ready.
         </p>
         {proofId && (
@@ -116,7 +116,7 @@ export function AssetInquirePanel({
         Inquire · {assetName}
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 1rem" }}>
-        Abraxas spearheads the flow — {partnerName} provides updates, diligence stays on-registry,
+        Abraxas spearheads the flow. {partnerName} provides updates, diligence stays on-registry,
         and settlement can close in USDC on Sui. No routing buyers off-platform.
       </p>
 

@@ -1,7 +1,7 @@
 // FILE: lib/infrastructurePositioning.ts
-// Infrastructure narrative — trust layer under the RWA stack (not another marketplace).
+// Infrastructure narrative. trust layer under the RWA stack (not another marketplace).
 
-export const ABRAXAS_INFRA_CATEGORY = "Trust infrastructure for tokenized assets";
+export const ABRAXAS_INFRA_CATEGORY = "RWA infrastructure · verification for tokenized real-world assets";
 
 export const ABRAXAS_INFRA_EMOTION = "Stop proving your assets over and over.";
 
@@ -10,10 +10,10 @@ export const ABRAXAS_INFRA_MECHANISM = "One verification. Unlimited applications
 export const ABRAXAS_INFRA_HEADLINE = "Verify once. Transact everywhere.";
 
 export const ABRAXAS_INFRA_NARRATIVE =
-  "Every RWA app is rebuilding trust from scratch. Abraxas makes trust portable.";
+  "Every RWA app and asset tokenization platform rebuilds trust from scratch. Abraxas is the verification infrastructure that makes proof portable.";
 
 export const ABRAXAS_INFRA_POSITIONING =
-  "Not another issuer. Not another marketplace. Not another chain. The identity and verification layer every tokenized asset application plugs into.";
+  "Not another issuer. Not another marketplace. Abraxas is the trust check every token app plugs into.";
 
 export const ABRAXAS_EMBED_PITCH =
   "Already issuing tokenized assets? Embed Abraxas Passport so verified assets move across applications without repeating due diligence.";
@@ -39,7 +39,7 @@ export const RWA_STACK_LAYERS: {
   },
   {
     id: "abraxas",
-    label: "Abraxas — trust infrastructure",
+    label: "Abraxas. trust infrastructure",
     examples: "Passport · Verification API · Reusable diligence · Policy engine",
     role: "Where identity, compliance, and asset proof are verified once and reused everywhere",
     highlight: true,
@@ -50,22 +50,22 @@ export const NETWORK_EFFECT_STEPS = [
   {
     step: "01",
     title: "First issuer verifies",
-    body: "Veriff, title, surveys, and asset scope — attested once, separate claims per issuer.",
+    body: "Veriff, title, surveys, and asset scope. attested once, separate claims per issuer.",
   },
   {
     step: "02",
-    title: "First app accepts Passport",
-    body: "A marketplace or operator reads the same credential — no document resend.",
+    title: "First app accepts proof",
+    body: "A marketplace or operator reads the same credential. no document resend.",
   },
   {
     step: "03",
-    title: "Second app accepts Passport",
+    title: "Second app accepts proof",
     body: "Each new relying party is the moat. Network value = apps that trust the proof.",
   },
   {
     step: "04",
     title: "Compounding reuse",
-    body: "More accepting applications → more valuable Passport. That adoption curve is the north star.",
+    body: "More accepting applications → more valuable verification. That adoption curve is the north star.",
   },
 ] as const;
 
@@ -101,7 +101,7 @@ export const NOT_FOR_AUDIENCES = [
 ] as const;
 
 export const TOKENIZED_STOCKS_PITCH =
-  "Abraxas lets your application reuse verified assets across marketplaces, lenders, custodians, and financial institutions. Instead of verifying every asset again — verify once, then integrate everywhere.";
+  "Abraxas lets your application reuse verified assets across marketplaces, lenders, custodians, and financial institutions. Instead of verifying every asset again. verify once, then integrate everywhere.";
 
 export const CINEMATIC_UNLOCK_TARGETS = [
   "Marketplace",
@@ -121,15 +121,15 @@ export const CINEMATIC_MERGE_LINE = "One proof. Every future.";
 export const CINEMATIC_HOLD_LINE = "One Passport. Zero repeated diligence.";
 
 export const HOME_BUILD_BRIDGE =
-  "Ship faster with proof that already worked — Cielo bookings and Chickasaw land diligence are live references. Embed Passport instead of rebuilding KYC per app.";
+  "Ship faster with proof that already worked. Cielo bookings and Chickasaw land diligence are live references. Embed Passport instead of rebuilding KYC per app.";
 
 export const BUILD_WITH_OUTCOMES: { label: string; outcome: string }[] = [
-  { label: "Cielo Sunrise", outcome: "Verified guest in minutes — live STR + USDC booking" },
-  { label: "Chickasaw land diligence", outcome: "Title scope attested once — scoped disclosure for qualified counterparties" },
-  { label: "Passport embed", outcome: "Days to integrate — not quarters of bespoke KYC" },
+  { label: "Cielo Sunrise", outcome: "Verified guest in minutes. live STR + USDC booking" },
+  { label: "Chickasaw land diligence", outcome: "Title scope attested once. scoped disclosure for qualified counterparties" },
+  { label: "Passport embed", outcome: "Days to integrate. not quarters of bespoke KYC" },
   { label: "Policy decisions", outcome: "Approved / denied in one API call" },
-  { label: "Portable proof", outcome: "W3C credentials — not email PDF attachments" },
-  { label: "Multi-issuer claims", outcome: "Veriff, title, appraisers — separate trust rules each" },
+  { label: "Portable proof", outcome: "W3C credentials. not email PDF attachments" },
+  { label: "Multi-issuer claims", outcome: "Veriff, title, appraisers. separate trust rules each" },
 ];
 
 export const DEVELOPER_QUICKSTARTS = [

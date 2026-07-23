@@ -34,7 +34,7 @@ export function ExternalRelyingPartnersList() {
   if (partners.length === 0) {
     return (
       <p style={body}>
-        No external relying parties are publicly listed yet. Abraxas is pilot-ready — recruiting the first
+        No external relying parties are publicly listed yet. Abraxas is pilot-ready. recruiting the first
         unaffiliated organization to operate with an issued <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_</code> key
         for one narrow workflow.
       </p>

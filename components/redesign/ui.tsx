@@ -7,8 +7,9 @@ import type { ReactNode, CSSProperties } from "react";
 import { AnimatedCounter } from "@/lib/motion/AnimatedCounter";
 import { Spinner } from "@/components/ui/Spinner";
 import { INSTITUTIONAL_PRIMARY_BTN_TEXT } from "@/lib/design/institutionalTheme";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const FONT = ABRAXAS_FONT_SANS;
 
 type Variant = "primary" | "secondary" | "ghost" | "tertiary";
 type Size = "sm" | "md" | "lg";
@@ -120,7 +121,7 @@ interface StatTileProps {
   label: string;
   sub?: string;
   accent?: boolean;
-  /** Alternate accent — violet stat tile */
+  /** Alternate accent. violet stat tile */
   accentVariant?: "gold" | "violet";
 }
 

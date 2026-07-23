@@ -2,6 +2,7 @@
 // Daily automated asset monitoring feeds (credential TTL + registry assurance).
 
 import { NextRequest, NextResponse } from "next/server";
+import { parseEnvBool } from "@/lib/env/parseEnvBool";
 import { runAssetMonitoringFeeds } from "@/lib/assetMonitoring/runFeeds";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const apply = process.env.ASSET_MONITORING_AUTO_APPLY === "true";
+  const apply = parseEnvBool(process.env.ASSET_MONITORING_AUTO_APPLY);
 
   try {
     const { signals, results } = await runAssetMonitoringFeeds({

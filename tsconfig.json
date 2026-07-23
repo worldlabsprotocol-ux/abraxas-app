@@ -39,6 +39,7 @@
     "programs",
     "tests",
     "target",
-    "migrations"
+    "migrations",
+    "scripts"
   ]
 }

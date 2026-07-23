@@ -25,7 +25,7 @@ export function ConceptDemoVideo({
   );
 }
 
-/** Premium elite slideshow — site-wide demo standard */
+/** Premium elite slideshow. site-wide demo standard */
 export function EliteConceptDemo({
   config,
   compact = false,

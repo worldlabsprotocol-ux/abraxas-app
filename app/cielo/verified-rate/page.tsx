@@ -1,5 +1,5 @@
 // FILE: app/cielo/verified-rate/page.tsx
-// Cielo verified-rate request loop entry — not a booking or payment handoff.
+// Cielo verified-rate request loop entry. not a booking or payment handoff.
 
 import { Suspense } from "react";
 import Link from "next/link";

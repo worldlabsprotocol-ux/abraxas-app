@@ -93,10 +93,10 @@ export function VerifierResultCard({
           gap: "0.5rem", marginBottom: compact ? "0.75rem" : "1rem",
         }}>
           {[
-            ["Stage", result.current_pipeline_stage ?? "—"],
-            ["Assurance", result.assurance_level ? `L${result.assurance_level}` : "—"],
-            ...(compact ? [] : [["Class", result.asset_class ?? "—"]]),
-            ["Last sync", result.last_sync_timestamp ? new Date(result.last_sync_timestamp).toLocaleDateString() : "—"],
+            ["Stage", result.current_pipeline_stage ?? ", "],
+            ["Assurance", result.assurance_level ? `L${result.assurance_level}` : ", "],
+            ...(compact ? [] : [["Class", result.asset_class ?? ", "]]),
+            ["Last sync", result.last_sync_timestamp ? new Date(result.last_sync_timestamp).toLocaleDateString() : ", "],
           ].map(([k, v]) => (
             <div key={k} style={{ padding: "0.55rem", borderRadius: 8, background: "var(--surface-inset)", border: "1px solid var(--border)" }}>
               <div style={{ fontFamily: MONO, fontSize: "0.48rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 2 }}>{k}</div>
@@ -118,7 +118,7 @@ export function VerifierResultCard({
                   : "L4_ActiveMonitoring";
                 const row = taxonomy[key as keyof typeof taxonomy];
                 if (!row) return null;
-                const status = row.status ?? "—";
+                const status = row.status ?? ", ";
                 const issuer = assuranceRowIssuer(row);
                 return (
                   <div key={key} style={{ padding: "0.4rem 0", borderBottom: "1px solid var(--border)" }}>

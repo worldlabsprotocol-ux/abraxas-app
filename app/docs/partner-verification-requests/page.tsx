@@ -14,7 +14,7 @@ export default function PartnerVerificationRequestsPage() {
       <PageHeader
         eyebrow="Integrators · Step 4"
         title="Partner verification requests"
-        subtitle="Portable reuse loop — partner creates request, holder consents, policy engine returns decision."
+        subtitle="Portable reuse loop. partner creates request, holder consents, policy engine returns decision."
       />
 
       <ContentCard title="Create a request (server-side)">
@@ -39,9 +39,9 @@ Authorization: Bearer abx_live_YOUR_KEY
       <ContentCard title="Holder consent">
         <BulletList items={[
           "Redirect holder to consent_url (/passport?verify_request=…)",
-          "Holder sees selective disclosure preview — claims only, never documents",
+          "Holder sees selective disclosure preview. claims only, never documents",
           "Approve → POST …/consent (browser session, not client wallet spoofing)",
-          "Decline → POST …/decline — request cancelled",
+          "Decline → POST …/decline. request cancelled",
         ]} />
       </ContentCard>
 
@@ -49,7 +49,7 @@ Authorization: Bearer abx_live_YOUR_KEY
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
           After approval, poll{" "}
           <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>GET /api/v1/decisions/&#123;id&#125;/status</code>{" "}
-          before settlement. Decisions can expire or be revoked — fail closed.
+          before settlement. Decisions can expire or be revoked. fail closed.
         </p>
       </ContentCard>
 

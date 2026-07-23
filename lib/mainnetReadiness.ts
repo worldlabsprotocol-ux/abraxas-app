@@ -72,7 +72,10 @@ export const MAINNET_READINESS_MILESTONES: MainnetMilestone[] = [
   },
 ];
 
-export const MAINNET_READINESS_HEADLINE = "What full mainnet means";
+export const MAINNET_READINESS_HEADLINE = "Pushing toward full mainnet";
+
+export const MAINNET_READINESS_SUBHEAD =
+  "Core verification E2E is live in production. Six gates remain: Sui mainnet Passport, published audits, first external relying party, asset monitoring, and open self-serve integrate.";
 
 export const MAINNET_READINESS_SUMMARY = CONFIDENT_STATUS_FRAMING;
 

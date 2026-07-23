@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/vision/TrustIsTimeBoundSection.tsx
-// Premium trust-over-time — deed analogy, refresh triggers, verify paths.
+// Premium trust-over-time. deed analogy, refresh triggers, verify paths.
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
@@ -84,10 +84,10 @@ export function TrustIsTimeBoundSection() {
       </div>
 
       <h3 style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
-        What triggers refresh — real estate & land
+        What triggers refresh. real estate & land
       </h3>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.65, margin: "0 0 0.85rem", maxWidth: 560 }}>
-        Recorded events — not random re-KYC. Sale, lien, and appraisal expiry are natural checkpoints.
+        Recorded events. not random re-KYC. Sale, lien, and appraisal expiry are natural checkpoints.
       </p>
 
       <div style={{

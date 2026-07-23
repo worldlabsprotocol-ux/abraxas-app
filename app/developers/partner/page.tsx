@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/developers/partner/page.tsx
-// Partner self-service portal — authenticate with issued abx_ API key.
+// Partner self-service portal. authenticate with issued abx_ API key.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -94,7 +94,7 @@ export default function PartnerPortalPage() {
       <PageHeader
         eyebrow="Developers"
         title="Partner portal"
-        subtitle="View API usage, onboarding progress, and mainnet gate eligibility. Keys are server-side only — never expose in client apps."
+        subtitle="View API usage, onboarding progress, and mainnet gate eligibility. Keys are server-side only. never expose in client apps."
       />
 
       {!dashboard ? (
@@ -133,7 +133,7 @@ export default function PartnerPortalPage() {
               {[
                 { label: "30d calls", value: dashboard.stats.calls_30d },
                 { label: "7d calls", value: dashboard.stats.calls_7d },
-                { label: "Success rate", value: dashboard.stats.success_rate != null ? `${dashboard.stats.success_rate}%` : "—" },
+                { label: "Success rate", value: dashboard.stats.success_rate != null ? `${dashboard.stats.success_rate}%` : ", " },
               ].map(stat => (
                 <div key={stat.label} style={{ padding: "0.65rem", borderRadius: 10, border: "1px solid var(--border)" }}>
                   <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)" }}>{stat.label}</div>
@@ -170,7 +170,7 @@ export default function PartnerPortalPage() {
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: dashboard.mainnet_gate.eligible ? "var(--accent)" : "var(--text-muted)", margin: 0 }}>
               {dashboard.mainnet_gate.eligible
                 ? "✓ Your integration counts toward the external relying party gate"
-                : "Not yet eligible — complete production verify with abx_live_ key"}
+                : "Not yet eligible. complete production verify with abx_live_ key"}
             </p>
           </ContentCard>
 
@@ -179,7 +179,7 @@ export default function PartnerPortalPage() {
               <div style={{ display: "grid", gap: "0.35rem" }}>
                 {dashboard.recent_events.slice(0, 8).map((ev, i) => (
                   <div key={`${ev.endpoint}-${i}`} style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)" }}>
-                    {ev.endpoint} · {ev.decision ?? "—"} · {new Date(ev.created_at).toLocaleString()}
+                    {ev.endpoint} · {ev.decision ?? ", "} · {new Date(ev.created_at).toLocaleString()}
                   </div>
                 ))}
               </div>

@@ -11,6 +11,7 @@ import {
 } from "@/lib/credentials/claimSchema";
 import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
+import { getSuiNetwork } from "@/lib/sui/network";
 import type { VeriffDecisionInput } from "./types";
 
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
@@ -197,7 +198,7 @@ export async function issueIdentityCredential(
       await sb.from("sui_passport_objects").upsert({
         sui_address: normalized,
         object_id: onChain.objectId,
-        network: "devnet",
+        network: getSuiNetwork(),
         stamp_bitmask: onChain.stampBitmask,
         create_tx_digest: onChain.createTxDigest ?? null,
         stamps_tx_digest: onChain.stampsTxDigest ?? null,

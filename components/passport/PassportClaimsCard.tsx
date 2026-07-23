@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportClaimsCard.tsx
-// Live credential claims from /api/credentials/claims — honest Passport state.
+// Live credential claims from /api/credentials/claims. honest Passport state.
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -63,14 +63,14 @@ export function PassportClaimsCard({ suiAddress }: { suiAddress: string | null }
 
       {isError && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
-          Claims registry unavailable — ensure Supabase migration 018 is applied (see docs/SUPABASE_MIGRATION_018.md).
+          Claims registry unavailable. ensure Supabase migration 018 is applied (see docs/SUPABASE_MIGRATION_018.md).
         </p>
       )}
 
       {!isLoading && !isError && data?.claims.length === 0 && (
         <div>
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-            Passport Core is active. No compliance claims yet — add an ID check when a booking or partner requires it.
+            Passport Core is active. No compliance claims yet. add an ID check when a booking or partner requires it.
           </p>
           <Link href="#passport-step-2" style={{
             fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, color: ACCENT, textDecoration: "none",

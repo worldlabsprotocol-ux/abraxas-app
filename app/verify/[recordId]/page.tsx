@@ -1,5 +1,5 @@
 // FILE: app/verify/[recordId]/page.tsx
-// Stable public record URLs — e.g. /verify/ABX-RE-HOSP-001
+// Stable public record URLs. e.g. /verify/ABX-RE-HOSP-001
 
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";

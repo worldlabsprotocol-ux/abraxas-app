@@ -101,7 +101,7 @@ export default function TokenomicsPage() {
         </div>
       </ContentCard>
 
-      <ContentCard title="VC objections — answered">
+      <ContentCard title="VC objections. answered">
         {TOKENOMICS_MODEL.vcDefense.map(row => (
           <div key={row.objection} style={{ marginBottom: "0.75rem" }}>
             <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>{row.objection}</div>

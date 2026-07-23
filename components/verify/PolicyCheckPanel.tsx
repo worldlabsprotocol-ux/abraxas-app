@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/verify/PolicyCheckPanel.tsx
-// Public demo of Abraxas Verified Participant v1 — reference policy gate.
+// Public demo of Abraxas Verified Participant v1. reference policy gate.
 
 import { useState, type CSSProperties } from "react";
 import Link from "next/link";
@@ -83,7 +83,7 @@ export function PolicyCheckPanel({ suiAddress }: { suiAddress?: string | null })
           {POLICY.name}
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.65rem" }}>
-          {POLICY.description} Partners receive <strong>approved / denied / manual review</strong> — not document folders.
+          {POLICY.description} Partners receive <strong>approved / denied / manual review</strong>. not document folders.
         </p>
         <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
           {POLICY.required.map(r => (
@@ -130,9 +130,9 @@ export function PolicyCheckPanel({ suiAddress }: { suiAddress?: string | null })
           <StatusBanner
             tone={decisionTone}
             title={
-              result.decision === "approved" ? "Approved — eligible for gated action"
-              : result.decision === "manual_review" ? "Manual review — partial eligibility"
-              : "Denied — missing requirements"
+              result.decision === "approved" ? "Approved. eligible for gated action"
+              : result.decision === "manual_review" ? "Manual review. partial eligibility"
+              : "Denied. missing requirements"
             }
           >
             Policy {result.policy_id ?? POLICY.id} · Level {result.currentLevel}
