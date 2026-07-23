@@ -58,13 +58,15 @@ export function PageHeader({
 
 export function ContentCard({
   title,
+  id,
   children,
 }: {
   title?: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section style={{
+    <section id={id} style={{
       marginBottom: "1.25rem",
       padding: "1.25rem",
       borderRadius: "var(--radius-lg)",
