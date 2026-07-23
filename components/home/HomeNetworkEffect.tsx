@@ -19,8 +19,8 @@ export function HomeNetworkEffect() {
         eyebrow="Network"
         title={
           <>
-            <span id="network-heading">Each RP </span>
-            <span className="abx-gradient-text">compounds</span>
+            <span id="network-heading">Trust </span>
+            <span className="abx-gradient-text">spreads</span>
           </>
         }
         headingId="network-heading"

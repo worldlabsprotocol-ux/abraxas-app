@@ -304,7 +304,7 @@ export function AbraxasPassport({
                   fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
                   lineHeight: 1.7, maxWidth: 440, margin: "0 0 1.1rem",
                 }}>
-                  {PUBLIC_POSITIONING.proofNotDocuments} Documents stay with regulated providers —
+                  {PUBLIC_POSITIONING.proofNotDocuments} Documents stay with regulated providers , 
                   Abraxas carries signed claims you consent to share.
                 </p>
               </>
@@ -504,7 +504,7 @@ export function AbraxasPassport({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.7, margin: 0,
           }}>
-            Each claim is a specific credential — identity, screening, KYB, asset ownership, lending eligibility.
+            Each claim is a specific credential. identity, screening, KYB, asset ownership, lending eligibility.
             Partners verify via API with their own policy rules. Planned claims are shown for roadmap transparency.
           </p>
         </div>

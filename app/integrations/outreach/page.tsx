@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/integrations/outreach/page.tsx
-// Design partner outreach — copy-paste email templates.
+// Design partner outreach. copy-paste email templates.
 
 import { useState } from "react";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -32,7 +32,7 @@ export default function OutreachPage() {
       <PageHeader
         eyebrow="Design partner outreach"
         title="Recruit your first relying party"
-        subtitle="Copy-paste templates for RWA marketplaces, lenders, and IP platforms. Personalize bracketed fields — link visual proof (/verify + Cielo photos) before API docs."
+        subtitle="Copy-paste templates for RWA marketplaces, lenders, and IP platforms. Personalize bracketed fields. link visual proof (/verify + Cielo photos) before API docs."
       />
 
       <ContentCard title="Before you send">

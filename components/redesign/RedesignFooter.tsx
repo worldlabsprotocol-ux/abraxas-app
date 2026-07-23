@@ -1,9 +1,8 @@
 "use client";
 // FILE: components/redesign/RedesignFooter.tsx
-// Protocol footer — curated columns, no link sprawl.
+// Protocol footer. curated columns, no link sprawl.
 
 import Link from "next/link";
-import { SITE_URL } from "@/lib/siteUrl";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -107,25 +106,19 @@ export function RedesignFooter() {
           gap: "1.5rem",
           marginBottom: "2rem",
         }}>
-          <div style={{ gridColumn: "span 1", minWidth: 180 }}>
+          <div style={{ gridColumn: "span 1", minWidth: 140 }}>
             <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900,
-                           color: ACCENT, marginBottom: "0.5rem" }}>
+                           color: ACCENT, marginBottom: "0.35rem" }}>
               ABRAXAS
             </div>
             <p style={{
               fontFamily: FONT,
-              fontSize: "0.74rem",
+              fontSize: "0.72rem",
               color: "var(--text-muted)",
-              lineHeight: 1.6,
-              maxWidth: 220,
+              lineHeight: 1.5,
+              margin: 0,
             }}>
-              Verify once. Transact everywhere. Real assets with proof you can reuse, not another KYC form.
-            </p>
-            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
-              Live at{" "}
-              <a href={SITE_URL} style={{ color: ACCENT, textDecoration: "none" }}>
-                abraxas-app.vercel.app
-              </a>
+              Verify once. Transact everywhere.
             </p>
           </div>
           <Column title="Protocol" items={LINKS.protocol} />

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportAdvancedSection.tsx
-// Secondary credentials — active, unlock when needed, not required.
+// Secondary credentials. active, unlock when needed, not required.
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";

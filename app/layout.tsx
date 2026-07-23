@@ -1,29 +1,33 @@
 // FILE: app/layout.tsx
 // Root layout. Light default, dark via ThemeContext toggle.
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
-import { SITE_URL } from "@/lib/siteUrl";
+import { siteMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Abraxas, Verify Once. Transact Everywhere.",
-  description: "The verification and identity layer for real-world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
-  metadataBase: new URL(SITE_URL),
-  openGraph: {
-    title: "Abraxas, Verify Once. Transact Everywhere.",
-    description: "The verification and identity layer for real-world assets onchain.",
-    url: SITE_URL,
-    siteName: "Abraxas",
-    images: ["/og-image.jpg"],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Abraxas, Verify Once. Transact Everywhere.",
-    description: "The verification and identity layer for real-world assets onchain.",
-    images: ["/og-image.jpg"],
-  },
-};
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const plusJakartaDisplay = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["700", "800"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+export const metadata: Metadata = siteMetadata();
 
 const themeInitScript = `
 (function(){
@@ -56,7 +60,12 @@ const langInitScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" translate="no" suppressHydrationWarning>
+    <html
+      lang="en"
+      translate="no"
+      suppressHydrationWarning
+      className={`${plusJakarta.variable} ${plusJakartaDisplay.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
         <meta name="google" content="notranslate" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

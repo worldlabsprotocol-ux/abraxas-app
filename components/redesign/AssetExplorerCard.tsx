@@ -7,6 +7,7 @@ import { VerificationBadge } from "./VerificationBadge";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 import { AssetThumbnail, assetThumbObjectPosition } from "@/components/ui/AssetThumbnail";
+import { CmnRegistrySlideshow } from "@/components/registry/CmnRegistrySlideshow";
 import { VERIFY_META, type ExploreAsset } from "@/lib/data/exploreAssets";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -37,16 +38,26 @@ export function AssetExplorerCard({
       }}
     >
       {!isCompact ? (
-        <div style={{ position: "relative", height: isHome ? 168 : 220, background: "#06090B" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={asset.image}
-            alt={asset.name}
-            style={{
-              width: "100%", height: "100%", objectFit: "cover", display: "block",
-              objectPosition: assetThumbObjectPosition(asset.id),
-            }}
-          />
+        <div style={{ position: "relative", background: "#06090B" }}>
+          {asset.id === "cmn-pokemon-collection" ? (
+            <CmnRegistrySlideshow
+              alt={asset.name}
+              height={isHome ? 168 : 220}
+              objectPosition={assetThumbObjectPosition(asset.id)}
+            />
+          ) : (
+            <div style={{ position: "relative", height: isHome ? 168 : 220 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={asset.image}
+                alt={asset.name}
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover", display: "block",
+                  objectPosition: assetThumbObjectPosition(asset.id),
+                }}
+              />
+            </div>
+          )}
           {isHome && (
             <div style={{
               position: "absolute", inset: 0, pointerEvents: "none",

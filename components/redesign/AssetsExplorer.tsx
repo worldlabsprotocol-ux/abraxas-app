@@ -61,7 +61,7 @@ export function AssetsExplorer({
   title?: string;
   eyebrow?: string;
   compact?: boolean;
-  /** Ultra-minimal homepage strip — plain copy, no dev metadata. */
+  /** Ultra-minimal homepage strip. plain copy, no dev metadata. */
   home?: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -140,7 +140,7 @@ export function AssetsExplorer({
         {!compact && !home && (
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
                        maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
-            The canonical asset list — search, filter, and inspect verification scope per listing.
+            The canonical asset list. search, filter, and inspect verification scope per listing.
           </p>
         )}
       </div>

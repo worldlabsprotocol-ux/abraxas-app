@@ -67,7 +67,7 @@ export default function RelyingPartiesPage() {
       <ContentCard title="Why this is the network-effect milestone">
         <p style={body}>
           Abraxas becomes infrastructure when an <strong>unaffiliated</strong> lender, marketplace, or protocol
-          checks our credential state in production — not when we claim acceptance on a landing page.
+          checks our credential state in production. not when we claim acceptance on a landing page.
           First-party flows (Cielo booking, /passport) prove the rails work. Your integration proves they travel.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
@@ -78,7 +78,7 @@ export default function RelyingPartiesPage() {
 
       <ContentCard title="Partner sandbox (internal demo)">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
-          Tier 3 policy, consent, and screening architecture is live for testing — labeled honestly as a sandbox,
+          Tier 3 policy, consent, and screening architecture is live for testing. labeled honestly as a sandbox,
           not as an external relying party.
         </p>
         {sandboxPartners.map(partner => (
@@ -108,7 +108,7 @@ export default function RelyingPartiesPage() {
           </div>
         ))}
         <p style={{ ...body, margin: "0.65rem 0 0", fontSize: "0.72rem" }}>
-          Holders never paste API keys — they consent at{" "}
+          Holders never paste API keys. they consent at{" "}
           <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>/passport?verify_request=…</code>
         </p>
       </ContentCard>
@@ -158,26 +158,26 @@ export default function RelyingPartiesPage() {
       <ContentCard title="Asset monitoring webhook (partners)">
         <p style={{ ...body, marginBottom: "0.65rem" }}>
           Title companies, registries, and operators can push material state-change signals.
-          Abraxas maps them to credential refresh or suspend — fail-closed at transaction time.
+          Abraxas maps them to credential refresh or suspend. fail-closed at transaction time.
         </p>
         <CodeBlock>{ASSET_SIGNAL_WEBHOOK_EXAMPLE}</CodeBlock>
       </ContentCard>
 
-      <ContentCard title="API reference — credential verify">
+      <ContentCard title="API reference. credential verify">
         <p style={{ ...body, marginBottom: "0.65rem" }}>
           Full identity gate for regulated flows. User presents JWT; your server verifies via Abraxas.
         </p>
         <CodeBlock>{CREDENTIAL_VERIFY_EXAMPLE}</CodeBlock>
       </ContentCard>
 
-      <ContentCard title="API reference — trust status">
+      <ContentCard title="API reference. trust status">
         <p style={{ ...body, marginBottom: "0.65rem" }}>
           Lightweight wallet check for browse-to-transact flows.
         </p>
         <CodeBlock>{TRUST_STATUS_EXAMPLE}</CodeBlock>
       </ContentCard>
 
-      <ContentCard title="API reference — public registry">
+      <ContentCard title="API reference. public registry">
         <p style={{ ...body, marginBottom: "0.65rem" }}>
           Asset and Passport DID lookup with assurance taxonomy (L1–L4).
         </p>

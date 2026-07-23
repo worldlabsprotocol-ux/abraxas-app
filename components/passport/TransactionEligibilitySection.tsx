@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/TransactionEligibilitySection.tsx
-// Tier 3 — transaction-specific claims and sandbox partner demo gate.
+// Tier 3. transaction-specific claims and sandbox partner demo gate.
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -125,7 +125,7 @@ export function TransactionEligibilitySection({ enabled }: { enabled: boolean })
         fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 0.85rem",
       }}>
-        Sanctions, investor, KYB, and asset-specific proofs are separate time-bound claims — not implied by identity verification alone.
+        Sanctions, investor, KYB, and asset-specific proofs are separate time-bound claims. not implied by identity verification alone.
       </p>
 
       {isLoading && (

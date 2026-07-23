@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/status/CurrentStatusModule.tsx
-// Premium current-status module — proof first, gates second.
+// Premium current-status module. proof first, gates second.
 
 import Link from "next/link";
 import {
@@ -60,7 +60,7 @@ export function CurrentStatusModule({
                 margin: "0 0 0.45rem",
               }}
             >
-              Live today — staged toward full mainnet
+              Live today. staged toward full mainnet
             </h2>
           )}
           {showFraming && (

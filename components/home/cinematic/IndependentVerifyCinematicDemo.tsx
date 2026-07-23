@@ -25,7 +25,7 @@ export function IndependentVerifyCinematicDemo({ compact = false }: { compact?: 
   const captions = [
     "Anyone pastes a proof ID. No account. No Abraxas login.",
     "Verifier checks Ed25519 signature with the published public key.",
-    "Valid or invalid — determined on your machine. Not our servers.",
+    "Valid or invalid. determined on your machine. Not our servers.",
   ];
   const labels = ["Lookup", "Verify", "Trust math"];
 

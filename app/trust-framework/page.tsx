@@ -1,5 +1,5 @@
 // FILE: app/trust-framework/page.tsx
-// Abraxas Trust Framework — institutional claim taxonomy.
+// Abraxas Trust Framework. institutional claim taxonomy.
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
@@ -13,7 +13,7 @@ export default function TrustFrameworkPage() {
       <PageHeader
         eyebrow="Verification standards"
         title="Abraxas Trust Framework"
-        subtitle="Separate issuers, assurance levels, and expiry — plus how trust stays current when records change."
+        subtitle="Separate issuers, assurance levels, and expiry. plus how trust stays current when records change."
       />
       <TrustFrameworkDemo />
       <TrustIsTimeBoundSection />

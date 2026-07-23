@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/passport/page.tsx
-// Abraxas Passport — wallet dashboard + verify tab.
+// Abraxas Passport. wallet dashboard + verify tab.
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -187,7 +187,7 @@ function PassportPageInner() {
             lineHeight: 1.65, maxWidth: 560, margin: 0,
           }}>
             {pageView === "verify"
-              ? "Look up registry records, run policy checks, and verify credentials — same tools partners integrate server-side."
+              ? "Look up registry records, run policy checks, and verify credentials. same tools partners integrate server-side."
               : "Bind a wallet once. Share only the proof a partner needs. Add identity verification only when a policy requires it."}
           </p>
         </div>
@@ -292,7 +292,7 @@ function PassportPageInner() {
               }}>
                 {[
                   { title: "Wallet", body: "Google OAuth → zkLogin → deterministic Sui address. No seed phrase." },
-                  { title: "Issuance", body: "W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Outcome only — never raw documents." },
+                  { title: "Issuance", body: "W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Outcome only. never raw documents." },
                   { title: "On-chain anchor", body: "Stamp bitmask on Sui Move Passport object after approval." },
                   { title: "Portability", body: "Third parties verify via W3C credential or GET /api/sui/passport." },
                 ].map(c => (

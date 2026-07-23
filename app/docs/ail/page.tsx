@@ -198,7 +198,7 @@ export default function AILSpecPage() {
 
       <ContentCard title="Trust score (roadmap)">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.65 }}>
-          Dynamic 0–1000 score. not just initial KYC. Factors include:
+          Dynamic 0-1000 score. not just initial KYC. Factors include:
         </p>
         <BulletList items={TRUST_SCORE_FACTORS} />
       </ContentCard>

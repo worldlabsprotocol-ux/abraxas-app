@@ -16,7 +16,7 @@ const EMERGENCY_POLICY = [
   "Veriff sessions revocable; credentials support revocation timestamp",
   "Disputed assets can be flagged in pipeline before MARKETPLACE_LIVE",
   "Payment verification requires matching settlement address + memo + amount on Sui",
-  "Progressive decentralization — central committee today, documented in litepaper",
+  "Progressive decentralization. central committee today, documented in litepaper",
 ];
 
 export default function SecurityPage() {
@@ -67,7 +67,7 @@ export default function SecurityPage() {
       <ContentCard title="Privacy architecture">
         <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: 0 }}>
           Sensitive identity data stays with licensed providers (Veriff). Abraxas anchors only consented proofs,
-          attestations, hashes, and revocation state — never raw document images on-chain. User controls consent
+          attestations, hashes, and revocation state. never raw document images on-chain. User controls consent
           for credential sharing via presentation proofs.
         </p>
       </ContentCard>

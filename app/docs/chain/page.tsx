@@ -19,7 +19,7 @@ export default function ChainPage() {
       />
 
       {c.layers.map(layer => (
-        <ContentCard key={layer.chain} title={`${layer.chain} — ${layer.role}`}>
+        <ContentCard key={layer.chain} title={`${layer.chain}. ${layer.role}`}>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
             {layer.why}
           </p>

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/demo/partner-access/DemoPartnerClient.tsx
-// DEMO — tokenized asset access page; unlocks only after live receipt validation.
+// DEMO. tokenized asset access page; unlocks only after live receipt validation.
 
 import { useCallback, useEffect, useState } from "react";
 import { EvmWalletConnectActions } from "@/components/wallet/EvmWalletConnectActions";
@@ -29,7 +29,7 @@ export default function DemoPartnerClient() {
     setUnlocked(Boolean(data.action_unlocked));
     setStatus(data.approved
       ? data.action_unlocked
-        ? "Approved — receipt currently valid"
+        ? "Approved. receipt currently valid"
         : `Approved but not currently valid (${data.validity ?? "unknown"})`
       : "Not approved");
   }, []);
@@ -86,7 +86,7 @@ export default function DemoPartnerClient() {
 
   return (
     <div style={{ maxWidth: 560, margin: "2rem auto", padding: "1.5rem", fontFamily: "system-ui,sans-serif", color: "#f0f0f0", background: "#0d1017", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)" }}>
-      <div style={{ fontSize: "0.65rem", color: "#FBBF24", letterSpacing: "0.12em", marginBottom: 8 }}>DEMO — NOT A LIVE PARTNER</div>
+      <div style={{ fontSize: "0.65rem", color: "#FBBF24", letterSpacing: "0.12em", marginBottom: 8 }}>DEMO. NOT A LIVE PARTNER</div>
       <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.5rem" }}>Tokenized Asset Access (Demo)</h1>
       <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
         Connect MetaMask, verify eligibility through Abraxas Connect, and unlock Request Access only when a live Decision Receipt passes Trust Layer validation.

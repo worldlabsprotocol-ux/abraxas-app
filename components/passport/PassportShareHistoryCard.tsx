@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportShareHistoryCard.tsx
-// Which partners accessed what claims — consent receipt history.
+// Which partners accessed what claims. consent receipt history.
 
 import { useQuery } from "@tanstack/react-query";
 

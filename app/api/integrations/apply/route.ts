@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { issueAuthenticationProof } from "@/lib/authenticationProof/issue";
+import { adminEmailShell, adminEmailTable, sendAdminEmail } from "@/lib/notify/adminResend";
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,6 +56,23 @@ export async function POST(req: NextRequest) {
       eventType: "design_partner_apply",
       recordId,
       recordPayload: { ...row, record_id: recordId },
+    });
+
+    void sendAdminEmail({
+      subject: `Design partner apply — ${company}`,
+      html: adminEmailShell(
+        "New integration application",
+        adminEmailTable({
+          Company: company,
+          Contact: body.contact_name?.trim() ?? "—",
+          Email: email,
+          Website: body.website?.trim() ?? "—",
+          "Use case": body.use_case?.trim() ?? "—",
+          Volume: body.monthly_volume?.trim() ?? "—",
+          Type: body.integration_type?.trim() ?? "passport_gate",
+          "Proof ID": proof.proof_id ?? recordId,
+        }),
+      ),
     });
 
     return NextResponse.json({ ok: true, record_id: recordId, proof });

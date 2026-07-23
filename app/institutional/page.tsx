@@ -13,7 +13,7 @@ const ACCENT = "#10B981";
 const PILLARS = [
   {
     title: "Trust registry, not KYC vendor",
-    body: "Abraxas orchestrates proof. Licensed partners perform identity. Protocols query Abraxas via AIL — users keep document custody with providers.",
+    body: "Abraxas orchestrates proof. Licensed partners perform identity. Protocols query Abraxas via AIL. users keep document custody with providers.",
   },
   {
     title: "Sui-native verification",

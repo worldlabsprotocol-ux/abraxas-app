@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/transparency/page.tsx
-// Live operational transparency — real Supabase events, not mock vault logs.
+// Live operational transparency. real Supabase events, not mock vault logs.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -61,7 +61,7 @@ export default function TransparencyPage() {
               { l: "Wallets registered", v: data.metrics.zklogin_wallets },
               { l: "Credentials active", v: data.metrics.active_credentials },
               { l: "Captured stays", v: data.metrics.captured_cielo_bookings },
-              { l: "Cielo USDC revenue", v: data.metrics.cielo_revenue_usdc > 0 ? `$${data.metrics.cielo_revenue_usdc}` : "—" },
+              { l: "Cielo USDC revenue", v: data.metrics.cielo_revenue_usdc > 0 ? `$${data.metrics.cielo_revenue_usdc}` : ", " },
             ].map(row => (
               <div key={row.l} style={{ padding: "0.75rem", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <div style={{ fontFamily: FONT, fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>{row.v}</div>

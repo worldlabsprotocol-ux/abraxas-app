@@ -5,6 +5,7 @@ import { FLAGSHIP_PROPERTY } from "@/lib/data/flagshipProperty";
 import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 import { SMYRNA_ASSET } from "@/lib/smyrnaCaseStudy";
+import { CMN_POKEMON_ASSET } from "@/lib/cmnPokemonCaseStudy";
 import { EXPLORE_ASSETS, type VerifyState } from "@/lib/data/exploreAssets";
 import type { AssuranceBreakdown } from "@/lib/assuranceTaxonomy";
 
@@ -189,7 +190,34 @@ const CLOVE: RegistryAssetDef = {
   aliases: ["clove", "the-clove"],
 };
 
-export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, CPG, NAJ, DEMO_EXTERNAL, CLOVE];
+const CMN_POKEMON: RegistryAssetDef = {
+  abxId: CMN_POKEMON_ASSET.id,
+  slug: "cmn-pokemon-collection",
+  name: CMN_POKEMON_ASSET.name,
+  assetClass: "COLLECTIBLE_GRADED_CARD",
+  location: CMN_POKEMON_ASSET.location,
+  image: CMN_POKEMON_ASSET.image,
+  verifyState: "owned",
+  pipelineStage: "OWNED_NOT_OPEN",
+  assuranceLevel: 2,
+  assuranceTaxonomy: {
+    L1_IdentityClaim: { status: "VERIFIED", timestamp: "2026-07-23T00:00:00Z", provider: "CMN_Designs_Owner_Attestation" },
+    L2_LegalReview: { status: "VERIFIED", provider: "Custody_And_Title_On_File" },
+    L3_ProfessionalAttestation: { status: "PENDING", authority: "PSA_Cert_Verification" },
+    L4_ActiveMonitoring: { status: "PENDING", oracleSource: "Custody_Feed_Pending" },
+  },
+  metadataUri: CMN_POKEMON_ASSET.caseStudyPath,
+  notice:
+    "CMN Designs · PSA-graded Pokémon slabs · registry reference to show collectibles asset class · not listed for sale on Abraxas.",
+  tokenization: {
+    standard: "Abraxas Registry Entry",
+    chain: "Off-chain custody",
+    status: "OWNED_REFERENCE",
+  },
+  aliases: ["cmn", "cmn-designs", "cmn-pokemon", "cmn-pokemon-collection"],
+};
+
+export const REGISTRY_ASSETS: RegistryAssetDef[] = [CIELO, SMYRNA, CPG, NAJ, DEMO_EXTERNAL, CLOVE, CMN_POKEMON];
 
 const BY_KEY = new Map<string, RegistryAssetDef>();
 for (const asset of REGISTRY_ASSETS) {

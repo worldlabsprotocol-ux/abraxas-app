@@ -205,7 +205,7 @@ export function MusicRoyaltySection({ hideHeader = false }: { hideHeader?: boole
                   fontFamily: "'Space Grotesk',sans-serif", fontSize: "1.75rem",
                   fontWeight: 700, color: ACCENT, letterSpacing: "-0.02em",
                 }}>
-                  {fmt(low)} – {fmt(high)}
+                  {fmt(low)}, {fmt(high)}
                 </span>
                 <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
                   estimated range

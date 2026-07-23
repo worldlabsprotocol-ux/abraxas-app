@@ -1,5 +1,5 @@
 // FILE: components/verify/VerifyRecordStatic.tsx
-// Server-rendered public record — full proof card for crawlers and no-JS clients.
+// Server-rendered public record. full proof card for crawlers and no-JS clients.
 
 import Link from "next/link";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
@@ -51,7 +51,7 @@ export async function VerifyRecordStatic({ recordId }: { recordId: string }) {
         }}
       >
         {abxId}
-        {result.entity_label ? ` — ${result.entity_label.toUpperCase()}` : ""}
+        {result.entity_label ? `. ${result.entity_label.toUpperCase()}` : ""}
       </h1>
 
       <p style={{

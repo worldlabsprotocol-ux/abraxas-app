@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloPhoto.tsx
-// Consistent Cielo imagery — dark letterbox prevents white-edge artifacts.
+// Consistent Cielo imagery. dark letterbox prevents white-edge artifacts.
 
 import type { CSSProperties } from "react";
 

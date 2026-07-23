@@ -22,7 +22,7 @@ export function NonCustodialDisclosure({ variant = "inline", settlementNote }: P
         Abraxas operates as a <strong style={{ color: "var(--text-primary)" }}>verification and attestation registry</strong>, not a custodian or counterparty to your transaction.
       </p>
       <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
-        <li>Capital routes to <strong>asset-specific settlement containers</strong> — not a commingled corporate treasury for investor funds.</li>
+        <li>Capital routes to <strong>asset-specific settlement containers</strong>. not a commingled corporate treasury for investor funds.</li>
         <li>Funds remain locked until booking or deal conditions are verified on-chain or by attested workflow.</li>
         <li>Abraxas verifies state; it does not take discretionary custody of your capital.</li>
       </ul>
@@ -44,7 +44,7 @@ export function NonCustodialDisclosure({ variant = "inline", settlementNote }: P
           Non-custodial settlement
         </div>
         <p style={{ margin: 0, fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          Abraxas attests — it does not hold investor capital.{" "}
+          Abraxas attests. it does not hold investor capital.{" "}
           <button type="button" onClick={() => setOpen(o => !o)}
             style={{ background: "none", border: "none", padding: 0, color: ACCENT, cursor: "pointer", fontFamily: FONT, fontSize: "0.68rem", fontWeight: 600 }}>
             {open ? "Hide details" : "How funds move →"}

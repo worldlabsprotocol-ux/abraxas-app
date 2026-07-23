@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/wallet/EvmWalletConnectActions.tsx
-// Shared connect/bind buttons — injected provider or WalletConnect on mobile.
+// Shared connect/bind buttons. injected provider or WalletConnect on mobile.
 
 import type { EvmConnectionUiState } from "@/lib/walletAuthority/client/evmConnectionUi";
 
