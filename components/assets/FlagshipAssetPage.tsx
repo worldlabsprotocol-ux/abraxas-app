@@ -177,13 +177,8 @@ export function FlagshipAssetPage() {
 
       <ContentCard title="Book Cielo Sunrise" id="book">
         <p style={body}>
-          Select dates, request a verified rate with your Passport, or pay in USDC on Sui after operator confirmation.
+          Protocol Calendar + reservation flow below. Select open dates on the calendar, request a verified rate with Passport, or pay in USDC after operator confirmation.
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
-          <Btn href={D.airbnbUrl} newTab size="sm">Airbnb listing →</Btn>
-          <Btn href={D.instagramUrl} newTab variant="ghost" size="sm">@cielosunrise</Btn>
-          <Btn href="/case-studies/cielo" variant="secondary" size="sm">Case study</Btn>
-        </div>
         <CieloFlagshipActions />
       </ContentCard>
 
