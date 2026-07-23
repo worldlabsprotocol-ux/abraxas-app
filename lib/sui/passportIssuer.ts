@@ -162,11 +162,13 @@ async function sendTx(tx: Transaction, keypair: Ed25519Keypair): Promise<SuiTran
 }
 
 export function isPassportIssuerConfigured(): boolean {
-  const hasKey = Boolean(process.env.SUI_SPONSOR_SECRET_KEY ?? process.env.SUI_ISSUER_SECRET_KEY);
-  const hasCap = Boolean(process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim());
+  const diagnostics = getSponsorEnvDiagnostics();
+  if (diagnostics.issuer_fully_configured) return true;
   const isProduction = Boolean(process.env.VERCEL || process.env.NODE_ENV === "production");
-  if (isProduction) return hasKey && hasCap;
-  return hasKey && (hasCap || Boolean(SUI_DEVNET.demoIssuanceCapObjectId));
+  if (!isProduction && diagnostics.sponsor_key_status === "valid") {
+    return Boolean(SUI_DEVNET.demoIssuanceCapObjectId);
+  }
+  return false;
 }
 
 /** Idempotent: create passport if missing, then issue Veriff stamps. */

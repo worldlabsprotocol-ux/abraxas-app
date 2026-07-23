@@ -18,7 +18,7 @@ export const ABRAXAS_PRODUCT =
 export const ABRAXAS_EMOTION_HEADLINE = "Stop proving your assets over and over.";
 
 /** Homepage layer 2. mechanism (marketing: simple). */
-export const ABRAXAS_MECHANISM = "One verification. Unlimited applications.";
+export const ABRAXAS_MECHANISM = "One verification. Every application.";
 
 /** Homepage layer 3. tagline / payoff. */
 export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
@@ -27,7 +27,7 @@ export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
 export const ABRAXAS_TAGLINE = ABRAXAS_HEADLINE;
 
 export const ABRAXAS_SUBHEAD =
-  "The RWA verification app. Reusable proof across marketplaces, lenders, and token companies without repeating due diligence.";
+  "The RWA verification app. Reusable Abraxas proof across marketplaces, lenders, and token companies. No repeat diligence.";
 
 /** North star metric. relying party adoption compounds the network. */
 export const ABRAXAS_NORTH_STAR_METRIC =

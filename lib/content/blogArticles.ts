@@ -79,32 +79,32 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         rank: 1,
         name: "Abraxas",
-        tagline: "Verify once. Use the proof again.",
+        tagline: "Verify once. Proof rides with the asset.",
         body:
-          "Abraxas fixes repeated checks. Teams stop uploading the same papers to every app. One verified record can be reused under clear rules, with a trail anyone can audit.",
-        bestFor: ["Enterprise RWA", "Government projects", "Reusable trust"],
+          "Abraxas ends the repeat-KYC loop. One verified record, reusable under policy, with a trail any counterparty can audit. Built for teams that eat their own cooking: Cielo Sunrise and Chickasaw land are live on Abraxas today.",
+        bestFor: ["Enterprise RWA", "Government programs", "Reusable trust"],
         featured: true,
       },
       {
         rank: 2,
         name: "Didit",
-        tagline: "Identity and compliance in one place.",
+        tagline: "Compliance rails for investor onboarding.",
         body:
-          "Didit combines KYC, KYB, AML, and wallet screening. Strong fit when you must onboard investors safely before they touch tokenized assets.",
+          "Didit bundles KYC, KYB, AML, and wallet screening. Strong when you must onboard investors safely before they touch tokenized assets.",
         bestFor: ["KYC", "KYB", "AML screening", "Investor onboarding"],
       },
       {
         rank: 3,
         name: "Humanity Protocol",
-        tagline: "Prove who you are with less data exposed.",
+        tagline: "Prove eligibility. Keep privacy.",
         body:
-          "Humanity Protocol uses privacy-first identity. Users can prove they qualify without sharing more personal data than needed.",
+          "Humanity Protocol uses privacy-first identity. Users prove they qualify without oversharing personal data.",
         bestFor: ["Privacy-first ID", "Decentralized credentials", "Cross-border rules"],
       },
       {
         rank: 4,
         name: "Veriff",
-        tagline: "Enterprise identity checks at speed.",
+        tagline: "Enterprise ID at fintech speed.",
         body:
           "Veriff is trusted by banks and fintechs worldwide. Fast customer ID checks with fraud controls, easy to plug into tokenization workflows.",
         bestFor: ["Banks", "Fintech", "Fraud prevention", "Digital onboarding"],
@@ -112,9 +112,9 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         rank: 5,
         name: "Sumsub",
-        tagline: "Global compliance for many countries.",
+        tagline: "Global compliance across borders.",
         body:
-          "Sumsub covers KYC, KYB, AML monitoring, and fraud tools across borders. Useful when your investors live in many jurisdictions.",
+          "Sumsub covers KYC, KYB, AML monitoring, and fraud tools across jurisdictions. Useful when your investors live in many countries.",
         bestFor: ["Global compliance", "AML monitoring", "International investors"],
       },
     ],

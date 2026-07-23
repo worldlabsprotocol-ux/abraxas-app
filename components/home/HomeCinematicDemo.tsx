@@ -121,12 +121,12 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
   const actCaption =
     act === 1
-      ? 'Every app asks for the same papers again.'
+      ? 'Every app runs the same ID parade. Abraxas ends the parade.'
       : act === 2
-        ? 'One proof works in every app.'
+        ? 'One Abraxas proof works in every app.'
         : showFinalLine
           ? CINEMATIC_PROOF_ISSUED_LINE
-          : 'Anyone can check the proof. No email relay.';
+          : 'Signed proof. Anyone can audit it. No email relay.';
 
   const actTransition = {
     initial: { opacity: 0, filter: 'blur(10px)', scale: 0.985 },
@@ -276,7 +276,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: mergeProgress > 0.72 ? 1 : 0 }}
                     >
-                      One ID check. Use it everywhere.
+                      One Abraxas proof. Every app.
                     </motion.p>
                   </motion.div>
                 </motion.div>

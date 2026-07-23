@@ -4,7 +4,7 @@
 import { AUDIT_TRACKER } from "@/lib/securityProgram";
 import mainnetDeployment from "./deployment.mainnet.json";
 import { getSuiNetwork } from "./network";
-import { isPassportIssuerConfigured } from "./passportIssuer";
+import { getSponsorEnvDiagnostics, isPassportIssuerConfigured } from "./passportIssuer";
 import { isDeployedPackage, isSuiMainnetDeployed } from "./config";
 
 export type SuiMainnetStepStatus = "complete" | "ready" | "blocked" | "action_required";
@@ -43,11 +43,14 @@ export function getSuiMainnetDeployPath(): SuiMainnetDeployPath {
   const packagePublished = isDeployedPackage(mainnetDeployment.packageId);
   const network = getSuiNetwork();
   const productionNetwork = network === "mainnet";
-  const hasSponsorKey = Boolean(
-    process.env.SUI_SPONSOR_SECRET_KEY?.trim() || process.env.SUI_ISSUER_SECRET_KEY?.trim(),
-  );
-  const hasCapEnv = Boolean(process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim());
-  const issuerReady = isPassportIssuerConfigured() && productionNetwork && packagePublished;
+  const diagnostics = getSponsorEnvDiagnostics();
+  const hasSponsorKey = diagnostics.sponsor_key_status === "valid";
+  const hasCapEnv = diagnostics.issuance_cap_length_ok;
+  const issuerReady =
+    diagnostics.issuer_fully_configured &&
+    productionNetwork &&
+    packagePublished &&
+    isPassportIssuerConfigured();
 
   const steps: SuiMainnetDeployStep[] = [
     {
@@ -94,12 +97,24 @@ export function getSuiMainnetDeployPath(): SuiMainnetDeployPath {
     {
       id: "sponsor-wallet",
       label: "Sponsor wallet funded + keys in Vercel",
-      status: hasSponsorKey ? (productionNetwork ? "complete" : "ready") : "action_required",
+      status: hasSponsorKey
+        ? hasCapEnv
+          ? productionNetwork
+            ? "complete"
+            : "ready"
+          : "action_required"
+        : diagnostics.sponsor_key_status === "invalid"
+          ? "action_required"
+          : "action_required",
       detail: hasSponsorKey
-        ? productionNetwork
-          ? "SUI_SPONSOR_SECRET_KEY configured."
-          : "Key set locally — set SUI_NETWORK=mainnet in Vercel for production."
-        : "Export suiprivkey from sponsor wallet → SUI_SPONSOR_SECRET_KEY.",
+        ? hasCapEnv
+          ? productionNetwork
+            ? "Sponsor key valid and IssuanceCap configured."
+            : "Keys valid locally. Set SUI_NETWORK=mainnet after package publish."
+          : "Sponsor key valid. Mint cap and set SUI_ISSUANCE_CAP_OBJECT_ID."
+        : diagnostics.sponsor_key_status === "invalid"
+          ? "SUI_SPONSOR_SECRET_KEY present but invalid. Re-export suiprivkey1."
+          : "Export suiprivkey from sponsor wallet to SUI_SPONSOR_SECRET_KEY.",
       env_vars: ["SUI_SPONSOR_SECRET_KEY", "SUI_ISSUANCE_CAP_OBJECT_ID"],
     },
     {
