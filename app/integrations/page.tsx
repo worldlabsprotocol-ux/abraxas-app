@@ -137,7 +137,21 @@ export default function IntegrationsPage() {
                 {p.description}
               </p>
               {p.api && (
-                <code style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT }}>{p.api}</code>
+                <code style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT, display: "block", marginTop: "0.35rem" }}>{p.api}</code>
+              )}
+              {(p.href || p.website) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginTop: "0.45rem" }}>
+                  {p.href && (
+                    <Link href={p.href} style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, textDecoration: "none" }}>
+                      Pilot page →
+                    </Link>
+                  )}
+                  {p.website && (
+                    <a href={p.website} target="_blank" rel="noopener noreferrer" style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", textDecoration: "none" }}>
+                      Website ↗
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           </div>
