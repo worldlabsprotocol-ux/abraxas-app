@@ -5,6 +5,7 @@ import {
   CMN_DESIGNS_REGISTRY_IMAGE,
   cmnDesignsSlideshowPaths,
 } from "@/lib/cmnDesignsMedia";
+import { CMN_DESIGNS_HERO_SRC, cmnDesignsPhotoRotation } from "@/lib/cmnDesignsDisplay";
 import { CMN_POKEMON_ASSET } from "@/lib/cmnPokemonCaseStudy";
 import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
 import { REGISTRY_ASSETS } from "@/lib/data/registryAssets";
@@ -12,6 +13,7 @@ import { REGISTRY_ASSETS } from "@/lib/data/registryAssets";
 describe("cmnDesignsMedia", () => {
   it("uses cmn21.jpg as registry hero", () => {
     expect(CMN_DESIGNS_REGISTRY_IMAGE.src).toBe("/assets/cmn21.jpg");
+    expect(CMN_DESIGNS_HERO_SRC).toBe("/assets/cmn21.jpg");
     expect(CMN_DESIGNS_HERO_NUMBER).toBe(21);
   });
 
@@ -24,6 +26,12 @@ describe("cmnDesignsMedia", () => {
     const paths = cmnDesignsSlideshowPaths();
     expect(paths[0]).toBe("/assets/cmn21.jpg");
     expect(paths).toHaveLength(28);
+  });
+
+  it("rotates non-hero slabs 180° CCW", () => {
+    expect(cmnDesignsPhotoRotation("/assets/cmn21.jpg")).toBe(0);
+    expect(cmnDesignsPhotoRotation("/assets/cmn1.jpg")).toBe(-180);
+    expect(cmnDesignsPhotoRotation("/assets/cmn22.jpg")).toBe(-180);
   });
 
   it("registers PSA Pokémon in explore and registry catalogs", () => {

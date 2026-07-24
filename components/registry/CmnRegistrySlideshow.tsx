@@ -5,14 +5,15 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cmnDesignsSlideshowPaths } from "@/lib/cmnDesignsMedia";
-import { probeImageList } from "@/lib/mediaProbe";
+import { CMN_DESIGNS_HERO_SRC } from "@/lib/cmnDesignsDisplay";
+import { CmnSlabPhoto } from "@/components/registry/CmnSlabPhoto";
 
-const INTERVAL_MS = 3800;
+const INTERVAL_MS = 4200;
+const PATHS = cmnDesignsSlideshowPaths();
 
 export function CmnRegistrySlideshow({
   alt,
   height = 220,
-  objectPosition = "center center",
   showDots = true,
 }: {
   alt: string;
@@ -20,17 +21,9 @@ export function CmnRegistrySlideshow({
   objectPosition?: string;
   showDots?: boolean;
 }) {
-  const [images, setImages] = useState<string[]>([]);
+  const [images] = useState(PATHS);
   const [index, setIndex] = useState(0);
   const reduce = useReducedMotion();
-
-  useEffect(() => {
-    let cancelled = false;
-    void probeImageList(cmnDesignsSlideshowPaths()).then(found => {
-      if (!cancelled) setImages(found);
-    });
-    return () => { cancelled = true; };
-  }, []);
 
   useEffect(() => {
     if (reduce || images.length <= 1) return undefined;
@@ -40,45 +33,24 @@ export function CmnRegistrySlideshow({
     return () => window.clearInterval(id);
   }, [images.length, reduce]);
 
-  const src = images[index] ?? images[0];
-
-  if (!images.length) {
-    return (
-      <div style={{
-        height, background: "#06090B",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "'Inter',system-ui,sans-serif",
-        fontSize: "0.72rem", color: "var(--text-muted)",
-      }}>
-        Loading slabs…
-      </div>
-    );
-  }
+  const src = images[index] ?? CMN_DESIGNS_HERO_SRC;
 
   return (
     <div style={{ position: "relative", height, background: "#06090B", overflow: "hidden" }}>
       {reduce ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt={alt}
-          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition, display: "block" }}
-        />
+        <CmnSlabPhoto src={src} alt={alt} fill />
       ) : (
         <AnimatePresence mode="sync">
-          <motion.img
+          <motion.div
             key={src}
-            src={src}
-            alt={alt}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.55, ease: "easeInOut" }}
-            style={{
-              position: "absolute", inset: 0,
-              width: "100%", height: "100%", objectFit: "cover", objectPosition, display: "block",
-            }}
-          />
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            style={{ position: "absolute", inset: 0 }}
+          >
+            <CmnSlabPhoto src={src} alt={alt} fill />
+          </motion.div>
         </AnimatePresence>
       )}
 

@@ -61,13 +61,19 @@ export function AssetExplorerCard({
               />
             </div>
           )}
-          {isHome && (
+          {isHome && asset.id !== "cmn-pokemon-collection" && (
             <div style={{
-              position: "absolute", inset: 0, pointerEvents: "none",
+              position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
               background: "linear-gradient(to top, rgba(6,9,11,0.88) 0%, rgba(6,9,11,0.15) 42%, rgba(6,9,11,0.35) 100%)",
             }} />
           )}
-          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: "0.35rem", flexWrap: "wrap", zIndex: 1 }}>
+          {isHome && asset.id === "cmn-pokemon-collection" && (
+            <div style={{
+              position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
+              background: "linear-gradient(to top, rgba(6,9,11,0.55) 0%, transparent 38%)",
+            }} />
+          )}
+          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: "0.35rem", flexWrap: "wrap", zIndex: 2 }}>
             <VerificationBadge label={meta.label} color={meta.color} />
             {asset.statusBadge && <CapabilityStatusBadge status={asset.statusBadge} size="xs" />}
           </div>

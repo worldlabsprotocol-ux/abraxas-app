@@ -2,88 +2,51 @@
 // FILE: components/case-studies/CmnPokemonPhotoGallery.tsx
 // PSA Pokémon slab photos — cmn1.jpg … cmn29.jpg (no cmn8) under public/assets/
 
-import { useEffect, useState } from "react";
-import { CMN_POKEMON_ASSET, CMN_POKEMON_GALLERY_PATHS } from "@/lib/cmnPokemonCaseStudy";
+import { useState } from "react";
+import { CMN_POKEMON_GALLERY_PATHS } from "@/lib/cmnPokemonCaseStudy";
 import { cmnDesignsSlideshowPaths } from "@/lib/cmnDesignsMedia";
+import { CMN_DESIGNS_HERO_SRC } from "@/lib/cmnDesignsDisplay";
+import { CmnSlabPhoto } from "@/components/registry/CmnSlabPhoto";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-
-import { probeImageList } from "@/lib/mediaProbe";
+const PATHS = cmnDesignsSlideshowPaths();
 
 export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
-  const [loaded, setLoaded] = useState<string[]>([]);
   const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const order = cmnDesignsSlideshowPaths();
-      const found = await probeImageList(order);
-      if (!cancelled) setLoaded(found.length ? found : []);
-    }
-
-    void load();
-    return () => { cancelled = true; };
-  }, []);
-
-  if (!loaded.length) {
-    return (
-      <div style={{
-        padding: "1.25rem", borderRadius: 14,
-        background: "var(--surface)", border: "1px dashed var(--border-strong)",
-      }}>
-        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
-          Add photos to <code style={{ fontFamily: "monospace" }}>public/assets/</code> as{" "}
-          <code style={{ fontFamily: "monospace" }}>cmn1.jpg</code> through <code style={{ fontFamily: "monospace" }}>cmn29.jpg</code> (no cmn8).
-        </p>
-      </div>
-    );
-  }
-
-  const main = loaded[active] ?? loaded[0];
+  const main = PATHS[active] ?? CMN_DESIGNS_HERO_SRC;
 
   return (
     <div>
       <div style={{
         borderRadius: 14, overflow: "hidden", marginBottom: "0.65rem",
-        border: "1px solid var(--border-strong)", aspectRatio: "16/10",
-        background: "var(--surface)",
+        border: "1px solid var(--border-strong)", aspectRatio: "4/3",
+        background: "#06090B", position: "relative",
       }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={main}
-          alt={`${altPrefix} ${active + 1}`}
-          style={{
-            width: "100%", height: "100%", objectFit: "cover",
-            objectPosition: CMN_POKEMON_ASSET.imageObjectPosition,
-            display: "block",
-          }}
-        />
+        <CmnSlabPhoto src={main} alt={`${altPrefix} ${active + 1}`} fill />
       </div>
 
-      {loaded.length > 1 && (
+      {PATHS.length > 1 && (
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
-          {loaded.map((src, i) => (
+          {PATHS.map((src, i) => (
             <button
               key={src}
               type="button"
               onClick={() => setActive(i)}
+              aria-label={`View slab ${i + 1}`}
               style={{
                 padding: 0, border: `2px solid ${i === active ? "var(--accent)" : "var(--border)"}`,
                 borderRadius: 8, overflow: "hidden", width: 72, height: 52, cursor: "pointer",
-                opacity: i === active ? 1 : 0.7,
+                opacity: i === active ? 1 : 0.7, background: "#0e1318",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <CmnSlabPhoto src={src} alt="" height={52} compact />
             </button>
           ))}
         </div>
       )}
 
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
-        {loaded.length} of {CMN_POKEMON_GALLERY_PATHS.length} slab photos loaded · hero: cmn21.jpg
+        {PATHS.length} of {CMN_POKEMON_GALLERY_PATHS.length} slab photos on file · hero: cmn21.jpg
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.5rem" }}>

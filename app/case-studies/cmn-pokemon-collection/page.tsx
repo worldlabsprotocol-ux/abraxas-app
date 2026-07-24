@@ -5,8 +5,9 @@
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, KeyValueTable } from "@/components/redesign/RedesignContent";
-import { CaseStudyPhotoHero } from "@/components/case-studies/CaseStudyGallery";
 import { CmnPokemonPhotoGallery } from "@/components/case-studies/CmnPokemonPhotoGallery";
+import { CmnSlabPhoto } from "@/components/registry/CmnSlabPhoto";
+import { CMN_DESIGNS_HERO_SRC } from "@/lib/cmnDesignsDisplay";
 import {
   CMN_POKEMON_ASSET,
   CMN_POKEMON_CARDS,
@@ -43,14 +44,32 @@ export default function CmnPokemonCollectionPage() {
         subtitle="PSA-graded Pokémon slabs · insured custody · registry visibility alongside real estate. Not listed for sale."
       />
 
-      <CaseStudyPhotoHero
-        src={CMN_POKEMON_ASSET.image}
-        alt={CMN_POKEMON_ASSET.name}
-        badge={CMN_POKEMON_ASSET.designation}
-        title={CMN_POKEMON_ASSET.name}
-        subtitle={CMN_POKEMON_ASSET.subtitle}
-        objectPosition={CMN_POKEMON_ASSET.imageObjectPosition}
-      />
+      <div style={{
+        position: "relative", borderRadius: 18, overflow: "hidden",
+        marginBottom: "0.65rem", aspectRatio: "16/9", background: "#06090B",
+      }}>
+        <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={CMN_POKEMON_ASSET.name} fill />
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
+          background: "linear-gradient(to top, rgba(6,9,11,0.88) 0%, transparent 52%)",
+        }} />
+        <div style={{ position: "absolute", bottom: 20, left: 20, right: 20, zIndex: 3 }}>
+          <span style={{
+            display: "inline-block", fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
+            padding: "0.3rem 0.6rem", borderRadius: 999, marginBottom: "0.5rem",
+            background: "rgba(232,197,71,0.2)", color: "var(--accent, #E8C547)",
+            border: "1px solid var(--accent-border, rgba(232,197,71,0.4))",
+          }}>
+            {CMN_POKEMON_ASSET.designation}
+          </span>
+          <div style={{ fontFamily: FONT, fontSize: "1.35rem", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
+            {CMN_POKEMON_ASSET.name}
+          </div>
+          <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.72)", marginTop: 4 }}>
+            {CMN_POKEMON_ASSET.subtitle}
+          </div>
+        </div>
+      </div>
 
       <ContentCard title="Slab photos">
         <CmnPokemonPhotoGallery altPrefix="PSA Pokémon slab" />
