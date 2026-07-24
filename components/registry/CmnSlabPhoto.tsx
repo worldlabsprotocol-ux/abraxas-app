@@ -33,7 +33,7 @@ export function CmnSlabPhoto({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: featured ? "8px 12px" : compact ? "4px 6px" : CMN_SLAB_FRAME.padding,
+        padding: featured ? "6px 10px" : compact ? "4px 6px" : CMN_SLAB_FRAME.padding,
         overflow: "hidden",
         position: fill ? "absolute" : "relative",
         inset: fill ? 0 : undefined,
@@ -47,8 +47,8 @@ export function CmnSlabPhoto({
         decoding="async"
         fetchPriority={featured ? "high" : undefined}
         style={{
-          maxWidth: featured ? "46%" : compact ? "88%" : "62%",
-          maxHeight: featured ? "98%" : compact ? "94%" : "96%",
+          maxWidth: featured ? "78%" : compact ? "88%" : "62%",
+          maxHeight: featured ? "100%" : compact ? "94%" : "96%",
           width: "auto",
           height: "auto",
           objectFit: "contain",

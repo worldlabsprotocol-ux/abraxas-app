@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: blog context first → product story → demo → registry.
+// Homepage: hero hook → blog context → demo → registry.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -31,9 +31,11 @@ const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "cmn-pokemon-co
 function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
-      <HomeFeaturedArticle lead />
       <div style={MAXW}>
         <HomeSharpHero />
+      </div>
+      <HomeFeaturedArticle lead />
+      <div style={MAXW}>
         <HomeDemoVideo />
         <HomeTrustTransferStrip />
         <HomeBuildWithSection />

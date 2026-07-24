@@ -33,10 +33,10 @@ export const TOP5_PLATFORMS_SLUG = "top-5-rwa-verification-platforms" as const;
 
 export const FEATURED_THESIS_BLOG_SLUG = "what-is-real-world-asset-tokenization" as const;
 
-/** Homepage article carousel: newest first, exactly two articles */
+/** Homepage article carousel: tokenization primer first, then platform comparison */
 export const HOMEPAGE_ARTICLE_SLUGS = [
-  "top-5-rwa-verification-platforms",
   "what-is-real-world-asset-tokenization",
+  "top-5-rwa-verification-platforms",
 ] as const;
 
 export function getHomepageArticles(): BlogArticle[] {
