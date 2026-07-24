@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// Session boot. routes to deck (product) or article (thesis). No duplicated data.
+// Welcome gate — informative, no wallet required. One click into the product.
 
 import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties } from "react";
@@ -11,11 +11,12 @@ import {
   INSTITUTIONAL_PRIMARY_BTN_TEXT,
   TEXT_ON_DARK,
 } from "@/lib/design/institutionalTheme";
-
-import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { ABRAXAS_MECHANISM, ABRAXAS_ONE_LINER } from "@/lib/northStar";
+import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
-const STORAGE_KEY = "abraxas_boot_entered_v10";
+const DISPLAY = ABRAXAS_FONT_DISPLAY;
+const STORAGE_KEY = "abraxas_boot_entered_v11";
 
 const BOOT_THEME: CSSProperties = {
   ["--text-primary" as string]: TEXT_ON_DARK.primary,
@@ -24,6 +25,12 @@ const BOOT_THEME: CSSProperties = {
   ["--accent" as string]: "#E8C547",
   ["--accent-2" as string]: TEXT_ON_DARK.violet,
 };
+
+const INSIDE = [
+  "Live registry — Cielo Sunrise, Chickasaw, Good Trouble",
+  "What RWA tokenization is — plain-language primer",
+  "Verify layer — how proof travels without repeating diligence",
+] as const;
 
 export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => void }) {
   const [visible, setVisible] = useState(false);
@@ -80,88 +87,113 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
           <div style={{
             position: "absolute", inset: 0,
             background: `
-              radial-gradient(ellipse 50% 40% at 50% 38%, rgba(34,211,238,0.1) 0%, transparent 65%),
-              radial-gradient(ellipse 45% 35% at 80% 70%, rgba(167,139,250,0.1) 0%, transparent 60%)
+              radial-gradient(ellipse 50% 40% at 50% 38%, rgba(34,211,238,0.08) 0%, transparent 65%),
+              radial-gradient(ellipse 45% 35% at 80% 70%, rgba(167,139,250,0.08) 0%, transparent 60%)
             `,
             pointerEvents: "none",
           }} />
 
           <motion.div
-            initial={{ scale: 0.96, opacity: 0, y: 12 }}
+            initial={{ scale: 0.97, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.98, opacity: 0, y: -6 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 1.5rem", maxWidth: 540, width: "100%" }}
+            style={{
+              position: "relative", zIndex: 1, textAlign: "center",
+              padding: "0 1.5rem", maxWidth: 520, width: "100%",
+            }}
           >
             <div style={{
               fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
-              fontSize: "0.62rem",
+              fontSize: "0.6rem",
               fontWeight: 700,
-              letterSpacing: "0.22em",
+              letterSpacing: "0.2em",
               textTransform: "uppercase",
               color: TEXT_ON_DARK.eyebrow,
-              marginBottom: "1rem",
+              marginBottom: "0.85rem",
             }}>
               Abraxas · World Labs Protocol
             </div>
 
             <div style={{
-              fontFamily: FONT,
-              fontSize: "clamp(1.65rem, 6vw, 2.5rem)",
+              fontFamily: DISPLAY,
+              fontSize: "clamp(1.55rem, 5.5vw, 2.35rem)",
               fontWeight: 900,
-              letterSpacing: "-0.05em",
-              lineHeight: 1.08,
-              marginBottom: "0.75rem",
+              letterSpacing: "-0.045em",
+              lineHeight: 1.1,
+              marginBottom: "0.65rem",
+              color: TEXT_ON_DARK.primary,
             }}>
-              <span style={{ color: TEXT_ON_DARK.primary, display: "block" }}>Connect wallet.</span>
-              <span style={{ color: TEXT_ON_DARK.gold }}>See proof in 10 seconds.</span>
+              {ABRAXAS_MECHANISM}
             </div>
 
             <p style={{
               fontFamily: FONT,
-              fontSize: "clamp(0.88rem, 2.2vw, 1rem)",
+              fontSize: "clamp(0.9rem, 2.2vw, 1.02rem)",
               fontWeight: 500,
               color: TEXT_ON_DARK.secondary,
-              lineHeight: 1.55,
-              margin: "0 0 1.75rem",
-              maxWidth: 420,
-              marginLeft: "auto",
-              marginRight: "auto",
+              lineHeight: 1.6,
+              margin: "0 0 1.25rem",
             }}>
-              Minimum proof up front. Pick a path. arrow through product, thesis, build, and pulse.
+              {ABRAXAS_ONE_LINER} Browse everything below — no wallet or account needed to explore.
             </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
-              <button
-                type="button"
-                onClick={dismiss}
-                style={{
-                  padding: "0.85rem 2rem",
-                  borderRadius: 999,
-                  border: "none",
-                  background: INSTITUTIONAL_PRIMARY_BTN_BG,
-                  color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
-                  fontFamily: FONT,
-                  fontSize: "0.82rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
-                }}
-              >
-                Enter Abraxas →
-              </button>
+            <ul style={{
+              listStyle: "none", margin: "0 0 1.5rem", padding: 0,
+              display: "flex", flexDirection: "column", gap: "0.45rem",
+              textAlign: "left", maxWidth: 400, marginLeft: "auto", marginRight: "auto",
+            }}>
+              {INSIDE.map(line => (
+                <li
+                  key={line}
+                  style={{
+                    fontFamily: FONT,
+                    fontSize: "0.76rem",
+                    color: TEXT_ON_DARK.caption,
+                    lineHeight: 1.5,
+                    paddingLeft: "1rem",
+                    position: "relative",
+                  }}
+                >
+                  <span style={{
+                    position: "absolute", left: 0, top: "0.45em",
+                    width: 5, height: 5, borderRadius: 999,
+                    background: "var(--accent)",
+                  }} />
+                  {line}
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              onClick={dismiss}
+              style={{
+                padding: "0.85rem 2.1rem",
+                borderRadius: 999,
+                border: "none",
+                background: INSTITUTIONAL_PRIMARY_BTN_BG,
+                color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
+                fontFamily: FONT,
+                fontSize: "0.84rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
+              }}
+            >
+              Enter Abraxas →
+            </button>
 
             <p style={{
-              fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
-              fontSize: "0.58rem",
-              fontWeight: 600,
+              fontFamily: FONT,
+              fontSize: "0.65rem",
+              fontWeight: 500,
               color: TEXT_ON_DARK.caption,
-              margin: 0,
-              letterSpacing: "0.06em",
+              margin: "0.85rem 0 0",
+              lineHeight: 1.5,
             }}>
-              Wallet → proof → pick your path · Blog in Pulse chapter
+              Connect a wallet later only if you want Passport or on-chain proof.
             </p>
-            </div>
           </motion.div>
         </motion.div>
       )}
