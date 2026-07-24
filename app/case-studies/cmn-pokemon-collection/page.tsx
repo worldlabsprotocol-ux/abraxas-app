@@ -41,7 +41,7 @@ export default function CmnPokemonCollectionPage() {
       <PageHeader
         eyebrow="Case study · Collectibles · Graded Card"
         title={CMN_POKEMON_ASSET.name}
-        subtitle="PSA-graded Pokémon slabs · insured custody · registry visibility alongside real estate. Not listed for sale."
+        subtitle="First PSA slab on-registry — new collectibles asset class on Abraxas. Not listed for sale."
       />
 
       <div style={{
@@ -71,7 +71,7 @@ export default function CmnPokemonCollectionPage() {
         </div>
       </div>
 
-      <ContentCard title="Slab photos">
+      <ContentCard title="Featured slab">
         <CmnPokemonPhotoGallery altPrefix="PSA Pokémon slab" />
       </ContentCard>
 

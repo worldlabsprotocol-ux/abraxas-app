@@ -52,12 +52,15 @@ function sortAssets(assets: ExploreAsset[], sort: SortKey) {
 
 export function AssetsExplorer({
   excludeIds = [],
+  pinIds = [],
   title = "Real assets. Proven on-chain.",
   eyebrow = "Verified Assets",
   compact = false,
   home = false,
 }: {
   excludeIds?: string[];
+  /** Homepage order — flagship assets first */
+  pinIds?: string[];
   title?: string;
   eyebrow?: string;
   compact?: boolean;
@@ -112,7 +115,17 @@ export function AssetsExplorer({
     return sortAssets(list, sort);
   }, [pool, filter, sort, query, assetClass]);
 
-  const displayAssets = home ? assets.slice(0, 4) : compact ? assets.slice(0, 3) : assets;
+  const orderedAssets = useMemo(() => {
+    if (!pinIds.length) return assets;
+    const pinned = pinIds
+      .map(id => assets.find(a => a.id === id))
+      .filter((a): a is ExploreAsset => Boolean(a));
+    const rest = assets.filter(a => !pinIds.includes(a.id));
+    return [...pinned, ...rest];
+  }, [assets, pinIds]);
+
+  const homeLimit = pinIds.length > 0 ? pinIds.length : 4;
+  const displayAssets = home ? orderedAssets.slice(0, homeLimit) : compact ? orderedAssets.slice(0, 3) : orderedAssets;
   const cardVariant = home ? "home" as const : compact ? "compact" as const : "default" as const;
 
   return (

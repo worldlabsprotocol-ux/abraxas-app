@@ -28,7 +28,7 @@ describe("cmnDesignsMedia", () => {
     expect(paths).toHaveLength(28);
   });
 
-  it("rotates non-hero slabs 180° CCW", () => {
+  it("rotates non-hero slabs 180° CCW when gallery expands", () => {
     expect(cmnDesignsPhotoRotation("/assets/cmn21.jpg")).toBe(0);
     expect(cmnDesignsPhotoRotation("/assets/cmn1.jpg")).toBe(-180);
     expect(cmnDesignsPhotoRotation("/assets/cmn22.jpg")).toBe(-180);
@@ -39,6 +39,7 @@ describe("cmnDesignsMedia", () => {
     const registry = REGISTRY_ASSETS.find(a => a.abxId === CMN_POKEMON_ASSET.id);
     expect(explore?.image).toBe(CMN_DESIGNS_REGISTRY_IMAGE.src);
     expect(explore?.name).toBe("PSA Pokémon · Graded Collection");
+    expect(explore?.secondaryValue).toBe("More slabs soon");
     expect(registry?.slug).toBe("cmn-pokemon-collection");
     expect(registry?.verifyState).toBe("verified");
   });

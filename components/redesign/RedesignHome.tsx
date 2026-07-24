@@ -25,8 +25,9 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-// Reorder: Cielo + Chickasaw first, then new asset-class pilots (CMN, Good Trouble)
-const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove"];
+// Homepage: Cielo + Chickasaw lead · Pokémon as new asset-class teaser (no pilots until ready)
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove", "good-trouble-cannabis"];
+const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "cmn-pokemon-collection"];
 
 function HomeContent() {
   return (
@@ -53,6 +54,7 @@ function HomeContent() {
             title="Live proof on-registry"
             eyebrow="Reference assets"
             home
+            pinIds={HOME_REGISTRY_PIN}
             excludeIds={HOME_REGISTRY_EXCLUDE}
           />
         </div>

@@ -7,7 +7,7 @@ import { VerificationBadge } from "./VerificationBadge";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 import { AssetThumbnail, assetThumbObjectPosition } from "@/components/ui/AssetThumbnail";
-import { CmnRegistrySlideshow } from "@/components/registry/CmnRegistrySlideshow";
+import { CmnRegistryHero } from "@/components/registry/CmnRegistryHero";
 import { GoodTroubleRegistryVisual } from "@/components/registry/GoodTroubleRegistryVisual";
 import { VERIFY_META, type ExploreAsset } from "@/lib/data/exploreAssets";
 
@@ -41,10 +41,9 @@ export function AssetExplorerCard({
       {!isCompact ? (
         <div style={{ position: "relative", background: "#06090B" }}>
           {asset.id === "cmn-pokemon-collection" ? (
-            <CmnRegistrySlideshow
+            <CmnRegistryHero
               alt={asset.name}
               height={isHome ? 168 : 220}
-              objectPosition={assetThumbObjectPosition(asset.id)}
             />
           ) : asset.id === "good-trouble-cannabis" ? (
             <GoodTroubleRegistryVisual height={isHome ? 168 : 220} />

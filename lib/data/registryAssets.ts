@@ -209,7 +209,7 @@ const CMN_POKEMON: RegistryAssetDef = {
   },
   metadataUri: CMN_POKEMON_ASSET.caseStudyPath,
   notice:
-    "PSA-graded Pokémon slabs · registry reference to show collectibles asset class · not listed for sale on Abraxas.",
+    "PSA-graded Pokémon · first slab on-registry · new collectibles asset class · full vault catalog expanding · not listed for sale on Abraxas.",
   tokenization: {
     standard: "Abraxas Registry Entry",
     chain: "Off-chain custody",

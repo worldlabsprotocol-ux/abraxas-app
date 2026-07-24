@@ -23,11 +23,25 @@ export interface CmnPokemonCardRow {
  */
 export const CMN_POKEMON_CARDS: CmnPokemonCardRow[] = [];
 
+export const CMN_POKEMON_TEASER = {
+  badge: "More slabs coming soon",
+  headline: "First slab on-registry",
+  body:
+    "One PSA-graded Pokémon slab is live on Abraxas today. Full vault photography and cert manifest publish as each slab clears the same verification bar as our real-estate flagship assets.",
+} as const;
+
+export const CMN_POKEMON_FEATURED_SLAB = {
+  name: "Pikachu-Holo",
+  set: "2002 Pokémon Japanese · McDonald's #010",
+  grade: "PSA NM-MT 8",
+  cert: "88655608",
+} as const;
+
 export const CMN_POKEMON_ASSET = {
   id: "ABX-COL-PSA-007",
   designation: "COLLECTIBLE · PSA GRADED · POKÉMON",
   name: "PSA Pokémon · Graded Collection",
-  subtitle: "PSA-graded trading cards · insured custody · on-registry reference",
+  subtitle: "First PSA slab on-registry · new collectibles asset class on Abraxas",
   owner: "Beneficial owner on file",
   location: "Certified custody · United States",
   image: CMN_DESIGNS_REGISTRY_IMAGE.src,
@@ -39,7 +53,7 @@ export const CMN_POKEMON_ASSET = {
     grading: "PSA (Professional Sports Authenticator)",
     custody: "Insured vault · United States",
     disposition: "Not for sale · registry visibility",
-    photoCount: `${CMN_DESIGNS_PHOTO_NUMBERS.length} slabs photographed`,
+    photoCount: "1 featured · vault catalog expanding",
   },
 } as const;
 
