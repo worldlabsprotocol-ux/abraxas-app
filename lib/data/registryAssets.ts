@@ -202,14 +202,14 @@ const CMN_POKEMON: RegistryAssetDef = {
   pipelineStage: "OWNED_NOT_OPEN",
   assuranceLevel: 2,
   assuranceTaxonomy: {
-    L1_IdentityClaim: { status: "VERIFIED", timestamp: "2026-07-23T00:00:00Z", provider: "CMN_Designs_Owner_Attestation" },
+    L1_IdentityClaim: { status: "VERIFIED", timestamp: "2026-07-23T00:00:00Z", provider: "Owner_Attestation" },
     L2_LegalReview: { status: "VERIFIED", provider: "Custody_And_Title_On_File" },
     L3_ProfessionalAttestation: { status: "PENDING", authority: "PSA_Cert_Verification" },
     L4_ActiveMonitoring: { status: "PENDING", oracleSource: "Custody_Feed_Pending" },
   },
   metadataUri: CMN_POKEMON_ASSET.caseStudyPath,
   notice:
-    "CMN Designs · PSA-graded Pokémon slabs · registry reference to show collectibles asset class · not listed for sale on Abraxas.",
+    "PSA-graded Pokémon slabs · registry reference to show collectibles asset class · not listed for sale on Abraxas.",
   tokenization: {
     standard: "Abraxas Registry Entry",
     chain: "Off-chain custody",

@@ -26,10 +26,11 @@ describe("cmnDesignsMedia", () => {
     expect(paths).toHaveLength(28);
   });
 
-  it("registers CMN Pokémon in explore and registry catalogs", () => {
+  it("registers PSA Pokémon in explore and registry catalogs", () => {
     const explore = EXPLORE_ASSETS.find(a => a.id === "cmn-pokemon-collection");
     const registry = REGISTRY_ASSETS.find(a => a.abxId === CMN_POKEMON_ASSET.id);
     expect(explore?.image).toBe(CMN_DESIGNS_REGISTRY_IMAGE.src);
+    expect(explore?.name).toBe("PSA Pokémon · Graded Collection");
     expect(registry?.slug).toBe("cmn-pokemon-collection");
     expect(registry?.verifyState).toBe("verified");
   });

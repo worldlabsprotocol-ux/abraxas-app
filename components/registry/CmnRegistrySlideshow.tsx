@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/registry/CmnRegistrySlideshow.tsx
-// Mini auto-advance slideshow for CMN Designs registry cards.
+// Mini auto-advance slideshow for PSA Pokémon registry cards.
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cmnDesignsSlideshowPaths } from "@/lib/cmnDesignsMedia";
+import { probeImageList } from "@/lib/mediaProbe";
 
 const INTERVAL_MS = 3800;
 
@@ -19,9 +20,17 @@ export function CmnRegistrySlideshow({
   objectPosition?: string;
   showDots?: boolean;
 }) {
-  const images = cmnDesignsSlideshowPaths();
+  const [images, setImages] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
   const reduce = useReducedMotion();
+
+  useEffect(() => {
+    let cancelled = false;
+    void probeImageList(cmnDesignsSlideshowPaths()).then(found => {
+      if (!cancelled) setImages(found);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (reduce || images.length <= 1) return undefined;
@@ -32,6 +41,19 @@ export function CmnRegistrySlideshow({
   }, [images.length, reduce]);
 
   const src = images[index] ?? images[0];
+
+  if (!images.length) {
+    return (
+      <div style={{
+        height, background: "#06090B",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "'Inter',system-ui,sans-serif",
+        fontSize: "0.72rem", color: "var(--text-muted)",
+      }}>
+        Loading slabs…
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: "relative", height, background: "#06090B", overflow: "hidden" }}>

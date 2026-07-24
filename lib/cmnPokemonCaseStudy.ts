@@ -1,5 +1,5 @@
 // FILE: lib/cmnPokemonCaseStudy.ts
-// CMN Designs · PSA-graded Pokémon collectibles — registry reference (not for sale).
+// PSA-graded Pokémon collectibles — registry reference (not for sale).
 
 import {
   CMN_DESIGNS_GALLERY_PATHS,
@@ -25,10 +25,10 @@ export const CMN_POKEMON_CARDS: CmnPokemonCardRow[] = [];
 
 export const CMN_POKEMON_ASSET = {
   id: "ABX-COL-PSA-007",
-  designation: "COLLECTIBLE · PSA GRADED · CMN DESIGNS",
-  name: "CMN Designs · PSA Pokémon Vault",
-  subtitle: "Graded trading cards · CMN Designs custody · registry reference only",
-  owner: "CMN Designs",
+  designation: "COLLECTIBLE · PSA GRADED · POKÉMON",
+  name: "PSA Pokémon · Graded Collection",
+  subtitle: "PSA-graded trading cards · insured custody · on-registry reference",
+  owner: "Beneficial owner on file",
   location: "Certified custody · United States",
   image: CMN_DESIGNS_REGISTRY_IMAGE.src,
   imageObjectPosition: CMN_DESIGNS_REGISTRY_IMAGE.objectPosition,
@@ -37,7 +37,7 @@ export const CMN_POKEMON_ASSET = {
   stats: {
     assetClass: "Graded Card · Pokémon",
     grading: "PSA (Professional Sports Authenticator)",
-    custody: "CMN Designs · insured vault",
+    custody: "Insured vault · United States",
     disposition: "Not for sale · registry visibility",
     photoCount: `${CMN_DESIGNS_PHOTO_NUMBERS.length} slabs photographed`,
   },
@@ -51,7 +51,7 @@ export const CMN_POKEMON_CONFLICTS = {
     {
       topic: "Not an offering",
       disclosure:
-        "This entry demonstrates Abraxas collectibles verification posture. CMN Designs has not listed these slabs for sale on Abraxas.",
+        "This entry demonstrates Abraxas collectibles verification posture. These slabs are not listed for sale on Abraxas.",
       implication: "Photos and grades are owner-attested unless a cert number is published in the manifest below.",
     },
     {
@@ -62,7 +62,7 @@ export const CMN_POKEMON_CONFLICTS = {
     },
     {
       topic: "Custody",
-      disclosure: "CMN Designs is the disclosed beneficial owner. Custody location and insurance limits are available under signed diligence.",
+      disclosure: "Beneficial owner and custody location are disclosed under signed diligence.",
       implication: "Registry L4 monitoring for collectibles is custody-feed dependent — pending partner hookup.",
     },
   ],
@@ -70,17 +70,17 @@ export const CMN_POKEMON_CONFLICTS = {
 
 export const CMN_POKEMON_SOURCES = [
   {
-    claim: "Owner",
-    value: "CMN Designs",
-    level: "L1 Reference",
-    source: "Owner attestation",
-    asOf: "2026-07-23",
-  },
-  {
     claim: "Grading authority",
     value: "PSA",
     level: "L3 Pending",
     source: "Slab serial / cert on file",
+    asOf: "2026-07-23",
+  },
+  {
+    claim: "Custody",
+    value: "Insured vault",
+    level: "L2 Review",
+    source: "Owner attestation",
     asOf: "2026-07-23",
   },
   {

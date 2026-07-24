@@ -8,6 +8,7 @@ import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 import { AssetThumbnail, assetThumbObjectPosition } from "@/components/ui/AssetThumbnail";
 import { CmnRegistrySlideshow } from "@/components/registry/CmnRegistrySlideshow";
+import { GoodTroubleRegistryVisual } from "@/components/registry/GoodTroubleRegistryVisual";
 import { VERIFY_META, type ExploreAsset } from "@/lib/data/exploreAssets";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -45,6 +46,8 @@ export function AssetExplorerCard({
               height={isHome ? 168 : 220}
               objectPosition={assetThumbObjectPosition(asset.id)}
             />
+          ) : asset.id === "good-trouble-cannabis" ? (
+            <GoodTroubleRegistryVisual height={isHome ? 168 : 220} />
           ) : (
             <div style={{ position: "relative", height: isHome ? 168 : 220 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/case-studies/CmnPokemonPhotoGallery.tsx
-// CMN Designs PSA slabs — cmn1.jpg … cmn29.jpg (no cmn8) under public/assets/
+// PSA Pokémon slab photos — cmn1.jpg … cmn29.jpg (no cmn8) under public/assets/
 
 import { useEffect, useState } from "react";
 import { CMN_POKEMON_ASSET, CMN_POKEMON_GALLERY_PATHS } from "@/lib/cmnPokemonCaseStudy";
@@ -8,14 +8,7 @@ import { cmnDesignsSlideshowPaths } from "@/lib/cmnDesignsMedia";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
-function probeImage(src: string): Promise<boolean> {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
-    img.src = src;
-  });
-}
+import { probeImageList } from "@/lib/mediaProbe";
 
 export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
   const [loaded, setLoaded] = useState<string[]>([]);
@@ -26,10 +19,7 @@ export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
 
     async function load() {
       const order = cmnDesignsSlideshowPaths();
-      const found: string[] = [];
-      for (const src of order) {
-        if (await probeImage(src)) found.push(src);
-      }
+      const found = await probeImageList(order);
       if (!cancelled) setLoaded(found.length ? found : []);
     }
 
@@ -93,13 +83,13 @@ export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
       )}
 
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
-        {loaded.length} of {CMN_POKEMON_GALLERY_PATHS.length} CMN slab photos loaded · hero: cmn21.jpg
+        {loaded.length} of {CMN_POKEMON_GALLERY_PATHS.length} slab photos loaded · hero: cmn21.jpg
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.5rem" }}>
         {[
-          { label: "Owner", value: CMN_POKEMON_ASSET.owner, sub: "Beneficial holder" },
-          { label: "Grading", value: "PSA slabs", sub: "Per-card when disclosed" },
+          { label: "Grading", value: "PSA", sub: "Professional Sports Authenticator" },
+          { label: "Slabs", value: "28 on file", sub: "Photographed PSA slabs" },
           { label: "Status", value: "Not for sale", sub: "Registry reference" },
         ].map(card => (
           <div key={card.label} style={{

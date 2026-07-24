@@ -19,7 +19,7 @@ export function cmnDesignsPhotoPath(n: number): string {
 export const CMN_DESIGNS_REGISTRY_IMAGE = {
   src: cmnDesignsPhotoPath(CMN_DESIGNS_HERO_NUMBER),
   objectPosition: "center center",
-  alt: "CMN Designs PSA graded Pokémon slab",
+  alt: "PSA graded Pokémon trading card slab",
 } as const;
 
 /** Slideshow order: hero first, then remaining slabs in numeric order */

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/case-studies/cmn-pokemon-collection/page.tsx
-// CMN Designs · PSA Pokémon collectibles — registry reference (not for sale).
+// PSA Pokémon collectibles — registry reference (not for sale).
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -40,7 +40,7 @@ export default function CmnPokemonCollectionPage() {
       <PageHeader
         eyebrow="Case study · Collectibles · Graded Card"
         title={CMN_POKEMON_ASSET.name}
-        subtitle="CMN Designs custody · PSA-graded Pokémon slabs · registry visibility to show collectibles alongside real estate. Not listed for sale."
+        subtitle="PSA-graded Pokémon slabs · insured custody · registry visibility alongside real estate. Not listed for sale."
       />
 
       <CaseStudyPhotoHero
@@ -52,8 +52,8 @@ export default function CmnPokemonCollectionPage() {
         objectPosition={CMN_POKEMON_ASSET.imageObjectPosition}
       />
 
-      <ContentCard title="Slab photos · CMN Designs vault">
-        <CmnPokemonPhotoGallery altPrefix="CMN Designs PSA Pokémon" />
+      <ContentCard title="Slab photos">
+        <CmnPokemonPhotoGallery altPrefix="PSA Pokémon slab" />
       </ContentCard>
 
       <ContentCard title="Registry snapshot">

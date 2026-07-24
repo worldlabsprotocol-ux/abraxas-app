@@ -5,6 +5,9 @@ import { GOOD_TROUBLE_BRAND, GOOD_TROUBLE_INTEGRATION_PATH, GOOD_TROUBLE_PARTNER
 
 export const GOOD_TROUBLE_REGISTRY_IMAGE = "/assets/good-trouble/brand-card.svg";
 
+/** Flip to false once partner photography is committed under public/assets/good-trouble/ */
+export const GOOD_TROUBLE_USE_PLACEHOLDER = true;
+
 export const GOOD_TROUBLE_ASSET = {
   id: "ABX-CNB-GT-008",
   slug: "good-trouble-cannabis",

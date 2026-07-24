@@ -6,6 +6,7 @@ import Link from "next/link";
 import { registryAssetsForShowcase } from "@/lib/data/registryAssets";
 import { VERIFY_META } from "@/lib/data/exploreAssets";
 import { CmnRegistrySlideshow } from "@/components/registry/CmnRegistrySlideshow";
+import { GoodTroubleRegistryVisual } from "@/components/registry/GoodTroubleRegistryVisual";
 import {
   VERIFY_SHOWCASE_BODY,
   VERIFY_SHOWCASE_EYEBROW,
@@ -60,6 +61,8 @@ export function VerifyAssetsShowcase({ onSelectAsset }: Props) {
               <div style={{ position: "relative", height: 140, background: "#0a0f14" }}>
                 {asset.abxId === "ABX-COL-PSA-007" ? (
                   <CmnRegistrySlideshow alt={asset.name} height={140} showDots={false} />
+                ) : asset.abxId === "ABX-CNB-GT-008" ? (
+                  <GoodTroubleRegistryVisual height={140} />
                 ) : (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={asset.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
