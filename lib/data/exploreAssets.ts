@@ -116,7 +116,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     primaryValue: "PSA Certified",
     primaryMeta: { level: 3, type: "reference", asOf: "2026-07-23" },
     secondaryLabel: "Catalog",
-    secondaryValue: "More slabs soon",
+    secondaryValue: "Slabs coming soon",
     secondaryMeta: { level: 1, type: "reference", asOf: "2026-07-24" },
     state: "verified",
     note: "New asset class · first PSA slab on-registry · vault catalog expanding.",

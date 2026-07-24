@@ -6,6 +6,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_REGISTRY_IMAGE } from "@/lib/goodTrouble/registryEntry";
 
 describe("goodTrouble pilot", () => {
   it("lists Good Trouble as pilot in integration registry", () => {
@@ -32,5 +33,9 @@ describe("goodTrouble pilot", () => {
 
   it("uses sandbox retail policy id", () => {
     expect(GOOD_TROUBLE_RETAIL_POLICY_ID).toBe("good-trouble-retail-v1");
+  });
+
+  it("uses partner brand logo on registry", () => {
+    expect(GOOD_TROUBLE_REGISTRY_IMAGE).toBe("/assets/good-trouble/brand-logo.png");
   });
 });

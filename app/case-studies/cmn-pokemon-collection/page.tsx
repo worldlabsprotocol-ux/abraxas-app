@@ -6,8 +6,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, KeyValueTable } from "@/components/redesign/RedesignContent";
 import { CmnPokemonPhotoGallery } from "@/components/case-studies/CmnPokemonPhotoGallery";
-import { CmnSlabPhoto } from "@/components/registry/CmnSlabPhoto";
-import { CMN_DESIGNS_HERO_SRC } from "@/lib/cmnDesignsDisplay";
+import { CmnPokemonTeaserVisual } from "@/components/registry/CmnPokemonTeaserVisual";
 import {
   CMN_POKEMON_ASSET,
   CMN_POKEMON_CARDS,
@@ -46,12 +45,12 @@ export default function CmnPokemonCollectionPage() {
 
       <div style={{
         position: "relative", borderRadius: 18, overflow: "hidden",
-        marginBottom: "0.65rem", aspectRatio: "16/9", background: "#06090B",
+        marginBottom: "0.65rem", background: "#000000",
       }}>
-        <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={CMN_POKEMON_ASSET.name} fill featured />
+        <CmnPokemonTeaserVisual height={320} />
         <div style={{
           position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
-          background: "linear-gradient(to top, rgba(6,9,11,0.88) 0%, transparent 52%)",
+          background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 48%)",
         }} />
         <div style={{ position: "absolute", bottom: 20, left: 20, right: 20, zIndex: 3 }}>
           <span style={{

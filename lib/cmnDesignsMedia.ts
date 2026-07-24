@@ -1,10 +1,10 @@
 // FILE: lib/cmnDesignsMedia.ts
-// CMN Designs · PSA Pokémon slab photos (public/assets/cmn{N}.jpg)
+// PSA Pokémon vault photos (public/assets/cmn{N}.jpg) — gallery expands later.
 
 const BASE = "/assets";
 const POKEMON_HERO = `${BASE}/pokemon/psa-hero.jpg`;
 
-/** Canonical featured slab — replace public/assets/pokemon/psa-hero.jpg in VS Code */
+/** Canonical featured slab — used when photography goes live */
 export const CMN_POKEMON_HERO_SRC = POKEMON_HERO;
 
 /** Slot numbers on disk — cmn8.jpg intentionally missing */
@@ -19,11 +19,11 @@ export function cmnDesignsPhotoPath(n: number): string {
   return `${BASE}/cmn${n}.jpg`;
 }
 
-/** Registry hero — PSA Pikachu featured slab */
+/** Registry metadata — card UI uses black teaser until vault ships */
 export const CMN_DESIGNS_REGISTRY_IMAGE = {
   src: CMN_POKEMON_HERO_SRC,
   objectPosition: "center center",
-  alt: "PSA graded Pokémon trading card slab",
+  alt: "PSA graded Pokémon trading card collection",
 } as const;
 
 /** Slideshow order: hero first, then remaining slabs when gallery expands */

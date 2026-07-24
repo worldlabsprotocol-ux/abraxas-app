@@ -39,7 +39,7 @@ describe("cmnDesignsMedia", () => {
     const registry = REGISTRY_ASSETS.find(a => a.abxId === CMN_POKEMON_ASSET.id);
     expect(explore?.image).toBe(CMN_DESIGNS_REGISTRY_IMAGE.src);
     expect(explore?.name).toBe("PSA Pokémon · Graded Collection");
-    expect(explore?.secondaryValue).toBe("More slabs soon");
+    expect(explore?.secondaryValue).toBe("Slabs coming soon");
     expect(registry?.slug).toBe("cmn-pokemon-collection");
     expect(registry?.verifyState).toBe("verified");
   });

@@ -3,10 +3,10 @@
 
 import { GOOD_TROUBLE_BRAND, GOOD_TROUBLE_INTEGRATION_PATH, GOOD_TROUBLE_PARTNER_ID } from "@/lib/goodTrouble/constants";
 
-export const GOOD_TROUBLE_REGISTRY_IMAGE = "/assets/good-trouble/brand-card.svg";
+export const GOOD_TROUBLE_REGISTRY_IMAGE = "/assets/good-trouble/brand-logo.png";
 
-/** Flip to false once partner photography is committed under public/assets/good-trouble/ */
-export const GOOD_TROUBLE_USE_PLACEHOLDER = true;
+/** Partner logo on file */
+export const GOOD_TROUBLE_USE_PLACEHOLDER = false;
 
 export const GOOD_TROUBLE_ASSET = {
   id: "ABX-CNB-GT-008",

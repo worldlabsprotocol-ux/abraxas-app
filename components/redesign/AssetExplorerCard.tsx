@@ -46,7 +46,7 @@ export function AssetExplorerCard({
               height={isHome ? 200 : 240}
             />
           ) : asset.id === "good-trouble-cannabis" ? (
-            <GoodTroubleRegistryVisual height={isHome ? 168 : 220} />
+            <GoodTroubleRegistryVisual height={isHome ? 200 : 240} />
           ) : (
             <div style={{ position: "relative", height: isHome ? 168 : 220 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}

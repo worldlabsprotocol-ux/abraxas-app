@@ -24,10 +24,10 @@ export interface CmnPokemonCardRow {
 export const CMN_POKEMON_CARDS: CmnPokemonCardRow[] = [];
 
 export const CMN_POKEMON_TEASER = {
-  badge: "More slabs coming soon",
-  headline: "First slab on-registry",
+  badge: "Slabs coming soon",
+  headline: "Collectibles asset class",
   body:
-    "One PSA-graded Pokémon slab is live on Abraxas today. Full vault photography and cert manifest publish as each slab clears the same verification bar as our real-estate flagship assets.",
+    "PSA-graded Pokémon slabs will publish on Abraxas under the same verification bar as our real-estate flagship assets. Photography and cert manifest load as each slab clears review.",
 } as const;
 
 export const CMN_POKEMON_FEATURED_SLAB = {

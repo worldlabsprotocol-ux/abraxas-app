@@ -1,35 +1,30 @@
 "use client";
 // FILE: components/case-studies/CmnPokemonPhotoGallery.tsx
-// Featured PSA slab + vault teaser until full catalog photography is ready.
+// Black institutional teaser until vault photography ships.
 
-import { CMN_DESIGNS_HERO_SRC } from "@/lib/cmnDesignsDisplay";
-import {
-  CMN_POKEMON_ASSET,
-  CMN_POKEMON_FEATURED_SLAB,
-  CMN_POKEMON_TEASER,
-} from "@/lib/cmnPokemonCaseStudy";
-import { CmnSlabPhoto } from "@/components/registry/CmnSlabPhoto";
+import { CMN_POKEMON_ASSET, CMN_POKEMON_TEASER } from "@/lib/cmnPokemonCaseStudy";
+import { CmnPokemonTeaserVisual } from "@/components/registry/CmnPokemonTeaserVisual";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
-export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
+export function CmnPokemonPhotoGallery({ altPrefix: _altPrefix }: { altPrefix: string }) {
   return (
     <div>
       <div style={{
         borderRadius: 14, overflow: "hidden", marginBottom: "0.75rem",
-        border: "1px solid var(--border-strong)", aspectRatio: "4/3",
-        background: "#06090B", position: "relative",
+        border: "1px solid var(--border-strong)",
+        background: "#000000",
       }}>
-        <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={altPrefix} fill featured />
+        <CmnPokemonTeaserVisual height={280} subtitle="Vault photography publishing soon" />
       </div>
 
       <div style={{
-        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
         gap: "0.5rem", marginBottom: "0.85rem",
       }}>
         {[
-          { label: "Featured slab", value: CMN_POKEMON_FEATURED_SLAB.name, sub: CMN_POKEMON_FEATURED_SLAB.set },
-          { label: "Grade", value: CMN_POKEMON_FEATURED_SLAB.grade, sub: `Cert ${CMN_POKEMON_FEATURED_SLAB.cert}` },
+          { label: "Grading", value: "PSA", sub: "Professional Sports Authenticator" },
+          { label: "Catalog", value: "Expanding", sub: CMN_POKEMON_TEASER.badge },
           { label: "Status", value: "On-registry", sub: CMN_POKEMON_ASSET.stats.disposition },
         ].map(card => (
           <div key={card.label} style={{
@@ -52,16 +47,9 @@ export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
         <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
           {CMN_POKEMON_TEASER.headline}
         </div>
-        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
           {CMN_POKEMON_TEASER.body}
         </p>
-        <span style={{
-          fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
-          letterSpacing: "0.06em", textTransform: "uppercase",
-          color: "var(--accent)",
-        }}>
-          {CMN_POKEMON_TEASER.badge}
-        </span>
       </div>
     </div>
   );
