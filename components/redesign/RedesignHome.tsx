@@ -12,6 +12,7 @@ import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
+import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
 import { HomeReusableComplianceStrip } from "@/components/home/HomeReusableComplianceStrip";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
