@@ -26,8 +26,9 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove", "good-trouble-cannabis"];
-const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "cmn-pokemon-collection"];
+// Homepage registry: Cielo + Chickasaw + Good Trouble (always). Pokémon on /verify only.
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove", "cmn-pokemon-collection"];
+const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "good-trouble-cannabis"];
 
 function HomeContent() {
   return (
