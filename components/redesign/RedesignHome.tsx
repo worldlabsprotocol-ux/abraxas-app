@@ -12,7 +12,7 @@ import { RedesignFooter } from "./RedesignFooter";
 import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
-import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
+import { HomeReusableComplianceStrip } from "@/components/home/HomeReusableComplianceStrip";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
@@ -25,8 +25,8 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove"];
-const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "cmn-pokemon-collection", "good-trouble-cannabis"];
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove", "good-trouble-cannabis"];
+const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "cmn-pokemon-collection"];
 
 function HomeContent() {
   return (
@@ -38,6 +38,7 @@ function HomeContent() {
       <div style={MAXW}>
         <HomeDemoVideo />
         <HomeTrustTransferStrip />
+        <HomeReusableComplianceStrip />
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />

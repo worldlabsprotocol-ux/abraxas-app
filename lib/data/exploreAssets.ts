@@ -119,7 +119,7 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryValue: "Slabs coming soon",
     secondaryMeta: { level: 1, type: "reference", asOf: "2026-07-24" },
     state: "verified",
-    note: "New asset class · first PSA slab on-registry · vault catalog expanding.",
+    note: "New collectibles asset class on Abraxas · vault catalog expanding.",
     href: CMN_POKEMON_ASSET.caseStudyPath,
     liveProof: { label: "Verify record", url: CMN_POKEMON_ASSET.verifyPath },
     cta: "View collection",

@@ -15,7 +15,7 @@ export function CmnPokemonPhotoGallery({ altPrefix: _altPrefix }: { altPrefix: s
         border: "1px solid var(--border-strong)",
         background: "#000000",
       }}>
-        <CmnPokemonTeaserVisual height={280} subtitle="Vault photography publishing soon" />
+        <CmnPokemonTeaserVisual height={280} />
       </div>
 
       <div style={{
