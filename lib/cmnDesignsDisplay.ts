@@ -1,13 +1,14 @@
 // FILE: lib/cmnDesignsDisplay.ts
 // Display rules for PSA slab photography on registry surfaces.
 
-import { CMN_DESIGNS_HERO_NUMBER, cmnDesignsPhotoPath } from "@/lib/cmnDesignsMedia";
+import { CMN_POKEMON_HERO_SRC, CMN_DESIGNS_HERO_NUMBER } from "@/lib/cmnDesignsMedia";
 
-/** Hero slab (cmn21) — correct orientation as shot */
-export const CMN_DESIGNS_HERO_SRC = cmnDesignsPhotoPath(CMN_DESIGNS_HERO_NUMBER);
+/** Featured PSA slab — public/assets/pokemon/psa-hero.jpg */
+export const CMN_DESIGNS_HERO_SRC = CMN_POKEMON_HERO_SRC;
 
-/** Non-hero phone shots were captured inverted — rotate 180° CCW for display */
+/** Non-hero phone shots were captured inverted — rotate 180° CCW when gallery expands */
 export function cmnDesignsPhotoRotation(src: string): number {
+  if (src === CMN_POKEMON_HERO_SRC || src.endsWith("/psa-hero.jpg")) return 0;
   return src.endsWith(`/cmn${CMN_DESIGNS_HERO_NUMBER}.jpg`) ? 0 : -180;
 }
 

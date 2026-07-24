@@ -11,14 +11,16 @@ export function CmnSlabPhoto({
   rotation,
   fill = false,
   compact = false,
+  featured = false,
 }: {
   src: string;
   alt: string;
   height?: number;
   rotation?: number;
-  /** Fill parent height (slideshow) vs intrinsic gallery frame */
   fill?: boolean;
   compact?: boolean;
+  /** Homepage / registry hero — larger slab, minimal chrome */
+  featured?: boolean;
 }) {
   const deg = rotation ?? cmnDesignsPhotoRotation(src);
 
@@ -31,7 +33,7 @@ export function CmnSlabPhoto({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: compact ? "4px 6px" : CMN_SLAB_FRAME.padding,
+        padding: featured ? "8px 12px" : compact ? "4px 6px" : CMN_SLAB_FRAME.padding,
         overflow: "hidden",
         position: fill ? "absolute" : "relative",
         inset: fill ? 0 : undefined,
@@ -41,17 +43,22 @@ export function CmnSlabPhoto({
       <img
         src={src}
         alt={alt}
-        loading={fill ? "eager" : "lazy"}
+        loading={featured || fill ? "eager" : "lazy"}
         decoding="async"
+        fetchPriority={featured ? "high" : undefined}
         style={{
-          maxWidth: compact ? "88%" : "62%",
-          maxHeight: compact ? "94%" : "96%",
+          maxWidth: featured ? "46%" : compact ? "88%" : "62%",
+          maxHeight: featured ? "98%" : compact ? "94%" : "96%",
           width: "auto",
           height: "auto",
           objectFit: "contain",
           transform: deg ? `rotate(${deg}deg)` : undefined,
-          filter: "contrast(1.06) saturate(0.9) brightness(1.03)",
-          boxShadow: compact ? "none" : "0 10px 36px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)",
+          filter: featured
+            ? "contrast(1.08) saturate(0.95) brightness(1.04)"
+            : "contrast(1.06) saturate(0.9) brightness(1.03)",
+          boxShadow: featured || compact
+            ? "0 12px 40px rgba(0,0,0,0.5)"
+            : "0 10px 36px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)",
           borderRadius: 2,
         }}
       />

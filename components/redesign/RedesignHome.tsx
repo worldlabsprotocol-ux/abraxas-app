@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: infrastructure flow. hero → demo → trust → build → thesis → registry.
+// Homepage: blog context first → product story → demo → registry.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -25,13 +25,13 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-// Homepage: Cielo + Chickasaw lead · Pokémon as new asset-class teaser (no pilots until ready)
 const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove", "good-trouble-cannabis"];
 const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "cmn-pokemon-collection"];
 
 function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
+      <HomeFeaturedArticle lead />
       <div style={MAXW}>
         <HomeSharpHero />
         <HomeDemoVideo />
@@ -39,13 +39,10 @@ function HomeContent() {
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />
-      </div>
-      <HomeFeaturedArticle />
-      <div style={MAXW}>
         <div
           id="registry"
           style={{
-            paddingTop: "clamp(0.5rem, 2vw, 1rem)",
+            paddingTop: "clamp(1.5rem, 4vw, 2.5rem)",
             paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
             borderBottom: "1px solid var(--border-strong)",
           }}

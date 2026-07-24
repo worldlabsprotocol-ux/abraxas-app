@@ -11,9 +11,9 @@ import { EXPLORE_ASSETS } from "@/lib/data/exploreAssets";
 import { REGISTRY_ASSETS } from "@/lib/data/registryAssets";
 
 describe("cmnDesignsMedia", () => {
-  it("uses cmn21.jpg as registry hero", () => {
-    expect(CMN_DESIGNS_REGISTRY_IMAGE.src).toBe("/assets/cmn21.jpg");
-    expect(CMN_DESIGNS_HERO_SRC).toBe("/assets/cmn21.jpg");
+  it("uses dedicated PSA hero image path", () => {
+    expect(CMN_DESIGNS_REGISTRY_IMAGE.src).toBe("/assets/pokemon/psa-hero.jpg");
+    expect(CMN_DESIGNS_HERO_SRC).toBe("/assets/pokemon/psa-hero.jpg");
     expect(CMN_DESIGNS_HERO_NUMBER).toBe(21);
   });
 
@@ -24,12 +24,12 @@ describe("cmnDesignsMedia", () => {
 
   it("starts slideshow with hero image", () => {
     const paths = cmnDesignsSlideshowPaths();
-    expect(paths[0]).toBe("/assets/cmn21.jpg");
+    expect(paths[0]).toBe("/assets/pokemon/psa-hero.jpg");
     expect(paths).toHaveLength(28);
   });
 
   it("rotates non-hero slabs 180° CCW when gallery expands", () => {
-    expect(cmnDesignsPhotoRotation("/assets/cmn21.jpg")).toBe(0);
+    expect(cmnDesignsPhotoRotation("/assets/pokemon/psa-hero.jpg")).toBe(0);
     expect(cmnDesignsPhotoRotation("/assets/cmn1.jpg")).toBe(-180);
     expect(cmnDesignsPhotoRotation("/assets/cmn22.jpg")).toBe(-180);
   });

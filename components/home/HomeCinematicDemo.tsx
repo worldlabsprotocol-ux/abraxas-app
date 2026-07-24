@@ -149,7 +149,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
         }}
       >
         <PremiumMeshBg mesh={meshKey} />
-        <CosmicParticleField accent={accent} count={hero ? 20 : 14} />
+        <CosmicParticleField accent={accent} count={hero ? 10 : 14} />
 
         {act === 1 && (
           <div
@@ -161,7 +161,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
           />
         )}
 
-        <div className={`relative z-10 ${hero ? 'px-6 py-7 sm:px-10 sm:py-9' : 'px-5 py-6 sm:px-8 sm:py-8'}`}>
+        <div className={`relative z-10 ${hero ? 'px-7 py-9 sm:px-12 sm:py-11' : 'px-5 py-6 sm:px-8 sm:py-8'}`}>
           <div className="flex flex-col items-center text-center">
             <PremiumEyebrow accent={accent} centered large={hero}>
               {actLabel}
@@ -180,8 +180,8 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
           </div>
 
           <div
-            className={`relative mt-6 sm:mt-8 ${
-              hero ? 'min-h-[360px] sm:min-h-[420px] md:min-h-[460px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
+            className={`relative mt-8 sm:mt-10 ${
+              hero ? 'min-h-[400px] sm:min-h-[480px] md:min-h-[520px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
             }`}
           >
             <AnimatePresence mode="wait">

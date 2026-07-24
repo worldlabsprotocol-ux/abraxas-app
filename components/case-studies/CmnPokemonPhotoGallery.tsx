@@ -20,7 +20,7 @@ export function CmnPokemonPhotoGallery({ altPrefix }: { altPrefix: string }) {
         border: "1px solid var(--border-strong)", aspectRatio: "4/3",
         background: "#06090B", position: "relative",
       }}>
-        <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={altPrefix} fill />
+        <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={altPrefix} fill featured />
       </div>
 
       <div style={{

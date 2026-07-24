@@ -19,7 +19,7 @@ export function CmnRegistryHero({
 }) {
   return (
     <div style={{ position: "relative", height, background: "#06090B", overflow: "hidden" }}>
-      <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={alt} fill />
+      <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={alt} fill featured />
 
       {showComingSoon && (
         <div style={{

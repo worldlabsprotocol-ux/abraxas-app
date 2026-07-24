@@ -48,7 +48,7 @@ export default function CmnPokemonCollectionPage() {
         position: "relative", borderRadius: 18, overflow: "hidden",
         marginBottom: "0.65rem", aspectRatio: "16/9", background: "#06090B",
       }}>
-        <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={CMN_POKEMON_ASSET.name} fill />
+        <CmnSlabPhoto src={CMN_DESIGNS_HERO_SRC} alt={CMN_POKEMON_ASSET.name} fill featured />
         <div style={{
           position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
           background: "linear-gradient(to top, rgba(6,9,11,0.88) 0%, transparent 52%)",

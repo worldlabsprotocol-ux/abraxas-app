@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeDemoVideo.tsx
-// Homepage demo. cinematic 7× verification debt (hero typography).
+// Homepage demo — plain-language lead-in, generous spacing (not dev-console cramped).
 
 import { HomeCinematicDemo } from "./HomeCinematicDemo";
 import { CINEMATIC_DEMO_LEAD } from "@/lib/intersectionThesis";
@@ -19,13 +19,13 @@ export function HomeDemoVideo() {
       aria-labelledby="demo-heading"
       className="hero-demo-breakout"
       style={{
-        margin: "clamp(1.25rem, 3vw, 2rem) 0 clamp(1.75rem, 4vw, 2.5rem)",
+        margin: "clamp(2.5rem, 6vw, 4rem) 0 clamp(3rem, 7vw, 4.5rem)",
         width: "100%",
       }}
     >
-      <div style={{ marginBottom: "clamp(0.85rem, 2vw, 1.25rem)", maxWidth: 780 }}>
-        <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-          The problem
+      <div style={{ marginBottom: "clamp(1.25rem, 3vw, 1.75rem)", maxWidth: 720 }}>
+        <div className="abx-eyebrow-violet" style={{ marginBottom: "0.55rem" }}>
+          How it works
         </div>
         <h2
           id="demo-heading"
@@ -34,25 +34,25 @@ export function HomeDemoVideo() {
             fontSize: "clamp(1.35rem, 4vw, 2rem)",
             fontWeight: 900,
             letterSpacing: "-0.04em",
-            lineHeight: 1.08,
+            lineHeight: 1.12,
             color: "var(--text-primary)",
-            margin: "0 0 0.55rem",
+            margin: "0 0 0.65rem",
           }}
         >
-          You verify <span style={{ color: "var(--accent)" }}>7×</span>. You should verify once.
+          Verify once. Use everywhere.
         </h2>
         <p
           style={{
             fontFamily: FONT,
-            fontSize: "clamp(0.95rem, 2.4vw, 1.15rem)",
-            fontWeight: 600,
+            fontSize: "clamp(0.95rem, 2.4vw, 1.1rem)",
+            fontWeight: 500,
             color: "var(--text-secondary)",
-            lineHeight: 1.55,
+            lineHeight: 1.65,
             margin: 0,
-            maxWidth: 640,
+            maxWidth: 600,
           }}
         >
-          {CINEMATIC_DEMO_LEAD}
+          {CINEMATIC_DEMO_LEAD} No crypto jargon required — this is the same verification loop banks, marketplaces, and property deals already run, just without repeating it seven times.
         </p>
       </div>
       <HomeCinematicDemo hero />

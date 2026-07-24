@@ -43,7 +43,7 @@ export function AssetExplorerCard({
           {asset.id === "cmn-pokemon-collection" ? (
             <CmnRegistryHero
               alt={asset.name}
-              height={isHome ? 168 : 220}
+              height={isHome ? 200 : 240}
             />
           ) : asset.id === "good-trouble-cannabis" ? (
             <GoodTroubleRegistryVisual height={isHome ? 168 : 220} />
