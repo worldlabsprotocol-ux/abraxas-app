@@ -237,6 +237,7 @@ Set or update:
 ```
 SUI_NETWORK=devnet
 NEXT_PUBLIC_SUI_NETWORK=devnet
+SUI_RPC_URL=https://rpc-devnet.suiscan.xyz
 SUI_SPONSOR_SECRET_KEY=suiprivkey1...(full export, no quotes)
 SUI_ISSUANCE_CAP_OBJECT_ID=0x...(66 characters from Step 4)
 ```
@@ -335,6 +336,7 @@ They are **never** the same address.
 |---------|-----|
 | `ConvertFrom-Json : Invalid JSON primitive: code` | Package missing on devnet — run Step 3 redeploy, use new `packageId` |
 | `Package object does not exist` / `Object … not found` | Redeploy Step 3, update `packageId` |
+| `cap_lookup_failed` / `cap_owner_matches_sponsor: false` with correct cap | Add `SUI_RPC_URL=https://rpc-devnet.suiscan.xyz` in Vercel and redeploy |
 | `cap_owner_matches_sponsor: false` | Mint cap again while **sponsor address** is active |
 | Cap length ≠ 66 | Re-copy full `0x` + 64 hex |
 | `invalid private key` | Re-export `suiprivkey1`, no spaces/quotes |
