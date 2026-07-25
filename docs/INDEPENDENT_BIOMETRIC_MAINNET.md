@@ -53,7 +53,9 @@ npm run sui:mint-cap -- mainnet
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /api/idv/independent/status` | Provider, signing key, Sui network, issuer config |
+| `GET /api/idv/independent/status` | Provider, signing key, Sui network, issuer config, pending review queue |
+| `GET /api/verify/layer` | Verification layer scoreboard (includes independent biometric item) |
+| `GET /api/mainnet/readiness` | Mainnet gates + `independent_idv` telemetry |
 | `GET /api/sui/passport/sponsor` | Sponsor wallet + cap diagnostics |
 | `GET /api/sui/mainnet/readiness` | Mainnet gate #3 deploy checklist |
 

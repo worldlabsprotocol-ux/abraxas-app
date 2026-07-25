@@ -1,10 +1,11 @@
 // FILE: lib/authenticationProof/verificationLayerStatus.ts
-// Honest runtime status for the seven verification-layer items.
+// Honest runtime status for the verification-layer items (independent IDV + proof loop).
 
 import { parseEnvBool } from "@/lib/env/parseEnvBool";
 import { getAssetMonitoringGateStatus } from "@/lib/assetMonitoring/gateStatus";
 import { loadReceiptSigningKey, loadReceiptVerificationKey } from "@/lib/decisionReceipts/signing";
 import { checkAuthenticationProofsTable } from "@/lib/authenticationProof/persistAuthenticationProof";
+import { getIndependentIdvStatus } from "@/lib/idv/independentIdvStatus";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { isProductionReferenceAsset } from "./productionReference";
@@ -28,6 +29,7 @@ export interface VerificationLayerStatus {
   verification_key_configured: boolean;
   supabase_configured: boolean;
   sui_network: string;
+  independent_idv_status: "live" | "partial" | "not_configured";
   items: VerificationLayerItem[];
 }
 
@@ -46,6 +48,15 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
   const monitoringGate = await getAssetMonitoringGateStatus();
   const proofsTable = await checkAuthenticationProofsTable();
   const persistenceLive = proofsTable.writable;
+  const independentIdv = await getIndependentIdvStatus();
+
+  const independentBiometric: VerificationLayerItem = {
+    id: "independent-biometric-idv",
+    label: "Independent biometric IDV (capture → review → L2 credential + stamps)",
+    status: independentIdv.status,
+    detail: independentIdv.summary,
+    blockers: independentIdv.blockers,
+  };
 
   const credentialsVerify: VerificationLayerItem = {
     id: "credentials-verify",
@@ -159,6 +170,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
   };
 
   const items = [
+    independentBiometric,
     credentialsVerify,
     proofLookup,
     suiAnchoring,
@@ -183,6 +195,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     signing_configured: signingConfigured,
     verification_key_configured: verificationKeyConfigured,
     supabase_configured: supabaseConfigured,
+    independent_idv_status: independentIdv.status,
     items,
     sui_network: getActiveSuiNetwork(),
   };

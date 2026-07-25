@@ -8,6 +8,7 @@ import { loadReceiptSigningKey, loadReceiptVerificationKey } from "@/lib/decisio
 import { runE2eVerificationCheck } from "@/lib/authenticationProof/runE2eVerificationCheck";
 import { getVerificationLayerStatus } from "@/lib/authenticationProof/verificationLayerStatus";
 import { verificationLayerProgress } from "@/lib/authenticationProof/verificationLayerProgress";
+import { getIndependentIdvStatus } from "@/lib/idv/independentIdvStatus";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -61,6 +62,7 @@ export async function getVerificationBootstrapReport() {
   const layer = await getVerificationLayerStatus();
   const progress = verificationLayerProgress(layer);
   const e2e = await runE2eVerificationCheck();
+  const independentIdv = await getIndependentIdvStatus();
 
   const blockers: string[] = [];
   if (!signingConfigured) blockers.push("ABRAXAS_SIGNING_KEY missing or invalid JSON");
@@ -88,6 +90,7 @@ export async function getVerificationBootstrapReport() {
       lot_inventory_rows: lotInventoryRows,
     },
     verification_layer: { ...layer, progress },
+    independent_idv: independentIdv,
     e2e: {
       ok: e2e.ok,
       fully_live: e2e.signing_configured && e2e.verification_key_configured && e2e.supabase_configured && e2e.ok,
@@ -98,6 +101,6 @@ export async function getVerificationBootstrapReport() {
     ready: progress.isFullyReady && e2e.ok,
     next_steps: blockers.length
       ? blockers
-      : ["All verification layer checks passed — 7/7 ready."],
+      : [`All verification layer checks passed — ${progress.total}/${progress.total} ready.`],
   };
 }
