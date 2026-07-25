@@ -2,13 +2,13 @@
   "network": "devnet",
   "rpcUrl": "https://fullnode.devnet.sui.io:443",
   "explorerBase": "https://suiscan.xyz/devnet",
-  "packageId": "0xb8e6537bd17dfadc741f328bf8bdb41fdad43f3f145b695a5b9f205ec520f37a",
+  "packageId": "0x946e7f2878e58525638549a486462c820c175dfbd3404cce66a02d25b0e86551",
   "module": "passport",
-  "publishedAt": "2026-06-30T00:00:00.000Z",
-  "publishTxDigest": "F9azyiLMNfpdLbBqXFDRNXjWLQJyTMbgbQtiLxcPZaMr",
+  "publishedAt": "2026-07-25T05:41:49.000Z",
+  "publishTxDigest": "5zKzpay4NkRHP77KpJ4FNt7vh9Vj9ByaLkZmPfC8QB2C",
   "demoPassportObjectId": "0x8c77ae709b8da7fb8ae9a5713cf597e5493846a5204d4df0eaf672bde94ceb29",
-  "demoIssuanceCapObjectId": "0xee6c6f7e8729e7eb2c07dd79fe94308fe31869f29d205d9e1c29b923f76d27d7",
-  "demoOwnerAddress": "0xcf8fa905f43668cd9c1afa59e95020e5a61cfda7090b9f8fb48f5bd6936c06ee",
-  "_readme": "demoOwnerAddress/demoIssuanceCapObjectId are legacy deploy artifacts only. Production MUST set SUI_SPONSOR_SECRET_KEY + SUI_ISSUANCE_CAP_OBJECT_ID in Vercel (your wallet, e.g. 0xa4d1…). Verify: GET /api/sui/passport/sponsor",
-  "demoBootstrapTxDigest": "5KKNsEzZkkvx1sDq2JEVAZ2szCizgA5Lmq6zHn3DmEj6"
+  "demoIssuanceCapObjectId": "0x30a59456818e9cc3ec61e76b8b111a8e2b927e1deb0f6504f09fc791b6b2d9da",
+  "demoOwnerAddress": "0x14a235ce709c7f86b15147ee9504b61c69a20fa57d7c441eac6d6cac0d8ca129",
+  "_readme": "demoOwnerAddress/demoIssuanceCapObjectId are cloud-agent deploy artifacts. Production MUST set SUI_SPONSOR_SECRET_KEY + SUI_ISSUANCE_CAP_OBJECT_ID in Vercel (your wallet, e.g. 0xa4d1…). Mint your own cap with passport::mint_cap. Verify: GET /api/sui/passport/sponsor",
+  "demoBootstrapTxDigest": ""
 }

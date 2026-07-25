@@ -83,15 +83,19 @@ Note your **sponsor address** (example: `0xa4d1f13d…` — use **yours**, not d
 
 ## Step 2 — Check if Move package still exists on devnet
 
-Repo package ID (may be stale after devnet reset):
+Repo package ID (updated after devnet reset **2026-07-25**):
 
 ```
-0xb8e6537bd17dfadc741f328bf8bdb41fdad43f3f145b695a5b9f205ec520f37a
+0x946e7f2878e58525638549a486462c820c175dfbd3404cce66a02d25b0e86551
 ```
+
+**Old ID (stale — do not use):** `0xb8e6537bd17dfadc741f328bf8bdb41fdad43f3f145b695a5b9f205ec520f37a`
 
 ```powershell
-$packageId = "0xb8e6537bd17dfadc741f328bf8bdb41fdad43f3f145b695a5b9f205ec520f37a"
+$sui = "C:\sui\sui.exe"
+$packageId = "0x946e7f2878e58525638549a486462c820c175dfbd3404cce66a02d25b0e86551"
 
+# Run WITHOUT --json first — you must see JSON, not an error line
 & $sui client call `
   --package $packageId `
   --module passport `
@@ -102,7 +106,39 @@ $packageId = "0xb8e6537bd17dfadc741f328bf8bdb41fdad43f3f145b695a5b9f205ec520f37a
 | Result | Action |
 |--------|--------|
 | JSON with `objectChanges` + new cap | **Package OK** — skip to Step 4, copy cap `objectId` |
-| `Package object does not exist` / not found | **Devnet reset** — do Step 3 redeploy |
+| `code: 'Some requested entity was not found'` / `Object … not found` | **Devnet reset** — do Step 3 redeploy |
+| `ConvertFrom-Json : Invalid JSON primitive: code` | Same as above — CLI printed an error, not JSON. Re-run **without** `--json` to read it |
+
+### If `ConvertFrom-Json` fails
+
+PowerShell error `Invalid JSON primitive: code` means `$raw` is **not** JSON. The Sui CLI printed a plain-text error like:
+
+```
+code: 'Some requested entity was not found', message: "Object 0xb8e6… not found"
+```
+
+**Fix:** redeploy (Step 3), then use the **new** `$packageId` in Step 4.
+
+Safe capture pattern:
+
+```powershell
+$raw = & $sui client call `
+  --package $packageId `
+  --module passport `
+  --function mint_cap `
+  --gas-budget 20000000 `
+  --json 2>&1
+
+Write-Host "RAW OUTPUT:"
+Write-Host $raw
+
+if ($raw -is [string] -and $raw.TrimStart().StartsWith("{")) {
+  $out = $raw | ConvertFrom-Json
+} else {
+  Write-Host "ERROR: Not JSON — redeploy package (Step 3) or fix packageId"
+  return
+}
+```
 
 ---
 
@@ -113,10 +149,12 @@ From project root in PowerShell:
 ```powershell
 cd C:\Users\deant\OneDrive\Desktop\abraxas-app-main\abraxas-app-main
 
-& $sui move build --path sui\abraxas_passport
+& $sui move build --path sui\abraxas_passport --build-env testnet
 
 cd sui\abraxas_passport
-$publish = & $sui client test-publish --build-env testnet --json | ConvertFrom-Json
+$publishRaw = & $sui client test-publish --build-env testnet --json 2>&1
+Write-Host $publishRaw
+$publish = $publishRaw | ConvertFrom-Json
 cd ..\..
 ```
 
@@ -136,17 +174,29 @@ Update `lib\sui\deployment.devnet.json` → `packageId` with this value, commit,
 Use **your** active sponsor address (must own the cap):
 
 ```powershell
-& $sui client switch --address 0xYOUR_SPONSOR_ADDRESS
+$sui = "C:\sui\sui.exe"
+$sponsor = "0xa4d1f13d192d9c215642ae2eaeea5371e737c911c573c2238f8f14970f1d2246"
 
-$packageId = "0xb8e6537bd17dfadc741f328bf8bdb41fdad43f3f145b695a5b9f205ec520f37a"
-# ^ use NEW id from Step 3 if you redeployed
+& $sui client switch --env devnet
+& $sui client switch --address $sponsor
 
-$out = & $sui client call `
+$packageId = "0x946e7f2878e58525638549a486462c820c175dfbd3404cce66a02d25b0e86551"
+# ^ use NEW id from Step 3 if you redeployed yourself
+
+$raw = & $sui client call `
   --package $packageId `
   --module passport `
   --function mint_cap `
   --gas-budget 20000000 `
-  --json | ConvertFrom-Json
+  --json 2>&1
+
+if (-not ($raw -is [string]) -or -not $raw.TrimStart().StartsWith("{")) {
+  Write-Host "mint_cap failed (not JSON):"
+  Write-Host $raw
+  return
+}
+
+$out = $raw | ConvertFrom-Json
 
 $capId = ($out.objectChanges | Where-Object { $_.objectType -like "*IssuanceCap*" }).objectId
 $tx = $out.digest
@@ -278,7 +328,8 @@ They are **never** the same address.
 
 | Symptom | Fix |
 |---------|-----|
-| `Package object does not exist` | Redeploy Step 3, update `packageId` |
+| `ConvertFrom-Json : Invalid JSON primitive: code` | Package missing on devnet — run Step 3 redeploy, use new `packageId` |
+| `Package object does not exist` / `Object … not found` | Redeploy Step 3, update `packageId` |
 | `cap_owner_matches_sponsor: false` | Mint cap again while **sponsor address** is active |
 | Cap length ≠ 66 | Re-copy full `0x` + 64 hex |
 | `invalid private key` | Re-export `suiprivkey1`, no spaces/quotes |
