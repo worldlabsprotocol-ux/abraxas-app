@@ -7,6 +7,8 @@ import { VerificationBadge } from "./VerificationBadge";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
 import { Btn } from "./ui";
 import { AssetThumbnail, assetThumbObjectPosition } from "@/components/ui/AssetThumbnail";
+import { CmnRegistryHero } from "@/components/registry/CmnRegistryHero";
+import { GoodTroubleRegistryVisual } from "@/components/registry/GoodTroubleRegistryVisual";
 import { VERIFY_META, type ExploreAsset } from "@/lib/data/exploreAssets";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -37,23 +39,40 @@ export function AssetExplorerCard({
       }}
     >
       {!isCompact ? (
-        <div style={{ position: "relative", height: isHome ? 168 : 220, background: "#06090B" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={asset.image}
-            alt={asset.name}
-            style={{
-              width: "100%", height: "100%", objectFit: "cover", display: "block",
-              objectPosition: assetThumbObjectPosition(asset.id),
-            }}
-          />
-          {isHome && (
+        <div style={{ position: "relative", background: "#06090B" }}>
+          {asset.id === "cmn-pokemon-collection" ? (
+            <CmnRegistryHero
+              alt={asset.name}
+              height={isHome ? 200 : 240}
+            />
+          ) : asset.id === "good-trouble-cannabis" ? (
+            <GoodTroubleRegistryVisual height={isHome ? 200 : 240} />
+          ) : (
+            <div style={{ position: "relative", height: isHome ? 168 : 220 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={asset.image}
+                alt={asset.name}
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover", display: "block",
+                  objectPosition: assetThumbObjectPosition(asset.id),
+                }}
+              />
+            </div>
+          )}
+          {isHome && asset.id !== "cmn-pokemon-collection" && (
             <div style={{
-              position: "absolute", inset: 0, pointerEvents: "none",
+              position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
               background: "linear-gradient(to top, rgba(6,9,11,0.88) 0%, rgba(6,9,11,0.15) 42%, rgba(6,9,11,0.35) 100%)",
             }} />
           )}
-          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: "0.35rem", flexWrap: "wrap", zIndex: 1 }}>
+          {isHome && asset.id === "cmn-pokemon-collection" && (
+            <div style={{
+              position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
+              background: "linear-gradient(to top, rgba(6,9,11,0.55) 0%, transparent 38%)",
+            }} />
+          )}
+          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: "0.35rem", flexWrap: "wrap", zIndex: 2 }}>
             <VerificationBadge label={meta.label} color={meta.color} />
             {asset.statusBadge && <CapabilityStatusBadge status={asset.statusBadge} size="xs" />}
           </div>

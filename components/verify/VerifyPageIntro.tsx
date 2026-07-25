@@ -1,5 +1,5 @@
 // FILE: components/verify/VerifyPageIntro.tsx
-// Server-rendered intro — visible to crawlers and first paint before client hydrates.
+// Server-rendered intro. visible to crawlers and first paint before client hydrates.
 
 export function VerifyPageIntro() {
   return (
@@ -24,7 +24,7 @@ export function VerifyPageIntro() {
         fontSize: "0.9rem", color: "var(--text-secondary)",
         lineHeight: 1.7, maxWidth: 720, margin: "0 0 0.5rem",
       }}>
-        Independent verification of Abraxas attestations — credentials, policy decisions, and reference asset records.
+        Independent verification of Abraxas attestations. credentials, policy decisions, and reference asset records.
         Cryptographic proofs are verifiable without signing in; owner submissions are not auto-published here.
       </p>
       <p style={{

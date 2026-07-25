@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AssuranceLegend.tsx
-// L1–L4 definitions — visible wherever assurance levels appear.
+// L1–L4 definitions. visible wherever assurance levels appear.
 
 import { ASSURANCE_LEVELS_PARTNER } from "@/lib/assuranceTaxonomy";
 

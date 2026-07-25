@@ -9,6 +9,9 @@ import { CIELO_REGISTRY_IMAGE } from "@/lib/data/registryAssetImages";
 import { NAJ_TULUM_REGISTRY_IMAGE } from "@/lib/data/najTulumMedia";
 import { SMYRNA_TOWNHOME_IMAGE } from "@/lib/data/registryAssetImages";
 import { CPG_ASSET, CPG_PRICING, formatUsd } from "@/lib/cpgLandCaseStudy";
+import { CMN_POKEMON_ASSET } from "@/lib/cmnPokemonCaseStudy";
+import { CMN_DESIGNS_REGISTRY_IMAGE } from "@/lib/cmnDesignsMedia";
+import { GOOD_TROUBLE_ASSET, GOOD_TROUBLE_REGISTRY_IMAGE } from "@/lib/goodTrouble/registryEntry";
 import type { CapabilityStatus } from "@/lib/capabilityStatus";
 import type { AssuranceLevel } from "@/lib/assuranceTaxonomy";
 
@@ -104,6 +107,42 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     cta: "View case study",
   },
   {
+    id: "cmn-pokemon-collection",
+    name: CMN_POKEMON_ASSET.name,
+    assetClass: "Collectibles · Graded Card",
+    location: CMN_POKEMON_ASSET.location,
+    image: CMN_DESIGNS_REGISTRY_IMAGE.src,
+    primaryLabel: "Grading",
+    primaryValue: "PSA Certified",
+    primaryMeta: { level: 3, type: "reference", asOf: "2026-07-23" },
+    secondaryLabel: "Catalog",
+    secondaryValue: "Slabs coming soon",
+    secondaryMeta: { level: 1, type: "reference", asOf: "2026-07-24" },
+    state: "verified",
+    note: "New collectibles asset class on Abraxas · vault catalog expanding.",
+    href: CMN_POKEMON_ASSET.caseStudyPath,
+    liveProof: { label: "Verify record", url: CMN_POKEMON_ASSET.verifyPath },
+    cta: "View collection",
+  },
+  {
+    id: "good-trouble-cannabis",
+    name: GOOD_TROUBLE_ASSET.name,
+    assetClass: "Cannabis · Batch Provenance",
+    location: GOOD_TROUBLE_ASSET.location,
+    image: GOOD_TROUBLE_REGISTRY_IMAGE,
+    primaryLabel: "Partner",
+    primaryValue: GOOD_TROUBLE_ASSET.owner,
+    primaryMeta: { level: 1, type: "reference", asOf: "2026-07-23" },
+    secondaryLabel: "Pilot batches",
+    secondaryValue: "4 fixtures",
+    secondaryMeta: { level: 1, type: "reference", asOf: "2026-07-23" },
+    state: "verified",
+    note: "Organic cultivator · Passport retail gate pilot · sandbox COA batch registry.",
+    href: GOOD_TROUBLE_ASSET.caseStudyPath,
+    liveProof: { label: "Verify record", url: GOOD_TROUBLE_ASSET.verifyPath },
+    cta: "View pilot",
+  },
+  {
     id: "naj-tulum",
     name: "Naj Tulum",
     assetClass: "Real Estate · International",
@@ -114,8 +153,9 @@ export const EXPLORE_ASSETS: ExploreAsset[] = [
     secondaryLabel: "Monthly income",
     secondaryValue: "$1,500 / mo",
     state: "owned",
-    note: "Held via fideicomiso. Not open to outside investors.",
-    cta: "Verify to view",
+    note: "Held via fideicomiso. Acquired 2023. Not open to outside investors.",
+    href: "/verify/ABX-RE-INT-003",
+    cta: "View verify record",
   },
   {
     id: "the-clove",

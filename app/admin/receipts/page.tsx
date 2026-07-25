@@ -110,7 +110,7 @@ export default function AdminReceiptsPage() {
           <Link href="/admin/trust" style={{ color: "#a78bfa", fontSize: "0.75rem", textDecoration: "none" }}>Trust layer</Link>
           <h1 style={{ fontSize: "0.9rem", margin: "0.25rem 0 0", letterSpacing: "0.08em" }}>Decision Receipts</h1>
           <p style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", margin: "0.25rem 0 0" }}>
-            Eligibility decision receipts — signed policy evaluation artifacts
+            Eligibility decision receipts. signed policy evaluation artifacts
           </p>
         </div>
         <input
@@ -161,15 +161,15 @@ export default function AdminReceiptsPage() {
               <dl style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "0.35rem 0.5rem", margin: 0 }}>
                 {[
                   ["Receipt ID", detail.receipt.receipt_id],
-                  ["Decision ID", detail.receipt.decision_id ?? "—"],
+                  ["Decision ID", detail.receipt.decision_id ?? ", "],
                   ["Policy", `${detail.receipt.policy_id} v${detail.receipt.policy_version}`],
                   ["Partner", detail.receipt.partner_id],
                   ["Result", detail.receipt.decision_result],
                   ["Status", detail.resolved_status],
                   ["Context", detail.receipt.decision_context],
                   ["Signature", detail.signature_status],
-                  ["Expires", detail.receipt.expires_at ?? "—"],
-                  ["Consent", detail.receipt.consent_receipt_id ?? "—"],
+                  ["Expires", detail.receipt.expires_at ?? ", "],
+                  ["Consent", detail.receipt.consent_receipt_id ?? ", "],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display: "contents" }}>
                     <dt style={{ color: "rgba(255,255,255,0.35)" }}>{k}</dt>

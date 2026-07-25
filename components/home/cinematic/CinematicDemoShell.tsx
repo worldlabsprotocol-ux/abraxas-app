@@ -71,7 +71,7 @@ export function CinematicDemoShell({
           </div>
         </div>
 
-        {/* Subtle progress hairline — no countdown */}
+        {/* Subtle progress hairline. no countdown */}
         <div className="relative z-10 h-px bg-white/[0.04]">
           <motion.div
             className="h-full"

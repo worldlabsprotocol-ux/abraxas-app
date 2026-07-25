@@ -18,6 +18,17 @@ export async function GET(req: Request) {
   const deployment = getSuiDeployment();
   const network = getActiveSuiNetwork();
 
+  if (!deployment.packageId?.startsWith("0x")) {
+    return NextResponse.json(
+      {
+        error: "Sui Passport package not deployed on active network",
+        network,
+        mainnet_path: "/api/sui/mainnet/readiness",
+      },
+      { status: 503 },
+    );
+  }
+
   try {
     if (objectId) {
       const obj = await sui.getObject({

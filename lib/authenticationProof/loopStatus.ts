@@ -10,6 +10,7 @@ export const AUTHENTICATION_PROOF_LOOP_STATUS = {
     "Asset monitoring apply path issues asset_state_change proofs and marks prior proofs refresh_required/superseded",
     "GET /api/asset-monitoring/preview — testable evaluate path without admin apply",
     "GET /api/proof/loop — live vs pending deploy status",
+    "GET /api/verify/layer — seven-item verification layer scoreboard",
   ],
   requiresMoveRedeploy: [
     "anchor_status: anchored on Sui (needs anchor_authentication_proof in deployed Move package)",

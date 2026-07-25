@@ -1,11 +1,13 @@
 "use client";
 // FILE: components/case-studies/CaseStudyGallery.tsx
-// Photo evidence — validates assets load; skips collage panels that read as placeholders.
+// Photo evidence. validates assets load; skips collage panels that read as placeholders.
 
 import { useEffect, useState } from "react";
 import { CIELO_SKIP_IMAGES } from "@/lib/data/cieloMedia";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+
+const FONT = ABRAXAS_FONT_SANS;
 const BG = "#06090B";
 
 const OBJECT_POSITIONS: Record<string, string> = {
@@ -100,11 +102,14 @@ function PhotoTile({ src, alt, rounded }: { src: string; alt: string; rounded?: 
   return (
     <div style={{
       position: "relative",
-      minHeight: 0,
+      minHeight: rounded ? 160 : 0,
+      height: rounded ? "auto" : "100%",
+      width: "100%",
       minWidth: 0,
       background: BG,
       overflow: "hidden",
       borderRadius: rounded ? 12 : 0,
+      aspectRatio: rounded ? "4/3" : undefined,
     }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

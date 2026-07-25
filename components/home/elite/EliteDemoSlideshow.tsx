@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/elite/EliteDemoSlideshow.tsx
-// Site-wide elite visual demo — cosmic frame, auto slides, minimal text.
+// Site-wide elite visual demo. cosmic frame, auto slides, minimal text.
 
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -8,6 +8,7 @@ import { CosmicCornerGlow, CosmicParticleField } from "@/components/home/cinemat
 import { PremiumMeshBg } from "@/components/home/cinematic/PremiumDemoPrimitives";
 import { COSMIC_PALETTE, DEMO_MOTION, DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
 import type { EliteDemoConfig } from "@/lib/eliteDemoSlides";
+import { ABRAXAS_FONT_DISPLAY } from "@/lib/abraxasTypography";
 import { EliteSlideVisual } from "./EliteSlideVisual";
 
 const ASPECT: Record<string, { ratio: string; maxH: number }> = {
@@ -91,13 +92,14 @@ export function EliteDemoSlideshow({
           >
             <h3
               style={{
-                fontFamily: DEMO_TYPOGRAPHY.fontSans,
-                fontSize: compact ? "clamp(1.1rem, 3vw, 1.4rem)" : "clamp(1.25rem, 3.5vw, 1.75rem)",
+                fontFamily: ABRAXAS_FONT_DISPLAY,
+                fontSize: compact ? "clamp(1.2rem, 3.2vw, 1.55rem)" : "clamp(1.45rem, 4vw, 2rem)",
                 fontWeight: 900,
                 letterSpacing: "-0.04em",
                 color: COSMIC_PALETTE.textPrimary,
                 margin: "0.35rem 0 0.5rem",
                 textShadow: `0 0 40px ${config.accent}33`,
+                lineHeight: 1.08,
               }}
             >
               {slide.headline}

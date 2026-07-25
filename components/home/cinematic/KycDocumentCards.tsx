@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/cinematic/KycDocumentCards.tsx
-// Institutional demo visuals — premium app screens, proof artifact, passport.
+// Institutional demo visuals. premium app screens, proof artifact, passport.
 
 import { motion } from "framer-motion";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
@@ -50,7 +50,7 @@ function DocShell({
   );
 }
 
-/** Rising burden — oppressive counter with milestone ticks */
+/** Rising burden. oppressive counter with milestone ticks */
 export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?: number }) {
   const pct = Math.min(100, (count / max) * 100);
   const milestones = [2, 4, 7];
@@ -72,7 +72,7 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
             fontFamily: FONT, fontSize: DEMO_TYPE.debtSub,
             color: "rgba(255,255,255,0.45)", marginTop: 4, display: "block",
           }}>
-            Not asset proof — repeated trust rebuilds
+            Not asset proof. repeated trust rebuilds
           </span>
         </div>
         <motion.span
@@ -429,7 +429,7 @@ export function AbraxasPassportVc({
   );
 }
 
-/** Hero authentication proof — centerpiece of Act 3 */
+/** Hero authentication proof. centerpiece of Act 3 */
 const DEFAULT_PROOF_ID = "aprx_cielo_sunrise_7f3a9c2e";
 
 export function AuthenticationProofArtifact({

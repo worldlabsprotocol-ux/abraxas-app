@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
 # FILE: scripts/sui/mint-issuance-cap.sh
-# Mint a NEW IssuanceCap for YOUR wallet on the already-deployed Abraxas Passport package.
-# Use when you don't have the original deploy wallet's private key.
+# Mint IssuanceCap for sponsor wallet on devnet or mainnet package.
 #
-# Prerequisites:
-#   1. Sui CLI installed (see scripts/sui/deploy-devnet.sh)
-#   2. Your wallet imported and set active:
-#        sui keytool import "your twelve word seed phrase here" ed25519
-#        sui client switch --address 0xYOUR_ADDRESS
-#   3. Devnet SUI for gas: sui client faucet
-#
-# After running, copy the new Cap object ID into Vercel:
-#   SUI_ISSUANCE_CAP_OBJECT_ID=0x...
-# And export your active wallet key:
-#   sui keytool export --key-identity 0xYOUR_ADDRESS
+# Usage:
+#   npm run sui:mint-cap              # devnet (default)
+#   npm run sui:mint-cap -- mainnet   # after deploy-mainnet.sh
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SUI="${SUI_BIN:-$ROOT/.sui-bin/sui}"
-DEPLOY="$ROOT/lib/sui/deployment.devnet.json"
+NETWORK="${1:-devnet}"
+
+case "$NETWORK" in
+  devnet)
+    DEPLOY="$ROOT/lib/sui/deployment.devnet.json"
+    ;;
+  mainnet)
+    DEPLOY="$ROOT/lib/sui/deployment.mainnet.json"
+    ;;
+  *)
+    echo "Usage: $0 [devnet|mainnet]"
+    exit 1
+    ;;
+esac
 
 if [[ ! -x "$SUI" ]]; then
   echo "Sui CLI not found at $SUI"
@@ -27,12 +31,18 @@ if [[ ! -x "$SUI" ]]; then
 fi
 
 PACKAGE_ID="$(jq -r '.packageId' "$DEPLOY")"
+if [[ -z "$PACKAGE_ID" || "$PACKAGE_ID" == "null" || "$PACKAGE_ID" == "" ]]; then
+  echo "No packageId in $DEPLOY — deploy first (npm run sui:deploy:$NETWORK)"
+  exit 1
+fi
+
 ACTIVE="$("$SUI" client active-address)"
 
+echo "→ Network:  $NETWORK"
 echo "→ Package:  $PACKAGE_ID"
-echo "→ Active wallet (will receive new IssuanceCap): $ACTIVE"
+echo "→ Wallet:   $ACTIVE"
 echo ""
-echo "→ Calling passport::mint_cap on devnet…"
+echo "→ Calling passport::mint_cap…"
 
 OUT="$("$SUI" client call \
   --package "$PACKAGE_ID" \
@@ -45,29 +55,23 @@ CAP_ID="$(echo "$OUT" | jq -r '.objectChanges[] | select(.objectType | endswith(
 TX="$(echo "$OUT" | jq -r '.digest')"
 
 if [[ -z "$CAP_ID" || "$CAP_ID" == "null" ]]; then
-  echo "Failed to parse IssuanceCap from transaction output:"
+  echo "Failed to parse IssuanceCap:"
   echo "$OUT" | jq .
   exit 1
 fi
 
+if [[ "$NETWORK" == "mainnet" ]]; then
+  TMP="$(mktemp)"
+  jq --arg cap "$CAP_ID" '.demoIssuanceCapObjectId = $cap' "$DEPLOY" > "$TMP" && mv "$TMP" "$DEPLOY"
+  echo "   Updated demoIssuanceCapObjectId in deployment.mainnet.json"
+fi
+
 echo ""
-echo "✓ IssuanceCap minted"
+echo "✓ IssuanceCap minted on $NETWORK"
 echo ""
-echo "  Wallet:     $ACTIVE"
-echo "  Cap ID:     $CAP_ID"
-echo "  Tx:         $TX"
+echo "  Cap ID:  $CAP_ID"
+echo "  Tx:      $TX"
 echo ""
-echo "Add to Vercel environment variables:"
-echo ""
+echo "Vercel:"
 echo "  SUI_ISSUANCE_CAP_OBJECT_ID=$CAP_ID"
-echo ""
-echo "Export your sponsor private key (do NOT share this):"
-echo ""
-echo "  sui keytool export --key-identity $ACTIVE"
-echo ""
-echo "Paste the suiprivkey1… output as:"
-echo ""
-echo "  SUI_SPONSOR_SECRET_KEY=suiprivkey1…"
-echo ""
-echo "Fund wallet if needed: sui client faucet"
-echo "Then redeploy Vercel."
+echo "  SUI_SPONSOR_SECRET_KEY=suiprivkey1…  (sui keytool export --key-identity $ACTIVE)"

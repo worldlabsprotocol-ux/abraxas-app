@@ -33,7 +33,7 @@ const SANS  = "'Inter var','Inter',system-ui,sans-serif";
 const SCENARIOS = {
   small: {
     label: "Small Assets",
-    sub:   "$1–3M avg",
+    sub:   "$1-3M avg",
     color: C.amber,
     years: ["Year 1", "Year 2", "Year 3"],
     metrics: {
@@ -53,7 +53,7 @@ const SCENARIOS = {
   },
   large: {
     label: "Large Assets",
-    sub:   "$15–25M avg",
+    sub:   "$15-25M avg",
     color: C.green,
     years: ["Year 1", "Year 2", "Year 3"],
     metrics: {

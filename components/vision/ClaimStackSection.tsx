@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/vision/ClaimStackSection.tsx
-// KYC is a stack of separate claims — not one green checkmark.
+// KYC is a stack of separate claims. not one green checkmark.
 
 import { CLAIM_STACK, type ClaimLayer } from "@/lib/abraxasNetwork";
 import { ProductStatusBadge } from "@/components/ui/ProductStatusBadge";

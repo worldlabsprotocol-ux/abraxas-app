@@ -1,34 +1,111 @@
 "use client";
 // FILE: components/cielo/CieloAvailabilityPanel.tsx
-// Abraxas Protocol Calendar — our own availability layer for crypto bookings.
+// Protocol Calendar. month grid aligned with institutional redesign.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
 import type { BlockedDate } from "@/lib/cielo/types";
-
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
-const PENDING = "#F59E0B";
-const BLOCKED = "#EF4444";
+import {
+  CIELO_FONT,
+  CIELO_MONO,
+  CIELO_ACCENT,
+  CIELO_VERIFY,
+  CIELO_PENDING,
+  CIELO_BLOCKED,
+  cieloPanelStyle,
+  cieloEyebrowStyle,
+} from "./cieloBookingStyles";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface AvailabilityResponse {
   blocked?: BlockedDate[];
-  calendar?: string;
   sources?: {
     pending_bookings: number;
     confirmed_bookings: number;
     operator_blocks: number;
   };
-  airbnb_listing_url?: string;
 }
 
-export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean }) {
+export type DayStatus = "open" | "pending" | "blocked" | "past";
+
+export interface SelectedRange {
+  start: string;
+  end: string;
+}
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+function monthLabel(year: number, month: number) {
+  return new Date(year, month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function isoDate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function buildMonthGrid(year: number, month: number): (Date | null)[] {
+  const first = new Date(year, month, 1);
+  const startPad = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startPad; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+function dayStatus(dateIso: string, blocked: BlockedDate[], todayIso: string): DayStatus {
+  if (dateIso < todayIso) return "past";
+  const hit = blocked.find(b => dateIso >= b.start && dateIso < b.end);
+  if (!hit) return "open";
+  if (hit.source === "abraxas_pending") return "pending";
+  return "blocked";
+}
+
+function inSelectedRange(dateIso: string, range?: SelectedRange) {
+  if (!range?.start) return false;
+  if (!range.end) return dateIso === range.start;
+  return dateIso >= range.start && dateIso < range.end;
+}
+
+function statusColors(status: DayStatus, selected: boolean) {
+  if (selected) {
+    return {
+      bg: "rgba(232,197,71,0.22)",
+      border: "1px solid var(--accent-border, rgba(232,197,71,0.55))",
+      color: "var(--text-primary)",
+    };
+  }
+  switch (status) {
+    case "open":
+      return { bg: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.22)", color: "var(--text-primary)" };
+    case "pending":
+      return { bg: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.35)", color: "var(--text-primary)" };
+    case "blocked":
+      return { bg: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", color: "var(--text-muted)" };
+    default:
+      return { bg: "transparent", border: "1px solid transparent", color: "var(--text-muted)" };
+  }
+}
+
+export function CieloAvailabilityPanel({
+  selectedRange,
+  onSelectDate,
+}: {
+  selectedRange?: SelectedRange;
+  onSelectDate?: (dateIso: string) => void;
+}) {
   const [blocked, setBlocked] = useState<BlockedDate[] | null>(null);
   const [meta, setMeta] = useState<AvailabilityResponse["sources"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewDate, setViewDate] = useState(() => new Date());
+
+  const todayIso = isoDate(new Date());
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const grid = useMemo(() => buildMonthGrid(year, month), [year, month]);
 
   useEffect(() => {
     setLoading(true);
@@ -36,118 +113,211 @@ export function CieloAvailabilityPanel({ compact = false }: { compact?: boolean 
     fetch("/api/cielo/availability")
       .then(r => r.json())
       .then((data: AvailabilityResponse & { error?: string }) => {
-        if (data.error && !data.blocked) {
-          throw new Error(data.error);
-        }
+        if (data.error && !data.blocked) throw new Error(data.error);
         setBlocked(data.blocked ?? []);
         setMeta(data.sources ?? null);
       })
       .catch(() => {
         setBlocked(null);
-        setError("Could not load Protocol Calendar. Try again or book on /flagship.");
+        setError("Could not load Protocol Calendar.");
       })
       .finally(() => setLoading(false));
   }, []);
 
-  const today = new Date();
-  const days = Array.from({ length: compact ? 21 : 35 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    return d.toISOString().slice(0, 10);
-  });
-
-  function blockStyle(dateIso: string): string {
-    if (!blocked) return "rgba(255,255,255,0.06)";
-    const hit = blocked.find(b => dateIso >= b.start && dateIso < b.end);
-    if (!hit) return `${ACCENT}35`;
-    if (hit.source === "abraxas_pending") return `${PENDING}88`;
-    return `${BLOCKED}88`;
+  function shiftMonth(delta: number) {
+    setViewDate(d => new Date(d.getFullYear(), d.getMonth() + delta, 1));
   }
 
   if (loading) {
     return (
-      <div id="protocol-calendar" style={{
-        padding: compact ? "0.85rem" : "1rem 1.1rem", borderRadius: 14,
-        background: "var(--surface-raised)", border: "1px solid var(--border)",
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)",
-      }}>
-        Loading Abraxas Protocol Calendar…
+      <div id="protocol-calendar" className="abx-glass-panel" style={{ ...cieloPanelStyle, padding: "1.25rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+          <Spinner size={18} color={CIELO_VERIFY} />
+          <span style={{ fontFamily: CIELO_FONT, fontSize: "0.82rem", color: "var(--text-muted)" }}>
+            Loading Protocol Calendar…
+          </span>
+        </div>
       </div>
     );
   }
 
   if (error || blocked === null) {
     return (
-      <div id="protocol-calendar" style={{
-        padding: compact ? "0.85rem" : "1rem 1.1rem", borderRadius: 14,
-        background: "var(--surface-raised)", border: "1px dashed var(--border)",
-        fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6,
-      }}>
-        {error ?? "Calendar unavailable."}{" "}
-        <Link href="/cielo/status" style={{ color: ACCENT }}>Track a booking</Link>
+      <div id="protocol-calendar" className="abx-glass-panel" style={{ ...cieloPanelStyle, padding: "1.25rem" }}>
+        <p style={{ fontFamily: CIELO_FONT, fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
+          {error ?? "Calendar unavailable."}{" "}
+          <Link href="/cielo/status" style={{ color: CIELO_VERIFY }}>Track a booking</Link>
+        </p>
       </div>
     );
   }
 
   return (
-    <div id="protocol-calendar" style={{
-      padding: compact ? "0.85rem" : "1rem 1.1rem",
-      borderRadius: 14,
-      background: "var(--surface-raised)",
-      border: "1px solid var(--border)",
-    }}>
-      <div style={{ marginBottom: "0.65rem" }}>
-        <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT,
-                       letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-          Abraxas Protocol Calendar
-        </div>
-        <div style={{ fontFamily: FONT, fontSize: compact ? "0.78rem" : "0.85rem", fontWeight: 700,
-                       color: "var(--text-primary)" }}>
-          Our calendar. our crypto bookings.
-        </div>
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-                     lineHeight: 1.6, margin: "0.35rem 0 0" }}>
-          USDC stays on Abraxas run on this calendar — not Airbnb&apos;s host tools.
-          Cross-check the{" "}
-          <Link href={CIELO_AIRBNB_URL} target="_blank" rel="noopener noreferrer"
-            style={{ color: ACCENT, textDecoration: "underline" }}>
+    <div id="protocol-calendar" className="abx-glass-panel" style={{ ...cieloPanelStyle, padding: "1.25rem" }}>
+      <div style={{ marginBottom: "1rem" }}>
+        <div style={cieloEyebrowStyle}>Abraxas Protocol Calendar</div>
+        <h3 style={{
+          fontFamily: CIELO_FONT,
+          fontSize: "var(--fs-h2, 1.05rem)",
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          margin: "0 0 0.35rem",
+        }}>
+          Live availability for USDC bookings
+        </h3>
+        <p style={{
+          fontFamily: CIELO_FONT,
+          fontSize: "0.8rem",
+          color: "var(--text-secondary)",
+          lineHeight: 1.65,
+          margin: 0,
+        }}>
+          Crypto stays run on this calendar. not Airbnb host tools. Cross-check the{" "}
+          <Link href={CIELO_AIRBNB_URL} target="_blank" rel="noopener noreferrer" style={{ color: CIELO_VERIFY }}>
             public listing
           </Link>{" "}
-          before you travel; we reconcile both channels.
+          before you travel.
+          {onSelectDate && " Tap open dates to build your stay."}
         </p>
       </div>
 
       <div style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${compact ? 7 : 10}, 1fr)`,
-        gap: 3,
-        marginBottom: "0.65rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: "0.75rem",
+        gap: "0.5rem",
       }}>
-        {days.map(d => (
-          <div key={d} title={d} style={{ aspectRatio: "1", borderRadius: 4, background: blockStyle(d) }} />
+        <button
+          type="button"
+          onClick={() => shiftMonth(-1)}
+          aria-label="Previous month"
+          style={navBtnStyle}
+        >
+          ←
+        </button>
+        <div style={{
+          fontFamily: CIELO_FONT,
+          fontSize: "0.92rem",
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          textAlign: "center",
+        }}>
+          {monthLabel(year, month)}
+        </div>
+        <button
+          type="button"
+          onClick={() => shiftMonth(1)}
+          aria-label="Next month"
+          style={navBtnStyle}
+        >
+          →
+        </button>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, 1fr)",
+        gap: "0.35rem",
+        marginBottom: "0.35rem",
+      }}>
+        {WEEKDAYS.map(d => (
+          <div key={d} style={{
+            fontFamily: CIELO_MONO,
+            fontSize: "0.55rem",
+            fontWeight: 700,
+            color: "var(--text-muted)",
+            textAlign: "center",
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            padding: "0.25rem 0",
+          }}>
+            {d}
+          </div>
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: "0.85rem", flexWrap: "wrap", marginBottom: meta ? "0.5rem" : 0 }}>
-        <Legend color={`${ACCENT}35`} label="Open on Abraxas" />
-        <Legend color={`${PENDING}88`} label="Pending request" />
-        <Legend color={`${BLOCKED}88`} label="Confirmed / blocked" />
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, 1fr)",
+        gap: "0.35rem",
+        marginBottom: "1rem",
+      }}>
+        {grid.map((cell, i) => {
+          if (!cell) return <div key={`pad-${i}`} />;
+          const dateIso = isoDate(cell);
+          const status = dayStatus(dateIso, blocked, todayIso);
+          const selected = inSelectedRange(dateIso, selectedRange);
+          const colors = statusColors(status, selected);
+          const isToday = dateIso === todayIso;
+          const clickable = onSelectDate && status === "open";
+
+          return (
+            <button
+              key={dateIso}
+              type="button"
+              disabled={!clickable}
+              onClick={() => clickable && onSelectDate(dateIso)}
+              title={dateIso}
+              style={{
+                aspectRatio: "1",
+                borderRadius: 10,
+                background: colors.bg,
+                border: colors.border,
+                color: colors.color,
+                fontFamily: CIELO_FONT,
+                fontSize: "0.78rem",
+                fontWeight: isToday ? 800 : 600,
+                cursor: clickable ? "pointer" : "default",
+                opacity: status === "past" ? 0.45 : 1,
+                boxShadow: isToday ? "0 0 0 1px var(--accent-border, rgba(232,197,71,0.4))" : undefined,
+                padding: 0,
+              }}
+            >
+              {cell.getDate()}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: meta ? "0.65rem" : 0 }}>
+        <Legend swatch={`${CIELO_VERIFY}33`} border="rgba(16,185,129,0.35)" label="Open" />
+        <Legend swatch={`${CIELO_PENDING}44`} border="rgba(245,158,11,0.4)" label="Pending" />
+        <Legend swatch={`${CIELO_BLOCKED}44`} border="rgba(239,68,68,0.35)" label="Booked / blocked" />
+        {selectedRange?.start && (
+          <Legend swatch="rgba(232,197,71,0.25)" border="rgba(232,197,71,0.5)" label="Your selection" />
+        )}
       </div>
 
       {meta && (
-        <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: "var(--text-muted)" }}>
-          {meta.operator_blocks} operator blocks · {meta.pending_bookings} pending · calendar v1
+        <div style={{ fontFamily: CIELO_MONO, fontSize: "0.58rem", color: "var(--text-muted)" }}>
+          {meta.operator_blocks} operator blocks · {meta.pending_bookings} pending · {meta.confirmed_bookings} confirmed
         </div>
       )}
     </div>
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
+function Legend({ swatch, border, label }: { swatch: string; border: string; label: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-      <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
-      <span style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)" }}>{label}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+      <div style={{ width: 10, height: 10, borderRadius: 4, background: swatch, border: `1px solid ${border}` }} />
+      <span style={{ fontFamily: CIELO_FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>{label}</span>
     </div>
   );
 }
+
+const navBtnStyle: React.CSSProperties = {
+  width: 36,
+  height: 36,
+  borderRadius: 999,
+  border: "1px solid var(--border)",
+  background: "var(--surface)",
+  color: "var(--text-secondary)",
+  fontFamily: CIELO_FONT,
+  fontSize: "0.9rem",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/investors/pitch/page.tsx
-// Web pitch deck — 12 slides for VC meetings.
+// Web pitch deck. 12 slides for VC meetings.
 
 import { useState } from "react";
 import Link from "next/link";

@@ -49,5 +49,6 @@ export function AssetThumbnail({
 
 export function assetThumbObjectPosition(assetId: string): string {
   if (assetId === "genesis-asset") return "center 35%";
+  if (assetId === "cmn-pokemon-collection") return "center center";
   return "center";
 }

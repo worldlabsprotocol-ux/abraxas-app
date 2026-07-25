@@ -78,7 +78,7 @@ export function WalletBindingCard({ suiAddress }: { suiAddress: string | null })
         Wallet binding · step-up
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.6 }}>
-        Prove wallet control with a one-time signed challenge — required for high-value RWA and lending policies.
+        Prove wallet control with a one-time signed challenge. required for high-value RWA and lending policies.
       </p>
       {!done && (
         <button type="button" onClick={confirmBinding} disabled={busy}

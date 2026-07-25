@@ -483,7 +483,7 @@ export function AssetOwnerOnboarding({
             <ol style={{ fontFamily: S, fontSize: "0.72rem",
                           color:"rgba(21,21,26,0.5)", lineHeight: 1.8,
                           margin: 0, paddingLeft: "1.125rem" }}>
-              <li>Our team reviews your submission (24–48 hours)</li>
+              <li>Our team reviews your submission (24-48 hours)</li>
               <li>You receive a verification assignment email</li>
               <li>Asset moves through 10-stage V5 pipeline</li>
               <li>Once verified: token minted, lending eligible</li>

@@ -1,10 +1,16 @@
 // FILE: components/home/cinematic/demoPremium.ts
-// Premium DeFi-native demo tokens — glass, mesh, bold type (institutional × crypto-native).
+// Premium DeFi-native demo tokens. glass, mesh, bold type (institutional × crypto-native).
 
 import type { CSSProperties } from "react";
+import {
+  ABRAXAS_FONT_DISPLAY,
+  ABRAXAS_FONT_MONO,
+  ABRAXAS_FONT_SANS,
+} from "@/lib/abraxasTypography";
 
-export const PREMIUM_FONT = "'Inter', system-ui, -apple-system, sans-serif";
-export const PREMIUM_MONO = "'JetBrains Mono', 'SF Mono', ui-monospace, monospace";
+export const PREMIUM_FONT = ABRAXAS_FONT_SANS;
+export const PREMIUM_DISPLAY = ABRAXAS_FONT_DISPLAY;
+export const PREMIUM_MONO = ABRAXAS_FONT_MONO;
 
 export const GLASS: CSSProperties = {
   background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
@@ -46,7 +52,7 @@ export const ACCENT: Record<MeshKey, string> = {
   danger: "#F87171",
 };
 
-/** Legible demo typography — hero cinematic + mobile (v3: ~15% larger than v2). */
+/** Legible demo typography. hero cinematic + mobile (v3: ~15% larger than v2). */
 export const DEMO_TYPE = {
   micro: "0.55rem",
   xs: "0.64rem",
@@ -65,12 +71,14 @@ export const DEMO_TYPE = {
   noRelay: "clamp(0.62rem, 1.7vw, 0.76rem)",
   eyebrow: "0.78rem",
   headline: "clamp(1.24rem, 3.4vw, 1.72rem)",
-  headlineHero: "clamp(1.32rem, 3.7vw, 1.88rem)",
-  finalLine: "clamp(0.95rem, 2.4vw, 1.2rem)",
+  headlineHero: "clamp(1.5rem, 4.2vw, 2.15rem)",
+  finalLine: "clamp(1rem, 2.5vw, 1.28rem)",
   actPill: "0.62rem",
+  actPillHero: "0.72rem",
+  eyebrowHero: "0.82rem",
 } as const;
 
-/** Secondary concept demos — shared legible scale (replaces scattered 0.42–0.72rem values). */
+/** Secondary concept demos. shared legible scale (replaces scattered 0.42-0.72rem values). */
 export const CONCEPT_TYPE = {
   label: "0.68rem",
   body: "0.84rem",

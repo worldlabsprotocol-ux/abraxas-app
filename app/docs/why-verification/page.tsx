@@ -18,7 +18,7 @@ export default function WhyVerificationPage() {
     <RedesignPage maxWidth={820}>
       <PageHeader
         eyebrow="Technical thesis"
-        title="Why unified KYC is hard for RWAs — and how Abraxas solves it"
+        title="Why unified KYC is hard for RWAs. and how Abraxas solves it"
         subtitle={KYC_DEBT_HEADLINE}
       />
 
@@ -57,8 +57,8 @@ export default function WhyVerificationPage() {
         </p>
         <BulletList items={[
           "Sui: zkLogin, W3C credentials, Move Passport, USDC settlement",
-          "Solana: $ABRA optional access tiers — verification is not gated",
-          "Credentials are portable by W3C standard — verify signature anywhere",
+          "Solana: $ABRA optional access tiers. verification is not gated",
+          "Credentials are portable by W3C standard. verify signature anywhere",
         ]} />
       </ContentCard>
 
