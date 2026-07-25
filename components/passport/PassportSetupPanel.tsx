@@ -11,6 +11,7 @@ import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
+import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { PassportTierCapabilities } from "@/components/passport/PassportTierCapabilities";
 import Link from "next/link";
 
@@ -252,7 +253,11 @@ export function PassportSetupPanel({
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
                   Your profile is active. Add an ID check when you need enhanced trust for payments, submissions, or partner policies.
                   {manualMode ? (
+<<<<<<< HEAD
+                    <> Use your device camera below — name, government ID, and selfie. Reviewed by Abraxas (not Veriff).</>
+=======
                     <> Upload a government ID below. our team reviews manually (Veriff trial is not active).</>
+>>>>>>> origin/main
                   ) : (
                     <> Usually takes 2-4 minutes via licensed provider. Abraxas stores outcome only.</>
                   )}
@@ -307,15 +312,30 @@ export function PassportSetupPanel({
 
                 {manualMode ? (
                   <>
-                    <DocumentUpload
+                    <AbraxasIdentityCapture
                       email={email}
                       suiAddress={suiAddress}
-                      stampId="identity"
-                      color={ACCENT}
-                      onUploaded={onRefresh}
+                      onSubmitted={onRefresh}
                     />
+                    <details style={{ marginTop: "0.65rem" }}>
+                      <summary style={{
+                        fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+                        color: "var(--text-muted)", cursor: "pointer",
+                      }}>
+                        Or upload a file instead
+                      </summary>
+                      <div style={{ marginTop: "0.5rem" }}>
+                        <DocumentUpload
+                          email={email}
+                          suiAddress={suiAddress}
+                          stampId="identity"
+                          color={ACCENT}
+                          onUploaded={onRefresh}
+                        />
+                      </div>
+                    </details>
                     <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
-                      Pilot · Manual review · Assurance L2. Not required to use your profile.
+                      Pilot · Abraxas review · Assurance L2. Not required to use your profile.
                     </p>
                   </>
                 ) : !veriffConfigured ? (
@@ -494,7 +514,7 @@ function PassportDataTransparency({ visible, via }: { visible: boolean; via: str
         ["Identity", "Verified outcome only"],
         ["Document images", "Not stored by Abraxas"],
         ["Biometric data", "Not stored by Abraxas"],
-        ["Verification provider", via === "veriff" ? "Veriff" : via === "manual" ? "Abraxas pilot review" : "Licensed provider"],
+        ["Verification provider", via === "veriff" ? "Veriff" : via === "manual" ? "Abraxas verify (camera)" : "Licensed provider"],
       ].map(([k, v]) => (
         <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.68rem", marginBottom: 3 }}>
           <span style={{ color: "var(--text-muted)" }}>{k}</span>

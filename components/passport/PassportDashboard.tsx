@@ -13,6 +13,7 @@ import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
+import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { TransactionEligibilitySection } from "@/components/passport/TransactionEligibilitySection";
@@ -477,12 +478,10 @@ function IdentityUnlockSection({
           Your last submission was not approved. Try again with a different document or contact support.
         </p>
         {manualMode ? (
-          <DocumentUpload
+          <AbraxasIdentityCapture
             email={email}
             suiAddress={suiAddress}
-            stampId="identity"
-            color={ACCENT}
-            onUploaded={onRefresh}
+            onSubmitted={onRefresh}
           />
         ) : (
           <Btn size="sm" loading={starting} onClick={onStartIdCheck}>
@@ -557,18 +556,16 @@ function IdentityUnlockSection({
 
       {manualMode ? (
         <>
-          <DocumentUpload
+          <AbraxasIdentityCapture
             email={email}
             suiAddress={suiAddress}
-            stampId="identity"
-            color={ACCENT}
-            onUploaded={onRefresh}
+            onSubmitted={onRefresh}
           />
           <p style={{
             fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",
             margin: "0.65rem 0 0", lineHeight: 1.55,
           }}>
-            Pilot manual review · Assurance L2. Abraxas uses the verification outcome, not your documents, as the reusable credential.
+            Pilot Abraxas verify · Assurance L2. Partners receive the verification outcome, not your document images.
           </p>
         </>
       ) : veriffConfigured ? (

@@ -20,6 +20,13 @@ interface QueueItem {
   storage_path: string;
   status: string;
   reviewer_note: string | null;
+  legal_name?: string | null;
+  capture_session_id?: string | null;
+  document_type?: string | null;
+  has_selfie?: boolean;
+  has_id_front?: boolean;
+  capture_complete?: boolean;
+  documents?: QueueItem[];
 }
 
 export default function AdminIdentityPage() {
@@ -121,8 +128,13 @@ export default function AdminIdentityPage() {
         </div>
 
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
+<<<<<<< HEAD
+          Abraxas-native capture: users submit legal name + ID photo + selfie from /passport.
+          Approve to issue an L2 identity credential and on-chain stamps. URL: <strong>/admin/identity</strong>
+=======
           Veriff live integrations are disabled. When users upload IDs on Passport, pending items appear here.
           Approve to issue an L2 identity credential. or reject with a note. URL: <strong>/admin/identity</strong>
+>>>>>>> origin/main
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -171,12 +183,22 @@ export default function AdminIdentityPage() {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
                   <div>
-                    <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700 }}>{item.user_email}</div>
+                    <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700 }}>
+                      {item.legal_name ?? item.user_email}
+                    </div>
+                    {item.legal_name && (
+                      <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
+                        {item.user_email}
+                      </div>
+                    )}
                     <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
                       {item.sui_address ? `${item.sui_address.slice(0, 10)}…${item.sui_address.slice(-6)}` : "No wallet linked yet"}
                     </div>
                     <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 6 }}>
-                      {item.file_name} · {new Date(item.created_at).toLocaleString()}
+                      {item.capture_session_id
+                        ? `${item.has_id_front ? "ID" : "—"} + ${item.has_selfie ? "selfie" : "—"} · ${item.capture_complete ? "complete" : "incomplete"}`
+                        : item.file_name}
+                      {" · "}{new Date(item.created_at).toLocaleString()}
                     </div>
                     <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
                       {item.storage_path}
