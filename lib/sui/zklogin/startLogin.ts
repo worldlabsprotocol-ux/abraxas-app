@@ -17,27 +17,35 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
     };
   }
 
-  const sui = getSuiClient();
-  const { epoch } = await sui.getLatestSuiSystemState();
-  const maxEpoch = Number(epoch) + EPOCH_BUFFER;
+  try {
+    const sui = getSuiClient();
+    const { epoch } = await sui.getLatestSuiSystemState();
+    const maxEpoch = Number(epoch) + EPOCH_BUFFER;
 
-  const ephemeralKeypair = Ed25519Keypair.generate();
-  const randomness = generateRandomness();
-  const nonce = generateNonce(ephemeralKeypair.getPublicKey(), maxEpoch, randomness);
+    const ephemeralKeypair = Ed25519Keypair.generate();
+    const randomness = generateRandomness();
+    const nonce = generateNonce(ephemeralKeypair.getPublicKey(), maxEpoch, randomness);
 
-  savePendingSession({
-    ephemeralSecretKey: ephemeralKeypair.getSecretKey(),
-    randomness,
-    maxEpoch,
-    provider: "google",
-    startedAt: new Date().toISOString(),
-  });
+    savePendingSession({
+      ephemeralSecretKey: ephemeralKeypair.getSecretKey(),
+      randomness,
+      maxEpoch,
+      provider: "google",
+      startedAt: new Date().toISOString(),
+    });
 
-  const url = buildGoogleOAuthUrl(nonce);
-  if (!url) {
-    return { ok: false, error: "Could not build OAuth URL" };
+    const url = buildGoogleOAuthUrl(nonce);
+    if (!url) {
+      return { ok: false, error: "Could not build OAuth URL" };
+    }
+
+    window.location.assign(url);
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Could not reach Sui network";
+    return {
+      ok: false,
+      error: `Sign-in failed: ${msg}. Check SUI_RPC_URL in Vercel or try again.`,
+    };
   }
-
-  window.location.href = url;
-  return { ok: true };
 }

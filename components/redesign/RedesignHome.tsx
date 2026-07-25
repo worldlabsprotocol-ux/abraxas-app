@@ -19,6 +19,7 @@ import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
+import { HomeRegistrySlideshow } from "@/components/home/HomeRegistrySlideshow";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180,
@@ -52,6 +53,7 @@ function HomeContent() {
             borderBottom: "1px solid var(--border-strong)",
           }}
         >
+          <HomeRegistrySlideshow />
           <AssetsExplorer
             title="Live proof on-registry"
             eyebrow="Reference assets"
