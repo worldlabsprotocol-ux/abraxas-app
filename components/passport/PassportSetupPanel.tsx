@@ -253,11 +253,7 @@ export function PassportSetupPanel({
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
                   Your profile is active. Add an ID check when you need enhanced trust for payments, submissions, or partner policies.
                   {manualMode ? (
-<<<<<<< HEAD
                     <> Use your device camera below — name, government ID, and selfie. Reviewed by Abraxas (not Veriff).</>
-=======
-                    <> Upload a government ID below. our team reviews manually (Veriff trial is not active).</>
->>>>>>> origin/main
                   ) : (
                     <> Usually takes 2-4 minutes via licensed provider. Abraxas stores outcome only.</>
                   )}
