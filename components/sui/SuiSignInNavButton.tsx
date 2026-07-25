@@ -41,7 +41,7 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
     const hasProfile = Boolean(profile?.username || profile?.display_name);
     const avatarColor = profile?.avatar_color ?? DEFAULT_AVATAR;
     const initial = profileInitial(profile, email);
-    const href = hasProfile ? "/account" : "/verify?mode=profile";
+    const href = "/account";
 
     return (
       <Link

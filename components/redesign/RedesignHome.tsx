@@ -9,7 +9,6 @@ import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
-import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
 import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
@@ -19,6 +18,7 @@ import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
+import { HomeRegistrySlideshow } from "@/components/home/HomeRegistrySlideshow";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180,
@@ -26,9 +26,7 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
 
-// Homepage registry: Cielo + Chickasaw + Good Trouble (always). Pokémon on /verify only.
-const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove", "cmn-pokemon-collection"];
-const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "good-trouble-cannabis"];
+// Homepage registry: compact slideshow (full grid lives on /verify).
 
 function HomeContent() {
   return (
@@ -52,13 +50,7 @@ function HomeContent() {
             borderBottom: "1px solid var(--border-strong)",
           }}
         >
-          <AssetsExplorer
-            title="Live proof on-registry"
-            eyebrow="Reference assets"
-            home
-            pinIds={HOME_REGISTRY_PIN}
-            excludeIds={HOME_REGISTRY_EXCLUDE}
-          />
+          <HomeRegistrySlideshow />
         </div>
         <HomePartnersBrief />
       </div>
