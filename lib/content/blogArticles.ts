@@ -119,7 +119,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     slug: "what-is-real-world-asset-tokenization",
     title: "What Is Real-World Asset Tokenization?",
     description:
-      "Abraxas: the verification layer institutions need beyond tokenization. Market context, seven institutional steps, and why minting alone is not enough.",
+      "The verification layer institutions need beyond minting — with market data, process, and diligence in visual form.",
     category: "product",
     readingTime: "12 min",
     featured: true,
