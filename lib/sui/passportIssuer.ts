@@ -11,8 +11,11 @@ import { SUI_DEVNET, getSuiDeployment, passportTypeFilter } from "@/lib/sui/conf
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";
 import { stampsToBitmask } from "@/lib/passport/stamps";
 
-/** identity + biometric + compliance after Veriff approve */
-export const VERIFF_PASSPORT_STAMPS = stampsToBitmask(["identity", "biometric", "compliance"]);
+/** identity + biometric + compliance after identity verification (Veriff or Abraxas independent) */
+export const IDENTITY_PASSPORT_STAMPS = stampsToBitmask(["identity", "biometric", "compliance"]);
+
+/** @deprecated use IDENTITY_PASSPORT_STAMPS */
+export const VERIFF_PASSPORT_STAMPS = IDENTITY_PASSPORT_STAMPS;
 
 export interface ProvisionResult {
   objectId: string;
@@ -33,8 +36,13 @@ function getIssuerKeypair(): Ed25519Keypair {
 function getCapId(): string {
   const cap = process.env.SUI_ISSUANCE_CAP_OBJECT_ID?.trim();
   if (cap) return cap;
-  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
-    throw new Error("SUI_ISSUANCE_CAP_OBJECT_ID must be set in Vercel (do not use legacy demo cap)");
+  const deployment = getSuiDeployment();
+  const isProduction = Boolean(process.env.VERCEL || process.env.NODE_ENV === "production");
+  if (deployment.demoIssuanceCapObjectId) {
+    return deployment.demoIssuanceCapObjectId;
+  }
+  if (isProduction) {
+    throw new Error("SUI_ISSUANCE_CAP_OBJECT_ID must be set in production");
   }
   return SUI_DEVNET.demoIssuanceCapObjectId;
 }
@@ -203,14 +211,14 @@ export async function provisionOnChainPassport(holder: string): Promise<Provisio
   let stampBitmask = await readStampBitmask(objectId);
   let stampsTxDigest: string | undefined;
 
-  if ((stampBitmask & VERIFF_PASSPORT_STAMPS) !== VERIFF_PASSPORT_STAMPS) {
+  if ((stampBitmask & IDENTITY_PASSPORT_STAMPS) !== IDENTITY_PASSPORT_STAMPS) {
     const tx2 = new Transaction();
     tx2.moveCall({
       target: `${packageId}::passport::issue_stamps_entry`,
       arguments: [
         tx2.object(capId),
         tx2.object(objectId),
-        tx2.pure.u16(VERIFF_PASSPORT_STAMPS),
+        tx2.pure.u16(IDENTITY_PASSPORT_STAMPS),
       ],
     });
     const result2 = await sendTx(tx2, keypair);

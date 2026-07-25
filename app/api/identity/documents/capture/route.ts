@@ -6,6 +6,8 @@ import { createClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { randomUUID } from "crypto";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { getIdvProvider } from "@/lib/idv/idvProvider";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,16 +48,25 @@ async function uploadCaptureFile(
 
 export async function POST(req: NextRequest) {
   try {
+    if (getIdvProvider() === "veriff") {
+      return NextResponse.json({
+        error: "Abraxas capture is disabled while Veriff is active. Use Start identity check instead.",
+      }, { status: 403 });
+    }
+
+    const auth = await requireBrowserSession(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const formData = await req.formData();
-    const email = (formData.get("email") as string | null)?.trim();
     const legalName = (formData.get("legal_name") as string | null)?.trim();
-    const suiRaw = (formData.get("sui_address") as string | null)?.trim();
     const idFront = formData.get("id_front") as File | null;
     const selfie = formData.get("selfie") as File | null;
 
-    if (!email || !legalName || !suiRaw || !idFront || !selfie) {
+    if (!legalName || !idFront || !selfie) {
       return NextResponse.json({
-        error: "email, legal_name, sui_address, id_front, and selfie are required",
+        error: "legal_name, id_front, and selfie are required",
       }, { status: 400 });
     }
 
@@ -63,11 +74,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "legal_name must be at least 2 characters" }, { status: 400 });
     }
 
-    let suiAddress: string;
-    try {
-      suiAddress = normalizeSuiAddress(suiRaw);
-    } catch {
-      return NextResponse.json({ error: "Invalid sui_address" }, { status: 400 });
+    const suiAddress = normalizeSuiAddress(auth.session.suiAddress);
+
+    const { data: zkRow } = await supabase
+      .from("sui_zklogin_identities")
+      .select("email")
+      .eq("sui_address", suiAddress)
+      .maybeSingle();
+
+    const email = zkRow?.email?.trim();
+    if (!email?.includes("@")) {
+      return NextResponse.json({
+        error: "Google account email required — sign in again from the top right",
+      }, { status: 403 });
     }
 
     const captureSessionId = randomUUID();

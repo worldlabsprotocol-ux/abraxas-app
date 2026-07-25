@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { SignJWT, importJWK } from "jose";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import {
+  abraxasCaptureApprovedClaims,
   manualApprovedClaims,
   veriffApprovedClaims,
   walletBindingClaim,
@@ -25,10 +26,12 @@ export interface IssueIdentityCredentialResult {
   message?: string;
 }
 
+export type IdentityIssuanceProvider = "veriff" | "manual" | "abraxas_capture";
+
 export async function issueIdentityCredential(
   holder: string,
   decision: VeriffDecisionInput,
-  options?: { provider?: "veriff" | "manual"; reviewId?: string },
+  options?: { provider?: IdentityIssuanceProvider; reviewId?: string; captureSessionId?: string },
 ): Promise<IssueIdentityCredentialResult> {
   const provider = options?.provider ?? "veriff";
   const reviewRef = options?.reviewId ?? decision.id;
@@ -98,7 +101,7 @@ export async function issueIdentityCredential(
       chain: "sui" as const,
       veriff_session_id: provider === "veriff" ? decision.id : undefined,
       assurance_level: provider === "veriff" ? ("L3" as const) : ("L2" as const),
-      idv_provider: provider,
+      idv_provider: provider === "abraxas_capture" ? "abraxas_independent" : provider,
       review_id: provider === "manual" ? reviewRef : undefined,
       permissions: {
         fiat_offramp: true,
@@ -136,7 +139,11 @@ export async function issueIdentityCredential(
         document_state: state.toUpperCase() || null,
         document_verified: true,
         liveness_passed: true,
-        liveness_provider: provider === "veriff" ? "veriff" : "manual_review",
+        liveness_provider: provider === "veriff"
+          ? "veriff"
+          : provider === "abraxas_capture"
+            ? "abraxas_capture"
+            : "manual_review",
         status: "approved",
         identity_verification_status: "approved",
         credential_status: "active",
@@ -175,14 +182,23 @@ export async function issueIdentityCredential(
             veriffSessionId: decision.id,
             expiresAt,
           })
-        : manualApprovedClaims({
-            subjectId: normalized,
-            jti,
-            jurisdiction: juris,
-            documentType: docType,
-            reviewId: reviewRef,
-            expiresAt,
-          })),
+        : provider === "abraxas_capture" && options?.captureSessionId
+          ? abraxasCaptureApprovedClaims({
+              subjectId: normalized,
+              jti,
+              jurisdiction: juris,
+              documentType: docType,
+              captureSessionId: options.captureSessionId,
+              expiresAt,
+            })
+          : manualApprovedClaims({
+              subjectId: normalized,
+              jti,
+              jurisdiction: juris,
+              documentType: docType,
+              reviewId: reviewRef,
+              expiresAt,
+            })),
       walletBindingClaim({
         subjectId: normalized,
         walletAddress: normalized,
@@ -218,6 +234,7 @@ export interface ManualReviewApproval {
   jurisdiction?: string;
   documentType?: string;
   reviewer?: string;
+  captureSessionId?: string;
 }
 
 /** Issue credential after admin manual review (Veriff unavailable). Assurance L2. */
@@ -225,6 +242,10 @@ export async function issueManualIdentityCredential(
   holder: string,
   approval: ManualReviewApproval,
 ): Promise<IssueIdentityCredentialResult> {
+  const provider: IdentityIssuanceProvider = approval.captureSessionId
+    ? "abraxas_capture"
+    : "manual";
+
   return issueIdentityCredential(
     holder,
     {
@@ -238,6 +259,10 @@ export async function issueManualIdentityCredential(
           : undefined,
       },
     },
-    { provider: "manual", reviewId: approval.reviewId },
+    {
+      provider,
+      reviewId: approval.reviewId,
+      captureSessionId: approval.captureSessionId,
+    },
   );
 }

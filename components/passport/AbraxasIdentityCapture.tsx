@@ -68,7 +68,7 @@ export function AbraxasIdentityCapture({
       return;
     }
     if (!suiAddress) {
-      setError("Bind your wallet before submitting identity verification.");
+      setError("Sign in with Google (top right) before submitting identity verification.");
       return;
     }
     if (!idCapture || !selfieCapture) {
@@ -80,14 +80,13 @@ export function AbraxasIdentityCapture({
     setError(null);
     try {
       const formData = new FormData();
-      formData.append("email", email);
-      formData.append("sui_address", suiAddress);
       formData.append("legal_name", legalName.trim());
       formData.append("id_front", idCapture.blob, "id_front.jpg");
       formData.append("selfie", selfieCapture.blob, "selfie.jpg");
 
       const res = await fetch("/api/identity/documents/capture", {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
       const data = await res.json() as {
