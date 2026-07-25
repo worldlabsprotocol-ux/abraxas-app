@@ -216,8 +216,13 @@ Write-Host "Length: $($capId.Length)  (must be 66)"
 ## Step 5 — Export sponsor private key for Vercel
 
 ```powershell
-& $sui keytool export --key-identity 0xYOUR_SPONSOR_ADDRESS --key-scheme ed25519
+$sui = "C:\sui\sui.exe"
+$sponsor = "0xa4d1f13d192d9c215642ae2eaeea5371e737c911c573c2238f8f14970f1d2246"
+
+& $sui keytool export --key-identity $sponsor
 ```
+
+Sui CLI 1.76+ removed `--key-scheme` from `keytool export` (identity alone is enough).
 
 Copy the full line starting with `suiprivkey1` — **never** paste in chat, GitHub, or screenshots.
 
