@@ -11,9 +11,7 @@ import {
   type BlogArticle,
   type PlatformReview,
 } from "@/lib/content/blogArticles";
-import { RWA_THESIS_SUBTITLE } from "@/lib/rwaTokenizationThesis";
 import {
-  ThesisLiveProofFigure,
   ThesisMarketStatsFigure,
   ThesisQuestionsFigure,
   ThesisStepsFigure,
@@ -102,9 +100,6 @@ function ThesisArticleContent({ article }: { article: BlogArticle }) {
 
   return (
     <>
-      <p style={{ ...paraStyle, fontWeight: 700, color: "var(--accent-pale, var(--accent))" }}>
-        {RWA_THESIS_SUBTITLE}
-      </p>
       {def && <Paragraph>{def}</Paragraph>}
       <ThesisMarketStatsFigure />
       {compare && <Paragraph>{compare}</Paragraph>}
@@ -114,7 +109,6 @@ function ThesisArticleContent({ article }: { article: BlogArticle }) {
       {abraxas && <Paragraph>{abraxas}</Paragraph>}
       {blockchain && <Paragraph>{blockchain}</Paragraph>}
       {close && <Paragraph>{close}</Paragraph>}
-      <ThesisLiveProofFigure />
     </>
   );
 }
