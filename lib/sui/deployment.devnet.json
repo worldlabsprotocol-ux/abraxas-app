@@ -1,6 +1,6 @@
 {
   "network": "devnet",
-  "rpcUrl": "https://fullnode.devnet.sui.io:443",
+  "rpcUrl": "https://rpc-devnet.suiscan.xyz",
   "explorerBase": "https://suiscan.xyz/devnet",
   "packageId": "0x946e7f2878e58525638549a486462c820c175dfbd3404cce66a02d25b0e86551",
   "module": "passport",
