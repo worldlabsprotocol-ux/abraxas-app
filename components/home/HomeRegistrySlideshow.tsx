@@ -54,14 +54,14 @@ export function HomeRegistrySlideshow() {
         display: "flex", justifyContent: "space-between", alignItems: "flex-end",
         flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.85rem",
       }}>
-        <motionGradient>
-          <motionGradient style={{
+        <div>
+          <div style={{
             fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700,
             letterSpacing: "0.12em", textTransform: "uppercase",
             color: ACCENT, marginBottom: "0.3rem",
           }}>
             Live proof on-registry
-          </motionGradient>
+          </div>
           <h2 style={{
             fontFamily: FONT, fontSize: "clamp(1.05rem, 2.5vw, 1.25rem)",
             fontWeight: 800, letterSpacing: "-0.02em",
@@ -69,14 +69,14 @@ export function HomeRegistrySlideshow() {
           }}>
             Reference assets in rotation
           </h2>
-        </motionGradient>
+        </div>
         <Link href="/verify" style={{
           fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700,
           color: ACCENT, textDecoration: "none",
         }}>
           Browse all →
         </Link>
-      </motionGradient>
+      </div>
 
       <article style={{
         display: "grid",
@@ -88,11 +88,11 @@ export function HomeRegistrySlideshow() {
         background: "var(--surface-raised)",
         minHeight: THUMB_HEIGHT,
       }}>
-        <motionGradient style={{ position: "relative", height: THUMB_HEIGHT, background: "#0a0f14" }}>
+        <div style={{ position: "relative", height: THUMB_HEIGHT, background: "#0a0f14" }}>
           <SlideVisual abxId={slide.abxId} image={slide.image} name={slide.name} />
-        </motionGradient>
+        </div>
 
-        <motionGradient style={{
+        <div style={{
           padding: "0.75rem 0.9rem",
           display: "flex",
           flexDirection: "column",
@@ -100,7 +100,7 @@ export function HomeRegistrySlideshow() {
           gap: "0.3rem",
           minWidth: 0,
         }}>
-          <motionGradient style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
             <span style={{
               fontFamily: FONT, fontSize: "0.52rem", fontWeight: 700,
               padding: "0.18rem 0.4rem", borderRadius: 999,
@@ -113,7 +113,7 @@ export function HomeRegistrySlideshow() {
             <span style={{ fontFamily: MONO, fontSize: "0.5rem", color: ACCENT, fontWeight: 700 }}>
               {slide.abxId}
             </span>
-          </motionGradient>
+          </div>
 
           <h3 style={{
             fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800,
@@ -134,7 +134,7 @@ export function HomeRegistrySlideshow() {
               : ""}
           </p>
 
-          <motionGradient style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.15rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.15rem" }}>
             <Link
               href={`/verify/${encodeURIComponent(slide.abxId)}`}
               style={{
@@ -154,12 +154,12 @@ export function HomeRegistrySlideshow() {
                 Details
               </Link>
             )}
-          </motionGradient>
-        </motionGradient>
+          </div>
+        </div>
       </article>
 
       {SLIDES.length > 1 && (
-        <motionGradient style={{
+        <div style={{
           display: "flex", justifyContent: "center", alignItems: "center",
           gap: "0.5rem", marginTop: "0.55rem", flexWrap: "wrap",
         }}>
@@ -197,7 +197,7 @@ export function HomeRegistrySlideshow() {
           >
             →
           </button>
-        </motionGradient>
+        </div>
       )}
     </section>
   );
