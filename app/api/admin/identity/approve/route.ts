@@ -47,13 +47,19 @@ export async function POST(req: NextRequest) {
   const reviewer = body.reviewer ?? "admin";
 
   if (body.action === "reject") {
-    await sb.from("passport_documents").update({
+    const sessionId = doc.capture_session_id as string | null;
+    const rejectUpdate = {
       status: "rejected",
       reviewer_note: body.note ?? null,
       reviewed_at: now,
       reviewed_by: reviewer,
       updated_at: now,
-    }).eq("id", doc.id);
+    };
+    if (sessionId) {
+      await sb.from("passport_documents").update(rejectUpdate).eq("capture_session_id", sessionId);
+    } else {
+      await sb.from("passport_documents").update(rejectUpdate).eq("id", doc.id);
+    }
 
     return NextResponse.json({ ok: true, action: "rejected", document_id: doc.id });
   }
@@ -88,14 +94,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: issued.message ?? "Issuance failed" }, { status: 500 });
   }
 
-  await sb.from("passport_documents").update({
+  const sessionId = doc.capture_session_id as string | null;
+  const updateQuery = sb.from("passport_documents").update({
     status: "accepted",
     sui_address: normalized,
     reviewer_note: body.note ?? null,
     reviewed_at: now,
     reviewed_by: reviewer,
     updated_at: now,
-  }).eq("id", doc.id);
+  });
+
+  if (sessionId) {
+    await updateQuery.eq("capture_session_id", sessionId);
+  } else {
+    await updateQuery.eq("id", doc.id);
+  }
 
   return NextResponse.json({
     ok: true,

@@ -1,5 +1,5 @@
 // FILE: app/api/admin/identity/queue/route.ts
-// Manual identity review queue (Veriff subscription inactive workaround).
+// Manual identity review queue — grouped Abraxas capture sessions.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -7,6 +7,20 @@ import { checkAdmin } from "@/lib/adminAuth";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+interface DocRow {
+  id: string;
+  created_at: string;
+  user_email: string;
+  sui_address: string | null;
+  file_name: string;
+  storage_path: string;
+  status: string;
+  reviewer_note: string | null;
+  document_type: string | null;
+  capture_session_id: string | null;
+  legal_name: string | null;
+}
 
 export async function GET(req: NextRequest) {
   if (!checkAdmin(req)) {
@@ -21,10 +35,10 @@ export async function GET(req: NextRequest) {
 
   let query = sb
     .from("passport_documents")
-    .select("id, created_at, user_email, sui_address, file_name, storage_path, status, reviewer_note, reviewed_at, reviewed_by")
+    .select("id, created_at, user_email, sui_address, file_name, storage_path, status, reviewer_note, document_type, capture_session_id, legal_name")
     .eq("stamp_id", "identity")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(200);
 
   if (status === "pending") {
     query = query.in("status", ["submitted", "under_review"]);
@@ -37,5 +51,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ items: data ?? [], count: data?.length ?? 0 });
+  const rows = (data ?? []) as DocRow[];
+  const grouped = new Map<string, DocRow & { documents: DocRow[] }>();
+
+  for (const row of rows) {
+    const key = row.capture_session_id ?? row.id;
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, { ...row, documents: [row] });
+      continue;
+    }
+    existing.documents.push(row);
+    if (row.document_type === "id_front") {
+      grouped.set(key, { ...row, documents: existing.documents });
+    }
+  }
+
+  const items = Array.from(grouped.values()).map(item => ({
+    ...item,
+    has_selfie: item.documents.some(d => d.document_type === "selfie"),
+    has_id_front: item.documents.some(d => d.document_type === "id_front"),
+    capture_complete: item.capture_session_id
+      ? item.documents.some(d => d.document_type === "id_front") &&
+        item.documents.some(d => d.document_type === "selfie")
+      : true,
+  }));
+
+  return NextResponse.json({ items, count: items.length });
 }
