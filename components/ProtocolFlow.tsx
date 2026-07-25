@@ -22,7 +22,7 @@ const STEPS = [
     icon:  "◈",
     color: "#C8A96E",
     desc:  "Token-2022 certificate minted. immutable proof of ownership",
-    metric:{ label:"Mint cost", value:"100–500 ABRA" },
+    metric:{ label:"Mint cost", value:"100-500 ABRA" },
   },
   {
     id:    "collateralize",

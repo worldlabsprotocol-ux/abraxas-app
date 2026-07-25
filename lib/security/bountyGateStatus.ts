@@ -34,13 +34,14 @@ export async function getBountyGateStatus(): Promise<BountyGateStatus> {
   }
 
   const notifyConfigured = Boolean(process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL);
+  const bountyPhase =
+    process.env.BUG_BOUNTY_PHASE?.trim() === "live" ? "live" : BUG_BOUNTY.phase;
+
   const met =
     bountySubmissionsEnabled &&
     selfServeIntegrate &&
     notifyConfigured &&
-    BUG_BOUNTY.phase !== "pre_registration"
-      ? auditsComplete >= 2
-      : false;
+    (bountyPhase !== "pre_registration" ? auditsComplete >= 2 : true);
 
   return {
     met,

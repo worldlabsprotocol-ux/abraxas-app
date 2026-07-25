@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncBagsRevenue }           from "@/lib/services/bagsService";
 import { runAssetMonitoringFeeds } from "@/lib/assetMonitoring/runFeeds";
+import { parseEnvBool } from "@/lib/env/parseEnvBool";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const bags = await syncBagsRevenue();
-    const monitoringApply = process.env.ASSET_MONITORING_AUTO_APPLY === "true";
+    const monitoringApply = parseEnvBool(process.env.ASSET_MONITORING_AUTO_APPLY);
     const monitoring = await runAssetMonitoringFeeds({
       apply: monitoringApply,
       changedBy: "cron:daily-ops",

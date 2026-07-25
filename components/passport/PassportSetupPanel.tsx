@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportSetupPanel.tsx
-// Dominant guided onboarding — account → identity → wallet bind.
+// Dominant guided onboarding. account → identity → wallet bind.
 
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
@@ -139,7 +139,7 @@ export function PassportSetupPanel({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.6, margin: "0 0 0.75rem", maxWidth: 520,
           }}>
-            Your reusable eligibility profile. Bind your wallet to finish setup —
+            Your reusable eligibility profile. Bind your wallet to finish setup , 
             ID verification is optional until a partner policy requires it.
           </p>
           <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>
@@ -152,7 +152,7 @@ export function PassportSetupPanel({
           <ol style={{ listStyle: "none", margin: "0 0 1.25rem", padding: 0, display: "grid", gap: "0.45rem" }}>
             {[
               { done: setup.accountComplete, label: "Account created", sub: walletDone && suiAddress ? truncateSuiAddress(suiAddress, 8, 6) : "Sign in with Google" },
-              { done: setup.walletBound, label: "Bind wallet", sub: setup.walletBound ? "Signed control proof on file" : "One signature — no funds move" },
+              { done: setup.walletBound, label: "Bind wallet", sub: setup.walletBound ? "Signed control proof on file" : "One signature. no funds move" },
               { done: setup.identityComplete, label: "Verify identity", sub: setup.identityComplete ? `Credential active · ${assuranceLabel}` : "Optional · for payments & enhanced trust" },
             ].map(item => (
               <li key={item.label} style={{
@@ -203,7 +203,7 @@ export function PassportSetupPanel({
               </div>
               <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
                 Signing proves you control this wallet. It does not authorize a transaction or move funds.
-                This completes your core profile — no ID upload required.
+                This completes your core profile. no ID upload required.
               </p>
               <Btn size="lg" fullWidth onClick={() => void bindWallet()}>
                 Sign to bind wallet →
@@ -221,7 +221,7 @@ export function PassportSetupPanel({
                   Continue with basic Passport
                 </div>
                 <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-                  Tier 1 complete — wallet bound. Browse, connect apps, and use the Cielo verified-rate pilot without ID verification.
+                  Tier 1 complete. wallet bound. Browse, connect apps, and use the Cielo verified-rate pilot without ID verification.
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                   {returnPath ? (
@@ -253,9 +253,13 @@ export function PassportSetupPanel({
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
                   Your profile is active. Add an ID check when you need enhanced trust for payments, submissions, or partner policies.
                   {manualMode ? (
+<<<<<<< HEAD
                     <> Use your device camera below — name, government ID, and selfie. Reviewed by Abraxas (not Veriff).</>
+=======
+                    <> Upload a government ID below. our team reviews manually (Veriff trial is not active).</>
+>>>>>>> origin/main
                   ) : (
-                    <> Usually takes 2–4 minutes via licensed provider — Abraxas stores outcome only.</>
+                    <> Usually takes 2-4 minutes via licensed provider. Abraxas stores outcome only.</>
                   )}
                 </p>
 
@@ -268,7 +272,7 @@ export function PassportSetupPanel({
                       Veriff session inactive
                     </div>
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
-                      If you started Veriff before the trial ended, that review will not complete. Upload your ID below for pilot manual review instead — or skip identity; Tier 1 Passport works without it.
+                      If you started Veriff before the trial ended, that review will not complete. Upload your ID below for pilot manual review instead. or skip identity; Tier 1 Passport works without it.
                     </p>
                   </div>
                 )}
@@ -347,7 +351,7 @@ export function PassportSetupPanel({
                       onClick={onStartIdCheck}
                       disabled={identityStatus === "pending"}
                     >
-                      Add identity verification — optional →
+                      Add identity verification. optional →
                     </Btn>
                     <Btn
                       variant="ghost"
@@ -382,7 +386,7 @@ export function PassportSetupPanel({
               background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)",
             }}>
               <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: ACCENT, marginBottom: "0.5rem" }}>
-                ✓ Profile ready — browse, verify, and connect
+                ✓ Profile ready. browse, verify, and connect
               </div>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
                 Wallet bound · Core account active · Add optional ID check above when a deal requires enhanced trust.

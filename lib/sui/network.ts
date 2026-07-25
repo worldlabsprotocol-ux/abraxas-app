@@ -17,7 +17,10 @@ export function getSuiNetwork(): SuiNetwork {
 export function getSuiRpcUrl(): string {
   const explicit = process.env.SUI_RPC_URL?.trim();
   if (explicit) return explicit;
-  return getFullnodeUrl(getSuiNetwork());
+  const network = getSuiNetwork();
+  // Mysten devnet fullnode currently 404s for @mysten/sui JSON-RPC; Suiscan works.
+  if (network === "devnet") return "https://rpc-devnet.suiscan.xyz";
+  return getFullnodeUrl(network);
 }
 
 export function getSuiExplorerTxBase(): string {

@@ -57,13 +57,13 @@ export default function IntegrationsPage() {
       <PageHeader
         eyebrow="Integrations"
         title="The reusable verification primitive"
-        subtitle={`${liveCount} live integration surfaces today. External protocols integrate Abraxas Passport in ~4 lines — no re-KYC for users.`}
+        subtitle={`${liveCount} live integration surfaces today. External protocols integrate Abraxas Passport in ~4 lines. no re-KYC for users.`}
       />
 
       <ContentCard title="Relying party program">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
           The network-effect milestone: an unaffiliated lender, marketplace, or protocol checks Abraxas credentials in production.
-          Partners configure eligibility rules — Abraxas returns <strong>approved / denied / manual review</strong> with consent receipts and audit references.
+          Partners configure eligibility rules. Abraxas returns <strong>approved / denied / manual review</strong> with consent receipts and audit references.
         </p>
         <Btn href="/integrations/relying-parties" size="sm">Relying party onboarding →</Btn>
         <Btn href="/integrations/outreach" variant="secondary" size="sm">Outreach templates</Btn>
@@ -73,12 +73,12 @@ export default function IntegrationsPage() {
       <ContentCard title="Policy Engine">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.65rem" }}>
           Partners define required claims (identity, screening, wallet binding, accreditation) with assurance levels and max age.
-          The engine evaluates live claim status — not a static profile — and logs every decision.
+          The engine evaluates live claim status. not a static profile. and logs every decision.
         </p>
         <BulletList items={[
           "Seeded policies: abraxas-core-v1, abraxas-booking-v1, abraxas-rwa-us-v1",
-          "POST /api/v1/policies/evaluate — direct evaluation",
-          "GET /api/v1/decisions/{id}/status — re-check before settlement",
+          "POST /api/v1/policies/evaluate. direct evaluation",
+          "GET /api/v1/decisions/{id}/status. re-check before settlement",
         ]} />
       </ContentCard>
       </div>
@@ -90,7 +90,7 @@ export default function IntegrationsPage() {
           with assurance tiers, jurisdictions, and audit status.
         </p>
         <BulletList items={[
-          "GET /api/trust/registry — issuers + W3C schema identifiers",
+          "GET /api/trust/registry. issuers + W3C schema identifiers",
           "Veriff · Abraxas Network · Manual Review · Screening (partner-gated)",
           "Issuer suspension and schema versioning",
         ]} />
@@ -137,7 +137,21 @@ export default function IntegrationsPage() {
                 {p.description}
               </p>
               {p.api && (
-                <code style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT }}>{p.api}</code>
+                <code style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT, display: "block", marginTop: "0.35rem" }}>{p.api}</code>
+              )}
+              {(p.href || p.website) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginTop: "0.45rem" }}>
+                  {p.href && (
+                    <Link href={p.href} style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, textDecoration: "none" }}>
+                      Pilot page →
+                    </Link>
+                  )}
+                  {p.website && (
+                    <a href={p.website} target="_blank" rel="noopener noreferrer" style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", textDecoration: "none" }}>
+                      Website ↗
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           </div>

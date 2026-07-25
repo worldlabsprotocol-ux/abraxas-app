@@ -8,9 +8,9 @@ import {
 } from "./trustTransfer";
 
 describe("trustTransfer", () => {
-  it("states cryptographic portability in headline", () => {
-    expect(TRUST_TRANSFER_HEADLINE.toLowerCase()).toContain("cryptographically");
-    expect(TRUST_TRANSFER_HEADLINE.toLowerCase()).toContain("without re-doing");
+  it("states portable proof in headline", () => {
+    expect(TRUST_TRANSFER_HEADLINE.toLowerCase()).toContain("portable");
+    expect(TRUST_TRANSFER_HEADLINE.toLowerCase()).toContain("without doing the work");
   });
 
   it("defines four-step verification chain ending with independent verify", () => {

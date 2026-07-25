@@ -141,7 +141,7 @@ export default function AdminListingsPage() {
                 <tr key={row.lot} style={{ borderBottom: "1px solid var(--border)" }}>
                   <td style={{ padding: "0.5rem", fontWeight: 700 }}>{row.lot}</td>
                   <td style={{ padding: "0.5rem" }}>{row.acres}</td>
-                  <td style={{ padding: "0.5rem" }}>{row.priceUsd > 0 ? `$${row.priceUsd.toLocaleString()}` : "—"}</td>
+                  <td style={{ padding: "0.5rem" }}>{row.priceUsd > 0 ? `$${row.priceUsd.toLocaleString()}` : ", "}</td>
                   <td style={{ padding: "0.5rem" }}>{row.status}</td>
                   <td style={{ padding: "0.5rem", fontFamily: MONO, fontSize: "0.58rem" }}>{row.source}</td>
                   <td style={{ padding: "0.5rem", fontFamily: MONO, fontSize: "0.58rem" }}>
@@ -197,7 +197,7 @@ export default function AdminListingsPage() {
       <ContentCard title="Recent status events">
         {events.length === 0 ? (
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
-            No events yet — partner push or manual edits will appear here.
+            No events yet. partner push or manual edits will appear here.
           </p>
         ) : (
           <div style={{ display: "grid", gap: "0.45rem" }}>
@@ -210,7 +210,7 @@ export default function AdminListingsPage() {
                 fontSize: "0.6rem",
                 color: "var(--text-secondary)",
               }}>
-                Lot {ev.lot_number}: {ev.from_status ?? "—"} → {ev.to_status} · {ev.source} · {new Date(ev.created_at).toLocaleString()}
+                Lot {ev.lot_number}: {ev.from_status ?? ", "} → {ev.to_status} · {ev.source} · {new Date(ev.created_at).toLocaleString()}
               </div>
             ))}
           </div>

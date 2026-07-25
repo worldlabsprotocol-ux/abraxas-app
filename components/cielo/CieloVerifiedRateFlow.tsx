@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/cielo/CieloVerifiedRateFlow.tsx
-// Step 3 verified-rate request loop — Passport → consent → eligibility → rate request (not booking/payment).
+// Step 3 verified-rate request loop. Passport → consent → eligibility → rate request (not booking/payment).
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -169,7 +169,7 @@ export function CieloVerifiedRateFlow() {
           Check verified rate
         </h2>
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
-          Passport unlocks a pilot verified-rate request at Cielo — not a confirmed reservation or payment.
+          Passport unlocks a pilot verified-rate request at Cielo. not a confirmed reservation or payment.
           Tier 1 only: account, profile, wallet binding, and consent. No partner API key required.
         </p>
       </div>
@@ -194,13 +194,13 @@ export function CieloVerifiedRateFlow() {
             ) : (
               <ul style={{ margin: "0 0 0.75rem", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
                 <li style={{ color: evaluation?.account_active ? ACCENT : "var(--text-muted)" }}>
-                  Account active {evaluation?.account_active ? "✓" : "—"}
+                  Account active {evaluation?.account_active ? "✓" : ", "}
                 </li>
                 <li style={{ color: evaluation?.profile_complete ? ACCENT : AMBER }}>
                   Profile complete {evaluation?.profile_complete ? "✓" : "(username or display name required)"}
                 </li>
                 <li style={{ color: evaluation?.wallet_binding_fresh ? ACCENT : AMBER }}>
-                  Wallet bound (30d) {evaluation?.wallet_binding_fresh ? "✓" : "—"}
+                  Wallet bound (30d) {evaluation?.wallet_binding_fresh ? "✓" : ", "}
                 </li>
                 <li style={{ color: "var(--text-muted)" }}>
                   Identity credential optional {evaluation?.identity_credential_active ? "· active" : "· not required for pilot"}
@@ -255,7 +255,7 @@ export function CieloVerifiedRateFlow() {
             <StepLabel n={2} title="Consent & eligibility" />
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
               Policy <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>cielo-verified-guest-v1</code> shares only:
-              Passport account status, profile completeness, and wallet binding freshness — never raw ID documents.
+              Passport account status, profile completeness, and wallet binding freshness. never raw ID documents.
             </p>
             <ul style={{ margin: "0 0 0.85rem", paddingLeft: "1.1rem", fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", lineHeight: 1.7 }}>
               <li>passport_account</li>
@@ -276,7 +276,7 @@ export function CieloVerifiedRateFlow() {
             <StepLabel n={3} title="Verified rate eligible" />
             <DecisionBadge label="APPROVED" sub="Verified Rate Eligible · pilot request" color={ACCENT} />
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0.75rem 0" }}>
-              Submit a pilot verified-rate request. An operator will review — this is not a confirmed booking.
+              Submit a pilot verified-rate request. An operator will review. this is not a confirmed booking.
             </p>
             <Field label="Your name"><input value={guestName} onChange={e => setGuestName(e.target.value)} style={inputStyle} /></Field>
             <Field label="Email"><input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} style={inputStyle} /></Field>
@@ -306,7 +306,7 @@ export function CieloVerifiedRateFlow() {
             <StepLabel n={3} title="Eligibility result" />
             <DecisionBadge
               label={consentResult.display_decision}
-              sub={consentResult.decision === "manual_review" ? "Pending review — complete missing steps" : "Not eligible for verified rate pilot"}
+              sub={consentResult.decision === "manual_review" ? "Pending review. complete missing steps" : "Not eligible for verified rate pilot"}
               color={consentResult.decision === "manual_review" ? AMBER : RED}
             />
             {consentResult.reason_codes.length > 0 && (

@@ -97,7 +97,7 @@ export default function AdminInquiriesPage() {
       <PageHeader
         eyebrow="Admin · acquisition"
         title="Asset inquiry queue"
-        subtitle="Closed-loop buyer interest from case studies — route to partner, update status on-protocol."
+        subtitle="Closed-loop buyer interest from case studies. route to partner, update status on-protocol."
       />
 
       {msg && (
@@ -113,7 +113,7 @@ export default function AdminInquiriesPage() {
       <ContentCard title={`Inquiries (${inquiries.length})`}>
         {inquiries.length === 0 ? (
           <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
-            No inquiries yet — Chickasaw inquire panel POSTs to /api/assets/inquire with on-chain proof.
+            No inquiries yet. Chickasaw inquire panel POSTs to /api/assets/inquire with on-chain proof.
           </p>
         ) : (
           <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -134,7 +134,7 @@ export default function AdminInquiriesPage() {
                   </span>
                 </div>
                 <div style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                  <div><strong>Package:</strong> {row.package_interest ?? "—"}</div>
+                  <div><strong>Package:</strong> {row.package_interest ?? ", "}</div>
                   <div><strong>Email:</strong> {row.email}</div>
                   {row.wallet && <div><strong>Wallet:</strong> {row.wallet}</div>}
                   {row.message && <div><strong>Message:</strong> {row.message}</div>}

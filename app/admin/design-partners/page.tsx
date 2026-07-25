@@ -146,7 +146,7 @@ export default function AdminDesignPartnersPage() {
                   <div>
                     <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800 }}>{app.company}</div>
                     <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                      {app.contact_name ?? "—"} · {app.email} · {app.integration_type}
+                      {app.contact_name ?? ", "} · {app.email} · {app.integration_type}
                     </div>
                   </div>
                   <span style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--accent)" }}>{app.status}</span>

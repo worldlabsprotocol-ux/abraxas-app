@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/case-studies/ChickasawProjectCaseStudy.tsx
-// Chickasaw Project — Abraxas land reference loop.
+// Chickasaw Project. Abraxas land reference loop.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -81,7 +81,7 @@ export function ChickasawProjectCaseStudy() {
       <PageHeader
         eyebrow="Reference land loop · consent-gated"
         title={`${CPG_ASSET.name}`}
-        subtitle="~270 acres across 11 surveyed tracts in the Chickasha corridor — Abraxas verification and acquisition flow. Drone footage, Phase I clean, qualified-buyer workflow."
+        subtitle="~270 acres across 11 surveyed tracts in the Chickasha corridor. Abraxas verification and acquisition flow. Drone footage, Phase I clean, qualified-buyer workflow."
       />
 
       <CaseStudyVideoHero
@@ -112,7 +112,7 @@ export function ChickasawProjectCaseStudy() {
             v: `${lots.filter(l => l.status === "available").length} available · ${lots.filter(l => l.status === "under_contract").length} under contract`,
           },
           { k: "Full project", v: formatUsd(CPG_PRICING.fullProject) },
-          { k: "Lots 2–4 bundle", v: `${formatUsd(CPG_PRICING.lots234Bundle)} · 81.74 ac · no active wells` },
+          { k: "Lots 2-4 bundle", v: `${formatUsd(CPG_PRICING.lots234Bundle)} · 81.74 ac · no active wells` },
           { k: "Closing", v: CPG_PARTNER.titleCompany },
           { k: "Flow", v: "Acquire · verify · USDC settle on Abraxas" },
         ]} />
@@ -161,23 +161,23 @@ export function ChickasawProjectCaseStudy() {
 
       <ContentCard title="Pricing & packages">
         <p style={{ ...body, marginTop: 0 }}>
-          Headline pricing is public for transparency. Full lot schedule and package breakdowns release through Passport — captures serious buyers inside Abraxas.
+          Headline pricing is public for transparency. Full lot schedule and package breakdowns release through Passport. captures serious buyers inside Abraxas.
         </p>
         <KeyValueTable rows={[
           { k: "Full project (11 lots · ~270 ac)", v: formatUsd(CPG_PRICING.fullProject) },
-          { k: "Lots 2–4 contiguous bundle", v: `${formatUsd(CPG_PRICING.lots234Bundle)} · clean well status` },
+          { k: "Lots 2-4 contiguous bundle", v: `${formatUsd(CPG_PRICING.lots234Bundle)} · clean well status` },
           { k: "Remaining 9 lots", v: formatUsd(CPG_PRICING.remaining9Lots) },
         ]} />
         <div style={{ marginTop: "1rem" }}>
           <PassportGate
             returnPath={RETURN_PATH}
             title="Full pricing & lot schedule"
-            description="Line-item lot prices, fast-approval thresholds, and bundle math — sign in once, access from any device."
+            description="Line-item lot prices, fast-approval thresholds, and bundle math. sign in once, access from any device."
           >
             <KeyValueTable rows={[
               { k: "Bulk acquisition (partner convenience)", v: formatUsd(CPG_PRICING.bulkFullProject) },
               { k: "Fast approval threshold (9 lots)", v: `≥ ${formatUsd(CPG_PRICING.remaining9LotsFastApproval)}` },
-              { k: "Lots 2–4 list reference", v: formatUsd(CPG_PRICING.lots234List) },
+              { k: "Lots 2-4 list reference", v: formatUsd(CPG_PRICING.lots234List) },
               { k: "10 lots · ~235 ac (if Lot 1 available)", v: formatUsd(CPG_PRICING.tenLots235Acres) },
             ]} />
             <p style={{ ...body, margin: "1rem 0 0.5rem" }}>{CPG_ASSET.availableLotsNote}</p>
@@ -204,7 +204,7 @@ export function ChickasawProjectCaseStudy() {
                         {row.priceUsd > 0 ? formatUsd(row.priceUsd) : "On request"}
                       </td>
                       <td style={{ padding: "0.5rem" }}>{STATUS_LABEL[row.status] ?? row.status}</td>
-                      <td style={{ padding: "0.5rem", color: "var(--text-muted)", maxWidth: 220 }}>{row.notes ?? "—"}</td>
+                      <td style={{ padding: "0.5rem", color: "var(--text-muted)", maxWidth: 220 }}>{row.notes ?? ", "}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -226,7 +226,7 @@ export function ChickasawProjectCaseStudy() {
         <PassportGate
           returnPath={RETURN_PATH}
           title="Diligence pack · surveys & deed"
-          description="11 lot plats, parent parcel, and warranty deed — released on Abraxas after Passport sign-in. No re-forwarding to every buyer."
+          description="11 lot plats, parent parcel, and warranty deed. released on Abraxas after Passport sign-in. No re-forwarding to every buyer."
         >
           <div style={{ display: "grid", gap: "0.45rem" }}>
             {CPG_SURVEY_FILES.map(file => (

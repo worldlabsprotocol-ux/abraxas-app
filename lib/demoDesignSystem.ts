@@ -1,6 +1,12 @@
 // FILE: lib/demoDesignSystem.ts
 // Premium demo design tokens — cosmic dark theme for video-ready UI.
 
+import {
+  ABRAXAS_FONT_DISPLAY,
+  ABRAXAS_FONT_MONO,
+  ABRAXAS_FONT_SANS,
+} from "@/lib/abraxasTypography";
+
 export const COSMIC_PALETTE = {
   void: "#050508",
   deep: "#06040c",
@@ -20,8 +26,9 @@ export const COSMIC_PALETTE = {
 } as const;
 
 export const DEMO_TYPOGRAPHY = {
-  fontSans: "'Inter', system-ui, -apple-system, sans-serif",
-  fontMono: "'JetBrains Mono', 'SF Mono', ui-monospace, monospace",
+  fontSans: ABRAXAS_FONT_SANS,
+  fontDisplay: ABRAXAS_FONT_DISPLAY,
+  fontMono: ABRAXAS_FONT_MONO,
   display: "clamp(1.5rem, 4vw, 2.25rem)",
   h1: "clamp(1.25rem, 3.2vw, 1.75rem)",
   h2: "clamp(1rem, 2.5vw, 1.35rem)",

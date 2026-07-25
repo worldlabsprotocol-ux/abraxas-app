@@ -163,7 +163,7 @@ export function CieloVerifiedRateQueue({ pin }: { pin: string }) {
         Verified-rate request queue
       </h2>
       <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "#888", marginBottom: "0.85rem", lineHeight: 1.55 }}>
-        Internal operator workflow — verified-rate requests only. Not bookings, reservations, or payments.
+        Internal operator workflow. verified-rate requests only. Not bookings, reservations, or payments.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "0.85rem" }}>
@@ -203,7 +203,7 @@ export function CieloVerifiedRateQueue({ pin }: { pin: string }) {
                 {r.status_label} · {r.eligibility_decision}
               </div>
               <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "#666", marginTop: 4 }}>
-                {r.guest_name ?? "—"} · {new Date(r.created_at).toLocaleString()}
+                {r.guest_name ?? ", "} · {new Date(r.created_at).toLocaleString()}
               </div>
             </button>
           ))}
@@ -220,17 +220,17 @@ export function CieloVerifiedRateQueue({ pin }: { pin: string }) {
               <DetailRow label="Operator status" value={detail.status_label} />
               <DetailRow label="Eligibility decision" value={detail.eligibility_decision} />
               <DetailRow label="Policy" value={`${detail.policy_id} v${detail.policy_version}`} />
-              <DetailRow label="Reason codes" value={detail.reason_codes.join(", ") || "—"} />
-              <DetailRow label="Decision ID" value={detail.verification_decision_id ?? "—"} mono />
-              <DetailRow label="Consent receipt" value={detail.consent_receipt_id ?? "—"} mono />
-              <DetailRow label="Wallet binding" value={detail.wallet_binding_status ?? "—"} />
+              <DetailRow label="Reason codes" value={detail.reason_codes.join(", ") || ", "} />
+              <DetailRow label="Decision ID" value={detail.verification_decision_id ?? ", "} mono />
+              <DetailRow label="Consent receipt" value={detail.consent_receipt_id ?? ", "} mono />
+              <DetailRow label="Wallet binding" value={detail.wallet_binding_status ?? ", "} />
               <DetailRow label="Dates" value={
                 detail.check_in && detail.check_out
                   ? `${detail.check_in} → ${detail.check_out} · ${detail.guests ?? "?"} guests`
-                  : "—"
+                  : ", "
               } />
-              <DetailRow label="Guest" value={detail.guest_name ?? "—"} />
-              <DetailRow label="Contact" value={detail.contact_email ?? "—"} />
+              <DetailRow label="Guest" value={detail.guest_name ?? ", "} />
+              <DetailRow label="Contact" value={detail.contact_email ?? ", "} />
               {detail.notes && <DetailRow label="Guest notes" value={detail.notes} />}
               {detail.decision_reason && <DetailRow label="Decline reason" value={detail.decision_reason} />}
 

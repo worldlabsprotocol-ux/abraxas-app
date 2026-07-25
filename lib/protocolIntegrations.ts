@@ -11,6 +11,9 @@ export interface ProtocolIntegration {
   description: string;
   capability: string;
   api?: string;
+  /** Pilot landing page or docs */
+  href?: string;
+  website?: string;
 }
 
 export const INTEGRATION_SDK_SNIPPET = `// 1) Check if user meets your policy before an action
@@ -98,6 +101,19 @@ export const PROTOCOL_INTEGRATIONS: ProtocolIntegration[] = [
     description: "Catalog ownership attestation via Abraxas music audit intake.",
     capability: "Royalty stamp + ownership chain",
     api: "/music-audit",
+    href: "/music-audit",
+  },
+  {
+    id: "good-trouble-cannabis",
+    name: "Good Trouble Cannabis",
+    category: "Regulated retail (pilot)",
+    status: "pilot",
+    description:
+      "Kansas City organic cultivator (est. 2022). Passport retail eligibility + batch provenance fixtures for cannabis SDK.",
+    capability: "Age-gated verify + COA batch registry",
+    api: "POST /api/credentials/verify · GET /api/good-trouble/batch",
+    href: "/good-trouble",
+    website: "https://www.goodtroublecanna.com/",
   },
 ];
 

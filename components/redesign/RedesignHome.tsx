@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: emotion → demo → build → ecosystem → proof.
+// Homepage: hero hook → blog context → demo → registry.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -9,42 +9,58 @@ import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
-import { HomeReferenceProofStrip } from "@/components/home/HomeReferenceProofStrip";
+import { AssetsExplorer } from "./AssetsExplorer";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
-import { HomeHonestStatusStrip } from "@/components/home/HomeHonestStatusStrip";
-import { HomePositioningStrip } from "@/components/home/HomePositioningStrip";
-import { HomeAgenticFinanceStrip } from "@/components/home/HomeAgenticFinanceStrip";
-import { HomeProductVisualSection } from "@/components/home/HomeProductVisualSection";
-import { HomeThesisEssaySection } from "@/components/home/HomeThesisEssaySection";
-import { HomeMarketTicker } from "@/components/home/HomeMarketTicker";
+import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
+import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
+import { HomeReusableComplianceStrip } from "@/components/home/HomeReusableComplianceStrip";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomeStackPosition } from "@/components/home/HomeStackPosition";
 import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
-import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
+import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 
 const MAXW: React.CSSProperties = {
-  maxWidth: 1180, margin: "0 auto",
+  maxWidth: 1180,
+  margin: "0 auto",
   padding: "0 clamp(1rem, 3vw, 2rem)",
 };
+
+// Homepage registry: Cielo + Chickasaw + Good Trouble (always). Pokémon on /verify only.
+const HOME_REGISTRY_EXCLUDE = ["smyrna-townhome", "naj-tulum", "the-clove", "cmn-pokemon-collection"];
+const HOME_REGISTRY_PIN = ["genesis-asset", "chickasaw-project", "good-trouble-cannabis"];
 
 function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
       <div style={MAXW}>
         <HomeSharpHero />
-        <HomeAgenticFinanceStrip />
-        <HomeProductVisualSection />
-        <HomeThesisEssaySection />
-        <HomeHonestStatusStrip />
-        <HomePositioningStrip />
-        <HomeMarketTicker />
+      </div>
+      <HomeFeaturedArticle lead />
+      <div style={MAXW}>
+        <HomeDemoVideo />
+        <HomeTrustTransferStrip />
+        <HomeReusableComplianceStrip />
         <HomeBuildWithSection />
         <HomeStackPosition />
         <HomeNetworkEffect />
-        <HomeReferenceProofStrip />
+        <div
+          id="registry"
+          style={{
+            paddingTop: "clamp(1.5rem, 4vw, 2.5rem)",
+            paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
+            borderBottom: "1px solid var(--border-strong)",
+          }}
+        >
+          <AssetsExplorer
+            title="Live proof on-registry"
+            eyebrow="Reference assets"
+            home
+            pinIds={HOME_REGISTRY_PIN}
+            excludeIds={HOME_REGISTRY_EXCLUDE}
+          />
+        </div>
         <HomePartnersBrief />
-        <HomeSignedInModule />
       </div>
     </main>
   );

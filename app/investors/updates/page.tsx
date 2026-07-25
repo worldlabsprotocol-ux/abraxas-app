@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/investors/updates/page.tsx
-// Investor update template — send monthly before you raise.
+// Investor update template. send monthly before you raise.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -17,13 +17,13 @@ const UPDATE_SECTIONS = [
     prompt: "List concrete product releases with links to /metrics or PRs.",
     example: [
       "Investor data room live at /investors",
-      "Cielo USDC pay on Sui mainnet — one-click zkLogin",
+      "Cielo USDC pay on Sui mainnet. one-click zkLogin",
       "Live metrics dashboard pulling Supabase + Bags API",
     ],
   },
   {
     title: "Traction & metrics",
-    prompt: "Pull numbers from /api/metrics/investor — never fabricate.",
+    prompt: "Pull numbers from /api/metrics/investor. never fabricate.",
     example: [
       "X zkLogin wallets registered",
       "Y credentials issued · Z captured Cielo stays",
@@ -40,9 +40,9 @@ const UPDATE_SECTIONS = [
   },
   {
     title: "Risks & blockers",
-    prompt: "Honesty builds trust — list what slowed you and how you're addressing it.",
+    prompt: "Honesty builds trust. list what slowed you and how you're addressing it.",
     example: [
-      "Move mainnet audit not yet published — scope documented at /security",
+      "Move mainnet audit not yet published. scope documented at /security",
       "First external protocol integration still in recruiting",
     ],
   },
@@ -72,12 +72,12 @@ export default function InvestorUpdatesPage() {
       <PageHeader
         eyebrow="Investor relations"
         title="Monthly update template"
-        subtitle="Send this to potential investors, advisors, and design partners every month — even before you formally raise. Familiarity converts cold pitches into warm ones."
+        subtitle="Send this to potential investors, advisors, and design partners every month. even before you formally raise. Familiarity converts cold pitches into warm ones."
       />
 
       <ContentCard title="Subject line">
         <code style={{ fontFamily: MONO, fontSize: "0.82rem", color: ACCENT }}>
-          Abraxas Update — [Month] · [1 headline metric or ship]
+          Abraxas Update. [Month] · [1 headline metric or ship]
         </code>
       </ContentCard>
 

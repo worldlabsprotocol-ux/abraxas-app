@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/docs/ai-agents/page.tsx
-// Abraxas for AI agents — verify → proof → independent check.
+// Abraxas for AI agents. verify → proof → independent check.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -67,7 +67,7 @@ export default function AiAgentsDocsPage() {
           <strong style={{ color: "var(--text-primary)" }}>Robinhood reference (act layer).</strong>{" "}
           Their Trading MCP is at{" "}
           <code style={inlineCode}>{ROBINHOOD_AGENTIC_TRADING_REFERENCE.mcp_url}</code>
-          {" "}— OAuth, isolated Agentic account, equities and rolling options support per their docs.{" "}
+          {" "},  OAuth, isolated Agentic account, equities and rolling options support per their docs.{" "}
           Abraxas does not operate that server; compose verify → act in your agent policy.
         </p>
       </ContentCard>
@@ -97,7 +97,7 @@ export default function AiAgentsDocsPage() {
 
       <ContentCard title="Agent decision fields">
         <p style={{ ...body, marginBottom: "0.65rem" }}>
-          Every verify and proof response includes an <code style={inlineCode}>agent</code> object with explicit booleans —
+          Every verify and proof response includes an <code style={inlineCode}>agent</code> object with explicit booleans , 
           minimal branching logic, no parsing nested receipts.
         </p>
         <CodeBlock>{JSON.stringify({

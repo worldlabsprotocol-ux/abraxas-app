@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/VerificationSuccessPanel.tsx
-// Post-approval success moment — shown once after Veriff completes.
+// Post-approval success moment. shown once after Veriff completes.
 
 import { Btn } from "@/components/redesign/ui";
 import type { StoredCredential } from "@/lib/credentials/storage";

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
-import { ACCENT, CONCEPT_TYPE, GLASS, GRADIENT_TEXT, MESH, type MeshKey, PREMIUM_FONT, PREMIUM_MONO, DEMO_TYPE } from "./demoPremium";
+import { ACCENT, CONCEPT_TYPE, GLASS, GRADIENT_TEXT, MESH, type MeshKey, PREMIUM_DISPLAY, PREMIUM_FONT, PREMIUM_MONO, DEMO_TYPE } from "./demoPremium";
 
 export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   return (
@@ -20,19 +20,21 @@ export function PremiumMeshBg({ mesh }: { mesh: MeshKey }) {
   );
 }
 
-/** Act progress pills — shows which chapter of the demo is playing. */
+/** Act progress pills. shows which chapter of the demo is playing. */
 export function DemoActProgress({
   act,
   actCount,
   accent,
   labels,
   centered = true,
+  large = false,
 }: {
   act: number;
   actCount: number;
   accent: string;
   labels?: string[];
   centered?: boolean;
+  large?: boolean;
 }) {
   return (
     <div
@@ -59,7 +61,7 @@ export function DemoActProgress({
             transition={{ duration: 0.35 }}
             style={{
               fontFamily: PREMIUM_MONO,
-              fontSize: DEMO_TYPE.actPill,
+              fontSize: large ? DEMO_TYPE.actPillHero : DEMO_TYPE.actPill,
               fontWeight: active ? 800 : 600,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -88,7 +90,7 @@ export function PremiumEyebrow({ children, accent, centered, large }: { children
         gap: 8,
         justifyContent: centered ? "center" : undefined,
         fontFamily: PREMIUM_MONO,
-        fontSize: large ? DEMO_TYPE.eyebrow : DEMO_TYPE.sm,
+        fontSize: large ? DEMO_TYPE.eyebrowHero : DEMO_TYPE.sm,
         fontWeight: 700,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
@@ -105,9 +107,9 @@ export function PremiumHeadline({ children, mesh, centered = false, large = fals
   return (
     <h3
       style={{
-        fontFamily: PREMIUM_FONT,
+        fontFamily: large ? PREMIUM_DISPLAY : PREMIUM_FONT,
         fontSize: large ? DEMO_TYPE.headlineHero : DEMO_TYPE.headline,
-        fontWeight: 800,
+        fontWeight: large ? 900 : 800,
         letterSpacing: "-0.03em",
         lineHeight: 1.2,
         margin: "0.5rem 0 0",

@@ -13,7 +13,7 @@ export function BuildIntegrateCinematicDemo({ compact = false }: { compact?: boo
 
   const captions = [
     "One API key. No KYC stack to rebuild.",
-    "POST verify — decision + proof_id in the response.",
+    "POST verify. decision + proof_id in the response.",
     "Webhooks fire when asset state changes. Proofs refresh automatically.",
   ];
   const labels = ["Integrate", "Verify", "Ship"];

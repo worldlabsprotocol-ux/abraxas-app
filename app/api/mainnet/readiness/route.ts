@@ -10,8 +10,10 @@ import { getBountyGateStatus } from "@/lib/security/bountyGateStatus";
 import { getAuditGateStatus } from "@/lib/security/auditGateStatus";
 import { getPublicSuiConfig } from "@/lib/sui/network";
 import { isSuiMainnetDeployed } from "@/lib/sui/config";
+import { getSuiMainnetDeployPath } from "@/lib/sui/mainnetDeployPath";
 import { AUTHENTICATION_PROOF_LOOP_STATUS } from "@/lib/authenticationProof/loopStatus";
 import { getVerificationLayerStatus } from "@/lib/authenticationProof/verificationLayerStatus";
+import { verificationLayerProgress } from "@/lib/authenticationProof/verificationLayerProgress";
 import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +31,18 @@ export async function GET() {
   ]);
 
   const sui = getPublicSuiConfig();
+  const suiMainnetPath = getSuiMainnetDeployPath();
+  const layerProgress = verificationLayerProgress(verificationLayer);
 
   return NextResponse.json({
     ...progress,
+    verification_layer_progress: layerProgress,
+    sui_mainnet_path: {
+      summary: suiMainnetPath.summary,
+      ready_for_cutover: suiMainnetPath.ready_for_mainnet_cutover,
+      next_actions: suiMainnetPath.next_actions,
+      api: "/api/sui/mainnet/readiness",
+    },
     telemetry: {
       sui: { ...sui, mainnet_deployed: isSuiMainnetDeployed() },
       audits,

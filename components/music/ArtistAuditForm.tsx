@@ -178,7 +178,7 @@ export function ArtistAuditForm({ theme = "light" }: { theme?: "light" | "dark" 
               <label style={lbl}>Approximate catalog size</label>
               <select value={size} style={sel} onChange={e => setSize(e.target.value)}>
                 <option value="">Select range</option>
-                {["1–10 tracks","10–50 tracks","50–100 tracks","100+ tracks"].map(s => (
+                {["1-10 tracks","10-50 tracks","50-100 tracks","100+ tracks"].map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

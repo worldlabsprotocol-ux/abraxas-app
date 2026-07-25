@@ -1,9 +1,9 @@
 // FILE: lib/northStar.ts
-// Abraxas North Star — one page every feature must satisfy.
+// Abraxas North Star. one page every feature must satisfy.
 
 import { CPG_ASSET } from "@/lib/cpgLandCaseStudy";
 
-export const ABRAXAS_CATEGORY = "Trust infrastructure for tokenized assets";
+export const ABRAXAS_CATEGORY = "RWA verification app · trust infrastructure for tokenized assets";
 
 export const ABRAXAS_ONE_LINER =
   "We eliminate repeated verification so assets, people, and businesses can move faster.";
@@ -14,37 +14,37 @@ export const ABRAXAS_CUDA =
 export const ABRAXAS_PRODUCT =
   "Trust as an API. Passport is the UX.";
 
-/** Homepage layer 1 — emotion (Becker: 5-second problem). */
+/** Homepage layer 1. emotion (Becker: 5-second problem). */
 export const ABRAXAS_EMOTION_HEADLINE = "Stop proving your assets over and over.";
 
-/** Homepage layer 2 — mechanism (marketing: simple). */
-export const ABRAXAS_MECHANISM = "One verification. Unlimited applications.";
+/** Homepage layer 2. mechanism (marketing: simple). */
+export const ABRAXAS_MECHANISM = "One verification. Every application.";
 
-/** Homepage layer 3 — tagline / payoff. */
+/** Homepage layer 3. tagline / payoff. */
 export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
 
 /** @deprecated Use ABRAXAS_EMOTION_HEADLINE + layers on marketing surfaces. */
 export const ABRAXAS_TAGLINE = ABRAXAS_HEADLINE;
 
 export const ABRAXAS_SUBHEAD =
-  "Get your Abraxas Passport once. Reuse verified proof across marketplaces, lenders, and operators — without repeating due diligence.";
+  "The RWA verification app. Reusable Abraxas proof across marketplaces, lenders, and token companies. No repeat diligence.";
 
-/** North star metric — relying party adoption compounds the network. */
+/** North star metric. relying party adoption compounds the network. */
 export const ABRAXAS_NORTH_STAR_METRIC =
-  "Applications that accept and act on Passport proof — that's what compounds.";
+  "Applications that accept and act on Passport proof. that's what compounds.";
 
 /** Category positioning for investor/partner surfaces. */
 export const ABRAXAS_POSITIONING =
-  "Abraxas is the reusable verification infrastructure for real-world assets — verify once, then every partner gets faster approvals with fewer document requests.";
+  "Abraxas is reusable verification infrastructure for real-world assets. the RWA verification layer tokenization companies plug into for digital asset verification, blockchain verification, and institutional RWA compliance.";
 
 export const ABRAXAS_PROBLEM_THESIS =
   "Tokenization alone is not enough. Repeated verification is the hidden tax killing institutional adoption of RWAs.";
 
 export const ABRAXAS_BECKER_PITCH =
-  "Every RWA platform needs this. Not another marketplace — the trust layer underneath all of them.";
+  "Every RWA platform needs this. Not another marketplace. the trust layer underneath all of them.";
 
 export const ABRAXAS_OPERATOR_OUTCOME =
-  "Your guests go from sign-up to verified booking in under two minutes — and sensitive documents never sit in your inbox.";
+  "Your guests go from sign-up to verified booking in under two minutes. and sensitive documents never sit in your inbox.";
 
 export interface NorthStarPrinciple {
   id: string;
@@ -66,7 +66,7 @@ export const NORTH_STAR_PRINCIPLES: NorthStarPrinciple[] = [
   {
     id: "minimum-proof",
     title: "Ask for the minimum proof",
-    body: "Partners get yes, no, or review — never a document folder by default.",
+    body: "Partners get yes, no, or review. never a document folder by default.",
   },
   {
     id: "one-action",
@@ -96,7 +96,7 @@ export const NORTH_STAR_PRINCIPLES: NorthStarPrinciple[] = [
   {
     id: "integrate-once",
     title: "Partners integrate once",
-    body: "Everything else should come from policy — not another bespoke integration.",
+    body: "Everything else should come from policy. not another bespoke integration.",
   },
   {
     id: "five-year-old",
@@ -125,7 +125,7 @@ export const NORTH_STAR_PHASES: NorthStarPhase[] = [
       "No duplicate profile or wallet flows",
       "One home for verification, wallets, and access",
     ],
-    exitCriteria: "The loop is boring — it works every time without explanation.",
+    exitCriteria: "The loop is boring. it works every time without explanation.",
   },
   {
     id: "undeniable-proof",
@@ -143,7 +143,7 @@ export const NORTH_STAR_PHASES: NorthStarPhase[] = [
     id: "productize-story",
     letter: "C",
     title: "Productize the story",
-    goal: "Package technology as outcomes — never as infrastructure jargon.",
+    goal: "Package technology as outcomes. never as infrastructure jargon.",
     bullets: [
       "Never upload your driver's license again",
       "Share only what they're asking for",
@@ -155,13 +155,13 @@ export const NORTH_STAR_PHASES: NorthStarPhase[] = [
     id: "scale-systems",
     letter: "D",
     title: "Scale systems",
-    goal: "Operator onboarding before operator volume — not more features.",
+    goal: "Operator onboarding before operator volume. not more features.",
     bullets: [
       "Implementation guide · pilot metrics · API examples",
       "Partner success playbooks · support docs",
       "Issuers and relying parties expand from proof, not pitches",
     ],
-    exitCriteria: "100 operators signing tomorrow breaks operations — not trust in the demo.",
+    exitCriteria: "100 operators signing tomorrow breaks operations. not trust in the demo.",
   },
 ];
 
@@ -176,13 +176,13 @@ export const VERTICAL_SEQUENCE: {
   {
     order: 1,
     name: "Hospitality",
-    why: "High-frequency verification — Cielo Sunrise is the live reference loop.",
+    why: "High-frequency verification. Cielo Sunrise is the live reference loop.",
     status: "active",
   },
   {
     order: 2,
     name: "Tribal land & mineral rights",
-    why: `${CPG_ASSET.name} live — verify-once land diligence for qualified counterparties (consent-gated, not public listing).`,
+    why: `${CPG_ASSET.name} live. verify-once land diligence for qualified counterparties (consent-gated, not public listing).`,
     status: "active",
   },
   {
@@ -213,14 +213,14 @@ export const DESIGN_PARTNER_PROFILE = [
 ];
 
 export const DESIGN_PARTNER_OFFER = [
-  "Direct access to the team — white-glove implementation",
+  "Direct access to the team. white-glove implementation",
   "Influence on roadmap for your vertical",
   "Early adoption terms for production rollout",
   "Joint case study when metrics prove out",
 ];
 
 export const DESIGN_PARTNER_ASK = [
-  "One real workflow to wire — not a vanity pilot",
+  "One real workflow to wire. not a vanity pilot",
   "Honest feedback weekly during implementation",
   "Permission to measure: time saved, drop-off, documents avoided",
   "Optional public reference when it works",
@@ -236,5 +236,5 @@ export const WORKFLOW_BEFORE = [
 export const WORKFLOW_AFTER = [
   "Verify once",
   "Reuse permissioned proof",
-  "Marketplace · lender · registry · operator — done",
+  "Marketplace · lender · registry · operator. done",
 ];

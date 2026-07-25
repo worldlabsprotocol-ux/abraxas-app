@@ -20,16 +20,56 @@ export interface SuiDeployment {
 /** @deprecated use getSuiDeployment() */
 export const SUI_DEVNET = devnetDeployment as SuiDeployment;
 
-function isDeployedPackage(packageId: string | undefined): boolean {
+export function isDeployedPackage(packageId: string | undefined): boolean {
   return Boolean(packageId?.startsWith("0x") && packageId.length > 10);
 }
 
-export function getSuiDeployment(): SuiDeployment {
+export type SuiDeploymentSource = "mainnet" | "devnet";
+
+export interface ResolvedSuiDeployment {
+  deployment: SuiDeployment;
+  source: SuiDeploymentSource;
+  /** SUI_NETWORK=mainnet but deployment.mainnet.json has no packageId yet */
+  mainnetPackageMissing: boolean;
+}
+
+/** Resolve deployment without silently using devnet packageId on mainnet RPC. */
+export function resolveSuiDeployment(): ResolvedSuiDeployment {
   const network = getSuiNetwork();
-  if (network === "mainnet" && isDeployedPackage(mainnetDeployment.packageId)) {
-    return mainnetDeployment as SuiDeployment;
+  if (network === "mainnet") {
+    if (isDeployedPackage(mainnetDeployment.packageId)) {
+      return {
+        deployment: mainnetDeployment as SuiDeployment,
+        source: "mainnet",
+        mainnetPackageMissing: false,
+      };
+    }
+    return {
+      deployment: mainnetDeployment as SuiDeployment,
+      source: "mainnet",
+      mainnetPackageMissing: true,
+    };
   }
-  return devnetDeployment as SuiDeployment;
+  return {
+    deployment: devnetDeployment as SuiDeployment,
+    source: "devnet",
+    mainnetPackageMissing: false,
+  };
+}
+
+export function getSuiDeployment(): SuiDeployment {
+  return resolveSuiDeployment().deployment;
+}
+
+export function requireDeployedPassportPackage(): SuiDeployment {
+  const resolved = resolveSuiDeployment();
+  if (!isDeployedPackage(resolved.deployment.packageId)) {
+    const hint = resolved.mainnetPackageMissing
+      ? "SUI_NETWORK=mainnet but deployment.mainnet.json packageId is empty — run sui:deploy:mainnet"
+      : "Sui Passport package not deployed on active network";
+    throw new Error(hint);
+  }
+  return resolved.deployment;
 }
 
 export function getActiveSuiNetwork(): SuiNetwork {
@@ -40,7 +80,7 @@ export function getActiveSuiNetwork(): SuiNetwork {
 }
 
 export function passportTypeFilter(): string {
-  const deployment = getSuiDeployment();
+  const deployment = requireDeployedPassportPackage();
   return `${deployment.packageId}::${deployment.module}::Passport`;
 }
 
@@ -57,5 +97,6 @@ export function suiExplorerTx(digest: string): string {
 }
 
 export function isSuiMainnetDeployed(): boolean {
-  return getActiveSuiNetwork() === "mainnet" && isDeployedPackage(getSuiDeployment().packageId);
+  const resolved = resolveSuiDeployment();
+  return resolved.source === "mainnet" && isDeployedPackage(resolved.deployment.packageId);
 }

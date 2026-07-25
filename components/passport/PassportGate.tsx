@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportGate.tsx
-// Sign-in gate for diligence packs — captures investigators inside Abraxas.
+// Sign-in gate for diligence packs. captures investigators inside Abraxas.
 
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 
@@ -10,7 +10,7 @@ const ACCENT = "#10B981";
 export function PassportGate({
   returnPath,
   title = "Sign in to unlock",
-  description = "Full diligence packs, lot schedules, and survey PDFs stay inside Abraxas Passport — verify once, access anywhere.",
+  description = "Full diligence packs, lot schedules, and survey PDFs stay inside Abraxas Passport. verify once, access anywhere.",
   children,
 }: {
   returnPath: string;
@@ -58,7 +58,7 @@ export function PassportGate({
           Continue with Google →
         </button>
         <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", margin: "0.75rem 0 0", lineHeight: 1.5 }}>
-          Public registry and headline pricing stay open. Detailed packs release after sign-in — closed loop on Abraxas.
+          Public registry and headline pricing stay open. Detailed packs release after sign-in. closed loop on Abraxas.
         </p>
       </div>
     );

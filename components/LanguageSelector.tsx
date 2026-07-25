@@ -1,5 +1,5 @@
 // FILE: components/LanguageSelector.tsx
-// Language selector — English by default. Translation is opt-in only.
+// Language selector. English by default. Translation is opt-in only.
 // Fixes: stale googtrans cookies, failed English reset, browser auto-translate flash.
 "use client";
 
@@ -13,22 +13,20 @@ import {
   setDocumentLanguage,
   writeLanguagePreference,
 } from "@/lib/i18n/googleTranslate";
+import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
-const M   = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const S   = "system-ui,-apple-system,sans-serif";
-const G   = "#10B981";
-const BDR = "#1C2333";
-const W   = "#F8FAFC";
+const FONT = ABRAXAS_FONT_SANS;
+const MONO = ABRAXAS_FONT_MONO;
 
-interface Lang { code: string; name: string; flag: string; }
+interface Lang { code: string; name: string; badge: string; }
 
 const LANGS: Lang[] = [
-  { code: "en", name: "English",   flag: "🇺🇸" },
-  { code: "es", name: "Español",   flag: "🇪🇸" },
-  { code: "pt", name: "Português", flag: "🇧🇷" },
-  { code: "fr", name: "Français",  flag: "🇫🇷" },
-  { code: "de", name: "Deutsch",   flag: "🇩🇪" },
-  { code: "zh-CN", name: "中文",   flag: "🇨🇳" },
+  { code: "en", name: "English",   badge: "EN" },
+  { code: "es", name: "Español",   badge: "ES" },
+  { code: "pt", name: "Português", badge: "PT" },
+  { code: "fr", name: "Français",  badge: "FR" },
+  { code: "de", name: "Deutsch",   badge: "DE" },
+  { code: "zh-CN", name: "中文",   badge: "ZH" },
 ];
 
 declare global {
@@ -179,25 +177,45 @@ export function LanguageSelector() {
         disabled={busy}
         className="notranslate abx-interactive"
         style={{
-          padding: "0.45rem 0.875rem", borderRadius: 5, flexShrink: 0,
-          border: `1px solid ${BDR}`, background: "rgba(13,17,23,0.8)",
-          backdropFilter: "blur(4px)",
-          color: W, fontFamily: M, fontSize: "0.875rem", fontWeight: 700,
-          cursor: busy ? "wait" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
-          whiteSpace: "nowrap", lineHeight: 1, minHeight: 44,
+          padding: "0.4rem 0.75rem",
+          borderRadius: 999,
+          flexShrink: 0,
+          border: "1px solid var(--border)",
+          background: "var(--surface-raised)",
+          color: "var(--text-primary)",
+          fontFamily: FONT,
+          fontSize: "0.78rem",
+          fontWeight: 700,
+          cursor: busy ? "wait" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.4rem",
+          whiteSpace: "nowrap",
+          lineHeight: 1,
+          minHeight: 40,
           opacity: busy ? 0.7 : 1,
         }}
         aria-label="Change language"
         aria-expanded={open}
         aria-busy={busy || undefined}
       >
-        <span role="img" aria-label={current.name} style={{ fontSize: "1rem" }}>
-          {current.flag}
+        <span style={{
+          fontFamily: MONO,
+          fontSize: "0.58rem",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          padding: "0.2rem 0.45rem",
+          borderRadius: 6,
+          border: "1px solid var(--border)",
+          color: "var(--accent)",
+          background: "rgba(232,197,71,0.08)",
+        }}>
+          {current.badge}
         </span>
         <span style={{ letterSpacing: "0.06em" }}>
           {current.code === "zh-CN" ? "ZH" : current.code.toUpperCase()}
         </span>
-        <span style={{ color: G, fontSize: "0.65rem", marginLeft: 1 }}>▾</span>
+        <span style={{ color: "var(--accent)", fontSize: "0.65rem", marginLeft: 1 }}>▾</span>
       </button>
 
       {open && (
@@ -210,17 +228,17 @@ export function LanguageSelector() {
             top: dropPos.top,
             right: dropPos.right,
             minWidth: 220,
-            background: "#0D1117",
-            border: `1px solid ${G}40`,
-            borderRadius: 7,
+            background: "var(--surface-raised)",
+            border: "1px solid var(--border-strong)",
+            borderRadius: 14,
             padding: "0.375rem",
-            boxShadow: "0 16px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(16,185,129,0.08)",
+            boxShadow: "var(--shadow-card)",
             zIndex: 99999,
           }}
         >
           <div style={{
             padding: "0.45rem 0.875rem 0.35rem",
-            fontFamily: S, fontSize: "0.72rem", color: "rgba(255,255,255,0.45)",
+            fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
           }}>
             English is default · translate only when you choose
           </div>
@@ -233,30 +251,35 @@ export function LanguageSelector() {
                 role="menuitem"
                 onClick={() => void pick(lang)}
                 style={{
-                  width: "100%", padding: "0.625rem 0.875rem", borderRadius: 4,
-                  border: "none", background: active ? `${G}15` : "transparent",
-                  color: active ? G : W,
-                  fontFamily: S, fontSize: "0.9rem", fontWeight: active ? 700 : 400,
+                  width: "100%", padding: "0.625rem 0.875rem", borderRadius: 10,
+                  border: "none", background: active ? "rgba(232,197,71,0.12)" : "transparent",
+                  color: active ? "var(--accent)" : "var(--text-primary)",
+                  fontFamily: FONT, fontSize: "0.86rem", fontWeight: active ? 700 : 500,
                   cursor: "pointer", display: "flex", alignItems: "center",
-                  gap: "0.75rem", textAlign: "left", transition: "background 0.1s",
-                  minHeight: 44,
-                }}
-                onMouseEnter={e => {
-                  if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                }}
-                onMouseLeave={e => {
-                  if (!active) e.currentTarget.style.background = "transparent";
+                  gap: "0.75rem", textAlign: "left", minHeight: 44,
                 }}
               >
-                <span style={{ fontSize: "1.125rem" }}>{lang.flag}</span>
+                <span style={{
+                  fontFamily: MONO,
+                  fontSize: "0.58rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  padding: "0.2rem 0.4rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  color: active ? "var(--accent)" : "var(--text-muted)",
+                  background: active ? "rgba(232,197,71,0.08)" : "transparent",
+                }}>
+                  {lang.badge}
+                </span>
                 <span style={{ flex: 1 }}>{lang.name}</span>
-                {active && <span style={{ color: G, fontWeight: 900, fontSize: "0.8rem" }}>✓</span>}
+                {active && <span style={{ color: "var(--accent)", fontWeight: 900, fontSize: "0.8rem" }}>✓</span>}
               </button>
             );
           })}
-          <div style={{ height: 1, background: BDR, margin: "0.375rem 0" }} />
-          <div style={{ padding: "0.4rem 0.875rem", fontFamily: M,
-                         fontSize: "0.65rem", color: "rgba(255,255,255,0.25)",
+          <div style={{ height: 1, background: "var(--border)", margin: "0.375rem 0" }} />
+          <div style={{ padding: "0.4rem 0.875rem", fontFamily: MONO,
+                         fontSize: "0.58rem", color: "var(--text-muted)",
                          letterSpacing: "0.06em" }}>
             Powered by Google Translate
           </div>

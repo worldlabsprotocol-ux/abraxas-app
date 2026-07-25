@@ -80,13 +80,13 @@ export function AddToAppleWallet({
         fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
         color: "var(--text-primary)", margin: "0 0 0.35rem",
       }}>
-        Keep your verified status in Apple Wallet — scan anywhere
+        Keep your verified status in Apple Wallet. scan anywhere
       </p>
       <p style={{
         fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
         lineHeight: 1.6, margin: "0 0 0.75rem",
       }}>
-        Carry your verified Passport like a boarding pass — QR links to the public verifier.
+        Carry your verified Passport like a boarding pass. QR links to the public verifier.
       </p>
 
       <AddToAppleWalletButton onClick={requestPass} busy={busy} variant="dark" size="md">

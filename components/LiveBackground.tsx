@@ -16,11 +16,11 @@ const NODES = Array.from({ length: 16 }).map((_, i) => {
     left: i % 2 === 0 ? `${2 + (i * 3.3) % 9}%` : undefined,
     right: i % 2 === 1 ? `${2 + (i * 2.7) % 9}%` : undefined,
     top: `${6 + (i * 13.7) % 88}%`,
-    size: 3 + Math.round(r * 5),          // 3–8px
-    duration: 7 + Math.round(r * 11),     // 7–18s
+    size: 3 + Math.round(r * 5),          // 3-8px
+    duration: 7 + Math.round(r * 11),     // 7-18s
     delay: -Math.round(r * 12),           // desync start
-    drift: 10 + Math.round(r * 18),       // 10–28px travel
-    opacity: 0.14 + r * 0.16,             // 0.14–0.30
+    drift: 10 + Math.round(r * 18),       // 10-28px travel
+    opacity: 0.14 + r * 0.16,             // 0.14-0.30
   };
 });
 

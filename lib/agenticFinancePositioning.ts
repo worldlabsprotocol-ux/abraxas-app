@@ -1,5 +1,5 @@
 // FILE: lib/agenticFinancePositioning.ts
-// Agentic finance ecosystem positioning — complementary to act-layer MCPs (e.g. Robinhood).
+// Agentic finance ecosystem positioning. complementary to act-layer MCPs (e.g. Robinhood).
 // Abraxas is not integrated with Robinhood; we verify before agents act.
 
 import { siteUrl } from "@/lib/siteUrl";
@@ -9,49 +9,49 @@ export const ROBINHOOD_TRADING_MCP_URL = "https://agent.robinhood.com/mcp/tradin
 
 export const AGENTIC_FINANCE_HEADLINE = "Verify before agents act.";
 
-/** Homepage — names Robinhood explicitly so the movement is visible above the fold. */
+/** Homepage. names Robinhood explicitly so the movement is visible above the fold. */
 export const AGENTIC_FINANCE_HOME_TITLE =
   "Robinhood opened agentic trading. Abraxas verifies before agents act.";
 
 export const AGENTIC_FINANCE_HOME_BADGE = "Agentic finance · July 2026";
 
 export const AGENTIC_FINANCE_HERO_PILL =
-  "Robinhood Agentic Trading MCP is live — Abraxas is the verify layer upstream";
+  "Robinhood Agentic Trading MCP is live. Abraxas is the verify layer upstream";
 
 export const AGENTIC_FINANCE_SUBHEAD =
   "Robinhood's Agentic Trading MCP lets agents trade. Abraxas gives those agents cryptographic proof to check before they move capital or accept an asset.";
 
 export const AGENTIC_FINANCE_STRIP_BODY =
-  "Agentic finance is here — Robinhood opened its Trading MCP to Claude, ChatGPT, Cursor, and other agents. Abraxas sits upstream: verify identity and asset proof once, then let any MCP-connected agent gate on agent.valid before it acts.";
+  "Agentic finance is here. Robinhood opened its Trading MCP to Claude, ChatGPT, Cursor, and other agents. Abraxas sits upstream: verify identity and asset proof once, then let any MCP-connected agent gate on agent.valid before it acts.";
 
 export const AGENTIC_FINANCE_INDEPENDENCE_NOTE =
-  "Abraxas is independent verification infrastructure — not a Robinhood integration. We build alongside the same agentic stack so builders can compose verify → act without rebuilding trust per app.";
+  "Abraxas is independent verification infrastructure. not a Robinhood integration. We build alongside the same agentic stack so builders can compose verify → act without rebuilding trust per app.";
 
 export const AGENTIC_FINANCE_STACK_LAYERS = [
   {
     id: "verify",
-    label: "1 · Verify — Abraxas",
-    role: "Cryptographic proof that a person or asset passed policy — agent.proceed / agent.valid",
+    label: "1 · Verify. Abraxas",
+    role: "Cryptographic proof that a person or asset passed policy. agent.proceed / agent.valid",
     examples: "POST /api/credentials/verify · GET /api/proof/{id}",
     abraxas: true,
     step: 1,
   },
   {
     id: "act",
-    label: "2 · Act — Robinhood MCP",
-    role: "Agents place orders via Robinhood's Trading MCP — Claude, ChatGPT, Cursor, and more",
+    label: "2 · Act. Robinhood MCP",
+    role: "Agents place orders via Robinhood's Trading MCP. Claude, ChatGPT, Cursor, and more",
     examples: "agent.robinhood.com/mcp/trading · isolated Agentic account",
     abraxas: false,
     step: 2,
   },
 ] as const;
 
-/** Factual reference about Robinhood Agentic Trading — for docs and JSON guides only. */
+/** Factual reference about Robinhood Agentic Trading. for docs and JSON guides only. */
 export const ROBINHOOD_AGENTIC_TRADING_REFERENCE = {
   product: "Robinhood Agentic Trading",
   mcp_url: ROBINHOOD_TRADING_MCP_URL,
   transport: "HTTP (Streamable HTTP / remote MCP)",
-  auth: "OAuth via Robinhood — agents never handle user passwords",
+  auth: "OAuth via Robinhood. agents never handle user passwords",
   account_model:
     "Dedicated, separately funded Agentic account for order placement; other Robinhood accounts remain read-only to the agent",
   supported_actions: [
@@ -73,7 +73,7 @@ export const ROBINHOOD_AGENTIC_TRADING_REFERENCE = {
     "https://robinhood.com/us/en/newsroom/robinhood-is-now-open-to-agents/",
   ],
   disclaimer:
-    "Reference only — Abraxas does not operate Robinhood's MCP and is not affiliated with Robinhood. Users remain responsible for trades their agents place per Robinhood's terms.",
+    "Reference only. Abraxas does not operate Robinhood's MCP and is not affiliated with Robinhood. Users remain responsible for trades their agents place per Robinhood's terms.",
 } as const;
 
 export const ABRAXAS_AGENTIC_ROLE = {
@@ -93,8 +93,8 @@ export const ABRAXAS_AGENTIC_ROLE = {
 
 export const AGENTIC_FINANCE_COMPOSE_FLOW = [
   "Agent receives a task that touches a verified person or RWA (allocation, custody handoff, gated product access).",
-  "POST /api/credentials/verify with record_id or credential — read response.agent.proceed.",
-  "GET response.verify_url — require proof.agent.valid === true (fail closed).",
+  "POST /api/credentials/verify with record_id or credential. read response.agent.proceed.",
+  "GET response.verify_url. require proof.agent.valid === true (fail closed).",
   "Only then invoke act-layer tools (e.g. Robinhood MCP order placement) per your policy.",
 ] as const;
 

@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/investors/page.tsx
-// Investor data room hub — structured like ChatGPT audit categories.
+// Investor data room hub. structured like ChatGPT audit categories.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -19,7 +19,7 @@ export default function InvestorsPage() {
       <PageHeader
         eyebrow="Investors"
         title="Data room"
-        subtitle="Everything a VC or design partner needs to diligence Abraxas — proof first, claims backed by evidence. No timeline promises; milestone sequence only."
+        subtitle="Everything a VC or design partner needs to diligence Abraxas. proof first, claims backed by evidence. No timeline promises; milestone sequence only."
       />
 
       <ContentCard title="North star">
@@ -64,7 +64,7 @@ export default function InvestorsPage() {
         ))}
       </div>
 
-      <ContentCard title="Milestone sequence (no dates — dependency order)">
+      <ContentCard title="Milestone sequence (no dates. dependency order)">
         <ol style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.8, margin: 0, paddingLeft: "1.25rem" }}>
           <li><strong style={{ color: "var(--text-primary)" }}>Foundation:</strong> Litepaper, tokenomics framework, live metrics, security posture, chain narrative</li>
           <li><strong style={{ color: "var(--text-primary)" }}>Traction:</strong> Cielo revenue loop E2E, external protocol LOI, second verified asset</li>

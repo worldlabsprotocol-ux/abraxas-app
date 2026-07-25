@@ -116,7 +116,7 @@ describe("e2e verification layer", () => {
 
   it("readiness verification layer status reports honest signals", async () => {
     const status = await getVerificationLayerStatus();
-    expect(status.items).toHaveLength(6);
+    expect(status.items).toHaveLength(7);
     expect(status.items.map(i => i.id)).toEqual([
       "credentials-verify",
       "proof-lookup",
@@ -124,6 +124,7 @@ describe("e2e verification layer", () => {
       "production-demo",
       "agent-readiness",
       "asset-monitoring",
+      "e2e-loop",
     ]);
     expect(["live", "partial", "not_configured"]).toContain(status.items[0].status);
     expect(status.summary.length).toBeGreaterThan(10);

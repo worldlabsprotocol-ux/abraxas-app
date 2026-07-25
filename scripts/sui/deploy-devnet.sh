@@ -14,7 +14,7 @@ if [[ ! -x "$SUI" ]]; then
 fi
 
 echo "→ Building Move package…"
-(cd "$PKG" && "$SUI" move build)
+(cd "$PKG" && "$SUI" move build --build-env testnet)
 
 echo "→ Publishing to devnet (test-publish / testnet build env)…"
 PUBLISH_OUT="$(cd "$PKG" && "$SUI" client test-publish --build-env testnet --json)"

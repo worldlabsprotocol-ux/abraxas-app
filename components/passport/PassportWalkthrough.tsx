@@ -239,7 +239,7 @@ export function PassportWalkthrough({
                         <StatusBanner tone="success" title="Account created">
                           {email && <>Signed in as <strong>{email}</strong>. </>}
                           {suiAddress && <>Wallet {truncateSuiAddress(suiAddress, 10, 8)} ready.</>}
-                          {" "}Browse assets now — ID check is optional until a deal needs it.
+                          {" "}Browse assets now. ID check is optional until a deal needs it.
                         </StatusBanner>
                       )}
                     </div>
@@ -281,7 +281,7 @@ export function PassportWalkthrough({
                           </Btn>
                           {walletDone && (
                             <Btn href="/" variant="tertiary" size="md">
-                              Skip — browse assets
+                              Skip. browse assets
                             </Btn>
                           )}
                         </div>
@@ -330,7 +330,7 @@ export function PassportWalkthrough({
                             tone={verifyState === "valid" ? "success" : "pending"}
                             title={verifyState === "valid" ? "Ready to reuse anywhere" : "Share your verify link"}
                           >
-                            Partners verify via API — they never see your documents. Copy your JWT or open the public verify link.
+                            Partners verify via API. they never see your documents. Copy your JWT or open the public verify link.
                           </StatusBanner>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
                             {verifyWalletUrl && (

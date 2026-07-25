@@ -1,8 +1,8 @@
 // FILE: lib/relyingPartyProgram.ts
-// Relying party onboarding — how external protocols verify Abraxas credentials.
+// Relying party onboarding. how external protocols verify Abraxas credentials.
 
 export const RELYING_PARTY_DEFINITION =
-  "A relying party is any lender, marketplace, registry, or protocol that accepts an Abraxas credential or Passport state to clear a downstream action — without re-running KYC on the user.";
+  "A relying party is any lender, marketplace, registry, or protocol that accepts an Abraxas credential or Passport state to clear a downstream action. without re-running KYC on the user.";
 
 export const RELYING_PARTY_CHECKLIST = [
   {
@@ -18,7 +18,7 @@ export const RELYING_PARTY_CHECKLIST = [
   {
     step: 3,
     title: "Implement the gate",
-    body: "Call our API server-side. Never trust client-side JWT parsing alone — verify signature via our endpoint or published Ed25519 public key.",
+    body: "Call our API server-side. Never trust client-side JWT parsing alone. verify signature via our endpoint or published Ed25519 public key.",
   },
   {
     step: 4,
@@ -46,7 +46,7 @@ const result = await res.json();
 if (result.decision === "approved") {
   const proof = await fetch(result.verify_url).then(r => r.json());
   if (proof.signature_valid && proof.proof_reliable) {
-    // Clear gated action — independently verifiable proof on record
+    // Clear gated action. independently verifiable proof on record
   }
 }`;
 
@@ -59,7 +59,7 @@ const trust = await res.json();
 if (trust.enhanced_trust) {
   // ID verified + active credential
 } else if (trust.ready_to_transact) {
-  // Account exists — optional ID for your risk tier
+  // Account exists. optional ID for your risk tier
 }`;
 
 export const REGISTRY_VERIFY_EXAMPLE = `// Verify an asset or Passport DID in the public registry
@@ -69,24 +69,25 @@ const res = await fetch(
 const state = await res.json();
 
 if (state.state === "RESOLVED_VALID" && state.assurance_level >= 3) {
-  // L3+ attested — suitable for collateral decisions
+  // L3+ attested. suitable for collateral decisions
 }`;
 
 export const RELYING_PARTY_LIMITATIONS = [
-  "Abraxas credentials attest to verification state — they are not investment advice or securities approvals.",
+  "Abraxas credentials attest to verification state. they are not investment advice or securities approvals.",
   "Relying parties must define their own risk tier mapping (which assurance level clears which action).",
   "Passport reuse on Abraxas today; external partner acceptance expands as design partners come online.",
-  "Revoked or expired credentials must fail closed — always check state at transaction time, not cache indefinitely.",
+  "Revoked or expired credentials must fail closed. always check state at transaction time, not cache indefinitely.",
 ] as const;
 
 export const DESIGN_PARTNER_SLOTS = [
   { category: "RWA marketplace", need: "Investor eligibility gate without re-KYC", api: "POST /api/credentials/verify" },
   { category: "Private credit / lending", need: "Collateral + identity tier for borrow", api: "GET /api/verify/registry" },
   { category: "Music / IP platform", need: "Catalog ownership attestation", api: "GET /api/verify/registry" },
+  { category: "Regulated retail (cannabis)", need: "Age-gated Passport + batch COA provenance", api: "POST /api/credentials/verify" },
   { category: "Corporate registry", need: "Wyoming LLC + asset binding check", api: "GET /api/trust/status" },
 ] as const;
 
-export const ASSET_SIGNAL_WEBHOOK_EXAMPLE = `// Partner webhook — report lot status change (MLS sync)
+export const ASSET_SIGNAL_WEBHOOK_EXAMPLE = `// Partner webhook. report lot status change (MLS sync)
 const res = await fetch("https://abraxas-app.vercel.app/api/v1/listings/lot-status", {
   method: "POST",
   headers: {
@@ -121,7 +122,7 @@ await fetch("https://abraxas-app.vercel.app/api/v1/asset-signals", {
 });`;
 
 export const PRODUCTION_INTEGRATION_PATH = [
-  "Read /docs/relying-party-verify — one verify call → proof → independent check",
+  "Read /docs/relying-party-verify. one verify call → proof → independent check",
   "Issue abx_live_ key with verify:credential scope",
   "Implement server-side POST /api/credentials/verify at your transaction gate",
   "Confirm GET /api/proof/{proof_id} returns signature_valid: true",

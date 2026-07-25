@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/DeveloperDetails.tsx
-// Collapsible technical sections — crypto jargon hidden by default.
+// Collapsible technical sections. crypto jargon hidden by default.
 
 import { useState, type ReactNode } from "react";
 

@@ -24,10 +24,10 @@ const ACT3_MS = 9000;
 const TOTAL_MS = ACT1_MS + ACT2_MS + ACT3_MS;
 
 const ACT1_PORTALS = [
-  { name: 'RWA marketplace', context: 'Asset onboarding', accent: 'violet' as const },
-  { name: 'Private lender', context: 'Credit underwriting', accent: 'gold' as const },
-  { name: 'Hospitality ops', context: 'Operator credentialing', accent: 'violet' as const },
-  { name: 'Custody', context: 'Beneficial owner proof', accent: 'gold' as const },
+  { name: 'Marketplace', context: 'New asset', accent: 'violet' as const },
+  { name: 'Bank', context: 'Loan check', accent: 'gold' as const },
+  { name: 'Hotel app', context: 'Guest check', accent: 'violet' as const },
+  { name: 'Custody', context: 'Owner check', accent: 'gold' as const },
 ];
 
 const BURDEN_STEPS = [
@@ -117,16 +117,16 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   const showFinalLine = phase3 === 'land';
 
   const actLabel =
-    act === 1 ? 'Verification debt' : act === 2 ? 'One Passport' : 'Proof issued';
+    act === 1 ? 'Too many checks' : act === 2 ? 'One check' : 'Proof ready';
 
   const actCaption =
     act === 1
-      ? 'Every platform rebuilds trust from zero. Verification debt — not asset proof.'
+      ? 'Every app runs the same ID parade. Abraxas ends the parade.'
       : act === 2
-        ? 'One portable Passport resolves the repeated asks.'
+        ? 'One Abraxas proof works in every app.'
         : showFinalLine
           ? CINEMATIC_PROOF_ISSUED_LINE
-          : 'Cryptographic proof anyone can verify independently.';
+          : 'Signed proof. Anyone can audit it. No email relay.';
 
   const actTransition = {
     initial: { opacity: 0, filter: 'blur(10px)', scale: 0.985 },
@@ -137,7 +137,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
   const meshKey = act === 1 ? 'danger' : act === 2 ? 'gold' : 'emerald';
   const accent = act === 1 ? ACCENT.danger : act === 2 ? ACCENT.gold : ACCENT.emerald;
-  const actPillLabels = ['Debt', 'Passport', 'Proof'];
+  const actPillLabels = ['7× asks', 'One proof', 'Check it'];
 
   return (
     <div className={`cinematic-demo relative mx-auto w-full ${hero ? 'max-w-[1120px]' : 'max-w-5xl'}`}>
@@ -149,7 +149,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
         }}
       >
         <PremiumMeshBg mesh={meshKey} />
-        <CosmicParticleField accent={accent} count={hero ? 20 : 14} />
+        <CosmicParticleField accent={accent} count={hero ? 10 : 14} />
 
         {act === 1 && (
           <div
@@ -161,7 +161,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
           />
         )}
 
-        <div className={`relative z-10 ${hero ? 'px-6 py-7 sm:px-10 sm:py-9' : 'px-5 py-6 sm:px-8 sm:py-8'}`}>
+        <div className={`relative z-10 ${hero ? 'px-7 py-9 sm:px-12 sm:py-11' : 'px-5 py-6 sm:px-8 sm:py-8'}`}>
           <div className="flex flex-col items-center text-center">
             <PremiumEyebrow accent={accent} centered large={hero}>
               {actLabel}
@@ -175,12 +175,13 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
               accent={accent}
               labels={actPillLabels}
               centered
+              large={hero}
             />
           </div>
 
           <div
-            className={`relative mt-6 sm:mt-8 ${
-              hero ? 'min-h-[360px] sm:min-h-[420px] md:min-h-[460px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
+            className={`relative mt-8 sm:mt-10 ${
+              hero ? 'min-h-[400px] sm:min-h-[480px] md:min-h-[520px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
             }`}
           >
             <AnimatePresence mode="wait">
@@ -275,7 +276,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: mergeProgress > 0.72 ? 1 : 0 }}
                     >
-                      One portable identity. Verified once.
+                      One Abraxas proof. Every app.
                     </motion.p>
                   </motion.div>
                 </motion.div>

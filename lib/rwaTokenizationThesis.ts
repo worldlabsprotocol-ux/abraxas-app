@@ -1,5 +1,5 @@
 // FILE: lib/rwaTokenizationThesis.ts
-// RWA tokenization thesis — sourced from Medium essay (July 2026).
+// RWA tokenization thesis. sourced from Medium essay (July 2026).
 
 export const RWA_THESIS_MEDIUM_URL =
   "https://medium.com/@worldlabsprotocol/what-is-real-world-asset-tokenization-13d6c8d0a595" as const;
@@ -11,11 +11,17 @@ export const RWA_THESIS_TITLE = "What Is Real-World Asset Tokenization?";
 export const RWA_THESIS_SUBTITLE =
   "Abraxas: the verification layer institutions need beyond tokenization.";
 
+export const RWA_THESIS_SECTION_INTRO =
+  "Market context, institutional steps, diligence questions, and why minting alone is not enough.";
+
+export const RWA_THESIS_SECTION_NOTE =
+  "Market data, institutional steps, diligence questions, and live asset references appear here only. not repeated in the product deck above.";
+
 export const RWA_THESIS_HOME_LEAD =
-  "The RWA market is moving from experimentation to institutional adoption. Tokenization creates digital ownership — but institutions still need trusted verification before capital moves.";
+  "The RWA market is moving from experimentation to institutional adoption. Tokenization creates digital ownership. but institutions still need trusted verification before capital moves.";
 
 export const RWA_THESIS_HERO_PILL =
-  "New essay: What is RWA tokenization? — verification beyond minting";
+  "New article: What is RWA tokenization?. verification beyond minting";
 
 export const RWA_THESIS_MARKET_STATS = [
   { label: "2025 market", value: "$1.8T", detail: "RWA tokenization (industry estimates)" },
@@ -42,10 +48,10 @@ export const RWA_INSTITUTION_QUESTIONS = [
 ] as const;
 
 export const RWA_THESIS_ACTS = [
-  "Institutions are entering RWA tokenization — the market is measured in trillions, not experiments.",
-  "Seven steps: select, structure, value, mint, onboard, manage, trade — tokenization creates the digital representation.",
-  "Token creation alone is not enough — every counterparty still re-asks who, what, and whether policy passed.",
-  "Abraxas is the verify layer — reusable cryptographic proof before agents act or capital allocates.",
+  "Institutions are entering RWA tokenization. the market is measured in trillions, not experiments.",
+  "Seven steps: select, structure, value, mint, onboard, manage, trade. tokenization creates the digital representation.",
+  "Token creation alone is not enough. every counterparty still re-asks who, what, and whether policy passed.",
+  "Abraxas is the verify layer. reusable cryptographic proof before agents act or capital allocates.",
 ] as const;
 
 export const RWA_THESIS_ABRAXAS_CLOSE =
@@ -59,7 +65,7 @@ export interface RwaThesisSlide {
   visual: "market" | "define" | "steps" | "gap" | "examples" | "abraxas";
 }
 
-/** Homepage slideshow — full essay without long scroll. */
+/** Homepage slideshow. full essay without long scroll. */
 export const RWA_THESIS_SLIDES: RwaThesisSlide[] = [
   {
     id: "market",
@@ -72,7 +78,7 @@ export const RWA_THESIS_SLIDES: RwaThesisSlide[] = [
     id: "define",
     label: "02 · Definition",
     headline: "Tokenization converts ownership into on-chain representation.",
-    body: "Real estate, bonds, private credit, metals, carbon credits, and art become digital tokens — transparent records instead of siloed paper and databases.",
+    body: "Real estate, bonds, private credit, metals, carbon credits, and art become digital tokens. transparent records instead of siloed paper and databases.",
     visual: "define",
   },
   {
@@ -86,13 +92,13 @@ export const RWA_THESIS_SLIDES: RwaThesisSlide[] = [
     id: "gap",
     label: "04 · The gap",
     headline: "Token creation alone is not enough.",
-    body: "Every counterparty still asks who owns the asset, whether eligibility passed, and if compliance can travel — or be reused instead of repeated.",
+    body: "Every counterparty still asks who owns the asset, whether eligibility passed, and if compliance can travel. or be reused instead of repeated.",
     visual: "gap",
   },
   {
     id: "examples",
     label: "05 · Proof",
-    headline: "This is already happening — and on Abraxas.",
+    headline: "This is already happening. and on Abraxas.",
     body: "BlackRock BUIDL, private credit pools, and tokenized real estate show the market is real. Cielo Sunrise and Chickasaw diligence are live verify records on Abraxas today.",
     visual: "examples",
   },
