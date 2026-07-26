@@ -1,91 +1,19 @@
 "use client";
 // FILE: components/redesign/RedesignFooter.tsx
-// Protocol footer. curated columns, no link sprawl.
+// Minimal footer — plain language, few links.
 
 import Link from "next/link";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "var(--accent)";
+const FONT = "'Inter',system-ui,sans-serif";
 
-const LINKS = {
-  protocol: [
-    { label: "Home", href: "/" },
-    { label: "Passport", href: "/passport" },
-    { label: "Verify", href: "/verify" },
-    { label: "My account", href: "/account" },
-    { label: "Submit your asset", href: "/build" },
-  ],
-  apps: [
-    { label: "Cielo pilot", href: "/apps/cielo-sunrise" },
-    { label: "Music audit", href: "/apps/music" },
-    { label: "Wyoming LLC", href: "/apps/wyoming" },
-    { label: "Dashboard", href: "/dashboard" },
-  ],
-  learn: [
-    { label: "RWA tokenization essay", href: "/blog/what-is-real-world-asset-tokenization" },
-    { label: "Why verification", href: "/docs/why-verification" },
-    { label: "Cielo case study", href: "/case-studies/cielo" },
-    { label: "Chickasaw Project", href: "/case-studies/chickasaw-project" },
-    { label: "FAQ", href: "/faq" },
-    { label: "Roadmap", href: "/roadmap" },
-    { label: "About", href: "/about" },
-  ],
-  developers: [
-    { label: "Integrate", href: "/integrate" },
-    { label: "AI agents · Robinhood MCP", href: "/docs/ai-agents" },
-    { label: "Documentation", href: "/docs" },
-    { label: "Integrations", href: "/integrations" },
-    { label: "Relying parties", href: "/integrations/relying-parties" },
-    { label: "Trust Framework", href: "/trust-framework" },
-    { label: "Live metrics", href: "/metrics" },
-    { label: "Security", href: "/security" },
-  ],
-  legal: [
-    { label: "Legal overview", href: "/legal" },
-    { label: "Privacy Policy", href: "/legal/privacy" },
-    { label: "Terms of Service", href: "/legal/terms" },
-    { label: "Settlement disclosure", href: "/legal/terms#settlement" },
-  ],
-  social: [
-    { label: "Discord", href: "https://discord.gg/sHK8EWbnXH" },
-    { label: "LinkedIn", href: "https://www.linkedin.com/company/worldlabsprotocol/" },
-    { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app" },
-  ],
-};
-
-function Column({ title, items }: { title: string; items: { label: string; href: string }[] }) {
-  return (
-    <div>
-      <div style={{
-        fontFamily: MONO,
-        fontSize: "0.58rem",
-        fontWeight: 700,
-        color: "var(--text-muted)",
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        marginBottom: "0.75rem",
-      }}>
-        {title}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-        {items.map(item => (
-          <Link key={item.label} href={item.href}
-            target={item.href.startsWith("http") ? "_blank" : undefined}
-            rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-            style={{
-              fontFamily: FONT,
-              fontSize: "0.78rem",
-              color: "var(--text-secondary)",
-              textDecoration: "none",
-            }}>
-            {item.label}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
+const LINKS = [
+  { label: "Passport", href: "/passport" },
+  { label: "Verify assets", href: "/verify" },
+  { label: "Tokenize", href: "/build" },
+  { label: "Blog", href: "/blog" },
+  { label: "Privacy", href: "/legal/privacy" },
+  { label: "Terms", href: "/legal/terms" },
+];
 
 export function RedesignFooter() {
   return (
@@ -100,44 +28,37 @@ export function RedesignFooter() {
         margin: "0 auto",
         padding: "2rem clamp(1rem, 3vw, 2rem) 2.5rem",
       }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-          gap: "1.5rem",
-          marginBottom: "2rem",
-        }}>
-          <div style={{ gridColumn: "span 1", minWidth: 140 }}>
-            <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900,
-                           color: ACCENT, marginBottom: "0.35rem" }}>
-              ABRAXAS
-            </div>
-            <p style={{
-              fontFamily: FONT,
-              fontSize: "0.72rem",
-              color: "var(--text-muted)",
-              lineHeight: 1.5,
-              margin: 0,
-            }}>
-              Verify once. Transact everywhere.
-            </p>
+        <div style={{ marginBottom: "1.25rem" }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900, color: "var(--accent)", marginBottom: "0.35rem" }}>
+            ABRAXAS
           </div>
-          <Column title="Protocol" items={LINKS.protocol} />
-          <Column title="Apps" items={LINKS.apps} />
-          <Column title="Learn" items={LINKS.learn} />
-          <Column title="Developers" items={LINKS.developers} />
-          <Column title="Legal" items={LINKS.legal} />
-          <Column title="Community" items={LINKS.social} />
+          <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0, maxWidth: 420 }}>
+            Prove it once. Use it everywhere. Verify assets, hold your proof, tokenize what you own.
+          </p>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem 1.25rem", marginBottom: "1.25rem" }}>
+          {LINKS.map(item => (
+            <Link key={item.href} href={item.href} style={{
+              fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", textDecoration: "none",
+            }}>
+              {item.label}
+            </Link>
+          ))}
+          <Link href="/design-partner" style={{
+            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", textDecoration: "none",
+          }}>
+            Design partners
+          </Link>
         </div>
         <div style={{
-          paddingTop: "1.25rem",
+          paddingTop: "1rem",
           borderTop: "1px solid var(--border)",
           fontFamily: FONT,
           fontSize: "0.68rem",
           color: "var(--text-muted)",
           lineHeight: 1.6,
         }}>
-          © {new Date().getFullYear()} Abraxas Protocol, World Labs Protocol. Not investment advice.
-          RWA offerings may involve securities. Past performance does not guarantee future results.
+          © {new Date().getFullYear()} Abraxas · Not investment advice.
         </div>
       </div>
     </footer>

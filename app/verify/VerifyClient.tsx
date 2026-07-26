@@ -5,16 +5,12 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PublicVerifierPanel } from "@/components/verify/PublicVerifierPanel";
 import { RelyingPartyVerifyPanel } from "@/components/verify/RelyingPartyVerifyPanel";
-import { PolicyCheckPanel } from "@/components/verify/PolicyCheckPanel";
-import { VerifyProfilePanel } from "@/components/verify/VerifyProfilePanel";
 import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
 
-export type VerifyTab = "registry" | "credential" | "policy" | "profile";
+export type VerifyTab = "registry" | "credential";
 
 function tabFromParams(mode: string | null): VerifyTab {
-  if (mode === "credential") return "credential";
-  if (mode === "policy") return "policy";
-  if (mode === "profile") return "profile";
+  if (mode === "credential" || mode === "policy") return "credential";
   return "registry";
 }
 
@@ -35,13 +31,22 @@ function VerifyTabs({ tab, setTab }: { tab: VerifyTab; setTab: (t: VerifyTab) =>
 
   const tabs: Array<[VerifyTab, string]> = [
     ["registry", "Registry"],
-    ["profile", "Profile"],
-    ["credential", "Credential"],
-    ["policy", "Policy"],
+    ["credential", "Credentials & policy"],
   ];
 
   return (
     <>
+      <p style={{
+        fontFamily: "'Inter',system-ui,sans-serif",
+        fontSize: "0.78rem",
+        color: "var(--text-secondary)",
+        lineHeight: 1.6,
+        margin: "0 0 1rem",
+        maxWidth: 560,
+      }}>
+        Look up tokenized assets on-registry, or test how a partner checks your Abraxas proof.
+        Profile settings live under your account menu (top right).
+      </p>
       <div style={{
         display: "flex", gap: "0.35rem", flexWrap: "wrap",
         padding: "0.25rem", borderRadius: 999, marginBottom: "1.5rem",
@@ -69,9 +74,7 @@ function VerifyTabs({ tab, setTab }: { tab: VerifyTab; setTab: (t: VerifyTab) =>
           <PublicVerifierPanel />
         </Suspense>
       )}
-      {tab === "credential" && <RelyingPartyVerifyPanel suiAddress={suiAddress} />}
-      {tab === "policy" && <PolicyCheckPanel suiAddress={suiAddress} />}
-      {tab === "profile" && <VerifyProfilePanel />}
+      {tab === "credential" && <RelyingPartyVerifyPanel suiAddress={suiAddress} showPolicyCheck />}
     </>
   );
 }

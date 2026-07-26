@@ -92,7 +92,7 @@ export function PublicVerifierPanel() {
           <Btn size="sm" variant="secondary" onClick={() => { setQuery("ABX-RE-RES-002"); void runVerify("ABX-RE-RES-002"); }} disabled={loading}>Smyrna townhome</Btn>
           <Btn size="sm" variant="secondary" onClick={() => showSample("not_found")} disabled={loading}>Not found demo</Btn>
           <Btn size="sm" variant="tertiary" onClick={() => showSample("revoked")} disabled={loading}>Revoked demo</Btn>
-          <Btn href="/verify?mode=policy" variant="ghost" size="sm">Policy gate demo</Btn>
+          <Btn href="/verify?mode=credential" variant="ghost" size="sm">Policy gate demo</Btn>
         </div>
       </div>
 

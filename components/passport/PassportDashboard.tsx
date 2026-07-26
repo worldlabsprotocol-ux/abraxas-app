@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
 import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
@@ -90,6 +89,9 @@ export function PassportDashboard({
   returnPath,
 }: Props) {
   const [identityExpanded, setIdentityExpanded] = useState(false);
+  const [bindError, setBindError] = useState<string | null>(null);
+  const [bindLoading, setBindLoading] = useState(false);
+  const [bindSuccess, setBindSuccess] = useState(false);
   const manualMode = idvProvider === "manual";
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const assuranceLabel = manualMode ? "L2" : "L3";
@@ -119,10 +121,16 @@ export function PassportDashboard({
   });
 
   async function bindWallet() {
-    if (!suiAddress) return;
+    if (!suiAddress) {
+      setBindError("Sign in first using the button at the top right.");
+      return;
+    }
+    setBindLoading(true);
+    setBindError(null);
+    setBindSuccess(false);
     try {
       const secret = getEphemeralSecretKey();
-      if (!secret) throw new Error("Sign in again to enable wallet signing.");
+      if (!secret) throw new Error("Session expired — sign out and sign in again from the top right.");
 
       const chRes = await fetch("/api/wallet/binding/challenge", {
         method: "POST",
@@ -131,7 +139,7 @@ export function PassportDashboard({
       });
       const challenge = await chRes.json() as { challenge_id?: string; message?: string; error?: string };
       if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
-        throw new Error(challenge.error ?? "Challenge failed");
+        throw new Error(challenge.error ?? "Could not start wallet bind. Try again.");
       }
 
       const { signature, publicKey } = await signIntentMessage(challenge.message, secret);
@@ -147,10 +155,15 @@ export function PassportDashboard({
         }),
       });
       const result = await confirmRes.json() as { ok?: boolean; error?: string };
-      if (!confirmRes.ok) throw new Error(result.error ?? "Confirm failed");
+      if (!confirmRes.ok) throw new Error(result.error ?? "Wallet bind failed. Try again.");
+      setBindSuccess(true);
       onWalletBound?.();
     } catch (e) {
+      const msg = e instanceof Error ? e.message : "Wallet bind failed";
+      setBindError(msg);
       console.error(e);
+    } finally {
+      setBindLoading(false);
     }
   }
 
@@ -168,9 +181,25 @@ export function PassportDashboard({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 520,
           }}>
-            Sign in with Google. Bind a wallet when you&apos;re ready. Identity verification only appears when it unlocks a specific action.
+            Use <strong style={{ color: "var(--text-primary)" }}>Sign in</strong> at the top right.
+            Google creates your Abraxas wallet — no seed phrase.
           </p>
-          <ZkLoginSignIn />
+        </section>
+      )}
+
+      {walletDone && !setup.identityComplete && identityUi !== "under_review" && (
+        <section style={{ ...CARD, border: "2px solid rgba(16,185,129,0.28)" }}>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem" }}>
+            Verify who you are
+          </h2>
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
+            Name, ID photo, and selfie. Reviewed by Abraxas. Partners only see yes/no — not your documents.
+          </p>
+          {manualMode ? (
+            <AbraxasIdentityCapture email={email} suiAddress={suiAddress} onSubmitted={onRefresh} />
+          ) : (
+            <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Start identity check →</Btn>
+          )}
         </section>
       )}
 
@@ -180,26 +209,36 @@ export function PassportDashboard({
             fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
             color: "var(--text-primary)", margin: "0 0 0.5rem",
           }}>
-            Bind your wallet
+            Bind your wallet (optional)
           </h2>
           <p style={{
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.65, margin: "0 0 1rem",
           }}>
-            One signature proves wallet control. No funds move. This unlocks Tier 1 pilots like Cielo verified rate.
+            One signature proves wallet control. No funds move. Optional — unlocks Tier 1 pilots like Cielo verified rate after you verify your identity.
           </p>
           {suiAddress && (
             <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
               {truncateSuiAddress(suiAddress, 8, 6)}
             </div>
           )}
-          <Btn size="lg" fullWidth onClick={() => void bindWallet()}>
-            Sign to bind wallet →
+          <Btn size="lg" fullWidth loading={bindLoading} onClick={() => void bindWallet()}>
+            {bindLoading ? "Waiting for signature…" : "Sign to bind wallet →"}
           </Btn>
+          {bindSuccess && (
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
+              Wallet bound successfully.
+            </p>
+          )}
+          {bindError && (
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, margin: "0.65rem 0 0", lineHeight: 1.55 }}>
+              {bindError}
+            </p>
+          )}
         </section>
       )}
 
-      {setup.profileComplete && (
+      {walletDone && (
         <>
           <PassportStatusCard
             tier={tier}
@@ -211,7 +250,7 @@ export function PassportDashboard({
             returnPath={returnPath}
           />
 
-          {identityUi !== "verified" && (
+          {identityUi !== "verified" && !manualMode && (
             <IdentityUnlockSection
               identityUi={identityUi}
               manualMode={manualMode}
@@ -237,7 +276,7 @@ export function PassportDashboard({
             credential={credential}
           />
 
-          <TransactionEligibilitySection enabled={setup.profileComplete} />
+          <TransactionEligibilitySection enabled={walletDone} />
 
           <PartnerAccessSection suiAddress={suiAddress} />
 
@@ -398,8 +437,7 @@ function PassportStatusCard({
         ) : (
           <Btn href="/cielo/verified-rate" size="sm">Try Cielo verified rate →</Btn>
         )}
-              <Btn href="/verify" variant="secondary" size="sm">Verify records →</Btn>
-        <Btn href="/passport?view=verify" variant="ghost" size="sm">Verify a record →</Btn>
+        <Btn href="/verify" variant="secondary" size="sm">Verify records →</Btn>
       </div>
     </section>
   );
@@ -625,14 +663,24 @@ function CredentialsSection({
         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
         color: "var(--text-primary)", margin: "0 0 0.35rem",
       }}>
-        Time-bound proofs. not one generic KYC badge
+        Time-bound yes/no proofs — not a folder of your documents
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-        lineHeight: 1.55, margin: "0 0 1rem",
+        lineHeight: 1.55, margin: "0 0 0.75rem",
       }}>
-        Credentials are separate, time-bound proofs issued by approved authorities.
+        Think of a credential like a tamper-proof badge. Partners check the badge — they don&apos;t get your ID photos.
+        Under the hood it&apos;s a signed JWT (a short encrypted receipt), but you never need to handle that directly.
       </p>
+      <details style={{ marginBottom: "1rem" }}>
+        <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, cursor: "pointer" }}>
+          What is a JWT? (plain English)
+        </summary>
+        <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0.5rem 0 0" }}>
+          A JWT is a signed string that says &quot;this person passed check X until date Y.&quot;
+          Abraxas issues it after review. Apps verify the signature — they don&apos;t store your documents.
+        </p>
+      </details>
 
       <CredentialRow
         title="Wallet binding"
@@ -643,8 +691,8 @@ function CredentialsSection({
       />
       <CredentialRow
         title="Identity verification"
-        issuer={identityUi === "verified" ? (manualMode ? "Abraxas pilot review" : "Approved identity provider") : ", "}
-        assurance={identityUi === "verified" ? assuranceLabel : ", "}
+        issuer={identityUi === "verified" ? (manualMode ? "Abraxas pilot review" : "Approved identity provider") : "—"}
+        assurance={identityUi === "verified" ? assuranceLabel : "—"}
         status={IDENTITY_UI_LABELS[identityUi]}
         refresh={identityUi === "verified" && credential?.expires_at
           ? `Expires ${new Date(credential.expires_at).toLocaleDateString()}`

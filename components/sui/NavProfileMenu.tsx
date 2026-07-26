@@ -13,9 +13,11 @@ const ACCENT = "#10B981";
 const DEFAULT_AVATAR = "#10B981";
 
 const MENU_ITEMS = [
-  { label: "Passport", href: "/passport", description: "Credentials & verification" },
-  { label: "My account", href: "/account", description: "Profile & status" },
-  { label: "Submit asset", href: "/build", description: "Add to registry" },
+  { label: "Passport", href: "/passport", description: "Your proofs & verification" },
+  { label: "Account settings", href: "/account", description: "Name, profile, status" },
+  { label: "Verify a record", href: "/verify", description: "Look up an asset" },
+  { label: "Tokenize an asset", href: "/build", description: "Start owner intake" },
+  { label: "Design partners", href: "/design-partner", description: "For apps integrating Abraxas" },
 ] as const;
 
 export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
