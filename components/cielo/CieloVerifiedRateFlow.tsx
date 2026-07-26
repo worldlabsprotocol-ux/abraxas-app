@@ -229,7 +229,7 @@ export function CieloVerifiedRateFlow() {
                     </Link>
                   )}
                   {!evaluation?.profile_complete && (
-                    <Link href={`/verify?mode=profile&return=${passportReturn}`} style={linkBtnStyle}>
+                    <Link href={`/account?return=${passportReturn}`} style={linkBtnStyle}>
                       Set up profile →
                     </Link>
                   )}
