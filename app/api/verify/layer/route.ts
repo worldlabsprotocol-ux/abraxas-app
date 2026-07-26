@@ -1,5 +1,5 @@
 // FILE: app/api/verify/layer/route.ts
-// Verification layer status — seven items with progress.
+// Verification layer status — eight items with progress.
 
 import { NextResponse } from "next/server";
 import { getVerificationLayerStatus } from "@/lib/authenticationProof/verificationLayerStatus";

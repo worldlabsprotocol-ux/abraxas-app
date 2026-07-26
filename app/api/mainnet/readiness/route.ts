@@ -15,11 +15,12 @@ import { AUTHENTICATION_PROOF_LOOP_STATUS } from "@/lib/authenticationProof/loop
 import { getVerificationLayerStatus } from "@/lib/authenticationProof/verificationLayerStatus";
 import { verificationLayerProgress } from "@/lib/authenticationProof/verificationLayerProgress";
 import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
+import { getIndependentIdvStatus } from "@/lib/idv/independentIdvStatus";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [progress, rpGate, monitoringGate, positioning, bountyGate, audits, verificationLayer] =
+  const [progress, rpGate, monitoringGate, positioning, bountyGate, audits, verificationLayer, independentIdv] =
     await Promise.all([
     getLiveMainnetProgress(),
     getExternalRpGateStatus(3),
@@ -28,6 +29,7 @@ export async function GET() {
     getBountyGateStatus(),
     Promise.resolve(getAuditGateStatus()),
     getVerificationLayerStatus(),
+    getIndependentIdvStatus(),
   ]);
 
   const sui = getPublicSuiConfig();
@@ -37,6 +39,7 @@ export async function GET() {
   return NextResponse.json({
     ...progress,
     verification_layer_progress: layerProgress,
+    independent_idv: independentIdv,
     sui_mainnet_path: {
       summary: suiMainnetPath.summary,
       ready_for_cutover: suiMainnetPath.ready_for_mainnet_cutover,

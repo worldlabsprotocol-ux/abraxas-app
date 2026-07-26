@@ -1,10 +1,11 @@
 // FILE: lib/authenticationProof/verificationLayerStatus.ts
-// Honest runtime status for the seven verification-layer items.
+// Honest runtime status for the verification-layer items (independent IDV + proof loop).
 
 import { parseEnvBool } from "@/lib/env/parseEnvBool";
 import { getAssetMonitoringGateStatus } from "@/lib/assetMonitoring/gateStatus";
 import { loadReceiptSigningKey, loadReceiptVerificationKey } from "@/lib/decisionReceipts/signing";
 import { checkAuthenticationProofsTable } from "@/lib/authenticationProof/persistAuthenticationProof";
+import { getIndependentIdvStatus } from "@/lib/idv/independentIdvStatus";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { isProductionReferenceAsset } from "./productionReference";
@@ -28,6 +29,7 @@ export interface VerificationLayerStatus {
   verification_key_configured: boolean;
   supabase_configured: boolean;
   sui_network: string;
+  independent_idv_status: "live" | "partial" | "not_configured";
   items: VerificationLayerItem[];
 }
 
@@ -46,6 +48,21 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
   const monitoringGate = await getAssetMonitoringGateStatus();
   const proofsTable = await checkAuthenticationProofsTable();
   const persistenceLive = proofsTable.writable;
+  const independentIdv = await getIndependentIdvStatus();
+
+  const engine = independentIdv.biometric_engine;
+  const independentBiometric: VerificationLayerItem = {
+    id: "independent-biometric-idv",
+    label: "Abraxas Verify biometric IDV (capture → engine → L2/L3 credential + stamps)",
+    status: independentIdv.status,
+    detail: engine.auto_approve_enabled
+      ? `${independentIdv.summary} Engine auto-approve enabled for L3.`
+      : `${independentIdv.summary} ${engine.summary}`,
+    blockers: [
+      ...independentIdv.blockers,
+      ...(independentIdv.abraxas_independent ? engine.blockers : []),
+    ],
+  };
 
   const credentialsVerify: VerificationLayerItem = {
     id: "credentials-verify",
@@ -159,6 +176,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
   };
 
   const items = [
+    independentBiometric,
     credentialsVerify,
     proofLookup,
     suiAnchoring,
@@ -183,6 +201,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
     signing_configured: signingConfigured,
     verification_key_configured: verificationKeyConfigured,
     supabase_configured: supabaseConfigured,
+    independent_idv_status: independentIdv.status,
     items,
     sui_network: getActiveSuiNetwork(),
   };

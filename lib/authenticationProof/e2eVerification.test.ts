@@ -116,8 +116,9 @@ describe("e2e verification layer", () => {
 
   it("readiness verification layer status reports honest signals", async () => {
     const status = await getVerificationLayerStatus();
-    expect(status.items).toHaveLength(7);
+    expect(status.items).toHaveLength(8);
     expect(status.items.map(i => i.id)).toEqual([
+      "independent-biometric-idv",
       "credentials-verify",
       "proof-lookup",
       "sui-anchoring",

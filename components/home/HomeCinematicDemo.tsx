@@ -67,8 +67,19 @@ function act3Phase(ms: number): 'context' | 'issue' | 'verify' | 'land' {
 export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const startRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  const heroPresentation = hero && !isMobile;
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -142,14 +153,14 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
   return (
     <div className={`cinematic-demo relative mx-auto w-full ${hero ? 'max-w-[1120px]' : 'max-w-5xl'}`}>
       <div
-        className="relative overflow-hidden rounded-3xl"
+        className={`relative overflow-hidden ${hero ? "rounded-2xl sm:rounded-3xl" : "rounded-3xl"}`}
         style={{
           border: '1px solid rgba(255,255,255,0.06)',
           boxShadow: `0 32px 100px rgba(0,0,0,0.55), 0 0 72px ${accent}14`,
         }}
       >
         <PremiumMeshBg mesh={meshKey} />
-        <CosmicParticleField accent={accent} count={hero ? 10 : 14} />
+        <CosmicParticleField accent={accent} count={heroPresentation ? 10 : isMobile ? 6 : 14} />
 
         {act === 1 && (
           <div
@@ -161,12 +172,12 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
           />
         )}
 
-        <div className={`relative z-10 ${hero ? 'px-7 py-9 sm:px-12 sm:py-11' : 'px-5 py-6 sm:px-8 sm:py-8'}`}>
+        <div className={`relative z-10 ${hero ? "px-4 py-5 sm:px-7 sm:py-9 md:px-12 md:py-11" : "px-4 py-5 sm:px-8 sm:py-8"}`}>
           <div className="flex flex-col items-center text-center">
-            <PremiumEyebrow accent={accent} centered large={hero}>
+            <PremiumEyebrow accent={accent} centered large={heroPresentation}>
               {actLabel}
             </PremiumEyebrow>
-            <PremiumHeadline mesh={meshKey} centered large={hero}>
+            <PremiumHeadline mesh={meshKey} centered large={heroPresentation}>
               {actCaption}
             </PremiumHeadline>
             <DemoActProgress
@@ -175,25 +186,27 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
               accent={accent}
               labels={actPillLabels}
               centered
-              large={hero}
+              large={heroPresentation}
             />
           </div>
 
           <div
-            className={`relative mt-8 sm:mt-10 ${
-              hero ? 'min-h-[400px] sm:min-h-[480px] md:min-h-[520px]' : 'min-h-[300px] sm:min-h-[340px] md:min-h-[380px]'
+            className={`relative mt-5 sm:mt-8 md:mt-10 ${
+              hero
+                ? "min-h-[220px] sm:min-h-[360px] md:min-h-[480px] lg:min-h-[520px]"
+                : "min-h-[220px] sm:min-h-[300px] md:min-h-[380px]"
             }`}
           >
             <AnimatePresence mode="wait">
               {act === 1 && (
                 <motion.div key="act1" {...actTransition} className="absolute inset-0 flex flex-col items-center">
-                  <div className="mb-4 flex w-full max-w-md justify-center sm:mb-5">
+                  <div className="mb-2 flex w-full max-w-md justify-center sm:mb-5">
                     <VerificationDebtMeter count={debtCount} max={7} />
                   </div>
 
                   <div className="cine-act1-portals relative flex w-full max-w-4xl flex-1 flex-col items-center justify-center">
                     <BurdenStackLayer count={debtCount} />
-                    <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3.5">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3.5">
                       {ACT1_PORTALS.map((portal, i) => (
                         <motion.div
                           key={portal.name}
@@ -258,13 +271,13 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
                     <motion.div
                       animate={{
-                        scale: (hero ? 0.92 : 0.85) + mergeProgress * (hero ? 0.1 : 0.12),
+                        scale: (heroPresentation ? 0.92 : 0.85) + mergeProgress * (heroPresentation ? 0.1 : 0.12),
                         opacity: passportRevealed ? 1 : 0.25,
                       }}
                       transition={{ duration: 0.65, ease: actEase }}
                     >
                       <AbraxasPassportVc
-                        large={hero || passportRevealed}
+                        large={(heroPresentation || passportRevealed) && !isMobile}
                         pulse={mergeProgress > 0.65}
                         merge={passportRevealed}
                       />
@@ -311,7 +324,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                       }}
                       transition={{ duration: 0.55, ease: actEase }}
                     >
-                      <AuthenticationProofArtifact pulse={proofPulse} hero issued={proofIssued} />
+                      <AuthenticationProofArtifact pulse={proofPulse} hero={heroPresentation} issued={proofIssued} />
                     </motion.div>
 
                     <div className="cine-act3-beam flex items-center justify-center py-1 md:py-0">
@@ -331,6 +344,18 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                     </motion.div>
                   </div>
 
+                  {isMobile && showFinalLine && (
+                    <motion.p
+                      className="mx-auto mt-2 max-w-[280px] text-center font-semibold text-amber-100/90"
+                      style={{ fontSize: DEMO_TYPE.sm }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {CINEMATIC_PROOF_ISSUED_LINE}
+                    </motion.p>
+                  )}
+
+                  {!isMobile && (
                   <AnimatePresence>
                     {showNoRelay && (
                       <motion.div
@@ -344,8 +369,9 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  )}
 
-                  {showFinalLine && (
+                  {!isMobile && showFinalLine && (
                     <motion.div
                       className="mx-auto mt-4 max-w-lg rounded-xl border border-amber-400/30 bg-amber-400/12 px-5 py-3.5 text-center sm:mt-5"
                       initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -362,6 +388,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                     </motion.div>
                   )}
 
+                  {!isMobile && (
                   <motion.p
                     className="mt-3 text-center font-mono uppercase tracking-[0.14em] text-emerald-400/85"
                     style={{ fontSize: DEMO_TYPE.sm }}
@@ -370,6 +397,7 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
                   >
                     {CINEMATIC_NO_RELAY_LINE}
                   </motion.p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -391,11 +419,19 @@ export function HomeCinematicDemo({ hero = false }: { hero?: boolean }) {
 
       <style jsx>{`
         @media (max-width: 767px) {
-          .cine-act3-flow {
-            gap: 0.65rem;
-          }
+          .cine-act3-ref,
+          .cine-act3-verifier,
           .cine-act3-beam {
-            transform: scale(0.85);
+            display: none !important;
+          }
+          .cine-act3-flow {
+            gap: 0.5rem;
+          }
+          .cine-act3-proof {
+            max-width: min(100%, 300px) !important;
+          }
+          .cine-act1-portals :global(.cine-proof-hero) {
+            max-width: 100%;
           }
         }
         @media (min-width: 768px) {

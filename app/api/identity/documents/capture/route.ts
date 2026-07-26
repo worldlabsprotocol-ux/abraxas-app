@@ -1,41 +1,42 @@
 // FILE: app/api/identity/documents/capture/route.ts
-// Abraxas-native identity capture: legal name + ID front + selfie in one submission.
+// Abraxas-native identity capture: legal name + ID front + selfie + biometric engine.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { randomUUID } from "crypto";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { getIdvProvider } from "@/lib/idv/idvProvider";
+import { analyzeBiometricCapture } from "@/lib/idv/biometric/analyzeCapture";
+import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
+import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
 
-async function uploadCaptureFile(
-  file: File,
+function getSupabase(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
+async function uploadCaptureBuffer(
+  supabase: SupabaseClient,
+  buffer: Buffer,
+  contentType: string,
   email: string,
   sessionId: string,
   documentType: "id_front" | "selfie",
 ) {
-  if (!ALLOWED_TYPES.has(file.type)) {
-    throw new Error(`Invalid file type for ${documentType}. Use JPG or PNG.`);
-  }
-  if (file.size > MAX_BYTES) {
-    throw new Error(`File too large for ${documentType}. Max 8 MB.`);
-  }
-
   const emailSafe = email.replace(/[^a-zA-Z0-9]/g, "_");
-  const ext = file.type.includes("png") ? "png" : "jpg";
+  const ext = contentType.includes("png") ? "png" : "jpg";
   const path = `identity/${emailSafe}/${sessionId}/${documentType}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: uploadError } = await supabase.storage
     .from("passport-documents")
-    .upload(path, buffer, { contentType: file.type || "image/jpeg", upsert: false });
+    .upload(path, buffer, { contentType: contentType || "image/jpeg", upsert: false });
 
   if (uploadError) {
     throw new Error(uploadError.message);
@@ -44,18 +45,71 @@ async function uploadCaptureFile(
   return { path, fileName: `${documentType}.${ext}` };
 }
 
+function validateImageFile(file: File, label: string) {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    throw new Error(`Invalid file type for ${label}. Use JPG or PNG.`);
+  }
+  if (file.size > MAX_BYTES) {
+    throw new Error(`File too large for ${label}. Max 8 MB.`);
+  }
+}
+
+async function hasPendingIdentityReview(
+  supabase: SupabaseClient,
+  suiAddress: string,
+): Promise<boolean> {
+  const normalized = normalizeSuiAddress(suiAddress);
+
+  const { count: docCount } = await supabase
+    .from("passport_documents")
+    .select("id", { count: "exact", head: true })
+    .eq("sui_address", normalized)
+    .eq("stamp_id", "identity")
+    .in("status", ["submitted", "under_review"]);
+
+  if ((docCount ?? 0) > 0) return true;
+
+  const { data: idv } = await supabase
+    .from("identity_verifications")
+    .select("identity_verification_status, credential_status, status")
+    .or(`wallet_address.eq.${normalized},sui_address.eq.${normalized}`)
+    .maybeSingle();
+
+  if (!idv) return false;
+
+  return (
+    idv.identity_verification_status === "submitted"
+    || idv.identity_verification_status === "in_progress"
+    || (idv.status === "pending" && idv.credential_status !== "active")
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
+    if (getIdvProvider() === "veriff") {
+      return NextResponse.json({
+        error: "Abraxas Verify is disabled while legacy automated IDV is active.",
+      }, { status: 403 });
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json({ error: "Document storage not configured" }, { status: 503 });
+    }
+
+    const auth = await requireBrowserSession(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const formData = await req.formData();
-    const email = (formData.get("email") as string | null)?.trim();
     const legalName = (formData.get("legal_name") as string | null)?.trim();
-    const suiRaw = (formData.get("sui_address") as string | null)?.trim();
     const idFront = formData.get("id_front") as File | null;
     const selfie = formData.get("selfie") as File | null;
 
-    if (!email || !legalName || !suiRaw || !idFront || !selfie) {
+    if (!legalName || !idFront || !selfie) {
       return NextResponse.json({
-        error: "email, legal_name, sui_address, id_front, and selfie are required",
+        error: "legal_name, id_front, and selfie are required",
       }, { status: 400 });
     }
 
@@ -63,18 +117,57 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "legal_name must be at least 2 characters" }, { status: 400 });
     }
 
-    let suiAddress: string;
-    try {
-      suiAddress = normalizeSuiAddress(suiRaw);
-    } catch {
-      return NextResponse.json({ error: "Invalid sui_address" }, { status: 400 });
+    validateImageFile(idFront, "ID");
+    validateImageFile(selfie, "selfie");
+
+    const suiAddress = normalizeSuiAddress(auth.session.suiAddress);
+
+    if (await hasPendingIdentityReview(supabase, suiAddress)) {
+      return NextResponse.json({
+        error: "Identity verification is already pending review. We'll notify you when it's complete.",
+        already_pending: true,
+      }, { status: 409 });
     }
 
+    const { data: zkRow } = await supabase
+      .from("sui_zklogin_identities")
+      .select("email")
+      .eq("sui_address", suiAddress)
+      .maybeSingle();
+
+    const email = zkRow?.email?.trim();
+    if (!email?.includes("@")) {
+      return NextResponse.json({
+        error: "Google account email required — sign in again from the top right",
+      }, { status: 403 });
+    }
+
+    const idBuffer = Buffer.from(await idFront.arrayBuffer());
+    const selfieBuffer = Buffer.from(await selfie.arrayBuffer());
     const captureSessionId = randomUUID();
 
+    const assessment = await analyzeBiometricCapture({
+      captureSessionId,
+      suiAddress,
+      idFrontBuffer: idBuffer,
+      selfieBuffer,
+    });
+
+    await persistBiometricAssessment(assessment);
+
+    if (assessment.decision === "reject") {
+      return NextResponse.json({
+        error: "We couldn't verify your photos. Retake with good lighting, a clear ID image, and your face centered in the selfie.",
+        biometric: {
+          decision: assessment.decision,
+          scores: assessment.scores,
+        },
+      }, { status: 422 });
+    }
+
     const [idUpload, selfieUpload] = await Promise.all([
-      uploadCaptureFile(idFront, email, captureSessionId, "id_front"),
-      uploadCaptureFile(selfie, email, captureSessionId, "selfie"),
+      uploadCaptureBuffer(supabase, idBuffer, idFront.type, email, captureSessionId, "id_front"),
+      uploadCaptureBuffer(supabase, selfieBuffer, selfie.type, email, captureSessionId, "selfie"),
     ]);
 
     const rows = [
@@ -111,6 +204,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: insertErr.message }, { status: 500 });
     }
 
+    const reviewDocId = inserted?.find(r => r.document_type === "id_front")?.id;
+
+    if (assessment.decision === "auto_approve" && reviewDocId) {
+      const issued = await issueManualIdentityCredential(suiAddress, {
+        reviewId: reviewDocId,
+        captureSessionId,
+        reviewer: "abraxas_biometric_engine",
+        assuranceLevel: assessment.assurance_level,
+        reviewMethod: assessment.review_method,
+        biometricScores: {
+          face_match: assessment.scores.face_match,
+          liveness: assessment.scores.liveness,
+        },
+      });
+
+      if (issued.ok) {
+        await supabase
+          .from("passport_documents")
+          .update({ status: "accepted", updated_at: new Date().toISOString() })
+          .eq("capture_session_id", captureSessionId);
+
+        return NextResponse.json({
+          submitted: true,
+          approved: true,
+          capture_session_id: captureSessionId,
+          review_status: "approved",
+          assurance_level: assessment.assurance_level,
+          biometric: {
+            decision: assessment.decision,
+            scores: assessment.scores,
+            engine_version: assessment.engine_version,
+          },
+          jti: issued.jti,
+          on_chain: issued.on_chain ?? null,
+        });
+      }
+    }
+
     await transitionIdentityVerification(
       suiAddress,
       {
@@ -130,6 +261,11 @@ export async function POST(req: NextRequest) {
       capture_session_id: captureSessionId,
       document_ids: inserted?.map(r => r.id) ?? [],
       review_status: "submitted",
+      biometric: {
+        decision: assessment.decision,
+        scores: assessment.scores,
+        engine_version: assessment.engine_version,
+      },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";

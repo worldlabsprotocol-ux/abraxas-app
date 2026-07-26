@@ -12,7 +12,15 @@ export function resolveIdentityUiState(input: {
   if (input.hasCredential && input.identityStatus === "earned") return "verified";
   if (input.identityStatus === "declined") return "needs_action";
   if (input.identityStatus === "pending") {
-    if (input.via === "manual_review") return "under_review";
+    // Stale Veriff session while Abraxas manual IDV is active — treat as not started.
+    if (input.via === "veriff" && input.idvProvider === "manual") return "not_started";
+    if (
+      input.via === "manual_review"
+      || input.via === "verification"
+      || input.via === "abraxas_capture"
+    ) {
+      return "under_review";
+    }
     if (input.idvProvider === "veriff") return "under_review";
     return "not_started";
   }

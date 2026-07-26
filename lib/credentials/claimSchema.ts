@@ -47,6 +47,81 @@ export const CLAIM_ISSUERS = {
   sandbox: "issuer:abraxas-sandbox",
 } as const;
 
+/** Claims issued after Abraxas independent capture (name + ID + selfie) */
+export function abraxasCaptureApprovedClaims(input: {
+  subjectId: string;
+  jti: string;
+  jurisdiction: string;
+  documentType: string;
+  captureSessionId: string;
+  expiresAt: Date;
+  assuranceLevel?: AssuranceLevel;
+  reviewMethod?: "automated_biometric" | "human_biometric_match";
+  biometricScores?: { face_match: number; liveness: number };
+}): Omit<CredentialClaimRecord, "id" | "status">[] {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = input.expiresAt.toISOString();
+  const assurance = input.assuranceLevel ?? "L2";
+  const reviewMethod = input.reviewMethod ?? "human_biometric_match";
+  const base = {
+    subject_id: input.subjectId,
+    credential_jti: input.jti,
+    issuer_id: CLAIM_ISSUERS.abraxas,
+    assurance_level: assurance,
+    issued_at: issuedAt,
+    expires_at: expiresAt,
+    revocation_reference: null,
+    evidence_reference: `abraxas_capture:${input.captureSessionId}`,
+    jurisdiction: input.jurisdiction,
+    policy_scope: "compliance",
+  };
+
+  const livenessNote = reviewMethod === "automated_biometric"
+    ? "Abraxas Verify engine: automated face match + liveness signals"
+    : "Device selfie compared to government ID by Abraxas reviewer";
+
+  return [
+    {
+      ...base,
+      claim_type: "identity_verified",
+      claim_value: {
+        document_type: input.documentType,
+        provider: "abraxas_independent",
+        review_method: reviewMethod,
+        ...(input.biometricScores && {
+          face_match_score: input.biometricScores.face_match,
+          liveness_score: input.biometricScores.liveness,
+        }),
+      },
+    },
+    {
+      ...base,
+      claim_type: "government_id_verified",
+      claim_value: { document_type: input.documentType, provider: "abraxas_capture" },
+    },
+    {
+      ...base,
+      claim_type: "liveness_passed",
+      claim_value: {
+        provider: "abraxas_capture",
+        review_method: reviewMethod,
+        note: livenessNote,
+        ...(input.biometricScores && {
+          face_match_score: input.biometricScores.face_match,
+          liveness_score: input.biometricScores.liveness,
+        }),
+      },
+      assurance_level: assurance,
+    },
+    {
+      ...base,
+      claim_type: "screening_outcome",
+      claim_value: { outcome: "pending_partner_screen", note: "Full AML/OFAC program is partner-gated" },
+      assurance_level: "L1",
+    },
+  ];
+}
+
 /** Claims issued after Abraxas manual identity review (pilot — no Veriff) */
 export function manualApprovedClaims(input: {
   subjectId: string;
