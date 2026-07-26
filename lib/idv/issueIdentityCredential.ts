@@ -24,6 +24,7 @@ export interface IssueIdentityCredentialResult {
   jwt?: string;
   alreadyIssued?: boolean;
   message?: string;
+  on_chain?: { ok: boolean; object_id?: string | null; error?: string };
 }
 
 export type IdentityIssuanceProvider = "veriff" | "manual" | "abraxas_capture";
@@ -207,10 +208,13 @@ export async function issueIdentityCredential(
     ]);
   }
 
+  let onChainResult: IssueIdentityCredentialResult["on_chain"];
+
   try {
     const { isPassportIssuerConfigured, provisionOnChainPassport } = await import("@/lib/sui/passportIssuer");
     if (isPassportIssuerConfigured() && sb) {
       const onChain = await provisionOnChainPassport(normalized);
+      onChainResult = { ok: true, object_id: onChain.objectId };
       await sb.from("sui_passport_objects").upsert({
         sui_address: normalized,
         object_id: onChain.objectId,
@@ -223,10 +227,12 @@ export async function issueIdentityCredential(
       }, { onConflict: "sui_address" });
     }
   } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "On-chain provision failed";
     console.error("[issueIdentityCredential] On-chain provision failed:", e);
+    onChainResult = { ok: false, error: message };
   }
 
-  return { ok: true, jti, jwt, alreadyIssued: false };
+  return { ok: true, jti, jwt, alreadyIssued: false, on_chain: onChainResult };
 }
 
 export interface ManualReviewApproval {

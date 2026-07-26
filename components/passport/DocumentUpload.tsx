@@ -39,6 +39,7 @@ export function DocumentUpload({ email, suiAddress, stampId, color, onUploaded }
       if (suiAddress) formData.append("sui_address", suiAddress);
       const res = await fetch("/api/identity/documents/upload", {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
       const data = await res.json() as {

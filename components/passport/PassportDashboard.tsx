@@ -59,6 +59,7 @@ interface Props {
   credential: StoredCredential | null;
   via: string | null;
   isRefreshing: boolean;
+  isPolling?: boolean;
   starting: boolean;
   error: string | null;
   idvProvider: "veriff" | "manual";
@@ -79,6 +80,7 @@ export function PassportDashboard({
   credential,
   via,
   isRefreshing,
+  isPolling = false,
   starting,
   error,
   idvProvider,
@@ -197,7 +199,12 @@ export function PassportDashboard({
             Name, ID photo, and selfie. Reviewed by Abraxas. Partners only see yes/no — not your documents.
           </p>
           {manualMode ? (
-            <AbraxasIdentityCapture email={email} suiAddress={suiAddress} onSubmitted={onRefresh} />
+            <AbraxasIdentityCapture
+              email={email}
+              suiAddress={suiAddress}
+              onSubmitted={onRefresh}
+              pendingReview={identityUi === "under_review"}
+            />
           ) : (
             <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Start identity check →</Btn>
           )}
@@ -241,7 +248,10 @@ export function PassportDashboard({
 
       {walletDone && (
         <>
-          <IndependentBiometricStatusCard manualMode={manualMode} />
+          <IndependentBiometricStatusCard
+            manualMode={manualMode}
+            isPolling={isPolling || identityUi === "under_review"}
+          />
           <PassportStatusCard
             tier={tier}
             suiAddress={suiAddress}
@@ -252,7 +262,7 @@ export function PassportDashboard({
             returnPath={returnPath}
           />
 
-          {identityUi !== "verified" && !manualMode && (
+          {identityUi !== "verified" && (!manualMode || identityUi === "under_review" || identityUi === "needs_action") && (
             <IdentityUnlockSection
               identityUi={identityUi}
               manualMode={manualMode}
@@ -488,7 +498,7 @@ function IdentityUnlockSection({
           lineHeight: 1.65, margin: "0 0 0.85rem",
         }}>
           {manualMode
-            ? "Our team is reviewing your uploaded ID. You can continue using your Passport while you wait."
+            ? "Your name, ID photo, and selfie are in the Abraxas review queue. You can keep using your Passport while you wait."
             : "Your identity provider is reviewing your submission. Your Passport stays active."}
         </p>
         <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>

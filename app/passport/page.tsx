@@ -228,6 +228,7 @@ function PassportPageInner() {
               credential={credential}
               via={via}
               isRefreshing={isRefreshing || isPolling}
+              isPolling={isPolling}
               starting={starting}
               error={error}
               idvProvider={idvProvider}

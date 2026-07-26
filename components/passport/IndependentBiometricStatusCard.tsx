@@ -2,7 +2,7 @@
 // FILE: components/passport/IndependentBiometricStatusCard.tsx
 // Live status for Abraxas independent IDV on /passport.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 const FONT = "'Inter',system-ui,sans-serif";
@@ -23,16 +23,29 @@ const STATUS_COLOR = {
   not_configured: "#F87171",
 } as const;
 
-export function IndependentBiometricStatusCard({ manualMode }: { manualMode: boolean }) {
+export function IndependentBiometricStatusCard({
+  manualMode,
+  isPolling = false,
+}: {
+  manualMode: boolean;
+  isPolling?: boolean;
+}) {
   const [status, setStatus] = useState<IdvStatus | null>(null);
 
-  useEffect(() => {
-    if (!manualMode) return;
+  const loadStatus = useCallback(() => {
     fetch("/api/idv/independent/status")
       .then(r => r.json())
       .then(data => setStatus(data as IdvStatus))
       .catch(() => {});
-  }, [manualMode]);
+  }, []);
+
+  useEffect(() => {
+    if (!manualMode) return;
+    loadStatus();
+    if (!isPolling) return;
+    const t = window.setInterval(loadStatus, 10_000);
+    return () => window.clearInterval(t);
+  }, [manualMode, isPolling, loadStatus]);
 
   if (!manualMode) return null;
 
