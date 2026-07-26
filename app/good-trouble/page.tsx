@@ -13,8 +13,13 @@ export default function GoodTroublePage() {
       <PageHeader
         eyebrow="Integration pilot · Cannabis"
         title={`${GOOD_TROUBLE_BRAND.name} verification`}
-        subtitle={`${GOOD_TROUBLE_BRAND.tagline} Organic cultivator in ${GOOD_TROUBLE_BRAND.location}. Abraxas Passport retail gate + batch provenance SDK foundation.`}
+        subtitle={`${GOOD_TROUBLE_BRAND.tagline} Organic cultivator in ${GOOD_TROUBLE_BRAND.location}. Part of the Abraxas regulated retail vertical — age eligibility + batch provenance.`}
       />
+      <p style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.78rem", margin: "0 0 1.25rem" }}>
+        <a href="/regulated-retail" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+          ← Cannabis & spirits verification overview
+        </a>
+      </p>
       <GoodTroublePilotSection hideHeader />
     </RedesignPage>
   );

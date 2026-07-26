@@ -22,6 +22,12 @@ export const GOOD_TROUBLE_BRAND = {
     "The same potency, purity, and punch — every time. Consistency you can feel is not an accident.",
   adultUseNotice:
     "Products are intended for adults 21+. Consume responsibly and in compliance with applicable Missouri law.",
+  /** Public site age gate copy (partner website) — Abraxas replaces checkbox with portable proof */
+  ageGate: {
+    eyebrow: "BEFORE YOU ENTER",
+    headline: "OLD ENOUGH TO KNOW BETTER?",
+    requirement: "YOU MUST BE 21 OR OLDER TO ENTER",
+  },
 } as const;
 
 export const GOOD_TROUBLE_PILOT_DISCLAIMER =

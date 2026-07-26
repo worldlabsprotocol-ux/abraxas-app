@@ -96,13 +96,13 @@ export function HomeReusableComplianceStrip() {
       </p>
 
       <Link
-        href="/good-trouble"
+        href="/regulated-retail"
         style={{
           fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
           color: "var(--accent)", textDecoration: "none",
         }}
       >
-        See cannabis retail pilot →
+        See cannabis & spirits verification →
       </Link>
     </section>
   );
