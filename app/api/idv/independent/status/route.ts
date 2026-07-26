@@ -17,6 +17,7 @@ export async function GET() {
     issuance_cap_from_env: sponsor.cap_from_env,
     endpoints: {
       capture: "POST /api/identity/documents/capture",
+      biometric_engine: "/api/idv/biometric/status",
       admin_review: "/admin/identity",
       identity_status: "GET /api/identity/status",
       verification_layer: "GET /api/verify/layer",

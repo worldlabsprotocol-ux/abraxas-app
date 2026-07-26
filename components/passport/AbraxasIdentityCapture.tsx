@@ -9,6 +9,7 @@ import {
   identityCaptureStepLabel,
   type IdentityCaptureStep,
 } from "@/lib/idv/identityCapture";
+import { runCapturePreflight } from "@/lib/idv/biometric/clientPreflight";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -45,6 +46,8 @@ export function AbraxasIdentityCapture({
     if (pendingReview) setSubmitted(true);
   }, [pendingReview]);
   const [error, setError] = useState<string | null>(null);
+  const [preflightWarning, setPreflightWarning] = useState<string | null>(null);
+  const [checkingPreflight, setCheckingPreflight] = useState(false);
 
   const stepIndex = useMemo(
     () => ["name", "id_front", "selfie", "review"].indexOf(step),
@@ -56,6 +59,36 @@ export function AbraxasIdentityCapture({
     if (step === "id_front") return Boolean(idCapture);
     if (step === "selfie") return Boolean(selfieCapture);
     return true;
+  }
+
+  async function handleCapture(
+    kind: "id_front" | "selfie",
+    blob: Blob,
+    previewUrl: string,
+  ) {
+    setCheckingPreflight(true);
+    setPreflightWarning(null);
+    setError(null);
+    try {
+      const result = await runCapturePreflight(blob, kind);
+      if (!result.ok) {
+        setPreflightWarning(result.issues[0] ?? "Retake this photo with better lighting and focus.");
+        return;
+      }
+      if (kind === "id_front") {
+        setIdCapture({ blob, previewUrl });
+      } else {
+        setSelfieCapture({ blob, previewUrl });
+      }
+    } catch {
+      if (kind === "id_front") {
+        setIdCapture({ blob, previewUrl });
+      } else {
+        setSelfieCapture({ blob, previewUrl });
+      }
+    } finally {
+      setCheckingPreflight(false);
+    }
   }
 
   function goNext() {
@@ -223,8 +256,8 @@ export function AbraxasIdentityCapture({
             facingMode="environment"
             color={ACCENT}
             capturedPreview={idCapture?.previewUrl ?? null}
-            onCapture={(blob, previewUrl) => setIdCapture({ blob, previewUrl })}
-            onClear={() => setIdCapture(null)}
+            onCapture={(blob, previewUrl) => void handleCapture("id_front", blob, previewUrl)}
+            onClear={() => { setIdCapture(null); setPreflightWarning(null); }}
           />
         )}
 
@@ -236,8 +269,8 @@ export function AbraxasIdentityCapture({
             mirror
             color={ACCENT}
             capturedPreview={selfieCapture?.previewUrl ?? null}
-            onCapture={(blob, previewUrl) => setSelfieCapture({ blob, previewUrl })}
-            onClear={() => setSelfieCapture(null)}
+            onCapture={(blob, previewUrl) => void handleCapture("selfie", blob, previewUrl)}
+            onClear={() => { setSelfieCapture(null); setPreflightWarning(null); }}
           />
         )}
 
@@ -272,6 +305,12 @@ export function AbraxasIdentityCapture({
           </div>
         )}
 
+        {preflightWarning && (
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#F59E0B", margin: "0.75rem 0 0" }}>
+            {preflightWarning}
+          </p>
+        )}
+
         {error && (
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0.75rem 0 0" }}>
             {error}
@@ -285,8 +324,8 @@ export function AbraxasIdentityCapture({
             </Btn>
           )}
           {step !== "review" ? (
-            <Btn size="sm" onClick={goNext} disabled={!canContinue()}>
-              Continue →
+            <Btn size="sm" onClick={goNext} disabled={!canContinue() || checkingPreflight}>
+              {checkingPreflight ? "Checking photo…" : "Continue →"}
             </Btn>
           ) : (
             <Btn size="sm" loading={submitting} onClick={() => void submitCapture()}>

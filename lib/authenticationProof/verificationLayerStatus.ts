@@ -50,12 +50,18 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
   const persistenceLive = proofsTable.writable;
   const independentIdv = await getIndependentIdvStatus();
 
+  const engine = independentIdv.biometric_engine;
   const independentBiometric: VerificationLayerItem = {
     id: "independent-biometric-idv",
-    label: "Independent biometric IDV (capture → review → L2 credential + stamps)",
+    label: "Abraxas Verify biometric IDV (capture → engine → L2/L3 credential + stamps)",
     status: independentIdv.status,
-    detail: independentIdv.summary,
-    blockers: independentIdv.blockers,
+    detail: engine.auto_approve_enabled
+      ? `${independentIdv.summary} Engine auto-approve enabled for L3.`
+      : `${independentIdv.summary} ${engine.summary}`,
+    blockers: [
+      ...independentIdv.blockers,
+      ...(independentIdv.abraxas_independent ? engine.blockers : []),
+    ],
   };
 
   const credentialsVerify: VerificationLayerItem = {

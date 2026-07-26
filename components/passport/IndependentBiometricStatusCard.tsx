@@ -15,6 +15,11 @@ interface IdvStatus {
   signing_key_configured: boolean;
   on_chain_issuer_configured: boolean;
   pending_review_count: number | null;
+  biometric_engine?: {
+    engine: string;
+    status: string;
+    auto_approve_enabled: boolean;
+  };
 }
 
 const STATUS_COLOR = {
@@ -63,13 +68,19 @@ export function IndependentBiometricStatusCard({
         <span style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 800, letterSpacing: "0.1em", color }}>
           INDEPENDENT BIOMETRIC IDV {status ? `· ${status.status.toUpperCase()}` : ""}
         </span>
-        <Link href="/api/idv/independent/status" style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--accent)", textDecoration: "none" }}>
-          Health JSON →
+        <Link href="/api/idv/biometric/status" style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--accent)", textDecoration: "none" }}>
+          Engine health →
         </Link>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
         {status?.summary ?? "Abraxas Verify — camera capture + biometric engine. Name, ID, and selfie below."}
       </p>
+      {status?.biometric_engine && (
+        <p style={{ fontFamily: MONO, fontSize: "0.58rem", color, margin: "6px 0 0" }}>
+          Engine {status.biometric_engine.engine}
+          {status.biometric_engine.auto_approve_enabled ? " · auto-approve on" : " · human review queue"}
+        </p>
+      )}
       {status && status.pending_review_count != null && status.pending_review_count > 0 && (
         <p style={{ fontFamily: MONO, fontSize: "0.58rem", color, margin: "6px 0 0" }}>
           {status.pending_review_count} capture(s) pending admin review

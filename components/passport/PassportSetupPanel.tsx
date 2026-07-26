@@ -59,14 +59,14 @@ export function PassportSetupPanel({
   starting,
   error,
   veriffConfigured,
-  idvProvider = veriffConfigured ? "veriff" : "manual",
+  idvProvider = "manual",
   onStartIdCheck,
   onRefresh,
   onWalletBound,
   returnPath,
 }: Props) {
   const manualMode = idvProvider === "manual";
-  const assuranceLabel = manualMode ? "L2" : "L3";
+  const assuranceLabel = credential?.level?.toUpperCase() ?? (manualMode ? "L2" : "L3");
   const completedCount = [setup.accountComplete, setup.walletBound, setup.identityComplete].filter(Boolean).length;
 
   async function bindWallet() {
@@ -255,25 +255,11 @@ export function PassportSetupPanel({
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
                   Your profile is active. Add an ID check when you need enhanced trust for payments, submissions, or partner policies.
                   {manualMode ? (
-                    <> Use your device camera below — name, government ID, and selfie. Reviewed by Abraxas (not Veriff).</>
+                    <> Use your device camera below — name, government ID, and selfie. Verified by Abraxas Verify.</>
                   ) : (
-                    <> Usually takes 2-4 minutes via licensed provider. Abraxas stores outcome only.</>
+                    <> Legacy third-party IDV path. Abraxas Verify is the default on this deployment.</>
                   )}
                 </p>
-
-                {manualMode && (identityStatus === "pending" || isPolling) && (
-                  <div style={{
-                    padding: "0.65rem 0.75rem", borderRadius: 10, marginBottom: "0.65rem",
-                    background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.25)",
-                  }}>
-                    <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#3B82F6", marginBottom: 4 }}>
-                      Veriff session inactive
-                    </div>
-                    <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
-                      If you started Veriff before the trial ended, that review will not complete. Upload your ID below for pilot manual review instead. or skip identity; Tier 1 Passport works without it.
-                    </p>
-                  </div>
-                )}
 
                 {(identityStatus === "pending" || isPolling) ? (
                   <div style={{
@@ -282,12 +268,12 @@ export function PassportSetupPanel({
                     marginBottom: "0.65rem",
                   }}>
                     <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#F59E0B", marginBottom: 4 }}>
-                      {manualMode ? "Review in progress" : "Verification in progress"}
+                      {manualMode ? "Abraxas Verify review in progress" : "Legacy verification in progress"}
                     </div>
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
                       {manualMode
-                        ? "Our team is reviewing your uploaded ID. You can continue using your profile while you wait."
-                        : "Veriff is reviewing your submission. Your profile stays active."}
+                        ? "Our biometric engine scored your capture; a reviewer confirms edge cases. Your profile stays active."
+                        : "Legacy provider is reviewing your submission. Your profile stays active."}
                     </p>
                     <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>
                       Check status now
@@ -333,7 +319,7 @@ export function PassportSetupPanel({
                       </div>
                     </details>
                     <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
-                      Pilot · Abraxas review · Assurance L2. Not required to use your profile.
+                      Abraxas Verify · engine + human review · Assurance L2–L3. Not required to use your profile.
                     </p>
                   </>
                 ) : !veriffConfigured ? (
@@ -406,7 +392,7 @@ export function PassportSetupPanel({
                 ✓ Passport ready for supported verified actions
               </div>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
-                Identity credential active · {manualMode ? "Abraxas manual review" : "Veriff / Abraxas"} · Assurance {assuranceLabel}
+                Identity credential active · {manualMode ? "Abraxas Verify" : "Legacy IDV"} · Assurance {assuranceLabel}
                 {credential.expires_at && <> · Expires {new Date(credential.expires_at).toLocaleDateString()}</>}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
@@ -512,7 +498,7 @@ function PassportDataTransparency({ visible, via }: { visible: boolean; via: str
         ["Identity", "Verified outcome only"],
         ["Document images", "Not stored by Abraxas"],
         ["Biometric data", "Not stored by Abraxas"],
-        ["Verification provider", via === "veriff" ? "Veriff" : via === "manual" ? "Abraxas verify (camera)" : "Licensed provider"],
+        ["Verification provider", via === "veriff" ? "Legacy third-party" : via === "manual" ? "Abraxas Verify (camera)" : "Abraxas Verify"],
       ].map(([k, v]) => (
         <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.68rem", marginBottom: 3 }}>
           <span style={{ color: "var(--text-muted)" }}>{k}</span>
