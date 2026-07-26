@@ -2,6 +2,7 @@
 // Run Abraxas biometric engine on ID + selfie buffers at capture time.
 
 import { compareIdAndSelfie } from "./faceSimilarity";
+import { documentQualityScore } from "./documentSignals";
 import { analyzeImageBuffer, livenessFromSelfieSignals } from "./imageSignals";
 import { evaluateBiometricDecision } from "./decision";
 import type { BiometricAssessment } from "./types";
@@ -21,10 +22,15 @@ export async function analyzeBiometricCapture(input: {
   ]);
 
   const liveness = livenessFromSelfieSignals(selfieSignals);
+  const documentQuality = documentQualityScore(
+    idSignals.quality,
+    idSignals.width,
+    idSignals.height,
+  );
   const scores = {
     face_match: faceMatch,
     liveness,
-    document_quality: idSignals.quality,
+    document_quality: documentQuality,
     selfie_quality: selfieSignals.quality,
   };
 
@@ -43,6 +49,7 @@ export async function analyzeBiometricCapture(input: {
       id_height: idSignals.height,
       id_brightness: idSignals.brightness,
       id_sharpness: idSignals.sharpness,
+      document_aspect_score: documentQuality - idSignals.quality * 0.75,
       selfie_width: selfieSignals.width,
       selfie_height: selfieSignals.height,
       selfie_brightness: selfieSignals.brightness,

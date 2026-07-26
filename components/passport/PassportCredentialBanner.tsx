@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportCredentialBanner.tsx
-// Active W3C credential. auto-verified after Veriff approval (no manual JWT paste).
+// Active W3C credential. auto-verified after Abraxas Verify approval (no manual JWT paste).
 
 import { useState } from "react";
 import type { StoredCredential } from "@/lib/credentials/storage";
@@ -37,6 +37,7 @@ export function PassportCredentialBanner({
   isPolling,
   onRefresh,
   syncMessage,
+  manualMode = true,
 }: {
   identityStatus: IdentityStampStatus;
   via: string | null;
@@ -51,6 +52,7 @@ export function PassportCredentialBanner({
   isPolling: boolean;
   onRefresh: () => void;
   syncMessage?: string | null;
+  manualMode?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -69,10 +71,12 @@ export function PassportCredentialBanner({
         border: `1px solid ${AMBER}44`, background: `${AMBER}10`,
       }}>
         <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: AMBER, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-          Veriff Precheck in review
+          {manualMode ? "Abraxas Verify in review" : "Identity verification in review"}
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-          Your documents are being reviewed{via ? ` (${via})` : ""}. This page polls Veriff every 5 seconds and issues your credential automatically when approved.
+          {manualMode
+            ? "Your capture is in the Abraxas Verify queue. This page polls every few seconds and issues your credential when approved."
+            : `Your documents are being reviewed${via ? ` (${via})` : ""}. This page polls every few seconds and issues your credential automatically when approved.`}
         </p>
         {syncMessage && (
           <p style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
