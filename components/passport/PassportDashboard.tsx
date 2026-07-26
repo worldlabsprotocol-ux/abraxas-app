@@ -203,7 +203,6 @@ export function PassportDashboard({
               email={email}
               suiAddress={suiAddress}
               onSubmitted={onRefresh}
-              pendingReview={identityUi === "under_review"}
             />
           ) : (
             <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Start identity check →</Btn>
