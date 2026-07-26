@@ -2,7 +2,7 @@
 // FILE: components/passport/AbraxasIdentityCapture.tsx
 // Abraxas-native identity flow: legal name → ID photo → selfie → submit for review.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { CameraCapture } from "@/components/passport/CameraCapture";
 import { Btn } from "@/components/redesign/ui";
 import {
@@ -18,6 +18,7 @@ interface AbraxasIdentityCaptureProps {
   email: string;
   suiAddress: string | null;
   onSubmitted?: () => void;
+  pendingReview?: boolean;
 }
 
 interface CaptureState {
@@ -29,13 +30,18 @@ export function AbraxasIdentityCapture({
   email,
   suiAddress,
   onSubmitted,
+  pendingReview = false,
 }: AbraxasIdentityCaptureProps) {
   const [step, setStep] = useState<IdentityCaptureStep>("name");
   const [legalName, setLegalName] = useState("");
   const [idCapture, setIdCapture] = useState<CaptureState | null>(null);
   const [selfieCapture, setSelfieCapture] = useState<CaptureState | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(pendingReview);
+
+  useEffect(() => {
+    if (pendingReview) setSubmitted(true);
+  }, [pendingReview]);
   const [error, setError] = useState<string | null>(null);
 
   const stepIndex = useMemo(

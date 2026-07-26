@@ -149,5 +149,6 @@ export async function POST(req: NextRequest) {
     sui_address: normalized,
     jti: issued.jti,
     already_issued: issued.alreadyIssued ?? false,
+    on_chain: issued.on_chain ?? null,
   });
 }

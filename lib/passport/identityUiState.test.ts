@@ -57,6 +57,28 @@ describe("resolveIdentityUiState", () => {
     ).toBe("not_started");
   });
 
+  it("returns under_review for Abraxas camera capture pending", () => {
+    expect(
+      resolveIdentityUiState({
+        identityStatus: "pending",
+        hasCredential: false,
+        idvProvider: "manual",
+        via: "verification",
+      }),
+    ).toBe("under_review");
+  });
+
+  it("returns under_review when status API maps abraxas capture to manual_review", () => {
+    expect(
+      resolveIdentityUiState({
+        identityStatus: "pending",
+        hasCredential: false,
+        idvProvider: "manual",
+        via: "manual_review",
+      }),
+    ).toBe("under_review");
+  });
+
   it("returns not_started when nothing submitted", () => {
     expect(
       resolveIdentityUiState({
