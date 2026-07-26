@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { checkAdmin } from "@/lib/adminAuth";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
+import { getBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -114,6 +115,7 @@ export async function POST(req: NextRequest) {
   const reviewId = doc.id as string;
 
   const sessionId = doc.capture_session_id as string | null;
+  const assessment = sessionId ? await getBiometricAssessment(sessionId) : null;
 
   const issued = await issueManualIdentityCredential(normalized, {
     reviewId,
@@ -121,6 +123,11 @@ export async function POST(req: NextRequest) {
     documentType: body.document_type ?? "passport",
     reviewer,
     captureSessionId: sessionId ?? undefined,
+    assuranceLevel: assessment?.assurance_level ?? "L2",
+    reviewMethod: assessment?.review_method ?? "human_biometric_match",
+    biometricScores: assessment
+      ? { face_match: assessment.scores.face_match, liveness: assessment.scores.liveness }
+      : undefined,
   });
 
   if (!issued.ok) {

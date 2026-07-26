@@ -47,7 +47,7 @@ export const CLAIM_ISSUERS = {
   sandbox: "issuer:abraxas-sandbox",
 } as const;
 
-/** Claims issued after Abraxas independent capture (name + ID + selfie, human review) */
+/** Claims issued after Abraxas independent capture (name + ID + selfie) */
 export function abraxasCaptureApprovedClaims(input: {
   subjectId: string;
   jti: string;
@@ -55,14 +55,19 @@ export function abraxasCaptureApprovedClaims(input: {
   documentType: string;
   captureSessionId: string;
   expiresAt: Date;
+  assuranceLevel?: AssuranceLevel;
+  reviewMethod?: "automated_biometric" | "human_biometric_match";
+  biometricScores?: { face_match: number; liveness: number };
 }): Omit<CredentialClaimRecord, "id" | "status">[] {
   const issuedAt = new Date().toISOString();
   const expiresAt = input.expiresAt.toISOString();
+  const assurance = input.assuranceLevel ?? "L2";
+  const reviewMethod = input.reviewMethod ?? "human_biometric_match";
   const base = {
     subject_id: input.subjectId,
     credential_jti: input.jti,
     issuer_id: CLAIM_ISSUERS.abraxas,
-    assurance_level: "L2" as AssuranceLevel,
+    assurance_level: assurance,
     issued_at: issuedAt,
     expires_at: expiresAt,
     revocation_reference: null,
@@ -71,6 +76,10 @@ export function abraxasCaptureApprovedClaims(input: {
     policy_scope: "compliance",
   };
 
+  const livenessNote = reviewMethod === "automated_biometric"
+    ? "Abraxas Verify engine: automated face match + liveness signals"
+    : "Device selfie compared to government ID by Abraxas reviewer";
+
   return [
     {
       ...base,
@@ -78,7 +87,11 @@ export function abraxasCaptureApprovedClaims(input: {
       claim_value: {
         document_type: input.documentType,
         provider: "abraxas_independent",
-        review_method: "human_biometric_match",
+        review_method: reviewMethod,
+        ...(input.biometricScores && {
+          face_match_score: input.biometricScores.face_match,
+          liveness_score: input.biometricScores.liveness,
+        }),
       },
     },
     {
@@ -91,10 +104,14 @@ export function abraxasCaptureApprovedClaims(input: {
       claim_type: "liveness_passed",
       claim_value: {
         provider: "abraxas_capture",
-        review_method: "selfie_matched_to_id",
-        note: "Device selfie compared to government ID by Abraxas reviewer",
+        review_method: reviewMethod,
+        note: livenessNote,
+        ...(input.biometricScores && {
+          face_match_score: input.biometricScores.face_match,
+          liveness_score: input.biometricScores.liveness,
+        }),
       },
-      assurance_level: "L2",
+      assurance_level: assurance,
     },
     {
       ...base,

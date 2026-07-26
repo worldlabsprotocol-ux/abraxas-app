@@ -33,6 +33,16 @@ interface QueueItem {
   has_id_front?: boolean;
   capture_complete?: boolean;
   documents?: DocRow[];
+  biometric?: {
+    face_match_score?: number;
+    liveness_score?: number;
+    document_quality_score?: number;
+    selfie_quality_score?: number;
+    decision?: string;
+    assurance_level?: string;
+    review_method?: string;
+    engine_version?: string;
+  } | null;
 }
 
 function CapturePreview({
@@ -183,8 +193,8 @@ export default function AdminIdentityPage() {
         </div>
 
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
-          Users submit legal name + ID + selfie from /passport. Approve to issue L2 credential + on-chain stamps
-          on the active Sui network (devnet or mainnet). Health: <code>/api/idv/independent/status</code>
+          Users submit legal name + ID + selfie from /passport. Abraxas Verify engine scores face match + liveness;
+          approve edge cases to issue L2/L3 credential + on-chain stamps. Health: <code>/api/idv/independent/status</code>
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -248,6 +258,14 @@ export default function AdminIdentityPage() {
                       {item.capture_complete ? "ID + selfie complete" : "Incomplete capture"}
                       {" · "}{new Date(item.created_at).toLocaleString()}
                     </div>
+                    {item.biometric && (
+                      <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "#A7F3D0", marginTop: 8, lineHeight: 1.6 }}>
+                        Engine {item.biometric.engine_version ?? "v1"} · {item.biometric.decision}
+                        {" · "}face {(Number(item.biometric.face_match_score) * 100).toFixed(0)}%
+                        {" · "}liveness {(Number(item.biometric.liveness_score) * 100).toFixed(0)}%
+                        {" · "}id {(Number(item.biometric.document_quality_score) * 100).toFixed(0)}%
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
                     <button
@@ -262,7 +280,7 @@ export default function AdminIdentityPage() {
                         cursor: item.sui_address && item.capture_complete ? "pointer" : "not-allowed",
                       }}
                     >
-                      Approve L2
+                      Approve {item.biometric?.assurance_level === "L3" ? "L3" : "L2"}
                     </button>
                     <button
                       onClick={() => void reject(item)}

@@ -68,7 +68,7 @@ export function IndependentBiometricStatusCard({
         </Link>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
-        {status?.summary ?? "Abraxas camera capture + human review — not Veriff. Name, ID, and selfie below."}
+        {status?.summary ?? "Abraxas Verify — camera capture + biometric engine. Name, ID, and selfie below."}
       </p>
       {status && status.pending_review_count != null && status.pending_review_count > 0 && (
         <p style={{ fontFamily: MONO, fontSize: "0.58rem", color, margin: "6px 0 0" }}>

@@ -40,6 +40,26 @@ CONFIRM_MAINNET=1 npm run sui:deploy:mainnet
 npm run sui:mint-cap -- mainnet
 ```
 
+## Abraxas Verify engine (v1)
+
+On every capture, the server runs `abraxas-biometric-v1`:
+
+- **Face match** — ID photo vs selfie (self-hosted correlation)
+- **Liveness** — selfie quality + texture heuristics
+- **Document quality** — resolution, brightness, sharpness
+
+Scores persist in `identity_biometric_assessments`. Admin queue shows engine output.
+
+### Auto-approve (optional)
+
+```env
+ABRAXAS_BIOMETRIC_AUTO_APPROVE=1
+ABRAXAS_BIOMETRIC_AUTO_FACE=0.68
+ABRAXAS_BIOMETRIC_AUTO_LIVENESS=0.62
+```
+
+When enabled, high-confidence captures issue **L3** credentials immediately without human review.
+
 ## End-to-end flow
 
 1. User **Sign in** (Google zkLogin) → browser session cookie minted

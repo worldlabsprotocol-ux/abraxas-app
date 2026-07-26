@@ -32,7 +32,14 @@ export type IdentityIssuanceProvider = "veriff" | "manual" | "abraxas_capture";
 export async function issueIdentityCredential(
   holder: string,
   decision: VeriffDecisionInput,
-  options?: { provider?: IdentityIssuanceProvider; reviewId?: string; captureSessionId?: string },
+  options?: {
+    provider?: IdentityIssuanceProvider;
+    reviewId?: string;
+    captureSessionId?: string;
+    assuranceLevel?: "L2" | "L3";
+    reviewMethod?: "automated_biometric" | "human_biometric_match";
+    biometricScores?: { face_match: number; liveness: number };
+  },
 ): Promise<IssueIdentityCredentialResult> {
   const provider = options?.provider ?? "veriff";
   const reviewRef = options?.reviewId ?? decision.id;
@@ -101,7 +108,8 @@ export async function issueIdentityCredential(
       verified_at: now.toISOString(),
       chain: "sui" as const,
       veriff_session_id: provider === "veriff" ? decision.id : undefined,
-      assurance_level: provider === "veriff" ? ("L3" as const) : ("L2" as const),
+      assurance_level: options?.assuranceLevel
+        ?? (provider === "veriff" ? ("L3" as const) : provider === "abraxas_capture" && options?.reviewMethod === "automated_biometric" ? ("L3" as const) : ("L2" as const)),
       idv_provider: provider === "abraxas_capture" ? "abraxas_independent" : provider,
       review_id: provider === "manual" ? reviewRef : undefined,
       permissions: {
@@ -191,6 +199,9 @@ export async function issueIdentityCredential(
               documentType: docType,
               captureSessionId: options.captureSessionId,
               expiresAt,
+              assuranceLevel: options.assuranceLevel,
+              reviewMethod: options.reviewMethod,
+              biometricScores: options.biometricScores,
             })
           : manualApprovedClaims({
               subjectId: normalized,
@@ -241,6 +252,9 @@ export interface ManualReviewApproval {
   documentType?: string;
   reviewer?: string;
   captureSessionId?: string;
+  assuranceLevel?: "L2" | "L3";
+  reviewMethod?: "automated_biometric" | "human_biometric_match";
+  biometricScores?: { face_match: number; liveness: number };
 }
 
 /** Issue credential after admin manual review (Veriff unavailable). Assurance L2. */
@@ -269,6 +283,9 @@ export async function issueManualIdentityCredential(
       provider,
       reviewId: approval.reviewId,
       captureSessionId: approval.captureSessionId,
+      assuranceLevel: approval.assuranceLevel,
+      reviewMethod: approval.reviewMethod,
+      biometricScores: approval.biometricScores,
     },
   );
 }
