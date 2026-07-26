@@ -18,7 +18,7 @@ export const MAINNET_READINESS_MILESTONES: MainnetMilestone[] = [
     id: "core-verification-live",
     label: "Core verification live in production",
     description:
-      "Passport issuance, W3C Verifiable Credentials, Veriff IDV, consent, and POST /api/credentials/verify — real users and pilot partners.",
+      "Passport issuance, W3C Verifiable Credentials, Abraxas independent biometric IDV (or Veriff), consent, and POST /api/credentials/verify — real users and pilot partners.",
     done: true,
     href: "/passport",
   },

@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { checkAdmin } from "@/lib/adminAuth";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
+import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -61,6 +62,35 @@ export async function POST(req: NextRequest) {
       await sb.from("passport_documents").update(rejectUpdate).eq("id", doc.id);
     }
 
+    let sui = doc.sui_address as string | null;
+    if (!sui && doc.user_email) {
+      const { data: zk } = await sb
+        .from("sui_zklogin_identities")
+        .select("sui_address")
+        .eq("email", doc.user_email)
+        .maybeSingle();
+      sui = zk?.sui_address ?? null;
+    }
+
+    if (sui) {
+      try {
+        const normalized = normalizeSuiAddress(sui);
+        await transitionIdentityVerification(
+          normalized,
+          {
+            user_email: doc.user_email,
+            status: "revoked",
+            identity_verification_status: "declined",
+            credential_status: "not_issued",
+            error_message: body.note ?? "Identity verification declined",
+          },
+          "admin_identity_reject",
+        );
+      } catch (e) {
+        console.error("[admin/identity/reject] state transition failed:", e);
+      }
+    }
+
     return NextResponse.json({ ok: true, action: "rejected", document_id: doc.id });
   }
 
@@ -83,18 +113,20 @@ export async function POST(req: NextRequest) {
   const normalized = normalizeSuiAddress(sui);
   const reviewId = doc.id as string;
 
+  const sessionId = doc.capture_session_id as string | null;
+
   const issued = await issueManualIdentityCredential(normalized, {
     reviewId,
     jurisdiction: body.jurisdiction ?? "US",
     documentType: body.document_type ?? "passport",
     reviewer,
+    captureSessionId: sessionId ?? undefined,
   });
 
   if (!issued.ok) {
     return NextResponse.json({ error: issued.message ?? "Issuance failed" }, { status: 500 });
   }
 
-  const sessionId = doc.capture_session_id as string | null;
   const updateQuery = sb.from("passport_documents").update({
     status: "accepted",
     sui_address: normalized,
@@ -117,5 +149,6 @@ export async function POST(req: NextRequest) {
     sui_address: normalized,
     jti: issued.jti,
     already_issued: issued.alreadyIssued ?? false,
+    on_chain: issued.on_chain ?? null,
   });
 }

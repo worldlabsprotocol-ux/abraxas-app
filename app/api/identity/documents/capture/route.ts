@@ -2,20 +2,25 @@
 // Abraxas-native identity capture: legal name + ID front + selfie in one submission.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { randomUUID } from "crypto";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { getIdvProvider } from "@/lib/idv/idvProvider";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
 
+function getSupabase(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
 async function uploadCaptureFile(
+  supabase: SupabaseClient,
   file: File,
   email: string,
   sessionId: string,
@@ -44,18 +49,63 @@ async function uploadCaptureFile(
   return { path, fileName: `${documentType}.${ext}` };
 }
 
+async function hasPendingIdentityReview(
+  supabase: SupabaseClient,
+  suiAddress: string,
+): Promise<boolean> {
+  const normalized = normalizeSuiAddress(suiAddress);
+
+  const { count: docCount } = await supabase
+    .from("passport_documents")
+    .select("id", { count: "exact", head: true })
+    .eq("sui_address", normalized)
+    .eq("stamp_id", "identity")
+    .in("status", ["submitted", "under_review"]);
+
+  if ((docCount ?? 0) > 0) return true;
+
+  const { data: idv } = await supabase
+    .from("identity_verifications")
+    .select("identity_verification_status, credential_status, status")
+    .or(`wallet_address.eq.${normalized},sui_address.eq.${normalized}`)
+    .maybeSingle();
+
+  if (!idv) return false;
+
+  const pending =
+    idv.identity_verification_status === "submitted"
+    || idv.identity_verification_status === "in_progress"
+    || (idv.status === "pending" && idv.credential_status !== "active");
+
+  return pending;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    if (getIdvProvider() === "veriff") {
+      return NextResponse.json({
+        error: "Abraxas capture is disabled while Veriff is active. Use Start identity check instead.",
+      }, { status: 403 });
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json({ error: "Document storage not configured" }, { status: 503 });
+    }
+
+    const auth = await requireBrowserSession(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const formData = await req.formData();
-    const email = (formData.get("email") as string | null)?.trim();
     const legalName = (formData.get("legal_name") as string | null)?.trim();
-    const suiRaw = (formData.get("sui_address") as string | null)?.trim();
     const idFront = formData.get("id_front") as File | null;
     const selfie = formData.get("selfie") as File | null;
 
-    if (!email || !legalName || !suiRaw || !idFront || !selfie) {
+    if (!legalName || !idFront || !selfie) {
       return NextResponse.json({
-        error: "email, legal_name, sui_address, id_front, and selfie are required",
+        error: "legal_name, id_front, and selfie are required",
       }, { status: 400 });
     }
 
@@ -63,18 +113,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "legal_name must be at least 2 characters" }, { status: 400 });
     }
 
-    let suiAddress: string;
-    try {
-      suiAddress = normalizeSuiAddress(suiRaw);
-    } catch {
-      return NextResponse.json({ error: "Invalid sui_address" }, { status: 400 });
+    const suiAddress = normalizeSuiAddress(auth.session.suiAddress);
+
+    if (await hasPendingIdentityReview(supabase, suiAddress)) {
+      return NextResponse.json({
+        error: "Identity verification is already pending review. We'll notify you when it's complete.",
+        already_pending: true,
+      }, { status: 409 });
+    }
+
+    const { data: zkRow } = await supabase
+      .from("sui_zklogin_identities")
+      .select("email")
+      .eq("sui_address", suiAddress)
+      .maybeSingle();
+
+    const email = zkRow?.email?.trim();
+    if (!email?.includes("@")) {
+      return NextResponse.json({
+        error: "Google account email required — sign in again from the top right",
+      }, { status: 403 });
     }
 
     const captureSessionId = randomUUID();
 
     const [idUpload, selfieUpload] = await Promise.all([
-      uploadCaptureFile(idFront, email, captureSessionId, "id_front"),
-      uploadCaptureFile(selfie, email, captureSessionId, "selfie"),
+      uploadCaptureFile(supabase, idFront, email, captureSessionId, "id_front"),
+      uploadCaptureFile(supabase, selfie, email, captureSessionId, "selfie"),
     ]);
 
     const rows = [

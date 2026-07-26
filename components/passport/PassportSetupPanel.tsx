@@ -12,6 +12,7 @@ import type { StoredCredential } from "@/lib/credentials/storage";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
+import { IndependentBiometricStatusCard } from "@/components/passport/IndependentBiometricStatusCard";
 import { PassportTierCapabilities } from "@/components/passport/PassportTierCapabilities";
 import Link from "next/link";
 
@@ -148,6 +149,7 @@ export function PassportSetupPanel({
         </div>
 
         <div style={{ padding: "1.25rem 1.35rem" }}>
+          <IndependentBiometricStatusCard manualMode={manualMode} />
           {/* Progress checklist */}
           <ol style={{ listStyle: "none", margin: "0 0 1.25rem", padding: 0, display: "grid", gap: "0.45rem" }}>
             {[
@@ -388,7 +390,7 @@ export function PassportSetupPanel({
                 Wallet bound · Core account active · Add optional ID check above when a deal requires enhanced trust.
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-                <Btn href="/verify?mode=profile" size="sm">Set up public profile →</Btn>
+                <Btn href="/account" size="sm">Set up public profile →</Btn>
                 <Btn href="/verify" variant="secondary" size="sm">Test verification</Btn>
                 <Btn href="/verify" variant="ghost" size="sm">Verify records</Btn>
               </div>
@@ -409,7 +411,7 @@ export function PassportSetupPanel({
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
                 <Btn href="/verify?mode=credential" size="sm">Verify credential publicly →</Btn>
-                <Btn href="/verify?mode=policy" variant="secondary" size="sm">Run policy check</Btn>
+                <Btn href="/verify?mode=credential" variant="secondary" size="sm">Run policy check</Btn>
                 <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
                 <Btn href="/verify" variant="ghost" size="sm">Verify records</Btn>
               </div>

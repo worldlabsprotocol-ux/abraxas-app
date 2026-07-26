@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
 
   if (!(await holderIsVerified(sui))) {
     return NextResponse.json(
-      { error: "Holder must complete Veriff approval before on-chain provision" },
+      { error: "Holder must complete identity verification before on-chain provision" },
       { status: 403 },
     );
   }

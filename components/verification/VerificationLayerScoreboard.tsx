@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/verification/VerificationLayerScoreboard.tsx
-// Seven-item verification layer tracker with blockers and E2E status.
+// Eight-item verification layer tracker with blockers and E2E status.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -52,7 +52,7 @@ export function VerificationLayerScoreboard({ compact = false }: { compact?: boo
       .finally(() => setLoading(false));
   }, []);
 
-  const progress = data?.progress ?? { done: 0, total: 7, percent: 0, isFullyReady: false };
+  const progress = data?.progress ?? { done: 0, total: 8, percent: 0, isFullyReady: false };
   const items: VerificationLayerItem[] = data?.items ?? [];
 
   if (loading) {
@@ -194,6 +194,9 @@ export function VerificationLayerScoreboard({ compact = false }: { compact?: boo
         <Btn href="/api/verify/bootstrap" variant="secondary" size="sm">
           Bootstrap diagnostics (JSON) →
         </Btn>
+          <Btn href="/api/idv/independent/status" variant="secondary" size="sm">
+            Independent IDV health →
+          </Btn>
           <Btn href="/mainnet" variant="ghost" size="sm">
             Mainnet gates →
           </Btn>

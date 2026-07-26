@@ -2,7 +2,7 @@
 // FILE: components/passport/AbraxasIdentityCapture.tsx
 // Abraxas-native identity flow: legal name → ID photo → selfie → submit for review.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { CameraCapture } from "@/components/passport/CameraCapture";
 import { Btn } from "@/components/redesign/ui";
 import {
@@ -18,6 +18,7 @@ interface AbraxasIdentityCaptureProps {
   email: string;
   suiAddress: string | null;
   onSubmitted?: () => void;
+  pendingReview?: boolean;
 }
 
 interface CaptureState {
@@ -29,13 +30,18 @@ export function AbraxasIdentityCapture({
   email,
   suiAddress,
   onSubmitted,
+  pendingReview = false,
 }: AbraxasIdentityCaptureProps) {
   const [step, setStep] = useState<IdentityCaptureStep>("name");
   const [legalName, setLegalName] = useState("");
   const [idCapture, setIdCapture] = useState<CaptureState | null>(null);
   const [selfieCapture, setSelfieCapture] = useState<CaptureState | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(pendingReview);
+
+  useEffect(() => {
+    if (pendingReview) setSubmitted(true);
+  }, [pendingReview]);
   const [error, setError] = useState<string | null>(null);
 
   const stepIndex = useMemo(
@@ -68,7 +74,7 @@ export function AbraxasIdentityCapture({
       return;
     }
     if (!suiAddress) {
-      setError("Bind your wallet before submitting identity verification.");
+      setError("Sign in with Google (top right) before submitting identity verification.");
       return;
     }
     if (!idCapture || !selfieCapture) {
@@ -80,14 +86,13 @@ export function AbraxasIdentityCapture({
     setError(null);
     try {
       const formData = new FormData();
-      formData.append("email", email);
-      formData.append("sui_address", suiAddress);
       formData.append("legal_name", legalName.trim());
       formData.append("id_front", idCapture.blob, "id_front.jpg");
       formData.append("selfie", selfieCapture.blob, "selfie.jpg");
 
       const res = await fetch("/api/identity/documents/capture", {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
       const data = await res.json() as {

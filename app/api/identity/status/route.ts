@@ -132,7 +132,12 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
 
   return {
     status: legacyStatus,
-    via: data.liveness_provider === "veriff" ? "veriff" : "verification",
+    via:
+      data.liveness_provider === "veriff"
+        ? "veriff"
+        : data.liveness_provider === "abraxas_capture" || data.liveness_provider === "manual_review"
+          ? "manual_review"
+          : "verification",
     credential_jti: data.credential_jti,
     document_type: data.document_type,
     jurisdiction: data.document_country,
