@@ -12,6 +12,7 @@ import type { StoredCredential } from "@/lib/credentials/storage";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
+import { IndependentBiometricStatusCard } from "@/components/passport/IndependentBiometricStatusCard";
 import { PassportTierCapabilities } from "@/components/passport/PassportTierCapabilities";
 import Link from "next/link";
 
@@ -148,6 +149,7 @@ export function PassportSetupPanel({
         </div>
 
         <div style={{ padding: "1.25rem 1.35rem" }}>
+          <IndependentBiometricStatusCard manualMode={manualMode} />
           {/* Progress checklist */}
           <ol style={{ listStyle: "none", margin: "0 0 1.25rem", padding: 0, display: "grid", gap: "0.45rem" }}>
             {[
