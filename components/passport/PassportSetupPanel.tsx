@@ -388,7 +388,7 @@ export function PassportSetupPanel({
                 Wallet bound · Core account active · Add optional ID check above when a deal requires enhanced trust.
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-                <Btn href="/verify?mode=profile" size="sm">Set up public profile →</Btn>
+                <Btn href="/account" size="sm">Set up public profile →</Btn>
                 <Btn href="/verify" variant="secondary" size="sm">Test verification</Btn>
                 <Btn href="/verify" variant="ghost" size="sm">Verify records</Btn>
               </div>
@@ -409,7 +409,7 @@ export function PassportSetupPanel({
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
                 <Btn href="/verify?mode=credential" size="sm">Verify credential publicly →</Btn>
-                <Btn href="/verify?mode=policy" variant="secondary" size="sm">Run policy check</Btn>
+                <Btn href="/verify?mode=credential" variant="secondary" size="sm">Run policy check</Btn>
                 <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
                 <Btn href="/verify" variant="ghost" size="sm">Verify records</Btn>
               </div>
