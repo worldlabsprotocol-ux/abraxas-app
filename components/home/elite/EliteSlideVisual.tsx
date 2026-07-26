@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { AbraxasPassportVc, AuthenticationProofArtifact } from "@/components/home/cinematic/KycDocumentCards";
+import { AbraxasPassportVc, AuthenticationProofArtifact, VerificationDebtMeter } from "@/components/home/cinematic/KycDocumentCards";
 import { GlowOrb } from "@/components/home/productVisual/ProductVisualPrimitives";
 import { COSMIC_PALETTE, DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
 import type { EliteSlide } from "@/lib/eliteDemoSlides";
@@ -9,29 +10,7 @@ import type { EliteSlide } from "@/lib/eliteDemoSlides";
 export function EliteSlideVisual({ slide, accent }: { slide: EliteSlide; accent: string }) {
   switch (slide.visual) {
     case "hero-debt":
-      return (
-        <div style={{ width: "100%", textAlign: "center" }}>
-          <motion.div
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            style={{
-              fontFamily: DEMO_TYPOGRAPHY.fontSans,
-              fontSize: "clamp(2.5rem, 8vw, 4rem)",
-              fontWeight: 900,
-              color: COSMIC_PALETTE.rose,
-              textShadow: `0 0 48px ${COSMIC_PALETTE.rose}55`,
-              marginBottom: 12,
-            }}
-          >
-            7×
-          </motion.div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-            {slide.pills?.map(p => (
-              <span key={p} style={pillStyle(accent)}>{p}</span>
-            ))}
-          </div>
-        </div>
-      );
+      return <HeroDebtVisual pills={slide.pills} accent={accent} />;
     case "hero-passport":
       return <AbraxasPassportVc pulse large />;
     case "hero-proof":
@@ -167,6 +146,38 @@ export function EliteSlideVisual({ slide, accent }: { slide: EliteSlide; accent:
     default:
       return <GlowOrb accent={accent} icon="◆" size={100} />;
   }
+}
+
+function HeroDebtVisual({ pills, accent }: { pills?: string[]; accent: string }) {
+  const [count, setCount] = useState(1);
+
+  useEffect(() => {
+    const steps = [1, 2, 3, 4, 5, 6, 7];
+    let i = 0;
+    const t = window.setInterval(() => {
+      i = (i + 1) % steps.length;
+      setCount(steps[i]);
+    }, 900);
+    return () => window.clearInterval(t);
+  }, []);
+
+  return (
+    <div style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
+      <VerificationDebtMeter count={count} max={7} />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 14 }}>
+        {pills?.map(p => (
+          <motion.span
+            key={p}
+            animate={{ opacity: [0.55, 1, 0.55] }}
+            transition={{ duration: 2, repeat: Infinity, delay: pills.indexOf(p) * 0.15 }}
+            style={pillStyle(accent)}
+          >
+            {p}
+          </motion.span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function statCard(accent: string): React.CSSProperties {

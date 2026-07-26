@@ -1,8 +1,9 @@
 "use client";
 // FILE: components/home/HomeDemoVideo.tsx
-// Homepage demo — plain-language lead-in, responsive on mobile.
+// Homepage demo — elite slideshow (same standard as site-wide demos).
 
-import { HomeCinematicDemo } from "./HomeCinematicDemo";
+import { EliteDemoSlideshow } from "@/components/home/elite/EliteDemoSlideshow";
+import { HERO_ELITE_DEMO } from "@/lib/eliteDemoSlides";
 import { CINEMATIC_DEMO_LEAD } from "@/lib/intersectionThesis";
 import {
   ABRAXAS_FONT_DISPLAY,
@@ -57,7 +58,7 @@ export function HomeDemoVideo() {
           {CINEMATIC_DEMO_LEAD} No crypto jargon required — this is the same verification loop banks, marketplaces, and property deals already run, just without repeating it seven times.
         </p>
       </div>
-      <HomeCinematicDemo hero />
+      <EliteDemoSlideshow config={HERO_ELITE_DEMO} />
       <style jsx>{`
         @media (min-width: 900px) {
           .hero-demo-breakout {

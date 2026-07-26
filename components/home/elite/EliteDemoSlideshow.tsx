@@ -30,6 +30,8 @@ export function EliteDemoSlideshow({
   const slide = slides[index];
   const autoMs = config.autoMs ?? 4000;
   const aspect = ASPECT[config.aspect ?? "wide"];
+  const slideAccent = slide.accent ?? config.accent;
+  const slideMesh = slide.mesh ?? config.mesh;
 
   const go = useCallback(
     (n: number) => setIndex((n + slides.length) % slides.length),
@@ -55,14 +57,14 @@ export function EliteDemoSlideshow({
         aspectRatio: aspect.ratio,
         maxHeight: compact ? aspect.maxH * 0.85 : aspect.maxH,
         borderRadius: compact ? 20 : 24,
-        border: `1px solid ${config.accent}44`,
+        border: `1px solid ${slideAccent}44`,
         overflow: "hidden",
-        boxShadow: `0 40px 120px rgba(0,0,0,0.6), 0 0 80px ${config.accent}14`,
+        boxShadow: `0 40px 120px rgba(0,0,0,0.6), 0 0 80px ${slideAccent}14`,
       }}
     >
-      <PremiumMeshBg mesh={config.mesh} />
-      <CosmicParticleField accent={config.accent} count={compact ? 12 : 18} />
-      <CosmicCornerGlow color={config.accent} />
+      <PremiumMeshBg mesh={slideMesh} />
+      <CosmicParticleField accent={slideAccent} count={compact ? 12 : 18} />
+      <CosmicCornerGlow color={slideAccent} />
 
       <div
         style={{
@@ -75,7 +77,7 @@ export function EliteDemoSlideshow({
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={microStyle(config.accent)}>{slide.label}</span>
+          <span style={microStyle(slideAccent)}>{slide.label}</span>
           <span style={{ ...microStyle(COSMIC_PALETTE.textMuted), color: COSMIC_PALETTE.textMuted }}>
             {index + 1}/{slides.length}
           </span>
@@ -98,18 +100,18 @@ export function EliteDemoSlideshow({
                 letterSpacing: "-0.04em",
                 color: COSMIC_PALETTE.textPrimary,
                 margin: "0.35rem 0 0.5rem",
-                textShadow: `0 0 40px ${config.accent}33`,
+                textShadow: `0 0 40px ${slideAccent}33`,
                 lineHeight: 1.08,
               }}
             >
               {slide.headline}
             </h3>
             {slide.micro && (
-              <p style={{ fontFamily: DEMO_TYPOGRAPHY.fontMono, fontSize: "0.58rem", color: config.accent, margin: "0 0 0.75rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              <p style={{ fontFamily: DEMO_TYPOGRAPHY.fontMono, fontSize: "0.58rem", color: slideAccent, margin: "0 0 0.75rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                 {slide.micro}
               </p>
             )}
-            <EliteSlideVisual slide={slide} accent={config.accent} />
+            <EliteSlideVisual slide={slide} accent={slideAccent} />
           </motion.div>
         </AnimatePresence>
 
@@ -128,7 +130,7 @@ export function EliteDemoSlideshow({
                   border: "none",
                   padding: 0,
                   cursor: "pointer",
-                  background: i === index ? config.accent : "rgba(255,255,255,0.2)",
+                  background: i === index ? slideAccent : "rgba(255,255,255,0.2)",
                   transition: "width 0.3s",
                 }}
               />
@@ -151,8 +153,8 @@ export function EliteDemoSlideshow({
               bottom: 0,
               left: 0,
               height: 2,
-              background: `linear-gradient(90deg, ${config.accent}, ${COSMIC_PALETTE.violet})`,
-              boxShadow: `0 0 12px ${config.accent}66`,
+              background: `linear-gradient(90deg, ${slideAccent}, ${COSMIC_PALETTE.violet})`,
+              boxShadow: `0 0 12px ${slideAccent}66`,
             }}
           />
         )}
