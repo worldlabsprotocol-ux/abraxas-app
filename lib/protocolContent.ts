@@ -8,7 +8,7 @@ export const ROADMAP = [
     items: [
       "Sui zkLogin sign-in on /passport (Google → Sui address)",
       "Verified credential system (W3C VC, did:sui, Ed25519 signed JWT)",
-      "Identity verification via Veriff in-context SDK (linked to zkLogin Sui address)",
+      "Identity verification via Abraxas camera capture + review, or Veriff SDK (linked to zkLogin Sui address)",
       "Sui Passport Move module on devnet + live object panel",
       "Wyoming LLC formation flow",
       "Asset verification pipeline (10-stage V5 lifecycle)",
@@ -23,7 +23,7 @@ export const ROADMAP = [
     items: [
       "Document review for Business, Property, and Asset Owner stamps",
       "Self-serve purchase lifecycle status for buyers",
-      "On-chain stamp issuance after Veriff approve (sui_passport_objects)",
+      "On-chain stamp issuance after identity approve (sui_passport_objects)",
       "Sponsored transaction treasury + tier allowances",
       "Design partner applications via /integrations",
     ],
@@ -105,7 +105,7 @@ export const DOCS_SECTIONS = [
   },
   {
     title: "Identity providers",
-    body: "Veriff: government ID + liveness on /passport (vendorData links to your Sui address). Business, Property, and Asset Owner tiers use manual document review. All tied to Sui holder address after zkLogin.",
+    body: "Abraxas independent capture (name + ID + selfie on /passport) with human review, or Veriff when enabled. Business, Property, and Asset Owner tiers use manual document review. All tied to Sui holder address after zkLogin.",
   },
   {
     title: "Sponsored transactions (roadmap)",
