@@ -102,7 +102,7 @@ export async function getIndependentIdvStatus(): Promise<IndependentIdvStatus> {
 
   const summary = abraxasIndependent
     ? fullLive
-      ? "Independent biometric IDV is production-ready: capture, review, credential, and on-chain stamps."
+      ? "Independent biometric IDV is production-ready: Abraxas Verify engine, capture, review, credential, and on-chain stamps."
       : coreLive
         ? "Capture and review path ready; configure Sui sponsor for on-chain stamps."
         : `${blockers.length} blocker(s) — see independent IDV health.`

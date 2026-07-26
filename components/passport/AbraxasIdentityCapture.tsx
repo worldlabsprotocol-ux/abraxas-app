@@ -38,6 +38,8 @@ export function AbraxasIdentityCapture({
   const [selfieCapture, setSelfieCapture] = useState<CaptureState | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(pendingReview);
+  const [approvedInstant, setApprovedInstant] = useState(false);
+  const [assuranceLevel, setAssuranceLevel] = useState<string | null>(null);
 
   useEffect(() => {
     if (pendingReview) setSubmitted(true);
@@ -97,15 +99,24 @@ export function AbraxasIdentityCapture({
       });
       const data = await res.json() as {
         submitted?: boolean;
+        approved?: boolean;
+        assurance_level?: string;
         capture_session_id?: string;
         error?: string;
+        biometric?: { decision?: string };
       };
+
+      if (res.status === 422) {
+        throw new Error(data.error ?? "Photos did not pass Abraxas Verify checks. Please retake.");
+      }
 
       if (!res.ok || !data.submitted) {
         throw new Error(data.error ?? "Submission failed");
       }
 
       setSubmitted(true);
+      setApprovedInstant(data.approved === true);
+      setAssuranceLevel(data.assurance_level ?? null);
       onSubmitted?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submission failed");
@@ -115,18 +126,21 @@ export function AbraxasIdentityCapture({
   }
 
   if (submitted) {
+    const instant = approvedInstant;
     return (
       <div style={{
         padding: "0.85rem 1rem",
         borderRadius: 12,
-        background: "rgba(245,158,11,0.08)",
-        border: "1px solid rgba(245,158,11,0.25)",
+        background: instant ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.08)",
+        border: `1px solid ${instant ? "rgba(16,185,129,0.35)" : "rgba(245,158,11,0.25)"}`,
       }}>
-        <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: "#F59E0B", marginBottom: 6 }}>
-          Submitted for Abraxas review
+        <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: instant ? ACCENT : "#F59E0B", marginBottom: 6 }}>
+          {instant ? `Verified · Assurance ${assuranceLevel ?? "L3"}` : "Submitted for Abraxas Verify review"}
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
-          Your name, ID photo, and selfie are queued for pilot review. Partners receive the verification outcome only — not your document images. This page updates when approved.
+          {instant
+            ? "Abraxas Verify passed automated checks. Your Passport credential and on-chain stamps are active."
+            : "Your photos are in the review queue. Partners receive the verification outcome only — not your document images."}
         </p>
       </div>
     );
@@ -149,13 +163,13 @@ export function AbraxasIdentityCapture({
           letterSpacing: "0.1em", textTransform: "uppercase",
           color: ACCENT, marginBottom: 4,
         }}>
-          Abraxas verify · Pilot L2
+          Abraxas Verify
         </div>
         <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)" }}>
           Verify with your device camera
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0.35rem 0 0.75rem", lineHeight: 1.55 }}>
-          Name + government ID + selfie. Reviewed by Abraxas. On approval, your Passport credential and on-chain stamps are issued.
+          Name + government ID + selfie. Abraxas engine checks face match and liveness; our team reviews edge cases.
         </p>
         <div style={{ display: "flex", gap: 6 }}>
           {(["name", "id_front", "selfie", "review"] as const).map((s, i) => (
@@ -276,7 +290,7 @@ export function AbraxasIdentityCapture({
             </Btn>
           ) : (
             <Btn size="sm" loading={submitting} onClick={() => void submitCapture()}>
-              Submit for review →
+              {submitting ? "Abraxas Verify is checking…" : "Submit for verification →"}
             </Btn>
           )}
         </div>

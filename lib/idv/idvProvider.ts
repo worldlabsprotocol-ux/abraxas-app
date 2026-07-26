@@ -23,8 +23,8 @@ export function isVeriffLive(): boolean {
 
 export function idvProviderLabel(provider: IdvProvider): string {
   return provider === "veriff"
-    ? "Veriff (automated IDV)"
-    : "Abraxas independent verify (camera + review)";
+    ? "Legacy automated IDV"
+    : "Abraxas Verify";
 }
 
 /** True when Abraxas-native capture is the active path (not Veriff). */
