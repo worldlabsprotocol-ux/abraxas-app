@@ -71,10 +71,10 @@ export const DEMO_TYPE = {
   noRelay: "clamp(0.62rem, 1.7vw, 0.76rem)",
   eyebrow: "0.78rem",
   headline: "clamp(1.24rem, 3.4vw, 1.72rem)",
-  headlineHero: "clamp(1.5rem, 4.2vw, 2.15rem)",
+  headlineHero: "clamp(1.05rem, 3vw, 2.15rem)",
   finalLine: "clamp(1rem, 2.5vw, 1.28rem)",
   actPill: "0.62rem",
-  actPillHero: "0.72rem",
+  actPillHero: "0.62rem",
   eyebrowHero: "0.82rem",
 } as const;
 

@@ -6,11 +6,14 @@ import type { Metadata } from "next";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { getBlogArticle } from "@/lib/content/blogArticles";
+import { BlogArticleBody } from "@/components/blog/BlogArticleBody";
+import { getBlogArticle, FEATURED_THESIS_BLOG_SLUG, TOP5_PLATFORMS_SLUG } from "@/lib/content/blogArticles";
 import { BLOG_CATEGORY_LABELS } from "@/lib/content/types";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+
+const FIGURE_ARTICLE_SLUGS: string[] = [FEATURED_THESIS_BLOG_SLUG, TOP5_PLATFORMS_SLUG];
 
 export async function generateMetadata({
   params,
@@ -36,6 +39,8 @@ export default async function BlogArticlePage({
   const article = getBlogArticle(slug);
   if (!article) notFound();
 
+  const usesFigures = FIGURE_ARTICLE_SLUGS.includes(article.slug);
+
   return (
     <RedesignPage maxWidth={720}>
       <PageHeader
@@ -44,11 +49,15 @@ export default async function BlogArticlePage({
         subtitle={article.description}
       />
       <ContentCard title="">
-        {article.body.map((para, i) => (
-          <p key={i} style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 1rem" }}>
-            {para}
-          </p>
-        ))}
+        {usesFigures ? (
+          <BlogArticleBody article={article} showFooter={false} compact />
+        ) : (
+          article.body.map((para, i) => (
+            <p key={i} style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 1rem" }}>
+              {para}
+            </p>
+          ))
+        )}
         {article.relatedHref && (
           <Btn href={article.relatedHref} size="sm">Continue reading →</Btn>
         )}

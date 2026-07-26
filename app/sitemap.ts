@@ -19,6 +19,8 @@ const STATIC_ROUTES = [
   "/roadmap",
   "/about",
   "/faq",
+  "/regulated-retail",
+  "/good-trouble",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

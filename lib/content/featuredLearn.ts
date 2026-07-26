@@ -24,7 +24,7 @@ export const FEATURED_LEARN_ARTICLES: FeaturedLearnArticle[] = [
     slug: "what-is-real-world-asset-tokenization",
     title: "What Is Real-World Asset Tokenization?",
     description:
-      "Seven institutional steps, diligence questions, and why minting alone is not enough. The full thesis.",
+      "Why verification matters beyond minting — full essay with visuals.",
     category: "product",
     readingTime: "12 min",
   },

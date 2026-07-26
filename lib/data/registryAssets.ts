@@ -274,7 +274,9 @@ export function getExploreAssetVerifyQuery(exploreId: string): string | null {
 }
 
 export function registryAssetsForShowcase() {
-  return REGISTRY_ASSETS.map(asset => {
+  return REGISTRY_ASSETS
+    .filter(asset => asset.slug !== "demo-riverside-parcel")
+    .map(asset => {
     const explore = EXPLORE_ASSETS.find(e => e.id === asset.slug);
     return {
       ...asset,

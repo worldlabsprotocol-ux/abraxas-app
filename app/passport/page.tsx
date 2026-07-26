@@ -245,7 +245,7 @@ function PassportPageInner() {
               </p>
             )}
 
-            {setup.profileComplete && (
+            {walletDone && (
               <details id="stamps" style={{ marginBottom: "1.5rem" }}>
                 <summary style={{
                   fontFamily: S, fontSize: "0.78rem", fontWeight: 600,
