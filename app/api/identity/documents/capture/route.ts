@@ -9,6 +9,7 @@ import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { getIdvProvider } from "@/lib/idv/idvProvider";
 import { analyzeBiometricCapture } from "@/lib/idv/biometric/analyzeCapture";
+import { checkCaptureRateLimit, logCaptureAudit } from "@/lib/idv/biometric/captureGuard";
 import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
 
@@ -122,6 +123,19 @@ export async function POST(req: NextRequest) {
 
     const suiAddress = normalizeSuiAddress(auth.session.suiAddress);
 
+    const rateLimit = await checkCaptureRateLimit(supabase, suiAddress);
+    if (!rateLimit.allowed) {
+      logCaptureAudit({
+        event: "capture_rate_limited",
+        sui_address: suiAddress,
+        reason: `${rateLimit.attemptsInWindow}/${rateLimit.limit} per hour`,
+      });
+      return NextResponse.json({
+        error: "Too many capture attempts. Please wait before trying again.",
+        retry_after_sec: rateLimit.retryAfterSec,
+      }, { status: 429 });
+    }
+
     if (await hasPendingIdentityReview(supabase, suiAddress)) {
       return NextResponse.json({
         error: "Identity verification is already pending review. We'll notify you when it's complete.",
@@ -146,6 +160,12 @@ export async function POST(req: NextRequest) {
     const selfieBuffer = Buffer.from(await selfie.arrayBuffer());
     const captureSessionId = randomUUID();
 
+    logCaptureAudit({
+      event: "capture_started",
+      sui_address: suiAddress,
+      capture_session_id: captureSessionId,
+    });
+
     const assessment = await analyzeBiometricCapture({
       captureSessionId,
       suiAddress,
@@ -156,6 +176,17 @@ export async function POST(req: NextRequest) {
     await persistBiometricAssessment(assessment);
 
     if (assessment.decision === "reject") {
+      logCaptureAudit({
+        event: "capture_rejected_engine",
+        sui_address: suiAddress,
+        capture_session_id: captureSessionId,
+        decision: assessment.decision,
+        engine_version: assessment.engine_version,
+        scores: {
+          face_match: assessment.scores.face_match,
+          liveness: assessment.scores.liveness,
+        },
+      });
       return NextResponse.json({
         error: "We couldn't verify your photos. Retake with good lighting, a clear ID image, and your face centered in the selfie.",
         biometric: {
@@ -220,6 +251,13 @@ export async function POST(req: NextRequest) {
       });
 
       if (issued.ok) {
+        logCaptureAudit({
+          event: "capture_auto_approved",
+          sui_address: suiAddress,
+          capture_session_id: captureSessionId,
+          decision: "auto_approve",
+          engine_version: assessment.engine_version,
+        });
         await supabase
           .from("passport_documents")
           .update({ status: "accepted", updated_at: new Date().toISOString() })
@@ -241,6 +279,18 @@ export async function POST(req: NextRequest) {
         });
       }
     }
+
+    logCaptureAudit({
+      event: "capture_queued_review",
+      sui_address: suiAddress,
+      capture_session_id: captureSessionId,
+      decision: assessment.decision,
+      engine_version: assessment.engine_version,
+      scores: {
+        face_match: assessment.scores.face_match,
+        liveness: assessment.scores.liveness,
+      },
+    });
 
     await transitionIdentityVerification(
       suiAddress,
@@ -269,6 +319,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
+    logCaptureAudit({ event: "capture_error", reason: msg });
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
