@@ -77,5 +77,28 @@ export async function GET(req: NextRequest) {
       : true,
   }));
 
-  return NextResponse.json({ items, count: items.length });
+  const sessionIds = items
+    .map(i => i.capture_session_id)
+    .filter((id): id is string => Boolean(id));
+
+  const biometricBySession = new Map<string, Record<string, unknown>>();
+  if (sessionIds.length > 0) {
+    const { data: assessments } = await sb
+      .from("identity_biometric_assessments")
+      .select("capture_session_id, face_match_score, liveness_score, document_quality_score, selfie_quality_score, decision, assurance_level, review_method, engine_version")
+      .in("capture_session_id", sessionIds);
+
+    for (const row of assessments ?? []) {
+      biometricBySession.set(row.capture_session_id as string, row);
+    }
+  }
+
+  const withBiometric = items.map(item => ({
+    ...item,
+    biometric: item.capture_session_id
+      ? biometricBySession.get(item.capture_session_id) ?? null
+      : null,
+  }));
+
+  return NextResponse.json({ items: withBiometric, count: withBiometric.length });
 }

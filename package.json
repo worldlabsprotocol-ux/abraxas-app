@@ -17,7 +17,9 @@
     "cielo:e2e": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/cielo-e2e-check.ts",
     "cielo:e2e:remote": "BASE_URL=https://abraxas-app.vercel.app npx ts-node scripts/cielo-e2e-check.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "biometric:verify-migrations": "npx tsx scripts/verify-biometric-migrations.ts",
+    "biometric:health": "npx tsx scripts/verify-biometric-health.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
@@ -42,6 +44,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^3.8.1",
+    "sharp": "^0.35.3",
     "stripe": "^16.0.0",
     "tweetnacl": "^1.0.3",
     "viem": "^2.23.2",

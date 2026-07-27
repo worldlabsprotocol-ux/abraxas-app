@@ -27,6 +27,8 @@ export interface EliteSlide {
   micro?: string;
   stats?: { label: string; value: string }[];
   pills?: string[];
+  mesh?: MeshKey;
+  accent?: string;
 }
 
 export interface EliteDemoConfig {
@@ -43,29 +45,35 @@ export const HERO_ELITE_DEMO: EliteDemoConfig = {
   mesh: "gold",
   accent: COSMIC_PALETTE.gold,
   aspect: "cinema",
-  autoMs: 4500,
+  autoMs: 5000,
   slides: [
     {
       id: "debt",
-      label: "01 · Problem",
-      headline: "Seven asks. Same person.",
+      label: "01 · The parade",
+      headline: "Seven apps. Same ID. Every time.",
       visual: "hero-debt",
-      micro: "Verification parade",
-      pills: ["Store", "Bank", "Hotel", "Custody"],
+      micro: "Verification debt",
+      pills: ["Marketplace", "Bank", "Hotel", "Custody"],
+      mesh: "danger",
+      accent: COSMIC_PALETTE.rose,
     },
     {
       id: "passport",
       label: "02 · Abraxas",
-      headline: "Verify once.",
+      headline: "Verify once. Use everywhere.",
       visual: "hero-passport",
       micro: "Passport holds proof",
+      mesh: "gold",
+      accent: COSMIC_PALETTE.gold,
     },
     {
       id: "proof",
       label: "03 · Proof",
       headline: "Anyone can audit it.",
       visual: "hero-proof",
-      micro: "No inbox relay",
+      micro: "Signed · no inbox relay",
+      mesh: "emerald",
+      accent: COSMIC_PALETTE.emerald,
     },
   ],
 };

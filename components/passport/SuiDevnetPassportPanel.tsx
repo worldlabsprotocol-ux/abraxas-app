@@ -185,7 +185,7 @@ export function SuiDevnetPassportPanel({
           {!compact && (
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.65, maxWidth: 520 }}>
               {isUserPassport
-                ? "Live Abraxas Passport object on Sui devnet. stamps issued after Veriff approve."
+                ? "Live Abraxas Passport object on Sui devnet. Stamps issued after Abraxas Verify approval."
                 : "Abraxas Passport Move module deployed on Sui devnet. Query any Passport object ID or load the demo bootstrap passport."}
             </p>
           )}
