@@ -50,10 +50,10 @@ export const HERO_ELITE_DEMO: EliteDemoConfig = {
     {
       id: "debt",
       label: "01 · The parade",
-      headline: "Seven apps. Same ID. Every time.",
+      headline: "Cannabis. Spirits. Exchange. Same ID.",
       visual: "hero-debt",
-      micro: "Verification debt",
-      pills: ["Cannabis", "Spirits", "Exchange", "Hotel", "Lender"],
+      micro: "Every regulated gate asks again",
+      pills: ["Cannabis", "Spirits", "Exchange", "Casino", "Hotel"],
       mesh: "danger",
       accent: COSMIC_PALETTE.rose,
     },
@@ -276,7 +276,7 @@ export const VERIFICATION_ECOSYSTEM_DEMO: EliteDemoConfig = {
     {
       id: "parade",
       label: "01 · Every industry",
-      headline: "Same ID parade. Every gate.",
+      headline: "Cannabis → Spirits → Casino. Again.",
       visual: "hero-debt",
       micro: "Users follow the law — and still get left out",
       pills: ["Cannabis", "Spirits", "Exchange", "Casino", "Hotel"],

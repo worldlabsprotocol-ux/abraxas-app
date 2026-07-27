@@ -2,8 +2,12 @@
 // FILE: components/home/cinematic/KycDocumentCards.tsx
 // Institutional demo visuals. premium app screens, proof artifact, passport.
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { INSTITUTIONAL_GOLD, INSTITUTIONAL_GOLD_PALE, INSTITUTIONAL_VIOLET } from "@/lib/design/institutionalTheme";
+import {
+  VERIFICATION_PARADE_INDUSTRIES,
+  type VerificationParadeIndustry,
+} from "@/lib/verificationParadeIndustries";
 import { CosmicParticleField } from "./CosmicDemoEffects";
 import { DEMO_TYPE } from "./demoPremium";
 
@@ -50,9 +54,132 @@ function DocShell({
   );
 }
 
-/** Rising burden. oppressive counter with milestone ticks */
-export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?: number }) {
-  const pct = Math.min(100, (count / max) * 100);
+/** Rising burden — industry parade mode cycles gates; legacy mode shows ×count */
+export function VerificationDebtMeter({
+  count,
+  max = 12,
+  industries,
+  activeIndex = 0,
+}: {
+  count?: number;
+  max?: number;
+  industries?: VerificationParadeIndustry[];
+  activeIndex?: number;
+}) {
+  const parade = count === undefined;
+  const paradeList = industries?.length ? industries : VERIFICATION_PARADE_INDUSTRIES;
+  const idx = parade ? activeIndex % paradeList.length : 0;
+  const active = paradeList[idx];
+  const paradePct = parade ? ((idx + 1) / paradeList.length) * 100 : 0;
+
+  if (parade) {
+    return (
+      <motion.div style={{ width: "100%", maxWidth: 440 }}>
+        <div style={{ marginBottom: 10 }}>
+          <span style={{
+            fontFamily: MONO, fontSize: DEMO_TYPE.debtLabel,
+            color: "rgba(248,113,113,0.95)", letterSpacing: "0.12em", fontWeight: 800,
+            display: "block",
+          }}>
+            VERIFICATION PARADE
+          </span>
+          <span style={{
+            fontFamily: FONT, fontSize: DEMO_TYPE.debtSub,
+            color: "rgba(255,255,255,0.45)", marginTop: 4, display: "block",
+          }}>
+            Same person. New industry. Upload your ID again.
+          </span>
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={active.id}
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 220, damping: 22 }}
+            style={{
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: "1px solid rgba(248,113,113,0.45)",
+              background: "linear-gradient(135deg, rgba(248,113,113,0.14) 0%, rgba(0,0,0,0.35) 100%)",
+              marginBottom: 12,
+              textAlign: "center",
+            }}
+          >
+            <div style={{
+              fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700,
+              letterSpacing: "0.14em", color: "rgba(248,113,113,0.8)",
+              marginBottom: 6, textTransform: "uppercase",
+            }}>
+              Gate {idx + 1} of {paradeList.length}
+            </div>
+            <div style={{
+              fontFamily: FONT, fontSize: "clamp(1.35rem, 4vw, 1.75rem)",
+              fontWeight: 900, letterSpacing: "-0.03em", color: "#FEE2E2",
+              lineHeight: 1.1, marginBottom: 6,
+            }}>
+              {active.label}
+            </div>
+            <div style={{
+              fontFamily: FONT, fontSize: DEMO_TYPE.sm, color: "rgba(255,255,255,0.55)",
+              lineHeight: 1.45,
+            }}>
+              {active.gate}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        <div style={{
+          height: 8, borderRadius: 999, background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(248,113,113,0.25)", overflow: "hidden", position: "relative",
+          marginBottom: 10,
+        }}>
+          <motion.div
+            animate={{ width: `${paradePct}%` }}
+            transition={{ type: "spring", stiffness: 90, damping: 16 }}
+            style={{
+              height: "100%",
+              borderRadius: 999,
+              background: "linear-gradient(90deg, #DC2626 0%, #F87171 40%, #FCA5A5 100%)",
+              boxShadow: "0 0 20px rgba(248,113,113,0.55)",
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+          {paradeList.map((ind, i) => {
+            const isActive = i === idx;
+            const isPast = i < idx;
+            return (
+              <span
+                key={ind.id}
+                style={{
+                  fontFamily: MONO,
+                  fontSize: "0.52rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  padding: "4px 9px",
+                  borderRadius: 999,
+                  border: `1px solid ${isActive ? "rgba(248,113,113,0.75)" : isPast ? "rgba(248,113,113,0.35)" : "rgba(255,255,255,0.12)"}`,
+                  color: isActive ? "#FCA5A5" : isPast ? "rgba(248,113,113,0.65)" : "rgba(255,255,255,0.35)",
+                  background: isActive ? "rgba(248,113,113,0.2)" : isPast ? "rgba(248,113,113,0.08)" : "transparent",
+                  transform: isActive ? "scale(1.05)" : undefined,
+                  transition: "all 0.25s ease",
+                }}
+              >
+                {ind.label}
+              </span>
+            );
+          })}
+        </div>
+      </motion.div>
+    );
+  }
+
+  const debtCount = count ?? 1;
+  const pct = Math.min(100, (debtCount / max) * 100);
   const milestones = [2, 4, 7];
   return (
     <div style={{ width: "100%", maxWidth: 420 }}>
@@ -76,7 +203,7 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
           </span>
         </div>
         <motion.span
-          key={count}
+          key={debtCount}
           initial={{ scale: 1.35, opacity: 0, color: "#fff" }}
           animate={{ scale: 1, opacity: 1, color: "#FCA5A5" }}
           transition={{ type: "spring", stiffness: 200, damping: 14 }}
@@ -85,7 +212,7 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
             letterSpacing: "-0.04em", lineHeight: 1,
           }}
         >
-          ×{count}
+          ×{debtCount}
         </motion.span>
       </div>
       <div style={{
@@ -108,7 +235,7 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
             style={{
               position: "absolute", top: 0, bottom: 0,
               left: `${(m / max) * 100}%`,
-              width: 1, background: count >= m ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.1)",
+              width: 1, background: debtCount >= m ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.1)",
             }}
           />
         ))}
@@ -118,7 +245,7 @@ export function VerificationDebtMeter({ count, max = 12 }: { count: number; max?
         fontFamily: MONO, fontSize: DEMO_TYPE.micro, color: "rgba(248,113,113,0.55)",
       }}>
         {milestones.map(m => (
-          <span key={m} style={{ opacity: count >= m ? 1 : 0.4 }}>×{m}</span>
+          <span key={m} style={{ opacity: debtCount >= m ? 1 : 0.4 }}>×{m}</span>
         ))}
       </div>
     </div>

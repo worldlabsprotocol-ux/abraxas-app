@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { AbraxasPassportVc, AuthenticationProofArtifact, VerificationDebtMeter } from "@/components/home/cinematic/KycDocumentCards";
 import { GlowOrb } from "@/components/home/productVisual/ProductVisualPrimitives";
 import { COSMIC_PALETTE, DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
 import type { EliteSlide } from "@/lib/eliteDemoSlides";
+import { VERIFICATION_PARADE_INDUSTRIES } from "@/lib/verificationParadeIndustries";
 
 export function EliteSlideVisual({ slide, accent }: { slide: EliteSlide; accent: string }) {
   switch (slide.visual) {
@@ -148,34 +149,27 @@ export function EliteSlideVisual({ slide, accent }: { slide: EliteSlide; accent:
   }
 }
 
-function HeroDebtVisual({ pills, accent }: { pills?: string[]; accent: string }) {
-  const [count, setCount] = useState(1);
+function HeroDebtVisual({ pills }: { pills?: string[]; accent: string }) {
+  const [index, setIndex] = useState(0);
+
+  const industries = useMemo(() => {
+    if (!pills?.length) return VERIFICATION_PARADE_INDUSTRIES;
+    return pills.map(label => {
+      const found = VERIFICATION_PARADE_INDUSTRIES.find(i => i.label === label);
+      return found ?? { id: label.toLowerCase().replace(/\s+/g, "-"), label, gate: "Upload your ID again" };
+    });
+  }, [pills]);
 
   useEffect(() => {
-    const steps = [1, 2, 3, 4, 5, 6, 7];
-    let i = 0;
     const t = window.setInterval(() => {
-      i = (i + 1) % steps.length;
-      setCount(steps[i]);
-    }, 900);
+      setIndex(i => (i + 1) % industries.length);
+    }, 1100);
     return () => window.clearInterval(t);
-  }, []);
+  }, [industries.length]);
 
   return (
-    <div style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
-      <VerificationDebtMeter count={count} max={7} />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 14 }}>
-        {pills?.map(p => (
-          <motion.span
-            key={p}
-            animate={{ opacity: [0.55, 1, 0.55] }}
-            transition={{ duration: 2, repeat: Infinity, delay: pills.indexOf(p) * 0.15 }}
-            style={pillStyle(accent)}
-          >
-            {p}
-          </motion.span>
-        ))}
-      </div>
+    <div style={{ width: "100%", maxWidth: 440, margin: "0 auto" }}>
+      <VerificationDebtMeter industries={industries} activeIndex={index} />
     </div>
   );
 }
