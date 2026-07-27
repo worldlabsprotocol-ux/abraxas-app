@@ -2,19 +2,18 @@
 // Update Cielo booking status + sync Protocol Calendar holds.
 
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdmin } from "@/lib/adminAuth";
 import { createClient } from "@supabase/supabase-js";
 import { confirmBookingHold, releaseBookingHold } from "@/lib/cielo/calendar";
 import { emailGuestPaymentLink } from "@/lib/cielo/notifications";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-const ADMIN_PIN = process.env.ADMIN_PIN ?? process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 
 const VALID = ["pending", "confirmed", "authorized", "captured", "cancelled", "declined"];
 
 export async function GET(req: NextRequest) {
-  const pin = req.headers.get("x-admin-pin");
-  if (pin !== ADMIN_PIN) {
+  if (!checkAdmin(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {
@@ -33,8 +32,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const pin = req.headers.get("x-admin-pin") ?? body.pin;
-  if (pin !== ADMIN_PIN) {
+  if (!checkAdmin(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

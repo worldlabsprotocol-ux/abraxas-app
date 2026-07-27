@@ -5,6 +5,8 @@
 const BASE = process.env.ABRAXAS_HEALTH_BASE_URL ?? "http://localhost:3000";
 
 const ENDPOINTS = [
+  "/api/health",
+  "/api/idv/health",
   "/api/idv/independent/status",
   "/api/idv/biometric/status",
   "/api/verify/layer",

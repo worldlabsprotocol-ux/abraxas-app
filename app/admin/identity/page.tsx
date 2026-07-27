@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { getAdminPinPrefill } from "@/lib/adminPinClient";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -95,7 +95,7 @@ function CapturePreview({
 }
 
 export default function AdminIdentityPage() {
-  const [pin, setPin] = useState(ADMIN_PIN);
+  const [pin, setPin] = useState(getAdminPinPrefill);
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

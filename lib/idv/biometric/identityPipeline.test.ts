@@ -68,4 +68,21 @@ describe("Abraxas Verify identity pipeline", () => {
     ];
     expect(stages).toHaveLength(7);
   });
+
+  it("requires server ADMIN_PIN for production admin APIs", async () => {
+    const { checkAdmin, isAdminPinConfigured } = await import("@/lib/adminAuth");
+    const prev = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    delete process.env.ADMIN_PIN;
+    process.env.NEXT_PUBLIC_ADMIN_PIN = "must-not-work-in-prod";
+
+    const { NextRequest } = await import("next/server");
+    const req = new NextRequest("http://localhost/api/admin/test", {
+      headers: { "x-admin-pin": "must-not-work-in-prod" },
+    });
+
+    expect(isAdminPinConfigured()).toBe(false);
+    expect(checkAdmin(req)).toBe(false);
+    process.env.NODE_ENV = prev;
+  });
 });

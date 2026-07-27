@@ -2,18 +2,15 @@
 // Operator calendar management (block/unblock dates on Abraxas Protocol Calendar).
 
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdmin } from "@/lib/adminAuth";
 import {
   addOperatorBlock,
   listCalendarBlocks,
   removeBlockById,
 } from "@/lib/cielo/calendar";
 
-const ADMIN_PIN = process.env.ADMIN_PIN ?? process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
-
-function authorized(req: NextRequest, body?: { pin?: string }) {
-  const headerPin = req.headers.get("x-admin-pin");
-  const pin = headerPin ?? body?.pin;
-  return pin === ADMIN_PIN;
+function authorized(req: NextRequest) {
+  return checkAdmin(req);
 }
 
 export async function GET(req: NextRequest) {
@@ -26,7 +23,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  if (!authorized(req, body)) {
+  if (!authorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -44,7 +41,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  if (!authorized(req, body)) {
+  if (!authorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
