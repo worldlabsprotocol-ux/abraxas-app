@@ -7,6 +7,7 @@ import type { VerificationResult } from "@/lib/credentials/types";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { CapabilityStatusBadge } from "@/components/ui/CapabilityStatusBadge";
+import { PolicyCheckPanel } from "@/components/verify/PolicyCheckPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -31,7 +32,13 @@ const fieldStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
-export function RelyingPartyVerifyPanel({ suiAddress }: { suiAddress?: string | null }) {
+export function RelyingPartyVerifyPanel({
+  suiAddress,
+  showPolicyCheck = false,
+}: {
+  suiAddress?: string | null;
+  showPolicyCheck?: boolean;
+}) {
   const [jwt, setJwt] = useState("");
   const [verifierId, setVerifierId] = useState("demo_relying_party");
   const [requiredClaims, setRequiredClaims] = useState<string[]>([]);
@@ -111,8 +118,8 @@ export function RelyingPartyVerifyPanel({ suiAddress }: { suiAddress?: string | 
         fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
       }}>
-        Relying parties call this server-side with a user&apos;s Abraxas credential JWT.
-        This public tester verifies the JWT cryptographically. no partner API key required.
+        Your portable proof badge. Partners check it server-side — they never see your ID photos.
+        Load yours from Passport, or paste a JWT to test verification.
       </p>
 
       <div style={{ display: "grid", gap: "0.85rem", marginBottom: "1rem" }}>
@@ -285,9 +292,15 @@ export function RelyingPartyVerifyPanel({ suiAddress }: { suiAddress?: string | 
           background: "var(--surface-inset)", border: "1px dashed var(--border-strong)",
           fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6,
         }}>
-          <strong style={{ color: "var(--text-primary)" }}>Partner integration tip:</strong>{" "}
-          Call this endpoint from your backend only. For registry/asset checks without a user JWT, use{" "}
-          <code style={{ fontFamily: MONO, fontSize: "0.68rem", color: ACCENT }}>GET /api/verify/registry</code>.
+          <strong style={{ color: "var(--text-primary)" }}>Plain English:</strong>{" "}
+          A JWT is a signed receipt that says &quot;this wallet passed identity check X.&quot;
+          Apps verify the signature — not your documents.
+        </div>
+      )}
+
+      {showPolicyCheck && (
+        <div style={{ marginTop: "1.5rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)" }}>
+          <PolicyCheckPanel suiAddress={suiAddress} />
         </div>
       )}
     </div>

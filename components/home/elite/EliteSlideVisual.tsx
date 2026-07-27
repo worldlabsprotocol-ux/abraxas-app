@@ -1,37 +1,17 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { AbraxasPassportVc, AuthenticationProofArtifact } from "@/components/home/cinematic/KycDocumentCards";
+import { AbraxasPassportVc, AuthenticationProofArtifact, VerificationDebtMeter } from "@/components/home/cinematic/KycDocumentCards";
 import { GlowOrb } from "@/components/home/productVisual/ProductVisualPrimitives";
 import { COSMIC_PALETTE, DEMO_TYPOGRAPHY } from "@/lib/demoDesignSystem";
 import type { EliteSlide } from "@/lib/eliteDemoSlides";
+import { VERIFICATION_PARADE_INDUSTRIES } from "@/lib/verificationParadeIndustries";
 
 export function EliteSlideVisual({ slide, accent }: { slide: EliteSlide; accent: string }) {
   switch (slide.visual) {
     case "hero-debt":
-      return (
-        <div style={{ width: "100%", textAlign: "center" }}>
-          <motion.div
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            style={{
-              fontFamily: DEMO_TYPOGRAPHY.fontSans,
-              fontSize: "clamp(2.5rem, 8vw, 4rem)",
-              fontWeight: 900,
-              color: COSMIC_PALETTE.rose,
-              textShadow: `0 0 48px ${COSMIC_PALETTE.rose}55`,
-              marginBottom: 12,
-            }}
-          >
-            7×
-          </motion.div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-            {slide.pills?.map(p => (
-              <span key={p} style={pillStyle(accent)}>{p}</span>
-            ))}
-          </div>
-        </div>
-      );
+      return <HeroDebtVisual pills={slide.pills} accent={accent} />;
     case "hero-passport":
       return <AbraxasPassportVc pulse large />;
     case "hero-proof":
@@ -167,6 +147,31 @@ export function EliteSlideVisual({ slide, accent }: { slide: EliteSlide; accent:
     default:
       return <GlowOrb accent={accent} icon="◆" size={100} />;
   }
+}
+
+function HeroDebtVisual({ pills }: { pills?: string[]; accent: string }) {
+  const [index, setIndex] = useState(0);
+
+  const industries = useMemo(() => {
+    if (!pills?.length) return VERIFICATION_PARADE_INDUSTRIES;
+    return pills.map(label => {
+      const found = VERIFICATION_PARADE_INDUSTRIES.find(i => i.label === label);
+      return found ?? { id: label.toLowerCase().replace(/\s+/g, "-"), label, gate: "Upload your ID again" };
+    });
+  }, [pills]);
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      setIndex(i => (i + 1) % industries.length);
+    }, 1100);
+    return () => window.clearInterval(t);
+  }, [industries.length]);
+
+  return (
+    <div style={{ width: "100%", maxWidth: 440, margin: "0 auto" }}>
+      <VerificationDebtMeter industries={industries} activeIndex={index} />
+    </div>
+  );
 }
 
 function statCard(accent: string): React.CSSProperties {

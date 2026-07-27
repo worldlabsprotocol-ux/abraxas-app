@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/admin/identity/page.tsx
-// Manual identity review queue. Veriff subscription workaround.
+// Abraxas independent identity review — ID + selfie preview, approve → L2 credential + on-chain stamps.
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +10,12 @@ import Link from "next/link";
 const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
+
+interface DocRow {
+  id: string;
+  document_type: string | null;
+  storage_path: string;
+}
 
 interface QueueItem {
   id: string;
@@ -26,7 +32,66 @@ interface QueueItem {
   has_selfie?: boolean;
   has_id_front?: boolean;
   capture_complete?: boolean;
-  documents?: QueueItem[];
+  documents?: DocRow[];
+  biometric?: {
+    face_match_score?: number;
+    liveness_score?: number;
+    document_quality_score?: number;
+    selfie_quality_score?: number;
+    decision?: string;
+    assurance_level?: string;
+    review_method?: string;
+    engine_version?: string;
+  } | null;
+}
+
+function CapturePreview({
+  pin,
+  doc,
+  label,
+}: {
+  pin: string;
+  doc: DocRow | undefined;
+  label: string;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    if (!doc?.storage_path) return;
+    let cancelled = false;
+    void fetch(`/api/admin/identity/document-url?path=${encodeURIComponent(doc.storage_path)}`, {
+      headers: { "x-admin-pin": pin },
+    })
+      .then(r => r.json())
+      .then((data: { signed_url?: string }) => {
+        if (!cancelled && data.signed_url) setUrl(data.signed_url);
+      })
+      .catch(() => { if (!cancelled) setErr(true); });
+    return () => { cancelled = true; };
+  }, [doc?.storage_path, pin]);
+
+  return (
+    <div style={{ flex: "1 1 140px", minWidth: 120 }}>
+      <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{
+        height: 100, borderRadius: 8, overflow: "hidden",
+        background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.08)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: err ? "#FCA5A5" : "rgba(255,255,255,0.35)" }}>
+            {err ? "Preview failed" : "Loading…"}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminIdentityPage() {
@@ -107,13 +172,16 @@ export default function AdminIdentityPage() {
     }
   }
 
+  const idDoc = (item: QueueItem) => item.documents?.find(d => d.document_type === "id_front");
+  const selfieDoc = (item: QueueItem) => item.documents?.find(d => d.document_type === "selfie");
+
   return (
     <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#f0f0f0", padding: "2rem 1.25rem" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
             <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "#10B981", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
-              Pilot · Manual IDV
+              Abraxas independent verify
             </div>
             <h1 style={{ fontFamily: FONT, fontSize: "1.35rem", fontWeight: 800, margin: 0 }}>
               Identity review queue
@@ -122,14 +190,11 @@ export default function AdminIdentityPage() {
           <Link href="/admin" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#10B981", textDecoration: "none" }}>
             ← Admin home
           </Link>
-          <Link href="/admin/partners" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#10B981", textDecoration: "none" }}>
-            Partner keys →
-          </Link>
         </div>
 
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
-          Abraxas-native capture: users submit legal name + ID photo + selfie from /passport.
-          Approve to issue an L2 identity credential and on-chain stamps. URL: <strong>/admin/identity</strong>
+          Users submit legal name + ID + selfie from /passport. Abraxas Verify engine scores face match + liveness;
+          approve edge cases to issue L2/L3 credential + on-chain stamps. Health: <code>/api/idv/independent/status</code>
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -177,7 +242,7 @@ export default function AdminIdentityPage() {
                 background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-                  <div>
+                  <div style={{ flex: "1 1 280px" }}>
                     <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700 }}>
                       {item.legal_name ?? item.user_email}
                     </div>
@@ -187,32 +252,35 @@ export default function AdminIdentityPage() {
                       </div>
                     )}
                     <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
-                      {item.sui_address ? `${item.sui_address.slice(0, 10)}…${item.sui_address.slice(-6)}` : "No wallet linked yet"}
+                      {item.sui_address ? `${item.sui_address.slice(0, 10)}…${item.sui_address.slice(-6)}` : "No wallet — user must sign in"}
                     </div>
                     <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 6 }}>
-                      {item.capture_session_id
-                        ? `${item.has_id_front ? "ID" : "—"} + ${item.has_selfie ? "selfie" : "—"} · ${item.capture_complete ? "complete" : "incomplete"}`
-                        : item.file_name}
+                      {item.capture_complete ? "ID + selfie complete" : "Incomplete capture"}
                       {" · "}{new Date(item.created_at).toLocaleString()}
                     </div>
-                    <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
-                      {item.storage_path}
-                    </div>
+                    {item.biometric && (
+                      <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "#A7F3D0", marginTop: 8, lineHeight: 1.6 }}>
+                        Engine {item.biometric.engine_version ?? "v1"} · {item.biometric.decision}
+                        {" · "}face {(Number(item.biometric.face_match_score) * 100).toFixed(0)}%
+                        {" · "}liveness {(Number(item.biometric.liveness_score) * 100).toFixed(0)}%
+                        {" · "}id {(Number(item.biometric.document_quality_score) * 100).toFixed(0)}%
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
                     <button
                       onClick={() => void approve(item)}
-                      disabled={actionId === item.id || !item.sui_address}
-                      title={!item.sui_address ? "User must sign in before approval" : undefined}
+                      disabled={actionId === item.id || !item.sui_address || !item.capture_complete}
+                      title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
                       style={{
                         padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
-                        background: item.sui_address ? "#10B981" : "rgba(255,255,255,0.1)",
-                        color: item.sui_address ? "#000" : "rgba(255,255,255,0.3)",
+                        background: item.sui_address && item.capture_complete ? "#10B981" : "rgba(255,255,255,0.1)",
+                        color: item.sui_address && item.capture_complete ? "#000" : "rgba(255,255,255,0.3)",
                         fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
-                        cursor: item.sui_address ? "pointer" : "not-allowed",
+                        cursor: item.sui_address && item.capture_complete ? "pointer" : "not-allowed",
                       }}
                     >
-                      Approve L2
+                      Approve {item.biometric?.assurance_level === "L3" ? "L3" : "L2"}
                     </button>
                     <button
                       onClick={() => void reject(item)}
@@ -228,6 +296,13 @@ export default function AdminIdentityPage() {
                     </button>
                   </div>
                 </div>
+
+                {item.capture_session_id && (
+                  <div style={{ display: "flex", gap: "0.65rem", marginTop: "0.85rem", flexWrap: "wrap" }}>
+                    <CapturePreview pin={pin} doc={idDoc(item)} label="Government ID" />
+                    <CapturePreview pin={pin} doc={selfieDoc(item)} label="Selfie" />
+                  </div>
+                )}
               </div>
             ))}
           </div>

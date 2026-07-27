@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/VerificationSuccessPanel.tsx
-// Post-approval success moment. shown once after Veriff completes.
+// Post-approval success moment after Abraxas Verify completes.
 
 import { Btn } from "@/components/redesign/ui";
 import type { StoredCredential } from "@/lib/credentials/storage";
@@ -47,7 +47,7 @@ export function VerificationSuccessPanel({
           background: "var(--surface-inset)", border: "1px solid var(--border)",
           fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.55,
         }}>
-          <div><strong style={{ color: "var(--text-primary)" }}>Issuer:</strong> Veriff · Abraxas-approved</div>
+          <div><strong style={{ color: "var(--text-primary)" }}>Issuer:</strong> Abraxas Verify</div>
           <div><strong style={{ color: "var(--text-primary)" }}>Status:</strong> Active · Assurance L3</div>
           {credential.expires_at && (
             <div><strong style={{ color: "var(--text-primary)" }}>Expires:</strong> {new Date(credential.expires_at).toLocaleDateString()}</div>
