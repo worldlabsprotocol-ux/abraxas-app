@@ -8,13 +8,13 @@ export interface ZkLoginOAuthConfig {
   redirectUri: string;
   authUrl: string;
   responseType: "id_token";
-  scope: "openid";
+  scope: "openid email profile";
 }
 
 const APP_ORIGIN =
   typeof window !== "undefined"
     ? window.location.origin
-    : process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
+    : process.env.ABRAXAS_ISSUER_URL ?? "https://abraxasworld.xyz";
 
 export const ZKLOGIN_CALLBACK_PATH = "/auth/zklogin/callback";
 
@@ -25,7 +25,7 @@ export function getZkLoginRedirectUri(): string {
   if (typeof window !== "undefined") {
     return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
   }
-  const base = (process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app").replace(/\/$/, "");
+  const base = (process.env.ABRAXAS_ISSUER_URL ?? "https://abraxasworld.xyz").replace(/\/$/, "");
   return `${base}${ZKLOGIN_CALLBACK_PATH}`;
 }
 
@@ -48,7 +48,7 @@ export function getGoogleOAuthConfig(): ZkLoginOAuthConfig | null {
     redirectUri: getZkLoginRedirectUri(),
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     responseType: "id_token",
-    scope: "openid",
+    scope: "openid email profile",
   };
 }
 
@@ -65,7 +65,6 @@ export function buildGoogleOAuthUrl(nonce: string): string | null {
     response_type: cfg.responseType,
     scope: cfg.scope,
     nonce,
-    prompt: "select_account",
   });
   return `${cfg.authUrl}?${params.toString()}`;
 }

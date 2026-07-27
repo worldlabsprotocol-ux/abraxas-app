@@ -28,7 +28,7 @@ export function PassportIntentCard({
     const secretKey = loadEphemeralSecretKey();
     if (!secretKey) {
       setStatus("error");
-      setError("Sign out and sign in again with Google to enable this check for your session.");
+      setError("Wallet signing key missing. Sign out and sign in once — your Passport stays the same.");
       return;
     }
 

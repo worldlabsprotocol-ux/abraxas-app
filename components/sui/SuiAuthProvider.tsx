@@ -11,7 +11,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { loadUserSession, clearUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
+import { loadUserSession, clearUserSession, saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
@@ -73,6 +73,29 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
       }).catch(() => { /* best-effort */ });
     }
   }, [session]);
+
+  useEffect(() => {
+    if (!session?.suiAddress) return;
+
+    void (async () => {
+      if (!session.email?.includes("@")) {
+        try {
+          const res = await fetch("/api/auth/zklogin/me", { credentials: "include" });
+          if (res.ok) {
+            const data = await res.json() as { email?: string | null };
+            if (data.email?.includes("@")) {
+              const current = loadUserSession();
+              if (current) {
+                const updated = { ...current, email: data.email };
+                saveUserSession(updated);
+                setSession(updated);
+              }
+            }
+          }
+        } catch { /* best-effort */ }
+      }
+    })();
+  }, [session?.suiAddress, session?.email]);
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     setError(null);

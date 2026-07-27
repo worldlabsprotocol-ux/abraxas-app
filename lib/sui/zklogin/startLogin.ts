@@ -33,8 +33,9 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
     return { ok: false, error: "Sign-in already in progress" };
   }
 
+  setLoginInFlight(true);
+
   try {
-    setLoginInFlight(true);
     const sui = getSuiClient();
     const { epoch } = await sui.getLatestSuiSystemState();
     const maxEpoch = Number(epoch) + EPOCH_BUFFER;

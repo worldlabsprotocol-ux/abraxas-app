@@ -1,9 +1,8 @@
 "use client";
 // FILE: components/passport/CameraCapture.tsx
-// Device camera capture via getUserMedia with file-upload fallback.
+// Mobile-native photo capture via file input (opens device camera reliably).
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { attachCameraStream } from "@/lib/passport/attachCameraStream";
+import { useRef, useState } from "react";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -28,98 +27,9 @@ export function CameraCapture({
   onClear,
   capturedPreview,
 }: CameraCaptureProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [active, setActive] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [currentFacing, setCurrentFacing] = useState<"user" | "environment">(facingMode);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const stopStream = useCallback(() => {
-    streamRef.current?.getTracks().forEach(track => track.stop());
-    streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setActive(false);
-  }, []);
-
-  useEffect(() => () => stopStream(), [stopStream]);
-
-  const bindStream = useCallback(async (stream: MediaStream) => {
-    const video = videoRef.current;
-    if (!video) return false;
-    await attachCameraStream(video, stream);
-    return true;
-  }, []);
-
-  const startCamera = useCallback(async (facing: "user" | "environment" = currentFacing) => {
-    setError(null);
-    setLoading(true);
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Camera not supported in this browser. Use the upload button below.");
-      }
-
-      stopStream();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: facing,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      setCurrentFacing(facing);
-      setActive(true);
-
-      // Video element is always mounted; bind on next paint if ref was not ready.
-      requestAnimationFrame(() => {
-        void bindStream(stream).catch(() => {
-          setError("Could not start camera preview. Try again or upload a photo.");
-          stopStream();
-        });
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not access camera";
-      setError(msg.includes("Permission") || msg.includes("NotAllowed")
-        ? "Camera permission denied. Allow camera access or upload a photo instead."
-        : msg);
-      stopStream();
-    } finally {
-      setLoading(false);
-    }
-  }, [bindStream, currentFacing, stopStream]);
-
-  async function flipCamera() {
-    const next = currentFacing === "user" ? "environment" : "user";
-    await startCamera(next);
-  }
-
-  function snapPhoto() {
-    const video = videoRef.current;
-    if (!video || video.videoWidth === 0) {
-      setError("Camera is still starting. Wait a moment and try again.");
-      return;
-    }
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const shouldMirror = mirror && currentFacing === "user";
-    if (shouldMirror) {
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-    }
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob(blob => {
-      if (!blob) return;
-      const previewUrl = URL.createObjectURL(blob);
-      onCapture(blob, previewUrl);
-      stopStream();
-    }, "image/jpeg", 0.92);
-  }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -128,14 +38,19 @@ export function CameraCapture({
       setError("Please choose an image file (JPG or PNG).");
       return;
     }
+    setError(null);
     const previewUrl = URL.createObjectURL(file);
     onCapture(file, previewUrl);
-    stopStream();
     e.target.value = "";
   }
 
   function clearCapture() {
     onClear?.();
+    setError(null);
+  }
+
+  function flipCamera() {
+    setCurrentFacing(prev => (prev === "user" ? "environment" : "user"));
     setError(null);
   }
 
@@ -154,6 +69,15 @@ export function CameraCapture({
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.85rem" }}>
         {hint}
       </p>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture={currentFacing}
+        onChange={handleFile}
+        style={{ display: "none" }}
+      />
 
       {capturedPreview ? (
         <div>
@@ -190,124 +114,42 @@ export function CameraCapture({
           </button>
         </div>
       ) : (
-        <>
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            autoPlay
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
             style={{
-              display: active ? "block" : "none",
-              width: "100%",
-              maxHeight: 280,
-              objectFit: "cover",
-              borderRadius: 10,
-              background: "#000",
-              marginBottom: active ? "0.75rem" : 0,
-              transform: previewMirror ? "scaleX(-1)" : undefined,
+              padding: "0.5rem 1rem",
+              borderRadius: 8,
+              border: "none",
+              background: color,
+              color: "#04130C",
+              fontFamily: FONT,
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              cursor: "pointer",
             }}
-          />
-
-          {active ? (
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
-              <button
-                type="button"
-                onClick={snapPhoto}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: 8,
-                  border: "none",
-                  background: color,
-                  color: "#04130C",
-                  fontFamily: FONT,
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Capture photo
-              </button>
-              <button
-                type="button"
-                onClick={() => void flipCamera()}
-                disabled={loading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: 8,
-                  border: `1px solid ${color}`,
-                  background: "transparent",
-                  color,
-                  fontFamily: FONT,
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  cursor: loading ? "wait" : "pointer",
-                }}
-              >
-                Flip camera
-              </button>
-              <button
-                type="button"
-                onClick={stopStream}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  fontFamily: FONT,
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
-              <button
-                type="button"
-                onClick={() => void startCamera()}
-                disabled={loading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: 8,
-                  border: "none",
-                  background: color,
-                  color: "#04130C",
-                  fontFamily: FONT,
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  cursor: loading ? "wait" : "pointer",
-                  opacity: loading ? 0.7 : 1,
-                }}
-              >
-                {loading ? "Starting camera…" : "Use camera"}
-              </button>
-              <label style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "0.5rem 1rem",
-                borderRadius: 8,
-                border: `1px solid ${color}`,
-                color,
-                fontFamily: FONT,
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}>
-                Upload photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture={facingMode === "environment" ? "environment" : "user"}
-                  onChange={handleFile}
-                  style={{ display: "none" }}
-                />
-              </label>
-            </div>
-          )}
-        </>
+          >
+            Take photo
+          </button>
+          <button
+            type="button"
+            onClick={flipCamera}
+            style={{
+              padding: "0.5rem 1rem",
+              borderRadius: 8,
+              border: `1px solid ${color}`,
+              background: "transparent",
+              color,
+              fontFamily: FONT,
+              fontSize: "0.78rem",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Flip camera ({currentFacing === "user" ? "front" : "back"})
+          </button>
+        </div>
       )}
 
       {error && (

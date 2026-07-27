@@ -117,7 +117,7 @@ export function AbraxasIdentityCapture({
       return;
     }
     if (!email.includes("@")) {
-      setError("We could not read your Google email. Refresh the page and try again.");
+      setError("We need your Google email on file. Sign out, sign in once more, then submit again.");
       return;
     }
     if (!idCapture || !selfieCapture) {

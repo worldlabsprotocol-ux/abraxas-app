@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Abraxas, Verify Once. Transact Everywhere.",
     description: "The verification and identity layer for real-world assets onchain.",
-    url: "https://abraxas-app.vercel.app",
+    url: "https://abraxasworld.xyz",
     siteName: "Abraxas",
     images: ["/og-image.jpg"],
     type: "website",

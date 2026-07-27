@@ -41,6 +41,7 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   const regData = (await regRes.json()) as {
     sui_address?: string;
     user_salt?: string;
+    email?: string | null;
     error?: string;
   };
 
@@ -57,11 +58,15 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   }
 
   const jwtEmail = (decoded as Record<string, unknown>).email;
+  const resolvedEmail =
+    (typeof regData.email === "string" && regData.email.includes("@") ? regData.email : null)
+    ?? (typeof jwtEmail === "string" ? jwtEmail : undefined);
+
   const session: ZkLoginUserSession = {
     suiAddress: regData.sui_address,
     provider: pending.provider,
     oauthSub: sub,
-    email: typeof jwtEmail === "string" ? jwtEmail : undefined,
+    email: resolvedEmail,
     maxEpoch: pending.maxEpoch,
     loggedInAt: new Date().toISOString(),
   };

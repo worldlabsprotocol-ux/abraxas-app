@@ -27,9 +27,9 @@ const BOOT_THEME: CSSProperties = {
 };
 
 const INSIDE = [
-  "Live registry — Cielo Sunrise, Chickasaw, Good Trouble",
-  "What RWA tokenization is — plain-language primer",
-  "Verify layer — how proof travels without repeating diligence",
+  "Live registry: Cielo Sunrise, Chickasaw, Good Trouble",
+  "What RWA tokenization is: plain language primer",
+  "Verify layer: how proof travels without repeating diligence",
 ] as const;
 
 export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => void }) {

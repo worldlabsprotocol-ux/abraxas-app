@@ -67,12 +67,17 @@ export async function POST(req: Request) {
   const emailFromJwt = typeof jwtEmail === "string" ? jwtEmail : null;
 
   if (existing?.sui_address && existing?.user_salt) {
+    if (emailFromJwt) {
+      await sb.from("sui_zklogin_identities")
+        .update({ email: emailFromJwt, updated_at: new Date().toISOString() })
+        .eq("oauth_sub", body.oauth_sub);
+    }
     return NextResponse.json({
       sui_address: existing.sui_address,
       user_salt: existing.user_salt,
       provider: body.provider ?? "google",
       oauth_sub: body.oauth_sub,
-      email: existing.email ?? emailFromJwt,
+      email: emailFromJwt ?? existing.email,
     });
   }
 

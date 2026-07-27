@@ -135,7 +135,9 @@ export function PassportDashboard({
     setBindSuccess(false);
     try {
       const secret = getEphemeralSecretKey();
-      if (!secret) throw new Error("Session expired — sign out and sign in again from the top right.");
+      if (!secret) {
+        throw new Error("Wallet signing key missing. Sign out and sign in once — your Passport stays the same.");
+      }
 
       const chRes = await fetch("/api/wallet/binding/challenge", {
         method: "POST",

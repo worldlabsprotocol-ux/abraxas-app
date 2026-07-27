@@ -73,18 +73,30 @@ export function clearUserSession(): void {
   clearEphemeralSecretKey();
   removeSessionStorage("abraxas_zklogin_signing_v1");
   removeSessionStorage("abraxas_zklogin_proof_v1");
+  removeLocalStorage("abraxas_zklogin_signing_v1");
+  removeLocalStorage("abraxas_zklogin_proof_v1");
+}
+
+function migrateSessionToLocal(key: string): string | null {
+  const fromSession = readSessionStorage(key);
+  if (!fromSession) return readLocalStorage(key);
+  writeLocalStorage(key, fromSession);
+  removeSessionStorage(key);
+  return fromSession;
 }
 
 export function saveEphemeralSecretKey(secretKey: string): void {
-  writeSessionStorage(EPHEMERAL_KEY, secretKey);
+  writeLocalStorage(EPHEMERAL_KEY, secretKey);
+  removeSessionStorage(EPHEMERAL_KEY);
 }
 
 export function loadEphemeralSecretKey(): string | null {
-  return readSessionStorage(EPHEMERAL_KEY);
+  return migrateSessionToLocal(EPHEMERAL_KEY);
 }
 
 export function clearEphemeralSecretKey(): void {
   removeSessionStorage(EPHEMERAL_KEY);
+  removeLocalStorage(EPHEMERAL_KEY);
 }
 
 /** Parse id_token from OAuth implicit callback hash (#id_token=...) */
