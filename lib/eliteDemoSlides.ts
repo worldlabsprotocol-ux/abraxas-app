@@ -53,7 +53,7 @@ export const HERO_ELITE_DEMO: EliteDemoConfig = {
       headline: "Seven apps. Same ID. Every time.",
       visual: "hero-debt",
       micro: "Verification debt",
-      pills: ["Marketplace", "Bank", "Hotel", "Custody"],
+      pills: ["Cannabis", "Spirits", "Exchange", "Hotel", "Lender"],
       mesh: "danger",
       accent: COSMIC_PALETTE.rose,
     },
@@ -266,6 +266,53 @@ export const PARTNERS_ELITE_DEMO: EliteDemoConfig = {
   ],
 };
 
+export const VERIFICATION_ECOSYSTEM_DEMO: EliteDemoConfig = {
+  id: "verification-ecosystem",
+  mesh: "violet",
+  accent: COSMIC_PALETTE.violet,
+  aspect: "cinema",
+  autoMs: 5500,
+  slides: [
+    {
+      id: "parade",
+      label: "01 · Every industry",
+      headline: "Same ID parade. Every gate.",
+      visual: "hero-debt",
+      micro: "Users follow the law — and still get left out",
+      pills: ["Cannabis", "Spirits", "Exchange", "Casino", "Hotel"],
+      mesh: "danger",
+      accent: COSMIC_PALETTE.rose,
+    },
+    {
+      id: "passport",
+      label: "02 · Abraxas",
+      headline: "Verify once. Policy everywhere.",
+      visual: "hero-passport",
+      micro: "Passport + your policy_id",
+      mesh: "gold",
+      accent: COSMIC_PALETTE.gold,
+    },
+    {
+      id: "embed",
+      label: "03 · Plug in",
+      headline: "Your app calls Abraxas.",
+      visual: "api-flow",
+      micro: "POST /credentials/verify",
+      mesh: "ice",
+      accent: COSMIC_PALETTE.cyan,
+    },
+    {
+      id: "proof",
+      label: "04 · Proof",
+      headline: "Pre-check energy for any protocol.",
+      visual: "hero-proof",
+      micro: "Signed · reusable · auditable",
+      mesh: "emerald",
+      accent: COSMIC_PALETTE.emerald,
+    },
+  ],
+};
+
 export const AGENTIC_ELITE_DEMO: EliteDemoConfig = {
   id: "agentic-finance",
   mesh: "emerald",
@@ -304,5 +351,6 @@ export const ELITE_DEMO_BY_ID: Record<string, EliteDemoConfig> = {
   [NETWORK_ELITE_DEMO.id]: NETWORK_ELITE_DEMO,
   [REFERENCE_ELITE_DEMO.id]: REFERENCE_ELITE_DEMO,
   [PARTNERS_ELITE_DEMO.id]: PARTNERS_ELITE_DEMO,
+  [VERIFICATION_ECOSYSTEM_DEMO.id]: VERIFICATION_ECOSYSTEM_DEMO,
   [AGENTIC_ELITE_DEMO.id]: AGENTIC_ELITE_DEMO,
 };

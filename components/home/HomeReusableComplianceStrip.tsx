@@ -96,6 +96,15 @@ export function HomeReusableComplianceStrip() {
       </p>
 
       <Link
+        href="/verification"
+        style={{
+          fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
+          color: "var(--accent)", textDecoration: "none", marginRight: "1rem",
+        }}
+      >
+        Full verification layer →
+      </Link>
+      <Link
         href="/good-trouble"
         style={{
           fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,

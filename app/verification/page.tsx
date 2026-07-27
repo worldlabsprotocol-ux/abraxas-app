@@ -1,10 +1,12 @@
 "use client";
 // FILE: app/verification/page.tsx
-// Verification layer scoreboard. seven items to production-ready.
+// Verification layer: ecosystem pitch + production scoreboard.
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
+import { VerificationEcosystemPitch } from "@/components/verification/VerificationEcosystemPitch";
 import { VerificationLayerScoreboard } from "@/components/verification/VerificationLayerScoreboard";
+import { VERIFICATION_ECOSYSTEM_LEAD } from "@/lib/verificationEcosystemPositioning";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -27,7 +29,7 @@ const BOOTSTRAP_STEPS = [
   {
     n: 4,
     title: "Confirm E2E",
-    body: "GET /api/verify/e2e. all steps green including proof-lookup-roundtrip. Target: /verification shows 7/7.",
+    body: "GET /api/verify/e2e. all steps green including proof-lookup-roundtrip. Target: /verification shows 8/8.",
   },
 ];
 
@@ -36,11 +38,18 @@ export default function VerificationPage() {
     <RedesignPage maxWidth={960}>
       <PageHeader
         eyebrow="Verification layer"
-        title="7/7 production scoreboard"
-        subtitle="Digital asset verification and blockchain verification for tokenized real-world assets. the cryptographic verify → proof → lookup loop behind the RWA verification app."
+        title="The layer protocols plug into"
+        subtitle={VERIFICATION_ECOSYSTEM_LEAD}
       />
 
-      <VerificationLayerScoreboard />
+      <VerificationEcosystemPitch />
+
+      <section style={{ marginTop: "0.5rem", marginBottom: "1.5rem" }}>
+        <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
+          Production scoreboard
+        </div>
+        <VerificationLayerScoreboard />
+      </section>
 
       <section style={{ marginTop: "1.5rem" }}>
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>

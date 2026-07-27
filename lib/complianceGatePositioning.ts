@@ -13,7 +13,9 @@ export const COMPLIANCE_GATE_INSIGHT =
 
 export const COMPLIANCE_GATE_USE_CASES = [
   { label: "Cannabis retail", detail: "21+ eligibility · state policy · batch COA on file" },
-  { label: "Alcohol & hospitality", detail: "Age attestation reusable across checkout flows" },
+  { label: "Alcohol & spirits", detail: "Age attestation reusable across D2C checkout flows" },
+  { label: "Crypto & DeFi gates", detail: "Wallet binding + credential verify — not another exchange KYC" },
+  { label: "iGaming & betting", detail: "Age at signup, enhanced checks on spend — one credential" },
   { label: "Marketplaces & lenders", detail: "KYC + asset proof without repeating diligence" },
 ] as const;
 
