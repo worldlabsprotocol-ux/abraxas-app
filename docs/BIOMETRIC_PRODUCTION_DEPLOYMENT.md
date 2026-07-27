@@ -2,6 +2,8 @@
 
 Generated for merge of **#67** (infrastructure) + **#72** (biometric engine) → `main`.
 
+> **Living report:** See [`PRODUCTION_READINESS_REPORT.md`](./PRODUCTION_READINESS_REPORT.md) for current launch status, health checks, and blockers.
+
 ## Completed work
 
 | Area | Status |

@@ -16,7 +16,6 @@ import {
 }                              from "@/lib/protocol";
 import type { VerificationRecord } from "@/lib/protocol/verificationEngine";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 const MONO      = "'JetBrains Mono',monospace";
 
 function fmtUsd(n:number) {
@@ -220,8 +219,11 @@ export default function AdminPage() {
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
-  function tryPin() {
-    if(pin===ADMIN_PIN) { setAuthed(true); setPinErr(false); }
+  async function tryPin() {
+    const res = await fetch("/api/admin/identity/queue", {
+      headers: { "x-admin-pin": pin },
+    });
+    if (res.ok) { setAuthed(true); setPinErr(false); }
     else setPinErr(true);
   }
 

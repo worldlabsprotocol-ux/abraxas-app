@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
+import { getAdminPinPrefill } from "@/lib/adminPinClient";
+
 const MONO = "'JetBrains Mono',monospace";
 
 interface ReceiptRow {
@@ -39,7 +40,7 @@ interface ReceiptDetail {
 }
 
 export default function AdminReceiptsPage() {
-  const [pin, setPin] = useState(ADMIN_PIN);
+  const [pin, setPin] = useState(getAdminPinPrefill);
   const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState<ReceiptDetail | null>(null);

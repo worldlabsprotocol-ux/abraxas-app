@@ -7,6 +7,18 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
+const MAX_BYTES = 8 * 1024 * 1024;
+
+function validateImageFile(file: File, label: string) {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    throw new Error(`Invalid file type for ${label}. Use JPG or PNG.`);
+  }
+  if (file.size > MAX_BYTES) {
+    throw new Error(`File too large for ${label}. Max 8 MB.`);
+  }
+}
+
 function getSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -33,6 +45,13 @@ export async function POST(req: NextRequest) {
 
     if (!file || !stampId) {
       return NextResponse.json({ error: "file and stampId required" }, { status: 400 });
+    }
+
+    try {
+      validateImageFile(file, stampId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Invalid file";
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
     const suiAddress = normalizeSuiAddress(auth.session.suiAddress);
