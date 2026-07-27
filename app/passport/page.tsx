@@ -11,7 +11,7 @@ import { PassportDashboard } from "@/components/passport/PassportDashboard";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { VerificationSuccessPanel } from "@/components/passport/VerificationSuccessPanel";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
-import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
@@ -28,17 +28,15 @@ const G = "#10B981";
 
 export default function PassportPage() {
   return (
-    <SuiAuthProvider>
-      <Suspense fallback={null}>
-        <PassportPageInner />
-      </Suspense>
-    </SuiAuthProvider>
+    <Suspense fallback={null}>
+      <PassportPageInner />
+    </Suspense>
   );
 }
 
 function PassportPageInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session } = useSuiAuth();
+  const { suiAddress, session, isLoading: authLoading } = useSuiAuth();
   const email = session?.email ?? "";
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +76,10 @@ function PassportPageInner() {
   });
 
   useEffect(() => {
-    if (searchParams.get("signed_in") === "1") refresh();
+    if (searchParams.get("signed_in") === "1") {
+      window.dispatchEvent(new CustomEvent("abraxas:zklogin-session"));
+      refresh();
+    }
   }, [searchParams, refresh]);
 
   useEffect(() => {
@@ -221,6 +222,7 @@ function PassportPageInner() {
 
             <PassportDashboard
               walletDone={walletDone}
+              authLoading={authLoading}
               suiAddress={suiAddress}
               email={email}
               setup={setup}
@@ -240,7 +242,13 @@ function PassportPageInner() {
               returnPath={searchParams.get("return")}
             />
 
-            {!walletDone && verificationLoading && (
+            {!walletDone && authLoading && (
+              <p style={{ fontFamily: S, fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center" }}>
+                Loading your Passport…
+              </p>
+            )}
+
+            {!walletDone && !authLoading && verificationLoading && (
               <p style={{ fontFamily: S, fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center" }}>
                 Loading passport status…
               </p>

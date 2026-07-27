@@ -52,6 +52,7 @@ const IDENTITY_UNLOCKS = [
 
 interface Props {
   walletDone: boolean;
+  authLoading?: boolean;
   suiAddress: string | null;
   email: string;
   setup: PassportSetupState;
@@ -73,6 +74,7 @@ interface Props {
 
 export function PassportDashboard({
   walletDone,
+  authLoading = false,
   suiAddress,
   email,
   setup,
@@ -172,25 +174,36 @@ export function PassportDashboard({
 
   return (
     <div>
-      {!walletDone && (
+      {authLoading && (
+        <section style={CARD} aria-live="polite">
+          <p style={{
+            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+            lineHeight: 1.65, margin: 0,
+          }}>
+            Loading your Passport session…
+          </p>
+        </section>
+      )}
+
+      {!authLoading && !walletDone && (
         <section style={CARD} aria-labelledby="passport-signin-heading">
           <h2 id="passport-signin-heading" style={{
             fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
             color: "var(--text-primary)", margin: "0 0 0.5rem",
           }}>
-            Create your Passport
+            Sign in to your Passport
           </h2>
           <p style={{
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 520,
           }}>
-            Use <strong style={{ color: "var(--text-primary)" }}>Sign in</strong> at the top right.
+            Tap <strong style={{ color: "var(--text-primary)" }}>Sign in</strong> once at the top right.
             Google creates your Abraxas wallet — no seed phrase.
           </p>
         </section>
       )}
 
-      {walletDone && !setup.identityComplete && identityUi !== "under_review" && (
+      {!authLoading && walletDone && !setup.identityComplete && identityUi !== "under_review" && (
         <section style={{ ...CARD, border: "2px solid rgba(16,185,129,0.28)" }}>
           <h2 style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem" }}>
             Verify who you are
@@ -245,7 +258,7 @@ export function PassportDashboard({
         </section>
       )}
 
-      {walletDone && (
+      {!authLoading && walletDone && (
         <>
           <IndependentBiometricStatusCard
             manualMode={manualMode}

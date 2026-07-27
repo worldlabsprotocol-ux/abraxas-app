@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
+import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -164,26 +165,14 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
 }
 
 export function NavSignInButton({ prominent = false }: { prominent?: boolean }) {
-  const auth = useSuiAuthOptional();
-  const [busy, setBusy] = useState(false);
-  const configured = auth?.isConfigured ?? false;
-
-  async function handleSignIn() {
-    if (!auth?.signInWithGoogle) return;
-    setBusy(true);
-    try {
-      await auth.signInWithGoogle();
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { signIn, busy, configured, disabled } = useGoogleSignIn();
 
   if (configured) {
     return (
       <button
         type="button"
-        onClick={handleSignIn}
-        disabled={busy}
+        onClick={() => void signIn()}
+        disabled={disabled}
         style={{
           display: "inline-flex",
           alignItems: "center",

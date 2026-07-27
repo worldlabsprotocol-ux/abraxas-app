@@ -26,7 +26,7 @@ interface SuiAuthContextValue {
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
   signOut: () => void;
 }
 
@@ -45,6 +45,23 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  const reloadSession = useCallback(() => {
+    const loaded = loadUserSession();
+    setSession(loaded);
+    setCanSignTransactions(canSignZkLoginTransactions(loaded?.suiAddress));
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const onSessionChange = () => reloadSession();
+    window.addEventListener("abraxas:zklogin-session", onSessionChange);
+    window.addEventListener("storage", onSessionChange);
+    return () => {
+      window.removeEventListener("abraxas:zklogin-session", onSessionChange);
+      window.removeEventListener("storage", onSessionChange);
+    };
+  }, [reloadSession]);
+
   useEffect(() => {
     setCanSignTransactions(canSignZkLoginTransactions(session?.suiAddress));
     if (session?.suiAddress) {
@@ -57,10 +74,14 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     setError(null);
     const result = await startGoogleZkLogin();
-    if (!result.ok) setError(result.error);
+    if (!result.ok) {
+      setError(result.error);
+      return false;
+    }
+    return true;
   }, []);
 
   const signOut = useCallback(() => {

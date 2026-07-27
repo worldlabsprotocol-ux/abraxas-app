@@ -46,10 +46,16 @@ export function loadPendingSession(): ZkLoginPendingSession | null {
 
 export function clearPendingSession(): void {
   removeSessionStorage(ZKLOGIN_PENDING_KEY);
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("abraxas_zklogin_login_in_flight");
+  }
 }
 
 export function saveUserSession(session: ZkLoginUserSession): void {
   writeLocalStorage(ZKLOGIN_SESSION_KEY, JSON.stringify(session));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("abraxas:zklogin-session"));
+  }
 }
 
 export function loadUserSession(): ZkLoginUserSession | null {

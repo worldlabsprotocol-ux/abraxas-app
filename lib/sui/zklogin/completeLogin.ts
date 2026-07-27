@@ -5,6 +5,7 @@ import { jwtToAddress, decodeJwt } from "@mysten/sui/zklogin";
 import {
   clearPendingSession,
   loadPendingSession,
+  loadUserSession,
   saveUserSession,
   type ZkLoginUserSession,
 } from "./session";
@@ -13,6 +14,11 @@ import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
   const pending = loadPendingSession();
   if (!pending) {
+    const existing = loadUserSession();
+    if (existing) {
+      // OAuth callback re-entered (Strict Mode, back navigation) after success.
+      return existing;
+    }
     throw new Error("Login session expired. Please sign in again.");
   }
 

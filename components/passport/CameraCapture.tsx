@@ -3,6 +3,7 @@
 // Device camera capture via getUserMedia with file-upload fallback.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { attachCameraStream } from "@/lib/passport/attachCameraStream";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -30,6 +31,7 @@ export function CameraCapture({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [active, setActive] = useState(false);
+  const [currentFacing, setCurrentFacing] = useState<"user" | "environment">(facingMode);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,46 +44,71 @@ export function CameraCapture({
 
   useEffect(() => () => stopStream(), [stopStream]);
 
-  async function startCamera() {
+  const bindStream = useCallback(async (stream: MediaStream) => {
+    const video = videoRef.current;
+    if (!video) return false;
+    await attachCameraStream(video, stream);
+    return true;
+  }, []);
+
+  const startCamera = useCallback(async (facing: "user" | "environment" = currentFacing) => {
     setError(null);
     setLoading(true);
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera not supported in this browser. Use the upload button below.");
       }
+
+      stopStream();
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode,
+          facingMode: facing,
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
         audio: false,
       });
+
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      setCurrentFacing(facing);
       setActive(true);
+
+      // Video element is always mounted; bind on next paint if ref was not ready.
+      requestAnimationFrame(() => {
+        void bindStream(stream).catch(() => {
+          setError("Could not start camera preview. Try again or upload a photo.");
+          stopStream();
+        });
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not access camera";
       setError(msg.includes("Permission") || msg.includes("NotAllowed")
         ? "Camera permission denied. Allow camera access or upload a photo instead."
         : msg);
+      stopStream();
     } finally {
       setLoading(false);
     }
+  }, [bindStream, currentFacing, stopStream]);
+
+  async function flipCamera() {
+    const next = currentFacing === "user" ? "environment" : "user";
+    await startCamera(next);
   }
 
   function snapPhoto() {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || video.videoWidth === 0) {
+      setError("Camera is still starting. Wait a moment and try again.");
+      return;
+    }
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    if (mirror) {
+    const shouldMirror = mirror && currentFacing === "user";
+    if (shouldMirror) {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
@@ -112,6 +139,8 @@ export function CameraCapture({
     setError(null);
   }
 
+  const previewMirror = mirror && currentFacing === "user";
+
   return (
     <div style={{
       background: "var(--surface-inset)",
@@ -139,7 +168,7 @@ export function CameraCapture({
               borderRadius: 10,
               border: `1px solid ${color}44`,
               marginBottom: "0.75rem",
-              transform: mirror ? "scaleX(-1)" : undefined,
+              transform: previewMirror ? "scaleX(-1)" : undefined,
             }}
           />
           <button
@@ -162,57 +191,77 @@ export function CameraCapture({
         </div>
       ) : (
         <>
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            autoPlay
+            style={{
+              display: active ? "block" : "none",
+              width: "100%",
+              maxHeight: 280,
+              objectFit: "cover",
+              borderRadius: 10,
+              background: "#000",
+              marginBottom: active ? "0.75rem" : 0,
+              transform: previewMirror ? "scaleX(-1)" : undefined,
+            }}
+          />
+
           {active ? (
-            <div style={{ marginBottom: "0.75rem" }}>
-              <video
-                ref={videoRef}
-                playsInline
-                muted
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={snapPhoto}
                 style={{
-                  width: "100%",
-                  maxHeight: 280,
-                  objectFit: "cover",
-                  borderRadius: 10,
-                  background: "#000",
-                  transform: mirror ? "scaleX(-1)" : undefined,
+                  padding: "0.5rem 1rem",
+                  borderRadius: 8,
+                  border: "none",
+                  background: color,
+                  color: "#04130C",
+                  fontFamily: FONT,
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
                 }}
-              />
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.65rem", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={snapPhoto}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    borderRadius: 8,
-                    border: "none",
-                    background: color,
-                    color: "#04130C",
-                    fontFamily: FONT,
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Capture photo
-                </button>
-                <button
-                  type="button"
-                  onClick={stopStream}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    borderRadius: 8,
-                    border: "1px solid var(--border)",
-                    background: "transparent",
-                    color: "var(--text-secondary)",
-                    fontFamily: FONT,
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
+              >
+                Capture photo
+              </button>
+              <button
+                type="button"
+                onClick={() => void flipCamera()}
+                disabled={loading}
+                style={{
+                  padding: "0.5rem 1rem",
+                  borderRadius: 8,
+                  border: `1px solid ${color}`,
+                  background: "transparent",
+                  color,
+                  fontFamily: FONT,
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  cursor: loading ? "wait" : "pointer",
+                }}
+              >
+                Flip camera
+              </button>
+              <button
+                type="button"
+                onClick={stopStream}
+                style={{
+                  padding: "0.5rem 1rem",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  fontFamily: FONT,
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
             </div>
           ) : (
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
