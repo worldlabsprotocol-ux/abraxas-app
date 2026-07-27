@@ -8,7 +8,7 @@ export interface ZkLoginOAuthConfig {
   redirectUri: string;
   authUrl: string;
   responseType: "id_token";
-  scope: "openid email profile";
+  scope: string;
 }
 
 const APP_ORIGIN =
@@ -48,7 +48,7 @@ export function getGoogleOAuthConfig(): ZkLoginOAuthConfig | null {
     redirectUri: getZkLoginRedirectUri(),
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     responseType: "id_token",
-    scope: "openid email profile",
+    scope: "openid email",
   };
 }
 

@@ -1,8 +1,8 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// Welcome gate — informative, no wallet required. One click into the product.
+// Welcome gate — shows on every homepage load until Enter is tapped.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -16,7 +16,6 @@ import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography
 
 const FONT = ABRAXAS_FONT_SANS;
 const DISPLAY = ABRAXAS_FONT_DISPLAY;
-const STORAGE_KEY = "abraxas_boot_entered_v11";
 
 const BOOT_THEME: CSSProperties = {
   ["--text-primary" as string]: TEXT_ON_DARK.primary,
@@ -33,43 +32,17 @@ const INSIDE = [
 ] as const;
 
 export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => void }) {
-  const [visible, setVisible] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   const dismiss = useCallback(() => {
-    try { sessionStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
     setVisible(false);
     onReady?.(true);
   }, [onReady]);
 
-  useEffect(() => {
-    let skip = false;
-    try {
-      skip = Boolean(sessionStorage.getItem(STORAGE_KEY));
-    } catch { /* ignore */ }
-    if (skip) {
-      onReady?.(true);
-      setVisible(false);
-    } else {
-      setVisible(true);
-      onReady?.(false);
-    }
-    setChecked(true);
-  }, [onReady]);
-
-  if (!checked) {
-    return (
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        background: "#04050A",
-      }} aria-hidden />
-    );
-  }
-
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div
+        <div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.45 }}
@@ -93,7 +66,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
             pointerEvents: "none",
           }} />
 
-          <motion.div
+          <div
             initial={{ scale: 0.97, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.98, opacity: 0, y: -6 }}
@@ -135,7 +108,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               lineHeight: 1.6,
               margin: "0 0 1.25rem",
             }}>
-              {ABRAXAS_ONE_LINER} Browse everything below — no wallet or account needed to explore.
+              {ABRAXAS_ONE_LINER} Browse everything below. No wallet or account needed to explore.
             </p>
 
             <ul style={{
@@ -194,8 +167,8 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
             }}>
               Connect a wallet later only if you want Passport or on-chain proof.
             </p>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
     </AnimatePresence>
   );

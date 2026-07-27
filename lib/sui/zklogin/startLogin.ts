@@ -6,20 +6,14 @@ import { generateNonce, generateRandomness } from "@mysten/sui/zklogin";
 import { getSuiClient } from "@/lib/sui/client";
 import { buildGoogleOAuthUrl, isZkLoginConfigured } from "./config";
 import { savePendingSession } from "./session";
+import {
+  clearLoginInFlight,
+  clearStaleLoginInFlight,
+  isLoginInFlight,
+  setLoginInFlight,
+} from "./loginInFlight";
 
 const EPOCH_BUFFER = 10;
-const LOGIN_IN_FLIGHT_KEY = "abraxas_zklogin_login_in_flight";
-
-function isLoginInFlight(): boolean {
-  if (typeof window === "undefined") return false;
-  return sessionStorage.getItem(LOGIN_IN_FLIGHT_KEY) === "1";
-}
-
-function setLoginInFlight(active: boolean): void {
-  if (typeof window === "undefined") return;
-  if (active) sessionStorage.setItem(LOGIN_IN_FLIGHT_KEY, "1");
-  else sessionStorage.removeItem(LOGIN_IN_FLIGHT_KEY);
-}
 
 export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!isZkLoginConfigured()) {
@@ -29,8 +23,10 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
     };
   }
 
+  clearStaleLoginInFlight();
+
   if (isLoginInFlight()) {
-    return { ok: false, error: "Sign-in already in progress" };
+    return { ok: false, error: "Sign-in already in progress. Wait a moment and try again." };
   }
 
   setLoginInFlight(true);
@@ -54,13 +50,14 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
 
     const url = buildGoogleOAuthUrl(nonce);
     if (!url) {
+      clearLoginInFlight();
       return { ok: false, error: "Could not build OAuth URL" };
     }
 
     window.location.assign(url);
     return { ok: true };
   } catch (e) {
-    setLoginInFlight(false);
+    clearLoginInFlight();
     const msg = e instanceof Error ? e.message : "Could not reach Sui network";
     return {
       ok: false,
@@ -68,3 +65,5 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
     };
   }
 }
+
+export { clearLoginInFlight, clearStaleLoginInFlight } from "./loginInFlight";

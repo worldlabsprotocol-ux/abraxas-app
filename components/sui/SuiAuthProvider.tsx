@@ -13,7 +13,7 @@ import {
 } from "react";
 import { loadUserSession, clearUserSession, saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
-import { startGoogleZkLogin } from "@/lib/sui/zklogin/startLogin";
+import { startGoogleZkLogin, clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
 
@@ -39,6 +39,7 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    clearStaleLoginInFlight();
     const loaded = loadUserSession();
     setSession(loaded);
     setCanSignTransactions(canSignZkLoginTransactions(loaded?.suiAddress));

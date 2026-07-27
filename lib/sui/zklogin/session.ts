@@ -2,6 +2,7 @@
 // Browser session for zkLogin-derived Sui identity.
 
 import { ZKLOGIN_SESSION_KEY, ZKLOGIN_PENDING_KEY } from "./config";
+import { clearLoginInFlight } from "./loginInFlight";
 import {
   readLocalStorage,
   readSessionStorage,
@@ -46,9 +47,7 @@ export function loadPendingSession(): ZkLoginPendingSession | null {
 
 export function clearPendingSession(): void {
   removeSessionStorage(ZKLOGIN_PENDING_KEY);
-  if (typeof window !== "undefined") {
-    sessionStorage.removeItem("abraxas_zklogin_login_in_flight");
-  }
+  clearLoginInFlight();
 }
 
 export function saveUserSession(session: ZkLoginUserSession): void {

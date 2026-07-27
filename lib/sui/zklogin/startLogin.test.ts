@@ -44,9 +44,10 @@ describe("startGoogleZkLogin", () => {
   });
 
   it("blocks duplicate sign-in attempts while in flight", async () => {
-    sessionStorage.setItem("abraxas_zklogin_login_in_flight", "1");
+    storage["abraxas_zklogin_login_in_flight"] = "1";
+    storage["abraxas_zklogin_login_in_flight_ts"] = String(Date.now());
     const result = await startGoogleZkLogin();
-    expect(result).toEqual({ ok: false, error: "Sign-in already in progress" });
+    expect(result).toEqual({ ok: false, error: "Sign-in already in progress. Wait a moment and try again." });
     expect(assign).not.toHaveBeenCalled();
   });
 
@@ -54,7 +55,7 @@ describe("startGoogleZkLogin", () => {
     const result = await startGoogleZkLogin();
     expect(result).toEqual({ ok: true });
     expect(savePendingSession).toHaveBeenCalled();
-    expect(sessionStorage.getItem("abraxas_zklogin_login_in_flight")).toBe("1");
+    expect(storage["abraxas_zklogin_login_in_flight"]).toBe("1");
     expect(assign).toHaveBeenCalled();
   });
 });

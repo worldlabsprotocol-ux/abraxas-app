@@ -10,11 +10,13 @@ export function useGoogleSignIn() {
   const inFlightRef = useRef(false);
 
   const signIn = useCallback(async (): Promise<boolean> => {
-    if (inFlightRef.current || busy || !auth?.signInWithGoogle) return false;
+    const signInFn = auth?.signInWithGoogle;
+    if (!signInFn || inFlightRef.current) return false;
+
     inFlightRef.current = true;
     setBusy(true);
     try {
-      const redirected = await auth.signInWithGoogle();
+      const redirected = await signInFn();
       if (!redirected) {
         inFlightRef.current = false;
         setBusy(false);
@@ -25,11 +27,12 @@ export function useGoogleSignIn() {
       setBusy(false);
       return false;
     }
-  }, [auth, busy]);
+  }, [auth?.signInWithGoogle]);
 
   return {
     signIn,
     busy,
+    error: auth?.error ?? null,
     configured: auth?.isConfigured ?? false,
     disabled: busy || !auth?.isConfigured,
   };
