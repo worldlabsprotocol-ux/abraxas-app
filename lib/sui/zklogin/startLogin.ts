@@ -3,7 +3,6 @@
 
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { generateNonce, generateRandomness } from "@mysten/sui/zklogin";
-import { getSuiClient } from "@/lib/sui/client";
 import { buildGoogleOAuthUrl, isZkLoginConfigured } from "./config";
 import { savePendingSession } from "./session";
 import {
@@ -13,8 +12,7 @@ import {
   setLoginInFlight,
 } from "./loginInFlight";
 import { logAuthEvent } from "./authDebug";
-
-const EPOCH_BUFFER = 10;
+import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 
 export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!isZkLoginConfigured()) {
@@ -35,9 +33,17 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
   setLoginInFlight(true);
 
   try {
-    const sui = getSuiClient();
-    const { epoch } = await sui.getLatestSuiSystemState();
-    const maxEpoch = Number(epoch) + EPOCH_BUFFER;
+    const epochResult = await fetchLoginMaxEpoch();
+    if (!epochResult.ok) {
+      clearLoginInFlight();
+      logAuthEvent("oauth_start", { error: epochResult.error });
+      return { ok: false, error: epochResult.error };
+    }
+
+    const maxEpoch = epochResult.maxEpoch;
+    logAuthEvent("oauth_start", {
+      detail: `epoch via ${epochResult.rpcHost} (${epochResult.network})`,
+    });
 
     const ephemeralKeypair = Ed25519Keypair.generate();
     const randomness = generateRandomness();
@@ -62,10 +68,11 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
     return { ok: true };
   } catch (e) {
     clearLoginInFlight();
-    const msg = e instanceof Error ? e.message : "Could not reach Sui network";
+    const msg = e instanceof Error ? e.message : "Unexpected sign-in error";
+    logAuthEvent("oauth_start", { error: msg });
     return {
       ok: false,
-      error: `Sign-in failed: ${msg}. Check SUI_RPC_URL in Vercel or try again.`,
+      error: `Sign-in failed: ${msg}`,
     };
   }
 }

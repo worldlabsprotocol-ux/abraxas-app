@@ -139,3 +139,44 @@ No tokens, secrets, or full addresses are logged (addresses truncated).
 - **Sui epoch expiry:** `maxEpoch` is current epoch + 10; on-chain txs fail after ~10 epochs while UI may still show signed in. Consider epoch check in `canSignZkLoginTransactions()`.
 - **Mobile Safari ITP:** May still evict `sessionStorage` during OAuth; users should avoid private mode.
 - **L3 vs zkLogin bind semantics:** Product may want zkLogin auto-bind to satisfy Tier 2 without extra signature step.
+
+---
+
+## Addendum: Sui RPC "Failed to fetch" during sign-in (2026-07-28)
+
+### Symptom
+
+`Sign-in failed: Failed to fetch. Check SUI_RPC_URL in Vercel or try again.`
+
+### Root cause
+
+`startGoogleZkLogin()` called `getSuiClient().getLatestSuiSystemState()` **in the browser**. That is wrong because:
+
+1. **`SUI_RPC_URL` is server-only** — not in the client bundle. The browser used a different fallback URL than the server.
+2. **Browser → RPC direct fetch** can fail with generic `Failed to fetch` (CORS, mobile network, RPC outage) even when server-side RPC works.
+3. The misleading `SUI_RPC_URL` hint was added in PR #75 error handling — the RPC call itself predates that PR.
+
+### Failing request (before fix)
+
+| Field | Value |
+|-------|-------|
+| **Where** | Browser (client-side `startGoogleZkLogin`) |
+| **Method** | JSON-RPC `suix_getLatestSuiSystemState` |
+| **URL** | Client fallback: `https://rpc-devnet.suiscan.xyz` (devnet) or Mysten fullnode (mainnet) — **not** `SUI_RPC_URL` |
+| **Error** | `TypeError: Failed to fetch` (no HTTP status) |
+
+### Fix
+
+- New **`GET /api/auth/zklogin/prepare`** — fetches epoch on the server using `SUI_RPC_URL`
+- `startGoogleZkLogin()` calls that API instead of RPC directly
+- Errors now include **network**, **RPC host**, **HTTP status**, and **phase**
+
+### Vercel env checklist
+
+| Variable | Scope | Purpose |
+|----------|-------|---------|
+| `SUI_RPC_URL` | Server | Primary RPC for prepare API + backend |
+| `NEXT_PUBLIC_SUI_NETWORK` | Client + server | Network selection when RPC URL unset |
+| `NEXT_PUBLIC_SUI_RPC_URL` | Client | Optional — only if client must call RPC directly (signing) |
+
+Server and client should agree: set `SUI_RPC_URL` + matching `NEXT_PUBLIC_SUI_NETWORK`, or also set `NEXT_PUBLIC_SUI_RPC_URL` to the same host for client-side signing flows.

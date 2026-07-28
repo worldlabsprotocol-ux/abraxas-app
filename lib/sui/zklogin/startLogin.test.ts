@@ -2,9 +2,12 @@
 
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 
-vi.mock("@/lib/sui/client", () => ({
-  getSuiClient: () => ({
-    getLatestSuiSystemState: async () => ({ epoch: "100" }),
+vi.mock("./fetchLoginEpoch", () => ({
+  fetchLoginMaxEpoch: vi.fn().mockResolvedValue({
+    ok: true,
+    maxEpoch: 110,
+    network: "devnet",
+    rpcHost: "rpc-devnet.suiscan.xyz",
   }),
 }));
 
@@ -18,6 +21,7 @@ vi.mock("./session", () => ({
 }));
 
 import { savePendingSession } from "./session";
+import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 import { startGoogleZkLogin } from "./startLogin";
 
 describe("startGoogleZkLogin", () => {
@@ -37,6 +41,12 @@ describe("startGoogleZkLogin", () => {
     });
     assign.mockClear();
     vi.mocked(savePendingSession).mockClear();
+    vi.mocked(fetchLoginMaxEpoch).mockResolvedValue({
+      ok: true,
+      maxEpoch: 110,
+      network: "devnet",
+      rpcHost: "rpc-devnet.suiscan.xyz",
+    });
   });
 
   afterEach(() => {
@@ -54,8 +64,23 @@ describe("startGoogleZkLogin", () => {
   it("starts OAuth and marks in-flight", async () => {
     const result = await startGoogleZkLogin();
     expect(result).toEqual({ ok: true });
+    expect(fetchLoginMaxEpoch).toHaveBeenCalled();
     expect(savePendingSession).toHaveBeenCalled();
     expect(storage["abraxas_zklogin_login_in_flight"]).toBe("1");
     expect(assign).toHaveBeenCalled();
+  });
+
+  it("surfaces RPC prepare failure without generic fetch message", async () => {
+    vi.mocked(fetchLoginMaxEpoch).mockResolvedValue({
+      ok: false,
+      error: "Sign-in failed during sui_epoch_fetch: timeout. Sui network=devnet, RPC host=rpc-devnet.suiscan.xyz.",
+    });
+    const result = await startGoogleZkLogin();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("sui_epoch_fetch");
+      expect(result.error).toContain("rpc-devnet.suiscan.xyz");
+    }
+    expect(assign).not.toHaveBeenCalled();
   });
 });
