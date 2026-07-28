@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
-import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
@@ -65,17 +64,15 @@ export function RedesignHome() {
 
   return (
     <WalletContextProvider>
-      <SuiAuthProvider>
-        <AbraxasBootScreen onReady={setBootReady} />
-        {bootReady && (
-          <div data-theme="dark" className="abx-institutional-shell">
-            <AmbientGlow />
-            <RedesignNav />
-            <HomeContent />
-            <RedesignFooter />
-          </div>
-        )}
-      </SuiAuthProvider>
+      <AbraxasBootScreen onReady={setBootReady} />
+      {bootReady && (
+        <div data-theme="dark" className="abx-institutional-shell">
+          <AmbientGlow />
+          <RedesignNav />
+          <HomeContent />
+          <RedesignFooter />
+        </div>
+      )}
     </WalletContextProvider>
   );
 }

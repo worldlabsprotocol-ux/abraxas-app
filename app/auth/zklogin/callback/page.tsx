@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseIdTokenFromCallbackHash, loadUserSession } from "@/lib/sui/zklogin/session";
 import { completeGoogleZkLogin } from "@/lib/sui/zklogin/completeLogin";
+import { clearLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
+import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
 
 export default function ZkLoginCallbackPage() {
   const router = useRouter();
@@ -32,8 +34,11 @@ export default function ZkLoginCallbackPage() {
         await completeGoogleZkLogin(idToken);
         router.replace("/passport?signed_in=1");
       } catch (err) {
+        clearLoginInFlight();
+        const message = err instanceof Error ? err.message : "Sign-in failed";
+        logAuthEvent("oauth_callback_error", { error: message });
         setStatus("error");
-        setErrorMsg(err instanceof Error ? err.message : "Sign-in failed");
+        setErrorMsg(message);
       }
     }
     void finish();

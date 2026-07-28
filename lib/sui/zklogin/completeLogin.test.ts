@@ -14,6 +14,10 @@ vi.mock("./signingSession", () => ({
   saveSigningSession: vi.fn(),
 }));
 
+vi.mock("@/lib/auth/ensureBrowserSession", () => ({
+  ensureBrowserSession: vi.fn().mockResolvedValue({ ok: true }),
+}));
+
 import { loadPendingSession, loadUserSession } from "./session";
 import { completeGoogleZkLogin } from "./completeLogin";
 
@@ -50,7 +54,7 @@ describe("completeGoogleZkLogin", () => {
     vi.mocked(loadUserSession).mockReturnValue(null);
 
     await expect(completeGoogleZkLogin("token")).rejects.toThrow(
-      "Login session expired. Please sign in again.",
+      "Sign-in could not finish",
     );
   });
 });

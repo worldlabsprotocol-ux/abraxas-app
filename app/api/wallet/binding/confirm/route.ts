@@ -4,7 +4,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { verifyIntentSignature } from "@/lib/sui/intent/personalMessage";
-import { getBindingChallenge, consumeBindingChallenge } from "@/lib/walletBinding/challenge";
+import {
+  consumeSuiBindingChallenge,
+  loadSuiBindingChallenge,
+} from "@/lib/walletBinding/suiChallenge";
 import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
 import { walletBindingClaim, CLAIM_ISSUERS } from "@/lib/credentials/claimSchema";
 
@@ -25,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const wallet = normalizeSuiAddress(body.sui_address);
 
-  const stored = getBindingChallenge(body.challenge_id);
+  const stored = await loadSuiBindingChallenge(body.challenge_id);
   if (!stored || stored.wallet !== wallet || stored.message !== body.message) {
     return NextResponse.json({ error: "Invalid or expired challenge" }, { status: 400 });
   }
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  if (!consumeBindingChallenge(body.challenge_id, wallet)) {
+  if (!await consumeSuiBindingChallenge(body.challenge_id, wallet)) {
     return NextResponse.json({ error: "Challenge already used" }, { status: 409 });
   }
 

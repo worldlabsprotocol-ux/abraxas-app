@@ -36,7 +36,7 @@ export default function PassportPage() {
 
 function PassportPageInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session, isLoading: authLoading } = useSuiAuth();
+  const { suiAddress, session, isLoading: authLoading, refreshSession } = useSuiAuth();
   const email = session?.email ?? "";
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,10 +77,10 @@ function PassportPageInner() {
 
   useEffect(() => {
     if (searchParams.get("signed_in") === "1") {
-      window.dispatchEvent(new CustomEvent("abraxas:zklogin-session"));
-      refresh();
+      refreshSession();
+      void refresh();
     }
-  }, [searchParams, refresh]);
+  }, [searchParams, refresh, refreshSession]);
 
   useEffect(() => {
     if (verificationParam === "complete" || verificationParam === "pending") {

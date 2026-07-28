@@ -12,6 +12,7 @@ import {
   isLoginInFlight,
   setLoginInFlight,
 } from "./loginInFlight";
+import { logAuthEvent } from "./authDebug";
 
 const EPOCH_BUFFER = 10;
 
@@ -24,8 +25,10 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
   }
 
   clearStaleLoginInFlight();
+  logAuthEvent("oauth_start");
 
   if (isLoginInFlight()) {
+    logAuthEvent("oauth_start", { error: "blocked_by_login_in_flight" });
     return { ok: false, error: "Sign-in already in progress. Wait a moment and try again." };
   }
 
@@ -54,6 +57,7 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
       return { ok: false, error: "Could not build OAuth URL" };
     }
 
+    logAuthEvent("oauth_redirect");
     window.location.assign(url);
     return { ok: true };
   } catch (e) {

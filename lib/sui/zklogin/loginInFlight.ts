@@ -1,4 +1,5 @@
 // FILE: lib/sui/zklogin/loginInFlight.ts
+// Guards duplicate OAuth starts; must clear on callback success AND failure.
 // Prevents duplicate OAuth starts; auto-clears stale locks after abandoned redirects.
 
 const LOGIN_IN_FLIGHT_KEY = "abraxas_zklogin_login_in_flight";
@@ -20,6 +21,12 @@ export function setLoginInFlight(active: boolean): void {
     sessionStorage.removeItem(LOGIN_IN_FLIGHT_KEY);
     sessionStorage.removeItem(LOGIN_IN_FLIGHT_TS_KEY);
   }
+  // Lazy import avoids circular deps when logging from session.ts
+  void import("./authDebug").then(({ logAuthEvent }) => {
+    logAuthEvent(active ? "login_in_flight_set" : "login_in_flight_cleared", {
+      loginInFlight: active,
+    });
+  });
 }
 
 export function clearStaleLoginInFlight(): void {

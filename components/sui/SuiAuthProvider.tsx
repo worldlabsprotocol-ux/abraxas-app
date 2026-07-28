@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/sui/SuiAuthProvider.tsx
-// Sui-native verification identity via zkLogin (replaces Solana wallet on /passport).
+// Single source of truth for zkLogin auth state — mount once at app root only.
 
 import {
   createContext,
@@ -16,6 +16,8 @@ import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin, clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
 
 interface SuiAuthContextValue {
   session: ZkLoginUserSession | null;
@@ -28,30 +30,44 @@ interface SuiAuthContextValue {
   error: string | null;
   signInWithGoogle: () => Promise<boolean>;
   signOut: () => void;
+  refreshSession: () => void;
 }
 
 const SuiAuthContext = createContext<SuiAuthContextValue | null>(null);
 
+function readSessionFromStorage(): ZkLoginUserSession | null {
+  if (typeof window === "undefined") return null;
+  return loadUserSession();
+}
+
 export function SuiAuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<ZkLoginUserSession | null>(null);
-  const [canSignTransactions, setCanSignTransactions] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<ZkLoginUserSession | null>(readSessionFromStorage);
+  const [canSignTransactions, setCanSignTransactions] = useState(() =>
+    canSignZkLoginTransactions(readSessionFromStorage()?.suiAddress),
+  );
+  const [isLoading, setIsLoading] = useState(() => typeof window === "undefined");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const reloadSession = useCallback(() => {
     clearStaleLoginInFlight();
     const loaded = loadUserSession();
     setSession(loaded);
-    setCanSignTransactions(canSignZkLoginTransactions(loaded?.suiAddress));
+    const signingReady = canSignZkLoginTransactions(loaded?.suiAddress);
+    setCanSignTransactions(signingReady);
     setIsLoading(false);
+    logAuthEvent("session_loaded", {
+      suiAddress: loaded?.suiAddress ?? null,
+      hasSigning: signingReady,
+    });
+    if (loaded?.suiAddress) {
+      logAuthEvent("auth_provider_authenticated", { suiAddress: loaded.suiAddress });
+    }
+    logAuthEvent("auth_provider_ready", { suiAddress: loaded?.suiAddress ?? null });
   }, []);
 
-  const reloadSession = useCallback(() => {
-    const loaded = loadUserSession();
-    setSession(loaded);
-    setCanSignTransactions(canSignZkLoginTransactions(loaded?.suiAddress));
-    setIsLoading(false);
-  }, []);
+  useEffect(() => {
+    reloadSession();
+  }, [reloadSession]);
 
   useEffect(() => {
     const onSessionChange = () => reloadSession();
@@ -64,14 +80,14 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   }, [reloadSession]);
 
   useEffect(() => {
-    setCanSignTransactions(canSignZkLoginTransactions(session?.suiAddress));
+    const signingReady = canSignZkLoginTransactions(session?.suiAddress);
+    setCanSignTransactions(signingReady);
     if (session?.suiAddress) {
-      void fetch("/api/auth/browser-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ sui_address: session.suiAddress }),
-      }).catch(() => { /* best-effort */ });
+      logAuthEvent(signingReady ? "wallet_signing_ready" : "wallet_signing_missing", {
+        suiAddress: session.suiAddress,
+        hasSigning: signingReady,
+      });
+      void ensureBrowserSession(session.suiAddress);
     }
   }, [session]);
 
@@ -112,6 +128,8 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     clearUserSession();
     setSession(null);
     setCanSignTransactions(false);
+    logAuthEvent("session_cleared");
+    void fetch("/api/auth/browser-session", { method: "DELETE", credentials: "include" }).catch(() => {});
   }, []);
 
   const value = useMemo<SuiAuthContextValue>(() => ({
@@ -125,7 +143,8 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     error,
     signInWithGoogle,
     signOut,
-  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signOut]);
+    refreshSession: reloadSession,
+  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signOut, reloadSession]);
 
   return (
     <SuiAuthContext.Provider value={value}>

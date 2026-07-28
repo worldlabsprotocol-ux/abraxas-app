@@ -3,6 +3,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
+import { clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
 
 export function useGoogleSignIn() {
   const auth = useSuiAuthOptional();
@@ -11,8 +12,12 @@ export function useGoogleSignIn() {
 
   const signIn = useCallback(async (): Promise<boolean> => {
     const signInFn = auth?.signInWithGoogle;
-    if (!signInFn || inFlightRef.current) return false;
+    if (!signInFn) {
+      return false;
+    }
+    if (inFlightRef.current) return false;
 
+    clearStaleLoginInFlight();
     inFlightRef.current = true;
     setBusy(true);
     try {

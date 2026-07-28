@@ -4,7 +4,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { createClient } from "@supabase/supabase-js";
-import { attachBrowserSessionCookie, issueBrowserSessionToken } from "@/lib/auth/browserSession";
+import {
+  attachBrowserSessionCookie,
+  BROWSER_SESSION_COOKIE,
+  issueBrowserSessionToken,
+} from "@/lib/auth/browserSession";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { sui_address?: string };
@@ -41,5 +45,17 @@ export async function POST(req: NextRequest) {
 
   const res = NextResponse.json({ ok: true, sui_address: sui });
   attachBrowserSessionCookie(res, token);
+  return res;
+}
+
+export async function DELETE() {
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(BROWSER_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
   return res;
 }

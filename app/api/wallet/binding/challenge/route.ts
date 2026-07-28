@@ -1,8 +1,8 @@
 // FILE: app/api/wallet/binding/challenge/route.ts
-// Step 1: issue a one-time wallet binding challenge.
+// Step 1: issue a one-time wallet binding challenge (Supabase-backed).
 
 import { NextRequest, NextResponse } from "next/server";
-import { createWalletBindingChallenge } from "@/lib/walletBinding/challenge";
+import { createSuiWalletBindingChallenge } from "@/lib/walletBinding/suiChallenge";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as { sui_address?: string };
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const challenge = createWalletBindingChallenge(body.sui_address.trim());
+    const challenge = await createSuiWalletBindingChallenge(body.sui_address.trim());
     return NextResponse.json(challenge);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Challenge failed";
