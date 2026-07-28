@@ -9,7 +9,7 @@ import { analyzeImageBuffer, livenessFromSelfieSignals } from "./imageSignals";
 import { evaluateBiometricDecision } from "./decision";
 import { buildExplainableSignals, explainableSignalsToRecord } from "./explainableSignals";
 import { estimateTamperScore } from "./tamperSignals";
-import type { BiometricAssessment, BiometricFraudSignals } from "./types";
+import type { BiometricAssessment, BiometricFraudSignals, BiometricSignals } from "./types";
 
 export const BIOMETRIC_ENGINE_VERSION = "abraxas-biometric-v2";
 
@@ -68,7 +68,7 @@ export async function analyzeBiometricCapture(input: {
   const decision = evaluateBiometricDecision(scores, fraudSignals);
   fraudSignals.fraud_risk_score = decision.fraud_risk_score;
 
-  const rawSignals: Record<string, number | string> = {
+  const rawSignals: BiometricSignals = {
     id_width: idSignals.width,
     id_height: idSignals.height,
     id_brightness: idSignals.brightness,

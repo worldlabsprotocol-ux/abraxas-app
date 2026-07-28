@@ -3,6 +3,11 @@
 
 export type BiometricDecision = "auto_approve" | "human_review" | "reject";
 
+/** Values stored in identity_biometric_assessments.signals (JSONB). */
+export type BiometricSignalValue = string | number | boolean | string[];
+
+export type BiometricSignals = Record<string, BiometricSignalValue>;
+
 export interface BiometricScores {
   face_match: number;
   liveness: number;
@@ -31,7 +36,7 @@ export interface BiometricAssessment {
   assurance_level: "L2" | "L3";
   review_method: "automated_biometric" | "human_biometric_match";
   engine_version: string;
-  signals: Record<string, number | string>;
+  signals: BiometricSignals;
   reasons: string[];
   analyzed_at: string;
 }

@@ -1,7 +1,7 @@
 // FILE: lib/idv/biometric/explainableSignals.ts
 // Machine-readable audit trail for every biometric assessment.
 
-import type { BiometricAssessment, BiometricDecision } from "./types";
+import type { BiometricAssessment, BiometricDecision, BiometricSignals } from "./types";
 
 export interface ExplainableBiometricSignals {
   face_detected_id: boolean;
@@ -53,6 +53,6 @@ function round4(n: number): number {
 /** Flat map for Supabase JSONB storage + admin UI. */
 export function explainableSignalsToRecord(
   explainable: ExplainableBiometricSignals,
-): Record<string, string | number | boolean | string[]> {
+): BiometricSignals {
   return { ...explainable };
 }
