@@ -35,12 +35,9 @@ function ProofCard({ proof }: { proof: ProtocolProof }) {
         }}>
           {proof.category}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.35rem" }}>
-          <span style={{ fontSize: "1.1rem" }} aria-hidden>{proof.icon}</span>
-          <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-            {proof.title}
-          </h3>
-        </div>
+        <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
+          {proof.title}
+        </h3>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.35rem", fontWeight: 600 }}>
           {proof.summary}
         </p>
@@ -99,12 +96,9 @@ export function HomeProtocolInAction() {
             border: `1px solid ${ACCENT}33`,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", marginBottom: "0.35rem" }}>
-            <span style={{ fontSize: "1.15rem" }} aria-hidden>{passport.icon}</span>
-            <h3 style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-              {passport.title}
-            </h3>
-          </div>
+          <h3 style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
+            {passport.title}
+          </h3>
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.25rem", fontWeight: 600 }}>
             {passport.summary}
           </p>

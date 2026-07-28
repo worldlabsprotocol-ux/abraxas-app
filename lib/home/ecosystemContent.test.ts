@@ -9,6 +9,7 @@ import {
   WITHOUT_ABRAXAS_INDUSTRIES,
   WITH_ABRAXAS_INDUSTRIES,
 } from "./ecosystemContent";
+import { GOOD_TROUBLE_PROOF_LINE } from "@/lib/positioningStrategy";
 
 describe("ecosystemContent", () => {
   it("lists four industries for without/with Abraxas comparison", () => {
@@ -39,6 +40,10 @@ describe("ecosystemContent", () => {
   it("finishes with passport as the connecting layer", () => {
     expect(PROTOCOL_PASSPORT_CONNECTOR.title).toBe("Abraxas Passport");
     expect(PROTOCOL_PASSPORT_CONNECTOR.demonstrates).toMatch(/connecting every use case/i);
+  });
+
+  it("uses product-centric good trouble proof line", () => {
+    expect(PROTOCOL_IN_ACTION_PROOFS[2]?.demonstrates).toBe(GOOD_TROUBLE_PROOF_LINE);
   });
 
   it("surfaces Cielo in live ecosystem partners", () => {
