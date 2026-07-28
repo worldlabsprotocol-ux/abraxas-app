@@ -6,25 +6,73 @@ export const RELYING_PARTY_NORTH_STAR =
   "Every application that accepts Abraxas Passport makes the network more valuable. Relying party adoption is the north star. credentials and SDK exist to get there.";
 
 /**
- * Strategic north star (2026): portable eligibility, not "KYC for DeFi."
- * Businesses don't want identity — they want to sell. Every verification step is friction.
- * Abraxas = Stripe for eligibility: "Can this user legally use my service?"
+ * Strategic north star: trusted eligibility, not identity plumbing.
+ * Mechanism = verify once. Product = never build verification again.
+ * Network question: "Has this already been verified?"
  */
+export const MERCHANT_PRODUCT_PITCH = "Never build verification again.";
+
 export const ELIGIBILITY_NORTH_STAR =
-  "The internet's reusable verification layer. Reduce trust to one question: Can this user do this?";
+  "The internet's reusable verification layer. One question: Has this already been verified?";
+
+export const DEVELOPER_API_NORTH_STAR = "await abraxas.can(user, { age: 21, identity: true })";
+
+/** Aspirational SDK surface — maps to POST /api/credentials/verify today. */
+export const ABRAXAS_CAN_API_EXAMPLE = `const eligibility = await abraxas.can(user, {
+  age: 21,
+  identity: true,
+  jurisdiction: ["US"],
+});
+
+if (eligibility.allowed) {
+  unlockExperience();
+}`;
+
+/** What every company builds in-house without Abraxas. */
+export const BUILD_VERIFICATION_YOURSELF = [
+  "Build identity flows",
+  "Build age verification",
+  "Integrate vendors",
+  "Store sensitive documents",
+  "Handle fraud",
+  "Build review queues",
+  "Maintain audit logs",
+  "Update compliance rules",
+  "Support users",
+] as const;
+
+/** The real competitor: DIY checks without a trusted issuer. */
+export const DIY_ELIGIBILITY_COMPETITOR = `if (user.age >= 21) { ... }`;
+
+export const ABRAXAS_ELIGIBILITY_ANSWER = `if (credential.age21) { ... }`;
+
+/** Why a merchant integrates Abraxas instead of building verification in-house. */
+export const WHY_INTEGRATE_ABRAXAS = [
+  "Better conversion — every extra upload loses users; don't ask again if verification already exists",
+  "Lower compliance burden — consume trusted credentials instead of becoming an identity company",
+  "Lower engineering cost — one SDK instead of months building verification infrastructure",
+  "Better privacy — merchants need answers (over 21? verified? resident?), not passport images",
+  "Network effects — more merchants → more valuable credentials → more users arrive pre-verified",
+] as const;
+
+/** Investor / partner flywheel. */
+export const ELIGIBILITY_FLYWHEEL = [
+  "User verifies once",
+  "Receives reusable credential",
+  "Merchant integrates one API",
+  "Instant eligibility check",
+  "Less onboarding friction",
+  "Higher conversion",
+  "More merchants integrate",
+  "Credential becomes more valuable",
+  "More users verify once",
+] as const;
 
 /** Product-focused taglines (homepage hero may stay protocol-focused). */
 export const PRODUCT_TAGLINE_OPTIONS = [
   "Verify once. Reuse everywhere.",
   "One verification. Unlimited trusted experiences.",
-] as const;
-
-/** Why a merchant integrates Abraxas instead of building verification in-house. */
-export const WHY_INTEGRATE_ABRAXAS = [
-  "Higher conversion — fewer abandoned signups from repeated document uploads",
-  "Lower verification costs — reuse prior checks when policy allows",
-  "Faster onboarding — one API instead of sign-up, email, KYC, age, fraud, review, audit",
-  "Better privacy — merchants receive only the claims they need, not raw documents",
+  "Never build verification again.",
 ] as const;
 
 /** What merchants want from the API — not documents, just claims. */
@@ -35,7 +83,7 @@ export const MERCHANT_CLAIMS_EXAMPLE = {
   expires: "2028-05-10",
 } as const;
 
-/** Verification modules — each verified once, reused where appropriate. */
+/** Verification modules — inputs to credentials, not the product. */
 export const VERIFICATION_MODULES = [
   "Age (18+, 21+)",
   "Identity (government ID, biometrics, liveness)",
@@ -44,7 +92,11 @@ export const VERIFICATION_MODULES = [
   "Professional (licenses, memberships)",
 ] as const;
 
-/** Homepage / hero. keep high-signal, no TTL/revocation nuance. */
+/** Long-term category: trusted eligibility (Stripe owns payments, OAuth owns auth). */
+export const ELIGIBILITY_CATEGORY_VISION =
+  "If Stripe owns money movement and OAuth owns authentication, Abraxas owns trusted eligibility.";
+
+/** Homepage / hero. mechanism, not merchant pitch — see MERCHANT_PRODUCT_PITCH for integrate. */
 export const MARKETING_HERO_TAGLINE = "Verify once. Transact everywhere.";
 
 /** Docs / trust-framework only. honest refresh model. */

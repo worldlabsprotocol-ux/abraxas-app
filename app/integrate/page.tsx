@@ -17,7 +17,7 @@ import {
 } from "@/lib/infrastructurePositioning";
 import { INTEGRATE_COUNTERPARTY_TRUST } from "@/lib/trustTransfer";
 import { TRUST_IS_TIME_BOUND_HEADLINE, TRUST_VERIFY_ONCE_HONEST } from "@/lib/trustOverTime";
-import { BUILDER_PROOF_EXAMPLES } from "@/lib/positioningStrategy";
+import { BUILDER_PROOF_EXAMPLES, ABRAXAS_CAN_API_EXAMPLE, MERCHANT_PRODUCT_PITCH, WHY_INTEGRATE_ABRAXAS } from "@/lib/positioningStrategy";
 import { INTEGRATE_PRODUCTION_NOTE } from "@/lib/currentStatus";
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { AGENT_POSITIONING_LONG, AGENT_POSITIONING_SHORT } from "@/lib/agentVerification";
@@ -39,9 +39,24 @@ export default function IntegratePage() {
     <RedesignPage maxWidth={880}>
       <PageHeader
         eyebrow="Integrate Abraxas"
-        title="Embed verification. Don't rebuild KYC."
-        subtitle={INTEGRATE_PRODUCTION_NOTE}
+        title={MERCHANT_PRODUCT_PITCH}
+        subtitle="Add trusted eligibility in minutes — not months. One API call instead of building identity, age verification, fraud, review queues, and audit logs."
       />
+
+      <ContentCard title="The entire pitch">
+        <pre style={{
+          fontFamily: MONO, fontSize: "0.72rem", lineHeight: 1.6,
+          padding: "1rem", borderRadius: 12, margin: "0 0 1rem",
+          background: "var(--surface-inset)", border: "1px solid var(--border)",
+          overflow: "auto", color: "var(--text-secondary)",
+        }}>
+          {ABRAXAS_CAN_API_EXAMPLE}
+        </pre>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.6 }}>
+          {INTEGRATE_PRODUCTION_NOTE} Today: <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>POST /api/credentials/verify</code>
+        </p>
+        <BulletList items={[...WHY_INTEGRATE_ABRAXAS]} />
+      </ContentCard>
 
       <EliteConceptDemo config={BUILD_ELITE_DEMO} id="integrate-demo" />
 
