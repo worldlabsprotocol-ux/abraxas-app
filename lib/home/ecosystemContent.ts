@@ -17,6 +17,24 @@ export interface EcosystemPartnerCard {
   status?: "live" | "coming";
 }
 
+export interface ProtocolProof {
+  id: string;
+  category: string;
+  icon: string;
+  title: string;
+  summary: string;
+  demonstrates: string;
+  href: string;
+}
+
+export interface ProtocolConnector {
+  icon: string;
+  title: string;
+  summary: string;
+  demonstrates: string;
+  href: string;
+}
+
 export const WITHOUT_ABRAXAS_INDUSTRIES: IndustryCard[] = [
   { id: "cannabis", icon: "🌿", title: "Cannabis", problem: "Verify 21+ every visit" },
   { id: "real-estate", icon: "🏡", title: "Real Estate", problem: "Repeat ownership & identity checks" },
@@ -81,45 +99,41 @@ export const LIVE_ECOSYSTEM_PARTNERS: EcosystemPartnerCard[] = [
   },
 ];
 
-export const VERIFIED_ECOSYSTEM_CARDS: EcosystemPartnerCard[] = [
+/** Three proofs that the protocol works in different domains — shown in progression order. */
+export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
   {
     id: "cielo",
+    category: "Genesis Asset",
     icon: "🌅",
     title: "Cielo Sunrise",
-    summary: "Genesis verified asset",
+    summary: "Verified hospitality asset",
+    demonstrates: "Real-world asset verification and registry.",
     href: "/flagship",
-    status: "live",
-  },
-  {
-    id: "good-trouble",
-    icon: "🌿",
-    title: "Good Trouble Canna",
-    summary: "21+ eligibility",
-    href: "/good-trouble",
-    status: "live",
   },
   {
     id: "chickasaw",
+    category: "Traditional Markets",
     icon: "🏡",
     title: "Chickasaw Project",
-    summary: "Property verification",
+    summary: "Property verification and buyer diligence",
+    demonstrates: "Trust infrastructure for conventional transactions.",
     href: "/case-studies/chickasaw-project",
-    status: "live",
   },
   {
-    id: "passport",
-    icon: "🛂",
-    title: "Abraxas Passport",
-    summary: "Reusable identity",
-    href: "/passport",
-    status: "live",
-  },
-  {
-    id: "more",
-    icon: "➕",
-    title: "More integrations coming",
-    summary: "Partners across regulated industries",
-    href: "/design-partner",
-    status: "coming",
+    id: "good-trouble",
+    category: "Reusable Credentials",
+    icon: "🌿",
+    title: "Good Trouble Canna",
+    summary: "21+ eligibility verification",
+    demonstrates: "Reusable compliance credentials across businesses — the first proof of portable eligibility.",
+    href: "/good-trouble",
   },
 ];
+
+export const PROTOCOL_PASSPORT_CONNECTOR: ProtocolConnector = {
+  icon: "🛂",
+  title: "Abraxas Passport",
+  summary: "Portable identity credentials",
+  demonstrates: "The reusable identity layer connecting every use case.",
+  href: "/passport",
+};

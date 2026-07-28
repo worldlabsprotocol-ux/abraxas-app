@@ -14,8 +14,7 @@ import { HomeVerifyOnceDiagram } from "@/components/home/HomeVerifyOnceDiagram";
 import { HomeVerificationPipeline } from "@/components/home/HomeVerificationPipeline";
 import { HomeTrustPillars } from "@/components/home/HomeTrustPillars";
 import { HomeRegulatedIndustries } from "@/components/home/HomeRegulatedIndustries";
-import { HomeLiveEcosystem } from "@/components/home/HomeLiveEcosystem";
-import { HomeVerifiedEcosystem } from "@/components/home/HomeVerifiedEcosystem";
+import { HomeProtocolInAction } from "@/components/home/HomeProtocolInAction";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { HomeDocsBrief } from "@/components/home/HomeDocsBrief";
 import { HomeRoadmapBrief } from "@/components/home/HomeRoadmapBrief";
@@ -38,8 +37,7 @@ function HomeContent() {
         <HomeVerificationPipeline />
         <HomeTrustPillars />
         <HomeRegulatedIndustries />
-        <HomeLiveEcosystem />
-        <HomeVerifiedEcosystem />
+        <HomeProtocolInAction />
         <HomeLiveStats />
         <HomeDocsBrief />
         <HomeRoadmapBrief />

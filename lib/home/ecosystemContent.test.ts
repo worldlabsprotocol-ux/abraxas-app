@@ -3,8 +3,9 @@
 import { describe, expect, it } from "vitest";
 import {
   LIVE_ECOSYSTEM_PARTNERS,
+  PROTOCOL_IN_ACTION_PROOFS,
+  PROTOCOL_PASSPORT_CONNECTOR,
   REGULATED_INDUSTRY_PILLARS,
-  VERIFIED_ECOSYSTEM_CARDS,
   WITHOUT_ABRAXAS_INDUSTRIES,
   WITH_ABRAXAS_INDUSTRIES,
 } from "./ecosystemContent";
@@ -25,19 +26,22 @@ describe("ecosystemContent", () => {
     ]);
   });
 
-  it("surfaces live ecosystem partners including genesis asset", () => {
-    expect(LIVE_ECOSYSTEM_PARTNERS[0]?.title).toBe("Cielo Sunrise");
-    expect(LIVE_ECOSYSTEM_PARTNERS.some((p) => p.title.includes("Good Trouble"))).toBe(true);
-    expect(LIVE_ECOSYSTEM_PARTNERS.some((p) => p.title.includes("Chickasaw"))).toBe(true);
+  it("orders protocol proofs as genesis → traditional → reusable eligibility", () => {
+    expect(PROTOCOL_IN_ACTION_PROOFS.map((p) => p.id)).toEqual([
+      "cielo",
+      "chickasaw",
+      "good-trouble",
+    ]);
+    expect(PROTOCOL_IN_ACTION_PROOFS[0]?.category).toBe("Genesis Asset");
+    expect(PROTOCOL_IN_ACTION_PROOFS[2]?.category).toBe("Reusable Credentials");
   });
 
-  it("positions verified ecosystem with Cielo, cannabis, land, and passport", () => {
-    expect(VERIFIED_ECOSYSTEM_CARDS.map((c) => c.title)).toEqual([
-      "Cielo Sunrise",
-      "Good Trouble Canna",
-      "Chickasaw Project",
-      "Abraxas Passport",
-      "More integrations coming",
-    ]);
+  it("finishes with passport as the connecting layer", () => {
+    expect(PROTOCOL_PASSPORT_CONNECTOR.title).toBe("Abraxas Passport");
+    expect(PROTOCOL_PASSPORT_CONNECTOR.demonstrates).toMatch(/connecting every use case/i);
+  });
+
+  it("surfaces Cielo in live ecosystem partners", () => {
+    expect(LIVE_ECOSYSTEM_PARTNERS[0]?.title).toBe("Cielo Sunrise");
   });
 });
