@@ -21,7 +21,8 @@ import {
   BUILDER_PROOF_EXAMPLES,
   ABRAXAS_CAN_API_EXAMPLE,
   ABRAXAS_TRUST_API_EXAMPLE,
-  COMPANY_MISSION,
+  ABRAXAS_CATEGORY,
+  COMPANY_MISSION_LONG_TERM,
   ABRAXAS_ICONIC_LINE,
   MERCHANT_PRODUCT_PITCH,
   WHY_INTEGRATE_ABRAXAS,
@@ -47,10 +48,17 @@ export default function IntegratePage() {
   return (
     <RedesignPage maxWidth={880}>
       <PageHeader
-        eyebrow={COMPANY_MISSION}
+        eyebrow={ABRAXAS_CATEGORY}
         title={MERCHANT_PRODUCT_PITCH}
         subtitle={`${ABRAXAS_ICONIC_LINE} Add trusted eligibility in minutes, not months. One API call instead of building identity, age verification, fraud, review queues, and audit logs.`}
       />
+
+      <p style={{
+        fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-muted)",
+        lineHeight: 1.6, margin: "0 0 1.25rem", maxWidth: 720,
+      }}>
+        Long term mission: {COMPANY_MISSION_LONG_TERM}
+      </p>
 
       <ContentCard title="The entire pitch">
         <pre style={{

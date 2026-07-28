@@ -3,7 +3,9 @@ import {
   RELYING_PARTY_NORTH_STAR,
   ELIGIBILITY_NORTH_STAR,
   MERCHANT_PRODUCT_PITCH,
-  COMPANY_MISSION,
+  ABRAXAS_CATEGORY,
+  COMPANY_MISSION_LONG_TERM,
+  MECHANISM_TAGLINE,
   ABRAXAS_ICONIC_LINE,
   DEVELOPER_API_NORTH_STAR,
   MARKETING_HERO_TAGLINE,
@@ -15,6 +17,7 @@ import {
   TRUST_NETWORK_TWO_SIDED,
   BUILD_VERIFICATION_YOURSELF,
   FIRST_WEDGE_FOCUS,
+  TARGET_PROOF_METRICS,
 } from "./positioningStrategy";
 
 describe("positioningStrategy", () => {
@@ -22,8 +25,19 @@ describe("positioningStrategy", () => {
     expect(RELYING_PARTY_NORTH_STAR.toLowerCase()).toContain("relying party");
   });
 
-  it("defines company mission as trust layer", () => {
-    expect(COMPANY_MISSION.toLowerCase()).toContain("trust layer");
+  it("leads with reusable verification category", () => {
+    expect(ABRAXAS_CATEGORY.toLowerCase()).toContain("reusable verification layer");
+  });
+
+  it("reserves trust layer as long term mission", () => {
+    expect(COMPANY_MISSION_LONG_TERM.toLowerCase()).toContain("trust layer");
+    expect(ABRAXAS_CATEGORY).not.toBe(COMPANY_MISSION_LONG_TERM);
+  });
+
+  it("defines messaging hierarchy", () => {
+    expect(MERCHANT_PRODUCT_PITCH.toLowerCase()).toContain("never build verification");
+    expect(MECHANISM_TAGLINE.toLowerCase()).toContain("verify once");
+    expect(DEVELOPER_API_NORTH_STAR).toContain("abraxas.can");
   });
 
   it("sells never build verification again to merchants", () => {
@@ -74,5 +88,9 @@ describe("positioningStrategy", () => {
   it("keeps first wedge focused", () => {
     expect(FIRST_WEDGE_FOCUS).toHaveLength(3);
     expect(FIRST_WEDGE_FOCUS[0]?.toLowerCase()).toContain("age");
+  });
+
+  it("lists target proof metrics to gather post launch", () => {
+    expect(TARGET_PROOF_METRICS.length).toBeGreaterThanOrEqual(4);
   });
 });

@@ -1,8 +1,32 @@
 // FILE: lib/positioningStrategy.ts
 // Positioning guardrails. marketing vs docs split, north star, parked narratives.
 
-/** Company mission. Bigger than identity, verification, or eligibility alone. */
-export const COMPANY_MISSION = "The trust layer for the internet.";
+/**
+ * Messaging hierarchy (lead with concrete category, earn the mission):
+ * - Category: reusable verification layer (lead today)
+ * - Mission (5–10yr): trust layer for the internet
+ * - Product: never build verification again
+ * - Mechanism: verify once, reuse everywhere
+ * - Developer: await abraxas.can(...)
+ */
+
+/** Lead category. Concrete and credible today. */
+export const ABRAXAS_CATEGORY = "The reusable verification layer for the internet.";
+
+/** Long term mission. Earn this position after category is established. */
+export const COMPANY_MISSION_LONG_TERM = "The trust layer for the internet.";
+
+/** @deprecated Use ABRAXAS_CATEGORY for public lead copy. */
+export const COMPANY_MISSION = ABRAXAS_CATEGORY;
+
+/** Product pitch for merchants and CTOs. */
+export const MERCHANT_PRODUCT_PITCH = "Never build verification again.";
+
+/** Mechanism tagline. How it works for users. */
+export const MECHANISM_TAGLINE = "Verify once. Reuse everywhere.";
+
+/** Homepage hero. Protocol surface; mechanism variant in MECHANISM_TAGLINE. */
+export const MARKETING_HERO_TAGLINE = "Verify once. Transact everywhere.";
 
 /** Every business asks this. Identity is one input. */
 export const TRUST_DECISION_QUESTION = "Can I trust this user enough to do X?";
@@ -11,19 +35,21 @@ export const TRUST_DECISION_QUESTION = "Can I trust this user enough to do X?";
 export const ABRAXAS_ICONIC_LINE =
   "Every verification should happen once. Every trust decision should happen instantly.";
 
+/** Network question merchants ask Abraxas. */
+export const ELIGIBILITY_NORTH_STAR =
+  "Has this already been verified by a trusted issuer?";
+
+/** Proof points to gather after launch (make positioning tangible). */
+export const TARGET_PROOF_METRICS = [
+  "Time to integrate: under 30 minutes",
+  "Verification reuse: % of returning users who skip document upload",
+  "Onboarding speed: average time to eligibility",
+  "Business impact: % reduction in repeated verification requests",
+] as const;
+
 /** The metric that compounds: apps that accept and act on Passport proof. */
 export const RELYING_PARTY_NORTH_STAR =
   "Every application that accepts Abraxas Passport makes the network more valuable. Relying party adoption is the north star. credentials and SDK exist to get there.";
-
-/**
- * Merchant product: never build verification again.
- * Network question: has this already been verified?
- * Category: trust layer (eligibility is the first wedge).
- */
-export const MERCHANT_PRODUCT_PITCH = "Never build verification again.";
-
-export const ELIGIBILITY_NORTH_STAR =
-  "Has this already been verified by a trusted issuer?";
 
 export const DEVELOPER_API_NORTH_STAR = "await abraxas.can(user, { age: 21, identity: true })";
 
@@ -136,10 +162,7 @@ export const VERIFICATION_MODULES = [
 
 /** Long-term category vision. */
 export const ELIGIBILITY_CATEGORY_VISION =
-  "If Stripe owns money movement and OAuth owns authentication, Abraxas owns the trust layer for the internet.";
-
-/** Homepage hero. Mechanism, not merchant pitch. */
-export const MARKETING_HERO_TAGLINE = "Verify once. Transact everywhere.";
+  `Lead with ${ABRAXAS_CATEGORY} Mission: ${COMPANY_MISSION_LONG_TERM}`;
 
 /** Docs / trust-framework only. honest refresh model. */
 export const DOCS_REFRESH_PROMISE =
