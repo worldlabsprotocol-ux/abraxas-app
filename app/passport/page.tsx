@@ -69,6 +69,7 @@ function PassportPageInner() {
     walletDone,
     identityStatus: identityStatus === "earned" ? "approved"
       : identityStatus === "pending" ? "in_progress"
+      : identityStatus === "resubmission_requested" ? "requires_resubmission"
       : identityStatus === "declined" ? "declined"
       : "not_started",
     credentialStatus: hasCredential ? "active" : "not_issued",

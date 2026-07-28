@@ -1,7 +1,17 @@
 // FILE: lib/idv/biometric/persistAssessment.ts
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { BiometricAssessment } from "./types";
+import type { BiometricAssessment, BiometricSignals } from "./types";
+
+function parseStoredSignals(raw: unknown): BiometricSignals {
+  if (!raw || typeof raw !== "object") return {};
+  return raw as BiometricSignals;
+}
+
+function reasonsFromSignals(signals: BiometricSignals): string[] {
+  const reasons = signals.rejection_reasons;
+  return Array.isArray(reasons) ? reasons.filter((r): r is string => typeof r === "string") : [];
+}
 
 function getSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -27,7 +37,10 @@ export async function persistBiometricAssessment(
     assurance_level: assessment.assurance_level,
     review_method: assessment.review_method,
     engine_version: assessment.engine_version,
-    signals: assessment.signals,
+    signals: {
+      ...assessment.signals,
+      rejection_reasons: assessment.reasons,
+    },
     analyzed_at: assessment.analyzed_at,
   }, { onConflict: "capture_session_id" });
 
@@ -62,7 +75,8 @@ export async function getBiometricAssessment(
     assurance_level: data.assurance_level,
     review_method: data.review_method,
     engine_version: data.engine_version,
-    signals: (data.signals as Record<string, number>) ?? {},
+    signals: (data.signals as BiometricSignals) ?? {},
+    reasons: reasonsFromSignals(parseStoredSignals(data.signals)),
     analyzed_at: data.analyzed_at,
   };
 }

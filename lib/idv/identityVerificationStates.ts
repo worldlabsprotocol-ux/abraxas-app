@@ -96,13 +96,16 @@ export function computePassportSetupState(input: {
   } else if (!walletBound) {
     nextAction = "bind_wallet";
     nextActionLabel = "Sign to bind wallet";
-  } else if (
+  } else   if (
     input.identityStatus === "declined" ||
     input.identityStatus === "expired" ||
     input.identityStatus === "error"
   ) {
     nextAction = "retry_verify";
     nextActionLabel = "Retry optional ID check";
+  } else if (input.identityStatus === "requires_resubmission") {
+    nextAction = "retry_verify";
+    nextActionLabel = "Upload new documents";
   } else if (
     input.identityStatus === "in_progress" ||
     input.identityStatus === "submitted" ||

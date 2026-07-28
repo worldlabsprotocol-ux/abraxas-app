@@ -17,6 +17,9 @@ export function getBiometricThresholds(): BiometricThresholds {
     selfieMin: parseEnvFloat("ABRAXAS_BIOMETRIC_SELFIE_MIN", 0.35),
     autoApproveFace: parseEnvFloat("ABRAXAS_BIOMETRIC_AUTO_FACE", 0.68),
     autoApproveLiveness: parseEnvFloat("ABRAXAS_BIOMETRIC_AUTO_LIVENESS", 0.62),
+    facePresenceMin: parseEnvFloat("ABRAXAS_BIOMETRIC_FACE_PRESENCE_MIN", 0.32),
+    documentAspectMin: parseEnvFloat("ABRAXAS_BIOMETRIC_DOCUMENT_ASPECT_MIN", 0.38),
+    documentClassMin: parseEnvFloat("ABRAXAS_BIOMETRIC_DOCUMENT_CLASS_MIN", 0.35),
   };
 }
 

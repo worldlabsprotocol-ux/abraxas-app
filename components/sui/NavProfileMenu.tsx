@@ -7,11 +7,18 @@ import { useEffect, useRef, useState } from "react";
 import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
+import { useAdminAccess } from "@/lib/hooks/useAdminAccess";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
 const DEFAULT_AVATAR = "#10B981";
+
+const ADMIN_MENU_ITEMS = [
+  { label: "Identity reviews", href: "/admin/identity", description: "Abraxas Verify queue" },
+  { label: "Asset reviews", href: "/admin", description: "Verification center" },
+  { label: "Partners & keys", href: "/admin/partners", description: "Relying party registry" },
+] as const;
 
 const MENU_ITEMS = [
   { label: "Passport", href: "/passport", description: "Your proofs & verification" },
@@ -24,6 +31,7 @@ const MENU_ITEMS = [
 export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
   const auth = useSuiAuthOptional();
   const { data: profile } = useUserProfile();
+  const { isAdmin } = useAdminAccess();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -131,6 +139,36 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
                 </div>
               </Link>
             ))}
+            {isAdmin && (
+              <>
+                <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
+                <div style={{ padding: "0.35rem 0.7rem 0.2rem", fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                  Admin
+                </div>
+                {ADMIN_MENU_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    role="menuitem"
+                    onClick={() => setOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "0.65rem 0.7rem",
+                      borderRadius: 10,
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    <div style={{ fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700, color: ACCENT }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>
+                      {item.description}
+                    </div>
+                  </Link>
+                ))}
+              </>
+            )}
             <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
             <button
               type="button"

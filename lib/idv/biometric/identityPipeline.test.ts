@@ -33,7 +33,18 @@ describe("Abraxas Verify identity pipeline", () => {
 
   it("keeps auto-approve disabled by default — high scores queue for human review", () => {
     expect(isBiometricAutoApproveEnabled()).toBe(false);
-    const result = evaluateBiometricDecision(HIGH_SCORES);
+    const result = evaluateBiometricDecision(HIGH_SCORES, {
+      id_face_presence: 0.7,
+      selfie_face_presence: 0.75,
+      document_aspect: 0.8,
+      document_class: "passport",
+      document_class_confidence: 0.75,
+      document_edge_density: 0.1,
+      fraud_risk_score: 0,
+      selfie_face_count: 1,
+      id_tamper_score: 0.1,
+      selfie_tamper_score: 0.1,
+    });
     expect(result.decision).toBe("human_review");
     expect(result.assurance_level).toBe("L2");
     expect(result.review_method).toBe("human_biometric_match");
@@ -41,7 +52,18 @@ describe("Abraxas Verify identity pipeline", () => {
 
   it("auto-approves only when explicitly enabled", () => {
     process.env.ABRAXAS_BIOMETRIC_AUTO_APPROVE = "1";
-    const result = evaluateBiometricDecision(HIGH_SCORES);
+    const result = evaluateBiometricDecision(HIGH_SCORES, {
+      id_face_presence: 0.7,
+      selfie_face_presence: 0.75,
+      document_aspect: 0.8,
+      document_class: "passport",
+      document_class_confidence: 0.75,
+      document_edge_density: 0.1,
+      fraud_risk_score: 0,
+      selfie_face_count: 1,
+      id_tamper_score: 0.1,
+      selfie_tamper_score: 0.1,
+    });
     expect(result.decision).toBe("auto_approve");
     expect(result.assurance_level).toBe("L3");
   });

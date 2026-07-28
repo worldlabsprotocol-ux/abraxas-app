@@ -13,6 +13,7 @@ import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { IndependentBiometricStatusCard } from "@/components/passport/IndependentBiometricStatusCard";
+import { MyVerificationPanel } from "@/components/passport/MyVerificationPanel";
 import { PassportTierCapabilities } from "@/components/passport/PassportTierCapabilities";
 import Link from "next/link";
 
@@ -261,6 +262,8 @@ export function PassportSetupPanel({
                   )}
                 </p>
 
+                <MyVerificationPanel email={email} suiAddress={suiAddress} onUpdated={onRefresh} />
+
                 {(identityStatus === "pending" || isPolling) ? (
                   <div style={{
                     padding: "0.65rem 0.75rem", borderRadius: 10,
@@ -278,6 +281,19 @@ export function PassportSetupPanel({
                     <Btn variant="secondary" size="sm" loading={isRefreshing} onClick={onRefresh}>
                       Check status now
                     </Btn>
+                  </div>
+                ) : identityStatus === "resubmission_requested" ? (
+                  <div style={{
+                    padding: "0.65rem 0.75rem", borderRadius: 10,
+                    background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                    marginBottom: "0.65rem",
+                  }}>
+                    <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "#F59E0B", marginBottom: 4 }}>
+                      Resubmission requested
+                    </div>
+                    <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
+                      See the note above and upload new documents when ready.
+                    </p>
                   </div>
                 ) : identityStatus === "declined" ? (
                   <div style={{

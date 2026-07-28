@@ -25,7 +25,7 @@ import {
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { computePassportSetupState, resolveCredentialStatus, resolveIdentityVerificationStatus } from "@/lib/idv/identityVerificationStates";
 
-export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined";
+export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined" | "resubmission_requested";
 export type CredentialVerifyState = "idle" | "checking" | "valid" | "invalid";
 
 export interface MeCredentialResponse {
@@ -140,6 +140,9 @@ async function runIdentityPipeline(
   } else if (data.status === "pending") {
     identityStatus = "pending";
     via = data.via ?? null;
+  } else if (data.status === "requires_resubmission") {
+    identityStatus = "resubmission_requested";
+    via = data.via ?? null;
   } else if (data.status === "declined") {
     identityStatus = "declined";
   } else if (suiAddress) {
@@ -187,7 +190,7 @@ export function usePassportVerification(
     refetchInterval: query => {
       const d = query.state.data;
       if (!d) return false;
-      if (d.identityStatus === "pending" || d.onChain?.needs_provision) return POLL_MS;
+      if (d.identityStatus === "pending" || d.identityStatus === "resubmission_requested" || d.onChain?.needs_provision) return POLL_MS;
       return false;
     },
   });

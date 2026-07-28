@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkAdmin } from "@/lib/adminAuth";
+import { checkAdminAccess } from "@/lib/adminAuth";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -23,7 +23,7 @@ interface DocRow {
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
   if (sessionIds.length > 0) {
     const { data: assessments } = await sb
       .from("identity_biometric_assessments")
-      .select("capture_session_id, face_match_score, liveness_score, document_quality_score, selfie_quality_score, decision, assurance_level, review_method, engine_version")
+      .select("capture_session_id, face_match_score, liveness_score, document_quality_score, selfie_quality_score, decision, assurance_level, review_method, engine_version, reviewer_decision, reviewer_id, reviewed_at, signals")
       .in("capture_session_id", sessionIds);
 
     for (const row of assessments ?? []) {
