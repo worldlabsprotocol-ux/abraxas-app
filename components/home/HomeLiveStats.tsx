@@ -4,22 +4,16 @@
 
 import { useEffect, useState } from "react";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import {
+  buildHomeStatCards,
+  type HomeMetricsStatus,
+  type PublicMetrics,
+} from "@/lib/home/publicMetrics";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = "'JetBrains Mono',monospace";
 
-interface PublicMetrics {
-  verified_assets?: number;
-  active_credentials?: number;
-  zklogin_wallets?: number;
-  verification_network?: {
-    manual_idv_pending?: number;
-    manual_idv_approved?: number;
-    credentials_issued_30d?: number;
-  };
-}
-
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value, loading }: { label: string; value: string; loading?: boolean }) {
   return (
     <div style={{
       padding: "1rem 1.1rem",
@@ -28,6 +22,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
       border: "1px solid var(--border-strong)",
       minWidth: 140,
       flex: "1 1 140px",
+      opacity: loading ? 0.65 : 1,
     }}>
       <div style={{ fontFamily: MONO, fontSize: "1.35rem", fontWeight: 800, color: "var(--accent)", letterSpacing: "-0.02em" }}>
         {value}
@@ -41,19 +36,26 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 export function HomeLiveStats() {
   const [metrics, setMetrics] = useState<PublicMetrics | null>(null);
+  const [status, setStatus] = useState<HomeMetricsStatus>("loading");
 
   useEffect(() => {
     void fetch("/api/metrics/public")
-      .then(r => r.json())
-      .then((data: { metrics?: PublicMetrics }) => setMetrics(data.metrics ?? null))
-      .catch(() => setMetrics(null));
+      .then(async (r) => {
+        if (!r.ok) throw new Error("metrics_unavailable");
+        return r.json() as Promise<{ metrics?: PublicMetrics }>;
+      })
+      .then((data) => {
+        setMetrics(data.metrics ?? null);
+        setStatus("ready");
+      })
+      .catch(() => {
+        setMetrics(null);
+        setStatus("error");
+      });
   }, []);
 
-  const vn = metrics?.verification_network;
-  const pending = vn?.manual_idv_pending ?? 0;
-  const verifiedIds = vn?.manual_idv_approved ?? 0;
-  const credentials = metrics?.active_credentials ?? vn?.credentials_issued_30d ?? 0;
-  const assets = metrics?.verified_assets ?? 0;
+  const cards = buildHomeStatCards(metrics);
+  const loading = status === "loading";
 
   return (
     <section aria-labelledby="home-live-stats">
@@ -67,11 +69,20 @@ export function HomeLiveStats() {
         Trust in motion
       </h2>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
-        <StatCard label="Verified identities" value={verifiedIds} />
-        <StatCard label="Verified assets" value={assets} />
-        <StatCard label="Pending reviews" value={pending} />
-        <StatCard label="Active credentials" value={credentials} />
+        {cards.map((card) => (
+          <StatCard
+            key={card.key}
+            label={card.label}
+            value={loading ? "…" : card.value}
+            loading={loading}
+          />
+        ))}
       </div>
+      {status === "error" && (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.75rem 0 0" }}>
+          Live metrics temporarily unavailable — counts will refresh when the API recovers.
+        </p>
+      )}
     </section>
   );
 }

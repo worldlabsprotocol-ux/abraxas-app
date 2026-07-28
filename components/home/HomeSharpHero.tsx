@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeSharpHero.tsx
-// Trust-first hero — verify once, transact everywhere.
+// Problem-first hero — verify once, transact everywhere.
 
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
@@ -30,7 +30,7 @@ export function HomeSharpHero() {
           letterSpacing: "-0.045em",
           lineHeight: 1.02,
           color: "var(--text-primary)",
-          margin: "0 0 0.55rem",
+          margin: "0 0 0.85rem",
         }}
       >
         Verify once. Transact everywhere.
@@ -39,15 +39,31 @@ export function HomeSharpHero() {
       <p
         style={{
           fontFamily: FONT,
-          fontSize: "clamp(1rem, 2.5vw, 1.2rem)",
-          fontWeight: 600,
+          fontSize: "clamp(0.95rem, 2.2vw, 1.05rem)",
+          fontWeight: 500,
           color: "var(--text-secondary)",
-          margin: "0 0 1.15rem",
-          lineHeight: 1.45,
-          maxWidth: 640,
+          margin: "0 0 0.65rem",
+          lineHeight: 1.65,
+          maxWidth: 680,
         }}
       >
-        Reusable identity infrastructure for tokenized assets and permissioned finance.
+        Identity verification is fragmented. Every platform asks users to repeat KYC, businesses
+        repeat compliance, and trust doesn&apos;t travel.
+      </p>
+
+      <p
+        style={{
+          fontFamily: FONT,
+          fontSize: "clamp(0.95rem, 2.2vw, 1.05rem)",
+          fontWeight: 500,
+          color: "var(--text-secondary)",
+          margin: "0 0 1.25rem",
+          lineHeight: 1.65,
+          maxWidth: 680,
+        }}
+      >
+        Abraxas creates reusable identity credentials secured by biometrics so verification can
+        move with the user instead of restarting every time.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>

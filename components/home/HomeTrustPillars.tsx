@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeTrustPillars.tsx
-// Four product pillars — Passport, Biometrics, Trust Registry, Asset Protocol.
+// Four protocol pillars introduced after the problem statement.
 
 import Link from "next/link";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
@@ -9,27 +9,27 @@ const FONT = ABRAXAS_FONT_SANS;
 
 const PILLARS = [
   {
-    title: "Abraxas Passport",
+    title: "Passport",
     href: "/passport",
-    bullets: ["Google sign-in", "Wallet created automatically", "Portable verification"],
+    summary: "Sign in once. Wallet and identity anchor created automatically.",
     accent: "#10B981",
   },
   {
-    title: "Biometric Engine",
+    title: "Biometrics",
     href: "/passport",
-    bullets: ["Government ID + selfie", "Face match & liveness", "Fraud screening", "Human review when needed"],
+    summary: "Government ID, selfie, fraud screening, and human review when needed.",
     accent: "#A78BFA",
   },
   {
     title: "Trust Registry",
     href: "/docs/credential-portability",
-    bullets: ["Reusable credentials", "Permissioned access", "On-chain attestations"],
+    summary: "Reusable credentials partners can verify without re-collecting documents.",
     accent: "#38BDF8",
   },
   {
-    title: "Asset Protocol",
+    title: "Assets",
     href: "/build",
-    bullets: ["Tokenization workflow", "Compliance gates", "Due diligence pipeline"],
+    summary: "Tokenization workflow with compliance gates and due diligence stages.",
     accent: "#F59E0B",
   },
 ] as const;
@@ -39,11 +39,17 @@ export function HomeTrustPillars() {
     <section aria-labelledby="home-pillars-heading">
       <h2 id="home-pillars-heading" style={{
         fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
-        letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 1rem",
+        letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.45rem",
       }}>
-        Four pillars of the protocol
+        How Abraxas solves it
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "0.85rem" }}>
+      <p style={{
+        fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
+        lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
+      }}>
+        Four pillars work together so verification happens once and trust travels with the user.
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem" }}>
         {PILLARS.map(p => (
           <Link
             key={p.title}
@@ -54,16 +60,12 @@ export function HomeTrustPillars() {
               transition: "border-color 0.15s",
             }}
           >
-            <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: p.accent, marginBottom: "0.55rem" }}>
+            <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: p.accent, marginBottom: "0.45rem" }}>
               {p.title}
             </div>
-            <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-              {p.bullets.map(b => (
-                <li key={b} style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.55, marginBottom: 3 }}>
-                  {b}
-                </li>
-              ))}
-            </ul>
+            <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
+              {p.summary}
+            </p>
           </Link>
         ))}
       </div>

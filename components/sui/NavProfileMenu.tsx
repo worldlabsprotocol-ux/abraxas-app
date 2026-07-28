@@ -31,11 +31,11 @@ const MENU_ITEMS = [
 export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
   const auth = useSuiAuthOptional();
   const { data: profile } = useUserProfile();
-  const { isAdmin } = useAdminAccess();
+  const addr = auth?.suiAddress ?? null;
+  const { isAdmin } = useAdminAccess({ enabled: Boolean(addr) });
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const addr = auth?.suiAddress ?? null;
   const email = auth?.session?.email ?? null;
   const configured = auth?.isConfigured ?? false;
 
@@ -56,7 +56,27 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
     const initial = profileInitial(profile, email);
 
     return (
-      <div ref={rootRef} style={{ position: "relative" }}>
+      <div ref={rootRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "0.45rem" }}>
+        {isAdmin && (
+          <span
+            title="Signed-in account has admin access"
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: ACCENT,
+              padding: "0.28rem 0.55rem",
+              borderRadius: 999,
+              border: `1px solid ${ACCENT}44`,
+              background: `${ACCENT}12`,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Admin Access ✓
+          </span>
+        )}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}

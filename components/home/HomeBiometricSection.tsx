@@ -1,18 +1,19 @@
 "use client";
 // FILE: components/home/HomeBiometricSection.tsx
-// Biometric identity verification — what the protocol does today.
+// Biometric verification workflow — what actually happens.
 
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { HomePipelineFlow } from "./HomePipelineFlow";
 
 const FONT = ABRAXAS_FONT_SANS;
 
-const SIGNALS = [
-  "Face match",
-  "Government ID",
-  "Fraud detection",
-  "Human review",
-  "Portable credential",
+const BIOMETRIC_STEPS = [
+  { label: "Government ID", detail: "User submits legal name and ID image" },
+  { label: "Biometric Analysis", detail: "Face match, liveness, and document signals" },
+  { label: "Fraud Detection", detail: "Tamper heuristics and risk scoring" },
+  { label: "Human Review", detail: "Borderline cases queue for a reviewer" },
+  { label: "Reusable Credential", detail: "W3C VC issued to the user's Passport" },
 ] as const;
 
 export function HomeBiometricSection() {
@@ -33,31 +34,18 @@ export function HomeBiometricSection() {
         fontFamily: FONT, fontSize: "clamp(1.2rem, 3.2vw, 1.55rem)", fontWeight: 800,
         letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.65rem",
       }}>
-        Biometric identity verification
+        Biometric verification workflow
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
-        lineHeight: 1.7, margin: "0 0 1rem", maxWidth: 680,
+        lineHeight: 1.7, margin: "0 0 1.15rem", maxWidth: 680,
       }}>
-        Verify your government ID and selfie once. Abraxas analyzes identity signals, performs fraud
-        screening, and creates a reusable verification credential trusted across participating applications.
+        This is the live path from document capture to a credential partners can verify.
       </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "1rem" }}>
-        {SIGNALS.map(s => (
-          <span
-            key={s}
-            style={{
-              fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
-              padding: "0.35rem 0.65rem", borderRadius: 999,
-              background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)",
-              color: "#A7F3D0",
-            }}
-          >
-            ✓ {s}
-          </span>
-        ))}
+      <HomePipelineFlow steps={[...BIOMETRIC_STEPS]} />
+      <div style={{ marginTop: "1.15rem" }}>
+        <Btn href="/passport" size="md">Start verification</Btn>
       </div>
-      <Btn href="/passport" size="md">Create Passport</Btn>
     </section>
   );
 }

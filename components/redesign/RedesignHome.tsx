@@ -13,6 +13,7 @@ import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeTrustPillars } from "@/components/home/HomeTrustPillars";
 import { HomeBiometricSection } from "@/components/home/HomeBiometricSection";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
+import { HomeVerificationPipeline } from "@/components/home/HomeVerificationPipeline";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
@@ -38,6 +39,7 @@ function HomeContent() {
       <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
         <HomeTrustPillars />
         <HomeBiometricSection />
+        <HomeVerificationPipeline />
         <HomeLiveStats />
         <HomeDemoVideo />
         <HomeBuildWithSection />

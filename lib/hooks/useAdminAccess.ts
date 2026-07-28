@@ -12,7 +12,7 @@ interface AdminAccessResponse {
   hint?: string;
 }
 
-export function useAdminAccess() {
+export function useAdminAccess(opts?: { enabled?: boolean }) {
   const query = useQuery({
     queryKey: ["admin", "access"],
     queryFn: async () => {
@@ -20,6 +20,7 @@ export function useAdminAccess() {
       return res.json() as Promise<AdminAccessResponse>;
     },
     staleTime: 60_000,
+    enabled: opts?.enabled !== false,
   });
 
   return {
