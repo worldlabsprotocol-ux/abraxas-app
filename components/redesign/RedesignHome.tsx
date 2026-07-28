@@ -10,12 +10,11 @@ import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
 import { HomeRegistrySlideshow } from "@/components/home/HomeRegistrySlideshow";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeTrustPillars } from "@/components/home/HomeTrustPillars";
+import { HomeBiometricSection } from "@/components/home/HomeBiometricSection";
+import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
-import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
-import { HomeReusableComplianceStrip } from "@/components/home/HomeReusableComplianceStrip";
 import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
-import { HomeStackPosition } from "@/components/home/HomeStackPosition";
-import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 
@@ -37,12 +36,11 @@ function HomeContent() {
         <HomeFeaturedArticle lead />
       </div>
       <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
+        <HomeTrustPillars />
+        <HomeBiometricSection />
+        <HomeLiveStats />
         <HomeDemoVideo />
-        <HomeTrustTransferStrip />
-        <HomeReusableComplianceStrip />
         <HomeBuildWithSection />
-        <HomeStackPosition />
-        <HomeNetworkEffect />
         <div
           id="registry"
           style={{

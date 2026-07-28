@@ -7,6 +7,9 @@ interface AdminAccessResponse {
   authorized: boolean;
   method?: "email" | "pin_header" | "pin_cookie" | null;
   email?: string | null;
+  reason?: string;
+  allowlist_configured?: boolean;
+  hint?: string;
 }
 
 export function useAdminAccess() {
@@ -23,6 +26,9 @@ export function useAdminAccess() {
     isAdmin: query.data?.authorized ?? false,
     method: query.data?.method ?? null,
     email: query.data?.email ?? null,
+    reason: query.data?.reason ?? null,
+    hint: query.data?.hint ?? null,
+    allowlistConfigured: query.data?.allowlist_configured ?? false,
     isLoading: query.isLoading,
   };
 }
