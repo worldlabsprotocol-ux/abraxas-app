@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeSharpHero.tsx
-// Hero — headline with live proof mosaic (photography over template cards).
+// Hero — headline first, then full-width proof photography.
 
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +27,7 @@ export function HomeSharpHero() {
           Verify once. Transact everywhere.
         </h1>
 
-        <p className="abx-home-lead" style={{ marginBottom: "0.45rem", maxWidth: 520 }}>
+        <p className="abx-home-lead" style={{ marginBottom: "0.45rem", maxWidth: 640 }}>
           Users verify once. Applications consume trusted credentials instead of rebuilding identity flows.
         </p>
         <p style={{
@@ -37,7 +37,7 @@ export function HomeSharpHero() {
           color: "var(--text-primary)",
           margin: "0 0 1.25rem",
           lineHeight: 1.5,
-          maxWidth: 520,
+          maxWidth: 640,
         }}>
           Identity becomes portable instead of repetitive.
         </p>
@@ -61,14 +61,15 @@ export function HomeSharpHero() {
                 src={proof.image.src}
                 alt={proof.image.alt}
                 fill
-                sizes="(min-width: 960px) 220px, 33vw"
+                sizes={index === 0 ? "(min-width: 900px) 66vw, 100vw" : "(min-width: 900px) 33vw, 100vw"}
                 priority={index === 0}
                 style={{ objectFit: "cover", objectPosition: proof.image.objectPosition ?? "center" }}
               />
-            </span>
-            <span className="abx-home-hero__proof-caption">
-              <span className="abx-section-label">{proof.category}</span>
-              <span className="abx-home-hero__proof-title">{proof.title}</span>
+              <span className="abx-home-hero__proof-scrim" aria-hidden />
+              <span className="abx-home-hero__proof-caption">
+                <span className="abx-section-label">{proof.category}</span>
+                <span className="abx-home-hero__proof-title">{proof.title}</span>
+              </span>
             </span>
           </Link>
         ))}
@@ -76,16 +77,10 @@ export function HomeSharpHero() {
 
       <style jsx>{`
         .abx-home-hero {
-          display: grid;
+          display: flex;
+          flex-direction: column;
           gap: 1.75rem;
           padding: clamp(1.25rem, 4vw, 2.5rem) 0 clamp(0.5rem, 2vw, 1rem);
-        }
-        @media (min-width: 960px) {
-          .abx-home-hero {
-            grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
-            align-items: center;
-            gap: 2.5rem;
-          }
         }
         .abx-home-hero__title {
           font-family: ${DISPLAY};
@@ -95,64 +90,75 @@ export function HomeSharpHero() {
           line-height: 1.02;
           color: var(--text-primary);
           margin: 0 0 0.85rem;
+          max-width: 14ch;
         }
         .abx-home-hero__proof {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 0.55rem;
+          grid-template-columns: 1fr;
+          gap: 0.75rem;
+          width: 100%;
         }
-        @media (max-width: 959px) {
+        @media (min-width: 720px) {
           .abx-home-hero__proof {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1.35fr 1fr 1fr;
+            grid-template-rows: minmax(280px, 42vh) minmax(200px, 28vh);
+            gap: 0.75rem;
           }
           .abx-home-hero__proof-link--lead {
-            grid-column: auto;
+            grid-row: 1 / span 2;
           }
         }
         .abx-home-hero__proof-link {
-          display: flex;
-          flex-direction: column;
-          border-radius: 12px;
+          position: relative;
+          display: block;
+          border-radius: 14px;
           overflow: hidden;
           border: 1px solid var(--border);
-          background: var(--surface-raised);
+          background: #0a0a0b;
+          min-height: 220px;
         }
-        .abx-home-hero__proof-link--lead {
-          grid-column: span 1;
-        }
-        @media (min-width: 960px) {
-          .abx-home-hero__proof {
-            grid-template-rows: 1fr 1fr;
-            grid-template-columns: 1.1fr 0.9fr;
-          }
-          .abx-home-hero__proof-link--lead {
-            grid-row: span 2;
+        @media (min-width: 720px) {
+          .abx-home-hero__proof-link {
+            min-height: 0;
           }
         }
         .abx-home-hero__proof-media {
           position: relative;
           display: block;
           width: 100%;
-          aspect-ratio: 4 / 3;
-          background: #0a0a0b;
+          height: 100%;
+          min-height: 220px;
         }
-        .abx-home-hero__proof-link--lead .abx-home-hero__proof-media {
-          aspect-ratio: auto;
-          flex: 1;
-          min-height: 140px;
+        @media (min-width: 720px) {
+          .abx-home-hero__proof-link--lead .abx-home-hero__proof-media {
+            min-height: 100%;
+          }
+        }
+        .abx-home-hero__proof-scrim {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, transparent 40%, rgba(4, 5, 10, 0.72) 100%);
         }
         .abx-home-hero__proof-caption {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 2;
           display: flex;
           flex-direction: column;
-          gap: 0.15rem;
-          padding: 0.55rem 0.65rem 0.65rem;
+          gap: 0.2rem;
+          padding: 0.85rem 1rem 1rem;
         }
         .abx-home-hero__proof-title {
           font-family: ${FONT};
-          font-size: 0.78rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          letter-spacing: -0.01em;
+          font-size: clamp(0.85rem, 1.8vw, 1rem);
+          font-weight: 800;
+          color: #fafafa;
+          letter-spacing: -0.02em;
+        }
+        .abx-home-hero__proof-caption :global(.abx-section-label) {
+          color: rgba(250, 250, 250, 0.72);
         }
       `}</style>
     </section>
