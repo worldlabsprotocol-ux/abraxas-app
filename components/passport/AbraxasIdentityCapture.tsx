@@ -13,6 +13,7 @@ import { loadSigningSession } from "@/lib/sui/zklogin/signingSession";
 import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
 import {
   identityCaptureStepLabel,
+  identityCaptureStepHint,
   type IdentityCaptureStep,
 } from "@/lib/idv/identityCapture";
 import { runCapturePreflight } from "@/lib/idv/biometric/clientPreflight";
@@ -41,6 +42,7 @@ export function AbraxasIdentityCapture({
 }: AbraxasIdentityCaptureProps) {
   const { suiAddress: authAddress, session, isLoading: authLoading, isAuthenticated, refreshSession } = useSuiAuth();
   const [resolvedEmail, setResolvedEmail] = useState<string | null>(null);
+  const [emailHydrating, setEmailHydrating] = useState(false);
   const displayEmail = resolvedEmail || emailProp || session?.email || "";
   const suiAddress = suiProp ?? authAddress;
   const [step, setStep] = useState<IdentityCaptureStep>("name");
@@ -66,10 +68,18 @@ export function AbraxasIdentityCapture({
       setResolvedEmail(local);
       return;
     }
+    setEmailHydrating(true);
+    void resolveZkLoginEmail(suiAddress).then(email => {
+      if (email) setResolvedEmail(email);
+    }).finally(() => setEmailHydrating(false));
+  }, [authLoading, suiAddress, session?.email]);
+
+  useEffect(() => {
+    if (step !== "review" || !suiAddress) return;
     void resolveZkLoginEmail(suiAddress).then(email => {
       if (email) setResolvedEmail(email);
     });
-  }, [authLoading, suiAddress, session?.email]);
+  }, [step, suiAddress]);
 
   const stepIndex = useMemo(
     () => ["name", "id_front", "selfie", "review"].indexOf(step),
@@ -99,14 +109,18 @@ export function AbraxasIdentityCapture({
       }
       if (kind === "id_front") {
         setIdCapture({ blob, previewUrl });
+        window.setTimeout(() => setStep("selfie"), 400);
       } else {
         setSelfieCapture({ blob, previewUrl });
+        window.setTimeout(() => setStep("review"), 400);
       }
     } catch {
       if (kind === "id_front") {
         setIdCapture({ blob, previewUrl });
+        window.setTimeout(() => setStep("selfie"), 400);
       } else {
         setSelfieCapture({ blob, previewUrl });
+        window.setTimeout(() => setStep("review"), 400);
       }
     } finally {
       setCheckingPreflight(false);
@@ -147,7 +161,7 @@ export function AbraxasIdentityCapture({
     }
     if (!submitEmail.includes("@")) {
       setError(
-        "We could not read your Google email from this session. Submit again — you do not need to sign out.",
+        "Your Google account is connected. Wait a moment and tap Submit again — no need to sign out.",
       );
       logAuthEvent("zklogin_complete_error", {
         suiAddress: resolvedAddress,
@@ -177,8 +191,18 @@ export function AbraxasIdentityCapture({
       if (!browserSession.ok) {
         throw new Error(
           browserSession.error
-          ?? "Could not establish a secure browser session. Sign out, sign in once, then try again.",
+          ?? "Could not secure your browser session. Tap Submit again.",
         );
+      }
+
+      const signing = loadSigningSession();
+      if (signing?.idToken && signing.suiAddress === resolvedAddress) {
+        await fetch("/api/auth/zklogin/sync-email", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_token: signing.idToken }),
+        }).catch(() => { /* capture route also backfills */ });
       }
 
       const formData = new FormData();
@@ -186,7 +210,6 @@ export function AbraxasIdentityCapture({
       formData.append("id_front", idCapture.blob, "id_front.jpg");
       formData.append("selfie", selfieCapture.blob, "selfie.jpg");
 
-      const signing = loadSigningSession();
       if (signing?.idToken && signing.suiAddress === resolvedAddress) {
         formData.append("id_token", signing.idToken);
       }
@@ -210,7 +233,11 @@ export function AbraxasIdentityCapture({
       }
 
       if (!res.ok || !data.submitted) {
-        throw new Error(data.error ?? "Submission failed");
+        const msg = data.error ?? "Submission failed";
+        if (res.status === 403 && msg.toLowerCase().includes("email")) {
+          throw new Error("Account email is still syncing. Tap Submit again — you are signed in.");
+        }
+        throw new Error(msg);
       }
 
       setSubmitted(true);
@@ -295,9 +322,16 @@ export function AbraxasIdentityCapture({
         <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", marginTop: 6 }}>
           Step {stepIndex + 1} of 4 · {identityCaptureStepLabel(step)}
         </div>
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0.5rem 0 0", lineHeight: 1.55 }}>
+          {identityCaptureStepHint(step)}
+        </p>
       </div>
 
       <div style={{ padding: "1rem" }}>
+        {(displayEmail || emailHydrating) && (
+          <AccountChip email={displayEmail} hydrating={emailHydrating} />
+        )}
+
         {step === "name" && (
           <div>
             <label style={{ display: "block", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
@@ -408,6 +442,33 @@ export function AbraxasIdentityCapture({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function AccountChip({ email, hydrating }: { email: string; hydrating: boolean }) {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: "0.85rem",
+      padding: "0.45rem 0.65rem",
+      borderRadius: 8,
+      background: "rgba(16,185,129,0.08)",
+      border: "1px solid rgba(16,185,129,0.22)",
+    }}>
+      <span style={{
+        width: 8,
+        height: 8,
+        borderRadius: "50%",
+        background: hydrating ? "#F59E0B" : ACCENT,
+        flexShrink: 0,
+      }} />
+      <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)" }}>
+        {hydrating ? "Linking your Google account…" : "Signed in as "}
+        {!hydrating && email && <strong style={{ color: "var(--text-primary)" }}>{email}</strong>}
+      </span>
     </div>
   );
 }

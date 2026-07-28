@@ -32,12 +32,20 @@ export interface ZkLoginUserSession {
 }
 
 export function savePendingSession(session: ZkLoginPendingSession): void {
-  writeSessionStorage(ZKLOGIN_PENDING_KEY, JSON.stringify(session));
+  writeLocalStorage(ZKLOGIN_PENDING_KEY, JSON.stringify(session));
+  removeSessionStorage(ZKLOGIN_PENDING_KEY);
 }
 
 export function loadPendingSession(): ZkLoginPendingSession | null {
   try {
-    const raw = readSessionStorage(ZKLOGIN_PENDING_KEY);
+    let raw = readLocalStorage(ZKLOGIN_PENDING_KEY);
+    if (!raw) {
+      raw = readSessionStorage(ZKLOGIN_PENDING_KEY);
+      if (raw) {
+        writeLocalStorage(ZKLOGIN_PENDING_KEY, raw);
+        removeSessionStorage(ZKLOGIN_PENDING_KEY);
+      }
+    }
     if (!raw) return null;
     return JSON.parse(raw) as ZkLoginPendingSession;
   } catch {
@@ -47,6 +55,7 @@ export function loadPendingSession(): ZkLoginPendingSession | null {
 
 export function clearPendingSession(): void {
   removeSessionStorage(ZKLOGIN_PENDING_KEY);
+  removeLocalStorage(ZKLOGIN_PENDING_KEY);
   clearLoginInFlight();
 }
 
