@@ -2,7 +2,7 @@
 // Server-side Sui epoch for zkLogin nonce — browser must never call Sui RPC during sign-in.
 
 import { NextResponse } from "next/server";
-import { getSuiClient } from "@/lib/sui/client";
+import { fetchCurrentSuiEpoch } from "@/lib/sui/fetchCurrentEpoch";
 import { getRpcDiagnostics } from "@/lib/sui/rpcDiagnostics";
 import { ZKLOGIN_EPOCH_BUFFER, ZKLOGIN_PREPARE_API_VERSION } from "@/lib/sui/zklogin/constants";
 
@@ -12,23 +12,20 @@ export async function GET() {
   const diag = getRpcDiagnostics();
 
   try {
-    const client = getSuiClient();
-    const { epoch } = await client.getLatestSuiSystemState();
-    const epochNum = Number(epoch);
-    if (!Number.isFinite(epochNum)) {
-      throw new Error(`Invalid epoch from RPC: ${String(epoch)}`);
-    }
+    const { epoch, source, detail } = await fetchCurrentSuiEpoch();
 
     return NextResponse.json({
       ok: true,
       api_version: ZKLOGIN_PREPARE_API_VERSION,
-      epoch: epochNum,
-      max_epoch: epochNum + ZKLOGIN_EPOCH_BUFFER,
+      epoch,
+      max_epoch: epoch + ZKLOGIN_EPOCH_BUFFER,
       epoch_buffer: ZKLOGIN_EPOCH_BUFFER,
+      epoch_source: source,
+      epoch_detail: detail ?? null,
       ...diag,
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "RPC request failed";
+    const message = e instanceof Error ? e.message : "Epoch fetch failed";
     return NextResponse.json(
       {
         ok: false,
