@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage: hero hook → blog context → demo → registry.
+// Homepage story: problem → solution → proof.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -8,16 +8,15 @@ import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
 import { RedesignFooter } from "./RedesignFooter";
-import { HomeRegistrySlideshow } from "@/components/home/HomeRegistrySlideshow";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
-import { HomeDemoVideo } from "@/components/home/HomeDemoVideo";
-import { HomeTrustTransferStrip } from "@/components/home/HomeTrustTransferStrip";
-import { HomeReusableComplianceStrip } from "@/components/home/HomeReusableComplianceStrip";
-import { HomeBuildWithSection } from "@/components/home/HomeBuildWithSection";
-import { HomeStackPosition } from "@/components/home/HomeStackPosition";
-import { HomeNetworkEffect } from "@/components/home/HomeNetworkEffect";
+import { HomeWhyAbraxas } from "@/components/home/HomeWhyAbraxas";
+import { HomeVerifyOnceDiagram } from "@/components/home/HomeVerifyOnceDiagram";
+import { HomeVerificationPipeline } from "@/components/home/HomeVerificationPipeline";
+import { HomeTrustPillars } from "@/components/home/HomeTrustPillars";
+import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
-import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
+import { HomeDocsBrief } from "@/components/home/HomeDocsBrief";
+import { HomeRoadmapBrief } from "@/components/home/HomeRoadmapBrief";
 
 const MAXW: React.CSSProperties = {
   maxWidth: 1180,
@@ -30,30 +29,16 @@ const SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1, paddingBottom: "3rem" }}>
-      <div style={MAXW}>
-        <HomeSharpHero />
-      </div>
-      <div style={{ marginBottom: SECTION_GAP }}>
-        <HomeFeaturedArticle lead />
-      </div>
       <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
-        <HomeDemoVideo />
-        <HomeTrustTransferStrip />
-        <HomeReusableComplianceStrip />
-        <HomeBuildWithSection />
-        <HomeStackPosition />
-        <HomeNetworkEffect />
-        <div
-          id="registry"
-          style={{
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            borderBottom: "1px solid var(--border-strong)",
-          }}
-        >
-          <HomeRegistrySlideshow />
-        </div>
+        <HomeSharpHero />
+        <HomeWhyAbraxas />
+        <HomeVerifyOnceDiagram />
+        <HomeVerificationPipeline />
+        <HomeTrustPillars />
+        <HomeLiveStats />
         <HomePartnersBrief />
+        <HomeDocsBrief />
+        <HomeRoadmapBrief />
       </div>
     </main>
   );

@@ -66,29 +66,51 @@ async function emailForSuiAddress(suiAddress: string): Promise<string | null> {
 
 export type AdminAccessMethod = "email" | "pin_header" | "pin_cookie" | null;
 
+export type AdminAccessReason =
+  | "authorized"
+  | "pin_header"
+  | "pin_cookie"
+  | "email_allowlisted"
+  | "no_session"
+  | "email_not_allowlisted"
+  | "allowlist_empty";
+
 export async function resolveAdminAccess(req: NextRequest): Promise<{
   authorized: boolean;
   method: AdminAccessMethod;
   email?: string | null;
+  reason: AdminAccessReason;
+  allowlist_configured: boolean;
 }> {
   if (checkAdmin(req)) {
-    return { authorized: true, method: "pin_header" };
+    return { authorized: true, method: "pin_header", reason: "pin_header", allowlist_configured: getAdminEmails().length > 0 };
   }
 
   if (hasValidAdminSessionCookie(req)) {
-    return { authorized: true, method: "pin_cookie" };
+    return { authorized: true, method: "pin_cookie", reason: "pin_cookie", allowlist_configured: getAdminEmails().length > 0 };
   }
 
+  const allowlistConfigured = getAdminEmails().length > 0;
   const session = await resolveBrowserSession(req);
-  if (session) {
-    const email = await emailForSuiAddress(session.suiAddress);
-    if (isAdminEmail(email)) {
-      return { authorized: true, method: "email", email };
-    }
-    return { authorized: false, method: null, email };
+  if (!session) {
+    return {
+      authorized: false,
+      method: null,
+      reason: allowlistConfigured ? "no_session" : "allowlist_empty",
+      allowlist_configured: allowlistConfigured,
+    };
   }
 
-  return { authorized: false, method: null };
+  const email = await emailForSuiAddress(session.suiAddress);
+  if (!allowlistConfigured) {
+    return { authorized: false, method: null, email, reason: "allowlist_empty", allowlist_configured: false };
+  }
+
+  if (isAdminEmail(email)) {
+    return { authorized: true, method: "email", email, reason: "email_allowlisted", allowlist_configured: true };
+  }
+
+  return { authorized: false, method: null, email, reason: "email_not_allowlisted", allowlist_configured: true };
 }
 
 export async function checkAdminAccess(req: NextRequest): Promise<boolean> {

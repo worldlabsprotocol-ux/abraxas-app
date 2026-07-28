@@ -18,7 +18,7 @@ export function HomePartnersBrief() {
     >
       <EliteSectionLead
         eyebrow="Partners"
-        title={<span id="partners-heading">Only ask for what you need</span>}
+        title={<span id="partners-heading">Partner ecosystem</span>}
         headingId="partners-heading"
       />
 
