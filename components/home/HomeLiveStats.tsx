@@ -59,13 +59,10 @@ export function HomeLiveStats() {
 
   return (
     <section aria-labelledby="home-live-stats">
-      <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
+      <p className="abx-section-label" style={{ marginBottom: "0.65rem" }}>
         Live protocol
-      </div>
-      <h2 id="home-live-stats" style={{
-        fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
-        letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 1rem",
-      }}>
+      </p>
+      <h2 id="home-live-stats" className="abx-home-h2" style={{ marginBottom: "1rem" }}>
         Trust in motion
       </h2>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>

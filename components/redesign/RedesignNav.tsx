@@ -112,8 +112,8 @@ export function RedesignNav() {
                     position: "absolute",
                     inset: 0,
                     borderRadius: 999,
-                    background: "rgba(16,185,129,0.12)",
-                    border: "1px solid rgba(16,185,129,0.25)",
+                    background: "var(--accent-faint)",
+                    border: "1px solid var(--accent-border)",
                     zIndex: -1,
                   }}
                 />

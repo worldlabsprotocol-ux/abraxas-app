@@ -3,8 +3,9 @@
 // Minimal footer — plain language, few links.
 
 import Link from "next/link";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
-const FONT = "'Inter',system-ui,sans-serif";
+const FONT = ABRAXAS_FONT_SANS;
 
 const LINKS = [
   { label: "Passport", href: "/passport" },
@@ -33,7 +34,7 @@ export function RedesignFooter() {
             ABRAXAS
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0, maxWidth: 420 }}>
-            Prove it once. Use it everywhere. Verify assets, hold your proof, tokenize what you own.
+            Reusable verification infrastructure. Verify once, transact everywhere.
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem 1.25rem", marginBottom: "1.25rem" }}>

@@ -220,6 +220,36 @@ details > summary::-webkit-details-marker {
   text-shadow: 0 0 24px rgba(34, 211, 238, 0.35);
 }
 
+/* Homepage editorial hierarchy — no glow, restrained labels */
+.abx-section-label {
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.abx-home-h2 {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-size: var(--fs-h2);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.abx-home-lead {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+}
+
 .abx-cosmic-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.35) 100%);

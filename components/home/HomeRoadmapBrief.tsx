@@ -11,13 +11,10 @@ const FONT = ABRAXAS_FONT_SANS;
 export function HomeRoadmapBrief() {
   return (
     <section aria-labelledby="home-roadmap-heading" id="roadmap">
-      <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
+      <p className="abx-section-label" style={{ marginBottom: "0.5rem" }}>
         Current focus
-      </div>
-      <h2 id="home-roadmap-heading" style={{
-        fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
-        letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.75rem",
-      }}>
+      </p>
+      <h2 id="home-roadmap-heading" className="abx-home-h2" style={{ marginBottom: "0.75rem" }}>
         What we are shipping now
       </h2>
       <ol style={{

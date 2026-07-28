@@ -1,8 +1,8 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// Welcome gate — shows on every homepage load until Enter is tapped.
+// Welcome gate — once per browser session, then straight to content.
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -16,6 +16,7 @@ import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography
 
 const FONT = ABRAXAS_FONT_SANS;
 const DISPLAY = ABRAXAS_FONT_DISPLAY;
+const BOOT_SEEN_KEY = "abraxas_boot_seen_v1";
 
 const BOOT_THEME: CSSProperties = {
   ["--text-primary" as string]: TEXT_ON_DARK.primary,
@@ -27,17 +28,37 @@ const BOOT_THEME: CSSProperties = {
 
 const INSIDE = [
   "Live registry: Cielo Sunrise, Chickasaw, Good Trouble",
-  "What RWA tokenization is: plain language primer",
-  "Verify layer: how proof travels without repeating diligence",
+  "Verification pipeline and reusable credentials",
+  "Integrate without rebuilding identity flows",
 ] as const;
 
 export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => void }) {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const seen = typeof window !== "undefined" && sessionStorage.getItem(BOOT_SEEN_KEY) === "1";
+    if (seen) {
+      onReady?.(true);
+    } else {
+      setVisible(true);
+    }
+    setHydrated(true);
+  }, [onReady]);
 
   const dismiss = useCallback(() => {
+    try {
+      sessionStorage.setItem(BOOT_SEEN_KEY, "1");
+    } catch {
+      /* private browsing */
+    }
     setVisible(false);
     onReady?.(true);
   }, [onReady]);
+
+  if (!hydrated) {
+    return null;
+  }
 
   return (
     <AnimatePresence>
@@ -45,7 +66,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.45 }}
+          transition={{ duration: 0.35 }}
           data-theme="dark"
           style={{
             ...BOOT_THEME,
@@ -57,43 +78,26 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
             overflow: "hidden",
           }}
         >
-          <div style={{
-            position: "absolute", inset: 0,
-            background: `
-              radial-gradient(ellipse 50% 40% at 50% 38%, rgba(34,211,238,0.08) 0%, transparent 65%),
-              radial-gradient(ellipse 45% 35% at 80% 70%, rgba(167,139,250,0.08) 0%, transparent 60%)
-            `,
-            pointerEvents: "none",
-          }} />
-
           <motion.div
-            initial={{ scale: 0.97, opacity: 0, y: 10 }}
+            initial={{ scale: 0.98, opacity: 0, y: 8 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.98, opacity: 0, y: -6 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ scale: 0.99, opacity: 0, y: -4 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             style={{
               position: "relative", zIndex: 1, textAlign: "center",
-              padding: "0 1.5rem", maxWidth: 520, width: "100%",
+              padding: "0 1.5rem", maxWidth: 480, width: "100%",
             }}
           >
-            <div style={{
-              fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
-              fontSize: "0.6rem",
-              fontWeight: 700,
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: TEXT_ON_DARK.eyebrow,
-              marginBottom: "0.85rem",
-            }}>
+            <p className="abx-section-label" style={{ marginBottom: "0.85rem", color: TEXT_ON_DARK.caption }}>
               Abraxas · World Labs Protocol
-            </div>
+            </p>
 
             <div style={{
               fontFamily: DISPLAY,
-              fontSize: "clamp(1.55rem, 5.5vw, 2.35rem)",
+              fontSize: "clamp(1.55rem, 5.5vw, 2.2rem)",
               fontWeight: 900,
-              letterSpacing: "-0.045em",
-              lineHeight: 1.1,
+              letterSpacing: "-0.04em",
+              lineHeight: 1.12,
               marginBottom: "0.65rem",
               color: TEXT_ON_DARK.primary,
             }}>
@@ -102,19 +106,19 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
 
             <p style={{
               fontFamily: FONT,
-              fontSize: "clamp(0.9rem, 2.2vw, 1.02rem)",
+              fontSize: "clamp(0.9rem, 2.2vw, 1rem)",
               fontWeight: 500,
               color: TEXT_ON_DARK.secondary,
               lineHeight: 1.6,
               margin: "0 0 1.25rem",
             }}>
-              {ABRAXAS_ONE_LINER} Browse everything below. No wallet or account needed to explore.
+              {ABRAXAS_ONE_LINER}
             </p>
 
             <ul style={{
-              listStyle: "none", margin: "0 0 1.5rem", padding: 0,
-              display: "flex", flexDirection: "column", gap: "0.45rem",
-              textAlign: "left", maxWidth: 400, marginLeft: "auto", marginRight: "auto",
+              listStyle: "none", margin: "0 0 1.35rem", padding: 0,
+              display: "flex", flexDirection: "column", gap: "0.4rem",
+              textAlign: "left", maxWidth: 380, marginLeft: "auto", marginRight: "auto",
             }}>
               {INSIDE.map(line => (
                 <li
@@ -124,15 +128,10 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
                     fontSize: "0.76rem",
                     color: TEXT_ON_DARK.caption,
                     lineHeight: 1.5,
-                    paddingLeft: "1rem",
-                    position: "relative",
+                    paddingLeft: "0.85rem",
+                    borderLeft: "2px solid rgba(232, 197, 71, 0.35)",
                   }}
                 >
-                  <span style={{
-                    position: "absolute", left: 0, top: "0.45em",
-                    width: 5, height: 5, borderRadius: 999,
-                    background: "var(--accent)",
-                  }} />
                   {line}
                 </li>
               ))}
@@ -142,8 +141,8 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               type="button"
               onClick={dismiss}
               style={{
-                padding: "0.85rem 2.1rem",
-                borderRadius: 999,
+                padding: "0.8rem 1.85rem",
+                borderRadius: 10,
                 border: "none",
                 background: INSTITUTIONAL_PRIMARY_BTN_BG,
                 color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
@@ -151,22 +150,10 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
                 fontSize: "0.84rem",
                 fontWeight: 800,
                 cursor: "pointer",
-                boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
               }}
             >
-              Enter Abraxas →
+              Continue
             </button>
-
-            <p style={{
-              fontFamily: FONT,
-              fontSize: "0.65rem",
-              fontWeight: 500,
-              color: TEXT_ON_DARK.caption,
-              margin: "0.85rem 0 0",
-              lineHeight: 1.5,
-            }}>
-              Connect a wallet later only if you want Passport or on-chain proof.
-            </p>
           </motion.div>
         </motion.div>
       )}

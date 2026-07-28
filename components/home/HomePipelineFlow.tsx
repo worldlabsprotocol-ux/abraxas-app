@@ -27,9 +27,10 @@ export function HomePipelineFlow({ steps, compact }: { steps: PipelineStep[]; co
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 28, flexShrink: 0 }}>
             <div style={{
               width: 28, height: 28, borderRadius: "50%",
-              background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)",
+              background: "var(--accent-verify-faint, rgba(16,185,129,0.15))",
+              border: "1px solid rgba(16,185,129,0.35)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: MONO, fontSize: "0.65rem", fontWeight: 800, color: "#10B981",
+              fontFamily: MONO, fontSize: "0.65rem", fontWeight: 800, color: "var(--accent-verify, #10B981)",
             }}>
               {i + 1}
             </div>
