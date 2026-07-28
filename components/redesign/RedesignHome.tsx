@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Homepage story: problem → solution → proof.
+// Homepage story: problem → industries → proof → ecosystem.
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
@@ -13,8 +13,9 @@ import { HomeWhyAbraxas } from "@/components/home/HomeWhyAbraxas";
 import { HomeVerifyOnceDiagram } from "@/components/home/HomeVerifyOnceDiagram";
 import { HomeVerificationPipeline } from "@/components/home/HomeVerificationPipeline";
 import { HomeTrustPillars } from "@/components/home/HomeTrustPillars";
+import { HomeRegulatedIndustries } from "@/components/home/HomeRegulatedIndustries";
+import { HomeProtocolInAction } from "@/components/home/HomeProtocolInAction";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
-import { HomePartnersBrief } from "@/components/home/HomePartnersBrief";
 import { HomeDocsBrief } from "@/components/home/HomeDocsBrief";
 import { HomeRoadmapBrief } from "@/components/home/HomeRoadmapBrief";
 
@@ -35,8 +36,9 @@ function HomeContent() {
         <HomeVerifyOnceDiagram />
         <HomeVerificationPipeline />
         <HomeTrustPillars />
+        <HomeRegulatedIndustries />
+        <HomeProtocolInAction />
         <HomeLiveStats />
-        <HomePartnersBrief />
         <HomeDocsBrief />
         <HomeRoadmapBrief />
       </div>

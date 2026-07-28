@@ -80,7 +80,7 @@ export function HomeLiveStats() {
       </div>
       {status === "error" && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.75rem 0 0" }}>
-          Live metrics temporarily unavailable — counts will refresh when the API recovers.
+          Live metrics temporarily unavailable. Counts will refresh when the API recovers.
         </p>
       )}
     </section>

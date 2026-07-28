@@ -25,7 +25,7 @@ export function HomeDocsBrief() {
         fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
       }}>
-        Overview, quick start, core concepts, and developer docs — each section fits one screen.
+        Overview, quick start, core concepts, and developer docs. Each section fits one screen.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "1rem" }}>
         {DOCS_HUB_NAV.map((item) => (

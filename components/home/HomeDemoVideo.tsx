@@ -55,7 +55,7 @@ export function HomeDemoVideo() {
             maxWidth: 600,
           }}
         >
-          {CINEMATIC_DEMO_LEAD} No crypto jargon required — this is the same verification loop banks, marketplaces, and property deals already run, just without repeating it seven times.
+          {CINEMATIC_DEMO_LEAD} No crypto jargon required. This is the same verification loop banks, marketplaces, and property deals already run, just without repeating it seven times.
         </p>
       </div>
       <EliteDemoSlideshow config={HERO_ELITE_DEMO} />

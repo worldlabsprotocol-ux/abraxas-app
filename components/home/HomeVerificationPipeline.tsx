@@ -12,7 +12,7 @@ const PIPELINE_STEPS = [
   { label: "AI & Biometric Analysis", detail: "Automated face match, liveness, and fraud signals" },
   { label: "Human Review (if required)", detail: "Reviewer approves, rejects, or requests resubmission" },
   { label: "Credential Issued", detail: "Signed verifiable credential anchored to the user" },
-  { label: "Reusable Across Partners", detail: "Relying parties verify proof — no document re-upload" },
+  { label: "Reusable Across Partners", detail: "Relying parties verify proof. No document re-upload." },
 ] as const;
 
 export function HomeVerificationPipeline() {
