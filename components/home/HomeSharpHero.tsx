@@ -47,7 +47,7 @@ export function HomeSharpHero() {
           maxWidth: 640,
         }}
       >
-        Reusable identity infrastructure for tokenized assets and permissioned finance.
+        Reusable identity infrastructure. Users verify once — applications consume trusted credentials.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>
