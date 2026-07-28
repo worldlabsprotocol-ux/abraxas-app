@@ -122,8 +122,8 @@ export async function runCapturePreflight(
   if (sharpnessScore < 0.2) issues.push("Image looks blurry — hold steady and tap to focus.");
   if (kind === "selfie" && varianceScore < 0.15) issues.push("Selfie looks flat — ensure your face is visible.");
 
-  const minScore = kind === "id_front" ? 0.32 : 0.3;
-  const ok = score >= minScore && issues.length <= 1;
+  const minScore = kind === "id_front" ? 0.38 : 0.34;
+  const ok = score >= minScore && issues.length === 0;
 
   return { ok, score, issues: ok ? [] : issues };
 }

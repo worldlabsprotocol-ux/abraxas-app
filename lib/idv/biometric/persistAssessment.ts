@@ -27,7 +27,10 @@ export async function persistBiometricAssessment(
     assurance_level: assessment.assurance_level,
     review_method: assessment.review_method,
     engine_version: assessment.engine_version,
-    signals: assessment.signals,
+    signals: {
+      ...assessment.signals,
+      rejection_reasons: assessment.reasons,
+    },
     analyzed_at: assessment.analyzed_at,
   }, { onConflict: "capture_session_id" });
 
@@ -62,7 +65,10 @@ export async function getBiometricAssessment(
     assurance_level: data.assurance_level,
     review_method: data.review_method,
     engine_version: data.engine_version,
-    signals: (data.signals as Record<string, number>) ?? {},
+    signals: (data.signals as Record<string, number | string>) ?? {},
+    reasons: Array.isArray((data.signals as { rejection_reasons?: string[] })?.rejection_reasons)
+      ? (data.signals as { rejection_reasons: string[] }).rejection_reasons
+      : [],
     analyzed_at: data.analyzed_at,
   };
 }

@@ -10,6 +10,16 @@ export interface BiometricScores {
   selfie_quality: number;
 }
 
+export interface BiometricFraudSignals {
+  id_face_presence: number;
+  selfie_face_presence: number;
+  document_aspect: number;
+  document_class: string;
+  document_class_confidence: number;
+  document_edge_density: number;
+  fraud_risk_score: number;
+}
+
 export interface BiometricAssessment {
   capture_session_id: string;
   sui_address: string;
@@ -18,7 +28,8 @@ export interface BiometricAssessment {
   assurance_level: "L2" | "L3";
   review_method: "automated_biometric" | "human_biometric_match";
   engine_version: string;
-  signals: Record<string, number>;
+  signals: Record<string, number | string>;
+  reasons: string[];
   analyzed_at: string;
 }
 
@@ -29,4 +40,7 @@ export interface BiometricThresholds {
   selfieMin: number;
   autoApproveFace: number;
   autoApproveLiveness: number;
+  facePresenceMin: number;
+  documentAspectMin: number;
+  documentClassMin: number;
 }

@@ -188,10 +188,13 @@ export async function POST(req: NextRequest) {
         },
       });
       return NextResponse.json({
-        error: "We couldn't verify your photos. Retake with good lighting, a clear ID image, and your face centered in the selfie.",
+        error: assessment.reasons[0]
+          ?? "We couldn't verify your photos. Retake with good lighting, a clear ID image, and your face centered in the selfie.",
+        reasons: assessment.reasons,
         biometric: {
           decision: assessment.decision,
           scores: assessment.scores,
+          fraud_risk_score: assessment.signals.fraud_risk_score,
         },
       }, { status: 422 });
     }

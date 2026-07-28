@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
   if (sessionIds.length > 0) {
     const { data: assessments } = await sb
       .from("identity_biometric_assessments")
-      .select("capture_session_id, face_match_score, liveness_score, document_quality_score, selfie_quality_score, decision, assurance_level, review_method, engine_version")
+      .select("capture_session_id, face_match_score, liveness_score, document_quality_score, selfie_quality_score, decision, assurance_level, review_method, engine_version, signals")
       .in("capture_session_id", sessionIds);
 
     for (const row of assessments ?? []) {

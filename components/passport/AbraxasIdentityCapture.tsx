@@ -87,11 +87,7 @@ export function AbraxasIdentityCapture({
         setSelfieCapture({ blob, previewUrl });
       }
     } catch {
-      if (kind === "id_front") {
-        setIdCapture({ blob, previewUrl });
-      } else {
-        setSelfieCapture({ blob, previewUrl });
-      }
+      setPreflightWarning("Could not analyze this photo. Retake with your camera.");
     } finally {
       setCheckingPreflight(false);
     }
@@ -166,11 +162,15 @@ export function AbraxasIdentityCapture({
         assurance_level?: string;
         capture_session_id?: string;
         error?: string;
+        reasons?: string[];
         biometric?: { decision?: string };
       };
 
       if (res.status === 422) {
-        throw new Error(data.error ?? "Photos did not pass Abraxas Verify checks. Please retake.");
+        const detail = data.reasons?.length
+          ? data.reasons.slice(0, 2).join(" ")
+          : data.error;
+        throw new Error(detail ?? "Photos did not pass Abraxas Verify checks. Please retake.");
       }
 
       if (!res.ok || !data.submitted) {

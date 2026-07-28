@@ -42,6 +42,7 @@ interface QueueItem {
     assurance_level?: string;
     review_method?: string;
     engine_version?: string;
+    signals?: { rejection_reasons?: string[]; fraud_risk_score?: number };
   } | null;
 }
 
@@ -264,6 +265,16 @@ export default function AdminIdentityPage() {
                         {" · "}face {(Number(item.biometric.face_match_score) * 100).toFixed(0)}%
                         {" · "}liveness {(Number(item.biometric.liveness_score) * 100).toFixed(0)}%
                         {" · "}id {(Number(item.biometric.document_quality_score) * 100).toFixed(0)}%
+                        {item.biometric.signals?.fraud_risk_score != null && (
+                          <>{" · "}fraud risk {(Number(item.biometric.signals.fraud_risk_score) * 100).toFixed(0)}%</>
+                        )}
+                      </div>
+                    )}
+                    {item.biometric?.signals?.rejection_reasons && item.biometric.signals.rejection_reasons.length > 0 && (
+                      <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.6)", marginTop: 6, lineHeight: 1.5 }}>
+                        {item.biometric.signals.rejection_reasons.map(r => (
+                          <div key={r} style={{ marginTop: 2 }}>• {r}</div>
+                        ))}
                       </div>
                     )}
                   </div>
