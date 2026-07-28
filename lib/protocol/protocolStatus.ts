@@ -1,44 +1,19 @@
 // FILE: lib/protocol/protocolStatus.ts
-// Public protocol health summary for /status.
+// Public protocol health summary for /status (server-only).
 
 import { getVerificationLayerStatus, type VerificationItemStatus } from "@/lib/authenticationProof/verificationLayerStatus";
 import { getIndependentIdvStatus } from "@/lib/idv/independentIdvStatus";
 import { getUnifiedRegistryStats } from "@/lib/registry/unifiedStats";
+import type { ProtocolHealthLabel, ProtocolStatusPayload, ProtocolSubsystemStatus } from "./protocolStatusShared";
 
-export type ProtocolHealthLabel = "operational" | "degraded" | "not_configured";
-
-export interface ProtocolSubsystemStatus {
-  id: string;
-  label: string;
-  status: ProtocolHealthLabel;
-  detail: string;
-}
-
-export interface ProtocolStatusPayload {
-  ok: boolean;
-  updatedAt: string;
-  subsystems: ProtocolSubsystemStatus[];
-  metrics: {
-    verified_identities: number | null;
-    pending_reviews: number | null;
-    credentials_issued_30d: number | null;
-    verified_assets: number | null;
-  };
-}
+export type { ProtocolHealthLabel, ProtocolStatusPayload, ProtocolSubsystemStatus } from "./protocolStatusShared";
+export { protocolHealthLabel } from "./protocolStatusShared";
 
 function mapStatus(status: VerificationItemStatus | "live" | "partial" | "not_configured"): ProtocolHealthLabel {
   if (status === "live") return "operational";
   if (status === "partial") return "degraded";
   return "not_configured";
 }
-
-function labelFor(status: ProtocolHealthLabel): string {
-  if (status === "operational") return "Operational";
-  if (status === "degraded") return "Degraded";
-  return "Not configured";
-}
-
-export { labelFor as protocolHealthLabel };
 
 export async function getProtocolStatus(): Promise<ProtocolStatusPayload> {
   const [layer, idv, stats] = await Promise.all([

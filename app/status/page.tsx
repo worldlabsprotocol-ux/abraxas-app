@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { Btn } from "@/components/redesign/ui";
-import { protocolHealthLabel, type ProtocolHealthLabel, type ProtocolSubsystemStatus } from "@/lib/protocol/protocolStatus";
+import { protocolHealthLabel, type ProtocolHealthLabel, type ProtocolSubsystemStatus } from "@/lib/protocol/protocolStatusShared";
 import { buildHomeStatCards, type PublicMetrics } from "@/lib/home/publicMetrics";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
