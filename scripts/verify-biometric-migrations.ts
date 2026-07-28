@@ -23,6 +23,10 @@ const MIGRATIONS = [
     requiredTable: "identity_review_audit_log",
     requiredColumns: ["reviewer_decision", "engine_decision"],
   },
+  {
+    file: "supabase/migrations/051_identity_biometric_service_update.sql",
+    requiredColumns: ["grant update"],
+  },
 ];
 
 function checkSqlFiles(): { ok: boolean; messages: string[] } {

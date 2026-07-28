@@ -209,3 +209,31 @@ After deploy, test on `https://abraxasworld.xyz` per `docs/VERIFY_MATRIX.md`. Fo
 - High `fraud_risk` for junk images
 - Engine `decision: reject` blocks queue entry (422 on capture)
 - Reviewer actions write rows to `identity_review_audit_log`
+
+## Schema audit (zero mismatch gate)
+
+**Column provenance:** `reviewer_note`, `reviewed_by`, `reviewed_at` on `passport_documents` are from **migration 021**, not 050. Migration 050 adds `identity_review_audit_log` and `reviewer_decision` / `reviewer_id` / `reviewed_at` on **identity_biometric_assessments** only.
+
+```bash
+npm run identity:verify-schema    # probe live Supabase columns
+npm run identity:seed-review-queue  # 5 pending + 2 approved + 2 rejected + 1 resubmit
+```
+
+Apply migrations **050** and **051** (051 grants UPDATE on biometric assessments for reviewer_decision).
+
+### Corrected verification queries (after approve)
+
+```sql
+-- passport_documents (reviewed_by from 021)
+select status, reviewed_by, reviewed_at, reviewer_note
+from passport_documents where capture_session_id = '<session_id>';
+
+-- biometric (reviewer_id / reviewer_decision from 050)
+select decision, reviewer_decision, reviewer_id, reviewed_at, engine_version, signals
+from identity_biometric_assessments where capture_session_id = '<session_id>';
+
+-- audit log (reviewer_id from 050)
+select action, engine_decision, reviewer_decision, reviewer_id, notes, created_at
+from identity_review_audit_log where capture_session_id = '<session_id>';
+```
+
