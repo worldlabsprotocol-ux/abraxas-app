@@ -18,15 +18,26 @@ const APP_ORIGIN =
 
 export const ZKLOGIN_CALLBACK_PATH = "/auth/zklogin/callback";
 
-/** Pin redirect in Google Console via NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI, or it follows the current origin (each Vercel preview URL must be registered). */
+const CANONICAL_ORIGIN = (
+  process.env.NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI?.replace(/\/auth\/zklogin\/callback\/?$/, "")
+  ?? process.env.ABRAXAS_ISSUER_URL
+  ?? "https://abraxasworld.xyz"
+).replace(/\/$/, "");
+
+/** Pin redirect in Google Console: https://abraxasworld.xyz/auth/zklogin/callback */
 export function getZkLoginRedirectUri(): string {
   const pinned = process.env.NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI?.trim();
   if (pinned) return pinned.replace(/\/$/, "");
+
+  // Production builds always callback on abraxasworld.xyz — never a git-preview host.
+  if (process.env.NODE_ENV === "production") {
+    return `${CANONICAL_ORIGIN}${ZKLOGIN_CALLBACK_PATH}`;
+  }
+
   if (typeof window !== "undefined") {
     return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
   }
-  const base = (process.env.ABRAXAS_ISSUER_URL ?? "https://abraxasworld.xyz").replace(/\/$/, "");
-  return `${base}${ZKLOGIN_CALLBACK_PATH}`;
+  return `${CANONICAL_ORIGIN}${ZKLOGIN_CALLBACK_PATH}`;
 }
 
 /** @deprecated use getZkLoginRedirectUri() */

@@ -19,6 +19,19 @@ export function identityCaptureStepLabel(step: IdentityCaptureStep): string {
   }
 }
 
+export function identityCaptureStepHint(step: IdentityCaptureStep): string {
+  switch (step) {
+    case "name":
+      return "Enter the name exactly as it appears on your ID.";
+    case "id_front":
+      return "Photograph the front of your passport, license, or national ID.";
+    case "selfie":
+      return "Take a clear selfie — we match it to your ID photo.";
+    case "review":
+      return "Confirm everything looks right, then submit for Abraxas Verify.";
+  }
+}
+
 export function dataUrlToBlob(dataUrl: string): Blob {
   const [header, base64] = dataUrl.split(",");
   const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
