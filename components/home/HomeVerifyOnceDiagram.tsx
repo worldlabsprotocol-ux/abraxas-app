@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeVerifyOnceDiagram.tsx
-// Without Abraxas vs With Abraxas — regulated industries, not generic placeholders.
+// Without Abraxas vs With Abraxas. Typography first.
 
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
@@ -17,24 +17,18 @@ function IndustryProblemCard({ item }: { item: IndustryCard }) {
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: "0.55rem",
         padding: "0.65rem 0.75rem",
         borderRadius: 10,
         border: "1px solid var(--border)",
         background: "var(--surface)",
       }}
     >
-      <span style={{ fontSize: "1rem", lineHeight: 1 }} aria-hidden>{item.icon}</span>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
-          {item.title}
-        </div>
-        <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2, lineHeight: 1.45 }}>
-          {item.problem}
-        </div>
+      <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
+        {item.title}
       </div>
+      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2, lineHeight: 1.45, marginBottom: 0 }}>
+        {item.problem}
+      </p>
     </div>
   );
 }
@@ -52,7 +46,6 @@ function IndustrySolutionCard({ item }: { item: IndustryCard }) {
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: "1rem", marginBottom: 4 }} aria-hidden>{item.icon}</div>
       <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800, color: "var(--text-primary)" }}>
         {item.title}
       </div>

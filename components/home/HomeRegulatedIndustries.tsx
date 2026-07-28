@@ -41,7 +41,6 @@ export function HomeRegulatedIndustries() {
               border: "1px solid var(--border-strong)",
             }}
           >
-            <div style={{ fontSize: "1.15rem", marginBottom: "0.45rem" }} aria-hidden>{item.icon}</div>
             <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
               {item.title}
             </h3>

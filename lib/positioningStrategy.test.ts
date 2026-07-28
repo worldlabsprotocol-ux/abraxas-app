@@ -18,6 +18,8 @@ import {
   BUILD_VERIFICATION_YOURSELF,
   FIRST_WEDGE_FOCUS,
   TARGET_PROOF_METRICS,
+  CURRENT_FOCUS,
+  GOOD_TROUBLE_PROOF_LINE,
 } from "./positioningStrategy";
 
 describe("positioningStrategy", () => {
@@ -92,5 +94,16 @@ describe("positioningStrategy", () => {
 
   it("lists target proof metrics to gather post launch", () => {
     expect(TARGET_PROOF_METRICS.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("keeps current focus to three scannable objectives", () => {
+    expect(CURRENT_FOCUS).toHaveLength(3);
+    expect(CURRENT_FOCUS[0]?.toLowerCase()).toContain("credential lifecycle");
+    expect(CURRENT_FOCUS[1]?.toLowerCase()).toContain("good trouble");
+  });
+
+  it("frames good trouble as reusable trust not document upload", () => {
+    expect(GOOD_TROUBLE_PROOF_LINE.toLowerCase()).toContain("trusts an existing abraxas credential");
+    expect(GOOD_TROUBLE_PROOF_LINE.toLowerCase()).toContain("verify again");
   });
 });

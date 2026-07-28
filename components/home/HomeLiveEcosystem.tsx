@@ -21,7 +21,6 @@ function PartnerCard({ card }: { card: EcosystemPartnerCard }) {
         opacity: card.status === "coming" ? 0.9 : 1,
       }}
     >
-      <div style={{ fontSize: "1.15rem", marginBottom: "0.45rem" }} aria-hidden>{card.icon}</div>
       <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
         {card.title}
       </h3>

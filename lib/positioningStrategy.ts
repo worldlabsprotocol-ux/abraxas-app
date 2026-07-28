@@ -39,6 +39,17 @@ export const ABRAXAS_ICONIC_LINE =
 export const ELIGIBILITY_NORTH_STAR =
   "Has this already been verified by a trusted issuer?";
 
+/** Proof line for Good Trouble — reusable trust, not document uploads. */
+export const GOOD_TROUBLE_PROOF_LINE =
+  "Good Trouble trusts an existing Abraxas credential instead of asking users to verify again.";
+
+/** Current focus. Three objectives only — easy to scan. */
+export const CURRENT_FOCUS = [
+  "Complete the first production credential lifecycle.",
+  "Launch Good Trouble as the first relying party.",
+  "Measure verification reuse and onboarding performance.",
+] as const;
+
 /** Proof points to gather after launch (make positioning tangible). */
 export const TARGET_PROOF_METRICS = [
   "Time to integrate: under 30 minutes",
