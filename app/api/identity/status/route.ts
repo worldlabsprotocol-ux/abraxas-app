@@ -79,6 +79,26 @@ async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Prom
     return { status: "pending", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
   }
 
+  const { data: resubmit } = await supabase
+    .from("passport_documents")
+    .select("status, reviewer_note, reviewed_at")
+    .eq("sui_address", normalized)
+    .eq("stamp_id", "identity")
+    .eq("status", "resubmission_requested")
+    .order("reviewed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (resubmit) {
+    return {
+      status: "requires_resubmission",
+      via: "manual_review",
+      error_message: resubmit.reviewer_note ?? "Please resubmit your identity documents",
+      idv_provider: getIdvProvider(),
+      veriff_configured: isVeriffLive(),
+    };
+  }
+
   return null;
 }
 
@@ -113,6 +133,7 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
 
   const legacyStatus =
     idvStatus === "approved" && credStatus === "active" ? "approved"
+    : idvStatus === "requires_resubmission" ? "requires_resubmission"
     : idvStatus === "declined" || idvStatus === "expired" || idvStatus === "error" ? "declined"
     : idvStatus === "not_started" ? "not_started"
     : "pending";
@@ -198,6 +219,25 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
 
   if (pendingDoc) {
     return { status: "pending", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
+  }
+
+  const { data: resubmitDoc } = await supabase
+    .from("passport_documents")
+    .select("status, reviewer_note")
+    .eq("user_email", email)
+    .eq("stamp_id", "identity")
+    .eq("status", "resubmission_requested")
+    .limit(1)
+    .maybeSingle();
+
+  if (resubmitDoc) {
+    return {
+      status: "requires_resubmission",
+      via: "manual_review",
+      error_message: resubmitDoc.reviewer_note ?? "Please resubmit your identity documents",
+      idv_provider: getIdvProvider(),
+      veriff_configured: isVeriffLive(),
+    };
   }
 
   return { status: "not_started", veriff_configured: isVeriffLive(), idv_provider: getIdvProvider() };

@@ -2,13 +2,13 @@
 // Approve, reject, or request resubmission for manual identity review.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdmin } from "@/lib/adminAuth";
+import { checkAdminAccess } from "@/lib/adminAuth";
 import { executeAdminReviewAction, type AdminReviewAction } from "@/lib/idv/adminReviewService";
 
 const VALID_ACTIONS = new Set<AdminReviewAction>(["approve", "reject", "request_resubmission"]);
 
 export async function POST(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
