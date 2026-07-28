@@ -36,7 +36,7 @@ describe("fetchLoginMaxEpoch", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("prepare_api");
-      expect(result.error).toContain("/api/auth/zklogin/prepare");
+      expect(result.error).toContain("/api/zklogin/prepare");
     }
   });
 

@@ -6,6 +6,8 @@ import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeJwt, genAddressSeed, getZkLoginSignature } from "@mysten/sui/zklogin";
 import { getSuiClient } from "@/lib/sui/client";
 import { fetchZkLoginProof } from "./fetchZkProof";
+import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
+import { ZKLOGIN_EPOCH_BUFFER } from "./constants";
 import {
   getEphemeralSecretKey,
   loadProofCache,
@@ -28,9 +30,12 @@ export async function signAndExecuteZkLoginTransaction(
     throw new Error("Sign in with Google again to pay from your zkLogin wallet.");
   }
 
-  const client = getSuiClient();
-  const { epoch } = await client.getLatestSuiSystemState();
-  const currentEpoch = Number(epoch);
+  const sui = getSuiClient({ allowBrowser: true });
+  const epochResult = await fetchLoginMaxEpoch();
+  if (!epochResult.ok) {
+    throw new Error(epochResult.error);
+  }
+  const currentEpoch = epochResult.maxEpoch - ZKLOGIN_EPOCH_BUFFER;
   if (currentEpoch >= signing.maxEpoch) {
     throw new Error("Wallet session expired. Sign in with Google again.");
   }
@@ -38,7 +43,7 @@ export async function signAndExecuteZkLoginTransaction(
   const keypair = Ed25519Keypair.fromSecretKey(ephemeralSecretKey);
   tx.setSender(signing.suiAddress);
 
-  const { bytes, signature: userSignature } = await tx.sign({ client, signer: keypair });
+  const { bytes, signature: userSignature } = await tx.sign({ client: sui, signer: keypair });
 
   let partialProof = loadProofCache(signing.maxEpoch);
   if (!partialProof) {
@@ -66,7 +71,7 @@ export async function signAndExecuteZkLoginTransaction(
     userSignature,
   });
 
-  const result = await client.executeTransactionBlock({
+  const result = await sui.executeTransactionBlock({
     transactionBlock: bytes,
     signature: zkLoginSignature,
     options: { showEffects: true },

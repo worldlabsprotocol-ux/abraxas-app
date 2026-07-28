@@ -167,11 +167,23 @@ No tokens, secrets, or full addresses are logged (addresses truncated).
 
 ### Fix
 
-- New **`GET /api/auth/zklogin/prepare`** — fetches epoch on the server using `SUI_RPC_URL`
+- **`GET /api/zklogin/prepare`** — fetches epoch on the server using `SUI_RPC_URL` (alongside `/api/zklogin/prover`, not under `/api/auth/`)
 - `startGoogleZkLogin()` calls that API instead of RPC directly
+- `getSuiClient()` throws `BrowserSuiRpcError` in the browser unless explicitly opted in (payments only)
 - Errors now include **network**, **RPC host**, **HTTP status**, and **phase**
+- `/api/sui/status` exposes `auth_stack.version` to verify deployment
 
-### Vercel env checklist
+### Production verification (abraxasworld.xyz)
+
+As of investigation, production was **not** running this fix:
+
+| Check | Old production | After deploy |
+|-------|----------------|--------------|
+| `GET /api/zklogin/prepare` | 404 or 501 | `200` with `ok: true` |
+| `GET /api/sui/status` → `auth_stack` | missing | `zklogin-server-epoch-v2` |
+| Browser CORS to `rpc-devnet.suiscan.xyz` on sign-in | yes | **no** |
+| Error text "Check SUI_RPC_URL" | yes | **no** (detailed prepare errors) |
+| PR #76 merged | **no** (open) | required |
 
 | Variable | Scope | Purpose |
 |----------|-------|---------|

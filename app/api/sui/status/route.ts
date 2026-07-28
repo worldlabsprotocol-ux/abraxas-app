@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { getSuiDeployment, isSuiMainnetDeployed, resolveSuiDeployment } from "@/lib/sui/config";
 import { getPublicSuiConfig } from "@/lib/sui/network";
 import { getSponsorEnvDiagnostics, isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
+import { ZKLOGIN_PREPARE_API_VERSION, ZKLOGIN_PREPARE_PATH } from "@/lib/sui/zklogin/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,12 @@ export async function GET() {
       : null,
     blockers,
     mainnet_path: "/api/sui/mainnet/readiness",
+    auth_stack: {
+      version: ZKLOGIN_PREPARE_API_VERSION,
+      prepare_path: ZKLOGIN_PREPARE_PATH,
+      browser_sign_in_rpc: false,
+      note: "If prepare_path returns 404/501, production has not deployed auth-session fix",
+    },
     updated_at: new Date().toISOString(),
   });
 }
