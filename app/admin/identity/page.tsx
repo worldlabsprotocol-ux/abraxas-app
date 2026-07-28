@@ -42,7 +42,17 @@ interface QueueItem {
     assurance_level?: string;
     review_method?: string;
     engine_version?: string;
-    signals?: { rejection_reasons?: string[]; fraud_risk_score?: number };
+    signals?: {
+      rejection_reasons?: string[];
+      fraud_risk_score?: number;
+      fraud_risk?: number;
+      face_detected_selfie?: boolean;
+      face_detected_id?: boolean;
+      document_type?: string;
+      face_match?: number;
+      liveness?: number;
+      tamper_score?: number;
+    };
   } | null;
 }
 
@@ -262,11 +272,11 @@ export default function AdminIdentityPage() {
                     {item.biometric && (
                       <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "#A7F3D0", marginTop: 8, lineHeight: 1.6 }}>
                         Engine {item.biometric.engine_version ?? "v1"} · {item.biometric.decision}
-                        {" · "}face {(Number(item.biometric.face_match_score) * 100).toFixed(0)}%
-                        {" · "}liveness {(Number(item.biometric.liveness_score) * 100).toFixed(0)}%
-                        {" · "}id {(Number(item.biometric.document_quality_score) * 100).toFixed(0)}%
-                        {item.biometric.signals?.fraud_risk_score != null && (
-                          <>{" · "}fraud risk {(Number(item.biometric.signals.fraud_risk_score) * 100).toFixed(0)}%</>
+                        {" · "}face {((Number(item.biometric.signals?.face_match ?? item.biometric.face_match_score ?? 0)) * 100).toFixed(0)}%
+                        {" · "}liveness {((Number(item.biometric.signals?.liveness ?? item.biometric.liveness_score ?? 0)) * 100).toFixed(0)}%
+                        {" · "}{String(item.biometric.signals?.document_type ?? "id")}
+                        {(item.biometric.signals?.fraud_risk ?? item.biometric.signals?.fraud_risk_score) != null && (
+                          <>{" · "}fraud {(Number(item.biometric.signals?.fraud_risk ?? item.biometric.signals?.fraud_risk_score) * 100).toFixed(0)}%</>
                         )}
                       </div>
                     )}

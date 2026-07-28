@@ -45,12 +45,18 @@ export function evaluateBiometricDecision(
     document_class_confidence: 1,
     document_edge_density: 1,
     fraud_risk_score: 0,
+    selfie_face_count: 1,
+    id_tamper_score: 0,
+    selfie_tamper_score: 0,
   };
 
   const fraudRisk = computeFraudRisk(scores, f, t);
 
   if (f.selfie_face_presence < t.facePresenceMin) {
     reasons.push("Selfie must show a clear human face");
+  }
+  if (f.selfie_face_count > 1) {
+    reasons.push("Selfie must show exactly one face");
   }
   if (f.id_face_presence < t.facePresenceMin * 0.75) {
     reasons.push("Government ID photo must include a visible face");
@@ -76,8 +82,12 @@ export function evaluateBiometricDecision(
   if (scores.face_match < t.faceMin) {
     reasons.push("Face on ID does not match selfie");
   }
+  if (f.selfie_tamper_score > 0.65 || f.id_tamper_score > 0.65) {
+    reasons.push("Image may be a screen capture or digitally altered");
+  }
 
   const hardReject =
+    f.selfie_face_count > 1 ||
     f.selfie_face_presence < t.facePresenceMin * 0.55 ||
     f.id_face_presence < t.facePresenceMin * 0.45 ||
     f.document_aspect < t.documentAspectMin * 0.55 ||

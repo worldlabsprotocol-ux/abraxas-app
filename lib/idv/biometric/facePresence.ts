@@ -8,6 +8,7 @@ export interface FacePresenceResult {
   skin_ratio: number;
   center_variance: number;
   edge_density: number;
+  face_count_estimate: number;
 }
 
 function clamp01(n: number): number {
@@ -78,6 +79,8 @@ export async function detectFacePresence(buffer: Buffer): Promise<FacePresenceRe
   }
   const edgeDensity = edgeCount ? edgeSum / edgeCount / 255 : 0;
 
+  const faceCountEstimate = estimateFaceCount(data, w, h);
+
   const skinScore = clamp01(skinRatio * 4.5);
   const varianceScore = clamp01(variance / 1200);
   const edgeScore = clamp01(edgeDensity * 3.2);
@@ -94,5 +97,81 @@ export async function detectFacePresence(buffer: Buffer): Promise<FacePresenceRe
     skin_ratio: skinRatio,
     center_variance: variance,
     edge_density: edgeDensity,
+    face_count_estimate: faceCountEstimate,
   };
+}
+
+/** Estimate face count: two separated skin regions (gap in center) → 2 faces. */
+function estimateFaceCount(data: Buffer, w: number, h: number): number {
+  let leftSkin = 0;
+  let centerSkin = 0;
+  let rightSkin = 0;
+  const leftBound = w / 3;
+  const rightBound = (2 * w) / 3;
+  let totalSkin = 0;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 3;
+      if (!isSkinTone(data[i], data[i + 1], data[i + 2])) continue;
+      totalSkin++;
+      if (x < leftBound) leftSkin++;
+      else if (x >= rightBound) rightSkin++;
+      else centerSkin++;
+    }
+  }
+
+  if (totalSkin === 0) return 0;
+  const minSide = Math.max(6, totalSkin * 0.18);
+  const centerGap = centerSkin < totalSkin * 0.12;
+  if (leftSkin >= minSide && rightSkin >= minSide && centerGap) return 2;
+  if (totalSkin > 0) return 1;
+
+  const cols = 4;
+  const rows = 4;
+  const blockW = Math.floor(w / cols);
+  const blockH = Math.floor(h / rows);
+  const activeBlocks: { x: number; y: number }[] = [];
+
+  for (let by = 0; by < rows; by++) {
+    for (let bx = 0; bx < cols; bx++) {
+      let skin = 0;
+      let total = 0;
+      for (let y = by * blockH; y < (by + 1) * blockH && y < h; y++) {
+        for (let x = bx * blockW; x < (bx + 1) * blockW && x < w; x++) {
+          const i = (y * w + x) * 3;
+          if (isSkinTone(data[i], data[i + 1], data[i + 2])) skin++;
+          total++;
+        }
+      }
+      if (total > 0 && skin / total > 0.18) {
+        activeBlocks.push({ x: bx, y: by });
+      }
+    }
+  }
+
+  if (activeBlocks.length < 2) return activeBlocks.length > 0 ? 1 : 0;
+
+  let clusters = 0;
+  const visited = new Set<string>();
+  for (const block of activeBlocks) {
+    const key = `${block.x},${block.y}`;
+    if (visited.has(key)) continue;
+    clusters++;
+    const queue = [block];
+    visited.add(key);
+    while (queue.length) {
+      const cur = queue.pop()!;
+      for (const nb of activeBlocks) {
+        const nk = `${nb.x},${nb.y}`;
+        if (visited.has(nk)) continue;
+        const dist = Math.abs(nb.x - cur.x) + Math.abs(nb.y - cur.y);
+        if (dist <= 1.5) {
+          visited.add(nk);
+          queue.push(nb);
+        }
+      }
+    }
+  }
+  return clusters;
 }

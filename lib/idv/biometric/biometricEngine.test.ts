@@ -12,6 +12,9 @@ const GOOD_FRAUD: BiometricFraudSignals = {
   document_class_confidence: 0.68,
   document_edge_density: 0.12,
   fraud_risk_score: 0,
+  selfie_face_count: 1,
+  id_tamper_score: 0.1,
+  selfie_tamper_score: 0.1,
 };
 
 describe("evaluateBiometricDecision", () => {
@@ -53,6 +56,7 @@ describe("evaluateBiometricDecision", () => {
       selfie_face_presence: 0.05,
       document_aspect: 0.1,
       document_class_confidence: 0.1,
+      selfie_face_count: 0,
     });
     expect(result.decision).toBe("reject");
     expect(result.reasons.length).toBeGreaterThan(0);
@@ -72,6 +76,9 @@ describe("evaluateBiometricDecision", () => {
       document_class_confidence: 0.12,
       document_edge_density: 0.02,
       fraud_risk_score: 0,
+      selfie_face_count: 0,
+      id_tamper_score: 0.2,
+      selfie_tamper_score: 0.2,
     });
     expect(result.decision).toBe("reject");
     expect(result.reasons.some(r => r.toLowerCase().includes("face"))).toBe(true);
@@ -91,6 +98,9 @@ describe("evaluateBiometricDecision", () => {
       document_class_confidence: 0.2,
       document_edge_density: 0.03,
       fraud_risk_score: 0,
+      selfie_face_count: 1,
+      id_tamper_score: 0.3,
+      selfie_tamper_score: 0.3,
     });
     expect(result.decision).toBe("reject");
     expect(result.fraud_risk_score).toBeGreaterThan(0.25);

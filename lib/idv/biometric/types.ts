@@ -18,6 +18,9 @@ export interface BiometricFraudSignals {
   document_class_confidence: number;
   document_edge_density: number;
   fraud_risk_score: number;
+  selfie_face_count: number;
+  id_tamper_score: number;
+  selfie_tamper_score: number;
 }
 
 export interface BiometricAssessment {

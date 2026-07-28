@@ -41,6 +41,9 @@ describe("Abraxas Verify identity pipeline", () => {
       document_class_confidence: 0.75,
       document_edge_density: 0.1,
       fraud_risk_score: 0,
+      selfie_face_count: 1,
+      id_tamper_score: 0.1,
+      selfie_tamper_score: 0.1,
     });
     expect(result.decision).toBe("human_review");
     expect(result.assurance_level).toBe("L2");
@@ -57,6 +60,9 @@ describe("Abraxas Verify identity pipeline", () => {
       document_class_confidence: 0.75,
       document_edge_density: 0.1,
       fraud_risk_score: 0,
+      selfie_face_count: 1,
+      id_tamper_score: 0.1,
+      selfie_tamper_score: 0.1,
     });
     expect(result.decision).toBe("auto_approve");
     expect(result.assurance_level).toBe("L3");
