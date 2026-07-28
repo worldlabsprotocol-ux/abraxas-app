@@ -2,7 +2,7 @@
 
 import { describe, expect, it, vi, afterEach } from "vitest";
 
-vi.mock("./client", () => ({
+vi.mock("./serverClient", () => ({
   getSuiClient: vi.fn(),
 }));
 
@@ -11,7 +11,7 @@ vi.mock("./network", () => ({
   getSuiGraphqlUrl: () => "https://graphql.devnet.sui.io/graphql",
 }));
 
-import { getSuiClient } from "./client";
+import { getSuiClient } from "./serverClient";
 import { fetchCurrentSuiEpoch } from "./fetchCurrentEpoch";
 
 describe("fetchCurrentSuiEpoch", () => {

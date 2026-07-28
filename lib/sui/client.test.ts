@@ -3,14 +3,13 @@
 import { describe, expect, it, afterEach, vi } from "vitest";
 import { BrowserSuiRpcError, getSuiClient } from "./client";
 
-describe("getSuiClient", () => {
+describe("getSuiClient (browser)", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("throws in the browser unless allowBrowser is set", () => {
+  it("always throws in the browser", () => {
     vi.stubGlobal("window", {});
     expect(() => getSuiClient()).toThrow(BrowserSuiRpcError);
-    expect(() => getSuiClient({ allowBrowser: true })).not.toThrow();
   });
 });

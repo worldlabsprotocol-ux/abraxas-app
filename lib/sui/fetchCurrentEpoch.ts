@@ -1,7 +1,7 @@
 // FILE: lib/sui/fetchCurrentEpoch.ts
 // Fetch current Sui epoch — JSON-RPC first, GraphQL fallback (public JSON-RPC deprecated Jul 2026).
 
-import { getSuiClient } from "./client";
+import { getSuiClient } from "./serverClient";
 import { getSuiGraphqlUrl, getSuiNetwork } from "./network";
 
 export type EpochSource = "json_rpc" | "graphql";

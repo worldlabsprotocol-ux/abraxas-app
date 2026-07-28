@@ -2,7 +2,7 @@
 // Verify which sponsor wallet + IssuanceCap Abraxas is using (no secrets exposed).
 
 import { NextResponse } from "next/server";
-import { getSuiDevnetClient } from "@/lib/sui/client";
+import { getSuiDevnetClient } from "@/lib/sui/serverClient";
 import { isSuiMainnetDeployed } from "@/lib/sui/config";
 import { getSponsorConfig, getSponsorEnvDiagnostics } from "@/lib/sui/passportIssuer";
 import { getSuiNetwork } from "@/lib/sui/network";

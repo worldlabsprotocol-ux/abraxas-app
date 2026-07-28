@@ -2,7 +2,7 @@
 // Verify USDC (or devnet SUI) payment to Cielo treasury on Sui.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { getSuiClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/serverClient";
 import { suiExplorerTxUrl } from "@/lib/sui/network";
 import { getCieloTreasuryAddress, getUsdcCoinType, humanUsdcFromBaseUnits, usdcBaseUnits } from "@/lib/cielo/treasury";
 
