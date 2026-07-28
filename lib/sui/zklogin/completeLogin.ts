@@ -13,6 +13,7 @@ import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 import { clearLoginInFlight } from "./loginInFlight";
 import { logAuthEvent } from "./authDebug";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { emailFromIdToken } from "./resolveEmail";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
   logAuthEvent("oauth_callback");
@@ -77,10 +78,11 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
     }
   }
 
-  const jwtEmail = (decoded as Record<string, unknown>).email;
+  const jwtEmail = emailFromIdToken(idToken);
   const resolvedEmail =
     (typeof regData.email === "string" && regData.email.includes("@") ? regData.email : null)
-    ?? (typeof jwtEmail === "string" ? jwtEmail : undefined);
+    ?? jwtEmail
+    ?? undefined;
 
   const session: ZkLoginUserSession = {
     suiAddress: regData.sui_address,
@@ -113,8 +115,18 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
       suiAddress: regData.sui_address,
       error: browserSession.error,
     });
+  } else if (jwtEmail && !regData.email) {
+    void fetch("/api/auth/zklogin/sync-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id_token: idToken }),
+    }).catch(() => { /* best-effort */ });
   }
 
-  logAuthEvent("zklogin_complete", { suiAddress: session.suiAddress });
+  logAuthEvent("zklogin_complete", {
+    suiAddress: session.suiAddress,
+    detail: resolvedEmail ? "email_present" : "email_missing",
+  });
   return session;
 }
