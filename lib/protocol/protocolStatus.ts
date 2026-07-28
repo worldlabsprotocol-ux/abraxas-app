@@ -43,7 +43,7 @@ export async function getProtocolStatus(): Promise<ProtocolStatusPayload> {
       label: "Credential Issuance",
       status: idv.signing_key_configured ? "operational" : "degraded",
       detail: idv.signing_key_configured
-        ? "Signing key configured — credentials can be issued after approval."
+        ? "Signing key configured. Credentials can be issued after approval."
         : "ABRAXAS_SIGNING_KEY required for credential issuance.",
     },
     {

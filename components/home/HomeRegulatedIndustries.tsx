@@ -27,7 +27,7 @@ export function HomeRegulatedIndustries() {
         fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
       }}>
-        The same verification layer solves different regulatory problems — age eligibility, property
+        The same verification layer solves different regulatory problems: age eligibility, property
         ownership, wallet identity, and financial compliance.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>

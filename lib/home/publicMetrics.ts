@@ -22,7 +22,7 @@ export interface HomeStatCard {
 export type HomeMetricsStatus = "loading" | "ready" | "error";
 
 export function formatMetricValue(value: number | null | undefined): string {
-  if (value == null || Number.isNaN(value)) return "—";
+  if (value == null || Number.isNaN(value)) return "n/a";
   return value.toLocaleString();
 }
 

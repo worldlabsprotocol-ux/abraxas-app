@@ -63,7 +63,7 @@ export function HomeLiveEcosystem() {
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
       }}>
         Age verified once. Trusted everywhere. Reusable eligibility credentials work across cannabis,
-        real estate, and identity — not just one vertical.
+        real estate, and identity. Not just one vertical.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>
         {LIVE_ECOSYSTEM_PARTNERS.map((card) => (

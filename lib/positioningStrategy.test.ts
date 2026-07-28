@@ -3,6 +3,8 @@ import {
   RELYING_PARTY_NORTH_STAR,
   ELIGIBILITY_NORTH_STAR,
   MERCHANT_PRODUCT_PITCH,
+  COMPANY_MISSION,
+  ABRAXAS_ICONIC_LINE,
   DEVELOPER_API_NORTH_STAR,
   MARKETING_HERO_TAGLINE,
   DOCS_REFRESH_PROMISE,
@@ -10,12 +12,18 @@ import {
   PARKED_PUBLIC_NARRATIVES,
   WHY_INTEGRATE_ABRAXAS,
   ELIGIBILITY_FLYWHEEL,
+  TRUST_NETWORK_TWO_SIDED,
   BUILD_VERIFICATION_YOURSELF,
+  FIRST_WEDGE_FOCUS,
 } from "./positioningStrategy";
 
 describe("positioningStrategy", () => {
   it("centers relying party adoption as north star", () => {
     expect(RELYING_PARTY_NORTH_STAR.toLowerCase()).toContain("relying party");
+  });
+
+  it("defines company mission as trust layer", () => {
+    expect(COMPANY_MISSION.toLowerCase()).toContain("trust layer");
   });
 
   it("sells never build verification again to merchants", () => {
@@ -24,6 +32,11 @@ describe("positioningStrategy", () => {
 
   it("asks whether work was already verified", () => {
     expect(ELIGIBILITY_NORTH_STAR.toLowerCase()).toContain("already been verified");
+  });
+
+  it("captures iconic verification and trust line", () => {
+    expect(ABRAXAS_ICONIC_LINE.toLowerCase()).toContain("every verification should happen once");
+    expect(ABRAXAS_ICONIC_LINE.toLowerCase()).toContain("trust decision");
   });
 
   it("centers the API as the product", () => {
@@ -52,9 +65,14 @@ describe("positioningStrategy", () => {
     expect(WHY_INTEGRATE_ABRAXAS[4]?.toLowerCase()).toContain("network");
   });
 
-  it("defines the eligibility flywheel", () => {
+  it("defines user and issuer sided flywheels", () => {
     expect(ELIGIBILITY_FLYWHEEL[0]?.toLowerCase()).toContain("verifies once");
-    expect(ELIGIBILITY_FLYWHEEL.at(-1)?.toLowerCase()).toContain("verify once");
+    expect(TRUST_NETWORK_TWO_SIDED.some((s) => s.toLowerCase().includes("issuer"))).toBe(true);
     expect(BUILD_VERIFICATION_YOURSELF.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("keeps first wedge focused", () => {
+    expect(FIRST_WEDGE_FOCUS).toHaveLength(3);
+    expect(FIRST_WEDGE_FOCUS[0]?.toLowerCase()).toContain("age");
   });
 });

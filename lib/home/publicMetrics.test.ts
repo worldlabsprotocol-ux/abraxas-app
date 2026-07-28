@@ -8,9 +8,9 @@ describe("publicMetrics", () => {
     expect(formatMetricValue(1200)).toBe("1,200");
   });
 
-  it("returns em dash for missing values", () => {
-    expect(formatMetricValue(null)).toBe("—");
-    expect(formatMetricValue(undefined)).toBe("—");
+  it("returns n/a for missing values", () => {
+    expect(formatMetricValue(null)).toBe("n/a");
+    expect(formatMetricValue(undefined)).toBe("n/a");
   });
 
   it("builds stat cards from API metrics", () => {
@@ -33,7 +33,7 @@ describe("publicMetrics", () => {
 
   it("handles empty metrics payload gracefully", () => {
     const cards = buildHomeStatCards(null);
-    expect(cards.every((c) => c.value === "—" && c.numeric === null)).toBe(true);
+    expect(cards.every((c) => c.value === "n/a" && c.numeric === null)).toBe(true);
   });
 
   it("falls back credentials to verification_network when active_credentials missing", () => {

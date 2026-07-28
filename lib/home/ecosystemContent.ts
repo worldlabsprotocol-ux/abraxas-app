@@ -125,7 +125,7 @@ export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
     icon: "🌿",
     title: "Good Trouble Canna",
     summary: "21+ eligibility verification",
-    demonstrates: "Reusable compliance credentials across businesses — the first proof of portable eligibility.",
+    demonstrates: "Reusable compliance credentials across businesses. The first proof of portable eligibility.",
     href: "/good-trouble",
   },
 ];

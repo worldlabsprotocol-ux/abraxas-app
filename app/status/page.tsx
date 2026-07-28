@@ -87,7 +87,7 @@ export default function ProtocolStatusPage() {
           Protocol status
         </h1>
         <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
-          Abraxas is reusable identity infrastructure — not just a website. Live subsystem health and protocol metrics.
+          Abraxas is reusable identity infrastructure, not just a website. Live subsystem health and protocol metrics.
         </p>
       </header>
 

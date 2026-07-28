@@ -47,7 +47,7 @@ export function HomeSharpHero() {
           maxWidth: 640,
         }}
       >
-        Reusable identity infrastructure. Users verify once — applications consume trusted credentials.
+        Reusable identity infrastructure. Users verify once. Applications consume trusted credentials.
       </p>
       <p
         style={{

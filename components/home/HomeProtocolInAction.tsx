@@ -77,7 +77,7 @@ export function HomeProtocolInAction() {
         fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 680,
       }}>
-        Real implementations — not hypothetical examples. Each partner demonstrates a different
+        Real implementations, not hypothetical examples. Each partner demonstrates a different
         capability of reusable trust infrastructure.
       </p>
 

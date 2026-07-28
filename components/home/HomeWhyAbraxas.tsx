@@ -37,7 +37,7 @@ export function HomeWhyAbraxas() {
         }}
       >
         Every financial platform asks users to verify themselves again. Every issuer repeats
-        compliance. Every institution rebuilds trust from scratch — and every dispensary, delivery
+        compliance. Every institution rebuilds trust from scratch. Every dispensary, delivery
         service, or regulated marketplace asks users to prove the same eligibility again.
       </blockquote>
       <p
@@ -65,8 +65,8 @@ export function HomeWhyAbraxas() {
           maxWidth: 720,
         }}
       >
-        Age verified once. Trusted everywhere. Reusable credentials for age, identity, and compliance
-        — not cannabis verification, but eligibility infrastructure that works across industries.
+        Age verified once. Trusted everywhere. Reusable credentials for age, identity, and compliance.
+        Eligibility infrastructure that works across industries, not a single vertical product.
       </p>
     </section>
   );
