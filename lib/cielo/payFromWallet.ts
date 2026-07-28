@@ -1,9 +1,7 @@
 // FILE: lib/cielo/payFromWallet.ts
-// Phase 3: one-click Cielo payment from zkLogin wallet.
+// Phase 3: one-click Cielo payment from zkLogin wallet (no browser Sui RPC).
 
-import { getSuiClient } from "@/lib/sui/client";
 import { signAndExecuteZkLoginTransaction } from "@/lib/sui/zklogin/signAndExecuteTransaction";
-import { buildCieloPaymentTransaction } from "@/lib/cielo/buildPaymentTransaction";
 
 export interface PayCieloFromWalletParams {
   senderAddress: string;
@@ -23,15 +21,28 @@ export async function payCieloFromWallet(
     throw new Error("Treasury address not configured");
   }
 
-  const client = getSuiClient();
-  const tx = await buildCieloPaymentTransaction(client, {
-    sender: params.senderAddress,
-    treasury: params.treasuryAddress,
-    amountUsdc: params.amountUsdc,
-    usdcCoinType: params.usdcCoinType,
+  const buildRes = await fetch("/api/cielo/build-payment-tx", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sender_address: params.senderAddress,
+      treasury_address: params.treasuryAddress,
+      amount_usdc: params.amountUsdc,
+      usdc_coin_type: params.usdcCoinType,
+    }),
   });
 
-  const { digest } = await signAndExecuteZkLoginTransaction(tx);
+  const buildData = (await buildRes.json()) as {
+    ok?: boolean;
+    transaction_block?: string;
+    error?: string;
+  };
+
+  if (!buildRes.ok || !buildData.transaction_block) {
+    throw new Error(buildData.error ?? "Could not build payment transaction");
+  }
+
+  const { digest } = await signAndExecuteZkLoginTransaction(buildData.transaction_block);
   return { txDigest: digest };
 }
 

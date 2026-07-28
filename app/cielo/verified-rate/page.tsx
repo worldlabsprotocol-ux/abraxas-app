@@ -4,7 +4,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
-import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { CieloVerifiedRateFlow } from "@/components/cielo/CieloVerifiedRateFlow";
 
 export default function CieloVerifiedRatePage() {
@@ -18,9 +17,7 @@ export default function CieloVerifiedRatePage() {
           ← Cielo Sunrise asset
         </Link>
         <Suspense fallback={<p style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading…</p>}>
-          <SuiAuthProvider>
-            <CieloVerifiedRateFlow />
-          </SuiAuthProvider>
+          <CieloVerifiedRateFlow />
         </Suspense>
       </div>
     </RedesignShell>

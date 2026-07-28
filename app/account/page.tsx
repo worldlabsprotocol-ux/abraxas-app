@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
@@ -166,9 +166,5 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
 }
 
 export default function AccountPage() {
-  return (
-    <SuiAuthProvider>
-      <AccountInner />
-    </SuiAuthProvider>
-  );
+  return <AccountInner />;
 }

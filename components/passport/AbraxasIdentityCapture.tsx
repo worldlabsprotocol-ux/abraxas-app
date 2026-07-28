@@ -5,6 +5,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { CameraCapture } from "@/components/passport/CameraCapture";
 import { Btn } from "@/components/redesign/ui";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { loadUserSession } from "@/lib/sui/zklogin/session";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import {
   identityCaptureStepLabel,
   type IdentityCaptureStep,
@@ -28,11 +31,14 @@ interface CaptureState {
 }
 
 export function AbraxasIdentityCapture({
-  email,
-  suiAddress,
+  email: emailProp,
+  suiAddress: suiProp,
   onSubmitted,
   pendingReview = false,
 }: AbraxasIdentityCaptureProps) {
+  const { suiAddress: authAddress, session, isLoading: authLoading, isAuthenticated, refreshSession } = useSuiAuth();
+  const email = emailProp || session?.email || "";
+  const suiAddress = suiProp ?? authAddress;
   const [step, setStep] = useState<IdentityCaptureStep>("name");
   const [legalName, setLegalName] = useState("");
   const [idCapture, setIdCapture] = useState<CaptureState | null>(null);
@@ -104,12 +110,24 @@ export function AbraxasIdentityCapture({
   }
 
   async function submitCapture() {
-    if (!email.includes("@")) {
-      setError("Sign in with Google so we can link this verification to your account.");
+    if (authLoading) {
+      setError("Still loading your session. Please wait a moment.");
       return;
     }
-    if (!suiAddress) {
-      setError("Sign in with Google (top right) before submitting identity verification.");
+
+    const stored = loadUserSession();
+    const resolvedAddress = suiAddress ?? stored?.suiAddress ?? null;
+    const resolvedEmail = email || stored?.email || "";
+
+    if (!resolvedAddress) {
+      setError(
+        "You are not signed in. Tap Sign in at the top right, complete Google once, then return here.",
+      );
+      return;
+    }
+
+    if (!resolvedEmail.includes("@")) {
+      setError("We need your Google email on file. Sign out, sign in once more, then submit again.");
       return;
     }
     if (!idCapture || !selfieCapture) {
@@ -117,9 +135,21 @@ export function AbraxasIdentityCapture({
       return;
     }
 
+    if (!isAuthenticated && stored?.suiAddress) {
+      refreshSession();
+    }
+
     setSubmitting(true);
     setError(null);
     try {
+      const browserSession = await ensureBrowserSession(resolvedAddress);
+      if (!browserSession.ok) {
+        throw new Error(
+          browserSession.error
+          ?? "Could not establish a secure browser session. Sign out, sign in once, then try again.",
+        );
+      }
+
       const formData = new FormData();
       formData.append("legal_name", legalName.trim());
       formData.append("id_front", idCapture.blob, "id_front.jpg");
@@ -156,6 +186,14 @@ export function AbraxasIdentityCapture({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div style={{ padding: "1rem", fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+        Loading your session…
+      </div>
+    );
   }
 
   if (submitted) {

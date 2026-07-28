@@ -32,4 +32,4 @@ export const SEO_ALL_KEYWORDS = [...SEO_PRIMARY_KEYWORDS, ...SEO_SUPPORTING_KEYW
 export const SEO_DEFAULT_DESCRIPTION =
   "Abraxas is the RWA verification app and asset tokenization platform for real world asset tokenization — reusable verification infrastructure for tokenized real-world assets, digital asset verification, and institutional RWA compliance.";
 
-export const SEO_DEFAULT_TITLE = "Abraxas | RWA Verification App — Real World Asset Tokenization";
+export const SEO_DEFAULT_TITLE = "Abraxas · abraxasworld.xyz";

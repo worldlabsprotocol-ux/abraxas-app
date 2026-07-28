@@ -15,12 +15,20 @@ export function getSuiNetwork(): SuiNetwork {
 }
 
 export function getSuiRpcUrl(): string {
-  const explicit = process.env.SUI_RPC_URL?.trim();
+  const explicit =
+    process.env.SUI_RPC_URL?.trim()
+    ?? process.env.NEXT_PUBLIC_SUI_RPC_URL?.trim();
   if (explicit) return explicit;
   const network = getSuiNetwork();
-  // Mysten devnet fullnode currently 404s for @mysten/sui JSON-RPC; Suiscan works.
-  if (network === "devnet") return "https://rpc-devnet.suiscan.xyz";
   return getFullnodeUrl(network);
+}
+
+/** Sui Foundation GraphQL — reliable for epoch reads when JSON-RPC is unavailable. */
+export function getSuiGraphqlUrl(): string {
+  const explicit = process.env.SUI_GRAPHQL_URL?.trim();
+  if (explicit) return explicit;
+  const network = getSuiNetwork();
+  return `https://graphql.${network}.sui.io/graphql`;
 }
 
 export function getSuiExplorerTxBase(): string {
@@ -53,7 +61,9 @@ export function getPublicSuiConfig() {
   const network = getSuiNetwork();
   return {
     network,
-    rpc_configured: Boolean(process.env.SUI_RPC_URL),
+    rpc_configured: Boolean(
+      process.env.SUI_RPC_URL?.trim() || process.env.NEXT_PUBLIC_SUI_RPC_URL?.trim(),
+    ),
     explorer_tx_base: getSuiExplorerTxBase(),
     is_mainnet: network === "mainnet",
   };

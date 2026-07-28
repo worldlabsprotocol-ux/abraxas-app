@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/sui/SuiAuthProvider.tsx
-// Sui-native verification identity via zkLogin (replaces Solana wallet on /passport).
+// Single source of truth for zkLogin auth state — mount once at app root only.
 
 import {
   createContext,
@@ -11,11 +11,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { loadUserSession, clearUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
+import { loadUserSession, clearUserSession, saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
-import { startGoogleZkLogin } from "@/lib/sui/zklogin/startLogin";
+import { startGoogleZkLogin, clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
 
 interface SuiAuthContextValue {
   session: ZkLoginUserSession | null;
@@ -26,47 +28,108 @@ interface SuiAuthContextValue {
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
   signOut: () => void;
+  refreshSession: () => void;
 }
 
 const SuiAuthContext = createContext<SuiAuthContextValue | null>(null);
 
+function readSessionFromStorage(): ZkLoginUserSession | null {
+  if (typeof window === "undefined") return null;
+  return loadUserSession();
+}
+
 export function SuiAuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<ZkLoginUserSession | null>(null);
-  const [canSignTransactions, setCanSignTransactions] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<ZkLoginUserSession | null>(readSessionFromStorage);
+  const [canSignTransactions, setCanSignTransactions] = useState(() =>
+    canSignZkLoginTransactions(readSessionFromStorage()?.suiAddress),
+  );
+  const [isLoading, setIsLoading] = useState(() => typeof window === "undefined");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const reloadSession = useCallback(() => {
+    clearStaleLoginInFlight();
     const loaded = loadUserSession();
     setSession(loaded);
-    setCanSignTransactions(canSignZkLoginTransactions(loaded?.suiAddress));
+    const signingReady = canSignZkLoginTransactions(loaded?.suiAddress);
+    setCanSignTransactions(signingReady);
     setIsLoading(false);
+    logAuthEvent("session_loaded", {
+      suiAddress: loaded?.suiAddress ?? null,
+      hasSigning: signingReady,
+    });
+    if (loaded?.suiAddress) {
+      logAuthEvent("auth_provider_authenticated", { suiAddress: loaded.suiAddress });
+    }
+    logAuthEvent("auth_provider_ready", { suiAddress: loaded?.suiAddress ?? null });
   }, []);
 
   useEffect(() => {
-    setCanSignTransactions(canSignZkLoginTransactions(session?.suiAddress));
+    reloadSession();
+  }, [reloadSession]);
+
+  useEffect(() => {
+    const onSessionChange = () => reloadSession();
+    window.addEventListener("abraxas:zklogin-session", onSessionChange);
+    window.addEventListener("storage", onSessionChange);
+    return () => {
+      window.removeEventListener("abraxas:zklogin-session", onSessionChange);
+      window.removeEventListener("storage", onSessionChange);
+    };
+  }, [reloadSession]);
+
+  useEffect(() => {
+    const signingReady = canSignZkLoginTransactions(session?.suiAddress);
+    setCanSignTransactions(signingReady);
     if (session?.suiAddress) {
-      void fetch("/api/auth/browser-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ sui_address: session.suiAddress }),
-      }).catch(() => { /* best-effort */ });
+      logAuthEvent(signingReady ? "wallet_signing_ready" : "wallet_signing_missing", {
+        suiAddress: session.suiAddress,
+        hasSigning: signingReady,
+      });
+      void ensureBrowserSession(session.suiAddress);
     }
   }, [session]);
 
-  const signInWithGoogle = useCallback(async () => {
+  useEffect(() => {
+    if (!session?.suiAddress) return;
+
+    void (async () => {
+      if (!session.email?.includes("@")) {
+        try {
+          const res = await fetch("/api/auth/zklogin/me", { credentials: "include" });
+          if (res.ok) {
+            const data = await res.json() as { email?: string | null };
+            if (data.email?.includes("@")) {
+              const current = loadUserSession();
+              if (current) {
+                const updated = { ...current, email: data.email };
+                saveUserSession(updated);
+                setSession(updated);
+              }
+            }
+          }
+        } catch { /* best-effort */ }
+      }
+    })();
+  }, [session?.suiAddress, session?.email]);
+
+  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     setError(null);
     const result = await startGoogleZkLogin();
-    if (!result.ok) setError(result.error);
+    if (!result.ok) {
+      setError(result.error);
+      return false;
+    }
+    return true;
   }, []);
 
   const signOut = useCallback(() => {
     clearUserSession();
     setSession(null);
     setCanSignTransactions(false);
+    logAuthEvent("session_cleared");
+    void fetch("/api/auth/browser-session", { method: "DELETE", credentials: "include" }).catch(() => {});
   }, []);
 
   const value = useMemo<SuiAuthContextValue>(() => ({
@@ -80,7 +143,8 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     error,
     signInWithGoogle,
     signOut,
-  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signOut]);
+    refreshSession: reloadSession,
+  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signOut, reloadSession]);
 
   return (
     <SuiAuthContext.Provider value={value}>

@@ -4,7 +4,7 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { CieloPaymentPanel } from "@/components/cielo/CieloPaymentPanel";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
@@ -43,14 +43,12 @@ function PayInner() {
 
 export default function CieloPayPage() {
   return (
-    <SuiAuthProvider>
-      <div data-theme="dark" style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)" }}>
-        <AmbientGlow />
-        <RedesignNav />
-        <Suspense fallback={null}>
-          <PayInner />
-        </Suspense>
-      </div>
-    </SuiAuthProvider>
+    <div data-theme="dark" style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)" }}>
+      <AmbientGlow />
+      <RedesignNav />
+      <Suspense fallback={null}>
+        <PayInner />
+      </Suspense>
+    </div>
   );
 }

@@ -2,7 +2,7 @@
 // Query Abraxas Passport objects on Sui devnet by object ID or owner address.
 
 import { NextResponse } from "next/server";
-import { getSuiClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/serverClient";
 import { getSuiDeployment, passportTypeFilter } from "@/lib/sui/config";
 import { getActiveSuiNetwork } from "@/lib/sui/config";
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";

@@ -4,7 +4,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { Btn } from "@/components/redesign/ui";
 import { CieloAvailabilityPanel } from "./CieloAvailabilityPanel";
 import { CieloBookingPanel } from "./CieloBookingPanel";
@@ -97,9 +97,5 @@ function Inner() {
 }
 
 export function CieloFlagshipActions() {
-  return (
-    <SuiAuthProvider>
-      <Inner />
-    </SuiAuthProvider>
-  );
+  return <Inner />;
 }

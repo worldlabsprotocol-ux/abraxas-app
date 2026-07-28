@@ -2,7 +2,7 @@
 // Event-based payment discovery — scan recent treasury inbound transactions on Sui.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { getSuiClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/serverClient";
 import { getCieloTreasuryAddress, getUsdcCoinType, humanUsdcFromBaseUnits } from "@/lib/cielo/treasury";
 
 export interface InboundPaymentMatch {

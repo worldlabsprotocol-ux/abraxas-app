@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
-import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { AbraxasBootScreen } from "./AbraxasBootScreen";
@@ -23,19 +22,21 @@ import { HomeFeaturedArticle } from "@/components/home/HomeFeaturedArticle";
 const MAXW: React.CSSProperties = {
   maxWidth: 1180,
   margin: "0 auto",
-  padding: "0 clamp(1rem, 3vw, 2rem)",
+  padding: "0 clamp(1.25rem, 4vw, 2rem)",
 };
 
-// Homepage registry: slideshow only — full grid on /verify.
+const SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 
 function HomeContent() {
   return (
-    <main style={{ position: "relative", zIndex: 1 }}>
+    <main style={{ position: "relative", zIndex: 1, paddingBottom: "3rem" }}>
       <div style={MAXW}>
         <HomeSharpHero />
       </div>
-      <HomeFeaturedArticle lead />
-      <div style={MAXW}>
+      <div style={{ marginBottom: SECTION_GAP }}>
+        <HomeFeaturedArticle lead />
+      </div>
+      <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
         <HomeDemoVideo />
         <HomeTrustTransferStrip />
         <HomeReusableComplianceStrip />
@@ -45,8 +46,8 @@ function HomeContent() {
         <div
           id="registry"
           style={{
-            paddingTop: "clamp(1.5rem, 4vw, 2.5rem)",
-            paddingBottom: "clamp(1rem, 3vw, 1.5rem)",
+            paddingTop: "0.5rem",
+            paddingBottom: "0.5rem",
             borderBottom: "1px solid var(--border-strong)",
           }}
         >
@@ -63,17 +64,15 @@ export function RedesignHome() {
 
   return (
     <WalletContextProvider>
-      <SuiAuthProvider>
-        <AbraxasBootScreen onReady={setBootReady} />
-        {bootReady && (
-          <div data-theme="dark" className="abx-institutional-shell">
-            <AmbientGlow />
-            <RedesignNav />
-            <HomeContent />
-            <RedesignFooter />
-          </div>
-        )}
-      </SuiAuthProvider>
+      <AbraxasBootScreen onReady={setBootReady} />
+      {bootReady && (
+        <div data-theme="dark" className="abx-institutional-shell">
+          <AmbientGlow />
+          <RedesignNav />
+          <HomeContent />
+          <RedesignFooter />
+        </div>
+      )}
     </WalletContextProvider>
   );
 }

@@ -6,7 +6,7 @@ import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import type { SuiTransactionBlockResponse } from "@mysten/sui/client";
-import { getSuiDevnetClient } from "@/lib/sui/client";
+import { getSuiDevnetClient } from "@/lib/sui/serverClient";
 import { SUI_DEVNET, getSuiDeployment, passportTypeFilter } from "@/lib/sui/config";
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";
 import { stampsToBitmask } from "@/lib/passport/stamps";

@@ -4,7 +4,7 @@
 import { Transaction } from "@mysten/sui/transactions";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
-import { getSuiClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/serverClient";
 import { getSuiDeployment } from "@/lib/sui/config";
 import { isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import type { AuthenticationEventType } from "@/lib/authenticationProof/types";

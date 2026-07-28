@@ -5,7 +5,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PublicVerifierPanel } from "@/components/verify/PublicVerifierPanel";
 import { RelyingPartyVerifyPanel } from "@/components/verify/RelyingPartyVerifyPanel";
-import { SuiAuthProvider, useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 
 export type VerifyTab = "registry" | "credential";
 
@@ -20,9 +20,7 @@ export function VerifyClient() {
   const [tab, setTab] = useState<VerifyTab>(initial);
 
   return (
-    <SuiAuthProvider>
-      <VerifyTabs tab={tab} setTab={setTab} />
-    </SuiAuthProvider>
+    <VerifyTabs tab={tab} setTab={setTab} />
   );
 }
 

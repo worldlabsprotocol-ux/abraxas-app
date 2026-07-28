@@ -3,38 +3,21 @@
 // Nav identity. sign in, then @username / avatar as profile progresses.
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
+import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 const DEFAULT_AVATAR = "#10B981";
 
 export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean }) {
-  const pathname = usePathname();
   const auth = useSuiAuthOptional();
   const { data: profile } = useUserProfile();
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    setBusy(false);
-  }, [pathname]);
+  const { signIn, busy, configured, disabled, error } = useGoogleSignIn();
 
   const addr = auth?.suiAddress ?? null;
   const email = auth?.session?.email ?? null;
-  const configured = auth?.isConfigured ?? false;
-
-  async function handleSignIn() {
-    if (!auth?.signInWithGoogle) return;
-    setBusy(true);
-    try {
-      await auth.signInWithGoogle();
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (addr) {
     const label = profileNavLabel(profile, email);
@@ -92,20 +75,39 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
     );
   }
 
-  if (prominent && configured) {
+  if (configured) {
     return (
-      <button type="button" onClick={handleSignIn} disabled={busy}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: "0.4rem",
-          padding: "0.55rem 1rem", borderRadius: 999, border: "none",
-          background: ACCENT, color: "#000",
-          fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
-          cursor: busy ? "wait" : "pointer", opacity: busy ? 0.75 : 1,
-          whiteSpace: "nowrap",
-        }}>
-        <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
-        {busy ? "Redirecting…" : "Continue with Google"}
-      </button>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+        <button
+          type="button"
+          onClick={() => void signIn()}
+          disabled={disabled}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            padding: prominent ? "0.55rem 1rem" : "0.45rem 0.95rem",
+            borderRadius: 999,
+            border: "none",
+            background: ACCENT,
+            color: "#000",
+            fontFamily: FONT,
+            fontSize: prominent ? "0.82rem" : "0.78rem",
+            fontWeight: 700,
+            cursor: busy ? "wait" : "pointer",
+            opacity: busy ? 0.75 : 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
+          {busy ? "Redirecting…" : prominent ? "Continue with Google" : "Sign in with Google"}
+        </button>
+        {error && (
+          <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#EF4444", maxWidth: 220, textAlign: "right", lineHeight: 1.4 }}>
+            {error}
+          </span>
+        )}
+      </div>
     );
   }
 
@@ -113,16 +115,16 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
     <Link href="/passport" style={{
       padding: prominent ? "0.55rem 1rem" : "0.45rem 0.95rem",
       borderRadius: 999,
-      border: configured ? `1px solid ${ACCENT}55` : "1px solid var(--border)",
-      background: configured ? `${ACCENT}14` : "var(--surface)",
+      border: "1px solid var(--border)",
+      background: "var(--surface)",
       fontFamily: FONT,
       fontSize: prominent ? "0.82rem" : "0.78rem",
       fontWeight: 700,
-      color: configured ? ACCENT : "var(--text-secondary)",
+      color: "var(--text-secondary)",
       textDecoration: "none",
       whiteSpace: "nowrap",
     }}>
-      {configured ? "Sign in with Google" : "Sign in"}
+      Sign in
     </Link>
   );
 }

@@ -1,11 +1,11 @@
 // FILE: lib/sui/zklogin/signAndExecuteTransaction.ts
-// Sign and execute a Sui transaction with zkLogin (ephemeral key + ZK proof).
+// Sign zkLogin tx in browser; execute via server (no browser Sui RPC).
 
-import { Transaction } from "@mysten/sui/transactions";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeJwt, genAddressSeed, getZkLoginSignature } from "@mysten/sui/zklogin";
-import { getSuiClient } from "@/lib/sui/client";
 import { fetchZkLoginProof } from "./fetchZkProof";
+import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
+import { ZKLOGIN_EPOCH_BUFFER } from "./constants";
 import {
   getEphemeralSecretKey,
   loadProofCache,
@@ -18,8 +18,9 @@ export interface ZkLoginExecuteResult {
   effectsStatus: string;
 }
 
+/** Sign a base64-encoded transaction block and submit via server execute API. */
 export async function signAndExecuteZkLoginTransaction(
-  tx: Transaction,
+  transactionBlockBase64: string,
 ): Promise<ZkLoginExecuteResult> {
   const signing = loadSigningSession();
   const ephemeralSecretKey = getEphemeralSecretKey();
@@ -28,17 +29,18 @@ export async function signAndExecuteZkLoginTransaction(
     throw new Error("Sign in with Google again to pay from your zkLogin wallet.");
   }
 
-  const client = getSuiClient();
-  const { epoch } = await client.getLatestSuiSystemState();
-  const currentEpoch = Number(epoch);
+  const epochResult = await fetchLoginMaxEpoch();
+  if (!epochResult.ok) {
+    throw new Error(epochResult.error);
+  }
+  const currentEpoch = epochResult.maxEpoch - ZKLOGIN_EPOCH_BUFFER;
   if (currentEpoch >= signing.maxEpoch) {
     throw new Error("Wallet session expired. Sign in with Google again.");
   }
 
+  const bytes = Uint8Array.from(Buffer.from(transactionBlockBase64, "base64"));
   const keypair = Ed25519Keypair.fromSecretKey(ephemeralSecretKey);
-  tx.setSender(signing.suiAddress);
-
-  const { bytes, signature: userSignature } = await tx.sign({ client, signer: keypair });
+  const { signature: userSignature } = await keypair.signTransaction(bytes);
 
   let partialProof = loadProofCache(signing.maxEpoch);
   if (!partialProof) {
@@ -66,20 +68,25 @@ export async function signAndExecuteZkLoginTransaction(
     userSignature,
   });
 
-  const result = await client.executeTransactionBlock({
-    transactionBlock: bytes,
-    signature: zkLoginSignature,
-    options: { showEffects: true },
+  const res = await fetch("/api/sui/zklogin/execute", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      transaction_block: transactionBlockBase64,
+      signature: zkLoginSignature,
+    }),
   });
 
-  const status = result.effects?.status?.status ?? "unknown";
-  if (status !== "success") {
-    throw new Error(result.effects?.status?.error ?? "Transaction failed on Sui");
+  const data = (await res.json()) as {
+    ok?: boolean;
+    digest?: string;
+    effectsStatus?: string;
+    error?: string;
+  };
+
+  if (!res.ok || !data.ok || !data.digest) {
+    throw new Error(data.error ?? "Transaction submission failed");
   }
 
-  if (!result.digest) {
-    throw new Error("Transaction submitted but digest missing");
-  }
-
-  return { digest: result.digest, effectsStatus: status };
+  return { digest: data.digest, effectsStatus: data.effectsStatus ?? "success" };
 }

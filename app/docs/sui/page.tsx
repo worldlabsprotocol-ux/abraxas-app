@@ -7,7 +7,6 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
-import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 import { SUI_FEATURES } from "@/lib/protocolSui";
 
@@ -24,15 +23,13 @@ function SuiDocsInner() {
       />
 
       <ContentCard title="Try it now">
-        <SuiAuthProvider>
-          <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-            <ZkLoginSignIn />
-            <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
-              <p style={{ margin: "0 0 0.5rem" }}>After sign-in, earn stamps on the Passport wizard. Each stamp can mirror to Sui devnet.</p>
-              <Link href="/passport" style={{ color: ACCENT, fontWeight: 600 }}>Open Passport →</Link>
-            </div>
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+          <ZkLoginSignIn />
+          <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
+            <p style={{ margin: "0 0 0.5rem" }}>After sign-in, earn stamps on the Passport wizard. Each stamp can mirror to Sui devnet.</p>
+            <Link href="/passport" style={{ color: ACCENT, fontWeight: 600 }}>Open Passport →</Link>
           </div>
-        </SuiAuthProvider>
+        </div>
       </ContentCard>
 
       <ContentCard title="Feature map">

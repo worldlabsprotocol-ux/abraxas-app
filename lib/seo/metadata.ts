@@ -12,7 +12,10 @@ export function siteMetadata(overrides?: Partial<Metadata>): Metadata {
 
   return {
     metadataBase: new URL(SITE_URL),
-    title,
+    title: {
+      default: typeof title === "string" ? title : SEO_DEFAULT_TITLE,
+      template: "%s · abraxasworld.xyz",
+    },
     description,
     keywords: SEO_ALL_KEYWORDS,
     openGraph: {

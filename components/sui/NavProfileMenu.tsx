@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
+import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -164,46 +165,41 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
 }
 
 export function NavSignInButton({ prominent = false }: { prominent?: boolean }) {
-  const auth = useSuiAuthOptional();
-  const [busy, setBusy] = useState(false);
-  const configured = auth?.isConfigured ?? false;
-
-  async function handleSignIn() {
-    if (!auth?.signInWithGoogle) return;
-    setBusy(true);
-    try {
-      await auth.signInWithGoogle();
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { signIn, busy, configured, disabled, error } = useGoogleSignIn();
 
   if (configured) {
     return (
-      <button
-        type="button"
-        onClick={handleSignIn}
-        disabled={busy}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.4rem",
-          padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
-          borderRadius: 999,
-          border: "none",
-          background: ACCENT,
-          color: "#000",
-          fontFamily: FONT,
-          fontSize: prominent ? "0.84rem" : "0.8rem",
-          fontWeight: 700,
-          cursor: busy ? "wait" : "pointer",
-          opacity: busy ? 0.75 : 1,
-          whiteSpace: "nowrap",
-        }}
-      >
-        <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
-        {busy ? "Redirecting…" : "Sign in"}
-      </button>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+        <button
+          type="button"
+          onClick={() => void signIn()}
+          disabled={disabled}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
+            borderRadius: 999,
+            border: "none",
+            background: ACCENT,
+            color: "#000",
+            fontFamily: FONT,
+            fontSize: prominent ? "0.84rem" : "0.8rem",
+            fontWeight: 700,
+            cursor: busy ? "wait" : "pointer",
+            opacity: busy ? 0.75 : 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
+          {busy ? "Redirecting…" : "Sign in"}
+        </button>
+        {error && (
+          <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#EF4444", maxWidth: 200, textAlign: "right", lineHeight: 1.4 }}>
+            {error}
+          </span>
+        )}
+      </div>
     );
   }
 

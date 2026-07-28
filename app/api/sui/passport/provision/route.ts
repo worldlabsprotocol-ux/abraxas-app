@@ -9,7 +9,7 @@ import {
   provisionOnChainPassport,
   VERIFF_PASSPORT_STAMPS,
 } from "@/lib/sui/passportIssuer";
-import { getSuiClient } from "@/lib/sui/client";
+import { getSuiClient } from "@/lib/sui/serverClient";
 import { getSuiDeployment, getActiveSuiNetwork, passportTypeFilter, suiExplorerObject, suiExplorerTx } from "@/lib/sui/config";
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";
 

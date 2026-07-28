@@ -2,6 +2,7 @@
 // Browser session for zkLogin-derived Sui identity.
 
 import { ZKLOGIN_SESSION_KEY, ZKLOGIN_PENDING_KEY } from "./config";
+import { clearLoginInFlight } from "./loginInFlight";
 import {
   readLocalStorage,
   readSessionStorage,
@@ -46,10 +47,14 @@ export function loadPendingSession(): ZkLoginPendingSession | null {
 
 export function clearPendingSession(): void {
   removeSessionStorage(ZKLOGIN_PENDING_KEY);
+  clearLoginInFlight();
 }
 
 export function saveUserSession(session: ZkLoginUserSession): void {
   writeLocalStorage(ZKLOGIN_SESSION_KEY, JSON.stringify(session));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("abraxas:zklogin-session"));
+  }
 }
 
 export function loadUserSession(): ZkLoginUserSession | null {
@@ -67,18 +72,30 @@ export function clearUserSession(): void {
   clearEphemeralSecretKey();
   removeSessionStorage("abraxas_zklogin_signing_v1");
   removeSessionStorage("abraxas_zklogin_proof_v1");
+  removeLocalStorage("abraxas_zklogin_signing_v1");
+  removeLocalStorage("abraxas_zklogin_proof_v1");
+}
+
+function migrateSessionToLocal(key: string): string | null {
+  const fromSession = readSessionStorage(key);
+  if (!fromSession) return readLocalStorage(key);
+  writeLocalStorage(key, fromSession);
+  removeSessionStorage(key);
+  return fromSession;
 }
 
 export function saveEphemeralSecretKey(secretKey: string): void {
-  writeSessionStorage(EPHEMERAL_KEY, secretKey);
+  writeLocalStorage(EPHEMERAL_KEY, secretKey);
+  removeSessionStorage(EPHEMERAL_KEY);
 }
 
 export function loadEphemeralSecretKey(): string | null {
-  return readSessionStorage(EPHEMERAL_KEY);
+  return migrateSessionToLocal(EPHEMERAL_KEY);
 }
 
 export function clearEphemeralSecretKey(): void {
   removeSessionStorage(EPHEMERAL_KEY);
+  removeLocalStorage(EPHEMERAL_KEY);
 }
 
 /** Parse id_token from OAuth implicit callback hash (#id_token=...) */

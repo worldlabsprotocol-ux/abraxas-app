@@ -5,20 +5,42 @@ import { jwtToAddress, decodeJwt } from "@mysten/sui/zklogin";
 import {
   clearPendingSession,
   loadPendingSession,
+  loadUserSession,
   saveUserSession,
   type ZkLoginUserSession,
 } from "./session";
 import { persistEphemeralKey, saveSigningSession } from "./signingSession";
+import { clearLoginInFlight } from "./loginInFlight";
+import { logAuthEvent } from "./authDebug";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
+  logAuthEvent("oauth_callback");
+
   const pending = loadPendingSession();
   if (!pending) {
-    throw new Error("Login session expired. Please sign in again.");
+    const existing = loadUserSession();
+    if (existing) {
+      logAuthEvent("zklogin_complete", { suiAddress: existing.suiAddress, detail: "existing_session" });
+      return existing;
+    }
+    clearLoginInFlight();
+    logAuthEvent("zklogin_complete_error", {
+      error: "pending_session_missing",
+      detail: "OAuth returned but browser lost the in-flight signing key (sessionStorage cleared during redirect).",
+    });
+    throw new Error(
+      "Sign-in could not finish: this browser lost the temporary signing key during Google redirect. "
+      + "Disable private browsing, allow site storage, then tap Sign in once more.",
+    );
   }
 
   const decoded = decodeJwt(idToken);
   const sub = decoded.sub;
-  if (!sub) throw new Error("OAuth token missing subject");
+  if (!sub) {
+    clearLoginInFlight();
+    throw new Error("OAuth token missing subject");
+  }
 
   // Salt is server-managed so the same Google account always maps to the same Sui address.
   const regRes = await fetch("/api/auth/zklogin/register", {
@@ -35,27 +57,36 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   const regData = (await regRes.json()) as {
     sui_address?: string;
     user_salt?: string;
+    email?: string | null;
     error?: string;
   };
 
   if (!regRes.ok || !regData.sui_address) {
-    throw new Error(regData.error ?? "Could not register zkLogin identity");
+    clearLoginInFlight();
+    const err = regData.error ?? "Could not register zkLogin identity";
+    logAuthEvent("zklogin_complete_error", { error: err });
+    throw new Error(err);
   }
 
   // Verify client-side derivation matches server (sanity check).
   if (regData.user_salt) {
     const derived = jwtToAddress(idToken, regData.user_salt);
     if (derived !== regData.sui_address) {
+      clearLoginInFlight();
       throw new Error("Address derivation mismatch — contact support");
     }
   }
 
   const jwtEmail = (decoded as Record<string, unknown>).email;
+  const resolvedEmail =
+    (typeof regData.email === "string" && regData.email.includes("@") ? regData.email : null)
+    ?? (typeof jwtEmail === "string" ? jwtEmail : undefined);
+
   const session: ZkLoginUserSession = {
     suiAddress: regData.sui_address,
     provider: pending.provider,
     oauthSub: sub,
-    email: typeof jwtEmail === "string" ? jwtEmail : undefined,
+    email: resolvedEmail,
     maxEpoch: pending.maxEpoch,
     loggedInAt: new Date().toISOString(),
   };
@@ -74,11 +105,16 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   }
 
   clearPendingSession();
-  void fetch("/api/auth/browser-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ sui_address: regData.sui_address }),
-  }).catch(() => { /* best-effort */ });
+  logAuthEvent("session_saved", { suiAddress: session.suiAddress });
+
+  const browserSession = await ensureBrowserSession(regData.sui_address);
+  if (!browserSession.ok) {
+    logAuthEvent("browser_session_mint_failed", {
+      suiAddress: regData.sui_address,
+      error: browserSession.error,
+    });
+  }
+
+  logAuthEvent("zklogin_complete", { suiAddress: session.suiAddress });
   return session;
 }

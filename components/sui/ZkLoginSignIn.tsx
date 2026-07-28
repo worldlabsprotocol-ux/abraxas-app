@@ -6,23 +6,15 @@ import { useState } from "react";
 import { useSuiAuth, truncateSuiAddress } from "./SuiAuthProvider";
 import Link from "next/link";
 import { consumerCopy } from "@/lib/consumerCopy";
+import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
-  const { isAuthenticated, suiAddress, isConfigured, signInWithGoogle, signOut, error } = useSuiAuth();
-  const [busy, setBusy] = useState(false);
+  const { isAuthenticated, suiAddress, signOut, error } = useSuiAuth();
+  const { signIn, busy, configured, disabled } = useGoogleSignIn();
   const [showAddress, setShowAddress] = useState(false);
-
-  async function handleSignIn() {
-    setBusy(true);
-    try {
-      await signInWithGoogle();
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (isAuthenticated && suiAddress) {
     return (
@@ -73,27 +65,27 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
         </p>
       )}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-        <button type="button" onClick={handleSignIn} disabled={busy || !isConfigured}
+        <button type="button" onClick={() => void signIn()} disabled={disabled}
           style={{
             display: "inline-flex", alignItems: "center", gap: "0.5rem",
             padding: "0.6rem 1.1rem", borderRadius: 999, border: "none",
-            background: isConfigured ? ACCENT : "var(--border)",
-            color: isConfigured ? "#000" : "var(--text-muted)",
+            background: configured ? ACCENT : "var(--border)",
+            color: configured ? "#000" : "var(--text-muted)",
             fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
-            cursor: isConfigured && !busy ? "pointer" : "not-allowed",
+            cursor: configured && !busy ? "pointer" : "not-allowed",
             opacity: busy ? 0.7 : 1,
           }}>
           <span style={{ fontWeight: 800 }}>G</span>
           {busy ? "Redirecting…" : "Continue with Google"}
         </button>
-        {!isConfigured && (
+        {!configured && (
           <Link href="/docs/zklogin-setup" style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT }}>
             Setup guide →
           </Link>
         )}
       </div>
-      {(error || !isConfigured) && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: !isConfigured ? "var(--text-muted)" : "#E0524F", margin: "0.75rem 0 0", lineHeight: 1.55 }}>
+      {(error || !configured) && (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: !configured ? "var(--text-muted)" : "#E0524F", margin: "0.75rem 0 0", lineHeight: 1.55 }}>
           {error ?? "Sign in is being configured. Check back soon or contact support."}
         </p>
       )}
