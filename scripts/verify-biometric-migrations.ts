@@ -18,6 +18,11 @@ const MIGRATIONS = [
     file: "supabase/migrations/037_biometric_assessments.sql",
     requiredTable: "identity_biometric_assessments",
   },
+  {
+    file: "supabase/migrations/050_identity_review_workflow.sql",
+    requiredTable: "identity_review_audit_log",
+    requiredColumns: ["reviewer_decision", "engine_decision"],
+  },
 ];
 
 function checkSqlFiles(): { ok: boolean; messages: string[] } {
@@ -77,6 +82,14 @@ async function checkLiveSchema(): Promise<{ ok: boolean; messages: string[] }> {
     messages.push(`LIVE: identity_biometric_assessments — ${assessErr.message} (run 037 in Supabase SQL editor)`);
   } else {
     messages.push("LIVE: identity_biometric_assessments table present");
+  }
+
+  const { error: auditErr } = await sb.from("identity_review_audit_log").select("id").limit(1);
+  if (auditErr) {
+    ok = false;
+    messages.push(`LIVE: identity_review_audit_log — ${auditErr.message} (run 050 in Supabase SQL editor)`);
+  } else {
+    messages.push("LIVE: identity_review_audit_log table present");
   }
 
   return { ok, messages };

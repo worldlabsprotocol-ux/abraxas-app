@@ -39,6 +39,7 @@ interface QueueItem {
     document_quality_score?: number;
     selfie_quality_score?: number;
     decision?: string;
+    reviewer_decision?: string | null;
     assurance_level?: string;
     review_method?: string;
     engine_version?: string;
@@ -48,12 +49,93 @@ interface QueueItem {
       fraud_risk?: number;
       face_detected_selfie?: boolean;
       face_detected_id?: boolean;
+      face_count_selfie?: number;
       document_type?: string;
+      document_confidence?: number;
       face_match?: number;
       liveness?: number;
       tamper_score?: number;
+      id_tamper_score?: number;
+      selfie_tamper_score?: number;
     };
   } | null;
+}
+
+type ReviewAction = "approve" | "reject" | "request_resubmission";
+
+function pct(value: unknown): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return `${(n * 100).toFixed(0)}%`;
+}
+
+function boolLabel(value: unknown): string {
+  if (value === true) return "yes";
+  if (value === false) return "no";
+  return "—";
+}
+
+function BiometricSignalsPanel({ item }: { item: QueueItem }) {
+  const bio = item.biometric;
+  if (!bio) {
+    return (
+      <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)", marginTop: 10 }}>
+        No biometric assessment on file.
+      </div>
+    );
+  }
+
+  const signals = bio.signals ?? {};
+  const fraud = signals.fraud_risk ?? signals.fraud_risk_score;
+  const tamper = signals.tamper_score ?? signals.id_tamper_score;
+
+  const rows: Array<[string, string]> = [
+    ["Engine version", bio.engine_version ?? "—"],
+    ["Engine decision", bio.decision ?? "—"],
+    ["Reviewer decision", bio.reviewer_decision ?? "pending"],
+    ["Fraud risk", pct(fraud)],
+    ["Face match", pct(signals.face_match ?? bio.face_match_score)],
+    ["Liveness", pct(signals.liveness ?? bio.liveness_score)],
+    ["Document type", String(signals.document_type ?? "—")],
+    ["Document confidence", pct(signals.document_confidence)],
+    ["ID image quality", pct(bio.document_quality_score)],
+    ["Selfie quality", pct(bio.selfie_quality_score)],
+    ["Tamper score", pct(tamper)],
+    ["Face detected (ID)", boolLabel(signals.face_detected_id)],
+    ["Face detected (selfie)", boolLabel(signals.face_detected_selfie)],
+    ["Selfie face count", String(signals.face_count_selfie ?? "—")],
+    ["Assurance", bio.assurance_level ?? "—"],
+    ["Review method", bio.review_method ?? "—"],
+  ];
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+        gap: "0.35rem 0.75rem",
+        padding: "0.65rem 0.75rem",
+        borderRadius: 8,
+        background: "rgba(16,185,129,0.06)",
+        border: "1px solid rgba(16,185,129,0.15)",
+      }}>
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <div style={{ fontFamily: FONT, fontSize: "0.58rem", color: "rgba(255,255,255,0.45)" }}>{label}</div>
+            <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "#D1FAE5", marginTop: 2 }}>{value}</div>
+          </div>
+        ))}
+      </div>
+      {signals.rejection_reasons && signals.rejection_reasons.length > 0 && (
+        <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.65)", marginTop: 8, lineHeight: 1.5 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Engine rejection reasons</div>
+          {signals.rejection_reasons.map(r => (
+            <div key={r} style={{ marginTop: 2 }}>• {r}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function CapturePreview({
@@ -111,6 +193,7 @@ export default function AdminIdentityPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
@@ -133,7 +216,7 @@ export default function AdminIdentityPage() {
     void loadQueue();
   }, [loadQueue]);
 
-  async function approve(item: QueueItem) {
+  async function runReview(item: QueueItem, action: ReviewAction) {
     setActionId(item.id);
     setError("");
     try {
@@ -142,42 +225,18 @@ export default function AdminIdentityPage() {
         headers: { "Content-Type": "application/json", "x-admin-pin": pin },
         body: JSON.stringify({
           document_id: item.id,
-          action: "approve",
+          action,
           jurisdiction: "US",
           document_type: "passport",
           reviewer: "admin",
+          note: notes[item.id]?.trim() || undefined,
         }),
       });
-      const data = await res.json() as { ok?: boolean; error?: string; jti?: string };
-      if (!res.ok) throw new Error(data.error ?? "Approve failed");
+      const data = await res.json() as { ok?: boolean; error?: string; reviewer_decision?: string };
+      if (!res.ok) throw new Error(data.error ?? `${action} failed`);
       await loadQueue();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Approve failed");
-    } finally {
-      setActionId(null);
-    }
-  }
-
-  async function reject(item: QueueItem) {
-    const note = window.prompt("Rejection note (optional):") ?? "";
-    setActionId(item.id);
-    setError("");
-    try {
-      const res = await fetch("/api/admin/identity/approve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-pin": pin },
-        body: JSON.stringify({
-          document_id: item.id,
-          action: "reject",
-          note,
-          reviewer: "admin",
-        }),
-      });
-      const data = await res.json() as { ok?: boolean; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Reject failed");
-      await loadQueue();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Reject failed");
+      setError(e instanceof Error ? e.message : `${action} failed`);
     } finally {
       setActionId(null);
     }
@@ -204,8 +263,8 @@ export default function AdminIdentityPage() {
         </div>
 
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
-          Users submit legal name + ID + selfie from /passport. Abraxas Verify engine scores face match + liveness;
-          approve edge cases to issue L2/L3 credential + on-chain stamps. Health: <code>/api/idv/independent/status</code>
+          Engine decisions are preserved separately from reviewer decisions. Every action writes an immutable audit log.
+          Health: <code>/api/idv/independent/status</code>
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -268,53 +327,64 @@ export default function AdminIdentityPage() {
                     <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 6 }}>
                       {item.capture_complete ? "ID + selfie complete" : "Incomplete capture"}
                       {" · "}{new Date(item.created_at).toLocaleString()}
+                      {item.capture_session_id && (
+                        <>{" · "}session {item.capture_session_id.slice(0, 8)}…</>
+                      )}
                     </div>
-                    {item.biometric && (
-                      <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "#A7F3D0", marginTop: 8, lineHeight: 1.6 }}>
-                        Engine {item.biometric.engine_version ?? "v1"} · {item.biometric.decision}
-                        {" · "}face {((Number(item.biometric.signals?.face_match ?? item.biometric.face_match_score ?? 0)) * 100).toFixed(0)}%
-                        {" · "}liveness {((Number(item.biometric.signals?.liveness ?? item.biometric.liveness_score ?? 0)) * 100).toFixed(0)}%
-                        {" · "}{String(item.biometric.signals?.document_type ?? "id")}
-                        {(item.biometric.signals?.fraud_risk ?? item.biometric.signals?.fraud_risk_score) != null && (
-                          <>{" · "}fraud {(Number(item.biometric.signals?.fraud_risk ?? item.biometric.signals?.fraud_risk_score) * 100).toFixed(0)}%</>
-                        )}
-                      </div>
-                    )}
-                    {item.biometric?.signals?.rejection_reasons && item.biometric.signals.rejection_reasons.length > 0 && (
-                      <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.6)", marginTop: 6, lineHeight: 1.5 }}>
-                        {item.biometric.signals.rejection_reasons.map(r => (
-                          <div key={r} style={{ marginTop: 2 }}>• {r}</div>
-                        ))}
-                      </div>
-                    )}
+                    <BiometricSignalsPanel item={item} />
                   </div>
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
-                    <button
-                      onClick={() => void approve(item)}
-                      disabled={actionId === item.id || !item.sui_address || !item.capture_complete}
-                      title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-end", minWidth: 160 }}>
+                    <textarea
+                      value={notes[item.id] ?? ""}
+                      onChange={e => setNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
+                      placeholder="Reviewer notes"
+                      rows={2}
                       style={{
-                        padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
-                        background: item.sui_address && item.capture_complete ? "#10B981" : "rgba(255,255,255,0.1)",
-                        color: item.sui_address && item.capture_complete ? "#000" : "rgba(255,255,255,0.3)",
-                        fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
-                        cursor: item.sui_address && item.capture_complete ? "pointer" : "not-allowed",
+                        width: "100%", minWidth: 180, padding: "0.45rem 0.55rem", borderRadius: 6,
+                        border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.25)",
+                        color: "#f0f0f0", fontFamily: FONT, fontSize: "0.68rem", resize: "vertical",
                       }}
-                    >
-                      Approve {item.biometric?.assurance_level === "L3" ? "L3" : "L2"}
-                    </button>
-                    <button
-                      onClick={() => void reject(item)}
-                      disabled={actionId === item.id}
-                      style={{
-                        padding: "0.45rem 0.85rem", borderRadius: 6,
-                        border: "1px solid rgba(239,68,68,0.4)", background: "transparent",
-                        color: "#FCA5A5", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Reject
-                    </button>
+                    />
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <button
+                        onClick={() => void runReview(item, "approve")}
+                        disabled={actionId === item.id || !item.sui_address || !item.capture_complete}
+                        title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
+                        style={{
+                          padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
+                          background: item.sui_address && item.capture_complete ? "#10B981" : "rgba(255,255,255,0.1)",
+                          color: item.sui_address && item.capture_complete ? "#000" : "rgba(255,255,255,0.3)",
+                          fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
+                          cursor: item.sui_address && item.capture_complete ? "pointer" : "not-allowed",
+                        }}
+                      >
+                        Approve {item.biometric?.assurance_level === "L3" ? "L3" : "L2"}
+                      </button>
+                      <button
+                        onClick={() => void runReview(item, "request_resubmission")}
+                        disabled={actionId === item.id}
+                        style={{
+                          padding: "0.45rem 0.85rem", borderRadius: 6,
+                          border: "1px solid rgba(251,191,36,0.45)", background: "transparent",
+                          color: "#FCD34D", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Resubmit
+                      </button>
+                      <button
+                        onClick={() => void runReview(item, "reject")}
+                        disabled={actionId === item.id}
+                        style={{
+                          padding: "0.45rem 0.85rem", borderRadius: 6,
+                          border: "1px solid rgba(239,68,68,0.4)", background: "transparent",
+                          color: "#FCA5A5", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Reject
+                      </button>
+                    </div>
                   </div>
                 </div>
 
