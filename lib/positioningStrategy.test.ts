@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   RELYING_PARTY_NORTH_STAR,
+  ELIGIBILITY_NORTH_STAR,
   MARKETING_HERO_TAGLINE,
   DOCS_REFRESH_PROMISE,
   BUILDER_PROOF_EXAMPLES,
   PARKED_PUBLIC_NARRATIVES,
+  WHY_INTEGRATE_ABRAXAS,
 } from "./positioningStrategy";
 
 describe("positioningStrategy", () => {
@@ -27,5 +29,10 @@ describe("positioningStrategy", () => {
 
   it("parks premature orchestration rebrand", () => {
     expect(PARKED_PUBLIC_NARRATIVES.some(n => n.includes("Orchestration"))).toBe(true);
+  });
+
+  it("frames eligibility as the strategic north star", () => {
+    expect(ELIGIBILITY_NORTH_STAR.toLowerCase()).toContain("can this user");
+    expect(WHY_INTEGRATE_ABRAXAS.length).toBeGreaterThanOrEqual(4);
   });
 });
