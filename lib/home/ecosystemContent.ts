@@ -40,6 +40,14 @@ export const REGULATED_INDUSTRY_PILLARS = [
 
 export const LIVE_ECOSYSTEM_PARTNERS: EcosystemPartnerCard[] = [
   {
+    id: "cielo",
+    icon: "🌅",
+    title: "Cielo Sunrise",
+    summary: "Genesis verified asset · hospitality",
+    href: "/flagship",
+    status: "live",
+  },
+  {
     id: "good-trouble",
     icon: "🌿",
     title: "Good Trouble Canna",
@@ -57,7 +65,7 @@ export const LIVE_ECOSYSTEM_PARTNERS: EcosystemPartnerCard[] = [
   },
   {
     id: "passport",
-    icon: "🆔",
+    icon: "🛂",
     title: "Abraxas Passport",
     summary: "Portable identity credential",
     href: "/passport",
@@ -73,29 +81,45 @@ export const LIVE_ECOSYSTEM_PARTNERS: EcosystemPartnerCard[] = [
   },
 ];
 
-export const VERIFIED_ASSET_CARDS: EcosystemPartnerCard[] = [
+export const VERIFIED_ECOSYSTEM_CARDS: EcosystemPartnerCard[] = [
   {
-    id: "gt-asset",
+    id: "cielo",
+    icon: "🌅",
+    title: "Cielo Sunrise",
+    summary: "Genesis verified asset",
+    href: "/flagship",
+    status: "live",
+  },
+  {
+    id: "good-trouble",
     icon: "🌿",
     title: "Good Trouble Canna",
-    summary: "Age verification",
+    summary: "21+ eligibility",
     href: "/good-trouble",
     status: "live",
   },
   {
-    id: "land-asset",
+    id: "chickasaw",
     icon: "🏡",
     title: "Chickasaw Project",
     summary: "Property verification",
-    href: "/verify/ABX-RE-LAND-006",
+    href: "/case-studies/chickasaw-project",
     status: "live",
   },
   {
-    id: "more-assets",
-    icon: "🔜",
-    title: "More partners coming online",
-    summary: "Verified across regulated industries",
-    href: "/verify",
+    id: "passport",
+    icon: "🛂",
+    title: "Abraxas Passport",
+    summary: "Reusable identity",
+    href: "/passport",
+    status: "live",
+  },
+  {
+    id: "more",
+    icon: "➕",
+    title: "More integrations coming",
+    summary: "Partners across regulated industries",
+    href: "/design-partner",
     status: "coming",
   },
 ];

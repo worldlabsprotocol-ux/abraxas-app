@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   LIVE_ECOSYSTEM_PARTNERS,
   REGULATED_INDUSTRY_PILLARS,
-  VERIFIED_ASSET_CARDS,
+  VERIFIED_ECOSYSTEM_CARDS,
   WITHOUT_ABRAXAS_INDUSTRIES,
   WITH_ABRAXAS_INDUSTRIES,
 } from "./ecosystemContent";
@@ -25,13 +25,19 @@ describe("ecosystemContent", () => {
     ]);
   });
 
-  it("surfaces live ecosystem partners", () => {
+  it("surfaces live ecosystem partners including genesis asset", () => {
+    expect(LIVE_ECOSYSTEM_PARTNERS[0]?.title).toBe("Cielo Sunrise");
     expect(LIVE_ECOSYSTEM_PARTNERS.some((p) => p.title.includes("Good Trouble"))).toBe(true);
     expect(LIVE_ECOSYSTEM_PARTNERS.some((p) => p.title.includes("Chickasaw"))).toBe(true);
   });
 
-  it("positions verified assets as trust signals", () => {
-    expect(VERIFIED_ASSET_CARDS[0]?.summary).toBe("Age verification");
-    expect(VERIFIED_ASSET_CARDS[1]?.summary).toBe("Property verification");
+  it("positions verified ecosystem with Cielo, cannabis, land, and passport", () => {
+    expect(VERIFIED_ECOSYSTEM_CARDS.map((c) => c.title)).toEqual([
+      "Cielo Sunrise",
+      "Good Trouble Canna",
+      "Chickasaw Project",
+      "Abraxas Passport",
+      "More integrations coming",
+    ]);
   });
 });

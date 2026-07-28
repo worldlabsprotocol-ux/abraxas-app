@@ -42,12 +42,25 @@ export function HomeSharpHero() {
           fontSize: "clamp(1rem, 2.5vw, 1.15rem)",
           fontWeight: 600,
           color: "var(--text-secondary)",
-          margin: "0 0 1.25rem",
+          margin: "0 0 0.5rem",
           lineHeight: 1.45,
           maxWidth: 640,
         }}
       >
         Reusable identity infrastructure. Users verify once — applications consume trusted credentials.
+      </p>
+      <p
+        style={{
+          fontFamily: FONT,
+          fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          margin: "0 0 1.25rem",
+          lineHeight: 1.45,
+          maxWidth: 640,
+        }}
+      >
+        Identity becomes portable instead of repetitive.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>

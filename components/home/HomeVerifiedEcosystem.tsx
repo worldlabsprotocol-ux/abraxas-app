@@ -1,15 +1,15 @@
 "use client";
-// FILE: components/home/HomeVerifiedAssets.tsx
-// Verified assets on the protocol — trust signals, not reference examples.
+// FILE: components/home/HomeVerifiedEcosystem.tsx
+// Verified ecosystem — live partners and integrations on the protocol.
 
 import Link from "next/link";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { VERIFIED_ASSET_CARDS, type EcosystemPartnerCard } from "@/lib/home/ecosystemContent";
+import { VERIFIED_ECOSYSTEM_CARDS, type EcosystemPartnerCard } from "@/lib/home/ecosystemContent";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
 
-function AssetCard({ card }: { card: EcosystemPartnerCard }) {
+function EcosystemCard({ card }: { card: EcosystemPartnerCard }) {
   const inner = (
     <article
       style={{
@@ -40,14 +40,14 @@ function AssetCard({ card }: { card: EcosystemPartnerCard }) {
   );
 }
 
-export function HomeVerifiedAssets() {
+export function HomeVerifiedEcosystem() {
   return (
-    <section aria-labelledby="home-verified-assets-heading">
+    <section aria-labelledby="home-verified-ecosystem-heading">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-        Verified assets
+        Verified ecosystem
       </div>
       <h2
-        id="home-verified-assets-heading"
+        id="home-verified-ecosystem-heading"
         style={{
           fontFamily: FONT,
           fontSize: "clamp(1.15rem, 3vw, 1.45rem)",
@@ -57,17 +57,18 @@ export function HomeVerifiedAssets() {
           margin: "0 0 0.5rem",
         }}
       >
-        Assets verified through Abraxas
+        Trusted network on the protocol
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
       }}>
-        Protocol activity across industries — not tied to a single vertical.
+        From Cielo Sunrise — the genesis proof — to cannabis eligibility and land diligence. One protocol,
+        multiple regulated industries.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>
-        {VERIFIED_ASSET_CARDS.map((card) => (
-          <AssetCard key={card.id} card={card} />
+        {VERIFIED_ECOSYSTEM_CARDS.map((card) => (
+          <EcosystemCard key={card.id} card={card} />
         ))}
       </div>
     </section>
