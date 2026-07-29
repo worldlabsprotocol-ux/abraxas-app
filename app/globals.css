@@ -322,6 +322,7 @@ details > summary::-webkit-details-marker {
   padding: 0;
   overflow: hidden;
 }
+.abx-home-proof-card {
   height: 100%;
   border-radius: 12px;
   overflow: hidden;
