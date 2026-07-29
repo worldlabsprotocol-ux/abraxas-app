@@ -271,30 +271,59 @@ Create Passport → Verify Identity → Issue Credential → Present Credential
 
 ---
 
-## Recommended Engineering Priorities (Post-Validation)
+## Engineering Phases (Approved Order)
 
-Once the production walkthrough succeeds, shift effort to:
+### Phase 1 — Production Validation (DO FIRST)
 
-### Phase 1 — Protocol hardening (before partner #2)
-1. Idempotency on partner session receipts and verification requests
-2. Unified audit trail (biometric events → `audit_events`, not stdout)
-3. Immutable policy versioning
-4. Rate limiting on verify, partner-flow, passport creation
-5. Fix `PartnerFlowReturnHandler` silent failure
-6. Publish partner-flow docs at `/docs/partner-flow`
+**Before changing code, prove what exists.**
 
-### Phase 2 — Partner #2 onboarding
-1. Developer SDK (config-driven integration)
-2. Self-service partner onboarding (DB config, no code)
-3. OpenAPI spec for all v1 endpoints
-4. Partner dashboard with verifier analytics
+One real end-to-end walkthrough with evidence at every step:
+- Real Google account → zkLogin → Passport → admin approval → credential → GT enter
+- Returning user (skip Passport, one evaluate call)
+- Expired / revoked credential → back to Passport
 
-### Phase 3 — Passport lifecycle product
-1. Credential presentation UI
-2. Renewal flow
-3. Revocation + reissue UX
-4. Holder-facing history / audit log
-5. Expiration notifications
+Checklist: `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
+Automated pre-check: `npm run audit:production`
+
+**Bug fix rule:** If walkthrough uncovers bugs, fix only those bugs. Do not start Phase 2 until Path A + B pass.
+
+---
+
+### Phase 2 — Protocol Hardening (after walkthrough passes)
+
+Implement in this order (highest ROI first):
+
+| Priority | Item | Stars | Why |
+|----------|------|-------|-----|
+| 1 | **Idempotency** | ⭐⭐⭐⭐⭐ | Duplicate receipts/credentials on page refresh breaks trust |
+| 2 | **Unified audit trail** | ⭐⭐⭐⭐⭐ | One canonical stream; no stdout; reconstructable |
+| 3 | **Policy versioning** | ⭐⭐⭐⭐⭐ | Immutable policy → version → decision → receipt chain |
+| 4 | **Redirect recovery** | ⭐⭐⭐⭐☆ | Never leave user wondering if verification succeeded |
+| 5 | **Public partner docs** | ⭐⭐⭐⭐☆ | Onboarding weeks → hours |
+| 6 | **Rate limiting** | ⭐⭐⭐☆☆ | Important but easier than above |
+| 7 | **Backward compatibility** | ⭐⭐⭐⭐⭐ | See `docs/BACKWARD_COMPATIBILITY_AUDIT.md` |
+
+**Explicitly do NOT build yet:**
+- More biometric signals
+- More AI scoring
+- Homepage redesigns
+- More Passport UI features
+- Additional verification methods
+
+---
+
+### Phase 3 — Partner #2 Onboarding
+
+- Developer SDK (config-driven)
+- Self-service partner onboarding
+- OpenAPI spec for all v1 endpoints
+- Partner dashboard with verifier analytics
+
+---
+
+### Phase 4 — Passport Lifecycle Product
+
+Present → renew → revoke → reissue → holder-facing history/audit
 
 ---
 
@@ -343,6 +372,8 @@ npx vitest run lib/partner/relyingPartyFlow.test.ts  # Partner flow tests
 
 **Reports:**
 - `docs/PRODUCTION_READINESS_AUDIT.md` — live HTTP evidence
+- `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` — Phase 1 manual validation script
 - `docs/VERIFICATION_V1_READINESS_REPORT.md` — biometric engine evidence
 - `docs/PARTNER_FLOW_INTEGRATION.md` — partner flow architecture
+- `docs/BACKWARD_COMPATIBILITY_AUDIT.md` — API/credential/receipt/migration compat
 - `docs/PROTOCOL_MATURITY_AUDIT.md` — this document
