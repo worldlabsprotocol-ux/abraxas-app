@@ -17,7 +17,7 @@ const PIPELINE_STEPS = [
 
 export function HomeVerificationPipeline() {
   return (
-    <section aria-labelledby="home-verification-pipeline">
+    <section aria-labelledby="home-verification-pipeline" className="abx-home-section-copy">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Verification pipeline
       </div>
@@ -27,10 +27,7 @@ export function HomeVerificationPipeline() {
       }}>
         From documents to portable trust
       </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, margin: "0 0 1.15rem", maxWidth: 640,
-      }}>
+      <p className="abx-home-section-lead">
         Visitors understand processes faster than paragraphs. This is the path every verified identity follows.
       </p>
       <div style={{

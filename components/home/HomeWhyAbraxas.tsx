@@ -8,7 +8,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeWhyAbraxas() {
   return (
-    <section aria-labelledby="home-why-heading">
+    <section aria-labelledby="home-why-heading" className="abx-home-section-copy">
       <h2
         id="home-why-heading"
         style={{

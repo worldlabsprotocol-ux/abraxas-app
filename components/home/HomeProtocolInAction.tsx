@@ -1,7 +1,8 @@
 "use client";
 // FILE: components/home/HomeProtocolInAction.tsx
-// Protocol in Action — three proofs + Passport connector (not a partner list).
+// Protocol in Action — three proofs + Passport connector with subtle asset photography.
 
+import Image from "next/image";
 import Link from "next/link";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
@@ -12,6 +13,48 @@ import {
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
+const PHOTO_HEIGHT = 56;
+
+function ProofPhotoStrip({ proof }: { proof: ProtocolProof }) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: PHOTO_HEIGHT,
+        flexShrink: 0,
+        background: "#0a0a0b",
+      }}
+    >
+      <Image
+        src={proof.image.src}
+        alt=""
+        fill
+        sizes="(min-width: 900px) 33vw, 100vw"
+        style={{
+          objectFit: "cover",
+          objectPosition: proof.image.objectPosition ?? "center",
+          opacity: 0.88,
+        }}
+      />
+      <PhotoFade />
+    </div>
+  );
+}
+
+function PhotoFade() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(180deg, transparent 0%, var(--surface-raised) 100%)",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
 
 function ProofCard({ proof }: { proof: ProtocolProof }) {
   return (
@@ -22,28 +65,63 @@ function ProofCard({ proof }: { proof: ProtocolProof }) {
       <article
         style={{
           height: "100%",
-          padding: "1rem 1.05rem",
           borderRadius: 12,
+          overflow: "hidden",
           background: "var(--surface-raised)",
           border: "1px solid var(--border-strong)",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <div style={{
-          fontFamily: FONT, fontSize: "0.62rem", fontWeight: 800,
-          letterSpacing: "0.08em", textTransform: "uppercase",
-          color: ACCENT, marginBottom: "0.5rem",
-        }}>
-          {proof.category}
+        <ProofPhotoStrip proof={proof} />
+        <div style={{ padding: "0.85rem 1.05rem 1rem", flex: 1 }}>
+          <div
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.62rem",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: ACCENT,
+              marginBottom: "0.45rem",
+            }}
+          >
+            {proof.category}
+          </div>
+          <h3
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.9rem",
+              fontWeight: 800,
+              color: "var(--text-primary)",
+              margin: "0 0 0.35rem",
+            }}
+          >
+            {proof.title}
+          </h3>
+          <p
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.78rem",
+              color: "var(--text-primary)",
+              margin: "0 0 0.35rem",
+              fontWeight: 600,
+            }}
+          >
+            {proof.summary}
+          </p>
+          <p
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.74rem",
+              color: "var(--text-muted)",
+              margin: 0,
+              lineHeight: 1.5,
+            }}
+          >
+            {proof.demonstrates}
+          </p>
         </div>
-        <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
-          {proof.title}
-        </h3>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.35rem", fontWeight: 600 }}>
-          {proof.summary}
-        </p>
-        <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-          {proof.demonstrates}
-        </p>
       </article>
     </Link>
   );
@@ -53,7 +131,7 @@ export function HomeProtocolInAction() {
   const passport = PROTOCOL_PASSPORT_CONNECTOR;
 
   return (
-    <section aria-labelledby="home-protocol-in-action-heading" id="ecosystem">
+    <section aria-labelledby="home-protocol-in-action-heading" id="ecosystem" className="abx-home-section-copy">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Abraxas in three proofs
       </div>
@@ -70,10 +148,7 @@ export function HomeProtocolInAction() {
       >
         Protocol in action
       </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 680,
-      }}>
+      <p className="abx-home-section-lead">
         Real implementations, not hypothetical examples. Each partner demonstrates a different
         capability of reusable trust infrastructure.
       </p>

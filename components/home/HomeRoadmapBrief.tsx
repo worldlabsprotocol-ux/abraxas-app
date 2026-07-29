@@ -10,7 +10,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeRoadmapBrief() {
   return (
-    <section aria-labelledby="home-roadmap-heading" id="roadmap">
+    <section aria-labelledby="home-roadmap-heading" id="roadmap" className="abx-home-section-copy">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Current focus
       </div>

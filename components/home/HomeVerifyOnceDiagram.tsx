@@ -55,7 +55,7 @@ function IndustrySolutionCard({ item }: { item: IndustryCard }) {
 
 export function HomeVerifyOnceDiagram() {
   return (
-    <section aria-labelledby="home-verify-once-heading">
+    <section aria-labelledby="home-verify-once-heading" className="abx-home-section-copy">
       <h2
         id="home-verify-once-heading"
         style={{

@@ -2,6 +2,7 @@
 // Homepage ecosystem copy. Typography first, no decorative icons.
 
 import { GOOD_TROUBLE_PROOF_LINE } from "@/lib/positioningStrategy";
+import { PROTOCOL_PROOF_IMAGES, type ProtocolProofImage } from "@/lib/home/protocolProofMedia";
 
 export interface IndustryCard {
   id: string;
@@ -24,6 +25,7 @@ export interface ProtocolProof {
   summary: string;
   demonstrates: string;
   href: string;
+  image: ProtocolProofImage;
 }
 
 export interface ProtocolConnector {
@@ -100,6 +102,7 @@ export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
     summary: "Verified hospitality asset",
     demonstrates: "Real-world asset verification and registry.",
     href: "/flagship",
+    image: PROTOCOL_PROOF_IMAGES.cielo,
   },
   {
     id: "chickasaw",
@@ -108,6 +111,7 @@ export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
     summary: "Property verification and buyer diligence",
     demonstrates: "Trust infrastructure for conventional transactions.",
     href: "/case-studies/chickasaw-project",
+    image: PROTOCOL_PROOF_IMAGES.chickasaw,
   },
   {
     id: "good-trouble",
@@ -116,6 +120,7 @@ export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
     summary: "21+ eligibility verification",
     demonstrates: GOOD_TROUBLE_PROOF_LINE,
     href: "/good-trouble",
+    image: PROTOCOL_PROOF_IMAGES["good-trouble"],
   },
 ];
 

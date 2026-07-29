@@ -36,17 +36,14 @@ const PILLARS = [
 
 export function HomeTrustPillars() {
   return (
-    <section aria-labelledby="home-pillars-heading">
+    <section aria-labelledby="home-pillars-heading" className="abx-home-section-copy">
       <h2 id="home-pillars-heading" style={{
         fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
         letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.45rem",
       }}>
         How Abraxas solves it
       </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 640,
-      }}>
+      <p className="abx-home-section-lead">
         Four pillars work together so verification happens once and trust travels with the user.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem" }}>
