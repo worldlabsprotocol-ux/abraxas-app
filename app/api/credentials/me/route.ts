@@ -1,18 +1,33 @@
 // FILE: app/api/credentials/me/route.ts
-// Fetch the active Abraxas credential for a Sui holder (Passport dashboard).
+// Fetch the active Abraxas credential for the signed-in holder (Passport dashboard).
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 export async function GET(req: NextRequest) {
-  const sui = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
-  if (!sui) {
-    return NextResponse.json({ error: "sui query param required" }, { status: 400 });
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
+
+  const sui = auth.session.suiAddress;
+  const requested = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
+  if (requested) {
+    try {
+      if (normalizeSuiAddress(requested) !== sui) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid sui query param" }, { status: 400 });
+    }
+  }
+
   if (!SB_URL || !SB_KEY) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 });
   }

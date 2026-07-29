@@ -16,7 +16,9 @@ A month ago Abraxas was primarily a verification application. Today it is substa
 
 **Start investing in:** production validation, partner onboarding, developer SDK, policy expansion, credential portability, issuer management, verifier analytics, compliance tooling, observability, and Passport lifecycle (present → renew → revoke → history).
 
-**Production readiness score: 62/100** (see scoring section at end).
+**Production readiness score: 63/100** — operational hardening and validation remain (see scoring section).
+
+**Product architecture score: 92/100** — Passport, credentials, partner flow, and session receipts are a sound reusable pattern. Do not conflate the two; see `docs/ENGINEERING_ROADMAP.md`.
 
 ---
 
@@ -254,10 +256,19 @@ Create Passport → Verify Identity → Issue Credential → Present Credential
 
 ## Scoring
 
+### Two dimensions (do not merge)
+
+| Dimension | Score | What it measures |
+|-----------|-------|------------------|
+| **Product Architecture** | **92/100** | Partner flow design, credential-first verify, session receipts, reusable integration — strong |
+| **Production Readiness** | **63/100** | Security, idempotency, audit trail, policy versioning, live validation — incomplete |
+
+### Production readiness breakdown
+
 | Area | Score | Weight | Weighted |
 |------|-------|--------|----------|
 | Architecture (partner flow, credential-first) | 85 | 15% | 12.8 |
-| Security (secrets, auth gates) | 70 | 15% | 10.5 |
+| Security (secrets, auth gates) | 75 | 15% | 11.3 |
 | Idempotency | 40 | 10% | 4.0 |
 | State machine | 55 | 10% | 5.5 |
 | Audit trail | 50 | 10% | 5.0 |
@@ -267,15 +278,21 @@ Create Passport → Verify Identity → Issue Credential → Present Credential
 | Failure recovery | 55 | 5% | 2.8 |
 | Public API docs | 65 | 5% | 3.3 |
 | Production validation | 35 | 10% | 3.5 |
-| **Total** | | | **62/100** |
+| **Production Readiness Total** | | | **63/100** |
 
 ---
 
-## Engineering Phases (Approved Order)
+## Engineering Phases
 
-### Phase 1 — Production Validation (DO FIRST)
+**Canonical roadmap:** `docs/ENGINEERING_ROADMAP.md`
 
-**Before changing code, prove what exists.**
+### Phase 0 — Critical Security Fixes ✅ (before walkthrough)
+
+Six Critical/High findings from `docs/SECURITY_THREAT_MODEL.md` — holder auth, admin PIN, zkLogin JWKS verification. Deploy before Phase 1.
+
+### Phase 1 — Production Validation
+
+**Before further code changes, prove what exists.**
 
 One real end-to-end walkthrough with evidence at every step:
 - Real Google account → zkLogin → Passport → admin approval → credential → GT enter
@@ -289,7 +306,13 @@ Automated pre-check: `npm run audit:production`
 
 ---
 
-### Phase 2 — Protocol Hardening (after walkthrough passes)
+### Phase 1.5 — Freeze
+
+After walkthrough passes: release tag, freeze public APIs, credential/receipt schemas, partner callback contract, and DB schema (except migrations).
+
+---
+
+### Phase 2 — Protocol Hardening (after walkthrough + freeze)
 
 Implement in this order (highest ROI first):
 
@@ -312,7 +335,7 @@ Implement in this order (highest ROI first):
 
 ---
 
-### Phase 3 — Partner #2 Onboarding
+### Phase 3 — Partner SDK (partner #2)
 
 - Developer SDK (config-driven)
 - Self-service partner onboarding
@@ -332,7 +355,7 @@ Present → renew → revoke → reissue → holder-facing history/audit
 1. Good Trouble is sandbox pilot — not production partner
 2. Veriff disabled on production — manual IDV only
 3. Zero credentials issued on production
-4. Admin PIN exposed in client bundle (pilot only)
+4. ~~Admin PIN exposed in client bundle~~ — fixed in Phase 0 (server-only `ADMIN_PIN`)
 5. Biometric audit events are stdout-only (not durable)
 6. Policy updates overwrite in place (no version history)
 7. Two integration models documented unevenly
@@ -364,7 +387,7 @@ Present → renew → revoke → reissue → holder-facing history/audit
 ## Re-run Commands
 
 ```bash
-npm test                                    # 353 automated tests
+npm test                                    # 355 automated tests
 npm run biometric:validate-policy           # GT policy scenarios
 npm run audit:production                    # Live HTTP probes
 npx vitest run lib/partner/relyingPartyFlow.test.ts  # Partner flow tests

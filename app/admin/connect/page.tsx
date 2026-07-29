@@ -6,10 +6,9 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import Link from "next/link";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 
 export default function AdminConnectPage() {
-  const [pin, setPin] = useState(ADMIN_PIN);
+  const [pin, setPin] = useState("");
   const [requestId, setRequestId] = useState("");
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState("");

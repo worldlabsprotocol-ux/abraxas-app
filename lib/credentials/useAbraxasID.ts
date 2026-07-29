@@ -37,7 +37,9 @@ export function useAbraxasID(suiAddress?: string | null): UseAbraxasIDReturn {
     }
     setStatus("checking");
     try {
-      const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`);
+      const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`, {
+        credentials: "include",
+      });
       const data = await res.json() as {
         verified?: boolean;
         credential_jwt?: string;

@@ -16,7 +16,6 @@ import {
 }                              from "@/lib/protocol";
 import type { VerificationRecord } from "@/lib/protocol/verificationEngine";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 const MONO      = "'JetBrains Mono',monospace";
 
 function fmtUsd(n:number) {
@@ -206,9 +205,6 @@ function AdvanceModal({
 // ── Main admin page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [mounted,   setMounted]   = useState(false);
-  const [authed,    setAuthed]    = useState(false);
-  const [pin,       setPin]       = useState("");
-  const [pinErr,    setPinErr]    = useState(false);
   const [tab,       setTab]       = useState<"queue"|"all"|"partners"|"logs">("queue");
   const [selected,  setSelected]  = useState<string|null>(null);
   const [advancing, setAdvancing] = useState(false);
@@ -219,36 +215,6 @@ export default function AdminPage() {
 
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
-
-  function tryPin() {
-    if(pin===ADMIN_PIN) { setAuthed(true); setPinErr(false); }
-    else setPinErr(true);
-  }
-
-  if(!authed) return (
-    <div style={{ minHeight:"100vh", background:"#060810",
-      display:"flex", flexDirection:"column",
-      alignItems:"center", justifyContent:"center", gap:"0.875rem" }}>
-      <div style={{ fontSize:"0.78rem", fontWeight:900, color:"rgba(200,169,110,0.7)",
-        fontFamily:MONO, letterSpacing:"0.3em", marginBottom:"0.5rem" }}>
-        ABRAXAS ADMIN
-      </div>
-      <div style={{ fontSize:"0.44rem", color:"rgba(255,255,255,0.25)",
-        fontFamily:MONO, marginBottom:"0.5rem" }}>Verification Operations Center</div>
-      <input value={pin} onChange={e=>setPin(e.target.value)} type="password"
-        placeholder="Admin PIN" onKeyDown={e=>e.key==="Enter"&&tryPin()}
-        style={{ padding:"0.625rem 1rem", borderRadius:"6px", width:240,
-          textAlign:"center", background:"rgba(255,255,255,0.04)",
-          border:`1px solid ${pinErr?"#f26b6b":"rgba(255,255,255,0.12)"}`,
-          color:"#f0f0f0", fontSize:"0.62rem", outline:"none", fontFamily:MONO }} />
-      {pinErr&&<div style={{fontSize:"0.44rem",color:"#f26b6b",fontFamily:MONO}}>Invalid PIN</div>}
-      <button onClick={tryPin} style={{ padding:"0.5rem 1.25rem", borderRadius:"5px",
-        border:"none", cursor:"pointer", background:"#7c3aed",
-        color:"#fff", fontSize:"0.58rem", fontWeight:700, fontFamily:MONO }}>
-        Enter
-      </button>
-    </div>
-  );
 
   const queue    = assets.filter(a=>["created","pending_documents","pending_identity",
     "pending_appraisal","pending_custody","pending_verification"].includes(a.status));

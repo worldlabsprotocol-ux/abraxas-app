@@ -7,7 +7,7 @@ import Link from "next/link";
 import { CIELO_RATES, blockedNightsInRange, estimateUsdc, eachNight } from "@/lib/cielo/bookingValidation";
 import { NonCustodialDisclosure } from "@/components/compliance/NonCustodialDisclosure";
 import { PaymentMethodChooser, type PaymentMethod } from "@/components/cielo/PaymentMethodChooser";
-import { Btn } from "@/components/redesign/ui";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import {
   CIELO_FONT,
   CIELO_MONO,
@@ -103,12 +103,7 @@ export function CieloBookingPanel({
       }
 
       if (suiAddress) {
-        await fetch("/api/auth/browser-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ sui_address: suiAddress }),
-        }).catch(() => { /* best-effort */ });
+        await ensureBrowserSession(suiAddress).catch(() => { /* best-effort */ });
       }
 
       const res = await fetch("/api/cielo/verified-rate/status", { credentials: "include" });

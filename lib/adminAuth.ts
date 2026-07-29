@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { resolveBrowserSession } from "@/lib/auth/browserSession";
 
 export const ADMIN_SESSION_COOKIE = "abraxas_admin_session";
-const ADMIN_PIN = process.env.ADMIN_PIN ?? process.env.NEXT_PUBLIC_ADMIN_PIN ?? "";
+const ADMIN_PIN = process.env.ADMIN_PIN ?? "";
 const ADMIN_SESSION_TTL_SEC = 60 * 60 * 8;
 
 function adminSessionToken(): string | null {
@@ -31,6 +31,7 @@ export function isAdminEmail(email: string | null | undefined): boolean {
 
 /** Legacy sync PIN check — prefer checkAdminAccess for routes. */
 export function checkAdmin(req: NextRequest): boolean {
+  if (hasValidAdminSessionCookie(req)) return true;
   if (!ADMIN_PIN) return process.env.NODE_ENV !== "production";
   return req.headers.get("x-admin-pin") === ADMIN_PIN;
 }

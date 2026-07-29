@@ -7,7 +7,6 @@ export const dynamic = "force-dynamic";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -23,7 +22,7 @@ interface PartnerKeyRow {
 }
 
 export default function AdminPartnersPage() {
-  const [pin, setPin] = useState(ADMIN_PIN);
+  const [pin, setPin] = useState("");
   const [keys, setKeys] = useState<PartnerKeyRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

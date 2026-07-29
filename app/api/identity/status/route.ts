@@ -10,6 +10,7 @@ import {
   resolveIdentityVerificationStatus,
 } from "@/lib/idv/identityVerificationStates";
 import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -244,12 +245,38 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
 }
 
 export async function GET(req: NextRequest) {
-  const sui = req.nextUrl.searchParams.get("sui_address")
-    ?? req.nextUrl.searchParams.get("sui");
-  const email = req.nextUrl.searchParams.get("email");
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
 
-  if (!sui && !email) {
-    return NextResponse.json({ error: "sui_address or email required" }, { status: 400 });
+  const sui = auth.session.suiAddress;
+  const requested = req.nextUrl.searchParams.get("sui_address")
+    ?? req.nextUrl.searchParams.get("sui");
+  if (requested) {
+    try {
+      if (normalizeSuiAddress(requested) !== sui) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid sui query param" }, { status: 400 });
+    }
+  }
+
+  const email = req.nextUrl.searchParams.get("email");
+  if (email) {
+    const supabase = sb();
+    if (supabase) {
+      const { data: identity } = await supabase
+        .from("sui_zklogin_identities")
+        .select("email")
+        .eq("sui_address", sui)
+        .maybeSingle();
+      const sessionEmail = identity?.email?.trim().toLowerCase();
+      if (!sessionEmail || sessionEmail !== email.trim().toLowerCase()) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
   }
 
   const supabase = sb();
@@ -262,10 +289,8 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  if (sui) {
-    const bySui = await statusBySui(supabase, sui);
-    if (bySui) return NextResponse.json(bySui);
-  }
+  const bySui = await statusBySui(supabase, sui);
+  if (bySui) return NextResponse.json(bySui);
 
   if (email) {
     return NextResponse.json(await statusByEmail(supabase, email));
