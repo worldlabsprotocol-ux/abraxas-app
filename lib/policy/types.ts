@@ -45,6 +45,14 @@ export interface PartnerPolicyRules {
   blocked_jurisdictions?: string[];
   /** Enforce issuer trust registry on all required claims */
   enforce_issuer_trust?: boolean;
+  /** Partner session receipt TTL in hours (default 24). Relying parties cache this receipt locally. */
+  session_receipt_hours?: number;
+  /** Minimum age gate — partners receive over_21 boolean, never raw DOB. */
+  minimum_age?: number;
+  /** Action label for server-side verify (e.g. regulated_retail_purchase). */
+  product_eligibility_action?: string;
+  account_required?: boolean;
+  consent_required?: boolean;
 }
 
 export interface PolicyEvaluationContext {

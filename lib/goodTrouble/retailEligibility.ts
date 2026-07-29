@@ -19,7 +19,7 @@ export const GOOD_TROUBLE_RETAIL_POLICY_RULES = {
   product_eligibility_action: "regulated_retail_purchase",
 } as const;
 
-export const GOOD_TROUBLE_VERIFY_EXAMPLE = `// Server-side: clear age-gated retail before checkout (sandbox pilot)
+export const GOOD_TROUBLE_VERIFY_EXAMPLE = `// Server-side: verify credential JWT (never wallet-address-only)
 const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify", {
   method: "POST",
   headers: {
@@ -27,8 +27,7 @@ const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify",
     Authorization: "Bearer abx_test_YOUR_KEY",
   },
   body: JSON.stringify({
-    sui_address: walletAddress,
-    requested_action: "high_value_transaction",
+    credential_jwt: sessionCredentialJwt,
     policy_id: "${GOOD_TROUBLE_RETAIL_POLICY_ID}",
     verifier_id: "${GOOD_TROUBLE_PARTNER_ID}",
   }),
@@ -36,7 +35,8 @@ const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify",
 
 const result = await res.json();
 // decision: approved | denied | manual_review
-// Re-check at transaction time — do not cache credentials indefinitely`;
+// decision_receipt — signed session receipt, no PII
+// Validate receipt at transaction time via GET /api/v1/receipts/{receipt_id}`;
 
 export const GOOD_TROUBLE_BATCH_VERIFY_EXAMPLE = `// Batch provenance lookup (pilot registry fixtures)
 const res = await fetch(

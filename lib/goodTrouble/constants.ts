@@ -28,3 +28,4 @@ export const GOOD_TROUBLE_PILOT_DISCLAIMER =
   "Pilot integration on Abraxas sandbox infrastructure. Not a live dispensary checkout gate until partner promotion, production API key, and compliance review are complete.";
 
 export const GOOD_TROUBLE_INTEGRATION_PATH = "/good-trouble" as const;
+export const GOOD_TROUBLE_ENTER_PATH = "/good-trouble/enter" as const;

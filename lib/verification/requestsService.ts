@@ -37,6 +37,7 @@ export async function createVerificationRequest(input: {
   requestedAction?: string;
   requestedClaims?: string[];
   suiAddress?: string;
+  returnUrl?: string;
 }): Promise<{ request_id: string; consent_url: string; expires_at: string }> {
   const sb = requireSupabaseAdmin();
   const policy = await getPolicy(input.policyId);
@@ -70,9 +71,16 @@ export async function createVerificationRequest(input: {
     metadata: { requested_action: input.requestedAction },
   });
 
+  const consentParams = new URLSearchParams({ verify_request: data.id as string });
+  if (input.returnUrl) {
+    consentParams.set("return", input.returnUrl);
+    consentParams.set("partner_id", input.partnerId);
+    consentParams.set("policy_id", input.policyId);
+  }
+
   return {
     request_id: data.id as string,
-    consent_url: `${APP_URL}/passport?verify_request=${data.id}`,
+    consent_url: `${APP_URL}/passport?${consentParams.toString()}`,
     expires_at: expiresAt,
   };
 }

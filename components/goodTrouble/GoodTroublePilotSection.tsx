@@ -16,6 +16,7 @@ import {
   GOOD_TROUBLE_VERIFY_EXAMPLE,
   GOOD_TROUBLE_BATCH_VERIFY_EXAMPLE,
 } from "@/lib/goodTrouble/retailEligibility";
+import { goodTroubleVerifyUrl } from "@/lib/goodTrouble/partnerIntegration";
 import { CANNABIS_BATCH_SCHEMA_ID, CANNABIS_BATCH_VC_TYPES } from "@/lib/credentials/cannabisBatchCredential";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -143,7 +144,8 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href="/verify?mode=credential" size="sm">Test credential verify →</Btn>
+        <Btn href={goodTroubleVerifyUrl()} size="sm">Continue with Abraxas →</Btn>
+        <Btn href="/verify?mode=credential" variant="secondary" size="sm">Test credential verify →</Btn>
         <Btn href="/integrations/relying-parties" variant="secondary" size="sm">Relying party program →</Btn>
         <Link href={GOOD_TROUBLE_BRAND.website} target="_blank" rel="noopener noreferrer"
           style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
