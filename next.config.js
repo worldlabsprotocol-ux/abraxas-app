@@ -1,19 +1,27 @@
 // FILE: next.config.js
 /** @type {import('next').NextConfig} */
 
-// Keep only linux/x64 CPU ONNX + sharp binaries in the biometric capture serverless trace.
-const BIOMETRIC_CAPTURE_TRACE_EXCLUDES = [
-  "./node_modules/onnxruntime-node/bin/napi-v3/darwin/**",
-  "./node_modules/onnxruntime-node/bin/napi-v3/win32/**",
-  "./node_modules/onnxruntime-node/bin/napi-v3/linux/arm64/**",
-  "./node_modules/onnxruntime-node/bin/napi-v3/linux/x64/libonnxruntime_providers_cuda.so",
-  "./node_modules/onnxruntime-node/bin/napi-v3/linux/x64/libonnxruntime_providers_tensorrt.so",
-  "./node_modules/@img/sharp-darwin-*/**",
-  "./node_modules/@img/sharp-win32-*/**",
-  "./node_modules/@img/sharp-wasm32/**",
-  "./node_modules/@img/sharp-libvips-darwin-*/**",
-  "./node_modules/@img/sharp-libvips-linuxmusl-*/**",
-  "./node_modules/@img/sharp-linuxmusl-*/**",
+// Keep only linux/x64 CPU ONNX + sharp binaries in serverless traces.
+// Applied globally via outputFileTracingIgnores (reliable on Vercel) and per-route excludes.
+const ML_TRACE_EXCLUDES = [
+  "**/node_modules/onnxruntime-node/bin/napi-v3/darwin/**",
+  "**/node_modules/onnxruntime-node/bin/napi-v3/win32/**",
+  "**/node_modules/onnxruntime-node/bin/napi-v3/linux/arm64/**",
+  "**/node_modules/onnxruntime-node/bin/napi-v3/linux/x64/libonnxruntime_providers_cuda.so",
+  "**/node_modules/onnxruntime-node/bin/napi-v3/linux/x64/libonnxruntime_providers_tensorrt.so",
+  "**/node_modules/onnxruntime-node/bin/napi-v3/linux/x64/libonnxruntime.so.1.21.0",
+  "**/node_modules/@img/sharp-darwin-*/**",
+  "**/node_modules/@img/sharp-win32-*/**",
+  "**/node_modules/@img/sharp-wasm32/**",
+  "**/node_modules/@img/sharp-libvips-darwin-*/**",
+  "**/node_modules/@img/sharp-libvips-linuxmusl-*/**",
+  "**/node_modules/@img/sharp-linuxmusl-*/**",
+  "**/node_modules/@img/sharp-linux-arm*/**",
+  "**/node_modules/@img/sharp-linux-ppc64/**",
+  "**/node_modules/@img/sharp-linux-riscv64/**",
+  "**/node_modules/@img/sharp-linux-s390x/**",
+  "**/node_modules/@img/sharp-freebsd-*/**",
+  "**/node_modules/@img/sharp-webcontainers-*/**",
 ];
 
 const nextConfig = {
@@ -21,8 +29,11 @@ const nextConfig = {
   // Next.js 14: keep native Node packages out of the server webpack graph.
   experimental: {
     serverComponentsExternalPackages: ["onnxruntime-node"],
+    // Legacy key merged into outputFileTracingExcludes["**/*"] — works on Vercel when route keys do not.
+    outputFileTracingIgnores: ML_TRACE_EXCLUDES,
     outputFileTracingExcludes: {
-      "/api/identity/documents/capture": BIOMETRIC_CAPTURE_TRACE_EXCLUDES,
+      "**/*": ML_TRACE_EXCLUDES,
+      "/api/identity/documents/capture": ML_TRACE_EXCLUDES,
     },
   },
   images: {
