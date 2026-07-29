@@ -17,7 +17,6 @@ import { HomeRegulatedIndustries } from "@/components/home/HomeRegulatedIndustri
 import { HomeProtocolInAction } from "@/components/home/HomeProtocolInAction";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { HomeDocsBrief } from "@/components/home/HomeDocsBrief";
-import { HomeRegistrySlideshow } from "@/components/home/HomeRegistrySlideshow";
 import { HomeRoadmapBrief } from "@/components/home/HomeRoadmapBrief";
 
 const MAXW: React.CSSProperties = {
@@ -38,7 +37,6 @@ function HomeContent() {
         <HomeVerificationPipeline />
         <HomeTrustPillars />
         <HomeRegulatedIndustries />
-        <HomeRegistrySlideshow />
         <HomeProtocolInAction />
         <HomeLiveStats />
         <HomeDocsBrief />
