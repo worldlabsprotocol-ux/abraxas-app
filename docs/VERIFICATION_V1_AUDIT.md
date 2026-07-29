@@ -1,118 +1,141 @@
-# Abraxas Verification v1 — Final Audit
+# Abraxas Verification v1 — Evidence Audit
 
-**Date:** 2026-07-29  
-**Engine:** `abraxas-biometric-v3`  
-**Verdict:** Tier 1 biometric wiring is **complete**. Biometric engine is **frozen** for v1 — only production bugfixes from here.
+**Engine:** `abraxas-biometric-v3` (PR #84 merged to `main`)  
+**Wiring:** PR #86 `cursor/biometric-tier1-wiring-d541`  
+**Last verified:** tests on wiring branch (see CI after merge)
 
----
-
-## Executive summary
-
-| Layer | Status | Notes |
-|-------|--------|-------|
-| v3 biometric engine | **Done** | PR #84 merged |
-| Passport → Policy → Capture → Decision | **Done** | `verification_request_id`, `policy_id`, `partner_id` on capture |
-| Admin v3 signal panel | **Done** | All v3 signals + `reason_codes` + threshold source |
-| Partner policy seeds | **Done** | Good Trouble retail (`050_good_trouble_biometric_thresholds.sql`) |
-| ONNX face embeddings | **Done** | ArcFace ONNX default; correlation fallback |
-| Credential lifecycle / SDK / receipts | **Not in scope** | Next investment area |
-
-**Ansem-style read:** You are through Tier 1. Do not pivot. Do not add biometric features. Move to reusable verification, policy-based trust, and cross-partner credential reuse.
+This document labels each Tier 1 item **COMPLETE** or **PARTIAL** based on code + automated tests, not README claims.
 
 ---
 
-## Completed Tier 1 checklist
+## Tier 1 scorecard
 
-### 1. Merge PR #84 (v3 engine)
-- Engine version `abraxas-biometric-v3`
-- Measurable signals: blur, lighting, occlusion, alignment, screen replay, deepfake hook
-- Stable `reason_codes` on reject and in persisted assessments
-- Partner threshold merge from `partner_policies.rules_json.biometric_thresholds`
-
-### 2. Wire Passport → Policy → Capture
-**Before:** Passport → Capture → generic thresholds  
-**After:** Partner Request → Policy → Capture → Decision
-
-Client (`/passport?verify_request=…&policy_id=…&partner_id=…`):
-- `app/passport/page.tsx` passes `capturePolicy` into `PassportDashboard`
-- `AbraxasIdentityCapture` appends `verification_request_id`, `policy_id`, `partner_id` to FormData
-
-Server (`POST /api/identity/documents/capture`):
-- `resolveCaptureBiometricPolicy()` loads policy from verification request or direct `policy_id`
-- `analyzeBiometricCapture()` applies partner thresholds at decision time
-
-### 3. Admin v3 signal panel
-`/admin/identity` reviewers now see:
-- Face quality (blur, lighting, occlusion)
-- Alignment, face coverage
-- Screen replay, deepfake score/status
-- `reason_codes`, threshold source, partner id
-- Face match method (`onnx_embedding` vs `correlation`)
-
-### 4. Partner policy seeds — Good Trouble
-Migration `050_good_trouble_biometric_thresholds.sql`:
-
-| Rule | Value |
-|------|-------|
-| Minimum face match | 0.90 |
-| Minimum liveness | 0.92 |
-| Maximum fraud risk | 0.15 |
-| Age requirement | 21+ (`retail_minimum_age`) |
-
-Constants mirrored in `lib/goodTrouble/biometricPolicy.ts`.
-
-### 5. ONNX embedding face matcher
-- **Default:** `ABRAXAS_FACE_MATCH_PROVIDER=onnx_embedding` (or unset)
-- **Model:** `models/mobilefacenet.onnx` (ArcFace 112×112 → 512-d)
-- **Download:** `bash scripts/download-face-embedding-model.sh`
-- **Fallback:** correlation if model missing or inference fails
-- **Override:** `ABRAXAS_FACE_MATCH_PROVIDER=correlation` for legacy behavior
-
-Signal `face_match_method` stored on every assessment for reviewer transparency.
+| # | Item | Verdict | Blocker to merge? |
+|---|------|---------|-------------------|
+| 0 | v3 engine (PR #84) | **COMPLETE** on `main` | No |
+| 1 | Passport → Policy → Capture | **COMPLETE** wiring / **PARTIAL** e2e | No — merge; verify in staging |
+| 2 | Admin v3 signal panel | **COMPLETE** | No |
+| 3 | Good Trouble policy seeds | **COMPLETE** code / **PARTIAL** prod migration | Run migration 050 |
+| 4 | ONNX face matcher | **PARTIAL** | Accept with correlation fallback until model on host |
+| 5 | This audit | **COMPLETE** (evidence-based) | N/A |
 
 ---
 
-## What is production-complete vs engine-complete
+## 1. Passport → Policy → Capture
 
-| Concern | Engine complete | Production complete |
-|---------|-----------------|---------------------|
-| Biometric scoring | Yes | Yes (human review default) |
-| Partner-specific thresholds | Yes | Yes (policy JSON + Good Trouble seed) |
-| Reviewer explainability | Yes | Yes (admin panel) |
-| Auto-approve | Supported | **Disabled** — tune from real captures first |
-| ONNX on Vercel | Implemented | Requires model artifact on deploy host (~131 MB) |
-| Mainnet on-chain | N/A | Not deployed |
+**Verdict: COMPLETE (wiring) / PARTIAL (full e2e)**
 
----
+### Files (PR #86)
+- `lib/idv/capturePolicyContext.ts`
+- `lib/idv/capturePolicyContext.test.ts`
+- `lib/idv/biometric/resolveCapturePolicy.ts` (on `main`, tested in #86)
+- `lib/idv/biometric/resolveCapturePolicy.test.ts`
+- `lib/idv/biometric/capturePolicyPipeline.test.ts`
+- `app/passport/page.tsx`
+- `components/passport/PassportDashboard.tsx`
+- `components/passport/AbraxasIdentityCapture.tsx`
+- `app/api/identity/documents/capture/route.ts` (on `main`)
+- `lib/idv/biometric/analyzeCapture.ts`
 
-## Freeze line — no new biometric features
-
-After this audit, **do not** propose:
-- New liveness modalities
-- Vendor parity features (Veriff-style expansion)
-- Additional signal types unless fixing a production bug
-
-**Do** invest in:
-1. Credential lifecycle (issuance, expiration, revocation)
-2. Verification receipts and `abraxas.can()` SDK
-3. Good Trouble end-to-end integration
-4. Cross-partner credential reuse
-
----
-
-## Env reference (biometric)
-
-```env
-# Face match — ONNX default; correlation fallback automatic
-ABRAXAS_FACE_MATCH_PROVIDER=onnx_embedding
-ABRAXAS_FACE_EMBEDDING_MODEL=/path/to/mobilefacenet.onnx
-
-# Human review only for pilot
-# Do NOT set ABRAXAS_BIOMETRIC_AUTO_APPROVE=1 until 50+ reviewed captures
+### Execution path
+```
+/passport?verify_request=&policy_id=&partner_id=
+  → capturePolicy prop
+  → capturePolicyFormFields() → FormData
+  → POST /api/identity/documents/capture
+  → resolveCaptureBiometricPolicy()
+  → analyzeBiometricCapture({ policyRules })
+  → evaluateBiometricDecision(..., { policyRules })
+  → identity_biometric_assessments.signals
 ```
 
+### Tests
+- `capturePolicyContext.test.ts` — FormData field mapping
+- `resolveCapturePolicy.test.ts` — DB policy resolution (mocked)
+- `capturePolicyPipeline.test.ts` — `threshold_policy_source: partner` on real analyze path
+
+### Limitations
+- No HTTP integration test against live Supabase
+- `PassportSetupPanel` / `MyVerificationPanel` capture paths not wired
+
 ---
 
-## Confidence
+## 2. Admin v3 signal panel
 
-With all five Tier 1 items complete, the biometric engine is **effectively complete for Verification v1**. Long-term moat is policy-based reusable trust — not out-building dedicated biometric vendors.
+**Verdict: COMPLETE**
+
+### Files
+- `app/admin/identity/page.tsx` — `BiometricSignalsPanel`
+- `lib/admin/biometricSignalRows.ts` — pure row builder (testable)
+- `lib/admin/biometricSignalRows.test.ts`
+- `app/api/admin/identity/queue/route.ts` — returns `signals` JSONB
+
+### Tests
+- `biometricSignalRows.test.ts` — blur, lighting, replay, reason_codes, threshold source
+
+### Limitations
+- No Playwright/screenshot test
+
+---
+
+## 3. Good Trouble policy
+
+**Verdict: COMPLETE (code) / PARTIAL (production)**
+
+### Files
+- `supabase/migrations/050_good_trouble_biometric_thresholds.sql`
+- `lib/goodTrouble/biometricPolicy.ts`
+- `lib/goodTrouble/biometricPolicy.test.ts`
+- `lib/idv/biometric/partnerThresholds.ts`
+- `lib/idv/biometric/decision.ts`
+
+### Tests
+- Constants match migration
+- Borderline capture: global passes, Good Trouble emits `FACE_MATCH_LOW`
+
+### Limitations
+- Migration not run until applied in Supabase
+- `retail_minimum_age: 21` stored in policy JSON; not enforced by biometric engine (credential layer)
+
+---
+
+## 4. ONNX face matcher
+
+**Verdict: PARTIAL**
+
+### Files
+- `lib/idv/biometric/faceEmbeddingOnnx.ts`
+- `lib/idv/biometric/faceSimilarity.ts`
+- `lib/idv/biometric/faceSimilarityCorrelation.ts`
+- `lib/idv/biometric/faceMatchProvider.ts`
+- `lib/idv/biometric/faceSimilarity.test.ts`
+- `scripts/download-face-embedding-model.sh`
+
+### Model
+- ArcFace ONNX (`arcface.onnx` → `models/mobilefacenet.onnx`), **not in git** (~131 MB)
+
+### Tests
+- Correlation provider
+- Fallback when model missing
+- ONNX path runs **only if** model file exists locally (skipped in CI without model)
+
+### Limitations
+- No production benchmark vs correlation in CI
+- Vercel deploy without model download → silent correlation fallback
+- Cosine→score mapping is heuristic, not calibrated on production data
+
+---
+
+## 5. Would the code alone prove Verification v1 works?
+
+**No.**
+
+The code proves: engine runs, policy rules merge at decision time, signals persist, admin can display them.
+
+It does not prove: ONNX in production, migration applied, partner-initiated verification request flow without manual URL params, credential issuance with age 21+.
+
+---
+
+## Freeze line
+
+After PR #86 merges and migration 050 runs: **freeze biometrics**. Next: credential lifecycle, receipts, SDK, Good Trouble integration.
