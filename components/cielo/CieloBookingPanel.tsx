@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CIELO_RATES, blockedNightsInRange, estimateUsdc, eachNight } from "@/lib/cielo/bookingValidation";
 import { NonCustodialDisclosure } from "@/components/compliance/NonCustodialDisclosure";
 import { PaymentMethodChooser, type PaymentMethod } from "@/components/cielo/PaymentMethodChooser";
+import { Btn } from "@/components/redesign/ui";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import {
   CIELO_FONT,
