@@ -11,8 +11,14 @@ export function HomeWhyAbraxas() {
     <section aria-labelledby="home-why-heading">
       <h2
         id="home-why-heading"
-        className="abx-home-h2"
-        style={{ marginBottom: "0.85rem" }}
+        style={{
+          fontFamily: FONT,
+          fontSize: "clamp(1.15rem, 3vw, 1.45rem)",
+          fontWeight: 800,
+          letterSpacing: "-0.03em",
+          color: "var(--text-primary)",
+          margin: "0 0 0.85rem",
+        }}
       >
         Why Abraxas exists
       </h2>

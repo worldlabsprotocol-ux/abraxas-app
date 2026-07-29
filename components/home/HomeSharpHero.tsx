@@ -1,12 +1,11 @@
 "use client";
 // FILE: components/home/HomeSharpHero.tsx
-// Hero — headline and CTAs only. Photography lives in Protocol in Action.
+// Hero — headline and primary CTAs.
 
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
-const DISPLAY = ABRAXAS_FONT_DISPLAY;
 
 export function HomeSharpHero() {
   return (
@@ -14,21 +13,21 @@ export function HomeSharpHero() {
       id="top"
       aria-labelledby="home-hero-heading"
       style={{
-        padding: "clamp(1.5rem, 5vw, 3rem) 0 clamp(0.25rem, 2vw, 0.75rem)",
+        padding: "clamp(1.5rem, 5vw, 3rem) 0 clamp(1rem, 3vw, 1.5rem)",
         maxWidth: 780,
       }}
     >
-      <p className="abx-section-label" style={{ marginBottom: "0.65rem" }}>
-        Reusable verification layer
-      </p>
+      <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
+        Live protocol · not a waitlist
+      </div>
 
       <h1
         id="home-hero-heading"
         style={{
-          fontFamily: DISPLAY,
+          fontFamily: ABRAXAS_FONT_DISPLAY,
           fontSize: "clamp(2rem, 5.5vw, var(--fs-display))",
           fontWeight: 900,
-          letterSpacing: "-0.04em",
+          letterSpacing: "-0.045em",
           lineHeight: 1.02,
           color: "var(--text-primary)",
           margin: "0 0 0.85rem",
@@ -37,24 +36,36 @@ export function HomeSharpHero() {
         Verify once. Transact everywhere.
       </h1>
 
-      <p className="abx-home-lead" style={{ marginBottom: "0.45rem", maxWidth: 640 }}>
-        Users verify once. Applications consume trusted credentials instead of rebuilding identity flows.
+      <p
+        style={{
+          fontFamily: FONT,
+          fontSize: "clamp(1rem, 2.5vw, 1.15rem)",
+          fontWeight: 600,
+          color: "var(--text-secondary)",
+          margin: "0 0 0.5rem",
+          lineHeight: 1.45,
+          maxWidth: 640,
+        }}
+      >
+        Reusable identity infrastructure. Users verify once. Applications consume trusted credentials.
       </p>
-      <p style={{
-        fontFamily: FONT,
-        fontSize: "0.92rem",
-        fontWeight: 600,
-        color: "var(--text-primary)",
-        margin: "0 0 1.25rem",
-        lineHeight: 1.5,
-        maxWidth: 640,
-      }}>
+      <p
+        style={{
+          fontFamily: FONT,
+          fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          margin: "0 0 1.25rem",
+          lineHeight: 1.45,
+          maxWidth: 640,
+        }}
+      >
         Identity becomes portable instead of repetitive.
       </p>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>
         <Btn href="/passport" size="lg">Create Passport</Btn>
-        <Btn href="/integrate" variant="secondary" size="lg">Integrate</Btn>
+        <Btn href="/integrate" variant="secondary" size="lg">Explore Protocol</Btn>
       </div>
     </section>
   );
