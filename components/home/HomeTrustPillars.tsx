@@ -36,7 +36,7 @@ const PILLARS = [
 
 export function HomeTrustPillars() {
   return (
-    <section aria-labelledby="home-pillars-heading">
+    <section aria-labelledby="home-pillars-heading" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
       <h2 id="home-pillars-heading" style={{
         fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
@@ -48,7 +48,7 @@ export function HomeTrustPillars() {
         Four pillars work together so verification happens once and trust travels with the user.
       </p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem", maxWidth: 960, margin: "0 auto", width: "100%" }}>
         {PILLARS.map(p => (
           <Link
             key={p.title}
@@ -56,7 +56,7 @@ export function HomeTrustPillars() {
             style={{
               display: "block", padding: "1.1rem 1.15rem", borderRadius: 14, textDecoration: "none",
               background: "var(--surface-raised)", border: "1px solid var(--border-strong)",
-              transition: "border-color 0.15s",
+              transition: "border-color 0.15s", textAlign: "center",
             }}
           >
             <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: p.accent, marginBottom: "0.45rem" }}>

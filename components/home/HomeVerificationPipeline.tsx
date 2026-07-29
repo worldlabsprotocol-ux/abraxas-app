@@ -17,7 +17,7 @@ const PIPELINE_STEPS = [
 
 export function HomeVerificationPipeline() {
   return (
-    <section aria-labelledby="home-verification-pipeline">
+    <section aria-labelledby="home-verification-pipeline" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
           Verification pipeline
@@ -37,6 +37,9 @@ export function HomeVerificationPipeline() {
         borderRadius: 14,
         background: "var(--surface-raised)",
         border: "1px solid var(--border-strong)",
+        maxWidth: 960,
+        margin: "0 auto",
+        width: "100%",
       }}>
         <HomePipelineFlow steps={[...PIPELINE_STEPS]} />
       </div>

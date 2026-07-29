@@ -1,126 +1,65 @@
 "use client";
 // FILE: components/home/HomeProtocolInAction.tsx
-// Protocol in Action — three proofs + Passport connector with subtle asset photography.
+// Protocol in Action — three proofs + Passport connector with partner logos.
 
 import Image from "next/image";
 import Link from "next/link";
-import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   PROTOCOL_IN_ACTION_PROOFS,
   PROTOCOL_PASSPORT_CONNECTOR,
   type ProtocolProof,
 } from "@/lib/home/ecosystemContent";
+import {
+  PROTOCOL_PROOF_LOGOS,
+  PROTOCOL_PROOF_LOGO_HEIGHT,
+  type ProtocolProofLogo,
+} from "@/lib/home/protocolProofLogos";
 
-const FONT = ABRAXAS_FONT_SANS;
-const ACCENT = "#10B981";
-const PHOTO_HEIGHT = 56;
+const LOGO_SLOT_HEIGHT = 52;
 
-function ProofPhotoStrip({ proof }: { proof: ProtocolProof }) {
+function ProofLogoMark({ logo }: { logo: ProtocolProofLogo }) {
   return (
     <div
       style={{
-        position: "relative",
-        width: "100%",
-        height: PHOTO_HEIGHT,
+        height: LOGO_SLOT_HEIGHT,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0.5rem 1rem 0.15rem",
         flexShrink: 0,
-        background: "#0a0a0b",
       }}
     >
       <Image
-        src={proof.image.src}
-        alt=""
-        fill
-        sizes="(min-width: 900px) 33vw, 100vw"
+        src={logo.src}
+        alt={logo.alt}
+        width={160}
+        height={PROTOCOL_PROOF_LOGO_HEIGHT}
         style={{
-          objectFit: "cover",
-          objectPosition: proof.image.objectPosition ?? "center",
-          opacity: 0.88,
+          width: "auto",
+          height: PROTOCOL_PROOF_LOGO_HEIGHT,
+          maxWidth: "75%",
+          objectFit: "contain",
+          display: "block",
         }}
       />
-      <PhotoFade />
     </div>
   );
 }
 
-function PhotoFade() {
-  return (
-    <div
-      aria-hidden
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: "linear-gradient(180deg, transparent 0%, var(--surface-raised) 100%)",
-        pointerEvents: "none",
-      }}
-    />
-  );
-}
-
 function ProofCard({ proof }: { proof: ProtocolProof }) {
+  const logo = PROTOCOL_PROOF_LOGOS[proof.id];
   return (
     <Link
       href={proof.href}
       style={{ textDecoration: "none", color: "inherit", display: "block", height: "100%" }}
     >
-      <article
-        style={{
-          height: "100%",
-          borderRadius: 12,
-          overflow: "hidden",
-          background: "var(--surface-raised)",
-          border: "1px solid var(--border-strong)",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <ProofPhotoStrip proof={proof} />
-        <div style={{ padding: "0.85rem 1.05rem 1rem", flex: 1 }}>
-          <div
-            style={{
-              fontFamily: FONT,
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: ACCENT,
-              marginBottom: "0.45rem",
-            }}
-          >
-            {proof.category}
-          </div>
-          <h3
-            style={{
-              fontFamily: FONT,
-              fontSize: "0.9rem",
-              fontWeight: 800,
-              color: "var(--text-primary)",
-              margin: "0 0 0.35rem",
-            }}
-          >
-            {proof.title}
-          </h3>
-          <p
-            style={{
-              fontFamily: FONT,
-              fontSize: "0.78rem",
-              color: "var(--text-primary)",
-              margin: "0 0 0.35rem",
-              fontWeight: 600,
-            }}
-          >
-            {proof.summary}
-          </p>
-          <p
-            style={{
-              fontFamily: FONT,
-              fontSize: "0.74rem",
-              color: "var(--text-muted)",
-              margin: 0,
-              lineHeight: 1.5,
-            }}
-          >
-            {proof.demonstrates}
-          </p>
+      <article className="abx-home-proof-card">
+        {logo ? <ProofLogoMark logo={logo} /> : null}
+        <div style={{ padding: "0.65rem 1rem 1rem", flex: 1 }}>
+          <div className="abx-home-proof-eyebrow">{proof.category}</div>
+          <h3 className="abx-home-proof-title">{proof.title}</h3>
+          <p className="abx-home-proof-summary">{proof.summary}</p>
+          <p className="abx-home-proof-body">{proof.demonstrates}</p>
         </div>
       </article>
     </Link>
@@ -129,59 +68,39 @@ function ProofCard({ proof }: { proof: ProtocolProof }) {
 
 export function HomeProtocolInAction() {
   const passport = PROTOCOL_PASSPORT_CONNECTOR;
+  const passportLogo = PROTOCOL_PROOF_LOGOS.passport;
 
   return (
-    <section aria-labelledby="home-protocol-in-action-heading" id="ecosystem" >
+    <section aria-labelledby="home-protocol-in-action-heading" id="ecosystem" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
-      <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-        Abraxas in three proofs
+        <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
+          Abraxas in three proofs
+        </div>
+        <h2 id="home-protocol-in-action-heading" className="abx-home-section-title">
+          Protocol in action
+        </h2>
+        <p className="abx-home-section-lead">
+          Real implementations, not hypothetical examples. Each partner demonstrates a different
+          capability of reusable trust infrastructure.
+        </p>
       </div>
-      <h2
-        id="home-protocol-in-action-heading"
-        style={{
-          fontFamily: FONT,
-          fontSize: "clamp(1.15rem, 3vw, 1.45rem)",
-          fontWeight: 800,
-          letterSpacing: "-0.03em",
-          color: "var(--text-primary)",
-          margin: "0 0 0.5rem",
-        }}
-      >
-        Protocol in action
-      </h2>
-      <p className="abx-home-section-lead">
-        Real implementations, not hypothetical examples. Each partner demonstrates a different
-        capability of reusable trust infrastructure.
-      </p>
 
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem", marginBottom: "0.75rem" }}>
+      <div className="abx-home-proof-grid">
         {PROTOCOL_IN_ACTION_PROOFS.map((proof) => (
           <ProofCard key={proof.id} proof={proof} />
         ))}
       </div>
 
-      <Link
-        href={passport.href}
-        style={{ textDecoration: "none", color: "inherit", display: "block" }}
-      >
-        <article
-          style={{
-            padding: "1rem 1.15rem",
-            borderRadius: 12,
-            background: `linear-gradient(135deg, ${ACCENT}10 0%, rgba(167,139,250,0.06) 100%)`,
-            border: `1px solid ${ACCENT}33`,
-          }}
-        >
-          <h3 style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
-            {passport.title}
-          </h3>
-          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.25rem", fontWeight: 600 }}>
-            {passport.summary}
-          </p>
-          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
-            {passport.demonstrates}
-          </p>
+      <Link href={passport.href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+        <article className="abx-home-passport-connector">
+          {passportLogo ? <ProofLogoMark logo={passportLogo} /> : null}
+          <div style={{ padding: "0 1rem 1rem" }}>
+            <h3 className="abx-home-proof-title">{passport.title}</h3>
+            <p className="abx-home-proof-summary">{passport.summary}</p>
+            <p className="abx-home-proof-body" style={{ color: "var(--text-secondary)" }}>
+              {passport.demonstrates}
+            </p>
+          </div>
         </article>
       </Link>
     </section>

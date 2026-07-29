@@ -9,7 +9,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeRegulatedIndustries() {
   return (
-    <section aria-labelledby="home-regulated-heading" >
+    <section aria-labelledby="home-regulated-heading" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
       <h2
         id="home-regulated-heading"
@@ -29,7 +29,7 @@ export function HomeRegulatedIndustries() {
         ownership, wallet identity, and financial compliance.
       </p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", maxWidth: 960, margin: "0 auto", width: "100%" }}>
         {REGULATED_INDUSTRY_PILLARS.map((item) => (
           <article
             key={item.id}
@@ -38,6 +38,7 @@ export function HomeRegulatedIndustries() {
               borderRadius: 12,
               background: "var(--surface-raised)",
               border: "1px solid var(--border-strong)",
+              textAlign: "center",
             }}
           >
             <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>

@@ -10,7 +10,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeRoadmapBrief() {
   return (
-    <section aria-labelledby="home-roadmap-heading" id="roadmap" >
+    <section aria-labelledby="home-roadmap-heading" id="roadmap" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Current focus
@@ -23,12 +23,14 @@ export function HomeRoadmapBrief() {
       </h2>
       </div>
       <ol style={{
-        margin: "0 0 1rem",
+        margin: "0 auto 1rem",
         padding: 0,
         listStyle: "none",
         display: "flex",
         flexDirection: "column",
         gap: "0.65rem",
+        maxWidth: 720,
+        width: "100%",
       }}>
         {CURRENT_FOCUS.map((objective, index) => (
           <li

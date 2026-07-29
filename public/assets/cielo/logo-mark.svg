@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" role="img" aria-label="Cielo Sunrise">
+  <circle cx="24" cy="24" r="14" fill="none" stroke="#E8C547" stroke-width="2.5"/>
+  <path d="M24 14v6M24 28v6M14 24h6M28 24h6" stroke="#E8C547" stroke-width="2" stroke-linecap="round"/>
+  <text x="48" y="30" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="18" font-weight="800" letter-spacing="-0.5">CIELO SUNRISE</text>
+</svg>

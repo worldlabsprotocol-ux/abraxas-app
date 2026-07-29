@@ -11,7 +11,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeDocsBrief() {
   return (
-    <section aria-labelledby="home-docs-heading" id="docs" >
+    <section aria-labelledby="home-docs-heading" id="docs" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Documentation

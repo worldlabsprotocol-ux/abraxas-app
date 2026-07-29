@@ -58,15 +58,12 @@ export function HomeLiveStats() {
   const loading = status === "loading";
 
   return (
-    <section aria-labelledby="home-live-stats" >
+    <section aria-labelledby="home-live-stats" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
         Live protocol
       </div>
-      <h2 id="home-live-stats" style={{
-        fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
-        letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 1rem",
-      }}>
+      <h2 id="home-live-stats" className="abx-home-section-title" style={{ marginBottom: "1rem" }}>
         Trust in motion
       </h2>
       </div>

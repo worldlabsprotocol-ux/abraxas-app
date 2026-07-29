@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/AbraxasBootScreen.tsx
-// Welcome gate — short intro, tap to enter.
+// Welcome gate — concise intro, tap to enter.
 
 import { useState, useCallback } from "react";
 import type { CSSProperties } from "react";
@@ -11,7 +11,7 @@ import {
   INSTITUTIONAL_PRIMARY_BTN_TEXT,
   TEXT_ON_DARK,
 } from "@/lib/design/institutionalTheme";
-import { ABRAXAS_MECHANISM, ABRAXAS_ONE_LINER } from "@/lib/northStar";
+import { ABRAXAS_MECHANISM } from "@/lib/northStar";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -67,7 +67,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             style={{
               position: "relative", zIndex: 1, textAlign: "center",
-              padding: "0 1.5rem", maxWidth: 480, width: "100%",
+              padding: "0 1.5rem", maxWidth: 420, width: "100%",
             }}
           >
             <div style={{
@@ -79,12 +79,12 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               color: TEXT_ON_DARK.eyebrow,
               marginBottom: "0.75rem",
             }}>
-              Abraxas · World Labs Protocol
+              Abraxas Protocol
             </div>
 
             <div style={{
               fontFamily: DISPLAY,
-              fontSize: "clamp(1.55rem, 5.5vw, 2.2rem)",
+              fontSize: "clamp(1.55rem, 5.5vw, 2.1rem)",
               fontWeight: 900,
               letterSpacing: "-0.045em",
               lineHeight: 1.1,
@@ -96,13 +96,13 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
 
             <p style={{
               fontFamily: FONT,
-              fontSize: "clamp(0.88rem, 2.2vw, 0.98rem)",
+              fontSize: "clamp(0.86rem, 2.2vw, 0.95rem)",
               fontWeight: 500,
               color: TEXT_ON_DARK.secondary,
-              lineHeight: 1.55,
-              margin: "0 0 1.35rem",
+              lineHeight: 1.5,
+              margin: "0 0 1.25rem",
             }}>
-              {ABRAXAS_ONE_LINER} Browse live proofs. No wallet required.
+              Reusable verification for regulated apps. Browse live proofs. No wallet required to explore.
             </p>
 
             <button
@@ -121,7 +121,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
                 boxShadow: "0 0 0 1px rgba(232,197,71,0.35), 0 8px 32px rgba(232,197,71,0.18)",
               }}
             >
-              Enter Abraxas →
+              Enter Abraxas
             </button>
 
             <p style={{
@@ -132,7 +132,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               margin: "0.75rem 0 0",
               lineHeight: 1.45,
             }}>
-              Connect a wallet only when you want Passport or on-chain proof.
+              Connect a wallet when you want Passport or on chain proof.
             </p>
           </motion.div>
         </motion.div>

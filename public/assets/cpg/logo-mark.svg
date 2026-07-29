@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" role="img" aria-label="Chickasaw Project">
+  <rect x="2" y="10" width="28" height="28" rx="4" fill="none" stroke="#10B981" stroke-width="2"/>
+  <path d="M8 32 L16 16 L24 32 Z" fill="#10B981" opacity="0.85"/>
+  <text x="40" y="30" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="16" font-weight="800" letter-spacing="-0.3">CHICKASAW PROJECT</text>
+</svg>
