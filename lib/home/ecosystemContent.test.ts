@@ -42,6 +42,15 @@ describe("ecosystemContent", () => {
     expect(PROTOCOL_PASSPORT_CONNECTOR.demonstrates).toMatch(/connecting every use case/i);
   });
 
+  it("includes audited images for each protocol proof", () => {
+    for (const proof of PROTOCOL_IN_ACTION_PROOFS) {
+      expect(proof.image.src).toMatch(/^\/assets\//);
+      expect(proof.image.alt.length).toBeGreaterThan(5);
+    }
+    expect(PROTOCOL_IN_ACTION_PROOFS[0]?.image.src).toContain("cielo");
+    expect(PROTOCOL_IN_ACTION_PROOFS[1]?.image.src).toContain("cpg");
+  });
+
   it("uses product-centric good trouble proof line", () => {
     expect(PROTOCOL_IN_ACTION_PROOFS[2]?.demonstrates).toBe(GOOD_TROUBLE_PROOF_LINE);
   });

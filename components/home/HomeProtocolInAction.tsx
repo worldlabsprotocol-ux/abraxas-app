@@ -1,7 +1,8 @@
 "use client";
 // FILE: components/home/HomeProtocolInAction.tsx
-// Protocol in Action — three proofs + Passport connector (not a partner list).
+// Protocol in Action — same layout as production, with asset photography.
 
+import Image from "next/image";
 import Link from "next/link";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
@@ -22,28 +23,49 @@ function ProofCard({ proof }: { proof: ProtocolProof }) {
       <article
         style={{
           height: "100%",
-          padding: "1rem 1.05rem",
           borderRadius: 12,
+          overflow: "hidden",
           background: "var(--surface-raised)",
           border: "1px solid var(--border-strong)",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <div style={{
-          fontFamily: FONT, fontSize: "0.62rem", fontWeight: 800,
-          letterSpacing: "0.08em", textTransform: "uppercase",
-          color: ACCENT, marginBottom: "0.5rem",
-        }}>
-          {proof.category}
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            aspectRatio: "16 / 10",
+            background: "#0a0a0b",
+            flexShrink: 0,
+          }}
+        >
+          <Image
+            src={proof.image.src}
+            alt={proof.image.alt}
+            fill
+            sizes="(min-width: 900px) 33vw, 100vw"
+            style={{ objectFit: "cover", objectPosition: proof.image.objectPosition ?? "center" }}
+          />
         </div>
-        <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
-          {proof.title}
-        </h3>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.35rem", fontWeight: 600 }}>
-          {proof.summary}
-        </p>
-        <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-          {proof.demonstrates}
-        </p>
+        <div style={{ padding: "1rem 1.05rem", flex: 1, display: "flex", flexDirection: "column" }}>
+          <div style={{
+            fontFamily: FONT, fontSize: "0.62rem", fontWeight: 800,
+            letterSpacing: "0.08em", textTransform: "uppercase",
+            color: ACCENT, marginBottom: "0.5rem",
+          }}>
+            {proof.category}
+          </div>
+          <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
+            {proof.title}
+          </h3>
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.35rem", fontWeight: 600 }}>
+            {proof.summary}
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+            {proof.demonstrates}
+          </p>
+        </div>
       </article>
     </Link>
   );
