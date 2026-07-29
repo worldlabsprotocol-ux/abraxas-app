@@ -29,8 +29,8 @@ const SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 
 function HomeContent() {
   return (
-    <main style={{ position: "relative", zIndex: 1, paddingBottom: "3rem" }}>
-      <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
+    <main style={{ position: "relative", zIndex: 1, paddingBottom: "3rem", textAlign: "center" }}>
+      <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
         <HomeSharpHero />
         <HomeWhyAbraxas />
         <HomeVerifyOnceDiagram />
