@@ -1,7 +1,9 @@
 # Abraxas Engineering Roadmap
 
 **Last updated:** 2026-07-29  
-**Status:** Phase 0 complete (code). Phase 1 (production walkthrough) is next.
+**Status:** Phase 0 code complete. Awaiting green CI → merge → deploy → Phase 1 walkthrough.
+
+**Do not build new systems.** From here the goal is to graduate Abraxas from a project into infrastructure.
 
 ---
 
@@ -41,6 +43,20 @@ Fix vulnerabilities that could invalidate the walkthrough or expose sensitive da
 
 **Key files:** `lib/auth/verifyZkLoginIdToken.ts`, `app/api/auth/browser-session/route.ts`, secured holder routes.
 
+### Immediate checklist (before Phase 1)
+
+| Step | Status | Notes |
+|------|--------|-------|
+| Fix `Btn` TypeScript error (`CieloBookingPanel.tsx`) | ✅ | Import restored in PR #89 |
+| Confirm Vercel / CI build passes | ⏳ | Merge only after green — security work doesn't matter if the branch can't deploy |
+| Merge PR #89 | ⏳ | **Only after CI passes** and walkthrough environment is ready |
+| Deploy to production | ⏳ | **Immediately after merge** — use that deployment for the walkthrough |
+| Set `ADMIN_PIN` (server-only; remove `NEXT_PUBLIC_ADMIN_PIN`) | ⏳ | Vercel env |
+| Verify `NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID` | ⏳ | Required for JWKS audience check |
+| Run production walkthrough | ⏳ | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` |
+
+> Merge PR #89 only after it passes CI and the production walkthrough environment is ready. Deploy immediately afterward and use that deployment for the walkthrough.
+
 ---
 
 ## Phase 1 — Production Walkthrough
@@ -63,9 +79,9 @@ Pre-check: `npm run audit:production`
 
 ## Phase 1.5 — Freeze
 
-After walkthrough passes:
+After walkthrough passes (Paths A + B minimum):
 
-1. Release tag (e.g. `v1.0.0-beta`)
+1. Release tag (`v1.0.0-beta`)
 2. Freeze public APIs
 3. Freeze credential schema
 4. Freeze receipt schema (`schema_version: 1.0.0`)
@@ -74,9 +90,17 @@ After walkthrough passes:
 
 From this point: **version changes, don't silently mutate behavior.**
 
+### Release audit (request after walkthrough passes)
+
+Before Phase 2, generate a **v1.0.0-beta release audit**:
+
+> Freeze all public contracts (APIs, credential schema, receipt schema, callback payloads, database migration baseline). Produce a changelog, known limitations, and compatibility guarantees. This release becomes the baseline that all future protocol changes must remain compatible with unless explicitly versioned.
+
+Deliverable: tagged release + `docs/RELEASE_v1.0.0-beta.md` (or equivalent).
+
 ---
 
-## Phase 2 — Protocol Hardening
+## Phase 2 — Protocol Hardening (Scale prep)
 
 Only after Phase 1 + 1.5.
 
@@ -94,7 +118,7 @@ Only after Phase 1 + 1.5.
 
 ---
 
-## Phase 3 — Partner SDK
+## Phase 3 — Partner SDK (Scale)
 
 Self-serve onboarding for partner #2:
 
@@ -110,7 +134,17 @@ Present → renew → revoke → reissue → holder-facing history
 
 ---
 
-## Reference Audits
+## Phase progression
+
+| Phase | Name | Goal |
+|-------|------|------|
+| 0 | Security | Close Critical/High findings before proof |
+| 1 | Proof | Production walkthrough with evidence |
+| 1.5 | Freeze | Tag baseline; immutable public contracts |
+| 2 | Hardening | Idempotency, audit, policy versioning |
+| 3 | Scale | Partner SDK, self-serve onboarding |
+
+---
 
 | Document | Purpose |
 |----------|---------|
