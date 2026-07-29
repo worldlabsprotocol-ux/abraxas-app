@@ -49,4 +49,11 @@ describe("ecosystemContent", () => {
   it("surfaces Cielo in live ecosystem partners", () => {
     expect(LIVE_ECOSYSTEM_PARTNERS[0]?.title).toBe("Cielo Sunrise");
   });
+
+  it("attaches audited imagery to protocol proof cards", () => {
+    for (const proof of PROTOCOL_IN_ACTION_PROOFS) {
+      expect(proof.image.src).toMatch(/^\/assets\//);
+      expect(proof.image.alt.length).toBeGreaterThan(4);
+    }
+  });
 });

@@ -12,9 +12,9 @@ export function HomeSharpHero() {
     <section
       id="top"
       aria-labelledby="home-hero-heading"
+      className="abx-home-hero"
       style={{
         padding: "clamp(1.5rem, 5vw, 3rem) 0 clamp(1rem, 3vw, 1.5rem)",
-        maxWidth: 780,
       }}
     >
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
@@ -42,7 +42,7 @@ export function HomeSharpHero() {
           fontSize: "clamp(1rem, 2.5vw, 1.15rem)",
           fontWeight: 600,
           color: "var(--text-secondary)",
-          margin: "0 0 0.5rem",
+          margin: "0 auto 0.5rem",
           lineHeight: 1.45,
           maxWidth: 640,
         }}
@@ -55,7 +55,7 @@ export function HomeSharpHero() {
           fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
           fontWeight: 600,
           color: "var(--text-primary)",
-          margin: "0 0 1.25rem",
+          margin: "0 auto 1.25rem",
           lineHeight: 1.45,
           maxWidth: 640,
         }}
@@ -63,7 +63,7 @@ export function HomeSharpHero() {
         Identity becomes portable instead of repetitive.
       </p>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.5rem" }}>
+      <div className="abx-home-hero-actions">
         <Btn href="/passport" size="lg">Create Passport</Btn>
         <Btn href="/integrate" variant="secondary" size="lg">Explore Protocol</Btn>
       </div>
