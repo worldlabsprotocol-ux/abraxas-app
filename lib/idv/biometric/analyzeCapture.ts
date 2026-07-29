@@ -8,17 +8,26 @@ import { detectFacePresence } from "./facePresence";
 import { analyzeImageBuffer, livenessFromSelfieSignals } from "./imageSignals";
 import { evaluateBiometricDecision } from "./decision";
 import { buildExplainableSignals, explainableSignalsToRecord } from "./explainableSignals";
-import { estimateTamperScore } from "./tamperSignals";
+import { analyzeFaceAlignment } from "./faceAlignment";
+import { scoreFaceQuality } from "./faceQuality";
+import { analyzeScreenReplay } from "./screenReplay";
+import { runDeepfakeHook } from "./deepfakeHook";
+import { emitBiometricTelemetry } from "./telemetry";
+import type { PartnerPolicyRules } from "@/lib/policy/types";
 import type { BiometricAssessment, BiometricFraudSignals, BiometricSignals } from "./types";
 
-export const BIOMETRIC_ENGINE_VERSION = "abraxas-biometric-v2";
+export const BIOMETRIC_ENGINE_VERSION = "abraxas-biometric-v3";
 
 export async function analyzeBiometricCapture(input: {
   captureSessionId: string;
   suiAddress: string;
   idFrontBuffer: Buffer;
   selfieBuffer: Buffer;
+  partnerId?: string;
+  policyRules?: PartnerPolicyRules | null;
 }): Promise<BiometricAssessment> {
+  const started = Date.now();
+
   const [
     idSignals,
     selfieSignals,
@@ -26,8 +35,10 @@ export async function analyzeBiometricCapture(input: {
     idFace,
     selfieFace,
     docClass,
-    idTamper,
-    selfieTamper,
+    selfieAlignment,
+    idReplay,
+    selfieReplay,
+    deepfake,
   ] = await Promise.all([
     analyzeImageBuffer(input.idFrontBuffer),
     analyzeImageBuffer(input.selfieBuffer),
@@ -35,20 +46,25 @@ export async function analyzeBiometricCapture(input: {
     detectFacePresence(input.idFrontBuffer),
     detectFacePresence(input.selfieBuffer),
     classifyIdentityDocument(input.idFrontBuffer),
-    estimateTamperScore(input.idFrontBuffer),
-    estimateTamperScore(input.selfieBuffer),
+    analyzeFaceAlignment(input.selfieBuffer),
+    analyzeScreenReplay(input.idFrontBuffer),
+    analyzeScreenReplay(input.selfieBuffer),
+    runDeepfakeHook(input.selfieBuffer),
   ]);
 
+  const selfieQuality = scoreFaceQuality(selfieSignals, selfieFace);
   const liveness = livenessFromSelfieSignals(selfieSignals);
   const documentQuality = documentQualityScore(
     idSignals.quality,
     idSignals.width,
     idSignals.height,
   );
+
   const scores = {
     face_match: faceMatch,
     liveness,
     document_quality: documentQuality,
+    // Keep legacy aggregate for threshold compatibility; granular scores live in signals.
     selfie_quality: selfieSignals.quality,
   };
 
@@ -61,11 +77,26 @@ export async function analyzeBiometricCapture(input: {
     document_edge_density: docClass.edge_density,
     fraud_risk_score: 0,
     selfie_face_count: selfieFace.face_count_estimate,
-    id_tamper_score: idTamper,
-    selfie_tamper_score: selfieTamper,
+    id_tamper_score: idReplay.digital_tamper_score,
+    selfie_tamper_score: selfieReplay.digital_tamper_score,
   };
 
-  const decision = evaluateBiometricDecision(scores, fraudSignals);
+  const qualitySignals = {
+    alignment_score: selfieAlignment.score,
+    selfie_blur_score: selfieQuality.blur,
+    selfie_lighting_score: selfieQuality.lighting,
+    selfie_occlusion_score: selfieQuality.occlusion,
+    screen_replay_score: Math.max(idReplay.screen_replay_score, selfieReplay.screen_replay_score),
+    deepfake_score: deepfake.score,
+    deepfake_status: deepfake.status,
+  };
+
+  const decision = evaluateBiometricDecision(
+    scores,
+    fraudSignals,
+    qualitySignals,
+    { partnerId: input.partnerId, policyRules: input.policyRules },
+  );
   fraudSignals.fraud_risk_score = decision.fraud_risk_score;
 
   const rawSignals: BiometricSignals = {
@@ -87,10 +118,27 @@ export async function analyzeBiometricCapture(input: {
     selfie_brightness: selfieSignals.brightness,
     selfie_sharpness: selfieSignals.sharpness,
     selfie_variance: selfieSignals.variance,
-    tamper_score_id: idTamper,
-    tamper_score_selfie: selfieTamper,
-    tamper_score: Math.max(idTamper, selfieTamper),
+    selfie_blur_score: selfieQuality.blur,
+    selfie_lighting_score: selfieQuality.lighting,
+    selfie_occlusion_score: selfieQuality.occlusion,
+    alignment_score: selfieAlignment.score,
+    alignment_offset_x: selfieAlignment.center_offset_x,
+    alignment_offset_y: selfieAlignment.center_offset_y,
+    face_coverage: selfieAlignment.face_coverage,
+    symmetry_score: selfieAlignment.symmetry_score,
+    tamper_score_id: idReplay.combined_tamper_score,
+    tamper_score_selfie: selfieReplay.combined_tamper_score,
+    screen_replay_score: qualitySignals.screen_replay_score,
+    digital_tamper_score_id: idReplay.digital_tamper_score,
+    digital_tamper_score_selfie: selfieReplay.digital_tamper_score,
+    tamper_score: Math.max(idReplay.combined_tamper_score, selfieReplay.combined_tamper_score),
+    deepfake_score: deepfake.score,
+    deepfake_status: deepfake.status,
+    deepfake_provider: deepfake.provider,
     fraud_risk_score: decision.fraud_risk_score,
+    reason_codes: decision.reason_codes,
+    threshold_policy_source: input.policyRules?.biometric_thresholds ? "partner" : "global",
+    partner_id: input.partnerId ?? "",
   };
 
   const draft: BiometricAssessment = {
@@ -102,6 +150,7 @@ export async function analyzeBiometricCapture(input: {
     review_method: decision.review_method,
     engine_version: BIOMETRIC_ENGINE_VERSION,
     reasons: decision.reasons,
+    reason_codes: decision.reason_codes,
     signals: rawSignals,
     analyzed_at: new Date().toISOString(),
   };
@@ -111,6 +160,11 @@ export async function analyzeBiometricCapture(input: {
     ...rawSignals,
     ...explainableSignalsToRecord(explainable),
   };
+
+  emitBiometricTelemetry(draft, {
+    latencyMs: Date.now() - started,
+    partnerId: input.partnerId,
+  });
 
   return draft;
 }

@@ -10,6 +10,7 @@ import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { getIdvProvider } from "@/lib/idv/idvProvider";
 import { analyzeBiometricCapture } from "@/lib/idv/biometric/analyzeCapture";
 import { checkCaptureRateLimit, logCaptureAudit } from "@/lib/idv/biometric/captureGuard";
+import { resolveCaptureBiometricPolicy } from "@/lib/idv/biometric/resolveCapturePolicy";
 import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
 
@@ -166,11 +167,19 @@ export async function POST(req: NextRequest) {
       capture_session_id: captureSessionId,
     });
 
+    const policyContext = await resolveCaptureBiometricPolicy(supabase, {
+      policyId: formData.get("policy_id") as string | null,
+      partnerId: formData.get("partner_id") as string | null,
+      verificationRequestId: formData.get("verification_request_id") as string | null,
+    });
+
     const assessment = await analyzeBiometricCapture({
       captureSessionId,
       suiAddress,
       idFrontBuffer: idBuffer,
       selfieBuffer,
+      partnerId: policyContext.partnerId,
+      policyRules: policyContext.policyRules,
     });
 
     await persistBiometricAssessment(assessment);
@@ -191,10 +200,13 @@ export async function POST(req: NextRequest) {
         error: assessment.reasons[0]
           ?? "We couldn't verify your photos. Retake with good lighting, a clear ID image, and your face centered in the selfie.",
         reasons: assessment.reasons,
+        reason_codes: assessment.reason_codes,
         biometric: {
           decision: assessment.decision,
           scores: assessment.scores,
           fraud_risk_score: assessment.signals.fraud_risk_score,
+          engine_version: assessment.engine_version,
+          threshold_policy_source: assessment.signals.threshold_policy_source,
         },
       }, { status: 422 });
     }

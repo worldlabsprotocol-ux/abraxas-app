@@ -1,6 +1,59 @@
 # Abraxas Verify — Production Deployment Report
 
-Generated for merge of **#67** (infrastructure) + **#72** (biometric engine) → `main`.
+Generated for merge of **#67** (infrastructure) + **#72** (biometric engine) → `main`.  
+Updated for **abraxas-biometric-v3** (Tier 1 production hardening).
+
+## Engine versions
+
+| Version | Status | Notes |
+|---------|--------|-------|
+| `abraxas-biometric-v1` | Legacy | Correlation face match, single quality score |
+| `abraxas-biometric-v2` | Superseded | Fraud signals + explainable output |
+| **`abraxas-biometric-v3`** | **Current** | Measurable signals, partner thresholds, telemetry |
+
+## v3 signal catalog (Tier 1)
+
+Every capture produces structured scores and stable `reason_codes` — not just pass/fail.
+
+| Signal | Field(s) | Purpose |
+|--------|----------|---------|
+| Passive liveness | `scores.liveness` | Single-frame heuristic from selfie variance/brightness |
+| Face quality (blur) | `signals.selfie_blur_score` | Sharpness decomposition |
+| Face quality (lighting) | `signals.selfie_lighting_score` | Exposure / evenness |
+| Face quality (occlusion) | `signals.selfie_occlusion_score` | Coverage / obstruction heuristic |
+| Face alignment | `signals.alignment_score`, `alignment_offset_*`, `face_coverage` | Centroid, coverage, symmetry |
+| Multiple faces | `signals.selfie_face_count` | Rejects >1 face in selfie |
+| Screen / replay | `signals.screen_replay_score` | Moiré + aspect + tamper fusion |
+| Digital tamper | `tamper_score_id`, `tamper_score_selfie` | Per-image tamper heuristics |
+| Deepfake hook | `deepfake_score`, `deepfake_provider`, `deepfake_status` | Pluggable provider (`noop` default) |
+| Fraud composite | `signals.fraud_risk_score` | Weighted deficit across all thresholds |
+| Partner thresholds | `threshold_policy_source`, `partner_id` | `global` or `partner` from `partner_policies.rules_json.biometric_thresholds` |
+| Explainability | `reason_codes`, `reasons` | Stable codes + human messages with optional detail |
+
+### Partner-specific thresholds
+
+Pass optional form fields on `POST /api/identity/documents/capture`:
+
+- `policy_id` — load active policy from `partner_policies`
+- `partner_id` — optional override when only policy is known
+- `verification_request_id` — resolve partner + policy from an in-flight verification request
+
+Policy JSON shape (`rules_json.biometric_thresholds`):
+
+```json
+{
+  "face_min": 0.42,
+  "liveness_min": 0.38,
+  "alignment_min": 0.38,
+  "blur_min": 0.28,
+  "screen_replay_max": 0.62,
+  "deepfake_max": 0.75
+}
+```
+
+### Telemetry
+
+Each analysis emits a JSON log line (`event: biometric.analyzed`) with scores, granular signals, `reason_codes`, and `latency_ms`. Ship to your log drain / APM for Phase 4 observability dashboards.
 
 ## Completed work
 
@@ -10,6 +63,7 @@ Generated for merge of **#67** (infrastructure) + **#72** (biometric engine) →
 | Abraxas Verify default (`IDV_PROVIDER=manual`) | Done |
 | Veriff opt-in only (`IDV_PROVIDER=veriff`) | Done |
 | Biometric engine v1 (face, liveness, doc quality, aspect) | Done |
+| **Biometric engine v3 (Tier 1 hardening)** | Done |
 | Decision engine (reject / human_review / auto_approve) | Done |
 | Auto-approve **disabled** by default | Done |
 | Capture session auth (httpOnly cookie) | Done |
@@ -29,7 +83,7 @@ Generated for merge of **#67** (infrastructure) + **#72** (biometric engine) →
 | Layer | Score | Notes |
 |-------|-------|-------|
 | **Infrastructure** | 9/10 | Capture, admin, issuance, health APIs |
-| **Biometric engine** | 6/10 | v1 heuristics — human review backs it |
+| **Biometric engine** | 7/10 | v3 measurable signals + partner thresholds; ML embedder still P1 |
 | **Security** | 8/10 | Session auth, rate limit, private storage |
 | **Ops / monitoring** | 7/10 | JSON logs + health endpoints; no APM yet |
 | **Mainnet on-chain** | 4/10 | Devnet ready; mainnet package not deployed |
@@ -61,8 +115,8 @@ Generated for merge of **#67** (infrastructure) + **#72** (biometric engine) →
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| v1 face match is correlation-based, not ML | Medium | Human review on all captures (production default) |
-| Single-frame liveness heuristics | Medium | Reject obvious failures; admin confirms edge cases |
+| v1 face match is correlation-based, not ML | Medium | Human review default; ONNX embedder on roadmap |
+| Single-frame liveness heuristics | Medium | Reject obvious failures; v3 adds quality decomposition |
 | Rate limit uses DB counts (not Redis) | Low | Sufficient for pilot; upgrade for high traffic |
 | Document images in Supabase | Medium | Private bucket; 90-day retention policy documented |
 | Admin approve is single PIN | Medium | Restrict `/admin` access; rotate `ADMIN` credentials |
