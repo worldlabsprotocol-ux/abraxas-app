@@ -2,7 +2,7 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm install",
   "alias": ["abraxas-app.vercel.app"],
   "crons": [
     {

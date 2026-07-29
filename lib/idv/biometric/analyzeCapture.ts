@@ -16,7 +16,9 @@ import { emitBiometricTelemetry } from "./telemetry";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import type { BiometricAssessment, BiometricFraudSignals, BiometricSignals } from "./types";
 
-export const BIOMETRIC_ENGINE_VERSION = "abraxas-biometric-v3";
+import { BIOMETRIC_ENGINE_VERSION } from "./engineVersion";
+
+export { BIOMETRIC_ENGINE_VERSION } from "./engineVersion";
 
 export async function analyzeBiometricCapture(input: {
   captureSessionId: string;

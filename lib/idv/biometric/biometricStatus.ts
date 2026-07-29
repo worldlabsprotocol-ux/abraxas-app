@@ -1,7 +1,7 @@
 // FILE: lib/idv/biometric/biometricStatus.ts
 // Runtime health for the Abraxas Verify biometric engine.
 
-import { BIOMETRIC_ENGINE_VERSION } from "./analyzeCapture";
+import { BIOMETRIC_ENGINE_VERSION } from "./engineVersion";
 import {
   BIOMETRIC_ASSESSMENT_RETENTION_DAYS,
   BIOMETRIC_DOCUMENT_RETENTION_DAYS,
