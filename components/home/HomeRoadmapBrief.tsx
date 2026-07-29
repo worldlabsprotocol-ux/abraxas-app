@@ -10,7 +10,8 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeRoadmapBrief() {
   return (
-    <section aria-labelledby="home-roadmap-heading" id="roadmap" className="abx-home-section-copy">
+    <section aria-labelledby="home-roadmap-heading" id="roadmap" >
+      <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Current focus
       </div>
@@ -20,6 +21,7 @@ export function HomeRoadmapBrief() {
       }}>
         What we are shipping now
       </h2>
+      </div>
       <ol style={{
         margin: "0 0 1rem",
         padding: 0,

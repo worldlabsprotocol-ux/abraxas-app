@@ -131,7 +131,8 @@ export function HomeProtocolInAction() {
   const passport = PROTOCOL_PASSPORT_CONNECTOR;
 
   return (
-    <section aria-labelledby="home-protocol-in-action-heading" id="ecosystem" className="abx-home-section-copy">
+    <section aria-labelledby="home-protocol-in-action-heading" id="ecosystem" >
+      <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Abraxas in three proofs
       </div>
@@ -153,6 +154,7 @@ export function HomeProtocolInAction() {
         capability of reusable trust infrastructure.
       </p>
 
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem", marginBottom: "0.75rem" }}>
         {PROTOCOL_IN_ACTION_PROOFS.map((proof) => (
           <ProofCard key={proof.id} proof={proof} />

@@ -23,7 +23,7 @@ const PILLARS = [
   {
     title: "Trust Registry",
     href: "/docs/credential-portability",
-    summary: "Reusable credentials partners can verify without re-collecting documents.",
+    summary: "Reusable credentials partners can verify without asking users to upload documents again.",
     accent: "#38BDF8",
   },
   {
@@ -36,7 +36,8 @@ const PILLARS = [
 
 export function HomeTrustPillars() {
   return (
-    <section aria-labelledby="home-pillars-heading" className="abx-home-section-copy">
+    <section aria-labelledby="home-pillars-heading">
+      <div className="abx-home-intro">
       <h2 id="home-pillars-heading" style={{
         fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
         letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.45rem",
@@ -46,6 +47,7 @@ export function HomeTrustPillars() {
       <p className="abx-home-section-lead">
         Four pillars work together so verification happens once and trust travels with the user.
       </p>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem" }}>
         {PILLARS.map(p => (
           <Link

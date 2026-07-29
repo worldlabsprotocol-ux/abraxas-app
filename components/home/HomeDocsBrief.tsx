@@ -11,7 +11,8 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeDocsBrief() {
   return (
-    <section aria-labelledby="home-docs-heading" id="docs" className="abx-home-section-copy">
+    <section aria-labelledby="home-docs-heading" id="docs" >
+      <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
         Documentation
       </div>
@@ -24,6 +25,7 @@ export function HomeDocsBrief() {
       <p className="abx-home-section-lead">
         Overview, quick start, core concepts, and developer docs. Each section fits one screen.
       </p>
+      </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "1rem", justifyContent: "center" }}>
         {DOCS_HUB_NAV.map((item) => (
           <Link

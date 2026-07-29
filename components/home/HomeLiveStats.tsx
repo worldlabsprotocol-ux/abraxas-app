@@ -58,7 +58,8 @@ export function HomeLiveStats() {
   const loading = status === "loading";
 
   return (
-    <section aria-labelledby="home-live-stats" className="abx-home-section-copy">
+    <section aria-labelledby="home-live-stats" >
+      <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
         Live protocol
       </div>
@@ -68,6 +69,7 @@ export function HomeLiveStats() {
       }}>
         Trust in motion
       </h2>
+      </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "center" }}>
         {cards.map((card) => (
           <StatCard

@@ -55,7 +55,8 @@ function IndustrySolutionCard({ item }: { item: IndustryCard }) {
 
 export function HomeVerifyOnceDiagram() {
   return (
-    <section aria-labelledby="home-verify-once-heading" className="abx-home-section-copy">
+    <section aria-labelledby="home-verify-once-heading">
+      <div className="abx-home-intro">
       <h2
         id="home-verify-once-heading"
         style={{
@@ -69,6 +70,7 @@ export function HomeVerifyOnceDiagram() {
       >
         One verification, many regulated ecosystems
       </h2>
+      </div>
       <div className="verify-once-diagram" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
         <Panel title="Without Abraxas" muted>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>

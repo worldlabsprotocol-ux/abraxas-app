@@ -49,7 +49,8 @@ export function HomeRegistrySlideshow() {
   const meta = VERIFY_META[slide.verifyState];
 
   return (
-    <section aria-label="Registry highlights" className="abx-home-section-copy">
+    <section aria-label="Registry highlights">
+      <div className="abx-home-intro" style={{ marginBottom: "0.85rem" }}>
       <div style={{
         display: "flex", justifyContent: "center", alignItems: "flex-end",
         flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.85rem",
@@ -76,6 +77,7 @@ export function HomeRegistrySlideshow() {
         }}>
           Browse all →
         </Link>
+      </div>
       </div>
 
       <article style={{

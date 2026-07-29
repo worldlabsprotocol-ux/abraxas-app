@@ -102,7 +102,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               lineHeight: 1.55,
               margin: "0 0 1.35rem",
             }}>
-              {ABRAXAS_ONE_LINER} Browse live proofs — no wallet required.
+              {ABRAXAS_ONE_LINER} Browse live proofs. No wallet required.
             </p>
 
             <button

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeWhyAbraxas.tsx
-// Why the product exists — before feature cards.
+// Why the product exists, before feature cards.
 
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
@@ -8,7 +8,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeWhyAbraxas() {
   return (
-    <section aria-labelledby="home-why-heading" className="abx-home-section-copy">
+    <section aria-labelledby="home-why-heading" className="abx-home-prose">
       <h2
         id="home-why-heading"
         style={{
@@ -33,7 +33,6 @@ export function HomeWhyAbraxas() {
           fontStyle: "normal",
           color: "var(--text-secondary)",
           lineHeight: 1.7,
-          maxWidth: 720,
         }}
       >
         Every financial platform asks users to verify themselves again. Every issuer repeats
@@ -48,7 +47,6 @@ export function HomeWhyAbraxas() {
           color: "var(--text-secondary)",
           lineHeight: 1.7,
           margin: "0 0 0.65rem",
-          maxWidth: 720,
         }}
       >
         Abraxas turns identity verification into reusable infrastructure. Verify once, receive a
@@ -62,7 +60,6 @@ export function HomeWhyAbraxas() {
           color: "var(--text-primary)",
           lineHeight: 1.7,
           margin: 0,
-          maxWidth: 720,
         }}
       >
         Age verified once. Trusted everywhere. Reusable credentials for age, identity, and compliance.

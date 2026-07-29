@@ -268,18 +268,18 @@ details > summary::-webkit-details-marker {
   border-top: 1px solid var(--border-strong);
 }
 
-/* Centered section intros (headlines + lead copy) */
-.abx-home-section-copy {
+/* Centered homepage intros (headline blocks only, not grids) */
+.abx-home-intro {
   text-align: center;
-}
-.abx-home-section-copy .abx-home-section-lead,
-.abx-home-section-copy > blockquote,
-.abx-home-section-copy > p {
+  max-width: 720px;
   margin-left: auto;
   margin-right: auto;
 }
-.abx-home-section-copy > blockquote {
+.abx-home-prose {
   max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
 }
 .abx-home-section-lead {
   font-family: var(--font-sans, "Inter", system-ui, sans-serif);

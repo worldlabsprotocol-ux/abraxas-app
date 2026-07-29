@@ -9,7 +9,8 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeRegulatedIndustries() {
   return (
-    <section aria-labelledby="home-regulated-heading" className="abx-home-section-copy">
+    <section aria-labelledby="home-regulated-heading" >
+      <div className="abx-home-intro">
       <h2
         id="home-regulated-heading"
         style={{
@@ -27,6 +28,7 @@ export function HomeRegulatedIndustries() {
         The same verification layer solves different regulatory problems: age eligibility, property
         ownership, wallet identity, and financial compliance.
       </p>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>
         {REGULATED_INDUSTRY_PILLARS.map((item) => (
           <article
