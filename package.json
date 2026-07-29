@@ -22,6 +22,7 @@
     "biometric:health": "npx tsx scripts/verify-biometric-health.ts",
     "biometric:download-model": "bash scripts/download-face-embedding-model.sh",
     "biometric:analyze-bundle": "node scripts/analyze-capture-bundle.js",
+    "biometric:validate-policy": "npx tsx scripts/validate-good-trouble-policy.ts",
     "identity:verify-schema": "npx tsx scripts/verify-admin-identity-schema.ts",
     "identity:seed-review-queue": "npx tsx scripts/seed-identity-review-queue.ts"
   },
