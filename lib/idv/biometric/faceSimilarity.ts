@@ -1,7 +1,8 @@
 // FILE: lib/idv/biometric/faceSimilarity.ts
 // Face-region similarity between ID photo and selfie (Abraxas engine v3).
 
-import { compareWithOnnxEmbeddings } from "./faceEmbeddingOnnx";
+import "server-only";
+
 import { compareWithCorrelation } from "./faceSimilarityCorrelation";
 import { resolveFaceMatchMethod, type FaceMatchMethod } from "./faceMatchProvider";
 
@@ -20,6 +21,7 @@ export async function compareIdAndSelfie(idBuffer: Buffer, selfieBuffer: Buffer)
   const preferred = resolveFaceMatchMethod();
   if (preferred === "onnx_embedding") {
     try {
+      const { compareWithOnnxEmbeddings } = await import("./faceEmbeddingOnnx");
       const score = await compareWithOnnxEmbeddings(idBuffer, selfieBuffer);
       return { score, method: "onnx_embedding" };
     } catch (err) {

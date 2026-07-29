@@ -1,6 +1,8 @@
 // FILE: lib/idv/biometric/faceEmbeddingOnnx.ts
 // ONNX embedding-based face match (ArcFace-style 112×112 → 512-d cosine similarity).
 
+import "server-only";
+
 import { existsSync } from "fs";
 import { join } from "path";
 import sharp from "sharp";
@@ -79,11 +81,13 @@ async function embedImage(buffer: Buffer): Promise<Float32Array> {
   };
   const result = await session.run(feeds);
   const raw = result[outputName]?.data;
-  if (!(raw instanceof Float32Array) && !Array.isArray(raw)) {
-    throw new Error("Unexpected ONNX embedding output");
+  if (raw instanceof Float32Array) {
+    return l2Normalize(raw);
   }
-  const embedding = raw instanceof Float32Array ? raw : new Float32Array(raw);
-  return l2Normalize(embedding);
+  if (Array.isArray(raw) && raw.every((v) => typeof v === "number")) {
+    return l2Normalize(new Float32Array(raw));
+  }
+  throw new Error("Unexpected ONNX embedding output");
 }
 
 /** Cosine similarity of L2-normalized embeddings, mapped to 0–1. */

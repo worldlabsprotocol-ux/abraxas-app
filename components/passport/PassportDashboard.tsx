@@ -295,6 +295,7 @@ export function PassportDashboard({
               error={error}
               onStartIdCheck={onStartIdCheck}
               onRefresh={onRefresh}
+              capturePolicy={capturePolicy}
             />
           )}
 
@@ -487,6 +488,7 @@ function IdentityUnlockSection({
   error,
   onStartIdCheck,
   onRefresh,
+  capturePolicy,
 }: {
   identityUi: IdentityUiState;
   manualMode: boolean;
@@ -501,6 +503,7 @@ function IdentityUnlockSection({
   error: string | null;
   onStartIdCheck: () => void;
   onRefresh: () => void;
+  capturePolicy?: CapturePolicyContext;
 }) {
   if (identityUi === "under_review") {
     return (
