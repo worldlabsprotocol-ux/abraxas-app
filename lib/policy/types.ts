@@ -15,10 +15,30 @@ export interface RequiredClaimRule {
   credential_max_age_hours?: number;
 }
 
+export interface PartnerBiometricThresholdRules {
+  face_min?: number;
+  liveness_min?: number;
+  document_min?: number;
+  selfie_min?: number;
+  auto_approve_face?: number;
+  auto_approve_liveness?: number;
+  face_presence_min?: number;
+  document_aspect_min?: number;
+  document_class_min?: number;
+  alignment_min?: number;
+  blur_min?: number;
+  lighting_min?: number;
+  occlusion_min?: number;
+  screen_replay_max?: number;
+  deepfake_max?: number;
+}
+
 export interface PartnerPolicyRules {
   allow_core_only?: boolean;
   /** When true, policy is for sandbox demo only — decisions are not production-usable. */
   sandbox_only?: boolean;
+  /** Optional biometric engine thresholds at capture time (partner-specific risk tolerance). */
+  biometric_thresholds?: PartnerBiometricThresholdRules;
   required_claims?: RequiredClaimRule[];
   blocked_jurisdictions?: string[];
   /** Enforce issuer trust registry on all required claims */

@@ -1,6 +1,14 @@
 // FILE: lib/idv/biometric/decision.ts
 
-import { getBiometricThresholds, isBiometricAutoApproveEnabled } from "./thresholds";
+import { isBiometricAutoApproveEnabled } from "./thresholds";
+import {
+  biometricReason,
+  reasonCodes,
+  reasonMessages,
+  type BiometricReason,
+} from "./reasonCodes";
+import type { ExtendedBiometricThresholds } from "./partnerThresholds";
+import { resolveBiometricThresholds } from "./partnerThresholds";
 import type { BiometricDecision, BiometricFraudSignals, BiometricScores } from "./types";
 
 export interface BiometricDecisionResult {
@@ -8,13 +16,26 @@ export interface BiometricDecisionResult {
   assurance_level: "L2" | "L3";
   review_method: "automated_biometric" | "human_biometric_match";
   reasons: string[];
+  reason_codes: string[];
+  structured_reasons: BiometricReason[];
   fraud_risk_score: number;
+}
+
+export interface BiometricQualitySignals {
+  alignment_score: number;
+  selfie_blur_score: number;
+  selfie_lighting_score: number;
+  selfie_occlusion_score: number;
+  screen_replay_score: number;
+  deepfake_score: number;
+  deepfake_status: string;
 }
 
 function computeFraudRisk(
   scores: BiometricScores,
   fraud: BiometricFraudSignals,
-  t: ReturnType<typeof getBiometricThresholds>,
+  quality: BiometricQualitySignals,
+  t: ExtendedBiometricThresholds,
 ): number {
   const deficits = [
     Math.max(0, t.faceMin - scores.face_match),
@@ -25,6 +46,12 @@ function computeFraudRisk(
     Math.max(0, t.facePresenceMin * 0.85 - fraud.id_face_presence),
     Math.max(0, t.documentAspectMin - fraud.document_aspect),
     Math.max(0, t.documentClassMin - fraud.document_class_confidence),
+    Math.max(0, t.alignmentMin - quality.alignment_score),
+    Math.max(0, t.blurMin - quality.selfie_blur_score),
+    Math.max(0, t.lightingMin - quality.selfie_lighting_score),
+    Math.max(0, t.occlusionMin - quality.selfie_occlusion_score),
+    Math.max(0, quality.screen_replay_score - t.screenReplayMax),
+    Math.max(0, quality.deepfake_score - t.deepfakeMax),
   ];
   const avgDeficit = deficits.reduce((a, b) => a + b, 0) / deficits.length;
   return Math.min(1, avgDeficit * 2.2);
@@ -33,9 +60,11 @@ function computeFraudRisk(
 export function evaluateBiometricDecision(
   scores: BiometricScores,
   fraud?: BiometricFraudSignals,
+  quality?: BiometricQualitySignals,
+  thresholdInput?: Parameters<typeof resolveBiometricThresholds>[0],
 ): BiometricDecisionResult {
-  const t = getBiometricThresholds();
-  const reasons: string[] = [];
+  const t = resolveBiometricThresholds(thresholdInput);
+  const structured: BiometricReason[] = [];
 
   const f: BiometricFraudSignals = fraud ?? {
     id_face_presence: 1,
@@ -50,40 +79,86 @@ export function evaluateBiometricDecision(
     selfie_tamper_score: 0,
   };
 
-  const fraudRisk = computeFraudRisk(scores, f, t);
+  const q: BiometricQualitySignals = quality ?? {
+    alignment_score: 1,
+    selfie_blur_score: 1,
+    selfie_lighting_score: 1,
+    selfie_occlusion_score: 1,
+    screen_replay_score: 0,
+    deepfake_score: 0,
+    deepfake_status: "skipped",
+  };
+
+  const fraudRisk = computeFraudRisk(scores, f, q, t);
 
   if (f.selfie_face_presence < t.facePresenceMin) {
-    reasons.push("Selfie must show a clear human face");
+    structured.push(biometricReason("SELFIE_FACE_MISSING"));
   }
   if (f.selfie_face_count > 1) {
-    reasons.push("Selfie must show exactly one face");
+    structured.push(biometricReason("SELFIE_MULTIPLE_FACES"));
   }
   if (f.id_face_presence < t.facePresenceMin * 0.75) {
-    reasons.push("Government ID photo must include a visible face");
+    structured.push(biometricReason("ID_FACE_MISSING"));
   }
   if (f.document_aspect < t.documentAspectMin) {
-    reasons.push("Image does not look like a government ID or passport");
+    structured.push(biometricReason("DOCUMENT_ASPECT_INVALID"));
   }
   if (f.document_class === "unknown" && f.document_class_confidence < t.documentClassMin) {
-    reasons.push("Unsupported or unrecognized document type");
+    structured.push(biometricReason("DOCUMENT_CLASS_UNKNOWN"));
   }
   if (f.document_edge_density < 0.04 && f.document_aspect < t.documentAspectMin * 1.1) {
-    reasons.push("ID image lacks document structure (text/edges)");
+    structured.push(biometricReason("DOCUMENT_STRUCTURE_WEAK"));
   }
   if (scores.document_quality < t.documentMin) {
-    reasons.push("ID image quality below threshold");
+    structured.push(biometricReason("ID_QUALITY_LOW"));
   }
   if (scores.selfie_quality < t.selfieMin) {
-    reasons.push("Selfie quality below threshold");
+    structured.push(
+      biometricReason(
+        "SELFIE_QUALITY_LOW",
+        `blur=${q.selfie_blur_score.toFixed(2)} lighting=${q.selfie_lighting_score.toFixed(2)} occlusion=${q.selfie_occlusion_score.toFixed(2)}`,
+      ),
+    );
+  } else {
+    if (q.selfie_blur_score < t.blurMin) {
+      structured.push(
+        biometricReason("SELFIE_BLUR_HIGH", `blur=${q.selfie_blur_score.toFixed(2)} < ${t.blurMin}`),
+      );
+    }
+    if (q.selfie_lighting_score < t.lightingMin) {
+      structured.push(
+        biometricReason("SELFIE_LIGHTING_POOR", `lighting=${q.selfie_lighting_score.toFixed(2)}`),
+      );
+    }
+    if (q.selfie_occlusion_score < t.occlusionMin) {
+      structured.push(biometricReason("SELFIE_OCCLUSION_SUSPECTED"));
+    }
+  }
+  if (q.alignment_score < t.alignmentMin && scores.selfie_quality < t.selfieMin * 1.05) {
+    structured.push(
+      biometricReason("SELFIE_ALIGNMENT_POOR", `alignment=${q.alignment_score.toFixed(2)}`),
+    );
   }
   if (scores.liveness < t.livenessMin) {
-    reasons.push("Liveness signals weak — retake selfie with your face centered");
+    structured.push(biometricReason("LIVENESS_WEAK"));
   }
   if (scores.face_match < t.faceMin) {
-    reasons.push("Face on ID does not match selfie");
+    structured.push(
+      biometricReason("FACE_MATCH_LOW", `match=${scores.face_match.toFixed(2)} < ${t.faceMin}`),
+    );
+  }
+  if (q.screen_replay_score > t.screenReplayMax) {
+    structured.push(
+      biometricReason("SCREEN_REPLAY_SUSPECTED", `score=${q.screen_replay_score.toFixed(2)}`),
+    );
   }
   if (f.selfie_tamper_score > 0.65 || f.id_tamper_score > 0.65) {
-    reasons.push("Image may be a screen capture or digitally altered");
+    structured.push(biometricReason("TAMPER_SUSPECTED"));
+  }
+  if (q.deepfake_score > t.deepfakeMax && q.deepfake_status === "ok") {
+    structured.push(
+      biometricReason("DEEPFAKE_SCORE_HIGH", `score=${q.deepfake_score.toFixed(2)}`),
+    );
   }
 
   const hardReject =
@@ -96,14 +171,19 @@ export function evaluateBiometricDecision(
     scores.document_quality < t.documentMin * 0.5 ||
     scores.selfie_quality < t.selfieMin * 0.5 ||
     scores.liveness < t.livenessMin * 0.5 ||
+    q.screen_replay_score > Math.min(0.85, t.screenReplayMax + 0.15) ||
+    (q.deepfake_score > t.deepfakeMax && q.deepfake_status === "ok") ||
     fraudRisk >= 0.72;
 
   if (hardReject) {
+    const reasons = structured.length ? structured : [biometricReason("GENERIC_REJECT")];
     return {
       decision: "reject",
       assurance_level: "L2",
       review_method: "human_biometric_match",
-      reasons: reasons.length ? reasons : ["Submission failed automated fraud checks"],
+      reasons: reasonMessages(reasons),
+      reason_codes: reasonCodes(reasons),
+      structured_reasons: reasons,
       fraud_risk_score: fraudRisk,
     };
   }
@@ -117,39 +197,58 @@ export function evaluateBiometricDecision(
     f.selfie_face_presence >= t.facePresenceMin &&
     f.id_face_presence >= t.facePresenceMin * 0.75 &&
     f.document_aspect >= t.documentAspectMin &&
-    reasons.length === 0;
+    q.alignment_score >= t.alignmentMin &&
+    q.selfie_blur_score >= t.blurMin &&
+    q.selfie_lighting_score >= t.lightingMin &&
+    q.selfie_occlusion_score >= t.occlusionMin &&
+    q.screen_replay_score <= t.screenReplayMax &&
+    (q.deepfake_status !== "ok" || q.deepfake_score <= t.deepfakeMax) &&
+    structured.length === 0;
 
   if (autoEligible) {
+    const passed = [biometricReason("AUTO_APPROVE_PASSED")];
     return {
       decision: "auto_approve",
       assurance_level: "L3",
       review_method: "automated_biometric",
-      reasons: ["Automated biometric checks passed"],
+      reasons: reasonMessages(passed),
+      reason_codes: reasonCodes(passed),
+      structured_reasons: passed,
       fraud_risk_score: fraudRisk,
     };
   }
 
   const borderlineReview =
-    reasons.length <= 2 &&
+    structured.length <= 2 &&
     fraudRisk < 0.55 &&
     f.selfie_face_presence >= t.facePresenceMin * 0.7 &&
     f.document_aspect >= t.documentAspectMin * 0.65;
 
   if (borderlineReview) {
+    const reviewReasons = structured.length
+      ? structured
+      : [biometricReason("BORDERLINE_HUMAN_REVIEW")];
     return {
       decision: "human_review",
       assurance_level: "L2",
       review_method: "human_biometric_match",
-      reasons: reasons.length ? reasons : ["Borderline scores — human review required"],
+      reasons: reasonMessages(reviewReasons),
+      reason_codes: reasonCodes(reviewReasons),
+      structured_reasons: reviewReasons,
       fraud_risk_score: fraudRisk,
     };
   }
 
+  const rejectReasons = structured.length
+    ? structured
+    : [biometricReason("FRAUD_RISK_HIGH")];
   return {
     decision: "reject",
     assurance_level: "L2",
     review_method: "human_biometric_match",
-    reasons: reasons.length ? reasons : ["Submission did not pass fraud detection thresholds"],
+    reasons: reasonMessages(rejectReasons),
+    reason_codes: reasonCodes(rejectReasons),
+    structured_reasons: rejectReasons,
     fraud_risk_score: fraudRisk,
   };
 }

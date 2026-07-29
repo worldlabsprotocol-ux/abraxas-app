@@ -13,8 +13,9 @@ describe("explainableSignals", () => {
       decision: "human_review",
       assurance_level: "L2",
       review_method: "human_biometric_match",
-      engine_version: "abraxas-biometric-v2",
+      engine_version: "abraxas-biometric-v3",
       reasons: ["Face match below threshold"],
+      reason_codes: ["FACE_MATCH_LOW"],
       signals: {
         id_face_presence: 0.7,
         selfie_face_presence: 0.75,

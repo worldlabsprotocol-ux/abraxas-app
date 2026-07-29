@@ -17,6 +17,16 @@ const GOOD_FRAUD: BiometricFraudSignals = {
   selfie_tamper_score: 0.1,
 };
 
+const GOOD_QUALITY = {
+  alignment_score: 0.82,
+  selfie_blur_score: 0.78,
+  selfie_lighting_score: 0.8,
+  selfie_occlusion_score: 0.76,
+  screen_replay_score: 0.12,
+  deepfake_score: 0,
+  deepfake_status: "skipped",
+};
+
 describe("evaluateBiometricDecision", () => {
   it("auto-approves when scores exceed auto thresholds and flag enabled", () => {
     process.env.ABRAXAS_BIOMETRIC_AUTO_APPROVE = "1";
@@ -25,7 +35,7 @@ describe("evaluateBiometricDecision", () => {
       liveness: 0.75,
       document_quality: 0.7,
       selfie_quality: 0.72,
-    }, GOOD_FRAUD);
+    }, GOOD_FRAUD, GOOD_QUALITY);
     expect(result.decision).toBe("auto_approve");
     expect(result.assurance_level).toBe("L3");
     expect(result.review_method).toBe("automated_biometric");
@@ -39,7 +49,7 @@ describe("evaluateBiometricDecision", () => {
       liveness: 0.55,
       document_quality: 0.6,
       selfie_quality: 0.58,
-    }, GOOD_FRAUD);
+    }, GOOD_FRAUD, GOOD_QUALITY);
     expect(result.decision).toBe("human_review");
     expect(result.assurance_level).toBe("L2");
   });
@@ -103,6 +113,6 @@ describe("evaluateBiometricDecision", () => {
       selfie_tamper_score: 0.3,
     });
     expect(result.decision).toBe("reject");
-    expect(result.fraud_risk_score).toBeGreaterThan(0.25);
+    expect(result.fraud_risk_score).toBeGreaterThan(0.15);
   });
 });

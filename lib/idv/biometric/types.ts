@@ -38,6 +38,7 @@ export interface BiometricAssessment {
   engine_version: string;
   signals: BiometricSignals;
   reasons: string[];
+  reason_codes: string[];
   analyzed_at: string;
 }
 
