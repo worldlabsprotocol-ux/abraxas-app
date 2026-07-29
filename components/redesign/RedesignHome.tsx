@@ -23,7 +23,7 @@ const MAXW: React.CSSProperties = {
   padding: "0 clamp(1.25rem, 4vw, 2rem)",
 };
 
-const SECTION_GAP = "clamp(2.25rem, 5.5vw, 3.5rem)";
+const SECTION_GAP = "clamp(2rem, 5vw, 3rem)";
 
 function HomeContent() {
   return (

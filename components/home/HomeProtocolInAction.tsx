@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeProtocolInAction.tsx
-// Protocol in Action — photographic proof, not a generic card grid.
+// Protocol in Action — large photographic proof, full content width.
 
 import Image from "next/image";
 import Link from "next/link";
@@ -27,16 +27,17 @@ function ProofCard({ proof, featured }: { proof: ProtocolProof; featured?: boole
             src={proof.image.src}
             alt={proof.image.alt}
             fill
-            sizes={featured ? "(min-width: 900px) 58vw, 100vw" : "(min-width: 900px) 28vw, 100vw"}
+            priority={featured}
+            sizes={featured ? "(min-width: 900px) 60vw, 100vw" : "(min-width: 900px) 35vw, 100vw"}
             style={{ objectFit: "cover", objectPosition: proof.image.objectPosition ?? "center" }}
           />
           <div className="abx-proof-card__scrim" />
-        </div>
-        <div className="abx-proof-card__body">
-          <div className="abx-section-label">{proof.category}</div>
-          <h3 className="abx-proof-card__title">{proof.title}</h3>
-          <p className="abx-proof-card__summary">{proof.summary}</p>
-          <p className="abx-proof-card__detail">{proof.demonstrates}</p>
+          <div className="abx-proof-card__overlay">
+            <p className="abx-section-label abx-proof-card__category">{proof.category}</p>
+            <h3 className="abx-proof-card__title">{proof.title}</h3>
+            <p className="abx-proof-card__summary">{proof.summary}</p>
+            <p className="abx-proof-card__detail">{proof.demonstrates}</p>
+          </div>
         </div>
       </article>
     </Link>
@@ -57,7 +58,7 @@ export function HomeProtocolInAction() {
       <h2 id="home-protocol-in-action-heading" className="abx-home-h2" style={{ marginBottom: "0.5rem" }}>
         Protocol in action
       </h2>
-      <p className="abx-home-lead" style={{ marginBottom: "1.25rem", maxWidth: 640 }}>
+      <p className="abx-home-lead" style={{ marginBottom: "1rem", maxWidth: 640 }}>
         Real deployments across hospitality, land, and regulated retail. Evidence, not a portfolio slide.
       </p>
 
@@ -78,7 +79,7 @@ export function HomeProtocolInAction() {
             <Image src="/icon-192.png" alt="" width={40} height={40} style={{ borderRadius: 10 }} />
           </div>
           <div>
-            <div className="abx-section-label">Connector</div>
+            <p className="abx-section-label">Connector</p>
             <h3 className="abx-passport-connector__title">{passport.title}</h3>
             <p className="abx-passport-connector__summary">{passport.summary}</p>
             <p className="abx-passport-connector__detail">{passport.demonstrates}</p>
@@ -88,6 +89,9 @@ export function HomeProtocolInAction() {
       </Link>
 
       <style jsx>{`
+        .abx-protocol-in-action {
+          width: 100%;
+        }
         .abx-proof-mosaic {
           display: grid;
           gap: 0.75rem;
@@ -95,26 +99,24 @@ export function HomeProtocolInAction() {
         }
         @media (min-width: 900px) {
           .abx-proof-mosaic {
-            grid-template-columns: 1.15fr 0.85fr;
+            grid-template-columns: 1.2fr 0.8fr;
+            grid-template-rows: minmax(520px, 58vh);
             align-items: stretch;
-          }
-          .abx-proof-mosaic__featured :global(.abx-proof-card__inner) {
-            min-height: 100%;
+            gap: 0.85rem;
           }
           .abx-proof-mosaic__stack {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 0.85rem;
+            min-height: 100%;
           }
         }
         :global(.abx-proof-card__inner) {
-          display: flex;
-          flex-direction: column;
           height: 100%;
-          border-radius: 14px;
+          border-radius: 16px;
           overflow: hidden;
           border: 1px solid var(--border);
-          background: var(--surface-raised);
+          background: #0a0a0b;
           transition: border-color 0.2s ease;
         }
         :global(.abx-proof-card:hover .abx-proof-card__inner) {
@@ -123,45 +125,63 @@ export function HomeProtocolInAction() {
         :global(.abx-proof-card__media) {
           position: relative;
           width: 100%;
-          aspect-ratio: 16 / 10;
-          background: #0a0a0b;
+          height: 100%;
+          min-height: 280px;
         }
-        :global(.abx-proof-card--featured .abx-proof-card__media) {
-          aspect-ratio: 16 / 11;
+        @media (min-width: 900px) {
+          :global(.abx-proof-card--featured .abx-proof-card__media) {
+            min-height: min(58vh, 640px);
+          }
+          :global(.abx-proof-card:not(.abx-proof-card--featured) .abx-proof-card__media) {
+            min-height: 0;
+          }
         }
         :global(.abx-proof-card__scrim) {
           position: absolute;
           inset: 0;
-          background: linear-gradient(180deg, transparent 35%, rgba(4, 5, 10, 0.55) 100%);
+          background: linear-gradient(
+            180deg,
+            rgba(4, 5, 10, 0.05) 0%,
+            rgba(4, 5, 10, 0.35) 45%,
+            rgba(4, 5, 10, 0.88) 100%
+          );
         }
-        :global(.abx-proof-card__body) {
-          padding: 1rem 1.05rem 1.1rem;
+        :global(.abx-proof-card__overlay) {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 2;
+          padding: clamp(1rem, 2.5vw, 1.35rem);
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
-          flex: 1;
+          gap: 0.3rem;
+        }
+        :global(.abx-proof-card__category) {
+          color: rgba(250, 250, 250, 0.72);
         }
         :global(.abx-proof-card__title) {
           font-family: ${FONT};
-          font-size: 0.95rem;
+          font-size: clamp(1rem, 2vw, 1.2rem);
           font-weight: 800;
-          color: var(--text-primary);
+          color: #fafafa;
           margin: 0;
           letter-spacing: -0.02em;
         }
         :global(.abx-proof-card__summary) {
           font-family: ${FONT};
-          font-size: 0.78rem;
+          font-size: 0.82rem;
           font-weight: 600;
-          color: var(--text-primary);
+          color: rgba(250, 250, 250, 0.92);
           margin: 0;
         }
         :global(.abx-proof-card__detail) {
           font-family: ${FONT};
-          font-size: 0.74rem;
-          color: var(--text-muted);
+          font-size: 0.76rem;
+          color: rgba(212, 212, 216, 0.88);
           margin: 0;
           line-height: 1.5;
+          max-width: 52ch;
         }
         .abx-passport-connector article {
           display: grid;
