@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeProtocolInAction.tsx
-// Protocol in Action — three proofs + Passport connector with partner logos.
+// Protocol in Action — three proofs + Passport connector with compact partner media.
 
 import Image from "next/image";
 import Link from "next/link";
@@ -15,31 +15,43 @@ import {
   type ProtocolProofLogo,
 } from "@/lib/home/protocolProofLogos";
 
-const LOGO_SLOT_HEIGHT = 52;
+function ProofMediaMark({ media }: { media: ProtocolProofLogo }) {
+  const slotHeight = media.slotHeight ?? PROTOCOL_PROOF_LOGO_HEIGHT;
+  const fit = media.fit ?? "contain";
 
-function ProofLogoMark({ logo }: { logo: ProtocolProofLogo }) {
+  if (fit === "contain") {
+    return (
+      <div className="abx-home-proof-media" style={{ height: slotHeight }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={media.src}
+          alt={media.alt}
+          style={{
+            maxHeight: slotHeight - 12,
+            maxWidth: "92%",
+            width: "auto",
+            height: "auto",
+            objectFit: "contain",
+            display: "block",
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
-      style={{
-        height: LOGO_SLOT_HEIGHT,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "0.5rem 1rem 0.15rem",
-        flexShrink: 0,
-      }}
+      className="abx-home-proof-media abx-home-proof-media--cover"
+      style={{ height: slotHeight, position: "relative" }}
     >
       <Image
-        src={logo.src}
-        alt={logo.alt}
-        width={160}
-        height={PROTOCOL_PROOF_LOGO_HEIGHT}
+        src={media.src}
+        alt={media.alt}
+        fill
+        sizes="(min-width: 900px) 33vw, 100vw"
         style={{
-          width: "auto",
-          height: PROTOCOL_PROOF_LOGO_HEIGHT,
-          maxWidth: "75%",
-          objectFit: "contain",
-          display: "block",
+          objectFit: "cover",
+          objectPosition: media.objectPosition ?? "center",
         }}
       />
     </div>
@@ -47,14 +59,14 @@ function ProofLogoMark({ logo }: { logo: ProtocolProofLogo }) {
 }
 
 function ProofCard({ proof }: { proof: ProtocolProof }) {
-  const logo = PROTOCOL_PROOF_LOGOS[proof.id];
+  const media = PROTOCOL_PROOF_LOGOS[proof.id];
   return (
     <Link
       href={proof.href}
       style={{ textDecoration: "none", color: "inherit", display: "block", height: "100%" }}
     >
       <article className="abx-home-proof-card">
-        {logo ? <ProofLogoMark logo={logo} /> : null}
+        {media ? <ProofMediaMark media={media} /> : null}
         <div style={{ padding: "0.65rem 1rem 1rem", flex: 1 }}>
           <div className="abx-home-proof-eyebrow">{proof.category}</div>
           <h3 className="abx-home-proof-title">{proof.title}</h3>
@@ -68,7 +80,7 @@ function ProofCard({ proof }: { proof: ProtocolProof }) {
 
 export function HomeProtocolInAction() {
   const passport = PROTOCOL_PASSPORT_CONNECTOR;
-  const passportLogo = PROTOCOL_PROOF_LOGOS.passport;
+  const passportMedia = PROTOCOL_PROOF_LOGOS.passport;
 
   return (
     <section aria-labelledby="home-protocol-in-action-heading" id="ecosystem" className="abx-home-section-center" style={{ width: "100%" }}>
@@ -93,7 +105,7 @@ export function HomeProtocolInAction() {
 
       <Link href={passport.href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
         <article className="abx-home-passport-connector">
-          {passportLogo ? <ProofLogoMark logo={passportLogo} /> : null}
+          {passportMedia ? <ProofMediaMark media={passportMedia} /> : null}
           <div style={{ padding: "0 1rem 1rem" }}>
             <h3 className="abx-home-proof-title">{passport.title}</h3>
             <p className="abx-home-proof-summary">{passport.summary}</p>

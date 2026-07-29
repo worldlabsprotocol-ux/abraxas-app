@@ -309,7 +309,19 @@ details > summary::-webkit-details-marker {
   max-width: 960px;
   text-align: center;
 }
-.abx-home-proof-card {
+.abx-home-proof-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.75rem 0.15rem;
+  flex-shrink: 0;
+  background: #0a0a0b;
+}
+.abx-home-proof-media--cover {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
   height: 100%;
   border-radius: 12px;
   overflow: hidden;
