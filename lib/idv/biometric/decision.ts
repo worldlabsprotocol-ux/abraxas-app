@@ -160,6 +160,11 @@ export function evaluateBiometricDecision(
       biometricReason("DEEPFAKE_SCORE_HIGH", `score=${q.deepfake_score.toFixed(2)}`),
     );
   }
+  if (fraudRisk > t.fraudRiskMax) {
+    structured.push(
+      biometricReason("FRAUD_RISK_HIGH", `score=${fraudRisk.toFixed(2)} > ${t.fraudRiskMax}`),
+    );
+  }
 
   const hardReject =
     f.selfie_face_count > 1 ||
@@ -173,7 +178,7 @@ export function evaluateBiometricDecision(
     scores.liveness < t.livenessMin * 0.5 ||
     q.screen_replay_score > Math.min(0.85, t.screenReplayMax + 0.15) ||
     (q.deepfake_score > t.deepfakeMax && q.deepfake_status === "ok") ||
-    fraudRisk >= 0.72;
+    fraudRisk >= t.fraudRiskMax;
 
   if (hardReject) {
     const reasons = structured.length ? structured : [biometricReason("GENERIC_REJECT")];

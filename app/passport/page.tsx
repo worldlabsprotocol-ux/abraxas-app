@@ -59,6 +59,8 @@ function PassportPageInner() {
   } = usePassportVerification(suiAddress, email || null);
 
   const verifyRequestId = searchParams.get("verify_request");
+  const policyIdParam = searchParams.get("policy_id");
+  const partnerIdParam = searchParams.get("partner_id");
   const verificationParam = searchParams.get("verification");
   const pageView = searchParams.get("view") === "verify" ? "verify" : "passport";
 
@@ -241,6 +243,11 @@ function PassportPageInner() {
               onRefresh={refresh}
               onWalletBound={refresh}
               returnPath={searchParams.get("return")}
+              capturePolicy={{
+                verificationRequestId: verifyRequestId,
+                policyId: policyIdParam,
+                partnerId: partnerIdParam,
+              }}
             />
 
             {!walletDone && authLoading && (

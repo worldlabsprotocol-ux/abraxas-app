@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "biometric:verify-migrations": "npx tsx scripts/verify-biometric-migrations.ts",
     "biometric:health": "npx tsx scripts/verify-biometric-health.ts",
+    "biometric:download-model": "bash scripts/download-face-embedding-model.sh",
     "identity:verify-schema": "npx tsx scripts/verify-admin-identity-schema.ts",
     "identity:seed-review-queue": "npx tsx scripts/seed-identity-review-queue.ts"
   },
@@ -43,6 +44,7 @@
     "framer-motion": "^12.42.0",
     "jose": "^6.2.3",
     "next": "14.2.35",
+    "onnxruntime-node": "^1.21.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^3.8.1",

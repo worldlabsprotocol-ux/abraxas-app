@@ -23,6 +23,7 @@ import {
   tierCapabilities,
   type PassportTier,
 } from "@/lib/passport/passportTiers";
+import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 import {
   resolveIdentityUiState,
   IDENTITY_UI_LABELS,
@@ -70,6 +71,7 @@ interface Props {
   onRefresh: () => void;
   onWalletBound?: () => void;
   returnPath?: string | null;
+  capturePolicy?: CapturePolicyContext;
 }
 
 export function PassportDashboard({
@@ -92,6 +94,7 @@ export function PassportDashboard({
   onRefresh,
   onWalletBound,
   returnPath,
+  capturePolicy,
 }: Props) {
   const [identityExpanded, setIdentityExpanded] = useState(false);
   const [bindError, setBindError] = useState<string | null>(null);
@@ -218,6 +221,7 @@ export function PassportDashboard({
               email={email}
               suiAddress={suiAddress}
               onSubmitted={onRefresh}
+              capturePolicy={capturePolicy}
             />
           ) : (
             <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Start identity check →</Btn>
@@ -546,6 +550,7 @@ function IdentityUnlockSection({
             email={email}
             suiAddress={suiAddress}
             onSubmitted={onRefresh}
+            capturePolicy={capturePolicy}
           />
         ) : (
           <Btn size="sm" loading={starting} onClick={onStartIdCheck}>
@@ -624,6 +629,7 @@ function IdentityUnlockSection({
             email={email}
             suiAddress={suiAddress}
             onSubmitted={onRefresh}
+            capturePolicy={capturePolicy}
           />
           <p style={{
             fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)",

@@ -31,6 +31,8 @@ export interface PartnerBiometricThresholdRules {
   occlusion_min?: number;
   screen_replay_max?: number;
   deepfake_max?: number;
+  /** Reject when composite fraud_risk_score exceeds this (0–1). */
+  fraud_risk_max?: number;
 }
 
 export interface PartnerPolicyRules {

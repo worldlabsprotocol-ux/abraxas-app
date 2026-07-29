@@ -14,6 +14,7 @@ export interface ExtendedBiometricThresholds extends BiometricThresholds {
   occlusionMin: number;
   screenReplayMax: number;
   deepfakeMax: number;
+  fraudRiskMax: number;
   policySource: "global" | "partner";
   partnerId?: string;
 }
@@ -25,6 +26,7 @@ const EXTENDED_DEFAULTS = {
   occlusionMin: 0.35,
   screenReplayMax: 0.62,
   deepfakeMax: 0.75,
+  fraudRiskMax: 0.72,
 } as const;
 
 function mergeThresholds(
@@ -52,6 +54,7 @@ function mergeThresholds(
     occlusionMin: partner.occlusion_min ?? EXTENDED_DEFAULTS.occlusionMin,
     screenReplayMax: partner.screen_replay_max ?? EXTENDED_DEFAULTS.screenReplayMax,
     deepfakeMax: partner.deepfake_max ?? EXTENDED_DEFAULTS.deepfakeMax,
+    fraudRiskMax: partner.fraud_risk_max ?? EXTENDED_DEFAULTS.fraudRiskMax,
     policySource: "partner",
     partnerId,
   };

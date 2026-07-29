@@ -83,7 +83,7 @@ Each analysis emits a JSON log line (`event: biometric.analyzed`) with scores, g
 | Layer | Score | Notes |
 |-------|-------|-------|
 | **Infrastructure** | 9/10 | Capture, admin, issuance, health APIs |
-| **Biometric engine** | 7/10 | v3 measurable signals + partner thresholds; ML embedder still P1 |
+| **Biometric engine** | 8/10 | v3 signals + partner thresholds + ONNX embeddings |
 | **Security** | 8/10 | Session auth, rate limit, private storage |
 | **Ops / monitoring** | 7/10 | JSON logs + health endpoints; no APM yet |
 | **Mainnet on-chain** | 4/10 | Devnet ready; mainnet package not deployed |
@@ -115,7 +115,7 @@ Each analysis emits a JSON log line (`event: biometric.analyzed`) with scores, g
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| v1 face match is correlation-based, not ML | Medium | Human review default; ONNX embedder on roadmap |
+| v1 face match is correlation-based, not ML | **Resolved** | ONNX ArcFace embeddings default; correlation fallback |
 | Single-frame liveness heuristics | Medium | Reject obvious failures; v3 adds quality decomposition |
 | Rate limit uses DB counts (not Redis) | Low | Sufficient for pilot; upgrade for high traffic |
 | Document images in Supabase | Medium | Private bucket; 90-day retention policy documented |
