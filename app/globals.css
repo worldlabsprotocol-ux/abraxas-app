@@ -317,6 +317,9 @@ details > summary::-webkit-details-marker {
   flex-shrink: 0;
   background: #06090b;
 }
+.abx-home-proof-media--contain {
+  overflow: hidden;
+}
 .abx-home-proof-media--cover {
   display: block;
   position: relative;

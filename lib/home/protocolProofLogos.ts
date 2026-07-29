@@ -11,6 +11,8 @@ export interface ProtocolProofLogo {
   fit?: "cover" | "contain";
   objectPosition?: string;
   slotHeight?: number;
+  /** Scale up contained logos (portrait assets in a wide card). */
+  containScale?: number;
 }
 
 export const PROTOCOL_PROOF_LOGOS: Record<string, ProtocolProofLogo> = {
@@ -32,7 +34,8 @@ export const PROTOCOL_PROOF_LOGOS: Record<string, ProtocolProofLogo> = {
     src: GOOD_TROUBLE_REGISTRY_IMAGE,
     alt: "Good Trouble Canna",
     fit: "contain",
-    slotHeight: 88,
+    slotHeight: 76,
+    containScale: 1.55,
   },
   passport: {
     src: "/icon-48.png",

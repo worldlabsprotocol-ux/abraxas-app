@@ -18,21 +18,26 @@ import {
 function ProofMediaMark({ media }: { media: ProtocolProofLogo }) {
   const slotHeight = media.slotHeight ?? PROTOCOL_PROOF_LOGO_HEIGHT;
   const fit = media.fit ?? "contain";
+  const containScale = media.containScale ?? 1;
 
   if (fit === "contain") {
     return (
-      <div className="abx-home-proof-media" style={{ height: slotHeight }}>
+      <div
+        className="abx-home-proof-media abx-home-proof-media--contain"
+        style={{ height: slotHeight }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={media.src}
           alt={media.alt}
           style={{
-            maxHeight: slotHeight - 10,
-            maxWidth: "94%",
+            maxHeight: slotHeight - 6,
+            maxWidth: "100%",
             width: "auto",
             height: "auto",
             objectFit: "contain",
             display: "block",
+            transform: containScale !== 1 ? `scale(${containScale})` : undefined,
           }}
         />
       </div>
