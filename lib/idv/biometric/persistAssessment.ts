@@ -13,6 +13,11 @@ function reasonsFromSignals(signals: BiometricSignals): string[] {
   return Array.isArray(reasons) ? reasons.filter((r): r is string => typeof r === "string") : [];
 }
 
+function reasonCodesFromSignals(signals: BiometricSignals): string[] {
+  const codes = signals.reason_codes;
+  return Array.isArray(codes) ? codes.filter((c): c is string => typeof c === "string") : [];
+}
+
 function getSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -40,6 +45,7 @@ export async function persistBiometricAssessment(
     signals: {
       ...assessment.signals,
       rejection_reasons: assessment.reasons,
+      reason_codes: assessment.reason_codes,
     },
     analyzed_at: assessment.analyzed_at,
   }, { onConflict: "capture_session_id" });
@@ -62,6 +68,8 @@ export async function getBiometricAssessment(
 
   if (!data) return null;
 
+  const signals = parseStoredSignals(data.signals);
+
   return {
     capture_session_id: data.capture_session_id,
     sui_address: data.sui_address,
@@ -75,8 +83,9 @@ export async function getBiometricAssessment(
     assurance_level: data.assurance_level,
     review_method: data.review_method,
     engine_version: data.engine_version,
-    signals: (data.signals as BiometricSignals) ?? {},
-    reasons: reasonsFromSignals(parseStoredSignals(data.signals)),
+    signals,
+    reasons: reasonsFromSignals(signals),
+    reason_codes: reasonCodesFromSignals(signals),
     analyzed_at: data.analyzed_at,
   };
 }
