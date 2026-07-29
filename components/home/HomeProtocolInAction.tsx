@@ -27,8 +27,8 @@ function ProofMediaMark({ media }: { media: ProtocolProofLogo }) {
           src={media.src}
           alt={media.alt}
           style={{
-            maxHeight: slotHeight - 12,
-            maxWidth: "92%",
+            maxHeight: slotHeight - 10,
+            maxWidth: "94%",
             width: "auto",
             height: "auto",
             objectFit: "contain",
@@ -42,7 +42,7 @@ function ProofMediaMark({ media }: { media: ProtocolProofLogo }) {
   return (
     <div
       className="abx-home-proof-media abx-home-proof-media--cover"
-      style={{ height: slotHeight, position: "relative" }}
+      style={{ height: slotHeight }}
     >
       <Image
         src={media.src}
@@ -52,6 +52,7 @@ function ProofMediaMark({ media }: { media: ProtocolProofLogo }) {
         style={{
           objectFit: "cover",
           objectPosition: media.objectPosition ?? "center",
+          transform: "scale(1.12)",
         }}
       />
     </div>

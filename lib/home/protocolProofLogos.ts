@@ -18,27 +18,29 @@ export const PROTOCOL_PROOF_LOGOS: Record<string, ProtocolProofLogo> = {
     src: PROTOCOL_PROOF_IMAGES.cielo.src,
     alt: PROTOCOL_PROOF_IMAGES.cielo.alt,
     fit: "cover",
-    objectPosition: PROTOCOL_PROOF_IMAGES.cielo.objectPosition ?? "center",
+    objectPosition: "58% 42%",
+    slotHeight: 76,
   },
   chickasaw: {
     src: PROTOCOL_PROOF_IMAGES.chickasaw.src,
     alt: PROTOCOL_PROOF_IMAGES.chickasaw.alt,
     fit: "cover",
-    objectPosition: PROTOCOL_PROOF_IMAGES.chickasaw.objectPosition ?? "center",
+    objectPosition: "center 40%",
+    slotHeight: 76,
   },
   "good-trouble": {
     src: GOOD_TROUBLE_REGISTRY_IMAGE,
     alt: "Good Trouble Canna",
     fit: "contain",
-    slotHeight: 52,
+    slotHeight: 88,
   },
   passport: {
     src: "/icon-48.png",
     alt: "Abraxas Passport",
     fit: "contain",
-    slotHeight: 44,
+    slotHeight: 56,
   },
 };
 
 /** Default media strip height (px). */
-export const PROTOCOL_PROOF_LOGO_HEIGHT = 44;
+export const PROTOCOL_PROOF_LOGO_HEIGHT = 72;

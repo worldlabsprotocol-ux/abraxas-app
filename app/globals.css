@@ -313,13 +313,13 @@ details > summary::-webkit-details-marker {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.75rem 0.15rem;
+  padding: 0;
   flex-shrink: 0;
-  background: #0a0a0b;
+  background: #06090b;
 }
 .abx-home-proof-media--cover {
   display: block;
-  padding: 0;
+  position: relative;
   overflow: hidden;
 }
 .abx-home-proof-card {

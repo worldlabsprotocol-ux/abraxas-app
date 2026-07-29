@@ -14,10 +14,10 @@ describe("PROTOCOL_PROOF_LOGOS", () => {
   it("uses contain fit for Good Trouble portrait logo", () => {
     expect(PROTOCOL_PROOF_LOGOS["good-trouble"].fit).toBe("contain");
     expect(PROTOCOL_PROOF_LOGOS["good-trouble"].src).toContain("good-trouble");
-    expect(PROTOCOL_PROOF_LOGOS["good-trouble"].slotHeight).toBeGreaterThanOrEqual(52);
+    expect(PROTOCOL_PROOF_LOGOS["good-trouble"].slotHeight).toBeGreaterThanOrEqual(88);
   });
 
-  it("uses a compact default media strip height", () => {
-    expect(PROTOCOL_PROOF_LOGO_HEIGHT).toBe(44);
+  it("uses a readable default media strip height", () => {
+    expect(PROTOCOL_PROOF_LOGO_HEIGHT).toBe(72);
   });
 });
