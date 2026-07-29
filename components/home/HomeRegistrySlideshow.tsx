@@ -50,8 +50,9 @@ export function HomeRegistrySlideshow() {
 
   return (
     <section aria-label="Registry highlights">
+      <div className="abx-home-intro" style={{ marginBottom: "0.85rem" }}>
       <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "flex-end",
+        display: "flex", justifyContent: "center", alignItems: "flex-end",
         flexWrap: "wrap", gap: "0.65rem", marginBottom: "0.85rem",
       }}>
         <div>
@@ -76,6 +77,7 @@ export function HomeRegistrySlideshow() {
         }}>
           Browse all →
         </Link>
+      </div>
       </div>
 
       <article style={{

@@ -267,3 +267,122 @@ details > summary::-webkit-details-marker {
 .abx-home-section + .abx-home-section {
   border-top: 1px solid var(--border-strong);
 }
+
+/* Centered homepage intros (headline blocks only, not grids) */
+.abx-home-intro {
+  text-align: center;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.abx-home-prose {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+.abx-home-section-lead {
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0 auto 1rem;
+  max-width: 680px;
+  text-align: center;
+}
+.abx-home-section-center {
+  text-align: center;
+}
+.abx-home-section-title {
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: clamp(1.15rem, 3vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+.abx-home-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 0 auto 0.75rem;
+  max-width: 960px;
+  text-align: center;
+}
+.abx-home-proof-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  background: #06090b;
+}
+.abx-home-proof-media--contain {
+  overflow: hidden;
+}
+.abx-home-proof-media--cover {
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+.abx-home-proof-card {
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+.abx-home-passport-connector {
+  max-width: 960px;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(167, 139, 250, 0.06) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  text-align: center;
+}
+.abx-home-proof-eyebrow {
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #10B981;
+  margin-bottom: 0.45rem;
+}
+.abx-home-proof-title {
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+}
+.abx-home-proof-summary {
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+.abx-home-proof-body {
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.abx-home-hero {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 780px;
+}
+.abx-home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
