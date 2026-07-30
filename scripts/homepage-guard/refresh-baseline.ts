@@ -46,9 +46,10 @@ function main(): void {
 
   const logos = readRepoFile("lib/home/protocolProofLogos.ts");
   const media = readRepoFile("lib/home/protocolProofMedia.ts");
+  const partnerNetwork = readRepoFile("lib/home/partnerNetwork.ts");
   const srcPattern = /src:\s*["']([^"']+)["']/g;
   const assetPaths = new Set<string>(manifest.protectedAssetPaths);
-  for (const content of [logos, media]) {
+  for (const content of [logos, media, partnerNetwork]) {
     let match: RegExpExecArray | null;
     while ((match = srcPattern.exec(content)) !== null) {
       if (match[1].startsWith("/") && !match[1].includes("${")) {
