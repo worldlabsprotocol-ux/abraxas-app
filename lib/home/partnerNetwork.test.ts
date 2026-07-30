@@ -47,7 +47,8 @@ describe("partnerNetwork", () => {
     expect(SMAKD_PARTNER_IMAGE.src).toMatch(/smakd-brand-lifestyle/);
   });
 
-  it("assigns contain fit to Good Trouble brand graphic", () => {
-    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image?.fit).toBe("contain");
+  it("fills Good Trouble Partner Network card with cover + brand orange field", () => {
+    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image?.fit).toBe("cover");
+    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image?.mediaBackground).toBe("#c45c2a");
   });
 });

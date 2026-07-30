@@ -28,7 +28,10 @@ function StatusBadge({ status }: { status: PartnerNetworkCard["status"] }) {
 function CardMedia({ image }: { image: NonNullable<PartnerNetworkCard["image"]> }) {
   const contain = image.fit === "contain";
   return (
-    <div className={`abx-partner-network-card-media${contain ? " abx-partner-network-card-media--contain" : ""}`}>
+    <div
+      className={`abx-partner-network-card-media${contain ? " abx-partner-network-card-media--contain" : ""}`}
+      style={image.mediaBackground ? { background: image.mediaBackground } : undefined}
+    >
       <Image
         src={image.src}
         alt={image.alt}

@@ -8,6 +8,8 @@ export interface PartnerNetworkImage {
   alt: string;
   objectPosition?: string;
   fit?: "cover" | "contain";
+  /** Fills letterbox gaps when the asset has its own brand field color. */
+  mediaBackground?: string;
 }
 
 export interface PartnerNetworkCard {
@@ -29,7 +31,8 @@ export const GOOD_TROUBLE_PARTNER_IMAGE: PartnerNetworkImage = {
   src: "/assets/good-trouble/brand-logo.png",
   alt: "Good Trouble — reusable age verification for cannabis retail",
   objectPosition: "center center",
-  fit: "contain",
+  fit: "cover",
+  mediaBackground: "#c45c2a",
 };
 
 /** Premiere lookbook cover — invitation-only luxury hospitality (from partner PDF). */
