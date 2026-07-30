@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-07-30T14:58:10.517Z",
+  "updatedAt": "2026-07-30T15:42:54.834Z",
   "files": {
     "components/redesign/RedesignHome.tsx": "cde88a97ee3ecf60234c6787acb71bea16486c449e3a1e2e66a383b81a3ae85c",
     "components/redesign/AbraxasBootScreen.tsx": "360bd44557e8b9b126d045e7f9189b78ff4d4b01051e233484155e20379a6c7a",
     "components/home/HomeSharpHero.tsx": "094ba7d0ebf7c4ffd198942b0a2456ba2a223dd1c050a04cd29e7747592bd47a",
     "components/home/HomeProtocolInAction.tsx": "385b45b667a70550752015fbb41f4f7b6d68dbede8c0ac3362a1ffac469283a7",
-    "components/home/HomePartnerNetwork.tsx": "8cbc4def6fd5c9df829b44a52f31b4bd9efc43fbd8757b4401b839c6a17424bf",
+    "components/home/HomePartnerNetwork.tsx": "983f613ffec35c1ae53a616ba158032eb5612fa6c0537eba2b7a1f70273dd227",
     "components/home/HomeWhyAbraxas.tsx": "dbbdd393551b7d76523a5129938df98d0a2d7f30b191b26642d1f2e6a7b7ad2b",
     "components/home/HomeVerifyOnceDiagram.tsx": "5354960db6ee5e358fd142aabc733b8c3c2d98be1cbce73e66f7db5f97d76188",
     "components/home/HomeVerificationPipeline.tsx": "f2e9fa4d0f9d93cb466035486fc675a6788d004edff939305b8dfd1dded2804a",
@@ -18,10 +18,11 @@
     "lib/home/protocolProofLogos.ts": "d1a6e97a4efa083172aa003bd930a1b0fc14707e48932843cd8228a58bc4c94a",
     "lib/home/protocolProofMedia.ts": "23e094aea4b2d1c120c815a50dded852319a7fde91ad4914c04a6131177faba7",
     "lib/home/ecosystemContent.ts": "369a3c2ff2ffba19109d362e8aa890d0da9c528e4d70bf8eb73728c8f7a46397",
-    "lib/home/partnerNetwork.ts": "3d1b0ececb6c46db03ab3bf4389376ea42574f9ef0642096befc020b30452e55",
-    "app/globals.home.css": "5051892cb5e28705ec7315bfa1cad993fd6d7669f36e19a68db76e6ac1398198",
+    "lib/home/partnerNetwork.ts": "d69cd5e7a47335d0ec4bf9b6ed4b28c5ece15e344067a443bf6cab236a5ad7de",
+    "app/globals.home.css": "6937db158da26d8307a3452906cc47c0f939ed628cf31b267ec2d84f8db90a8d",
     "assets/icon-48.png": "3d3dcbcaf12e30ae599c8b003b63c71825b6aaea3169dfdddc8cd85759a11711",
     "assets/assets/partner-network/premiere-lookbook-cover.jpg": "71aa8838b2c3cd3a53e35b528f2020df4e4f5eab9cabd5c3d5c770c32479f3b1",
-    "assets/assets/partner-network/smakd-brand-lifestyle.jpg": "90375709e494c54ccf4e5f21b32aad940221064b5653157a81dc3e5c60fbbcf9"
+    "assets/assets/partner-network/smakd-brand-lifestyle.jpg": "90375709e494c54ccf4e5f21b32aad940221064b5653157a81dc3e5c60fbbcf9",
+    "assets/assets/partner-network/good-trouble-partner-brand.png": "1de27d316f26f5576bda39f4dc1d8fd58cb13a0cc20cd9acf8753824322a5849"
   }
 }

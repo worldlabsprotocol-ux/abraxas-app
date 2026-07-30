@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DESIGN_PARTNER_NETWORK_CARDS,
+  GOOD_TROUBLE_PARTNER_IMAGE,
   LIVE_PARTNER_NETWORK_CARDS,
   PARTNER_NETWORK_CARDS,
   PREMIERE_PARTNER_IMAGE,
@@ -34,16 +35,18 @@ describe("partnerNetwork", () => {
     expect(partnerNetworkStatusEmoji("design_partner")).toBe("🟡");
   });
 
-  it("uses lookbook cover for Premiere and brand lifestyle for SMAK'D", () => {
+  it("uses lookbook cover for Premiere, brand lifestyle for SMAK'D, and brand mark for Good Trouble", () => {
     const premiere = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "premiere");
     const smakd = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "smakd");
+    const gt = LIVE_PARTNER_NETWORK_CARDS[0];
     expect(premiere?.image?.src).toBe(PREMIERE_PARTNER_IMAGE.src);
     expect(smakd?.image?.src).toBe(SMAKD_PARTNER_IMAGE.src);
+    expect(gt?.image?.src).toMatch(/good-trouble-partner-brand/);
     expect(PREMIERE_PARTNER_IMAGE.src).toMatch(/premiere-lookbook-cover/);
     expect(SMAKD_PARTNER_IMAGE.src).toMatch(/smakd-brand-lifestyle/);
   });
 
-  it("does not assign images to live Good Trouble card", () => {
-    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image).toBeUndefined();
+  it("assigns contain fit to Good Trouble brand graphic", () => {
+    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image?.fit).toBe("contain");
   });
 });

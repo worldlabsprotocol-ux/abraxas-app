@@ -7,6 +7,7 @@ export interface PartnerNetworkImage {
   src: string;
   alt: string;
   objectPosition?: string;
+  fit?: "cover" | "contain";
 }
 
 export interface PartnerNetworkCard {
@@ -22,6 +23,14 @@ export const PARTNER_NETWORK_TITLE = "Partner Network";
 
 export const PARTNER_NETWORK_SUBTITLE =
   "Organizations building on reusable trust through Abraxas.";
+
+/** Good Trouble brand mark — hand + smoke on green (partner-provided graphic). */
+export const GOOD_TROUBLE_PARTNER_IMAGE: PartnerNetworkImage = {
+  src: "/assets/partner-network/good-trouble-partner-brand.png",
+  alt: "Good Trouble — reusable age verification for cannabis retail",
+  objectPosition: "center center",
+  fit: "contain",
+};
 
 /** Premiere lookbook cover — invitation-only luxury hospitality (from partner PDF). */
 export const PREMIERE_PARTNER_IMAGE: PartnerNetworkImage = {
@@ -45,6 +54,7 @@ export const LIVE_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
     description:
       "First relying party demonstrating reusable age verification through Abraxas Passport.",
     href: "/good-trouble",
+    image: GOOD_TROUBLE_PARTNER_IMAGE,
   },
 ];
 

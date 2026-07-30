@@ -424,6 +424,9 @@ details > summary::-webkit-details-marker {
   flex-shrink: 0;
   background: #06090b;
 }
+.abx-partner-network-card-media--contain {
+  background: linear-gradient(165deg, #1a2418 0%, #0d120c 45%, #06090b 100%);
+}
 .abx-partner-network-card-body {
   padding: 1rem 1.05rem 1.1rem;
   display: flex;
