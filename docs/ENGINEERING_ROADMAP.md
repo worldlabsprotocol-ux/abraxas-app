@@ -1,7 +1,7 @@
 # Abraxas Engineering Roadmap
 
 **Last updated:** 2026-07-30  
-**Status:** Merge chain #89 → #92 → #93 complete. **Next:** production deploy → institutional walkthrough → API freeze → P1. **Do not start P1 until walkthrough passes.** No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.
+**Status:** Merge chain on `main` complete. **Next:** gather evidence — Institutional Acceptance Test (IAT) on production → tag `v1.0.0-beta.0` → API freeze → P1. **Do not start P1 until IAT passes.** No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.
 
 **Do not build new systems.** Prove the protocol works in production exactly as designed.
 
@@ -94,7 +94,9 @@ Merge chain (#89 → #92 → #93) → main
         ↓
 Production deploy (CI green, no regressions)
         ↓
-Institutional production walkthrough
+Institutional Acceptance Test (IAT) — evidence, not assertion
+        ↓
+Tag v1.0.0-beta.0 (known-good checkpoint before P1)
         ↓
 API freeze → docs/PROTOCOL_COMPATIBILITY.md
         ↓
@@ -111,40 +113,52 @@ Second relying party
 
 ---
 
-## Phase 1 — Production Walkthrough
+## Phase 1 — Institutional Acceptance Test (IAT)
 
 **Prerequisite:** Merge chain on `main`, deployed to production.
 
-Treat as an **institutional acceptance test** — not a click-through. Document every protocol step with timestamps, request IDs, decision IDs, screenshots, and anomalies.
+**Mindset shift:** Not "does it work?" — _would a regulated partner sign off on this?_ Gather evidence, not assertions.
 
-| Protocol step | Evidence section |
-|---------------|------------------|
-| Authorization request | §1 |
-| zkLogin / session | §2 |
-| Passport creation (new user) | §3 |
-| Consent ceremony | §4 |
-| Policy evaluation | §5 |
-| Trust Decision | §6 |
-| Signed Receipt | §7 |
-| Decision retrieval | §8 |
-| Expiry behavior | §9 |
-| Invalid / denied flow | §10 |
-| Retry / idempotency | §11 |
-| Audit events | §12 |
-| Logs / observability | §13 |
-| Failure cases | §14 |
+| Scenario | Question |
+|----------|----------|
+| A | New user → regulated purchase → approved Trust Decision + signed receipt |
+| B | Returning user → credential-first, single evaluate |
+| C | Expired / revoked credential → re-verification |
+| D | Failure recovery → no silent failures, idempotent retry |
 
-Paths A–D: `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
-Results: `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`  
-Pre-check: `npm run audit:production`
+Per scenario, capture: Request ID, Decision ID, Receipt ID, duration, screenshot + logs, notes on deviations.
 
-**Success criterion:** _"The protocol behaves exactly as specified."_
+**Execution guide:** `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
+**Sign-off document:** `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` (includes Institutional Acceptance Summary)  
+**Pre-check:** `npm run audit:production`
 
-**Bug fix rule:** Fix only validated defects found during walkthrough. **Do not start P1 until walkthrough passes.**
+**Success criterion:** Scenarios A–B pass minimum; A–D as exercised; zero Critical/High defects.
+
+**Bug fix rule:** Fix only validated defects. Rerun affected scenario before sign-off.
 
 ---
 
-## Phase 1.25 — API Freeze (after walkthrough passes)
+## Phase 1.2 — Checkpoint tag (after IAT passes)
+
+Tag **`v1.0.0-beta.0`** on the passing commit:
+
+```bash
+git tag -a v1.0.0-beta.0 -m "IAT passed: architecture frozen, P0 complete, pre-P1 baseline"
+git push origin v1.0.0-beta.0
+```
+
+This is not a public-ready release. It is a **permanent known-good baseline** — if P1 introduces regression, compare against this tag.
+
+| Checkpoint captures | |
+|---------------------|---|
+| Architecture frozen (v3) | ✅ |
+| P0 hardening complete | ✅ |
+| IAT passed with evidence | ✅ |
+| Before P1 changes | ← boundary |
+
+---
+
+## Phase 1.25 — API Freeze (after IAT + tag)
 
 Create `docs/PROTOCOL_COMPATIBILITY.md` before P1 engineering:
 
@@ -246,7 +260,8 @@ Present → renew → revoke → reissue → holder-facing history
 |-------|------|------|
 | 0 | Security | Close Critical/High findings before proof |
 | Merge | Canonical main | #89 → #92 → #93 on `main`, deploy |
-| 1 | Proof | Institutional production walkthrough |
+| 1 | Proof | Institutional Acceptance Test (IAT) |
+| 1.2 | Checkpoint | Tag `v1.0.0-beta.0` (pre-P1 baseline) |
 | 1.25 | API freeze | `PROTOCOL_COMPATIBILITY.md` |
 | 1.5 | P1 Hardening | Immutable policies → validity → observability → telemetry |
 | 1.6 | External review | Unknown unknowns against Trust Model v1 |
@@ -263,8 +278,8 @@ Present → renew → revoke → reissue → holder-facing history
 | `docs/PROTOCOL_MATURITY_AUDIT.md` | Idempotency, audit, policy gaps |
 | `docs/BACKWARD_COMPATIBILITY_AUDIT.md` | API/credential/receipt stability |
 | `docs/PRODUCTION_READINESS_AUDIT.md` | Live HTTP probes |
-| `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` | Phase 1 manual script |
-| `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` | Evidence record (fill during walkthrough) |
+| `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` | IAT execution guide |
+| `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` | IAT sign-off + Institutional Acceptance Summary |
 | `docs/UI_PRESERVATION.md` | Homepage protected surface + regression checklist |
 
 ---

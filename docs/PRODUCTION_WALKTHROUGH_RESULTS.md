@@ -1,7 +1,10 @@
-# Production Walkthrough Results
+# Institutional Acceptance Test (IAT) — Results
 
-**Purpose:** Institutional acceptance test — prove the protocol behaves exactly as specified.  
-**Checklist:** `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
+**Document type:** Institutional Acceptance Test sign-off  
+**Question answered:** _Would a regulated partner sign off on this protocol?_  
+**Not:** A QA checklist asking "does it work?"
+
+**Execution guide:** `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
 **Trust Model:** `docs/TRUST_MODEL_V1.md`
 
 ---
@@ -11,259 +14,231 @@
 | Field | Value |
 |-------|-------|
 | **Deployment URL** | _e.g. https://abraxas-app.vercel.app_ |
-| **Git commit / deploy ID** | _Vercel deployment SHA_ |
+| **Git commit** | _SHA on `main`_ |
+| **Vercel deployment ID** | _from Vercel dashboard_ |
 | **Date (UTC)** | _YYYY-MM-DD_ |
-| **Tester** | _name_ |
+| **Tester** | _name / role_ |
+| **Witness (optional)** | _advisor, design partner, security reviewer_ |
 | **Environment** | production |
 | **Migrations verified** | 049, 050, 051 |
 
----
+**Pre-check (automated):**
 
-## Summary verdict
-
-| Area | Result | Evidence section |
-|------|--------|------------------|
-| Authorization request | ⏳ | §1 |
-| zkLogin / session | ⏳ | §2 |
-| Passport creation (new user) | ⏳ | §3 |
-| Consent ceremony | ⏳ | §4 |
-| Policy evaluation | ⏳ | §5 |
-| Trust Decision | ⏳ | §6 |
-| Signed Receipt | ⏳ | §7 |
-| Decision retrieval | ⏳ | §8 |
-| Expiry behavior | ⏳ | §9 |
-| Invalid / denied flow | ⏳ | §10 |
-| Retry / idempotency | ⏳ | §11 |
-| Audit events | ⏳ | §12 |
-| Logs / observability | ⏳ | §13 |
-| Failure cases | ⏳ | §14 |
-| Path A — New user | ⏳ | §3, §5–§7 |
-| Path B — Returning user | ⏳ | §8 |
-| Path C — Expired / revoked | ⏳ | §9 |
-| Path D — Redirect recovery | ⏳ | §11 |
-| **Production blockers** | _None / Listed_ | §Blockers |
-
-**Verdict:** _Not ready / Walkthrough passed — proceed to API freeze + P1_
+```bash
+npm test                              # regression suite
+npm run audit:production              # live HTTP probes
+npm run biometric:validate-policy     # GT policy scenarios
+```
 
 ---
 
-## §1 — Authorization request
+## Scenario results
 
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | `POST /api/v1/verify/authorize` or partner evaluate with `permission` | 200, `decision_id` or `next` step | | |
-| | Permission resolved | `regulated_purchase` → GT policy | | |
-| | Partner API key (if required) | Accepted / rejected correctly | | |
+Record one block per scenario. **Capture evidence — do not assert readiness without it.**
 
-**Request ID / correlation:**  
-**Screenshot / network capture:**  
-**Anomalies:**
+### Scenario A — New user → regulated purchase
 
----
+| Field | Value |
+|-------|-------|
+| **Scenario** | New user → `regulated_purchase` → Passport → Trust Decision → signed receipt |
+| **Expected result** | Approved Trust Decision + signed receipt; holder enters partner flow |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | _verification_request / evaluate correlation_ |
+| **Decision ID** | _decision_id_ |
+| **Receipt ID** | _dr_*_ |
+| **Duration** | _e.g. 1.8s (evaluate → receipt)_ |
+| **Evidence** | _Screenshot + network HAR + log excerpt_ |
+| **Notes** | _Any deviations from spec_ |
 
-## §2 — zkLogin / session
-
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Google OAuth sign-in | Redirect completes | | |
-| | `GET /api/auth/zklogin/me` | 200, address bound | | |
-| | Browser session cookie | `HttpOnly`, set | | |
-| | Session without valid JWT | Rejected (no mint from address alone) | | |
-
-**Wallet address:**  
-**oauth_sub (redacted):**  
-**Anomalies:**
+**Protocol steps exercised:** Authorization → zkLogin → Passport creation → Consent → Policy evaluation → Trust Decision → Signed Receipt
 
 ---
 
-## §3 — Passport creation (new user)
+### Scenario B — Returning user → credential-first
 
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Redirect to `/passport?verify_request=...` | URL contains request ID | | |
-| | Document capture | 200, stored | | |
-| | Biometric capture | Assessment queued | | |
-| | Admin approve | `jti` issued | | |
-| | Credential row | `abraxas_credentials` created | | |
-
-**verify_request ID:**  
-**credential jti:**  
-**Anomalies:**
-
----
-
-## §4 — Consent ceremony
-
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | `GET /api/v1/verification-requests/{id}` | 200 **with session only** | | |
-| | Consent submit | Atomic; no duplicate claims on retry | | |
-| | Consent receipt | Issued once | | |
-| | Race / double-submit | Second attempt idempotent or rejected cleanly | | |
-
-**verification_request ID:**  
-**consent_receipt ID:**  
-**Anomalies:**
+| Field | Value |
+|-------|-------|
+| **Scenario** | Returning user with valid credential → single evaluate → immediate enter |
+| **Expected result** | `next: enter`; no Passport re-verification; one API call |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | |
+| **Receipt ID** | |
+| **Duration** | _e.g. 0.4s_ |
+| **Evidence** | _Screenshot + network tab (single evaluate)_ |
+| **Notes** | |
 
 ---
 
-## §5 — Policy evaluation
+### Scenario C — Expired / revoked credential
 
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | `POST /api/v1/partner-flow/evaluate` | Unified eval path | | |
-| | Policy + version pinned | `policy_id`, `policy_version` in response | | |
-| | Sandbox vs production | `decision_context` correct | | |
-| | Denied case (if tested) | Clear `reason_codes` | | |
-
-**policy_id:**  
-**policy_version:**  
-**evaluate response (snippet):**  
-**Anomalies:**
-
----
-
-## §6 — Trust Decision
-
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Decision created | `decision_id` returned | | |
-| | `GET /api/v1/verify/decisions/{id}` | Partner-scoped read | | |
-| | Decision payload | `approved` / `denied`, claim refs only | | |
-| | Cross-partner read | 403 / 404 (IDOR blocked) | | |
-
-**decision_id:**  
-**Trust Decision JSON (snippet):**  
-**Anomalies:**
+| Field | Value |
+|-------|-------|
+| **Scenario** | Expired or revoked credential → re-routes to Passport |
+| **Expected result** | Evaluate → `next: passport`; new credential after re-verification |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | |
+| **Receipt ID** | _new receipt after re-verify_ |
+| **Duration** | |
+| **Evidence** | _Before/after credential status + flow screenshots_ |
+| **Notes** | _Expired vs revoked sub-case_ |
 
 ---
 
-## §7 — Signed Receipt
+### Scenario D — Failure recovery
 
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Receipt issued | `receipt_id` (`dr_*`) | | |
-| | `GET /api/receipts/{id}/public` | `signature_valid: true` | | |
-| | Canonical payload | `policy_version`, `schema_version` present | | |
-| | Callback URL | No PII — only `receipt_id`, `status`, `credential_id` | | |
-
-**receipt_id:**  
-**signature_valid:**  
-**Anomalies:**
-
----
-
-## §8 — Decision retrieval
-
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Partner `getDecision` / status route | Same decision, scoped | | |
-| | Returning user (Path B) | Single evaluate → immediate enter | | |
-| | Unauthenticated decision fetch | Blocked where required | | |
-
-**Anomalies:**
+| Field | Value |
+|-------|-------|
+| **Scenario** | Mid-capture interrupt, admin reject, redirect failure, expired session receipt |
+| **Expected result** | Recoverable UX; no silent failure; idempotent retry where specified |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | |
+| **Receipt ID** | |
+| **Duration** | |
+| **Evidence** | _Screenshots + refresh/retry logs_ |
+| **Notes** | _Which sub-case(s) exercised_ |
 
 ---
 
-## §9 — Expiry behavior
+## Supplementary protocol evidence
 
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Expired credential | Re-routes to Passport | | |
-| | Expired session receipt | Refresh or re-eval per policy | | |
-| | `valid_until` in receipt | Honored at settlement | | |
+_Use when a regulated reviewer needs step-level proof beyond the four scenarios._
 
-**Anomalies:**
+### Authorization & session
+
+| Field | Value |
+|-------|-------|
+| **Scenario** | Partner authorization + zkLogin session binding |
+| **Expected result** | Permission resolved; session requires verified JWT; no address-only mint |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | |
+| **Receipt ID** | _N/A_ |
+| **Duration** | |
+| **Evidence** | |
+| **Notes** | |
+
+### Consent ceremony
+
+| Field | Value |
+|-------|-------|
+| **Scenario** | Consent atomicity + idempotent retry |
+| **Expected result** | Session required for preview; no duplicate claims on double-submit |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | _N/A_ |
+| **Receipt ID** | _consent receipt_ |
+| **Duration** | |
+| **Evidence** | |
+| **Notes** | |
+
+### Decision retrieval & tenancy
+
+| Field | Value |
+|-------|-------|
+| **Scenario** | Partner-scoped decision read; cross-partner blocked |
+| **Expected result** | `GET /api/v1/verify/decisions/{id}` scoped; IDOR returns 403/404 |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | |
+| **Receipt ID** | |
+| **Duration** | |
+| **Evidence** | |
+| **Notes** | |
+
+### Invalid / denied flow
+
+| Field | Value |
+|-------|-------|
+| **Scenario** | Policy denial or invalid partner key |
+| **Expected result** | Clear denial; no receipt issued; 401 on bad API key |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | |
+| **Receipt ID** | _none expected_ |
+| **Duration** | |
+| **Evidence** | |
+| **Notes** | |
+
+### Observability
+
+| Field | Value |
+|-------|-------|
+| **Scenario** | Audit events + logs sufficient to diagnose failure |
+| **Expected result** | Evaluate, policy eval, receipt issuance visible in logs/audit |
+| **Actual result** | _Pass / Fail_ |
+| **Request ID** | |
+| **Decision ID** | |
+| **Receipt ID** | |
+| **Duration** | |
+| **Evidence** | _Log excerpts (PII redacted)_ |
+| **Notes** | _Known gaps documented_ |
 
 ---
 
-## §10 — Invalid / denied flow
+## Defect log
 
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Under-age / policy deny | Clear denial, no receipt | | |
-| | Revoked credential | Re-verification required | | |
-| | Invalid partner key | 401 | | |
+| ID | Severity | Scenario | Description | Fix PR | Retest |
+|----|----------|----------|-------------|--------|--------|
+| | Critical / High / Medium / Low | | | | |
 
-**Anomalies:**
-
----
-
-## §11 — Retry / idempotency
-
-| Timestamp (UTC) | Step | Expected | Actual | Pass? |
-|-----------------|------|----------|--------|-------|
-| | Duplicate `partner-flow/complete` | Same receipt, no duplicate row | | |
-| | Consent retry | Idempotent | | |
-| | `POST /api/v1/partner-flow/refresh` | New receipt if expired | | |
-
-**Anomalies:**
-
----
-
-## §12 — Audit events
-
-| Timestamp (UTC) | Event type | Source | Recorded? |
-|-----------------|------------|--------|-----------|
-| | | | |
-| | | | |
-
-**Query / table used:**  
-**Gaps:**
-
----
-
-## §13 — Logs / observability
-
-| Signal | Present? | Sufficient to diagnose failure? | Notes |
-|--------|----------|-----------------------------------|-------|
-| Partner evaluate | | | |
-| Policy evaluation | | | |
-| Receipt issuance | | | |
-| Biometric analysis | | | |
-| Error paths | | | |
-
-**Log excerpts (redact PII):**
-
----
-
-## §14 — Failure cases
-
-| Scenario | Expected behavior | Actual | Pass? |
-|----------|-------------------|--------|-------|
-| Mid-capture browser close | Resume or clean restart | | |
-| Admin reject | User message, resubmit path | | |
-| Redirect failure | Recovery UI | | |
-
-**Anomalies:**
-
----
-
-## Blockers
-
-_List production-blocking issues. Fix only validated defects; rerun affected sections before sign-off._
-
-| ID | Severity | Description | Fix PR |
-|----|----------|-------------|--------|
-| | | | |
+**Bug fix rule:** Fix only validated defects. Rerun affected scenario(s) before updating the summary below.
 
 ---
 
 ## Evidence index
 
-| # | Type | Path / link | Covers |
-|---|------|-------------|--------|
+| # | Type | Path / link | Scenario |
+|---|------|-------------|----------|
 | 1 | Screenshot | | |
 | 2 | Network HAR | | |
 | 3 | API response | | |
+| 4 | Log excerpt | | |
 
 ---
 
-## Sign-off
+## Institutional Acceptance Summary
 
-| Role | Name | Date | Walkthrough passed? |
-|------|------|------|---------------------|
+**Release gate — single document for advisors, security reviewers, and design partners.**
+
+| Scenario | Result |
+|----------|--------|
+| **Scenario A** — New user → regulated purchase | _PASS / FAIL_ |
+| **Scenario B** — Returning user → credential-first | _PASS / FAIL_ |
+| **Scenario C** — Expired / revoked credential | _PASS / FAIL_ |
+| **Scenario D** — Failure recovery | _PASS / FAIL_ |
+
+| Defect class | Count |
+|--------------|-------|
+| Critical | 0 |
+| High | 0 |
+| Medium | _X_ |
+| Low | _X_ |
+
+### Recommendation
+
+_Select one:_
+
+- [ ] **Do not release** — critical/high defects or scenario failure
+- [ ] **Ready for P1** — Scenarios A–B pass (C–D as exercised); tag `v1.0.0-beta.0` → API freeze → P1-1
+- [ ] **Ready for external security review** — all scenarios pass; P1 complete; review against Trust Model v1
+
+---
+
+## Signatories
+
+| Role | Name | Date | Signature |
+|------|------|------|-----------|
 | Engineering | | | |
 | Product | | | |
+| Witness (optional) | | | |
 
-**On pass:** Create `docs/PROTOCOL_COMPATIBILITY.md` (API freeze) → begin P1-1 immutable policy versions.
+---
+
+## On pass — next gates
+
+1. Tag repository: **`v1.0.0-beta.0`** (architecture frozen, P0 complete, IAT passed — before P1 changes)
+2. Create `docs/PROTOCOL_COMPATIBILITY.md` (API freeze)
+3. Begin P1-1: immutable policy versions
