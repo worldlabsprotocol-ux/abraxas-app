@@ -149,8 +149,8 @@ Low defects: X
 
 Recommendation:
 ☐ Do not release
-☐ Ready for P1
-☐ Ready for external security review
+☐ Ready to tag v1.0.0-beta.0
+☐ Ready to enter external security review
 ```
 
 ---
@@ -158,9 +158,9 @@ Recommendation:
 ## On pass
 
 1. Sign the IAT results document
-2. Tag repository: **`git tag v1.0.0-beta.0 && git push origin v1.0.0-beta.0`**
-   - Checkpoint: architecture frozen, P0 complete, IAT passed — **before P1 changes**
-3. Create `docs/PROTOCOL_COMPATIBILITY.md`
-4. Begin P1-1 (immutable policy versions)
+2. Create `docs/PROTOCOL_COMPATIBILITY.md` (public contract freeze)
+3. Complete `docs/RELEASE_DECISION.md` (release sign-off)
+4. Tag repository: **`git tag -a v1.0.0-beta.0 -m "Canonical baseline: IAT passed, contract frozen, pre-P1" && git push origin v1.0.0-beta.0`**
+5. Begin P1-1 (immutable policy versions)
 
-**Do not start P1 until the IAT passes and `v1.0.0-beta.0` is tagged.**
+**Do not start P1 until `v1.0.0-beta.0` is tagged with the compatibility document included.**

@@ -1,0 +1,96 @@
+# Release Decision — v1.0.0-beta.0
+
+**Purpose:** One-page record of why this version exists and what remains intentionally deferred.  
+**Audience:** Future engineers, advisors, security reviewers, design partners  
+**Status:** _Draft — complete when tagging v1.0.0-beta.0_
+
+---
+
+## Current readiness
+
+| Layer | Status |
+|-------|--------|
+| Architecture | Complete (v3 frozen) |
+| Engine | Complete |
+| P0 hardening | Complete |
+| Threat Model v1 | Complete (`docs/TRUST_MODEL_V1.md`) |
+| Institutional Acceptance Test | _Pass / Fail_ (`docs/PRODUCTION_WALKTHROUGH_RESULTS.md`) |
+| Protocol Compatibility | _Pending / Complete_ (`docs/PROTOCOL_COMPATIBILITY.md`) |
+| Regression suite | _Pass / Fail_ (`npm test`) |
+| P1 hardening | Pending |
+
+---
+
+## v1.0.0-beta.0 snapshot criteria
+
+All must be true before tagging:
+
+- [x] Architecture frozen
+- [x] P0 complete
+- [ ] Institutional Acceptance Test passed
+- [x] Threat Model v1 complete
+- [ ] Protocol Compatibility document complete
+- [ ] Regression suite passing
+- [ ] Tagged `v1.0.0-beta.0`
+
+This tag is the **canonical known-good baseline** — the complete public contract snapshot before P1 changes.
+
+---
+
+## Known limitations (intentionally deferred to P1+)
+
+| Limitation | Target |
+|------------|--------|
+| Immutable policy versions not yet implemented | P1-1 |
+| Trust Decision validity integration pending | P1-2 |
+| Partner-flow observability enhancements pending | P1-3 |
+| Biometric telemetry persistence pending | P1-4 |
+
+These are documented in `docs/TRUST_MODEL_V1.md` and `docs/ENGINEERING_ROADMAP.md`. They are not hidden defects — they are scheduled integrity work.
+
+---
+
+## Risk assessment
+
+| Suitability | Assessment |
+|-------------|------------|
+| **Suitable for** | Controlled pilots with one relying party (Good Trouble reference flow) |
+| **Not yet suitable for** | Institutional production deployment |
+| **Not yet suitable for** | General availability |
+
+Production readiness score at tag time: **68/100** (post-P0). See `docs/PRODUCTION_READINESS_AUDIT.md`.
+
+---
+
+## Decision
+
+| Field | Value |
+|-------|-------|
+| **Release status** | `v1.0.0-beta.0` |
+| **Approval date** | _YYYY-MM-DD_ |
+| **Commit hash** | _SHA on `main`_ |
+| **Tag** | `v1.0.0-beta.0` |
+| **Deployment URL** | _production URL at tag time_ |
+
+### Sign-off
+
+| Role | Name | Date |
+|------|------|------|
+| Engineering | | |
+| Product | | |
+
+---
+
+## What happens next
+
+```
+v1.0.0-beta.0 tagged
+        ↓
+P1-1 Immutable policies → P1-2 Validity → P1-3 Observability → P1-4 Telemetry
+        ↓
+Ready to enter external security review (against Trust Model v1)
+        ↓
+v1.0.0-beta
+```
+
+**Note:** "Ready to enter external security review" means the review is expected to uncover issues — not that the system is finished.

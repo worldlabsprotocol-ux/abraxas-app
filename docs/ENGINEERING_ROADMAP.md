@@ -1,7 +1,7 @@
 # Abraxas Engineering Roadmap
 
 **Last updated:** 2026-07-30  
-**Status:** Merge chain on `main` complete. **Next:** gather evidence — Institutional Acceptance Test (IAT) on production → tag `v1.0.0-beta.0` → API freeze → P1. **Do not start P1 until IAT passes.** No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.
+**Status:** Merge chain on `main` complete. **Next:** IAT evidence → `PROTOCOL_COMPATIBILITY.md` → `RELEASE_DECISION.md` → tag `v1.0.0-beta.0` → P1. **Do not start P1 until beta.0 is tagged.** No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.
 
 **Do not build new systems.** Prove the protocol works in production exactly as designed.
 
@@ -96,13 +96,15 @@ Production deploy (CI green, no regressions)
         ↓
 Institutional Acceptance Test (IAT) — evidence, not assertion
         ↓
-Tag v1.0.0-beta.0 (known-good checkpoint before P1)
-        ↓
 API freeze → docs/PROTOCOL_COMPATIBILITY.md
+        ↓
+docs/RELEASE_DECISION.md (sign-off)
+        ↓
+Tag v1.0.0-beta.0 (canonical known-good baseline)
         ↓
 P1-1 Immutable policies → P1-2 Validity → P1-3 Observability → P1-4 Telemetry
         ↓
-External security review (Trust Model v1)
+Ready to enter external security review (Trust Model v1)
         ↓
 v1.0.0-beta
         ↓
@@ -138,29 +140,9 @@ Per scenario, capture: Request ID, Decision ID, Receipt ID, duration, screenshot
 
 ---
 
-## Phase 1.2 — Checkpoint tag (after IAT passes)
+## Phase 1.2 — API freeze (after IAT passes)
 
-Tag **`v1.0.0-beta.0`** on the passing commit:
-
-```bash
-git tag -a v1.0.0-beta.0 -m "IAT passed: architecture frozen, P0 complete, pre-P1 baseline"
-git push origin v1.0.0-beta.0
-```
-
-This is not a public-ready release. It is a **permanent known-good baseline** — if P1 introduces regression, compare against this tag.
-
-| Checkpoint captures | |
-|---------------------|---|
-| Architecture frozen (v3) | ✅ |
-| P0 hardening complete | ✅ |
-| IAT passed with evidence | ✅ |
-| Before P1 changes | ← boundary |
-
----
-
-## Phase 1.25 — API Freeze (after IAT + tag)
-
-Create `docs/PROTOCOL_COMPATIBILITY.md` before P1 engineering:
+Create `docs/PROTOCOL_COMPATIBILITY.md` **before** tagging. The tag must capture the complete public contract.
 
 | Record | Purpose |
 |--------|---------|
@@ -172,13 +154,38 @@ Create `docs/PROTOCOL_COMPATIBILITY.md` before P1 engineering:
 | Deprecation policy | How breaking changes ship |
 | Compatibility guarantees | What integrators can rely on |
 
-This document becomes the external contract discipline layer once developers integrate.
+---
+
+## Phase 1.25 — Release decision + checkpoint tag
+
+Complete `docs/RELEASE_DECISION.md` and tag **`v1.0.0-beta.0`** on the commit that includes the compatibility document.
+
+### v1.0.0-beta.0 snapshot criteria
+
+All must be true:
+
+| Criterion | Status |
+|-----------|--------|
+| Architecture frozen (v3) | ✅ |
+| P0 hardening complete | ✅ |
+| Institutional Acceptance Test passed | ⏳ |
+| Threat Model v1 complete | ✅ |
+| Protocol Compatibility document complete | ⏳ |
+| Regression suite passing | ⏳ |
+| Tagged `v1.0.0-beta.0` | ⏳ |
+
+```bash
+git tag -a v1.0.0-beta.0 -m "Canonical baseline: IAT passed, public contract frozen, pre-P1"
+git push origin v1.0.0-beta.0
+```
+
+This is not general availability. It is the **permanent known-good baseline** — if P1 introduces regression, compare against this tag.
 
 ---
 
 ## Phase 1.5 — P1 Hardening
 
-After walkthrough passes (Paths A + B minimum). **Before external security review** — reviewers should find unknown unknowns, not known P1s.
+After **`v1.0.0-beta.0`** is tagged. **Before external security review** — reviewers should find unknown unknowns, not known P1s.
 
 | Priority | Item | Rationale |
 |----------|------|-----------|
@@ -261,8 +268,8 @@ Present → renew → revoke → reissue → holder-facing history
 | 0 | Security | Close Critical/High findings before proof |
 | Merge | Canonical main | #89 → #92 → #93 on `main`, deploy |
 | 1 | Proof | Institutional Acceptance Test (IAT) |
-| 1.2 | Checkpoint | Tag `v1.0.0-beta.0` (pre-P1 baseline) |
-| 1.25 | API freeze | `PROTOCOL_COMPATIBILITY.md` |
+| 1.2 | API freeze | `PROTOCOL_COMPATIBILITY.md` |
+| 1.25 | Release + tag | `RELEASE_DECISION.md` + `v1.0.0-beta.0` |
 | 1.5 | P1 Hardening | Immutable policies → validity → observability → telemetry |
 | 1.6 | External review | Unknown unknowns against Trust Model v1 |
 | 1.7 | Freeze | Tag v1.0.0-beta; immutable public contracts |
@@ -280,6 +287,8 @@ Present → renew → revoke → reissue → holder-facing history
 | `docs/PRODUCTION_READINESS_AUDIT.md` | Live HTTP probes |
 | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` | IAT execution guide |
 | `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` | IAT sign-off + Institutional Acceptance Summary |
+| `docs/PROTOCOL_COMPATIBILITY.md` | Public contract freeze (before tag) |
+| `docs/RELEASE_DECISION.md` | One-page release decision at beta.0 |
 | `docs/UI_PRESERVATION.md` | Homepage protected surface + regression checklist |
 
 ---
