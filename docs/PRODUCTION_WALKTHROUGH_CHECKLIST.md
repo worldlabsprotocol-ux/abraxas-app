@@ -105,4 +105,4 @@ If any step fails during walkthrough:
 | Engineering | | | |
 | Product | | | |
 
-When signed off, proceed to Phase 2 (Protocol Hardening) per `docs/PROTOCOL_MATURITY_AUDIT.md`.
+When signed off: create `docs/PROTOCOL_COMPATIBILITY.md` (API freeze), then begin P1-1 (immutable policy versions). Do **not** start P1 until walkthrough passes.

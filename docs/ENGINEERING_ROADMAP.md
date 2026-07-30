@@ -1,7 +1,7 @@
 # Abraxas Engineering Roadmap
 
 **Last updated:** 2026-07-30  
-**Status:** P0 hardening complete (PR #93, 68/100). Merge #89 → #92 → #93 → deploy → walkthrough → P1 → external review → v1.0.0-beta. **No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.**
+**Status:** Merge chain #89 → #92 → #93 complete. **Next:** production deploy → institutional walkthrough → API freeze → P1. **Do not start P1 until walkthrough passes.** No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.
 
 **Do not build new systems.** Prove the protocol works in production exactly as designed.
 
@@ -87,23 +87,78 @@ Fix vulnerabilities that could invalidate the walkthrough or expose sensitive da
 
 ---
 
+## Gate sequence (canonical)
+
+```
+Merge chain (#89 → #92 → #93) → main
+        ↓
+Production deploy (CI green, no regressions)
+        ↓
+Institutional production walkthrough
+        ↓
+API freeze → docs/PROTOCOL_COMPATIBILITY.md
+        ↓
+P1-1 Immutable policies → P1-2 Validity → P1-3 Observability → P1-4 Telemetry
+        ↓
+External security review (Trust Model v1)
+        ↓
+v1.0.0-beta
+        ↓
+Second relying party
+```
+
+**Operating rule:** Validate the canonical codebase on `main`, not a feature branch. Resist any work not tied to hardening or protocol integrity until v1.0.0-beta.
+
+---
+
 ## Phase 1 — Production Walkthrough
 
-**Prerequisite:** Phase 0 deployed to production.
+**Prerequisite:** Merge chain on `main`, deployed to production.
 
-Validate with a real Google account + admin access:
+Treat as an **institutional acceptance test** — not a click-through. Document every protocol step with timestamps, request IDs, decision IDs, screenshots, and anomalies.
 
-- Path A — New user (Passport → admin approve → GT enter)
-- Path B — Returning user (credential-first, one evaluate)
-- Path C — Expired / revoked credential
-- Path D — Redirect recovery
+| Protocol step | Evidence section |
+|---------------|------------------|
+| Authorization request | §1 |
+| zkLogin / session | §2 |
+| Passport creation (new user) | §3 |
+| Consent ceremony | §4 |
+| Policy evaluation | §5 |
+| Trust Decision | §6 |
+| Signed Receipt | §7 |
+| Decision retrieval | §8 |
+| Expiry behavior | §9 |
+| Invalid / denied flow | §10 |
+| Retry / idempotency | §11 |
+| Audit events | §12 |
+| Logs / observability | §13 |
+| Failure cases | §14 |
 
-Checklist: `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
+Paths A–D: `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
+Results: `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`  
 Pre-check: `npm run audit:production`
 
-**Bug fix rule:** Fix only validated defects found during walkthrough. **Do not start Phase 2 until all v1.0.0-beta exit criteria pass.**
+**Success criterion:** _"The protocol behaves exactly as specified."_
 
-Record results in `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`.
+**Bug fix rule:** Fix only validated defects found during walkthrough. **Do not start P1 until walkthrough passes.**
+
+---
+
+## Phase 1.25 — API Freeze (after walkthrough passes)
+
+Create `docs/PROTOCOL_COMPATIBILITY.md` before P1 engineering:
+
+| Record | Purpose |
+|--------|---------|
+| SDK version | Partner integration baseline |
+| API version | `/api/v1/*` contract |
+| Supported permissions | Registry + default resolution |
+| Decision schema | Trust Decision payload |
+| Receipt schema | Signed receipt canonical form |
+| Deprecation policy | How breaking changes ship |
+| Compatibility guarantees | What integrators can rely on |
+
+This document becomes the external contract discipline layer once developers integrate.
 
 ---
 
@@ -190,8 +245,10 @@ Present → renew → revoke → reissue → holder-facing history
 | Phase | Name | Goal |
 |-------|------|------|
 | 0 | Security | Close Critical/High findings before proof |
-| 1 | Proof | Production walkthrough with evidence |
-| 1.5 | P1 Hardening | Immutable policies, validity, observability, telemetry |
+| Merge | Canonical main | #89 → #92 → #93 on `main`, deploy |
+| 1 | Proof | Institutional production walkthrough |
+| 1.25 | API freeze | `PROTOCOL_COMPATIBILITY.md` |
+| 1.5 | P1 Hardening | Immutable policies → validity → observability → telemetry |
 | 1.6 | External review | Unknown unknowns against Trust Model v1 |
 | 1.7 | Freeze | Tag v1.0.0-beta; immutable public contracts |
 | 2 | Scale prep | Rate limits, docs, residual endpoint hardening |
