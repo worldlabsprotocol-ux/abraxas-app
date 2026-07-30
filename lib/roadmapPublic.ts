@@ -45,7 +45,7 @@ export const ROADMAP_SECTIONS: readonly RoadmapSection[] = [
       "Partner SDK (Slice 1)",
       "Security hardening (P0 complete)",
       "Threat Model v1",
-      "383+ automated regression tests",
+      "389+ automated regression tests",
       "~$2M in verified assets onboarded",
       "Good Trouble reference relying party flow",
     ],
