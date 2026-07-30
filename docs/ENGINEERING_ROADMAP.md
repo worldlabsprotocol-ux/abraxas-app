@@ -1,17 +1,44 @@
 # Abraxas Engineering Roadmap
 
-**Last updated:** 2026-07-29  
-**Status:** Phase 0 code complete. Awaiting green CI → merge → deploy → Phase 1 walkthrough.
+**Last updated:** 2026-07-30  
+**Status:** PR #89 green. Merge → deploy → Phase 1 walkthrough. **No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.**
 
-**Do not build new systems.** From here the goal is to graduate Abraxas from a project into infrastructure.
+**Do not build new systems.** Prove the protocol works in production exactly as designed.
 
 ---
 
-## Governing Rules
+## Operating Rule (until v1.0.0-beta)
+
+> Every change must either **validate the system**, **resolve a validated defect**, **improve operational readiness**, or **address a verified security issue**. Any other work is deferred until after v1.0.0-beta.
+
+Security fixes are never blocked by process — but they must be verified issues, not speculative hardening.
+
+---
+
+## Exit Criteria — v1.0.0-beta
+
+**Define success before the walkthrough. Do not move goalposts.**
+
+All items must pass before Phase 2. If any item fails: fix, rerun walkthrough, re-evaluate.
+
+| # | Criterion | Status |
+|---|-----------|--------|
+| 1 | All walkthrough paths (A–D) complete successfully | ⏳ |
+| 2 | No Critical or High security findings remain (or explicitly accepted as documented risk) | ⏳ |
+| 3 | No production-blocking bugs discovered during validation | ⏳ |
+| 4 | Homepage guard and CI remain green | ⏳ |
+| 5 | Logs and observability provide enough information to diagnose failures | ⏳ |
+| 6 | Release audit completed; compatibility guarantees documented | ⏳ |
+
+**Deliverable:** `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` + `docs/RELEASE_v1.0.0-beta.md`
+
+---
+
+## Governing Rules (post-beta)
 
 > Every change must either (1) prove an existing capability works in production, or (2) increase the protocol's reliability, auditability, or interoperability. If a task doesn't satisfy one of those goals, defer it.
 
-> **Security precedence:** Any finding rated **Critical** or **High** in `docs/SECURITY_THREAT_MODEL.md` takes precedence over protocol hardening and new features. Do not continue roadmap work until every Critical finding is either fixed or explicitly accepted as a documented risk.
+> **Security precedence:** Any finding rated **Critical** or **High** in `docs/SECURITY_THREAT_MODEL.md` takes precedence over protocol hardening and new features.
 
 ---
 
@@ -48,8 +75,8 @@ Fix vulnerabilities that could invalidate the walkthrough or expose sensitive da
 | Step | Status | Notes |
 |------|--------|-------|
 | Fix `Btn` TypeScript error (`CieloBookingPanel.tsx`) | ✅ | Import restored in PR #89 |
-| Confirm Vercel / CI build passes | ⏳ | Merge only after green — security work doesn't matter if the branch can't deploy |
-| Merge PR #89 | ⏳ | **Only after CI passes** and walkthrough environment is ready |
+| Confirm Vercel / CI build passes | ✅ | PR #89 green |
+| Merge PR #89 | ⏳ | Ready to merge |
 | Deploy to production | ⏳ | **Immediately after merge** — use that deployment for the walkthrough |
 | Set `ADMIN_PIN` (server-only; remove `NEXT_PUBLIC_ADMIN_PIN`) | ⏳ | Vercel env |
 | Verify `NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID` | ⏳ | Required for JWKS audience check |
@@ -74,7 +101,9 @@ Validate with a real Google account + admin access:
 Checklist: `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
 Pre-check: `npm run audit:production`
 
-**Bug fix rule:** Fix only bugs found. Do not start Phase 2 until Path A + B pass.
+**Bug fix rule:** Fix only validated defects found during walkthrough. **Do not start Phase 2 until all v1.0.0-beta exit criteria pass.**
+
+Record results in `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`.
 
 ---
 
@@ -154,6 +183,7 @@ Present → renew → revoke → reissue → holder-facing history
 | `docs/BACKWARD_COMPATIBILITY_AUDIT.md` | API/credential/receipt stability |
 | `docs/PRODUCTION_READINESS_AUDIT.md` | Live HTTP probes |
 | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` | Phase 1 manual script |
+| `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` | Evidence record (fill during walkthrough) |
 | `docs/UI_PRESERVATION.md` | Homepage protected surface + regression checklist |
 
 ---
