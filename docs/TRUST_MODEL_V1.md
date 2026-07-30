@@ -356,6 +356,7 @@ Second relying party
 
 | Document | Purpose |
 |----------|---------|
+| `docs/RELEASE_DECISION.md` | Release decision record at v1.0.0-beta.0 |
 | `docs/SECURITY_THREAT_MODEL.md` | STRIDE design review (pre-P0; partially superseded) |
 | `docs/PROTOCOL_MATURITY_AUDIT.md` | Idempotency, audit maturity |
 | `docs/PARTNER_FLOW_INTEGRATION.md` | Relying party integration guide |
