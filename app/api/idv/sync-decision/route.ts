@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { processVeriffDecision } from "@/lib/idv/processVeriffDecision";
 import { parseVeriffDecisionPayload } from "@/lib/idv/veriffDecision";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
 
 const VERIFF_KEY = process.env.VERIFF_API_KEY ?? "";
 const VERIFF_BASE = "https://stationapi.veriff.com/v1";
@@ -136,22 +137,46 @@ async function syncDecisionForSui(
 }
 
 export async function GET(req: NextRequest) {
-  const raw = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
-  if (!raw) {
-    return NextResponse.json({ error: "sui param required" }, { status: 400 });
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-  return syncDecisionForSui(normalizeSuiAddress(raw));
+
+  const raw = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
+  if (raw) {
+    try {
+      if (normalizeSuiAddress(raw) !== auth.session.suiAddress) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid sui param" }, { status: 400 });
+    }
+  }
+
+  return syncDecisionForSui(auth.session.suiAddress);
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const body = await req.json().catch(() => ({})) as {
     sui_address?: string;
     sui?: string;
     session_id?: string;
   };
   const raw = body.sui_address ?? body.sui;
-  if (!raw) {
-    return NextResponse.json({ error: "sui_address required" }, { status: 400 });
+  if (raw) {
+    try {
+      if (normalizeSuiAddress(raw) !== auth.session.suiAddress) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid sui_address" }, { status: 400 });
+    }
   }
-  return syncDecisionForSui(normalizeSuiAddress(raw), body.session_id?.trim());
+
+  return syncDecisionForSui(auth.session.suiAddress, body.session_id?.trim());
 }

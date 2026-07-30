@@ -8,7 +8,7 @@ import {
   removeBlockById,
 } from "@/lib/cielo/calendar";
 
-const ADMIN_PIN = process.env.ADMIN_PIN ?? process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
+const ADMIN_PIN = process.env.ADMIN_PIN ?? "";
 
 function authorized(req: NextRequest, body?: { pin?: string }) {
   const headerPin = req.headers.get("x-admin-pin");

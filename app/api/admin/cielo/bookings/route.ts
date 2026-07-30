@@ -8,7 +8,7 @@ import { emailGuestPaymentLink } from "@/lib/cielo/notifications";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-const ADMIN_PIN = process.env.ADMIN_PIN ?? process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
+const ADMIN_PIN = process.env.ADMIN_PIN ?? "";
 
 const VALID = ["pending", "confirmed", "authorized", "captured", "cancelled", "declined"];
 

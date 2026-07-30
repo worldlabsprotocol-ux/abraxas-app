@@ -4,11 +4,12 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { jwtToAddress, decodeJwt } from "@mysten/sui/zklogin";
+import { jwtToAddress } from "@mysten/sui/zklogin";
 import { randomBytes } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { walletBindingClaim } from "@/lib/credentials/claimSchema";
 import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
+import { verifyGoogleZkLoginIdToken } from "@/lib/auth/verifyZkLoginIdToken";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -30,16 +31,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "id_token and oauth_sub required" }, { status: 400 });
   }
 
-  let decoded;
+  let verified;
   try {
-    decoded = decodeJwt(body.id_token);
+    verified = await verifyGoogleZkLoginIdToken(body.id_token, body.oauth_sub);
   } catch {
-    return NextResponse.json({ error: "Invalid id_token" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid id_token" }, { status: 401 });
   }
 
-  if (decoded.sub !== body.oauth_sub) {
-    return NextResponse.json({ error: "oauth_sub mismatch" }, { status: 400 });
-  }
+  const sub = verified.sub;
 
   if (!SB_URL || !SB_KEY) {
     // Dev fallback: derive with ephemeral salt (not persistent across restarts)
@@ -63,7 +62,7 @@ export async function POST(req: Request) {
     .eq("oauth_sub", body.oauth_sub)
     .maybeSingle();
 
-  const jwtEmail = (decoded as Record<string, unknown>).email;
+  const jwtEmail = verified.email;
   const emailFromJwt = typeof jwtEmail === "string" ? jwtEmail : null;
 
   if (existing?.sui_address && existing?.user_salt) {

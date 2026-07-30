@@ -7,6 +7,8 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { GOOD_TROUBLE_REGISTRY_IMAGE } from "@/lib/goodTrouble/registryEntry";
+import { GOOD_TROUBLE_VERIFY_EXAMPLE } from "@/lib/goodTrouble/retailEligibility";
+import { goodTroubleVerifyUrl } from "@/lib/goodTrouble/partnerIntegration";
 
 describe("goodTrouble pilot", () => {
   it("lists Good Trouble as pilot in integration registry", () => {
@@ -37,5 +39,17 @@ describe("goodTrouble pilot", () => {
 
   it("uses partner brand logo on registry", () => {
     expect(GOOD_TROUBLE_REGISTRY_IMAGE).toBe("/assets/good-trouble/brand-logo.png");
+  });
+
+  it("reference verify example uses credential_jwt not wallet address", () => {
+    expect(GOOD_TROUBLE_VERIFY_EXAMPLE).toContain("credential_jwt");
+    expect(GOOD_TROUBLE_VERIFY_EXAMPLE).not.toContain("sui_address");
+  });
+
+  it("builds partner verify URL from generic config", () => {
+    const url = goodTroubleVerifyUrl("https://abraxas-app.vercel.app");
+    expect(url).toContain("/partner/verify");
+    expect(url).toContain("good-trouble-cannabis");
+    expect(decodeURIComponent(url)).toContain("good-trouble/enter");
   });
 });

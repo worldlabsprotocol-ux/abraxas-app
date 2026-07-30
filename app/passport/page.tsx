@@ -22,6 +22,7 @@ import { computePassportSetupState } from "@/lib/idv/identityVerificationStates"
 import { VerifyClient } from "@/app/verify/VerifyClient";
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
+import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
@@ -59,6 +60,9 @@ function PassportPageInner() {
   } = usePassportVerification(suiAddress, email || null);
 
   const verifyRequestId = searchParams.get("verify_request");
+  const policyIdParam = searchParams.get("policy_id");
+  const partnerIdParam = searchParams.get("partner_id");
+  const returnPathParam = searchParams.get("return");
   const verificationParam = searchParams.get("verification");
   const pageView = searchParams.get("view") === "verify" ? "verify" : "passport";
 
@@ -206,6 +210,16 @@ function PassportPageInner() {
           </Suspense>
         ) : (
           <>
+            <PartnerFlowReturnHandler
+              suiAddress={suiAddress}
+              identityStatus={identityStatus}
+              hasCredential={hasCredential}
+              returnPath={returnPathParam}
+              partnerId={partnerIdParam}
+              policyId={policyIdParam}
+              verificationRequestId={verifyRequestId}
+            />
+
             {verifyRequestId && suiAddress && !partnerConsentDismissed && (
               <ConsentCeremony
                 requestId={verifyRequestId}
@@ -240,7 +254,12 @@ function PassportPageInner() {
               onStartIdCheck={startIdentityVerification}
               onRefresh={refresh}
               onWalletBound={refresh}
-              returnPath={searchParams.get("return")}
+              returnPath={returnPathParam}
+              capturePolicy={{
+                verificationRequestId: verifyRequestId,
+                policyId: policyIdParam,
+                partnerId: partnerIdParam,
+              }}
             />
 
             {!walletDone && authLoading && (

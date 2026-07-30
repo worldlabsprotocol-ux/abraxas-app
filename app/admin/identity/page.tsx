@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { buildBiometricSignalRows } from "@/lib/admin/biometricSignalRows";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -57,23 +57,23 @@ interface QueueItem {
       tamper_score?: number;
       id_tamper_score?: number;
       selfie_tamper_score?: number;
+      selfie_blur_score?: number;
+      selfie_lighting_score?: number;
+      selfie_occlusion_score?: number;
+      alignment_score?: number;
+      face_coverage?: number;
+      screen_replay_score?: number;
+      deepfake_score?: number;
+      deepfake_status?: string;
+      reason_codes?: string[];
+      threshold_policy_source?: string;
+      partner_id?: string;
+      face_match_method?: string;
     };
   } | null;
 }
 
 type ReviewAction = "approve" | "reject" | "request_resubmission";
-
-function pct(value: unknown): string {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return `${(n * 100).toFixed(0)}%`;
-}
-
-function boolLabel(value: unknown): string {
-  if (value === true) return "yes";
-  if (value === false) return "no";
-  return "—";
-}
 
 function BiometricSignalsPanel({ item }: { item: QueueItem }) {
   const bio = item.biometric;
@@ -86,27 +86,7 @@ function BiometricSignalsPanel({ item }: { item: QueueItem }) {
   }
 
   const signals = bio.signals ?? {};
-  const fraud = signals.fraud_risk ?? signals.fraud_risk_score;
-  const tamper = signals.tamper_score ?? signals.id_tamper_score;
-
-  const rows: Array<[string, string]> = [
-    ["Engine version", bio.engine_version ?? "—"],
-    ["Engine decision", bio.decision ?? "—"],
-    ["Reviewer decision", bio.reviewer_decision ?? "pending"],
-    ["Fraud risk", pct(fraud)],
-    ["Face match", pct(signals.face_match ?? bio.face_match_score)],
-    ["Liveness", pct(signals.liveness ?? bio.liveness_score)],
-    ["Document type", String(signals.document_type ?? "—")],
-    ["Document confidence", pct(signals.document_confidence)],
-    ["ID image quality", pct(bio.document_quality_score)],
-    ["Selfie quality", pct(bio.selfie_quality_score)],
-    ["Tamper score", pct(tamper)],
-    ["Face detected (ID)", boolLabel(signals.face_detected_id)],
-    ["Face detected (selfie)", boolLabel(signals.face_detected_selfie)],
-    ["Selfie face count", String(signals.face_count_selfie ?? "—")],
-    ["Assurance", bio.assurance_level ?? "—"],
-    ["Review method", bio.review_method ?? "—"],
-  ];
+  const rows = buildBiometricSignalRows(bio);
 
   return (
     <div style={{ marginTop: 10 }}>
@@ -188,7 +168,7 @@ function CapturePreview({
 }
 
 export default function AdminIdentityPage() {
-  const [pin, setPin] = useState(ADMIN_PIN);
+  const [pin, setPin] = useState("");
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

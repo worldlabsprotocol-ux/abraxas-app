@@ -13,6 +13,8 @@ import {
   type IdentityCaptureStep,
 } from "@/lib/idv/identityCapture";
 import { runCapturePreflight } from "@/lib/idv/biometric/clientPreflight";
+import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
+import { capturePolicyFormFields } from "@/lib/idv/capturePolicyContext";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -23,6 +25,7 @@ interface AbraxasIdentityCaptureProps {
   suiAddress: string | null;
   onSubmitted?: () => void;
   pendingReview?: boolean;
+  capturePolicy?: CapturePolicyContext;
 }
 
 interface CaptureState {
@@ -35,6 +38,7 @@ export function AbraxasIdentityCapture({
   suiAddress: suiProp,
   onSubmitted,
   pendingReview = false,
+  capturePolicy,
 }: AbraxasIdentityCaptureProps) {
   const { suiAddress: authAddress, session, isLoading: authLoading, isAuthenticated, refreshSession } = useSuiAuth();
   const email = emailProp || session?.email || "";
@@ -150,6 +154,9 @@ export function AbraxasIdentityCapture({
       formData.append("legal_name", legalName.trim());
       formData.append("id_front", idCapture.blob, "id_front.jpg");
       formData.append("selfie", selfieCapture.blob, "selfie.jpg");
+      for (const [key, value] of Object.entries(capturePolicyFormFields(capturePolicy ?? {}))) {
+        formData.append(key, value);
+      }
 
       const res = await fetch("/api/identity/documents/capture", {
         method: "POST",

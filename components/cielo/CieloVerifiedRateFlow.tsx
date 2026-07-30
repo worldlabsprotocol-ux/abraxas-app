@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { eachNight, estimateUsdc } from "@/lib/cielo/bookingValidation";
 import type { CieloVerifiedGuestEvaluation } from "@/lib/cielo/verifiedGuestPolicy";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -26,15 +27,6 @@ interface ConsentResult {
 }
 
 const RETURN_PATH = "/cielo/verified-rate";
-
-async function ensureBrowserSession(suiAddress: string): Promise<void> {
-  await fetch("/api/auth/browser-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ sui_address: suiAddress }),
-  }).catch(() => { /* best-effort */ });
-}
 
 export function CieloVerifiedRateFlow() {
   const router = useRouter();

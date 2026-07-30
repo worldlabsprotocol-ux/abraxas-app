@@ -61,7 +61,9 @@ export function RelyingPartyVerifyPanel({
     setLoadBusy(true);
     setErr(null);
     try {
-      const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`);
+      const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`, {
+        credentials: "include",
+      });
       const data = await res.json() as { credential_jwt?: string; verified?: boolean; error?: string };
       if (!res.ok || !data.credential_jwt) {
         throw new Error(data.error ?? "No active credential for this wallet yet.");

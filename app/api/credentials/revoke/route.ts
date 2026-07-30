@@ -6,19 +6,18 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { revokeSubjectClaims } from "@/lib/credentials/claimsService";
 import { appendAuditEvent } from "@/lib/verification/audit";
+import { checkAdminAccess } from "@/lib/adminAuth";
 
 export async function POST(req: NextRequest) {
-  const adminPin = process.env.NEXT_PUBLIC_ADMIN_PIN;
-  const authPin = req.headers.get("x-admin-pin");
+  if (!await checkAdminAccess(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await req.json().catch(() => ({})) as {
     sui_address?: string;
     reason?: string;
     jti?: string;
   };
-
-  if (adminPin && authPin !== adminPin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   if (!body.sui_address) {
     return NextResponse.json({ error: "sui_address required" }, { status: 400 });

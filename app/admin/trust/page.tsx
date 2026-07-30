@@ -7,11 +7,10 @@ export const dynamic = "force-dynamic";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "abraxas2026";
 const MONO = "'JetBrains Mono',monospace";
 
 export default function AdminTrustPage() {
-  const [pin, setPin] = useState(ADMIN_PIN);
+  const [pin, setPin] = useState("");
   const [tab, setTab] = useState<"issuers" | "credential">("issuers");
   const [issuers, setIssuers] = useState<Array<{ id: string; display_name: string; issuer_status: string; supported_claims: string[]; pilot_note?: string }>>([]);
   const [claimId, setClaimId] = useState("");

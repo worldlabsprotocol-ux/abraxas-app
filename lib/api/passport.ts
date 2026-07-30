@@ -75,17 +75,24 @@ export async function fetchIdentityStatus(
   const params = new URLSearchParams();
   if (suiAddress) params.set("sui_address", suiAddress);
   if (email) params.set("email", email);
-  const res = await fetch(`/api/identity/status?${params}`);
+  const res = await fetch(`/api/identity/status?${params}`, { credentials: "include" });
   return res.json() as Promise<IdentityStatusResponse>;
 }
 
 export async function syncVeriffDecision(suiAddress: string): Promise<VeriffSyncResponse> {
-  const res = await fetch(`/api/idv/sync-decision?sui=${encodeURIComponent(suiAddress)}`);
+  const res = await fetch("/api/idv/sync-decision", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sui_address: suiAddress }),
+  });
   return res.json() as Promise<VeriffSyncResponse>;
 }
 
 export async function fetchCredentialMe(suiAddress: string): Promise<MeCredentialResponse> {
-  const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`);
+  const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`, {
+    credentials: "include",
+  });
   return res.json() as Promise<MeCredentialResponse>;
 }
 

@@ -16,7 +16,9 @@ import { emitBiometricTelemetry } from "./telemetry";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import type { BiometricAssessment, BiometricFraudSignals, BiometricSignals } from "./types";
 
-export const BIOMETRIC_ENGINE_VERSION = "abraxas-biometric-v3";
+import { BIOMETRIC_ENGINE_VERSION } from "./engineVersion";
+
+export { BIOMETRIC_ENGINE_VERSION } from "./engineVersion";
 
 export async function analyzeBiometricCapture(input: {
   captureSessionId: string;
@@ -31,7 +33,7 @@ export async function analyzeBiometricCapture(input: {
   const [
     idSignals,
     selfieSignals,
-    faceMatch,
+    faceMatchResult,
     idFace,
     selfieFace,
     docClass,
@@ -42,7 +44,7 @@ export async function analyzeBiometricCapture(input: {
   ] = await Promise.all([
     analyzeImageBuffer(input.idFrontBuffer),
     analyzeImageBuffer(input.selfieBuffer),
-    compareIdAndSelfie(input.idFrontBuffer, input.selfieBuffer),
+    compareIdAndSelfie(input.idFrontBuffer, input.selfieBuffer).then(r => r),
     detectFacePresence(input.idFrontBuffer),
     detectFacePresence(input.selfieBuffer),
     classifyIdentityDocument(input.idFrontBuffer),
@@ -61,7 +63,7 @@ export async function analyzeBiometricCapture(input: {
   );
 
   const scores = {
-    face_match: faceMatch,
+    face_match: faceMatchResult.score,
     liveness,
     document_quality: documentQuality,
     // Keep legacy aggregate for threshold compatibility; granular scores live in signals.
@@ -139,6 +141,7 @@ export async function analyzeBiometricCapture(input: {
     reason_codes: decision.reason_codes,
     threshold_policy_source: input.policyRules?.biometric_thresholds ? "partner" : "global",
     partner_id: input.partnerId ?? "",
+    face_match_method: faceMatchResult.method,
   };
 
   const draft: BiometricAssessment = {
