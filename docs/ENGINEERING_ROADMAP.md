@@ -1,9 +1,26 @@
 # Abraxas Engineering Roadmap
 
 **Last updated:** 2026-07-30  
-**Status:** Merge chain on `main` complete. **Next:** IAT evidence → `PROTOCOL_COMPATIBILITY.md` → `RELEASE_DECISION.md` → tag `v1.0.0-beta.0` → P1. **Do not start P1 until beta.0 is tagged.** No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.
+**Status:** **Validation phase.** Execute IAT on production → evidence → `PROTOCOL_COMPATIBILITY.md` → `RELEASE_DECISION.md` → tag `v1.0.0-beta.0` → P1. No features, no architecture changes, no protocol expansion unless a validated defect requires it.
 
 **Do not build new systems.** Prove the protocol works in production exactly as designed.
+
+---
+
+## Operating Rule (validation phase)
+
+> The objective is no longer building Abraxas — it is proving the protocol behaves exactly as designed through evidence, documentation, and operational validation.
+
+**Allowed work:**
+1. Execute IAT and record production evidence
+2. Release artifacts after IAT passes (`PROTOCOL_COMPATIBILITY.md`, `RELEASE_DECISION.md`, tag)
+3. P1 planning (no implementation until `v1.0.0-beta.0` tagged)
+4. Documentation consistency review
+5. Fix **only validated defects** discovered during testing
+
+**Forbidden:** New features, architecture redesign, protocol expansion, speculative roadmap items.
+
+**Post-freeze PR rule:** Every PR must answer at least one: Does this change the public protocol? Strengthen protocol integrity? Fix a validated defect?
 
 ---
 
