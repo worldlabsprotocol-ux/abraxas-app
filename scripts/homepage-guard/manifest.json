@@ -13,6 +13,7 @@
     "components/redesign/AbraxasBootScreen.tsx",
     "components/home/HomeSharpHero.tsx",
     "components/home/HomeProtocolInAction.tsx",
+    "components/home/HomePartnerNetwork.tsx",
     "components/home/HomeWhyAbraxas.tsx",
     "components/home/HomeVerifyOnceDiagram.tsx",
     "components/home/HomeVerificationPipeline.tsx",
@@ -24,7 +25,8 @@
     "components/home/HomeRegistrySlideshow.tsx",
     "lib/home/protocolProofLogos.ts",
     "lib/home/protocolProofMedia.ts",
-    "lib/home/ecosystemContent.ts"
+    "lib/home/ecosystemContent.ts",
+    "lib/home/partnerNetwork.ts"
   ],
   "protectedCss": {
     "source": "app/globals.css",
@@ -59,6 +61,7 @@
     }
   ],
   "protectedAssetPaths": [
-    "/icon-48.png"
+    "/icon-48.png",
+    "/assets/partner-network/cannabis-ecosystem-event.jpg"
   ]
 }

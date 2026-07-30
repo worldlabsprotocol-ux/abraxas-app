@@ -10,14 +10,6 @@ export interface IndustryCard {
   problem: string;
 }
 
-export interface EcosystemPartnerCard {
-  id: string;
-  title: string;
-  summary: string;
-  href?: string;
-  status?: "live" | "coming";
-}
-
 export interface ProtocolProof {
   id: string;
   category: string;
@@ -55,44 +47,6 @@ export const REGULATED_INDUSTRY_PILLARS = [
   { id: "digital-assets", title: "Digital Assets", summary: "Wallet-linked credentials" },
   { id: "finance", title: "Financial Services", summary: "Reusable compliance" },
 ] as const;
-
-export const LIVE_ECOSYSTEM_PARTNERS: EcosystemPartnerCard[] = [
-  {
-    id: "cielo",
-    title: "Cielo Sunrise",
-    summary: "Genesis verified asset. Hospitality.",
-    href: "/flagship",
-    status: "live",
-  },
-  {
-    id: "good-trouble",
-    title: "Good Trouble Canna",
-    summary: "Reusable 21+ eligibility",
-    href: "/good-trouble",
-    status: "live",
-  },
-  {
-    id: "chickasaw",
-    title: "Chickasaw Project",
-    summary: "Property verification",
-    href: "/case-studies/chickasaw-project",
-    status: "live",
-  },
-  {
-    id: "passport",
-    title: "Abraxas Passport",
-    summary: "Portable identity credential",
-    href: "/passport",
-    status: "live",
-  },
-  {
-    id: "more",
-    title: "More integrations coming",
-    summary: "Design partners onboarding now",
-    href: "/design-partner",
-    status: "coming",
-  },
-];
 
 export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
   {

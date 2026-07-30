@@ -2,7 +2,6 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  LIVE_ECOSYSTEM_PARTNERS,
   PROTOCOL_IN_ACTION_PROOFS,
   PROTOCOL_PASSPORT_CONNECTOR,
   REGULATED_INDUSTRY_PILLARS,
@@ -44,10 +43,6 @@ describe("ecosystemContent", () => {
 
   it("uses product-centric good trouble proof line", () => {
     expect(PROTOCOL_IN_ACTION_PROOFS[2]?.demonstrates).toBe(GOOD_TROUBLE_PROOF_LINE);
-  });
-
-  it("surfaces Cielo in live ecosystem partners", () => {
-    expect(LIVE_ECOSYSTEM_PARTNERS[0]?.title).toBe("Cielo Sunrise");
   });
 
   it("attaches audited imagery to protocol proof cards", () => {
