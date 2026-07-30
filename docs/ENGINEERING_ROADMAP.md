@@ -1,7 +1,7 @@
 # Abraxas Engineering Roadmap
 
 **Last updated:** 2026-07-30  
-**Status:** PR #89 green. Merge → deploy → Phase 1 walkthrough. **No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.**
+**Status:** P0 hardening complete (PR #93, 68/100). Merge #89 → #92 → #93 → deploy → walkthrough → P1 → external review → v1.0.0-beta. **No architecture, tokenomics, or feature work until v1.0.0-beta exit criteria pass.**
 
 **Do not build new systems.** Prove the protocol works in production exactly as designed.
 
@@ -49,7 +49,7 @@ Do not collapse these into a single number — they measure different things.
 | Dimension | Score | Meaning |
 |-----------|-------|---------|
 | **Product Architecture** | **92/100** | Passport, credentials, partner flow, session receipts, reusable integration pattern — the design is strong |
-| **Production Readiness** | **63/100** | Security hardening, operational validation, idempotency, audit trail, policy versioning — not yet infrastructure-grade |
+| **Production Readiness** | **68/100** (post-P0) | Authorization, tenancy, consent/idempotency, policy evaluation unified — P1 (immutable policies, validity, observability) still pending |
 
 A single "62/100" headline understates the architecture and overstates the design risk. The gap is operational, not conceptual.
 
@@ -107,9 +107,34 @@ Record results in `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`.
 
 ---
 
-## Phase 1.5 — Freeze
+## Phase 1.5 — P1 Hardening
 
-After walkthrough passes (Paths A + B minimum):
+After walkthrough passes (Paths A + B minimum). **Before external security review** — reviewers should find unknown unknowns, not known P1s.
+
+| Priority | Item | Rationale |
+|----------|------|-----------|
+| 1 | **Immutable policy versions** | Protocol integrity — receipts pin `policy_version`; no in-place `UPDATE` of `rules_json` |
+| 2 | **Trust Decision validity** | API semantics — integrate `resolveReceiptValidity`; expose `currently_valid` |
+| 3 | **Partner-flow observability** | `logPartnerUsage` + audit events on partner-flow routes |
+| 4 | **Biometric telemetry persistence** | stdout → durable store (after protocol semantics are final) |
+
+P0 items (idempotency, consent atomicity, policy evaluation unification, tenancy) are complete in PR #93.
+
+**Do NOT build:** more biometric signals, AI scoring, homepage redesign, new verification methods.
+
+---
+
+## Phase 1.6 — External Security Review
+
+After P1 hardening. Review against `docs/TRUST_MODEL_V1.md` (protocol security whitepaper), not raw code first.
+
+Goal: find unknown unknowns, not confirm known P1s.
+
+---
+
+## Phase 1.7 — Freeze & v1.0.0-beta
+
+After walkthrough + P1 + external review:
 
 1. Release tag (`v1.0.0-beta`)
 2. Freeze public APIs
@@ -120,9 +145,9 @@ After walkthrough passes (Paths A + B minimum):
 
 From this point: **version changes, don't silently mutate behavior.**
 
-### Release audit (request after walkthrough passes)
+### Release audit
 
-Before Phase 2, generate a **v1.0.0-beta release audit**:
+Generate a **v1.0.0-beta release audit**:
 
 > Freeze all public contracts (APIs, credential schema, receipt schema, callback payloads, database migration baseline). Produce a changelog, known limitations, and compatibility guarantees. This release becomes the baseline that all future protocol changes must remain compatible with unless explicitly versioned.
 
@@ -130,21 +155,17 @@ Deliverable: tagged release + `docs/RELEASE_v1.0.0-beta.md` (or equivalent).
 
 ---
 
-## Phase 2 — Protocol Hardening (Scale prep)
+## Phase 2 — Scale Prep
 
-Only after Phase 1 + 1.5.
+Only after v1.0.0-beta.
 
 | Priority | Item |
 |----------|------|
-| 1 | Idempotency (session receipts, verification requests) |
-| 2 | Unified audit trail |
-| 3 | Immutable policy versioning |
-| 4 | Redirect recovery (`PartnerFlowReturnHandler`) |
-| 5 | Public partner docs at `/docs/partner-flow` |
-| 6 | Rate limiting |
-| 7 | Backward compatibility guarantees |
-
-**Do NOT build:** more biometric signals, AI scoring, homepage redesign, new verification methods.
+| 1 | Redirect recovery (`PartnerFlowReturnHandler`) |
+| 2 | Public partner docs at `/docs/partner-flow` |
+| 3 | Rate limiting |
+| 4 | Backward compatibility guarantees |
+| 5 | Residual endpoint hardening (`/api/trust/status`, share-history, etc.) |
 
 ---
 
@@ -170,15 +191,18 @@ Present → renew → revoke → reissue → holder-facing history
 |-------|------|------|
 | 0 | Security | Close Critical/High findings before proof |
 | 1 | Proof | Production walkthrough with evidence |
-| 1.5 | Freeze | Tag baseline; immutable public contracts |
-| 2 | Hardening | Idempotency, audit, policy versioning |
+| 1.5 | P1 Hardening | Immutable policies, validity, observability, telemetry |
+| 1.6 | External review | Unknown unknowns against Trust Model v1 |
+| 1.7 | Freeze | Tag v1.0.0-beta; immutable public contracts |
+| 2 | Scale prep | Rate limits, docs, residual endpoint hardening |
 | 3 | Scale | Partner SDK, self-serve onboarding |
 
 ---
 
 | Document | Purpose |
 |----------|---------|
-| `docs/SECURITY_THREAT_MODEL.md` | STRIDE design review |
+| `docs/TRUST_MODEL_V1.md` | Protocol security whitepaper (enterprise reviewers) |
+| `docs/SECURITY_THREAT_MODEL.md` | STRIDE design review (pre-P0; partially superseded) |
 | `docs/PROTOCOL_MATURITY_AUDIT.md` | Idempotency, audit, policy gaps |
 | `docs/BACKWARD_COMPATIBILITY_AUDIT.md` | API/credential/receipt stability |
 | `docs/PRODUCTION_READINESS_AUDIT.md` | Live HTTP probes |
