@@ -393,27 +393,6 @@ details > summary::-webkit-details-marker {
   margin-left: auto;
   margin-right: auto;
 }
-.abx-partner-network-featured {
-  margin: 0 auto 1rem;
-  max-width: 960px;
-  width: 100%;
-}
-.abx-partner-network-featured-media {
-  position: relative;
-  width: 100%;
-  height: clamp(180px, 32vw, 280px);
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--border-strong);
-  background: #06090b;
-}
-.abx-partner-network-featured-caption {
-  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  margin: 0.5rem 0 0;
-  line-height: 1.45;
-}
 .abx-partner-network-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

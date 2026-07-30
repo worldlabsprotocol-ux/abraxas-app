@@ -5,7 +5,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE,
   PARTNER_NETWORK_CARDS,
   PARTNER_NETWORK_SUBTITLE,
   PARTNER_NETWORK_TITLE,
@@ -65,8 +64,6 @@ function PartnerCard({ card }: { card: PartnerNetworkCard }) {
 }
 
 export function HomePartnerNetwork() {
-  const featured = PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE;
-
   return (
     <section
       aria-labelledby="home-partner-network-heading"
@@ -83,25 +80,6 @@ export function HomePartnerNetwork() {
         </h2>
         <p className="abx-home-section-lead">{PARTNER_NETWORK_SUBTITLE}</p>
       </div>
-
-      <figure className="abx-partner-network-featured">
-        <div className="abx-partner-network-featured-media">
-          <Image
-            src={featured.src}
-            alt={featured.alt}
-            fill
-            sizes="(min-width: 900px) 960px, 100vw"
-            priority={false}
-            style={{
-              objectFit: "cover",
-              objectPosition: featured.objectPosition ?? "center",
-            }}
-          />
-        </div>
-        <figcaption className="abx-partner-network-featured-caption">
-          Cannabis ecosystem — hospitality, brands, and reusable guest credentials
-        </figcaption>
-      </figure>
 
       <div className="abx-partner-network-grid">
         {PARTNER_NETWORK_CARDS.map((card) => (

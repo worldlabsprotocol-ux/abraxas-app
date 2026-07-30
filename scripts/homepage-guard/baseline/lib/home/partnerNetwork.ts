@@ -23,11 +23,18 @@ export const PARTNER_NETWORK_TITLE = "Partner Network";
 export const PARTNER_NETWORK_SUBTITLE =
   "Organizations building on reusable trust through Abraxas.";
 
-/** Featured visual for the cannabis ecosystem — event photography, not logos. */
-export const PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE: PartnerNetworkImage = {
-  src: "/assets/partner-network/cannabis-ecosystem-event.jpg",
-  alt: "SMAK'D premium rolling papers at The Session Atlanta — cannabis hospitality event",
-  objectPosition: "center 42%",
+/** Premiere lookbook cover — invitation-only luxury hospitality (from partner PDF). */
+export const PREMIERE_PARTNER_IMAGE: PartnerNetworkImage = {
+  src: "/assets/partner-network/premiere-lookbook-cover.jpg",
+  alt: "The Premiere Upscale Smoking Experience — invitation-only luxury cannabis hospitality",
+  objectPosition: "center 45%",
+};
+
+/** SMAK'D brand lifestyle — consumer cannabis brand (official rusmakd.com photography). */
+export const SMAKD_PARTNER_IMAGE: PartnerNetworkImage = {
+  src: "/assets/partner-network/smakd-brand-lifestyle.jpg",
+  alt: "SMAK'D premium rolling papers — consumer cannabis brand",
+  objectPosition: "center 35%",
 };
 
 export const LIVE_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
@@ -48,6 +55,7 @@ export const DESIGN_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
     status: "design_partner",
     description:
       "Premium cannabis consumer brand exploring portable customer identity and loyalty.",
+    image: SMAKD_PARTNER_IMAGE,
   },
   {
     id: "premiere",
@@ -55,7 +63,7 @@ export const DESIGN_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
     status: "design_partner",
     description:
       "Invitation-only cannabis hospitality experience exploring reusable guest credentials and trusted access.",
-    image: PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE,
+    image: PREMIERE_PARTNER_IMAGE,
   },
 ];
 

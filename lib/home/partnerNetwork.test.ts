@@ -5,7 +5,8 @@ import {
   DESIGN_PARTNER_NETWORK_CARDS,
   LIVE_PARTNER_NETWORK_CARDS,
   PARTNER_NETWORK_CARDS,
-  PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE,
+  PREMIERE_PARTNER_IMAGE,
+  SMAKD_PARTNER_IMAGE,
   partnerNetworkStatusEmoji,
   partnerNetworkStatusLabel,
 } from "./partnerNetwork";
@@ -33,17 +34,16 @@ describe("partnerNetwork", () => {
     expect(partnerNetworkStatusEmoji("design_partner")).toBe("🟡");
   });
 
-  it("uses event photography for cannabis ecosystem featured visual", () => {
-    expect(PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE.src).toMatch(
-      /^\/assets\/partner-network\//,
-    );
-    expect(PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE.alt.length).toBeGreaterThan(12);
-  });
-
-  it("assigns featured image to Premiere design partner card only", () => {
+  it("uses lookbook cover for Premiere and brand lifestyle for SMAK'D", () => {
     const premiere = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "premiere");
     const smakd = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "smakd");
-    expect(premiere?.image?.src).toBe(PARTNER_NETWORK_CANNABIS_FEATURED_IMAGE.src);
-    expect(smakd?.image).toBeUndefined();
+    expect(premiere?.image?.src).toBe(PREMIERE_PARTNER_IMAGE.src);
+    expect(smakd?.image?.src).toBe(SMAKD_PARTNER_IMAGE.src);
+    expect(PREMIERE_PARTNER_IMAGE.src).toMatch(/premiere-lookbook-cover/);
+    expect(SMAKD_PARTNER_IMAGE.src).toMatch(/smakd-brand-lifestyle/);
+  });
+
+  it("does not assign images to live Good Trouble card", () => {
+    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image).toBeUndefined();
   });
 });
