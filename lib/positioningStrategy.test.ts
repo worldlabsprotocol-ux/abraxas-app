@@ -98,8 +98,8 @@ describe("positioningStrategy", () => {
 
   it("keeps current focus to three scannable objectives", () => {
     expect(CURRENT_FOCUS).toHaveLength(3);
-    expect(CURRENT_FOCUS[0]?.toLowerCase()).toContain("credential lifecycle");
-    expect(CURRENT_FOCUS[1]?.toLowerCase()).toContain("good trouble");
+    expect(CURRENT_FOCUS[0]?.toLowerCase()).toContain("institutional acceptance test");
+    expect(CURRENT_FOCUS[2]?.toLowerCase()).toContain("v1.0.0-beta.0");
   });
 
   it("frames good trouble as reusable trust not document upload", () => {
