@@ -318,7 +318,8 @@ Permission (stable)  →  Policy (versioned)  →  Claims  →  Evidence  →  I
 Before institutional adoption, verify:
 
 - [ ] P0 regression suite passes (`npm test`, P0 subset documented in PR #93)
-- [ ] Production walkthrough completed with evidence (`PRODUCTION_WALKTHROUGH_RESULTS.md`)
+- [ ] Institutional Acceptance Test passed (`docs/PRODUCTION_WALKTHROUGH_RESULTS.md`)
+- [ ] `v1.0.0-beta.0` tagged (pre-P1 known-good baseline)
 - [ ] P1 complete: immutable policies, Trust Decision validity, observability
 - [ ] External security review against this document (not against raw code first)
 - [ ] Partner integration uses server-side receipt validation
@@ -330,7 +331,11 @@ Before institutional adoption, verify:
 ## 14. Roadmap Alignment
 
 ```
-Manual walkthrough
+Institutional Acceptance Test (IAT)
+        ↓
+Tag v1.0.0-beta.0 (pre-P1 checkpoint)
+        ↓
+API freeze → PROTOCOL_COMPATIBILITY.md
         ↓
 P1 hardening (immutable policies → validity → observability → telemetry)
         ↓

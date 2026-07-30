@@ -1,108 +1,166 @@
-# Production Walkthrough Checklist — Phase 1
+# Institutional Acceptance Test (IAT) — Execution Guide
 
-**Purpose:** Prove what exists before changing code.  
+**Document type:** Institutional Acceptance Test protocol  
+**Mindset:** _Would a regulated partner sign off on this?_ — not "does it click through?"  
 **Environment:** https://abraxas-app.vercel.app  
+**Results document:** `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`  
+**Trust Model:** `docs/TRUST_MODEL_V1.md`
+
 **Prerequisites:** Test Google account, admin PIN access, Supabase migrations 049–051 applied
 
-Record every step: timestamp, HTTP status, screenshot, API response snippet.
+---
+
+## Before you start
+
+The IAT produces **evidence**, not confidence-by-assertion. For every scenario, capture:
+
+| Field | Example |
+|-------|---------|
+| Scenario | New user → regulated purchase |
+| Expected result | Approved Trust Decision + signed receipt |
+| Actual result | Pass / Fail |
+| Request ID | `vr_*` or correlation ID |
+| Decision ID | `decision_id` |
+| Receipt ID | `dr_*` |
+| Duration | e.g. 1.8s |
+| Evidence | Screenshot + logs |
+| Notes | Any deviations |
+
+Record into `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`.
 
 ---
 
 ## Setup
 
-- [ ] Confirm migrations applied: `049`, `050` (GT biometric thresholds), `051` (return URLs)
-- [ ] Confirm `ABRAXAS_SIGNING_KEY` configured on Vercel
-- [ ] Confirm `ABRAXAS_BROWSER_SESSION_SECRET` configured
+- [ ] Confirm `main` commit matches production deployment SHA
+- [ ] Confirm migrations applied: `049`, `050`, `051`
+- [ ] Confirm `ABRAXAS_SIGNING_KEY` on Vercel
+- [ ] Confirm `ABRAXAS_BROWSER_SESSION_SECRET` on Vercel
+- [ ] Run automated pre-check:
+
+```bash
+npm test
+npm run audit:production
+npm run biometric:validate-policy
+```
+
 - [ ] Note starting `active_credentials` from `GET /api/metrics/public`
 
 ---
 
-## Path A — First-Time User
+## Scenario A — New user → regulated purchase
 
-| # | Step | Expected | Evidence | Pass? |
-|---|------|----------|----------|-------|
-| 1 | Land on `/good-trouble` | Page loads, "Continue with Abraxas" visible | Screenshot | |
-| 2 | Click Continue with Abraxas | Redirect to `/partner/verify?...` | URL bar | |
-| 3 | Sign in with Google (zkLogin) | Wallet created, session cookie set | `GET /api/auth/zklogin/me` → 200 | |
-| 4 | Partner evaluate runs | `POST /api/v1/partner-flow/evaluate` → `next: passport` | Network tab response | |
-| 5 | Redirect to Passport | `/passport?verify_request=...&return=...` | URL bar | |
-| 6 | Upload ID document | `POST /api/identity/documents/capture` or upload route → 200 | Response JSON | |
-| 7 | Upload selfie / biometric capture | Capture completes, `biometric.analyzed` in logs | Admin queue shows assessment | |
-| 8 | Admin reviews in `/admin/identity` | v3 signals visible, reason_codes shown | Screenshot | |
-| 9 | Admin approves | `POST /api/admin/identity/approve` → `ok: true`, `jti` returned | Response JSON | |
-| 10 | Credential issued | `abraxas_credentials` row exists; `active_credentials` +1 | DB or metrics | |
-| 11 | Partner complete runs | `POST /api/v1/partner-flow/complete` → `redirect_url` | Network tab | |
-| 12 | Redirect to `/good-trouble/enter?receipt_id=...` | Receipt validates, "You're in" | Screenshot | |
-| 13 | Receipt signature valid | `GET /api/receipts/{id}/public` → `signature_valid: true` | Response JSON | |
-| 14 | No PII in callback URL | URL contains only `receipt_id`, `status`, `credential_id` — no DOB/images | URL inspection | |
+_End-to-end: authorization → zkLogin → Passport → consent → policy eval → Trust Decision → signed receipt._
 
----
+| # | Step | Expected | Capture |
+|---|------|----------|---------|
+| 1 | Land on `/good-trouble` | "Continue with Abraxas" visible | Screenshot |
+| 2 | Click Continue with Abraxas | Redirect to `/partner/verify?...` | URL |
+| 3 | Sign in with Google (zkLogin) | Session cookie set | `GET /api/auth/zklogin/me` → 200 |
+| 4 | Partner evaluate | `POST /api/v1/partner-flow/evaluate` → `next: passport` | Request ID, response JSON |
+| 5 | Redirect to Passport | `/passport?verify_request=...` | URL |
+| 6 | Consent ceremony | Session required; atomic submit | verification_request ID |
+| 7 | Upload ID document | Capture → 200 | Response JSON |
+| 8 | Upload selfie / biometric | Assessment queued | Admin queue screenshot |
+| 9 | Admin approves | `jti` returned | Response JSON |
+| 10 | Credential issued | `active_credentials` +1 | Metrics or DB |
+| 11 | Partner complete | `redirect_url` with receipt | Network tab |
+| 12 | Enter page | Receipt validates, "You're in" | Screenshot |
+| 13 | Receipt signature | `signature_valid: true` | `GET /api/receipts/{id}/public` |
+| 14 | Callback URL | No PII — only `receipt_id`, `status`, `credential_id` | URL inspection |
+| 15 | Trust Decision fetch | Partner-scoped `GET /api/v1/verify/decisions/{id}` | decision_id, JSON |
 
-## Path B — Returning User
-
-| # | Step | Expected | Evidence | Pass? |
-|---|------|----------|----------|-------|
-| 15 | Sign out / clear session | Session cleared | | |
-| 16 | Click Continue with Abraxas again | `/partner/verify` | | |
-| 17 | Sign in with same Google account | Same wallet address | | |
-| 18 | Evaluate runs once | `POST /api/v1/partner-flow/evaluate` → `next: enter` (NOT passport) | Response JSON | |
-| 19 | Redirect to GT with receipt | Immediate — no ID upload, no selfie | Screenshot | |
-| 20 | Single API call only | Only one evaluate call in network tab | Network tab | |
+**Fill Scenario A block in results doc.** Record decision_id, receipt_id, duration (evaluate → receipt).
 
 ---
 
-## Path C — Expired / Revoked Credential
+## Scenario B — Returning user → credential-first
 
-| # | Step | Expected | Evidence | Pass? |
-|---|------|----------|----------|-------|
-| 21 | Expire credential (admin or DB `expiration_date`) | Credential status → expired | | |
-| 22 | Continue with Abraxas | Evaluate → `next: passport` | Response JSON | |
-| 23 | Re-verify through Passport | New capture + admin approval | | |
-| 24 | New credential issued | New `jti`, redirect to GT | | |
+| # | Step | Expected | Capture |
+|---|------|----------|---------|
+| 1 | Clear session | Session gone | |
+| 2 | Continue with Abraxas | `/partner/verify` | |
+| 3 | Same Google account | Same wallet address | |
+| 4 | Single evaluate | `next: enter` — NOT passport | Response JSON, duration |
+| 5 | Immediate enter | No ID upload, no selfie | Screenshot |
+| 6 | Network tab | Exactly one evaluate call | HAR |
 
-| # | Step (revoked) | Expected | Evidence | Pass? |
-|---|----------------|----------|----------|-------|
-| 25 | Revoke credential via admin | `POST /api/credentials/revoke` | | |
-| 26 | Continue with Abraxas | Evaluate → passport path | | |
-
----
-
-## Path D — Failure Recovery
-
-| # | Step | Expected | Evidence | Pass? |
-|---|------|----------|----------|-------|
-| 27 | Close browser mid-capture, reopen | User can resume or restart without duplicate credential | | |
-| 28 | Admin rejects verification | User sees rejection message, can resubmit | | |
-| 29 | Partner redirect fails (simulate) | User sees recovery UI, not silent failure | | |
-| 30 | Expired session receipt | Refresh button re-issues receipt | `POST /api/v1/partner-flow/refresh` | |
+**Fill Scenario B block in results doc.**
 
 ---
 
-## Automated Pre-Check (run before walkthrough)
+## Scenario C — Expired / revoked credential
 
-```bash
-npm test                              # 353 tests
-npm run audit:production              # Live HTTP probes
-npm run biometric:validate-policy     # GT policy scenarios
+| # | Step | Expected | Capture |
+|---|------|----------|---------|
+| 1 | Expire credential | Status → expired | Before state |
+| 2 | Continue with Abraxas | `next: passport` | Response JSON |
+| 3 | Re-verify through Passport | New capture + approval | |
+| 4 | New credential + receipt | New `jti`, new `dr_*` | After state |
+
+| # | Step (revoked) | Expected | Capture |
+|---|----------------|----------|---------|
+| 5 | Revoke via admin | `POST /api/credentials/revoke` | |
+| 6 | Continue with Abraxas | Passport path again | |
+
+**Fill Scenario C block in results doc.**
+
+---
+
+## Scenario D — Failure recovery
+
+| # | Step | Expected | Capture |
+|---|------|----------|---------|
+| 1 | Close browser mid-capture | Resume or clean restart | Screenshot |
+| 2 | Admin rejects | User message, resubmit path | |
+| 3 | Redirect failure (simulate) | Recovery UI, not silent failure | |
+| 4 | Expired session receipt | `POST /api/v1/partner-flow/refresh` re-issues | Response JSON |
+| 5 | Duplicate complete | Same receipt (idempotent) | Network tab |
+
+**Fill Scenario D block in results doc.**
+
+---
+
+## Supplementary checks (if reviewer requires)
+
+- [ ] Invalid partner API key → 401
+- [ ] Cross-partner decision read → 403/404
+- [ ] Audit events queryable for evaluate + receipt issuance
+- [ ] Logs sufficient to diagnose a failed evaluate
+
+Record in supplementary protocol evidence sections of results doc.
+
+---
+
+## Institutional Acceptance Summary
+
+When all scenarios are complete, fill the **Institutional Acceptance Summary** in `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`:
+
+```
+Scenario A: PASS / FAIL
+Scenario B: PASS / FAIL
+Scenario C: PASS / FAIL
+Scenario D: PASS / FAIL
+
+Critical defects: 0
+High defects: 0
+Medium defects: X
+Low defects: X
+
+Recommendation:
+☐ Do not release
+☐ Ready for P1
+☐ Ready for external security review
 ```
 
 ---
 
-## Bug Fix Rule
+## On pass
 
-If any step fails during walkthrough:
-1. Log the failure with evidence
-2. Fix **only that bug**
-3. Re-run the failed step
-4. Do not start Phase 2 hardening until all Path A + B steps pass
+1. Sign the IAT results document
+2. Tag repository: **`git tag v1.0.0-beta.0 && git push origin v1.0.0-beta.0`**
+   - Checkpoint: architecture frozen, P0 complete, IAT passed — **before P1 changes**
+3. Create `docs/PROTOCOL_COMPATIBILITY.md`
+4. Begin P1-1 (immutable policy versions)
 
----
-
-## Sign-Off
-
-| Role | Name | Date | All paths pass? |
-|------|------|------|-----------------|
-| Engineering | | | |
-| Product | | | |
-
-When signed off: create `docs/PROTOCOL_COMPATIBILITY.md` (API freeze), then begin P1-1 (immutable policy versions). Do **not** start P1 until walkthrough passes.
+**Do not start P1 until the IAT passes and `v1.0.0-beta.0` is tagged.**
