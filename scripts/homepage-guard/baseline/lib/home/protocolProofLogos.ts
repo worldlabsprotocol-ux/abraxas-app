@@ -2,7 +2,9 @@
 // Partner media for Protocol in Action — compact strip, per-asset fit rules.
 
 import { PROTOCOL_PROOF_IMAGES } from "@/lib/home/protocolProofMedia";
-import { GOOD_TROUBLE_REGISTRY_IMAGE } from "@/lib/goodTrouble/registryEntry";
+
+/** Hand + smoke brand graphic — Protocol in Action proof media for Good Trouble. */
+export const GOOD_TROUBLE_PROTOCOL_PROOF_IMAGE = "/assets/partner-network/good-trouble-partner-brand.png";
 
 export interface ProtocolProofLogo {
   src: string;
@@ -31,11 +33,11 @@ export const PROTOCOL_PROOF_LOGOS: Record<string, ProtocolProofLogo> = {
     slotHeight: 76,
   },
   "good-trouble": {
-    src: GOOD_TROUBLE_REGISTRY_IMAGE,
+    src: GOOD_TROUBLE_PROTOCOL_PROOF_IMAGE,
     alt: "Good Trouble Canna",
-    fit: "contain",
+    fit: "cover",
+    objectPosition: "center center",
     slotHeight: 76,
-    containScale: 1.55,
   },
   passport: {
     src: "/icon-48.png",

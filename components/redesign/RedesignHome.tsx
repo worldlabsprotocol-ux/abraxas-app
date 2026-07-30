@@ -15,6 +15,7 @@ import { HomeVerificationPipeline } from "@/components/home/HomeVerificationPipe
 import { HomeTrustPillars } from "@/components/home/HomeTrustPillars";
 import { HomeRegulatedIndustries } from "@/components/home/HomeRegulatedIndustries";
 import { HomeProtocolInAction } from "@/components/home/HomeProtocolInAction";
+import { HomePartnerNetwork } from "@/components/home/HomePartnerNetwork";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { HomeDocsBrief } from "@/components/home/HomeDocsBrief";
 import { HomeRoadmapBrief } from "@/components/home/HomeRoadmapBrief";
@@ -38,6 +39,7 @@ function HomeContent() {
         <HomeTrustPillars />
         <HomeRegulatedIndustries />
         <HomeProtocolInAction />
+        <HomePartnerNetwork />
         <HomeLiveStats />
         <HomeDocsBrief />
         <HomeRoadmapBrief />

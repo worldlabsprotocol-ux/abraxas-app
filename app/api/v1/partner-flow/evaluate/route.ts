@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { evaluatePartnerFlow } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
+import { resolvePartnerFlowParams } from "@/lib/verify/resolveFlowParams";
+import { PermissionResolutionError } from "@/lib/verify/resolvePermission";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/v1/partner-flow/evaluate
- * Generic relying-party flow evaluation (Good Trouble is reference config).
+ * Generic relying-party flow evaluation (permission or policy_id).
  */
 export async function POST(request: NextRequest) {
   const session = await requireBrowserSession(request);
@@ -15,27 +17,47 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  let body: { partner_id?: string; policy_id?: string; return_url?: string };
+  let body: {
+    partner_id?: string;
+    relying_party_id?: string;
+    policy_id?: string;
+    permission?: string;
+    permission_version?: string;
+    return_url?: string;
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const partnerId = body.partner_id?.trim();
-  const policyId = body.policy_id?.trim();
+  const partnerId = (body.relying_party_id ?? body.partner_id)?.trim();
   const returnUrl = body.return_url?.trim();
-  if (!partnerId || !policyId || !returnUrl) {
+  if (!partnerId || !returnUrl) {
     return NextResponse.json(
-      { error: "partner_id, policy_id, and return_url are required" },
+      { error: "relying_party_id (or partner_id) and return_url are required" },
       { status: 400 },
     );
+  }
+
+  let policyId: string;
+  try {
+    ({ policyId } = resolvePartnerFlowParams({
+      relyingPartyId: partnerId,
+      policyId: body.policy_id,
+      permission: body.permission,
+      permissionVersion: body.permission_version,
+    }));
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Invalid permission or policy";
+    const status = e instanceof PermissionResolutionError ? 400 : 400;
+    return NextResponse.json({ error: msg }, { status });
   }
 
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
   if (!allowed) {
     return NextResponse.json(
-      { error: "return_url is not allowed for this partner" },
+      { error: "return_url is not allowed for this relying party" },
       { status: 400 },
     );
   }

@@ -11,11 +11,10 @@ describe("PROTOCOL_PROOF_LOGOS", () => {
     expect(PROTOCOL_PROOF_LOGOS.chickasaw.src).toContain("/assets/cpg/");
   });
 
-  it("uses contain fit for Good Trouble portrait logo", () => {
-    expect(PROTOCOL_PROOF_LOGOS["good-trouble"].fit).toBe("contain");
-    expect(PROTOCOL_PROOF_LOGOS["good-trouble"].src).toContain("good-trouble");
+  it("uses cover fit for Good Trouble hand brand graphic in Protocol in Action", () => {
+    expect(PROTOCOL_PROOF_LOGOS["good-trouble"].fit).toBe("cover");
+    expect(PROTOCOL_PROOF_LOGOS["good-trouble"].src).toContain("good-trouble-partner-brand");
     expect(PROTOCOL_PROOF_LOGOS["good-trouble"].slotHeight).toBe(76);
-    expect(PROTOCOL_PROOF_LOGOS["good-trouble"].containScale).toBeGreaterThan(1);
   });
 
   it("uses a readable default media strip height", () => {
