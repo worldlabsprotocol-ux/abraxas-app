@@ -134,7 +134,19 @@ Per scenario, capture: Request ID, Decision ID, Receipt ID, duration, screenshot
 **Sign-off document:** `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` (includes Institutional Acceptance Summary)  
 **Pre-check:** `npm run audit:production`
 
-**Success criterion:** Scenarios A–B pass minimum; A–D as exercised; zero Critical/High defects.
+**Success criterion:** All IAT release thresholds met (see below). Scenarios A–B required; C–D as exercised.
+
+### IAT release thresholds
+
+| Metric | Target |
+|--------|--------|
+| Critical defects | 0 |
+| High defects | 0 |
+| Regression suite | 100% passing (`npm test`) |
+| Security regressions | 0 |
+| Data integrity issues | 0 |
+| Reproducible failures | 0 |
+| IAT scenarios (A–D exercised) | 100% pass |
 
 **Bug fix rule:** Fix only validated defects. Rerun affected scenario before sign-off.
 
@@ -180,6 +192,16 @@ git push origin v1.0.0-beta.0
 ```
 
 This is not general availability. It is the **permanent known-good baseline** — if P1 introduces regression, compare against this tag.
+
+### Post-freeze PR discipline (after `v1.0.0-beta.0`)
+
+Every PR after the API freeze must answer **at least one** of these in its description:
+
+1. **Does this change the public protocol?** (must be versioned per `PROTOCOL_COMPATIBILITY.md`)
+2. **Does this strengthen protocol integrity?**
+3. **Does this fix a validated defect?**
+
+If the answer to all three is **no**, it does not belong after the freeze.
 
 ---
 

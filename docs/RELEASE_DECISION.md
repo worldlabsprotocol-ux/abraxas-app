@@ -6,6 +6,12 @@
 
 ---
 
+## Why this release exists
+
+> v1.0.0-beta.0 establishes the first stable protocol baseline. It freezes the public contract after successful institutional acceptance testing and P0 hardening. This release is intended for controlled pilots and serves as the reference point for future compatibility. Remaining work focuses on protocol integrity, observability, and operational maturity rather than expanding functionality.
+
+---
+
 ## Current readiness
 
 | Layer | Status |
@@ -34,6 +40,20 @@ All must be true before tagging:
 - [ ] Tagged `v1.0.0-beta.0`
 
 This tag is the **canonical known-good baseline** — the complete public contract snapshot before P1 changes.
+
+### IAT release thresholds
+
+Sign-off requires **measurable thresholds**, not subjective "looks good." All must meet target:
+
+| Metric | Target | Actual |
+|--------|--------|--------|
+| Critical defects | 0 | |
+| High defects | 0 | |
+| Regression suite | 100% passing | |
+| Security regressions | 0 | |
+| Data integrity issues | 0 | |
+| Reproducible failures | 0 | |
+| IAT scenarios (A–D exercised) | 100% pass | |
 
 ---
 
