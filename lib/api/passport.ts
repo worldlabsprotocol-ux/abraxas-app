@@ -138,8 +138,8 @@ export async function fetchCheckLevel(
   return res.json() as Promise<CheckLevelResponse>;
 }
 
-export async function fetchCredentialClaims(suiAddress: string): Promise<CredentialClaimsResponse> {
-  const res = await fetch(`/api/credentials/claims?sui=${encodeURIComponent(suiAddress)}`);
+export async function fetchCredentialClaims(_suiAddress: string): Promise<CredentialClaimsResponse> {
+  const res = await fetch("/api/credentials/claims", { credentials: "include" });
   if (!res.ok) throw new Error("Failed to load claims");
   return res.json() as Promise<CredentialClaimsResponse>;
 }

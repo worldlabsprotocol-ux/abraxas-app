@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const subject = normalizeSuiAddress(body.sui_address);
-    const result = await evaluateSubjectPolicy(subject, body.policy_id);
+    const result = await evaluateSubjectPolicy(subject, body.policy_id, auth.partnerId);
 
     void logPartnerUsage({
       endpoint: "/api/v1/policies/evaluate",
