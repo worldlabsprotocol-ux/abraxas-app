@@ -1,0 +1,23 @@
+{
+  "updatedAt": "2026-07-30T00:48:02.116Z",
+  "files": {
+    "components/redesign/RedesignHome.tsx": "3e4fa34fbfd429bf4b7e327716b2cde816fbc62c000726237714b101d3564915",
+    "components/redesign/AbraxasBootScreen.tsx": "360bd44557e8b9b126d045e7f9189b78ff4d4b01051e233484155e20379a6c7a",
+    "components/home/HomeSharpHero.tsx": "094ba7d0ebf7c4ffd198942b0a2456ba2a223dd1c050a04cd29e7747592bd47a",
+    "components/home/HomeProtocolInAction.tsx": "385b45b667a70550752015fbb41f4f7b6d68dbede8c0ac3362a1ffac469283a7",
+    "components/home/HomeWhyAbraxas.tsx": "dbbdd393551b7d76523a5129938df98d0a2d7f30b191b26642d1f2e6a7b7ad2b",
+    "components/home/HomeVerifyOnceDiagram.tsx": "5354960db6ee5e358fd142aabc733b8c3c2d98be1cbce73e66f7db5f97d76188",
+    "components/home/HomeVerificationPipeline.tsx": "f2e9fa4d0f9d93cb466035486fc675a6788d004edff939305b8dfd1dded2804a",
+    "components/home/HomeTrustPillars.tsx": "a989f6cc452bf0d331cf9f32b3d1bf9c5c4149e61a763b2e34083632566d1ed5",
+    "components/home/HomeRegulatedIndustries.tsx": "c62c4c821d4e92a8578f9cc50985967925c7bd42cde25979f1847e4ebeba9fa1",
+    "components/home/HomeLiveStats.tsx": "c522fbac15d716b507a1c6a7aefd24f356637db0956ce10f8006d9da3c9d10a9",
+    "components/home/HomeDocsBrief.tsx": "175357a186ef4b66a1602ec53d85280bc53fa44fb135de9ef393f77bd04f7f85",
+    "components/home/HomeRoadmapBrief.tsx": "1530611df12ebd5464c3243384e9cbb672a3d44d437654a0b2989e795819c0f8",
+    "components/home/HomeRegistrySlideshow.tsx": "973238ea187bdb5db94a95c5810346d308947fefcdc3636ef2438ec9e828f9b7",
+    "lib/home/protocolProofLogos.ts": "d1a6e97a4efa083172aa003bd930a1b0fc14707e48932843cd8228a58bc4c94a",
+    "lib/home/protocolProofMedia.ts": "23e094aea4b2d1c120c815a50dded852319a7fde91ad4914c04a6131177faba7",
+    "lib/home/ecosystemContent.ts": "14f2c3efa54610a4f1824068fcf640521253437bd02bf41555cbb3673c0dba6f",
+    "app/globals.home.css": "57ed5d6c23c5a2e258445037b8506b235267116d3bae8a78136c2506444fb5a1",
+    "assets/icon-48.png": "3d3dcbcaf12e30ae599c8b003b63c71825b6aaea3169dfdddc8cd85759a11711"
+  }
+}

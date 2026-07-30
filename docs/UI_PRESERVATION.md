@@ -1,126 +1,93 @@
-# Homepage UI Preservation (Standing Rule)
+# Homepage UI Preservation — Repository Enforcement
 
-**Approved baseline reference:**  
-https://abraxas-app-git-cursor-ph-f13dce-worldlabsprotocol-uxs-projects.vercel.app/
+**The repository enforces the homepage baseline. You do not need to remember a merge process.**
 
-**Baseline commit:** `9e5db2f` (`fix(home): restore centered typography and Protocol in Action images`)  
-**Included in:** PR #89 (`cursor/phase0-security-fixes-d541`) — merge to `main` restores production homepage.
-
-This is a **protected surface**. Functional engineering PRs must not change homepage visuals unless a redesign is explicitly requested.
+**Approved reference:** https://abraxas-app-git-cursor-ph-f13dce-worldlabsprotocol-uxs-projects.vercel.app/  
+**Single source of truth:** `scripts/homepage-guard/manifest.json`  
+**Baseline snapshots:** `scripts/homepage-guard/baseline/`
 
 ---
 
-## Design invariants (do not change without explicit redesign PR)
+## How it works
 
-### 1. Hero layout
+Every PR runs `npm run check:homepage-guard` in CI. The guard:
 
-- Centered column alignment (`textAlign: center`, `alignItems: center` on `RedesignHome` shell).
-- `abx-home-hero` and `abx-home-hero-actions` classes on hero section.
-- Do **not** recenter the entire viewport differently or flatten visual hierarchy.
+1. Compares protected files to committed baseline snapshots (byte-for-byte hashes).
+2. Verifies critical markers (hero centering, Protocol in Action media, CSS tokens).
+3. Verifies protected assets exist and match baseline.
+4. **Fails** if anything regressed — with a report of exactly what changed.
+5. **Fails** if protected paths were edited in the PR without `[ui-change]` in the title or description.
 
-### 2. Protocol in Action
-
-- All partner media assets must render via `PROTOCOL_PROOF_LOGOS` + `ProofMediaMark`.
-- Cielo, Chickasaw, and Good Trouble images/logos must remain visible.
-- Do **not** remove, replace, or hide assets because they appear "unused" in a refactor.
-
-### 3. Homepage visual design
-
-- Do **not** modify typography, spacing, image placement, cards, or section order during unrelated work.
-- `abx-home-*` CSS in `app/globals.css` is part of the approved baseline.
+There is **no silent bypass**. Accidental homepage edits cannot merge.
 
 ---
 
-## Protected files
+## Intentional redesign (only path to change the homepage)
 
-Changes to these paths require homepage visual review (see checklist below):
+1. Add **`[ui-change]`** to the PR title or description.
+2. Make design edits to protected files.
+3. Run **`npm run homepage:baseline:refresh`** and commit updated snapshots under `scripts/homepage-guard/baseline/`.
+4. CI passes when working tree matches the new baseline.
 
-```
-app/globals.css                          (abx-home-* rules only)
-components/redesign/RedesignHome.tsx
-components/redesign/AbraxasBootScreen.tsx
-components/home/HomeSharpHero.tsx
-components/home/HomeProtocolInAction.tsx
-components/home/HomeWhyAbraxas.tsx
-components/home/HomeVerifyOnceDiagram.tsx
-components/home/HomeVerificationPipeline.tsx
-components/home/HomeTrustPillars.tsx
-components/home/HomeRegulatedIndustries.tsx
-components/home/HomeLiveStats.tsx
-components/home/HomeDocsBrief.tsx
-components/home/HomeRoadmapBrief.tsx
-components/home/HomeRegistrySlideshow.tsx
-lib/home/protocolProofLogos.ts
-lib/home/protocolProofMedia.ts
-lib/home/ecosystemContent.ts
-public/assets/**                         (homepage proof media)
-```
+Local refresh uses the npm script (includes `--approved`). In automation, set `UI_APPROVED=true`.
 
 ---
 
-## PR guardrails
+## Protected surface (manifest-driven)
 
-1. **Treat the homepage as protected** — unrelated PRs should not touch protected paths.
-2. **Before merge:** run `npm run check:homepage` (static baseline tests).
-3. **If a PR changes protected files unintentionally:** restore from baseline commit `9e5db2f` before merge.
-4. **Never mix** visual redesigns with security, partner flow, or protocol hardening PRs.
-5. **Optional visual evidence:** `SCREENSHOT_BASE=<preview-url> node scripts/capture-homepage-screenshots.mjs`
+See `scripts/homepage-guard/manifest.json` for the canonical list:
 
----
+- All `components/home/*` homepage sections
+- `components/redesign/RedesignHome.tsx`, `AbraxasBootScreen.tsx`
+- `lib/home/protocolProof*.ts`, `ecosystemContent.ts`
+- `app/globals.css` → `abx-home-*` block only (extracted to baseline)
+- Referenced public assets (e.g. `/icon-48.png`)
 
-## UI regression checklist (per PR)
-
-| Check | Pass? |
-|-------|-------|
-| `npm run check:homepage` | |
-| PR does not modify protected paths (or redesign is intentional) | |
-| Hero centered; CTAs visible | |
-| Protocol in Action shows 3 proof cards **with images** | |
-| Passport connector card shows media strip | |
-| Section order unchanged in `RedesignHome.tsx` | |
-| No deleted files under `lib/home/protocolProof*` | |
+**Do not edit the manifest without `[ui-change]`.**
 
 ---
 
-## Root cause: why this keeps happening
-
-| Cause | What happens | Fix |
-|-------|--------------|-----|
-| **`main` behind feature branches** | Homepage restore landed on `cursor/homepage-ui-restore-d541` / Phase 0 branch but **not** on `main`. Production and new branches from `main` show the old text-only Protocol in Action cards. | Merge PR #89; branch new work from updated `main`. |
-| **Agents optimize for the task given** | Security/partner PRs don't mention homepage → agent refactors nearby components or drops "unused" image imports. | Standing rule + protected paths + `check:homepage` in CI. |
-| **False "unused asset" deletion** | `HomeProtocolInAction` lost `PROTOCOL_PROOF_LOGOS` import → images disappeared while cards still rendered. | Baseline tests assert `ProofMediaMark` + logo module imports. |
-| **Multiple homepage branches** | `homepage-visual-refresh`, `homepage-trust-ux`, `robinhood-homepage`, etc. diverge and conflict at merge. | One approved baseline; redesigns get their own PR; no drive-by edits. |
-| **Inline style → class migration partial** | Centering lived in `abx-home-*` CSS on one branch and inline styles on another; merges kept the wrong half. | Freeze baseline commit; restore full file set from `9e5db2f`, not piecemeal. |
-| **No automated guard** | Regressions merged because nothing failed CI when images were removed. | `lib/home/homepageBaseline.test.ts` + PR checklist. |
-
-**Not the cause:** Vercel, Next.js, ONNX, or security changes inherently breaking the homepage. Regressions are **merge discipline + missing guards**, not platform issues.
-
----
-
-## Restore procedure (if regression detected)
+## Commands
 
 ```bash
-git show 9e5db2f --stat   # verify file list
-git checkout 9e5db2f -- \
-  app/globals.css \
-  components/home/ \
-  components/redesign/RedesignHome.tsx \
-  components/redesign/AbraxasBootScreen.tsx \
-  lib/home/protocolProofLogos.ts \
-  lib/home/protocolProofMedia.ts \
-  lib/home/ecosystemContent.ts \
-  lib/home/protocolProofLogos.test.ts \
-  lib/home/ecosystemContent.test.ts
-
-npm run check:homepage
+npm run check:homepage-guard      # CI + pre-push — fails on any drift
+npm run check:homepage            # structural invariant tests
+npm run homepage:baseline:refresh # after approved [ui-change] redesign
 ```
-
-Do not alter restored files beyond what is needed to resolve merge conflicts with legitimate functional changes.
 
 ---
 
-## Related
+## Root cause (why enforcement exists)
 
-- `docs/ENGINEERING_ROADMAP.md` — PR process includes homepage check
-- `scripts/capture-homepage-screenshots.mjs` — visual evidence capture
-- `lib/home/protocolProofLogos.test.ts` — asset path assertions
+| Cause | Enforcement |
+|-------|-------------|
+| Feature branches from stale `main` | Baseline snapshots in repo; CI fails on drift |
+| Agents drop "unused" image imports | Marker checks for `ProofMediaMark`, `PROTOCOL_PROOF_LOGOS` |
+| Partial merges | Full-file baseline comparison |
+| No CI guard | `check:homepage-guard` required in `.github/workflows/ci.yml` |
+
+---
+
+## Design invariants (human-readable summary)
+
+1. **Hero** — centered (`abx-home-hero`, shell `textAlign` / `alignItems` center).
+2. **Protocol in Action** — all partner media via `ProofMediaMark` + `PROTOCOL_PROOF_LOGOS`.
+3. **Typography / spacing** — `abx-home-*` CSS block unchanged unless `[ui-change]` + baseline refresh.
+
+---
+
+## Restore from regression
+
+If CI reports drift and the change was accidental:
+
+```bash
+git checkout HEAD -- components/home/HomeProtocolInAction.tsx  # example
+npm run check:homepage-guard
+```
+
+Or restore entire baseline from last good commit:
+
+```bash
+git checkout HEAD -- scripts/homepage-guard/baseline/
+npm run homepage:baseline:refresh  # only if working tree is the approved design
+```

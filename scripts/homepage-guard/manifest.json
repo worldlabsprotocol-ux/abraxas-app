@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "baselineCommit": "9e5db2f",
+  "referenceUrl": "https://abraxas-app-git-cursor-ph-f13dce-worldlabsprotocol-uxs-projects.vercel.app/",
+  "approvalMarkers": {
+    "envVar": "UI_APPROVED",
+    "envValue": "true",
+    "prTag": "[ui-change]",
+    "commitTag": "[ui-change]"
+  },
+  "protectedFiles": [
+    "components/redesign/RedesignHome.tsx",
+    "components/redesign/AbraxasBootScreen.tsx",
+    "components/home/HomeSharpHero.tsx",
+    "components/home/HomeProtocolInAction.tsx",
+    "components/home/HomeWhyAbraxas.tsx",
+    "components/home/HomeVerifyOnceDiagram.tsx",
+    "components/home/HomeVerificationPipeline.tsx",
+    "components/home/HomeTrustPillars.tsx",
+    "components/home/HomeRegulatedIndustries.tsx",
+    "components/home/HomeLiveStats.tsx",
+    "components/home/HomeDocsBrief.tsx",
+    "components/home/HomeRoadmapBrief.tsx",
+    "components/home/HomeRegistrySlideshow.tsx",
+    "lib/home/protocolProofLogos.ts",
+    "lib/home/protocolProofMedia.ts",
+    "lib/home/ecosystemContent.ts"
+  ],
+  "protectedCss": {
+    "source": "app/globals.css",
+    "baseline": "app/globals.home.css",
+    "startMarker": "/* Homepage section rhythm"
+  },
+  "criticalMarkers": [
+    {
+      "id": "hero-centered",
+      "file": "components/home/HomeSharpHero.tsx",
+      "mustContain": ["abx-home-hero", "abx-home-hero-actions"]
+    },
+    {
+      "id": "home-shell-centered",
+      "file": "components/redesign/RedesignHome.tsx",
+      "mustContain": ["textAlign: \"center\"", "alignItems: \"center\""]
+    },
+    {
+      "id": "protocol-in-action-media",
+      "file": "components/home/HomeProtocolInAction.tsx",
+      "mustContain": ["PROTOCOL_PROOF_LOGOS", "ProofMediaMark", "abx-home-proof-grid", "abx-home-section-center"]
+    },
+    {
+      "id": "protocol-proof-partners",
+      "file": "lib/home/protocolProofLogos.ts",
+      "mustContain": ["cielo", "chickasaw", "good-trouble", "passport"]
+    },
+    {
+      "id": "homepage-css-tokens",
+      "file": "app/globals.css",
+      "mustContain": [".abx-home-section-center", ".abx-home-proof-card", ".abx-home-proof-media", ".abx-home-hero"]
+    }
+  ],
+  "protectedAssetPaths": [
+    "/icon-48.png"
+  ]
+}
