@@ -2,12 +2,18 @@
 // Holder preview of a partner verification request (before consent).
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { getVerificationRequestPreview } from "@/lib/verification/requestsService";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireBrowserSession(req);
+  if (!session.ok) {
+    return NextResponse.json({ error: session.error }, { status: session.status });
+  }
+
   const { id } = await params;
 
   try {

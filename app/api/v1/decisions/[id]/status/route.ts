@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
-import { getDecisionStatus } from "@/lib/verification/requestsService";
+import { getDecisionStatusForPartner } from "@/lib/verification/decisionAccess";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export async function GET(
@@ -17,7 +17,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const decision = await getDecisionStatus(id);
+  const decision = await getDecisionStatusForPartner(id, auth.partnerId);
 
   if (!decision) {
     void logPartnerUsage({

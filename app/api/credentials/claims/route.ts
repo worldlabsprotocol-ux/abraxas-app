@@ -1,21 +1,21 @@
 // FILE: app/api/credentials/claims/route.ts
-// GET active credential claims for a subject (Passport UI + integrators).
+// GET active credential claims for authenticated holder (Passport UI).
 
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { claimTypeLabel } from "@/lib/credentials/claimSchema";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const sui = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
-  if (!sui) {
-    return NextResponse.json({ error: "sui param required" }, { status: 400 });
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   try {
-    const subject = normalizeSuiAddress(sui);
+    const subject = auth.session.suiAddress;
     const claims = await getActiveClaims(subject);
 
     return NextResponse.json({
