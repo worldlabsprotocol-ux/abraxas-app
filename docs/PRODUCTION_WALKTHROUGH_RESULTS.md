@@ -222,8 +222,8 @@ _Use when a regulated reviewer needs step-level proof beyond the four scenarios.
 _Select one:_
 
 - [ ] **Do not release** — critical/high defects or scenario failure
-- [ ] **Ready for P1** — Scenarios A–B pass (C–D as exercised); tag `v1.0.0-beta.0` → API freeze → P1-1
-- [ ] **Ready for external security review** — all scenarios pass; P1 complete; review against Trust Model v1
+- [ ] **Ready to tag v1.0.0-beta.0** — Scenarios A–B pass (C–D as exercised); complete `PROTOCOL_COMPATIBILITY.md` + `RELEASE_DECISION.md` → tag
+- [ ] **Ready to enter external security review** — all scenarios pass; P1 complete; review against Trust Model v1
 
 ---
 
@@ -239,6 +239,7 @@ _Select one:_
 
 ## On pass — next gates
 
-1. Tag repository: **`v1.0.0-beta.0`** (architecture frozen, P0 complete, IAT passed — before P1 changes)
-2. Create `docs/PROTOCOL_COMPATIBILITY.md` (API freeze)
-3. Begin P1-1: immutable policy versions
+1. Create `docs/PROTOCOL_COMPATIBILITY.md` (public contract freeze)
+2. Complete `docs/RELEASE_DECISION.md` (release sign-off)
+3. Tag repository: **`v1.0.0-beta.0`** (canonical baseline — must include compatibility doc)
+4. Begin P1-1: immutable policy versions

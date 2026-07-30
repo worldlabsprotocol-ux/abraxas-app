@@ -319,7 +319,9 @@ Before institutional adoption, verify:
 
 - [ ] P0 regression suite passes (`npm test`, P0 subset documented in PR #93)
 - [ ] Institutional Acceptance Test passed (`docs/PRODUCTION_WALKTHROUGH_RESULTS.md`)
-- [ ] `v1.0.0-beta.0` tagged (pre-P1 known-good baseline)
+- [ ] Protocol Compatibility document complete (`docs/PROTOCOL_COMPATIBILITY.md`)
+- [ ] Release decision signed (`docs/RELEASE_DECISION.md`)
+- [ ] `v1.0.0-beta.0` tagged (canonical known-good baseline)
 - [ ] P1 complete: immutable policies, Trust Decision validity, observability
 - [ ] External security review against this document (not against raw code first)
 - [ ] Partner integration uses server-side receipt validation
@@ -333,13 +335,15 @@ Before institutional adoption, verify:
 ```
 Institutional Acceptance Test (IAT)
         ↓
-Tag v1.0.0-beta.0 (pre-P1 checkpoint)
-        ↓
 API freeze → PROTOCOL_COMPATIBILITY.md
+        ↓
+RELEASE_DECISION.md (sign-off)
+        ↓
+Tag v1.0.0-beta.0 (canonical known-good baseline)
         ↓
 P1 hardening (immutable policies → validity → observability → telemetry)
         ↓
-External security review (unknown unknowns, not known P1s)
+Ready to enter external security review (unknown unknowns, not known P1s)
         ↓
 v1.0.0-beta
         ↓
@@ -352,6 +356,7 @@ Second relying party
 
 | Document | Purpose |
 |----------|---------|
+| `docs/RELEASE_DECISION.md` | Release decision record at v1.0.0-beta.0 |
 | `docs/SECURITY_THREAT_MODEL.md` | STRIDE design review (pre-P0; partially superseded) |
 | `docs/PROTOCOL_MATURITY_AUDIT.md` | Idempotency, audit maturity |
 | `docs/PARTNER_FLOW_INTEGRATION.md` | Relying party integration guide |
