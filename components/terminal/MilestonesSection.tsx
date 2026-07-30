@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { ROADMAP } from "@/lib/protocolContent";
+import { isCompletedRoadmapPhase } from "@/lib/roadmapPublic";
 import { ScrollFade } from "./ui";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -50,7 +51,7 @@ export function MilestonesSection() {
                                 fontFamily: FONT, fontSize: "0.72rem",
                                 color: "var(--text-secondary)",
                                 lineHeight: 1.4 }}>
-                      {ms.phase === "Live now" ? "\u2713 " : ""}{item}
+                      {isCompletedRoadmapPhase(ms.phase) ? "\u2713 " : ""}{item}
                     </div>
                   ))}
                 </div>

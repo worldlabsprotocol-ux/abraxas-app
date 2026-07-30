@@ -1,47 +1,7 @@
 // FILE: lib/protocolContent.ts
 // Shared copy for protocol pages. Single source, no fabricated metrics.
 
-export const ROADMAP = [
-  {
-    phase: "Live now",
-    color: "#10B981",
-    items: [
-      "Sui zkLogin sign-in on /passport (Google → Sui address)",
-      "Verified credential system (W3C VC, did:sui, Ed25519 signed JWT)",
-      "Identity verification via Abraxas camera capture + review, or Veriff SDK (linked to zkLogin Sui address)",
-      "Sui Passport Move module on devnet + live object panel",
-      "Wyoming LLC formation flow",
-      "Asset verification pipeline (10-stage V5 lifecycle)",
-      "Music royalty audit intake",
-      "Cielo Sunrise verified asset with real gallery and stablecoin booking",
-      "Dark premium homepage redesign",
-    ],
-  },
-  {
-    phase: "In progress",
-    color: "#F59E0B",
-    items: [
-      "Document review for Business, Property, and Asset Owner stamps",
-      "Self-serve purchase lifecycle status for buyers",
-      "On-chain stamp issuance after identity approve (sui_passport_objects)",
-      "Sponsored transaction treasury + tier allowances",
-      "Design partner applications via /integrations",
-    ],
-  },
-  {
-    phase: "Up next",
-    color: "#3B82F6",
-    items: [
-      "Sui mainnet Passport deployment",
-      "Intent message signing for integrators (gas-free proofs)",
-      "x402 HTTP payment path for verification packages",
-      "Institutional-grade secure storage integration (Utila)",
-      "Passport accepted on external protocols",
-      "Design partner integration pipeline (/integrations)",
-      "Public bug bounty program",
-    ],
-  },
-] as const;
+export { ROADMAP } from "./roadmapPublic";
 
 export const FAQ_ITEMS = [
   {
