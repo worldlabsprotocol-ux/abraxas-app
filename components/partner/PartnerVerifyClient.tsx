@@ -1,12 +1,13 @@
 "use client";
 // FILE: components/partner/PartnerVerifyClient.tsx
-// Generic partner verification hub — authenticate, evaluate credential, route to Passport or partner.
+// Abraxas Verify entry — lazy Passport creation, permission or policy routing.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
 import { Btn } from "@/components/redesign/ui";
+import { getPermissionDefinition } from "@/lib/verify/permissions";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -25,20 +26,29 @@ export function PartnerVerifyClient() {
   const [error, setError] = useState<string | null>(null);
   const [evaluating, setEvaluating] = useState(false);
 
-  const partnerId = searchParams.get("partner_id") ?? "";
+  const relyingPartyId = searchParams.get("relying_party_id")
+    ?? searchParams.get("partner_id")
+    ?? "";
+  const permission = searchParams.get("permission") ?? "";
+  const permissionVersion = searchParams.get("permission_version") ?? "";
   const policyId = searchParams.get("policy_id") ?? "";
   const returnUrl = searchParams.get("return_url") ?? "";
 
+  const permissionLabel = useMemo(() => {
+    if (!permission) return null;
+    return getPermissionDefinition(permission)?.consentLabel ?? permission;
+  }, [permission]);
+
   const evaluate = useCallback(async () => {
-    if (!partnerId || !policyId || !returnUrl) {
-      setError("Missing partner_id, policy_id, or return_url.");
+    if (!relyingPartyId || !returnUrl || (!policyId && !permission)) {
+      setError("Missing relying party, return URL, and permission or policy.");
       return;
     }
     if (!suiAddress) return;
 
     setEvaluating(true);
     setError(null);
-    setStatus("Checking your credential…");
+    setStatus("Checking your credentials…");
 
     try {
       const res = await fetch("/api/v1/partner-flow/evaluate", {
@@ -46,8 +56,10 @@ export function PartnerVerifyClient() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          partner_id: partnerId,
-          policy_id: policyId,
+          relying_party_id: relyingPartyId,
+          permission: permission || undefined,
+          permission_version: permissionVersion || undefined,
+          policy_id: policyId || undefined,
           return_url: returnUrl,
         }),
       });
@@ -55,17 +67,17 @@ export function PartnerVerifyClient() {
       if (!res.ok) throw new Error(data.error ?? "Evaluation failed");
 
       if (data.next === "enter" && data.redirect_url) {
-        setStatus("Verified — returning to partner…");
+        setStatus("Verified — returning…");
         window.location.href = data.redirect_url;
         return;
       }
       if (data.next === "passport" && data.passport_url) {
-        setStatus("Passport verification required…");
+        setStatus("Completing verification…");
         window.location.href = data.passport_url;
         return;
       }
       if (data.next === "pending_review") {
-        setStatus("Your verification is under manual review. Check back after approval.");
+        setStatus("Your verification is under review. Check back after approval.");
         return;
       }
       if (data.next === "denied") {
@@ -78,12 +90,12 @@ export function PartnerVerifyClient() {
     } finally {
       setEvaluating(false);
     }
-  }, [partnerId, policyId, returnUrl, suiAddress]);
+  }, [relyingPartyId, permission, permissionVersion, policyId, returnUrl, suiAddress]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!partnerId || !policyId || !returnUrl) {
-      setError("Invalid partner verification link. partner_id, policy_id, and return_url are required.");
+    if (!relyingPartyId || !returnUrl || (!policyId && !permission)) {
+      setError("Invalid verification link. A permission or policy is required.");
       return;
     }
     if (suiAddress) {
@@ -91,7 +103,7 @@ export function PartnerVerifyClient() {
     } else {
       setStatus("Sign in to continue with Abraxas.");
     }
-  }, [authLoading, suiAddress, partnerId, policyId, returnUrl, evaluate]);
+  }, [authLoading, suiAddress, relyingPartyId, policyId, permission, returnUrl, evaluate]);
 
   return (
     <div style={{
@@ -101,13 +113,15 @@ export function PartnerVerifyClient() {
       border: "1px solid var(--border-strong)",
     }}>
       <div style={{ fontSize: "0.7rem", color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 8 }}>
-        ABRAXAS PARTNER VERIFY
+        ABRAXAS VERIFY
       </div>
       <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.75rem", fontWeight: 800 }}>
         Continue with Abraxas
       </h1>
       <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 1rem" }}>
-        Partner <strong>{partnerId}</strong> · Policy <strong>{policyId}</strong>
+        {permissionLabel
+          ? <>Verifying: <strong>{permissionLabel}</strong></>
+          : <>Policy <strong>{policyId}</strong></>}
       </p>
 
       {!suiAddress && !authLoading && (

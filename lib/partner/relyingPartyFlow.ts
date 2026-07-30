@@ -151,7 +151,7 @@ export async function issuePartnerSessionReceipt(input: {
   policyId: string;
   credentialJti: string;
   verificationRequestId?: string;
-}): Promise<{ receipt_id: string; receipt_expires_at: string; partner_result: PartnerVerificationResult }> {
+}): Promise<{ decision_id: string; receipt_id: string; receipt_expires_at: string; partner_result: PartnerVerificationResult }> {
   const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(input.suiAddress);
   const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
@@ -220,6 +220,7 @@ export async function issuePartnerSessionReceipt(input: {
   });
 
   return {
+    decision_id: decisionId,
     receipt_id: receipt.id,
     receipt_expires_at: sessionExpires,
     partner_result,
@@ -268,7 +269,7 @@ export async function evaluatePartnerFlow(input: {
     const { evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
 
     if (evaluation.decision === "approved") {
-      const { receipt_id, receipt_expires_at, partner_result } = await issuePartnerSessionReceipt({
+      const { decision_id, receipt_id, receipt_expires_at, partner_result } = await issuePartnerSessionReceipt({
         suiAddress: subject,
         partnerId: input.partnerId,
         policyId: input.policyId,
@@ -277,6 +278,7 @@ export async function evaluatePartnerFlow(input: {
 
       const redirect_url = buildRedirectUrl(input.returnUrl, {
         status: "approved",
+        decision_id,
         receipt_id,
         receipt_expires_at,
         credential_id: credential.credential_jti,
@@ -337,7 +339,7 @@ export async function completePartnerFlowAfterApproval(input: {
     return { ok: false, error: "Credential not yet active" };
   }
 
-  const { partner_result, receipt_id, receipt_expires_at } = await issuePartnerSessionReceipt({
+  const { decision_id, partner_result, receipt_id, receipt_expires_at } = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -347,6 +349,7 @@ export async function completePartnerFlowAfterApproval(input: {
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {
     status: partner_result.decision,
+    decision_id,
     receipt_id,
     receipt_expires_at,
     credential_id: credential.credential_jti,
@@ -379,7 +382,7 @@ export async function refreshPartnerSessionReceipt(input: {
     return { next: "denied", reason_codes: evaluation.reason_codes };
   }
 
-  const { receipt_id, receipt_expires_at, partner_result } = await issuePartnerSessionReceipt({
+  const { decision_id, receipt_id, receipt_expires_at, partner_result } = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -388,6 +391,7 @@ export async function refreshPartnerSessionReceipt(input: {
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {
     status: "approved",
+    decision_id,
     receipt_id,
     receipt_expires_at,
     credential_id: credential.credential_jti,
