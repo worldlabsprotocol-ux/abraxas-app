@@ -24,9 +24,9 @@ export const PARTNER_NETWORK_TITLE = "Partner Network";
 export const PARTNER_NETWORK_SUBTITLE =
   "Organizations building on reusable trust through Abraxas.";
 
-/** Good Trouble brand mark — hand + smoke on green (partner-provided graphic). */
+/** Good Trouble script logo — Partner Network card (registry wordmark). */
 export const GOOD_TROUBLE_PARTNER_IMAGE: PartnerNetworkImage = {
-  src: "/assets/partner-network/good-trouble-partner-brand.png",
+  src: "/assets/good-trouble/brand-logo.png",
   alt: "Good Trouble — reusable age verification for cannabis retail",
   objectPosition: "center center",
   fit: "contain",

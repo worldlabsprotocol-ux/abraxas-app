@@ -35,13 +35,14 @@ describe("partnerNetwork", () => {
     expect(partnerNetworkStatusEmoji("design_partner")).toBe("🟡");
   });
 
-  it("uses lookbook cover for Premiere, brand lifestyle for SMAK'D, and brand mark for Good Trouble", () => {
+  it("uses script logo for Good Trouble in Partner Network", () => {
     const premiere = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "premiere");
     const smakd = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "smakd");
     const gt = LIVE_PARTNER_NETWORK_CARDS[0];
     expect(premiere?.image?.src).toBe(PREMIERE_PARTNER_IMAGE.src);
     expect(smakd?.image?.src).toBe(SMAKD_PARTNER_IMAGE.src);
-    expect(gt?.image?.src).toMatch(/good-trouble-partner-brand/);
+    expect(gt?.image?.src).toBe(GOOD_TROUBLE_PARTNER_IMAGE.src);
+    expect(GOOD_TROUBLE_PARTNER_IMAGE.src).toContain("good-trouble/brand-logo");
     expect(PREMIERE_PARTNER_IMAGE.src).toMatch(/premiere-lookbook-cover/);
     expect(SMAKD_PARTNER_IMAGE.src).toMatch(/smakd-brand-lifestyle/);
   });
