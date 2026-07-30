@@ -11,15 +11,21 @@
 
 If you cannot answer **"why does this token exist?"** for a specific utility, that utility should not exist.
 
-ABX is **not** required for Abraxas to verify identity, issue credentials, or run the partner flow. The protocol works without a token today. ABX exists — or will exist — to **operate and secure the trust network** once the network has real participants:
+ABX is **not** required for Abraxas to verify identity, issue credentials, or run the partner flow. **The protocol is functional without ABX.** The token is not what makes verification possible — it **aligns incentives and secures participation** in the Abraxas trust network as adoption grows:
 
 - Align incentives among **issuers, verifiers, and relying partners**
-- Settle **protocol fees** for verification and settlement work
+- Settle **protocol fees** tied to measurable verification activity
 - **Stake** economic weight behind honest infrastructure behavior
 - **Govern** shared standards after the network has users
 - **Reward** contributions that reduce fraud and improve trust quality
 
 **Holders (end users) should barely know ABX exists.** Passport, credentials, and partner verification must remain usable with fiat or abstracted billing. Network operators — partners, issuers, verifiers — are the primary economic actors.
+
+### "Can Abraxas work without the token?"
+
+> **Yes.** The protocol is functional without ABX. ABX strengthens the network by aligning incentives, securing participation, settling protocol fees, and enabling decentralized governance as adoption grows.
+
+ABX is subordinate to the protocol, not the other way around. Do not invent utility first — attach the token only after the trust layer is proven and frozen (`v1.0.0-beta`).
 
 ```
 Users
@@ -44,6 +50,7 @@ ABX powers settlement, staking, governance, incentives
 | **No holder toll** | Users do not pay ABX to verify identity or obtain credentials |
 | **Utility = trust support** | Every ABX use case must strengthen verification quality, accountability, or network sustainability |
 | **No artificial demand** | No mechanics whose primary purpose is "create buy pressure" |
+| **Activity-coupled utility** | Every ABX use maps to measurable protocol activity (verify, stake, slash, govern) — not speculative holding |
 | **Abstract at the edge** | Partners may pay in fiat/stablecoin; protocol can settle internally in ABX |
 | **Versioned economics** | Fee schedules, stake minimums, and slashing rules are governance parameters — not hardcoded surprises |
 | **Receipts stay canonical** | Decision receipts (`schema_version: 1.0.0`) remain the trust artifact; ABX does not replace cryptographic proof |
@@ -217,6 +224,33 @@ One-partner-one-vote floor for registered partners below stake minimum (advisory
 - Rewards for merely holding ABX
 
 **Funding:** Protocol fees → treasury → rewards pool. Emissions (if any) are governance-capped and decay over time.
+
+---
+
+### 6. Trust insurance / dispute bonds (future — medium confidence)
+
+**Purpose:** Give ABX a direct role in network trust beyond fees and governance — compensating harm when operators fail.
+
+**Not implemented in any phase until Token Phase 3.** Document now; build only after protocol is proven and frozen.
+
+**Mechanism:**
+
+1. Verifier or issuer posts an **ABX bond** (subset of stake, earmarked for disputes).
+2. If they issue fraudulent credentials or violate protocol rules, a portion of the bond is **slashed**.
+3. Slashed funds flow to a **dispute resolution pool** that can:
+   - Compensate affected relying partners (e.g. wrongful access granted)
+   - Fund independent audit of disputed receipts / credentials
+   - Remediate holder harm (policy-defined caps; never replaces legal process)
+
+**Coupling to protocol activity:**
+
+| Trigger | Evidence | Bond action |
+|---------|----------|-------------|
+| Fraudulent credential upheld in dispute | Receipt ID + credential JTI + audit | Bond slash → partner compensation |
+| Verifier policy violation | Admin + biometric audit trail | Partial slash → dispute pool |
+| False dispute (partner abuse) | Failed dispute after review | Complainant loses deposit (anti-spam) |
+
+Bond size scales with stake tier and policy risk class. This extends staking (§1) — not a separate speculative product.
 
 ---
 
