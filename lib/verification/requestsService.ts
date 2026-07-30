@@ -3,12 +3,13 @@
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { claimTypeLabel, type ClaimType } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
-import type { PartnerPolicy, PolicyDecisionRecord } from "@/lib/policy/types";
+import { getPartnerPolicy } from "@/lib/policy/getPolicy";
+import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership";
+import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
+import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
-import { loadPolicyTrustContext } from "@/lib/trust/loadPolicyTrustContext";
 import {
   buildEvaluatedClaimRefs,
   claimTypesFromEvaluation,
@@ -18,18 +19,7 @@ import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
 
-export async function getPolicy(policyId: string): Promise<PartnerPolicy | null> {
-  const sb = requireSupabaseAdmin();
-  const { data } = await sb
-    .from("partner_policies")
-    .select("*")
-    .eq("id", policyId)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (!data) return null;
-  return data as PartnerPolicy;
-}
+export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 
 export async function createVerificationRequest(input: {
   partnerId: string;
@@ -40,8 +30,9 @@ export async function createVerificationRequest(input: {
   returnUrl?: string;
 }): Promise<{ request_id: string; consent_url: string; expires_at: string }> {
   const sb = requireSupabaseAdmin();
-  const policy = await getPolicy(input.policyId);
+  const policy = await getPartnerPolicy(input.policyId);
   if (!policy) throw new Error("Policy not found");
+  assertPolicyBelongsToPartner(policy, input.partnerId);
 
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const requestedClaims = input.requestedClaims?.length
@@ -111,7 +102,7 @@ export async function getVerificationRequestPreview(
 
   if (!request) return null;
 
-  const policy = await getPolicy(request.policy_id as string);
+  const policy = await getPartnerPolicy(request.policy_id as string);
   const requestedClaims = (request.requested_claims as string[]) ?? [];
   const policyClaims = (policy?.rules_json.required_claims ?? []).map(r => r.claim_type);
   const allClaims = Array.from(new Set([...requestedClaims, ...policyClaims]));
@@ -162,7 +153,11 @@ export async function consentAndDecide(input: {
     .maybeSingle();
 
   if (!request) throw new Error("Request not found");
-  if (request.status === "decided") throw new Error("Request already decided");
+
+  if (request.status === "decided") {
+    return getExistingConsentDecision(input.requestId, subject);
+  }
+
   if (new Date(request.expires_at as string) < new Date()) {
     await sb.from("verification_requests").update({ status: "expired" }).eq("id", input.requestId);
     throw new Error("Request expired");
@@ -172,26 +167,34 @@ export async function consentAndDecide(input: {
     throw new Error("This request is for a different Passport");
   }
 
-  const policy = await getPolicy(request.policy_id as string);
-  if (!policy) throw new Error("Policy not found");
+  const partnerId = request.partner_id as string;
+  const { policy, evaluation, claims } = await evaluatePolicyForSubject({
+    suiAddress: subject,
+    policyId: request.policy_id as string,
+    partnerId,
+  });
 
-  const claims = await getActiveClaims(subject);
-  const residency = claims.find(c => c.claim_type === "residency_country")?.claim_value?.country as string | undefined;
-  const trustContext = await loadPolicyTrustContext({
-    partnerId: request.partner_id as string,
-    policyId: policy.id,
-    jurisdiction: residency ?? claims.find(c => c.jurisdiction)?.jurisdiction,
-  });
-  const evaluation = evaluatePolicyRules(policy.rules_json, claims, {
-    jurisdiction: trustContext.jurisdiction,
-    partnerId: trustContext.partnerId,
-    policyId: trustContext.policyId,
-    trustRulesByClaimType: trustContext.trustRulesByClaimType,
-  });
+  const { data: claimed, error: claimError } = await sb
+    .from("verification_requests")
+    .update({
+      status: "decided",
+      subject_id: subject,
+      sui_address: subject,
+    })
+    .eq("id", input.requestId)
+    .eq("status", "pending")
+    .select("*")
+    .maybeSingle();
+
+  if (claimError) throw new Error(claimError.message);
+
+  if (!claimed) {
+    return getExistingConsentDecision(input.requestId, subject);
+  }
 
   const { data: consent } = await sb.from("consent_receipts").insert({
     subject_id: subject,
-    partner_id: request.partner_id as string,
+    partner_id: partnerId,
     request_id: input.requestId,
     purpose: request.requested_action as string,
     claims_authorized: Object.keys(evaluation.claims),
@@ -200,7 +203,7 @@ export async function consentAndDecide(input: {
 
   const { data: decisionRow } = await sb.from("verification_decisions").insert({
     request_id: input.requestId,
-    partner_id: request.partner_id as string,
+    partner_id: partnerId,
     subject_id: subject,
     policy_id: policy.id,
     policy_version: policy.version,
@@ -211,12 +214,11 @@ export async function consentAndDecide(input: {
     status: "active",
   }).select("id").single();
 
-  await sb.from("verification_requests").update({
-    status: "decided",
-    subject_id: subject,
-    sui_address: subject,
-    consent_id: consent?.id ?? null,
-  }).eq("id", input.requestId);
+  if (consent?.id) {
+    await sb.from("verification_requests")
+      .update({ consent_id: consent.id })
+      .eq("id", input.requestId);
+  }
 
   await appendAuditEvent({
     actor_type: "subject",
@@ -233,12 +235,15 @@ export async function consentAndDecide(input: {
   });
 
   const claimTypes = claimTypesFromEvaluation(evaluation.claims);
-  const evaluatedClaimRefs = buildEvaluatedClaimRefs(claims, claimTypes.length ? claimTypes : Object.keys(evaluation.claims));
+  const evaluatedClaimRefs = buildEvaluatedClaimRefs(
+    claims,
+    claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
+  );
 
   const receipt = await issueReceiptForDecision({
     decisionId: decisionRow?.id as string,
     consentReceiptId: consent?.id as string,
-    partnerId: request.partner_id as string,
+    partnerId,
     policyId: policy.id,
     policyVersion: policy.version,
     subjectId: subject,
@@ -252,13 +257,53 @@ export async function consentAndDecide(input: {
       : "production",
   });
 
+  if (!receipt) {
+    throw new Error("Failed to issue decision receipt");
+  }
+
   return {
     decision_id: decisionRow?.id as string,
-    receipt_id: receipt?.id ?? null,
+    receipt_id: receipt.id,
     decision: evaluation.decision,
     claims: evaluation.claims,
     reason_codes: evaluation.reason_codes,
     valid_until: evaluation.valid_until,
+  };
+}
+
+async function getExistingConsentDecision(
+  requestId: string,
+  subject: string,
+): Promise<{
+  decision_id: string;
+  receipt_id: string | null;
+  decision: string;
+  claims: Record<string, unknown>;
+  reason_codes: string[];
+  valid_until: string | null;
+}> {
+  const sb = requireSupabaseAdmin();
+  const { data: decisionRow } = await sb
+    .from("verification_decisions")
+    .select("*")
+    .eq("request_id", requestId)
+    .eq("subject_id", subject)
+    .order("decided_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!decisionRow) throw new Error("Request already decided");
+
+  const { getReceiptByDecisionId } = await import("@/lib/decisionReceipts/service");
+  const receipt = await getReceiptByDecisionId(decisionRow.id as string);
+
+  return {
+    decision_id: decisionRow.id as string,
+    receipt_id: receipt?.id ?? null,
+    decision: decisionRow.decision as string,
+    claims: (decisionRow.claims_json as Record<string, unknown>) ?? {},
+    reason_codes: (decisionRow.reason_codes as string[]) ?? [],
+    valid_until: (decisionRow.valid_until as string | null) ?? null,
   };
 }
 
@@ -348,34 +393,40 @@ export async function getDecisionStatus(decisionId: string): Promise<PolicyDecis
     return { ...mapped, status: "superseded", decision: "denied" };
   }
 
-  const claims = await getActiveClaims(mapped.subject_id);
-  const policy = await getPolicy(mapped.policy_id);
-  if (policy) {
-    const reeval = evaluatePolicyRules(policy.rules_json, claims);
-    if (reeval.decision === "denied") {
+  const { evaluation } = await evaluatePolicyForSubject({
+    suiAddress: mapped.subject_id,
+    policyId: mapped.policy_id,
+    partnerId: mapped.partner_id,
+  });
+
+  if (evaluation.decision === "denied") {
       await sb.from("verification_decisions")
-        .update({ status: "revoked", reason_codes: reeval.reason_codes })
+        .update({ status: "revoked", reason_codes: evaluation.reason_codes })
         .eq("id", decisionId);
       return {
         ...mapped,
         status: "revoked",
         decision: "denied",
-        reason_codes: reeval.reason_codes,
+        reason_codes: evaluation.reason_codes,
       };
     }
-  }
 
   return mapped;
 }
 
-/** Direct policy check without consent flow (first-party / internal) */
+/** Direct policy check — uses issuer trust context when partnerId provided. */
 export async function evaluateSubjectPolicy(
   suiAddress: string,
   policyId: string,
+  partnerId?: string,
 ): Promise<ReturnType<typeof evaluatePolicyRules> & { policy_id: string; policy_version: number }> {
-  const policy = await getPolicy(policyId);
+  const policy = await getPartnerPolicy(policyId);
   if (!policy) throw new Error("Policy not found");
-  const claims = await getActiveClaims(suiAddress);
-  const result = evaluatePolicyRules(policy.rules_json, claims);
-  return { ...result, policy_id: policy.id, policy_version: policy.version };
+  const effectivePartnerId = partnerId ?? policy.partner_id;
+  const { evaluation, policy: resolved } = await evaluatePolicyForSubject({
+    suiAddress,
+    policyId,
+    partnerId: effectivePartnerId,
+  });
+  return { ...evaluation, policy_id: resolved.id, policy_version: resolved.version };
 }

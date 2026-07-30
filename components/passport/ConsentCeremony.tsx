@@ -38,7 +38,7 @@ export function ConsentCeremony({
   const [result, setResult] = useState<{ decision: PolicyDecision | "declined"; decision_reference: string } | null>(null);
 
   useEffect(() => {
-    fetch(`/api/v1/verification-requests/${requestId}`)
+    fetch(`/api/v1/verification-requests/${requestId}`, { credentials: "include" })
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error);

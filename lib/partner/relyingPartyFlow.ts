@@ -3,8 +3,8 @@
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
-import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
-import { loadPolicyTrustContext } from "@/lib/trust/loadPolicyTrustContext";
+import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
+import { findActiveSessionDecision } from "@/lib/partner/sessionDecision";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
@@ -123,26 +123,7 @@ async function evaluateHolderPolicy(
   partnerId: string,
   policyId: string,
 ) {
-  const policy = await getPolicy(policyId);
-  if (!policy) throw new Error("Policy not found");
-  if (policy.partner_id !== partnerId) throw new Error("Policy does not belong to partner");
-
-  const claims = await getActiveClaims(suiAddress);
-  const residency = claims.find(c => c.claim_type === "residency_country")?.claim_value?.country as string | undefined;
-  const trustContext = await loadPolicyTrustContext({
-    partnerId,
-    policyId: policy.id,
-    jurisdiction: residency ?? claims.find(c => c.jurisdiction)?.jurisdiction,
-  });
-
-  const evaluation = evaluatePolicyRules(policy.rules_json, claims, {
-    jurisdiction: trustContext.jurisdiction,
-    partnerId,
-    policyId: policy.id,
-    trustRulesByClaimType: trustContext.trustRulesByClaimType,
-  });
-
-  return { policy, evaluation, claims };
+  return evaluatePolicyForSubject({ suiAddress, policyId, partnerId });
 }
 
 export async function issuePartnerSessionReceipt(input: {
@@ -152,8 +133,40 @@ export async function issuePartnerSessionReceipt(input: {
   credentialJti: string;
   verificationRequestId?: string;
 }): Promise<{ decision_id: string; receipt_id: string; receipt_expires_at: string; partner_result: PartnerVerificationResult }> {
-  const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(input.suiAddress);
+
+  const existing = await findActiveSessionDecision({
+    partnerId: input.partnerId,
+    subjectId: subject,
+    policyId: input.policyId,
+  });
+  if (existing) {
+    const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
+    const evaluatedAt = new Date().toISOString();
+    const identityVerified = Boolean(evaluation.claims.identity_verified);
+    const partner_result = buildPartnerVerificationResult({
+      decision: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
+      credentialJti: input.credentialJti,
+      issuer: ISSUER,
+      evaluatedAt,
+      receiptId: existing.receipt_id,
+      receiptExpiresAt: existing.receipt_expires_at,
+      policyId: policy.id,
+      partnerId: input.partnerId,
+      identityVerified,
+      minimumAge: policy.rules_json.minimum_age,
+      assuranceLevel: identityVerified ? "L2" : null,
+      reasonCodes: evaluation.reason_codes,
+    });
+    return {
+      decision_id: existing.decision_id,
+      receipt_id: existing.receipt_id,
+      receipt_expires_at: existing.receipt_expires_at,
+      partner_result,
+    };
+  }
+
+  const sb = requireSupabaseAdmin();
   const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
   const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
   const evaluatedAt = new Date().toISOString();
