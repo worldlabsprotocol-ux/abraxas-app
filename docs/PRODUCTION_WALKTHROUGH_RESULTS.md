@@ -203,6 +203,22 @@ _Use when a regulated reviewer needs step-level proof beyond the four scenarios.
 
 **Release gate — single document for advisors, security reviewers, and design partners.**
 
+Sign-off is based on **measurable thresholds**, not subjective approval.
+
+### IAT release thresholds
+
+| Metric | Target | Actual | Met? |
+|--------|--------|--------|------|
+| Critical defects | 0 | | |
+| High defects | 0 | | |
+| Regression suite | 100% passing | | |
+| Security regressions | 0 | | |
+| Data integrity issues | 0 | | |
+| Reproducible failures | 0 | | |
+| IAT scenarios (A–D exercised) | 100% pass | | |
+
+### Scenario results
+
 | Scenario | Result |
 |----------|--------|
 | **Scenario A** — New user → regulated purchase | _PASS / FAIL_ |
@@ -219,11 +235,11 @@ _Use when a regulated reviewer needs step-level proof beyond the four scenarios.
 
 ### Recommendation
 
-_Select one:_
+_Select one. All IAT release thresholds must be met to select "Ready to tag":_
 
-- [ ] **Do not release** — critical/high defects or scenario failure
-- [ ] **Ready to tag v1.0.0-beta.0** — Scenarios A–B pass (C–D as exercised); complete `PROTOCOL_COMPATIBILITY.md` + `RELEASE_DECISION.md` → tag
-- [ ] **Ready to enter external security review** — all scenarios pass; P1 complete; review against Trust Model v1
+- [ ] **Do not release** — any threshold not met
+- [ ] **Ready to tag v1.0.0-beta.0** — all thresholds met; complete `PROTOCOL_COMPATIBILITY.md` + `RELEASE_DECISION.md` → tag
+- [ ] **Ready to enter external security review** — P1 complete; review against Trust Model v1
 
 ---
 

@@ -134,7 +134,21 @@ Record in supplementary protocol evidence sections of results doc.
 
 ## Institutional Acceptance Summary
 
-When all scenarios are complete, fill the **Institutional Acceptance Summary** in `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`:
+When all scenarios are complete, fill the **Institutional Acceptance Summary** in `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`.
+
+**Sign-off requires measurable thresholds — not "all scenarios passed" by assertion.**
+
+### IAT release thresholds
+
+| Metric | Target |
+|--------|--------|
+| Critical defects | 0 |
+| High defects | 0 |
+| Regression suite | 100% passing |
+| Security regressions | 0 |
+| Data integrity issues | 0 |
+| Reproducible failures | 0 |
+| IAT scenarios (A–D exercised) | 100% pass |
 
 ```
 Scenario A: PASS / FAIL
@@ -142,12 +156,7 @@ Scenario B: PASS / FAIL
 Scenario C: PASS / FAIL
 Scenario D: PASS / FAIL
 
-Critical defects: 0
-High defects: 0
-Medium defects: X
-Low defects: X
-
-Recommendation:
+Recommendation (all thresholds must be met to tag):
 ☐ Do not release
 ☐ Ready to tag v1.0.0-beta.0
 ☐ Ready to enter external security review
