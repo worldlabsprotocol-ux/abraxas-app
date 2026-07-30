@@ -54,8 +54,9 @@ Fix vulnerabilities that could invalidate the walkthrough or expose sensitive da
 | Set `ADMIN_PIN` (server-only; remove `NEXT_PUBLIC_ADMIN_PIN`) | ⏳ | Vercel env |
 | Verify `NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID` | ⏳ | Required for JWKS audience check |
 | Run production walkthrough | ⏳ | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` |
+| Homepage unchanged (if not redesign PR) | ⏳ | `npm run check:homepage` — see `docs/UI_PRESERVATION.md` |
 
-> Merge PR #89 only after it passes CI and the production walkthrough environment is ready. Deploy immediately afterward and use that deployment for the walkthrough.
+> Merge PR #89 only after it passes CI and the production walkthrough environment is ready. Deploy immediately afterward and use that deployment for the walkthrough. **PR #89 includes the approved homepage baseline** — merging it restores production UI.
 
 ---
 
@@ -153,6 +154,7 @@ Present → renew → revoke → reissue → holder-facing history
 | `docs/BACKWARD_COMPATIBILITY_AUDIT.md` | API/credential/receipt stability |
 | `docs/PRODUCTION_READINESS_AUDIT.md` | Live HTTP probes |
 | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md` | Phase 1 manual script |
+| `docs/UI_PRESERVATION.md` | Homepage protected surface + regression checklist |
 
 ---
 
