@@ -1,48 +1,95 @@
 "use client";
 // FILE: components/home/HomeVerificationPipeline.tsx
-// End-to-end verification pipeline, trust infrastructure visualized.
+// How the protocol works — five steps from verification to Trust Decision.
 
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { HomePipelineFlow } from "./HomePipelineFlow";
+import { HOME_PROTOCOL_STEPS } from "@/lib/home/homeNarrative";
 
 const FONT = ABRAXAS_FONT_SANS;
-
-const PIPELINE_STEPS = [
-  { label: "Submit Documents", detail: "ID and selfie captured on Passport" },
-  { label: "AI & Biometric Analysis", detail: "Automated face match, liveness, and fraud signals" },
-  { label: "Human Review (if required)", detail: "Reviewer approves, rejects, or requests resubmission" },
-  { label: "Credential Issued", detail: "Signed verifiable credential anchored to the user" },
-  { label: "Reusable Across Partners", detail: "Relying parties verify proof. No repeat document upload." },
-] as const;
+const ACCENT = "#10B981";
 
 export function HomeVerificationPipeline() {
   return (
-    <section aria-labelledby="home-verification-pipeline" className="abx-home-section-center" style={{ width: "100%" }}>
+    <section aria-labelledby="home-how-it-works" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-          Verification pipeline
+          Protocol
         </div>
-        <h2 id="home-verification-pipeline" style={{
+        <h2 id="home-how-it-works" style={{
           fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
           letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.5rem",
         }}>
-          From documents to portable trust
+          How it works
         </h2>
         <p className="abx-home-section-lead">
-          Visitors understand processes faster than paragraphs. This is the path every verified identity follows.
+          From one-time verification to a signed decision partners can rely on.
         </p>
       </div>
-      <div style={{
-        padding: "clamp(1rem, 3vw, 1.35rem)",
-        borderRadius: 14,
-        background: "var(--surface-raised)",
-        border: "1px solid var(--border-strong)",
-        maxWidth: 960,
+      <ol style={{
         margin: "0 auto",
+        padding: 0,
+        listStyle: "none",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.65rem",
+        maxWidth: 720,
         width: "100%",
       }}>
-        <HomePipelineFlow steps={[...PIPELINE_STEPS]} />
-      </div>
+        {HOME_PROTOCOL_STEPS.map((item) => (
+          <li
+            key={item.step}
+            style={{
+              padding: "0.85rem 1rem",
+              borderRadius: 12,
+              background: "var(--surface-raised)",
+              border: "1px solid var(--border-strong)",
+              display: "flex",
+              gap: "0.85rem",
+              alignItems: "flex-start",
+              textAlign: "left",
+            }}
+          >
+            <span style={{
+              fontFamily: FONT,
+              fontSize: "0.72rem",
+              fontWeight: 800,
+              color: ACCENT,
+              flexShrink: 0,
+              width: "1.5rem",
+              height: "1.5rem",
+              borderRadius: "50%",
+              border: `1px solid ${ACCENT}44`,
+              background: `${ACCENT}12`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              {item.step}
+            </span>
+            <div>
+              <div style={{
+                fontFamily: FONT,
+                fontSize: "0.88rem",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                marginBottom: "0.2rem",
+                lineHeight: 1.4,
+              }}>
+                {item.label}
+              </div>
+              <p style={{
+                fontFamily: FONT,
+                fontSize: "0.78rem",
+                color: "var(--text-muted)",
+                margin: 0,
+                lineHeight: 1.5,
+              }}>
+                {item.detail}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

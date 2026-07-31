@@ -47,20 +47,20 @@ export function HomeSharpHero() {
           maxWidth: 640,
         }}
       >
-        Reusable identity infrastructure. Users verify once. Applications consume trusted credentials.
+        Programmable trust infrastructure for regulated applications.
       </p>
       <p
         style={{
           fontFamily: FONT,
-          fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
-          fontWeight: 600,
-          color: "var(--text-primary)",
+          fontSize: "clamp(0.95rem, 2.2vw, 1.05rem)",
+          fontWeight: 500,
+          color: "var(--text-secondary)",
           margin: "0 auto 1.25rem",
-          lineHeight: 1.45,
+          lineHeight: 1.55,
           maxWidth: 640,
         }}
       >
-        Identity becomes portable instead of repetitive.
+        Users verify once. Partners evaluate trusted claims instead of repeating identity verification.
       </p>
 
       <div className="abx-home-hero-actions">

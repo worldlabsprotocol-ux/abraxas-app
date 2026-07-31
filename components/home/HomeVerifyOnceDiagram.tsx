@@ -86,7 +86,7 @@ export function HomeVerifyOnceDiagram() {
 
         <Panel title="With Abraxas">
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <CredentialNode>Verify Once</CredentialNode>
+            <CredentialNode>One-time verification</CredentialNode>
             <div aria-hidden style={{ color: ACCENT, fontFamily: MONO, fontSize: "1.1rem", fontWeight: 700, padding: "0.35rem 0" }}>↓</div>
             <CredentialNode highlight>Reusable Identity Credential</CredentialNode>
             <div aria-hidden style={{

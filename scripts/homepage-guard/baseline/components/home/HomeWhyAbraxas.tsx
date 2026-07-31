@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeWhyAbraxas.tsx
-// Why the product exists, before feature cards.
+// Why the market needs reusable trust — not a repeat of the hero.
 
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
@@ -22,23 +22,18 @@ export function HomeWhyAbraxas() {
       >
         Why Abraxas exists
       </h2>
-      <blockquote
+      <p
         style={{
-          margin: "0 0 0.85rem",
-          padding: 0,
-          border: "none",
           fontFamily: FONT,
           fontSize: "clamp(0.95rem, 2.2vw, 1.05rem)",
-          fontWeight: 500,
-          fontStyle: "normal",
-          color: "var(--text-secondary)",
+          fontWeight: 600,
+          color: "var(--text-primary)",
           lineHeight: 1.7,
+          margin: "0 0 0.85rem",
         }}
       >
-        Every financial platform asks users to verify themselves again. Every issuer repeats
-        compliance. Every institution rebuilds trust from scratch. Every dispensary, delivery
-        service, or regulated marketplace asks users to prove the same eligibility again.
-      </blockquote>
+        Today&apos;s compliance model doesn&apos;t scale.
+      </p>
       <p
         style={{
           fontFamily: FONT,
@@ -46,11 +41,13 @@ export function HomeWhyAbraxas() {
           fontWeight: 500,
           color: "var(--text-secondary)",
           lineHeight: 1.7,
-          margin: "0 0 0.65rem",
+          margin: "0 0 0.85rem",
         }}
       >
-        Abraxas turns identity verification into reusable infrastructure. Verify once, receive a
-        portable credential, and use it anywhere that trusts the protocol.
+        Banks, marketplaces, healthcare providers, employers, real estate platforms, and
+        age-restricted businesses all collect and verify the same identity information
+        independently. Users repeat verification, organizations duplicate compliance efforts,
+        and sensitive data is stored over and over again.
       </p>
       <p
         style={{
@@ -62,8 +59,7 @@ export function HomeWhyAbraxas() {
           margin: 0,
         }}
       >
-        Age verified once. Trusted everywhere. Reusable credentials for age, identity, and compliance.
-        Eligibility infrastructure that works across industries, not a single vertical product.
+        Abraxas replaces repeated verification with reusable trust.
       </p>
     </section>
   );
