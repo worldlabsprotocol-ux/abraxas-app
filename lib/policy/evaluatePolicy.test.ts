@@ -115,4 +115,47 @@ describe("evaluatePolicyRules", () => {
     expect(result.decision_context).toBe("sandbox_only");
     expect(result.production_usable).toBe(false);
   });
+
+  it("Good Trouble retail approves when residency_country and all claims present", () => {
+    const gtPolicy: PartnerPolicyRules = {
+      sandbox_only: true,
+      required_claims: [
+        { claim_type: "identity_verified", max_age_hours: 8760, min_assurance: "L2" },
+        { claim_type: "liveness_passed", max_age_hours: 8760 },
+        { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L2" },
+        { claim_type: "residency_country", max_age_hours: 8760 },
+      ],
+    };
+    const result = evaluatePolicyRules(gtPolicy, [
+      claim({ claim_type: "identity_verified", jurisdiction: "US-MO" }),
+      claim({ claim_type: "liveness_passed" }),
+      claim({ claim_type: "wallet_binding_confirmed" }),
+      claim({
+        claim_type: "residency_country",
+        claim_value: { country: "US", state: "MO" },
+        jurisdiction: "US-MO",
+      }),
+    ]);
+    expect(result.decision).toBe("approved");
+    expect(result.missing_claims).toHaveLength(0);
+  });
+
+  it("Good Trouble retail denies without residency_country", () => {
+    const gtPolicy: PartnerPolicyRules = {
+      sandbox_only: true,
+      required_claims: [
+        { claim_type: "identity_verified", max_age_hours: 8760, min_assurance: "L2" },
+        { claim_type: "liveness_passed", max_age_hours: 8760 },
+        { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L2" },
+        { claim_type: "residency_country", max_age_hours: 8760 },
+      ],
+    };
+    const result = evaluatePolicyRules(gtPolicy, [
+      claim({ claim_type: "identity_verified" }),
+      claim({ claim_type: "liveness_passed" }),
+      claim({ claim_type: "wallet_binding_confirmed" }),
+    ]);
+    expect(result.decision).toBe("denied");
+    expect(result.missing_claims).toContain("residency_country");
+  });
 });

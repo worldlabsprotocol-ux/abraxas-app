@@ -47,6 +47,44 @@ export const CLAIM_ISSUERS = {
   sandbox: "issuer:abraxas-sandbox",
 } as const;
 
+function parseJurisdiction(jurisdiction: string): { country: string; state?: string } {
+  const [country, state] = jurisdiction.includes("-")
+    ? jurisdiction.split("-", 2)
+    : [jurisdiction, undefined];
+  return {
+    country: country.toUpperCase(),
+    ...(state ? { state: state.toUpperCase() } : {}),
+  };
+}
+
+/** Residency claim derived from verified document jurisdiction (e.g. US-MO → country US, state MO). */
+export function residencyCountryClaim(input: {
+  subjectId: string;
+  jti: string;
+  jurisdiction: string;
+  expiresAt: Date;
+  issuerId?: string;
+  evidenceReference?: string | null;
+}): Omit<CredentialClaimRecord, "id" | "status"> {
+  const issuedAt = new Date().toISOString();
+  const { country, state } = parseJurisdiction(input.jurisdiction);
+
+  return {
+    subject_id: input.subjectId,
+    credential_jti: input.jti,
+    claim_type: "residency_country",
+    claim_value: { country, ...(state ? { state } : {}) },
+    issuer_id: input.issuerId ?? CLAIM_ISSUERS.abraxas,
+    assurance_level: "L2",
+    issued_at: issuedAt,
+    expires_at: input.expiresAt.toISOString(),
+    revocation_reference: null,
+    evidence_reference: input.evidenceReference ?? null,
+    jurisdiction: input.jurisdiction,
+    policy_scope: "compliance",
+  };
+}
+
 /** Claims issued after Abraxas independent capture (name + ID + selfie) */
 export function abraxasCaptureApprovedClaims(input: {
   subjectId: string;
@@ -119,6 +157,14 @@ export function abraxasCaptureApprovedClaims(input: {
       claim_value: { outcome: "pending_partner_screen", note: "Full AML/OFAC program is partner-gated" },
       assurance_level: "L1",
     },
+    residencyCountryClaim({
+      subjectId: input.subjectId,
+      jti: input.jti,
+      jurisdiction: input.jurisdiction,
+      expiresAt: input.expiresAt,
+      issuerId: CLAIM_ISSUERS.abraxas,
+      evidenceReference: `abraxas_capture:${input.captureSessionId}`,
+    }),
   ];
 }
 
@@ -173,6 +219,14 @@ export function manualApprovedClaims(input: {
       claim_value: { outcome: "pending_partner_screen", note: "Full AML/OFAC program is partner-gated" },
       assurance_level: "L1",
     },
+    residencyCountryClaim({
+      subjectId: input.subjectId,
+      jti: input.jti,
+      jurisdiction: input.jurisdiction,
+      expiresAt: input.expiresAt,
+      issuerId: CLAIM_ISSUERS.manual,
+      evidenceReference: `manual_review:${input.reviewId}`,
+    }),
   ];
 }
 
@@ -225,6 +279,14 @@ export function veriffApprovedClaims(input: {
       claim_value: { outcome: "pending_partner_screen", note: "Full AML/OFAC program is partner-gated" },
       assurance_level: "L1",
     },
+    residencyCountryClaim({
+      subjectId: input.subjectId,
+      jti: input.jti,
+      jurisdiction: input.jurisdiction,
+      expiresAt: input.expiresAt,
+      issuerId: CLAIM_ISSUERS.veriff,
+      evidenceReference: `veriff:${input.veriffSessionId}`,
+    }),
   ];
 }
 
