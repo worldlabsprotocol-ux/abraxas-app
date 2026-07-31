@@ -66,9 +66,7 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
         { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L3" },
       ],
       account_required: true,
-      profile_required: true,
       consent_required: true,
-      identity_optional: true,
     },
   },
   {
@@ -270,9 +268,7 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
 /** Policy flags stored in rules_json but enforced outside evaluatePolicyRules. */
 export const POLICY_FLAGS_ENFORCED_EXTERNALLY: Record<string, string> = {
   account_required: "Partner flow / evaluateCieloVerifiedGuest",
-  profile_required: "evaluateCieloVerifiedGuest",
   consent_required: "Partner flow consent gate / evaluateCieloVerifiedGuest",
-  identity_optional: "evaluateCieloVerifiedGuest (skips identity requirement)",
   minimum_age: "buildPartnerVerificationResult (over_21, no raw DOB)",
   session_receipt_hours: "computeSessionReceiptExpiresAt",
   product_eligibility_action: "createVerificationRequest requestedAction",
@@ -280,6 +276,15 @@ export const POLICY_FLAGS_ENFORCED_EXTERNALLY: Record<string, string> = {
   blocked_jurisdictions: "evaluatePolicyRules",
   allow_core_only: "evaluatePolicyRules",
   sandbox_only: "evaluatePolicyRules (decision_context)",
+};
+
+/**
+ * Cielo rules_json fields present in DB migrations (026, 032) but not typed in PartnerPolicyRules.
+ * Enforced only in evaluateCieloVerifiedGuest — not part of the frozen TypeScript policy contract.
+ */
+export const CIELO_DB_ONLY_POLICY_FLAGS: Record<string, string> = {
+  profile_required: "evaluateCieloVerifiedGuest (hasCompleteProfile)",
+  identity_optional: "evaluateCieloVerifiedGuest (skips identity credential requirement)",
 };
 
 export function requiredClaimsForPolicy(policyId: string): ClaimType[] {
@@ -295,5 +300,5 @@ export function allRequiredClaimsAcrossPolicies(): ClaimType[] {
       set.add(claim);
     }
   }
-  return [...set];
+  return Array.from(set);
 }

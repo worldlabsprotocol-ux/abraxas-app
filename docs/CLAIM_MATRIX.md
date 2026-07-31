@@ -48,7 +48,7 @@ This matrix maps every claim from issuance through consumption. It is the protoc
 | `abraxas-booking-v1` | abraxas | No | identity, liveness, wallet | |
 | `abraxas-rwa-us-v1` | abraxas | No | identity, liveness, screening (clear), wallet | Screening not clear at IDV — manual_review expected |
 | `abraxas-verified-participant-v1` | abraxas | No | identity, liveness, wallet | |
-| `cielo-verified-guest-v1` | cielo | No | wallet (L3) | Account/profile/consent enforced in `evaluateCieloVerifiedGuest` |
+| `cielo-verified-guest-v1` | cielo | No | wallet (L3) | Account/consent in typed contract; profile/identity_optional in DB JSON only (see below) |
 | `partner-sandbox-gate-v1` | abraxas-partner-sandbox | Yes | identity, wallet, screening (clear) | Demo sandbox |
 | `good-trouble-retail-v1` | good-trouble-cannabis | Yes | identity, liveness, wallet, **residency** | Primary IAT path |
 | `good-trouble-batch-v1` | good-trouble-cannabis | Yes | asset_ownership_reviewed | **Blocked:** claim not issued |
@@ -60,15 +60,22 @@ This matrix maps every claim from issuance through consumption. It is the protoc
 | Flag | Enforced by |
 |------|-------------|
 | `account_required` | Partner flow / `evaluateCieloVerifiedGuest` |
-| `profile_required` | `evaluateCieloVerifiedGuest` |
 | `consent_required` | Partner flow consent gate / `evaluateCieloVerifiedGuest` |
-| `identity_optional` | `evaluateCieloVerifiedGuest` |
 | `minimum_age` | `buildPartnerVerificationResult` (`over_21`) |
 | `session_receipt_hours` | `computeSessionReceiptExpiresAt` |
 | `product_eligibility_action` | `createVerificationRequest` |
 | `biometric_thresholds` | `resolveCapturePolicy` / `analyzeCapture` |
 | `blocked_jurisdictions` | `evaluatePolicyRules` |
 | `sandbox_only` | `evaluatePolicyRules` (`decision_context`) |
+
+### Cielo DB-only flags (not in `PartnerPolicyRules` TypeScript contract)
+
+Present in migrations `026` / `032` `rules_json` for `cielo-verified-guest-v1`, enforced in `evaluateCieloVerifiedGuest` only:
+
+| Flag | Enforced by |
+|------|-------------|
+| `profile_required` | `evaluateCieloVerifiedGuest` (`hasCompleteProfile`) |
+| `identity_optional` | `evaluateCieloVerifiedGuest` (skips identity credential requirement) |
 
 ---
 

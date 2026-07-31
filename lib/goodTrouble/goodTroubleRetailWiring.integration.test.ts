@@ -13,7 +13,6 @@ import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { resolvePartnerFlowStep } from "@/lib/partner/relyingPartyFlow";
 import { buildPartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import { computeSessionReceiptExpiresAt } from "@/lib/partner/sessionReceipt";
-import { GOOD_TROUBLE_RETAIL_POLICY_RULES } from "@/lib/goodTrouble/retailEligibility";
 import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
@@ -113,7 +112,7 @@ describe("Good Trouble retail — full backend wiring", () => {
 
       // 4. Signed Trust Decision payload (session receipt partner result)
       const evaluatedAt = new Date().toISOString();
-      const receiptExpiresAt = computeSessionReceiptExpiresAt(GOOD_TROUBLE_RETAIL_POLICY_RULES);
+      const receiptExpiresAt = computeSessionReceiptExpiresAt(gtPolicy.rules);
       const partnerResult = buildPartnerVerificationResult({
         decision: "approved",
         credentialJti: JTI,
