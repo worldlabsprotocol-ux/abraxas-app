@@ -206,11 +206,11 @@ Record one block per scenario. **Capture evidence — do not assert readiness wi
 | **Actual result** | _Pass / Fail_ |
 | **Request ID** | |
 | **Decision ID** | |
-| **Receipt ID** | |
-| **Flow trace ID** | _ft_rc_* or ephemeral if no verification request_ |
-| **Pass?** | _Pass only if single evaluate → enter_ |
+| **Receipt ID** | _same dr_* on duplicate complete; new dr_* on refresh if expired_ |
+| **Flow trace ID** | _per sub-case — record for refresh/complete calls_ |
+| **Pass?** | _Pass only if recovery/idempotency criteria met (see pass/fail table)_ |
 | **Duration** | |
-| **Evidence** | _Screenshots + refresh/retry logs_ |
+| **Evidence** | _Screenshots + refresh/retry logs + network tab_ |
 | **Notes** | _Which sub-case(s) exercised_ |
 
 ---
@@ -282,15 +282,14 @@ _Use when a regulated reviewer needs step-level proof beyond the four scenarios.
 | Field | Value |
 |-------|-------|
 | **Scenario** | Audit events + logs sufficient to diagnose failure |
-| **Expected result** | Evaluate, policy eval, receipt issuance visible in logs/audit |
+| **Expected result** | `partner_flow.evaluate` + `partner_flow.complete` share `flow_trace_id`; receipt issuance auditable |
 | **Actual result** | _Pass / Fail_ |
-| **Request ID** | |
-| **Decision ID** | |
-| **Receipt ID** | |
-| **Flow trace ID** | _ft_rc_* or ephemeral if no verification request_ |
-| **Pass?** | _Pass only if single evaluate → enter_ |
-| **Duration** | |
-| **Evidence** | _Log excerpts (PII redacted)_ |
+| **Request ID** | _from audit metadata_ |
+| **Decision ID** | _from audit metadata_ |
+| **Receipt ID** | _from audit metadata_ |
+| **Flow trace ID** | _must equal ft_vr_{verification_request_id}_ |
+| **Audit query rows** | _count from SQL above_ |
+| **Evidence** | _SQL result excerpt (PII redacted) — action + flow_trace_id columns_ |
 | **Notes** | _Known gaps documented_ |
 
 ---
