@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { completePartnerFlowAfterApproval } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
+import { createFlowTraceId, auditPartnerFlowStep } from "@/lib/partner/partnerFlowAudit";
+import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,8 @@ export const dynamic = "force-dynamic";
  * After manual approval + credential issuance, redirect holder to partner.
  */
 export async function POST(request: NextRequest) {
+  const started = Date.now();
+  const flowTraceId = createFlowTraceId();
   const session = await requireBrowserSession(request);
   if (!session.ok) {
     return NextResponse.json({ error: session.error }, { status: session.status });
@@ -54,8 +58,51 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    void auditPartnerFlowStep({
+      flowTraceId,
+      action: "partner_flow.complete",
+      partnerId,
+      policyId,
+      subjectId: session.session.suiAddress,
+      outcome: "error",
+      verificationRequestId: body.verification_request_id,
+      error: result.error,
+    });
+    void logPartnerUsage({
+      endpoint: "/api/v1/partner-flow/complete",
+      method: "POST",
+      success: false,
+      httpStatus: 400,
+      responseTimeMs: Date.now() - started,
+      policyId,
+    });
+    return NextResponse.json({ error: result.error, flow_trace_id: flowTraceId }, { status: 400 });
   }
 
-  return NextResponse.json(result);
+  void auditPartnerFlowStep({
+    flowTraceId,
+    action: "partner_flow.complete",
+    partnerId,
+    policyId,
+    subjectId: session.session.suiAddress,
+    outcome: result.next,
+    verificationRequestId: body.verification_request_id,
+    receiptId: result.partner_result?.receipt_id,
+    reasonCodes: result.partner_result?.reason_codes,
+  });
+
+  void logPartnerUsage({
+    endpoint: "/api/v1/partner-flow/complete",
+    method: "POST",
+    success: true,
+    responseState: result.next,
+    httpStatus: 200,
+    responseTimeMs: Date.now() - started,
+    policyId,
+    decision: result.next,
+    proofId: result.partner_result?.receipt_id,
+    recordId: body.verification_request_id,
+  });
+
+  return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
 }

@@ -4,6 +4,8 @@ import { evaluatePartnerFlow } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { resolvePartnerFlowParams } from "@/lib/verify/resolveFlowParams";
 import { PermissionResolutionError } from "@/lib/verify/resolvePermission";
+import { createFlowTraceId, auditPartnerFlowStep } from "@/lib/partner/partnerFlowAudit";
+import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,8 @@ export const dynamic = "force-dynamic";
  * Generic relying-party flow evaluation (permission or policy_id).
  */
 export async function POST(request: NextRequest) {
+  const started = Date.now();
+  const flowTraceId = createFlowTraceId();
   const session = await requireBrowserSession(request);
   if (!session.ok) {
     return NextResponse.json({ error: session.error }, { status: session.status });
@@ -50,8 +54,7 @@ export async function POST(request: NextRequest) {
     }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Invalid permission or policy";
-    const status = e instanceof PermissionResolutionError ? 400 : 400;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
@@ -69,9 +72,52 @@ export async function POST(request: NextRequest) {
       returnUrl,
       suiAddress: session.session.suiAddress,
     });
-    return NextResponse.json(result);
+
+    void auditPartnerFlowStep({
+      flowTraceId,
+      action: "partner_flow.evaluate",
+      partnerId,
+      policyId,
+      subjectId: session.session.suiAddress,
+      outcome: result.next,
+      verificationRequestId: result.verification_request_id,
+      receiptId: result.partner_result?.receipt_id,
+      reasonCodes: result.reason_codes,
+    });
+
+    void logPartnerUsage({
+      endpoint: "/api/v1/partner-flow/evaluate",
+      method: "POST",
+      success: true,
+      responseState: result.next,
+      httpStatus: 200,
+      responseTimeMs: Date.now() - started,
+      policyId,
+      decision: result.next,
+      proofId: result.partner_result?.receipt_id,
+      recordId: result.verification_request_id,
+    });
+
+    return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Flow evaluation failed";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    void auditPartnerFlowStep({
+      flowTraceId,
+      action: "partner_flow.evaluate",
+      partnerId,
+      policyId,
+      subjectId: session.session.suiAddress,
+      outcome: "error",
+      error: msg,
+    });
+    void logPartnerUsage({
+      endpoint: "/api/v1/partner-flow/evaluate",
+      method: "POST",
+      success: false,
+      httpStatus: 400,
+      responseTimeMs: Date.now() - started,
+      policyId,
+    });
+    return NextResponse.json({ error: msg, flow_trace_id: flowTraceId }, { status: 400 });
   }
 }
