@@ -13,22 +13,47 @@
 
 | Field | Value |
 |-------|-------|
-| **Deployment URL** | _e.g. https://abraxas-app.vercel.app_ |
-| **Git commit** | _SHA on `main`_ |
-| **Vercel deployment ID** | _from Vercel dashboard_ |
-| **Date (UTC)** | _YYYY-MM-DD_ |
-| **Tester** | _name / role_ |
-| **Witness (optional)** | _advisor, design partner, security reviewer_ |
+| **Deployment URL** | https://abraxasworld.xyz |
+| **Git commit** | `5207736b175026c0ed8a86a89393de4735b73d46` |
+| **Vercel deployment ID** | GitHub deployment `5721852531` (Production) |
+| **Production promoted at (UTC)** | 2026-08-03T06:26:58Z |
+| **Source branch** | `cursor/beta-gate-evidence-d541` (not yet merged to `main`; `main` at `f1cad49`) |
+| **Date (UTC)** | 2026-08-03 |
+| **Tester** | Cloud agent — automated smoke only; IAT scenarios require human browser |
+| **Witness (optional)** | _pending_ |
 | **Environment** | production |
-| **Migrations verified** | 049, 050, 051 |
+| **Migrations verified** | _not verified in this run — operator confirm 049, 050, 051 in Supabase_ |
 
-**Pre-check (automated):**
+**Deployment identity verification:**
+
+| Prerequisite | In deployed SHA? | Evidence |
+|--------------|------------------|----------|
+| PR #101 `residency_country` issuance | **Yes** | `residencyCountryClaim` in `lib/credentials/claimSchema.ts` at `5207736` |
+| PR #102 beta-gate / audit-trace | **Yes** | `5207736` = tip of `cursor/beta-gate-evidence-d541`; includes `rejectMismatchedClientFlowTrace` |
+
+**Pre-check (automated — 2026-08-03 UTC):**
 
 ```bash
-npm test                              # regression suite
-npm run audit:production              # live HTTP probes
-npm run biometric:validate-policy     # GT policy scenarios
+BETA_GATE_BASE_URL=https://abraxasworld.xyz npm run gate:preflight
+# pass: 4, fail: 0, pending: 3, blocked: 1
+# ✓ Regression subset · ✓ Trust Decision fixture · ✓ signing_configured=true · ✓ partner-flow evaluate HTTP 405
+
+AUDIT_BASE_URL=https://abraxasworld.xyz npm run audit:production
+# PASS: 15  PARTIAL: 1  FAIL: 0  SKIP: 9
+# Report: production-readiness-audit.json (audited_at 2026-08-03T06:34:17Z)
 ```
+
+| Endpoint | HTTP | Result |
+|----------|------|--------|
+| `GET /api/trust/status` | 200 | `signing_configured: true`, `veriff_api_configured: false` |
+| `GET /api/metrics/public` | 200 | `active_credentials: 0` |
+| `POST /api/v1/partner-flow/evaluate` (no session) | 401 | `Sign in required in this browser` |
+| `POST /api/v1/partner-flow/complete` (no session) | 401 | auth required |
+| `POST /api/v1/partner-flow/refresh` (no session) | 401 | auth required |
+| `GET /api/receipts/dr_missing/public` | 404 | expected |
+| Passport IDV session | 503 | `idv_provider: manual`, `manual_review_mode` (PARTIAL) |
+
+**IAT status:** Scenarios A–D **not executed** in this run — requires human browser, Google OAuth, document capture, and admin approval.
 
 ---
 
