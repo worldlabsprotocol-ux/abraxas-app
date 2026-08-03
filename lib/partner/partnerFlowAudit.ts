@@ -4,8 +4,38 @@
 import { randomBytes } from "crypto";
 import { appendAuditEvent } from "@/lib/verification/audit";
 
+export const FLOW_TRACE_VR_PREFIX = "ft_vr_";
+export const FLOW_TRACE_DEC_PREFIX = "ft_dec_";
+export const FLOW_TRACE_RC_PREFIX = "ft_rc_";
+
 export function createFlowTraceId(): string {
   return `ft_${randomBytes(12).toString("base64url")}`;
+}
+
+export function flowTraceIdFromVerificationRequest(requestId: string): string {
+  return `${FLOW_TRACE_VR_PREFIX}${requestId}`;
+}
+
+/** Resolve durable flow trace from existing flow identifiers (no new tracing platform). */
+export function resolvePartnerFlowTraceId(input: {
+  flowTraceId?: string | null;
+  verificationRequestId?: string | null;
+  decisionId?: string | null;
+  receiptId?: string | null;
+}): string {
+  const explicit = input.flowTraceId?.trim();
+  if (explicit) return explicit;
+
+  const verificationRequestId = input.verificationRequestId?.trim();
+  if (verificationRequestId) return flowTraceIdFromVerificationRequest(verificationRequestId);
+
+  const decisionId = input.decisionId?.trim();
+  if (decisionId) return `${FLOW_TRACE_DEC_PREFIX}${decisionId}`;
+
+  const receiptId = input.receiptId?.trim();
+  if (receiptId) return `${FLOW_TRACE_RC_PREFIX}${receiptId}`;
+
+  return createFlowTraceId();
 }
 
 export interface PartnerFlowAuditInput {
@@ -22,9 +52,15 @@ export interface PartnerFlowAuditInput {
   error?: string | null;
 }
 
-/** Append partner-flow audit event — no PII, no document data. */
-export async function auditPartnerFlowStep(input: PartnerFlowAuditInput): Promise<void> {
-  await appendAuditEvent({
+export class PartnerFlowAuditPersistenceError extends Error {
+  constructor(message = "audit_persistence_failed") {
+    super(message);
+    this.name = "PartnerFlowAuditPersistenceError";
+  }
+}
+
+function toAuditEvent(input: PartnerFlowAuditInput) {
+  return {
     actor_type: "subject",
     actor_id: input.subjectId,
     action: input.action,
@@ -41,5 +77,29 @@ export async function auditPartnerFlowStep(input: PartnerFlowAuditInput): Promis
       reason_codes: input.reasonCodes ?? [],
       error: input.error ?? null,
     },
-  });
+  };
+}
+
+/** Required for successful partner-flow responses — fails when audit cannot be persisted. */
+export async function auditPartnerFlowStepRequired(input: PartnerFlowAuditInput): Promise<string> {
+  const auditId = await appendAuditEvent(toAuditEvent(input));
+  if (!auditId) throw new PartnerFlowAuditPersistenceError();
+  return auditId;
+}
+
+/** Error-path auditing — never throws; does not alter the HTTP response. */
+export async function auditPartnerFlowStepBestEffort(input: PartnerFlowAuditInput): Promise<void> {
+  try {
+    const auditId = await appendAuditEvent(toAuditEvent(input));
+    if (!auditId) {
+      console.error("[partnerFlowAudit] audit persistence failed (best-effort)", input.action);
+    }
+  } catch (e) {
+    console.error("[partnerFlowAudit] audit error (best-effort)", input.action, e);
+  }
+}
+
+/** @deprecated Use auditPartnerFlowStepRequired or auditPartnerFlowStepBestEffort */
+export async function auditPartnerFlowStep(input: PartnerFlowAuditInput): Promise<void> {
+  await auditPartnerFlowStepRequired(input);
 }

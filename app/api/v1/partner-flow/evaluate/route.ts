@@ -3,8 +3,12 @@ import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { evaluatePartnerFlow } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { resolvePartnerFlowParams } from "@/lib/verify/resolveFlowParams";
-import { PermissionResolutionError } from "@/lib/verify/resolvePermission";
-import { createFlowTraceId, auditPartnerFlowStep } from "@/lib/partner/partnerFlowAudit";
+import {
+  auditPartnerFlowStepBestEffort,
+  auditPartnerFlowStepRequired,
+  PartnerFlowAuditPersistenceError,
+  resolvePartnerFlowTraceId,
+} from "@/lib/partner/partnerFlowAudit";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +19,6 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   const started = Date.now();
-  const flowTraceId = createFlowTraceId();
   const session = await requireBrowserSession(request);
   if (!session.ok) {
     return NextResponse.json({ error: session.error }, { status: session.status });
@@ -73,17 +76,29 @@ export async function POST(request: NextRequest) {
       suiAddress: session.session.suiAddress,
     });
 
-    void auditPartnerFlowStep({
-      flowTraceId,
-      action: "partner_flow.evaluate",
-      partnerId,
-      policyId,
-      subjectId: session.session.suiAddress,
-      outcome: result.next,
+    const flowTraceId = resolvePartnerFlowTraceId({
       verificationRequestId: result.verification_request_id,
       receiptId: result.partner_result?.receipt_id,
-      reasonCodes: result.reason_codes,
     });
+
+    try {
+      await auditPartnerFlowStepRequired({
+        flowTraceId,
+        action: "partner_flow.evaluate",
+        partnerId,
+        policyId,
+        subjectId: session.session.suiAddress,
+        outcome: result.next,
+        verificationRequestId: result.verification_request_id,
+        receiptId: result.partner_result?.receipt_id,
+        reasonCodes: result.reason_codes,
+      });
+    } catch (e) {
+      if (e instanceof PartnerFlowAuditPersistenceError) {
+        return NextResponse.json({ error: "Audit persistence failed" }, { status: 503 });
+      }
+      throw e;
+    }
 
     void logPartnerUsage({
       endpoint: "/api/v1/partner-flow/evaluate",
@@ -101,7 +116,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Flow evaluation failed";
-    void auditPartnerFlowStep({
+    const flowTraceId = resolvePartnerFlowTraceId({});
+    void auditPartnerFlowStepBestEffort({
       flowTraceId,
       action: "partner_flow.evaluate",
       partnerId,

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { refreshPartnerSessionReceipt } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
-import { createFlowTraceId, auditPartnerFlowStep } from "@/lib/partner/partnerFlowAudit";
+import {
+  auditPartnerFlowStepBestEffort,
+  auditPartnerFlowStepRequired,
+  PartnerFlowAuditPersistenceError,
+  resolvePartnerFlowTraceId,
+} from "@/lib/partner/partnerFlowAudit";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +18,18 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   const started = Date.now();
-  const flowTraceId = createFlowTraceId();
   const session = await requireBrowserSession(request);
   if (!session.ok) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  let body: { partner_id?: string; policy_id?: string; return_url?: string };
+  let body: {
+    partner_id?: string;
+    policy_id?: string;
+    return_url?: string;
+    verification_request_id?: string;
+    flow_trace_id?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -44,6 +54,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const flowTraceId = resolvePartnerFlowTraceId({
+    flowTraceId: body.flow_trace_id,
+    verificationRequestId: body.verification_request_id,
+  });
+
   try {
     const result = await refreshPartnerSessionReceipt({
       partnerId,
@@ -52,16 +67,30 @@ export async function POST(request: NextRequest) {
       suiAddress: session.session.suiAddress,
     });
 
-    void auditPartnerFlowStep({
-      flowTraceId,
-      action: "partner_flow.refresh",
-      partnerId,
-      policyId,
-      subjectId: session.session.suiAddress,
-      outcome: result.next,
+    const resolvedTraceId = resolvePartnerFlowTraceId({
+      flowTraceId: flowTraceId,
+      verificationRequestId: body.verification_request_id,
       receiptId: result.partner_result?.receipt_id,
-      reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
     });
+
+    try {
+      await auditPartnerFlowStepRequired({
+        flowTraceId: resolvedTraceId,
+        action: "partner_flow.refresh",
+        partnerId,
+        policyId,
+        subjectId: session.session.suiAddress,
+        outcome: result.next,
+        verificationRequestId: body.verification_request_id,
+        receiptId: result.partner_result?.receipt_id,
+        reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
+      });
+    } catch (e) {
+      if (e instanceof PartnerFlowAuditPersistenceError) {
+        return NextResponse.json({ error: "Audit persistence failed" }, { status: 503 });
+      }
+      throw e;
+    }
 
     void logPartnerUsage({
       endpoint: "/api/v1/partner-flow/refresh",
@@ -75,16 +104,17 @@ export async function POST(request: NextRequest) {
       proofId: result.partner_result?.receipt_id,
     });
 
-    return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
+    return NextResponse.json({ ...result, flow_trace_id: resolvedTraceId });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Receipt refresh failed";
-    void auditPartnerFlowStep({
+    void auditPartnerFlowStepBestEffort({
       flowTraceId,
       action: "partner_flow.refresh",
       partnerId,
       policyId,
       subjectId: session.session.suiAddress,
       outcome: "error",
+      verificationRequestId: body.verification_request_id,
       error: msg,
     });
     void logPartnerUsage({

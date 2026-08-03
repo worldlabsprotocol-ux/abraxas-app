@@ -40,7 +40,7 @@ async function main() {
   // Local regression subset
   try {
     execSync(
-      "npm test -- lib/protocol/compatibility.test.ts lib/decisionReceipts/validityResolver.test.ts lib/partner/partnerFlowAudit.test.ts lib/goodTrouble/goodTroubleRetailWiring.integration.test.ts",
+      "npm test -- lib/protocol/compatibility.test.ts lib/decisionReceipts/validityResolver.test.ts lib/partner/partnerFlowAudit.test.ts lib/partner/partnerFlowRoutes.test.ts lib/goodTrouble/goodTroubleRetailWiring.integration.test.ts",
       { stdio: "pipe", encoding: "utf8" },
     );
     record("Regression subset (protocol + validity + partner audit + GT wiring)", "pass", "vitest passed");

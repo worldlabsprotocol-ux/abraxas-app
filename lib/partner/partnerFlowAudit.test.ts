@@ -1,13 +1,26 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { createFlowTraceId, auditPartnerFlowStep } from "./partnerFlowAudit";
+
+const appendAuditEvent = vi.hoisted(() =>
+  vi.fn(async (_input: unknown) => "audit-1" as string | null),
+);
 
 vi.mock("@/lib/verification/audit", () => ({
-  appendAuditEvent: vi.fn(async () => "audit-1"),
+  appendAuditEvent: (input: unknown) => appendAuditEvent(input),
 }));
+
+import {
+  createFlowTraceId,
+  flowTraceIdFromVerificationRequest,
+  resolvePartnerFlowTraceId,
+  auditPartnerFlowStepRequired,
+  auditPartnerFlowStepBestEffort,
+  PartnerFlowAuditPersistenceError,
+} from "./partnerFlowAudit";
 
 describe("partnerFlowAudit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    appendAuditEvent.mockResolvedValue("audit-1");
   });
 
   it("creates flow trace ids with ft_ prefix", () => {
@@ -16,9 +29,22 @@ describe("partnerFlowAudit", () => {
     expect(id.length).toBeGreaterThan(10);
   });
 
+  it("derives durable trace id from verification request id", () => {
+    const vrId = "00000000-0000-4000-8000-000000000001";
+    expect(flowTraceIdFromVerificationRequest(vrId)).toBe(`ft_vr_${vrId}`);
+    expect(resolvePartnerFlowTraceId({ verificationRequestId: vrId })).toBe(`ft_vr_${vrId}`);
+  });
+
+  it("prefers verification request over receipt when resolving trace id", () => {
+    const vrId = "vr-priority";
+    expect(resolvePartnerFlowTraceId({
+      verificationRequestId: vrId,
+      receiptId: "dr_other",
+    })).toBe(`ft_vr_${vrId}`);
+  });
+
   it("audits partner flow without PII fields", async () => {
-    const { appendAuditEvent } = await import("@/lib/verification/audit");
-    await auditPartnerFlowStep({
+    await auditPartnerFlowStepRequired({
       flowTraceId: "ft_test",
       action: "partner_flow.evaluate",
       partnerId: "good-trouble-cannabis",
@@ -46,8 +72,64 @@ describe("partnerFlowAudit", () => {
       }),
     );
 
-    const call = vi.mocked(appendAuditEvent).mock.calls[0]?.[0];
+    const call = appendAuditEvent.mock.calls[0]?.[0] as { metadata?: Record<string, unknown> };
     expect(call?.metadata).not.toHaveProperty("date_of_birth");
     expect(call?.metadata).not.toHaveProperty("document_image");
+  });
+
+  it("auditPartnerFlowStepRequired throws when persistence returns null", async () => {
+    appendAuditEvent.mockResolvedValueOnce(null);
+    await expect(
+      auditPartnerFlowStepRequired({
+        flowTraceId: "ft_fail",
+        action: "partner_flow.evaluate",
+        partnerId: "p",
+        policyId: "pol",
+        subjectId: "sub",
+        outcome: "enter",
+      }),
+    ).rejects.toBeInstanceOf(PartnerFlowAuditPersistenceError);
+  });
+
+  it("auditPartnerFlowStepRequired returns audit id on success", async () => {
+    const id = await auditPartnerFlowStepRequired({
+      flowTraceId: "ft_ok",
+      action: "partner_flow.complete",
+      partnerId: "p",
+      policyId: "pol",
+      subjectId: "sub",
+      outcome: "enter",
+    });
+    expect(id).toBe("audit-1");
+  });
+
+  it("auditPartnerFlowStepBestEffort does not throw when persistence fails", async () => {
+    appendAuditEvent.mockResolvedValueOnce(null);
+    await expect(
+      auditPartnerFlowStepBestEffort({
+        flowTraceId: "ft_err",
+        action: "partner_flow.evaluate",
+        partnerId: "p",
+        policyId: "pol",
+        subjectId: "sub",
+        outcome: "error",
+        error: "boom",
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("auditPartnerFlowStepBestEffort does not throw when appendAuditEvent throws", async () => {
+    appendAuditEvent.mockRejectedValueOnce(new Error("db down"));
+    await expect(
+      auditPartnerFlowStepBestEffort({
+        flowTraceId: "ft_err",
+        action: "partner_flow.evaluate",
+        partnerId: "p",
+        policyId: "pol",
+        subjectId: "sub",
+        outcome: "error",
+        error: "boom",
+      }),
+    ).resolves.toBeUndefined();
   });
 });
