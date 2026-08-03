@@ -11,13 +11,14 @@ import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { createVerificationRequest, getPolicy } from "@/lib/verification/requestsService";
+import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAllowlist";
 import { computeSessionReceiptExpiresAt } from "@/lib/partner/sessionReceipt";
 import { buildPartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import type { PartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+const APP_URL = getPublicAppOrigin();
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? APP_URL;
 
 export type PartnerFlowNextStep =
@@ -55,14 +56,16 @@ export function buildPassportUrl(input: {
   partnerId: string;
   policyId: string;
   returnUrl: string;
+  appOrigin?: string;
 }): string {
+  const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
   const params = new URLSearchParams({
     verify_request: input.verificationRequestId,
     partner_id: input.partnerId,
     policy_id: input.policyId,
     return: input.returnUrl,
   });
-  return `${APP_URL}/passport?${params.toString()}`;
+  return `${appUrl}/passport?${params.toString()}`;
 }
 
 export function buildPartnerVerifyUrl(input: {
@@ -262,6 +265,7 @@ export async function evaluatePartnerFlow(input: {
   partnerId: string;
   policyId: string;
   returnUrl: string;
+  appOrigin?: string;
 }): Promise<PartnerFlowEvaluateResult> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     throw new Error("return_url not allowlisted for partner");
@@ -320,6 +324,7 @@ export async function evaluatePartnerFlow(input: {
     requestedAction: (await getPolicy(input.policyId))?.rules_json.product_eligibility_action ?? "partner_eligibility",
     suiAddress: subject,
     returnUrl: input.returnUrl,
+    appOrigin: input.appOrigin,
   });
 
   const passport_url = buildPassportUrl({
@@ -327,6 +332,7 @@ export async function evaluatePartnerFlow(input: {
     partnerId: input.partnerId,
     policyId: input.policyId,
     returnUrl: input.returnUrl,
+    appOrigin: input.appOrigin,
   });
 
   return {

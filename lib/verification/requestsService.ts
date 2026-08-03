@@ -16,8 +16,7 @@ import {
 } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 
 export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 
@@ -28,8 +27,10 @@ export async function createVerificationRequest(input: {
   requestedClaims?: string[];
   suiAddress?: string;
   returnUrl?: string;
+  appOrigin?: string;
 }): Promise<{ request_id: string; consent_url: string; expires_at: string }> {
   const sb = requireSupabaseAdmin();
+  const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
   const policy = await getPartnerPolicy(input.policyId);
   if (!policy) throw new Error("Policy not found");
   assertPolicyBelongsToPartner(policy, input.partnerId);
@@ -71,7 +72,7 @@ export async function createVerificationRequest(input: {
 
   return {
     request_id: data.id as string,
-    consent_url: `${APP_URL}/passport?${consentParams.toString()}`,
+    consent_url: `${appUrl}/passport?${consentParams.toString()}`,
     expires_at: expiresAt,
   };
 }

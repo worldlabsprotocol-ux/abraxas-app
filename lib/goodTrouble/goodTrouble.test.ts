@@ -47,9 +47,11 @@ describe("goodTrouble pilot", () => {
   });
 
   it("builds partner verify URL from generic config", () => {
-    const url = goodTroubleVerifyUrl("https://abraxas-app.vercel.app");
-    expect(url).toContain("/partner/verify");
+    const url = goodTroubleVerifyUrl("https://abraxasworld.xyz");
+    expect(url).toMatch(/^https:\/\/abraxasworld\.xyz\/partner\/verify/);
     expect(url).toContain("good-trouble-cannabis");
-    expect(decodeURIComponent(url)).toContain("good-trouble/enter");
+    expect(decodeURIComponent(url)).toContain("https://abraxasworld.xyz/good-trouble/enter");
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get("return_url")).toBe("https://abraxasworld.xyz/good-trouble/enter");
   });
 });

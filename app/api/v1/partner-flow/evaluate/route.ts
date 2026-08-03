@@ -10,6 +10,7 @@ import {
   resolvePartnerFlowTraceId,
 } from "@/lib/partner/partnerFlowAudit";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
+import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
       policyId,
       returnUrl,
       suiAddress: session.session.suiAddress,
+      appOrigin: getPublicAppOriginFromRequest(request),
     });
 
     const flowTraceId = resolvePartnerFlowTraceId({

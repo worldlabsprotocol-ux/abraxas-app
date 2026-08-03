@@ -1,7 +1,7 @@
 // FILE: lib/partner/referenceIntegration.ts
 // Generic relying-party integration config — Good Trouble is the reference implementation.
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 
 export interface PartnerIntegrationConfig {
   partnerId: string;
@@ -11,20 +11,21 @@ export interface PartnerIntegrationConfig {
   displayName: string;
 }
 
-export function resolvePartnerReturnUrl(config: PartnerIntegrationConfig, origin = APP_URL): string {
-  return `${origin.replace(/\/$/, "")}${config.enterPath}`;
+export function resolvePartnerReturnUrl(config: PartnerIntegrationConfig, origin?: string): string {
+  const base = (origin ?? getPublicAppOrigin()).replace(/\/$/, "");
+  return `${base}${config.enterPath}`;
 }
 
 export function buildPartnerVerifyUrl(
   config: PartnerIntegrationConfig,
   options?: { origin?: string; returnUrl?: string },
 ): string {
-  const returnUrl = options?.returnUrl ?? resolvePartnerReturnUrl(config, options?.origin);
+  const origin = (options?.origin ?? getPublicAppOrigin()).replace(/\/$/, "");
+  const returnUrl = options?.returnUrl ?? resolvePartnerReturnUrl(config, origin);
   const params = new URLSearchParams({
     partner_id: config.partnerId,
     policy_id: config.policyId,
     return_url: returnUrl,
   });
-  const base = (options?.origin ?? APP_URL).replace(/\/$/, "");
-  return `${base}/partner/verify?${params.toString()}`;
+  return `${origin}/partner/verify?${params.toString()}`;
 }
