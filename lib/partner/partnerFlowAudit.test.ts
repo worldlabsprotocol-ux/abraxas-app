@@ -12,6 +12,8 @@ import {
   createFlowTraceId,
   flowTraceIdFromVerificationRequest,
   resolvePartnerFlowTraceId,
+  rejectMismatchedClientFlowTrace,
+  FlowTraceMismatchError,
   auditPartnerFlowStepRequired,
   auditPartnerFlowStepBestEffort,
   PartnerFlowAuditPersistenceError,
@@ -41,6 +43,18 @@ describe("partnerFlowAudit", () => {
       verificationRequestId: vrId,
       receiptId: "dr_other",
     })).toBe(`ft_vr_${vrId}`);
+  });
+
+  it("rejectMismatchedClientFlowTrace throws when client trace disagrees", () => {
+    expect(() =>
+      rejectMismatchedClientFlowTrace("ft_client_fake", "ft_vr_real"),
+    ).toThrow(FlowTraceMismatchError);
+  });
+
+  it("rejectMismatchedClientFlowTrace ignores absent client trace", () => {
+    expect(() =>
+      rejectMismatchedClientFlowTrace(undefined, "ft_vr_real"),
+    ).not.toThrow();
   });
 
   it("audits partner flow without PII fields", async () => {

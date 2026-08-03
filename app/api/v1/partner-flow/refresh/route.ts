@@ -5,7 +5,9 @@ import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
   auditPartnerFlowStepBestEffort,
   auditPartnerFlowStepRequired,
+  FlowTraceMismatchError,
   PartnerFlowAuditPersistenceError,
+  rejectMismatchedClientFlowTrace,
   resolvePartnerFlowTraceId,
 } from "@/lib/partner/partnerFlowAudit";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
@@ -54,10 +56,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const flowTraceId = resolvePartnerFlowTraceId({
-    flowTraceId: body.flow_trace_id,
-    verificationRequestId: body.verification_request_id,
-  });
+  const verificationRequestId = body.verification_request_id?.trim();
+
+  if (verificationRequestId) {
+    const serverTrace = resolvePartnerFlowTraceId({ verificationRequestId });
+    try {
+      rejectMismatchedClientFlowTrace(body.flow_trace_id, serverTrace);
+    } catch (e) {
+      if (e instanceof FlowTraceMismatchError) {
+        return NextResponse.json({ error: e.message }, { status: 400 });
+      }
+      throw e;
+    }
+  }
 
   try {
     const result = await refreshPartnerSessionReceipt({
@@ -67,15 +78,25 @@ export async function POST(request: NextRequest) {
       suiAddress: session.session.suiAddress,
     });
 
-    const resolvedTraceId = resolvePartnerFlowTraceId({
-      flowTraceId: flowTraceId,
-      verificationRequestId: body.verification_request_id,
+    const flowTraceId = resolvePartnerFlowTraceId({
+      verificationRequestId,
       receiptId: result.partner_result?.receipt_id,
     });
 
+    if (!verificationRequestId) {
+      try {
+        rejectMismatchedClientFlowTrace(body.flow_trace_id, flowTraceId);
+      } catch (e) {
+        if (e instanceof FlowTraceMismatchError) {
+          return NextResponse.json({ error: e.message }, { status: 400 });
+        }
+        throw e;
+      }
+    }
+
     try {
       await auditPartnerFlowStepRequired({
-        flowTraceId: resolvedTraceId,
+        flowTraceId,
         action: "partner_flow.refresh",
         partnerId,
         policyId,
@@ -104,11 +125,17 @@ export async function POST(request: NextRequest) {
       proofId: result.partner_result?.receipt_id,
     });
 
-    return NextResponse.json({ ...result, flow_trace_id: resolvedTraceId });
+    return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
   } catch (e) {
+    if (e instanceof FlowTraceMismatchError) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
     const msg = e instanceof Error ? e.message : "Receipt refresh failed";
+    const errorTraceId = verificationRequestId
+      ? resolvePartnerFlowTraceId({ verificationRequestId })
+      : resolvePartnerFlowTraceId({});
     void auditPartnerFlowStepBestEffort({
-      flowTraceId,
+      flowTraceId: errorTraceId,
       action: "partner_flow.refresh",
       partnerId,
       policyId,
@@ -125,6 +152,6 @@ export async function POST(request: NextRequest) {
       responseTimeMs: Date.now() - started,
       policyId,
     });
-    return NextResponse.json({ error: msg, flow_trace_id: flowTraceId }, { status: 400 });
+    return NextResponse.json({ error: msg, flow_trace_id: errorTraceId }, { status: 400 });
   }
 }

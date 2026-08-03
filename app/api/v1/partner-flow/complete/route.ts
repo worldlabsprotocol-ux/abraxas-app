@@ -5,7 +5,9 @@ import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
   auditPartnerFlowStepBestEffort,
   auditPartnerFlowStepRequired,
+  FlowTraceMismatchError,
   PartnerFlowAuditPersistenceError,
+  rejectMismatchedClientFlowTrace,
   resolvePartnerFlowTraceId,
 } from "@/lib/partner/partnerFlowAudit";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
@@ -54,10 +56,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const flowTraceId = resolvePartnerFlowTraceId({
-    flowTraceId: body.flow_trace_id,
-    verificationRequestId: body.verification_request_id,
-  });
+  const verificationRequestId = body.verification_request_id?.trim();
+
+  let flowTraceId: string | undefined;
+  if (verificationRequestId) {
+    flowTraceId = resolvePartnerFlowTraceId({ verificationRequestId });
+    try {
+      rejectMismatchedClientFlowTrace(body.flow_trace_id, flowTraceId);
+    } catch (e) {
+      if (e instanceof FlowTraceMismatchError) {
+        return NextResponse.json({ error: e.message }, { status: 400 });
+      }
+      throw e;
+    }
+  }
 
   const result = await completePartnerFlowAfterApproval({
     partnerId,
@@ -68,8 +80,9 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
+    const errorTraceId = flowTraceId ?? resolvePartnerFlowTraceId({});
     void auditPartnerFlowStepBestEffort({
-      flowTraceId,
+      flowTraceId: errorTraceId,
       action: "partner_flow.complete",
       partnerId,
       policyId,
@@ -86,7 +99,21 @@ export async function POST(request: NextRequest) {
       responseTimeMs: Date.now() - started,
       policyId,
     });
-    return NextResponse.json({ error: result.error, flow_trace_id: flowTraceId }, { status: 400 });
+    return NextResponse.json({ error: result.error, flow_trace_id: errorTraceId }, { status: 400 });
+  }
+
+  if (!flowTraceId) {
+    flowTraceId = resolvePartnerFlowTraceId({
+      receiptId: result.partner_result?.receipt_id,
+    });
+    try {
+      rejectMismatchedClientFlowTrace(body.flow_trace_id, flowTraceId);
+    } catch (e) {
+      if (e instanceof FlowTraceMismatchError) {
+        return NextResponse.json({ error: e.message }, { status: 400 });
+      }
+      throw e;
+    }
   }
 
   try {

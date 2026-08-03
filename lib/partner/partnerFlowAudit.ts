@@ -16,16 +16,12 @@ export function flowTraceIdFromVerificationRequest(requestId: string): string {
   return `${FLOW_TRACE_VR_PREFIX}${requestId}`;
 }
 
-/** Resolve durable flow trace from existing flow identifiers (no new tracing platform). */
+/** Server-derived flow trace — never accepts client-supplied flow_trace_id. */
 export function resolvePartnerFlowTraceId(input: {
-  flowTraceId?: string | null;
   verificationRequestId?: string | null;
   decisionId?: string | null;
   receiptId?: string | null;
 }): string {
-  const explicit = input.flowTraceId?.trim();
-  if (explicit) return explicit;
-
   const verificationRequestId = input.verificationRequestId?.trim();
   if (verificationRequestId) return flowTraceIdFromVerificationRequest(verificationRequestId);
 
@@ -36,6 +32,28 @@ export function resolvePartnerFlowTraceId(input: {
   if (receiptId) return `${FLOW_TRACE_RC_PREFIX}${receiptId}`;
 
   return createFlowTraceId();
+}
+
+export class FlowTraceMismatchError extends Error {
+  constructor(message = "flow_trace_id does not match verification_request_id") {
+    super(message);
+    this.name = "FlowTraceMismatchError";
+  }
+}
+
+/**
+ * Reject client-supplied flow_trace_id when it disagrees with the server-derived trace.
+ * flow_trace_id is response-only metadata — not an authoritative client input.
+ */
+export function rejectMismatchedClientFlowTrace(
+  clientFlowTraceId: string | null | undefined,
+  serverFlowTraceId: string,
+): void {
+  const client = clientFlowTraceId?.trim();
+  if (!client) return;
+  if (client !== serverFlowTraceId) {
+    throw new FlowTraceMismatchError();
+  }
 }
 
 export interface PartnerFlowAuditInput {

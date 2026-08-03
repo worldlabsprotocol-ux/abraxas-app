@@ -176,4 +176,65 @@ describe("partner-flow routes — shared flow_trace_id", () => {
     expect(json.error).toBe("evaluation failed");
     expect(json.flow_trace_id).toMatch(/^ft_/);
   });
+
+  it("rejects mismatching client flow_trace_id on complete — wrong trace not persisted", async () => {
+    completePartnerFlowAfterApproval.mockResolvedValue({
+      ok: true,
+      next: "enter",
+      redirect_url: RETURN_URL,
+      partner_result: {
+        decision: "approved",
+        receipt_id: "dr_complete",
+        reason_codes: [],
+      },
+    });
+
+    const maliciousTrace = "ft_client_attacker_trace";
+    const res = await completePOST(
+      postJson("http://localhost/api/v1/partner-flow/complete", {
+        partner_id: PARTNER_ID,
+        policy_id: POLICY_ID,
+        return_url: RETURN_URL,
+        verification_request_id: VR_ID,
+        flow_trace_id: maliciousTrace,
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: "flow_trace_id does not match verification_request_id",
+    });
+    expect(appendAuditEvent).not.toHaveBeenCalled();
+    expect(auditTraceIds()).not.toContain(maliciousTrace);
+  });
+
+  it("rejects mismatching client flow_trace_id on refresh — wrong trace not persisted", async () => {
+    refreshPartnerSessionReceipt.mockResolvedValue({
+      next: "enter",
+      redirect_url: RETURN_URL,
+      partner_result: {
+        decision: "approved",
+        receipt_id: "dr_refresh",
+        reason_codes: [],
+      },
+    });
+
+    const maliciousTrace = "ft_client_attacker_trace";
+    const res = await refreshPOST(
+      postJson("http://localhost/api/v1/partner-flow/refresh", {
+        partner_id: PARTNER_ID,
+        policy_id: POLICY_ID,
+        return_url: RETURN_URL,
+        verification_request_id: VR_ID,
+        flow_trace_id: maliciousTrace,
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: "flow_trace_id does not match verification_request_id",
+    });
+    expect(appendAuditEvent).not.toHaveBeenCalled();
+    expect(auditTraceIds()).not.toContain(maliciousTrace);
+  });
 });
