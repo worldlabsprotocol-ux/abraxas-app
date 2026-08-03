@@ -57,6 +57,85 @@ AUDIT_BASE_URL=https://abraxasworld.xyz npm run audit:production
 
 ---
 
+## Release source alignment (pre-IAT)
+
+**Goal:** `main` must contain the same application tree as production deploy `5207736…` before tagging or claiming gate pass.
+
+| Step | Action | Expected result |
+|------|--------|-----------------|
+| 1 | Merge **PR #101** (`cursor/residency-country-wiring-d541`) → `main` | Fast-forward to `672432a` (2 commits); `mergeStateStatus: CLEAN` |
+| 2 | Merge **PR #102** (`cursor/beta-gate-evidence-d541`) → `main` | Fast-forward to `cafcdcd` (4 additional commits on top of #101); `mergeStateStatus: CLEAN` |
+| 3 | **Rebase #102 after #101?** | **Not required** — #102 was branched from #101 tip (`672432a`); simulated merge is fast-forward with no conflicts |
+| 4 | Application tree vs production | After step 2, non-doc tree **identical** to deployed `5207736` (docs-only delta: `cafcdcd` smoke evidence in `PRODUCTION_WALKTHROUGH_RESULTS.md`) |
+| 5 | Post-merge deploy | Deploy `main` tip; confirm GitHub Production deployment SHA matches merge result before IAT |
+
+**Do not merge only #102 without closing #101** if you want PR-level traceability — but #102 already contains all #101 commits. Merging #102 alone would also land the full production tree.
+
+**Current divergence:** Production = branch deploy `5207736`; `main` = `f1cad49`; PR #101 and #102 remain OPEN.
+
+---
+
+## IAT evidence capture template
+
+Record for **every scenario** (IDs only — no PII):
+
+| Field | Source | Example |
+|-------|--------|---------|
+| **Deployed SHA** | Vercel / GitHub deployment | `5207736…` |
+| **Production timestamp (UTC)** | Deployment promoted_at | `2026-08-03T06:26:58Z` |
+| **Verification request ID** | evaluate `verification_request_id` or passport `verify_request` param | UUID |
+| **Decision ID** | complete/evaluate response or callback `decision_id` | UUID |
+| **Receipt ID** | callback `receipt_id` or `GET /api/receipts/{id}/public` | `dr_*` |
+| **Flow trace ID** | evaluate/complete response `flow_trace_id` | `ft_vr_{verification_request_id}` |
+| **Credential JTI** | callback `credential_id` (if issued) | from callback only |
+| **Outcome** | Pass / Fail | |
+| **Evidence ref** | Screenshot #, HAR path, network tab timestamp | Evidence index # |
+
+### Pass / fail criteria (Scenarios A–D)
+
+| Scenario | **PASS** requires | **FAIL** if |
+|----------|-------------------|-------------|
+| **A** — New user | zkLogin session → evaluate `passport` → consent → capture → admin approve → `residency_country` in issued claims → evaluate/complete `enter` → callback with `decision_id` + `dr_*` → `GET /api/receipts/{id}/public` → `signature_valid: true` → shared `flow_trace_id` across evaluate + complete audit events | Any step blocked; missing claim; denied at policy; invalid signature; silent `/complete` failure |
+| **B** — Returning user | Single `POST evaluate` → `next: enter` (no passport); one network evaluate call; receipt issued | Second passport trip; multiple evaluate calls; denied |
+| **C** — Expired/revoked | Expired or revoked credential → evaluate `passport`; after re-verify new `jti` + new `dr_*` | Stale credential accepted; no re-route to passport |
+| **D** — Failure recovery | Recoverable UX for interrupt/reject/refresh; duplicate `complete` returns same receipt; refresh re-issues when session receipt expired | Silent failure; unhandled error; duplicate receipt on idempotent complete |
+
+### Audit-event query evidence (P1-3)
+
+After Scenario A (or any full flow), run in Supabase SQL editor (replace IDs):
+
+```sql
+-- Correlation by server-derived flow trace
+SELECT id, action, object_type, object_id, policy_id, created_at,
+       metadata->>'flow_trace_id' AS flow_trace_id,
+       metadata->>'partner_id' AS partner_id,
+       metadata->>'outcome' AS outcome,
+       metadata->>'verification_request_id' AS verification_request_id,
+       metadata->>'decision_id' AS decision_id,
+       metadata->>'receipt_id' AS receipt_id
+FROM audit_events
+WHERE metadata->>'flow_trace_id' = 'ft_vr_<VERIFICATION_REQUEST_ID>'
+ORDER BY created_at;
+
+-- All partner-flow steps in window
+SELECT action, metadata->>'flow_trace_id', metadata->>'outcome', created_at
+FROM audit_events
+WHERE action LIKE 'partner_flow.%'
+  AND created_at > now() - interval '2 hours'
+ORDER BY created_at;
+```
+
+| Audit check | **PASS** | **FAIL** |
+|-------------|----------|----------|
+| Flow trace correlation | Same `flow_trace_id` on `partner_flow.evaluate` and `partner_flow.complete` for one verification request | Mismatched or missing `flow_trace_id` |
+| Evaluate step | `partner_flow.evaluate` row with `outcome` = `passport` or `enter` | No evaluate audit row after successful evaluate |
+| Complete step | `partner_flow.complete` with `receipt_id` when entering partner | Missing complete audit after successful flow |
+| Client trace rejected | Mismatching client `flow_trace_id` → HTTP 400, attacker trace not in DB | Arbitrary client trace persisted |
+
+Paste query result row count + sample `action`/`flow_trace_id` values into Observability supplementary section (redact `actor_id` if needed).
+
+---
+
 ## Scenario results
 
 Record one block per scenario. **Capture evidence — do not assert readiness without it.**
@@ -68,11 +147,14 @@ Record one block per scenario. **Capture evidence — do not assert readiness wi
 | **Scenario** | New user → `regulated_purchase` → Passport → Trust Decision → signed receipt |
 | **Expected result** | Approved Trust Decision + signed receipt; holder enters partner flow |
 | **Actual result** | _Pass / Fail_ |
-| **Request ID** | _verification_request / evaluate correlation_ |
-| **Decision ID** | _decision_id_ |
+| **Request ID** | _verification_request UUID_ |
+| **Decision ID** | _decision_id UUID_ |
 | **Receipt ID** | _dr_*_ |
+| **Flow trace ID** | _ft_vr_{verification_request_id} — must match evaluate + complete audit_ |
+| **Deployed SHA** | _confirm matches post-merge production deploy_ |
 | **Duration** | _e.g. 1.8s (evaluate → receipt)_ |
-| **Evidence** | _Screenshot + network HAR + log excerpt_ |
+| **Pass?** | _Pass only if all Scenario A criteria met_ |
+| **Evidence** | _Screenshot + network HAR + audit query excerpt_ |
 | **Notes** | _Any deviations from spec_ |
 
 **Protocol steps exercised:** Authorization → zkLogin → Passport creation → Consent → Policy evaluation → Trust Decision → Signed Receipt
@@ -89,6 +171,8 @@ Record one block per scenario. **Capture evidence — do not assert readiness wi
 | **Request ID** | |
 | **Decision ID** | |
 | **Receipt ID** | |
+| **Flow trace ID** | _ft_rc_* or ephemeral if no verification request_ |
+| **Pass?** | _Pass only if single evaluate → enter_ |
 | **Duration** | _e.g. 0.4s_ |
 | **Evidence** | _Screenshot + network tab (single evaluate)_ |
 | **Notes** | |
@@ -102,9 +186,11 @@ Record one block per scenario. **Capture evidence — do not assert readiness wi
 | **Scenario** | Expired or revoked credential → re-routes to Passport |
 | **Expected result** | Evaluate → `next: passport`; new credential after re-verification |
 | **Actual result** | _Pass / Fail_ |
-| **Request ID** | |
+| **Request ID** | _new verification_request after re-route_ |
 | **Decision ID** | |
-| **Receipt ID** | _new receipt after re-verify_ |
+| **Receipt ID** | _new dr_* after re-verify_ |
+| **Flow trace ID** | _ft_vr_{new verification_request_id}_ |
+| **Pass?** | _Pass only if expired/revoked forces passport + new credential/receipt_ |
 | **Duration** | |
 | **Evidence** | _Before/after credential status + flow screenshots_ |
 | **Notes** | _Expired vs revoked sub-case_ |
@@ -121,6 +207,8 @@ Record one block per scenario. **Capture evidence — do not assert readiness wi
 | **Request ID** | |
 | **Decision ID** | |
 | **Receipt ID** | |
+| **Flow trace ID** | _ft_rc_* or ephemeral if no verification request_ |
+| **Pass?** | _Pass only if single evaluate → enter_ |
 | **Duration** | |
 | **Evidence** | _Screenshots + refresh/retry logs_ |
 | **Notes** | _Which sub-case(s) exercised_ |
@@ -169,6 +257,8 @@ _Use when a regulated reviewer needs step-level proof beyond the four scenarios.
 | **Request ID** | |
 | **Decision ID** | |
 | **Receipt ID** | |
+| **Flow trace ID** | _ft_rc_* or ephemeral if no verification request_ |
+| **Pass?** | _Pass only if single evaluate → enter_ |
 | **Duration** | |
 | **Evidence** | |
 | **Notes** | |
@@ -197,6 +287,8 @@ _Use when a regulated reviewer needs step-level proof beyond the four scenarios.
 | **Request ID** | |
 | **Decision ID** | |
 | **Receipt ID** | |
+| **Flow trace ID** | _ft_rc_* or ephemeral if no verification request_ |
+| **Pass?** | _Pass only if single evaluate → enter_ |
 | **Duration** | |
 | **Evidence** | _Log excerpts (PII redacted)_ |
 | **Notes** | _Known gaps documented_ |
