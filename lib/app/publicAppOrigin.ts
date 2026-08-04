@@ -4,6 +4,24 @@
 import { SITE_URL } from "@/lib/siteUrl";
 
 /**
+ * Default base URL for server SDKs and integrator examples.
+ * Respects NEXT_PUBLIC_APP_URL, ABRAXAS_ISSUER_URL, and VERCEL_URL for preview/local;
+ * falls back to canonical production origin (SITE_URL).
+ */
+export function getSdkDefaultBaseUrl(): string {
+  const fromPublic = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (fromPublic) return fromPublic.replace(/\/$/, "");
+
+  const fromIssuer = process.env.ABRAXAS_ISSUER_URL?.trim();
+  if (fromIssuer) return fromIssuer.replace(/\/$/, "");
+
+  const vercelHost = process.env.VERCEL_URL?.trim();
+  if (vercelHost) return `https://${vercelHost.replace(/\/$/, "")}`;
+
+  return SITE_URL;
+}
+
+/**
  * Resolve the public app origin for links and return URLs.
  * Client: current page origin (same-origin partner flow).
  * Server: NEXT_PUBLIC_APP_URL → ABRAXAS_ISSUER_URL → VERCEL_URL → localhost.

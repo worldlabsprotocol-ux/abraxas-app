@@ -3,11 +3,6 @@
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
-const DEFAULT_DEMO_URLS = [
-  "http://localhost:3000/demo/partner-access",
-  "https://abraxas-app.vercel.app/demo/partner-access",
-];
-
 export async function isReturnUrlAllowed(partnerId: string, returnUrl: string): Promise<boolean> {
   let parsed: URL;
   try {
@@ -26,9 +21,8 @@ export async function isReturnUrlAllowed(partnerId: string, returnUrl: string): 
     .eq("partner_id", partnerId)
     .maybeSingle();
 
-  const allowed: string[] = (data?.allowed_return_urls as string[] | undefined)?.length
-    ? (data!.allowed_return_urls as string[])
-    : DEFAULT_DEMO_URLS;
+  const allowed = data?.allowed_return_urls as string[] | undefined;
+  if (!allowed?.length) return false;
 
   const normalized = `${parsed.origin}${parsed.pathname}`.replace(/\/$/, "");
   return allowed.some(entry => {
