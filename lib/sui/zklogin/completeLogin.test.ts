@@ -20,6 +20,11 @@ vi.mock("@/lib/auth/ensureBrowserSession", () => ({
 
 import { loadPendingSession, loadUserSession } from "./session";
 import { completeGoogleZkLogin } from "./completeLogin";
+import { fakeGoogleIdToken } from "./testJwt";
+import { jwtToAddress } from "@mysten/sui/zklogin";
+
+const LEGACY_OAUTH_CLIENT_ID = "187000000000-legacyclient.apps.googleusercontent.com";
+const NEW_OAUTH_CLIENT_ID = "540000000000-newclient.apps.googleusercontent.com";
 
 describe("completeGoogleZkLogin", () => {
   const env = { ...process.env };
@@ -55,6 +60,36 @@ describe("completeGoogleZkLogin", () => {
 
     await expect(completeGoogleZkLogin("token")).rejects.toThrow(
       "Sign-in could not finish",
+    );
+  });
+
+  it("rejects login when OAuth client ID changed but server still returns legacy address", async () => {
+    const oauthSub = "dgv-test-google-sub-12345";
+    const userSalt = "982451653";
+    const legacyToken = fakeGoogleIdToken({ sub: oauthSub, aud: LEGACY_OAUTH_CLIENT_ID });
+    const newToken = fakeGoogleIdToken({ sub: oauthSub, aud: NEW_OAUTH_CLIENT_ID });
+    const legacyAddress = jwtToAddress(legacyToken, userSalt);
+
+    vi.mocked(loadPendingSession).mockReturnValue({
+      ephemeralSecretKey: "ephemeral-secret-key",
+      randomness: "randomness",
+      maxEpoch: 110,
+      provider: "google",
+      startedAt: new Date().toISOString(),
+    });
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sui_address: legacyAddress,
+        user_salt: userSalt,
+        provider: "google",
+        oauth_sub: oauthSub,
+      }),
+    } as Response);
+
+    await expect(completeGoogleZkLogin(newToken)).rejects.toThrow(
+      /Address derivation mismatch.*OAuth client ID/,
     );
   });
 });

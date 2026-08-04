@@ -73,7 +73,10 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
     const derived = jwtToAddress(idToken, regData.user_salt);
     if (derived !== regData.sui_address) {
       clearLoginInFlight();
-      throw new Error("Address derivation mismatch — contact support");
+      throw new Error(
+        "Address derivation mismatch — the Google OAuth client ID may have changed since this account was created. "
+        + "Restore the historical OAuth client or contact support.",
+      );
     }
   }
 
