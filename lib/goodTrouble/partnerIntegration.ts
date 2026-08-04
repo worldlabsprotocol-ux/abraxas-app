@@ -11,6 +11,7 @@ import {
   resolvePartnerReturnUrl,
   type PartnerIntegrationConfig,
 } from "@/lib/partner/referenceIntegration";
+import { SITE_URL } from "@/lib/siteUrl";
 
 export const GOOD_TROUBLE_INTEGRATION: PartnerIntegrationConfig = {
   partnerId: GOOD_TROUBLE_PARTNER_ID,
@@ -25,4 +26,13 @@ export function goodTroubleVerifyUrl(origin?: string): string {
 
 export function goodTroubleReturnUrl(origin?: string): string {
   return resolvePartnerReturnUrl(GOOD_TROUBLE_INTEGRATION, origin);
+}
+
+/** Production retail entry — canonical abraxasworld.xyz partner verify + enter callback. */
+export function goodTroubleProductionVerifyUrl(): string {
+  return goodTroubleVerifyUrl(SITE_URL);
+}
+
+export function goodTroubleProductionReturnUrl(): string {
+  return goodTroubleReturnUrl(SITE_URL);
 }

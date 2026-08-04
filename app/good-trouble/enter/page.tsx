@@ -4,7 +4,7 @@
 import { Suspense } from "react";
 import { PartnerEnterClient } from "@/components/partner/PartnerEnterClient";
 import { GOOD_TROUBLE_BRAND } from "@/lib/goodTrouble/constants";
-import { GOOD_TROUBLE_INTEGRATION, goodTroubleVerifyUrl } from "@/lib/goodTrouble/partnerIntegration";
+import { GOOD_TROUBLE_INTEGRATION, goodTroubleProductionVerifyUrl } from "@/lib/goodTrouble/partnerIntegration";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default function GoodTroubleEnterPage() {
         <PartnerEnterClient
           partnerId={GOOD_TROUBLE_INTEGRATION.partnerId}
           partnerName={GOOD_TROUBLE_BRAND.name}
-          verifyPath={goodTroubleVerifyUrl()}
+          verifyPath={goodTroubleProductionVerifyUrl()}
         />
       </Suspense>
     </div>
