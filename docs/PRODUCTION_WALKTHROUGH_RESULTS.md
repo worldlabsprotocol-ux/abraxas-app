@@ -31,6 +31,27 @@
 | PR #101 `residency_country` issuance | **Yes** | `residencyCountryClaim` in `lib/credentials/claimSchema.ts` at `5207736` |
 | PR #102 beta-gate / audit-trace | **Yes** | `5207736` = tip of `cursor/beta-gate-evidence-d541`; includes `rejectMismatchedClientFlowTrace` |
 
+**Pre-check (automated — 2026-08-04 UTC):**
+
+```bash
+BETA_GATE_BASE_URL=https://abraxasworld.xyz npm run gate:preflight
+```
+
+| Status | Count | Items |
+|--------|-------|-------|
+| **PASS** | 4 | Regression subset (protocol + validity + partner audit + GT wiring); Trust Decision fixture verification; production signing configured (`GET /api/trust/status` → `signing=true`); partner-flow evaluate reachable (HTTP 405) |
+| **PENDING** | 3 | Local runner secrets unavailable (`ABRAXAS_SIGNING_KEY`, `ABRAXAS_BROWSER_SESSION_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`); human IAT (`docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`); `v1.0.0-beta.0` tag (awaiting IAT pass + `RELEASE_DECISION.md`) |
+| **BLOCKED** | 1 | Independent external security review (no report artifact) |
+| **FAIL** | 0 | — |
+
+**Overall automated preflight:** PASS (exit code 0).
+
+**Production deployment at preflight:** `bc43284d79cbdeb9c084ace9ddcfa82696480e1f` (promoted 2026-08-04T04:00:46Z) — includes PR #106 Good Trouble checkout entry (`/good-trouble/checkout`).
+
+**IAT identity note:** Use a **new Google account** registered under the current production OAuth client (540…). Legacy DGV test identity (187… client era) is incompatible with the new OAuth client — not a global Scenario A blocker.
+
+---
+
 **Pre-check (automated — 2026-08-03 UTC):**
 
 ```bash
