@@ -96,6 +96,7 @@ export function verifyReceiptSignature(
   } catch {
     return false;
   }
+  if (sig.length !== nacl.sign.signatureLength) return false;
   return nacl.sign.detached.verify(message, sig, pubKey);
 }
 

@@ -66,6 +66,17 @@ export async function POST(req: Request) {
   const emailFromJwt = typeof jwtEmail === "string" ? jwtEmail : null;
 
   if (existing?.sui_address && existing?.user_salt) {
+    const derived = jwtToAddress(body.id_token, existing.user_salt);
+    const stored = normalizeSuiAddress(existing.sui_address);
+    if (derived !== stored) {
+      return NextResponse.json({
+        error:
+          "OAuth client ID no longer matches this registered zkLogin identity. "
+          + "Restore the historical NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID or sign in with a new Google account.",
+        code: "zklogin_oauth_audience_mismatch",
+      }, { status: 409 });
+    }
+
     if (emailFromJwt) {
       await sb.from("sui_zklogin_identities")
         .update({ email: emailFromJwt, updated_at: new Date().toISOString() })

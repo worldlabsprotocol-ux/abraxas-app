@@ -1,6 +1,8 @@
 // FILE: lib/sui/zklogin/config.ts
 // OAuth + proving service configuration for Sui zkLogin.
 
+import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
+
 export type ZkLoginProvider = "google" | "apple";
 
 export interface ZkLoginOAuthConfig {
@@ -11,26 +13,19 @@ export interface ZkLoginOAuthConfig {
   scope: string;
 }
 
-const APP_ORIGIN =
-  typeof window !== "undefined"
-    ? window.location.origin
-    : process.env.ABRAXAS_ISSUER_URL ?? "https://abraxasworld.xyz";
-
 export const ZKLOGIN_CALLBACK_PATH = "/auth/zklogin/callback";
 
-/** Pin redirect in Google Console via NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI, or it follows the current origin (each Vercel preview URL must be registered). */
+/**
+ * OAuth redirect URI must match the browser origin that stores the ephemeral key.
+ * Client: always same-origin (never a pinned cross-host redirect).
+ * Server: configured public app origin (NEXT_PUBLIC_APP_URL → issuer → Vercel → localhost).
+ */
 export function getZkLoginRedirectUri(): string {
-  const pinned = process.env.NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI?.trim();
-  if (pinned) return pinned.replace(/\/$/, "");
   if (typeof window !== "undefined") {
     return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
   }
-  const base = (process.env.ABRAXAS_ISSUER_URL ?? "https://abraxasworld.xyz").replace(/\/$/, "");
-  return `${base}${ZKLOGIN_CALLBACK_PATH}`;
+  return `${getPublicAppOrigin().replace(/\/$/, "")}${ZKLOGIN_CALLBACK_PATH}`;
 }
-
-/** @deprecated use getZkLoginRedirectUri() */
-export const ZKLOGIN_CALLBACK_URI = getZkLoginRedirectUri();
 
 export const ZKLOGIN_SESSION_KEY = "abraxas_zklogin_session_v1";
 export const ZKLOGIN_PENDING_KEY = "abraxas_zklogin_pending_v1";
