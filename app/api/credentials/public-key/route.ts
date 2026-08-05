@@ -4,6 +4,7 @@
 // This is how decentralized verification works — verifiers cache this.
 
 import { NextResponse } from "next/server";
+import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
 
 export async function GET() {
   const pubKey = process.env.ABRAXAS_PUBLIC_KEY;
@@ -11,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: "Public key not configured" }, { status: 500 });
   }
   return NextResponse.json({
-    issuer:        "https://abraxas-app.vercel.app",
+    issuer:        getSdkDefaultBaseUrl(),
     public_key:    JSON.parse(pubKey),
     algorithm:     "EdDSA",
     standard:      "W3C VC Data Model v2.0",
