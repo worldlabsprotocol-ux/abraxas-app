@@ -5,6 +5,7 @@ import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
 import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { getPermissionDefinition, permissionForPolicyId } from "@/lib/verify/permissions";
+import type { TrustEvaluationResult, TrustValidityState } from "@/lib/decisionReceipts/trustEvaluation";
 
 export interface TrustDecisionProof {
   receipt_id: string;
@@ -30,6 +31,10 @@ export interface TrustDecision {
   policy_version: number;
   relying_party_id: string;
   proof: TrustDecisionProof | null;
+  /** P1-2 additive — live trust evaluation; fail closed when false. */
+  currently_valid: boolean;
+  validity: TrustValidityState | "unknown";
+  invalidation_reasons: string[];
 }
 
 function inferTrustLevel(policyId: string): number | null {
@@ -42,11 +47,13 @@ export function buildTrustDecision(input: {
   decision: PolicyDecisionRecord;
   receipt?: DecisionReceiptRecord | null;
   appUrl?: string;
+  trustEvaluation?: TrustEvaluationResult | null;
 }): TrustDecision {
   const appUrl = input.appUrl ?? getSdkDefaultBaseUrl();
   const mapped = permissionForPolicyId(input.decision.policy_id);
 
   const approved = input.decision.decision === "approved" && input.decision.status === "active";
+  const trust = input.trustEvaluation;
 
   return {
     decision_id: input.decision.id,
@@ -72,5 +79,8 @@ export function buildTrustDecision(input: {
           verify_url: `${appUrl}/api/receipts/${input.receipt.id}/public`,
         }
       : null,
+    currently_valid: trust?.currently_valid ?? false,
+    validity: trust?.validity ?? "unknown",
+    invalidation_reasons: trust?.invalidation_reasons ?? [],
   };
 }

@@ -27,6 +27,10 @@ export const PARTNER_FLOW_RESPONSE_FIELDS = [
   "partner_result",
   "reason_codes",
   "flow_trace_id",
+  "replay_status",
+  "currently_valid",
+  "validity",
+  "invalidation_reasons",
 ] as const;
 
 /** Public receipt view fields partners rely on. */
@@ -66,6 +70,9 @@ export const FROZEN_TRUST_DECISION_KEYS = [
   "policy_version",
   "relying_party_id",
   "proof",
+  "currently_valid",
+  "validity",
+  "invalidation_reasons",
 ] as const;
 
 export const FROZEN_TRUST_DECISION_PROOF_KEYS = [

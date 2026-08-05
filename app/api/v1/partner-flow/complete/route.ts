@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
-import { completePartnerFlowAfterApproval } from "@/lib/partner/relyingPartyFlow";
+import { completePartnerFlowAfterApproval, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
   auditPartnerFlowStepBestEffort,
@@ -71,13 +71,25 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const result = await completePartnerFlowAfterApproval({
-    partnerId,
-    policyId,
-    returnUrl,
-    suiAddress: session.session.suiAddress,
-    verificationRequestId: body.verification_request_id,
-  });
+  let result;
+  try {
+    result = await completePartnerFlowAfterApproval({
+      partnerId,
+      policyId,
+      returnUrl,
+      suiAddress: session.session.suiAddress,
+      verificationRequestId: body.verification_request_id,
+    });
+  } catch (e) {
+    if (e instanceof PartnerFlowIdempotencyConflictError) {
+      const errorTraceId = flowTraceId ?? resolvePartnerFlowTraceId({});
+      return NextResponse.json(
+        { error: e.message, code: e.code, flow_trace_id: errorTraceId },
+        { status: 409 },
+      );
+    }
+    throw e;
+  }
 
   if (!result.ok) {
     const errorTraceId = flowTraceId ?? resolvePartnerFlowTraceId({});

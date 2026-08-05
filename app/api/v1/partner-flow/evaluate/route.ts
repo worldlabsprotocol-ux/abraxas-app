@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
-import { evaluatePartnerFlow } from "@/lib/partner/relyingPartyFlow";
+import { evaluatePartnerFlow, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { resolvePartnerFlowParams } from "@/lib/verify/resolveFlowParams";
 import {
@@ -117,6 +117,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
   } catch (e) {
+    if (e instanceof PartnerFlowIdempotencyConflictError) {
+      const flowTraceId = resolvePartnerFlowTraceId({});
+      return NextResponse.json(
+        { error: e.message, code: e.code, flow_trace_id: flowTraceId },
+        { status: 409 },
+      );
+    }
     const msg = e instanceof Error ? e.message : "Flow evaluation failed";
     const flowTraceId = resolvePartnerFlowTraceId({});
     void auditPartnerFlowStepBestEffort({
