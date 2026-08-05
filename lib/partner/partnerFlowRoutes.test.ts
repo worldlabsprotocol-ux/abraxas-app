@@ -208,7 +208,12 @@ describe("partner-flow routes — shared flow_trace_id", () => {
     expect(await res.json()).toEqual({
       error: "flow_trace_id does not match verification_request_id",
     });
-    expect(appendAuditEvent).not.toHaveBeenCalled();
+    expect(appendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "partner_flow.rejected",
+        metadata: expect.objectContaining({ flow_trace_id: SHARED_TRACE }),
+      }),
+    );
     expect(auditTraceIds()).not.toContain(maliciousTrace);
   });
 
@@ -238,7 +243,12 @@ describe("partner-flow routes — shared flow_trace_id", () => {
     expect(await res.json()).toEqual({
       error: "flow_trace_id does not match verification_request_id",
     });
-    expect(appendAuditEvent).not.toHaveBeenCalled();
+    expect(appendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "partner_flow.rejected",
+        metadata: expect.objectContaining({ flow_trace_id: SHARED_TRACE }),
+      }),
+    );
     expect(auditTraceIds()).not.toContain(maliciousTrace);
   });
 });

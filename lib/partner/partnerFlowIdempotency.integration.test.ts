@@ -103,6 +103,7 @@ function approvedReceipt(id = "dr_existing") {
 describe("issuePartnerSessionReceipt idempotency", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    appendAuditEvent.mockResolvedValue("audit-1");
     resetVerificationDecisionSchemaProbeForTests();
     markVerificationDecisionIdempotencyKeyAvailable();
     insertResult = { data: { id: "vd_new" }, error: null };
@@ -147,7 +148,12 @@ describe("issuePartnerSessionReceipt idempotency", () => {
     expect(first.decision_id).toBe("vd_existing");
     expect(first.receipt_id).toBe("dr_existing");
     expect(issueReceiptForDecision).not.toHaveBeenCalled();
-    expect(appendAuditEvent).not.toHaveBeenCalled();
+    expect(appendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "partner_flow.idempotent_replay" }),
+    );
+    expect(appendAuditEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "partner_flow.receipt_issued" }),
+    );
   });
 
   it("returns idempotent replay for active session evaluate retries", async () => {

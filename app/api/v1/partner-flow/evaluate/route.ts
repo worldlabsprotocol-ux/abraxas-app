@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
 
     const flowTraceId = resolvePartnerFlowTraceId({
       verificationRequestId: result.verification_request_id,
+      decisionId: result.decision_id,
       receiptId: result.partner_result?.receipt_id,
     });
 
@@ -89,11 +90,16 @@ export async function POST(request: NextRequest) {
         action: "partner_flow.evaluate",
         partnerId,
         policyId,
+        policyVersion: result.policy_version,
         subjectId: session.session.suiAddress,
         outcome: result.next,
         verificationRequestId: result.verification_request_id,
+        decisionId: result.decision_id,
         receiptId: result.partner_result?.receipt_id,
         reasonCodes: result.reason_codes,
+        validity: result.validity,
+        currentlyValid: result.currently_valid,
+        replayStatus: result.replay_status,
       });
     } catch (e) {
       if (e instanceof PartnerFlowAuditPersistenceError) {
