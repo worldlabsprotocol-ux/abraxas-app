@@ -1,0 +1,803 @@
+openapi: 3.1.0
+info:
+  title: Abraxas Partner Flow API
+  version: 1.0.0
+  description: |
+    Machine-readable contract for the **browser-redirect Partner Flow** integration path.
+    External protocols redirect holders to Abraxas, receive a signed session receipt on a
+    callback URL, and verify eligibility server-side via the public receipt endpoint.
+
+    ## Auth boundaries
+
+    | Surface | Credential | Operations in this document |
+    |---------|------------|---------------------------|
+    | **Browser entry & UI** | Holder browser on `https://abraxasworld.xyz` | `GET /partner/verify`, `GET /passport` |
+    | **Browser session API** | `abraxas_browser_session` httpOnly cookie (set after zkLogin/wallet sign-in) | `POST /api/v1/partner-flow/*`, verification-request consent routes |
+    | **Public receipt** | None — call from partner backend only | `GET /api/receipts/{receiptId}/public` |
+
+  x-abraxas-excluded-operations:
+    - method: POST
+      path: /api/v1/verification-requests
+      reason: Server-to-server — partner API key (`verify:requests`). See /docs/partner-verification-requests.
+    - method: GET
+      path: /api/v1/receipts/{receiptId}
+      reason: Partner-authenticated receipt view — API key required. Browser Partner Flow uses the public receipt endpoint.
+    - method: GET
+      path: /api/v1/decision-receipts/{receiptId}/status
+      reason: Partner-authenticated receipt status — API key required.
+    - method: POST
+      path: /api/credentials/verify
+      reason: Credential/registry verify — separate integration path.
+    - method: POST
+      path: /api/v1/authorize
+      reason: Abraxas Connect — separate integration path.
+
+  x-abraxas-callback-policy: |
+    Partner callback redirects use **frozen query parameters only** (no PII):
+    `status`, `decision_id`, `receipt_id`, `receipt_expires_at`, `credential_id`, `policy_id`, `partner_id`.
+    Callbacks must not contain legal name, date of birth, document numbers, images, or wallet address.
+    Always verify via `GET /api/receipts/{receiptId}/public` — never trust callback parameters alone.
+
+  x-abraxas-receipt-validation: |
+    **Fail closed by default** (production). Integrators must verify on the public receipt view:
+    - `signature_valid === true`
+    - `decision_result === "approved"`
+    - `status === "active"` (missing status fails)
+    - `expires_at` present, valid ISO-8601, and not expired at verification time
+    - `production_usable === true`
+    - `partner_id` matches your integration id
+    - `policy_id` matches your policy gate id
+    Sandbox/pilot policies: accept `production_usable: false` only with **explicit opt-in**
+    (`allowSandbox: true` in `validatePartnerFlowPublicReceipt` or equivalent in your stack).
+
+  contact:
+    name: Abraxas Integrations
+    url: https://abraxasworld.xyz/docs/partner-flow
+
+servers:
+  - url: https://abraxasworld.xyz
+    description: Canonical production host
+
+tags:
+  - name: BrowserEntry
+    description: Holder-facing redirect entry (no API key; construct HTTPS links server-side).
+  - name: BrowserSession
+    description: Partner Flow JSON APIs — require `abraxas_browser_session` cookie on the Abraxas origin (`credentials: include`). **Never embed partner API keys in browser code.**
+  - name: PassportHandoff
+    description: Holder consent preview and decision during first-time ID verification (`next=passport`).
+  - name: PublicReceipt
+    description: Unsigned-fetch public receipt — partner backend only; CORS enabled.
+
+paths:
+  /partner/verify:
+    get:
+      tags: [BrowserEntry]
+      operationId: partnerFlowEntry
+      summary: Partner Flow browser entry
+      description: |
+        Redirect the holder to this URL to start Partner Flow. Abraxas UI authenticates the holder,
+        calls `POST /api/v1/partner-flow/evaluate`, and eventually redirects to your `return_url`.
+      parameters:
+        - $ref: "#/components/parameters/PartnerIdQuery"
+        - $ref: "#/components/parameters/PolicyIdQuery"
+        - $ref: "#/components/parameters/ReturnUrlQuery"
+        - $ref: "#/components/parameters/PermissionQuery"
+        - $ref: "#/components/parameters/PermissionVersionQuery"
+      responses:
+        "200":
+          description: Partner Flow entry page (HTML).
+
+  /passport:
+    get:
+      tags: [PassportHandoff]
+      operationId: passportHandoff
+      summary: Passport ID capture and consent UI
+      description: |
+        Returned as `passport_url` when evaluate yields `next=passport`. Holder completes biometric ID
+        verification and consent before `POST /api/v1/partner-flow/complete` issues the session receipt.
+      parameters:
+        - name: verify_request
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+          description: Verification request id from evaluate response.
+        - $ref: "#/components/parameters/PartnerIdQuery"
+        - $ref: "#/components/parameters/PolicyIdQuery"
+        - name: return
+          in: query
+          required: true
+          schema: { type: string, format: uri }
+          description: Partner callback URL (must be allowlisted).
+      responses:
+        "200":
+          description: Passport page (HTML).
+
+  /api/v1/partner-flow/evaluate:
+    post:
+      tags: [BrowserSession]
+      operationId: partnerFlowEvaluate
+      summary: Evaluate holder against partner policy
+      description: |
+        Called by Abraxas UI with the holder browser session. Returns the next step:
+        `authenticate`, `passport`, `enter`, `denied`, or `pending_review`.
+      security:
+        - BrowserSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerFlowEvaluateRequest"
+      responses:
+        "200":
+          description: Flow evaluation result (business denial/review uses HTTP 200 with `next` field).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerFlowEvaluateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedBrowser"
+        "503":
+          $ref: "#/components/responses/AuditPersistenceFailed"
+
+  /api/v1/partner-flow/complete:
+    post:
+      tags: [BrowserSession]
+      operationId: partnerFlowComplete
+      summary: Complete flow after approval
+      description: |
+        Called after manual approval and credential issuance, or after Passport consent path completes.
+        Issues session receipt and returns redirect URL with frozen callback parameters.
+      security:
+        - BrowserSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerFlowCompleteRequest"
+      responses:
+        "200":
+          description: Completion result — typically `next=enter` with `redirect_url`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerFlowEvaluateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedBrowser"
+        "503":
+          $ref: "#/components/responses/AuditPersistenceFailed"
+
+  /api/v1/partner-flow/refresh:
+    post:
+      tags: [BrowserSession]
+      operationId: partnerFlowRefresh
+      summary: Refresh expired session receipt
+      description: |
+        Re-issue a session receipt when the prior receipt TTL expired but the underlying credential
+        remains valid. Requires browser session.
+      security:
+        - BrowserSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerFlowCompleteRequest"
+      responses:
+        "200":
+          description: Refresh result — typically `next=enter` with new receipt in `partner_result`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerFlowEvaluateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedBrowser"
+        "503":
+          $ref: "#/components/responses/AuditPersistenceFailed"
+
+  /api/v1/verification-requests/{verificationRequestId}:
+    get:
+      tags: [PassportHandoff]
+      operationId: verificationRequestPreview
+      summary: Verification request preview (holder)
+      security:
+        - BrowserSession: []
+      parameters:
+        - $ref: "#/components/parameters/VerificationRequestId"
+      responses:
+        "200":
+          description: Consent preview before holder approves sharing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationRequestPreview"
+        "401":
+          $ref: "#/components/responses/UnauthorizedBrowser"
+        "404":
+          description: Request not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Request not found
+        "410":
+          description: Request expired.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Request expired
+
+  /api/v1/verification-requests/{verificationRequestId}/consent:
+    post:
+      tags: [PassportHandoff]
+      operationId: verificationRequestConsent
+      summary: Holder consents to verification request
+      security:
+        - BrowserSession: []
+      parameters:
+        - $ref: "#/components/parameters/VerificationRequestId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+      responses:
+        "200":
+          description: Policy decision after consent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationRequestConsentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedBrowser"
+
+  /api/v1/verification-requests/{verificationRequestId}/decline:
+    post:
+      tags: [PassportHandoff]
+      operationId: verificationRequestDecline
+      summary: Holder declines verification request
+      security:
+        - BrowserSession: []
+      parameters:
+        - $ref: "#/components/parameters/VerificationRequestId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+      responses:
+        "200":
+          description: Request cancelled.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [cancelled]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedBrowser"
+
+  /api/receipts/{receiptId}/public:
+    get:
+      tags: [PublicReceipt]
+      operationId: getPublicReceipt
+      summary: Public eligibility decision receipt
+      description: |
+        Fetch the signed receipt from your server after the holder callback. No authentication required.
+        Response includes `signature_valid` (computed server-side). **Callbacks contain no PII** —
+        this endpoint is the source of truth for eligibility verification.
+      parameters:
+        - $ref: "#/components/parameters/ReceiptId"
+      responses:
+        "200":
+          description: Public receipt view (cacheable 60s, CORS `*`).
+          headers:
+            Cache-Control:
+              schema: { type: string }
+              example: "public, max-age=60"
+            Access-Control-Allow-Origin:
+              schema: { type: string }
+              example: "*"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionReceiptPublicView"
+        "404":
+          description: Receipt not found — fail closed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Receipt not found
+
+components:
+  securitySchemes:
+    BrowserSession:
+      type: apiKey
+      in: cookie
+      name: abraxas_browser_session
+      description: |
+        httpOnly session cookie set on the Abraxas origin after zkLogin or wallet sign-in.
+        Browser clients must use `credentials: "include"`. Not available to cross-origin JavaScript
+        on partner domains.
+
+  parameters:
+    PartnerIdQuery:
+      name: partner_id
+      in: query
+      required: true
+      schema: { type: string }
+      description: Relying party identifier (`relying_party_id` alias accepted in JSON bodies).
+    PolicyIdQuery:
+      name: policy_id
+      in: query
+      required: true
+      schema: { type: string }
+      description: Active `partner_policies.id` to evaluate (or use `permission` instead).
+    ReturnUrlQuery:
+      name: return_url
+      in: query
+      required: true
+      schema: { type: string, format: uri }
+      description: HTTPS callback on partner origin; must appear in `partners.allowed_return_urls`.
+    PermissionQuery:
+      name: permission
+      in: query
+      required: false
+      schema: { type: string }
+      description: Alternative to `policy_id` — resolved to a policy for the relying party.
+    PermissionVersionQuery:
+      name: permission_version
+      in: query
+      required: false
+      schema: { type: string }
+    VerificationRequestId:
+      name: verificationRequestId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ReceiptId:
+      name: receiptId
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    BadRequest:
+      description: Invalid request, allowlist rejection, flow error, or flow_trace_id mismatch.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorWithFlowTrace"
+          examples:
+            invalidJson:
+              summary: Malformed JSON body
+              value: { error: Invalid JSON }
+            missingFields:
+              summary: Required fields missing (evaluate)
+              value:
+                error: relying_party_id (or partner_id) and return_url are required
+            missingCompleteFields:
+              summary: Required fields missing (complete/refresh)
+              value:
+                error: partner_id, policy_id, and return_url are required
+            returnUrlNotAllowed:
+              summary: Callback not allowlisted
+              value:
+                error: return_url is not allowed for this relying party
+            flowTraceMismatch:
+              summary: Client flow_trace_id does not match server derivation
+              value:
+                error: flow_trace_id does not match verification_request_id
+                flow_trace_id: ft_vr_00000000-0000-4000-8000-0000000000aa
+    UnauthorizedBrowser:
+      description: No valid browser session on the Abraxas origin.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Sign in required in this browser
+    AuditPersistenceFailed:
+      description: Successful flow step could not be audited — retry evaluate.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Audit persistence failed
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    ErrorWithFlowTrace:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        flow_trace_id:
+          type: string
+          description: Server-derived trace id for support correlation.
+
+    PartnerFlowEvaluateRequest:
+      type: object
+      additionalProperties: false
+      required: [return_url]
+      properties:
+        partner_id:
+          type: string
+          description: Relying party id (alias of `relying_party_id`).
+        relying_party_id:
+          type: string
+        policy_id:
+          type: string
+        permission:
+          type: string
+          description: Required if `policy_id` omitted.
+        permission_version:
+          type: string
+        return_url:
+          type: string
+          format: uri
+      description: |
+        Requires `(partner_id | relying_party_id)` and `return_url`.
+        Requires (`policy_id` | `permission`).
+
+    PartnerFlowCompleteRequest:
+      type: object
+      additionalProperties: false
+      required: [partner_id, policy_id, return_url]
+      properties:
+        partner_id:
+          type: string
+        policy_id:
+          type: string
+        return_url:
+          type: string
+          format: uri
+        verification_request_id:
+          type: string
+          format: uuid
+        flow_trace_id:
+          type: string
+          description: Optional client hint; server rejects if it does not match verification_request_id.
+
+    PartnerFlowNextStep:
+      type: string
+      enum: [authenticate, passport, enter, denied, pending_review]
+
+    PartnerVerificationResult:
+      type: object
+      required:
+        - decision
+        - credential_id
+        - issuer
+        - evaluated_at
+        - receipt_id
+        - receipt_expires_at
+        - policy_id
+        - partner_id
+        - identity_verified
+        - over_21
+        - assurance_level
+        - reason_codes
+      properties:
+        decision:
+          type: string
+          enum: [approved, denied, manual_review]
+        credential_id:
+          type: string
+        issuer:
+          type: string
+          format: uri
+        evaluated_at:
+          type: string
+          format: date-time
+        receipt_id:
+          type: string
+        receipt_expires_at:
+          type: string
+          format: date-time
+        policy_id:
+          type: string
+        partner_id:
+          type: string
+        identity_verified:
+          type: boolean
+        over_21:
+          type: boolean
+          description: Derived eligibility — partners never receive DOB or document images.
+        assurance_level:
+          type: string
+          nullable: true
+        reason_codes:
+          type: array
+          items: { type: string }
+
+    PartnerFlowEvaluateResponse:
+      type: object
+      required: [next, flow_trace_id]
+      properties:
+        next:
+          $ref: "#/components/schemas/PartnerFlowNextStep"
+        redirect_url:
+          type: string
+          format: uri
+          description: Partner callback URL with frozen query parameters when `next=enter`.
+        passport_url:
+          type: string
+          format: uri
+          description: Passport handoff URL when `next=passport`.
+        verification_request_id:
+          type: string
+          format: uuid
+        partner_result:
+          $ref: "#/components/schemas/PartnerVerificationResult"
+        reason_codes:
+          type: array
+          items: { type: string }
+        flow_trace_id:
+          type: string
+
+    PartnerCallbackQueryParams:
+      type: object
+      description: |
+        Frozen callback query parameters on `redirect_url` — **no PII**.
+        Exact set enforced by protocol compatibility tests.
+      required:
+        - status
+        - decision_id
+        - receipt_id
+        - receipt_expires_at
+        - credential_id
+        - policy_id
+        - partner_id
+      properties:
+        status:
+          type: string
+        decision_id:
+          type: string
+        receipt_id:
+          type: string
+        receipt_expires_at:
+          type: string
+          format: date-time
+        credential_id:
+          type: string
+        policy_id:
+          type: string
+        partner_id:
+          type: string
+      additionalProperties: false
+
+    VerificationRequestPreview:
+      type: object
+      required:
+        - request_id
+        - partner_id
+        - policy_id
+        - policy_name
+        - requested_claims
+        - claim_labels
+        - never_shared
+        - expires_at
+        - status
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        partner_id:
+          type: string
+        policy_id:
+          type: string
+        policy_name:
+          type: string
+        requested_action:
+          type: string
+          nullable: true
+        requested_claims:
+          type: array
+          items: { type: string }
+        claim_labels:
+          type: array
+          items:
+            type: object
+            required: [claim_type, label, will_share]
+            properties:
+              claim_type: { type: string }
+              label: { type: string }
+              will_share: { type: boolean }
+        never_shared:
+          type: array
+          items: { type: string }
+        expires_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    VerificationRequestConsentResponse:
+      type: object
+      required: [decision, claims, decision_reference, reason_codes]
+      properties:
+        decision:
+          type: string
+        claims:
+          type: object
+          additionalProperties: true
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        decision_reference:
+          type: string
+          description: Decision id (`decision_id`).
+        receipt_id:
+          type: string
+          nullable: true
+        receipt_public_url:
+          type: string
+          format: uri
+          nullable: true
+        reason_codes:
+          type: array
+          items: { type: string }
+
+    DecisionReceiptResult:
+      type: string
+      enum: [approved, denied, manual_review]
+
+    DecisionReceiptStatus:
+      type: string
+      enum: [active, expired, revoked]
+
+    DecisionReceiptContext:
+      type: string
+      enum: [production, sandbox_only]
+
+    EvaluatedClaimRef:
+      type: object
+      required: [claim_id, claim_type, issuer_id, status, issued_at]
+      properties:
+        claim_id: { type: string }
+        claim_type: { type: string }
+        issuer_id: { type: string }
+        status: { type: string }
+        issued_at: { type: string, format: date-time }
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    DecisionReceiptPublicView:
+      type: object
+      description: |
+        Public-safe receipt view. Integrators must apply fail-closed validation
+        (see `x-abraxas-receipt-validation` in info).
+      required:
+        - receipt_id
+        - schema_version
+        - policy_id
+        - policy_version
+        - partner_id
+        - subject_pseudonym_id
+        - decision_result
+        - reason_codes
+        - evaluated_claim_refs
+        - issuer_refs
+        - decision_context
+        - production_usable
+        - evaluated_at
+        - status
+        - payload_hash
+        - signature
+        - signing_key_id
+        - signature_valid
+        - artifact_type
+      properties:
+        receipt_id: { type: string }
+        schema_version: { type: string, example: "1.0.0" }
+        policy_id: { type: string }
+        policy_version: { type: integer }
+        partner_id: { type: string }
+        subject_pseudonym_id: { type: string }
+        decision_result:
+          $ref: "#/components/schemas/DecisionReceiptResult"
+        reason_codes:
+          type: array
+          items: { type: string }
+        evaluated_claim_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvaluatedClaimRef"
+        issuer_refs:
+          type: array
+          items: { type: string }
+        decision_context:
+          $ref: "#/components/schemas/DecisionReceiptContext"
+        production_usable:
+          type: boolean
+          description: Must be true for production gates unless sandbox opt-in.
+        evaluated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Session receipt TTL — required for Partner Flow validation.
+        status:
+          $ref: "#/components/schemas/DecisionReceiptStatus"
+        payload_hash: { type: string }
+        signature: { type: string }
+        signing_key_id: { type: string }
+        signature_valid:
+          type: boolean
+          description: Must be true — Ed25519 signature over canonical payload_hash.
+        anchor_reference:
+          type: string
+          nullable: true
+        artifact_type:
+          type: string
+          enum: [eligibility_decision_receipt]
+
+    PartnerFlowReceiptValidationExpectations:
+      type: object
+      description: |
+        Server-side validation inputs matching `validatePartnerFlowPublicReceipt`.
+        Default is fail-closed production verification.
+      required: [partnerId, policyId]
+      properties:
+        partnerId:
+          type: string
+        policyId:
+          type: string
+        allowSandbox:
+          type: boolean
+          default: false
+          description: When false (default), require production_usable === true.
+
+    PartnerFlowReceiptValidationErrors:
+      type: array
+      description: Documented validation error tokens from validatePartnerFlowPublicReceipt.
+      items:
+        type: string
+        enum:
+          - receipt_missing
+          - signature_invalid
+          - decision_not_approved
+          - partner_mismatch
+          - policy_mismatch
+          - status_not_active
+          - expires_at_missing
+          - expires_at_invalid
+          - receipt_expired
+          - production_not_usable
