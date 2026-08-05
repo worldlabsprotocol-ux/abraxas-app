@@ -46,6 +46,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         links: [
           { label: "Passport", href: "/passport" },
           { label: "Integrate", href: "/integrate" },
+          { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Relying party guide", href: "/docs/relying-party-verify" },
         ],
       },
@@ -97,8 +98,9 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         id: "api",
         title: "API",
         summary:
-          "POST /api/credentials/verify · GET /api/credentials/public-key · POST /api/identity/documents/capture · GET /api/identity/status · POST /api/auth/zklogin/register",
+          "Partner Flow redirect, POST /api/credentials/verify, verification requests, and public receipt verification.",
         links: [
+          { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "AI agents", href: "/docs/ai-agents" },
           { label: "Partner verification requests", href: "/docs/partner-verification-requests" },
         ],
