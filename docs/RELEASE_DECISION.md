@@ -61,7 +61,7 @@ Sign-off requires **measurable thresholds**, not subjective "looks good." All mu
 
 | Limitation | Target |
 |------------|--------|
-| Immutable policy versions not yet implemented | P1-1 |
+| Immutable policy versions — code merged; migration 055 operator apply pending | P1-1 (PR pending) |
 | Biometric telemetry persistence pending | P1-4 |
 
 **Merged (code on main):** P1-2 validity/idempotency (PR #113), P1-3 partner-flow audit traceability (PR #114). Operator migrations 053/054 and IAT evidence still required.

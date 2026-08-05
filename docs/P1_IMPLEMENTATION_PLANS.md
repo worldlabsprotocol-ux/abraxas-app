@@ -1,7 +1,7 @@
 # P1 Implementation Plans
 
-**Status:** Planning only — **do not implement until `v1.0.0-beta.0` is tagged.**  
-**Prerequisite:** IAT passed, `PROTOCOL_COMPATIBILITY.md` complete, `RELEASE_DECISION.md` signed.
+**Status:** P1-1 implemented in code (migration 055 pending operator apply). See `docs/POLICY_VERSION_OPERATOR.md`.  
+**Prerequisite for P1-2+:** IAT passed, `PROTOCOL_COMPATIBILITY.md` complete, `RELEASE_DECISION.md` signed.
 
 ---
 

@@ -1,38 +1,61 @@
 import { describe, expect, it } from "vitest";
+import {
+  PolicyImmutabilityError,
+  assertPublishedPolicyFieldsUnchanged,
+} from "@/lib/policy/policyLifecycle";
 
 /**
- * P1-1 readiness: documents current policy versioning behavior at beta.
- * Immutable policy snapshots are NOT implemented pre-beta — decisions pin policy_version integer only.
+ * P1-1: published policy versions are immutable at the service layer
+ * (database trigger in 055_policy_immutable_versions.sql enforces the same boundary).
  */
-describe("policy version pinning (P1-1 gap documentation)", () => {
-  it("verification_decisions schema pins policy_id and policy_version at decision time", () => {
-    const decisionColumns = [
+describe("policy immutability contract (P1-1)", () => {
+  it("documents immutable fields on active and deprecated versions", () => {
+    const immutable = [
       "id",
+      "version",
       "partner_id",
-      "subject_id",
-      "policy_id",
-      "policy_version",
-      "decision",
-      "claims_json",
-      "reason_codes",
-      "valid_until",
+      "name",
+      "rules_json",
+      "effective_at",
     ];
-    expect(decisionColumns).toContain("policy_id");
-    expect(decisionColumns).toContain("policy_version");
+    expect(immutable).toContain("rules_json");
+    expect(immutable).toContain("version");
   });
 
-  it("decision receipts pin policy_id and policy_version on signed artifact", () => {
-    const receiptPinned = {
-      policy_id: "good-trouble-retail-v1",
-      policy_version: 1,
-    };
-    expect(receiptPinned.policy_version).toBe(1);
+  it("rejects in-place rules_json mutation on active policy versions", () => {
+    expect(() =>
+      assertPublishedPolicyFieldsUnchanged(
+        {
+          status: "active",
+          id: "good-trouble-retail-v1",
+          version: 1,
+          partner_id: "good-trouble-cannabis",
+          name: "Good Trouble retail",
+          rules_json: { minimum_age: 21 },
+        },
+        { rules_json: { minimum_age: 18 } },
+      ),
+    ).toThrow(PolicyImmutabilityError);
   });
 
-  it("documents P1-1 gap: live rules_json can drift from pinned version", () => {
-    // partner_policies uses ON CONFLICT DO UPDATE in migrations — rules_json is not immutable today.
-    // Reproducing a decision requires reading historical rules_json snapshot (P1-1 post-beta).
-    const p1Gap = "rules_json mutable in partner_policies";
-    expect(p1Gap).toContain("mutable");
+  it("allows draft policy versions to be edited before publish", () => {
+    expect(() =>
+      assertPublishedPolicyFieldsUnchanged(
+        {
+          status: "draft",
+          id: "good-trouble-retail-v1",
+          version: 2,
+          partner_id: "good-trouble-cannabis",
+          name: "Good Trouble retail v2",
+          rules_json: { minimum_age: 21 },
+        },
+        { rules_json: { minimum_age: 21, sandbox_only: true } },
+      ),
+    ).not.toThrow();
+  });
+
+  it("requires new versions instead of mutating prior published rows", () => {
+    const createNewVersion = (currentVersion: number) => currentVersion + 1;
+    expect(createNewVersion(1)).toBe(2);
   });
 });

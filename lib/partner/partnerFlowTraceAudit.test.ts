@@ -454,4 +454,20 @@ describe("partnerFlowTraceAudit", () => {
     expect(result.sequence_ok).toBe(false);
     expect(result.issues).toContain("receipt_issued_without_issuance_path");
   });
+
+  it("flags mixed policy_version values within one flow trace (P1-1 pinning)", () => {
+    const result = analyzePartnerFlowTrace(TRACE, [
+      event("partner_flow.evaluate", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        outcome: "passport",
+      }, "2026-08-05T00:00:01.000Z"),
+      receiptIssued("dr-1", "evaluate", { policy_version: 2 }, "2026-08-05T00:00:02.000Z"),
+    ]);
+
+    expect(result.linkage_ok).toBe(false);
+    expect(result.issues.some(i => i.startsWith("multiple_policy_versions:"))).toBe(true);
+  });
 });

@@ -171,7 +171,7 @@ export const INTEGRATION_STATUS_SECTIONS: readonly IntegrationStatusSection[] = 
       "v1.0.0-beta.0 baseline tag — NOT created",
       "PROTOCOL_COMPATIBILITY freeze sign-off — pending",
       "RELEASE_DECISION.md — draft only",
-      "P1-1 immutable policy versions — not implemented",
+      "P1-1 immutable policy versions — code merged; apply migration 055 in Supabase",
     ],
   },
   {
