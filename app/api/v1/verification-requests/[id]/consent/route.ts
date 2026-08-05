@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import { consentAndDecide } from "@/lib/verification/requestsService";
 
 export async function POST(
@@ -22,6 +23,8 @@ export async function POST(
       suiAddress: session.session.suiAddress,
     });
 
+    const appOrigin = getPublicAppOriginFromRequest(req);
+
     return NextResponse.json({
       decision: result.decision,
       claims: result.claims,
@@ -29,7 +32,7 @@ export async function POST(
       decision_reference: result.decision_id,
       receipt_id: result.receipt_id,
       receipt_public_url: result.receipt_id
-        ? `${process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app"}/api/receipts/${result.receipt_id}/public`
+        ? `${appOrigin}/api/receipts/${result.receipt_id}/public`
         : null,
       reason_codes: result.reason_codes,
     });
