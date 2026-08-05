@@ -120,3 +120,11 @@ export function getPublicAppOriginFromRequest(request: {
 
   return getPublicAppOrigin();
 }
+
+/**
+ * Resolve app origin for server-generated protocol URLs (Verify, Connect, OpenID4VP).
+ * Prefer request-derived origin when callers pass it; otherwise SDK/env default (SITE_URL in prod).
+ */
+export function resolveProtocolAppOrigin(appOrigin?: string): string {
+  return (appOrigin ?? getSdkDefaultBaseUrl()).replace(/\/$/, "");
+}

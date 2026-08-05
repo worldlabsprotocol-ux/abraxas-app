@@ -19,6 +19,7 @@ import { getReceiptById } from "@/lib/decisionReceipts/service";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { getActiveWalletBinding } from "@/lib/walletAuthority/service";
 import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAllowlist";
+import { resolveProtocolAppOrigin } from "@/lib/app/publicAppOrigin";
 import { dispatchConnectWebhook } from "@/lib/connect/webhooks";
 import type {
   ConnectAuthorizationPartnerView,
@@ -28,8 +29,12 @@ import type {
 } from "@/lib/connect/types";
 import type { WalletChain } from "@/lib/walletAuthority/types";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
 const AUTH_TTL_MS = 30 * 60 * 1000;
+
+export function buildHostedConnectAuthorizeUrl(requestId: string, appOrigin?: string): string {
+  const base = resolveProtocolAppOrigin(appOrigin);
+  return `${base}/connect/authorize?request=${requestId}`;
+}
 
 function generateAuthRequestId(): string {
   return `car_${randomBytes(12).toString("base64url")}`;
@@ -81,6 +86,7 @@ export async function createAuthorizationRequest(input: {
   chainId?: number;
   returnUrl: string;
   idempotencyKey?: string;
+  appOrigin?: string;
 }): Promise<{
   authorization_request_id: string;
   hosted_connect_url: string;
@@ -112,7 +118,7 @@ export async function createAuthorizationRequest(input: {
       const mapped = mapRow(existing as Record<string, unknown>);
       return {
         authorization_request_id: mapped.id,
-        hosted_connect_url: `${APP_URL}/connect/authorize?request=${mapped.id}`,
+        hosted_connect_url: buildHostedConnectAuthorizeUrl(mapped.id, input.appOrigin),
         expires_at: mapped.expires_at,
         status: mapped.status,
       };
@@ -158,7 +164,7 @@ export async function createAuthorizationRequest(input: {
 
   return {
     authorization_request_id: id,
-    hosted_connect_url: `${APP_URL}/connect/authorize?request=${id}`,
+    hosted_connect_url: buildHostedConnectAuthorizeUrl(id, input.appOrigin),
     expires_at: expiresAt,
     status: "awaiting_user",
   };

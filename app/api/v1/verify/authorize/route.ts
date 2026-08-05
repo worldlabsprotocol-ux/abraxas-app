@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
+import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import { createVerifyAuthorization } from "@/lib/verify/authorize";
 import { PermissionResolutionError } from "@/lib/verify/resolvePermission";
 
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       permissionVersion: body.permission_version,
       redirectUri,
       state: body.state,
+      appOrigin: getPublicAppOriginFromRequest(req),
     });
 
     void logPartnerUsage({

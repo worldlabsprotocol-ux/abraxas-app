@@ -64,7 +64,7 @@ describe("buildVerifyAuthorizationUrl", () => {
       permission: "regulated_purchase",
       permissionVersion: "v1",
       policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
-      redirectUri: "https://abraxas-app.vercel.app/good-trouble/enter",
+      redirectUri: "https://abraxasworld.xyz/good-trouble/enter",
       state: "abc123",
       trustRequestId: "tr_test",
     });
