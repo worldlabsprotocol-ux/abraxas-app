@@ -229,6 +229,7 @@ export function analyzePartnerFlowTrace(
 
   const partnerIds = new Set<string>();
   const policyIds = new Set<string>();
+  const policyVersions = new Set<number>();
   const verificationRequestIds = new Set<string>();
   const decisionIds = new Set<string>();
   const receiptIds = new Set<string>();
@@ -251,6 +252,9 @@ export function analyzePartnerFlowTrace(
 
     if (partnerId) partnerIds.add(partnerId);
     if (policyId) policyIds.add(policyId);
+    if (typeof event.policy_version === "number") policyVersions.add(event.policy_version);
+    const metaPolicyVersion = meta.policy_version;
+    if (typeof metaPolicyVersion === "number") policyVersions.add(metaPolicyVersion);
     if (vrId) verificationRequestIds.add(vrId);
     if (decisionId) decisionIds.add(decisionId);
     if (receiptId) receiptIds.add(receiptId);
@@ -271,6 +275,10 @@ export function analyzePartnerFlowTrace(
   if (policyIds.size > 1) {
     linkage_ok = false;
     issues.push(`multiple_policy_ids:${Array.from(policyIds).join(",")}`);
+  }
+  if (policyVersions.size > 1) {
+    linkage_ok = false;
+    issues.push(`multiple_policy_versions:${Array.from(policyVersions).join(",")}`);
   }
   if (verificationRequestIds.size > 1) {
     linkage_ok = false;

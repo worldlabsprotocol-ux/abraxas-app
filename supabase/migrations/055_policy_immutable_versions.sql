@@ -1,0 +1,110 @@
+-- 055_policy_immutable_versions.sql
+-- P1-1: Immutable published policy versions.
+--
+-- Lifecycle:
+--   draft       — editable; may be deleted
+--   active      — immutable identity, version, and rules_json; one active row per policy id
+--   deprecated  — immutable historical snapshot; retained for reproducibility
+--
+-- Changing rules requires INSERT of a new version row, then publish (draft → active)
+-- while deprecating the prior active version.
+--
+-- ── PREFLIGHT (run before applying) ─────────────────────────────
+-- select count(*) from public.partner_policies;
+-- select id, version, status from public.partner_policies order by id, version;
+-- select conname, conrelid::regclass
+--   from pg_constraint
+--  where confrelid = 'public.partner_policies'::regclass;
+--
+-- ── ROLLBACK (manual; do not run in CI) ─────────────────────────
+-- drop trigger if exists trg_partner_policies_immutability on public.partner_policies;
+-- drop function if exists public.enforce_partner_policy_immutability();
+-- drop index if exists public.partner_policies_one_active_per_id;
+-- alter table public.partner_policies drop constraint if exists partner_policies_pkey;
+-- alter table public.partner_policies add primary key (id);
+-- (Re-add dropped FKs only if your environment had them and you need strict referential integrity.)
+
+-- Drop FK constraints that reference partner_policies(id) alone.
+-- policy_id columns reference the policy family id, not a specific version row.
+alter table if exists public.verification_requests
+  drop constraint if exists verification_requests_policy_id_fkey;
+
+alter table if exists public.partner_issuer_trust_rules
+  drop constraint if exists partner_issuer_trust_rules_policy_id_fkey;
+
+-- Move primary key from id → (id, version) so multiple versions share a policy id.
+alter table public.partner_policies
+  drop constraint if exists partner_policies_pkey;
+
+alter table public.partner_policies
+  add constraint partner_policies_pkey primary key (id, version);
+
+-- At most one active version per policy id.
+create unique index if not exists partner_policies_one_active_per_id
+  on public.partner_policies (id)
+  where status = 'active';
+
+create or replace function public.enforce_partner_policy_immutability()
+returns trigger
+language plpgsql
+as $$
+declare
+  immutable_fields text[] := array['id', 'version', 'partner_id', 'name', 'rules_json', 'effective_at'];
+  field_name text;
+begin
+  if tg_op = 'DELETE' then
+    if old.status <> 'draft' then
+      raise exception 'partner_policies: cannot delete % policy version %.%',
+        old.status, old.id, old.version;
+    end if;
+    return old;
+  end if;
+
+  if tg_op = 'INSERT' then
+    if new.version is null or new.version < 1 then
+      raise exception 'partner_policies: version must be a positive integer';
+    end if;
+    return new;
+  end if;
+
+  if tg_op = 'UPDATE' then
+    -- Draft rows remain fully editable (including delete via separate op).
+    if old.status = 'draft' then
+      return new;
+    end if;
+
+    -- Published rows: identity + rules are immutable.
+    if old.status in ('active', 'deprecated') then
+      foreach field_name in array immutable_fields loop
+        if to_jsonb(old) -> field_name is distinct from to_jsonb(new) -> field_name then
+          raise exception 'partner_policies: cannot mutate % on % policy version %.%',
+            field_name, old.status, old.id, old.version;
+        end if;
+      end loop;
+    end if;
+
+    -- Allowed status transitions for published rows.
+    if old.status = 'active' and new.status not in ('active', 'deprecated') then
+      raise exception 'partner_policies: active version may only transition to deprecated';
+    end if;
+    if old.status = 'deprecated' and new.status <> 'deprecated' then
+      raise exception 'partner_policies: deprecated versions cannot be reactivated';
+    end if;
+
+    return new;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_partner_policies_immutability on public.partner_policies;
+create trigger trg_partner_policies_immutability
+  before insert or update or delete on public.partner_policies
+  for each row execute function public.enforce_partner_policy_immutability();
+
+-- ── POST-MIGRATION VERIFICATION ─────────────────────────────────
+-- select id, version, status from public.partner_policies order by id, version;
+-- \d public.partner_policies
+-- -- Immutability probe (expect ERROR on active row):
+-- -- update public.partner_policies set rules_json = rules_json where status = 'active' limit 1;

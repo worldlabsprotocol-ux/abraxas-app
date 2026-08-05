@@ -65,7 +65,7 @@ Do **not** mark these complete in public materials:
 | `v1.0.0-beta.0` tag | **NOT created** | Git tag |
 | Protocol compatibility freeze | **Pending** | `docs/PROTOCOL_COMPATIBILITY.md` |
 | Release decision | **Draft** | `docs/RELEASE_DECISION.md` |
-| P1-1 immutable policies | **Not implemented** | `docs/P1_IMPLEMENTATION_PLANS.md` |
+| P1-1 immutable policies | **Code merged** — apply `055_policy_immutable_versions.sql` | `docs/POLICY_VERSION_OPERATOR.md` |
 
 See also: `docs/BETA_GATE_EVIDENCE.md`, `docs/ENGINEERING_ROADMAP.md`.
 
