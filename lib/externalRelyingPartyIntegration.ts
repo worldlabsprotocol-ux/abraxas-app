@@ -3,9 +3,9 @@
 // Hand this module to a real external integrator — one main call, optional proof lookup.
 
 import { DEFAULT_POLICY_ID } from "@/lib/partner/partnerDecision";
-import { siteUrl } from "@/lib/siteUrl";
+import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
 
-export const EXTERNAL_RP_BASE_URL = siteUrl();
+export const EXTERNAL_RP_BASE_URL = getSdkDefaultBaseUrl();
 
 export const EXTERNAL_RP_HEADLINE =
   "One API call to verify. A cryptographic proof anyone can check.";

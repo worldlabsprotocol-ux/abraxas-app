@@ -1,6 +1,7 @@
 // FILE: lib/relyingPartyProgram.ts
 // Relying party onboarding. how external protocols verify Abraxas credentials.
 
+import { SITE_URL } from "@/lib/siteUrl";
 export const RELYING_PARTY_DEFINITION =
   "A relying party is any lender, marketplace, registry, or protocol that accepts an Abraxas credential or Passport state to clear a downstream action. without re-running KYC on the user.";
 
@@ -28,7 +29,7 @@ export const RELYING_PARTY_CHECKLIST = [
 ] as const;
 
 export const CREDENTIAL_VERIFY_EXAMPLE = `// Server-side: verify → decision + cryptographic proof
-const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify", {
+const res = await fetch("${SITE_URL}/api/credentials/verify", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -52,7 +53,7 @@ if (result.decision === "approved") {
 
 export const TRUST_STATUS_EXAMPLE = `// Lightweight gate: does this Sui wallet have an Abraxas account + ID?
 const res = await fetch(
-  \`https://abraxas-app.vercel.app/api/trust/status?sui=\${walletAddress}\`
+  \`${SITE_URL}/api/trust/status?sui=\${walletAddress}\`
 );
 const trust = await res.json();
 
@@ -64,7 +65,7 @@ if (trust.enhanced_trust) {
 
 export const REGISTRY_VERIFY_EXAMPLE = `// Verify an asset or Passport DID in the public registry
 const res = await fetch(
-  \`https://abraxas-app.vercel.app/api/verify/registry?q=\${encodeURIComponent(identifier)}\`
+  \`${SITE_URL}/api/verify/registry?q=\${encodeURIComponent(identifier)}\`
 );
 const state = await res.json();
 
@@ -88,7 +89,7 @@ export const DESIGN_PARTNER_SLOTS = [
 ] as const;
 
 export const ASSET_SIGNAL_WEBHOOK_EXAMPLE = `// Partner webhook. report lot status change (MLS sync)
-const res = await fetch("https://abraxas-app.vercel.app/api/v1/listings/lot-status", {
+const res = await fetch("${SITE_URL}/api/v1/listings/lot-status", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -107,7 +108,7 @@ const result = await res.json();
 // { ok: true, fingerprint, changed, results[] }
 
 // Or via asset-signals with credential review:
-await fetch("https://abraxas-app.vercel.app/api/v1/asset-signals", {
+await fetch("${SITE_URL}/api/v1/asset-signals", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

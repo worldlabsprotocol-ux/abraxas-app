@@ -1,7 +1,7 @@
 // FILE: lib/verify/sdk.ts
 // Abraxas Verify server SDK — permission-based trust requests.
 
-const DEFAULT_BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
 
 export interface AbraxasVerifyClientOptions {
   apiKey: string;
@@ -45,7 +45,7 @@ export class AbraxasVerifyClient {
 
   constructor(opts: AbraxasVerifyClientOptions) {
     this.apiKey = opts.apiKey;
-    this.baseUrl = opts.baseUrl ?? DEFAULT_BASE;
+    this.baseUrl = opts.baseUrl ?? getSdkDefaultBaseUrl();
   }
 
   /** Start a trust request — returns hosted authorization URL for the holder. */

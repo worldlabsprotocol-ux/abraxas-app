@@ -1,7 +1,7 @@
 // FILE: lib/connect/sdk.ts
 // Minimal server SDK for Abraxas Connect (pilot).
 
-const DEFAULT_BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
 
 export interface AbraxasConnectClientOptions {
   apiKey: string;
@@ -24,7 +24,7 @@ export class AbraxasConnectClient {
 
   constructor(opts: AbraxasConnectClientOptions) {
     this.apiKey = opts.apiKey;
-    this.baseUrl = opts.baseUrl ?? DEFAULT_BASE;
+    this.baseUrl = opts.baseUrl ?? getSdkDefaultBaseUrl();
   }
 
   async createAuthorizationRequest(input: CreateAuthorizationInput) {

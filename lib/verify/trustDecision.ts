@@ -1,6 +1,7 @@
 // FILE: lib/verify/trustDecision.ts
 // Trust Decision — primary relying-party abstraction (receipt is proof underneath).
 
+import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
 import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { getPermissionDefinition, permissionForPolicyId } from "@/lib/verify/permissions";
@@ -42,7 +43,7 @@ export function buildTrustDecision(input: {
   receipt?: DecisionReceiptRecord | null;
   appUrl?: string;
 }): TrustDecision {
-  const appUrl = input.appUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+  const appUrl = input.appUrl ?? getSdkDefaultBaseUrl();
   const mapped = permissionForPolicyId(input.decision.policy_id);
 
   const approved = input.decision.decision === "approved" && input.decision.status === "active";
