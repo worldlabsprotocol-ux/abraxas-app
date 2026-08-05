@@ -25,6 +25,7 @@
     "biometric:validate-policy": "npx tsx scripts/validate-good-trouble-policy.ts",
     "audit:production": "npx tsx scripts/production-readiness-audit.ts",
     "gate:preflight": "npx tsx scripts/beta-gate-preflight.ts",
+    "integration:preflight": "npx tsx scripts/integration-preflight.ts",
     "gate:verify-receipt-fixture": "npx tsx scripts/verify-trust-decision-fixture.ts",
     "check:homepage": "vitest run lib/home/homepageBaseline.test.ts lib/home/protocolProofLogos.test.ts",
     "check:homepage-guard": "npx tsx scripts/homepage-guard/check.ts",
