@@ -11,6 +11,11 @@ import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
 import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import {
+  auditPartnerFlowStepBestEffort,
+  flowTraceIdFromVerificationRequest,
+} from "@/lib/partner/partnerFlowAudit";
+import { PARTNER_FLOW_AUDIT_ACTIONS } from "@/lib/partner/partnerFlowAuditContract";
+import {
   buildEvaluatedClaimRefs,
   claimTypesFromEvaluation,
 } from "@/lib/decisionReceipts/claimRefs";
@@ -232,6 +237,7 @@ export async function consentAndDecide(input: {
     metadata: {
       decision: evaluation.decision,
       reason_codes: evaluation.reason_codes,
+      flow_trace_id: flowTraceIdFromVerificationRequest(input.requestId),
     },
   });
 
@@ -261,6 +267,20 @@ export async function consentAndDecide(input: {
   if (!receipt) {
     throw new Error("Failed to issue decision receipt");
   }
+
+  void auditPartnerFlowStepBestEffort({
+    flowTraceId: flowTraceIdFromVerificationRequest(input.requestId),
+    action: PARTNER_FLOW_AUDIT_ACTIONS.consent,
+    partnerId,
+    policyId: policy.id,
+    policyVersion: policy.version,
+    subjectId: subject,
+    outcome: evaluation.decision,
+    decisionId: decisionRow?.id as string,
+    receiptId: receipt.id,
+    verificationRequestId: input.requestId,
+    reasonCodes: evaluation.reason_codes,
+  });
 
   return {
     decision_id: decisionRow?.id as string,

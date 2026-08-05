@@ -4,11 +4,13 @@ import { evaluatePartnerFlow, PartnerFlowIdempotencyConflictError } from "@/lib/
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { resolvePartnerFlowParams } from "@/lib/verify/resolveFlowParams";
 import {
+  auditPartnerFlowReceiptOutcome,
   auditPartnerFlowStepBestEffort,
   auditPartnerFlowStepRequired,
   PartnerFlowAuditPersistenceError,
   resolvePartnerFlowTraceId,
 } from "@/lib/partner/partnerFlowAudit";
+import { buildPartnerFlowVerificationRequestIdempotencyKey } from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
 
     const flowTraceId = resolvePartnerFlowTraceId({
       verificationRequestId: result.verification_request_id,
+      decisionId: result.decision_id,
       receiptId: result.partner_result?.receipt_id,
     });
 
@@ -89,12 +92,37 @@ export async function POST(request: NextRequest) {
         action: "partner_flow.evaluate",
         partnerId,
         policyId,
+        policyVersion: result.policy_version,
         subjectId: session.session.suiAddress,
         outcome: result.next,
         verificationRequestId: result.verification_request_id,
+        decisionId: result.decision_id,
         receiptId: result.partner_result?.receipt_id,
         reasonCodes: result.reason_codes,
+        validity: result.validity,
+        currentlyValid: result.currently_valid,
+        replayStatus: result.replay_status,
       });
+
+      if (result.replay_status) {
+        await auditPartnerFlowReceiptOutcome({
+          flowTraceId,
+          partnerId,
+          policyId,
+          policyVersion: result.policy_version,
+          subjectId: session.session.suiAddress,
+          outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
+          verificationRequestId: result.verification_request_id,
+          decisionId: result.decision_id,
+          receiptId: result.partner_result?.receipt_id,
+          reasonCodes: result.reason_codes,
+          validity: result.validity,
+          currentlyValid: result.currently_valid,
+          idempotencyKey: result.verification_request_id
+            ? buildPartnerFlowVerificationRequestIdempotencyKey(result.verification_request_id)
+            : null,
+        }, result.replay_status, "evaluate");
+      }
     } catch (e) {
       if (e instanceof PartnerFlowAuditPersistenceError) {
         return NextResponse.json({ error: "Audit persistence failed" }, { status: 503 });

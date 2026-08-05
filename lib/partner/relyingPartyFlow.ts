@@ -4,7 +4,7 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
-import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
+import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, findSessionReceiptForSupersede, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
 import {
   isMissingIdempotencyKeyColumnError,
   isVerificationDecisionIdempotencyKeyAvailable,
@@ -22,7 +22,6 @@ import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { appendAuditEvent } from "@/lib/verification/audit";
 import { createVerificationRequest, getPolicy } from "@/lib/verification/requestsService";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAllowlist";
@@ -61,6 +60,11 @@ export interface PartnerFlowEvaluateResult {
   currently_valid?: boolean;
   validity?: string;
   invalidation_reasons?: string[];
+  /** P1-3 additive — audit correlation fields. */
+  decision_id?: string;
+  policy_version?: number;
+  /** P1-3 additive — prior receipt superseded by a refresh replacement issuance. */
+  replaced_receipt_id?: string | null;
 }
 
 export interface PartnerFlowStartInput {
@@ -165,6 +169,7 @@ export async function issuePartnerSessionReceipt(input: {
   currently_valid: boolean;
   validity: string;
   invalidation_reasons: string[];
+  replaced_receipt_id?: string | null;
 }> {
   const subject = normalizeSuiAddress(input.suiAddress);
   const idempotencyKey = resolvePartnerFlowIdempotencyKey({
@@ -185,6 +190,7 @@ export async function issuePartnerSessionReceipt(input: {
   let decisionId: string | undefined;
   let receiptId: string | undefined;
   let receiptExpiresAt: string | undefined;
+  let replacedReceiptId: string | null = null;
 
   const vrId = input.verificationRequestId?.trim();
   if (vrId) {
@@ -227,6 +233,11 @@ export async function issuePartnerSessionReceipt(input: {
   if (!decisionId) {
     replay_status = "issued";
     if (input.supersedePriorSession) {
+      replacedReceiptId = await findSessionReceiptForSupersede({
+        partnerId: input.partnerId,
+        subjectId: subject,
+        policyId: input.policyId,
+      });
       await supersedeActiveSessionDecisions({
         partnerId: input.partnerId,
         subjectId: subject,
@@ -308,21 +319,6 @@ export async function issuePartnerSessionReceipt(input: {
       receiptId = receipt.id;
       receiptExpiresAt = sessionExpires;
       replay_status = "issued";
-
-      await appendAuditEvent({
-        actor_type: "system",
-        actor_id: "partner_flow",
-        action: "partner_session.receipt_issued",
-        object_type: "decision_receipt",
-        object_id: receipt.id,
-        policy_id: policy.id,
-        metadata: {
-          partner_id: input.partnerId,
-          credential_jti: input.credentialJti,
-          idempotency_key: idempotencyKey,
-          replay_status,
-        },
-      });
     }
   }
 
@@ -368,6 +364,7 @@ export async function issuePartnerSessionReceipt(input: {
     currently_valid: trust.currently_valid,
     validity: trust.validity,
     invalidation_reasons: trust.invalidation_reasons,
+    replaced_receipt_id: replacedReceiptId,
   };
 }
 
@@ -411,7 +408,7 @@ export async function evaluatePartnerFlow(input: {
   }
 
   if (credential.status === "active" && credential.credential_jti) {
-    const { evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
+    const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
 
     if (evaluation.decision === "approved") {
       const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
@@ -439,17 +436,20 @@ export async function evaluatePartnerFlow(input: {
         currently_valid,
         validity,
         invalidation_reasons,
+        decision_id,
+        policy_version: policy.version,
       };
     }
 
     if (evaluation.decision === "manual_review") {
-      return { next: "pending_review", reason_codes: evaluation.reason_codes };
+      return { next: "pending_review", reason_codes: evaluation.reason_codes, policy_version: policy.version };
     }
 
-    return { next: "denied", reason_codes: evaluation.reason_codes };
+    return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
   }
 
   // No credential, expired, or revoked → Passport
+  const policy = await getPolicy(input.policyId);
   const request = await createVerificationRequest({
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -471,6 +471,7 @@ export async function evaluatePartnerFlow(input: {
     next: credential.status === "expired" || credential.status === "revoked" ? "passport" : "passport",
     verification_request_id: request.request_id,
     passport_url,
+    policy_version: policy?.version,
   };
 }
 
@@ -499,6 +500,7 @@ export async function completePartnerFlowAfterApproval(input: {
   });
 
   const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons } = issued;
+  const policy = await getPolicy(input.policyId);
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {
     status: partner_result.decision,
@@ -519,6 +521,8 @@ export async function completePartnerFlowAfterApproval(input: {
     currently_valid,
     validity,
     invalidation_reasons,
+    decision_id,
+    policy_version: policy?.version,
   };
 }
 
@@ -534,12 +538,12 @@ export async function refreshPartnerSessionReceipt(input: {
     return { next: "passport" };
   }
 
-  const { evaluation } = await evaluateHolderPolicy(input.suiAddress, input.partnerId, input.policyId);
+  const { policy, evaluation } = await evaluateHolderPolicy(input.suiAddress, input.partnerId, input.policyId);
   if (evaluation.decision !== "approved") {
-    return { next: "denied", reason_codes: evaluation.reason_codes };
+    return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
   }
 
-  const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
+  const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons, replaced_receipt_id } = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -565,6 +569,9 @@ export async function refreshPartnerSessionReceipt(input: {
     currently_valid,
     validity,
     invalidation_reasons,
+    decision_id,
+    policy_version: policy.version,
+    replaced_receipt_id,
   };
 }
 

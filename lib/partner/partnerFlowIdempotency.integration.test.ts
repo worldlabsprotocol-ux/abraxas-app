@@ -16,6 +16,7 @@ const CRED_JTI = "cred-jti-1";
 const findActiveSessionDecision = vi.fn();
 const findDecisionByVerificationRequest = vi.fn();
 const findDecisionByIdempotencyKey = vi.fn();
+const findSessionReceiptForSupersede = vi.fn();
 const supersedeActiveSessionDecisions = vi.fn();
 const getReceiptByDecisionId = vi.fn();
 const evaluatePolicyForSubject = vi.fn();
@@ -32,6 +33,7 @@ vi.mock("@/lib/partner/sessionDecision", () => ({
   findActiveSessionDecision: (...args: unknown[]) => findActiveSessionDecision(...args),
   findDecisionByVerificationRequest: (...args: unknown[]) => findDecisionByVerificationRequest(...args),
   findDecisionByIdempotencyKey: (...args: unknown[]) => findDecisionByIdempotencyKey(...args),
+  findSessionReceiptForSupersede: (...args: unknown[]) => findSessionReceiptForSupersede(...args),
   supersedeActiveSessionDecisions: (...args: unknown[]) => supersedeActiveSessionDecisions(...args),
 }));
 
@@ -103,6 +105,7 @@ function approvedReceipt(id = "dr_existing") {
 describe("issuePartnerSessionReceipt idempotency", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    appendAuditEvent.mockResolvedValue("audit-1");
     resetVerificationDecisionSchemaProbeForTests();
     markVerificationDecisionIdempotencyKeyAvailable();
     insertResult = { data: { id: "vd_new" }, error: null };
@@ -233,9 +236,10 @@ describe("issuePartnerSessionReceipt idempotency", () => {
     findDecisionByVerificationRequest.mockResolvedValue(null);
     findDecisionByIdempotencyKey.mockResolvedValue(null);
     findActiveSessionDecision.mockResolvedValue(null);
+    findSessionReceiptForSupersede.mockResolvedValue("dr_prior");
     issueReceiptForDecision.mockResolvedValue({ id: "dr_new" });
 
-    await issuePartnerSessionReceipt({
+    const result = await issuePartnerSessionReceipt({
       suiAddress: SUBJECT,
       partnerId: PARTNER,
       policyId: POLICY,
@@ -243,11 +247,17 @@ describe("issuePartnerSessionReceipt idempotency", () => {
       supersedePriorSession: true,
     });
 
+    expect(findSessionReceiptForSupersede).toHaveBeenCalledWith({
+      partnerId: PARTNER,
+      subjectId: SUBJECT,
+      policyId: POLICY,
+    });
     expect(supersedeActiveSessionDecisions).toHaveBeenCalledWith({
       partnerId: PARTNER,
       subjectId: SUBJECT,
       policyId: POLICY,
     });
+    expect(result.replaced_receipt_id).toBe("dr_prior");
   });
 
   it("surfaces unexpected decision insert errors", async () => {

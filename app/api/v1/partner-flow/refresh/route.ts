@@ -3,6 +3,7 @@ import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { refreshPartnerSessionReceipt, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
+  auditPartnerFlowReceiptOutcome,
   auditPartnerFlowStepBestEffort,
   auditPartnerFlowStepRequired,
   FlowTraceMismatchError,
@@ -10,6 +11,10 @@ import {
   rejectMismatchedClientFlowTrace,
   resolvePartnerFlowTraceId,
 } from "@/lib/partner/partnerFlowAudit";
+import {
+  buildPartnerFlowSessionIdempotencyKey,
+  buildPartnerFlowVerificationRequestIdempotencyKey,
+} from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +69,17 @@ export async function POST(request: NextRequest) {
       rejectMismatchedClientFlowTrace(body.flow_trace_id, serverTrace);
     } catch (e) {
       if (e instanceof FlowTraceMismatchError) {
+        void auditPartnerFlowStepBestEffort({
+          flowTraceId: resolvePartnerFlowTraceId({ verificationRequestId }),
+          action: "partner_flow.rejected",
+          partnerId,
+          policyId,
+          subjectId: session.session.suiAddress,
+          outcome: "rejected",
+          verificationRequestId,
+          error: e.message,
+          errorCode: "flow_trace_id_mismatch",
+        });
         return NextResponse.json({ error: e.message }, { status: 400 });
       }
       throw e;
@@ -80,6 +96,7 @@ export async function POST(request: NextRequest) {
 
     const flowTraceId = resolvePartnerFlowTraceId({
       verificationRequestId,
+      decisionId: result.decision_id,
       receiptId: result.partner_result?.receipt_id,
     });
 
@@ -88,6 +105,16 @@ export async function POST(request: NextRequest) {
         rejectMismatchedClientFlowTrace(body.flow_trace_id, flowTraceId);
       } catch (e) {
         if (e instanceof FlowTraceMismatchError) {
+          void auditPartnerFlowStepBestEffort({
+            flowTraceId,
+            action: "partner_flow.rejected",
+            partnerId,
+            policyId,
+            subjectId: session.session.suiAddress,
+            outcome: "rejected",
+            error: e.message,
+            errorCode: "flow_trace_id_mismatch",
+          });
           return NextResponse.json({ error: e.message }, { status: 400 });
         }
         throw e;
@@ -95,16 +122,46 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      if (result.replay_status) {
+        await auditPartnerFlowReceiptOutcome({
+          flowTraceId,
+          partnerId,
+          policyId,
+          policyVersion: result.policy_version,
+          subjectId: session.session.suiAddress,
+          outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
+          verificationRequestId: body.verification_request_id,
+          decisionId: result.decision_id,
+          receiptId: result.partner_result?.receipt_id,
+          replacedReceiptId: result.replaced_receipt_id,
+          reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
+          validity: result.validity,
+          currentlyValid: result.currently_valid,
+          idempotencyKey: verificationRequestId
+            ? buildPartnerFlowVerificationRequestIdempotencyKey(verificationRequestId)
+            : buildPartnerFlowSessionIdempotencyKey({
+              partnerId,
+              subjectId: session.session.suiAddress,
+              policyId,
+            }),
+        }, result.replay_status, "refresh");
+      }
+
       await auditPartnerFlowStepRequired({
         flowTraceId,
         action: "partner_flow.refresh",
         partnerId,
         policyId,
+        policyVersion: result.policy_version,
         subjectId: session.session.suiAddress,
         outcome: result.next,
         verificationRequestId: body.verification_request_id,
+        decisionId: result.decision_id,
         receiptId: result.partner_result?.receipt_id,
         reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
+        validity: result.validity,
+        currentlyValid: result.currently_valid,
+        replayStatus: result.replay_status,
       });
     } catch (e) {
       if (e instanceof PartnerFlowAuditPersistenceError) {

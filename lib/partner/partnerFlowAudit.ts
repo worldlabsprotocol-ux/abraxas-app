@@ -1,8 +1,14 @@
 // FILE: lib/partner/partnerFlowAudit.ts
-// Minimal partner-flow audit metadata for IAT reconstruction (P1-3 observability).
+// Partner-flow audit metadata for IAT reconstruction (P1-3 observability).
 
 import { randomBytes } from "crypto";
 import { appendAuditEvent } from "@/lib/verification/audit";
+import {
+  normalizePartnerFlowAuditMetadata,
+  PARTNER_FLOW_AUDIT_ACTIONS,
+  type PartnerFlowIssuanceOperation,
+  type PartnerFlowReplayStatus,
+} from "@/lib/partner/partnerFlowAuditContract";
 
 export const FLOW_TRACE_VR_PREFIX = "ft_vr_";
 export const FLOW_TRACE_DEC_PREFIX = "ft_dec_";
@@ -61,6 +67,7 @@ export interface PartnerFlowAuditInput {
   action: string;
   partnerId: string;
   policyId: string;
+  policyVersion?: number | null;
   subjectId: string;
   outcome: string;
   decisionId?: string | null;
@@ -68,7 +75,16 @@ export interface PartnerFlowAuditInput {
   verificationRequestId?: string | null;
   reasonCodes?: string[];
   error?: string | null;
+  errorCode?: string | null;
+  validity?: string | null;
+  currentlyValid?: boolean | null;
+  replayStatus?: PartnerFlowReplayStatus | null;
+  idempotencyKey?: string | null;
+  issuanceOperation?: PartnerFlowIssuanceOperation | null;
+  replacedReceiptId?: string | null;
 }
+
+export type PartnerFlowAuditContext = Omit<PartnerFlowAuditInput, "action">;
 
 export class PartnerFlowAuditPersistenceError extends Error {
   constructor(message = "audit_persistence_failed") {
@@ -78,23 +94,35 @@ export class PartnerFlowAuditPersistenceError extends Error {
 }
 
 function toAuditEvent(input: PartnerFlowAuditInput) {
+  const metadata = normalizePartnerFlowAuditMetadata({
+    flowTraceId: input.flowTraceId,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    policyVersion: input.policyVersion,
+    verificationRequestId: input.verificationRequestId,
+    decisionId: input.decisionId,
+    receiptId: input.receiptId,
+    outcome: input.outcome,
+    validity: input.validity,
+    currentlyValid: input.currentlyValid,
+    replayStatus: input.replayStatus,
+    idempotencyKey: input.idempotencyKey,
+    issuanceOperation: input.issuanceOperation,
+    replacedReceiptId: input.replacedReceiptId,
+    reasonCodes: input.reasonCodes,
+    error: input.error,
+    errorCode: input.errorCode,
+  });
+
   return {
-    actor_type: "subject",
-    actor_id: input.subjectId,
+    actor_type: "system",
+    actor_id: "partner_flow",
     action: input.action,
     object_type: input.receiptId ? "decision_receipt" : "verification_decision",
     object_id: input.receiptId ?? input.decisionId ?? null,
     policy_id: input.policyId,
-    metadata: {
-      flow_trace_id: input.flowTraceId,
-      partner_id: input.partnerId,
-      outcome: input.outcome,
-      decision_id: input.decisionId ?? null,
-      receipt_id: input.receiptId ?? null,
-      verification_request_id: input.verificationRequestId ?? null,
-      reason_codes: input.reasonCodes ?? [],
-      error: input.error ?? null,
-    },
+    policy_version: input.policyVersion ?? null,
+    metadata,
   };
 }
 
@@ -114,6 +142,42 @@ export async function auditPartnerFlowStepBestEffort(input: PartnerFlowAuditInpu
     }
   } catch (e) {
     console.error("[partnerFlowAudit] audit error (best-effort)", input.action, e);
+  }
+}
+
+/** Fresh receipt issuance — never called on idempotent replay. */
+export async function auditPartnerFlowReceiptIssued(
+  input: PartnerFlowAuditContext & { issuanceOperation: PartnerFlowIssuanceOperation },
+): Promise<void> {
+  await auditPartnerFlowStepBestEffort({
+    ...input,
+    action: PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued,
+    replayStatus: "issued",
+    issuanceOperation: input.issuanceOperation,
+  });
+}
+
+/** Idempotent replay evidence — distinct from receipt_issued; no duplicate receipt. */
+export async function auditPartnerFlowIdempotentReplay(input: PartnerFlowAuditContext): Promise<void> {
+  await auditPartnerFlowStepBestEffort({
+    ...input,
+    action: PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay,
+    replayStatus: "idempotent_replay",
+  });
+}
+
+/** Route-level receipt outcome audit — evaluate: after step; complete/refresh: before step. */
+export async function auditPartnerFlowReceiptOutcome(
+  input: PartnerFlowAuditContext,
+  replayStatus: PartnerFlowReplayStatus,
+  issuanceOperation: PartnerFlowIssuanceOperation,
+): Promise<void> {
+  if (replayStatus === "issued") {
+    await auditPartnerFlowReceiptIssued({ ...input, issuanceOperation });
+    return;
+  }
+  if (replayStatus === "idempotent_replay") {
+    await auditPartnerFlowIdempotentReplay(input);
   }
 }
 
