@@ -93,4 +93,21 @@ describe("partnerFlowAuditContract sanitization", () => {
     });
     expect(metadata.reason_codes).toEqual(["approved"]);
   });
+
+  it("persists issuance_operation and replaced_receipt_id on receipt metadata", () => {
+    const metadata = normalizePartnerFlowAuditMetadata({
+      flowTraceId: "ft_vr_test",
+      partnerId: "good-trouble-cannabis",
+      policyId: "good-trouble-retail-v1",
+      outcome: "issued",
+      receiptId: "dr-2",
+      issuanceOperation: "refresh",
+      replacedReceiptId: "dr-1",
+      idempotencyKey: "pf_vr:vr-1",
+    });
+
+    expect(metadata.issuance_operation).toBe("refresh");
+    expect(metadata.replaced_receipt_id).toBe("dr-1");
+    expect(metadata).not.toHaveProperty("email");
+  });
 });

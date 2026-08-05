@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         idempotencyKey: body.verification_request_id
           ? buildPartnerFlowVerificationRequestIdempotencyKey(body.verification_request_id)
           : null,
-      }, result.replay_status);
+      }, result.replay_status, "complete");
     }
 
     await auditPartnerFlowStepRequired({

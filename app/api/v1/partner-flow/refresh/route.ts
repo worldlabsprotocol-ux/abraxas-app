@@ -11,6 +11,10 @@ import {
   rejectMismatchedClientFlowTrace,
   resolvePartnerFlowTraceId,
 } from "@/lib/partner/partnerFlowAudit";
+import {
+  buildPartnerFlowSessionIdempotencyKey,
+  buildPartnerFlowVerificationRequestIdempotencyKey,
+} from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export const dynamic = "force-dynamic";
@@ -129,10 +133,18 @@ export async function POST(request: NextRequest) {
           verificationRequestId: body.verification_request_id,
           decisionId: result.decision_id,
           receiptId: result.partner_result?.receipt_id,
+          replacedReceiptId: result.replaced_receipt_id,
           reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
           validity: result.validity,
           currentlyValid: result.currently_valid,
-        }, result.replay_status);
+          idempotencyKey: verificationRequestId
+            ? buildPartnerFlowVerificationRequestIdempotencyKey(verificationRequestId)
+            : buildPartnerFlowSessionIdempotencyKey({
+              partnerId,
+              subjectId: session.session.suiAddress,
+              policyId,
+            }),
+        }, result.replay_status, "refresh");
       }
 
       await auditPartnerFlowStepRequired({

@@ -116,6 +116,31 @@ export async function findDecisionByIdempotencyKey(
 }
 
 /** Supersede prior active session decisions before issuing a refresh replacement. */
+export async function findSessionReceiptForSupersede(input: {
+  partnerId: string;
+  subjectId: string;
+  policyId: string;
+}): Promise<string | null> {
+  const sb = requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from("verification_decisions")
+    .select("id")
+    .eq("partner_id", input.partnerId)
+    .eq("subject_id", input.subjectId)
+    .eq("policy_id", input.policyId)
+    .eq("status", "active")
+    .is("request_id", null)
+    .order("decided_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data?.id) return null;
+  const receipt = await getReceiptByDecisionId(data.id as string);
+  return receipt?.id ?? null;
+}
+
+/** Supersede prior active session decisions before issuing a refresh replacement. */
 export async function supersedeActiveSessionDecisions(input: {
   partnerId: string;
   subjectId: string;

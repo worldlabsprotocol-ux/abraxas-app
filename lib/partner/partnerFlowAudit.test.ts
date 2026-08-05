@@ -117,9 +117,14 @@ describe("partnerFlowAudit", () => {
       subjectId: "sub",
       outcome: "issued",
       receiptId: "dr-1",
+      issuanceOperation: "evaluate",
     });
     expect(appendAuditEvent.mock.calls[0]?.[0]).toMatchObject({
       action: "partner_flow.receipt_issued",
+      metadata: expect.objectContaining({
+        issuance_operation: "evaluate",
+        receipt_id: "dr-1",
+      }),
     });
   });
 

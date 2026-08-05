@@ -94,6 +94,8 @@ describe("partner-flow audit emission order", () => {
       "partner_flow.evaluate",
       "partner_flow.receipt_issued",
     ]);
+    expect((appendAuditEvent.mock.calls[1]?.[0] as { metadata: { issuance_operation: string } }).metadata.issuance_operation)
+      .toBe("evaluate");
   });
 
   it("complete persists receipt_issued before complete", async () => {
@@ -127,6 +129,8 @@ describe("partner-flow audit emission order", () => {
       "partner_flow.receipt_issued",
       "partner_flow.complete",
     ]);
+    expect((appendAuditEvent.mock.calls[0]?.[0] as { metadata: { issuance_operation: string } }).metadata.issuance_operation)
+      .toBe("complete");
     expect((appendAuditEvent.mock.calls[0]?.[0] as { metadata: { flow_trace_id: string } }).metadata.flow_trace_id)
       .toBe(SHARED_TRACE);
   });

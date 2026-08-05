@@ -5,6 +5,7 @@ import {
   findPartnerFlowAuditMetadataPiiViolations,
   PARTNER_FLOW_AUDIT_ACTIONS,
   PARTNER_FLOW_AUDIT_METADATA_KEYS,
+  type PartnerFlowIssuanceOperation,
 } from "@/lib/partner/partnerFlowAuditContract";
 
 export interface PartnerFlowTraceAuditEvent {
@@ -55,6 +56,63 @@ function hasEligibleTerminalContext(
   return hasEvaluate || hasConsent || hasReceiptIssued;
 }
 
+function issuanceCycleKey(
+  operation: PartnerFlowIssuanceOperation,
+  idempotencyKey: string | null,
+  receiptId: string,
+): string {
+  if (operation === "refresh") return `refresh:${receiptId}`;
+  return `${operation}:${idempotencyKey ?? `receipt:${receiptId}`}`;
+}
+
+function resolveIssuanceOperation(metadata: Record<string, unknown>): PartnerFlowIssuanceOperation {
+  return (metadataString(metadata, "issuance_operation") ?? "evaluate") as PartnerFlowIssuanceOperation;
+}
+
+function validatePartnerFlowReceiptIssuance(
+  sorted: PartnerFlowTraceAuditEvent[],
+): { ok: boolean; issues: string[] } {
+  const issues: string[] = [];
+  const seenReceiptIds = new Set<string>();
+  const seenIssuanceCycles = new Set<string>();
+  const knownReceiptIds = new Set<string>();
+
+  for (const event of sorted) {
+    if (event.action !== PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued) continue;
+
+    const meta = event.metadata ?? {};
+    const receiptId = metadataString(meta, "receipt_id")
+      ?? (event.object_type === "decision_receipt" ? event.object_id : null);
+    const operation = resolveIssuanceOperation(meta);
+    const idempotencyKey = metadataString(meta, "idempotency_key");
+    const replacedReceiptId = metadataString(meta, "replaced_receipt_id");
+
+    if (!receiptId) {
+      issues.push("receipt_issued_missing_receipt_id");
+      continue;
+    }
+
+    if (seenReceiptIds.has(receiptId)) {
+      issues.push(`duplicate_receipt_id_issued:${receiptId}`);
+    }
+    seenReceiptIds.add(receiptId);
+
+    const cycleKey = issuanceCycleKey(operation, idempotencyKey, receiptId);
+    if (seenIssuanceCycles.has(cycleKey)) {
+      issues.push(`duplicate_issuance_cycle:${cycleKey}`);
+    }
+    seenIssuanceCycles.add(cycleKey);
+
+    if (operation === "refresh" && replacedReceiptId && !knownReceiptIds.has(replacedReceiptId)) {
+      issues.push(`refresh_receipt_unknown_replaced_id:${replacedReceiptId}`);
+    }
+
+    knownReceiptIds.add(receiptId);
+  }
+
+  return { ok: issues.length === 0, issues };
+}
+
 /**
  * Validates causal ordering per attempt/cycle instead of one global monotonic tier.
  * Rejected and error-outcome events are ignored for sequence checks.
@@ -68,12 +126,14 @@ function validatePartnerFlowSequence(
   let hasReceiptIssued = false;
   let issuanceContext: "none" | "evaluate" | "consent" = "none";
   let preludeReady = false;
+  const knownReceiptIds = new Set<string>();
   const sequenceActions: string[] = [];
 
   for (const event of sorted) {
     if (isSequenceNeutralEvent(event)) continue;
 
     sequenceActions.push(event.action);
+    const meta = event.metadata ?? {};
 
     switch (event.action) {
       case PARTNER_FLOW_AUDIT_ACTIONS.evaluate:
@@ -90,14 +150,32 @@ function validatePartnerFlowSequence(
         preludeReady = false;
         break;
 
-      case PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued:
-        if (issuanceContext !== "evaluate" && issuanceContext !== "consent") {
+      case PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued: {
+        const operation = resolveIssuanceOperation(meta);
+        const receiptId = metadataString(meta, "receipt_id")
+          ?? (event.object_type === "decision_receipt" ? event.object_id : null);
+        const replacedReceiptId = metadataString(meta, "replaced_receipt_id");
+
+        if (operation === "refresh") {
+          if (!hasEvaluate) issues.push("refresh_receipt_without_evaluate");
+          if (!knownReceiptIds.size) issues.push("refresh_receipt_without_prior_receipt");
+          if (replacedReceiptId && !knownReceiptIds.has(replacedReceiptId)) {
+            issues.push(`refresh_receipt_unknown_replaced_id:${replacedReceiptId}`);
+          }
+        } else if (operation === "complete") {
+          if (!hasEligibleTerminalContext(hasEvaluate, hasConsent, hasReceiptIssued)) {
+            issues.push("complete_receipt_without_context");
+          }
+        } else if (issuanceContext !== "evaluate" && issuanceContext !== "consent") {
           issues.push("receipt_issued_without_issuance_path");
         }
+
+        if (receiptId) knownReceiptIds.add(receiptId);
         hasReceiptIssued = true;
         issuanceContext = "none";
         preludeReady = true;
         break;
+      }
 
       case PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay:
         if (!hasEligibleTerminalContext(hasEvaluate, hasConsent, hasReceiptIssued)) {
@@ -154,7 +232,6 @@ export function analyzePartnerFlowTrace(
   const verificationRequestIds = new Set<string>();
   const decisionIds = new Set<string>();
   const receiptIds = new Set<string>();
-  let receiptIssuedCount = 0;
   let idempotentReplayCount = 0;
 
   for (const event of sorted) {
@@ -178,7 +255,6 @@ export function analyzePartnerFlowTrace(
     if (decisionId) decisionIds.add(decisionId);
     if (receiptId) receiptIds.add(receiptId);
 
-    if (event.action === "partner_flow.receipt_issued") receiptIssuedCount += 1;
     if (event.action === "partner_flow.idempotent_replay") idempotentReplayCount += 1;
 
     const piiViolations = findPartnerFlowAuditMetadataPiiViolations(meta);
@@ -200,9 +276,11 @@ export function analyzePartnerFlowTrace(
     linkage_ok = false;
     issues.push(`multiple_verification_request_ids:${Array.from(verificationRequestIds).join(",")}`);
   }
-  if (receiptIssuedCount > 1) {
+
+  const receiptIssuance = validatePartnerFlowReceiptIssuance(sorted);
+  if (!receiptIssuance.ok) {
     linkage_ok = false;
-    issues.push(`duplicate_receipt_issued_events:${receiptIssuedCount}`);
+    issues.push(...receiptIssuance.issues);
   }
 
   const sequence = validatePartnerFlowSequence(sorted);

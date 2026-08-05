@@ -10,6 +10,8 @@ export const PARTNER_FLOW_AUDIT_METADATA_KEYS = [
   "policy_version",
   "decision_id",
   "receipt_id",
+  "issuance_operation",
+  "replaced_receipt_id",
   "outcome",
   "validity",
   "currently_valid",
@@ -43,6 +45,9 @@ export const PARTNER_FLOW_PII_FORBIDDEN_METADATA_KEYS = [
 
 export type PartnerFlowReplayStatus = "issued" | "idempotent_replay";
 
+export const PARTNER_FLOW_ISSUANCE_OPERATIONS = ["evaluate", "complete", "refresh"] as const;
+export type PartnerFlowIssuanceOperation = (typeof PARTNER_FLOW_ISSUANCE_OPERATIONS)[number];
+
 export interface PartnerFlowAuditMetadata {
   flow_trace_id: string;
   partner_id: string;
@@ -51,6 +56,8 @@ export interface PartnerFlowAuditMetadata {
   verification_request_id: string | null;
   decision_id: string | null;
   receipt_id: string | null;
+  issuance_operation: PartnerFlowIssuanceOperation | null;
+  replaced_receipt_id: string | null;
   outcome: string;
   validity: string | null;
   currently_valid: boolean | null;
@@ -68,6 +75,8 @@ export interface BuildPartnerFlowAuditMetadataInput {
   verificationRequestId?: string | null;
   decisionId?: string | null;
   receiptId?: string | null;
+  issuanceOperation?: PartnerFlowIssuanceOperation | null;
+  replacedReceiptId?: string | null;
   outcome: string;
   validity?: string | null;
   currentlyValid?: boolean | null;
@@ -97,6 +106,8 @@ export function buildPartnerFlowAuditMetadata(
     verification_request_id: input.verificationRequestId?.trim() || null,
     decision_id: input.decisionId?.trim() || null,
     receipt_id: input.receiptId?.trim() || null,
+    issuance_operation: sanitizeIssuanceOperation(input.issuanceOperation),
+    replaced_receipt_id: sanitizeReceiptId(input.replacedReceiptId),
     outcome: input.outcome,
     validity: input.validity ?? null,
     currently_valid: input.currentlyValid ?? null,
@@ -157,6 +168,27 @@ function sanitizeOutcome(outcome: string): string {
   }
   if (SAFE_TOKEN_PATTERN.test(trimmed)) return trimmed;
   return "generic_error";
+}
+
+function sanitizeIssuanceOperation(
+  operation: string | null | undefined,
+): PartnerFlowIssuanceOperation | null {
+  const trimmed = operation?.trim();
+  if (!trimmed) return null;
+  if ((PARTNER_FLOW_ISSUANCE_OPERATIONS as readonly string[]).includes(trimmed)) {
+    return trimmed as PartnerFlowIssuanceOperation;
+  }
+  return null;
+}
+
+function sanitizeReceiptId(receiptId: string | null | undefined): string | null {
+  const trimmed = receiptId?.trim();
+  if (!trimmed) return null;
+  if (JWT_PATTERN.test(trimmed) || EMAIL_PATTERN.test(trimmed) || WALLET_PATTERN.test(trimmed)) {
+    return null;
+  }
+  if (SAFE_TOKEN_PATTERN.test(trimmed)) return trimmed;
+  return null;
 }
 
 /** Write-time normalization — only documented keys, safe values only. */

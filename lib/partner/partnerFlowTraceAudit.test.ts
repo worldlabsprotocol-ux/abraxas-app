@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { analyzePartnerFlowTrace } from "@/lib/partner/partnerFlowTraceAudit";
 
 const TRACE = "ft_vr_00000000-0000-4000-8000-0000000000aa";
+const VR_ID = "00000000-0000-4000-8000-0000000000aa";
 
 function event(
   action: string,
@@ -11,13 +12,33 @@ function event(
   return {
     id: `${action}-${created_at}`,
     action,
-    object_type: "verification_decision",
-    object_id: (metadata.decision_id as string) ?? null,
+    object_type: metadata.receipt_id ? "decision_receipt" : "verification_decision",
+    object_id: (metadata.receipt_id as string) ?? (metadata.decision_id as string) ?? null,
     policy_id: metadata.policy_id as string,
     policy_version: metadata.policy_version as number,
     metadata,
     created_at,
   };
+}
+
+function receiptIssued(
+  receiptId: string,
+  operation: "evaluate" | "complete" | "refresh",
+  extra: Record<string, unknown> = {},
+  created_at: string,
+) {
+  return event("partner_flow.receipt_issued", {
+    flow_trace_id: TRACE,
+    partner_id: "good-trouble-cannabis",
+    policy_id: "good-trouble-retail-v1",
+    policy_version: 1,
+    verification_request_id: VR_ID,
+    receipt_id: receiptId,
+    outcome: "issued",
+    replay_status: "issued",
+    issuance_operation: operation,
+    ...extra,
+  }, created_at);
 }
 
 describe("partnerFlowTraceAudit", () => {
@@ -28,7 +49,7 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         outcome: "passport",
       }, "2026-08-05T00:00:01.000Z"),
       event("partner_flow.consent", {
@@ -36,27 +57,20 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         outcome: "approved",
       }, "2026-08-05T00:00:02.000Z"),
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "good-trouble-cannabis",
-        policy_id: "good-trouble-retail-v1",
-        policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+      receiptIssued("dr-1", "complete", {
         decision_id: "vd-1",
-        receipt_id: "dr-1",
-        outcome: "issued",
-        replay_status: "issued",
+        idempotency_key: `pf_vr:${VR_ID}`,
       }, "2026-08-05T00:00:03.000Z"),
       event("partner_flow.complete", {
         flow_trace_id: TRACE,
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         receipt_id: "dr-1",
         outcome: "enter",
@@ -73,7 +87,7 @@ describe("partnerFlowTraceAudit", () => {
     expect(result.issues).toEqual([]);
   });
 
-  it("accepts evaluate enter path with evaluate before receipt_issued", () => {
+  it("accepts fresh evaluate enter issuance", () => {
     const result = analyzePartnerFlowTrace(TRACE, [
       event("partner_flow.evaluate", {
         flow_trace_id: TRACE,
@@ -83,20 +97,135 @@ describe("partnerFlowTraceAudit", () => {
         outcome: "enter",
         replay_status: "issued",
       }, "2026-08-05T00:00:01.000Z"),
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "good-trouble-cannabis",
-        policy_id: "good-trouble-retail-v1",
-        policy_version: 1,
+      receiptIssued("dr-1", "evaluate", {
         decision_id: "vd-1",
-        receipt_id: "dr-1",
-        outcome: "issued",
-        replay_status: "issued",
+        idempotency_key: `pf_vr:${VR_ID}`,
       }, "2026-08-05T00:00:02.000Z"),
     ]);
 
     expect(result.sequence_ok).toBe(true);
+    expect(result.linkage_ok).toBe(true);
     expect(result.issues).toEqual([]);
+  });
+
+  it("accepts idempotent replay without a new receipt_issued event", () => {
+    const result = analyzePartnerFlowTrace(TRACE, [
+      event("partner_flow.evaluate", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        outcome: "enter",
+      }, "2026-08-05T00:00:01.000Z"),
+      receiptIssued("dr-1", "evaluate", {
+        idempotency_key: `pf_vr:${VR_ID}`,
+      }, "2026-08-05T00:00:02.000Z"),
+      event("partner_flow.complete", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        receipt_id: "dr-1",
+        outcome: "enter",
+      }, "2026-08-05T00:00:03.000Z"),
+      event("partner_flow.idempotent_replay", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        receipt_id: "dr-1",
+        outcome: "idempotent_replay",
+        replay_status: "idempotent_replay",
+      }, "2026-08-05T00:00:04.000Z"),
+      event("partner_flow.complete", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        receipt_id: "dr-1",
+        outcome: "enter",
+      }, "2026-08-05T00:00:05.000Z"),
+    ]);
+
+    expect(result.sequence_ok).toBe(true);
+    expect(result.linkage_ok).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it("accepts refresh replacement receipt on the same ft_vr trace", () => {
+    const result = analyzePartnerFlowTrace(TRACE, [
+      event("partner_flow.evaluate", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        verification_request_id: VR_ID,
+        outcome: "enter",
+      }, "2026-08-05T00:00:01.000Z"),
+      receiptIssued("dr-1", "evaluate", {
+        idempotency_key: `pf_vr:${VR_ID}`,
+      }, "2026-08-05T00:00:02.000Z"),
+      receiptIssued("dr-2", "refresh", {
+        replaced_receipt_id: "dr-1",
+        idempotency_key: `pf_vr:${VR_ID}`,
+      }, "2026-08-05T00:00:03.000Z"),
+      event("partner_flow.refresh", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        verification_request_id: VR_ID,
+        receipt_id: "dr-2",
+        outcome: "enter",
+        validity: "active",
+        currently_valid: true,
+      }, "2026-08-05T00:00:04.000Z"),
+    ]);
+
+    expect(result.sequence_ok).toBe(true);
+    expect(result.linkage_ok).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it("flags duplicate issuance of the same receipt id", () => {
+    const result = analyzePartnerFlowTrace(TRACE, [
+      event("partner_flow.evaluate", {
+        flow_trace_id: TRACE,
+        partner_id: "p",
+        policy_id: "pol",
+        outcome: "enter",
+      }, "2026-08-05T00:00:01.000Z"),
+      receiptIssued("dr-1", "evaluate", {
+        idempotency_key: "pf_vr:cycle-a",
+      }, "2026-08-05T00:00:02.000Z"),
+      receiptIssued("dr-1", "refresh", {
+        replaced_receipt_id: "dr-1",
+        idempotency_key: "pf_vr:cycle-a",
+      }, "2026-08-05T00:00:03.000Z"),
+    ]);
+
+    expect(result.linkage_ok).toBe(false);
+    expect(result.issues).toContain("duplicate_receipt_id_issued:dr-1");
+  });
+
+  it("flags duplicate fresh issuance for the same evaluate issuance cycle", () => {
+    const result = analyzePartnerFlowTrace(TRACE, [
+      event("partner_flow.evaluate", {
+        flow_trace_id: TRACE,
+        partner_id: "p",
+        policy_id: "pol",
+        outcome: "enter",
+      }, "2026-08-05T00:00:01.000Z"),
+      receiptIssued("dr-1", "evaluate", {
+        idempotency_key: "pf_vr:cycle-a",
+      }, "2026-08-05T00:00:02.000Z"),
+      receiptIssued("dr-2", "evaluate", {
+        idempotency_key: "pf_vr:cycle-a",
+      }, "2026-08-05T00:00:03.000Z"),
+    ]);
+
+    expect(result.linkage_ok).toBe(false);
+    expect(result.issues).toContain("duplicate_issuance_cycle:evaluate:pf_vr:cycle-a");
   });
 
   it("flags impossible sequence when complete precedes evaluate", () => {
@@ -117,28 +246,6 @@ describe("partnerFlowTraceAudit", () => {
 
     expect(result.sequence_ok).toBe(false);
     expect(result.issues).toContain("unexpected_event_order:partner_flow.complete→partner_flow.evaluate");
-  });
-
-  it("flags duplicate receipt_issued events", () => {
-    const result = analyzePartnerFlowTrace(TRACE, [
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "p",
-        policy_id: "pol",
-        receipt_id: "dr-1",
-        outcome: "issued",
-      }, "2026-08-05T00:00:01.000Z"),
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "p",
-        policy_id: "pol",
-        receipt_id: "dr-2",
-        outcome: "issued",
-      }, "2026-08-05T00:00:02.000Z"),
-    ]);
-
-    expect(result.linkage_ok).toBe(false);
-    expect(result.issues).toContain("duplicate_receipt_issued_events:2");
   });
 
   it("flags metadata PII violations", () => {
@@ -163,7 +270,7 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         outcome: "passport",
       }, "2026-08-05T00:00:01.000Z"),
       event("partner_flow.consent", {
@@ -171,27 +278,20 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         outcome: "approved",
       }, "2026-08-05T00:00:02.000Z"),
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "good-trouble-cannabis",
-        policy_id: "good-trouble-retail-v1",
-        policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+      receiptIssued("dr-1", "complete", {
         decision_id: "vd-1",
-        receipt_id: "dr-1",
-        outcome: "issued",
-        replay_status: "issued",
+        idempotency_key: `pf_vr:${VR_ID}`,
       }, "2026-08-05T00:00:03.000Z"),
       event("partner_flow.complete", {
         flow_trace_id: TRACE,
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         receipt_id: "dr-1",
         outcome: "enter",
@@ -204,7 +304,7 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         receipt_id: "dr-1",
         outcome: "idempotent_replay",
@@ -215,7 +315,7 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         receipt_id: "dr-1",
         outcome: "enter",
@@ -239,22 +339,15 @@ describe("partnerFlowTraceAudit", () => {
         outcome: "enter",
         replay_status: "issued",
       }, "2026-08-05T00:00:01.000Z"),
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "good-trouble-cannabis",
-        policy_id: "good-trouble-retail-v1",
-        policy_version: 1,
+      receiptIssued("dr-1", "evaluate", {
         decision_id: "vd-1",
-        receipt_id: "dr-1",
-        outcome: "issued",
-        replay_status: "issued",
       }, "2026-08-05T00:00:02.000Z"),
       event("partner_flow.refresh", {
         flow_trace_id: TRACE,
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         receipt_id: "dr-1",
         outcome: "refresh",
@@ -267,7 +360,7 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         receipt_id: "dr-1",
         outcome: "idempotent_replay",
@@ -278,7 +371,7 @@ describe("partnerFlowTraceAudit", () => {
         partner_id: "good-trouble-cannabis",
         policy_id: "good-trouble-retail-v1",
         policy_version: 1,
-        verification_request_id: "00000000-0000-4000-8000-0000000000aa",
+        verification_request_id: VR_ID,
         decision_id: "vd-1",
         receipt_id: "dr-1",
         outcome: "refresh",
@@ -301,14 +394,7 @@ describe("partnerFlowTraceAudit", () => {
         policy_version: 1,
         outcome: "enter",
       }, "2026-08-05T00:00:01.000Z"),
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "good-trouble-cannabis",
-        policy_id: "good-trouble-retail-v1",
-        policy_version: 1,
-        receipt_id: "dr-1",
-        outcome: "issued",
-      }, "2026-08-05T00:00:02.000Z"),
+      receiptIssued("dr-1", "evaluate", {}, "2026-08-05T00:00:02.000Z"),
       event("partner_flow.complete", {
         flow_trace_id: TRACE,
         partner_id: "good-trouble-cannabis",
@@ -339,13 +425,7 @@ describe("partnerFlowTraceAudit", () => {
         policy_id: "pol",
         outcome: "enter",
       }, "2026-08-05T00:00:01.000Z"),
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "p",
-        policy_id: "pol",
-        receipt_id: "dr-1",
-        outcome: "issued",
-      }, "2026-08-05T00:00:02.000Z"),
+      receiptIssued("dr-1", "evaluate", {}, "2026-08-05T00:00:02.000Z"),
       event("partner_flow.complete", {
         flow_trace_id: TRACE,
         partner_id: "p",
@@ -368,13 +448,7 @@ describe("partnerFlowTraceAudit", () => {
 
   it("flags receipt_issued without evaluate or consent issuance path", () => {
     const result = analyzePartnerFlowTrace(TRACE, [
-      event("partner_flow.receipt_issued", {
-        flow_trace_id: TRACE,
-        partner_id: "p",
-        policy_id: "pol",
-        receipt_id: "dr-1",
-        outcome: "issued",
-      }, "2026-08-05T00:00:01.000Z"),
+      receiptIssued("dr-1", "evaluate", {}, "2026-08-05T00:00:01.000Z"),
     ]);
 
     expect(result.sequence_ok).toBe(false);

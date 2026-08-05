@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
           idempotencyKey: result.verification_request_id
             ? buildPartnerFlowVerificationRequestIdempotencyKey(result.verification_request_id)
             : null,
-        }, result.replay_status);
+        }, result.replay_status, "evaluate");
       }
     } catch (e) {
       if (e instanceof PartnerFlowAuditPersistenceError) {

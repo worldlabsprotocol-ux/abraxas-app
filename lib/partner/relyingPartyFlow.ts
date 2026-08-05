@@ -4,7 +4,7 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
-import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
+import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, findSessionReceiptForSupersede, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
 import {
   isMissingIdempotencyKeyColumnError,
   isVerificationDecisionIdempotencyKeyAvailable,
@@ -63,6 +63,8 @@ export interface PartnerFlowEvaluateResult {
   /** P1-3 additive — audit correlation fields. */
   decision_id?: string;
   policy_version?: number;
+  /** P1-3 additive — prior receipt superseded by a refresh replacement issuance. */
+  replaced_receipt_id?: string | null;
 }
 
 export interface PartnerFlowStartInput {
@@ -167,6 +169,7 @@ export async function issuePartnerSessionReceipt(input: {
   currently_valid: boolean;
   validity: string;
   invalidation_reasons: string[];
+  replaced_receipt_id?: string | null;
 }> {
   const subject = normalizeSuiAddress(input.suiAddress);
   const idempotencyKey = resolvePartnerFlowIdempotencyKey({
@@ -187,6 +190,7 @@ export async function issuePartnerSessionReceipt(input: {
   let decisionId: string | undefined;
   let receiptId: string | undefined;
   let receiptExpiresAt: string | undefined;
+  let replacedReceiptId: string | null = null;
 
   const vrId = input.verificationRequestId?.trim();
   if (vrId) {
@@ -229,6 +233,11 @@ export async function issuePartnerSessionReceipt(input: {
   if (!decisionId) {
     replay_status = "issued";
     if (input.supersedePriorSession) {
+      replacedReceiptId = await findSessionReceiptForSupersede({
+        partnerId: input.partnerId,
+        subjectId: subject,
+        policyId: input.policyId,
+      });
       await supersedeActiveSessionDecisions({
         partnerId: input.partnerId,
         subjectId: subject,
@@ -355,6 +364,7 @@ export async function issuePartnerSessionReceipt(input: {
     currently_valid: trust.currently_valid,
     validity: trust.validity,
     invalidation_reasons: trust.invalidation_reasons,
+    replaced_receipt_id: replacedReceiptId,
   };
 }
 
@@ -533,7 +543,7 @@ export async function refreshPartnerSessionReceipt(input: {
     return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
   }
 
-  const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
+  const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons, replaced_receipt_id } = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -561,6 +571,7 @@ export async function refreshPartnerSessionReceipt(input: {
     invalidation_reasons,
     decision_id,
     policy_version: policy.version,
+    replaced_receipt_id,
   };
 }
 

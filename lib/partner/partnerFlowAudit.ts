@@ -6,6 +6,7 @@ import { appendAuditEvent } from "@/lib/verification/audit";
 import {
   normalizePartnerFlowAuditMetadata,
   PARTNER_FLOW_AUDIT_ACTIONS,
+  type PartnerFlowIssuanceOperation,
   type PartnerFlowReplayStatus,
 } from "@/lib/partner/partnerFlowAuditContract";
 
@@ -79,6 +80,8 @@ export interface PartnerFlowAuditInput {
   currentlyValid?: boolean | null;
   replayStatus?: PartnerFlowReplayStatus | null;
   idempotencyKey?: string | null;
+  issuanceOperation?: PartnerFlowIssuanceOperation | null;
+  replacedReceiptId?: string | null;
 }
 
 export type PartnerFlowAuditContext = Omit<PartnerFlowAuditInput, "action">;
@@ -104,6 +107,8 @@ function toAuditEvent(input: PartnerFlowAuditInput) {
     currentlyValid: input.currentlyValid,
     replayStatus: input.replayStatus,
     idempotencyKey: input.idempotencyKey,
+    issuanceOperation: input.issuanceOperation,
+    replacedReceiptId: input.replacedReceiptId,
     reasonCodes: input.reasonCodes,
     error: input.error,
     errorCode: input.errorCode,
@@ -141,11 +146,14 @@ export async function auditPartnerFlowStepBestEffort(input: PartnerFlowAuditInpu
 }
 
 /** Fresh receipt issuance — never called on idempotent replay. */
-export async function auditPartnerFlowReceiptIssued(input: PartnerFlowAuditContext): Promise<void> {
+export async function auditPartnerFlowReceiptIssued(
+  input: PartnerFlowAuditContext & { issuanceOperation: PartnerFlowIssuanceOperation },
+): Promise<void> {
   await auditPartnerFlowStepBestEffort({
     ...input,
     action: PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued,
     replayStatus: "issued",
+    issuanceOperation: input.issuanceOperation,
   });
 }
 
@@ -162,9 +170,10 @@ export async function auditPartnerFlowIdempotentReplay(input: PartnerFlowAuditCo
 export async function auditPartnerFlowReceiptOutcome(
   input: PartnerFlowAuditContext,
   replayStatus: PartnerFlowReplayStatus,
+  issuanceOperation: PartnerFlowIssuanceOperation,
 ): Promise<void> {
   if (replayStatus === "issued") {
-    await auditPartnerFlowReceiptIssued(input);
+    await auditPartnerFlowReceiptIssued({ ...input, issuanceOperation });
     return;
   }
   if (replayStatus === "idempotent_replay") {
