@@ -238,7 +238,7 @@ After **`v1.0.0-beta.0`** is tagged (not yet). **Before external security review
 
 | Priority | Item | Status (main) |
 |----------|------|----------------|
-| 1 | **Immutable policy versions** | **Live (code)** — migration 055 operator apply pending |
+| 1 | **Immutable policy versions** | **Live (code)** PR #119 — migration 055 operator apply pending |
 | 2 | **Trust Decision validity + idempotency** | **Merged** PR #113 |
 | 3 | **Partner-flow observability + audit trace** | **Merged** PR #114 |
 | 4 | **Biometric telemetry persistence** | Pending (P1-4) |
