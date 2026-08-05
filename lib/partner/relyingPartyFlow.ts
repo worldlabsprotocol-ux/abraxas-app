@@ -6,6 +6,11 @@ import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
 import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
 import {
+  isMissingIdempotencyKeyColumnError,
+  isVerificationDecisionIdempotencyKeyAvailable,
+  markVerificationDecisionIdempotencyKeyAbsent,
+} from "@/lib/partner/verificationDecisionsSchema";
+import {
   assertIdempotentPartnerFlowIdentity,
   PartnerFlowIdempotencyConflictError,
   resolvePartnerFlowIdempotencyKey,
@@ -232,9 +237,8 @@ export async function issuePartnerSessionReceipt(input: {
     const sb = requireSupabaseAdmin();
     const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
     const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
-    const evaluatedAt = new Date().toISOString();
 
-    const { data: decisionRow, error: insertError } = await sb.from("verification_decisions").insert({
+    const decisionInsertBase = {
       request_id: input.verificationRequestId ?? null,
       partner_id: input.partnerId,
       subject_id: subject,
@@ -244,10 +248,30 @@ export async function issuePartnerSessionReceipt(input: {
       claims_json: evaluation.claims,
       reason_codes: evaluation.reason_codes,
       valid_until: sessionExpires,
-      idempotency_key: idempotencyKey,
-    }).select("id").single();
+    };
 
-    if (insertError?.code === "23505") {
+    const idempotencyKeyAvailable = await isVerificationDecisionIdempotencyKeyAvailable();
+    let decisionInsertRow: typeof decisionInsertBase & { idempotency_key?: string } = decisionInsertBase;
+    if (idempotencyKeyAvailable) {
+      decisionInsertRow = { ...decisionInsertBase, idempotency_key: idempotencyKey };
+    }
+
+    let { data: decisionRow, error: insertError } = await sb
+      .from("verification_decisions")
+      .insert(decisionInsertRow)
+      .select("id")
+      .single();
+
+    if (insertError && idempotencyKeyAvailable && isMissingIdempotencyKeyColumnError(insertError)) {
+      markVerificationDecisionIdempotencyKeyAbsent();
+      ({ data: decisionRow, error: insertError } = await sb
+        .from("verification_decisions")
+        .insert(decisionInsertBase)
+        .select("id")
+        .single());
+    }
+
+    if (insertError?.code === "23505" && idempotencyKeyAvailable) {
       const raced = await findDecisionByIdempotencyKey(idempotencyKey);
       if (!raced) throw new Error(insertError.message);
       assertIdempotentPartnerFlowIdentity(raced, identity);

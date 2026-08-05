@@ -1,6 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { issuePartnerSessionReceipt } from "@/lib/partner/relyingPartyFlow";
 import { PartnerFlowIdempotencyConflictError } from "@/lib/partner/partnerFlowIdempotency";
+import {
+  markVerificationDecisionIdempotencyKeyAbsent,
+  markVerificationDecisionIdempotencyKeyAvailable,
+  resetVerificationDecisionSchemaProbeForTests,
+} from "@/lib/partner/verificationDecisionsSchema";
 
 const SUBJECT = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
 const PARTNER = "good-trouble-cannabis";
@@ -17,6 +22,11 @@ const evaluatePolicyForSubject = vi.fn();
 const issueReceiptForDecision = vi.fn();
 const getActiveClaims = vi.fn();
 const appendAuditEvent = vi.fn();
+const insertMock = vi.fn();
+let insertResult: { data: { id: string } | null; error: { message?: string; code?: string } | null } = {
+  data: { id: "vd_new" },
+  error: null,
+};
 
 vi.mock("@/lib/partner/sessionDecision", () => ({
   findActiveSessionDecision: (...args: unknown[]) => findActiveSessionDecision(...args),
@@ -49,11 +59,14 @@ vi.mock("@/lib/verification/audit", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   requireSupabaseAdmin: () => ({
     from: () => ({
-      insert: () => ({
-        select: () => ({
-          single: async () => ({ data: { id: "vd_new" }, error: null }),
-        }),
-      }),
+      insert: (row: Record<string, unknown>) => {
+        insertMock(row);
+        return {
+          select: () => ({
+            single: async () => insertResult,
+          }),
+        };
+      },
     }),
   }),
 }));
@@ -90,6 +103,9 @@ function approvedReceipt(id = "dr_existing") {
 describe("issuePartnerSessionReceipt idempotency", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetVerificationDecisionSchemaProbeForTests();
+    markVerificationDecisionIdempotencyKeyAvailable();
+    insertResult = { data: { id: "vd_new" }, error: null };
     process.env.ABRAXAS_PUBLIC_KEY = JSON.stringify({
       kty: "OKP",
       crv: "Ed25519",
@@ -175,5 +191,78 @@ describe("issuePartnerSessionReceipt idempotency", () => {
         verificationRequestId: VR,
       }),
     ).rejects.toBeInstanceOf(PartnerFlowIdempotencyConflictError);
+  });
+
+  it("inserts without idempotency_key before migration 053", async () => {
+    markVerificationDecisionIdempotencyKeyAbsent();
+    findDecisionByVerificationRequest.mockResolvedValue(null);
+    findDecisionByIdempotencyKey.mockResolvedValue(null);
+    findActiveSessionDecision.mockResolvedValue(null);
+    issueReceiptForDecision.mockResolvedValue({ id: "dr_new" });
+
+    await issuePartnerSessionReceipt({
+      suiAddress: SUBJECT,
+      partnerId: PARTNER,
+      policyId: POLICY,
+      credentialJti: CRED_JTI,
+    });
+
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(insertMock.mock.calls[0][0]).not.toHaveProperty("idempotency_key");
+  });
+
+  it("inserts with idempotency_key when migration 053 is applied", async () => {
+    markVerificationDecisionIdempotencyKeyAvailable();
+    findDecisionByVerificationRequest.mockResolvedValue(null);
+    findDecisionByIdempotencyKey.mockResolvedValue(null);
+    findActiveSessionDecision.mockResolvedValue(null);
+    issueReceiptForDecision.mockResolvedValue({ id: "dr_new" });
+
+    await issuePartnerSessionReceipt({
+      suiAddress: SUBJECT,
+      partnerId: PARTNER,
+      policyId: POLICY,
+      credentialJti: CRED_JTI,
+    });
+
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(insertMock.mock.calls[0][0].idempotency_key).toBe(`pf_session:${PARTNER}:${SUBJECT}:${POLICY}`);
+  });
+
+  it("calls supersede on refresh without updated_at", async () => {
+    findDecisionByVerificationRequest.mockResolvedValue(null);
+    findDecisionByIdempotencyKey.mockResolvedValue(null);
+    findActiveSessionDecision.mockResolvedValue(null);
+    issueReceiptForDecision.mockResolvedValue({ id: "dr_new" });
+
+    await issuePartnerSessionReceipt({
+      suiAddress: SUBJECT,
+      partnerId: PARTNER,
+      policyId: POLICY,
+      credentialJti: CRED_JTI,
+      supersedePriorSession: true,
+    });
+
+    expect(supersedeActiveSessionDecisions).toHaveBeenCalledWith({
+      partnerId: PARTNER,
+      subjectId: SUBJECT,
+      policyId: POLICY,
+    });
+  });
+
+  it("surfaces unexpected decision insert errors", async () => {
+    findDecisionByVerificationRequest.mockResolvedValue(null);
+    findDecisionByIdempotencyKey.mockResolvedValue(null);
+    findActiveSessionDecision.mockResolvedValue(null);
+    insertResult = { data: null, error: { message: "database unavailable" } };
+
+    await expect(
+      issuePartnerSessionReceipt({
+        suiAddress: SUBJECT,
+        partnerId: PARTNER,
+        policyId: POLICY,
+        credentialJti: CRED_JTI,
+      }),
+    ).rejects.toThrow("database unavailable");
   });
 });

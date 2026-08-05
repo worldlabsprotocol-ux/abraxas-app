@@ -4,6 +4,11 @@
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import type { StoredPartnerFlowDecisionIdentity } from "@/lib/partner/partnerFlowIdempotency";
+import {
+  isMissingIdempotencyKeyColumnError,
+  isVerificationDecisionIdempotencyKeyAvailable,
+  markVerificationDecisionIdempotencyKeyAbsent,
+} from "@/lib/partner/verificationDecisionsSchema";
 
 export interface ActiveSessionDecision {
   decision_id: string;
@@ -45,7 +50,7 @@ export async function findActiveSessionDecision(input: {
   const sb = requireSupabaseAdmin();
   const now = new Date().toISOString();
 
-  const { data } = await sb
+  const { data, error } = await sb
     .from("verification_decisions")
     .select("id, valid_until, status")
     .eq("partner_id", input.partnerId)
@@ -58,6 +63,7 @@ export async function findActiveSessionDecision(input: {
     .limit(1)
     .maybeSingle();
 
+  if (error) throw new Error(error.message);
   if (!data?.id) return null;
   return toActiveSessionDecision(data.id as string, data.valid_until as string);
 }
@@ -68,7 +74,7 @@ export async function findDecisionByVerificationRequest(input: {
   subjectId: string;
 }): Promise<ActiveSessionDecision | null> {
   const sb = requireSupabaseAdmin();
-  const { data } = await sb
+  const { data, error } = await sb
     .from("verification_decisions")
     .select("id, valid_until, status")
     .eq("request_id", input.verificationRequestId)
@@ -78,6 +84,7 @@ export async function findDecisionByVerificationRequest(input: {
     .limit(1)
     .maybeSingle();
 
+  if (error) throw new Error(error.message);
   if (!data?.id) return null;
   return toActiveSessionDecision(data.id as string, data.valid_until as string);
 }
@@ -85,14 +92,25 @@ export async function findDecisionByVerificationRequest(input: {
 export async function findDecisionByIdempotencyKey(
   idempotencyKey: string,
 ): Promise<StoredPartnerFlowDecisionIdentity | null> {
+  if (!await isVerificationDecisionIdempotencyKeyAvailable()) {
+    return null;
+  }
+
   const sb = requireSupabaseAdmin();
-  const { data } = await sb
+  const { data, error } = await sb
     .from("verification_decisions")
     .select("id, partner_id, subject_id, policy_id, request_id, idempotency_key, valid_until, status")
     .eq("idempotency_key", idempotencyKey)
     .eq("status", "active")
     .maybeSingle();
 
+  if (error) {
+    if (isMissingIdempotencyKeyColumnError(error)) {
+      markVerificationDecisionIdempotencyKeyAbsent();
+      return null;
+    }
+    throw new Error(error.message);
+  }
   if (!data?.id) return null;
   return mapDecisionIdentity(data as Record<string, unknown>);
 }
@@ -104,12 +122,14 @@ export async function supersedeActiveSessionDecisions(input: {
   policyId: string;
 }): Promise<void> {
   const sb = requireSupabaseAdmin();
-  await sb
+  const { error } = await sb
     .from("verification_decisions")
-    .update({ status: "superseded", updated_at: new Date().toISOString() })
+    .update({ status: "superseded" })
     .eq("partner_id", input.partnerId)
     .eq("subject_id", input.subjectId)
     .eq("policy_id", input.policyId)
     .eq("status", "active")
     .is("request_id", null);
+
+  if (error) throw new Error(error.message);
 }
