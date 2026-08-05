@@ -37,8 +37,9 @@ function buildSupabaseDeps(): Pick<
     async loadPolicy(policyId: string): Promise<PartnerPolicyRow | null> {
       const { data, error } = await sb
         .from("partner_policies")
-        .select("id, partner_id, status")
+        .select("id, partner_id, status, version")
         .eq("id", policyId)
+        .eq("status", "active")
         .maybeSingle();
       if (error) throw new Error(error.message);
       return data as PartnerPolicyRow | null;

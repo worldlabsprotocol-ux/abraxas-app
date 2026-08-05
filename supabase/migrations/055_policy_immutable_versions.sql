@@ -7,14 +7,25 @@
 --   deprecated  — immutable historical snapshot; retained for reproducibility
 --
 -- Changing rules requires INSERT of a new version row, then publish (draft → active)
--- while deprecating the prior active version.
+-- while deprecating the prior active version (use 056_publish_partner_policy_draft_rpc.sql).
 --
--- ── PREFLIGHT (run before applying) ─────────────────────────────
--- select count(*) from public.partner_policies;
+-- ── PREFLIGHT (run manually before applying — migration also enforces FK guard) ──
 -- select id, version, status from public.partner_policies order by id, version;
--- select conname, conrelid::regclass
---   from pg_constraint
---  where confrelid = 'public.partner_policies'::regclass;
+--
+-- -- List every inbound FK referencing partner_policies (STOP if any unexpected name):
+-- select con.conname as constraint_name,
+--        conrelid::regclass as referencing_table
+--   from pg_constraint con
+--  where con.contype = 'f'
+--    and con.confrelid = 'public.partner_policies'::regclass
+--  order by 1;
+--
+-- Permitted inbound FK names (must match lib/policy/partnerPoliciesFkAllowlist.ts):
+--   verification_requests_policy_id_fkey
+--   partner_issuer_trust_rules_policy_id_fkey
+--
+-- STOP CONDITION: if the query above returns any constraint_name not in the permitted list,
+-- do not apply this migration — review the new FK and update the allowlist + migration guard.
 --
 -- ── ROLLBACK (manual; do not run in CI) ─────────────────────────
 -- drop trigger if exists trg_partner_policies_immutability on public.partner_policies;
@@ -24,7 +35,31 @@
 -- alter table public.partner_policies add primary key (id);
 -- (Re-add dropped FKs only if your environment had them and you need strict referential integrity.)
 
--- Drop FK constraints that reference partner_policies(id) alone.
+begin;
+
+do $$
+declare
+  fk record;
+  allowed text[] := array[
+    'verification_requests_policy_id_fkey',
+    'partner_issuer_trust_rules_policy_id_fkey'
+  ];
+begin
+  for fk in
+    select con.conname as constraint_name
+      from pg_constraint con
+     where con.contype = 'f'
+       and con.confrelid = 'public.partner_policies'::regclass
+  loop
+    if not (fk.constraint_name = any(allowed)) then
+      raise exception
+        '055_policy_immutable_versions: unexpected FK % referencing partner_policies — stop and review before migrating',
+        fk.constraint_name;
+    end if;
+  end loop;
+end $$;
+
+-- Drop reviewed FK constraints that reference partner_policies(id) alone.
 -- policy_id columns reference the policy family id, not a specific version row.
 alter table if exists public.verification_requests
   drop constraint if exists verification_requests_policy_id_fkey;
@@ -102,6 +137,8 @@ drop trigger if exists trg_partner_policies_immutability on public.partner_polic
 create trigger trg_partner_policies_immutability
   before insert or update or delete on public.partner_policies
   for each row execute function public.enforce_partner_policy_immutability();
+
+commit;
 
 -- ── POST-MIGRATION VERIFICATION ─────────────────────────────────
 -- select id, version, status from public.partner_policies order by id, version;

@@ -10,6 +10,10 @@ import {
   isPolicyDraft,
 } from "@/lib/policy/policyLifecycle";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
+import {
+  mapPublishPolicyDraftRpcError,
+  parsePublishPolicyDraftRpcResult,
+} from "@/lib/policy/publishPolicyDraftRpc";
 
 export interface PolicyVersionSummary {
   id: string;
@@ -117,45 +121,17 @@ export async function publishPolicyDraft(input: {
   version: number;
 }): Promise<{ published: PartnerPolicy; deprecatedVersion: number | null }> {
   const sb = requireSupabaseAdmin();
-  const draft = await getPartnerPolicyAtVersion(input.policyId, input.version);
-  if (!draft) {
-    throw new PolicyImmutabilityError(`Policy version not found: ${input.policyId} v${input.version}`);
-  }
-  if (!isPolicyDraft(draft.status)) {
-    throw new PolicyImmutabilityError(
-      `Only draft versions can be published (${input.policyId} v${input.version} is ${draft.status})`,
-    );
-  }
+  const { data, error } = await sb.rpc("publish_partner_policy_draft", {
+    p_policy_id: input.policyId,
+    p_target_version: input.version,
+  });
 
-  assertPolicyStatusTransition(draft.status, "active");
-
-  const active = await getPartnerPolicy(input.policyId);
-  let deprecatedVersion: number | null = null;
-
-  if (active && active.version !== draft.version) {
-    assertPolicyStatusTransition(active.status, "deprecated");
-    const { error: deprecateError } = await sb
-      .from("partner_policies")
-      .update({ status: "deprecated" })
-      .eq("id", input.policyId)
-      .eq("version", active.version)
-      .eq("status", "active");
-
-    if (deprecateError) throw new Error(deprecateError.message);
-    deprecatedVersion = active.version;
+  if (error) {
+    throw mapPublishPolicyDraftRpcError(error);
   }
 
-  const { data, error } = await sb
-    .from("partner_policies")
-    .update({ status: "active" })
-    .eq("id", input.policyId)
-    .eq("version", input.version)
-    .eq("status", "draft")
-    .select("*")
-    .single();
-
-  if (error) throw new Error(error.message);
-  return { published: data as PartnerPolicy, deprecatedVersion };
+  const parsed = parsePublishPolicyDraftRpcResult(data);
+  return { published: parsed.published, deprecatedVersion: parsed.deprecatedVersion };
 }
 
 export async function deprecatePolicyVersion(input: {

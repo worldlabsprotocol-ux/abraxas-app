@@ -22,10 +22,25 @@ Changing rules requires a **new version row** — never `UPDATE rules_json` on a
 
 ```sql
 select id, version, status from public.partner_policies order by id, version;
-select conname, conrelid::regclass
-  from pg_constraint
- where confrelid = 'public.partner_policies'::regclass;
+
+-- List every inbound FK referencing partner_policies.
+-- STOP if any constraint_name is not in the permitted list below.
+select con.conname as constraint_name,
+       conrelid::regclass as referencing_table
+  from pg_constraint con
+ where con.contype = 'f'
+   and con.confrelid = 'public.partner_policies'::regclass
+ order by 1;
 ```
+
+**Permitted inbound FK names** (must match `lib/policy/partnerPoliciesFkAllowlist.ts`):
+
+- `verification_requests_policy_id_fkey`
+- `partner_issuer_trust_rules_policy_id_fkey`
+
+**Stop condition:** If the FK query returns any other `constraint_name`, **do not apply migration 055**. Review the new FK, update the allowlist in code + migration guard, then re-run preflight.
+
+Migration 055 runs inside `BEGIN … COMMIT` and **raises before any destructive DDL** when an unexpected FK is present.
 
 Confirm:
 - Every policy has `version >= 1`
@@ -33,10 +48,14 @@ Confirm:
 
 ---
 
-## Apply migration
+## Apply migrations (in order)
 
-1. Paste `supabase/migrations/055_policy_immutable_versions.sql` into Supabase SQL editor (or run via migration tooling).
-2. Verify:
+1. `supabase/migrations/055_policy_immutable_versions.sql` — composite PK + immutability trigger + FK guard
+2. `supabase/migrations/056_publish_partner_policy_draft_rpc.sql` — atomic publish RPC
+
+Paste into Supabase SQL editor (or run via migration tooling). **Do not apply in production until reviewed.**
+
+Verify:
 
 ```sql
 \d public.partner_policies
@@ -85,7 +104,9 @@ See rollback section at top of `055_policy_immutable_versions.sql`. Rollback rem
 }
 ```
 
-### Publish draft (activates vN, deprecates prior active)
+### Publish draft (activates vN, deprecates prior active — atomic RPC)
+
+Uses `publish_partner_policy_draft` (migration 056). Deprecation + activation occur in one database transaction; rollback on any error prevents a policy family with zero active versions.
 
 ```json
 {
