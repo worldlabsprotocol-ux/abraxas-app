@@ -101,6 +101,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           "Partner Flow redirect, POST /api/credentials/verify, verification requests, and public receipt verification.",
         links: [
           { label: "Partner Flow", href: "/docs/partner-flow" },
+          { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
           { label: "AI agents", href: "/docs/ai-agents" },
           { label: "Partner verification requests", href: "/docs/partner-verification-requests" },
         ],
