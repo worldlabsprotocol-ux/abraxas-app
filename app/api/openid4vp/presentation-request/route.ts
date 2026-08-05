@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildPresentationRequest, presentationRequestUrl } from "@/lib/openid4vp/presentation";
 import { createVerificationRequest } from "@/lib/verification/requestsService";
 import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
+import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 
 export async function POST(req: NextRequest) {
   const auth = await authenticateV1Partner(req, "verify:requests");
@@ -33,11 +34,14 @@ export async function POST(req: NextRequest) {
       suiAddress: body.sui_address,
     });
 
+    const appOrigin = getPublicAppOriginFromRequest(req);
+
     const oidc = buildPresentationRequest({
       partnerId: auth.partnerId,
       policyId: body.policy_id,
       requestedClaims: body.requested_claims ?? [],
       redirectUri: body.redirect_uri,
+      appOrigin,
     });
 
     return NextResponse.json({
@@ -45,7 +49,7 @@ export async function POST(req: NextRequest) {
       consent_url: vr.consent_url,
       openid4vp: {
         ...oidc,
-        presentation_url: presentationRequestUrl(oidc),
+        presentation_url: presentationRequestUrl(oidc, appOrigin),
       },
       note: "OpenID4VP scaffold — holder completes consent at consent_url today.",
     });

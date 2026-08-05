@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 import { createAuthorizationRequest } from "@/lib/connect/authorizationService";
+import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 
 export async function POST(req: NextRequest) {
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
       requestedAction: body.requested_action,
       returnUrl: body.return_url,
       idempotencyKey: body.idempotency_key,
+      appOrigin: getPublicAppOriginFromRequest(req),
     });
 
     void logPartnerUsage({

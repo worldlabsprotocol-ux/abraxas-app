@@ -2,8 +2,7 @@
 // OpenID4VP presentation request scaffold — standards-based credential presentation.
 
 import { randomBytes } from "crypto";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
+import { resolveProtocolAppOrigin } from "@/lib/app/publicAppOrigin";
 
 export interface OpenId4VpPresentationRequest {
   request_id: string;
@@ -30,14 +29,16 @@ export function buildPresentationRequest(input: {
   policyId: string;
   requestedClaims: string[];
   redirectUri?: string;
+  appOrigin?: string;
 }): OpenId4VpPresentationRequest {
+  const base = resolveProtocolAppOrigin(input.appOrigin);
   const requestId = randomBytes(12).toString("hex");
   const nonce = randomBytes(16).toString("hex");
 
   return {
     request_id: requestId,
     response_type: "vp_token",
-    client_id: `${APP_URL}/integrations`,
+    client_id: `${base}/integrations`,
     response_mode: "direct_post",
     presentation_definition: {
       id: input.policyId,
@@ -55,10 +56,14 @@ export function buildPresentationRequest(input: {
   };
 }
 
-export function presentationRequestUrl(request: OpenId4VpPresentationRequest): string {
+export function presentationRequestUrl(
+  request: OpenId4VpPresentationRequest,
+  appOrigin?: string,
+): string {
+  const base = resolveProtocolAppOrigin(appOrigin);
   const params = new URLSearchParams({
     client_id: request.client_id,
-    request_uri: `${APP_URL}/api/openid4vp/request/${request.request_id}`,
+    request_uri: `${base}/api/openid4vp/request/${request.request_id}`,
   });
   return `openid4vp://?${params.toString()}`;
 }

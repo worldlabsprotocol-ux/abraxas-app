@@ -3,9 +3,9 @@
 
 import { randomBytes } from "crypto";
 import { isReturnUrlAllowed } from "@/lib/connect/returnUrlAllowlist";
+import { resolveProtocolAppOrigin } from "@/lib/app/publicAppOrigin";
 import { resolvePermissionForRelyingParty, PermissionResolutionError } from "@/lib/verify/resolvePermission";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
 const AUTH_TTL_MS = 30 * 60 * 1000;
 
 export interface CreateVerifyAuthorizationInput {
@@ -14,6 +14,8 @@ export interface CreateVerifyAuthorizationInput {
   permissionVersion?: string | null;
   redirectUri: string;
   state?: string | null;
+  /** Trusted Abraxas origin for authorization_url (from request or SDK default). */
+  appOrigin?: string;
 }
 
 export interface VerifyAuthorizationResult {
@@ -38,7 +40,9 @@ export function buildVerifyAuthorizationUrl(input: {
   redirectUri: string;
   state?: string | null;
   trustRequestId?: string;
+  appOrigin?: string;
 }): string {
+  const base = resolveProtocolAppOrigin(input.appOrigin);
   const params = new URLSearchParams({
     relying_party_id: input.relyingPartyId,
     partner_id: input.relyingPartyId,
@@ -49,7 +53,7 @@ export function buildVerifyAuthorizationUrl(input: {
   });
   if (input.state) params.set("state", input.state);
   if (input.trustRequestId) params.set("trust_request_id", input.trustRequestId);
-  return `${APP_URL}/partner/verify?${params.toString()}`;
+  return `${base}/partner/verify?${params.toString()}`;
 }
 
 export async function createVerifyAuthorization(
@@ -84,6 +88,7 @@ export async function createVerifyAuthorization(
       redirectUri: input.redirectUri,
       state: input.state,
       trustRequestId,
+      appOrigin: input.appOrigin,
     }),
     permission: resolved.permission,
     permission_version: resolved.permissionVersion,
