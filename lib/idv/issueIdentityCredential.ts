@@ -14,8 +14,8 @@ import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsServi
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
 import { getSuiNetwork } from "@/lib/sui/network";
 import type { VeriffDecisionInput } from "./types";
+import { resolveAbraxasCredentialIssuer } from "@/lib/credentials/abraxasIssuer";
 
-const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
 const TTL_MS = 365 * 24 * 60 * 60 * 1000;
 
 export interface IssueIdentityCredentialResult {
@@ -82,6 +82,7 @@ export async function issueIdentityCredential(
   }
 
   const signingKey = await importJWK(JSON.parse(signingKeyJson), "EdDSA");
+  const issuer = resolveAbraxasCredentialIssuer();
   const expiresAt = new Date(now.getTime() + TTL_MS);
   const jti = `urn:uuid:${randomUUID()}`;
 
@@ -94,7 +95,7 @@ export async function issueIdentityCredential(
   const claims = {
     "@context": ["https://www.w3.org/2018/credentials/v1"],
     type: ["VerifiableCredential", "AbraxasIdentityCredential"],
-    issuer: ISSUER,
+    issuer,
     issuanceDate: now.toISOString(),
     expirationDate: expiresAt.toISOString(),
     id: jti,
@@ -124,7 +125,7 @@ export async function issueIdentityCredential(
   const jwt = await new SignJWT({ vc: claims })
     .setProtectedHeader({ alg: "EdDSA", typ: "JWT" })
     .setJti(jti)
-    .setIssuer(ISSUER)
+    .setIssuer(issuer)
     .setSubject(`did:sui:${normalized}`)
     .setIssuedAt(now)
     .setExpirationTime(expiresAt)
@@ -170,7 +171,7 @@ export async function issueIdentityCredential(
       jti,
       holder_wallet: normalized,
       sui_address: normalized,
-      issuer: ISSUER,
+      issuer,
       jurisdiction: juris,
       document_type: docType,
       verification_level: "standard",

@@ -6,6 +6,10 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import {
+  extractIssuerFromCredentialJwt,
+  resolveAbraxasCredentialIssuer,
+} from "@/lib/credentials/abraxasIssuer";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -78,7 +82,9 @@ export async function GET(req: NextRequest) {
     credential_jti: cred.jti,
     credential_jwt: cred.credential_jwt,
     credential_hash,
-    issuer: process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app",
+    issuer:
+      extractIssuerFromCredentialJwt(cred.credential_jwt)
+      ?? resolveAbraxasCredentialIssuer(),
     jurisdiction: cred.jurisdiction,
     document_type: cred.document_type,
     verification_level: cred.verification_level,

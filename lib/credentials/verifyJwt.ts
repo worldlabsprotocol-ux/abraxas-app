@@ -6,8 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { VerificationResult } from "@/lib/credentials/types";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-
-const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? "https://abraxas-app.vercel.app";
+import { trustedAbraxasCredentialIssuers } from "@/lib/credentials/abraxasIssuer";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
@@ -35,7 +34,9 @@ export async function verifyCredentialJwt(
 
   let payload;
   try {
-    const result = await jwtVerify(credentialJwt, publicKey, { issuer: ISSUER });
+    const result = await jwtVerify(credentialJwt, publicKey, {
+      issuer: trustedAbraxasCredentialIssuers(),
+    });
     payload = result.payload;
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "JWT verification failed";
