@@ -2,6 +2,8 @@
 // FILE: components/SiteFooter.tsx
 // Persistent footer on all protocol pages. Theme-aware.
 
+import { SITE_URL } from "@/lib/siteUrl";
+
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const G = "#10B981";
@@ -122,8 +124,8 @@ export function SiteFooter() {
               marginTop: "0.75rem",
             }}>
               Live at{" "}
-              <a href="https://abraxas-app.vercel.app/" style={{ color: G, textDecoration: "none" }}>
-                abraxas-app.vercel.app
+              <a href={SITE_URL} style={{ color: G, textDecoration: "none" }}>
+                abraxasworld.xyz
               </a>
             </p>
           </div>

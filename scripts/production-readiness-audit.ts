@@ -4,7 +4,10 @@
  * Run: npx tsx scripts/production-readiness-audit.ts
  */
 
-const PROD = process.env.AUDIT_BASE_URL ?? "https://abraxas-app.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
+
+const PROD = (process.env.AUDIT_BASE_URL ?? SITE_URL).replace(/\/$/, "");
+const GOOD_TROUBLE_ENTER_URL = `${PROD}/good-trouble/enter`;
 const OUT = process.env.AUDIT_OUT ?? "/opt/cursor/artifacts/production-readiness-audit.json";
 
 interface AuditStep {
@@ -60,7 +63,7 @@ async function main() {
   for (const [step, path] of [
     ["Landing page loads", "/"],
     ["Good Trouble page loads", "/good-trouble"],
-    ["Partner verify hub loads", "/partner/verify?partner_id=good-trouble-cannabis&policy_id=good-trouble-retail-v1&return_url=https%3A%2F%2Fabraxas-app.vercel.app%2Fgood-trouble%2Fenter"],
+    ["Partner verify hub loads", `/partner/verify?partner_id=good-trouble-cannabis&policy_id=good-trouble-retail-v1&return_url=${encodeURIComponent(GOOD_TROUBLE_ENTER_URL)}`],
     ["Good Trouble enter callback loads", "/good-trouble/enter"],
     ["Passport page loads", "/passport"],
   ] as const) {

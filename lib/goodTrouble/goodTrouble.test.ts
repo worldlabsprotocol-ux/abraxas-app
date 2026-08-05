@@ -44,6 +44,8 @@ describe("goodTrouble pilot", () => {
   it("reference verify example uses credential_jwt not wallet address", () => {
     expect(GOOD_TROUBLE_VERIFY_EXAMPLE).toContain("credential_jwt");
     expect(GOOD_TROUBLE_VERIFY_EXAMPLE).not.toContain("sui_address");
+    expect(GOOD_TROUBLE_VERIFY_EXAMPLE).toContain("https://abraxasworld.xyz");
+    expect(GOOD_TROUBLE_VERIFY_EXAMPLE).not.toContain("abraxas-app.vercel.app");
   });
 
   it("builds partner verify URL from generic config", () => {
