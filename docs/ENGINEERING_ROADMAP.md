@@ -1,9 +1,19 @@
 # Abraxas Engineering Roadmap
 
-**Last updated:** 2026-07-30  
-**Status:** **Validation phase.** Execute IAT on production → evidence → `PROTOCOL_COMPATIBILITY.md` → `RELEASE_DECISION.md` → tag `v1.0.0-beta.0` → P1. No features, no architecture changes, no protocol expansion unless a validated defect requires it.
+**Last updated:** 2026-08-05  
+**Public status (reconciled):** [`docs/INTEGRATION_READINESS_RECONCILIATION.md`](./INTEGRATION_READINESS_RECONCILIATION.md) · [`/docs/integration-readiness`](https://abraxasworld.xyz/docs/integration-readiness)  
+**Status:** **Validation phase.** IAT, external security review, and `v1.0.0-beta.0` are **not complete**. Partner Flow + P1-2/P1-3 merged; operator evidence pending.
 
 **Do not build new systems.** Prove the protocol works in production exactly as designed.
+
+### Recently merged (evidence on `main`)
+
+| Work | PR | Status |
+|------|-----|--------|
+| P1-2 Trust Decision validity + Partner Flow idempotency | #113 | **Live** (code); migration 053 operator-applied |
+| P1-3 Partner Flow observability + audit trace | #114 | **Live** (code); migration 054 operator-applied |
+| External security-review readiness package | #115 | **Docs only** — no independent review performed |
+| Integration preflight | — | **Live** (`npm run integration:preflight`) |
 
 ---
 
@@ -224,16 +234,16 @@ If the answer to all three is **no**, it does not belong after the freeze.
 
 ## Phase 1.5 — P1 Hardening
 
-After **`v1.0.0-beta.0`** is tagged. **Before external security review** — reviewers should find unknown unknowns, not known P1s.
+After **`v1.0.0-beta.0`** is tagged (not yet). **Before external security review** — reviewers should find unknown unknowns, not known P1s.
 
-| Priority | Item | Rationale |
-|----------|------|-----------|
-| 1 | **Immutable policy versions** | Protocol integrity — receipts pin `policy_version`; no in-place `UPDATE` of `rules_json` |
-| 2 | **Trust Decision validity** | API semantics — integrate `resolveReceiptValidity`; expose `currently_valid` |
-| 3 | **Partner-flow observability** | `logPartnerUsage` + audit events on partner-flow routes |
-| 4 | **Biometric telemetry persistence** | stdout → durable store (after protocol semantics are final) |
+| Priority | Item | Status (main) |
+|----------|------|----------------|
+| 1 | **Immutable policy versions** | Pending (P1-1) |
+| 2 | **Trust Decision validity + idempotency** | **Merged** PR #113 |
+| 3 | **Partner-flow observability + audit trace** | **Merged** PR #114 |
+| 4 | **Biometric telemetry persistence** | Pending (P1-4) |
 
-P0 items (idempotency, consent atomicity, policy evaluation unification, tenancy) are complete in PR #93.
+P0 items (idempotency foundations, consent atomicity, policy evaluation unification, tenancy) are complete in PR #93.
 
 **Do NOT build:** more biometric signals, AI scoring, homepage redesign, new verification methods.
 

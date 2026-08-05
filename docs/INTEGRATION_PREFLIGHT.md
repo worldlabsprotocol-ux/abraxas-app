@@ -81,6 +81,7 @@ Cannot be verified without a browser session / holder:
 
 ## Related docs
 
+- [Integration readiness reconciliation](./INTEGRATION_READINESS_RECONCILIATION.md)
 - [Partner Flow integrator kit](/docs/partner-flow)
 - [Partner Flow OpenAPI](/docs/partner-flow-api)
-- [Partner onboarding checklist](/docs/PARTNER_ONBOARDING_CHECKLIST.md)
+- [Partner onboarding checklist](./PARTNER_ONBOARDING_CHECKLIST.md)

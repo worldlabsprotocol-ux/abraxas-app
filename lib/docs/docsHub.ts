@@ -132,12 +132,13 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
     topics: [
       {
         id: "roadmap",
-        title: "Roadmap",
+        title: "Roadmap & integration status",
         summary:
-          "Live: zkLogin Passport, Abraxas Verify biometrics, credential issuance, admin review queue, Cielo pilot. In progress: mainnet deployment, expanded relying partners.",
+          "Live on abraxasworld.xyz: Partner Flow APIs, OpenAPI contract, P1-2 validity/idempotency, P1-3 audit traceability. Open gates: IAT, external security review, v1.0.0-beta.0.",
         links: [
           { label: "Roadmap", href: "/roadmap" },
-          { label: "Litepaper", href: "/docs/litepaper" },
+          { label: "Integration readiness", href: "/docs/integration-readiness" },
+          { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Live metrics", href: "/metrics" },
         ],
       },

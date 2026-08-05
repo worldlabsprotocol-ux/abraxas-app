@@ -23,7 +23,7 @@
 | Institutional Acceptance Test | _Pass / Fail_ (`docs/PRODUCTION_WALKTHROUGH_RESULTS.md`) |
 | Protocol Compatibility | _Pending / Complete_ (`docs/PROTOCOL_COMPATIBILITY.md`) |
 | Regression suite | _Pass / Fail_ (`npm test`) |
-| P1 hardening | Pending |
+| P1 hardening | P1-2 + P1-3 merged (code); P1-1 + P1-4 pending |
 
 ---
 
@@ -62,11 +62,9 @@ Sign-off requires **measurable thresholds**, not subjective "looks good." All mu
 | Limitation | Target |
 |------------|--------|
 | Immutable policy versions not yet implemented | P1-1 |
-| Trust Decision validity integration pending | P1-2 |
-| Partner-flow observability enhancements pending | P1-3 |
 | Biometric telemetry persistence pending | P1-4 |
 
-These are documented in `docs/TRUST_MODEL_V1.md` and `docs/ENGINEERING_ROADMAP.md`. They are not hidden defects — they are scheduled integrity work.
+**Merged (code on main):** P1-2 validity/idempotency (PR #113), P1-3 partner-flow audit traceability (PR #114). Operator migrations 053/054 and IAT evidence still required.
 
 ---
 

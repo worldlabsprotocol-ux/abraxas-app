@@ -1,8 +1,8 @@
 # Beta Gate Evidence Matrix
 
-**Phase:** Protocol Validation (Phase 3)  
-**Last updated:** 2026-08-03  
-**Prerequisite:** PR #101 merged and deployed before marking backend/IAT gates passed.
+**Last updated:** 2026-08-05  
+**Phase:** Protocol Validation  
+**Prerequisite:** Reconciliation doc `docs/INTEGRATION_READINESS_RECONCILIATION.md` — IAT and beta tag **not complete**.
 
 ---
 
@@ -23,9 +23,10 @@
 | **IAT** | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`, `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` | Signed results doc: Scenarios A–D PASS, decision_id + receipt_id + screenshots, 0 critical/high defects | Human: execute checklist on production. Pre-check: `npm run gate:preflight` with `BETA_GATE_BASE_URL=https://abraxasworld.xyz` | **Pending** | Production IAT not executed; PR #101 not on production `main` | Operator / founder |
 | **Protocol compatibility freeze** | `docs/PROTOCOL_COMPATIBILITY.md`, `lib/protocol/compatibility.ts`, `lib/protocol/compatibility.test.ts` | Doc committed at release SHA; **live-output** compatibility tests pass; live IAT receipt `signature_valid: true` | `npm test -- lib/protocol/compatibility.test.ts` · `npm run gate:verify-receipt-fixture` | **Partial** | Live-output tests pass locally; production IAT receipt not yet captured | Engineering + operator |
 | **P1-1 Immutable policy versions** | `verification_decisions.policy_version`, `decision_receipts.policy_version`; `getPartnerPolicy()` reads live `rules_json` | Decisions store `policy_id` + `policy_version`; **gap documented:** rules_json mutable until P1-1 post-beta | `npm test -- lib/policy/policyImmutability.test.ts` | **Partial** | No immutable rules snapshot — reproducibility requires P1-1 post-tag | Engineering (post-beta) |
-| **P1-2 Trust Decision validity** | `resolveReceiptValidity`, `toPublicView.signature_valid`; Trust Decision API lacks `currently_valid` | Fixture verifies sign/tamper; production `GET /api/receipts/{id}/public` → `signature_valid: true` | `npm run gate:verify-receipt-fixture` · production curl public receipt | **Partial** | `buildTrustDecision` does not expose `currently_valid` (P1-2 post-beta) | Engineering (post-beta) |
-| **P1-3 Observability / audit** | `audit_events`, `partner_api_usage`; partner-flow durable audit (`flow_trace_id` derived from verification request) | IAT flow reconstructable from `audit_events` metadata: trace, partner, policy, outcome, decision/receipt IDs | Query: `audit_events` where `metadata->>'flow_trace_id'` or `action` like `partner_flow.%` · `npm test -- lib/partner/partnerFlowRoutes.test.ts` | **Partial** | Route-level trace correlation + awaited audit on success path; auth/capture issuance still fragmented; production IAT evidence pending | Engineering + operator |
-| **External security review** | `docs/TRUST_MODEL_V1.md`, `docs/EXTERNAL_SECURITY_REVIEW_PACKAGE.md` | Independent written report; Critical/High disposition in `RELEASE_DECISION.md` | N/A — blocked on external reviewer | **Blocked** | No third-party report artifact | Security / founder |
+| **P1-2 Trust Decision validity** | `evaluateDecisionReceiptTrust`, idempotency keys, 409 on conflict | Fixture + integration tests pass; production IAT receipt pending | `npm test -- lib/decisionReceipts/trustEvaluation.test.ts lib/partner/partnerFlowIdempotency.integration.test.ts` | **Live (code)** — human IAT evidence pending | Migration 053 applied in prod |
+| **P1-3 Observability / audit** | `partnerFlowAuditContract`, `partnerFlowTraceAudit`, `audit:partner-flow-trace` | Route-level audit + trace analyzer merged; production trace run pending | `npm test -- lib/partner/partnerFlowTraceAudit.test.ts` · `npm run audit:partner-flow-trace -- ft_vr_<id>` | **Live (code)** — operator trace audit pending | Migration 054 applied in prod |
+| **Integration preflight** | `scripts/integration-preflight.ts`, `docs/INTEGRATION_PREFLIGHT.md` | Static + optional live/Supabase checks | `npm run integration:preflight` | **Live** | — |
+| **External security review** | `docs/external-security-review/` readiness package | Independent written report; Critical/High disposition in `RELEASE_DECISION.md` | See `docs/external-security-review/REPRO_COMMANDS.md` | **Blocked** — readiness only, **no review performed** | Security / founder |
 | **v1.0.0-beta.0 baseline tag** | `docs/RELEASE_DECISION.md`, Known Good Baseline template below | All gates above passed; regression suite green; signed release decision | See release checklist below — **do not run tag command until gates pass** | **Pending** | IAT, compatibility sign-off, external review | Founder |
 
 ---

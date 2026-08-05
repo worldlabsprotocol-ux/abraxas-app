@@ -1,7 +1,13 @@
 // FILE: lib/roadmapPublic.ts
-// Public roadmap — development log of shipped work, not a list of promises.
+// Public roadmap — evidence-backed status (see docs/INTEGRATION_READINESS_RECONCILIATION.md).
 
-export type RoadmapSectionId = "completed" | "in_progress" | "future";
+import {
+  INTEGRATION_STATUS_SECTIONS,
+  isLiveIntegrationPhase,
+  type IntegrationStatusId,
+} from "@/lib/integrationReadiness";
+
+export type RoadmapSectionId = IntegrationStatusId;
 
 export interface RoadmapSection {
   id: RoadmapSectionId;
@@ -12,80 +18,24 @@ export interface RoadmapSection {
   items: readonly string[];
 }
 
-export const ROADMAP_HEADLINE = "Protocol development log";
+export const ROADMAP_HEADLINE = "Integration & protocol status";
 
 export const ROADMAP_SUBTITLE =
-  "What we've shipped, what we're hardening now, and what's intentionally deferred. No calendar dates — only evidence-backed milestones.";
+  "What is live on abraxasworld.xyz today, what awaits pilot evidence, and which release gates remain open. Reconciled against merged PRs — not marketing promises.";
 
 export const ROADMAP_NARRATIVE = [
-  "We started by solving onboarding with zkLogin.",
-  "We built Passport, identity verification, biometrics, and the Trust Engine.",
-  "We hardened the protocol with P0 security fixes and a 383-test regression suite.",
-  "We're now validating the protocol through institutional acceptance testing before expanding to additional relying parties.",
+  "We built zkLogin Passport, biometrics, the Trust Engine, and Partner Flow APIs on abraxasworld.xyz.",
+  "P1-2 (validity + idempotency) and P1-3 (audit traceability) merged to main with operator tooling.",
+  "Good Trouble is the reference pilot checkout — sandbox/pilot until operator evidence says otherwise.",
+  "IAT, external security review, and v1.0.0-beta.0 remain open gates before GA claims.",
 ] as const;
 
-export const ROADMAP_SECTIONS: readonly RoadmapSection[] = [
-  {
-    id: "completed",
-    phase: "Completed",
-    emoji: "✅",
-    color: "#10B981",
-    description: "Live in production or built and merged to main.",
-    items: [
-      "Google zkLogin onboarding",
-      "Automatic wallet creation",
-      "Abraxas Passport",
-      "Identity verification pipeline",
-      "Biometric verification",
-      "Trust Engine",
-      "Permission registry",
-      "Trust Decision API",
-      "Signed decision receipts",
-      "Policy engine",
-      "Partner SDK (Slice 1)",
-      "Security hardening (P0 complete)",
-      "Threat Model v1",
-      "389+ automated regression tests",
-      "~$2M in verified assets onboarded",
-      "Good Trouble reference relying party flow",
-    ],
-  },
-  {
-    id: "in_progress",
-    phase: "In progress",
-    emoji: "🚧",
-    color: "#F59E0B",
-    description: "Active engineering gates with objective evidence requirements.",
-    items: [
-      "Institutional Acceptance Test (IAT)",
-      "Protocol compatibility freeze",
-      "Immutable policy versions (P1-1)",
-      "Trust Decision validity (P1-2)",
-      "Observability & audit improvements (P1-3)",
-      "External security review",
-      "v1.0.0-beta.0 baseline tag",
-    ],
-  },
-  {
-    id: "future",
-    phase: "Future",
-    emoji: "🔭",
-    color: "#6366F1",
-    description: "Intentionally short — expands after the protocol baseline is validated.",
-    items: [
-      "Additional relying party integrations",
-      "Expanded issuer network",
-      "Production-scale Trust Network",
-      "Mainnet & tokenization expansion",
-      "Broader RWA ecosystem integrations",
-    ],
-  },
-] as const;
+export const ROADMAP_SECTIONS: readonly RoadmapSection[] = INTEGRATION_STATUS_SECTIONS;
 
 export const ROADMAP_LONG_TERM_VISION = {
   title: "Long-term vision",
   body:
-    "These directions inform the protocol's category — they are not current engineering commitments. Work begins only after v1.0.0-beta hardening and external review.",
+    "These directions inform category positioning — they are not current commitments. Work expands after beta gates and a second relying party clear production.",
   items: [
     "Open mainnet deployment",
     "Token utility & governance",
@@ -102,5 +52,5 @@ export const ROADMAP = ROADMAP_SECTIONS.map(section => ({
 })) as readonly { phase: string; color: string; items: readonly string[] }[];
 
 export function isCompletedRoadmapPhase(phase: string): boolean {
-  return phase === "Completed";
+  return isLiveIntegrationPhase(phase);
 }
