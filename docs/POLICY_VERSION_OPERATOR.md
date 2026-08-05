@@ -78,7 +78,6 @@ begin
     raise notice 'no active policy rows — probe skipped';
     return;
   end if;
-  savepoint manual_immutability_probe;
   begin
     update public.partner_policies
        set rules_json = rules_json || jsonb_build_object('__manual_probe', true)
@@ -87,19 +86,17 @@ begin
        and status = 'active';
   exception
     when others then
-      rollback to savepoint manual_immutability_probe;
       if sqlerrm not like '%cannot mutate rules_json%' then
         raise;
       end if;
       raise notice 'immutability trigger rejected mutation as expected';
       return;
   end;
-  rollback to savepoint manual_immutability_probe;
   raise exception 'immutability probe failed — mutation succeeded';
 end $$;
 ```
 
-Expect `NOTICE: immutability trigger rejected mutation as expected` (or skip notice when no active rows). **Do not** use `rules_json = rules_json` — that is a no-op and does not exercise the trigger.
+Expect `NOTICE: immutability trigger rejected mutation as expected` (or skip notice when no active rows). Uses a nested `BEGIN … EXCEPTION` subtransaction — **do not** use `SAVEPOINT` / `ROLLBACK TO SAVEPOINT` inside a `DO` block. **Do not** use `rules_json = rules_json` — that is a no-op and does not exercise the trigger.
 
 ---
 

@@ -31,14 +31,20 @@ describe("partner_policies inbound FK allowlist (migration 055 guard)", () => {
     expect(migrationSql).toContain("add constraint partner_policies_pkey primary key (id, version)");
   });
 
-  it("migration 055 runs a non-no-op immutability probe with savepoint rollback", () => {
+  it("migration 055 runs a non-no-op immutability probe via nested exception subtransaction", () => {
+    const probeBlock = migrationSql.split(
+      "-- Self-contained immutability probe: attempt to mutate active rules_json",
+    )[1]?.split("commit;")[0] ?? "";
+
     expect(migrationSql).not.toMatch(/set\s+rules_json\s*=\s*rules_json\s*(where|;)/i);
-    expect(migrationSql).toContain("savepoint p1_1_immutability_probe");
-    expect(migrationSql).toMatch(
+    expect(probeBlock).not.toMatch(/\bsavepoint\b/i);
+    expect(probeBlock).not.toMatch(/\brollback to savepoint\b/i);
+    expect(probeBlock).toMatch(
       /rules_json = rules_json \|\| jsonb_build_object\('__p1_1_immutability_probe', true\)/,
     );
-    expect(migrationSql).toMatch(/cannot mutate rules_json/);
-    expect(migrationSql).toMatch(
+    expect(probeBlock).toMatch(/exception\s+when others then/);
+    expect(probeBlock).toMatch(/cannot mutate rules_json/);
+    expect(probeBlock).toMatch(
       /immutability probe failed — active rules_json mutation succeeded/,
     );
   });
