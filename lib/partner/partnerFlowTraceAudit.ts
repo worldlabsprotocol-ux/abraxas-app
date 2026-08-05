@@ -3,7 +3,7 @@
 
 import {
   findPartnerFlowAuditMetadataPiiViolations,
-  PARTNER_FLOW_AUDIT_ACTION_TIERS,
+  PARTNER_FLOW_AUDIT_ACTIONS,
   PARTNER_FLOW_AUDIT_METADATA_KEYS,
 } from "@/lib/partner/partnerFlowAuditContract";
 
@@ -40,6 +40,100 @@ function metadataString(
 ): string | null {
   const value = metadata[key];
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function isSequenceNeutralEvent(event: PartnerFlowTraceAuditEvent): boolean {
+  if (event.action === PARTNER_FLOW_AUDIT_ACTIONS.rejected) return true;
+  return metadataString(event.metadata ?? {}, "outcome") === "error";
+}
+
+function hasEligibleTerminalContext(
+  hasEvaluate: boolean,
+  hasConsent: boolean,
+  hasReceiptIssued: boolean,
+): boolean {
+  return hasEvaluate || hasConsent || hasReceiptIssued;
+}
+
+/**
+ * Validates causal ordering per attempt/cycle instead of one global monotonic tier.
+ * Rejected and error-outcome events are ignored for sequence checks.
+ */
+function validatePartnerFlowSequence(
+  sorted: PartnerFlowTraceAuditEvent[],
+): { ok: boolean; issues: string[] } {
+  const issues: string[] = [];
+  let hasEvaluate = false;
+  let hasConsent = false;
+  let hasReceiptIssued = false;
+  let issuanceContext: "none" | "evaluate" | "consent" = "none";
+  let preludeReady = false;
+  const sequenceActions: string[] = [];
+
+  for (const event of sorted) {
+    if (isSequenceNeutralEvent(event)) continue;
+
+    sequenceActions.push(event.action);
+
+    switch (event.action) {
+      case PARTNER_FLOW_AUDIT_ACTIONS.evaluate:
+        hasEvaluate = true;
+        issuanceContext = "evaluate";
+        preludeReady = false;
+        break;
+
+      case PARTNER_FLOW_AUDIT_ACTIONS.consent:
+        if (!hasEvaluate) issues.push("consent_without_evaluate");
+        if (hasReceiptIssued) issues.push("consent_after_receipt");
+        hasConsent = true;
+        issuanceContext = "consent";
+        preludeReady = false;
+        break;
+
+      case PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued:
+        if (issuanceContext !== "evaluate" && issuanceContext !== "consent") {
+          issues.push("receipt_issued_without_issuance_path");
+        }
+        hasReceiptIssued = true;
+        issuanceContext = "none";
+        preludeReady = true;
+        break;
+
+      case PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay:
+        if (!hasEligibleTerminalContext(hasEvaluate, hasConsent, hasReceiptIssued)) {
+          issues.push("idempotent_replay_without_context");
+        }
+        preludeReady = true;
+        break;
+
+      case PARTNER_FLOW_AUDIT_ACTIONS.complete:
+        if (!hasEligibleTerminalContext(hasEvaluate, hasConsent, hasReceiptIssued)) {
+          issues.push("complete_without_eligible_context");
+        } else if (!preludeReady) {
+          issues.push("complete_without_prelude");
+        }
+        preludeReady = false;
+        issuanceContext = "none";
+        break;
+
+      case PARTNER_FLOW_AUDIT_ACTIONS.refresh:
+        if (!hasEvaluate) issues.push("refresh_without_evaluate");
+        else if (!preludeReady) issues.push("refresh_without_prelude");
+        preludeReady = false;
+        break;
+
+      default:
+        sequenceActions.pop();
+        break;
+    }
+  }
+
+  const ok = issues.length === 0;
+  if (!ok) {
+    issues.push(`unexpected_event_order:${sequenceActions.join("→")}`);
+  }
+
+  return { ok, issues };
 }
 
 export function analyzePartnerFlowTrace(
@@ -111,16 +205,10 @@ export function analyzePartnerFlowTrace(
     issues.push(`duplicate_receipt_issued_events:${receiptIssuedCount}`);
   }
 
-  const presentActions = sorted.map(e => e.action);
-  const knownTiers = presentActions
-    .map(action => PARTNER_FLOW_AUDIT_ACTION_TIERS[action])
-    .filter((tier): tier is number => tier !== undefined);
-
-  let sequence_ok = knownTiers.every(
-    (tier, i) => i === 0 || tier >= knownTiers[i - 1],
-  );
+  const sequence = validatePartnerFlowSequence(sorted);
+  let sequence_ok = sequence.ok;
   if (!sequence_ok) {
-    issues.push(`unexpected_event_order:${presentActions.join("→")}`);
+    issues.push(...sequence.issues);
   }
 
   if (sorted.length === 0) {

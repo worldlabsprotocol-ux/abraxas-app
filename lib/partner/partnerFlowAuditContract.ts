@@ -223,7 +223,10 @@ export const PARTNER_FLOW_AUDIT_ACTIONS = {
   rejected: "partner_flow.rejected",
 } as const;
 
-/** Lifecycle tiers — monotonic non-decreasing timestamps are valid. */
+/**
+ * Reference tiers for documentation only — trace analysis validates causal ordering
+ * per attempt/cycle (see analyzePartnerFlowTrace), not one global monotonic timeline.
+ */
 export const PARTNER_FLOW_AUDIT_ACTION_TIERS: Record<string, number> = {
   [PARTNER_FLOW_AUDIT_ACTIONS.evaluate]: 0,
   [PARTNER_FLOW_AUDIT_ACTIONS.rejected]: 0,
@@ -235,8 +238,9 @@ export const PARTNER_FLOW_AUDIT_ACTION_TIERS: Record<string, number> = {
 };
 
 /**
- * Documented lifecycle (logical, not strict per-request micro-order):
- * evaluate/rejected → consent → receipt_issued|idempotent_replay → complete → refresh
+ * Documented lifecycle (causal per cycle, not one global monotonic timeline):
+ * evaluate/rejected → consent → receipt_issued|idempotent_replay → complete|refresh
+ * with idempotent_replay reopening complete/refresh cycles.
  *
  * Within one HTTP request, route handlers persist step audits before receipt/replay
  * for evaluate, and receipt/replay before step for complete/refresh.
