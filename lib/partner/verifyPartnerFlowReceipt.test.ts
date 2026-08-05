@@ -6,6 +6,8 @@ const EXPECTED = {
   policyId: "your-policy-v1",
 };
 
+const NOW = new Date("2026-01-01T00:00:00.000Z");
+
 function validReceipt(overrides: Record<string, unknown> = {}) {
   return {
     receipt_id: "dr_test",
@@ -15,15 +17,16 @@ function validReceipt(overrides: Record<string, unknown> = {}) {
     signature_valid: true,
     expires_at: "2099-01-01T00:00:00.000Z",
     status: "active",
+    production_usable: true,
     ...overrides,
   };
 }
 
 describe("validatePartnerFlowPublicReceipt", () => {
-  it("accepts a valid approved receipt", () => {
+  it("accepts a valid approved production receipt", () => {
     const result = validatePartnerFlowPublicReceipt(validReceipt(), {
       ...EXPECTED,
-      now: new Date("2026-01-01T00:00:00.000Z"),
+      now: NOW,
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toEqual([]);
@@ -32,7 +35,7 @@ describe("validatePartnerFlowPublicReceipt", () => {
   it("rejects invalid signature", () => {
     const result = validatePartnerFlowPublicReceipt(
       validReceipt({ signature_valid: false }),
-      EXPECTED,
+      { ...EXPECTED, now: NOW },
     );
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("signature_invalid");
@@ -41,16 +44,88 @@ describe("validatePartnerFlowPublicReceipt", () => {
   it("rejects expired receipt", () => {
     const result = validatePartnerFlowPublicReceipt(
       validReceipt({ expires_at: "2020-01-01T00:00:00.000Z" }),
-      { ...EXPECTED, now: new Date("2026-01-01T00:00:00.000Z") },
+      { ...EXPECTED, now: NOW },
     );
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("receipt_expired");
   });
 
+  it("rejects missing expires_at", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({ expires_at: null }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("expires_at_missing");
+  });
+
+  it("rejects invalid expires_at", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({ expires_at: "not-a-date" }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("expires_at_invalid");
+  });
+
+  it("rejects missing status", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({ status: undefined }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("status_not_active:missing");
+  });
+
+  it("rejects non-active status", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({ status: "expired" }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("status_not_active:expired");
+  });
+
+  it("rejects production_usable=false by default", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({ production_usable: false }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("production_not_usable:false");
+  });
+
+  it("rejects missing production_usable by default", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({ production_usable: undefined }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("production_not_usable:missing");
+  });
+
+  it("permits sandbox receipt only with explicit allowSandbox opt-in", () => {
+    const sandboxReceipt = validReceipt({ production_usable: false });
+
+    const defaultResult = validatePartnerFlowPublicReceipt(sandboxReceipt, {
+      ...EXPECTED,
+      now: NOW,
+    });
+    expect(defaultResult.ok).toBe(false);
+
+    const sandboxResult = validatePartnerFlowPublicReceipt(sandboxReceipt, {
+      ...EXPECTED,
+      now: NOW,
+      allowSandbox: true,
+    });
+    expect(sandboxResult.ok).toBe(true);
+    expect(sandboxResult.errors).toEqual([]);
+  });
+
   it("rejects wrong partner", () => {
     const result = validatePartnerFlowPublicReceipt(
       validReceipt({ partner_id: "other-partner" }),
-      EXPECTED,
+      { ...EXPECTED, now: NOW },
     );
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.startsWith("partner_mismatch"))).toBe(true);
@@ -59,7 +134,7 @@ describe("validatePartnerFlowPublicReceipt", () => {
   it("rejects wrong policy", () => {
     const result = validatePartnerFlowPublicReceipt(
       validReceipt({ policy_id: "other-policy-v1" }),
-      EXPECTED,
+      { ...EXPECTED, now: NOW },
     );
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.startsWith("policy_mismatch"))).toBe(true);
@@ -68,14 +143,14 @@ describe("validatePartnerFlowPublicReceipt", () => {
   it("rejects non-approved decision result", () => {
     const result = validatePartnerFlowPublicReceipt(
       validReceipt({ decision_result: "denied" }),
-      EXPECTED,
+      { ...EXPECTED, now: NOW },
     );
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.startsWith("decision_not_approved"))).toBe(true);
   });
 
   it("rejects missing receipt", () => {
-    const result = validatePartnerFlowPublicReceipt(null, EXPECTED);
+    const result = validatePartnerFlowPublicReceipt(null, { ...EXPECTED, now: NOW });
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("receipt_missing");
   });

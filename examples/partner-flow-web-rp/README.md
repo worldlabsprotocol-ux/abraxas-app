@@ -59,12 +59,16 @@ Or call the public endpoint from your backend:
 curl -s "https://abraxasworld.xyz/api/receipts/dr_FROM_CALLBACK/public"
 ```
 
-Check:
+Check (fail closed on any failure):
 
 - `signature_valid === true`
 - `decision_result === "approved"`
-- `expires_at` not passed
+- `status === "active"`
+- `expires_at` present, valid, and not passed
+- `production_usable === true` (production integrations)
 - `partner_id` and `policy_id` match your integration
+
+For sandbox/pilot policies only, pass `--allow-sandbox` to the example verifier or set `allowSandbox: true` in `validatePartnerFlowPublicReceipt`. Never accept `production_usable: false` in production by default.
 
 ### 4. Grant access only after verification passes
 

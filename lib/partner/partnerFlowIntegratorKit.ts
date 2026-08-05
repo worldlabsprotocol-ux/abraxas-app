@@ -94,10 +94,11 @@ export const PARTNER_FLOW_CALLBACK_PII_NOTE =
 export const PARTNER_FLOW_RECEIPT_CHECKS = [
   { check: "signature_valid === true", why: "Ed25519 signature over canonical payload_hash" },
   { check: "decision_result === \"approved\"", why: "Fail closed on denied or manual_review" },
-  { check: "expires_at not passed", why: "Session receipt TTL; re-verify at settlement time" },
+  { check: "status === \"active\"", why: "Reject expired, revoked, or unknown receipt state" },
+  { check: "expires_at present, valid, and not passed", why: "Session receipt TTL; re-verify at settlement time" },
+  { check: "production_usable === true", why: "Required for production gates; sandbox policies need explicit allowSandbox opt-in in your validator" },
   { check: "partner_id matches your integration", why: "Prevents cross-partner receipt replay" },
   { check: "policy_id matches your gate", why: "Ensures the evaluated policy is the one you requested" },
-  { check: "status === \"active\" (recommended)", why: "Reject expired or revoked receipts" },
 ] as const;
 
 export const PARTNER_FLOW_ERROR_TABLE = [
@@ -171,6 +172,7 @@ const receipt = await res.json();
 const result = validatePartnerFlowPublicReceipt(receipt, {
   partnerId: "your-partner-id",
   policyId: "your-policy-v1",
+  // allowSandbox: true, // only for explicit sandbox/pilot policy testing
 });
 
 if (!result.ok) {

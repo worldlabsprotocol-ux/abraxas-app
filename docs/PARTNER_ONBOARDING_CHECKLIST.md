@@ -84,7 +84,7 @@ Keys are issued at `/admin/partners` by Abraxas operators. **Never** embed `abx_
 
 - [ ] Redirect link built: `https://abraxasworld.xyz/partner/verify?partner_id=…&policy_id=…&return_url=…`
 - [ ] Callback handler fetches `GET /api/receipts/{receipt_id}/public`
-- [ ] Server validates: `signature_valid`, `decision_result === approved`, expiry, `partner_id`, `policy_id`
+- [ ] Server validates: `signature_valid`, `decision_result === approved`, `status === active`, non-expired `expires_at`, `production_usable === true`, matching `partner_id` and `policy_id`
 - [ ] Example verifier reviewed: `examples/partner-flow-web-rp/`
 - [ ] IAT / pilot evidence captured (decision_id, receipt_id, `flow_trace_id`)
 
