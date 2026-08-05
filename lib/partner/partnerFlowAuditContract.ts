@@ -75,6 +75,7 @@ export interface BuildPartnerFlowAuditMetadataInput {
   idempotencyKey?: string | null;
   reasonCodes?: string[];
   error?: string | null;
+  errorCode?: string | null;
 }
 
 /** Only VR-scoped keys are safe for metadata — session keys embed subject pseudonym. */
@@ -106,8 +107,86 @@ export function buildPartnerFlowAuditMetadata(
   };
 }
 
+export const PARTNER_FLOW_SAFE_ERROR_CODES = [
+  "flow_trace_id_mismatch",
+  "idempotency_conflict",
+  "audit_persistence_failed",
+  "generic_error",
+] as const;
+
 const JWT_PATTERN = /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const EMAIL_PATTERN = /@[a-z0-9.-]+\.[a-z]{2,}/i;
+const WALLET_PATTERN = /^0x[a-fA-F0-9]{40,}$/;
+const SAFE_TOKEN_PATTERN = /^[a-z0-9_.:-]{1,120}$/i;
+
+/** Map known runtime errors to stable safe audit codes. */
+export function sanitizePartnerFlowAuditError(
+  error: string | null | undefined,
+  errorCode?: string | null,
+): string | null {
+  const code = errorCode?.trim();
+  if (code === "idempotency_conflict") return "idempotency_conflict";
+
+  const trimmed = error?.trim();
+  if (!trimmed) return null;
+
+  if (trimmed === "flow_trace_id does not match verification_request_id") {
+    return "flow_trace_id_mismatch";
+  }
+  if (trimmed.startsWith("idempotency_conflict")) return "idempotency_conflict";
+  if ((PARTNER_FLOW_SAFE_ERROR_CODES as readonly string[]).includes(trimmed)) return trimmed;
+  if (JWT_PATTERN.test(trimmed) || EMAIL_PATTERN.test(trimmed) || WALLET_PATTERN.test(trimmed)) {
+    return "generic_error";
+  }
+  if (SAFE_TOKEN_PATTERN.test(trimmed)) return trimmed;
+  return "generic_error";
+}
+
+function sanitizeReasonCodes(reasonCodes: string[] | undefined): string[] {
+  if (!reasonCodes?.length) return [];
+  return reasonCodes
+    .map((code) => code.trim())
+    .filter((code) => code && SAFE_TOKEN_PATTERN.test(code) && !JWT_PATTERN.test(code) && !EMAIL_PATTERN.test(code));
+}
+
+function sanitizeOutcome(outcome: string): string {
+  const trimmed = outcome.trim();
+  if (!trimmed) return "unknown";
+  if (JWT_PATTERN.test(trimmed) || EMAIL_PATTERN.test(trimmed) || WALLET_PATTERN.test(trimmed)) {
+    return "generic_error";
+  }
+  if (SAFE_TOKEN_PATTERN.test(trimmed)) return trimmed;
+  return "generic_error";
+}
+
+/** Write-time normalization — only documented keys, safe values only. */
+export function normalizePartnerFlowAuditMetadata(
+  input: BuildPartnerFlowAuditMetadataInput,
+): Record<string, unknown> {
+  const built = buildPartnerFlowAuditMetadata({
+    ...input,
+    outcome: sanitizeOutcome(input.outcome),
+    reasonCodes: sanitizeReasonCodes(input.reasonCodes),
+    error: sanitizePartnerFlowAuditError(input.error, input.errorCode),
+  });
+
+  const normalized: Record<string, unknown> = {};
+  for (const key of PARTNER_FLOW_AUDIT_METADATA_KEYS) {
+    normalized[key] = built[key];
+  }
+
+  const violations = findPartnerFlowAuditMetadataPiiViolations(normalized);
+  if (violations.length > 0) {
+    normalized.error = "generic_error";
+    for (const key of Object.keys(normalized)) {
+      if ((PARTNER_FLOW_PII_FORBIDDEN_METADATA_KEYS as readonly string[]).includes(key.toLowerCase())) {
+        delete normalized[key];
+      }
+    }
+  }
+
+  return normalized;
+}
 
 export function findPartnerFlowAuditMetadataPiiViolations(
   metadata: Record<string, unknown>,
@@ -144,7 +223,24 @@ export const PARTNER_FLOW_AUDIT_ACTIONS = {
   rejected: "partner_flow.rejected",
 } as const;
 
-/** Expected high-level event order for passport → complete flows (subset, order-flexible). */
+/** Lifecycle tiers — monotonic non-decreasing timestamps are valid. */
+export const PARTNER_FLOW_AUDIT_ACTION_TIERS: Record<string, number> = {
+  [PARTNER_FLOW_AUDIT_ACTIONS.evaluate]: 0,
+  [PARTNER_FLOW_AUDIT_ACTIONS.rejected]: 0,
+  [PARTNER_FLOW_AUDIT_ACTIONS.consent]: 1,
+  [PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued]: 2,
+  [PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay]: 2,
+  [PARTNER_FLOW_AUDIT_ACTIONS.complete]: 3,
+  [PARTNER_FLOW_AUDIT_ACTIONS.refresh]: 4,
+};
+
+/**
+ * Documented lifecycle (logical, not strict per-request micro-order):
+ * evaluate/rejected → consent → receipt_issued|idempotent_replay → complete → refresh
+ *
+ * Within one HTTP request, route handlers persist step audits before receipt/replay
+ * for evaluate, and receipt/replay before step for complete/refresh.
+ */
 export const PARTNER_FLOW_TRACE_EVENT_ORDER = [
   PARTNER_FLOW_AUDIT_ACTIONS.evaluate,
   PARTNER_FLOW_AUDIT_ACTIONS.consent,

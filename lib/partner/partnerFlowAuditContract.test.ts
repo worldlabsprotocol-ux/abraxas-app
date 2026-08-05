@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildPartnerFlowAuditMetadata,
   findPartnerFlowAuditMetadataPiiViolations,
+  normalizePartnerFlowAuditMetadata,
   PARTNER_FLOW_AUDIT_METADATA_KEYS,
   safeIdempotencyKeyForAudit,
+  sanitizePartnerFlowAuditError,
 } from "@/lib/partner/partnerFlowAuditContract";
 
 describe("partnerFlowAuditContract", () => {
@@ -48,5 +50,47 @@ describe("partnerFlowAuditContract", () => {
     expect(violations).toContain("forbidden_key:email");
     expect(violations).toContain("forbidden_key:credential_jwt");
     expect(violations.some(v => v.startsWith("jwt_like_value:"))).toBe(true);
+  });
+});
+
+describe("partnerFlowAuditContract sanitization", () => {
+  it("maps known errors to stable safe codes", () => {
+    expect(sanitizePartnerFlowAuditError("flow_trace_id does not match verification_request_id"))
+      .toBe("flow_trace_id_mismatch");
+    expect(sanitizePartnerFlowAuditError("idempotency_conflict:stored decision identity", "idempotency_conflict"))
+      .toBe("idempotency_conflict");
+  });
+
+  it("replaces unsafe error text at write time", () => {
+    const metadata = normalizePartnerFlowAuditMetadata({
+      flowTraceId: "ft_test",
+      partnerId: "partner",
+      policyId: "policy",
+      outcome: "error",
+      error: "holder@example.com failed with 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    });
+
+    expect(metadata.error).toBe("generic_error");
+    expect(Object.keys(metadata)).not.toContain("email");
+  });
+
+  it("omits forbidden metadata keys and unsafe idempotency keys", () => {
+    const built = buildPartnerFlowAuditMetadata({
+      flowTraceId: "ft_test",
+      partnerId: "partner",
+      policyId: "policy",
+      outcome: "enter",
+      idempotencyKey: "pf_session:partner:subject:policy",
+    });
+    expect(built.idempotency_key).toBeNull();
+
+    const metadata = normalizePartnerFlowAuditMetadata({
+      flowTraceId: "ft_test",
+      partnerId: "partner",
+      policyId: "policy",
+      outcome: "enter",
+      reasonCodes: ["approved", "leak@example.com"],
+    });
+    expect(metadata.reason_codes).toEqual(["approved"]);
   });
 });

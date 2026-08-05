@@ -76,6 +76,7 @@ describe("partnerFlowAudit", () => {
       currentlyValid: true,
       replayStatus: "issued",
       idempotencyKey: "pf_vr:req-1",
+      error: "holder@example.com",
     });
 
     const call = appendAuditEvent.mock.calls[0]?.[0] as {
@@ -88,6 +89,7 @@ describe("partnerFlowAudit", () => {
     for (const key of PARTNER_FLOW_AUDIT_METADATA_KEYS) {
       expect(call.metadata).toHaveProperty(key);
     }
+    expect(call.metadata?.error).toBe("generic_error");
     expect(call.metadata).not.toHaveProperty("date_of_birth");
     expect(call.metadata).not.toHaveProperty("credential_jti");
     expect(call.metadata).not.toHaveProperty("subject_id");

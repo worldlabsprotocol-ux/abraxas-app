@@ -4,7 +4,7 @@
 import { randomBytes } from "crypto";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import {
-  buildPartnerFlowAuditMetadata,
+  normalizePartnerFlowAuditMetadata,
   PARTNER_FLOW_AUDIT_ACTIONS,
   type PartnerFlowReplayStatus,
 } from "@/lib/partner/partnerFlowAuditContract";
@@ -74,6 +74,7 @@ export interface PartnerFlowAuditInput {
   verificationRequestId?: string | null;
   reasonCodes?: string[];
   error?: string | null;
+  errorCode?: string | null;
   validity?: string | null;
   currentlyValid?: boolean | null;
   replayStatus?: PartnerFlowReplayStatus | null;
@@ -90,7 +91,7 @@ export class PartnerFlowAuditPersistenceError extends Error {
 }
 
 function toAuditEvent(input: PartnerFlowAuditInput) {
-  const metadata = buildPartnerFlowAuditMetadata({
+  const metadata = normalizePartnerFlowAuditMetadata({
     flowTraceId: input.flowTraceId,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -105,6 +106,7 @@ function toAuditEvent(input: PartnerFlowAuditInput) {
     idempotencyKey: input.idempotencyKey,
     reasonCodes: input.reasonCodes,
     error: input.error,
+    errorCode: input.errorCode,
   });
 
   return {
@@ -115,7 +117,7 @@ function toAuditEvent(input: PartnerFlowAuditInput) {
     object_id: input.receiptId ?? input.decisionId ?? null,
     policy_id: input.policyId,
     policy_version: input.policyVersion ?? null,
-    metadata: metadata as unknown as Record<string, unknown>,
+    metadata,
   };
 }
 
@@ -154,6 +156,20 @@ export async function auditPartnerFlowIdempotentReplay(input: PartnerFlowAuditCo
     action: PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay,
     replayStatus: "idempotent_replay",
   });
+}
+
+/** Route-level receipt outcome audit — evaluate: after step; complete/refresh: before step. */
+export async function auditPartnerFlowReceiptOutcome(
+  input: PartnerFlowAuditContext,
+  replayStatus: PartnerFlowReplayStatus,
+): Promise<void> {
+  if (replayStatus === "issued") {
+    await auditPartnerFlowReceiptIssued(input);
+    return;
+  }
+  if (replayStatus === "idempotent_replay") {
+    await auditPartnerFlowIdempotentReplay(input);
+  }
 }
 
 /** @deprecated Use auditPartnerFlowStepRequired or auditPartnerFlowStepBestEffort */

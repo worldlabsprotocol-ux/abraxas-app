@@ -3,6 +3,7 @@ import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { refreshPartnerSessionReceipt, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
+  auditPartnerFlowReceiptOutcome,
   auditPartnerFlowStepBestEffort,
   auditPartnerFlowStepRequired,
   FlowTraceMismatchError,
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
           outcome: "rejected",
           verificationRequestId,
           error: e.message,
+          errorCode: "flow_trace_id_mismatch",
         });
         return NextResponse.json({ error: e.message }, { status: 400 });
       }
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
             subjectId: session.session.suiAddress,
             outcome: "rejected",
             error: e.message,
+            errorCode: "flow_trace_id_mismatch",
           });
           return NextResponse.json({ error: e.message }, { status: 400 });
         }
@@ -115,6 +118,23 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      if (result.replay_status) {
+        await auditPartnerFlowReceiptOutcome({
+          flowTraceId,
+          partnerId,
+          policyId,
+          policyVersion: result.policy_version,
+          subjectId: session.session.suiAddress,
+          outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
+          verificationRequestId: body.verification_request_id,
+          decisionId: result.decision_id,
+          receiptId: result.partner_result?.receipt_id,
+          reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
+          validity: result.validity,
+          currentlyValid: result.currently_valid,
+        }, result.replay_status);
+      }
+
       await auditPartnerFlowStepRequired({
         flowTraceId,
         action: "partner_flow.refresh",

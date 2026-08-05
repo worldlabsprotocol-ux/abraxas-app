@@ -22,11 +22,6 @@ import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import {
-  auditPartnerFlowIdempotentReplay,
-  auditPartnerFlowReceiptIssued,
-  resolvePartnerFlowTraceId,
-} from "@/lib/partner/partnerFlowAudit";
 import { createVerificationRequest, getPolicy } from "@/lib/verification/requestsService";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAllowlist";
@@ -315,28 +310,6 @@ export async function issuePartnerSessionReceipt(input: {
       receiptId = receipt.id;
       receiptExpiresAt = sessionExpires;
       replay_status = "issued";
-
-      const flowTraceId = resolvePartnerFlowTraceId({
-        verificationRequestId: input.verificationRequestId,
-        decisionId,
-        receiptId,
-      });
-
-      await auditPartnerFlowReceiptIssued({
-        flowTraceId,
-        partnerId: input.partnerId,
-        policyId: policy.id,
-        policyVersion: policy.version,
-        subjectId: subject,
-        outcome: "issued",
-        decisionId,
-        receiptId,
-        verificationRequestId: input.verificationRequestId,
-        reasonCodes: evaluation.reason_codes,
-        validity: "active",
-        currentlyValid: true,
-        idempotencyKey,
-      });
     }
   }
 
@@ -372,30 +345,6 @@ export async function issuePartnerSessionReceipt(input: {
     assuranceLevel: identityVerified ? "L2" : null,
     reasonCodes: evaluation.reason_codes,
   });
-
-  const flowTraceId = resolvePartnerFlowTraceId({
-    verificationRequestId: input.verificationRequestId,
-    decisionId,
-    receiptId,
-  });
-
-  if (replay_status === "idempotent_replay") {
-    await auditPartnerFlowIdempotentReplay({
-      flowTraceId,
-      partnerId: input.partnerId,
-      policyId: policy.id,
-      policyVersion: policy.version,
-      subjectId: subject,
-      outcome: "idempotent_replay",
-      decisionId,
-      receiptId,
-      verificationRequestId: input.verificationRequestId,
-      reasonCodes: evaluation.reason_codes,
-      validity: trust.validity,
-      currentlyValid: trust.currently_valid,
-      idempotencyKey,
-    });
-  }
 
   return {
     decision_id: decisionId,

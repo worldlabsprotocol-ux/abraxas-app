@@ -3,8 +3,8 @@
 
 import {
   findPartnerFlowAuditMetadataPiiViolations,
+  PARTNER_FLOW_AUDIT_ACTION_TIERS,
   PARTNER_FLOW_AUDIT_METADATA_KEYS,
-  PARTNER_FLOW_TRACE_EVENT_ORDER,
 } from "@/lib/partner/partnerFlowAuditContract";
 
 export interface PartnerFlowTraceAuditEvent {
@@ -112,14 +112,12 @@ export function analyzePartnerFlowTrace(
   }
 
   const presentActions = sorted.map(e => e.action);
-  const knownIndices = presentActions
-    .map(action => PARTNER_FLOW_TRACE_EVENT_ORDER.indexOf(
-      action as (typeof PARTNER_FLOW_TRACE_EVENT_ORDER)[number],
-    ))
-    .filter(index => index >= 0);
+  const knownTiers = presentActions
+    .map(action => PARTNER_FLOW_AUDIT_ACTION_TIERS[action])
+    .filter((tier): tier is number => tier !== undefined);
 
-  let sequence_ok = knownIndices.every(
-    (index, i) => i === 0 || index >= knownIndices[i - 1],
+  let sequence_ok = knownTiers.every(
+    (tier, i) => i === 0 || tier >= knownTiers[i - 1],
   );
   if (!sequence_ok) {
     issues.push(`unexpected_event_order:${presentActions.join("→")}`);

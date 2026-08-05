@@ -148,12 +148,7 @@ describe("issuePartnerSessionReceipt idempotency", () => {
     expect(first.decision_id).toBe("vd_existing");
     expect(first.receipt_id).toBe("dr_existing");
     expect(issueReceiptForDecision).not.toHaveBeenCalled();
-    expect(appendAuditEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "partner_flow.idempotent_replay" }),
-    );
-    expect(appendAuditEvent).not.toHaveBeenCalledWith(
-      expect.objectContaining({ action: "partner_flow.receipt_issued" }),
-    );
+    expect(appendAuditEvent).not.toHaveBeenCalled();
   });
 
   it("returns idempotent replay for active session evaluate retries", async () => {

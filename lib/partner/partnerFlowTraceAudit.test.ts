@@ -21,7 +21,7 @@ function event(
 }
 
 describe("partnerFlowTraceAudit", () => {
-  it("passes correlated passport → complete sequence", () => {
+  it("passes correlated passport → complete sequence with receipt before complete", () => {
     const result = analyzePartnerFlowTrace(TRACE, [
       event("partner_flow.evaluate", {
         flow_trace_id: TRACE,
@@ -71,6 +71,52 @@ describe("partnerFlowTraceAudit", () => {
     expect(result.linkage_ok).toBe(true);
     expect(result.pii_ok).toBe(true);
     expect(result.issues).toEqual([]);
+  });
+
+  it("accepts evaluate enter path with evaluate before receipt_issued", () => {
+    const result = analyzePartnerFlowTrace(TRACE, [
+      event("partner_flow.evaluate", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        outcome: "enter",
+        replay_status: "issued",
+      }, "2026-08-05T00:00:01.000Z"),
+      event("partner_flow.receipt_issued", {
+        flow_trace_id: TRACE,
+        partner_id: "good-trouble-cannabis",
+        policy_id: "good-trouble-retail-v1",
+        policy_version: 1,
+        decision_id: "vd-1",
+        receipt_id: "dr-1",
+        outcome: "issued",
+        replay_status: "issued",
+      }, "2026-08-05T00:00:02.000Z"),
+    ]);
+
+    expect(result.sequence_ok).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it("flags impossible sequence when complete precedes evaluate", () => {
+    const result = analyzePartnerFlowTrace(TRACE, [
+      event("partner_flow.complete", {
+        flow_trace_id: TRACE,
+        partner_id: "p",
+        policy_id: "pol",
+        outcome: "enter",
+      }, "2026-08-05T00:00:01.000Z"),
+      event("partner_flow.evaluate", {
+        flow_trace_id: TRACE,
+        partner_id: "p",
+        policy_id: "pol",
+        outcome: "passport",
+      }, "2026-08-05T00:00:02.000Z"),
+    ]);
+
+    expect(result.sequence_ok).toBe(false);
+    expect(result.issues).toContain("unexpected_event_order:partner_flow.complete→partner_flow.evaluate");
   });
 
   it("flags duplicate receipt_issued events", () => {
