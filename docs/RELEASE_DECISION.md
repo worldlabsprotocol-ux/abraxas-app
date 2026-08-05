@@ -21,7 +21,7 @@
 | P0 hardening | Complete |
 | Threat Model v1 | Complete (`docs/TRUST_MODEL_V1.md`) |
 | Institutional Acceptance Test | _Pass / Fail_ (`docs/PRODUCTION_WALKTHROUGH_RESULTS.md`) |
-| Protocol Compatibility | _Pending / Complete_ (`docs/PROTOCOL_COMPATIBILITY.md`) |
+| Protocol Compatibility | _Live (code)_ (`docs/PROTOCOL_COMPATIBILITY.md`, `GET /api/protocol/compatibility`) |
 | Regression suite | _Pass / Fail_ (`npm test`) |
 | P1 hardening | P1-2 + P1-3 merged (code); P1-1 + P1-4 pending |
 

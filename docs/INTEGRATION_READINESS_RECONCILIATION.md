@@ -63,7 +63,7 @@ Do **not** mark these complete in public materials:
 | Institutional Acceptance Test | **NOT complete** | `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` |
 | External security review | **NOT complete** | Independent report (see `docs/external-security-review/`) |
 | `v1.0.0-beta.0` tag | **NOT created** | Git tag |
-| Protocol compatibility freeze | **Pending** | `docs/PROTOCOL_COMPATIBILITY.md` |
+| Protocol compatibility freeze | **Live (code)** — manifest + contract tests; IAT sign-off pending | `docs/PROTOCOL_COMPATIBILITY.md`, `GET /api/protocol/compatibility` |
 | Release decision | **Draft** | `docs/RELEASE_DECISION.md` |
 | P1-1 immutable policies | **Code merged** — apply `055_policy_immutable_versions.sql` | `docs/POLICY_VERSION_OPERATOR.md` |
 

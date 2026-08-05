@@ -9,6 +9,10 @@ import {
   FROZEN_PARTNER_VERIFICATION_RESULT_KEYS,
 } from "./compatibility";
 import { buildTrustDecision } from "@/lib/verify/trustDecision";
+import {
+  PARTNER_FLOW_COMPATIBILITY_VERSION,
+  buildPartnerFlowCompatibilityManifest,
+} from "@/lib/protocol/partnerFlowCompatibilityManifest";
 import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import { buildRedirectUrl } from "@/lib/connect/returnUrlAllowlist";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
@@ -195,5 +199,11 @@ describe("protocol compatibility — live implementation output", () => {
     expect(sortedKeys(partnerResult)).toEqual(
       [...FROZEN_PARTNER_VERIFICATION_RESULT_KEYS].sort(),
     );
+  });
+
+  it("compatibility manifest version aligns with frozen constants", () => {
+    const manifest = buildPartnerFlowCompatibilityManifest();
+    expect(manifest.compatibility_version).toBe(PARTNER_FLOW_COMPATIBILITY_VERSION);
+    expect(manifest.schema_versions.decision_receipt).toBe(DECISION_RECEIPT_SCHEMA_VERSION);
   });
 });

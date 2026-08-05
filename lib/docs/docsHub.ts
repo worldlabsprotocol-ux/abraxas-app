@@ -102,6 +102,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         links: [
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
+          { label: "Protocol compatibility manifest", href: "/api/protocol/compatibility" },
           { label: "AI agents", href: "/docs/ai-agents" },
           { label: "Partner verification requests", href: "/docs/partner-verification-requests" },
         ],

@@ -38,6 +38,9 @@ info:
     Callbacks must not contain legal name, date of birth, document numbers, images, or wallet address.
     Always verify via `GET /api/receipts/{receiptId}/public` — never trust callback parameters alone.
 
+  x-abraxas-compatibility-manifest: https://abraxasworld.xyz/api/protocol/compatibility
+  x-abraxas-compatibility-version: "1.0.0"
+
   x-abraxas-receipt-validation: |
     **Fail closed by default** (production). Integrators must verify on the public receipt view:
     - `signature_valid === true`
