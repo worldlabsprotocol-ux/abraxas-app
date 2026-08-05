@@ -12,6 +12,8 @@ import {
 } from "@/lib/partner/partnerFlowOpenApiContract";
 import { SITE_URL } from "@/lib/siteUrl";
 import { configuredEnvUsesStaleHost } from "@/lib/integration/preflightConfig";
+import { validateDeployedCompatibilityManifest } from "@/lib/integration/compatibilityManifestPreflight";
+import { PARTNER_FLOW_COMPATIBILITY_MANIFEST_PATH } from "@/lib/protocol/partnerFlowCompatibilityManifest";
 import type {
   PreflightCheck,
   PreflightDeps,
@@ -242,6 +244,15 @@ export async function runIntegrationPreflight(
         "No base URL — skipping live OpenAPI fetch",
       ),
     );
+    checks.push(
+      ...validateDeployedCompatibilityManifest({
+        productionMode: options.productionMode,
+        baseUrl: "",
+        httpOk: false,
+        rawText: "",
+        liveJson: null,
+      }).checks,
+    );
   } else {
     try {
       const { ok, json } = await fetchJson(deps.fetch, options.baseUrl, "/api/credentials/public-key");
@@ -398,6 +409,33 @@ export async function runIntegrationPreflight(
           options.productionMode ? "fail" : "pending",
           e instanceof Error ? e.message : String(e),
         ),
+      );
+    }
+
+    try {
+      const manifestFetch = await fetchJson(
+        deps.fetch,
+        options.baseUrl,
+        PARTNER_FLOW_COMPATIBILITY_MANIFEST_PATH,
+      );
+      checks.push(
+        ...validateDeployedCompatibilityManifest({
+          productionMode: options.productionMode,
+          baseUrl: options.baseUrl,
+          httpOk: manifestFetch.ok,
+          rawText: manifestFetch.text,
+          liveJson: manifestFetch.json,
+        }).checks,
+      );
+    } catch (e) {
+      checks.push(
+        ...validateDeployedCompatibilityManifest({
+          productionMode: options.productionMode,
+          baseUrl: options.baseUrl,
+          httpOk: false,
+          rawText: e instanceof Error ? e.message : String(e),
+          liveJson: null,
+        }).checks,
       );
     }
   }

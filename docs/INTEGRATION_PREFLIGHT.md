@@ -26,7 +26,7 @@ npm run integration:preflight
 
 | Variable | Required | Default (docs / examples) | Purpose |
 |----------|----------|---------------------------|---------|
-| `INTEGRATION_PREFLIGHT_BASE_URL` | No | *(empty — static checks only)* | Live HTTP probes (`/api/credentials/public-key`, `/api/trust/status`, OpenAPI) |
+| `INTEGRATION_PREFLIGHT_BASE_URL` | No | *(empty — static checks only)* | Live HTTP probes (`/api/credentials/public-key`, `/api/trust/status`, OpenAPI, `/api/protocol/compatibility`) |
 | `INTEGRATION_PREFLIGHT_PARTNER_ID` | No | `good-trouble-cannabis` | Partner row to validate |
 | `INTEGRATION_PREFLIGHT_POLICY_ID` | No | `good-trouble-retail-v1` | Active policy to validate |
 | `INTEGRATION_PREFLIGHT_RETURN_URL` | No | `{BASE_URL}/good-trouble/enter` or canonical GT enter URL | Callback allowlist match |
@@ -48,6 +48,9 @@ Each check is labeled **PASS**, **FAIL**, **PENDING**, or **BLOCKED**.
 | Public-key issuer matches expected origin | PENDING | PASS/FAIL | PASS/FAIL |
 | Trust signing enabled (`signing_configured`) | PENDING | PASS/FAIL | PASS/FAIL |
 | Deployed OpenAPI canonical server | PENDING | PASS/FAIL | PASS/FAIL |
+| Compatibility manifest endpoint (`GET /api/protocol/compatibility`) | PENDING | PASS/FAIL | PASS/FAIL |
+| Compatibility manifest frozen contract (version, origin, paths, callback, receipt fields) | PENDING | PASS/FAIL | PASS/FAIL |
+| Compatibility manifest has no `abraxas-app.vercel.app` | PENDING | PASS/FAIL | PASS/FAIL |
 | Partner row exists | PENDING | PENDING | PASS/FAIL |
 | Policy active + partner match | PENDING | PENDING | PASS/FAIL |
 | `allowed_return_urls` non-empty, no stale host | PENDING | PENDING | PASS/FAIL |
@@ -62,6 +65,7 @@ When `INTEGRATION_PREFLIGHT_BASE_URL` is `https://abraxasworld.xyz` (or `INTEGRA
 
 - Public-key issuer must be `https://abraxasworld.xyz` (not `abraxas-app.vercel.app`)
 - `signing_configured` must be `true` on `/api/trust/status`
+- `GET /api/protocol/compatibility` must return `compatibility_version` **1.0.0**, `canonical_origin` **https://abraxasworld.xyz**, frozen Partner Flow paths/callback/receipt fields aligned with `lib/protocol/partnerFlowCompatibilityManifest.ts`, and no `abraxas-app.vercel.app` in the response body
 - Missing partner/policy rows are **FAIL**, not **PENDING**
 
 ## What requires privileged Supabase access
