@@ -1,5 +1,7 @@
 // FILE: lib/goodTrouble/partnerIntegration.ts
 // Good Trouble as reference relying-party integration (config-only, no GT-specific flow logic).
+// For the labeled pilot example object, see lib/goodTrouble/pilotExample.ts.
+// New protocols should use lib/partner/referenceRelyingPartyConfig.ts (env-driven).
 
 import {
   GOOD_TROUBLE_BRAND,
