@@ -4,6 +4,37 @@ Integrate Abraxas Partner Flow with **one browser redirect** and **server-side r
 
 **Canonical production host:** `https://abraxasworld.xyz`
 
+> **No fake customer / no self-serve production provisioning.** Partner rows, policies, and callback allowlists are created by Abraxas operators only. This example does not provision partners or mutate live data.
+
+## Generic configuration (any protocol)
+
+Set your operator-provisioned ids via environment variables — **no Good Trouble defaults**:
+
+```bash
+export PARTNER_FLOW_RP_PARTNER_ID=your-protocol-partner
+export PARTNER_FLOW_RP_POLICY_ID=your-protocol-policy-v1
+export PARTNER_FLOW_RP_RETURN_URL=https://your-app.example.com/auth/abraxas/callback
+export PARTNER_FLOW_RP_BASE_URL=https://abraxasworld.xyz
+```
+
+Build a verify URL:
+
+```bash
+node examples/partner-flow-web-rp/build-verify-url.mjs
+```
+
+Run the conformance harness:
+
+```bash
+npm run partner:conformance
+```
+
+Full integrator workflow: `docs/PARTNER_FLOW_REFERENCE_INTEGRATION.md`
+
+## Good Trouble pilot example (labeled reference only)
+
+Good Trouble (`good-trouble-cannabis` / `good-trouble-retail-v1`) is Abraxas's hosted pilot checkout at `/good-trouble/*` — see `lib/goodTrouble/pilotExample.ts`. New protocols must use their own ids via the env vars above.
+
 ## Prerequisites (operator-provisioned)
 
 Before redirecting users, Abraxas operators must:

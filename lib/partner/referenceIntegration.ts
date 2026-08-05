@@ -1,5 +1,5 @@
 // FILE: lib/partner/referenceIntegration.ts
-// Generic relying-party integration config — Good Trouble is the reference implementation.
+// Generic relying-party integration config — partner-specific values supplied by caller or env.
 
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 
