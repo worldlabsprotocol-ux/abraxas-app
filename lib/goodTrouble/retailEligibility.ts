@@ -5,6 +5,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { SITE_URL } from "@/lib/siteUrl";
 
 export const GOOD_TROUBLE_RETAIL_POLICY_RULES = {
   required_claims: [
@@ -20,7 +21,7 @@ export const GOOD_TROUBLE_RETAIL_POLICY_RULES = {
 } as const;
 
 export const GOOD_TROUBLE_VERIFY_EXAMPLE = `// Server-side: verify credential JWT (never wallet-address-only)
-const res = await fetch("https://abraxas-app.vercel.app/api/credentials/verify", {
+const res = await fetch("${SITE_URL}/api/credentials/verify", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -40,7 +41,7 @@ const result = await res.json();
 
 export const GOOD_TROUBLE_BATCH_VERIFY_EXAMPLE = `// Batch provenance lookup (pilot registry fixtures)
 const res = await fetch(
-  "https://abraxas-app.vercel.app/api/good-trouble/batch?record_id=ABX-CNB-BATCH-002"
+  "${SITE_URL}/api/good-trouble/batch?record_id=ABX-CNB-BATCH-002"
 );
 const batch = await res.json();
 // batch.cultivar, batch.coa_status, batch.lab — partner-attested metadata`;

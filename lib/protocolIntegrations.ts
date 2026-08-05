@@ -1,6 +1,8 @@
 // FILE: lib/protocolIntegrations.ts
 // External protocol integration flywheel — honest status labels.
 
+import { SITE_URL } from "@/lib/siteUrl";
+
 export type IntegrationStatus = "live" | "pilot" | "loi" | "recruiting";
 
 export interface ProtocolIntegration {
@@ -17,7 +19,7 @@ export interface ProtocolIntegration {
 }
 
 export const INTEGRATION_SDK_SNIPPET = `// 1) Check if user meets your policy before an action
-const check = await fetch("https://abraxas-app.vercel.app/api/verification/check-level", {
+const check = await fetch("${SITE_URL}/api/verification/check-level", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ sui_address: walletAddress, action: "book_asset" }),
@@ -28,7 +30,7 @@ if (level.needsDeepVerification) {
 }
 
 // 2) Partner flow: create request → user consents → get decision
-const req = await fetch("https://abraxas-app.vercel.app/api/v1/verification-requests", {
+const req = await fetch("${SITE_URL}/api/v1/verification-requests", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -43,7 +45,7 @@ const { request_id, consent_url } = await req.json();
 
 // 3) Re-check decision before settlement
 const status = await fetch(
-  \`https://abraxas-app.vercel.app/api/v1/decisions/\${decisionId}/status\`,
+  \`${SITE_URL}/api/v1/decisions/\${decisionId}/status\`,
   { headers: { "X-API-Key": process.env.ABRAXAS_PARTNER_API_KEY } }
 );`;
 
