@@ -108,7 +108,7 @@ export const RELEASE_GATE_CHECKLIST = [
   { id: "iat", label: "Institutional Acceptance Test (IAT) signed in PRODUCTION_WALKTHROUGH_RESULTS.md", blocked: true },
   { id: "external-review", label: "Independent external security review report + disposition", blocked: true },
   { id: "beta-tag", label: "Tag v1.0.0-beta.0 (not created)", blocked: true },
-  { id: "protocol-freeze", label: "PROTOCOL_COMPATIBILITY.md signed at release SHA", blocked: true },
+  { id: "protocol-freeze", label: "PROTOCOL_COMPATIBILITY.md + manifest contract tests at release SHA", blocked: false },
   { id: "release-decision", label: "RELEASE_DECISION.md signed", blocked: true },
 ] as const;
 
@@ -169,7 +169,7 @@ export const INTEGRATION_STATUS_SECTIONS: readonly IntegrationStatusSection[] = 
       "Institutional Acceptance Test (IAT) — NOT complete",
       "Independent external security review — NOT complete",
       "v1.0.0-beta.0 baseline tag — NOT created",
-      "PROTOCOL_COMPATIBILITY freeze sign-off — pending",
+      "PROTOCOL_COMPATIBILITY freeze sign-off — code complete; IAT evidence pending",
       "RELEASE_DECISION.md — draft only",
       "P1-1 immutable policy versions — code merged; apply migration 055 in Supabase",
     ],

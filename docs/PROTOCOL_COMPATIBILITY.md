@@ -1,8 +1,24 @@
 # Protocol Compatibility — v1.0.0-beta.0 freeze
 
-**Status:** Draft — complete when tagging `v1.0.0-beta.0`  
+**Status:** **Live (code)** — manifest and contract tests on `main`; production IAT sign-off pending  
 **Baseline tag:** `v1.0.0-beta.0` (not yet created)  
-**Canonical tests:** `lib/protocol/compatibility.test.ts`
+**Compatibility version:** `1.0.0` (`PARTNER_FLOW_COMPATIBILITY_VERSION`)  
+**Canonical tests:** `lib/protocol/compatibility.test.ts`, `lib/protocol/partnerFlowCompatibilityManifest.test.ts`  
+**Machine-readable manifest:** `GET https://abraxasworld.xyz/api/protocol/compatibility` (generated from code)
+
+---
+
+## Single source of truth
+
+| Artifact | Location |
+|----------|----------|
+| Frozen field constants | `lib/protocol/compatibility.ts` |
+| Versioned Partner Flow manifest | `lib/protocol/partnerFlowCompatibilityManifest.ts` |
+| Public JSON (synced at runtime) | `GET /api/protocol/compatibility` |
+| OpenAPI (browser Partner Flow) | `public/openapi/partner-flow.openapi.yaml` |
+| Human integrator guide | `/docs/partner-flow`, `/docs/partner-flow-api` |
+
+**Rule:** Do not edit `public/openapi/partner-flow.openapi.yaml` or callback field lists without updating the manifest module and bumping `PARTNER_FLOW_COMPATIBILITY_VERSION` when the external contract changes.
 
 ---
 
@@ -10,63 +26,67 @@
 
 | Surface | Version | Location |
 |---------|---------|----------|
+| Partner Flow compatibility | `1.0.0` | `PARTNER_FLOW_COMPATIBILITY_VERSION` |
 | Decision receipt schema | `1.0.0` | `decision_receipts.schema_version` |
 | Trust Decision API JSON | `1.0.0` | `GET /api/v1/verify/decisions/{id}` |
-| Partner callback query params | v1 (fixed set) | `buildRedirectUrl` |
+| Partner callback query params | v1 (fixed set) | `PARTNER_CALLBACK_PARAMS` |
 | Partner-flow browser API | v1 (additive) | `POST /api/v1/partner-flow/*` |
+| OpenAPI document | `1.0.0` | `partner-flow.openapi.yaml` `info.version` |
 
 ---
 
-## Public contracts
+## Frozen Partner Flow surface (external)
 
-### 1. Signed decision receipt (public view)
+### Canonical production origin
 
-**Endpoint:** `GET /api/receipts/{receipt_id}/public`
+`https://abraxasworld.xyz` (`SITE_URL`)
 
-**Stable fields:** `receipt_id`, `schema_version`, `policy_id`, `policy_version`, `partner_id`, `subject_pseudonym_id`, `decision_result`, `reason_codes`, `evaluated_claim_refs`, `signature`, `payload_hash`, `signing_key_id`, `signature_valid`, `decision_context`, `production_usable`, `evaluated_at`, `expires_at`, `status`
+### Browser paths
 
-**Verification:** `signature_valid: true` + `payload_hash` matches canonical payload.
+| Path | Role |
+|------|------|
+| `GET /partner/verify` | Browser redirect entry |
+| `GET /passport` | ID capture / consent handoff (`next=passport`) |
+| `POST /api/v1/partner-flow/evaluate` | Policy evaluation (browser session) |
+| `POST /api/v1/partner-flow/complete` | Issue session receipt after approval |
+| `POST /api/v1/partner-flow/refresh` | Re-issue expired session receipt |
+| `GET /api/receipts/{receiptId}/public` | Public signed receipt (partner backend) |
 
-**Operator command:**
+### Partner callback (holder redirect)
 
-```bash
-npm run gate:verify-receipt-fixture
-# Production: curl https://abraxasworld.xyz/api/receipts/{dr_*}/public
-```
+**Query parameters (frozen, no PII):** `status`, `decision_id`, `receipt_id`, `receipt_expires_at`, `credential_id`, `policy_id`, `partner_id`
 
-### 2. Trust Decision (relying party)
+**Forbidden in callback URL:** legal name, DOB, document numbers, images, wallet address, email, credential JWT.
 
-**Endpoint:** `GET /api/v1/verify/decisions/{id}` (partner API key, partner-scoped)
+Partners **must** verify via `GET /api/receipts/{receiptId}/public` — never trust callback parameters alone.
 
-**Stable fields:** `decision_id`, `approved`, `decision`, `permission`, `permission_version`, `trust_level`, `valid_until`, `reason_codes`, `status`, `decided_at`, `policy_id`, `policy_version`, `relying_party_id`, `proof`
+### Public receipt view (frozen fields)
 
-**Note (P1-2):** `currently_valid` is **not** exposed on Trust Decision API at beta. Partners must verify receipt via public endpoint or implement P1-2 post-beta.
+`receipt_id`, `schema_version`, `policy_id`, `policy_version`, `partner_id`, `subject_pseudonym_id`, `decision_result`, `reason_codes`, `evaluated_claim_refs`, `issuer_refs`, `decision_context`, `production_usable`, `evaluated_at`, `expires_at`, `status`, `payload_hash`, `signature`, `signing_key_id`, `signature_valid`, `anchor_reference`, `artifact_type`
 
-### 3. Partner callback (holder redirect)
+**Validation (fail closed):** `signature_valid === true`, `decision_result === "approved"`, `status === "active"`, valid unexpired `expires_at`, `production_usable === true` (unless explicit sandbox opt-in), `partner_id` / `policy_id` match expected integration.
 
-**Query parameters (no PII):** `status`, `decision_id`, `receipt_id`, `receipt_expires_at`, `credential_id`, `policy_id`, `partner_id`
+### Partner-flow `next` values
 
-### 4. Partner-flow browser API
+`authenticate`, `passport`, `enter`, `denied`, `pending_review`
 
-| Route | Auth | Stable response fields |
-|-------|------|------------------------|
-| `POST /api/v1/partner-flow/evaluate` | Browser session | `next`, `redirect_url`, `passport_url`, `verification_request_id`, `partner_result`, `reason_codes`, `flow_trace_id` |
-| `POST /api/v1/partner-flow/complete` | Browser session | `next`, `redirect_url`, `partner_result`, `flow_trace_id` |
-| `POST /api/v1/partner-flow/refresh` | Browser session | `next`, `redirect_url`, `partner_result`, `flow_trace_id` |
+### Stable error codes (audit-safe)
 
-**`next` values:** `authenticate`, `passport`, `enter`, `denied`, `pending_review`
+`flow_trace_id_mismatch`, `idempotency_conflict`, `audit_persistence_failed`, `generic_error`
+
+HTTP conditions documented in manifest `stable_error_codes.http_conditions` and `/docs/partner-flow`.
 
 ---
 
-## Reference policies (beta)
+## Intentional exclusions (not public guarantees)
 
-| Policy ID | Partner | Sandbox |
-|-----------|---------|---------|
-| `good-trouble-retail-v1` | `good-trouble-cannabis` | Yes |
-| `cielo-verified-guest-v1` | `cielo` | No |
-| `abraxas-rwa-us-v1` | `abraxas` | No |
-
-Full matrix: `docs/CLAIM_MATRIX.md`, `lib/policy/productionPolicyContract.ts`
+- Internal admin APIs (`/api/admin/*`)
+- OAuth / zkLogin session internals
+- Server-to-server `POST /api/v1/verification-requests` (partner API key)
+- Partner-authenticated receipt views
+- Abraxas Connect (`/api/v1/authorize/*`)
+- Credential/registry verify (`/api/credentials/verify`)
+- Sandbox-only policy behavior unless `production_usable` is explicitly opted in
 
 ---
 
@@ -74,7 +94,11 @@ Full matrix: `docs/CLAIM_MATRIX.md`, `lib/policy/productionPolicyContract.ts`
 
 - **Additive changes only** until next major protocol version.
 - New JSON fields may be added; existing fields will not change semantics without a major bump.
-- Breaking changes require: updated `PROTOCOL_COMPATIBILITY.md`, migration note, and major tag (e.g. `v2.0.0`).
+- **Breaking change process:**
+  1. Bump `PARTNER_FLOW_COMPATIBILITY_VERSION` in `lib/protocol/partnerFlowCompatibilityManifest.ts`
+  2. Update this document with migration notes
+  3. Run `lib/protocol/partnerFlowCompatibilityManifest.test.ts` and `lib/protocol/compatibility.test.ts`
+  4. Tag major release (e.g. `v2.0.0`) for semantic breaking changes
 - Partners must not depend on undocumented fields.
 
 ---
@@ -83,7 +107,8 @@ Full matrix: `docs/CLAIM_MATRIX.md`, `lib/policy/productionPolicyContract.ts`
 
 ```bash
 npm test -- lib/protocol/compatibility.test.ts
-npm test -- lib/goodTrouble/goodTroubleRetailWiring.integration.test.ts
+npm test -- lib/protocol/partnerFlowCompatibilityManifest.test.ts
+npm test -- lib/partner/partnerFlowOpenApi.test.ts
 npm run gate:verify-receipt-fixture
 ```
 
@@ -91,7 +116,7 @@ npm run gate:verify-receipt-fixture
 
 ## Evidence required to mark this gate complete
 
-- [ ] This document reviewed and committed at release SHA
-- [ ] `lib/protocol/compatibility.test.ts` passing at release SHA
+- [x] Manifest module and contract tests committed at release SHA
+- [x] Public manifest endpoint `GET /api/protocol/compatibility`
 - [ ] Production IAT receipt shows `signature_valid: true` for live `dr_*`
 - [ ] `RELEASE_DECISION.md` references this document as complete

@@ -71,6 +71,12 @@ describe("partnerFlowOpenApi contract", () => {
     expect(spec).toContain("x-abraxas-excluded-operations");
   });
 
+  it("OpenAPI spec references compatibility manifest URL", () => {
+    expect(spec).toContain("x-abraxas-compatibility-manifest:");
+    expect(spec).toContain("/api/protocol/compatibility");
+    expect(spec).toContain('x-abraxas-compatibility-version: "1.0.0"');
+  });
+
   it("represents required receipt security fields in DecisionReceiptPublicView", () => {
     for (const field of PARTNER_FLOW_RECEIPT_SECURITY_FIELDS) {
       expect(spec).toMatch(new RegExp(`\\n\\s+${field}:`));

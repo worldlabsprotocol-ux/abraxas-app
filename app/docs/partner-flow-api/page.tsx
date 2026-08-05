@@ -16,6 +16,11 @@ import {
   PARTNER_FLOW_PUBLIC_RECEIPT_JS_EXAMPLE,
 } from "@/lib/partner/partnerFlowOpenApiContract";
 import { PARTNER_FLOW_CALLBACK_PII_NOTE } from "@/lib/partner/partnerFlowIntegratorKit";
+import {
+  PARTNER_FLOW_COMPATIBILITY_MANIFEST_PATH,
+  PARTNER_FLOW_COMPATIBILITY_VERSION,
+} from "@/lib/protocol/partnerFlowCompatibilityManifest";
+import { SITE_URL } from "@/lib/siteUrl";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -65,6 +70,10 @@ export default function PartnerFlowApiDocsPage() {
         OpenAPI 3.1 spec:{" "}
         <a href={PARTNER_FLOW_OPENAPI_PUBLIC_PATH} style={{ color: "var(--accent)" }}>
           {PARTNER_FLOW_OPENAPI_CANONICAL_URL}
+        </a>
+        . Compatibility manifest v{PARTNER_FLOW_COMPATIBILITY_VERSION}:{" "}
+        <a href={PARTNER_FLOW_COMPATIBILITY_MANIFEST_PATH} style={{ color: "var(--accent)" }}>
+          {SITE_URL}{PARTNER_FLOW_COMPATIBILITY_MANIFEST_PATH}
         </a>
         . Narrative guide:{" "}
         <Link href="/docs/partner-flow" style={{ color: "var(--accent)" }}>
