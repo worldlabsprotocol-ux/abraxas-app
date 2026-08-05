@@ -65,7 +65,7 @@ export default function RoadmapPage() {
                   lineHeight: 1.45,
                 }}
               >
-                {section.id === "completed" ? "✓ " : ""}
+                {section.id === "live" ? "✓ " : ""}
                 {item}
               </span>
             ))}

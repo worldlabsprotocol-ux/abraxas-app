@@ -6,8 +6,9 @@
 
 Abraxas is **not a KYC provider**. It is a **trust and credential orchestration layer**. Licensed verifiers (Veriff, manual review) perform identity checks; Abraxas records only cryptographic proof — credential hash, issuer, expiration, sanctions status, wallet binding — and lets any participating protocol ask *"Is this wallet verified?"* instead of re-running KYC.
 
-Live: **[https://abraxas-app.vercel.app/](https://abraxas-app.vercel.app/)**  
-Home / verify: **`/passport`** · AIL spec: **`/docs/ail`** · Sui hub: **`/docs/sui`**
+Live (beta): **[https://abraxasworld.xyz](https://abraxasworld.xyz)**  
+Legacy alias: `abraxas-app.vercel.app` (do not use for new integrations)  
+Home / verify: **`/passport`** · Partner Flow: **`/docs/partner-flow`** · Integration status: **`docs/INTEGRATION_READINESS_RECONCILIATION.md`**
 
 ---
 
@@ -94,7 +95,7 @@ NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID=
 # Credentials (generate once — see below)
 ABRAXAS_SIGNING_KEY=
 ABRAXAS_PUBLIC_KEY=
-ABRAXAS_ISSUER_URL=https://abraxas-app.vercel.app
+ABRAXAS_ISSUER_URL=https://abraxasworld.xyz
 
 # Veriff
 VERIFF_API_KEY=

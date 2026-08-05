@@ -29,6 +29,13 @@ describe("docsHub", () => {
     expect(dev?.topics.map((t) => t.id)).toEqual(["api", "architecture", "security"]);
   });
 
+  it("links roadmap to integration readiness and partner flow", () => {
+    const roadmap = getDocsHubGroup("roadmap");
+    const hrefs = roadmap?.topics[0]?.links?.map((l) => l.href) ?? [];
+    expect(hrefs).toContain("/docs/integration-readiness");
+    expect(hrefs).toContain("/docs/partner-flow");
+  });
+
   it("keeps summaries short for scanability", () => {
     for (const group of DOCS_HUB_GROUPS) {
       for (const topic of group.topics) {

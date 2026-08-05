@@ -7,36 +7,43 @@ import {
 } from "./roadmapPublic";
 
 describe("roadmapPublic", () => {
-  it("has three sections: completed, in progress, future", () => {
-    expect(ROADMAP_SECTIONS.map(s => s.id)).toEqual(["completed", "in_progress", "future"]);
+  it("has four evidence-based sections", () => {
+    expect(ROADMAP_SECTIONS.map(s => s.id)).toEqual(["live", "beta_ready", "blocked", "later"]);
   });
 
-  it("highlights shipped trust infrastructure in completed", () => {
-    const completed = ROADMAP_SECTIONS[0]!.items.join(" ");
-    expect(completed).toContain("Trust Engine");
-    expect(completed).toContain("Trust Decision API");
-    expect(completed).toContain("P0 complete");
+  it("highlights Partner Flow and P1 work in live section", () => {
+    const live = ROADMAP_SECTIONS.find(s => s.id === "live")!.items.join(" ");
+    expect(live).toContain("Partner Flow");
+    expect(live).toContain("P1-2");
+    expect(live).toContain("P1-3");
   });
 
-  it("puts IAT and P1 in progress, not completed", () => {
-    const inProgress = ROADMAP_SECTIONS[1]!.items.join(" ");
-    expect(inProgress).toContain("Institutional Acceptance Test");
-    expect(inProgress).toContain("Immutable policy versions");
+  it("keeps IAT and beta tag in blocked, not live", () => {
+    const blocked = ROADMAP_SECTIONS.find(s => s.id === "blocked")!.items.join(" ");
+    expect(blocked).toContain("IAT");
+    expect(blocked).toContain("v1.0.0-beta.0");
+    expect(blocked).toContain("NOT");
   });
 
-  it("keeps speculative items in long-term vision, not future milestones", () => {
-    const futureItems = ROADMAP_SECTIONS[2]!.items.join(" ");
-    expect(futureItems).not.toContain("DAO");
+  it("puts Good Trouble pilot evidence in beta_ready", () => {
+    const beta = ROADMAP_SECTIONS.find(s => s.id === "beta_ready")!.items.join(" ");
+    expect(beta.toLowerCase()).toContain("good trouble");
+    expect(beta.toLowerCase()).toContain("pilot");
+  });
+
+  it("keeps speculative items in long-term vision, not later milestones", () => {
+    const laterItems = ROADMAP_SECTIONS.find(s => s.id === "later")!.items.join(" ");
+    expect(laterItems).not.toContain("DAO");
     expect(ROADMAP_LONG_TERM_VISION.items.join(" ")).toContain("DAO");
   });
 
   it("exports legacy ROADMAP shape for MilestonesSection", () => {
-    expect(ROADMAP).toHaveLength(3);
-    expect(ROADMAP[0]?.phase).toBe("Completed");
+    expect(ROADMAP).toHaveLength(4);
+    expect(ROADMAP[0]?.phase).toBe("Live today");
   });
 
-  it("identifies completed phase for checkmarks", () => {
-    expect(isCompletedRoadmapPhase("Completed")).toBe(true);
-    expect(isCompletedRoadmapPhase("In progress")).toBe(false);
+  it("identifies live phase for checkmarks", () => {
+    expect(isCompletedRoadmapPhase("Live today")).toBe(true);
+    expect(isCompletedRoadmapPhase("Beta-ready — pending human evidence")).toBe(false);
   });
 });
