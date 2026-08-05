@@ -3,6 +3,7 @@
 
 import { getDecisionStatus } from "@/lib/verification/requestsService";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { buildTrustDecision } from "@/lib/verify/trustDecision";
 
 export async function getTrustDecisionForRelyingParty(
@@ -14,5 +15,11 @@ export async function getTrustDecisionForRelyingParty(
   if (decision.partner_id !== relyingPartyId) return null;
 
   const receipt = await getReceiptByDecisionId(decisionId);
-  return buildTrustDecision({ decision, receipt });
+  const trustEvaluation = receipt
+    ? await evaluateDecisionReceiptTrust(receipt, {
+        partnerId: relyingPartyId,
+        policyId: decision.policy_id,
+      })
+    : null;
+  return buildTrustDecision({ decision, receipt, trustEvaluation });
 }

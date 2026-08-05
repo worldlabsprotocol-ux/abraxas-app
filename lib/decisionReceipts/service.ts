@@ -14,6 +14,7 @@ import { recordReceiptClaimDependencies } from "@/lib/decisionReceipts/dependenc
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { toPartnerView, toPublicView } from "@/lib/decisionReceipts/views";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import type {
   DecisionReceiptContext,
   DecisionReceiptRecord,
@@ -252,13 +253,17 @@ export async function getPartnerReceipt(receiptId: string, partnerId: string) {
   if (record.partner_id !== partnerId) return { error: "forbidden" as const };
   const consentOk = await consentAllowsPartnerReceipt(record.consent_receipt_id, partnerId);
   const view = toPartnerView(record, consentOk);
-  const validity = await resolveReceiptValidity(record, { partnerId, policyId: record.policy_id });
+  const trust = await evaluateDecisionReceiptTrust(record, {
+    partnerId,
+    policyId: record.policy_id,
+  });
   return {
     view,
-    valid: validity.currently_valid && consentOk,
-    status: validity.stored_status,
-    validity: validity.validity,
-    invalidation_reasons: validity.invalidation_reasons,
+    valid: trust.currently_valid && consentOk,
+    status: record.status,
+    validity: trust.validity,
+    invalidation_reasons: trust.invalidation_reasons,
+    currently_valid: trust.currently_valid,
   };
 }
 

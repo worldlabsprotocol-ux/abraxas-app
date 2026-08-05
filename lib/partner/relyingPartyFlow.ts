@@ -4,7 +4,15 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
-import { findActiveSessionDecision } from "@/lib/partner/sessionDecision";
+import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
+import {
+  assertIdempotentPartnerFlowIdentity,
+  PartnerFlowIdempotencyConflictError,
+  resolvePartnerFlowIdempotencyKey,
+  type PartnerFlowReplayStatus,
+} from "@/lib/partner/partnerFlowIdempotency";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
+import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
@@ -42,6 +50,12 @@ export interface PartnerFlowEvaluateResult {
   passport_url?: string;
   partner_result?: PartnerVerificationResult;
   reason_codes?: string[];
+  /** P1-2 additive — idempotent replay vs fresh issue. */
+  replay_status?: "issued" | "idempotent_replay";
+  /** P1-2 additive — authoritative trust evaluation for partner_result receipt. */
+  currently_valid?: boolean;
+  validity?: string;
+  invalidation_reasons?: string[];
 }
 
 export interface PartnerFlowStartInput {
@@ -135,88 +149,184 @@ export async function issuePartnerSessionReceipt(input: {
   policyId: string;
   credentialJti: string;
   verificationRequestId?: string;
-}): Promise<{ decision_id: string; receipt_id: string; receipt_expires_at: string; partner_result: PartnerVerificationResult }> {
+  /** When true, supersede prior session decisions before issuing (refresh after TTL). */
+  supersedePriorSession?: boolean;
+}): Promise<{
+  decision_id: string;
+  receipt_id: string;
+  receipt_expires_at: string;
+  partner_result: PartnerVerificationResult;
+  replay_status: PartnerFlowReplayStatus;
+  currently_valid: boolean;
+  validity: string;
+  invalidation_reasons: string[];
+}> {
   const subject = normalizeSuiAddress(input.suiAddress);
-
-  const existing = await findActiveSessionDecision({
+  const idempotencyKey = resolvePartnerFlowIdempotencyKey({
     partnerId: input.partnerId,
     subjectId: subject,
     policyId: input.policyId,
+    verificationRequestId: input.verificationRequestId,
   });
-  if (existing) {
-    const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
-    const evaluatedAt = new Date().toISOString();
-    const identityVerified = Boolean(evaluation.claims.identity_verified);
-    const partner_result = buildPartnerVerificationResult({
-      decision: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
-      credentialJti: input.credentialJti,
-      issuer: ISSUER,
-      evaluatedAt,
-      receiptId: existing.receipt_id,
-      receiptExpiresAt: existing.receipt_expires_at,
-      policyId: policy.id,
-      partnerId: input.partnerId,
-      identityVerified,
-      minimumAge: policy.rules_json.minimum_age,
-      assuranceLevel: identityVerified ? "L2" : null,
-      reasonCodes: evaluation.reason_codes,
+
+  const identity = {
+    partnerId: input.partnerId,
+    subjectId: subject,
+    policyId: input.policyId,
+    verificationRequestId: input.verificationRequestId,
+  };
+
+  let replay_status: PartnerFlowReplayStatus = "idempotent_replay";
+  let decisionId: string | undefined;
+  let receiptId: string | undefined;
+  let receiptExpiresAt: string | undefined;
+
+  const vrId = input.verificationRequestId?.trim();
+  if (vrId) {
+    const byVr = await findDecisionByVerificationRequest({
+      verificationRequestId: vrId,
+      subjectId: subject,
     });
-    return {
-      decision_id: existing.decision_id,
-      receipt_id: existing.receipt_id,
-      receipt_expires_at: existing.receipt_expires_at,
-      partner_result,
-    };
+    if (byVr) {
+      decisionId = byVr.decision_id;
+      receiptId = byVr.receipt_id;
+      receiptExpiresAt = byVr.receipt_expires_at;
+    }
   }
 
-  const sb = requireSupabaseAdmin();
-  const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
-  const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
-  const evaluatedAt = new Date().toISOString();
+  if (!decisionId) {
+    const byKey = await findDecisionByIdempotencyKey(idempotencyKey);
+    if (byKey) {
+      assertIdempotentPartnerFlowIdentity(byKey, identity);
+      const receipt = await getReceiptByDecisionId(byKey.decision_id);
+      if (!receipt) throw new Error("Stored decision missing receipt");
+      decisionId = byKey.decision_id;
+      receiptId = receipt.id;
+      receiptExpiresAt = byKey.valid_until ?? receipt.expires_at ?? new Date().toISOString();
+    }
+  }
 
-  const { data: decisionRow } = await sb.from("verification_decisions").insert({
-    request_id: input.verificationRequestId ?? null,
-    partner_id: input.partnerId,
-    subject_id: subject,
-    policy_id: policy.id,
-    policy_version: policy.version,
-    decision: evaluation.decision,
-    claims_json: evaluation.claims,
-    reason_codes: evaluation.reason_codes,
-    valid_until: sessionExpires,
-  }).select("id").single();
+  if (!decisionId) {
+    const existing = await findActiveSessionDecision({
+      partnerId: input.partnerId,
+      subjectId: subject,
+      policyId: input.policyId,
+    });
+    if (existing) {
+      decisionId = existing.decision_id;
+      receiptId = existing.receipt_id;
+      receiptExpiresAt = existing.receipt_expires_at;
+    }
+  }
 
-  const decisionId = decisionRow?.id as string;
-  const claimRefs = buildEvaluatedClaimRefs(
-    await getActiveClaims(subject),
-    claimTypesFromEvaluation(evaluation.claims),
-  );
+  if (!decisionId) {
+    replay_status = "issued";
+    if (input.supersedePriorSession) {
+      await supersedeActiveSessionDecisions({
+        partnerId: input.partnerId,
+        subjectId: subject,
+        policyId: input.policyId,
+      });
+    }
 
-  const receipt = await issueReceiptForDecision({
-    decisionId,
+    const sb = requireSupabaseAdmin();
+    const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
+    const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
+    const evaluatedAt = new Date().toISOString();
+
+    const { data: decisionRow, error: insertError } = await sb.from("verification_decisions").insert({
+      request_id: input.verificationRequestId ?? null,
+      partner_id: input.partnerId,
+      subject_id: subject,
+      policy_id: policy.id,
+      policy_version: policy.version,
+      decision: evaluation.decision,
+      claims_json: evaluation.claims,
+      reason_codes: evaluation.reason_codes,
+      valid_until: sessionExpires,
+      idempotency_key: idempotencyKey,
+    }).select("id").single();
+
+    if (insertError?.code === "23505") {
+      const raced = await findDecisionByIdempotencyKey(idempotencyKey);
+      if (!raced) throw new Error(insertError.message);
+      assertIdempotentPartnerFlowIdentity(raced, identity);
+      const receipt = await getReceiptByDecisionId(raced.decision_id);
+      if (!receipt) throw new Error("Raced decision missing receipt");
+      decisionId = raced.decision_id;
+      receiptId = receipt.id;
+      receiptExpiresAt = raced.valid_until ?? receipt.expires_at ?? sessionExpires;
+      replay_status = "idempotent_replay";
+    } else if (!decisionRow?.id) {
+      throw new Error(insertError?.message ?? "Failed to create verification decision");
+    } else {
+      decisionId = decisionRow.id as string;
+      const claimRefs = buildEvaluatedClaimRefs(
+        await getActiveClaims(subject),
+        claimTypesFromEvaluation(evaluation.claims),
+      );
+
+      const receipt = await issueReceiptForDecision({
+        decisionId,
+        partnerId: input.partnerId,
+        policyId: policy.id,
+        policyVersion: policy.version,
+        subjectId: subject,
+        decisionResult: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
+        reasonCodes: evaluation.reason_codes,
+        claimsJson: evaluation.claims,
+        evaluatedClaimRefs: claimRefs,
+        expiresAt: sessionExpires,
+        decisionContext: policy.rules_json.sandbox_only ? "sandbox_only" : "production",
+      });
+
+      if (!receipt) throw new Error("Failed to issue session receipt");
+      receiptId = receipt.id;
+      receiptExpiresAt = sessionExpires;
+      replay_status = "issued";
+
+      await appendAuditEvent({
+        actor_type: "system",
+        actor_id: "partner_flow",
+        action: "partner_session.receipt_issued",
+        object_type: "decision_receipt",
+        object_id: receipt.id,
+        policy_id: policy.id,
+        metadata: {
+          partner_id: input.partnerId,
+          credential_jti: input.credentialJti,
+          idempotency_key: idempotencyKey,
+          replay_status,
+        },
+      });
+    }
+  }
+
+  if (!decisionId) {
+    throw new Error("Failed to resolve partner session decision");
+  }
+
+  const storedReceipt = await getReceiptByDecisionId(decisionId);
+  if (!storedReceipt) throw new Error("Receipt not found for decision");
+  if (!receiptId || !receiptExpiresAt) {
+    throw new Error("Partner session receipt identity incomplete");
+  }
+
+  const trust = await evaluateDecisionReceiptTrust(storedReceipt, {
     partnerId: input.partnerId,
-    policyId: policy.id,
-    policyVersion: policy.version,
-    subjectId: subject,
-    decisionResult: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
-    reasonCodes: evaluation.reason_codes,
-    claimsJson: evaluation.claims,
-    evaluatedClaimRefs: claimRefs,
-    expiresAt: sessionExpires,
-    decisionContext: policy.rules_json.sandbox_only ? "sandbox_only" : "production",
+    policyId: input.policyId,
   });
 
-  if (!receipt) throw new Error("Failed to issue session receipt");
-
+  const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
+  const evaluatedAt = new Date().toISOString();
   const identityVerified = Boolean(evaluation.claims.identity_verified);
-
   const partner_result = buildPartnerVerificationResult({
     decision: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
     credentialJti: input.credentialJti,
     issuer: ISSUER,
     evaluatedAt,
-    receiptId: receipt.id,
-    receiptExpiresAt: sessionExpires,
+    receiptId,
+    receiptExpiresAt,
     policyId: policy.id,
     partnerId: input.partnerId,
     identityVerified,
@@ -225,21 +335,15 @@ export async function issuePartnerSessionReceipt(input: {
     reasonCodes: evaluation.reason_codes,
   });
 
-  await appendAuditEvent({
-    actor_type: "system",
-    actor_id: "partner_flow",
-    action: "partner_session.receipt_issued",
-    object_type: "decision_receipt",
-    object_id: receipt.id,
-    policy_id: policy.id,
-    metadata: { partner_id: input.partnerId, credential_jti: input.credentialJti },
-  });
-
   return {
     decision_id: decisionId,
-    receipt_id: receipt.id,
-    receipt_expires_at: sessionExpires,
+    receipt_id: receiptId,
+    receipt_expires_at: receiptExpiresAt,
     partner_result,
+    replay_status,
+    currently_valid: trust.currently_valid,
+    validity: trust.validity,
+    invalidation_reasons: trust.invalidation_reasons,
   };
 }
 
@@ -286,7 +390,7 @@ export async function evaluatePartnerFlow(input: {
     const { evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
 
     if (evaluation.decision === "approved") {
-      const { decision_id, receipt_id, receipt_expires_at, partner_result } = await issuePartnerSessionReceipt({
+      const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
         suiAddress: subject,
         partnerId: input.partnerId,
         policyId: input.policyId,
@@ -307,6 +411,10 @@ export async function evaluatePartnerFlow(input: {
         next: "enter",
         redirect_url,
         partner_result: { ...partner_result, receipt_id, receipt_expires_at },
+        replay_status,
+        currently_valid,
+        validity,
+        invalidation_reasons,
       };
     }
 
@@ -358,13 +466,15 @@ export async function completePartnerFlowAfterApproval(input: {
     return { ok: false, error: "Credential not yet active" };
   }
 
-  const { decision_id, partner_result, receipt_id, receipt_expires_at } = await issuePartnerSessionReceipt({
+  const issued = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
     credentialJti: credential.credential_jti,
     verificationRequestId: input.verificationRequestId,
   });
+
+  const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons } = issued;
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {
     status: partner_result.decision,
@@ -381,6 +491,10 @@ export async function completePartnerFlowAfterApproval(input: {
     next: partner_result.decision === "approved" ? "enter" : "denied",
     redirect_url,
     partner_result,
+    replay_status,
+    currently_valid,
+    validity,
+    invalidation_reasons,
   };
 }
 
@@ -401,11 +515,12 @@ export async function refreshPartnerSessionReceipt(input: {
     return { next: "denied", reason_codes: evaluation.reason_codes };
   }
 
-  const { decision_id, receipt_id, receipt_expires_at, partner_result } = await issuePartnerSessionReceipt({
+  const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
     credentialJti: credential.credential_jti,
+    supersedePriorSession: true,
   });
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {
@@ -422,10 +537,15 @@ export async function refreshPartnerSessionReceipt(input: {
     next: "enter",
     redirect_url,
     partner_result: { ...partner_result, receipt_id, receipt_expires_at },
+    replay_status,
+    currently_valid,
+    validity,
+    invalidation_reasons,
   };
 }
 
 export { isReturnUrlAllowed as isAllowedPartnerReturnUrl } from "@/lib/connect/returnUrlAllowlist";
+export { PartnerFlowIdempotencyConflictError } from "@/lib/partner/partnerFlowIdempotency";
 
 /** Pure helper for tests — maps credential + policy evaluation to next step. */
 export function resolvePartnerFlowStep(input: {

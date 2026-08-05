@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
-import { refreshPartnerSessionReceipt } from "@/lib/partner/relyingPartyFlow";
+import { refreshPartnerSessionReceipt, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
   auditPartnerFlowStepBestEffort,
@@ -129,6 +129,15 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     if (e instanceof FlowTraceMismatchError) {
       return NextResponse.json({ error: e.message }, { status: 400 });
+    }
+    if (e instanceof PartnerFlowIdempotencyConflictError) {
+      const errorTraceId = verificationRequestId
+        ? resolvePartnerFlowTraceId({ verificationRequestId })
+        : resolvePartnerFlowTraceId({});
+      return NextResponse.json(
+        { error: e.message, code: e.code, flow_trace_id: errorTraceId },
+        { status: 409 },
+      );
     }
     const msg = e instanceof Error ? e.message : "Receipt refresh failed";
     const errorTraceId = verificationRequestId

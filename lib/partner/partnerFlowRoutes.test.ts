@@ -28,11 +28,15 @@ vi.mock("@/lib/partner/returnUrlAllowlist", () => ({
   isAllowedPartnerReturnUrl: vi.fn(async () => true),
 }));
 
-vi.mock("@/lib/partner/relyingPartyFlow", () => ({
-  evaluatePartnerFlow: (...args: unknown[]) => evaluatePartnerFlow(...args),
-  completePartnerFlowAfterApproval: (...args: unknown[]) => completePartnerFlowAfterApproval(...args),
-  refreshPartnerSessionReceipt: (...args: unknown[]) => refreshPartnerSessionReceipt(...args),
-}));
+vi.mock("@/lib/partner/relyingPartyFlow", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/partner/relyingPartyFlow")>();
+  return {
+    ...actual,
+    evaluatePartnerFlow: (...args: unknown[]) => evaluatePartnerFlow(...args),
+    completePartnerFlowAfterApproval: (...args: unknown[]) => completePartnerFlowAfterApproval(...args),
+    refreshPartnerSessionReceipt: (...args: unknown[]) => refreshPartnerSessionReceipt(...args),
+  };
+});
 
 vi.mock("@/lib/verify/resolveFlowParams", () => ({
   resolvePartnerFlowParams: vi.fn(() => ({ policyId: POLICY_ID })),
