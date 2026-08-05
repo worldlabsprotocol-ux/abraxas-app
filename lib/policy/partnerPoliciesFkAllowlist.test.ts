@@ -30,4 +30,16 @@ describe("partner_policies inbound FK allowlist (migration 055 guard)", () => {
     expect(migrationSql).toContain("drop constraint if exists partner_issuer_trust_rules_policy_id_fkey");
     expect(migrationSql).toContain("add constraint partner_policies_pkey primary key (id, version)");
   });
+
+  it("migration 055 runs a non-no-op immutability probe with savepoint rollback", () => {
+    expect(migrationSql).not.toMatch(/set\s+rules_json\s*=\s*rules_json\s*(where|;)/i);
+    expect(migrationSql).toContain("savepoint p1_1_immutability_probe");
+    expect(migrationSql).toMatch(
+      /rules_json = rules_json \|\| jsonb_build_object\('__p1_1_immutability_probe', true\)/,
+    );
+    expect(migrationSql).toMatch(/cannot mutate rules_json/);
+    expect(migrationSql).toMatch(
+      /immutability probe failed — active rules_json mutation succeeded/,
+    );
+  });
 });

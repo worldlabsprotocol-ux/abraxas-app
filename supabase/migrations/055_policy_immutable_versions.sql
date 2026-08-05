@@ -138,10 +138,74 @@ create trigger trg_partner_policies_immutability
   before insert or update or delete on public.partner_policies
   for each row execute function public.enforce_partner_policy_immutability();
 
+-- Self-contained immutability probe: attempt to mutate active rules_json and expect trigger rejection.
+-- Uses a savepoint so no probe mutation persists even if the trigger regresses.
+do $$
+declare
+  active_row record;
+begin
+  select id, version
+    into active_row
+    from public.partner_policies
+   where status = 'active'
+   order by id, version
+   limit 1;
+
+  if not found then
+    raise notice '055_policy_immutable_versions: skipping immutability probe — no active policy rows';
+    return;
+  end if;
+
+  savepoint p1_1_immutability_probe;
+  begin
+    update public.partner_policies
+       set rules_json = rules_json || jsonb_build_object('__p1_1_immutability_probe', true)
+     where id = active_row.id
+       and version = active_row.version
+       and status = 'active';
+  exception
+    when others then
+      rollback to savepoint p1_1_immutability_probe;
+      if sqlerrm not like '%cannot mutate rules_json%' then
+        raise;
+      end if;
+      return;
+  end;
+
+  rollback to savepoint p1_1_immutability_probe;
+  raise exception
+    '055_policy_immutable_versions: immutability probe failed — active rules_json mutation succeeded for %.%',
+    active_row.id, active_row.version;
+end $$;
+
 commit;
 
--- ── POST-MIGRATION VERIFICATION ─────────────────────────────────
+-- ── POST-MIGRATION VERIFICATION (manual operator re-check) ──────
 -- select id, version, status from public.partner_policies order by id, version;
 -- \d public.partner_policies
--- -- Immutability probe (expect ERROR on active row):
--- -- update public.partner_policies set rules_json = rules_json where status = 'active' limit 1;
+--
+-- -- Self-contained immutability probe (expect NOTICE skip or successful trigger rejection):
+-- do $$
+-- declare
+--   active_row record;
+-- begin
+--   select id, version into active_row
+--     from public.partner_policies where status = 'active' order by id, version limit 1;
+--   if not found then
+--     raise notice 'no active policy rows — probe skipped';
+--     return;
+--   end if;
+--   savepoint manual_immutability_probe;
+--   begin
+--     update public.partner_policies
+--        set rules_json = rules_json || jsonb_build_object('__manual_probe', true)
+--      where id = active_row.id and version = active_row.version and status = 'active';
+--   exception when others then
+--     rollback to savepoint manual_immutability_probe;
+--     if sqlerrm not like '%cannot mutate rules_json%' then raise; end if;
+--     raise notice 'immutability trigger rejected mutation as expected';
+--     return;
+--   end;
+--   rollback to savepoint manual_immutability_probe;
+--   raise exception 'immutability probe failed — mutation succeeded';
+-- end $$;
