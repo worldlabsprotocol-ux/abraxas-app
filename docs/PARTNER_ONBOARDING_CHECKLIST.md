@@ -4,6 +4,8 @@
 
 Use this checklist before a third-party protocol or app redirects holders to Abraxas Partner Flow in production.
 
+**Second relying-party pilot:** operator runbook with conformance + live flow steps — `docs/SECOND_PARTNER_PILOT_RUNBOOK.md`
+
 ---
 
 ## Before you start

@@ -1,5 +1,7 @@
 # Institutional Acceptance Test (IAT) — Results
 
+**Reconciliation:** See `docs/RELEASE_READINESS.md` for the current beta gate status across all evidence docs. Run `npm run release:readiness` (read-only) for machine-readable PASS / FAIL / PENDING / HUMAN_REQUIRED / BLOCKED.
+
 **Document type:** Institutional Acceptance Test sign-off  
 **Question answered:** _Would a regulated partner sign off on this protocol?_  
 **Not:** A QA checklist asking "does it work?"

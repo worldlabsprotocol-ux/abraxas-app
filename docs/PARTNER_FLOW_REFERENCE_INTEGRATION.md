@@ -31,6 +31,8 @@ Before your protocol can run a live pilot, an Abraxas operator must:
 
 See `docs/PARTNER_ONBOARDING_CHECKLIST.md` for the full checklist.
 
+**Second partner pilot (operator runbook):** `docs/SECOND_PARTNER_PILOT_RUNBOOK.md` — create partner row, active policy, `allowed_return_urls`, `npm run partner:conformance`, live flow, receipt verification, audit trace.
+
 **This is the remaining human/operator step** — the reference app and conformance harness cannot substitute for provisioning.
 
 ---
