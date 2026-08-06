@@ -95,7 +95,7 @@ begin
     alter column chain set default 'sui';
 
   alter table public.wallet_binding_challenges
-    alter column domain set default canonical_domain;
+    alter column domain set default 'abraxasworld.xyz';
 
   alter table public.wallet_binding_challenges
     alter column chain set not null,

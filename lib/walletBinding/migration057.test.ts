@@ -44,4 +44,9 @@ describe("migration 057_wallet_binding_challenges_connect.sql", () => {
     expect(sql).not.toMatch(/delete from public\.wallet_binding_challenges/i);
     expect(sql).not.toMatch(/truncate public\.wallet_binding_challenges/i);
   });
+
+  it("does not use bare PL/pgSQL variable in ALTER COLUMN SET DEFAULT", () => {
+    expect(sql).not.toMatch(/set default canonical_domain/i);
+    expect(sql).toMatch(/alter column domain set default 'abraxasworld\.xyz'/i);
+  });
 });
