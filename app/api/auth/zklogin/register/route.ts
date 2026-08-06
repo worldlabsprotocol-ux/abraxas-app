@@ -10,6 +10,14 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { walletBindingClaim } from "@/lib/credentials/claimSchema";
 import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
 import { verifyGoogleZkLoginIdToken } from "@/lib/auth/verifyZkLoginIdToken";
+import {
+  classifyGoogleAudience,
+  isLegacyRecoveryConfigured,
+  type ZkLoginLoginMode,
+} from "@/lib/sui/zklogin/audienceCohorts";
+import {
+  buildZkLoginRecoveryAuditMetadata,
+} from "@/lib/sui/zklogin/recoveryAudit";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -19,29 +27,58 @@ function generateUserSalt(): string {
   return BigInt(`0x${hex}`).toString();
 }
 
+function parseLoginMode(raw: unknown): ZkLoginLoginMode {
+  return raw === "legacy_recovery" ? "legacy_recovery" : "canonical";
+}
+
+function logRecoveryAudit(
+  loginMode: ZkLoginLoginMode,
+  audienceCohort: ReturnType<typeof classifyGoogleAudience>,
+  outcome: "success" | "audience_mismatch" | "no_existing_account",
+) {
+  console.info(
+    "[zklogin/register]",
+    buildZkLoginRecoveryAuditMetadata({ loginMode, audienceCohort, outcome }),
+  );
+}
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({})) as {
     id_token?: string;
     provider?: string;
     oauth_sub?: string;
     max_epoch?: number;
+    login_mode?: string;
   };
 
   if (!body.id_token || !body.oauth_sub) {
     return NextResponse.json({ error: "id_token and oauth_sub required" }, { status: 400 });
   }
 
+  const loginMode = parseLoginMode(body.login_mode);
+
   let verified;
   try {
     verified = await verifyGoogleZkLoginIdToken(body.id_token, body.oauth_sub);
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Invalid id_token";
+    if (msg === "untrusted_oauth_audience") {
+      return NextResponse.json({ error: "Invalid id_token audience", code: "zklogin_untrusted_audience" }, { status: 401 });
+    }
     return NextResponse.json({ error: "Invalid id_token" }, { status: 401 });
   }
 
   const sub = verified.sub;
+  const audienceCohort = classifyGoogleAudience(verified.aud);
+
+  if (loginMode === "legacy_recovery" && audienceCohort !== "legacy") {
+    return NextResponse.json({
+      error: "Existing account sign-in requires the legacy Google OAuth configuration.",
+      code: "zklogin_legacy_client_required",
+    }, { status: 400 });
+  }
 
   if (!SB_URL || !SB_KEY) {
-    // Dev fallback: derive with ephemeral salt (not persistent across restarts)
     const salt = generateUserSalt();
     const sui_address = jwtToAddress(body.id_token, salt);
     return NextResponse.json({
@@ -69,11 +106,14 @@ export async function POST(req: Request) {
     const derived = jwtToAddress(body.id_token, existing.user_salt);
     const stored = normalizeSuiAddress(existing.sui_address);
     if (derived !== stored) {
+      logRecoveryAudit(loginMode, audienceCohort, "audience_mismatch");
+      const legacyAvailable = isLegacyRecoveryConfigured();
       return NextResponse.json({
         error:
-          "OAuth client ID no longer matches this registered zkLogin identity. "
-          + "Restore the historical NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID or sign in with a new Google account.",
+          "We found your existing Abraxas account, but this sign-in configuration does not match how it was created. "
+          + "Use Existing account sign-in to continue with the configuration that created your account.",
         code: "zklogin_oauth_audience_mismatch",
+        legacy_recovery_available: legacyAvailable,
       }, { status: 409 });
     }
 
@@ -82,6 +122,8 @@ export async function POST(req: Request) {
         .update({ email: emailFromJwt, updated_at: new Date().toISOString() })
         .eq("oauth_sub", body.oauth_sub);
     }
+
+    logRecoveryAudit(loginMode, audienceCohort, "success");
     return NextResponse.json({
       sui_address: existing.sui_address,
       user_salt: existing.user_salt,
@@ -89,6 +131,16 @@ export async function POST(req: Request) {
       oauth_sub: body.oauth_sub,
       email: emailFromJwt ?? existing.email,
     });
+  }
+
+  if (loginMode === "legacy_recovery") {
+    logRecoveryAudit(loginMode, audienceCohort, "no_existing_account");
+    return NextResponse.json({
+      error:
+        "No existing Abraxas account was found for this Google identity. "
+        + "Use Continue with Google to create a new account.",
+      code: "zklogin_no_existing_account",
+    }, { status: 404 });
   }
 
   const user_salt = generateUserSalt();
@@ -118,6 +170,7 @@ export async function POST(req: Request) {
     console.warn("[zklogin/register] wallet binding claim skipped:", e);
   }
 
+  logRecoveryAudit("canonical", audienceCohort, "success");
   return NextResponse.json({
     sui_address,
     user_salt,

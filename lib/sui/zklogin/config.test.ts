@@ -89,7 +89,21 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
     expect(parsed.searchParams.get("redirect_uri")).toBe(
       `https://abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`,
     );
+    expect(parsed.searchParams.get("client_id")).toBe("test-client.apps.googleusercontent.com");
     expect(url).not.toContain("abraxas-app.vercel.app");
+  });
+
+  it("buildGoogleOAuthUrl uses legacy client id for existing account sign-in", () => {
+    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "canonical-client.apps.googleusercontent.com";
+    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = "legacy-client.apps.googleusercontent.com";
+
+    vi.stubGlobal("window", {
+      location: { origin: "https://abraxasworld.xyz" },
+    });
+
+    const url = buildGoogleOAuthUrl("nonce-legacy", "legacy_recovery");
+    expect(url).toBeTruthy();
+    expect(new URL(url!).searchParams.get("client_id")).toBe("legacy-client.apps.googleusercontent.com");
   });
 
   it("server-side redirect uses NEXT_PUBLIC_APP_URL when set", () => {

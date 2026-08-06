@@ -13,7 +13,7 @@ const ACCENT = "#10B981";
 
 export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
   const { isAuthenticated, suiAddress, signOut, error } = useSuiAuth();
-  const { signIn, busy, configured, disabled } = useGoogleSignIn();
+  const { signIn, signInExistingAccount, busy, legacyBusy, configured, legacyRecoveryConfigured, disabled, legacyDisabled } = useGoogleSignIn();
   const [showAddress, setShowAddress] = useState(false);
 
   if (isAuthenticated && suiAddress) {
@@ -78,12 +78,34 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
           <span style={{ fontWeight: 800 }}>G</span>
           {busy ? "Redirecting…" : "Continue with Google"}
         </button>
+        {legacyRecoveryConfigured && (
+          <button type="button" onClick={() => void signInExistingAccount()} disabled={legacyDisabled}
+            style={{
+              padding: "0.6rem 1.1rem", borderRadius: 999,
+              border: `1px solid ${ACCENT}55`, background: "transparent",
+              color: "var(--text-secondary)",
+              fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600,
+              cursor: !legacyDisabled ? "pointer" : "not-allowed",
+              opacity: legacyBusy ? 0.7 : 1,
+            }}>
+            {legacyBusy ? "Redirecting…" : "Existing account sign-in"}
+          </button>
+        )}
         {!configured && (
           <Link href="/docs/zklogin-setup" style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT }}>
             Setup guide →
           </Link>
         )}
       </div>
+      {legacyRecoveryConfigured && !compact && (
+        <p style={{
+          fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+          lineHeight: 1.55, margin: "0.75rem 0 0", maxWidth: 520,
+        }}>
+          Registered before our sign-in update? Use <strong style={{ color: "var(--text-secondary)" }}>Existing account sign-in</strong>.
+          {" "}We found your existing Abraxas account — continue with the account configuration that created it.
+        </p>
+      )}
       {(error || !configured) && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: !configured ? "var(--text-muted)" : "#E0524F", margin: "0.75rem 0 0", lineHeight: 1.55 }}>
           {error ?? "Sign in is being configured. Check back soon or contact support."}

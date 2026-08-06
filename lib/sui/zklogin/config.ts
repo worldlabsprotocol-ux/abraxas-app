@@ -2,6 +2,11 @@
 // OAuth + proving service configuration for Sui zkLogin.
 
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
+import {
+  isLegacyRecoveryConfiguredClient,
+  resolveOAuthClientIdForMode,
+  type ZkLoginLoginMode,
+} from "@/lib/sui/zklogin/audienceCohorts";
 
 export type ZkLoginProvider = "google" | "apple";
 
@@ -35,8 +40,8 @@ export const DEFAULT_PROVING_SERVICE_URL =
   process.env.NEXT_PUBLIC_ZKLOGIN_PROVER_URL ??
   "https://prover-dev.mystenlabs.com/v1";
 
-export function getGoogleOAuthConfig(): ZkLoginOAuthConfig | null {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID;
+export function getGoogleOAuthConfig(mode: ZkLoginLoginMode = "canonical"): ZkLoginOAuthConfig | null {
+  const clientId = resolveOAuthClientIdForMode(mode);
   if (!clientId) return null;
   return {
     clientId,
@@ -48,11 +53,15 @@ export function getGoogleOAuthConfig(): ZkLoginOAuthConfig | null {
 }
 
 export function isZkLoginConfigured(): boolean {
-  return Boolean(getGoogleOAuthConfig());
+  return Boolean(getGoogleOAuthConfig("canonical"));
 }
 
-export function buildGoogleOAuthUrl(nonce: string): string | null {
-  const cfg = getGoogleOAuthConfig();
+export function isLegacyZkLoginRecoveryConfigured(): boolean {
+  return isLegacyRecoveryConfiguredClient();
+}
+
+export function buildGoogleOAuthUrl(nonce: string, mode: ZkLoginLoginMode = "canonical"): string | null {
+  const cfg = getGoogleOAuthConfig(mode);
   if (!cfg) return null;
   const params = new URLSearchParams({
     client_id: cfg.clientId,
