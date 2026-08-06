@@ -18,6 +18,8 @@ export function resolveNavSignInUiState(input: {
 }
 
 export const NAV_SIGN_IN_COPY = {
+  open: ZKLOGIN_SIGN_IN_COPY.openButton,
+  openAriaLabel: ZKLOGIN_SIGN_IN_COPY.openButtonAriaLabel,
   canonical: ZKLOGIN_SIGN_IN_COPY.canonicalButton,
   legacy: ZKLOGIN_SIGN_IN_COPY.legacyButton,
   canonicalAriaLabel: ZKLOGIN_SIGN_IN_COPY.canonicalAriaLabel,

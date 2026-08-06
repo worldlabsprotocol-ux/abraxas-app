@@ -3,11 +3,19 @@
 // Hero — headline and primary CTAs.
 
 import { Btn } from "@/components/redesign/ui";
+import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
+import { useZkLoginSignInChooserOptional } from "@/components/sui/ZkLoginSignInChooserProvider";
+import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeSharpHero() {
+  const auth = useSuiAuthOptional();
+  const chooser = useZkLoginSignInChooserOptional();
+  const signedIn = Boolean(auth?.suiAddress);
+  const useChooser = !signedIn && canOpenSignInChooser({ configured: auth?.isConfigured ?? false });
+
   return (
     <section
       id="top"
@@ -64,7 +72,13 @@ export function HomeSharpHero() {
       </p>
 
       <div className="abx-home-hero-actions">
-        <Btn href="/passport" size="lg">Create Passport</Btn>
+        {useChooser ? (
+          <Btn size="lg" onClick={() => chooser?.openChooser()}>
+            Create Passport
+          </Btn>
+        ) : (
+          <Btn href="/passport" size="lg">Create Passport</Btn>
+        )}
         <Btn href="/integrate" variant="secondary" size="lg">Explore Protocol</Btn>
       </div>
     </section>

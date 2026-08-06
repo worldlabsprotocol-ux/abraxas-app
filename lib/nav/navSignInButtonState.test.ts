@@ -32,6 +32,7 @@ describe("resolveNavSignInUiState", () => {
   });
 
   it("uses shared zkLogin button and aria labels", () => {
+    expect(NAV_SIGN_IN_COPY.open).toBe("Sign in");
     expect(NAV_SIGN_IN_COPY.canonical).toBe("Continue with Google");
     expect(NAV_SIGN_IN_COPY.legacy).toBe("Use an existing Passport");
     expect(NAV_SIGN_IN_COPY.canonicalAriaLabel).toMatch(/Passport/i);

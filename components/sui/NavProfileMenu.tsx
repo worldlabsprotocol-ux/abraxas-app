@@ -20,6 +20,8 @@ import {
   NAV_SIGN_IN_COPY,
   resolveNavSignInUiState,
 } from "@/lib/nav/navSignInButtonState";
+import { useZkLoginSignInChooser } from "@/components/sui/ZkLoginSignInChooserProvider";
+import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
@@ -279,15 +281,10 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
 }
 
 export function NavSignInButton({ prominent = false }: { prominent?: boolean }) {
+  const { openChooser, isOpen } = useZkLoginSignInChooser();
   const {
-    signIn,
-    signInExistingAccount,
-    busy,
-    legacyBusy,
     configured,
     legacyRecoveryConfigured,
-    disabled,
-    legacyDisabled,
     error,
   } = useGoogleSignIn();
 
@@ -303,7 +300,7 @@ export function NavSignInButton({ prominent = false }: { prominent?: boolean }) 
           flexDirection: "column",
           alignItems: "flex-end",
           gap: 4,
-          maxWidth: prominent ? 220 : 200,
+          maxWidth: prominent ? 160 : 148,
         }}
       >
         <span
@@ -334,48 +331,34 @@ export function NavSignInButton({ prominent = false }: { prominent?: boolean }) 
     );
   }
 
-  const buttonStyle = (primary: boolean): CSSProperties => ({
+  const buttonStyle: CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
-    gap: "0.4rem",
+    justifyContent: "center",
     padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
     borderRadius: 999,
-    border: primary ? "none" : `1px solid ${ACCENT}55`,
-    background: primary ? ACCENT : "transparent",
-    color: primary ? "#000" : "var(--text-secondary)",
+    border: "none",
+    background: ACCENT,
+    color: "#000",
     fontFamily: FONT,
     fontSize: prominent ? "0.84rem" : "0.8rem",
     fontWeight: 700,
-    cursor: "pointer",
+    cursor: canOpenSignInChooser({ configured }) ? "pointer" : "not-allowed",
     whiteSpace: "nowrap",
-    opacity: (primary ? busy : legacyBusy) ? 0.75 : 1,
-  });
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.45rem" }}>
-        <button
-          type="button"
-          onClick={() => void signIn()}
-          disabled={disabled}
-          aria-label={NAV_SIGN_IN_COPY.canonicalAriaLabel}
-          style={buttonStyle(true)}
-        >
-          <span aria-hidden="true" style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
-          {busy ? "Redirecting…" : NAV_SIGN_IN_COPY.canonical}
-        </button>
-        {uiState === "canonical_and_legacy" && (
-          <button
-            type="button"
-            onClick={() => void signInExistingAccount()}
-            disabled={legacyDisabled}
-            aria-label={NAV_SIGN_IN_COPY.legacyAriaLabel}
-            style={buttonStyle(false)}
-          >
-            {legacyBusy ? "Redirecting…" : NAV_SIGN_IN_COPY.legacy}
-          </button>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={openChooser}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        aria-label={NAV_SIGN_IN_COPY.openAriaLabel}
+        style={buttonStyle}
+      >
+        {NAV_SIGN_IN_COPY.open}
+      </button>
       {error && (
         <span style={{
           fontFamily: FONT,
