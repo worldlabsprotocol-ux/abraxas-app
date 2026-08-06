@@ -5,7 +5,39 @@
 **Not:** A QA checklist asking "does it work?"
 
 **Execution guide:** `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`  
-**Trust Model:** `docs/TRUST_MODEL_V1.md`
+**Trust Model:** `docs/TRUST_MODEL_V1.md`  
+**Automated companion:** `docs/IAT_AUTOMATED_COMPANION.md`
+
+---
+
+## Automated IAT companion (read-only pre-check)
+
+**Recorded run (UTC):** 2026-08-06T01:52:39.653Z  
+**Command:**
+
+```bash
+IAT_BASE_URL=https://abraxasworld.xyz npm run iat:automated
+```
+
+| Field | Value |
+|-------|-------|
+| **Base URL** | https://abraxasworld.xyz |
+| **Exit code** | 0 |
+| **PASS** | 20 |
+| **FAIL** | 0 |
+| **PENDING** | 0 |
+| **HUMAN_REQUIRED** | 1 |
+| **Full IAT claimed** | **No** |
+| **Scenario A** | **Human-required** (browser OAuth, consent, capture, admin approval) |
+
+**Artifacts (local runner output — not committed; no secrets, user IDs, or callback tokens):**
+
+- `reports/iat-automated/iat-automated-2026-08-06T01-52-39-653Z.md` — human-readable summary + Scenario A evidence template (fields unfilled)
+- `reports/iat-automated/iat-automated-2026-08-06T01-52-39-653Z.json` — machine-readable check list + empty Scenario A template
+
+**Scope:** Read-only production probes only (compatibility manifest, canonical origin, Good Trouble pilot URLs, public route reachability, signing status, integration preflight aggregate, receipt-validation contract fixtures, stale-host scan, audit-trace command readiness). Does **not** create verification requests, sign in, consent, capture identity, approve users, or mutate Supabase.
+
+**IAT status unchanged:** Scenarios A–D **not executed**. This entry records automated infrastructure evidence only — not IAT sign-off.
 
 ---
 

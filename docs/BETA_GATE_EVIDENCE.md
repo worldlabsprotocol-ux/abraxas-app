@@ -1,6 +1,6 @@
 # Beta Gate Evidence Matrix
 
-**Last updated:** 2026-08-05  
+**Last updated:** 2026-08-06  
 **Phase:** Protocol Validation  
 **Prerequisite:** Reconciliation doc `docs/INTEGRATION_READINESS_RECONCILIATION.md` — IAT and beta tag **not complete**.
 
@@ -20,7 +20,7 @@
 
 | Gate | Current implementation | Required objective evidence | Verification command / procedure | Status | Validated gaps | Follow-up owner |
 |------|------------------------|---------------------------|----------------------------------|--------|----------------|-----------------|
-| **IAT** | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`, `docs/PRODUCTION_WALKTHROUGH_RESULTS.md` | Signed results doc: Scenarios A–D PASS, decision_id + receipt_id + screenshots, 0 critical/high defects | Human: execute checklist on production. Pre-check: `npm run gate:preflight` with `BETA_GATE_BASE_URL=https://abraxasworld.xyz` | **Pending** | Production IAT not executed; PR #101 not on production `main` | Operator / founder |
+| **IAT** | `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`, `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`, `docs/IAT_AUTOMATED_COMPANION.md` | Signed results doc: Scenarios A–D PASS, decision_id + receipt_id + screenshots, 0 critical/high defects | Human: execute checklist on production. Pre-checks: `npm run gate:preflight` · `IAT_BASE_URL=https://abraxasworld.xyz npm run iat:automated` (read-only; see results doc for 2026-08-06 run) | **Pending** — automated companion PASS (20/0/0/1 HUMAN_REQUIRED, exit 0); full IAT not claimed; Scenario A human-required | Production IAT scenarios A–D not executed | Operator / founder |
 | **Protocol compatibility freeze** | `docs/PROTOCOL_COMPATIBILITY.md`, `lib/protocol/partnerFlowCompatibilityManifest.ts`, `GET /api/protocol/compatibility`, `lib/protocol/compatibility.test.ts`, `lib/protocol/partnerFlowCompatibilityManifest.test.ts` | Versioned manifest + contract tests; OpenAPI `1.0.0` aligned; live IAT receipt pending | `npm test -- lib/protocol/compatibility.test.ts lib/protocol/partnerFlowCompatibilityManifest.test.ts lib/partner/partnerFlowOpenApi.test.ts` · `npm run gate:verify-receipt-fixture` | **Live (code)** — production IAT sign-off pending | Live `dr_*` receipt capture for gate complete | Engineering + operator |
 | **P1-1 Immutable policy versions** | `055_policy_immutable_versions.sql`, `lib/policy/policyLifecycle.ts`, `policyVersioning.ts`, `getPartnerPolicyAtVersion()` | DB trigger blocks `rules_json` mutation on active/deprecated rows; operator draft→publish workflow; decisions/receipts pin `policy_id`+`policy_version`; historical replay via version lookup | `npm test -- lib/policy/policyLifecycle.test.ts lib/policy/policyImmutability.test.ts lib/policy/policyHistoricalReproducibility.test.ts lib/partner/partnerFlowTraceAudit.test.ts` | **Live (code)** — migration 055 operator apply pending | `getDecisionStatus()` still re-evaluates live policy (P1-2); rules not embedded in receipt artifact | Engineering + operator |
 | **P1-2 Trust Decision validity** | `evaluateDecisionReceiptTrust`, idempotency keys, 409 on conflict | Fixture + integration tests pass; production IAT receipt pending | `npm test -- lib/decisionReceipts/trustEvaluation.test.ts lib/partner/partnerFlowIdempotency.integration.test.ts` | **Live (code)** — human IAT evidence pending | Migration 053 applied in prod |
@@ -50,6 +50,26 @@
 
 **Full procedure:** `docs/PRODUCTION_WALKTHROUGH_CHECKLIST.md`
 
+### Automated IAT companion evidence (read-only)
+
+**Recorded production run (UTC):** 2026-08-06T01:52:39.653Z
+
+```bash
+IAT_BASE_URL=https://abraxasworld.xyz npm run iat:automated
+```
+
+| Result | Value |
+|--------|-------|
+| Base URL | https://abraxasworld.xyz |
+| Exit code | 0 |
+| PASS / FAIL / PENDING / HUMAN_REQUIRED | 20 / 0 / 0 / 1 |
+| Full IAT claimed | **No** |
+| Scenario A | **Human-required** |
+
+Generates local artifacts under `reports/iat-automated/` (`iat-automated-<timestamp>.md` + `.json`). Reports contain check summaries and an empty Scenario A evidence template only — **no secrets, user IDs, or callback tokens**. Artifacts are not committed to the repository.
+
+Sanitized summary recorded in `docs/PRODUCTION_WALKTHROUGH_RESULTS.md`. Does **not** mark IAT complete, external security review complete, or `v1.0.0-beta.0` tag ready.
+
 ---
 
 ## Backend smoke checks (pre-IAT, ~30 min)
@@ -59,13 +79,17 @@
 npm run gate:preflight
 BETA_GATE_BASE_URL=https://abraxasworld.xyz npm run gate:preflight
 
-# 2. Production probes (unauthenticated)
+# 2. Automated IAT companion (read-only production probes)
+IAT_BASE_URL=https://abraxasworld.xyz npm run iat:automated
+# Writes reports/iat-automated/iat-automated-<timestamp>.{md,json}
+
+# 3. Production probes (unauthenticated)
 npm run audit:production
 
-# 3. Confirm deploy SHA matches merge commit
+# 4. Confirm deploy SHA matches merge commit
 # Vercel dashboard → deployment → Git SHA
 
-# 4. Signing + metrics
+# 5. Signing + metrics
 curl -s "https://abraxasworld.xyz/api/trust/status?sui=0x1234..." | jq .infrastructure.signing_configured
 curl -s "https://abraxasworld.xyz/api/metrics/public" | jq .metrics.active_credentials
 ```
