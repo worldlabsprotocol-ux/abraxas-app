@@ -29,6 +29,8 @@ import {
   IDENTITY_UI_LABELS,
   type IdentityUiState,
 } from "@/lib/passport/identityUiState";
+import { shouldShowVerifiedHero } from "@/lib/passport/verifiedHero";
+import { PassportVerifiedHero } from "@/components/passport/PassportVerifiedHero";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -127,6 +129,7 @@ export function PassportDashboard({
     idvProvider,
     via,
   });
+  const showVerifiedHero = shouldShowVerifiedHero(identityUi, hasCredential);
 
   async function bindWallet() {
     if (!suiAddress) {
@@ -147,8 +150,19 @@ export function PassportDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sui_address: suiAddress }),
       });
-      const challenge = await chRes.json() as { challenge_id?: string; message?: string; error?: string };
+      const challenge = await chRes.json() as {
+        challenge_id?: string;
+        message?: string;
+        error?: string;
+        code?: string;
+      };
       if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
+        if (chRes.status === 503 || challenge.code === "WALLET_BINDING_SCHEMA_INCOMPATIBLE") {
+          throw new Error(
+            challenge.error
+              ?? "Wallet binding is temporarily unavailable. Your verified identity still works without it.",
+          );
+        }
         throw new Error(challenge.error ?? "Could not start wallet bind. Try again.");
       }
 
@@ -229,56 +243,71 @@ export function PassportDashboard({
         </section>
       )}
 
-      {walletDone && !setup.walletBound && (
-        <section style={CARD} aria-labelledby="passport-bind-heading">
-          <h2 id="passport-bind-heading" style={{
-            fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
-            color: "var(--text-primary)", margin: "0 0 0.5rem",
-          }}>
-            Bind your wallet (optional)
-          </h2>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
-            lineHeight: 1.65, margin: "0 0 1rem",
-          }}>
-            One signature proves wallet control. No funds move. Optional — unlocks Tier 1 pilots like Cielo verified rate after you verify your identity.
-          </p>
-          {suiAddress && (
-            <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
-              {truncateSuiAddress(suiAddress, 8, 6)}
-            </div>
-          )}
-          <Btn size="lg" fullWidth loading={bindLoading} onClick={() => void bindWallet()}>
-            {bindLoading ? "Waiting for signature…" : "Sign to bind wallet →"}
-          </Btn>
-          {bindSuccess && (
-            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
-              Wallet bound successfully.
-            </p>
-          )}
-          {bindError && (
-            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, margin: "0.65rem 0 0", lineHeight: 1.55 }}>
-              {bindError}
-            </p>
-          )}
-        </section>
-      )}
-
       {!authLoading && walletDone && (
         <>
-          <IndependentBiometricStatusCard
-            manualMode={manualMode}
-            isPolling={isPolling || identityUi === "under_review"}
-          />
-          <PassportStatusCard
-            tier={tier}
-            suiAddress={suiAddress}
-            walletBindingL3={walletBindingL3}
-            identityUi={identityUi}
-            assuranceLabel={assuranceLabel}
-            availableNow={availableNow}
-            returnPath={returnPath}
-          />
+          {showVerifiedHero && (
+            <PassportVerifiedHero
+              assuranceLevel={assuranceLabel}
+              expiresAt={credential?.expires_at}
+              returnPath={returnPath}
+            />
+          )}
+
+          {!showVerifiedHero && (
+            <IndependentBiometricStatusCard
+              manualMode={manualMode}
+              isPolling={isPolling || identityUi === "under_review"}
+            />
+          )}
+
+          {!showVerifiedHero && (
+            <PassportStatusCard
+              tier={tier}
+              suiAddress={suiAddress}
+              walletBindingL3={walletBindingL3}
+              identityUi={identityUi}
+              assuranceLabel={assuranceLabel}
+              availableNow={availableNow}
+              returnPath={returnPath}
+            />
+          )}
+
+          {walletDone && !setup.walletBound && (
+            <section style={CARD} aria-labelledby="passport-bind-heading">
+              <h2 id="passport-bind-heading" style={{
+                fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
+                color: "var(--text-primary)", margin: "0 0 0.5rem",
+              }}>
+                Bind your wallet (optional)
+              </h2>
+              <p style={{
+                fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+                lineHeight: 1.65, margin: "0 0 1rem",
+              }}>
+                {showVerifiedHero
+                  ? "One signature proves wallet control for partners that require it. No funds move — your verified identity already works on its own."
+                  : "One signature proves wallet control. No funds move. Optional — unlocks partner pilots after you verify your identity."}
+              </p>
+              {suiAddress && (
+                <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
+                  {truncateSuiAddress(suiAddress, 8, 6)}
+                </div>
+              )}
+              <Btn size="lg" fullWidth loading={bindLoading} onClick={() => void bindWallet()}>
+                {bindLoading ? "Waiting for signature…" : "Sign to bind wallet →"}
+              </Btn>
+              {bindSuccess && (
+                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
+                  Wallet bound successfully.
+                </p>
+              )}
+              {bindError && (
+                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, margin: "0.65rem 0 0", lineHeight: 1.55 }}>
+                  {bindError}
+                </p>
+              )}
+            </section>
+          )}
 
           {identityUi !== "verified" && (!manualMode || identityUi === "under_review" || identityUi === "needs_action") && (
             <IdentityUnlockSection
@@ -305,54 +334,67 @@ export function PassportDashboard({
             assuranceLabel={assuranceLabel}
             manualMode={manualMode}
             credential={credential}
+            verifiedView={showVerifiedHero}
           />
 
-          <TransactionEligibilitySection enabled={walletDone} />
+          <PartnerAccessSection suiAddress={suiAddress} verifiedView={showVerifiedHero} />
 
-          <PartnerAccessSection suiAddress={suiAddress} />
+          {showVerifiedHero ? (
+            <PassportVerifiedDetails
+              tier={tier}
+              suiAddress={suiAddress}
+              walletBindingL3={walletBindingL3}
+              manualMode={manualMode}
+              isPolling={isPolling}
+            />
+          ) : (
+            <>
+              <TransactionEligibilitySection enabled={walletDone} />
 
-          <section style={CARD} aria-labelledby="passport-security-heading">
-            <div style={{
-              fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: ACCENT, marginBottom: "0.45rem",
-            }}>
-              Security
-            </div>
-            <h2 id="passport-security-heading" style={{
-              fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-              color: "var(--text-primary)", margin: "0 0 0.35rem",
-            }}>
-              Confirm wallet control
-            </h2>
-            <p style={{
-              fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
-              lineHeight: 1.6, margin: "0 0 0.85rem",
-            }}>
-              Optional session security check. Signs a message proving you control your connected wallet. not an identity check.
-            </p>
-            <PassportIntentCard suiAddress={suiAddress} />
-          </section>
+              <section style={CARD} aria-labelledby="passport-security-heading">
+                <div style={{
+                  fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: ACCENT, marginBottom: "0.45rem",
+                }}>
+                  Security
+                </div>
+                <h2 id="passport-security-heading" style={{
+                  fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
+                  color: "var(--text-primary)", margin: "0 0 0.35rem",
+                }}>
+                  Confirm wallet control
+                </h2>
+                <p style={{
+                  fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
+                  lineHeight: 1.6, margin: "0 0 0.85rem",
+                }}>
+                  Optional session security check. Signs a message proving you control your connected wallet — not an identity check.
+                </p>
+                <PassportIntentCard suiAddress={suiAddress} />
+              </section>
 
-          <section style={{ ...CARD, marginBottom: "1.5rem" }} aria-labelledby="passport-business-heading">
-            <div style={{
-              fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: ACCENT, marginBottom: "0.45rem",
-            }}>
-              For businesses and asset owners
-            </div>
-            <h2 id="passport-business-heading" style={{
-              fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-              color: "var(--text-primary)", margin: "0 0 0.85rem",
-            }}>
-              Need a business credential, asset-owner proof, or issuer attestation?
-            </h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              <Btn href="/passport#stamps" variant="secondary" size="sm">Stamp a credential →</Btn>
-              <Btn href="/build" variant="ghost" size="sm">Submit an asset →</Btn>
-            </div>
-          </section>
+              <section style={{ ...CARD, marginBottom: "1.5rem" }} aria-labelledby="passport-business-heading">
+                <div style={{
+                  fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: ACCENT, marginBottom: "0.45rem",
+                }}>
+                  For businesses and asset owners
+                </div>
+                <h2 id="passport-business-heading" style={{
+                  fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
+                  color: "var(--text-primary)", margin: "0 0 0.85rem",
+                }}>
+                  Need a business credential, asset-owner proof, or issuer attestation?
+                </h2>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <Btn href="/passport#stamps" variant="secondary" size="sm">Stamp a credential →</Btn>
+                  <Btn href="/build" variant="ghost" size="sm">Submit an asset →</Btn>
+                </div>
+              </section>
+            </>
+          )}
         </>
       )}
     </div>
@@ -466,7 +508,7 @@ function PassportStatusCard({
         {returnPath ? (
           <Btn href={decodeURIComponent(returnPath)} size="sm">Return to flow →</Btn>
         ) : (
-          <Btn href="/cielo/verified-rate" size="sm">Try Cielo verified rate →</Btn>
+          <Btn href="/partners" size="sm">Explore compatible access →</Btn>
         )}
         <Btn href="/verify" variant="secondary" size="sm">Verify records →</Btn>
       </div>
@@ -678,12 +720,14 @@ function CredentialsSection({
   assuranceLabel,
   manualMode,
   credential,
+  verifiedView = false,
 }: {
   walletBindingL3: boolean;
   identityUi: IdentityUiState;
   assuranceLabel: string;
   manualMode: boolean;
   credential: StoredCredential | null;
+  verifiedView?: boolean;
 }) {
   return (
     <section style={CARD} aria-labelledby="credentials-heading">
@@ -698,24 +742,30 @@ function CredentialsSection({
         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
         color: "var(--text-primary)", margin: "0 0 0.35rem",
       }}>
-        Time-bound yes/no proofs — not a folder of your documents
+        {verifiedView
+          ? "Your active proofs"
+          : "Time-bound yes/no proofs — not a folder of your documents"}
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
         lineHeight: 1.55, margin: "0 0 0.75rem",
       }}>
-        Think of a credential like a tamper-proof badge. Partners check the badge — they don&apos;t get your ID photos.
-        Under the hood it&apos;s a signed JWT (a short encrypted receipt), but you never need to handle that directly.
+        {verifiedView
+          ? "Partners check these proofs against their policy — they never receive your ID photos or selfie files."
+          : "Think of a credential like a tamper-proof badge. Partners check the badge — they don't get your ID photos."}
       </p>
-      <details style={{ marginBottom: "1rem" }}>
-        <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, cursor: "pointer" }}>
-          What is a JWT? (plain English)
-        </summary>
-        <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0.5rem 0 0" }}>
-          A JWT is a signed string that says &quot;this person passed check X until date Y.&quot;
-          Abraxas issues it after review. Apps verify the signature — they don&apos;t store your documents.
-        </p>
-      </details>
+
+      {!verifiedView && (
+        <details style={{ marginBottom: "1rem" }}>
+          <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, cursor: "pointer" }}>
+            What is a JWT? (plain English)
+          </summary>
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0.5rem 0 0" }}>
+            A JWT is a signed string that says &quot;this person passed check X until date Y.&quot;
+            Abraxas issues it after review. Apps verify the signature — they don&apos;t store your documents.
+          </p>
+        </details>
+      )}
 
       <CredentialRow
         title="Wallet binding"
@@ -723,15 +773,17 @@ function CredentialsSection({
         assurance={walletBindingL3 ? "L3" : "L2"}
         status={walletBindingL3 ? "Active" : "Session"}
         refresh="Every 30 days or before high-value actions"
+        compact={verifiedView}
       />
       <CredentialRow
         title="Identity verification"
-        issuer={identityUi === "verified" ? (manualMode ? "Abraxas pilot review" : "Approved identity provider") : "—"}
+        issuer={identityUi === "verified" ? (manualMode ? "Abraxas review" : "Approved identity provider") : "—"}
         assurance={identityUi === "verified" ? assuranceLabel : "—"}
         status={IDENTITY_UI_LABELS[identityUi]}
         refresh={identityUi === "verified" && credential?.expires_at
           ? `Expires ${new Date(credential.expires_at).toLocaleDateString()}`
           : "Only when a partner policy requires it"}
+        compact={verifiedView}
       />
 
       <Link href="/passport?view=verify&mode=credential" style={{
@@ -750,12 +802,14 @@ function CredentialRow({
   assurance,
   status,
   refresh,
+  compact = false,
 }: {
   title: string;
   issuer: string;
   assurance: string;
   status: string;
   refresh: string;
+  compact?: boolean;
 }) {
   return (
     <div style={{
@@ -767,12 +821,19 @@ function CredentialRow({
         {title}
       </div>
       <div style={{ display: "grid", gap: "0.2rem" }}>
-        {[
-          ["Issuer", issuer],
-          ["Assurance", assurance],
-          ["Status", status],
-          ["Refresh", refresh],
-        ].map(([k, v]) => (
+        {(compact
+          ? [
+              ["Status", status],
+              ["Assurance", assurance],
+              ["Valid through", refresh.replace(/^Expires /, "")],
+            ]
+          : [
+              ["Issuer", issuer],
+              ["Assurance", assurance],
+              ["Status", status],
+              ["Refresh", refresh],
+            ]
+        ).map(([k, v]) => (
           <div key={k} style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)" }}>
             <span style={{ color: "var(--text-muted)" }}>{k}: </span>{v}
           </div>
@@ -782,7 +843,13 @@ function CredentialRow({
   );
 }
 
-function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
+function PartnerAccessSection({
+  suiAddress,
+  verifiedView = false,
+}: {
+  suiAddress: string | null;
+  verifiedView?: boolean;
+}) {
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
 
@@ -819,13 +886,15 @@ function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
         color: "var(--text-primary)", margin: "0 0 0.5rem",
       }}>
-        Partners never receive your raw documents by default
+        {verifiedView ? "Partner access history" : "Partners never receive your raw documents by default"}
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 0.85rem",
       }}>
-        When a partner requests eligibility, you see which claims they need, why, how long approval is valid, and what action the decision unlocks.
+        {verifiedView
+          ? "When you approve a partner request, the consent receipt appears here. Each partner sees only the claims their policy requires."
+          : "When a partner requests eligibility, you see which claims they need, why, how long approval is valid, and what action the decision unlocks."}
       </p>
       {suiAddress && (
         <div style={{ marginBottom: "0.85rem" }}>
@@ -840,7 +909,75 @@ function PartnerAccessSection({ suiAddress }: { suiAddress: string | null }) {
           </p>
         </div>
       )}
-      <PassportShareHistoryCard suiAddress={suiAddress} />
+      <PassportShareHistoryCard suiAddress={suiAddress} verifiedView={verifiedView} />
     </section>
+  );
+}
+
+function PassportVerifiedDetails({
+  tier,
+  suiAddress,
+  walletBindingL3,
+  manualMode,
+  isPolling,
+}: {
+  tier: PassportTier;
+  suiAddress: string | null;
+  walletBindingL3: boolean;
+  manualMode: boolean;
+  isPolling: boolean;
+}) {
+  return (
+    <details style={{ ...CARD, marginBottom: "1.5rem" }}>
+      <summary style={{
+        fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
+        color: "var(--text-secondary)", cursor: "pointer",
+      }}>
+        Details
+      </summary>
+      <div style={{ marginTop: "1rem" }}>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
+          lineHeight: 1.6, margin: "0 0 0.85rem",
+        }}>
+          Passport tier {tier} · Wallet control: {walletBindingL3 ? "signed proof" : "zkLogin session"}
+          {suiAddress ? ` · ${truncateSuiAddress(suiAddress, 6, 4)}` : ""}
+        </p>
+
+        <IndependentBiometricStatusCard manualMode={manualMode} isPolling={isPolling} />
+
+        <details style={{ marginBottom: "1rem" }}>
+          <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, color: ACCENT, cursor: "pointer" }}>
+            Technical credential notes
+          </summary>
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0.5rem 0 0" }}>
+            Credentials are signed JWTs (W3C Verifiable Credentials). Partners verify the signature — they do not receive document images or biometric scores.
+          </p>
+        </details>
+
+        <section style={{ marginBottom: "1rem" }} aria-labelledby="passport-security-details-heading">
+          <h3 id="passport-security-details-heading" style={{
+            fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800,
+            color: "var(--text-primary)", margin: "0 0 0.35rem",
+          }}>
+            Confirm wallet control
+          </h3>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)",
+            lineHeight: 1.6, margin: "0 0 0.75rem",
+          }}>
+            Optional session security check — not an identity check.
+          </p>
+          <PassportIntentCard suiAddress={suiAddress} />
+        </section>
+
+        <TransactionEligibilitySection enabled />
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+          <Btn href="/passport#stamps" variant="secondary" size="sm">Business stamps →</Btn>
+          <Btn href="/build" variant="ghost" size="sm">Submit an asset →</Btn>
+        </div>
+      </div>
+    </details>
   );
 }

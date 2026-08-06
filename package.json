@@ -34,6 +34,7 @@
     "check:homepage-guard": "npx tsx scripts/homepage-guard/check.ts",
     "homepage:baseline:refresh": "npx tsx scripts/homepage-guard/refresh-baseline.ts --approved",
     "identity:verify-schema": "npx tsx scripts/verify-admin-identity-schema.ts",
+    "wallet-binding:verify-schema": "npx tsx scripts/verify-wallet-binding-schema.ts",
     "identity:seed-review-queue": "npx tsx scripts/seed-identity-review-queue.ts"
   },
   "dependencies": {
