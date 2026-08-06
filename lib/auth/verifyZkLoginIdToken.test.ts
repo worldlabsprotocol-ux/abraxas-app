@@ -8,7 +8,6 @@ describe("verifyGoogleZkLoginIdToken", () => {
 
   beforeEach(() => {
     process.env.GOOGLE_ZKLOGIN_CLIENT_ID = "test-client-id.apps.googleusercontent.com";
-    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "public-client-id.apps.googleusercontent.com";
   });
 
   afterEach(() => {
@@ -20,8 +19,7 @@ describe("verifyGoogleZkLoginIdToken", () => {
     delete process.env.GOOGLE_ZKLOGIN_CLIENT_ID;
   });
 
-  it("rejects missing client id configuration", async () => {
-    delete process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID;
+  it("rejects missing server canonical client id configuration", async () => {
     delete process.env.GOOGLE_ZKLOGIN_CLIENT_ID;
     await expect(verifyGoogleZkLoginIdToken("not-a-jwt")).rejects.toThrow(
       "Google OAuth client ID not configured",

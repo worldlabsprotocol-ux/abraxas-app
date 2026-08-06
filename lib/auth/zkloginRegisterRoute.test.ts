@@ -157,7 +157,7 @@ describe("POST /api/auth/zklogin/register", () => {
     expect(json.legacy_recovery_available).toBe(false);
   });
 
-  it("returns legacy_recovery_available true when only public legacy client is configured", async () => {
+  it("returns legacy_recovery_available false when only public legacy client is configured", async () => {
     delete process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS;
     process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = LEGACY_AUD;
 
@@ -172,14 +172,14 @@ describe("POST /api/auth/zklogin/register", () => {
 
     const json = (await res.json()) as { legacy_recovery_available?: boolean };
     expect(res.status).toBe(409);
-    expect(json.legacy_recovery_available).toBe(true);
+    expect(json.legacy_recovery_available).toBe(false);
   });
 
-  it("recovers legacy identity when only public legacy client is configured on server", async () => {
+  it("rejects legacy recovery when server allowlist is missing despite public legacy client", async () => {
     delete process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS;
     process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = LEGACY_AUD;
 
-    const { legacyToken, address } = mockExistingIdentity();
+    const { legacyToken } = mockExistingIdentity();
 
     const res = await postRegister({
       id_token: legacyToken,
@@ -188,10 +188,9 @@ describe("POST /api/auth/zklogin/register", () => {
       login_mode: "legacy_recovery",
     });
 
-    const json = (await res.json()) as { sui_address?: string; user_salt?: string };
-    expect(res.status).toBe(200);
-    expect(json.sui_address).toBe(address);
-    expect(json.user_salt).toBe(USER_SALT);
+    const json = (await res.json()) as { code?: string };
+    expect(res.status).toBe(503);
+    expect(json.code).toBe(ZKLOGIN_ERROR_CODES.legacyNotConfigured);
   });
 
   it("signs in legacy trusted identity with preserved address and salt", async () => {

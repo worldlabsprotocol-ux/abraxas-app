@@ -10,10 +10,9 @@ export async function GET() {
   const config = describeZkLoginAudienceConfiguration();
 
   return NextResponse.json({
-    canonical_configured: config.canonicalConfigured,
+    canonical_server_configured: config.canonicalServerConfigured,
+    legacy_server_configured: config.legacyServerConfigured,
     legacy_recovery_available: config.legacyRecoveryAvailable,
     trusted_audience_count: config.trustedAudienceCount,
-    uses_public_canonical_fallback: config.usesPublicCanonicalFallback,
-    uses_public_legacy_fallback: config.usesPublicLegacyFallback,
   });
 }

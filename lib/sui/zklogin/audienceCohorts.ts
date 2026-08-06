@@ -53,31 +53,18 @@ function readPublicLegacyClientId(env: Record<string, string | undefined>): stri
   return nullIfEmpty(env[ZKLOGIN_ENV_KEYS.legacyClientIdPublic]);
 }
 
-/**
- * Canonical JWT audience for server verification.
- * Prefers GOOGLE_ZKLOGIN_CLIENT_ID; falls back to NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID
- * when the server-only var is unset (OAuth client IDs are public identifiers).
- */
+/** Server-only canonical JWT audience (GOOGLE_ZKLOGIN_CLIENT_ID). */
 export function getServerCanonicalGoogleClientId(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
-  return readServerCanonicalClientId(env) ?? readPublicCanonicalClientId(env);
+  return readServerCanonicalClientId(env);
 }
 
-/**
- * Legacy JWT audiences accepted by the server.
- * When GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS is unset, falls back to the public legacy
- * client id so production cannot launch legacy OAuth with a mismatched server allowlist.
- * When the server list is non-empty, it is authoritative (explicit operator allowlist).
- */
+/** Server-only legacy JWT audiences (GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS). */
 export function parseServerLegacyGoogleClientIds(
   env: Record<string, string | undefined> = process.env,
 ): string[] {
-  const explicit = readServerLegacyClientIds(env);
-  if (explicit.length > 0) return explicit;
-
-  const publicLegacy = readPublicLegacyClientId(env);
-  return publicLegacy ? [publicLegacy] : [];
+  return readServerLegacyClientIds(env);
 }
 
 export function getPublicLegacyGoogleClientId(
@@ -93,8 +80,8 @@ export function getPublicCanonicalGoogleClientId(
 }
 
 /**
- * Browser-launchable legacy recovery on the server: public legacy client id is set
- * AND included in the effective server JWT allowlist.
+ * Legacy recovery is available only when the browser-public legacy client id is set
+ * AND explicitly included in the server-only GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS allowlist.
  */
 export function isBrowserLegacyRecoveryAvailable(
   env: Record<string, string | undefined> = process.env,
@@ -145,24 +132,19 @@ export function normalizeJwtAudience(aud: string | string[] | undefined): string
   return null;
 }
 
+/** Server-side zkLogin audience configuration for operational health and UI gating. */
 export function describeZkLoginAudienceConfiguration(
   env: Record<string, string | undefined> = process.env,
 ): {
-  canonicalConfigured: boolean;
+  canonicalServerConfigured: boolean;
+  legacyServerConfigured: boolean;
   legacyRecoveryAvailable: boolean;
   trustedAudienceCount: number;
-  usesPublicCanonicalFallback: boolean;
-  usesPublicLegacyFallback: boolean;
 } {
-  const explicitCanonical = readServerCanonicalClientId(env);
-  const explicitLegacy = readServerLegacyClientIds(env);
-  const publicLegacy = getPublicLegacyGoogleClientId(env);
-
   return {
-    canonicalConfigured: Boolean(getServerCanonicalGoogleClientId(env)),
+    canonicalServerConfigured: Boolean(getServerCanonicalGoogleClientId(env)),
+    legacyServerConfigured: parseServerLegacyGoogleClientIds(env).length > 0,
     legacyRecoveryAvailable: isBrowserLegacyRecoveryAvailable(env),
     trustedAudienceCount: getTrustedGoogleAudiences(env).length,
-    usesPublicCanonicalFallback: !explicitCanonical && Boolean(readPublicCanonicalClientId(env)),
-    usesPublicLegacyFallback: explicitLegacy.length === 0 && Boolean(publicLegacy),
   };
 }

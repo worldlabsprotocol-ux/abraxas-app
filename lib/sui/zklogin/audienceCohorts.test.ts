@@ -27,7 +27,7 @@ describe("audienceCohorts — server verification", () => {
     expect(trusted).toHaveLength(2);
   });
 
-  it("prefers server canonical client id over public when both are set", () => {
+  it("uses only GOOGLE_ZKLOGIN_CLIENT_ID for canonical server verification", () => {
     expect(
       getServerCanonicalGoogleClientId({
         [ZKLOGIN_ENV_KEYS.canonicalClientId]: CANONICAL,
@@ -36,13 +36,19 @@ describe("audienceCohorts — server verification", () => {
     ).toBe(CANONICAL);
   });
 
-  it("falls back to public canonical client id when server canonical is unset", () => {
+  it("ignores NEXT_PUBLIC canonical client id for server JWT trust", () => {
     expect(
       getServerCanonicalGoogleClientId({
         [ZKLOGIN_ENV_KEYS.canonicalClientId]: "",
         [ZKLOGIN_ENV_KEYS.canonicalClientIdPublic]: "public-only.apps.googleusercontent.com",
       }),
-    ).toBe("public-only.apps.googleusercontent.com");
+    ).toBeNull();
+    expect(
+      isTrustedGoogleAudience("public-only.apps.googleusercontent.com", {
+        [ZKLOGIN_ENV_KEYS.canonicalClientId]: "",
+        [ZKLOGIN_ENV_KEYS.canonicalClientIdPublic]: "public-only.apps.googleusercontent.com",
+      }),
+    ).toBe(false);
   });
 
   it("classifies canonical vs legacy cohorts from server allowlist", () => {
@@ -69,15 +75,16 @@ describe("audienceCohorts — server verification", () => {
     expect(getTrustedGoogleAudiences(serverOnly)).toContain(LEGACY);
   });
 
-  it("enables server recovery when only public legacy client is configured", () => {
+  it("never trusts legacy JWT from public client id alone", () => {
     const publicOnly = {
       [ZKLOGIN_ENV_KEYS.canonicalClientId]: CANONICAL,
       [ZKLOGIN_ENV_KEYS.legacyClientIdPublic]: LEGACY,
       [ZKLOGIN_ENV_KEYS.legacyClientIds]: "",
     };
-    expect(isBrowserLegacyRecoveryAvailable(publicOnly)).toBe(true);
-    expect(isTrustedGoogleAudience(LEGACY, publicOnly)).toBe(true);
-    expect(getTrustedGoogleAudiences(publicOnly)).toContain(LEGACY);
+    expect(isBrowserLegacyRecoveryAvailable(publicOnly)).toBe(false);
+    expect(isTrustedGoogleAudience(LEGACY, publicOnly)).toBe(false);
+    expect(getTrustedGoogleAudiences(publicOnly)).not.toContain(LEGACY);
+    expect(parseServerLegacyGoogleClientIds(publicOnly)).toEqual([]);
   });
 
   it("disables server recovery hint when public and server legacy client ids disagree", () => {
