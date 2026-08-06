@@ -2,6 +2,12 @@
 // End-user copy for zkLogin sign-in controls (buttons, helpers, accessible labels, errors).
 
 export const ZKLOGIN_SIGN_IN_COPY = {
+  openButton: "Sign in",
+  openButtonAriaLabel: "Sign in to your Abraxas Passport",
+  chooserTitle: "Access your Passport",
+  legacySectionHeading: "Already have a Passport?",
+  closeButton: "Close",
+
   canonicalButton: "Continue with Google",
   canonicalHelper: "New to Abraxas? This creates your Passport.",
   canonicalAriaLabel: "Continue with Google to create your Abraxas Passport",

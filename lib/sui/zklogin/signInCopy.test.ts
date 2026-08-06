@@ -11,6 +11,9 @@ describe("ZKLOGIN_SIGN_IN_COPY", () => {
   });
 
   it("uses Passport-first helper and legacy button copy", () => {
+    expect(ZKLOGIN_SIGN_IN_COPY.openButton).toBe("Sign in");
+    expect(ZKLOGIN_SIGN_IN_COPY.chooserTitle).toBe("Access your Passport");
+    expect(ZKLOGIN_SIGN_IN_COPY.legacySectionHeading).toBe("Already have a Passport?");
     expect(ZKLOGIN_SIGN_IN_COPY.canonicalHelper).toBe(
       "New to Abraxas? This creates your Passport.",
     );
