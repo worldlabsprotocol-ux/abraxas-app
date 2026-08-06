@@ -19,6 +19,7 @@ export interface ZkLoginPendingSession {
   randomness: string;
   maxEpoch: number;
   provider: "google" | "apple";
+  loginMode?: "canonical" | "legacy_recovery";
   startedAt: string;
 }
 

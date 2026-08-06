@@ -3,7 +3,8 @@
 
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { generateNonce, generateRandomness } from "@mysten/sui/zklogin";
-import { buildGoogleOAuthUrl, isZkLoginConfigured } from "./config";
+import { buildGoogleOAuthUrl, isZkLoginConfigured, isLegacyZkLoginRecoveryConfigured } from "./config";
+import type { ZkLoginLoginMode } from "./audienceCohorts";
 import { savePendingSession } from "./session";
 import {
   clearLoginInFlight,
@@ -14,8 +15,19 @@ import {
 import { logAuthEvent } from "./authDebug";
 import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 
-export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!isZkLoginConfigured()) {
+export async function startGoogleZkLogin(
+  options?: { mode?: ZkLoginLoginMode },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const mode = options?.mode ?? "canonical";
+
+  if (mode === "legacy_recovery") {
+    if (!isLegacyZkLoginRecoveryConfigured()) {
+      return {
+        ok: false,
+        error: "Existing account sign-in is not configured. Contact support if you registered before the OAuth update.",
+      };
+    }
+  } else if (!isZkLoginConfigured()) {
     return {
       ok: false,
       error: "Google OAuth not configured. Set NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID — see docs/ZKLOGIN_BACKEND_SETUP.md",
@@ -54,10 +66,11 @@ export async function startGoogleZkLogin(): Promise<{ ok: true } | { ok: false; 
       randomness,
       maxEpoch,
       provider: "google",
+      loginMode: mode,
       startedAt: new Date().toISOString(),
     });
 
-    const url = buildGoogleOAuthUrl(nonce);
+    const url = buildGoogleOAuthUrl(nonce, mode);
     if (!url) {
       clearLoginInFlight();
       return { ok: false, error: "Could not build OAuth URL" };

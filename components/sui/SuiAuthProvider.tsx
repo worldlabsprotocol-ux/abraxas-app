@@ -14,7 +14,7 @@ import {
 import { loadUserSession, clearUserSession, saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin, clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
-import { isZkLoginConfigured } from "@/lib/sui/zklogin/config";
+import { isZkLoginConfigured, isLegacyZkLoginRecoveryConfigured } from "@/lib/sui/zklogin/config";
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
@@ -26,9 +26,11 @@ interface SuiAuthContextValue {
   isAuthenticated: boolean;
   canSignTransactions: boolean;
   isConfigured: boolean;
+  isLegacyRecoveryConfigured: boolean;
   isLoading: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<boolean>;
+  signInWithExistingAccount: () => Promise<boolean>;
   signOut: () => void;
   refreshSession: () => void;
 }
@@ -116,7 +118,17 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     setError(null);
-    const result = await startGoogleZkLogin();
+    const result = await startGoogleZkLogin({ mode: "canonical" });
+    if (!result.ok) {
+      setError(result.error);
+      return false;
+    }
+    return true;
+  }, []);
+
+  const signInWithExistingAccount = useCallback(async (): Promise<boolean> => {
+    setError(null);
+    const result = await startGoogleZkLogin({ mode: "legacy_recovery" });
     if (!result.ok) {
       setError(result.error);
       return false;
@@ -139,12 +151,14 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: Boolean(session?.suiAddress),
     canSignTransactions,
     isConfigured: isZkLoginConfigured(),
+    isLegacyRecoveryConfigured: isLegacyZkLoginRecoveryConfigured(),
     isLoading,
     error,
     signInWithGoogle,
+    signInWithExistingAccount,
     signOut,
     refreshSession: reloadSession,
-  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signOut, reloadSession]);
+  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signInWithExistingAccount, signOut, reloadSession]);
 
   return (
     <SuiAuthContext.Provider value={value}>

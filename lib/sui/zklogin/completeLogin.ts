@@ -51,6 +51,7 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
       provider: pending.provider,
       oauth_sub: sub,
       max_epoch: pending.maxEpoch,
+      login_mode: pending.loginMode ?? "canonical",
     }),
   });
 
@@ -59,12 +60,22 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
     user_salt?: string;
     email?: string | null;
     error?: string;
+    code?: string;
+    legacy_recovery_available?: boolean;
   };
 
   if (!regRes.ok || !regData.sui_address) {
     clearLoginInFlight();
-    const err = regData.error ?? "Could not register zkLogin identity";
-    logAuthEvent("zklogin_complete_error", { error: err });
+    let err = regData.error ?? "Could not register zkLogin identity";
+    if (regRes.status === 409 && regData.code === "zklogin_oauth_audience_mismatch") {
+      err =
+        "We found your existing Abraxas account. Continue with Existing account sign-in "
+        + "to use the configuration that created your account.";
+    }
+    if (regRes.status === 404 && regData.code === "zklogin_no_existing_account") {
+      err = regData.error ?? err;
+    }
+    logAuthEvent("zklogin_complete_error", { error: err, detail: regData.code });
     throw new Error(err);
   }
 
