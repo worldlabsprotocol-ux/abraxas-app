@@ -3,7 +3,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkAdmin } from "@/lib/adminAuth";
+import { checkAdminAccess } from "@/lib/adminAuth";
+import { assertPilotPartnerCreateStatus } from "@/lib/admin/partnerOnboardingConsole";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -25,7 +26,7 @@ type PartnerRow = {
 };
 
 export async function GET(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
   const { data, error } = await sb
     .from("partners")
-    .select("id, partner_id, company, contact_name, contact_email, status, allowed_environments, legal_entity, use_case, assigned_policy_id, onboarding_notes, created_at")
+    .select("id, partner_id, company, contact_name, contact_email, status, allowed_environments, allowed_return_urls, legal_entity, use_case, assigned_policy_id, is_external, onboarding_notes, created_at")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {
@@ -91,6 +92,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "partner_id and company required" }, { status: 400 });
   }
 
+  let status: string;
+  try {
+    status = assertPilotPartnerCreateStatus(body.status?.trim() || "pilot");
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Invalid status" },
+      { status: 400 },
+    );
+  }
+
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
   const { data, error } = await sb
     .from("partners")
@@ -103,7 +114,8 @@ export async function POST(req: NextRequest) {
       use_case: body.use_case?.trim() ?? null,
       assigned_policy_id: body.assigned_policy_id?.trim() ?? null,
       onboarding_notes: body.onboarding_notes?.trim() ?? null,
-      status: body.status ?? "recruiting",
+      status,
+      is_external: true,
       allowed_environments: body.allowed_environments ?? ["sandbox"],
       updated_at: new Date().toISOString(),
     })
@@ -118,7 +130,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {

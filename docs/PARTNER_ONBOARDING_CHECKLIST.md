@@ -6,6 +6,8 @@ Use this checklist before a third-party protocol or app redirects holders to Abr
 
 **Second relying-party pilot:** operator runbook with conformance + live flow steps — `docs/SECOND_PARTNER_PILOT_RUNBOOK.md`
 
+**Admin console (pilot provisioning):** `/admin/partners` — `docs/PARTNER_ONBOARDING_CONSOLE.md`
+
 ---
 
 ## Before you start
