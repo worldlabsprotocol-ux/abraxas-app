@@ -25,6 +25,7 @@
     "biometric:validate-policy": "npx tsx scripts/validate-good-trouble-policy.ts",
     "audit:production": "npx tsx scripts/production-readiness-audit.ts",
     "audit:partner-flow-trace": "npx tsx scripts/partner-flow-trace-audit.ts",
+    "partner-flow:health": "npx tsx scripts/partner-flow-health.ts",
     "gate:preflight": "npx tsx scripts/beta-gate-preflight.ts",
     "integration:preflight": "npx tsx scripts/integration-preflight.ts",
     "partner:conformance": "npx tsx scripts/partner-conformance.ts",

@@ -13,8 +13,14 @@ import {
 import { buildPartnerFlowVerificationRequestIdempotencyKey } from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
+import {
+  enforcePartnerFlowRateLimit,
+  recordPartnerFlowRequestOutcome,
+} from "@/lib/partner/partnerFlowRouteGuard";
 
 export const dynamic = "force-dynamic";
+
+const ENDPOINT = "/api/v1/partner-flow/evaluate" as const;
 
 /**
  * POST /api/v1/partner-flow/evaluate
@@ -24,8 +30,24 @@ export async function POST(request: NextRequest) {
   const started = Date.now();
   const session = await requireBrowserSession(request);
   if (!session.ok) {
+    recordPartnerFlowRequestOutcome({
+      request,
+      endpoint: ENDPOINT,
+      method: "POST",
+      started,
+      httpStatus: session.status,
+    });
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
+
+  const rateLimited = enforcePartnerFlowRateLimit({
+    request,
+    endpoint: ENDPOINT,
+    method: "POST",
+    started,
+    sessionSubject: session.session.suiAddress,
+  });
+  if (rateLimited) return rateLimited;
 
   let body: {
     partner_id?: string;
@@ -125,13 +147,24 @@ export async function POST(request: NextRequest) {
       }
     } catch (e) {
       if (e instanceof PartnerFlowAuditPersistenceError) {
+        recordPartnerFlowRequestOutcome({
+          request,
+          endpoint: ENDPOINT,
+          method: "POST",
+          started,
+          sessionSubject: session.session.suiAddress,
+          partnerId,
+          policyId,
+          httpStatus: 503,
+          auditPersistenceFailed: true,
+        });
         return NextResponse.json({ error: "Audit persistence failed" }, { status: 503 });
       }
       throw e;
     }
 
     void logPartnerUsage({
-      endpoint: "/api/v1/partner-flow/evaluate",
+      endpoint: ENDPOINT,
       method: "POST",
       success: true,
       responseState: result.next,
@@ -141,6 +174,17 @@ export async function POST(request: NextRequest) {
       decision: result.next,
       proofId: result.partner_result?.receipt_id,
       recordId: result.verification_request_id,
+    });
+
+    recordPartnerFlowRequestOutcome({
+      request,
+      endpoint: ENDPOINT,
+      method: "POST",
+      started,
+      sessionSubject: session.session.suiAddress,
+      partnerId,
+      policyId,
+      httpStatus: 200,
     });
 
     return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
@@ -164,12 +208,22 @@ export async function POST(request: NextRequest) {
       error: msg,
     });
     void logPartnerUsage({
-      endpoint: "/api/v1/partner-flow/evaluate",
+      endpoint: ENDPOINT,
       method: "POST",
       success: false,
       httpStatus: 400,
       responseTimeMs: Date.now() - started,
       policyId,
+    });
+    recordPartnerFlowRequestOutcome({
+      request,
+      endpoint: ENDPOINT,
+      method: "POST",
+      started,
+      sessionSubject: session.session.suiAddress,
+      partnerId,
+      policyId,
+      httpStatus: 400,
     });
     return NextResponse.json({ error: msg, flow_trace_id: flowTraceId }, { status: 400 });
   }
