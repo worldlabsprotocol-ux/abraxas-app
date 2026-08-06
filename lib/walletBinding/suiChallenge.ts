@@ -8,6 +8,11 @@ import {
   consumeWalletBindingChallenge,
   resolveConnectDomain,
 } from "@/lib/walletAuthority/service";
+import {
+  isSchemaCacheChainError,
+  probeWalletBindingSchema,
+  type WalletBindingSchemaCheck,
+} from "@/lib/walletBinding/schemaPreflight";
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 
@@ -18,10 +23,19 @@ export interface SuiBindingChallenge {
   expires_at: string;
 }
 
+export async function getWalletBindingSchemaCheck(): Promise<WalletBindingSchemaCheck> {
+  const sb = requireSupabaseAdmin();
+  return probeWalletBindingSchema(sb);
+}
+
 export async function createSuiWalletBindingChallenge(
   walletAddress: string,
 ): Promise<SuiBindingChallenge> {
   const sb = requireSupabaseAdmin();
+  const schema = await probeWalletBindingSchema(sb);
+  if (!schema.compatible) {
+    throw new Error(schema.userMessage);
+  }
   const wallet = normalizeSuiAddress(walletAddress);
   const challengeId = randomBytes(16).toString("hex");
   const expires = new Date(Date.now() + CHALLENGE_TTL_MS);
@@ -43,7 +57,14 @@ export async function createSuiWalletBindingChallenge(
     expires_at: expires.toISOString(),
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isSchemaCacheChainError(error.message)) {
+      throw new Error(
+        "Wallet binding is temporarily unavailable. Your verified identity still works without it.",
+      );
+    }
+    throw new Error(error.message);
+  }
 
   return {
     challenge_id: challengeId,

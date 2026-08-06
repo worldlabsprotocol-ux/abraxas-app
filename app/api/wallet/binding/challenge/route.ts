@@ -2,7 +2,10 @@
 // Step 1: issue a one-time wallet binding challenge (Supabase-backed).
 
 import { NextRequest, NextResponse } from "next/server";
-import { createSuiWalletBindingChallenge } from "@/lib/walletBinding/suiChallenge";
+import {
+  createSuiWalletBindingChallenge,
+  getWalletBindingSchemaCheck,
+} from "@/lib/walletBinding/suiChallenge";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as { sui_address?: string };
@@ -12,10 +15,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const schema = await getWalletBindingSchemaCheck();
+    if (!schema.compatible) {
+      return NextResponse.json({
+        error: schema.userMessage,
+        code: "WALLET_BINDING_SCHEMA_INCOMPATIBLE",
+        migration: schema.migration,
+      }, { status: 503 });
+    }
+
     const challenge = await createSuiWalletBindingChallenge(body.sui_address.trim());
     return NextResponse.json(challenge);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Challenge failed";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    const status = msg.includes("temporarily unavailable") ? 503 : 400;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

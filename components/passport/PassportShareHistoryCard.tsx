@@ -24,7 +24,13 @@ async function fetchShareHistory() {
   return res.json() as Promise<{ shares: ShareRecord[] }>;
 }
 
-export function PassportShareHistoryCard({ suiAddress }: { suiAddress: string | null }) {
+export function PassportShareHistoryCard({
+  suiAddress,
+  verifiedView = false,
+}: {
+  suiAddress: string | null;
+  verifiedView?: boolean;
+}) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["passport", "share-history", suiAddress],
     queryFn: () => fetchShareHistory(),
@@ -61,7 +67,9 @@ export function PassportShareHistoryCard({ suiAddress }: { suiAddress: string | 
 
       {!isLoading && !isError && (data?.shares.length ?? 0) === 0 && (
         <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
-          No partner consent receipts yet. When a partner requests eligibility, approvals appear here.
+          {verifiedView
+            ? "No partner access yet. When a compatible app requests your proof, you'll review what they need and approve here."
+            : "No partner consent receipts yet. When a partner requests eligibility, approvals appear here."}
         </p>
       )}
 
