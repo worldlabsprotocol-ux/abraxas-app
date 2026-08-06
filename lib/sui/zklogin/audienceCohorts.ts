@@ -20,13 +20,23 @@ function splitClientIds(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function nullIfEmpty(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed || null;
+}
+
 function readServerCanonicalClientId(env: Record<string, string | undefined>): string | null {
   if (env === process.env) {
-    const value = process.env.GOOGLE_ZKLOGIN_CLIENT_ID;
-    const trimmed = value?.trim();
-    return trimmed || null;
+    return nullIfEmpty(process.env.GOOGLE_ZKLOGIN_CLIENT_ID);
   }
-  return env[ZKLOGIN_ENV_KEYS.canonicalClientId]?.trim() ?? null;
+  return nullIfEmpty(env[ZKLOGIN_ENV_KEYS.canonicalClientId]);
+}
+
+function readPublicCanonicalClientId(env: Record<string, string | undefined>): string | null {
+  if (env === process.env) {
+    return nullIfEmpty(process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID);
+  }
+  return nullIfEmpty(env[ZKLOGIN_ENV_KEYS.canonicalClientIdPublic]);
 }
 
 function readServerLegacyClientIds(env: Record<string, string | undefined>): string[] {
@@ -38,21 +48,19 @@ function readServerLegacyClientIds(env: Record<string, string | undefined>): str
 
 function readPublicLegacyClientId(env: Record<string, string | undefined>): string | null {
   if (env === process.env) {
-    const value = process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID;
-    const trimmed = value?.trim();
-    return trimmed || null;
+    return nullIfEmpty(process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID);
   }
-  return env[ZKLOGIN_ENV_KEYS.legacyClientIdPublic]?.trim() ?? null;
+  return nullIfEmpty(env[ZKLOGIN_ENV_KEYS.legacyClientIdPublic]);
 }
 
-/** Server-only canonical client id (GOOGLE_ZKLOGIN_CLIENT_ID). */
+/** Server-only canonical JWT audience (GOOGLE_ZKLOGIN_CLIENT_ID). */
 export function getServerCanonicalGoogleClientId(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
   return readServerCanonicalClientId(env);
 }
 
-/** Server JWT allowlist — GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS only. */
+/** Server-only legacy JWT audiences (GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS). */
 export function parseServerLegacyGoogleClientIds(
   env: Record<string, string | undefined> = process.env,
 ): string[] {
@@ -65,9 +73,15 @@ export function getPublicLegacyGoogleClientId(
   return readPublicLegacyClientId(env);
 }
 
+export function getPublicCanonicalGoogleClientId(
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  return readPublicCanonicalClientId(env);
+}
+
 /**
- * Browser-launchable legacy recovery on the server: public legacy client id is set
- * AND explicitly included in GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS.
+ * Legacy recovery is available only when the browser-public legacy client id is set
+ * AND explicitly included in the server-only GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS allowlist.
  */
 export function isBrowserLegacyRecoveryAvailable(
   env: Record<string, string | undefined> = process.env,
@@ -116,4 +130,21 @@ export function normalizeJwtAudience(aud: string | string[] | undefined): string
     return first?.trim() ?? null;
   }
   return null;
+}
+
+/** Server-side zkLogin audience configuration for operational health and UI gating. */
+export function describeZkLoginAudienceConfiguration(
+  env: Record<string, string | undefined> = process.env,
+): {
+  canonicalServerConfigured: boolean;
+  legacyServerConfigured: boolean;
+  legacyRecoveryAvailable: boolean;
+  trustedAudienceCount: number;
+} {
+  return {
+    canonicalServerConfigured: Boolean(getServerCanonicalGoogleClientId(env)),
+    legacyServerConfigured: parseServerLegacyGoogleClientIds(env).length > 0,
+    legacyRecoveryAvailable: isBrowserLegacyRecoveryAvailable(env),
+    trustedAudienceCount: getTrustedGoogleAudiences(env).length,
+  };
 }

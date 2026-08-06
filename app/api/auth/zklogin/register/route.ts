@@ -13,12 +13,17 @@ import { verifyGoogleZkLoginIdToken } from "@/lib/auth/verifyZkLoginIdToken";
 import {
   classifyGoogleAudience,
   isBrowserLegacyRecoveryAvailable,
+  parseServerLegacyGoogleClientIds,
   type ZkLoginLoginMode,
 } from "@/lib/sui/zklogin/audienceCohorts";
 import {
   buildZkLoginRecoveryAuditMetadata,
 } from "@/lib/sui/zklogin/recoveryAudit";
 import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
+import {
+  mapZkLoginVerificationFailure,
+  ZKLOGIN_ERROR_CODES,
+} from "@/lib/sui/zklogin/zkloginErrorCodes";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -58,15 +63,40 @@ export async function POST(req: Request) {
 
   const loginMode = parseLoginMode(body.login_mode);
 
+  if (loginMode === "legacy_recovery" && parseServerLegacyGoogleClientIds().length === 0) {
+    return NextResponse.json({
+      error: ZKLOGIN_SIGN_IN_COPY.errors.legacyNotConfigured,
+      code: ZKLOGIN_ERROR_CODES.legacyNotConfigured,
+    }, { status: 503 });
+  }
+
   let verified;
   try {
     verified = await verifyGoogleZkLoginIdToken(body.id_token, body.oauth_sub);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Invalid id_token";
-    if (msg === "untrusted_oauth_audience") {
-      return NextResponse.json({ error: "Invalid id_token audience", code: "zklogin_untrusted_audience" }, { status: 401 });
+    const mapped = mapZkLoginVerificationFailure(e);
+    if (mapped.code === ZKLOGIN_ERROR_CODES.untrustedAudience) {
+      return NextResponse.json({
+        error: ZKLOGIN_SIGN_IN_COPY.errors.untrustedAudience,
+        code: mapped.code,
+      }, { status: 401 });
     }
-    return NextResponse.json({ error: "Invalid id_token" }, { status: 401 });
+    if (mapped.code === ZKLOGIN_ERROR_CODES.notConfigured) {
+      return NextResponse.json({
+        error: ZKLOGIN_SIGN_IN_COPY.errors.signInUnavailable,
+        code: mapped.code,
+      }, { status: 503 });
+    }
+    if (mapped.code === ZKLOGIN_ERROR_CODES.oauthSubMismatch) {
+      return NextResponse.json({
+        error: ZKLOGIN_SIGN_IN_COPY.errors.invalidToken,
+        code: mapped.code,
+      }, { status: 401 });
+    }
+    return NextResponse.json({
+      error: ZKLOGIN_SIGN_IN_COPY.errors.invalidToken,
+      code: ZKLOGIN_ERROR_CODES.invalidToken,
+    }, { status: 401 });
   }
 
   const sub = verified.sub;
@@ -75,7 +105,7 @@ export async function POST(req: Request) {
   if (loginMode === "legacy_recovery" && audienceCohort !== "legacy") {
     return NextResponse.json({
       error: ZKLOGIN_SIGN_IN_COPY.errors.legacyClientRequired,
-      code: "zklogin_legacy_client_required",
+      code: ZKLOGIN_ERROR_CODES.legacyClientRequired,
     }, { status: 400 });
   }
 
@@ -111,7 +141,7 @@ export async function POST(req: Request) {
       const legacyAvailable = isBrowserLegacyRecoveryAvailable();
       return NextResponse.json({
         error: ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail,
-        code: "zklogin_oauth_audience_mismatch",
+        code: ZKLOGIN_ERROR_CODES.audienceMismatch,
         legacy_recovery_available: legacyAvailable,
       }, { status: 409 });
     }
@@ -136,7 +166,7 @@ export async function POST(req: Request) {
     logRecoveryAudit(loginMode, audienceCohort, "no_existing_account");
     return NextResponse.json({
       error: ZKLOGIN_SIGN_IN_COPY.errors.noExistingAccount,
-      code: "zklogin_no_existing_account",
+      code: ZKLOGIN_ERROR_CODES.noExistingAccount,
     }, { status: 404 });
   }
 
