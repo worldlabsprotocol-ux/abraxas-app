@@ -5,15 +5,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import { consentAndDecide } from "@/lib/verification/requestsService";
+import {
+  enforcePartnerFlowRateLimit,
+  recordPartnerFlowRequestOutcome,
+} from "@/lib/partner/partnerFlowRouteGuard";
+
+const ENDPOINT = "/api/v1/verification-requests/consent" as const;
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const started = Date.now();
   const session = await requireBrowserSession(req);
   if (!session.ok) {
+    recordPartnerFlowRequestOutcome({
+      request: req,
+      endpoint: ENDPOINT,
+      method: "POST",
+      started,
+      httpStatus: session.status,
+    });
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
+
+  const rateLimited = enforcePartnerFlowRateLimit({
+    request: req,
+    endpoint: ENDPOINT,
+    method: "POST",
+    started,
+    sessionSubject: session.session.suiAddress,
+  });
+  if (rateLimited) return rateLimited;
 
   const { id } = await params;
 
@@ -24,6 +47,15 @@ export async function POST(
     });
 
     const appOrigin = getPublicAppOriginFromRequest(req);
+
+    recordPartnerFlowRequestOutcome({
+      request: req,
+      endpoint: ENDPOINT,
+      method: "POST",
+      started,
+      sessionSubject: session.session.suiAddress,
+      httpStatus: 200,
+    });
 
     return NextResponse.json({
       decision: result.decision,
@@ -38,6 +70,14 @@ export async function POST(
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Consent failed";
+    recordPartnerFlowRequestOutcome({
+      request: req,
+      endpoint: ENDPOINT,
+      method: "POST",
+      started,
+      sessionSubject: session.session.suiAddress,
+      httpStatus: 400,
+    });
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

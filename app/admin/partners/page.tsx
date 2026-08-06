@@ -31,6 +31,9 @@ export default function AdminPartnersPage() {
               Partner Onboarding Console
             </h1>
           </div>
+          <Link href="/admin/partner-flow" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
+            Partner Flow health →
+          </Link>
           <Link href="/admin/identity" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
             ← Identity queue
           </Link>
