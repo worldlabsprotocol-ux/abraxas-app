@@ -3,7 +3,7 @@
 
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import {
-  isLegacyRecoveryConfiguredClient,
+  isBrowserLegacyRecoveryAvailable,
   resolveOAuthClientIdForMode,
   type ZkLoginLoginMode,
 } from "@/lib/sui/zklogin/audienceCohorts";
@@ -57,7 +57,7 @@ export function isZkLoginConfigured(): boolean {
 }
 
 export function isLegacyZkLoginRecoveryConfigured(): boolean {
-  return isLegacyRecoveryConfiguredClient();
+  return isBrowserLegacyRecoveryAvailable();
 }
 
 export function buildGoogleOAuthUrl(nonce: string, mode: ZkLoginLoginMode = "canonical"): string | null {

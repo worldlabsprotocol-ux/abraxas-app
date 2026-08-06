@@ -40,18 +40,20 @@ Legacy recovery **does not** create new accounts — unknown `oauth_sub` on the 
 NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID=<canonical-client-id>
 GOOGLE_ZKLOGIN_CLIENT_ID=<canonical-client-id>          # optional server override
 NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID=<legacy-client-id>
-GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS=<legacy-client-id>    # must include legacy aud for JWT verify
+GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS=<legacy-client-id>    # must include the same id as NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID
 ```
 
 ### Preview / local
 
-Set the same variables in the preview environment. Legacy recovery is enabled only when legacy client IDs are configured — omit them in environments without legacy users.
+Set the same variables in the preview environment. Legacy recovery is enabled **only** when `NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID` is set **and** that exact value appears in `GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS`. Server-only or public-only configuration keeps recovery disabled.
 
 Redirect URIs for **both** OAuth clients must include:
 
 `{origin}/auth/zklogin/callback`
 
 (same-origin per deployment host — see `lib/sui/zklogin/config.ts`).
+
+If the public legacy client id and server allowlist disagree, the **Existing account sign-in** button stays hidden and `legacy_recovery_available` is `false`.
 
 ## Rotation and deprecation
 

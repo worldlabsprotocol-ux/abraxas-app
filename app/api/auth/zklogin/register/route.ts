@@ -12,7 +12,7 @@ import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsServi
 import { verifyGoogleZkLoginIdToken } from "@/lib/auth/verifyZkLoginIdToken";
 import {
   classifyGoogleAudience,
-  isLegacyRecoveryConfigured,
+  isBrowserLegacyRecoveryAvailable,
   type ZkLoginLoginMode,
 } from "@/lib/sui/zklogin/audienceCohorts";
 import {
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
     const stored = normalizeSuiAddress(existing.sui_address);
     if (derived !== stored) {
       logRecoveryAudit(loginMode, audienceCohort, "audience_mismatch");
-      const legacyAvailable = isLegacyRecoveryConfigured();
+      const legacyAvailable = isBrowserLegacyRecoveryAvailable();
       return NextResponse.json({
         error:
           "We found your existing Abraxas account, but this sign-in configuration does not match how it was created. "

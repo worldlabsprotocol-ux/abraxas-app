@@ -133,6 +133,42 @@ describe("POST /api/auth/zklogin/register", () => {
     expect(jwtToAddress(newToken, USER_SALT)).not.toBe(address);
   });
 
+  it("returns legacy_recovery_available false when only server legacy allowlist is configured", async () => {
+    delete process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID;
+    process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS = LEGACY_AUD;
+
+    mockExistingIdentity();
+    const newToken = fakeGoogleIdToken({ sub: OAUTH_SUB, aud: NEW_AUD });
+
+    const res = await postRegister({
+      id_token: newToken,
+      oauth_sub: OAUTH_SUB,
+      login_mode: "canonical",
+    });
+
+    const json = (await res.json()) as { legacy_recovery_available?: boolean };
+    expect(res.status).toBe(409);
+    expect(json.legacy_recovery_available).toBe(false);
+  });
+
+  it("returns legacy_recovery_available false when public legacy client is not server-allowlisted", async () => {
+    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = LEGACY_AUD;
+    process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS = "";
+
+    mockExistingIdentity();
+    const newToken = fakeGoogleIdToken({ sub: OAUTH_SUB, aud: NEW_AUD });
+
+    const res = await postRegister({
+      id_token: newToken,
+      oauth_sub: OAUTH_SUB,
+      login_mode: "canonical",
+    });
+
+    const json = (await res.json()) as { legacy_recovery_available?: boolean };
+    expect(res.status).toBe(409);
+    expect(json.legacy_recovery_available).toBe(false);
+  });
+
   it("signs in legacy trusted identity with preserved address and salt", async () => {
     const { legacyToken, address } = mockExistingIdentity();
 
