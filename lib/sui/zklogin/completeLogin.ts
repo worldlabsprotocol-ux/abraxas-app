@@ -12,6 +12,7 @@ import {
 import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 import { clearLoginInFlight } from "./loginInFlight";
 import { logAuthEvent } from "./authDebug";
+import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
@@ -68,9 +69,7 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
     clearLoginInFlight();
     let err = regData.error ?? "Could not register zkLogin identity";
     if (regRes.status === 409 && regData.code === "zklogin_oauth_audience_mismatch") {
-      err =
-        "We found your existing Abraxas account. Continue with Existing account sign-in "
-        + "to use the configuration that created your account.";
+      err = ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatch;
     }
     if (regRes.status === 404 && regData.code === "zklogin_no_existing_account") {
       err = regData.error ?? err;
@@ -84,10 +83,7 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
     const derived = jwtToAddress(idToken, regData.user_salt);
     if (derived !== regData.sui_address) {
       clearLoginInFlight();
-      throw new Error(
-        "Address derivation mismatch — the Google OAuth client ID may have changed since this account was created. "
-        + "Restore the historical OAuth client or contact support.",
-      );
+      throw new Error(ZKLOGIN_SIGN_IN_COPY.errors.addressMismatch);
     }
   }
 

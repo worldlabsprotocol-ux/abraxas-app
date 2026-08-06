@@ -7,6 +7,7 @@ import { useSuiAuth, truncateSuiAddress } from "./SuiAuthProvider";
 import Link from "next/link";
 import { consumerCopy } from "@/lib/consumerCopy";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
+import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -65,7 +66,11 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
         </p>
       )}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-        <button type="button" onClick={() => void signIn()} disabled={disabled}
+        <button
+          type="button"
+          onClick={() => void signIn()}
+          disabled={disabled}
+          aria-label={ZKLOGIN_SIGN_IN_COPY.canonicalAriaLabel}
           style={{
             display: "inline-flex", alignItems: "center", gap: "0.5rem",
             padding: "0.6rem 1.1rem", borderRadius: 999, border: "none",
@@ -75,11 +80,15 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
             cursor: configured && !busy ? "pointer" : "not-allowed",
             opacity: busy ? 0.7 : 1,
           }}>
-          <span style={{ fontWeight: 800 }}>G</span>
-          {busy ? "Redirecting…" : "Continue with Google"}
+          <span aria-hidden="true" style={{ fontWeight: 800 }}>G</span>
+          {busy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.canonicalButton}
         </button>
         {legacyRecoveryConfigured && (
-          <button type="button" onClick={() => void signInExistingAccount()} disabled={legacyDisabled}
+          <button
+            type="button"
+            onClick={() => void signInExistingAccount()}
+            disabled={legacyDisabled}
+            aria-label={ZKLOGIN_SIGN_IN_COPY.legacyAriaLabel}
             style={{
               padding: "0.6rem 1.1rem", borderRadius: 999,
               border: `1px solid ${ACCENT}55`, background: "transparent",
@@ -88,7 +97,7 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
               cursor: !legacyDisabled ? "pointer" : "not-allowed",
               opacity: legacyBusy ? 0.7 : 1,
             }}>
-            {legacyBusy ? "Redirecting…" : "Existing account sign-in"}
+            {legacyBusy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.legacyButton}
           </button>
         )}
         {!configured && (
@@ -97,13 +106,20 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
           </Link>
         )}
       </div>
-      {legacyRecoveryConfigured && !compact && (
+      {!compact && (
         <p style={{
           fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
           lineHeight: 1.55, margin: "0.75rem 0 0", maxWidth: 520,
         }}>
-          Registered before our sign-in update? Use <strong style={{ color: "var(--text-secondary)" }}>Existing account sign-in</strong>.
-          {" "}We found your existing Abraxas account — continue with the account configuration that created it.
+          {ZKLOGIN_SIGN_IN_COPY.canonicalHelper}
+        </p>
+      )}
+      {legacyRecoveryConfigured && !compact && (
+        <p style={{
+          fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+          lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 520,
+        }}>
+          {ZKLOGIN_SIGN_IN_COPY.legacyHelper}
         </p>
       )}
       {(error || !configured) && (

@@ -125,10 +125,15 @@ describe("POST /api/auth/zklogin/register", () => {
       login_mode: "canonical",
     });
 
-    const json = (await res.json()) as { code?: string; legacy_recovery_available?: boolean };
+    const json = (await res.json()) as {
+      code?: string;
+      legacy_recovery_available?: boolean;
+      error?: string;
+    };
 
     expect(res.status).toBe(409);
     expect(json.code).toBe("zklogin_oauth_audience_mismatch");
+    expect(json.error).toMatch(/Use an existing Passport/i);
     expect(json.legacy_recovery_available).toBe(true);
     expect(jwtToAddress(newToken, USER_SALT)).not.toBe(address);
   });
