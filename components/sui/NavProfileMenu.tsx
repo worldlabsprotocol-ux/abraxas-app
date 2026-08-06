@@ -8,14 +8,20 @@ import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import { useAdminAccess } from "@/lib/hooks/useAdminAccess";
+import { useAdminIdentityPendingCount } from "@/lib/hooks/useAdminIdentityPendingCount";
+import {
+  ADMIN_IDENTITY_NAV,
+  adminIdentityPendingAriaLabel,
+  formatAdminIdentityPendingBadge,
+  shouldShowAdminIdentityNav,
+} from "@/lib/admin/adminIdentityNav";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
 const DEFAULT_AVATAR = "#10B981";
 
-const ADMIN_MENU_ITEMS = [
-  { label: "Identity reviews", href: "/admin/identity", description: "Abraxas Verify queue" },
+const OTHER_ADMIN_MENU_ITEMS = [
   { label: "Asset reviews", href: "/admin", description: "Verification center" },
   { label: "Partners & keys", href: "/admin/partners", description: "Relying party registry" },
 ] as const;
@@ -33,6 +39,10 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
   const { data: profile } = useUserProfile();
   const addr = auth?.suiAddress ?? null;
   const { isAdmin } = useAdminAccess({ enabled: Boolean(addr) });
+  const showAdminNav = shouldShowAdminIdentityNav(isAdmin);
+  const { pendingCount } = useAdminIdentityPendingCount(isAdmin);
+  const pendingBadge = formatAdminIdentityPendingBadge(pendingCount, isAdmin);
+  const pendingAria = adminIdentityPendingAriaLabel(pendingCount);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -57,9 +67,10 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
 
     return (
       <div ref={rootRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "0.45rem" }}>
-        {isAdmin && (
+        {showAdminNav && (
           <span
             title="Signed-in account has admin access"
+            aria-label="Admin access enabled"
             style={{
               fontFamily: FONT,
               fontSize: "0.62rem",
@@ -159,13 +170,54 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
                 </div>
               </Link>
             ))}
-            {isAdmin && (
+            {showAdminNav && (
               <>
                 <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
                 <div style={{ padding: "0.35rem 0.7rem 0.2rem", fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>
-                  Admin
+                  {ADMIN_IDENTITY_NAV.sectionLabel}
                 </div>
-                {ADMIN_MENU_ITEMS.map((item) => (
+                <Link
+                  href={ADMIN_IDENTITY_NAV.href}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  aria-label={pendingAria ? `${ADMIN_IDENTITY_NAV.label}, ${pendingAria}` : ADMIN_IDENTITY_NAV.label}
+                  style={{
+                    display: "block",
+                    padding: "0.65rem 0.7rem",
+                    borderRadius: 10,
+                    textDecoration: "none",
+                    color: "inherit",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                    <div style={{ fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700, color: ACCENT }}>
+                      {ADMIN_IDENTITY_NAV.label}
+                    </div>
+                    {pendingBadge && (
+                      <span
+                        aria-hidden={Boolean(pendingAria)}
+                        style={{
+                          fontFamily: FONT,
+                          fontSize: "0.62rem",
+                          fontWeight: 700,
+                          color: "#04130C",
+                          background: ACCENT,
+                          borderRadius: 999,
+                          padding: "0.15rem 0.45rem",
+                          minWidth: "1.25rem",
+                          textAlign: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {pendingBadge}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>
+                    {ADMIN_IDENTITY_NAV.description}
+                  </div>
+                </Link>
+                {OTHER_ADMIN_MENU_ITEMS.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
