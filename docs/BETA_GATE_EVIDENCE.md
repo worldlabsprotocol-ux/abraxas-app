@@ -2,6 +2,9 @@
 
 **Last updated:** 2026-08-06  
 **Phase:** Protocol Validation  
+**Reconciliation:** `docs/RELEASE_READINESS.md` — honest separation of implemented vs IAT vs human vs security vs second partner vs beta tag.  
+**Runnable aggregate:** `npm run release:readiness` (read-only; never mutates Supabase or production)
+
 **Prerequisite:** Reconciliation doc `docs/INTEGRATION_READINESS_RECONCILIATION.md` — IAT and beta tag **not complete**.
 
 ---
@@ -10,9 +13,9 @@
 
 | Check | Status | Evidence |
 |-------|--------|----------|
-| PR #101 merged to `main` | **Pending** | `main` at `f1cad49` does not include `residency_country` issuance |
-| Production SHA matches merge | **Unknown** | Operator must record Vercel deploy SHA |
-| Migrations 049–051 applied | **Unknown** | Operator confirms in Supabase |
+| `residency_country` issuance on `main` | **Live (code)** | `lib/credentials/claimSchema.ts` on current `main` |
+| Production SHA matches release target | **Human required** | Operator records Vercel deploy SHA in walkthrough + release decision |
+| Migrations 049–055 applied | **Human required** | Operator confirms in Supabase |
 
 ---
 
@@ -27,7 +30,8 @@
 | **P1-3 Observability / audit** | `partnerFlowAuditContract`, `partnerFlowTraceAudit`, `audit:partner-flow-trace` | Route-level audit + trace analyzer merged; production trace run pending | `npm test -- lib/partner/partnerFlowTraceAudit.test.ts` · `npm run audit:partner-flow-trace -- ft_vr_<id>` | **Live (code)** — operator trace audit pending | Migration 054 applied in prod |
 | **Integration preflight** | `scripts/integration-preflight.ts`, `docs/INTEGRATION_PREFLIGHT.md` | Static + optional live/Supabase checks | `npm run integration:preflight` | **Live** | — |
 | **External security review** | `docs/external-security-review/` readiness package | Independent written report; Critical/High disposition in `RELEASE_DECISION.md` | See `docs/external-security-review/REPRO_COMMANDS.md` | **Blocked** — readiness only, **no review performed** | Security / founder |
-| **v1.0.0-beta.0 baseline tag** | `docs/RELEASE_DECISION.md`, Known Good Baseline template below | All gates above passed; regression suite green; signed release decision | See release checklist below — **do not run tag command until gates pass** | **Pending** | IAT, compatibility sign-off, external review | Founder |
+| **Second relying-party pilot** | `docs/SECOND_PARTNER_PILOT_RUNBOOK.md`, `npm run partner:conformance` | Partner row + active policy + `allowed_return_urls`; live flow IDs; `signature_valid: true`; audit trace PASS | Operator runbook §1–7 | **Pending** | No signed second-partner evidence | Operator |
+| **v1.0.0-beta.0 baseline tag** | `docs/RELEASE_DECISION.md`, Known Good Baseline template below | All gates above passed; regression suite green; signed release decision | `npm run release:readiness` + release checklist below — **do not run tag command until gates pass** | **Pending** | IAT, compatibility sign-off, external review, second partner | Founder |
 
 ---
 
@@ -148,6 +152,7 @@ git push origin v1.0.0-beta.0
 | Command | Purpose |
 |---------|---------|
 | `npm run gate:preflight` | Local + optional production smoke |
+| `npm run release:readiness` | Read-only release gate aggregate (PASS/FAIL/PENDING/HUMAN_REQUIRED/BLOCKED) |
 | `npm run gate:verify-receipt-fixture` | Operator receipt sign/verify/tamper |
 | `npm test -- lib/protocol/compatibility.test.ts` | Compatibility contract tests |
 | `npm test -- lib/decisionReceipts/validityResolver.test.ts` | Validity negative tests |

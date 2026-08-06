@@ -1,6 +1,7 @@
 # External Security Review — Package (beta)
 
 **Status:** Readiness package prepared — **no independent security review has occurred** in this repository.  
+**Reconciliation:** `docs/RELEASE_READINESS.md` — external review remains **blocked** until `reports/external-security-review/independent-review.md` (or `SECURITY_REVIEW_ARTIFACT_PATH`) exists.  
 **Baseline:** `origin/main` after PR #114 (Partner Flow observability / audit evidence).  
 **Canonical handoff:** [`docs/external-security-review/`](./external-security-review/README.md)
 

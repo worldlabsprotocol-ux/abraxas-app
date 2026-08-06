@@ -2,7 +2,21 @@
 
 **Purpose:** One-page record of why this version exists and what remains intentionally deferred.  
 **Audience:** Future engineers, advisors, security reviewers, design partners  
-**Status:** _Draft — complete when tagging v1.0.0-beta.0_
+**Status:** _Draft — complete when tagging v1.0.0-beta.0_  
+**Reconciliation:** `docs/RELEASE_READINESS.md` · `npm run release:readiness`
+
+---
+
+## Release readiness (concise)
+
+| Bucket | Status |
+|--------|--------|
+| Implemented and deployed | Code on `main` (Partner Flow, P1-2/P1-3, compatibility manifest); operator deploy SHA confirmation pending |
+| IAT evidence recorded | Automated companion run 2026-08-06; Scenarios A–D **not signed** |
+| Human evidence still required | Full browser IAT, migrations, audit trace on real flow |
+| Independent security review | **Pending / blocked** — readiness package only |
+| Second relying-party pilot | **Pending** — `docs/SECOND_PARTNER_PILOT_RUNBOOK.md` |
+| Beta tag `v1.0.0-beta.0` | **Pending** — do not create |
 
 ---
 
@@ -20,7 +34,7 @@
 | Engine | Complete |
 | P0 hardening | Complete |
 | Threat Model v1 | Complete (`docs/TRUST_MODEL_V1.md`) |
-| Institutional Acceptance Test | _Pass / Fail_ (`docs/PRODUCTION_WALKTHROUGH_RESULTS.md`) |
+| Institutional Acceptance Test | **Not complete** — automated companion only (`docs/PRODUCTION_WALKTHROUGH_RESULTS.md`) |
 | Protocol Compatibility | _Live (code)_ (`docs/PROTOCOL_COMPATIBILITY.md`, `GET /api/protocol/compatibility`) |
 | Regression suite | _Pass / Fail_ (`npm test`) |
 | P1 hardening | P1-2 + P1-3 merged (code); P1-1 + P1-4 pending |
