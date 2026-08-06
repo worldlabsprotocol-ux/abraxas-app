@@ -37,6 +37,44 @@ export async function listPolicyVersions(policyId: string): Promise<PolicyVersio
   return (data ?? []) as PolicyVersionSummary[];
 }
 
+export async function createInitialPolicyDraft(input: {
+  policyId: string;
+  partnerId: string;
+  name: string;
+  rulesJson?: PartnerPolicyRules;
+}): Promise<PartnerPolicy> {
+  const sb = requireSupabaseAdmin();
+
+  const { data: existing } = await sb
+    .from("partner_policies")
+    .select("id")
+    .eq("id", input.policyId)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    throw new PolicyImmutabilityError(`Policy id already exists: ${input.policyId}`);
+  }
+
+  const row = {
+    id: input.policyId,
+    partner_id: input.partnerId,
+    version: 1,
+    name: input.name,
+    rules_json: input.rulesJson ?? {},
+    status: "draft",
+    effective_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await sb
+    .from("partner_policies")
+    .insert(row)
+    .select("*")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as PartnerPolicy;
+}
+
 export async function createPolicyDraftFromActive(input: {
   policyId: string;
   rulesJson?: PartnerPolicyRules;
