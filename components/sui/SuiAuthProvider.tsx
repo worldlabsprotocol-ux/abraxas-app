@@ -169,7 +169,7 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     isConfigured: isZkLoginConfigured(),
     isLegacyRecoveryConfigured:
       isLegacyZkLoginRecoveryConfigured()
-      && (serverLegacyRecoveryAvailable ?? true),
+      && serverLegacyRecoveryAvailable === true,
     isLoading,
     error,
     signInWithGoogle,
