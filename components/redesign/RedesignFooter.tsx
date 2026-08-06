@@ -33,7 +33,7 @@ export function RedesignFooter() {
             ABRAXAS
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0, maxWidth: 420 }}>
-            Prove it once. Use it everywhere. Verify assets, hold your proof, tokenize what you own.
+            Programmable trust infrastructure for regulated applications. Passport, Verify, and the Trust Engine.
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem 1.25rem", marginBottom: "1.25rem" }}>

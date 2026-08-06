@@ -1,10 +1,10 @@
 "use client";
 // FILE: components/home/HomeRoadmapBrief.tsx
-// Current focus on the homepage — three objectives, not a manifesto.
+// Current development milestones — public language, not internal engineering gates.
 
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { CURRENT_FOCUS } from "@/lib/positioningStrategy";
+import { HOME_CURRENT_MILESTONES } from "@/lib/home/homeNarrative";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -12,15 +12,15 @@ export function HomeRoadmapBrief() {
   return (
     <section aria-labelledby="home-roadmap-heading" id="roadmap" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
-      <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-        Current focus
-      </div>
-      <h2 id="home-roadmap-heading" style={{
-        fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
-        letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.75rem",
-      }}>
-        What we are shipping now
-      </h2>
+        <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
+          Current development
+        </div>
+        <h2 id="home-roadmap-heading" style={{
+          fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
+          letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.75rem",
+        }}>
+          Now in production validation
+        </h2>
       </div>
       <ol style={{
         margin: "0 auto 1rem",
@@ -32,9 +32,9 @@ export function HomeRoadmapBrief() {
         maxWidth: 720,
         width: "100%",
       }}>
-        {CURRENT_FOCUS.map((objective, index) => (
+        {HOME_CURRENT_MILESTONES.map((milestone, index) => (
           <li
-            key={objective}
+            key={milestone}
             style={{
               padding: "0.85rem 1rem",
               borderRadius: 12,
@@ -43,6 +43,7 @@ export function HomeRoadmapBrief() {
               display: "flex",
               gap: "0.75rem",
               alignItems: "baseline",
+              textAlign: "left",
             }}
           >
             <span style={{
@@ -61,12 +62,12 @@ export function HomeRoadmapBrief() {
               margin: 0,
               lineHeight: 1.55,
             }}>
-              {objective}
+              {milestone}
             </p>
           </li>
         ))}
       </ol>
-      <Btn href="/roadmap" variant="secondary" size="sm">View full roadmap</Btn>
+      <Btn href="/roadmap" variant="secondary" size="sm">View development log</Btn>
     </section>
   );
 }
