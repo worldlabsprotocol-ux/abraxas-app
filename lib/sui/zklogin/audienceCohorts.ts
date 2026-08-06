@@ -1,5 +1,5 @@
 // FILE: lib/sui/zklogin/audienceCohorts.ts
-// Trusted Google OAuth audience cohorts for zkLogin (canonical + configured legacy).
+// Server-side trusted Google OAuth audience cohorts for zkLogin JWT verification.
 
 export type ZkLoginLoginMode = "canonical" | "legacy_recovery";
 
@@ -20,32 +20,54 @@ function splitClientIds(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export function getCanonicalGoogleClientId(
-  env: Record<string, string | undefined> = process.env,
-): string | null {
-  return (
-    env[ZKLOGIN_ENV_KEYS.canonicalClientId]?.trim()
-    ?? env[ZKLOGIN_ENV_KEYS.canonicalClientIdPublic]?.trim()
-    ?? null
-  );
+function readServerCanonicalClientId(env: Record<string, string | undefined>): string | null {
+  if (env === process.env) {
+    const value = process.env.GOOGLE_ZKLOGIN_CLIENT_ID;
+    const trimmed = value?.trim();
+    return trimmed || null;
+  }
+  return env[ZKLOGIN_ENV_KEYS.canonicalClientId]?.trim() ?? null;
 }
 
-/** Server JWT allowlist — GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS only (no implicit public merge). */
+function readServerLegacyClientIds(env: Record<string, string | undefined>): string[] {
+  if (env === process.env) {
+    return splitClientIds(process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS);
+  }
+  return splitClientIds(env[ZKLOGIN_ENV_KEYS.legacyClientIds]);
+}
+
+function readPublicLegacyClientId(env: Record<string, string | undefined>): string | null {
+  if (env === process.env) {
+    const value = process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID;
+    const trimmed = value?.trim();
+    return trimmed || null;
+  }
+  return env[ZKLOGIN_ENV_KEYS.legacyClientIdPublic]?.trim() ?? null;
+}
+
+/** Server-only canonical client id (GOOGLE_ZKLOGIN_CLIENT_ID). */
+export function getServerCanonicalGoogleClientId(
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  return readServerCanonicalClientId(env);
+}
+
+/** Server JWT allowlist — GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS only. */
 export function parseServerLegacyGoogleClientIds(
   env: Record<string, string | undefined> = process.env,
 ): string[] {
-  return splitClientIds(env[ZKLOGIN_ENV_KEYS.legacyClientIds]);
+  return readServerLegacyClientIds(env);
 }
 
 export function getPublicLegacyGoogleClientId(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
-  return env[ZKLOGIN_ENV_KEYS.legacyClientIdPublic]?.trim() ?? null;
+  return readPublicLegacyClientId(env);
 }
 
 /**
- * Browser-launchable legacy recovery: public legacy client id is set AND explicitly
- * included in the server legacy JWT allowlist. Fail closed when they disagree.
+ * Browser-launchable legacy recovery on the server: public legacy client id is set
+ * AND explicitly included in GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS.
  */
 export function isBrowserLegacyRecoveryAvailable(
   env: Record<string, string | undefined> = process.env,
@@ -58,7 +80,7 @@ export function isBrowserLegacyRecoveryAvailable(
 export function getTrustedGoogleAudiences(
   env: Record<string, string | undefined> = process.env,
 ): string[] {
-  const canonical = getCanonicalGoogleClientId(env);
+  const canonical = getServerCanonicalGoogleClientId(env);
   const legacy = parseServerLegacyGoogleClientIds(env);
   return Array.from(new Set([canonical, ...legacy].filter((id): id is string => Boolean(id))));
 }
@@ -74,36 +96,17 @@ export function classifyGoogleAudience(
   aud: string,
   env: Record<string, string | undefined> = process.env,
 ): ZkLoginAudienceCohort {
-  const canonical = getCanonicalGoogleClientId(env);
+  const canonical = getServerCanonicalGoogleClientId(env);
   if (canonical && aud === canonical) return "canonical";
   if (parseServerLegacyGoogleClientIds(env).includes(aud)) return "legacy";
   return "untrusted";
 }
 
-/** @deprecated Use isBrowserLegacyRecoveryAvailable for UI and recovery hints. */
+/** @deprecated Use isBrowserLegacyRecoveryAvailable for server recovery hints. */
 export function isLegacyRecoveryConfigured(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
   return isBrowserLegacyRecoveryAvailable(env);
-}
-
-/** @deprecated Use isBrowserLegacyRecoveryAvailable. */
-export function isLegacyRecoveryConfiguredClient(
-  env: Record<string, string | undefined> = process.env,
-): boolean {
-  return isBrowserLegacyRecoveryAvailable(env);
-}
-
-export function resolveOAuthClientIdForMode(
-  mode: ZkLoginLoginMode,
-  env: Record<string, string | undefined> = process.env,
-): string | null {
-  if (mode === "legacy_recovery") {
-    if (!isBrowserLegacyRecoveryAvailable(env)) return null;
-    return getPublicLegacyGoogleClientId(env);
-  }
-  return env[ZKLOGIN_ENV_KEYS.canonicalClientIdPublic]?.trim()
-    ?? getCanonicalGoogleClientId(env);
 }
 
 export function normalizeJwtAudience(aud: string | string[] | undefined): string | null {

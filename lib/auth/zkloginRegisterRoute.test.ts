@@ -5,9 +5,9 @@ import { fakeGoogleIdToken } from "@/lib/sui/zklogin/testJwt";
 vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
-  process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "540000000000-newclient.apps.googleusercontent.com";
-  process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = "187000000000-legacyclient.apps.googleusercontent.com";
+  process.env.GOOGLE_ZKLOGIN_CLIENT_ID = "540000000000-newclient.apps.googleusercontent.com";
   process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS = "187000000000-legacyclient.apps.googleusercontent.com";
+  process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = "187000000000-legacyclient.apps.googleusercontent.com";
 });
 
 import { POST as registerPOST } from "@/app/api/auth/zklogin/register/route";
@@ -80,9 +80,9 @@ describe("POST /api/auth/zklogin/register", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
-    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = NEW_AUD;
-    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = LEGACY_AUD;
+    process.env.GOOGLE_ZKLOGIN_CLIENT_ID = NEW_AUD;
     process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS = LEGACY_AUD;
+    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = LEGACY_AUD;
 
     maybeSingle.mockReset();
     upsert.mockReset();
