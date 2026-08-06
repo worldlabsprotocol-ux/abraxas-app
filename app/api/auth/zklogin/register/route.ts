@@ -18,6 +18,7 @@ import {
 import {
   buildZkLoginRecoveryAuditMetadata,
 } from "@/lib/sui/zklogin/recoveryAudit";
+import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
 
   if (loginMode === "legacy_recovery" && audienceCohort !== "legacy") {
     return NextResponse.json({
-      error: "Existing account sign-in requires the legacy Google OAuth configuration.",
+      error: ZKLOGIN_SIGN_IN_COPY.errors.legacyClientRequired,
       code: "zklogin_legacy_client_required",
     }, { status: 400 });
   }
@@ -109,9 +110,7 @@ export async function POST(req: Request) {
       logRecoveryAudit(loginMode, audienceCohort, "audience_mismatch");
       const legacyAvailable = isBrowserLegacyRecoveryAvailable();
       return NextResponse.json({
-        error:
-          "We found your existing Abraxas account, but this sign-in configuration does not match how it was created. "
-          + "Use Existing account sign-in to continue with the configuration that created your account.",
+        error: ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail,
         code: "zklogin_oauth_audience_mismatch",
         legacy_recovery_available: legacyAvailable,
       }, { status: 409 });
@@ -136,9 +135,7 @@ export async function POST(req: Request) {
   if (loginMode === "legacy_recovery") {
     logRecoveryAudit(loginMode, audienceCohort, "no_existing_account");
     return NextResponse.json({
-      error:
-        "No existing Abraxas account was found for this Google identity. "
-        + "Use Continue with Google to create a new account.",
+      error: ZKLOGIN_SIGN_IN_COPY.errors.noExistingAccount,
       code: "zklogin_no_existing_account",
     }, { status: 404 });
   }

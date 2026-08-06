@@ -14,6 +14,7 @@ import {
 } from "./loginInFlight";
 import { logAuthEvent } from "./authDebug";
 import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
+import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 
 export async function startGoogleZkLogin(
   options?: { mode?: ZkLoginLoginMode },
@@ -24,7 +25,7 @@ export async function startGoogleZkLogin(
     if (!isLegacyZkLoginRecoveryConfigured()) {
       return {
         ok: false,
-        error: "Existing account sign-in is not configured. Contact support if you registered before the OAuth update.",
+        error: ZKLOGIN_SIGN_IN_COPY.errors.legacyNotConfigured,
       };
     }
   } else if (!isZkLoginConfigured()) {

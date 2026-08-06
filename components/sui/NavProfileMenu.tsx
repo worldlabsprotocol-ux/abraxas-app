@@ -358,9 +358,10 @@ export function NavSignInButton({ prominent = false }: { prominent?: boolean }) 
           type="button"
           onClick={() => void signIn()}
           disabled={disabled}
+          aria-label={NAV_SIGN_IN_COPY.canonicalAriaLabel}
           style={buttonStyle(true)}
         >
-          <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
+          <span aria-hidden="true" style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
           {busy ? "Redirecting…" : NAV_SIGN_IN_COPY.canonical}
         </button>
         {uiState === "canonical_and_legacy" && (
@@ -368,6 +369,7 @@ export function NavSignInButton({ prominent = false }: { prominent?: boolean }) 
             type="button"
             onClick={() => void signInExistingAccount()}
             disabled={legacyDisabled}
+            aria-label={NAV_SIGN_IN_COPY.legacyAriaLabel}
             style={buttonStyle(false)}
           >
             {legacyBusy ? "Redirecting…" : NAV_SIGN_IN_COPY.legacy}

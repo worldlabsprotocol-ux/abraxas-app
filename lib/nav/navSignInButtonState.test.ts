@@ -30,4 +30,11 @@ describe("resolveNavSignInUiState", () => {
     expect(NAV_SIGN_IN_COPY.unavailable).toBe("Sign-in unavailable");
     expect(NAV_SIGN_IN_COPY.unavailableHint).toMatch(/not configured/i);
   });
+
+  it("uses shared zkLogin button and aria labels", () => {
+    expect(NAV_SIGN_IN_COPY.canonical).toBe("Continue with Google");
+    expect(NAV_SIGN_IN_COPY.legacy).toBe("Use an existing Passport");
+    expect(NAV_SIGN_IN_COPY.canonicalAriaLabel).toMatch(/Passport/i);
+    expect(NAV_SIGN_IN_COPY.legacyAriaLabel).toMatch(/existing Passport/i);
+  });
 });

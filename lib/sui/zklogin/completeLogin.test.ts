@@ -89,7 +89,7 @@ describe("completeGoogleZkLogin", () => {
     } as Response);
 
     await expect(completeGoogleZkLogin(newToken)).rejects.toThrow(
-      /Address derivation mismatch.*OAuth client ID/,
+      /could not verify your Passport/i,
     );
   });
 });
