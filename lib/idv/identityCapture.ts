@@ -11,7 +11,7 @@ export function identityCaptureStepLabel(step: IdentityCaptureStep): string {
     case "name":
       return "Legal name";
     case "id_front":
-      return "Government ID";
+      return "Government ID (front)";
     case "selfie":
       return "Selfie";
     case "review":
