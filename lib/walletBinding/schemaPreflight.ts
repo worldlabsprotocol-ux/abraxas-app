@@ -14,7 +14,15 @@ export const WALLET_BINDING_REQUIRED_COLUMNS = [
   "expires_at",
 ] as const;
 
-export type WalletBindingSchemaStatus = "compatible" | "missing_chain" | "missing_id" | "table_missing" | "unknown";
+export type WalletBindingSchemaStatus =
+  | "compatible"
+  | "missing_chain"
+  | "missing_id"
+  | "mixed_schema"
+  | "table_missing"
+  | "unknown";
+
+export type WalletBindingColumnShape = "compatible" | "legacy" | "mixed" | "partial" | "unknown";
 
 export interface WalletBindingSchemaCheck {
   status: WalletBindingSchemaStatus;
@@ -25,8 +33,36 @@ export interface WalletBindingSchemaCheck {
   missingColumns: string[];
 }
 
+export function evaluateWalletBindingColumnShape(columns: readonly string[]): WalletBindingColumnShape {
+  const normalized = new Set(columns.map(c => c.toLowerCase()));
+  const hasId = normalized.has("id");
+  const hasChallengeId = normalized.has("challenge_id");
+
+  if (hasId && hasChallengeId) return "mixed";
+  if (hasId && WALLET_BINDING_REQUIRED_COLUMNS.every(col => normalized.has(col))) return "compatible";
+  if (hasChallengeId && !hasId) return "legacy";
+  if (hasId && !normalized.has("chain")) return "partial";
+  return "unknown";
+}
+
 export function evaluateWalletBindingSchema(columns: readonly string[]): WalletBindingSchemaCheck {
   const normalized = new Set(columns.map(c => c.toLowerCase()));
+  const shape = evaluateWalletBindingColumnShape(columns);
+
+  if (shape === "mixed") {
+    return {
+      status: "mixed_schema",
+      compatible: false,
+      userMessage: "Wallet binding is temporarily unavailable. Your verified identity still works without it.",
+      operatorMessage:
+        "wallet_binding_challenges has both id and challenge_id — stop and investigate before applying "
+        + WALLET_BINDING_SCHEMA_MIGRATION
+        + ".",
+      migration: WALLET_BINDING_SCHEMA_MIGRATION,
+      missingColumns: [],
+    };
+  }
+
   const missing = WALLET_BINDING_REQUIRED_COLUMNS.filter(col => !normalized.has(col));
 
   if (missing.length === 0) {

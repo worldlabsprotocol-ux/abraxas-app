@@ -27,18 +27,63 @@ order by ordinal_position;
 
 **Compatible** when columns include: `id`, `wallet_address`, `chain`, `message`, `domain`, `expires_at`.
 
-## Fix
+**Stop and investigate** if both `id` and `challenge_id` exist — migration 057 will fail closed on this mixed shape.
 
-Apply migration:
+## Operator steps — apply migration 057
 
-`supabase/migrations/057_wallet_binding_challenges_connect.sql`
+1. **Preflight (read-only)**
 
-This migration:
+   ```sql
+   select to_regclass('public.wallet_binding_challenges');
 
-1. Renames `challenge_id` → `id` when the 020 PK is still present.
-2. Adds `chain`, `domain`, `subject_id`, and `chain_id` if missing.
-3. Backfills `chain = 'sui'` and `domain` for legacy rows.
+   select column_name
+   from information_schema.columns
+   where table_schema = 'public' and table_name = 'wallet_binding_challenges'
+   order by ordinal_position;
+   ```
 
-After applying, refresh the Supabase schema cache (Dashboard → Settings → API → Reload schema, or wait for automatic refresh).
+   Confirm you have either:
+   - legacy shape: `challenge_id` (no `id`), or
+   - compatible shape: `id` + `chain` + `domain`
+
+   If **both** `id` and `challenge_id` exist, do not apply 057 until the schema is reconciled manually.
+
+2. **Apply migration**
+
+   Run the full contents of:
+
+   `supabase/migrations/057_wallet_binding_challenges_connect.sql`
+
+   in the Supabase SQL editor (or via your migration pipeline).
+
+   The migration will:
+   - Rename `challenge_id` → `id` on legacy tables only
+   - Add `chain`, `domain`, `subject_id`, `chain_id` if missing
+   - Backfill legacy rows (`chain = sui`, `domain = abraxasworld.xyz`)
+   - **Fail** if any row still has null `chain` or `domain` after backfill
+   - **Fail** if both `id` and `challenge_id` columns exist
+
+   Existing challenge rows are updated in place — nothing is deleted.
+
+3. **Post-migration verify**
+
+   ```sql
+   select id, chain, domain, subject_id
+   from public.wallet_binding_challenges
+   order by created_at desc
+   limit 3;
+   ```
+
+4. **Refresh schema cache**
+
+   Supabase Dashboard → Settings → API → Reload schema (or wait for automatic refresh).
+
+5. **Runtime verify**
+
+   ```bash
+   npm run wallet-binding:verify-schema
+   ```
 
 Wallet binding remains **optional** — verified identity credentials work without it.
+
+New runtime challenges use `resolveConnectDomain()` (canonical `abraxasworld.xyz` in production; trusted preview/local hosts when configured via env).

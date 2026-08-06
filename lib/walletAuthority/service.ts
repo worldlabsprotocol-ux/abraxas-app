@@ -13,6 +13,8 @@ import {
   verifyEvmBindingSignature,
 } from "@/lib/walletAuthority/evmSiwe";
 import type { WalletBindingRecord, WalletBindingStatus, WalletChain } from "@/lib/walletAuthority/types";
+import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
+import { SITE_URL } from "@/lib/siteUrl";
 
 function mapBinding(row: Record<string, unknown>): WalletBindingRecord {
   return {
@@ -32,11 +34,10 @@ function mapBinding(row: Record<string, unknown>): WalletBindingRecord {
 }
 
 export function resolveConnectDomain(): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://abraxas-app.vercel.app";
   try {
-    return new URL(appUrl).host;
+    return new URL(getSdkDefaultBaseUrl()).host;
   } catch {
-    return "abraxas-app.vercel.app";
+    return new URL(SITE_URL).host;
   }
 }
 

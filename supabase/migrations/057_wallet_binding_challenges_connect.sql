@@ -15,60 +15,89 @@
 --   order by created_at desc
 --   limit 3;
 
--- Rename legacy primary key column when 020 shape is still present.
+-- Canonical production host for legacy row backfill when domain was never stored.
+-- Runtime challenges use resolveConnectDomain() — not this constant directly.
 do $$
+declare
+  canonical_domain constant text := 'abraxasworld.xyz';
+  has_id boolean;
+  has_challenge_id boolean;
+  null_chain_count integer;
+  null_domain_count integer;
 begin
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'wallet_binding_challenges'
-      and column_name = 'challenge_id'
-  ) and not exists (
+  if to_regclass('public.wallet_binding_challenges') is null then
+    raise exception 'wallet_binding_challenges table is missing — apply migration 020 first';
+  end if;
+
+  select exists (
     select 1 from information_schema.columns
     where table_schema = 'public'
       and table_name = 'wallet_binding_challenges'
       and column_name = 'id'
-  ) then
+  ) into has_id;
+
+  select exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'wallet_binding_challenges'
+      and column_name = 'challenge_id'
+  ) into has_challenge_id;
+
+  if has_id and has_challenge_id then
+    raise exception
+      'wallet_binding_challenges has both id and challenge_id — stop and investigate before applying 057';
+  end if;
+
+  if has_challenge_id and not has_id then
     alter table public.wallet_binding_challenges
       rename column challenge_id to id;
+  elsif not has_id and not has_challenge_id then
+    raise exception
+      'wallet_binding_challenges has neither id nor challenge_id — unexpected schema shape';
   end if;
-end $$;
 
--- Add connect-era columns when table was created by 020 only.
-alter table public.wallet_binding_challenges
-  add column if not exists chain text,
-  add column if not exists chain_id int,
-  add column if not exists domain text,
-  add column if not exists subject_id text;
+  alter table public.wallet_binding_challenges
+    add column if not exists chain text,
+    add column if not exists chain_id int,
+    add column if not exists domain text,
+    add column if not exists subject_id text;
 
--- Backfill Sui defaults for legacy rows.
-update public.wallet_binding_challenges
-set
-  chain = coalesce(chain, 'sui'),
-  domain = coalesce(domain, 'abraxas-app.vercel.app'),
-  subject_id = coalesce(subject_id, wallet_address)
-where chain is null
-   or domain is null
-   or subject_id is null;
+  update public.wallet_binding_challenges
+  set
+    chain = coalesce(chain, 'sui'),
+    domain = coalesce(domain, canonical_domain),
+    subject_id = coalesce(subject_id, wallet_address)
+  where chain is null
+     or domain is null
+     or subject_id is null;
 
-alter table public.wallet_binding_challenges
-  alter column chain set default 'sui';
+  select count(*) into null_chain_count
+  from public.wallet_binding_challenges
+  where chain is null;
 
-alter table public.wallet_binding_challenges
-  alter column domain set default 'abraxas-app.vercel.app';
+  select count(*) into null_domain_count
+  from public.wallet_binding_challenges
+  where domain is null;
 
--- Enforce NOT NULL when backfill completed (safe no-op if already set).
-do $$
-begin
-  if not exists (
-    select 1 from public.wallet_binding_challenges
-    where chain is null or domain is null
-  ) then
-    alter table public.wallet_binding_challenges
-      alter column chain set not null,
-      alter column domain set not null;
+  if null_chain_count > 0 then
+    raise exception
+      'wallet_binding_challenges backfill incomplete: % row(s) still have null chain',
+      null_chain_count;
   end if;
-exception
-  when others then
-    raise notice 'wallet_binding_challenges: NOT NULL enforcement skipped — verify backfill';
+
+  if null_domain_count > 0 then
+    raise exception
+      'wallet_binding_challenges backfill incomplete: % row(s) still have null domain',
+      null_domain_count;
+  end if;
+
+  alter table public.wallet_binding_challenges
+    alter column chain set default 'sui';
+
+  alter table public.wallet_binding_challenges
+    alter column domain set default canonical_domain;
+
+  alter table public.wallet_binding_challenges
+    alter column chain set not null,
+    alter column domain set not null;
 end $$;
