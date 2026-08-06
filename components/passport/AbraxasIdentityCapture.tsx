@@ -12,6 +12,10 @@ import {
   identityCaptureStepLabel,
   type IdentityCaptureStep,
 } from "@/lib/idv/identityCapture";
+import {
+  identityCameraCaptureCopy,
+  identityCaptureStepIntro,
+} from "@/lib/idv/identityCaptureCopy";
 import { runCapturePreflight } from "@/lib/idv/biometric/clientPreflight";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 import { capturePolicyFormFields } from "@/lib/idv/capturePolicyContext";
@@ -295,28 +299,34 @@ export function AbraxasIdentityCapture({
         )}
 
         {step === "id_front" && (
-          <CameraCapture
-            label="Government ID — front"
-            hint="Use your rear camera. Place your ID inside the frame with good lighting. Passport, driver's license, or national ID."
-            facingMode="environment"
-            color={ACCENT}
-            capturedPreview={idCapture?.previewUrl ?? null}
-            onCapture={(blob, previewUrl) => void handleCapture("id_front", blob, previewUrl)}
-            onClear={() => { setIdCapture(null); setPreflightWarning(null); }}
-          />
+          <div>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.85rem" }}>
+              {identityCaptureStepIntro("id_front")}
+            </p>
+            <CameraCapture
+              {...identityCameraCaptureCopy("id_front")}
+              color={ACCENT}
+              capturedPreview={idCapture?.previewUrl ?? null}
+              onCapture={(blob, previewUrl) => void handleCapture("id_front", blob, previewUrl)}
+              onClear={() => { setIdCapture(null); setPreflightWarning(null); }}
+            />
+          </div>
         )}
 
         {step === "selfie" && (
-          <CameraCapture
-            label="Selfie"
-            hint="Use your front camera. Look straight at the camera. We'll compare this to your ID photo during review."
-            facingMode="user"
-            mirror
-            color={ACCENT}
-            capturedPreview={selfieCapture?.previewUrl ?? null}
-            onCapture={(blob, previewUrl) => void handleCapture("selfie", blob, previewUrl)}
-            onClear={() => { setSelfieCapture(null); setPreflightWarning(null); }}
-          />
+          <div>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.85rem" }}>
+              {identityCaptureStepIntro("selfie")}
+            </p>
+            <CameraCapture
+              {...identityCameraCaptureCopy("selfie")}
+              mirror
+              color={ACCENT}
+              capturedPreview={selfieCapture?.previewUrl ?? null}
+              onCapture={(blob, previewUrl) => void handleCapture("selfie", blob, previewUrl)}
+              onClear={() => { setSelfieCapture(null); setPreflightWarning(null); }}
+            />
+          </div>
         )}
 
         {step === "review" && (
