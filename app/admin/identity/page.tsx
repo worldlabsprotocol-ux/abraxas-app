@@ -5,7 +5,9 @@
 export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { IdentityReviewSubNav } from "@/components/admin/IdentityReviewSubNav";
+import { resolveIdentityReviewQueueTab } from "@/lib/admin/identityReviewQueueStates";
 import { buildBiometricSignalRows } from "@/lib/admin/biometricSignalRows";
 
 const MONO = "'JetBrains Mono',monospace";
@@ -168,6 +170,8 @@ function CapturePreview({
 }
 
 export default function AdminIdentityPage() {
+  const searchParams = useSearchParams();
+  const activeTab = resolveIdentityReviewQueueTab(searchParams.get("status"));
   const [pin, setPin] = useState("");
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -179,7 +183,7 @@ export default function AdminIdentityPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/identity/queue?status=pending", {
+      const res = await fetch(`/api/admin/identity/queue?status=${encodeURIComponent(activeTab.queryStatus)}`, {
         headers: { "x-admin-pin": pin },
       });
       const data = await res.json() as { items?: QueueItem[]; error?: string };
@@ -190,7 +194,7 @@ export default function AdminIdentityPage() {
     } finally {
       setLoading(false);
     }
-  }, [pin]);
+  }, [pin, activeTab.queryStatus]);
 
   useEffect(() => {
     void loadQueue();
@@ -228,19 +232,7 @@ export default function AdminIdentityPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#f0f0f0", padding: "2rem 1.25rem" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
-          <div>
-            <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "#10B981", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
-              Abraxas independent verify
-            </div>
-            <h1 style={{ fontFamily: FONT, fontSize: "1.35rem", fontWeight: 800, margin: 0 }}>
-              Identity review queue
-            </h1>
-          </div>
-          <Link href="/admin" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#10B981", textDecoration: "none" }}>
-            ← Admin home
-          </Link>
-        </div>
+        <IdentityReviewSubNav activeTabId={activeTab.id} />
 
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
           Engine decisions are preserved separately from reviewer decisions. Every action writes an immutable audit log.
@@ -282,7 +274,7 @@ export default function AdminIdentityPage() {
 
         {items.length === 0 && !loading ? (
           <div style={{ fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.4)" }}>
-            No pending identity uploads.
+            No {activeTab.label.toLowerCase()} identity submissions.
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -314,57 +306,65 @@ export default function AdminIdentityPage() {
                     <BiometricSignalsPanel item={item} />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-end", minWidth: 160 }}>
-                    <textarea
-                      value={notes[item.id] ?? ""}
-                      onChange={e => setNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
-                      placeholder="Reviewer notes"
-                      rows={2}
-                      style={{
-                        width: "100%", minWidth: 180, padding: "0.45rem 0.55rem", borderRadius: 6,
-                        border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.25)",
-                        color: "#f0f0f0", fontFamily: FONT, fontSize: "0.68rem", resize: "vertical",
-                      }}
-                    />
-                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                      <button
-                        onClick={() => void runReview(item, "approve")}
-                        disabled={actionId === item.id || !item.sui_address || !item.capture_complete}
-                        title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
-                        style={{
-                          padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
-                          background: item.sui_address && item.capture_complete ? "#10B981" : "rgba(255,255,255,0.1)",
-                          color: item.sui_address && item.capture_complete ? "#000" : "rgba(255,255,255,0.3)",
-                          fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
-                          cursor: item.sui_address && item.capture_complete ? "pointer" : "not-allowed",
-                        }}
-                      >
-                        Approve {item.biometric?.assurance_level === "L3" ? "L3" : "L2"}
-                      </button>
-                      <button
-                        onClick={() => void runReview(item, "request_resubmission")}
-                        disabled={actionId === item.id}
-                        style={{
-                          padding: "0.45rem 0.85rem", borderRadius: 6,
-                          border: "1px solid rgba(251,191,36,0.45)", background: "transparent",
-                          color: "#FCD34D", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Resubmit
-                      </button>
-                      <button
-                        onClick={() => void runReview(item, "reject")}
-                        disabled={actionId === item.id}
-                        style={{
-                          padding: "0.45rem 0.85rem", borderRadius: 6,
-                          border: "1px solid rgba(239,68,68,0.4)", background: "transparent",
-                          color: "#FCA5A5", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Reject
-                      </button>
-                    </div>
+                    {activeTab.id === "pending" ? (
+                      <>
+                        <textarea
+                          value={notes[item.id] ?? ""}
+                          onChange={e => setNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          placeholder="Reviewer notes"
+                          rows={2}
+                          style={{
+                            width: "100%", minWidth: 180, padding: "0.45rem 0.55rem", borderRadius: 6,
+                            border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.25)",
+                            color: "#f0f0f0", fontFamily: FONT, fontSize: "0.68rem", resize: "vertical",
+                          }}
+                        />
+                        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                          <button
+                            onClick={() => void runReview(item, "approve")}
+                            disabled={actionId === item.id || !item.sui_address || !item.capture_complete}
+                            title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
+                            style={{
+                              padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
+                              background: item.sui_address && item.capture_complete ? "#10B981" : "rgba(255,255,255,0.1)",
+                              color: item.sui_address && item.capture_complete ? "#000" : "rgba(255,255,255,0.3)",
+                              fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
+                              cursor: item.sui_address && item.capture_complete ? "pointer" : "not-allowed",
+                            }}
+                          >
+                            Approve {item.biometric?.assurance_level === "L3" ? "L3" : "L2"}
+                          </button>
+                          <button
+                            onClick={() => void runReview(item, "request_resubmission")}
+                            disabled={actionId === item.id}
+                            style={{
+                              padding: "0.45rem 0.85rem", borderRadius: 6,
+                              border: "1px solid rgba(251,191,36,0.45)", background: "transparent",
+                              color: "#FCD34D", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Resubmit
+                          </button>
+                          <button
+                            onClick={() => void runReview(item, "reject")}
+                            disabled={actionId === item.id}
+                            style={{
+                              padding: "0.45rem 0.85rem", borderRadius: 6,
+                              border: "1px solid rgba(239,68,68,0.4)", background: "transparent",
+                              color: "#FCA5A5", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", textAlign: "right" }}>
+                        Status: {item.status}
+                      </div>
+                    )}
                   </div>
                 </div>
 
