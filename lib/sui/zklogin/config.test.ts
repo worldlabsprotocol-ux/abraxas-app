@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildGoogleOAuthUrl,
   getZkLoginRedirectUri,
+  isLegacyZkLoginRecoveryConfigured,
+  isZkLoginConfigured,
   ZKLOGIN_CALLBACK_PATH,
 } from "@/lib/sui/zklogin/config";
 
@@ -11,6 +13,7 @@ const ENV_KEYS = [
   "VERCEL_URL",
   "NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI",
   "NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID",
+  "NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID",
 ] as const;
 
 describe("zkLogin OAuth redirect URI — same-origin", () => {
@@ -93,10 +96,9 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
     expect(url).not.toContain("abraxas-app.vercel.app");
   });
 
-  it("buildGoogleOAuthUrl uses legacy client id for existing account sign-in when aligned", () => {
+  it("buildGoogleOAuthUrl uses legacy client id from public env for existing account sign-in", () => {
     process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "canonical-client.apps.googleusercontent.com";
     process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = "legacy-client.apps.googleusercontent.com";
-    process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS = "legacy-client.apps.googleusercontent.com";
 
     vi.stubGlobal("window", {
       location: { origin: "https://abraxasworld.xyz" },
@@ -107,16 +109,25 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
     expect(new URL(url!).searchParams.get("client_id")).toBe("legacy-client.apps.googleusercontent.com");
   });
 
-  it("buildGoogleOAuthUrl does not launch legacy OAuth when public and server allowlist disagree", () => {
+  it("buildGoogleOAuthUrl returns null for legacy mode when public legacy client is unset", () => {
     process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "canonical-client.apps.googleusercontent.com";
-    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = "legacy-client.apps.googleusercontent.com";
-    process.env.GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS = "other-legacy.apps.googleusercontent.com";
+    delete process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID;
 
     vi.stubGlobal("window", {
       location: { origin: "https://abraxasworld.xyz" },
     });
 
     expect(buildGoogleOAuthUrl("nonce-legacy", "legacy_recovery")).toBeNull();
+  });
+
+  it("isZkLoginConfigured reflects embedded NEXT_PUBLIC canonical client id", () => {
+    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "embedded-client.apps.googleusercontent.com";
+    expect(isZkLoginConfigured()).toBe(true);
+  });
+
+  it("isLegacyZkLoginRecoveryConfigured reflects embedded NEXT_PUBLIC legacy client id", () => {
+    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = "legacy-embedded.apps.googleusercontent.com";
+    expect(isLegacyZkLoginRecoveryConfigured()).toBe(true);
   });
 
   it("server-side redirect uses NEXT_PUBLIC_APP_URL when set", () => {

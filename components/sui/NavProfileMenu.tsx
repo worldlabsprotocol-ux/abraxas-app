@@ -3,7 +3,7 @@
 // Signed-in profile menu. Passport, account, submit asset (replaces nav Passport tab).
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
@@ -16,6 +16,10 @@ import {
   shouldShowAdminIdentityNav,
 } from "@/lib/admin/adminIdentityNav";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import {
+  NAV_SIGN_IN_COPY,
+  resolveNavSignInUiState,
+} from "@/lib/nav/navSignInButtonState";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
@@ -275,61 +279,113 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
 }
 
 export function NavSignInButton({ prominent = false }: { prominent?: boolean }) {
-  const { signIn, busy, configured, disabled, error } = useGoogleSignIn();
+  const {
+    signIn,
+    signInExistingAccount,
+    busy,
+    legacyBusy,
+    configured,
+    legacyRecoveryConfigured,
+    disabled,
+    legacyDisabled,
+    error,
+  } = useGoogleSignIn();
 
-  if (configured) {
+  const uiState = resolveNavSignInUiState({ configured, legacyRecoveryConfigured });
+
+  if (uiState === "unavailable") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-        <button
-          type="button"
-          onClick={() => void signIn()}
-          disabled={disabled}
+      <div
+        role="status"
+        aria-live="polite"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 4,
+          maxWidth: prominent ? 220 : 200,
+        }}
+      >
+        <span
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.4rem",
             padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
             borderRadius: 999,
-            border: "none",
-            background: ACCENT,
-            color: "#000",
+            border: "1px solid var(--border)",
+            background: "var(--surface-inset)",
             fontFamily: FONT,
-            fontSize: prominent ? "0.84rem" : "0.8rem",
-            fontWeight: 700,
-            cursor: busy ? "wait" : "pointer",
-            opacity: busy ? 0.75 : 1,
+            fontSize: prominent ? "0.82rem" : "0.78rem",
+            fontWeight: 600,
+            color: "var(--text-muted)",
             whiteSpace: "nowrap",
           }}
         >
-          <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
-          {busy ? "Redirecting…" : "Sign in"}
-        </button>
-        {error && (
-          <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#EF4444", maxWidth: 200, textAlign: "right", lineHeight: 1.4 }}>
-            {error}
-          </span>
-        )}
+          {NAV_SIGN_IN_COPY.unavailable}
+        </span>
+        <span style={{
+          fontFamily: FONT,
+          fontSize: "0.62rem",
+          color: "var(--text-muted)",
+          textAlign: "right",
+          lineHeight: 1.4,
+        }}>
+          {NAV_SIGN_IN_COPY.unavailableHint}
+        </span>
       </div>
     );
   }
 
+  const buttonStyle = (primary: boolean): CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.4rem",
+    padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
+    borderRadius: 999,
+    border: primary ? "none" : `1px solid ${ACCENT}55`,
+    background: primary ? ACCENT : "transparent",
+    color: primary ? "#000" : "var(--text-secondary)",
+    fontFamily: FONT,
+    fontSize: prominent ? "0.84rem" : "0.8rem",
+    fontWeight: 700,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    opacity: (primary ? busy : legacyBusy) ? 0.75 : 1,
+  });
+
   return (
-    <Link
-      href="/passport"
-      style={{
-        padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
-        borderRadius: 999,
-        border: "1px solid var(--border)",
-        background: "var(--surface)",
-        fontFamily: FONT,
-        fontSize: prominent ? "0.84rem" : "0.8rem",
-        fontWeight: 700,
-        color: "var(--text-secondary)",
-        textDecoration: "none",
-        whiteSpace: "nowrap",
-      }}
-    >
-      Sign in
-    </Link>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.45rem" }}>
+        <button
+          type="button"
+          onClick={() => void signIn()}
+          disabled={disabled}
+          style={buttonStyle(true)}
+        >
+          <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
+          {busy ? "Redirecting…" : NAV_SIGN_IN_COPY.canonical}
+        </button>
+        {uiState === "canonical_and_legacy" && (
+          <button
+            type="button"
+            onClick={() => void signInExistingAccount()}
+            disabled={legacyDisabled}
+            style={buttonStyle(false)}
+          >
+            {legacyBusy ? "Redirecting…" : NAV_SIGN_IN_COPY.legacy}
+          </button>
+        )}
+      </div>
+      {error && (
+        <span style={{
+          fontFamily: FONT,
+          fontSize: "0.62rem",
+          color: "#EF4444",
+          maxWidth: 240,
+          textAlign: "right",
+          lineHeight: 1.4,
+        }}>
+          {error}
+        </span>
+      )}
+    </div>
   );
 }

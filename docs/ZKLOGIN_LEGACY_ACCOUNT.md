@@ -38,10 +38,12 @@ Legacy recovery **does not** create new accounts — unknown `oauth_sub` on the 
 
 ```bash
 NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID=<canonical-client-id>
-GOOGLE_ZKLOGIN_CLIENT_ID=<canonical-client-id>          # optional server override
+GOOGLE_ZKLOGIN_CLIENT_ID=<canonical-client-id>          # server JWT verification
 NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID=<legacy-client-id>
-GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS=<legacy-client-id>    # must include the same id as NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID
+GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS=<legacy-client-id>    # must match public legacy id
 ```
+
+**Client bundle note:** `NEXT_PUBLIC_*` values must be read via direct `process.env.NEXT_PUBLIC_…` property access in client code (`lib/sui/zklogin/clientEnv.ts`). Dynamic `process.env[key]` access is not inlined by Next.js and will appear undefined in the browser even when Vercel is configured correctly.
 
 ### Preview / local
 

@@ -2,11 +2,12 @@
 // OAuth + proving service configuration for Sui zkLogin.
 
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
+import type { ZkLoginLoginMode } from "@/lib/sui/zklogin/audienceCohorts";
 import {
-  isBrowserLegacyRecoveryAvailable,
-  resolveOAuthClientIdForMode,
-  type ZkLoginLoginMode,
-} from "@/lib/sui/zklogin/audienceCohorts";
+  isClientLegacyRecoveryConfigured,
+  isClientZkLoginConfigured,
+  resolveClientOAuthClientIdForMode,
+} from "@/lib/sui/zklogin/clientEnv";
 
 export type ZkLoginProvider = "google" | "apple";
 
@@ -41,7 +42,7 @@ export const DEFAULT_PROVING_SERVICE_URL =
   "https://prover-dev.mystenlabs.com/v1";
 
 export function getGoogleOAuthConfig(mode: ZkLoginLoginMode = "canonical"): ZkLoginOAuthConfig | null {
-  const clientId = resolveOAuthClientIdForMode(mode);
+  const clientId = resolveClientOAuthClientIdForMode(mode);
   if (!clientId) return null;
   return {
     clientId,
@@ -53,11 +54,11 @@ export function getGoogleOAuthConfig(mode: ZkLoginLoginMode = "canonical"): ZkLo
 }
 
 export function isZkLoginConfigured(): boolean {
-  return Boolean(getGoogleOAuthConfig("canonical"));
+  return isClientZkLoginConfigured();
 }
 
 export function isLegacyZkLoginRecoveryConfigured(): boolean {
-  return isBrowserLegacyRecoveryAvailable();
+  return isClientLegacyRecoveryConfigured();
 }
 
 export function buildGoogleOAuthUrl(nonce: string, mode: ZkLoginLoginMode = "canonical"): string | null {
