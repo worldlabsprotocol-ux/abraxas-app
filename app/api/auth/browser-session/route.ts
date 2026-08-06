@@ -10,6 +10,11 @@ import {
   issueBrowserSessionToken,
 } from "@/lib/auth/browserSession";
 import { verifyGoogleZkLoginIdToken } from "@/lib/auth/verifyZkLoginIdToken";
+import {
+  mapZkLoginVerificationFailure,
+  ZKLOGIN_ERROR_CODES,
+} from "@/lib/sui/zklogin/zkloginErrorCodes";
+import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
@@ -26,8 +31,12 @@ export async function POST(req: NextRequest) {
   let verified;
   try {
     verified = await verifyGoogleZkLoginIdToken(idToken, body.oauth_sub?.trim());
-  } catch {
-    return NextResponse.json({ error: "Invalid or expired id_token" }, { status: 401 });
+  } catch (e) {
+    const mapped = mapZkLoginVerificationFailure(e);
+    const message = mapped.code === ZKLOGIN_ERROR_CODES.untrustedAudience
+      ? ZKLOGIN_SIGN_IN_COPY.errors.untrustedAudience
+      : ZKLOGIN_SIGN_IN_COPY.errors.invalidToken;
+    return NextResponse.json({ error: message, code: mapped.code }, { status: 401 });
   }
 
   const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -70,7 +79,10 @@ export async function POST(req: NextRequest) {
 
   const token = await issueBrowserSessionToken(sui);
   if (!token) {
-    return NextResponse.json({ error: "Session signing unavailable" }, { status: 503 });
+    return NextResponse.json({
+      error: ZKLOGIN_SIGN_IN_COPY.errors.sessionMintFailed,
+      code: ZKLOGIN_ERROR_CODES.sessionMintFailed,
+    }, { status: 503 });
   }
 
   const res = NextResponse.json({ ok: true, sui_address: sui });

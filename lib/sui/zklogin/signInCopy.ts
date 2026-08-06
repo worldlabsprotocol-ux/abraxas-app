@@ -29,6 +29,14 @@ export const ZKLOGIN_SIGN_IN_COPY = {
       "Use an existing Passport is not available in this environment. Contact support if you had a Passport before our sign-in update.",
     legacyClientRequired:
       "Use an existing Passport to sign in with the Google account tied to your Passport.",
+    invalidToken:
+      "We could not verify your Google sign-in. Try again, or use an existing Passport if you had one before our sign-in update.",
+    untrustedAudience:
+      "This Google sign-in is not trusted for Abraxas. Use the sign-in option shown on the Passport page.",
+    signInUnavailable:
+      "Passport sign-in is temporarily unavailable. Try again later.",
+    sessionMintFailed:
+      "Your Passport was recognized, but we could not start your session. Try signing in again.",
     addressMismatch:
       "We could not verify your Passport with this sign-in. Try Use an existing Passport, or contact support.",
   },

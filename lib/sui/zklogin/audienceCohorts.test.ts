@@ -27,13 +27,22 @@ describe("audienceCohorts — server verification", () => {
     expect(trusted).toHaveLength(2);
   });
 
-  it("uses server-only GOOGLE_ZKLOGIN_CLIENT_ID for canonical audience", () => {
+  it("prefers server canonical client id over public when both are set", () => {
     expect(
       getServerCanonicalGoogleClientId({
         [ZKLOGIN_ENV_KEYS.canonicalClientId]: CANONICAL,
         [ZKLOGIN_ENV_KEYS.canonicalClientIdPublic]: "public-only.apps.googleusercontent.com",
       }),
     ).toBe(CANONICAL);
+  });
+
+  it("falls back to public canonical client id when server canonical is unset", () => {
+    expect(
+      getServerCanonicalGoogleClientId({
+        [ZKLOGIN_ENV_KEYS.canonicalClientId]: "",
+        [ZKLOGIN_ENV_KEYS.canonicalClientIdPublic]: "public-only.apps.googleusercontent.com",
+      }),
+    ).toBe("public-only.apps.googleusercontent.com");
   });
 
   it("classifies canonical vs legacy cohorts from server allowlist", () => {
@@ -60,14 +69,15 @@ describe("audienceCohorts — server verification", () => {
     expect(getTrustedGoogleAudiences(serverOnly)).toContain(LEGACY);
   });
 
-  it("disables server recovery hint when public legacy client is not server-allowlisted", () => {
+  it("enables server recovery when only public legacy client is configured", () => {
     const publicOnly = {
       [ZKLOGIN_ENV_KEYS.canonicalClientId]: CANONICAL,
       [ZKLOGIN_ENV_KEYS.legacyClientIdPublic]: LEGACY,
       [ZKLOGIN_ENV_KEYS.legacyClientIds]: "",
     };
-    expect(isBrowserLegacyRecoveryAvailable(publicOnly)).toBe(false);
-    expect(isTrustedGoogleAudience(LEGACY, publicOnly)).toBe(false);
+    expect(isBrowserLegacyRecoveryAvailable(publicOnly)).toBe(true);
+    expect(isTrustedGoogleAudience(LEGACY, publicOnly)).toBe(true);
+    expect(getTrustedGoogleAudiences(publicOnly)).toContain(LEGACY);
   });
 
   it("disables server recovery hint when public and server legacy client ids disagree", () => {

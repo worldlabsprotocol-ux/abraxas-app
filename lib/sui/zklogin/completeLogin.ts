@@ -13,6 +13,7 @@ import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 import { clearLoginInFlight } from "./loginInFlight";
 import { logAuthEvent } from "./authDebug";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
+import { ZKLOGIN_ERROR_CODES } from "./zkloginErrorCodes";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 
 export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
@@ -68,11 +69,20 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
   if (!regRes.ok || !regData.sui_address) {
     clearLoginInFlight();
     let err = regData.error ?? "Could not register zkLogin identity";
-    if (regRes.status === 409 && regData.code === "zklogin_oauth_audience_mismatch") {
+    if (regRes.status === 409 && regData.code === ZKLOGIN_ERROR_CODES.audienceMismatch) {
       err = ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatch;
     }
-    if (regRes.status === 404 && regData.code === "zklogin_no_existing_account") {
+    if (regRes.status === 404 && regData.code === ZKLOGIN_ERROR_CODES.noExistingAccount) {
       err = regData.error ?? err;
+    }
+    if (regData.code === ZKLOGIN_ERROR_CODES.legacyNotConfigured) {
+      err = regData.error ?? ZKLOGIN_SIGN_IN_COPY.errors.legacyNotConfigured;
+    }
+    if (regData.code === ZKLOGIN_ERROR_CODES.invalidToken) {
+      err = regData.error ?? ZKLOGIN_SIGN_IN_COPY.errors.invalidToken;
+    }
+    if (regData.code === ZKLOGIN_ERROR_CODES.untrustedAudience) {
+      err = regData.error ?? ZKLOGIN_SIGN_IN_COPY.errors.untrustedAudience;
     }
     logAuthEvent("zklogin_complete_error", { error: err, detail: regData.code });
     throw new Error(err);
@@ -122,7 +132,9 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
     logAuthEvent("browser_session_mint_failed", {
       suiAddress: regData.sui_address,
       error: browserSession.error,
+      detail: browserSession.code,
     });
+    throw new Error(browserSession.error ?? ZKLOGIN_SIGN_IN_COPY.errors.sessionMintFailed);
   }
 
   logAuthEvent("zklogin_complete", { suiAddress: session.suiAddress });

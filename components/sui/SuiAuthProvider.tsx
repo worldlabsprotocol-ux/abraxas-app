@@ -44,6 +44,7 @@ function readSessionFromStorage(): ZkLoginUserSession | null {
 
 export function SuiAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<ZkLoginUserSession | null>(readSessionFromStorage);
+  const [serverLegacyRecoveryAvailable, setServerLegacyRecoveryAvailable] = useState<boolean | null>(null);
   const [canSignTransactions, setCanSignTransactions] = useState(() =>
     canSignZkLoginTransactions(readSessionFromStorage()?.suiAddress),
   );
@@ -70,6 +71,21 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     reloadSession();
   }, [reloadSession]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/auth/zklogin/config", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json() as { legacy_recovery_available?: boolean };
+        if (typeof data.legacy_recovery_available === "boolean") {
+          setServerLegacyRecoveryAvailable(data.legacy_recovery_available);
+        }
+      } catch {
+        // Best-effort — client env gating still applies.
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const onSessionChange = () => reloadSession();
@@ -151,14 +167,16 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: Boolean(session?.suiAddress),
     canSignTransactions,
     isConfigured: isZkLoginConfigured(),
-    isLegacyRecoveryConfigured: isLegacyZkLoginRecoveryConfigured(),
+    isLegacyRecoveryConfigured:
+      isLegacyZkLoginRecoveryConfigured()
+      && (serverLegacyRecoveryAvailable ?? true),
     isLoading,
     error,
     signInWithGoogle,
     signInWithExistingAccount,
     signOut,
     refreshSession: reloadSession,
-  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signInWithExistingAccount, signOut, reloadSession]);
+  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signInWithExistingAccount, signOut, reloadSession, serverLegacyRecoveryAvailable]);
 
   return (
     <SuiAuthContext.Provider value={value}>
