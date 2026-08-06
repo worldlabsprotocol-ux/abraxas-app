@@ -18,6 +18,8 @@ type HealthReport = {
   rate_limit: {
     enabled: boolean;
     backend: string;
+    hmacSecretConfigured: boolean;
+    trustedIpStrategy: string;
     distributedStoreRequired: boolean;
     distributedStoreConfigured: boolean;
     note: string;
@@ -102,6 +104,15 @@ export default function AdminPartnerFlowHealthPage() {
             <div style={{ padding: "1rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", marginBottom: "1.25rem", fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
               <strong style={{ color: "#f0f0f0" }}>Rate limit backend:</strong>{" "}
               {report.rate_limit.enabled ? report.rate_limit.backend : "disabled"}
+              {" · "}
+              HMAC secret: {report.rate_limit.hmacSecretConfigured ? "configured" : "missing"}
+              {" · "}
+              IP strategy: {report.rate_limit.trustedIpStrategy}
+              {!report.rate_limit.hmacSecretConfigured && (
+                <span style={{ display: "block", marginTop: 6, color: "#f87171" }}>
+                  Public receipt rate limiting fails closed until PARTNER_FLOW_RATE_LIMIT_SALT or ABRAXAS_BROWSER_SESSION_SECRET is set.
+                </span>
+              )}
               {report.rate_limit.distributedStoreRequired && !report.rate_limit.distributedStoreConfigured && (
                 <span style={{ display: "block", marginTop: 6, color: "#fbbf24" }}>{report.rate_limit.note}</span>
               )}

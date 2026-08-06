@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import {
   checkPartnerFlowRateLimit,
+  partnerFlowRateLimitIdentityUnavailableResponse,
   partnerFlowRateLimitResponse,
   type PartnerFlowRateLimitEndpoint,
 } from "@/lib/partner/partnerFlowRateLimit";
@@ -27,6 +28,19 @@ export function enforcePartnerFlowRateLimit(
   const result = checkPartnerFlowRateLimit(ctx.request, ctx.endpoint, {
     sessionSubject: ctx.sessionSubject,
   });
+
+  if (result.backend === "identity_unavailable") {
+    const latencyMs = Date.now() - ctx.started;
+    recordPartnerFlowTelemetry({
+      endpoint: ctx.endpoint,
+      method: ctx.method,
+      httpStatus: 503,
+      latencyMs,
+      partnerId: ctx.partnerId,
+      policyId: ctx.policyId,
+    });
+    return partnerFlowRateLimitIdentityUnavailableResponse();
+  }
 
   if (!result.allowed) {
     const latencyMs = Date.now() - ctx.started;
