@@ -9,6 +9,10 @@ import {
   resetPartnerFlowRateLimitStoreForTests,
 } from "@/lib/partner/partnerFlowRateLimit";
 import {
+  checkPartnerFlowUpstashRateLimit,
+  resetPartnerFlowUpstashStoreForTests,
+} from "@/lib/partner/partnerFlowUpstashStore";
+import {
   getPartnerFlowTelemetrySnapshot,
   partnerFlowTelemetryHasNoPii,
   recordPartnerFlowTelemetry,
@@ -64,6 +68,15 @@ vi.mock("@/lib/decisionReceipts/views", () => ({
   assertNoPiiInPublicView: vi.fn(),
 }));
 
+vi.mock("@/lib/partner/partnerFlowUpstashStore", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/partner/partnerFlowUpstashStore")>();
+  return {
+    ...actual,
+    checkPartnerFlowUpstashRateLimit: vi.fn(actual.checkPartnerFlowUpstashRateLimit),
+    probePartnerFlowUpstashHealth: vi.fn(actual.probePartnerFlowUpstashHealth),
+  };
+});
+
 function postJson(body: Record<string, unknown>, headers: Record<string, string> = {}) {
   return new NextRequest("http://localhost/api/v1/partner-flow/evaluate", {
     method: "POST",
@@ -91,7 +104,11 @@ describe("partner-flow rate limit security regressions", () => {
     delete process.env.ABRAXAS_BROWSER_SESSION_SECRET;
     delete process.env.ABRAXAS_SIGNING_KEY;
     delete process.env.VERCEL;
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
     resetPartnerFlowRateLimitStoreForTests();
+    resetPartnerFlowUpstashStoreForTests();
+    vi.mocked(checkPartnerFlowUpstashRateLimit).mockReset();
     resetPartnerFlowTelemetryForTests();
 
     evaluatePartnerFlow.mockResolvedValue({
@@ -109,6 +126,7 @@ describe("partner-flow rate limit security regressions", () => {
   afterEach(() => {
     process.env = { ...envBackup };
     resetPartnerFlowRateLimitStoreForTests();
+    resetPartnerFlowUpstashStoreForTests();
     resetPartnerFlowTelemetryForTests();
   });
 
@@ -162,7 +180,7 @@ describe("partner-flow rate limit security regressions", () => {
     expect(getPublicReceipt).not.toHaveBeenCalled();
   });
 
-  it("ignores attacker-controlled x-forwarded-for on Vercel and shares one bucket per real IP", () => {
+  it("ignores attacker-controlled x-forwarded-for on Vercel and shares one bucket per real IP", async () => {
     process.env.VERCEL = "1";
     process.env.PARTNER_FLOW_RATE_LIMIT_PUBLIC_RECEIPT = "5";
     resetPartnerFlowRateLimitStoreForTests();
@@ -180,8 +198,8 @@ describe("partner-flow rate limit security regressions", () => {
       },
     });
 
-    const first = checkPartnerFlowRateLimit(req, "/api/receipts/public");
-    const second = checkPartnerFlowRateLimit(spoofed, "/api/receipts/public");
+    const first = await checkPartnerFlowRateLimit(req, "/api/receipts/public");
+    const second = await checkPartnerFlowRateLimit(spoofed, "/api/receipts/public");
 
     expect(first.backend).toBe("memory");
     expect(first.attemptsInWindow).toBe(1);
@@ -204,14 +222,14 @@ describe("partner-flow rate limit security regressions", () => {
       secret: STRONG_TEST_SECRET,
     });
 
-    const blocked = enforcePartnerFlowRateLimit({
+    const blocked = await enforcePartnerFlowRateLimit({
       request: req,
       endpoint: "/api/receipts/public",
       method: "GET",
       started: Date.now(),
     });
     await publicReceiptGET(req, { params: Promise.resolve({ receiptId: "dr_test" }) });
-    const blockedRes = blocked ?? enforcePartnerFlowRateLimit({
+    const blockedRes = blocked ?? await enforcePartnerFlowRateLimit({
       request: req,
       endpoint: "/api/receipts/public",
       method: "GET",
@@ -240,6 +258,44 @@ describe("partner-flow rate limit security regressions", () => {
     expect(healthText).not.toContain(rawIp);
     expect(healthText).not.toContain(bucketKey);
     expect(healthText).not.toContain(STRONG_TEST_SECRET);
+  });
+
+  it("evaluate returns 503 when Upstash configuration is URL-only", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const res = await evaluatePOST(postJson({
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+    }));
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.code).toBe("rate_limit_store_config_incomplete");
+    expect(evaluatePartnerFlow).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain("https://example.upstash.io");
+  });
+
+  it("production public receipt fails closed when Upstash is configured but unavailable", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+    process.env.VERCEL = "1";
+
+    vi.mocked(checkPartnerFlowUpstashRateLimit).mockRejectedValue(new Error("redis down"));
+    resetPartnerFlowRateLimitStoreForTests();
+
+    const req = new NextRequest("http://localhost/api/receipts/dr_test/public", {
+      headers: { "x-real-ip": "203.0.113.99" },
+    });
+    const params = Promise.resolve({ receiptId: "dr_test" });
+
+    const res = await publicReceiptGET(req, { params });
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.code).toBe("rate_limit_store_unavailable");
+    expect(getPublicReceipt).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain("test-token");
   });
 
   it("normal evaluate flow still succeeds under generous limits", async () => {

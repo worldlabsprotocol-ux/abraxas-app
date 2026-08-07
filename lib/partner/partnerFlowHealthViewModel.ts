@@ -50,6 +50,10 @@ export interface TechnicalDetailsView {
   hmacSecretConfigured: boolean;
   trustedIpStrategy: string;
   distributedStoreConfigured: boolean;
+  distributedStoreConfigIncomplete: boolean;
+  distributedStoreActive: boolean;
+  distributedStoreReachable: boolean | null;
+  distributedStoreErrorCode: string | null;
   dataSources: string;
   operatorNote: string;
   envVarNames: string[];
@@ -136,17 +140,52 @@ export function buildProtectionStatus(rateLimit: RateLimitInfo): ProtectionStatu
     };
   }
 
-  const needsNetworkWide = rateLimit.distributedStoreRequired && !rateLimit.distributedStoreConfigured;
-  const upstashVarsSetButNotWired = rateLimit.distributedStoreConfigured;
+  if (rateLimit.distributedStoreConfigIncomplete) {
+    return {
+      headline: "Network-wide protection configuration incomplete",
+      subheadline: "Only one Upstash Redis variable is set. Partner Flow rate-limited routes fail closed until both are configured or both are removed.",
+      showYellowBanner: true,
+      yellowBannerTitle: "Incomplete Upstash configuration",
+      yellowBannerBody:
+        "Set both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or remove both to use basic per-instance protection. Limits are not silently downgraded to memory.",
+      isCritical: true,
+      criticalMessage:
+        "Add the missing Upstash variable or remove both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+    };
+  }
+
+  if (rateLimit.distributedStoreActive) {
+    return {
+      headline: "Network-wide protection active",
+      subheadline: "Limits are shared across all Vercel instances via Upstash Redis.",
+      showYellowBanner: false,
+      yellowBannerTitle,
+      yellowBannerBody,
+      isCritical: false,
+      criticalMessage: null,
+    };
+  }
+
+  if (rateLimit.distributedStoreConfigured && rateLimit.distributedStoreReachable === false) {
+    return {
+      headline: "Network-wide protection unavailable",
+      subheadline: "Upstash Redis is configured but unreachable. Public receipt requests fail closed until connectivity is restored.",
+      showYellowBanner: true,
+      yellowBannerTitle: "Distributed rate limit store unreachable",
+      yellowBannerBody:
+        `Redis health check failed (${rateLimit.distributedStoreErrorCode ?? "unknown"}). `
+        + "Limits are not silently downgraded to per-instance memory while Upstash is configured.",
+      isCritical: true,
+      criticalMessage: "Restore Upstash connectivity or remove UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to fall back to basic per-instance protection.",
+    };
+  }
 
   return {
-    headline: "Protection active",
-    subheadline: "Basic protection — limits apply on each server instance separately.",
-    showYellowBanner: needsNetworkWide || upstashVarsSetButNotWired,
+    headline: "Basic per-instance protection active",
+    subheadline: "Limits apply on each server instance separately. Configure Upstash Redis for network-wide protection.",
+    showYellowBanner: true,
     yellowBannerTitle,
-    yellowBannerBody: upstashVarsSetButNotWired
-      ? "Redis credentials are present, but shared limits are not wired yet. Limits still apply per server instance only — this is expected, not an outage."
-      : yellowBannerBody,
+    yellowBannerBody,
     isCritical: false,
     criticalMessage: null,
   };
@@ -154,14 +193,19 @@ export function buildProtectionStatus(rateLimit: RateLimitInfo): ProtectionStatu
 
 export function buildNextActionView(rateLimit: RateLimitInfo): NextActionView {
   const protection = buildProtectionStatus(rateLimit);
-  const show = protection.showYellowBanner && rateLimit.enabled && rateLimit.hmacSecretConfigured;
+  const show = protection.showYellowBanner
+    && rateLimit.enabled
+    && rateLimit.hmacSecretConfigured
+    && !rateLimit.distributedStoreActive
+    && !rateLimit.distributedStoreConfigIncomplete
+    && !(rateLimit.distributedStoreConfigured && rateLimit.distributedStoreReachable === false);
 
   return {
     show,
     title: "Enable network-wide protection",
     body:
       "To share rate limits across every Vercel server, connect a Redis store. "
-      + "Until then, protection stays active on each server individually — partners are not unprotected, but limits are not coordinated globally.",
+      + "Until then, basic per-instance protection stays active — partners are not unprotected, but limits are not coordinated globally.",
     docUrl: PARTNER_FLOW_RATE_LIMITS_SETUP_URL,
     docLinkLabel: "Open setup guide",
   };
@@ -196,6 +240,10 @@ export function buildTechnicalDetails(report: PartnerFlowHealthReport): Technica
     hmacSecretConfigured: report.rate_limit.hmacSecretConfigured,
     trustedIpStrategy: report.rate_limit.trustedIpStrategy,
     distributedStoreConfigured: report.rate_limit.distributedStoreConfigured,
+    distributedStoreConfigIncomplete: report.rate_limit.distributedStoreConfigIncomplete,
+    distributedStoreActive: report.rate_limit.distributedStoreActive,
+    distributedStoreReachable: report.rate_limit.distributedStoreReachable,
+    distributedStoreErrorCode: report.rate_limit.distributedStoreErrorCode,
     dataSources: sources.length > 0 ? sources.join(", ") : "none",
     operatorNote: report.rate_limit.note,
     envVarNames: [

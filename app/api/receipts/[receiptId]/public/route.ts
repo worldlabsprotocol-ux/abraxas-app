@@ -17,7 +17,7 @@ export async function GET(
 ) {
   const started = Date.now();
 
-  const rateLimited = enforcePartnerFlowRateLimit({
+  const rateLimited = await enforcePartnerFlowRateLimit({
     request: req,
     endpoint: ENDPOINT,
     method: "GET",

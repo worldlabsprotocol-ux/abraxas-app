@@ -274,6 +274,19 @@ export function PartnerFlowHealthPanel({ report }: { report: PartnerFlowHealthRe
               <br />
               <strong style={{ color: "#f0f0f0" }}>Redis credentials present:</strong> {technical.distributedStoreConfigured ? "yes" : "no"}
               <br />
+              <strong style={{ color: "#f0f0f0" }}>Redis configuration incomplete:</strong> {technical.distributedStoreConfigIncomplete ? "yes" : "no"}
+              <br />
+              <strong style={{ color: "#f0f0f0" }}>Network-wide protection active:</strong> {technical.distributedStoreActive ? "yes" : "no"}
+              <br />
+              {technical.distributedStoreConfigured && (
+                <>
+                  <strong style={{ color: "#f0f0f0" }}>Redis reachable:</strong>{" "}
+                  {technical.distributedStoreReachable === null
+                    ? "unknown"
+                    : technical.distributedStoreReachable ? "yes" : `no (${technical.distributedStoreErrorCode ?? "unknown"})`}
+                  <br />
+                </>
+              )}
               <strong style={{ color: "#f0f0f0" }}>Data sources:</strong> {technical.dataSources}
             </p>
             <p style={{ margin: "0 0 0.75rem" }}>{technical.operatorNote}</p>

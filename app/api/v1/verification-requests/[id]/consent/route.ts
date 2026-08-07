@@ -29,7 +29,7 @@ export async function POST(
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  const rateLimited = enforcePartnerFlowRateLimit({
+  const rateLimited = await enforcePartnerFlowRateLimit({
     request: req,
     endpoint: ENDPOINT,
     method: "POST",
