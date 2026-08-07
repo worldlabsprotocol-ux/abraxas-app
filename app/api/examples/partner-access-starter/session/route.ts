@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
   return response;
 }
 
-export async function GET(_req?: NextRequest) {
+export async function GET(_req: NextRequest) {
   const runtime = assessStarterRuntime();
   if (!runtime.enabled) {
     return starterDisabledApiResponse();
