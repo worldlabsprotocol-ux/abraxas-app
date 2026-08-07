@@ -134,7 +134,7 @@ describe("POST /api/auth/zklogin/register", () => {
 
     expect(res.status).toBe(409);
     expect(json.code).toBe("zklogin_oauth_audience_mismatch");
-    expect(json.error).toMatch(/Use an existing Passport/i);
+    expect(json.error).toMatch(/older sign-in setup/i);
     expect(json.legacy_recovery_available).toBe(true);
     expect(json.suggested_login_mode).toBe("legacy_recovery");
     expect(jwtToAddress(newToken, USER_SALT)).not.toBe(address);

@@ -31,6 +31,8 @@ import {
 } from "@/lib/passport/identityUiState";
 import { shouldShowVerifiedHero } from "@/lib/passport/verifiedHero";
 import { PassportVerifiedHero } from "@/components/passport/PassportVerifiedHero";
+import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
+import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -98,6 +100,9 @@ export function PassportDashboard({
   returnPath,
   capturePolicy,
 }: Props) {
+  const auth = useSuiAuthOptional();
+  const signInRecovery = auth?.signInRecovery ?? null;
+  const dismissSignInRecovery = auth?.dismissSignInRecovery;
   const [identityExpanded, setIdentityExpanded] = useState(false);
   const [bindError, setBindError] = useState<string | null>(null);
   const [bindLoading, setBindLoading] = useState(false);
@@ -202,6 +207,13 @@ export function PassportDashboard({
             Loading your Passport session…
           </p>
         </section>
+      )}
+
+      {!authLoading && !walletDone && signInRecovery && (
+        <PassportSignInRecoveryPanel
+          recovery={signInRecovery}
+          onDismiss={() => dismissSignInRecovery?.()}
+        />
       )}
 
       {!authLoading && !walletDone && (

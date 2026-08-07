@@ -5,38 +5,42 @@ export const ZKLOGIN_SIGN_IN_COPY = {
   openButton: "Sign in",
   openButtonAriaLabel: "Sign in to your Abraxas Passport",
   chooserTitle: "Access your Passport",
-  legacySectionHeading: "Already have a Passport?",
+  legacySectionHeading: "Older sign-in setup",
   closeButton: "Close",
 
   canonicalButton: "Continue with Google",
-  canonicalHelper: "New to Abraxas? This creates your Passport.",
-  canonicalAriaLabel: "Continue with Google to create your Abraxas Passport",
+  canonicalHelper: "Recommended for most Passports.",
+  canonicalAriaLabel: "Continue with Google to create or open your Abraxas Passport",
 
-  legacyButton: "Use an existing Passport",
-  legacyHelper: "Had an Abraxas Passport before our sign-in update? Continue here.",
-  legacyAriaLabel: "Use an existing Passport from before our sign-in update",
+  legacyButton: "Recover a Passport created with an older sign-in setup",
+  legacyHelper:
+    "Use this only when Continue with Google does not open your Passport and you are directed here.",
+  legacyAriaLabel: "Recover a Passport created with an older sign-in setup",
+
+  recoveryDismissButton: "Dismiss",
+  recoveryDismissAriaLabel: "Dismiss sign-in guidance",
 
   redirecting: "Redirecting…",
 
   errors: {
     audienceMismatch:
-      "We found your existing Abraxas Passport. Use an existing Passport to continue.",
+      "We found your existing Abraxas Passport. Follow the recommended sign-in option below.",
     audienceMismatchDetail:
-      "We found your existing Abraxas Passport, but Continue with Google will not open it. Use an existing Passport instead.",
+      "Your Passport was created with an older sign-in setup. Use legacy recovery below only if you are directed here.",
     audienceMismatchUseCanonical:
-      "Your Abraxas Passport opens with Continue with Google. Use that option here instead of Use an existing Passport.",
+      "Your Abraxas Passport opens with Continue with Google. Use that option here instead of legacy recovery.",
     wrongPathForLegacyRecovery:
-      "This sign-in did not use Use an existing Passport. Return to Passport and choose that option to continue.",
+      "This sign-in path does not match your Passport. Use the recommended option below.",
     wrongPathForCanonical:
-      "This sign-in used Use an existing Passport, but your Passport opens with Continue with Google. Use that option instead.",
+      "Your Passport opens with Continue with Google. Choose that option below instead of legacy recovery.",
     noExistingAccount:
       "No Abraxas Passport was found for this Google identity. Continue with Google to create a new Passport.",
     legacyNotConfigured:
-      "Use an existing Passport is not available in this environment. Contact support if you had a Passport before our sign-in update.",
+      "Legacy recovery is not available in this environment. Contact support if you had a Passport before our sign-in update.",
     legacyClientRequired:
-      "Use an existing Passport to sign in with the Google account tied to your Passport.",
+      "Use legacy recovery to sign in with the Google account tied to your Passport.",
     addressMismatch:
-      "We could not verify your Passport with this sign-in. Try Use an existing Passport, or contact support.",
+      "We could not verify your Passport with this sign-in. Try the recommended sign-in option below, or contact support.",
     signInExpired: "Sign-in expired—please try again",
   },
 } as const;

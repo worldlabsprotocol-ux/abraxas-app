@@ -204,10 +204,13 @@ describe("completeGoogleZkLogin", () => {
 
     await expect(
       completeGoogleZkLogin(legacyToken, { callbackHash: `#state=${OAUTH_STATE}` }),
-    ).rejects.toThrow(ZKLOGIN_SIGN_IN_COPY.errors.wrongPathForCanonical);
+    ).rejects.toMatchObject({
+      message: ZKLOGIN_SIGN_IN_COPY.errors.wrongPathForCanonical,
+      suggestedMode: "canonical",
+    });
   });
 
-  it("directs canonical users with legacy passports to Use an existing Passport", async () => {
+  it("directs canonical users with legacy passports to legacy recovery CTA", async () => {
     const oauthSub = "dgv-test-google-sub-12345";
     const canonicalToken = fakeGoogleIdToken({ sub: oauthSub, aud: NEW_OAUTH_CLIENT_ID });
 
@@ -224,7 +227,10 @@ describe("completeGoogleZkLogin", () => {
 
     await expect(
       completeGoogleZkLogin(canonicalToken, { callbackHash: `#state=${OAUTH_STATE}` }),
-    ).rejects.toThrow(ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail);
+    ).rejects.toMatchObject({
+      message: ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail,
+      suggestedMode: "legacy_recovery",
+    });
   });
 });
 
@@ -240,6 +246,6 @@ describe("mapRegisterFailureToUserError", () => {
       "legacy_recovery",
     );
     expect(message).toBe(ZKLOGIN_SIGN_IN_COPY.errors.wrongPathForCanonical);
-    expect(message).not.toContain("Use an existing Passport to continue");
+    expect(message).not.toMatch(/Use an existing Passport/i);
   });
 });

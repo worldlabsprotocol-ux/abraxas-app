@@ -19,6 +19,10 @@ import {
   parseOAuthStateFromCallbackHash,
   ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE,
 } from "./oauthLoginState";
+import {
+  resolveSuggestedLoginMode,
+  ZkLoginSignInRecoveryError,
+} from "./signInRecovery";
 
 type RegisterFailureBody = {
   sui_address?: string;
@@ -145,6 +149,10 @@ export async function completeGoogleZkLogin(
     clearLoginInFlight();
     const err = mapRegisterFailureToUserError(regRes.status, regData, loginMode);
     logAuthEvent("zklogin_complete_error", { error: err, detail: regData.code });
+    const suggestedMode = resolveSuggestedLoginMode(regRes.status, regData, loginMode);
+    if (suggestedMode) {
+      throw new ZkLoginSignInRecoveryError(err, suggestedMode);
+    }
     throw new Error(err);
   }
 

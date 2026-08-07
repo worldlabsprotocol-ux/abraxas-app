@@ -18,6 +18,15 @@ import { isZkLoginConfigured, isLegacyZkLoginRecoveryConfigured } from "@/lib/su
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
+import {
+  clearSignInRecovery,
+  loadSignInRecovery,
+  parseSignInRecoveryFromSearchParams,
+  saveSignInRecovery,
+  SIGN_IN_ERROR_QUERY,
+  SUGGESTED_LOGIN_MODE_QUERY,
+  type SignInRecoveryState,
+} from "@/lib/sui/zklogin/signInRecovery";
 
 interface SuiAuthContextValue {
   session: ZkLoginUserSession | null;
@@ -29,6 +38,8 @@ interface SuiAuthContextValue {
   isLegacyRecoveryConfigured: boolean;
   isLoading: boolean;
   error: string | null;
+  signInRecovery: SignInRecoveryState | null;
+  dismissSignInRecovery: () => void;
   signInWithGoogle: () => Promise<boolean>;
   signInWithExistingAccount: () => Promise<boolean>;
   signOut: () => void;
@@ -49,6 +60,12 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   );
   const [isLoading, setIsLoading] = useState(() => typeof window === "undefined");
   const [error, setError] = useState<string | null>(null);
+  const [signInRecovery, setSignInRecovery] = useState<SignInRecoveryState | null>(null);
+
+  const dismissSignInRecovery = useCallback(() => {
+    clearSignInRecovery();
+    setSignInRecovery(null);
+  }, []);
 
   const reloadSession = useCallback(() => {
     clearStaleLoginInFlight();
@@ -73,13 +90,21 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
     const params = new URLSearchParams(window.location.search);
-    const signInError = params.get("sign_in_error");
-    if (!signInError) return;
-    setError(decodeURIComponent(signInError));
-    params.delete("sign_in_error");
-    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
-    window.history.replaceState(null, "", next);
+    const fromUrl = parseSignInRecoveryFromSearchParams(params);
+    if (fromUrl) {
+      saveSignInRecovery(fromUrl);
+      setSignInRecovery(fromUrl);
+      params.delete(SIGN_IN_ERROR_QUERY);
+      params.delete(SUGGESTED_LOGIN_MODE_QUERY);
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+      window.history.replaceState(null, "", next);
+      return;
+    }
+
+    const stored = loadSignInRecovery();
+    if (stored) setSignInRecovery(stored);
   }, []);
 
   useEffect(() => {
@@ -129,23 +154,25 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     setError(null);
+    dismissSignInRecovery();
     const result = await startGoogleZkLogin({ mode: "canonical" });
     if (!result.ok) {
       setError(result.error);
       return false;
     }
     return true;
-  }, []);
+  }, [dismissSignInRecovery]);
 
   const signInWithExistingAccount = useCallback(async (): Promise<boolean> => {
     setError(null);
+    dismissSignInRecovery();
     const result = await startGoogleZkLogin({ mode: "legacy_recovery" });
     if (!result.ok) {
       setError(result.error);
       return false;
     }
     return true;
-  }, []);
+  }, [dismissSignInRecovery]);
 
   const signOut = useCallback(() => {
     clearUserSession();
@@ -165,11 +192,13 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     isLegacyRecoveryConfigured: isLegacyZkLoginRecoveryConfigured(),
     isLoading,
     error,
+    signInRecovery,
+    dismissSignInRecovery,
     signInWithGoogle,
     signInWithExistingAccount,
     signOut,
     refreshSession: reloadSession,
-  }), [session, canSignTransactions, isLoading, error, signInWithGoogle, signInWithExistingAccount, signOut, reloadSession]);
+  }), [session, canSignTransactions, isLoading, error, signInRecovery, dismissSignInRecovery, signInWithGoogle, signInWithExistingAccount, signOut, reloadSession]);
 
   return (
     <SuiAuthContext.Provider value={value}>
