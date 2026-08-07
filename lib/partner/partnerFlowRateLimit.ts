@@ -4,6 +4,12 @@
 import { createHmac } from "crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import {
+  checkPartnerFlowUpstashRateLimit,
+  isPartnerFlowUpstashConfigured,
+  probePartnerFlowUpstashHealth,
+  resetPartnerFlowUpstashStoreForTests,
+} from "@/lib/partner/partnerFlowUpstashStore";
 
 export const PARTNER_FLOW_RATE_LIMIT_ENDPOINTS = [
   "/api/v1/partner-flow/evaluate",
@@ -15,7 +21,12 @@ export const PARTNER_FLOW_RATE_LIMIT_ENDPOINTS = [
 
 export type PartnerFlowRateLimitEndpoint = (typeof PARTNER_FLOW_RATE_LIMIT_ENDPOINTS)[number];
 
-export type PartnerFlowRateLimitBackend = "memory" | "disabled" | "identity_unavailable";
+export type PartnerFlowRateLimitBackend =
+  | "memory"
+  | "upstash"
+  | "disabled"
+  | "identity_unavailable"
+  | "distributed_unavailable";
 
 export interface PartnerFlowRateLimitResult {
   allowed: boolean;
@@ -248,11 +259,11 @@ function buildIdentityMaterial(
   return { material: trusted.identityMaterial, requiresSecret: true };
 }
 
-export function checkPartnerFlowRateLimit(
+export async function checkPartnerFlowRateLimit(
   request: NextRequest,
   endpoint: PartnerFlowRateLimitEndpoint,
   options?: { sessionSubject?: string | null },
-): PartnerFlowRateLimitResult {
+): Promise<PartnerFlowRateLimitResult> {
   const limit = getPartnerFlowRateLimitForEndpoint(endpoint);
   const windowSec = getPartnerFlowRateLimitWindowSec();
   const windowMs = windowSec * 1000;
@@ -271,6 +282,7 @@ export function checkPartnerFlowRateLimit(
   const secretResolution = resolvePartnerFlowRateLimitSecret();
   const { material } = buildIdentityMaterial(request, endpoint, options?.sessionSubject);
   const isIpBased = !options?.sessionSubject?.trim() && IP_BASED_ENDPOINTS.has(endpoint);
+  const upstashConfigured = isPartnerFlowUpstashConfigured();
 
   if (!secretResolution.configured || !secretResolution.secret) {
     if (isPartnerFlowProductionRuntime()) {
@@ -309,6 +321,30 @@ export function checkPartnerFlowRateLimit(
     secret: secretResolution.secret,
   });
 
+  if (upstashConfigured) {
+    try {
+      const upstashResult = await checkPartnerFlowUpstashRateLimit({
+        bucketKey,
+        endpoint,
+        limit,
+        windowSec,
+      });
+      return {
+        ...upstashResult,
+        limit,
+        backend: "upstash",
+      };
+    } catch {
+      return {
+        allowed: false,
+        limit,
+        attemptsInWindow: 0,
+        retryAfterSec: windowSec,
+        backend: "distributed_unavailable",
+      };
+    }
+  }
+
   const memoryResult = checkMemoryRateLimit(bucketKey, limit, windowMs, now);
   return {
     ...memoryResult,
@@ -331,6 +367,13 @@ export function partnerFlowRateLimitResponse(
   );
 }
 
+export function partnerFlowRateLimitDistributedUnavailableResponse(): NextResponse {
+  return NextResponse.json(
+    { error: "Service temporarily unavailable", code: "rate_limit_store_unavailable" },
+    { status: 503 },
+  );
+}
+
 export function partnerFlowRateLimitIdentityUnavailableResponse(): NextResponse {
   return NextResponse.json(
     { error: "Service temporarily unavailable" },
@@ -342,27 +385,55 @@ export function partnerFlowRateLimitIdentityUnavailableResponse(): NextResponse 
 export function resetPartnerFlowRateLimitStoreForTests(): void {
   memoryBuckets.clear();
   resetMisconfigWarningForTests();
+  resetPartnerFlowUpstashStoreForTests();
 }
 
-export function getPartnerFlowRateLimitBackendInfo(): {
+export interface PartnerFlowRateLimitBackendInfo {
   enabled: boolean;
-  backend: PartnerFlowRateLimitBackend | "memory";
+  backend: PartnerFlowRateLimitBackend | "memory" | "upstash";
   hmacSecretConfigured: boolean;
   trustedIpStrategy: string;
   distributedStoreRequired: boolean;
   distributedStoreConfigured: boolean;
+  distributedStoreActive: boolean;
+  distributedStoreReachable: boolean | null;
+  distributedStoreErrorCode: string | null;
   note: string;
-} {
-  const upstashConfigured = Boolean(
-    process.env.UPSTASH_REDIS_REST_URL?.trim()
-    && process.env.UPSTASH_REDIS_REST_TOKEN?.trim(),
-  );
+}
+
+export async function getPartnerFlowRateLimitBackendInfo(): Promise<PartnerFlowRateLimitBackendInfo> {
+  const upstashConfigured = isPartnerFlowUpstashConfigured();
+  const upstashHealth = await probePartnerFlowUpstashHealth();
   const secret = resolvePartnerFlowRateLimitSecret();
   const enabled = isPartnerFlowRateLimitEnabled();
 
-  let note = upstashConfigured
-    ? "Upstash env vars are set but distributed rate limiting is not wired yet; limits apply per server instance only."
-    : "Rate limits use in-process memory only. Configure Upstash Redis (UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN) for durable cross-instance protection on Vercel.";
+  const distributedStoreActive = upstashConfigured
+    && upstashHealth.reachable === true
+    && enabled
+    && secret.configured;
+
+  let backend: PartnerFlowRateLimitBackendInfo["backend"] = enabled ? "memory" : "disabled";
+  if (!enabled) {
+    backend = "disabled";
+  } else if (distributedStoreActive) {
+    backend = "upstash";
+  } else if (upstashConfigured && upstashHealth.reachable === false) {
+    backend = "distributed_unavailable";
+  } else {
+    backend = "memory";
+  }
+
+  let note = "Rate limits use in-process memory only (basic per-instance protection). "
+    + "Configure Upstash Redis (UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN) for network-wide protection on Vercel.";
+
+  if (distributedStoreActive) {
+    note = "Network-wide protection active via Upstash Redis. Limits are shared across all Vercel instances.";
+  } else if (upstashConfigured && upstashHealth.reachable === false) {
+    note = `Upstash Redis is configured but unreachable (${upstashHealth.errorCode ?? "unknown"}). `
+      + "Public receipt requests fail closed until connectivity is restored. Limits are not silently downgraded.";
+  } else if (upstashConfigured && upstashHealth.reachable === null) {
+    note = "Upstash credentials detected; health probe pending.";
+  }
 
   if (enabled && !secret.configured && isPartnerFlowProductionRuntime()) {
     note = "CRITICAL: No strong HMAC secret configured. Public receipt rate limiting fails closed; other endpoints are not rate limited.";
@@ -370,13 +441,16 @@ export function getPartnerFlowRateLimitBackendInfo(): {
 
   return {
     enabled,
-    backend: enabled ? "memory" : "disabled",
+    backend,
     hmacSecretConfigured: secret.configured,
     trustedIpStrategy: process.env.VERCEL === "1"
       ? "vercel-x-real-ip"
       : "untrusted-proxy-shared-fallback",
     distributedStoreRequired: true,
     distributedStoreConfigured: upstashConfigured,
+    distributedStoreActive,
+    distributedStoreReachable: upstashHealth.reachable,
+    distributedStoreErrorCode: upstashHealth.errorCode,
     note,
   };
 }

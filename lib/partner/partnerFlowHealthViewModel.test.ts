@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import type { PartnerFlowHealthReport } from "@/lib/partner/partnerFlowHealth";
 import {
   buildActivityEmptyMessage,
@@ -23,6 +23,9 @@ function baseReport(overrides?: Partial<PartnerFlowHealthReport>): PartnerFlowHe
       trustedIpStrategy: "vercel-x-real-ip",
       distributedStoreRequired: true,
       distributedStoreConfigured: false,
+      distributedStoreActive: false,
+      distributedStoreReachable: null,
+      distributedStoreErrorCode: null,
       note: "Rate limits use in-process memory only.",
     },
     telemetry: {
@@ -39,15 +42,28 @@ function baseReport(overrides?: Partial<PartnerFlowHealthReport>): PartnerFlowHe
 }
 
 describe("partnerFlowHealthViewModel", () => {
-  it("uses plain-language protection labels for active basic protection", () => {
+  it("shows basic per-instance protection when Upstash is not configured", () => {
     const view = buildProtectionStatus(baseReport().rate_limit);
-    expect(view.headline).toBe("Protection active");
-    expect(view.subheadline).toMatch(/Basic protection/i);
+    expect(view.headline).toBe("Basic per-instance protection active");
+    expect(view.subheadline).toMatch(/each server instance/i);
     expect(view.showYellowBanner).toBe(true);
     expect(view.yellowBannerTitle).toBe("Network-wide protection not enabled");
   });
 
-  it("explains yellow state is not a failure", () => {
+  it("shows network-wide protection when Upstash is active", () => {
+    const view = buildProtectionStatus({
+      ...baseReport().rate_limit,
+      backend: "upstash",
+      distributedStoreConfigured: true,
+      distributedStoreActive: true,
+      distributedStoreReachable: true,
+    });
+    expect(view.headline).toBe("Network-wide protection active");
+    expect(view.subheadline).toMatch(/shared across all Vercel instances/i);
+    expect(view.showYellowBanner).toBe(false);
+  });
+
+  it("explains yellow state is not a failure for basic protection", () => {
     const view = buildProtectionStatus(baseReport().rate_limit);
     expect(view.yellowBannerBody).toMatch(/not a failure/i);
     expect(view.yellowBannerBody).toMatch(/each server/i);
@@ -63,22 +79,38 @@ describe("partnerFlowHealthViewModel", () => {
     expect(view.showYellowBanner).toBe(false);
   });
 
-  it("keeps yellow banner when Redis env vars are set but not wired", () => {
+  it("shows critical state when Upstash is configured but unreachable", () => {
+    const view = buildProtectionStatus({
+      ...baseReport().rate_limit,
+      backend: "distributed_unavailable",
+      distributedStoreConfigured: true,
+      distributedStoreActive: false,
+      distributedStoreReachable: false,
+      distributedStoreErrorCode: "unreachable",
+    });
+    expect(view.headline).toBe("Network-wide protection unavailable");
+    expect(view.isCritical).toBe(true);
+    expect(view.yellowBannerBody).toMatch(/not silently downgraded/i);
+  });
+
+  it("does not imply Redis is active when only credentials are absent", () => {
+    const technical = buildTechnicalDetails(baseReport());
+    expect(technical.distributedStoreConfigured).toBe(false);
+    expect(technical.distributedStoreActive).toBe(false);
+    const view = buildProtectionStatus(baseReport().rate_limit);
+    expect(view.headline).toBe("Basic per-instance protection active");
+    expect(view.headline).not.toMatch(/Network-wide protection active/i);
+  });
+
+  it("does not imply Redis is active when credentials exist but store is not active", () => {
     const view = buildProtectionStatus({
       ...baseReport().rate_limit,
       distributedStoreConfigured: true,
-      note: "Upstash env vars are set but distributed rate limiting is not wired yet.",
+      distributedStoreActive: false,
+      distributedStoreReachable: true,
+      backend: "memory",
     });
-    expect(view.showYellowBanner).toBe(true);
-    expect(view.yellowBannerBody).toMatch(/not wired yet/i);
-    expect(view.yellowBannerBody).toMatch(/not an outage/i);
-  });
-
-  it("does not imply Redis is enabled when credentials are absent", () => {
-    const technical = buildTechnicalDetails(baseReport());
-    expect(technical.distributedStoreConfigured).toBe(false);
-    const view = buildProtectionStatus(baseReport().rate_limit);
-    expect(view.yellowBannerTitle).toBe("Network-wide protection not enabled");
+    expect(view.headline).toBe("Basic per-instance protection active");
   });
 
   it("builds four metric cards with operator descriptions", () => {
@@ -112,7 +144,17 @@ describe("partnerFlowHealthViewModel", () => {
     expect(next.show).toBe(true);
     expect(next.title).toBe("Enable network-wide protection");
     expect(next.docUrl).toBe(PARTNER_FLOW_RATE_LIMITS_SETUP_URL);
-    expect(next.body).toMatch(/each server individually/i);
+    expect(next.body).toMatch(/basic per-instance protection/i);
+  });
+
+  it("hides next-action when network-wide protection is active", () => {
+    const next = buildNextActionView({
+      ...baseReport().rate_limit,
+      distributedStoreActive: true,
+      distributedStoreConfigured: true,
+      backend: "upstash",
+    });
+    expect(next.show).toBe(false);
   });
 
   it("hides next-action when protection is off", () => {
@@ -128,5 +170,6 @@ describe("partnerFlowHealthViewModel", () => {
     expect(technical.cliCommand).toBe("npm run partner-flow:health");
     expect(technical.envVarNames).toContain("UPSTASH_REDIS_REST_URL");
     expect(technical.trustedIpStrategy).toBe("vercel-x-real-ip");
+    expect(technical.distributedStoreActive).toBe(false);
   });
 });

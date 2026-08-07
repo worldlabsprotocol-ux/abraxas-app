@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   getPartnerFlowRateLimitBackendInfo,
   PARTNER_FLOW_RATE_LIMIT_ENDPOINTS,
+  type PartnerFlowRateLimitBackendInfo,
 } from "@/lib/partner/partnerFlowRateLimit";
 import {
   getPartnerFlowTelemetrySnapshot,
@@ -96,7 +97,7 @@ export interface PartnerFlowHealthReport {
     in_memory_telemetry: boolean;
     partner_api_usage: boolean;
   };
-  rate_limit: ReturnType<typeof getPartnerFlowRateLimitBackendInfo>;
+  rate_limit: PartnerFlowRateLimitBackendInfo;
   telemetry: PartnerFlowTelemetrySnapshot;
 }
 
@@ -126,7 +127,7 @@ export async function buildPartnerFlowHealthReport(windowHours = 24): Promise<Pa
       in_memory_telemetry: inMemorySnapshot.total_requests > 0,
       partner_api_usage: usageEvents.length > 0,
     },
-    rate_limit: getPartnerFlowRateLimitBackendInfo(),
+    rate_limit: await getPartnerFlowRateLimitBackendInfo(),
     telemetry,
   };
 }

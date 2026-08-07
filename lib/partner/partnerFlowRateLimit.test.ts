@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 import {
   checkPartnerFlowRateLimit,
@@ -8,7 +8,22 @@ import {
   resetPartnerFlowRateLimitStoreForTests,
   resolvePartnerFlowRateLimitSecret,
   resolveTrustedClientIpIdentity,
+  getPartnerFlowRateLimitBackendInfo,
 } from "@/lib/partner/partnerFlowRateLimit";
+import {
+  checkPartnerFlowUpstashRateLimit,
+  probePartnerFlowUpstashHealth,
+  resetPartnerFlowUpstashStoreForTests,
+} from "@/lib/partner/partnerFlowUpstashStore";
+
+vi.mock("@/lib/partner/partnerFlowUpstashStore", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/partner/partnerFlowUpstashStore")>();
+  return {
+    ...actual,
+    checkPartnerFlowUpstashRateLimit: vi.fn(actual.checkPartnerFlowUpstashRateLimit),
+    probePartnerFlowUpstashHealth: vi.fn(actual.probePartnerFlowUpstashHealth),
+  };
+});
 
 const STRONG_TEST_SECRET = "integration-test-secret-minimum-32-chars";
 
@@ -26,12 +41,18 @@ describe("partnerFlowRateLimit", () => {
     delete process.env.ABRAXAS_BROWSER_SESSION_SECRET;
     delete process.env.ABRAXAS_SIGNING_KEY;
     delete process.env.VERCEL;
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
     resetPartnerFlowRateLimitStoreForTests();
+    resetPartnerFlowUpstashStoreForTests();
+    vi.mocked(checkPartnerFlowUpstashRateLimit).mockReset();
+    vi.mocked(probePartnerFlowUpstashHealth).mockReset();
   });
 
   afterEach(() => {
     process.env = { ...envBackup };
     resetPartnerFlowRateLimitStoreForTests();
+    resetPartnerFlowUpstashStoreForTests();
   });
 
   function requestWithHeaders(headers: Record<string, string>): NextRequest {
@@ -41,25 +62,27 @@ describe("partnerFlowRateLimit", () => {
     });
   }
 
-  it("allows requests under the configured limit", () => {
+  it("allows requests under the configured limit (in-memory default)", async () => {
     const req = requestWithHeaders({ "x-real-ip": "203.0.113.10" });
-    const first = checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+    const first = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
       sessionSubject: "0xabc",
     });
-    const second = checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+    const second = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
       sessionSubject: "0xabc",
     });
 
     expect(first.allowed).toBe(true);
+    expect(first.backend).toBe("memory");
     expect(second.allowed).toBe(true);
     expect(second.attemptsInWindow).toBe(2);
+    expect(checkPartnerFlowUpstashRateLimit).not.toHaveBeenCalled();
   });
 
-  it("returns 429 with Retry-After when limit exceeded", () => {
+  it("returns 429 with Retry-After when limit exceeded", async () => {
     const req = requestWithHeaders({});
-    checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", { sessionSubject: "0xdef" });
-    checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", { sessionSubject: "0xdef" });
-    const blocked = checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+    await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", { sessionSubject: "0xdef" });
+    await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", { sessionSubject: "0xdef" });
+    const blocked = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
       sessionSubject: "0xdef",
     });
 
@@ -69,6 +92,45 @@ describe("partnerFlowRateLimit", () => {
     const res = partnerFlowRateLimitResponse(blocked);
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe(String(blocked.retryAfterSec));
+  });
+
+  it("uses Upstash when both env vars are present", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+
+    vi.mocked(checkPartnerFlowUpstashRateLimit).mockResolvedValue({
+      allowed: true,
+      attemptsInWindow: 1,
+      retryAfterSec: 60,
+    });
+
+    const req = requestWithHeaders({});
+    const result = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+      sessionSubject: "0xabc",
+    });
+
+    expect(result.backend).toBe("upstash");
+    expect(result.allowed).toBe(true);
+    expect(checkPartnerFlowUpstashRateLimit).toHaveBeenCalledOnce();
+    const call = vi.mocked(checkPartnerFlowUpstashRateLimit).mock.calls[0]![0];
+    expect(call.bucketKey).toMatch(/^[a-f0-9]{32}$/);
+    expect(call.bucketKey).not.toContain("0xabc");
+    expect(JSON.stringify(call)).not.toContain("0xabc");
+  });
+
+  it("fails closed when Upstash is configured but unavailable", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+
+    vi.mocked(checkPartnerFlowUpstashRateLimit).mockRejectedValue(new Error("redis down"));
+
+    const req = new NextRequest("http://localhost/api/receipts/dr_test/public", {
+      headers: { "x-real-ip": "203.0.113.10" },
+    });
+    const result = await checkPartnerFlowRateLimit(req, "/api/receipts/public");
+
+    expect(result.allowed).toBe(false);
+    expect(result.backend).toBe("distributed_unavailable");
   });
 
   it("never exposes raw IP in bucket key output", () => {
@@ -83,16 +145,65 @@ describe("partnerFlowRateLimit", () => {
     expect(key).toMatch(/^[a-f0-9]{32}$/);
   });
 
-  it("uses distinct buckets for different session subjects", () => {
+  it("uses distinct buckets for different session subjects", async () => {
     const req = requestWithHeaders({});
     for (let i = 0; i < 2; i++) {
-      checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", { sessionSubject: "0x111" });
+      await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", { sessionSubject: "0x111" });
     }
-    const otherSubject = checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+    const otherSubject = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
       sessionSubject: "0x222",
     });
     expect(otherSubject.allowed).toBe(true);
     expect(otherSubject.attemptsInWindow).toBe(1);
+  });
+
+  it("reports memory backend in health when Upstash is not configured", async () => {
+    vi.mocked(probePartnerFlowUpstashHealth).mockResolvedValue({
+      configured: false,
+      reachable: null,
+      errorCode: null,
+    });
+
+    const info = await getPartnerFlowRateLimitBackendInfo();
+    expect(info.backend).toBe("memory");
+    expect(info.distributedStoreActive).toBe(false);
+    expect(info.distributedStoreConfigured).toBe(false);
+    expect(info.note).toMatch(/in-process memory/i);
+  });
+
+  it("reports upstash backend when configured and reachable", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+
+    vi.mocked(probePartnerFlowUpstashHealth).mockResolvedValue({
+      configured: true,
+      reachable: true,
+      errorCode: null,
+    });
+
+    const info = await getPartnerFlowRateLimitBackendInfo();
+    expect(info.backend).toBe("upstash");
+    expect(info.distributedStoreActive).toBe(true);
+    expect(info.note).toMatch(/Network-wide protection active/i);
+  });
+
+  it("reports distributed_unavailable in health when Upstash is unreachable", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+
+    vi.mocked(probePartnerFlowUpstashHealth).mockResolvedValue({
+      configured: true,
+      reachable: false,
+      errorCode: "unreachable",
+    });
+
+    const info = await getPartnerFlowRateLimitBackendInfo();
+    expect(info.backend).toBe("distributed_unavailable");
+    expect(info.distributedStoreConfigured).toBe(true);
+    expect(info.distributedStoreActive).toBe(false);
+    expect(info.distributedStoreReachable).toBe(false);
+    expect(info.note).toMatch(/unreachable/i);
+    expect(info.note).not.toContain("test-token");
   });
 });
 
