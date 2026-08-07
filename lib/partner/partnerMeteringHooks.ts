@@ -17,7 +17,6 @@ export function maybeRecordPartnerFlowReceiptMetering(input: {
   receiptId?: string | null;
   policyId?: string | null;
   decisionId?: string | null;
-  idempotencyKey?: string | null;
 }): void {
   if (input.replayStatus !== "issued") return;
   if (input.decision !== "approved") return;
@@ -30,7 +29,6 @@ export function maybeRecordPartnerFlowReceiptMetering(input: {
     receiptId,
     policyId: input.policyId ?? null,
     decisionId: input.decisionId ?? null,
-    idempotencyKey: input.idempotencyKey ?? null,
   });
 }
 

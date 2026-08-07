@@ -12,7 +12,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticatePartner(req);
+  const auth = await authenticatePartner(req, "metering:read");
   if (!auth) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
@@ -43,8 +43,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     metering: report,
-    note: report.observe_only
-      ? "Observe-only mode — usage is recorded but partners are not blocked or charged."
-      : "Enforcement mode is enabled for this partner.",
+    note: "Observe-only mode — usage is recorded for planning; partners are not blocked or charged.",
   });
 }

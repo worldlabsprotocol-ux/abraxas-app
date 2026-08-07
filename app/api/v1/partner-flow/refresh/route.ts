@@ -211,13 +211,6 @@ export async function POST(request: NextRequest) {
       receiptId: result.partner_result?.receipt_id,
       policyId,
       decisionId: result.decision_id,
-      idempotencyKey: verificationRequestId
-        ? buildPartnerFlowVerificationRequestIdempotencyKey(verificationRequestId)
-        : buildPartnerFlowSessionIdempotencyKey({
-          partnerId,
-          subjectId: session.session.suiAddress,
-          policyId,
-        }),
     });
 
     void logPartnerUsage({

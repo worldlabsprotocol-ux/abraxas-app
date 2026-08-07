@@ -12,6 +12,9 @@ import { getPartnerEntitlements } from "@/lib/partner/partnerEntitlements";
 
 export const dynamic = "force-dynamic";
 
+const OBSERVE_ONLY_LABEL =
+  "Observe-only — usage is recorded for planning; partners are not blocked or charged.";
+
 export async function GET(req: NextRequest) {
   if (!await checkAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,11 +56,8 @@ export async function GET(req: NextRequest) {
       enforcement_mode: entitlements.enforcementMode,
       monthly_receipt_limit: entitlements.monthlyReceiptLimit,
       monthly_api_call_limit: entitlements.monthlyApiCallLimit,
-      observe_only: entitlements.enforcementMode !== "enforce",
-      enforcement_label:
-        entitlements.enforcementMode === "enforce"
-          ? "Enforcement enabled — limits may block usage when configured."
-          : "Observe-only — partners are not blocked or charged by default.",
+      observe_only: true,
+      enforcement_label: OBSERVE_ONLY_LABEL,
     },
   });
 }

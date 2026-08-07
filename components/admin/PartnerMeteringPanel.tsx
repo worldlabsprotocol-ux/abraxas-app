@@ -138,13 +138,11 @@ export function PartnerMeteringPanel({ adminPin }: { adminPin: string }) {
             }}
           >
             <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700 }}>
-              {metering.observe_only ? "Observe-only metering" : "Enforcement configured"}
+              Observe-only metering
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "rgba(255,255,255,0.65)", margin: "0.35rem 0 0" }}>
               {entitlements?.enforcement_label
-                ?? (metering.observe_only
-                  ? "Partners are not blocked or charged by default."
-                  : "Enforcement may block usage when limits are exceeded.")}
+                ?? "Usage is recorded for commercial planning. Partners are not blocked or charged."}
             </p>
             <p style={{ fontFamily: MONO, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)", margin: "0.5rem 0 0" }}>
               plan={metering.plan_id} · mode={metering.enforcement_mode}

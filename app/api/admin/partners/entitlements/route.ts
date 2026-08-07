@@ -1,17 +1,20 @@
 // FILE: app/api/admin/partners/entitlements/route.ts
-// Admin partner entitlements configuration — audited, observe-only by default.
+// Admin partner entitlements configuration — audited, observe-only only.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { checkAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
+import { resolveAdminActorCategory } from "@/lib/admin/adminActorCategory";
 import { logAdminPartnerConfigAudit } from "@/lib/admin/partnerOnboardingAudit";
 import {
   getPartnerEntitlements,
   upsertPartnerEntitlements,
   type PartnerEnforcementMode,
 } from "@/lib/partner/partnerEntitlements";
-import { resolveAdminAccess } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
+
+const OBSERVE_ONLY_LABEL =
+  "Observe-only — usage is recorded for planning; partners are not blocked or charged.";
 
 export async function GET(req: NextRequest) {
   if (!await checkAdminAccess(req)) {
@@ -27,11 +30,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     entitlements: {
       ...entitlements,
-      observe_only: entitlements.enforcementMode !== "enforce",
-      enforcement_label:
-        entitlements.enforcementMode === "enforce"
-          ? "Enforcement enabled — limits may block usage when configured."
-          : "Observe-only — partners are not blocked or charged by default.",
+      observe_only: true,
+      enforcement_label: OBSERVE_ONLY_LABEL,
     },
   });
 }
@@ -54,22 +54,23 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "partner_id required" }, { status: 400 });
   }
 
-  if (body.enforcement_mode && body.enforcement_mode !== "observe" && body.enforcement_mode !== "enforce") {
+  if (body.enforcement_mode === "enforce") {
+    return NextResponse.json({ error: "enforcement_not_implemented" }, { status: 400 });
+  }
+
+  if (body.enforcement_mode && body.enforcement_mode !== "observe") {
     return NextResponse.json({ error: "invalid_enforcement_mode" }, { status: 400 });
   }
 
   const access = await resolveAdminAccess(req);
-  const updatedBy =
-    access.method === "email" && access.email
-      ? `admin_email:${access.email.split("@")[0]}`
-      : access.method ?? "admin_unknown";
+  const updatedBy = resolveAdminActorCategory(access.method);
 
   const updated = await upsertPartnerEntitlements({
     partnerId,
     planId: body.plan_id,
     monthlyReceiptLimit: body.monthly_receipt_limit,
     monthlyApiCallLimit: body.monthly_api_call_limit,
-    enforcementMode: body.enforcement_mode,
+    enforcementMode: "observe",
     updatedBy,
   });
 
@@ -92,11 +93,8 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({
     entitlements: {
       ...updated,
-      observe_only: updated.enforcementMode !== "enforce",
-      enforcement_label:
-        updated.enforcementMode === "enforce"
-          ? "Enforcement enabled — limits may block usage when configured."
-          : "Observe-only — partners are not blocked or charged by default.",
+      observe_only: true,
+      enforcement_label: OBSERVE_ONLY_LABEL,
     },
   });
 }

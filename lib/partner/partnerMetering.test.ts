@@ -3,30 +3,58 @@ import {
   buildPartnerApiMeteringKey,
   buildPartnerFlowReceiptMeteringKey,
   partnerMeteringPayloadHasNoPii,
-  recordPartnerMeteringEvent,
   recordPartnerFlowReceiptMetering,
   resolvePartnerApiMeteringCorrelationId,
 } from "@/lib/partner/partnerMetering";
 import { maybeRecordPartnerFlowReceiptMetering, maybeRecordPartnerApiMeteringFromUsage } from "@/lib/partner/partnerMeteringHooks";
-import { evaluatePartnerEntitlements, defaultPartnerEntitlements } from "@/lib/partner/partnerEntitlements";
+import {
+  evaluatePartnerEntitlements,
+  defaultPartnerEntitlements,
+  upsertPartnerEntitlements,
+} from "@/lib/partner/partnerEntitlements";
 import {
   partnerMeteringReportHasNoPii,
   validatePartnerMeteringDateRange,
 } from "@/lib/partner/partnerMeteringReport";
+import { resolveAdminActorCategory } from "@/lib/admin/adminActorCategory";
 
 const insertMock = vi.fn();
+const upsertMock = vi.fn().mockReturnThis();
 const fromMock = vi.fn(() => ({
   insert: insertMock,
   select: vi.fn().mockReturnThis(),
   eq: vi.fn().mockReturnThis(),
   maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-  upsert: vi.fn().mockReturnThis(),
+  upsert: upsertMock,
   single: vi.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({ from: fromMock })),
 }));
+
+function receiptMeteringKey(receiptId: string): string {
+  return buildPartnerFlowReceiptMeteringKey(receiptId);
+}
+
+function simulatePartnerFlowMetering(input: {
+  operation: "evaluate" | "complete" | "refresh";
+  partnerId: string;
+  replayStatus: "issued" | "idempotent_replay";
+  decision: string;
+  receiptId: string;
+  policyId?: string;
+  decisionId?: string;
+}): void {
+  maybeRecordPartnerFlowReceiptMetering({
+    partnerId: input.partnerId,
+    replayStatus: input.replayStatus,
+    decision: input.decision,
+    receiptId: input.receiptId,
+    policyId: input.policyId,
+    decisionId: input.decisionId,
+  });
+}
 
 describe("partner metering ledger", () => {
   beforeEach(() => {
@@ -49,7 +77,7 @@ describe("partner metering ledger", () => {
     expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
       partner_id: "acme-protocol",
       event_type: "partner_flow_receipt_issued",
-      idempotency_key: buildPartnerFlowReceiptMeteringKey("dr_test_001"),
+      idempotency_key: receiptMeteringKey("dr_test_001"),
       receipt_id: "dr_test_001",
       policy_id: "acme-gate-v1",
       decision_id: "dec-1",
@@ -74,6 +102,122 @@ describe("partner metering ledger", () => {
     expect(replay.recorded).toBe(false);
     expect(replay.duplicate).toBe(true);
     expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(insertMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      idempotency_key: receiptMeteringKey("dr_test_001"),
+    }));
+    expect(insertMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      idempotency_key: receiptMeteringKey("dr_test_001"),
+    }));
+  });
+
+  it("evaluate: fresh approved issuance uses meter:pf_receipt:{receipt_id}", () => {
+    simulatePartnerFlowMetering({
+      operation: "evaluate",
+      partnerId: "acme-protocol",
+      replayStatus: "issued",
+      decision: "approved",
+      receiptId: "dr_eval_001",
+      policyId: "acme-gate-v1",
+      decisionId: "dec-eval",
+    });
+
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
+      event_type: "partner_flow_receipt_issued",
+      idempotency_key: receiptMeteringKey("dr_eval_001"),
+      receipt_id: "dr_eval_001",
+    }));
+  });
+
+  it("evaluate: idempotent replay adds zero events", () => {
+    simulatePartnerFlowMetering({
+      operation: "evaluate",
+      partnerId: "acme-protocol",
+      replayStatus: "idempotent_replay",
+      decision: "approved",
+      receiptId: "dr_eval_001",
+    });
+
+    expect(insertMock).not.toHaveBeenCalled();
+  });
+
+  it("complete: fresh approved issuance uses meter:pf_receipt:{receipt_id}", () => {
+    simulatePartnerFlowMetering({
+      operation: "complete",
+      partnerId: "acme-protocol",
+      replayStatus: "issued",
+      decision: "approved",
+      receiptId: "dr_complete_001",
+      policyId: "acme-gate-v1",
+      decisionId: "dec-complete",
+    });
+
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
+      idempotency_key: receiptMeteringKey("dr_complete_001"),
+      receipt_id: "dr_complete_001",
+    }));
+  });
+
+  it("complete: replay of same receipt adds zero events", () => {
+    simulatePartnerFlowMetering({
+      operation: "complete",
+      partnerId: "acme-protocol",
+      replayStatus: "idempotent_replay",
+      decision: "approved",
+      receiptId: "dr_complete_001",
+    });
+
+    expect(insertMock).not.toHaveBeenCalled();
+  });
+
+  it("refresh: new receipt from refresh adds exactly one event with receipt-scoped key", async () => {
+    simulatePartnerFlowMetering({
+      operation: "refresh",
+      partnerId: "acme-protocol",
+      replayStatus: "issued",
+      decision: "approved",
+      receiptId: "dr_refresh_v2",
+      policyId: "acme-gate-v1",
+      decisionId: "dec-refresh",
+    });
+
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
+      idempotency_key: receiptMeteringKey("dr_refresh_v2"),
+      receipt_id: "dr_refresh_v2",
+    }));
+
+    insertMock.mockResolvedValueOnce({ error: { code: "23505", message: "duplicate" } });
+    const replay = await recordPartnerFlowReceiptMetering({
+      partnerId: "acme-protocol",
+      receiptId: "dr_refresh_v2",
+    });
+    expect(replay.duplicate).toBe(true);
+    expect(insertMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("refresh: replaced receipt id gets its own meter:pf_receipt key", () => {
+    simulatePartnerFlowMetering({
+      operation: "refresh",
+      partnerId: "acme-protocol",
+      replayStatus: "issued",
+      decision: "approved",
+      receiptId: "dr_refresh_v1",
+    });
+    simulatePartnerFlowMetering({
+      operation: "refresh",
+      partnerId: "acme-protocol",
+      replayStatus: "issued",
+      decision: "approved",
+      receiptId: "dr_refresh_v2",
+    });
+
+    expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(insertMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      idempotency_key: receiptMeteringKey("dr_refresh_v1"),
+    }));
+    expect(insertMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      idempotency_key: receiptMeteringKey("dr_refresh_v2"),
+    }));
   });
 
   it("does not record idempotent replay from partner flow hook", () => {
@@ -111,6 +255,7 @@ describe("partner metering ledger", () => {
     expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
       event_type: "partner_flow_receipt_issued",
       receipt_id: "dr_test_002",
+      idempotency_key: receiptMeteringKey("dr_test_002"),
     }));
   });
 
@@ -221,6 +366,57 @@ describe("partner entitlements observe-only default", () => {
     expect(evaluation.observeOnly).toBe(true);
     expect(evaluation.wouldBlock).toBe(false);
     expect(evaluation.enforcementEnabled).toBe(false);
+    expect(evaluation.enforcementMode).toBe("observe");
+  });
+
+  it("stores non-pii actor category in updated_by", async () => {
+    const actorCategory = resolveAdminActorCategory("email");
+    upsertMock.mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: {
+          partner_id: "acme-protocol",
+          plan_id: "observe",
+          monthly_receipt_limit: 100,
+          monthly_api_call_limit: null,
+          enforcement_mode: "observe",
+          updated_at: "2026-01-01T00:00:00.000Z",
+          updated_by: actorCategory,
+        },
+        error: null,
+      }),
+    });
+
+    const updated = await upsertPartnerEntitlements({
+      partnerId: "acme-protocol",
+      monthlyReceiptLimit: 100,
+      updatedBy: actorCategory,
+    });
+
+    expect(updated?.updatedBy).toBe("admin_authorized_email");
+    expect(JSON.stringify(updated)).not.toContain("@");
+    expect(JSON.stringify(updated)).not.toContain("admin_email:");
+  });
+});
+
+describe("partner metering privacy", () => {
+  it("admin actor categories never contain email or local-part", () => {
+    const sampleEmail = "operator@example.com";
+    const localPart = sampleEmail.split("@")[0];
+    const category = resolveAdminActorCategory("email");
+
+    expect(category).not.toContain("@");
+    expect(category).not.toContain(localPart);
+    expect(category).not.toBe(`admin_email:${localPart}`);
+  });
+
+  it("metering ledger keys never embed verification-request or session idempotency", () => {
+    const receiptId = "dr_test_001";
+    const key = buildPartnerFlowReceiptMeteringKey(receiptId);
+
+    expect(key).toBe(`meter:pf_receipt:${receiptId}`);
+    expect(key).not.toContain("pf_vr:");
+    expect(key).not.toContain("pf_session:");
   });
 });
 
@@ -242,5 +438,6 @@ describe("partner metering report validation", () => {
       pagination: { limit: 31, offset: 0, returned_days: 1 },
     };
     expect(partnerMeteringReportHasNoPii(report)).toBe(true);
+    expect(JSON.stringify(report)).not.toContain("@");
   });
 });

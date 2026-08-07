@@ -198,7 +198,7 @@ export async function buildPartnerMeteringReport(input: {
   return {
     partner_id: input.partnerId,
     range: input.range,
-    observe_only: entitlements.enforcementMode !== "enforce",
+    observe_only: true,
     enforcement_mode: entitlements.enforcementMode,
     plan_id: entitlements.planId,
     daily: pagedDaily,

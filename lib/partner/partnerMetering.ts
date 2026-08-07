@@ -149,7 +149,6 @@ export async function recordPartnerFlowReceiptMetering(input: {
   receiptId: string;
   policyId?: string | null;
   decisionId?: string | null;
-  idempotencyKey?: string | null;
 }): Promise<PartnerMeteringRecordResult> {
   const receiptId = input.receiptId?.trim();
   if (!receiptId) {
@@ -159,7 +158,7 @@ export async function recordPartnerFlowReceiptMetering(input: {
   return recordPartnerMeteringEvent({
     partnerId: input.partnerId,
     eventType: PARTNER_METERING_EVENT_TYPES.partnerFlowReceiptIssued,
-    idempotencyKey: input.idempotencyKey?.trim() || buildPartnerFlowReceiptMeteringKey(receiptId),
+    idempotencyKey: buildPartnerFlowReceiptMeteringKey(receiptId),
     policyId: input.policyId ?? null,
     decisionId: input.decisionId ?? null,
     receiptId,
@@ -171,7 +170,6 @@ export function recordPartnerFlowReceiptMeteringBestEffort(input: {
   receiptId: string;
   policyId?: string | null;
   decisionId?: string | null;
-  idempotencyKey?: string | null;
 }): void {
   void recordPartnerFlowReceiptMetering(input).catch((err: unknown) => {
     console.warn("partner flow receipt metering failed:", err instanceof Error ? err.message : String(err));

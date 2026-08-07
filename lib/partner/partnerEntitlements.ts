@@ -117,37 +117,14 @@ export async function evaluatePartnerEntitlements(input: {
   currentApiCallCount?: number;
 }): Promise<PartnerEntitlementEvaluation> {
   const entitlements = await getPartnerEntitlements(input.partnerId);
-  const observeOnly = entitlements.enforcementMode !== "enforce";
-  const enforcementEnabled = entitlements.enforcementMode === "enforce";
-
-  let wouldBlock = false;
-  let reason: string | null = null;
-
-  if (enforcementEnabled) {
-    if (
-      entitlements.monthlyReceiptLimit != null
-      && input.currentReceiptCount != null
-      && input.currentReceiptCount >= entitlements.monthlyReceiptLimit
-    ) {
-      wouldBlock = true;
-      reason = "monthly_receipt_limit_exceeded";
-    } else if (
-      entitlements.monthlyApiCallLimit != null
-      && input.currentApiCallCount != null
-      && input.currentApiCallCount >= entitlements.monthlyApiCallLimit
-    ) {
-      wouldBlock = true;
-      reason = "monthly_api_call_limit_exceeded";
-    }
-  }
 
   return {
     partnerId: input.partnerId,
-    enforcementMode: entitlements.enforcementMode,
-    observeOnly,
-    enforcementEnabled,
-    wouldBlock,
-    reason,
+    enforcementMode: "observe",
+    observeOnly: true,
+    enforcementEnabled: false,
+    wouldBlock: false,
+    reason: null,
     monthlyReceiptLimit: entitlements.monthlyReceiptLimit,
     monthlyApiCallLimit: entitlements.monthlyApiCallLimit,
     currentReceiptCount: input.currentReceiptCount ?? null,

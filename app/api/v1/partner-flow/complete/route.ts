@@ -248,9 +248,6 @@ export async function POST(request: NextRequest) {
     receiptId: result.partner_result?.receipt_id,
     policyId,
     decisionId: result.decision_id,
-    idempotencyKey: body.verification_request_id
-      ? buildPartnerFlowVerificationRequestIdempotencyKey(body.verification_request_id)
-      : null,
   });
 
   void logPartnerUsage({
