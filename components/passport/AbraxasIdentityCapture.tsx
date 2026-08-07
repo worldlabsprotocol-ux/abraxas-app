@@ -8,6 +8,9 @@ import { Btn } from "@/components/redesign/ui";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { loadUserSession } from "@/lib/sui/zklogin/session";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { resolveZkLoginEmail, readLocalZkLoginEmail } from "@/lib/sui/zklogin/resolveEmail";
+import { loadSigningSession } from "@/lib/sui/zklogin/signingSession";
+import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
 import {
   identityCaptureStepLabel,
   type IdentityCaptureStep,
@@ -45,7 +48,8 @@ export function AbraxasIdentityCapture({
   capturePolicy,
 }: AbraxasIdentityCaptureProps) {
   const { suiAddress: authAddress, session, isLoading: authLoading, isAuthenticated, refreshSession } = useSuiAuth();
-  const email = emailProp || session?.email || "";
+  const [resolvedEmail, setResolvedEmail] = useState<string | null>(null);
+  const displayEmail = resolvedEmail || emailProp || session?.email || "";
   const suiAddress = suiProp ?? authAddress;
   const [step, setStep] = useState<IdentityCaptureStep>("name");
   const [legalName, setLegalName] = useState("");
@@ -62,6 +66,18 @@ export function AbraxasIdentityCapture({
   const [error, setError] = useState<string | null>(null);
   const [preflightWarning, setPreflightWarning] = useState<string | null>(null);
   const [checkingPreflight, setCheckingPreflight] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !suiAddress) return;
+    const local = readLocalZkLoginEmail();
+    if (local) {
+      setResolvedEmail(local);
+      return;
+    }
+    void resolveZkLoginEmail(suiAddress).then(email => {
+      if (email) setResolvedEmail(email);
+    });
+  }, [authLoading, suiAddress, session?.email]);
 
   const stepIndex = useMemo(
     () => ["name", "id_front", "selfie", "review"].indexOf(step),
@@ -121,7 +137,6 @@ export function AbraxasIdentityCapture({
 
     const stored = loadUserSession();
     const resolvedAddress = suiAddress ?? stored?.suiAddress ?? null;
-    const resolvedEmail = email || stored?.email || "";
 
     if (!resolvedAddress) {
       setError(
@@ -130,10 +145,26 @@ export function AbraxasIdentityCapture({
       return;
     }
 
-    if (!resolvedEmail.includes("@")) {
-      setError("We need your Google email on file. Sign out, sign in once more, then submit again.");
+    let submitEmail = displayEmail || stored?.email || "";
+    if (!submitEmail.includes("@")) {
+      submitEmail = (await resolveZkLoginEmail(resolvedAddress)) ?? "";
+    }
+    if (!submitEmail.includes("@")) {
+      setError(
+        "We could not read your Google email from this session. Submit again — you do not need to sign out.",
+      );
+      logAuthEvent("zklogin_complete_error", {
+        suiAddress: resolvedAddress,
+        error: "verify_submit_email_missing",
+      });
       return;
     }
+
+    logAuthEvent("auth_provider_ready", {
+      suiAddress: resolvedAddress,
+      detail: `verify_submit_email:${submitEmail.split("@")[1]}`,
+    });
+
     if (!idCapture || !selfieCapture) {
       setError("Capture both your ID and selfie before submitting.");
       return;
@@ -160,6 +191,11 @@ export function AbraxasIdentityCapture({
       formData.append("selfie", selfieCapture.blob, "selfie.jpg");
       for (const [key, value] of Object.entries(capturePolicyFormFields(capturePolicy ?? {}))) {
         formData.append(key, value);
+      }
+
+      const signing = loadSigningSession();
+      if (signing?.idToken && signing.suiAddress === resolvedAddress) {
+        formData.append("id_token", signing.idToken);
       }
 
       const res = await fetch("/api/identity/documents/capture", {

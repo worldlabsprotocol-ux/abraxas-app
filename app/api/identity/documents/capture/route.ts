@@ -13,6 +13,7 @@ import { checkCaptureRateLimit, logCaptureAudit } from "@/lib/idv/biometric/capt
 import { resolveCaptureBiometricPolicy } from "@/lib/idv/biometric/resolveCapturePolicy";
 import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
+import { ensureZkLoginEmailForCapture } from "@/lib/sui/zklogin/serverEmail";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -144,16 +145,15 @@ export async function POST(req: NextRequest) {
       }, { status: 409 });
     }
 
-    const { data: zkRow } = await supabase
-      .from("sui_zklogin_identities")
-      .select("email")
-      .eq("sui_address", suiAddress)
-      .maybeSingle();
-
-    const email = zkRow?.email?.trim();
+    const idToken = (formData.get("id_token") as string | null)?.trim() || null;
+    const email = await ensureZkLoginEmailForCapture(supabase, suiAddress, idToken);
     if (!email?.includes("@")) {
+      console.error("[capture] google_email_missing", {
+        sui_address: `${suiAddress.slice(0, 10)}…`,
+        had_id_token: Boolean(idToken),
+      });
       return NextResponse.json({
-        error: "Google account email required — sign in again from the top right",
+        error: "We could not find your Google email for this account. Submit again — no need to sign out.",
       }, { status: 403 });
     }
 

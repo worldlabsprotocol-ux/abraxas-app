@@ -18,6 +18,7 @@ import { isZkLoginConfigured, isLegacyZkLoginRecoveryConfigured } from "@/lib/su
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
+import { readLocalZkLoginEmail, resolveZkLoginEmail } from "@/lib/sui/zklogin/resolveEmail";
 
 interface SuiAuthContextValue {
   session: ZkLoginUserSession | null;
@@ -97,21 +98,25 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     if (!session?.suiAddress) return;
 
     void (async () => {
-      if (!session.email?.includes("@")) {
-        try {
-          const res = await fetch("/api/auth/zklogin/me", { credentials: "include" });
-          if (res.ok) {
-            const data = await res.json() as { email?: string | null };
-            if (data.email?.includes("@")) {
-              const current = loadUserSession();
-              if (current) {
-                const updated = { ...current, email: data.email };
-                saveUserSession(updated);
-                setSession(updated);
-              }
-            }
-          }
-        } catch { /* best-effort */ }
+      if (session.email?.includes("@")) return;
+
+      const local = readLocalZkLoginEmail();
+      if (local) {
+        const current = loadUserSession();
+        if (current && current.email !== local) {
+          const updated = { ...current, email: local };
+          saveUserSession(updated);
+          setSession(updated);
+        }
+        return;
+      }
+
+      const resolved = await resolveZkLoginEmail(session.suiAddress);
+      if (resolved) {
+        const current = loadUserSession();
+        if (current) {
+          setSession({ ...current, email: resolved });
+        }
       }
     })();
   }, [session?.suiAddress, session?.email]);
