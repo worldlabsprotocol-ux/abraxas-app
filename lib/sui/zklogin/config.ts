@@ -61,7 +61,11 @@ export function isLegacyZkLoginRecoveryConfigured(): boolean {
   return isClientLegacyRecoveryConfigured();
 }
 
-export function buildGoogleOAuthUrl(nonce: string, mode: ZkLoginLoginMode = "canonical"): string | null {
+export function buildGoogleOAuthUrl(
+  nonce: string,
+  oauthState: string,
+  mode: ZkLoginLoginMode = "canonical",
+): string | null {
   const cfg = getGoogleOAuthConfig(mode);
   if (!cfg) return null;
   const params = new URLSearchParams({
@@ -70,6 +74,7 @@ export function buildGoogleOAuthUrl(nonce: string, mode: ZkLoginLoginMode = "can
     response_type: cfg.responseType,
     scope: cfg.scope,
     nonce,
+    state: oauthState,
   });
   return `${cfg.authUrl}?${params.toString()}`;
 }

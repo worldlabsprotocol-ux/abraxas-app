@@ -85,7 +85,8 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
       location: { origin: "https://abraxasworld.xyz" },
     });
 
-    const url = buildGoogleOAuthUrl("nonce-test-value");
+    const oauthState = "signed-oauth-state-token-value";
+    const url = buildGoogleOAuthUrl("nonce-test-value", oauthState, "canonical");
     expect(url).toBeTruthy();
 
     const parsed = new URL(url!);
@@ -93,10 +94,11 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
       `https://abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`,
     );
     expect(parsed.searchParams.get("client_id")).toBe("test-client.apps.googleusercontent.com");
+    expect(parsed.searchParams.get("state")).toBe(oauthState);
     expect(url).not.toContain("abraxas-app.vercel.app");
   });
 
-  it("buildGoogleOAuthUrl uses legacy client id from public env for existing account sign-in", () => {
+  it("buildGoogleOAuthUrl uses legacy client id with signed OAuth state", () => {
     process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "canonical-client.apps.googleusercontent.com";
     process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID = "legacy-client.apps.googleusercontent.com";
 
@@ -104,9 +106,11 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
       location: { origin: "https://abraxasworld.xyz" },
     });
 
-    const url = buildGoogleOAuthUrl("nonce-legacy", "legacy_recovery");
+    const oauthState = "signed-legacy-oauth-state";
+    const url = buildGoogleOAuthUrl("nonce-legacy", oauthState, "legacy_recovery");
     expect(url).toBeTruthy();
     expect(new URL(url!).searchParams.get("client_id")).toBe("legacy-client.apps.googleusercontent.com");
+    expect(new URL(url!).searchParams.get("state")).toBe(oauthState);
   });
 
   it("buildGoogleOAuthUrl returns null for legacy mode when public legacy client is unset", () => {
@@ -117,7 +121,7 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
       location: { origin: "https://abraxasworld.xyz" },
     });
 
-    expect(buildGoogleOAuthUrl("nonce-legacy", "legacy_recovery")).toBeNull();
+    expect(buildGoogleOAuthUrl("nonce-legacy", "signed-state", "legacy_recovery")).toBeNull();
   });
 
   it("isZkLoginConfigured reflects embedded NEXT_PUBLIC canonical client id", () => {

@@ -72,6 +72,17 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   }, [reloadSession]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const signInError = params.get("sign_in_error");
+    if (!signInError) return;
+    setError(decodeURIComponent(signInError));
+    params.delete("sign_in_error");
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+    window.history.replaceState(null, "", next);
+  }, []);
+
+  useEffect(() => {
     const onSessionChange = () => reloadSession();
     window.addEventListener("abraxas:zklogin-session", onSessionChange);
     window.addEventListener("storage", onSessionChange);

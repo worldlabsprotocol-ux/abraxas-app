@@ -31,7 +31,7 @@ export default function ZkLoginCallbackPage() {
         if (!idToken) {
           throw new Error("No id_token in callback URL. Check Google OAuth redirect settings.");
         }
-        await completeGoogleZkLogin(idToken);
+        await completeGoogleZkLogin(idToken, { callbackHash: window.location.hash });
         router.replace("/passport?signed_in=1");
       } catch (err) {
         clearLoginInFlight();
@@ -39,6 +39,7 @@ export default function ZkLoginCallbackPage() {
         logAuthEvent("oauth_callback_error", { error: message });
         setStatus("error");
         setErrorMsg(message);
+        router.replace(`/passport?sign_in_error=${encodeURIComponent(message)}`);
       }
     }
     void finish();

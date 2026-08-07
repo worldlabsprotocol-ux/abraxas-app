@@ -23,6 +23,12 @@ export const ZKLOGIN_SIGN_IN_COPY = {
       "We found your existing Abraxas Passport. Use an existing Passport to continue.",
     audienceMismatchDetail:
       "We found your existing Abraxas Passport, but Continue with Google will not open it. Use an existing Passport instead.",
+    audienceMismatchUseCanonical:
+      "Your Abraxas Passport opens with Continue with Google. Use that option here instead of Use an existing Passport.",
+    wrongPathForLegacyRecovery:
+      "This sign-in did not use Use an existing Passport. Return to Passport and choose that option to continue.",
+    wrongPathForCanonical:
+      "This sign-in used Use an existing Passport, but your Passport opens with Continue with Google. Use that option instead.",
     noExistingAccount:
       "No Abraxas Passport was found for this Google identity. Continue with Google to create a new Passport.",
     legacyNotConfigured:
@@ -31,6 +37,7 @@ export const ZKLOGIN_SIGN_IN_COPY = {
       "Use an existing Passport to sign in with the Google account tied to your Passport.",
     addressMismatch:
       "We could not verify your Passport with this sign-in. Try Use an existing Passport, or contact support.",
+    signInExpired: "Sign-in expired—please try again",
   },
 } as const;
 

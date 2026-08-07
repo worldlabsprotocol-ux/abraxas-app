@@ -14,8 +14,80 @@ import { clearLoginInFlight } from "./loginInFlight";
 import { logAuthEvent } from "./authDebug";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import type { ZkLoginLoginMode } from "./audienceCohorts";
+import {
+  parseOAuthStateFromCallbackHash,
+  ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE,
+} from "./oauthLoginState";
 
-export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUserSession> {
+type RegisterFailureBody = {
+  sui_address?: string;
+  user_salt?: string;
+  email?: string | null;
+  error?: string;
+  code?: string;
+  legacy_recovery_available?: boolean;
+  suggested_login_mode?: ZkLoginLoginMode;
+};
+
+export function mapRegisterFailureToUserError(
+  status: number,
+  body: RegisterFailureBody,
+  attemptedMode: ZkLoginLoginMode,
+): string {
+  if (status === 409 && body.code === "zklogin_oauth_audience_mismatch") {
+    const suggested = body.suggested_login_mode;
+    if (attemptedMode === "legacy_recovery" || suggested === "canonical") {
+      return ZKLOGIN_SIGN_IN_COPY.errors.wrongPathForCanonical;
+    }
+    if (body.legacy_recovery_available) {
+      return ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail;
+    }
+    return ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatch;
+  }
+
+  if (status === 400 && body.code === "zklogin_legacy_client_required") {
+    return attemptedMode === "legacy_recovery"
+      ? ZKLOGIN_SIGN_IN_COPY.errors.wrongPathForLegacyRecovery
+      : (body.error ?? ZKLOGIN_SIGN_IN_COPY.errors.legacyClientRequired);
+  }
+
+  if (status === 404 && body.code === "zklogin_no_existing_account") {
+    return body.error ?? ZKLOGIN_SIGN_IN_COPY.errors.noExistingAccount;
+  }
+
+  return body.error ?? "Could not register zkLogin identity";
+}
+
+export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<ZkLoginLoginMode> {
+  const oauthState = callbackHash ? parseOAuthStateFromCallbackHash(callbackHash) : null;
+  if (!oauthState) {
+    throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+  }
+
+  const res = await fetch("/api/auth/zklogin/consume-login-state", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ oauth_state: oauthState }),
+  });
+
+  if (!res.ok) {
+    throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+  }
+
+  const data = (await res.json()) as { login_mode?: string };
+  if (data.login_mode === "legacy_recovery" || data.login_mode === "canonical") {
+    return data.login_mode;
+  }
+
+  throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+}
+
+export async function completeGoogleZkLogin(
+  idToken: string,
+  options?: { callbackHash?: string },
+): Promise<ZkLoginUserSession> {
   logAuthEvent("oauth_callback");
 
   const pending = loadPendingSession();
@@ -43,7 +115,18 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
     throw new Error("OAuth token missing subject");
   }
 
-  // Salt is server-managed so the same Google account always maps to the same Sui address.
+  let loginMode: ZkLoginLoginMode;
+  try {
+    loginMode = await resolveVerifiedLoginMode(options?.callbackHash);
+  } catch (e) {
+    clearLoginInFlight();
+    const err = e instanceof Error ? e.message : ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE;
+    logAuthEvent("zklogin_complete_error", { error: err, detail: "oauth_state_invalid" });
+    throw new Error(err);
+  }
+
+  logAuthEvent("oauth_callback", { detail: `login_mode=${loginMode}` });
+
   const regRes = await fetch("/api/auth/zklogin/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -52,33 +135,19 @@ export async function completeGoogleZkLogin(idToken: string): Promise<ZkLoginUse
       provider: pending.provider,
       oauth_sub: sub,
       max_epoch: pending.maxEpoch,
-      login_mode: pending.loginMode ?? "canonical",
+      login_mode: loginMode,
     }),
   });
 
-  const regData = (await regRes.json()) as {
-    sui_address?: string;
-    user_salt?: string;
-    email?: string | null;
-    error?: string;
-    code?: string;
-    legacy_recovery_available?: boolean;
-  };
+  const regData = (await regRes.json()) as RegisterFailureBody;
 
   if (!regRes.ok || !regData.sui_address) {
     clearLoginInFlight();
-    let err = regData.error ?? "Could not register zkLogin identity";
-    if (regRes.status === 409 && regData.code === "zklogin_oauth_audience_mismatch") {
-      err = ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatch;
-    }
-    if (regRes.status === 404 && regData.code === "zklogin_no_existing_account") {
-      err = regData.error ?? err;
-    }
+    const err = mapRegisterFailureToUserError(regRes.status, regData, loginMode);
     logAuthEvent("zklogin_complete_error", { error: err, detail: regData.code });
     throw new Error(err);
   }
 
-  // Verify client-side derivation matches server (sanity check).
   if (regData.user_salt) {
     const derived = jwtToAddress(idToken, regData.user_salt);
     if (derived !== regData.sui_address) {
