@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "baselineCommit": "9e5db2f",
+  "baselineCommit": "9adba88",
   "referenceUrl": "https://abraxas-app-git-cursor-ph-f13dce-worldlabsprotocol-uxs-projects.vercel.app/",
   "approvalMarkers": {
     "envVar": "UI_APPROVED",
