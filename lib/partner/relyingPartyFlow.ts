@@ -28,6 +28,10 @@ import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAll
 import { computeSessionReceiptExpiresAt } from "@/lib/partner/sessionReceipt";
 import { buildPartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import type { PartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
+import {
+  partnerFlowReceiptAccessBlocked,
+  partnerFlowRevocationDeniedFields,
+} from "@/lib/partner/partnerFlowReceiptAccess";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
 const APP_URL = getPublicAppOrigin();
@@ -428,6 +432,13 @@ export async function evaluatePartnerFlow(input: {
         partner_id: input.partnerId,
       });
 
+      if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
+        return {
+          ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
+          policy_version: policy.version,
+        };
+      }
+
       return {
         next: "enter",
         redirect_url,
@@ -512,6 +523,14 @@ export async function completePartnerFlowAfterApproval(input: {
     partner_id: input.partnerId,
   });
 
+  if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
+    return {
+      ok: true,
+      ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
+      policy_version: policy?.version,
+    };
+  }
+
   return {
     ok: true,
     next: partner_result.decision === "approved" ? "enter" : "denied",
@@ -560,6 +579,13 @@ export async function refreshPartnerSessionReceipt(input: {
     policy_id: input.policyId,
     partner_id: input.partnerId,
   });
+
+  if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
+    return {
+      ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
+      policy_version: policy.version,
+    };
+  }
 
   return {
     next: "enter",

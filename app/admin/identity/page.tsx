@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { IdentityReviewSubNav } from "@/components/admin/IdentityReviewSubNav";
+import { RevocationControlPanel } from "@/components/admin/RevocationControlPanel";
 import { resolveIdentityReviewQueueTab } from "@/lib/admin/identityReviewQueueStates";
 import { buildBiometricSignalRows } from "@/lib/admin/biometricSignalRows";
 
@@ -373,6 +374,10 @@ export default function AdminIdentityPage() {
                     <CapturePreview pin={pin} doc={idDoc(item)} label="Government ID" />
                     <CapturePreview pin={pin} doc={selfieDoc(item)} label="Selfie" />
                   </div>
+                )}
+
+                {item.sui_address && (
+                  <RevocationControlPanel subjectId={item.sui_address} adminPin={pin} />
                 )}
               </div>
             ))}

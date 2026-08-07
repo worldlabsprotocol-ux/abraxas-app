@@ -86,6 +86,16 @@ describe("validatePartnerFlowPublicReceipt", () => {
     expect(result.errors).toContain("status_not_active:expired");
   });
 
+  it("rejects revoked receipt", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({ status: "revoked" }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("receipt_revoked");
+    expect(result.trust?.currently_valid).toBe(false);
+  });
+
   it("rejects production_usable=false by default", () => {
     const result = validatePartnerFlowPublicReceipt(
       validReceipt({ production_usable: false }),
