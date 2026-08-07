@@ -5,11 +5,11 @@ import {
   validatePartnerFlowPublicReceipt,
   type PartnerFlowPublicReceipt,
 } from "@/lib/partner/verifyPartnerFlowReceipt";
-import type { ReferenceRelyingPartyConfig } from "@/lib/partner/referenceRelyingPartyConfig";
+import type { StarterPartnerConfig } from "./config";
 
 export interface VerifyReceiptInput {
   receiptId: string;
-  config: ReferenceRelyingPartyConfig;
+  config: StarterPartnerConfig;
   allowSandbox: boolean;
   fetchFn?: typeof fetch;
 }
@@ -38,7 +38,7 @@ export async function verifyReceiptServerSide(
 ): Promise<VerifyReceiptResult> {
   const receipt = await fetchPublicReceipt(
     input.receiptId,
-    input.config.baseUrl,
+    input.config.abraxasBaseUrl,
     input.fetchFn,
   );
 

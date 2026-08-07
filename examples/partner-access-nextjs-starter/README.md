@@ -8,6 +8,24 @@ This is **not** production deployment. It is a minimal Next.js App Router exampl
 
 ---
 
+## Runtime isolation (default disabled)
+
+The starter pages and session API ship inside the Abraxas app but are **disabled by default**. They do **not** activate from generic `PARTNER_FLOW_RP_*` production variables alone.
+
+| Gate | Env var | Default |
+|------|---------|---------|
+| Server-only opt-in | `PARTNER_ACCESS_STARTER_ENABLED` | `false` (unset = off) |
+
+When disabled:
+
+- Entry, callback, protected page, session API, and logout API return **404** (or a generic disabled response)
+- No missing environment-variable names are listed publicly
+- No receipt fetch and no starter cookie read/write
+
+When enabled, use **starter-specific** `PARTNER_ACCESS_STARTER_*` variables (see `.env.example`). The shared `PARTNER_FLOW_RP_*` names are for `npm run partner:conformance` and other conformance tooling — not for silently enabling this in-repo demo.
+
+---
+
 ## What this demonstrates
 
 | Step | Implementation |
@@ -47,7 +65,7 @@ sequenceDiagram
 
 ---
 
-## Quick start
+## Quick start (local)
 
 ### 1. Operator provisioning (Abraxas)
 
@@ -62,7 +80,7 @@ See `docs/PARTNER_ONBOARDING_CHECKLIST.md`. There is no self-serve production pr
 
 ```bash
 cp examples/partner-access-nextjs-starter/.env.example .env.local
-# Edit PARTNER_FLOW_RP_* and PARTNER_ACCESS_STARTER_SESSION_SECRET
+# Set PARTNER_ACCESS_STARTER_ENABLED=true and fill PARTNER_ACCESS_STARTER_* vars
 ```
 
 ### 3. Run conformance (recommended)
@@ -71,7 +89,7 @@ cp examples/partner-access-nextjs-starter/.env.example .env.local
 npm run partner:conformance
 ```
 
-Uses the same `PARTNER_FLOW_RP_*` variables.
+Uses separate `PARTNER_FLOW_RP_*` variables (not the starter runtime gate).
 
 ### 4. Start the app
 
@@ -79,7 +97,7 @@ Uses the same `PARTNER_FLOW_RP_*` variables.
 npm run dev
 ```
 
-Open `http://localhost:3000/examples/partner-access-starter`
+Open `http://localhost:3000/examples/partner-access-starter` (only when opted in).
 
 ### 5. Test the callback
 
@@ -91,6 +109,7 @@ Complete Partner Flow and land on `/examples/partner-access-starter/callback`. T
 
 | | Reference starter | Production deployment |
 |---|-------------------|----------------------|
+| Runtime gate | `PARTNER_ACCESS_STARTER_ENABLED=true` | Your own feature flag / routing |
 | Session secret | `PARTNER_ACCESS_STARTER_SESSION_SECRET` sample | Your KMS/HSM-backed secret rotation |
 | Session store | Signed cookie only | Consider server-side session store + replay protection |
 | Callback URL | Single env var | Exact allowlisted HTTPS URLs per environment |
@@ -108,6 +127,7 @@ Complete Partner Flow and land on `/examples/partner-access-starter/callback`. T
 - **No browser storage of secrets** — no localStorage/sessionStorage for receipts or JWTs
 - **HttpOnly session cookie** — production partners must supply their own secure session secret
 - **Exact return URLs** — `validatePartnerReturnUrlFormat` rejects query strings, stale hosts, root paths
+- **Default disabled** — no accidental activation from Abraxas production `PARTNER_FLOW_RP_*` config
 
 ---
 
@@ -115,17 +135,16 @@ Complete Partner Flow and land on `/examples/partner-access-starter/callback`. T
 
 | Path | Role |
 |------|------|
-| `examples/partner-access-nextjs-starter/lib/` | Copyable logic (config, callback params, session, verify) |
+| `examples/partner-access-nextjs-starter/lib/` | Copyable logic (config, runtime gate, callback params, session, verify) |
 | `app/examples/partner-access-starter/` | Next.js pages (entry, callback, protected) |
 | `app/api/examples/partner-access-starter/session/` | Server verify + session cookie |
 | `lib/partner/verifyPartnerFlowReceipt.ts` | Shared receipt validation (monorepo) |
-| `lib/partner/referenceRelyingPartyConfig.ts` | Shared env + verify URL builder |
 
 ---
 
 ## Good Trouble (optional labeled example only)
 
-Good Trouble (`good-trouble-cannabis`) is Abraxas's hosted pilot checkout — see `lib/goodTrouble/pilotExample.ts`. **Do not use Good Trouble ids as defaults.** This starter uses generic `PARTNER_FLOW_RP_*` env vars only.
+Good Trouble (`good-trouble-cannabis`) is Abraxas's hosted pilot checkout — see `lib/goodTrouble/pilotExample.ts`. **Do not use Good Trouble ids as defaults.** This starter uses generic `PARTNER_ACCESS_STARTER_*` env vars only.
 
 ---
 
@@ -135,7 +154,7 @@ Good Trouble (`good-trouble-cannabis`) is Abraxas's hosted pilot checkout — se
 npx vitest run examples/partner-access-nextjs-starter
 ```
 
-Covers callback allowlist, receipt grant/deny paths, no stale `abraxas-app.vercel.app`, and no PII in protected responses.
+Covers runtime isolation (default disabled, generic RP vars cannot enable), callback allowlist, receipt grant/deny paths, route 404s, no stale `abraxas-app.vercel.app`, and no PII in protected responses.
 
 ---
 

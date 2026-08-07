@@ -3,12 +3,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { resolveStarterConfig } from "@/examples/partner-access-nextjs-starter/lib/config";
 import {
   STARTER_BASE_PATH,
   STARTER_LABEL,
-  STARTER_ROUTES,
 } from "@/examples/partner-access-nextjs-starter/lib/constants";
+import {
+  assessStarterRuntime,
+  starterDisabledApiResponse,
+} from "@/examples/partner-access-nextjs-starter/lib/runtimeGate";
 import {
   signStarterSession,
   STARTER_SESSION_COOKIE,
@@ -21,13 +23,19 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const resolved = resolveStarterConfig();
-  if (!resolved.config || !resolved.sessionSecret) {
+  const runtime = assessStarterRuntime();
+  if (!runtime.enabled) {
+    return starterDisabledApiResponse();
+  }
+
+  if (!runtime.ready || !runtime.config.config || !runtime.config.sessionSecret) {
     return NextResponse.json(
-      { demo_label: STARTER_LABEL, code: "starter_misconfigured", message: "Starter not configured." },
-      { status: 503 },
+      { error: "Not found" },
+      { status: 404 },
     );
   }
+
+  const resolved = runtime.config;
 
   let body: { receipt_id?: string };
   try {
@@ -49,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   const verification = await verifyReceiptServerSide({
     receiptId,
-    config: resolved.config,
+    config: resolved.config!,
     allowSandbox: resolved.allowSandbox,
   });
 
@@ -76,11 +84,11 @@ export async function POST(req: NextRequest) {
   const token = signStarterSession(
     {
       receiptId,
-      partnerId: resolved.config.partnerId,
-      policyId: resolved.config.policyId,
+      partnerId: resolved.config!.partnerId,
+      policyId: resolved.config!.policyId,
       expiresAt,
     },
-    resolved.sessionSecret,
+    resolved.sessionSecret!,
   );
 
   const response = NextResponse.json({
@@ -100,12 +108,23 @@ export async function POST(req: NextRequest) {
   return response;
 }
 
-export async function GET() {
-  const resolved = resolveStarterConfig();
+export async function GET(_req?: NextRequest) {
+  const runtime = assessStarterRuntime();
+  if (!runtime.enabled) {
+    return starterDisabledApiResponse();
+  }
+
+  if (!runtime.ready || !runtime.config.sessionSecret) {
+    return NextResponse.json(
+      { error: "Not found" },
+      { status: 404 },
+    );
+  }
+
   const cookieStore = cookies();
   const token = cookieStore.get(STARTER_SESSION_COOKIE)?.value;
 
-  if (!resolved.sessionSecret || !token) {
+  if (!token) {
     return NextResponse.json(
       { demo_label: STARTER_LABEL, code: "no_session", authenticated: false },
       { status: 401 },
@@ -115,7 +134,7 @@ export async function GET() {
   const { verifyStarterSession, isStarterSessionActive } = await import(
     "@/examples/partner-access-nextjs-starter/lib/session"
   );
-  const session = verifyStarterSession(token, resolved.sessionSecret);
+  const session = verifyStarterSession(token, runtime.config.sessionSecret);
   if (!session || !isStarterSessionActive(session)) {
     return NextResponse.json(
       { demo_label: STARTER_LABEL, code: "session_expired", authenticated: false },

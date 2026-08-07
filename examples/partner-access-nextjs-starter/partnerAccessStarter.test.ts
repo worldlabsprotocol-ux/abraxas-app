@@ -1,9 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { NextRequest } from "next/server";
 import {
   FORBIDDEN_CALLBACK_KEYS,
   validateCallbackSearchParams,
 } from "./lib/callbackParams";
 import { resolveStarterConfig, STARTER_ENV_KEYS } from "./lib/config";
+import {
+  assessStarterRuntime,
+  isStarterRuntimeEnabled,
+} from "./lib/runtimeGate";
 import {
   isStarterSessionActive,
   signStarterSession,
@@ -15,13 +20,24 @@ import {
 } from "./lib/verifyReceipt";
 import { STARTER_BASE_PATH } from "./lib/constants";
 import { SITE_URL } from "@/lib/siteUrl";
+import { GET as sessionGet, POST as sessionPost } from "@/app/api/examples/partner-access-starter/session/route";
+import { POST as logoutPost } from "@/app/api/examples/partner-access-starter/logout/route";
 
 const VALID_ENV = {
+  [STARTER_ENV_KEYS.enabled]: "true",
   [STARTER_ENV_KEYS.partnerId]: "acme-protocol",
   [STARTER_ENV_KEYS.policyId]: "acme-gate-v1",
   [STARTER_ENV_KEYS.returnUrl]: `http://localhost:3000${STARTER_BASE_PATH}/callback`,
-  [STARTER_ENV_KEYS.baseUrl]: SITE_URL,
+  [STARTER_ENV_KEYS.abraxasBaseUrl]: SITE_URL,
   [STARTER_ENV_KEYS.sessionSecret]: "test-session-secret-at-least-32-chars-long",
+};
+
+const GENERIC_RP_ENV = {
+  PARTNER_FLOW_RP_PARTNER_ID: "acme-protocol",
+  PARTNER_FLOW_RP_POLICY_ID: "acme-gate-v1",
+  PARTNER_FLOW_RP_RETURN_URL: `http://localhost:3000${STARTER_BASE_PATH}/callback`,
+  PARTNER_FLOW_RP_BASE_URL: SITE_URL,
+  PARTNER_ACCESS_STARTER_SESSION_SECRET: "test-session-secret-at-least-32-chars-long",
 };
 
 function validReceipt(overrides: Record<string, unknown> = {}) {
@@ -37,6 +53,119 @@ function validReceipt(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 }
+
+describe("partner access nextjs starter runtime isolation", () => {
+  it("is disabled by default (no opt-in env)", () => {
+    expect(isStarterRuntimeEnabled({})).toBe(false);
+    const assessment = assessStarterRuntime({});
+    expect(assessment.enabled).toBe(false);
+    expect(assessment.ready).toBe(false);
+    expect(assessment.config.config).toBeNull();
+    expect(assessment.config.missing).toEqual([]);
+  });
+
+  it("does not activate from generic PARTNER_FLOW_RP_* variables alone", () => {
+    const assessment = assessStarterRuntime(GENERIC_RP_ENV);
+    expect(assessment.enabled).toBe(false);
+    expect(assessment.ready).toBe(false);
+    expect(assessment.config.config).toBeNull();
+  });
+
+  it("requires explicit opt-in plus complete starter configuration", () => {
+    const enabledOnly = assessStarterRuntime({
+      [STARTER_ENV_KEYS.enabled]: "true",
+    });
+    expect(enabledOnly.enabled).toBe(true);
+    expect(enabledOnly.ready).toBe(false);
+
+    const ready = assessStarterRuntime(VALID_ENV);
+    expect(ready.enabled).toBe(true);
+    expect(ready.ready).toBe(true);
+    expect(ready.config.config?.partnerId).toBe("acme-protocol");
+  });
+
+  it("resolveStarterConfig returns empty missing list when disabled", () => {
+    const resolved = resolveStarterConfig(GENERIC_RP_ENV);
+    expect(resolved.enabled).toBe(false);
+    expect(resolved.missing).toEqual([]);
+    expect(resolved.config).toBeNull();
+  });
+});
+
+describe("partner access nextjs starter route isolation", () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("session POST returns 404 when disabled by default", async () => {
+    delete process.env.PARTNER_ACCESS_STARTER_ENABLED;
+    const res = await sessionPost(
+      new NextRequest("http://localhost/api/examples/partner-access-starter/session", {
+        method: "POST",
+        body: JSON.stringify({ receipt_id: "dr_test" }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body).toEqual({ error: "Not found" });
+    expect(body).not.toHaveProperty("missing");
+  });
+
+  it("session GET returns 404 when disabled by default", async () => {
+    delete process.env.PARTNER_ACCESS_STARTER_ENABLED;
+    const res = await sessionGet(new NextRequest("http://localhost/api/examples/partner-access-starter/session"));
+    expect(res.status).toBe(404);
+  });
+
+  it("logout returns 404 when disabled by default", async () => {
+    delete process.env.PARTNER_ACCESS_STARTER_ENABLED;
+    const res = await logoutPost();
+    expect(res.status).toBe(404);
+  });
+
+  it("session POST does not fetch receipts when generic RP vars exist but starter is disabled", async () => {
+    Object.assign(process.env, GENERIC_RP_ENV);
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await sessionPost(
+      new NextRequest("http://localhost/api/examples/partner-access-starter/session", {
+        method: "POST",
+        body: JSON.stringify({ receipt_id: "dr_test" }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    expect(res.status).toBe(404);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("session POST returns 404 when enabled but misconfigured (no receipt fetch)", async () => {
+    process.env.PARTNER_ACCESS_STARTER_ENABLED = "true";
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await sessionPost(
+      new NextRequest("http://localhost/api/examples/partner-access-starter/session", {
+        method: "POST",
+        body: JSON.stringify({ receipt_id: "dr_test" }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    expect(res.status).toBe(404);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
 
 describe("partner access nextjs starter", () => {
   it("does not reference stale abraxas-app.vercel.app in starter config", () => {

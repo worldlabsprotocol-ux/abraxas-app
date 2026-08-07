@@ -3,12 +3,12 @@
 
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { resolveStarterConfig } from "@/examples/partner-access-nextjs-starter/lib/config";
+import { notFound, redirect } from "next/navigation";
 import {
   STARTER_LABEL,
   STARTER_ROUTES,
 } from "@/examples/partner-access-nextjs-starter/lib/constants";
+import { assessStarterRuntime } from "@/examples/partner-access-nextjs-starter/lib/runtimeGate";
 import {
   isStarterSessionActive,
   STARTER_SESSION_COOKIE,
@@ -18,10 +18,20 @@ import {
 export const dynamic = "force-dynamic";
 
 export default function ProtectedStarterPage() {
-  const resolved = resolveStarterConfig();
+  const runtime = assessStarterRuntime();
+
+  if (!runtime.enabled) {
+    notFound();
+  }
+
+  const resolved = runtime.config;
+  if (!runtime.ready || !resolved.config || !resolved.sessionSecret) {
+    redirect(`${STARTER_ROUTES.entry}?reason=not_ready`);
+  }
+
   const token = cookies().get(STARTER_SESSION_COOKIE)?.value;
 
-  if (!resolved.sessionSecret || !token) {
+  if (!token) {
     redirect(`${STARTER_ROUTES.entry}?reason=session_required`);
   }
 
@@ -31,9 +41,8 @@ export default function ProtectedStarterPage() {
   }
 
   if (
-    resolved.config
-    && (session.partnerId !== resolved.config.partnerId
-      || session.policyId !== resolved.config.policyId)
+    session.partnerId !== resolved.config.partnerId
+    || session.policyId !== resolved.config.policyId
   ) {
     redirect(`${STARTER_ROUTES.entry}?reason=session_mismatch`);
   }

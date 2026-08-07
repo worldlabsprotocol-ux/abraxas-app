@@ -2,48 +2,36 @@
 // Reference starter entry — "Continue with Abraxas" (server-built verify URL).
 
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   buildStarterVerifyUrl,
-  resolveStarterConfig,
-  STARTER_ENV_KEYS,
 } from "@/examples/partner-access-nextjs-starter/lib/config";
 import {
   STARTER_LABEL,
   STARTER_ROUTES,
 } from "@/examples/partner-access-nextjs-starter/lib/constants";
+import { assessStarterRuntime } from "@/examples/partner-access-nextjs-starter/lib/runtimeGate";
 
 export const dynamic = "force-dynamic";
 
 export default function PartnerAccessStarterPage() {
-  const resolved = resolveStarterConfig();
+  const runtime = assessStarterRuntime();
 
-  if (!resolved.config || resolved.missing.length > 0) {
-    return (
-      <main style={{ fontFamily: "system-ui,sans-serif", maxWidth: 640, margin: "2rem auto", padding: "0 1rem" }}>
-        <p style={{ color: "#b45309", fontSize: "0.875rem" }}>{STARTER_LABEL}</p>
-        <h1>Partner Access Starter — not configured</h1>
-        <p>Set operator env vars (see <code>examples/partner-access-nextjs-starter/.env.example</code>):</p>
-        <ul>
-          {resolved.missing.map((key) => (
-            <li key={key}><code>{key}</code></li>
-          ))}
-          {!resolved.sessionSecret && <li><code>{STARTER_ENV_KEYS.sessionSecret}</code></li>}
-        </ul>
-      </main>
-    );
+  if (!runtime.enabled) {
+    notFound();
   }
 
-  if (resolved.returnUrlErrors.length > 0) {
+  const resolved = runtime.config;
+
+  if (!runtime.ready || !resolved.config) {
     return (
       <main style={{ fontFamily: "system-ui,sans-serif", maxWidth: 640, margin: "2rem auto", padding: "0 1rem" }}>
         <p style={{ color: "#b45309", fontSize: "0.875rem" }}>{STARTER_LABEL}</p>
-        <h1>Invalid return URL</h1>
-        <p><code>{STARTER_ENV_KEYS.returnUrl}</code> failed validation:</p>
-        <ul>
-          {resolved.returnUrlErrors.map((err) => (
-            <li key={err}><code>{err}</code></li>
-          ))}
-        </ul>
+        <h1>Partner Access Starter — not available</h1>
+        <p>
+          The starter is opted in but not fully configured. See{" "}
+          <code>examples/partner-access-nextjs-starter/.env.example</code> for local setup.
+        </p>
       </main>
     );
   }

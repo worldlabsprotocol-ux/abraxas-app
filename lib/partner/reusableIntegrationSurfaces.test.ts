@@ -15,6 +15,7 @@ const REUSABLE_SURFACES = [
   "examples/partner-flow-web-rp/build-verify-url.mjs",
   "examples/partner-flow-web-rp/verify-callback.mjs",
   "examples/partner-access-nextjs-starter/lib/config.ts",
+  "examples/partner-access-nextjs-starter/lib/runtimeGate.ts",
   "examples/partner-access-nextjs-starter/lib/callbackParams.ts",
   "examples/partner-access-nextjs-starter/lib/session.ts",
   "examples/partner-access-nextjs-starter/lib/verifyReceipt.ts",
