@@ -1,50 +1,44 @@
 // FILE: lib/x402/referenceGateway/headers.ts
-// x402 v2 header encoding — never log decoded payment payloads.
+// x402 v2 header encoding via official @x402/core/http — never log decoded payloads.
 
 import { createHash } from "crypto";
-import type { PaymentPayload, PaymentRequired, SettlementResponse } from "./types";
+import type { PaymentPayload, PaymentRequired, SettleResponse } from "@x402/core/types";
+import { parsePaymentPayload, parsePaymentRequired } from "@x402/core/schemas";
 import {
   X402_HEADER_PAYMENT_REQUIRED,
   X402_HEADER_PAYMENT_RESPONSE,
   X402_HEADER_PAYMENT_SIGNATURE,
 } from "./constants";
-import { isPaymentPayload, isPaymentRequired, isSettlementResponse } from "./x402V2Wire";
+import {
+  encodePaymentRequiredHeader,
+  encodePaymentResponseHeader,
+  encodePaymentSignatureHeader,
+  safeDecodePaymentRequiredHeader,
+  safeDecodePaymentResponseHeader,
+  safeDecodePaymentSignatureHeader,
+} from "./x402Sdk";
 
 export function encodeX402Header(
-  value: PaymentRequired | PaymentPayload | SettlementResponse,
+  value: PaymentRequired | PaymentPayload | SettleResponse,
 ): string {
-  return Buffer.from(JSON.stringify(value), "utf8").toString("base64");
-}
-
-export function decodePaymentRequiredHeader(raw: string | null | undefined): PaymentRequired | null {
-  if (!raw?.trim()) return null;
-  try {
-    const parsed = JSON.parse(Buffer.from(raw.trim(), "base64").toString("utf8")) as unknown;
-    return isPaymentRequired(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+  if ("accepts" in value) return encodePaymentRequiredHeader(value);
+  if ("accepted" in value) return encodePaymentSignatureHeader(value);
+  return encodePaymentResponseHeader(value);
 }
 
 export function decodePaymentSignatureHeader(raw: string | null | undefined): PaymentPayload | null {
-  if (!raw?.trim()) return null;
-  try {
-    const parsed = JSON.parse(Buffer.from(raw.trim(), "base64").toString("utf8")) as unknown;
-    return isPaymentPayload(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+  const decoded = safeDecodePaymentSignatureHeader(raw);
+  if (!decoded) return null;
+  return parsePaymentPayload(decoded).success ? decoded : null;
 }
 
-export function decodePaymentResponseHeader(raw: string | null | undefined): SettlementResponse | null {
-  if (!raw?.trim()) return null;
-  try {
-    const parsed = JSON.parse(Buffer.from(raw.trim(), "base64").toString("utf8")) as unknown;
-    return isSettlementResponse(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+export function decodePaymentRequiredHeader(raw: string | null | undefined): PaymentRequired | null {
+  const decoded = safeDecodePaymentRequiredHeader(raw);
+  if (!decoded) return null;
+  return parsePaymentRequired(decoded).success ? decoded : null;
 }
+
+export const decodePaymentResponseHeader = safeDecodePaymentResponseHeader;
 
 export const X402_HEADERS = {
   paymentRequired: X402_HEADER_PAYMENT_REQUIRED,

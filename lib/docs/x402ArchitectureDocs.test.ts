@@ -62,6 +62,7 @@ describe("x402 architecture documentation", () => {
     expect(readme).toMatch(/idempotenc/i);
     expect(readme).toMatch(/local-demo only/i);
     expect(readme).toMatch(/serverless/i);
+    expect(readme).toMatch(/@x402\/core/);
     expect(readme).toContain("```mermaid");
   });
 });

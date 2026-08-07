@@ -10,7 +10,9 @@
 
 **Network:** Base Sepolia only (`eip155:84532`).
 
-Wire payloads follow the [official x402 v2 specification](https://github.com/x402-foundation/x402/blob/main/specs/x402-specification-v2.md).
+Wire payloads are built and validated via official `@x402/core` + `@x402/evm` packages (not hand-rolled schemas).
+
+**Dependencies:** `@x402/core` (HTTP codecs, `x402ResourceServer`, `HTTPFacilitatorClient`) and `@x402/evm` (`ExactEvmScheme` for Base Sepolia).
 
 ---
 
@@ -154,7 +156,7 @@ Fail closed on: invalid receipt, wrong partner/policy, expired receipt, invalid 
 
 | Path | Role |
 |------|------|
-| `lib/x402/referenceGateway/` | Testable gateway logic |
+| `lib/x402/referenceGateway/` | Testable gateway logic (`@x402/core` + `@x402/evm` SDK) |
 | `app/api/examples/x402-partner-flow-gateway/resource/route.ts` | Next.js demo route |
 | `docs/X402_ABRAXAS_ARCHITECTURE.md` | Design context |
 | `docs/X402_THREAT_MODEL.md` | Threat model |

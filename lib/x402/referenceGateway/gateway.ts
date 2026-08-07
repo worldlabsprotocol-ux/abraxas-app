@@ -17,16 +17,18 @@ import type {
   GatewayResult,
   PaymentPayload,
   ReferenceGatewayConfig,
-  SettlementResponse,
+  SettleResponse,
 } from "./types";
 import {
   buildFailedSettlementResponse,
   buildSuccessSettlementResponse,
-} from "./x402V2Wire";
+} from "./x402Sdk";
+import type { x402ResourceServer } from "@x402/core/server";
 
 export interface GatewayDependencies {
   fulfillmentStore: FulfillmentStore;
   facilitator: FacilitatorClient;
+  resourceServer?: x402ResourceServer;
   fetchReceipt?: typeof fetch;
   now?: () => Date;
 }
@@ -61,7 +63,7 @@ function withHeaders(
   };
 }
 
-function paymentResponseHeader(response: SettlementResponse): Record<string, string> {
+function paymentResponseHeader(response: SettleResponse): Record<string, string> {
   return { "PAYMENT-RESPONSE": encodeX402Header(response) };
 }
 
@@ -89,7 +91,7 @@ export async function handleProtectedResourceRequest(
     }));
   }
 
-  const paymentRequired = buildPaymentRequired(config);
+  const paymentRequired = await buildPaymentRequired(config, input.deps.resourceServer);
   const paymentPayload = input.decodePaymentSignature(input.paymentSignatureHeader);
 
   if (!paymentPayload) {

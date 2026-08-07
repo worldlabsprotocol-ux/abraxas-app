@@ -1,34 +1,14 @@
 // FILE: lib/x402/referenceGateway/paymentRequired.ts
-// Build x402 v2 PAYMENT-REQUIRED payloads for Base Sepolia testnet.
+// Build x402 v2 PAYMENT-REQUIRED via official @x402/core server SDK.
 
-import { X402_PROTOCOL_VERSION } from "./constants";
 import type { PaymentRequired, ReferenceGatewayConfig } from "./types";
-import { baseSepoliaUsdcWireRequirements, wireAssetAddressFromCaip19 } from "./x402V2Wire";
+import type { x402ResourceServer } from "@x402/core/server";
+import { buildSdkPaymentRequired, getHttpX402ResourceServer } from "./x402Sdk";
 
-export function buildPaymentRequired(config: ReferenceGatewayConfig): PaymentRequired {
-  wireAssetAddressFromCaip19(config.priceAssetCaip19);
-
-  return {
-    x402Version: X402_PROTOCOL_VERSION,
-    error: "PAYMENT-SIGNATURE header is required",
-    resource: {
-      url: config.resourceUrl,
-      description: `${config.resourceId} (TESTNET demo — Base Sepolia only)`,
-      mimeType: "application/json",
-      serviceName: "Abraxas x402 ref gateway",
-      tags: ["testnet", "demo"],
-    },
-    accepts: [
-      baseSepoliaUsdcWireRequirements({
-        amount: config.priceAmount,
-        payTo: config.payTo,
-      }),
-    ],
-    extensions: {},
-  };
-}
-
-/** Single PaymentRequirements entry for facilitator /verify and /settle requests. */
-export function buildPrimaryPaymentRequirements(config: ReferenceGatewayConfig) {
-  return buildPaymentRequired(config).accepts[0]!;
+export async function buildPaymentRequired(
+  config: ReferenceGatewayConfig,
+  resourceServer?: x402ResourceServer,
+): Promise<PaymentRequired> {
+  const server = resourceServer ?? await getHttpX402ResourceServer(config.facilitatorUrl);
+  return buildSdkPaymentRequired(config, server);
 }

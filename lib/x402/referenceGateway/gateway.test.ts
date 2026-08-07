@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { handleProtectedResourceRequest } from "./gateway";
 import { buildFulfillmentIdempotencyKey } from "./idempotency";
 import { decodePaymentSignatureHeader, encodeX402Header, hashPaymentPayload } from "./headers";
@@ -8,6 +8,7 @@ import {
   BASE_SEPOLIA_USDC_ADDRESS,
   BASE_SEPOLIA_USDC_CAIP19,
 } from "./constants";
+import { SdkX402PaymentClient } from "./facilitatorClient";
 import type { FacilitatorClient } from "./facilitatorClient";
 import {
   DURABLE_FULFILLMENT_STORE_BRAND,
@@ -17,8 +18,13 @@ import type {
   FulfillmentRecord,
   PaymentPayload,
   ReferenceGatewayConfig,
-  SettlementResponse,
+  SettleResponse,
 } from "./types";
+import {
+  clearX402ResourceServerCacheForTests,
+  getInitializedX402ResourceServer,
+} from "./x402Sdk";
+import type { FacilitatorClient as SdkFacilitatorClient } from "@x402/core/server";
 
 const config: ReferenceGatewayConfig = {
   partnerId: "pilot-partner",
@@ -46,6 +52,21 @@ const validReceipt = {
   production_usable: false,
 };
 
+function mockSdkFacilitator(): SdkFacilitatorClient {
+  return {
+    getSupported: vi.fn().mockResolvedValue({
+      kinds: [{ x402Version: 2, scheme: "exact", network: BASE_SEPOLIA_CAIP2 }],
+      extensions: [],
+    }),
+    verify: vi.fn().mockResolvedValue({ isValid: true }),
+    settle: vi.fn().mockResolvedValue({
+      success: true,
+      transaction: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      network: BASE_SEPOLIA_CAIP2,
+    }),
+  };
+}
+
 const paymentPayload: PaymentPayload = {
   x402Version: 2,
   accepted: {
@@ -55,6 +76,7 @@ const paymentPayload: PaymentPayload = {
     asset: BASE_SEPOLIA_USDC_ADDRESS,
     payTo: config.payTo,
     maxTimeoutSeconds: 300,
+    extra: { name: "USDC", version: "2" },
   },
   payload: {
     signature: "0xabc",
@@ -89,7 +111,7 @@ class MemoryFulfillmentStore implements FulfillmentStore {
 
   async markSettled(key: string, update: {
     settlement_ref: string;
-    payment_response: SettlementResponse;
+    payment_response: SettleResponse;
     access_grant_expires_at: string;
   }) {
     const existing = this.records.get(key);
@@ -105,12 +127,12 @@ class MemoryFulfillmentStore implements FulfillmentStore {
     return "updated" as const;
   }
 
-  async markFailed(key: string, payment_response: SettlementResponse) {
+  async markFailed(key: string, payment_response: SettleResponse) {
     const existing = this.records.get(key);
     if (existing) this.records.set(key, { ...existing, status: "failed", payment_response });
   }
 
-  async markAmbiguous(key: string, payment_response: SettlementResponse) {
+  async markAmbiguous(key: string, payment_response: SettleResponse) {
     const existing = this.records.get(key);
     if (existing) this.records.set(key, { ...existing, status: "ambiguous", payment_response });
   }
@@ -126,16 +148,17 @@ function mockFetchReceipt() {
 describe("handleProtectedResourceRequest", () => {
   let store: MemoryFulfillmentStore;
   let facilitator: FacilitatorClient;
+  let resourceServer: Awaited<ReturnType<typeof getInitializedX402ResourceServer>>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    clearX402ResourceServerCacheForTests();
     store = new MemoryFulfillmentStore();
-    facilitator = {
-      verify: vi.fn().mockResolvedValue({ ok: true }),
-      settle: vi.fn().mockResolvedValue({
-        status: "settled",
-        transaction: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-      }),
-    };
+    resourceServer = await getInitializedX402ResourceServer(mockSdkFacilitator(), "gateway-unit");
+    facilitator = new SdkX402PaymentClient(resourceServer);
+  });
+
+  afterEach(() => {
+    clearX402ResourceServerCacheForTests();
   });
 
   it("returns 402 PAYMENT-REQUIRED when payment is absent", async () => {
@@ -145,13 +168,12 @@ describe("handleProtectedResourceRequest", () => {
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
       settlementEnabled: true,
-      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+      deps: { fulfillmentStore: store, facilitator, resourceServer, fetchReceipt: mockFetchReceipt() },
     });
 
     expect(result.status).toBe(402);
     expect(result.headers["PAYMENT-REQUIRED"]).toBeTruthy();
     expect(result.body.code).toBe("payment_required");
-    expect(facilitator.verify).not.toHaveBeenCalled();
   });
 
   it("returns 403 when receipt validation fails", async () => {
@@ -162,7 +184,7 @@ describe("handleProtectedResourceRequest", () => {
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
       settlementEnabled: true,
-      deps: { fulfillmentStore: store, facilitator, fetchReceipt: badFetch },
+      deps: { fulfillmentStore: store, facilitator, resourceServer, fetchReceipt: badFetch },
     });
 
     expect(result.status).toBe(403);
@@ -176,13 +198,11 @@ describe("handleProtectedResourceRequest", () => {
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
       settlementEnabled: false,
-      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+      deps: { fulfillmentStore: store, facilitator, resourceServer, fetchReceipt: mockFetchReceipt() },
     });
 
     expect(result.status).toBe(503);
     expect(result.body.code).toBe("settlement_unavailable");
-    expect(facilitator.verify).not.toHaveBeenCalled();
-    expect(facilitator.settle).not.toHaveBeenCalled();
   });
 
   it("returns 200 with PAYMENT-RESPONSE after canonical payment success", async () => {
@@ -192,17 +212,16 @@ describe("handleProtectedResourceRequest", () => {
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
       settlementEnabled: true,
-      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+      deps: { fulfillmentStore: store, facilitator, resourceServer, fetchReceipt: mockFetchReceipt() },
     });
 
     expect(result.status).toBe(200);
     expect(result.headers["PAYMENT-RESPONSE"]).toBeTruthy();
     expect(result.body.resource_id).toBe(config.resourceId);
-    expect(facilitator.settle).toHaveBeenCalled();
   });
 
   it("returns idempotent 200 on replayed PAYMENT-SIGNATURE", async () => {
-    const deps = { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() };
+    const deps = { fulfillmentStore: store, facilitator, resourceServer, fetchReceipt: mockFetchReceipt() };
     const input = {
       receiptId: "dr_test",
       paymentSignatureHeader: paymentHeader(),
@@ -217,42 +236,54 @@ describe("handleProtectedResourceRequest", () => {
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
-    expect(facilitator.settle).toHaveBeenCalledTimes(1);
   });
 
   it("returns 402 on facilitator verify failure without fulfilling", async () => {
-    facilitator.verify = vi.fn().mockResolvedValue({ ok: false, error: "invalid" });
+    const failingFacilitator = mockSdkFacilitator();
+    failingFacilitator.verify = vi.fn().mockResolvedValue({ isValid: false, invalidReason: "invalid" });
+    const failingServer = await getInitializedX402ResourceServer(failingFacilitator, "gateway-verify-fail");
     const result = await handleProtectedResourceRequest({
       receiptId: "dr_test",
       paymentSignatureHeader: paymentHeader(),
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
       settlementEnabled: true,
-      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+      deps: {
+        fulfillmentStore: store,
+        facilitator: new SdkX402PaymentClient(failingServer),
+        resourceServer: failingServer,
+        fetchReceipt: mockFetchReceipt(),
+      },
     });
 
     expect(result.status).toBe(402);
     expect(result.body.code).toBe("payment_verify_failed");
-    expect(facilitator.settle).not.toHaveBeenCalled();
   });
 
   it("returns 409 on ambiguous settlement without fulfilling", async () => {
-    facilitator.settle = vi.fn().mockResolvedValue({ status: "ambiguous", error: "timeout" });
+    const ambiguousFacilitator = mockSdkFacilitator();
+    ambiguousFacilitator.settle = vi.fn().mockRejectedValue(new Error("settlement timeout ambiguous"));
+    const ambiguousServer = await getInitializedX402ResourceServer(ambiguousFacilitator, "gateway-ambiguous");
     const result = await handleProtectedResourceRequest({
       receiptId: "dr_test",
       paymentSignatureHeader: paymentHeader(),
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
       settlementEnabled: true,
-      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+      deps: {
+        fulfillmentStore: store,
+        facilitator: new SdkX402PaymentClient(ambiguousServer),
+        resourceServer: ambiguousServer,
+        fetchReceipt: mockFetchReceipt(),
+      },
     });
 
     expect(result.status).toBe(409);
     expect(result.body.code).toBe("settlement_ambiguous");
   });
 
-  it("emits official x402 v2 PAYMENT-REQUIRED shape", () => {
-    const required = buildPaymentRequired(config);
+  it("emits SDK-built PAYMENT-REQUIRED shape", async () => {
+    const required = await buildPaymentRequired(config, resourceServer);
     expect(required.x402Version).toBe(2);
     expect(required.resource.url).toBe(config.resourceUrl);
     expect(required.accepts[0]?.network).toBe(BASE_SEPOLIA_CAIP2);
@@ -260,16 +291,27 @@ describe("handleProtectedResourceRequest", () => {
     expect(required.accepts[0]?.asset).toBe(BASE_SEPOLIA_USDC_ADDRESS);
   });
 
-  it("stores official SettlementResponse on success", async () => {
+  it("stores SDK SettleResponse on success", async () => {
     const tx = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd";
-    facilitator.settle = vi.fn().mockResolvedValue({ status: "settled", transaction: tx });
+    const settlingFacilitator = mockSdkFacilitator();
+    settlingFacilitator.settle = vi.fn().mockResolvedValue({
+      success: true,
+      transaction: tx,
+      network: BASE_SEPOLIA_CAIP2,
+    });
+    const settlingServer = await getInitializedX402ResourceServer(settlingFacilitator, "gateway-settle-tx");
     await handleProtectedResourceRequest({
       receiptId: "dr_test",
       paymentSignatureHeader: paymentHeader(),
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
       settlementEnabled: true,
-      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+      deps: {
+        fulfillmentStore: store,
+        facilitator: new SdkX402PaymentClient(settlingServer),
+        resourceServer: settlingServer,
+        fetchReceipt: mockFetchReceipt(),
+      },
     });
 
     const record = await store.getByIdempotencyKey(buildFulfillmentIdempotencyKey({

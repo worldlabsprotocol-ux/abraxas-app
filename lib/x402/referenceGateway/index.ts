@@ -10,5 +10,5 @@ export * from "./paymentRequired";
 export * from "./fulfillmentStore";
 export * from "./facilitatorClient";
 export * from "./runtimeMode";
-export * from "./x402V2Wire";
+export * from "./x402Sdk";
 export * from "./gateway";

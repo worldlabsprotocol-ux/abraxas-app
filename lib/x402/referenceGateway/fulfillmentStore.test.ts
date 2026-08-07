@@ -8,7 +8,7 @@ import {
   isGrantActive,
 } from "./fulfillmentStore";
 import type { FulfillmentRecord } from "./types";
-import { buildSuccessSettlementResponse } from "./x402V2Wire";
+import { buildSuccessSettlementResponse } from "./x402Sdk";
 
 describe("FileFulfillmentStore", () => {
   let dir: string;

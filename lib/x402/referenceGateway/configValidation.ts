@@ -3,9 +3,9 @@
 
 import {
   BASE_SEPOLIA_CAIP2,
+  BASE_SEPOLIA_USDC_ADDRESS,
   BASE_SEPOLIA_USDC_CAIP19,
 } from "./constants";
-import { isEvmAddress, isPositiveAtomicAmount } from "./x402V2Wire";
 import type { ReferenceGatewayConfig } from "./types";
 
 export interface ConfigValidationInput {
@@ -25,6 +25,21 @@ export interface ConfigValidationResult {
   errors: string[];
 }
 
+const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+
+export function isEvmAddress(value: string): boolean {
+  return EVM_ADDRESS_RE.test(value);
+}
+
+export function isPositiveAtomicAmount(value: string): boolean {
+  if (!/^\d+$/.test(value)) return false;
+  try {
+    return BigInt(value) > BigInt(0);
+  } catch {
+    return false;
+  }
+}
+
 function isHttpsUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -36,6 +51,18 @@ function isHttpsUrl(value: string): boolean {
 
 function isOfficialBaseSepoliaUsdcCaip19(value: string): boolean {
   return value.toLowerCase() === BASE_SEPOLIA_USDC_CAIP19.toLowerCase();
+}
+
+/** Map validated CAIP-19 config asset to ERC-20 address for x402 SDK price parsing. */
+export function wireAssetAddressFromCaip19(caip19: string): string {
+  const match = caip19.match(/^eip155:\d+\/erc20:(0x[0-9a-fA-F]{40})$/i);
+  if (!match?.[1]) {
+    throw new Error("invalid_caip19_asset");
+  }
+  if (match[1].toLowerCase() !== BASE_SEPOLIA_USDC_ADDRESS.toLowerCase()) {
+    throw new Error("invalid_caip19_asset");
+  }
+  return match[1];
 }
 
 export function validateReferenceGatewayConfigInput(

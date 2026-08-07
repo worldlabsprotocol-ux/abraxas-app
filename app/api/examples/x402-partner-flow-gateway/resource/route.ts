@@ -6,11 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   assessReferenceGatewayRuntime,
   decodePaymentSignatureHeader,
+  getHttpX402ResourceServer,
   handleProtectedResourceRequest,
-  HttpFacilitatorClient,
   NoOpFulfillmentStore,
   REFERENCE_GATEWAY_LABEL,
   resolveReferenceGatewayConfig,
+  SdkX402PaymentClient,
   type FulfillmentStore,
 } from "@/lib/x402/referenceGateway";
 
@@ -101,6 +102,9 @@ export async function GET(req: NextRequest) {
     ? runtime.createFulfillmentStore!()
     : new NoOpFulfillmentStore();
 
+  const resourceServer = await getHttpX402ResourceServer(resolved.config.facilitatorUrl);
+  const sdkClient = runtime.settlementAllowed ? new SdkX402PaymentClient(resourceServer) : null;
+
   const result = await handleProtectedResourceRequest({
     receiptId,
     paymentSignatureHeader,
@@ -109,9 +113,11 @@ export async function GET(req: NextRequest) {
     settlementEnabled: runtime.settlementAllowed,
     deps: {
       fulfillmentStore,
-      facilitator: new HttpFacilitatorClient({
-        baseUrl: resolved.config.facilitatorUrl,
-      }),
+      facilitator: sdkClient ?? {
+        verify: async () => ({ ok: false, error: "settlement_unavailable" }),
+        settle: async () => ({ status: "failed" as const, error: "settlement_unavailable" }),
+      },
+      resourceServer,
     },
   });
 

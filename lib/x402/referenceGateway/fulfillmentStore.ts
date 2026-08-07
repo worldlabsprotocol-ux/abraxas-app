@@ -3,17 +3,17 @@
 
 import { mkdirSync, readFileSync, renameSync, writeFileSync, existsSync } from "fs";
 import { dirname } from "path";
-import type { FulfillmentRecord, FulfillmentStatus, SettlementResponse } from "./types";
+import type { FulfillmentRecord, FulfillmentStatus, SettleResponse } from "./types";
 
 export interface FulfillmentStore {
   getByIdempotencyKey(key: string): Promise<FulfillmentRecord | null>;
   insertPending(record: FulfillmentRecord): Promise<"inserted" | "conflict">;
   markSettled(
     key: string,
-    update: { settlement_ref: string; payment_response: SettlementResponse; access_grant_expires_at: string },
+    update: { settlement_ref: string; payment_response: SettleResponse; access_grant_expires_at: string },
   ): Promise<"updated" | "missing" | "conflict">;
-  markFailed(key: string, payment_response: SettlementResponse): Promise<void>;
-  markAmbiguous(key: string, payment_response: SettlementResponse): Promise<void>;
+  markFailed(key: string, payment_response: SettleResponse): Promise<void>;
+  markAmbiguous(key: string, payment_response: SettleResponse): Promise<void>;
 }
 
 /** Brand for adapters backed by a real durable store (Postgres, DynamoDB, etc.). */
@@ -111,7 +111,7 @@ export class FileFulfillmentStore implements FulfillmentStore {
 
   async markSettled(
     key: string,
-    update: { settlement_ref: string; payment_response: SettlementResponse; access_grant_expires_at: string },
+    update: { settlement_ref: string; payment_response: SettleResponse; access_grant_expires_at: string },
   ): Promise<"updated" | "missing" | "conflict"> {
     return this.withLedger((ledger) => {
       const existing = ledger.records[key];
@@ -128,7 +128,7 @@ export class FileFulfillmentStore implements FulfillmentStore {
     });
   }
 
-  async markFailed(key: string, payment_response: SettlementResponse): Promise<void> {
+  async markFailed(key: string, payment_response: SettleResponse): Promise<void> {
     this.withLedger((ledger) => {
       const existing = ledger.records[key];
       if (!existing) return;
@@ -136,7 +136,7 @@ export class FileFulfillmentStore implements FulfillmentStore {
     });
   }
 
-  async markAmbiguous(key: string, payment_response: SettlementResponse): Promise<void> {
+  async markAmbiguous(key: string, payment_response: SettleResponse): Promise<void> {
     this.withLedger((ledger) => {
       const existing = ledger.records[key];
       if (!existing) return;
