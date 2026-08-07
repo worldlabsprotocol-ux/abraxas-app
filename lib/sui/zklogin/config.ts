@@ -8,6 +8,7 @@ import {
   isClientZkLoginConfigured,
   resolveClientOAuthClientIdForMode,
 } from "@/lib/sui/zklogin/clientEnv";
+import { oauthStateForLoginMode } from "@/lib/sui/zklogin/loginMode";
 
 export type ZkLoginProvider = "google" | "apple";
 
@@ -70,6 +71,7 @@ export function buildGoogleOAuthUrl(nonce: string, mode: ZkLoginLoginMode = "can
     response_type: cfg.responseType,
     scope: cfg.scope,
     nonce,
+    state: oauthStateForLoginMode(mode),
   });
   return `${cfg.authUrl}?${params.toString()}`;
 }

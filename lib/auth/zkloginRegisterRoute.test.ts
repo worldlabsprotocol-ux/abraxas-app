@@ -128,6 +128,7 @@ describe("POST /api/auth/zklogin/register", () => {
     const json = (await res.json()) as {
       code?: string;
       legacy_recovery_available?: boolean;
+      suggested_login_mode?: string;
       error?: string;
     };
 
@@ -135,7 +136,37 @@ describe("POST /api/auth/zklogin/register", () => {
     expect(json.code).toBe("zklogin_oauth_audience_mismatch");
     expect(json.error).toMatch(/Use an existing Passport/i);
     expect(json.legacy_recovery_available).toBe(true);
+    expect(json.suggested_login_mode).toBe("legacy_recovery");
     expect(jwtToAddress(newToken, USER_SALT)).not.toBe(address);
+  });
+
+  it("suggests canonical after legacy recovery audience mismatch (loop prevention)", async () => {
+    const canonicalToken = fakeGoogleIdToken({ sub: OAUTH_SUB, aud: NEW_AUD });
+    const canonicalAddress = jwtToAddress(canonicalToken, USER_SALT);
+    maybeSingle.mockResolvedValue({
+      data: {
+        sui_address: canonicalAddress,
+        user_salt: USER_SALT,
+        email: "dgv-test@example.com",
+      },
+    });
+
+    const legacyToken = fakeGoogleIdToken({ sub: OAUTH_SUB, aud: LEGACY_AUD });
+
+    const res = await postRegister({
+      id_token: legacyToken,
+      oauth_sub: OAUTH_SUB,
+      login_mode: "legacy_recovery",
+    });
+
+    const json = (await res.json()) as {
+      code?: string;
+      suggested_login_mode?: string;
+    };
+
+    expect(res.status).toBe(409);
+    expect(json.code).toBe("zklogin_oauth_audience_mismatch");
+    expect(json.suggested_login_mode).toBe("canonical");
   });
 
   it("returns legacy_recovery_available false when only server legacy allowlist is configured", async () => {

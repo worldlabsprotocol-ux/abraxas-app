@@ -15,6 +15,7 @@ import {
   isBrowserLegacyRecoveryAvailable,
   type ZkLoginLoginMode,
 } from "@/lib/sui/zklogin/audienceCohorts";
+import { suggestLoginModeAfterAudienceMismatch } from "@/lib/sui/zklogin/loginMode";
 import {
   buildZkLoginRecoveryAuditMetadata,
 } from "@/lib/sui/zklogin/recoveryAudit";
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
         error: ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail,
         code: "zklogin_oauth_audience_mismatch",
         legacy_recovery_available: legacyAvailable,
+        suggested_login_mode: suggestLoginModeAfterAudienceMismatch(loginMode, legacyAvailable),
       }, { status: 409 });
     }
 

@@ -107,6 +107,18 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
     const url = buildGoogleOAuthUrl("nonce-legacy", "legacy_recovery");
     expect(url).toBeTruthy();
     expect(new URL(url!).searchParams.get("client_id")).toBe("legacy-client.apps.googleusercontent.com");
+    expect(new URL(url!).searchParams.get("state")).toBe("abraxas_zklogin_legacy_recovery");
+  });
+
+  it("buildGoogleOAuthUrl encodes canonical OAuth state for Continue with Google", () => {
+    process.env.NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID = "canonical-client.apps.googleusercontent.com";
+
+    vi.stubGlobal("window", {
+      location: { origin: "https://abraxasworld.xyz" },
+    });
+
+    const url = buildGoogleOAuthUrl("nonce-canonical", "canonical");
+    expect(new URL(url!).searchParams.get("state")).toBe("abraxas_zklogin_canonical");
   });
 
   it("buildGoogleOAuthUrl returns null for legacy mode when public legacy client is unset", () => {

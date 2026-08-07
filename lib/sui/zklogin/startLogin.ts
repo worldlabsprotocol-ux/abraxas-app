@@ -36,7 +36,7 @@ export async function startGoogleZkLogin(
   }
 
   clearStaleLoginInFlight();
-  logAuthEvent("oauth_start");
+    logAuthEvent("oauth_start", { detail: `login_mode=${mode}` });
 
   if (isLoginInFlight()) {
     logAuthEvent("oauth_start", { error: "blocked_by_login_in_flight" });
