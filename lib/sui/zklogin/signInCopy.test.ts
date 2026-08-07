@@ -13,19 +13,21 @@ describe("ZKLOGIN_SIGN_IN_COPY", () => {
   it("uses Passport-first helper and legacy button copy", () => {
     expect(ZKLOGIN_SIGN_IN_COPY.openButton).toBe("Sign in");
     expect(ZKLOGIN_SIGN_IN_COPY.chooserTitle).toBe("Access your Passport");
-    expect(ZKLOGIN_SIGN_IN_COPY.legacySectionHeading).toBe("Already have a Passport?");
+    expect(ZKLOGIN_SIGN_IN_COPY.legacySectionHeading).toBe("Older sign-in setup");
     expect(ZKLOGIN_SIGN_IN_COPY.canonicalHelper).toBe(
-      "New to Abraxas? This creates your Passport.",
+      "Recommended for most Passports.",
     );
-    expect(ZKLOGIN_SIGN_IN_COPY.legacyButton).toBe("Use an existing Passport");
+    expect(ZKLOGIN_SIGN_IN_COPY.legacyButton).toBe(
+      "Recover a Passport created with an older sign-in setup",
+    );
     expect(ZKLOGIN_SIGN_IN_COPY.legacyHelper).toBe(
-      "Had an Abraxas Passport before our sign-in update? Continue here.",
+      "Use this only when Continue with Google does not open your Passport and you are directed here.",
     );
   });
 
   it("exposes accessible labels for both sign-in actions", () => {
     expect(ZKLOGIN_SIGN_IN_COPY.canonicalAriaLabel).toMatch(/Continue with Google/i);
-    expect(ZKLOGIN_SIGN_IN_COPY.legacyAriaLabel).toMatch(/existing Passport/i);
+    expect(ZKLOGIN_SIGN_IN_COPY.legacyAriaLabel).toMatch(/older sign-in setup/i);
   });
 
   it("keeps backend terms out of end-user copy", () => {

@@ -8,6 +8,10 @@ import { parseIdTokenFromCallbackHash, loadUserSession } from "@/lib/sui/zklogin
 import { completeGoogleZkLogin } from "@/lib/sui/zklogin/completeLogin";
 import { clearLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
 import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
+import {
+  buildPassportRecoveryQuery,
+  ZkLoginSignInRecoveryError,
+} from "@/lib/sui/zklogin/signInRecovery";
 
 export default function ZkLoginCallbackPage() {
   const router = useRouter();
@@ -39,6 +43,14 @@ export default function ZkLoginCallbackPage() {
         logAuthEvent("oauth_callback_error", { error: message });
         setStatus("error");
         setErrorMsg(message);
+        if (err instanceof ZkLoginSignInRecoveryError) {
+          router.replace(`/passport?${buildPassportRecoveryQuery({
+            message,
+            suggestedMode: err.suggestedMode,
+            createdAt: new Date().toISOString(),
+          })}`);
+          return;
+        }
         router.replace(`/passport?sign_in_error=${encodeURIComponent(message)}`);
       }
     }
