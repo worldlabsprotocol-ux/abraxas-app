@@ -15,20 +15,36 @@ export interface UpstashRateLimitCheckResult {
 
 export interface UpstashHealthProbe {
   configured: boolean;
+  configState: PartnerFlowUpstashConfigState;
   reachable: boolean | null;
   errorCode: string | null;
 }
 
+export type PartnerFlowUpstashConfigState = "none" | "complete" | "incomplete";
+
 let redisClient: Redis | null = null;
 const limiterCache = new Map<string, Ratelimit>();
+
+export function getPartnerFlowUpstashConfigState(
+  env: Record<string, string | undefined> = process.env,
+): PartnerFlowUpstashConfigState {
+  const hasUrl = Boolean(env.UPSTASH_REDIS_REST_URL?.trim());
+  const hasToken = Boolean(env.UPSTASH_REDIS_REST_TOKEN?.trim());
+  if (hasUrl && hasToken) return "complete";
+  if (hasUrl || hasToken) return "incomplete";
+  return "none";
+}
+
+export function isPartnerFlowUpstashConfigIncomplete(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return getPartnerFlowUpstashConfigState(env) === "incomplete";
+}
 
 export function isPartnerFlowUpstashConfigured(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  return Boolean(
-    env.UPSTASH_REDIS_REST_URL?.trim()
-    && env.UPSTASH_REDIS_REST_TOKEN?.trim(),
-  );
+  return getPartnerFlowUpstashConfigState(env) === "complete";
 }
 
 export function getPartnerFlowUpstashRedis(
@@ -104,22 +120,33 @@ export async function checkPartnerFlowUpstashRateLimit(input: {
 export async function probePartnerFlowUpstashHealth(
   env: Record<string, string | undefined> = process.env,
 ): Promise<UpstashHealthProbe> {
-  if (!isPartnerFlowUpstashConfigured(env)) {
-    return { configured: false, reachable: null, errorCode: null };
+  const configState = getPartnerFlowUpstashConfigState(env);
+
+  if (configState === "none") {
+    return { configured: false, configState, reachable: null, errorCode: null };
+  }
+
+  if (configState === "incomplete") {
+    return {
+      configured: false,
+      configState,
+      reachable: false,
+      errorCode: "config_incomplete",
+    };
   }
 
   try {
     const redis = getPartnerFlowUpstashRedis(env);
     if (!redis) {
-      return { configured: true, reachable: false, errorCode: "client_init_failed" };
+      return { configured: true, configState, reachable: false, errorCode: "client_init_failed" };
     }
     const pong = await redis.ping();
     if (pong !== "PONG") {
-      return { configured: true, reachable: false, errorCode: "ping_failed" };
+      return { configured: true, configState, reachable: false, errorCode: "ping_failed" };
     }
-    return { configured: true, reachable: true, errorCode: null };
+    return { configured: true, configState, reachable: true, errorCode: null };
   } catch {
-    return { configured: true, reachable: false, errorCode: "unreachable" };
+    return { configured: true, configState, reachable: false, errorCode: "unreachable" };
   }
 }
 

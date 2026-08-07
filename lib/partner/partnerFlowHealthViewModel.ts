@@ -50,6 +50,7 @@ export interface TechnicalDetailsView {
   hmacSecretConfigured: boolean;
   trustedIpStrategy: string;
   distributedStoreConfigured: boolean;
+  distributedStoreConfigIncomplete: boolean;
   distributedStoreActive: boolean;
   distributedStoreReachable: boolean | null;
   distributedStoreErrorCode: string | null;
@@ -139,6 +140,20 @@ export function buildProtectionStatus(rateLimit: RateLimitInfo): ProtectionStatu
     };
   }
 
+  if (rateLimit.distributedStoreConfigIncomplete) {
+    return {
+      headline: "Network-wide protection configuration incomplete",
+      subheadline: "Only one Upstash Redis variable is set. Partner Flow rate-limited routes fail closed until both are configured or both are removed.",
+      showYellowBanner: true,
+      yellowBannerTitle: "Incomplete Upstash configuration",
+      yellowBannerBody:
+        "Set both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or remove both to use basic per-instance protection. Limits are not silently downgraded to memory.",
+      isCritical: true,
+      criticalMessage:
+        "Add the missing Upstash variable or remove both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+    };
+  }
+
   if (rateLimit.distributedStoreActive) {
     return {
       headline: "Network-wide protection active",
@@ -182,6 +197,7 @@ export function buildNextActionView(rateLimit: RateLimitInfo): NextActionView {
     && rateLimit.enabled
     && rateLimit.hmacSecretConfigured
     && !rateLimit.distributedStoreActive
+    && !rateLimit.distributedStoreConfigIncomplete
     && !(rateLimit.distributedStoreConfigured && rateLimit.distributedStoreReachable === false);
 
   return {
@@ -224,6 +240,7 @@ export function buildTechnicalDetails(report: PartnerFlowHealthReport): Technica
     hmacSecretConfigured: report.rate_limit.hmacSecretConfigured,
     trustedIpStrategy: report.rate_limit.trustedIpStrategy,
     distributedStoreConfigured: report.rate_limit.distributedStoreConfigured,
+    distributedStoreConfigIncomplete: report.rate_limit.distributedStoreConfigIncomplete,
     distributedStoreActive: report.rate_limit.distributedStoreActive,
     distributedStoreReachable: report.rate_limit.distributedStoreReachable,
     distributedStoreErrorCode: report.rate_limit.distributedStoreErrorCode,

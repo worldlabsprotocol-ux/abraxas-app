@@ -133,6 +133,61 @@ describe("partnerFlowRateLimit", () => {
     expect(result.backend).toBe("distributed_unavailable");
   });
 
+  it("fails closed when only UPSTASH_REDIS_REST_URL is set (no memory fallback)", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const req = new NextRequest("http://localhost/api/receipts/dr_test/public", {
+      headers: { "x-real-ip": "203.0.113.10" },
+    });
+    const blocked = await checkPartnerFlowRateLimit(req, "/api/receipts/public");
+
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.backend).toBe("distributed_config_incomplete");
+    expect(checkPartnerFlowUpstashRateLimit).not.toHaveBeenCalled();
+
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    resetPartnerFlowRateLimitStoreForTests();
+    const memoryResult = await checkPartnerFlowRateLimit(req, "/api/receipts/public");
+    expect(memoryResult.backend).toBe("memory");
+    expect(memoryResult.attemptsInWindow).toBe(1);
+  });
+
+  it("fails closed when only UPSTASH_REDIS_REST_TOKEN is set (no memory fallback)", async () => {
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_TOKEN = "super-secret-token-value";
+
+    const req = requestWithHeaders({});
+    const blocked = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+      sessionSubject: "0xabc",
+    });
+
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.backend).toBe("distributed_config_incomplete");
+    expect(checkPartnerFlowUpstashRateLimit).not.toHaveBeenCalled();
+
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    resetPartnerFlowRateLimitStoreForTests();
+    const memoryResult = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+      sessionSubject: "0xabc",
+    });
+    expect(memoryResult.backend).toBe("memory");
+    expect(memoryResult.attemptsInWindow).toBe(1);
+  });
+
+  it("reports incomplete configuration in health without leaking secrets", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const info = await getPartnerFlowRateLimitBackendInfo();
+    expect(info.backend).toBe("distributed_config_incomplete");
+    expect(info.distributedStoreConfigIncomplete).toBe(true);
+    expect(info.distributedStoreConfigured).toBe(false);
+    expect(info.note).toMatch(/incomplete/i);
+    expect(info.note).not.toContain("https://example.upstash.io");
+    expect(JSON.stringify(info)).not.toContain("super-secret");
+  });
+
   it("never exposes raw IP in bucket key output", () => {
     const rawIp = "198.51.100.42";
     const key = hashPartnerFlowClientBucketKey({
@@ -160,6 +215,7 @@ describe("partnerFlowRateLimit", () => {
   it("reports memory backend in health when Upstash is not configured", async () => {
     vi.mocked(probePartnerFlowUpstashHealth).mockResolvedValue({
       configured: false,
+      configState: "none",
       reachable: null,
       errorCode: null,
     });
@@ -177,6 +233,7 @@ describe("partnerFlowRateLimit", () => {
 
     vi.mocked(probePartnerFlowUpstashHealth).mockResolvedValue({
       configured: true,
+      configState: "complete",
       reachable: true,
       errorCode: null,
     });
@@ -193,6 +250,7 @@ describe("partnerFlowRateLimit", () => {
 
     vi.mocked(probePartnerFlowUpstashHealth).mockResolvedValue({
       configured: true,
+      configState: "complete",
       reachable: false,
       errorCode: "unreachable",
     });

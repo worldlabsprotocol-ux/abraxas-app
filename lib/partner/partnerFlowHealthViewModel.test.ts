@@ -23,6 +23,7 @@ function baseReport(overrides?: Partial<PartnerFlowHealthReport>): PartnerFlowHe
       trustedIpStrategy: "vercel-x-real-ip",
       distributedStoreRequired: true,
       distributedStoreConfigured: false,
+      distributedStoreConfigIncomplete: false,
       distributedStoreActive: false,
       distributedStoreReachable: null,
       distributedStoreErrorCode: null,
@@ -48,6 +49,32 @@ describe("partnerFlowHealthViewModel", () => {
     expect(view.subheadline).toMatch(/each server instance/i);
     expect(view.showYellowBanner).toBe(true);
     expect(view.yellowBannerTitle).toBe("Network-wide protection not enabled");
+  });
+
+  it("shows incomplete configuration when only one Upstash variable is set", () => {
+    const view = buildProtectionStatus({
+      ...baseReport().rate_limit,
+      backend: "distributed_config_incomplete",
+      distributedStoreConfigIncomplete: true,
+      distributedStoreConfigured: false,
+      distributedStoreReachable: false,
+      distributedStoreErrorCode: "config_incomplete",
+      note: "Upstash Redis configuration is incomplete (only one of UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN is set).",
+    });
+    expect(view.headline).toBe("Network-wide protection configuration incomplete");
+    expect(view.isCritical).toBe(true);
+    expect(view.yellowBannerBody).toMatch(/not silently downgraded/i);
+    expect(JSON.stringify(view)).not.toContain("super-secret-token");
+    expect(JSON.stringify(view)).not.toContain("https://example.upstash.io");
+  });
+
+  it("hides next-action when Upstash configuration is incomplete", () => {
+    const next = buildNextActionView({
+      ...baseReport().rate_limit,
+      distributedStoreConfigIncomplete: true,
+      backend: "distributed_config_incomplete",
+    });
+    expect(next.show).toBe(false);
   });
 
   it("shows network-wide protection when Upstash is active", () => {

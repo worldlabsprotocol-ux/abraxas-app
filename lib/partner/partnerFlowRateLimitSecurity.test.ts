@@ -260,6 +260,23 @@ describe("partner-flow rate limit security regressions", () => {
     expect(healthText).not.toContain(STRONG_TEST_SECRET);
   });
 
+  it("evaluate returns 503 when Upstash configuration is URL-only", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const res = await evaluatePOST(postJson({
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+    }));
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.code).toBe("rate_limit_store_config_incomplete");
+    expect(evaluatePartnerFlow).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain("https://example.upstash.io");
+  });
+
   it("production public receipt fails closed when Upstash is configured but unavailable", async () => {
     process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
     process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";

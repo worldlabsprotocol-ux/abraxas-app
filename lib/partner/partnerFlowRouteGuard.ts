@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import {
   checkPartnerFlowRateLimit,
+  partnerFlowRateLimitConfigIncompleteResponse,
   partnerFlowRateLimitDistributedUnavailableResponse,
   partnerFlowRateLimitIdentityUnavailableResponse,
   partnerFlowRateLimitResponse,
@@ -30,7 +31,11 @@ export async function enforcePartnerFlowRateLimit(
     sessionSubject: ctx.sessionSubject,
   });
 
-  if (result.backend === "identity_unavailable" || result.backend === "distributed_unavailable") {
+  if (
+    result.backend === "identity_unavailable"
+    || result.backend === "distributed_unavailable"
+    || result.backend === "distributed_config_incomplete"
+  ) {
     const latencyMs = Date.now() - ctx.started;
     recordPartnerFlowTelemetry({
       endpoint: ctx.endpoint,
@@ -40,6 +45,9 @@ export async function enforcePartnerFlowRateLimit(
       partnerId: ctx.partnerId,
       policyId: ctx.policyId,
     });
+    if (result.backend === "distributed_config_incomplete") {
+      return partnerFlowRateLimitConfigIncompleteResponse();
+    }
     return result.backend === "distributed_unavailable"
       ? partnerFlowRateLimitDistributedUnavailableResponse()
       : partnerFlowRateLimitIdentityUnavailableResponse();

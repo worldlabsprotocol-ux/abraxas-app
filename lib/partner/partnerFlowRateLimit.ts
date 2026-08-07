@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
   checkPartnerFlowUpstashRateLimit,
+  getPartnerFlowUpstashConfigState,
   isPartnerFlowUpstashConfigured,
   probePartnerFlowUpstashHealth,
   resetPartnerFlowUpstashStoreForTests,
@@ -26,7 +27,8 @@ export type PartnerFlowRateLimitBackend =
   | "upstash"
   | "disabled"
   | "identity_unavailable"
-  | "distributed_unavailable";
+  | "distributed_unavailable"
+  | "distributed_config_incomplete";
 
 export interface PartnerFlowRateLimitResult {
   allowed: boolean;
@@ -282,7 +284,8 @@ export async function checkPartnerFlowRateLimit(
   const secretResolution = resolvePartnerFlowRateLimitSecret();
   const { material } = buildIdentityMaterial(request, endpoint, options?.sessionSubject);
   const isIpBased = !options?.sessionSubject?.trim() && IP_BASED_ENDPOINTS.has(endpoint);
-  const upstashConfigured = isPartnerFlowUpstashConfigured();
+  const upstashConfigState = getPartnerFlowUpstashConfigState();
+  const upstashConfigured = upstashConfigState === "complete";
 
   if (!secretResolution.configured || !secretResolution.secret) {
     if (isPartnerFlowProductionRuntime()) {
@@ -320,6 +323,16 @@ export async function checkPartnerFlowRateLimit(
     identityMaterial: material,
     secret: secretResolution.secret,
   });
+
+  if (upstashConfigState === "incomplete") {
+    return {
+      allowed: false,
+      limit,
+      attemptsInWindow: 0,
+      retryAfterSec: windowSec,
+      backend: "distributed_config_incomplete",
+    };
+  }
 
   if (upstashConfigured) {
     try {
@@ -367,6 +380,13 @@ export function partnerFlowRateLimitResponse(
   );
 }
 
+export function partnerFlowRateLimitConfigIncompleteResponse(): NextResponse {
+  return NextResponse.json(
+    { error: "Service temporarily unavailable", code: "rate_limit_store_config_incomplete" },
+    { status: 503 },
+  );
+}
+
 export function partnerFlowRateLimitDistributedUnavailableResponse(): NextResponse {
   return NextResponse.json(
     { error: "Service temporarily unavailable", code: "rate_limit_store_unavailable" },
@@ -395,6 +415,7 @@ export interface PartnerFlowRateLimitBackendInfo {
   trustedIpStrategy: string;
   distributedStoreRequired: boolean;
   distributedStoreConfigured: boolean;
+  distributedStoreConfigIncomplete: boolean;
   distributedStoreActive: boolean;
   distributedStoreReachable: boolean | null;
   distributedStoreErrorCode: string | null;
@@ -402,7 +423,9 @@ export interface PartnerFlowRateLimitBackendInfo {
 }
 
 export async function getPartnerFlowRateLimitBackendInfo(): Promise<PartnerFlowRateLimitBackendInfo> {
-  const upstashConfigured = isPartnerFlowUpstashConfigured();
+  const upstashConfigState = getPartnerFlowUpstashConfigState();
+  const upstashConfigured = upstashConfigState === "complete";
+  const upstashConfigIncomplete = upstashConfigState === "incomplete";
   const upstashHealth = await probePartnerFlowUpstashHealth();
   const secret = resolvePartnerFlowRateLimitSecret();
   const enabled = isPartnerFlowRateLimitEnabled();
@@ -415,6 +438,8 @@ export async function getPartnerFlowRateLimitBackendInfo(): Promise<PartnerFlowR
   let backend: PartnerFlowRateLimitBackendInfo["backend"] = enabled ? "memory" : "disabled";
   if (!enabled) {
     backend = "disabled";
+  } else if (upstashConfigIncomplete) {
+    backend = "distributed_config_incomplete";
   } else if (distributedStoreActive) {
     backend = "upstash";
   } else if (upstashConfigured && upstashHealth.reachable === false) {
@@ -426,13 +451,14 @@ export async function getPartnerFlowRateLimitBackendInfo(): Promise<PartnerFlowR
   let note = "Rate limits use in-process memory only (basic per-instance protection). "
     + "Configure Upstash Redis (UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN) for network-wide protection on Vercel.";
 
-  if (distributedStoreActive) {
+  if (upstashConfigIncomplete) {
+    note = "Upstash Redis configuration is incomplete (only one of UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN is set). "
+      + "Partner Flow rate-limited routes fail closed until both are set or both are removed.";
+  } else if (distributedStoreActive) {
     note = "Network-wide protection active via Upstash Redis. Limits are shared across all Vercel instances.";
   } else if (upstashConfigured && upstashHealth.reachable === false) {
     note = `Upstash Redis is configured but unreachable (${upstashHealth.errorCode ?? "unknown"}). `
       + "Public receipt requests fail closed until connectivity is restored. Limits are not silently downgraded.";
-  } else if (upstashConfigured && upstashHealth.reachable === null) {
-    note = "Upstash credentials detected; health probe pending.";
   }
 
   if (enabled && !secret.configured && isPartnerFlowProductionRuntime()) {
@@ -448,6 +474,7 @@ export async function getPartnerFlowRateLimitBackendInfo(): Promise<PartnerFlowR
       : "untrusted-proxy-shared-fallback",
     distributedStoreRequired: true,
     distributedStoreConfigured: upstashConfigured,
+    distributedStoreConfigIncomplete: upstashConfigIncomplete,
     distributedStoreActive,
     distributedStoreReachable: upstashHealth.reachable,
     distributedStoreErrorCode: upstashHealth.errorCode,

@@ -92,6 +92,14 @@ If both Upstash variables are set but Redis is unreachable:
 - Admin health shows unreachable status with a safe error code (e.g. `unreachable`, `ping_failed`) — no secrets or bucket keys.
 - Remove both Upstash variables to intentionally return to basic per-instance protection.
 
+**Fail-closed when Upstash configuration is incomplete**
+
+If exactly one of `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` is set:
+
+- All rate-limited Partner Flow routes return **HTTP 503** (`rate_limit_store_config_incomplete`) — memory fallback is **not** used.
+- Admin health shows **“Network-wide protection configuration incomplete.”**
+- Set both variables or remove both to restore normal operation.
+
 Implementation: `lib/partner/partnerFlowUpstashStore.ts` + `lib/partner/partnerFlowRateLimit.ts`.
 
 ## P1-4 telemetry
