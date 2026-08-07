@@ -36,7 +36,7 @@ export async function startGoogleZkLogin(
   }
 
   clearStaleLoginInFlight();
-    logAuthEvent("oauth_start", { detail: `login_mode=${mode}` });
+  logAuthEvent("oauth_start", { detail: `login_mode=${mode}` });
 
   if (isLoginInFlight()) {
     logAuthEvent("oauth_start", { error: "blocked_by_login_in_flight" });
@@ -58,6 +58,25 @@ export async function startGoogleZkLogin(
       detail: `epoch via ${epochResult.rpcHost} (${epochResult.network})`,
     });
 
+    const stateRes = await fetch("/api/auth/zklogin/login-state", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login_mode: mode }),
+    });
+
+    if (!stateRes.ok) {
+      clearLoginInFlight();
+      return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
+    }
+
+    const stateData = (await stateRes.json()) as { oauth_state?: string };
+    const oauthState = stateData.oauth_state?.trim();
+    if (!oauthState) {
+      clearLoginInFlight();
+      return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
+    }
+
     const ephemeralKeypair = Ed25519Keypair.generate();
     const randomness = generateRandomness();
     const nonce = generateNonce(ephemeralKeypair.getPublicKey(), maxEpoch, randomness);
@@ -71,7 +90,7 @@ export async function startGoogleZkLogin(
       startedAt: new Date().toISOString(),
     });
 
-    const url = buildGoogleOAuthUrl(nonce, mode);
+    const url = buildGoogleOAuthUrl(nonce, oauthState, mode);
     if (!url) {
       clearLoginInFlight();
       return { ok: false, error: "Could not build OAuth URL" };

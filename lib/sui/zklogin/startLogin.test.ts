@@ -14,8 +14,8 @@ vi.mock("./fetchLoginEpoch", () => ({
 vi.mock("./config", () => ({
   isZkLoginConfigured: () => true,
   isLegacyZkLoginRecoveryConfigured: () => true,
-  buildGoogleOAuthUrl: vi.fn((nonce: string, mode: string) =>
-    `https://accounts.google.com/o/oauth2/v2/auth?nonce=${nonce}&mode=${mode}`),
+  buildGoogleOAuthUrl: vi.fn((nonce: string, oauthState: string, mode: string) =>
+    `https://accounts.google.com/o/oauth2/v2/auth?nonce=${nonce}&state=${oauthState}&mode=${mode}`),
 }));
 
 vi.mock("./session", () => ({
@@ -26,6 +26,8 @@ import { savePendingSession } from "./session";
 import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 import { buildGoogleOAuthUrl } from "./config";
 import { startGoogleZkLogin } from "./startLogin";
+
+const SIGNED_OAUTH_STATE = "signed-random-oauth-state-token";
 
 describe("startGoogleZkLogin", () => {
   const assign = vi.fn();
@@ -42,6 +44,10 @@ describe("startGoogleZkLogin", () => {
     vi.stubGlobal("window", {
       location: { assign },
     });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ oauth_state: SIGNED_OAUTH_STATE }),
+    }));
     assign.mockClear();
     vi.mocked(savePendingSession).mockClear();
     vi.mocked(fetchLoginMaxEpoch).mockResolvedValue({
@@ -64,26 +70,41 @@ describe("startGoogleZkLogin", () => {
     expect(assign).not.toHaveBeenCalled();
   });
 
-  it("starts OAuth and marks in-flight", async () => {
+  it("mints server OAuth state and starts canonical sign-in", async () => {
     const result = await startGoogleZkLogin();
     expect(result).toEqual({ ok: true });
     expect(fetchLoginMaxEpoch).toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/auth/zklogin/login-state",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+      }),
+    );
     expect(savePendingSession).toHaveBeenCalledWith(
       expect.objectContaining({ loginMode: "canonical" }),
     );
-    expect(buildGoogleOAuthUrl).toHaveBeenCalledWith(expect.any(String), "canonical");
+    expect(buildGoogleOAuthUrl).toHaveBeenCalledWith(
+      expect.any(String),
+      SIGNED_OAUTH_STATE,
+      "canonical",
+    );
     expect(storage["abraxas_zklogin_login_in_flight"]).toBe("1");
     expect(assign).toHaveBeenCalled();
   });
 
-  it("uses legacy_recovery mode and OAuth URL for existing Passport sign-in", async () => {
+  it("uses legacy client and signed OAuth state for existing Passport sign-in", async () => {
     const result = await startGoogleZkLogin({ mode: "legacy_recovery" });
     expect(result).toEqual({ ok: true });
     expect(savePendingSession).toHaveBeenCalledWith(
       expect.objectContaining({ loginMode: "legacy_recovery" }),
     );
-    expect(buildGoogleOAuthUrl).toHaveBeenCalledWith(expect.any(String), "legacy_recovery");
-    expect(assign).toHaveBeenCalledWith(expect.stringContaining("mode=legacy_recovery"));
+    expect(buildGoogleOAuthUrl).toHaveBeenCalledWith(
+      expect.any(String),
+      SIGNED_OAUTH_STATE,
+      "legacy_recovery",
+    );
+    expect(assign).toHaveBeenCalledWith(expect.stringContaining(SIGNED_OAUTH_STATE));
   });
 
   it("surfaces RPC prepare failure without generic fetch message", async () => {

@@ -14,10 +14,11 @@ import { clearLoginInFlight } from "./loginInFlight";
 import { logAuthEvent } from "./authDebug";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
-import {
-  resolveLoginModeForRegister,
-} from "./loginMode";
 import type { ZkLoginLoginMode } from "./audienceCohorts";
+import {
+  parseOAuthStateFromCallbackHash,
+  ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE,
+} from "./oauthLoginState";
 
 type RegisterFailureBody = {
   sui_address?: string;
@@ -58,6 +59,31 @@ export function mapRegisterFailureToUserError(
   return body.error ?? "Could not register zkLogin identity";
 }
 
+export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<ZkLoginLoginMode> {
+  const oauthState = callbackHash ? parseOAuthStateFromCallbackHash(callbackHash) : null;
+  if (!oauthState) {
+    throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+  }
+
+  const res = await fetch("/api/auth/zklogin/consume-login-state", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ oauth_state: oauthState }),
+  });
+
+  if (!res.ok) {
+    throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+  }
+
+  const data = (await res.json()) as { login_mode?: string };
+  if (data.login_mode === "legacy_recovery" || data.login_mode === "canonical") {
+    return data.login_mode;
+  }
+
+  throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+}
+
 export async function completeGoogleZkLogin(
   idToken: string,
   options?: { callbackHash?: string },
@@ -89,11 +115,15 @@ export async function completeGoogleZkLogin(
     throw new Error("OAuth token missing subject");
   }
 
-  const loginMode = resolveLoginModeForRegister({
-    pending,
-    idToken,
-    callbackHash: options?.callbackHash,
-  });
+  let loginMode: ZkLoginLoginMode;
+  try {
+    loginMode = await resolveVerifiedLoginMode(options?.callbackHash);
+  } catch (e) {
+    clearLoginInFlight();
+    const err = e instanceof Error ? e.message : ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE;
+    logAuthEvent("zklogin_complete_error", { error: err, detail: "oauth_state_invalid" });
+    throw new Error(err);
+  }
 
   logAuthEvent("oauth_callback", { detail: `login_mode=${loginMode}` });
 
@@ -118,7 +148,6 @@ export async function completeGoogleZkLogin(
     throw new Error(err);
   }
 
-  // Verify client-side derivation matches server (sanity check).
   if (regData.user_salt) {
     const derived = jwtToAddress(idToken, regData.user_salt);
     if (derived !== regData.sui_address) {

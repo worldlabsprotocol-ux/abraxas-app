@@ -26,10 +26,10 @@ import {
 import { fakeGoogleIdToken } from "./testJwt";
 import { jwtToAddress } from "@mysten/sui/zklogin";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
-import { ZKLOGIN_OAUTH_STATE } from "./loginMode";
 
 const LEGACY_OAUTH_CLIENT_ID = "187000000000-legacyclient.apps.googleusercontent.com";
 const NEW_OAUTH_CLIENT_ID = "540000000000-newclient.apps.googleusercontent.com";
+const OAUTH_STATE = "signed-random-oauth-state-token";
 
 const basePending = {
   ephemeralSecretKey: "ephemeral-secret-key",
@@ -38,6 +38,25 @@ const basePending = {
   provider: "google" as const,
   startedAt: new Date().toISOString(),
 };
+
+function mockVerifiedLoginFetch(
+  loginMode: "canonical" | "legacy_recovery",
+  registerResponse: Response | (() => Response),
+) {
+  vi.mocked(fetch).mockImplementation(async (url) => {
+    const href = String(url);
+    if (href.includes("/api/auth/zklogin/consume-login-state")) {
+      return {
+        ok: true,
+        json: async () => ({ login_mode: loginMode }),
+      } as Response;
+    }
+    if (href.includes("/api/auth/zklogin/register")) {
+      return typeof registerResponse === "function" ? registerResponse() : registerResponse;
+    }
+    throw new Error(`Unexpected fetch: ${href}`);
+  });
+}
 
 describe("completeGoogleZkLogin", () => {
   const env = { ...process.env };
@@ -78,45 +97,29 @@ describe("completeGoogleZkLogin", () => {
     );
   });
 
+  it("fails safely when OAuth state verification fails", async () => {
+    vi.mocked(loadPendingSession).mockReturnValue(basePending);
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ code: "zklogin_sign_in_expired" }),
+    } as Response);
+
+    const token = fakeGoogleIdToken({ sub: "sub", aud: NEW_OAUTH_CLIENT_ID });
+    await expect(
+      completeGoogleZkLogin(token, { callbackHash: `#id_token=x&state=${OAUTH_STATE}` }),
+    ).rejects.toThrow(ZKLOGIN_SIGN_IN_COPY.errors.signInExpired);
+  });
+
   it("rejects login when OAuth client ID changed but server still returns legacy address", async () => {
     const oauthSub = "dgv-test-google-sub-12345";
     const userSalt = "982451653";
-    const legacyToken = fakeGoogleIdToken({ sub: oauthSub, aud: LEGACY_OAUTH_CLIENT_ID });
     const newToken = fakeGoogleIdToken({ sub: oauthSub, aud: NEW_OAUTH_CLIENT_ID });
-    const legacyAddress = jwtToAddress(legacyToken, userSalt);
-
-    vi.mocked(loadPendingSession).mockReturnValue({
-      ...basePending,
-      loginMode: "canonical",
-    });
-
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        sui_address: legacyAddress,
-        user_salt: userSalt,
-        provider: "google",
-        oauth_sub: oauthSub,
-      }),
-    } as Response);
-
-    await expect(completeGoogleZkLogin(newToken)).rejects.toThrow(
-      /could not verify your Passport/i,
-    );
-  });
-
-  it("sends legacy_recovery login_mode for legacy pending session", async () => {
-    const oauthSub = "dgv-test-google-sub-12345";
-    const userSalt = "982451653";
     const legacyToken = fakeGoogleIdToken({ sub: oauthSub, aud: LEGACY_OAUTH_CLIENT_ID });
     const legacyAddress = jwtToAddress(legacyToken, userSalt);
 
-    vi.mocked(loadPendingSession).mockReturnValue({
-      ...basePending,
-      loginMode: "legacy_recovery",
-    });
-
-    vi.mocked(fetch).mockResolvedValue({
+    vi.mocked(loadPendingSession).mockReturnValue(basePending);
+    mockVerifiedLoginFetch("canonical", {
       ok: true,
       json: async () => ({
         sui_address: legacyAddress,
@@ -126,23 +129,19 @@ describe("completeGoogleZkLogin", () => {
       }),
     } as Response);
 
-    await completeGoogleZkLogin(legacyToken);
-
-    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(String(init.body)) as { login_mode?: string };
-    expect(body.login_mode).toBe("legacy_recovery");
-    expect(saveUserSession).toHaveBeenCalled();
+    await expect(
+      completeGoogleZkLogin(newToken, { callbackHash: `#state=${OAUTH_STATE}` }),
+    ).rejects.toThrow(/could not verify your Passport/i);
   });
 
-  it("recovers legacy login_mode from OAuth callback state when pending omits it", async () => {
+  it("completes legacy recovery using server-verified login_mode", async () => {
     const oauthSub = "dgv-test-google-sub-12345";
     const userSalt = "982451653";
     const legacyToken = fakeGoogleIdToken({ sub: oauthSub, aud: LEGACY_OAUTH_CLIENT_ID });
     const legacyAddress = jwtToAddress(legacyToken, userSalt);
 
     vi.mocked(loadPendingSession).mockReturnValue(basePending);
-
-    vi.mocked(fetch).mockResolvedValue({
+    mockVerifiedLoginFetch("legacy_recovery", {
       ok: true,
       json: async () => ({
         sui_address: legacyAddress,
@@ -152,25 +151,48 @@ describe("completeGoogleZkLogin", () => {
       }),
     } as Response);
 
-    await completeGoogleZkLogin(legacyToken, {
-      callbackHash: `#id_token=x&state=${ZKLOGIN_OAUTH_STATE.legacy_recovery}`,
-    });
+    await completeGoogleZkLogin(legacyToken, { callbackHash: `#state=${OAUTH_STATE}` });
 
-    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(String(init.body)) as { login_mode?: string };
+    const registerCall = vi.mocked(fetch).mock.calls.find(([url]) =>
+      String(url).includes("/api/auth/zklogin/register"),
+    );
+    const body = JSON.parse(String((registerCall?.[1] as RequestInit).body)) as { login_mode?: string };
     expect(body.login_mode).toBe("legacy_recovery");
+    expect(saveUserSession).toHaveBeenCalled();
+  });
+
+  it("completes canonical sign-in using server-verified login_mode", async () => {
+    const oauthSub = "dgv-test-google-sub-12345";
+    const userSalt = "982451653";
+    const canonicalToken = fakeGoogleIdToken({ sub: oauthSub, aud: NEW_OAUTH_CLIENT_ID });
+    const canonicalAddress = jwtToAddress(canonicalToken, userSalt);
+
+    vi.mocked(loadPendingSession).mockReturnValue(basePending);
+    mockVerifiedLoginFetch("canonical", {
+      ok: true,
+      json: async () => ({
+        sui_address: canonicalAddress,
+        user_salt: userSalt,
+        provider: "google",
+        oauth_sub: oauthSub,
+      }),
+    } as Response);
+
+    await completeGoogleZkLogin(canonicalToken, { callbackHash: `#state=${OAUTH_STATE}` });
+
+    const registerCall = vi.mocked(fetch).mock.calls.find(([url]) =>
+      String(url).includes("/api/auth/zklogin/register"),
+    );
+    const body = JSON.parse(String((registerCall?.[1] as RequestInit).body)) as { login_mode?: string };
+    expect(body.login_mode).toBe("canonical");
   });
 
   it("does not loop legacy recovery after audience mismatch — directs user to Continue with Google", async () => {
     const oauthSub = "dgv-test-google-sub-12345";
     const legacyToken = fakeGoogleIdToken({ sub: oauthSub, aud: LEGACY_OAUTH_CLIENT_ID });
 
-    vi.mocked(loadPendingSession).mockReturnValue({
-      ...basePending,
-      loginMode: "legacy_recovery",
-    });
-
-    vi.mocked(fetch).mockResolvedValue({
+    vi.mocked(loadPendingSession).mockReturnValue(basePending);
+    mockVerifiedLoginFetch("legacy_recovery", {
       ok: false,
       status: 409,
       json: async () => ({
@@ -180,21 +202,17 @@ describe("completeGoogleZkLogin", () => {
       }),
     } as Response);
 
-    await expect(completeGoogleZkLogin(legacyToken)).rejects.toThrow(
-      ZKLOGIN_SIGN_IN_COPY.errors.wrongPathForCanonical,
-    );
+    await expect(
+      completeGoogleZkLogin(legacyToken, { callbackHash: `#state=${OAUTH_STATE}` }),
+    ).rejects.toThrow(ZKLOGIN_SIGN_IN_COPY.errors.wrongPathForCanonical);
   });
 
   it("directs canonical users with legacy passports to Use an existing Passport", async () => {
     const oauthSub = "dgv-test-google-sub-12345";
     const canonicalToken = fakeGoogleIdToken({ sub: oauthSub, aud: NEW_OAUTH_CLIENT_ID });
 
-    vi.mocked(loadPendingSession).mockReturnValue({
-      ...basePending,
-      loginMode: "canonical",
-    });
-
-    vi.mocked(fetch).mockResolvedValue({
+    vi.mocked(loadPendingSession).mockReturnValue(basePending);
+    mockVerifiedLoginFetch("canonical", {
       ok: false,
       status: 409,
       json: async () => ({
@@ -204,9 +222,9 @@ describe("completeGoogleZkLogin", () => {
       }),
     } as Response);
 
-    await expect(completeGoogleZkLogin(canonicalToken)).rejects.toThrow(
-      ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail,
-    );
+    await expect(
+      completeGoogleZkLogin(canonicalToken, { callbackHash: `#state=${OAUTH_STATE}` }),
+    ).rejects.toThrow(ZKLOGIN_SIGN_IN_COPY.errors.audienceMismatchDetail);
   });
 });
 

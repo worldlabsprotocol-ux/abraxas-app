@@ -37,6 +37,7 @@ export const ZKLOGIN_SIGN_IN_COPY = {
       "Use an existing Passport to sign in with the Google account tied to your Passport.",
     addressMismatch:
       "We could not verify your Passport with this sign-in. Try Use an existing Passport, or contact support.",
+    signInExpired: "Sign-in expired—please try again",
   },
 } as const;
 
