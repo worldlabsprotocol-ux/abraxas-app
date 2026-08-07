@@ -4,6 +4,7 @@
 import type { NextRequest } from "next/server";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { resolveAdminAccess } from "@/lib/adminAuth";
+import { resolveAdminActorCategory } from "@/lib/admin/adminActorCategory";
 
 export async function logAdminPartnerConfigAudit(
   req: NextRequest,
@@ -17,10 +18,7 @@ export async function logAdminPartnerConfigAudit(
   },
 ): Promise<void> {
   const access = await resolveAdminAccess(req);
-  const actorId =
-    access.method === "email" && access.email
-      ? `admin_email:${access.email.split("@")[0]}`
-      : access.method ?? "admin_unknown";
+  const actorId = resolveAdminActorCategory(access.method);
 
   await appendAuditEvent({
     actor_type: "admin_operator",

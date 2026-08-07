@@ -12,6 +12,7 @@ import {
 } from "@/lib/partner/partnerFlowAudit";
 import { buildPartnerFlowVerificationRequestIdempotencyKey } from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
+import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMeteringHooks";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import {
   enforcePartnerFlowRateLimit,
@@ -162,6 +163,15 @@ export async function POST(request: NextRequest) {
       }
       throw e;
     }
+
+    maybeRecordPartnerFlowReceiptMetering({
+      partnerId,
+      replayStatus: result.replay_status,
+      decision: result.partner_result?.decision,
+      receiptId: result.partner_result?.receipt_id,
+      policyId,
+      decisionId: result.decision_id,
+    });
 
     void logPartnerUsage({
       endpoint: ENDPOINT,

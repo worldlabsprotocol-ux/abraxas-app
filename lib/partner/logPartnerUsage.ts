@@ -3,6 +3,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import type { PartnerAuthContext } from "@/lib/partner/partnerAuth";
+import { maybeRecordPartnerApiMeteringFromUsage } from "@/lib/partner/partnerMeteringHooks";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -47,4 +48,6 @@ export async function logPartnerUsage(entry: PartnerUsageEntry): Promise<void> {
   if (error) {
     console.warn("partner_api_usage insert failed:", error.message);
   }
+
+  maybeRecordPartnerApiMeteringFromUsage(entry);
 }
