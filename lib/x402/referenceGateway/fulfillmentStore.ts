@@ -1,19 +1,53 @@
 // FILE: lib/x402/referenceGateway/fulfillmentStore.ts
-// Durable fulfillment ledger — file-backed for reference; production uses partner DB.
+// Fulfillment ledger interfaces — FileFulfillmentStore is LOCAL-DEMO ONLY (not durable).
 
 import { mkdirSync, readFileSync, renameSync, writeFileSync, existsSync } from "fs";
 import { dirname } from "path";
-import type { FulfillmentRecord, FulfillmentStatus, SettlementResponseV2 } from "./types";
+import type { FulfillmentRecord, FulfillmentStatus, SettlementResponse } from "./types";
 
 export interface FulfillmentStore {
   getByIdempotencyKey(key: string): Promise<FulfillmentRecord | null>;
   insertPending(record: FulfillmentRecord): Promise<"inserted" | "conflict">;
   markSettled(
     key: string,
-    update: { settlement_ref: string; payment_response: SettlementResponseV2; access_grant_expires_at: string },
+    update: { settlement_ref: string; payment_response: SettlementResponse; access_grant_expires_at: string },
   ): Promise<"updated" | "missing" | "conflict">;
-  markFailed(key: string, payment_response: SettlementResponseV2): Promise<void>;
-  markAmbiguous(key: string, payment_response: SettlementResponseV2): Promise<void>;
+  markFailed(key: string, payment_response: SettlementResponse): Promise<void>;
+  markAmbiguous(key: string, payment_response: SettlementResponse): Promise<void>;
+}
+
+/** Brand for adapters backed by a real durable store (Postgres, DynamoDB, etc.). */
+export const DURABLE_FULFILLMENT_STORE_BRAND = Symbol("DurableFulfillmentStore");
+
+export interface DurableFulfillmentStore extends FulfillmentStore {
+  readonly [DURABLE_FULFILLMENT_STORE_BRAND]: true;
+}
+
+export function isDurableFulfillmentStore(store: FulfillmentStore): store is DurableFulfillmentStore {
+  return DURABLE_FULFILLMENT_STORE_BRAND in store;
+}
+
+/** Read-only stub — used when only 402 PAYMENT-REQUIRED is served (no settlement). */
+export class NoOpFulfillmentStore implements FulfillmentStore {
+  async getByIdempotencyKey(): Promise<FulfillmentRecord | null> {
+    return null;
+  }
+
+  async insertPending(): Promise<"inserted" | "conflict"> {
+    throw new Error("noop_fulfillment_store_write");
+  }
+
+  async markSettled(): Promise<"updated" | "missing" | "conflict"> {
+    throw new Error("noop_fulfillment_store_write");
+  }
+
+  async markFailed(): Promise<void> {
+    throw new Error("noop_fulfillment_store_write");
+  }
+
+  async markAmbiguous(): Promise<void> {
+    throw new Error("noop_fulfillment_store_write");
+  }
 }
 
 export interface FileFulfillmentStoreOptions {
@@ -44,6 +78,10 @@ function writeLedger(filePath: string, ledger: LedgerFile): void {
   renameSync(tmp, filePath);
 }
 
+/**
+ * Local-demo file-backed ledger for developer workstations only.
+ * NOT durable across serverless instances, NOT safe for production or Vercel.
+ */
 export class FileFulfillmentStore implements FulfillmentStore {
   private readonly filePath: string;
 
@@ -73,7 +111,7 @@ export class FileFulfillmentStore implements FulfillmentStore {
 
   async markSettled(
     key: string,
-    update: { settlement_ref: string; payment_response: SettlementResponseV2; access_grant_expires_at: string },
+    update: { settlement_ref: string; payment_response: SettlementResponse; access_grant_expires_at: string },
   ): Promise<"updated" | "missing" | "conflict"> {
     return this.withLedger((ledger) => {
       const existing = ledger.records[key];
@@ -90,7 +128,7 @@ export class FileFulfillmentStore implements FulfillmentStore {
     });
   }
 
-  async markFailed(key: string, payment_response: SettlementResponseV2): Promise<void> {
+  async markFailed(key: string, payment_response: SettlementResponse): Promise<void> {
     this.withLedger((ledger) => {
       const existing = ledger.records[key];
       if (!existing) return;
@@ -98,7 +136,7 @@ export class FileFulfillmentStore implements FulfillmentStore {
     });
   }
 
-  async markAmbiguous(key: string, payment_response: SettlementResponseV2): Promise<void> {
+  async markAmbiguous(key: string, payment_response: SettlementResponse): Promise<void> {
     this.withLedger((ledger) => {
       const existing = ledger.records[key];
       if (!existing) return;
@@ -107,7 +145,10 @@ export class FileFulfillmentStore implements FulfillmentStore {
   }
 }
 
-/** SQL schema partners should use in production (not applied by Abraxas). */
+/**
+ * SQL schema partners must implement for a durable fulfillment ledger.
+ * NOT applied or implemented by Abraxas — documentation only.
+ */
 export const FULFILLMENT_LEDGER_SQL_SCHEMA = `
 CREATE TABLE IF NOT EXISTS x402_fulfillment_ledger (
   idempotency_key TEXT PRIMARY KEY,

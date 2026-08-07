@@ -8,6 +8,7 @@ import {
   isGrantActive,
 } from "./fulfillmentStore";
 import type { FulfillmentRecord } from "./types";
+import { buildSuccessSettlementResponse } from "./x402V2Wire";
 
 describe("FileFulfillmentStore", () => {
   let dir: string;
@@ -22,22 +23,24 @@ describe("FileFulfillmentStore", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it("persists records across store instances (durable, not in-memory)", async () => {
+  it("persists records across store instances for local-demo replay only", async () => {
+    const tx = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+    const paymentResponse = buildSuccessSettlementResponse(tx);
     const record: FulfillmentRecord = {
       idempotency_key: "key-1",
       receipt_id: "dr_test",
       payment_payload_hash: "hash-abc",
-      settlement_ref: "settle-1",
+      settlement_ref: tx,
       status: "settled",
       access_grant_expires_at: new Date(Date.now() + 60_000).toISOString(),
       created_at: new Date().toISOString(),
-      payment_response: { x402Version: 2, success: true, settlementRef: "settle-1" },
+      payment_response: paymentResponse,
     };
 
     await store.insertPending({ ...record, status: "pending", settlement_ref: null });
     await store.markSettled("key-1", {
-      settlement_ref: "settle-1",
-      payment_response: record.payment_response,
+      settlement_ref: tx,
+      payment_response: paymentResponse,
       access_grant_expires_at: record.access_grant_expires_at,
     });
 
@@ -47,7 +50,7 @@ describe("FileFulfillmentStore", () => {
     expect(isGrantActive(loaded!)).toBe(true);
   });
 
-  it("documents SQL schema for production partners", () => {
+  it("documents SQL schema for production partners (not implemented)", () => {
     expect(FULFILLMENT_LEDGER_SQL_SCHEMA).toContain("idempotency_key");
     expect(FULFILLMENT_LEDGER_SQL_SCHEMA).toContain("ambiguous");
   });

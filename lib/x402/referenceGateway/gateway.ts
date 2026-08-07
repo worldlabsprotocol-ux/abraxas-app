@@ -15,10 +15,14 @@ import { validateAbraxasEligibilityReceipt } from "./receiptValidation";
 import type {
   GatewayResponseBody,
   GatewayResult,
-  PaymentPayloadV2,
+  PaymentPayload,
   ReferenceGatewayConfig,
-  SettlementResponseV2,
+  SettlementResponse,
 } from "./types";
+import {
+  buildFailedSettlementResponse,
+  buildSuccessSettlementResponse,
+} from "./x402V2Wire";
 
 export interface GatewayDependencies {
   fulfillmentStore: FulfillmentStore;
@@ -30,9 +34,11 @@ export interface GatewayDependencies {
 export interface GatewayRequestInput {
   receiptId: string;
   paymentSignatureHeader: string | null;
-  decodePaymentSignature: (raw: string | null) => PaymentPayloadV2 | null;
+  decodePaymentSignature: (raw: string | null) => PaymentPayload | null;
   config: ReferenceGatewayConfig;
   deps: GatewayDependencies;
+  /** When false, PAYMENT-SIGNATURE requests fail closed (no verify/settle). */
+  settlementEnabled: boolean;
 }
 
 function demoBody(overrides: Partial<GatewayResponseBody> = {}): GatewayResponseBody {
@@ -55,7 +61,7 @@ function withHeaders(
   };
 }
 
-function paymentResponseHeader(response: SettlementResponseV2): Record<string, string> {
+function paymentResponseHeader(response: SettlementResponse): Record<string, string> {
   return { "PAYMENT-RESPONSE": encodeX402Header(response) };
 }
 
@@ -96,16 +102,20 @@ export async function handleProtectedResourceRequest(
     });
   }
 
-  if (paymentPayload.network !== config.network) {
+  if (!input.settlementEnabled) {
+    return withHeaders(503, demoBody({
+      code: "settlement_unavailable",
+      message: "Payment settlement requires a durable fulfillment store adapter. Not available in this runtime.",
+      receipt_id: input.receiptId,
+    }));
+  }
+
+  if (paymentPayload.accepted.network !== config.network) {
     return withHeaders(402, demoBody({
       code: "payment_network_mismatch",
       message: "Payment network must be Base Sepolia testnet only.",
       receipt_id: input.receiptId,
-    }), paymentResponseHeader({
-      x402Version: 2,
-      success: false,
-      error: "network_mismatch",
-    }));
+    }), paymentResponseHeader(buildFailedSettlementResponse("network_mismatch")));
   }
 
   const paymentPayloadHash = hashPaymentPayload(paymentPayload);
@@ -139,11 +149,7 @@ export async function handleProtectedResourceRequest(
   ).toISOString();
 
   if (!existing) {
-    const pendingResponse: SettlementResponseV2 = {
-      x402Version: 2,
-      success: false,
-      error: "pending",
-    };
+    const pendingResponse = buildFailedSettlementResponse("pending");
     const inserted = await input.deps.fulfillmentStore.insertPending({
       idempotency_key: idempotencyKey,
       receipt_id: input.receiptId,
@@ -168,11 +174,7 @@ export async function handleProtectedResourceRequest(
 
   const verify = await input.deps.facilitator.verify(paymentPayload, paymentRequired);
   if (!verify.ok) {
-    const failureResponse: SettlementResponseV2 = {
-      x402Version: 2,
-      success: false,
-      error: verify.error ?? "verify_failed",
-    };
+    const failureResponse = buildFailedSettlementResponse(verify.error ?? "verify_failed");
     await input.deps.fulfillmentStore.markFailed(idempotencyKey, failureResponse);
     return withHeaders(402, demoBody({
       code: "payment_verify_failed",
@@ -186,11 +188,7 @@ export async function handleProtectedResourceRequest(
 
   const settle = await input.deps.facilitator.settle(paymentPayload, paymentRequired);
   if (settle.status === "ambiguous") {
-    const ambiguousResponse: SettlementResponseV2 = {
-      x402Version: 2,
-      success: false,
-      error: settle.error ?? "settlement_ambiguous",
-    };
+    const ambiguousResponse = buildFailedSettlementResponse(settle.error ?? "settlement_ambiguous");
     await input.deps.fulfillmentStore.markAmbiguous(idempotencyKey, ambiguousResponse);
     return withHeaders(409, demoBody({
       code: "settlement_ambiguous",
@@ -199,12 +197,8 @@ export async function handleProtectedResourceRequest(
     }), paymentResponseHeader(ambiguousResponse));
   }
 
-  if (settle.status === "failed" || !settle.settlementRef) {
-    const failureResponse: SettlementResponseV2 = {
-      x402Version: 2,
-      success: false,
-      error: settle.error ?? "settlement_failed",
-    };
+  if (settle.status === "failed" || !settle.transaction) {
+    const failureResponse = buildFailedSettlementResponse(settle.error ?? "settlement_failed");
     await input.deps.fulfillmentStore.markFailed(idempotencyKey, failureResponse);
     return withHeaders(402, demoBody({
       code: "payment_settlement_failed",
@@ -216,14 +210,10 @@ export async function handleProtectedResourceRequest(
     });
   }
 
-  const successResponse: SettlementResponseV2 = {
-    x402Version: 2,
-    success: true,
-    settlementRef: settle.settlementRef,
-  };
+  const successResponse = buildSuccessSettlementResponse(settle.transaction, settle.payer);
 
   const marked = await input.deps.fulfillmentStore.markSettled(idempotencyKey, {
-    settlement_ref: settle.settlementRef,
+    settlement_ref: settle.transaction,
     payment_response: successResponse,
     access_grant_expires_at: accessGrantExpiresAt,
   });

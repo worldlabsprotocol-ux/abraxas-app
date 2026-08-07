@@ -10,6 +10,21 @@
 
 **Network:** Base Sepolia only (`eip155:84532`).
 
+Wire payloads follow the [official x402 v2 specification](https://github.com/x402-foundation/x402/blob/main/specs/x402-specification-v2.md).
+
+---
+
+## Safety contract
+
+| Runtime | Route | Settlement | Fulfillment store |
+|---------|-------|------------|-------------------|
+| **Disabled** (default) | 404 | — | — |
+| **Vercel / serverless** | 503 fail closed | blocked | file store never used |
+| **Local demo** (`X402_REF_LOCAL_DEMO_MODE=true` on a non-serverless host) | enabled | enabled | `FileFulfillmentStore` (local-demo only, **not durable**) |
+| **Remote testnet gateway** (no local-demo flag) | 402 only | 503 on `PAYMENT-SIGNATURE` | requires durable adapter (documented, **not implemented**) |
+
+`FileFulfillmentStore` is a **local-demo** convenience for developer workstations. It is **not** durable across serverless instances and must **never** be described or relied on as production-grade storage.
+
 ---
 
 ## Architecture
@@ -33,9 +48,9 @@ sequenceDiagram
   end
   Holder->>Partner: GET /resource?receipt_id=dr_… + PAYMENT-SIGNATURE
   Partner->>Fac: POST /verify
-  Fac-->>Partner: valid
+  Fac-->>Partner: isValid
   Partner->>Fac: POST /settle
-  Fac-->>Partner: settlementRef
+  Fac-->>Partner: transaction
   Partner->>Partner: durable fulfillment ledger (idempotent)
   Partner-->>Holder: 200 + synthetic resource + PAYMENT-RESPONSE
 ```
@@ -44,20 +59,22 @@ sequenceDiagram
 
 ## Partner configuration (operator-supplied)
 
-Set these environment variables on **your** gateway host. Abraxas does not store payment config.
+Set these environment variables on **your** gateway host. Abraxas does not store payment config. All URLs must be **HTTPS**. `pay_to`, `price_amount`, and `price_asset` are validated at startup.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `X402_REF_GATEWAY_ENABLED` | yes | Must be `true` to expose the demo route |
 | `X402_REF_PARTNER_ID` | yes | Abraxas pilot `partner_id` |
 | `X402_REF_POLICY_ID` | yes | Sandbox/testnet policy id |
-| `X402_REF_ABRAXAS_BASE_URL` | yes | e.g. `https://abraxasworld.xyz` |
-| `X402_REF_FACILITATOR_URL` | yes | External facilitator base URL (you operate) |
-| `X402_REF_PAY_TO` | yes | Partner treasury on Base Sepolia (you custody) |
-| `X402_REF_RESOURCE_URL` | yes | Canonical URL of this protected resource |
-| `X402_REF_PRICE_AMOUNT` | no | Atomic USDC units (default `10000` = 0.01 USDC) |
-| `X402_REF_PRICE_ASSET` | no | CAIP-19 testnet USDC on Base Sepolia |
-| `X402_REF_FULFILLMENT_STORE_PATH` | no | File path for demo ledger (production: use SQL — see below) |
+| `X402_REF_ABRAXAS_BASE_URL` | yes | HTTPS base URL, e.g. `https://abraxasworld.xyz` |
+| `X402_REF_FACILITATOR_URL` | yes | HTTPS external facilitator base URL (you operate) |
+| `X402_REF_PAY_TO` | yes | Valid EVM treasury on Base Sepolia (you custody) |
+| `X402_REF_RESOURCE_URL` | yes | HTTPS canonical URL of this protected resource |
+| `X402_REF_PRICE_AMOUNT` | no | Positive atomic USDC units (default `10000` = 0.01 USDC) |
+| `X402_REF_PRICE_ASSET` | no | Official Base Sepolia USDC CAIP-19: `eip155:84532/erc20:0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| `X402_REF_LOCAL_DEMO_MODE` | local only | Must be `true` to enable file-store settlement on a non-serverless host |
+| `X402_REF_FULFILLMENT_STORE_PATH` | local only | File path for local-demo ledger |
+| `X402_REF_DURABLE_STORE_ADAPTER` | remote | Reserved for a future durable adapter — **not implemented** |
 
 **Facilitator auth:** supply via your deployment platform (e.g. `Authorization` header). This repo does **not** ship facilitator secrets.
 
@@ -73,7 +90,7 @@ See `examples/partner-flow-web-rp/README.md` and `docs/PARTNER_ONBOARDING_CHECKL
 
 ---
 
-## Demo walkthrough (no live facilitator required for unit tests)
+## Demo walkthrough
 
 ### 1. Obtain eligibility
 
@@ -85,16 +102,18 @@ Complete Partner Flow and capture `receipt_id` from the callback.
 curl -si "https://YOUR_HOST/api/examples/x402-partner-flow-gateway/resource?receipt_id=dr_YOUR_RECEIPT"
 ```
 
-Expect **402** with `PAYMENT-REQUIRED` (Base64 JSON, x402 v2).
+On a **remote** testnet host without a durable adapter, this returns **402** with `PAYMENT-REQUIRED` (official x402 v2 JSON, Base64-encoded).
 
-### 3. Pay and retry (with facilitator configured)
+On **Vercel/serverless**, the route returns **503** (fail closed).
 
-Retry the same URL with a valid `PAYMENT-SIGNATURE` header. The gateway:
+### 3. Pay and retry (local demo only)
+
+On a **non-serverless** workstation with `X402_REF_LOCAL_DEMO_MODE=true` and a configured facilitator, retry with a valid `PAYMENT-SIGNATURE` header. The gateway:
 
 1. Re-validates the Abraxas receipt (fail closed on expiry / partner mismatch)
-2. Verifies payment with your facilitator
-3. Settles via facilitator (never fulfills on ambiguous settlement)
-4. Records fulfillment in a **durable ledger** (idempotent replays return the same `200` + `PAYMENT-RESPONSE`)
+2. Verifies payment with your facilitator (`POST /verify` with `paymentPayload` + `paymentRequirements`)
+3. Settles via facilitator (`POST /settle`) — never fulfills on ambiguous settlement
+4. Records fulfillment in the **local-demo file ledger** (idempotent replays return the same `200` + `PAYMENT-RESPONSE`)
 
 ### 4. Idempotent replay
 
@@ -102,9 +121,9 @@ Send the **same** `PAYMENT-SIGNATURE` again within the access grant TTL → **20
 
 ---
 
-## Production fulfillment store (required operator choice)
+## Production fulfillment store (required for remote settlement)
 
-The reference route uses a **file-backed ledger** for local demos. Production partners must use a durable database. Schema (not applied by Abraxas):
+Remote testnet gateways **must** implement a durable fulfillment-store adapter before payment settlement is permitted. Abraxas does **not** ship this adapter. Documented SQL schema (not applied):
 
 ```sql
 -- See lib/x402/referenceGateway/fulfillmentStore.ts — FULFILLMENT_LEDGER_SQL_SCHEMA
@@ -116,7 +135,7 @@ Idempotency key:
 SHA256(partner_id || resource_id || receipt_id || payment_payload_hash)
 ```
 
-**Do not** rely on in-memory deduplication for production fulfillment claims.
+**Do not** rely on `FileFulfillmentStore` or in-memory deduplication for production fulfillment claims.
 
 ---
 
@@ -127,7 +146,7 @@ SHA256(partner_id || resource_id || receipt_id || payment_payload_hash)
 | `receipt_id`, `partner_id`, `policy_id`, settlement status | Allowed (correlation only) |
 | Raw `PAYMENT-SIGNATURE`, JWTs, email, wallet addresses, identity claims | **Forbidden** |
 
-Fail closed on: invalid receipt, wrong partner/policy, expired receipt, invalid payment, facilitator failure, settlement ambiguity, duplicate fulfillment conflicts.
+Fail closed on: invalid receipt, wrong partner/policy, expired receipt, invalid payment, facilitator failure, settlement ambiguity, serverless file-store use, missing durable store on remote settlement, duplicate fulfillment conflicts.
 
 ---
 
@@ -143,7 +162,7 @@ Fail closed on: invalid receipt, wrong partner/policy, expired receipt, invalid 
 Run tests:
 
 ```bash
-npx vitest run lib/x402/referenceGateway lib/docs/x402ArchitectureDocs.test.ts
+npx vitest run lib/x402/referenceGateway lib/docs/x402ArchitectureDocs.test.ts app/api/examples/x402-partner-flow-gateway
 ```
 
 ---

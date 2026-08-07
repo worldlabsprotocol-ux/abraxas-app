@@ -1,7 +1,15 @@
 // FILE: lib/x402/referenceGateway/config.ts
 // Resolve reference gateway config from env — testnet demo only, no secrets.
 
-import { BASE_SEPOLIA_CAIP2, REFERENCE_GATEWAY_RESOURCE_ID } from "./constants";
+import {
+  BASE_SEPOLIA_CAIP2,
+  BASE_SEPOLIA_USDC_CAIP19,
+  REFERENCE_GATEWAY_RESOURCE_ID,
+} from "./constants";
+import {
+  validateReferenceGatewayConfigInput,
+  type ConfigValidationResult,
+} from "./configValidation";
 import type { ReferenceGatewayConfig } from "./types";
 
 export const REFERENCE_GATEWAY_ENV = {
@@ -20,6 +28,7 @@ export const REFERENCE_GATEWAY_ENV = {
 export interface ResolveReferenceGatewayConfigResult {
   config: ReferenceGatewayConfig | null;
   missing: string[];
+  validation: ConfigValidationResult | null;
   enabled: boolean;
 }
 
@@ -28,7 +37,12 @@ export function resolveReferenceGatewayConfig(
 ): ResolveReferenceGatewayConfigResult {
   const enabled = env[REFERENCE_GATEWAY_ENV.enabled]?.trim() === "true";
   if (!enabled) {
-    return { config: null, missing: [REFERENCE_GATEWAY_ENV.enabled], enabled: false };
+    return {
+      config: null,
+      missing: [REFERENCE_GATEWAY_ENV.enabled],
+      validation: null,
+      enabled: false,
+    };
   }
 
   const missing: string[] = [];
@@ -47,21 +61,40 @@ export function resolveReferenceGatewayConfig(
   if (!resourceUrl) missing.push(REFERENCE_GATEWAY_ENV.resourceUrl);
 
   if (missing.length > 0) {
-    return { config: null, missing, enabled: true };
+    return { config: null, missing, validation: null, enabled: true };
+  }
+
+  const priceAmount = env[REFERENCE_GATEWAY_ENV.priceAmount]?.trim() || "10000";
+  const priceAssetCaip19 = env[REFERENCE_GATEWAY_ENV.priceAsset]?.trim() || BASE_SEPOLIA_USDC_CAIP19;
+
+  const validation = validateReferenceGatewayConfigInput({
+    partnerId,
+    policyId,
+    abraxasPublicReceiptBaseUrl: abraxasPublicReceiptBaseUrl.replace(/\/$/, ""),
+    facilitatorUrl: facilitatorUrl.replace(/\/$/, ""),
+    payTo,
+    resourceUrl,
+    priceAmount,
+    priceAssetCaip19,
+    network: BASE_SEPOLIA_CAIP2,
+  });
+
+  if (!validation.valid) {
+    return { config: null, missing: [], validation, enabled: true };
   }
 
   return {
     enabled: true,
     missing: [],
+    validation,
     config: {
       partnerId,
       policyId,
       abraxasPublicReceiptBaseUrl: abraxasPublicReceiptBaseUrl.replace(/\/$/, ""),
       resourceUrl,
       resourceId: REFERENCE_GATEWAY_RESOURCE_ID,
-      priceAmount: env[REFERENCE_GATEWAY_ENV.priceAmount]?.trim() || "10000",
-      priceAsset: env[REFERENCE_GATEWAY_ENV.priceAsset]?.trim()
-        || "eip155:84532/erc20:0x036CbD53842cBd5A0bBd5A0bBd5A0bBd5A0bBd5A0",
+      priceAmount,
+      priceAssetCaip19,
       network: BASE_SEPOLIA_CAIP2,
       payTo,
       facilitatorUrl: facilitatorUrl.replace(/\/$/, ""),

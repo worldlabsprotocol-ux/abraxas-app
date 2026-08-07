@@ -1,15 +1,23 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { handleProtectedResourceRequest } from "./gateway";
-import { decodePaymentSignatureHeader, encodeX402Header } from "./headers";
+import { buildFulfillmentIdempotencyKey } from "./idempotency";
+import { decodePaymentSignatureHeader, encodeX402Header, hashPaymentPayload } from "./headers";
 import { buildPaymentRequired } from "./paymentRequired";
-import { BASE_SEPOLIA_CAIP2 } from "./constants";
+import {
+  BASE_SEPOLIA_CAIP2,
+  BASE_SEPOLIA_USDC_ADDRESS,
+  BASE_SEPOLIA_USDC_CAIP19,
+} from "./constants";
 import type { FacilitatorClient } from "./facilitatorClient";
-import type { FulfillmentStore } from "./fulfillmentStore";
+import {
+  DURABLE_FULFILLMENT_STORE_BRAND,
+  type FulfillmentStore,
+} from "./fulfillmentStore";
 import type {
   FulfillmentRecord,
-  PaymentPayloadV2,
+  PaymentPayload,
   ReferenceGatewayConfig,
-  SettlementResponseV2,
+  SettlementResponse,
 } from "./types";
 
 const config: ReferenceGatewayConfig = {
@@ -19,9 +27,9 @@ const config: ReferenceGatewayConfig = {
   resourceUrl: "https://partner.example/resource",
   resourceId: "synthetic-protected-resource",
   priceAmount: "10000",
-  priceAsset: "eip155:84532/erc20:0x036CbD53842cBd5A0bBd5A0bBd5A0bBd5A0bBd5A0",
+  priceAssetCaip19: BASE_SEPOLIA_USDC_CAIP19,
   network: BASE_SEPOLIA_CAIP2,
-  payTo: "0x0000000000000000000000000000000000000001",
+  payTo: "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
   facilitatorUrl: "https://facilitator.example",
   accessGrantTtlSec: 3600,
   allowSandbox: true,
@@ -38,11 +46,27 @@ const validReceipt = {
   production_usable: false,
 };
 
-const paymentPayload: PaymentPayloadV2 = {
+const paymentPayload: PaymentPayload = {
   x402Version: 2,
-  scheme: "exact",
-  network: BASE_SEPOLIA_CAIP2,
-  payload: { demo: true },
+  accepted: {
+    scheme: "exact",
+    network: BASE_SEPOLIA_CAIP2,
+    amount: "10000",
+    asset: BASE_SEPOLIA_USDC_ADDRESS,
+    payTo: config.payTo,
+    maxTimeoutSeconds: 300,
+  },
+  payload: {
+    signature: "0xabc",
+    authorization: {
+      from: "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      to: config.payTo,
+      value: "10000",
+      validAfter: "1740672089",
+      validBefore: "1740672154",
+      nonce: "0xf3746613c2d920b5fdabc0856f2aeb2d4f88ee6037b8cc5d04a71a4462f13480",
+    },
+  },
 };
 
 function paymentHeader(): string {
@@ -50,6 +74,7 @@ function paymentHeader(): string {
 }
 
 class MemoryFulfillmentStore implements FulfillmentStore {
+  readonly [DURABLE_FULFILLMENT_STORE_BRAND] = true as const;
   private records = new Map<string, FulfillmentRecord>();
 
   async getByIdempotencyKey(key: string) {
@@ -64,7 +89,7 @@ class MemoryFulfillmentStore implements FulfillmentStore {
 
   async markSettled(key: string, update: {
     settlement_ref: string;
-    payment_response: SettlementResponseV2;
+    payment_response: SettlementResponse;
     access_grant_expires_at: string;
   }) {
     const existing = this.records.get(key);
@@ -80,12 +105,12 @@ class MemoryFulfillmentStore implements FulfillmentStore {
     return "updated" as const;
   }
 
-  async markFailed(key: string, payment_response: SettlementResponseV2) {
+  async markFailed(key: string, payment_response: SettlementResponse) {
     const existing = this.records.get(key);
     if (existing) this.records.set(key, { ...existing, status: "failed", payment_response });
   }
 
-  async markAmbiguous(key: string, payment_response: SettlementResponseV2) {
+  async markAmbiguous(key: string, payment_response: SettlementResponse) {
     const existing = this.records.get(key);
     if (existing) this.records.set(key, { ...existing, status: "ambiguous", payment_response });
   }
@@ -106,7 +131,10 @@ describe("handleProtectedResourceRequest", () => {
     store = new MemoryFulfillmentStore();
     facilitator = {
       verify: vi.fn().mockResolvedValue({ ok: true }),
-      settle: vi.fn().mockResolvedValue({ status: "settled", settlementRef: "settle-ref-1" }),
+      settle: vi.fn().mockResolvedValue({
+        status: "settled",
+        transaction: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      }),
     };
   });
 
@@ -116,6 +144,7 @@ describe("handleProtectedResourceRequest", () => {
       paymentSignatureHeader: null,
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
+      settlementEnabled: true,
       deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
     });
 
@@ -132,11 +161,28 @@ describe("handleProtectedResourceRequest", () => {
       paymentSignatureHeader: null,
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
+      settlementEnabled: true,
       deps: { fulfillmentStore: store, facilitator, fetchReceipt: badFetch },
     });
 
     expect(result.status).toBe(403);
     expect(result.body.code).toBe("receipt_not_found");
+  });
+
+  it("returns 503 when settlement is disabled (no durable store)", async () => {
+    const result = await handleProtectedResourceRequest({
+      receiptId: "dr_test",
+      paymentSignatureHeader: paymentHeader(),
+      decodePaymentSignature: decodePaymentSignatureHeader,
+      config,
+      settlementEnabled: false,
+      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.code).toBe("settlement_unavailable");
+    expect(facilitator.verify).not.toHaveBeenCalled();
+    expect(facilitator.settle).not.toHaveBeenCalled();
   });
 
   it("returns 200 with PAYMENT-RESPONSE after canonical payment success", async () => {
@@ -145,6 +191,7 @@ describe("handleProtectedResourceRequest", () => {
       paymentSignatureHeader: paymentHeader(),
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
+      settlementEnabled: true,
       deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
     });
 
@@ -161,6 +208,7 @@ describe("handleProtectedResourceRequest", () => {
       paymentSignatureHeader: paymentHeader(),
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
+      settlementEnabled: true,
       deps,
     };
 
@@ -179,6 +227,7 @@ describe("handleProtectedResourceRequest", () => {
       paymentSignatureHeader: paymentHeader(),
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
+      settlementEnabled: true,
       deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
     });
 
@@ -194,6 +243,7 @@ describe("handleProtectedResourceRequest", () => {
       paymentSignatureHeader: paymentHeader(),
       decodePaymentSignature: decodePaymentSignatureHeader,
       config,
+      settlementEnabled: true,
       deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
     });
 
@@ -201,9 +251,34 @@ describe("handleProtectedResourceRequest", () => {
     expect(result.body.code).toBe("settlement_ambiguous");
   });
 
-  it("suggests legacy recovery path via payment required shape", () => {
+  it("emits official x402 v2 PAYMENT-REQUIRED shape", () => {
     const required = buildPaymentRequired(config);
     expect(required.x402Version).toBe(2);
+    expect(required.resource.url).toBe(config.resourceUrl);
     expect(required.accepts[0]?.network).toBe(BASE_SEPOLIA_CAIP2);
+    expect(required.accepts[0]?.amount).toBe("10000");
+    expect(required.accepts[0]?.asset).toBe(BASE_SEPOLIA_USDC_ADDRESS);
+  });
+
+  it("stores official SettlementResponse on success", async () => {
+    const tx = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+    facilitator.settle = vi.fn().mockResolvedValue({ status: "settled", transaction: tx });
+    await handleProtectedResourceRequest({
+      receiptId: "dr_test",
+      paymentSignatureHeader: paymentHeader(),
+      decodePaymentSignature: decodePaymentSignatureHeader,
+      config,
+      settlementEnabled: true,
+      deps: { fulfillmentStore: store, facilitator, fetchReceipt: mockFetchReceipt() },
+    });
+
+    const record = await store.getByIdempotencyKey(buildFulfillmentIdempotencyKey({
+      partnerId: config.partnerId,
+      resourceId: config.resourceId,
+      receiptId: "dr_test",
+      paymentPayloadHash: hashPaymentPayload(paymentPayload),
+    }));
+    expect(record?.payment_response.transaction).toBe(tx);
+    expect(record?.payment_response.success).toBe(true);
   });
 });
