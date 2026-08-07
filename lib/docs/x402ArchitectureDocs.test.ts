@@ -54,4 +54,12 @@ describe("x402 architecture documentation", () => {
     expect(threatModel).toContain("SR-1");
     expect(threatModel).toContain("SR-4");
   });
+
+  it("reference gateway README is testnet-only and documents durable fulfillment", () => {
+    const readme = readDoc("examples/x402-partner-flow-gateway/README.md");
+    expect(readme).toMatch(/TESTNET \/ DEMO ONLY/i);
+    expect(readme).toContain("eip155:84532");
+    expect(readme).toMatch(/idempotenc/i);
+    expect(readme).toContain("```mermaid");
+  });
 });
