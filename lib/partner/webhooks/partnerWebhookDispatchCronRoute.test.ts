@@ -2,9 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const processBatchMock = vi.fn();
+const recordRunMock = vi.fn();
 
 vi.mock("@/lib/partner/webhooks/webhookDelivery", () => ({
   processWebhookOutboxBatch: (...args: unknown[]) => processBatchMock(...args),
+}));
+
+vi.mock("@/lib/partner/webhooks/webhookDispatchHealth", () => ({
+  recordWebhookDispatchRun: (...args: unknown[]) => recordRunMock(...args),
 }));
 
 import { GET } from "@/app/api/cron/partner-webhook-dispatch/route";
@@ -20,7 +25,9 @@ describe("partner webhook dispatch cron route", () => {
       retrying: 0,
       failed: 0,
       skipped: 0,
+      stale: 0,
     });
+    recordRunMock.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -68,5 +75,6 @@ describe("partner webhook dispatch cron route", () => {
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
     expect(processBatchMock).toHaveBeenCalledWith({ limit: 50 });
+    expect(recordRunMock).toHaveBeenCalled();
   });
 });

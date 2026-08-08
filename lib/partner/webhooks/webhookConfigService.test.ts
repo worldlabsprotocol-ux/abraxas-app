@@ -47,6 +47,15 @@ describe("partner webhook endpoint trust reset", () => {
     let capturedUpdate: Record<string, unknown> | null = null;
 
     fromMock.mockImplementation((table: string) => {
+      if (table === "partners") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { partner_id: "partner-a" } }),
+            }),
+          }),
+        };
+      }
       if (table !== "partner_webhook_configs") return {};
       return {
         select: vi.fn().mockReturnValue({

@@ -7,6 +7,7 @@ Signed, non-PII lifecycle notifications for approved partner backends. **Notific
 Apply manually in order:
 
 1. `supabase/migrations/062_partner_webhook_outbox.sql`
+2. `supabase/migrations/063_partner_webhook_operator_ops.sql`
 
 ## Environment
 
@@ -14,6 +15,7 @@ Apply manually in order:
 |----------|---------|
 | `ABRAXAS_WEBHOOK_MASTER_KEY` | **Required.** Dedicated key to encrypt webhook signing secrets at rest. Do not reuse `ABRAXAS_SIGNING_KEY` — rotating receipt signing keys must not brick stored webhook secrets. |
 | `CRON_SECRET` | **Required for dispatch.** Protects `/api/cron/partner-webhook-dispatch`. Route returns `503 cron_not_configured` when unset; returns `401` when Authorization is wrong. |
+| `PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED` | Set to `true` after Vercel cron or external scheduler is live. Admin UI shows “Dispatch scheduler not yet configured” until this is set (and `CRON_SECRET` is present). |
 | `REQUIRE_PARTNER_API_KEY` | When `true`, partner delivery history requires API key |
 
 ## Event types
@@ -60,6 +62,17 @@ Never includes email, wallet, OAuth subject, JWTs, claims, documents, or storage
 **Endpoint changes reset trust:** saving a new endpoint URL automatically disables delivery, rotates the signing secret, and reveals the new secret once. The admin must re-enable after the partner updates its verifier. The previous endpoint and secret cannot receive new signed events.
 
 Delivery health: pending, delivering, delivered, retrying, failed.
+
+## Operator dead-letter recovery
+
+Admin UI (`/admin/partners` → Webhooks) lists failed deliveries (metadata only) and supports manual retry:
+
+- `GET /api/admin/partners/webhooks/failed-deliveries`
+- `POST /api/admin/partners/webhooks/retry` with `{ "outbox_id": "…" }`
+
+Manual retry requeues the **same** `event_id` and payload. It does not create a new Partner Flow receipt or billable event. Retries are refused when webhook delivery is disabled for that partner. Each retry is audited in `partner_webhook_retry_audit` (migration 063).
+
+Dispatch run telemetry is stored in `partner_webhook_dispatch_runs` (migration 063). No alert provider is wired — health is shown in admin UI only.
 
 ## Partner delivery history API
 
