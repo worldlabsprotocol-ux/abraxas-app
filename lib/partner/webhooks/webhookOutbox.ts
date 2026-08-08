@@ -14,6 +14,7 @@ import type {
   PartnerWebhookPayload,
   PartnerWebhookStatus,
 } from "@/lib/partner/webhooks/types";
+import { WEBHOOK_DELIVERY_LEASE_MS } from "@/lib/partner/webhooks/types";
 
 const OUTBOX = "partner_webhook_outbox";
 const CONFIG = "partner_webhook_configs";
@@ -32,6 +33,8 @@ function mapOutboxRow(row: Record<string, unknown>): PartnerWebhookOutboxRecord 
     next_attempt_at: row.next_attempt_at as string,
     delivered_at: (row.delivered_at as string | null) ?? null,
     last_error_code: (row.last_error_code as string | null) ?? null,
+    delivery_lease_until: (row.delivery_lease_until as string | null) ?? null,
+    delivery_worker_id: (row.delivery_worker_id as string | null) ?? null,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
   };
@@ -137,12 +140,53 @@ export async function listDispatchableWebhookEvents(limit = 25): Promise<Partner
   const { data } = await sb
     .from(OUTBOX)
     .select("*")
-    .in("status", ["pending", "retrying"])
-    .lte("next_attempt_at", now)
+    .or(`and(status.in.(pending,retrying),next_attempt_at.lte.${now}),and(status.eq.delivering,delivery_lease_until.lt.${now})`)
     .order("next_attempt_at", { ascending: true })
     .limit(limit);
 
   return (data ?? []).map(mapOutboxRow);
+}
+
+/**
+ * Atomically claim a dispatchable outbox event. Only one worker can hold the lease.
+ * Reclaims expired `delivering` leases from crashed workers.
+ */
+export async function claimWebhookOutboxEvent(input: {
+  outboxId: string;
+  workerId: string;
+}): Promise<PartnerWebhookOutboxRecord | null> {
+  const sb = requireSupabaseAdmin();
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const leaseUntil = new Date(now.getTime() + WEBHOOK_DELIVERY_LEASE_MS).toISOString();
+  const claimFields = {
+    status: "delivering" as const,
+    delivery_lease_until: leaseUntil,
+    delivery_worker_id: input.workerId,
+    updated_at: nowIso,
+  };
+
+  const { data: claimedPending } = await sb
+    .from(OUTBOX)
+    .update(claimFields)
+    .eq("id", input.outboxId)
+    .in("status", ["pending", "retrying"])
+    .lte("next_attempt_at", nowIso)
+    .select("*")
+    .maybeSingle();
+
+  if (claimedPending) return mapOutboxRow(claimedPending);
+
+  const { data: reclaimed } = await sb
+    .from(OUTBOX)
+    .update(claimFields)
+    .eq("id", input.outboxId)
+    .eq("status", "delivering")
+    .lt("delivery_lease_until", nowIso)
+    .select("*")
+    .maybeSingle();
+
+  return reclaimed ? mapOutboxRow(reclaimed) : null;
 }
 
 export async function listPartnerWebhookDeliveries(input: {

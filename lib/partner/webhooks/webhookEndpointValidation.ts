@@ -94,6 +94,26 @@ export async function validateWebhookEndpointUrl(raw: string): Promise<
   }
 }
 
+/** Revalidate endpoint immediately before every outbound delivery (DNS rebinding defense). */
+export async function validateWebhookEndpointForDelivery(endpointUrl: string): Promise<
+  | { ok: true; deliveryUrl: string }
+  | { ok: false; error: string }
+> {
+  const url = parseWebhookEndpointUrl(endpointUrl);
+  if (!url) return { ok: false, error: "invalid_url" };
+  if (!isWebhookEndpointStructurallyAllowed(url)) {
+    return { ok: false, error: "endpoint_not_allowed" };
+  }
+
+  try {
+    await assertWebhookEndpointResolvable(url);
+    return { ok: true, deliveryUrl: normalizeWebhookEndpointUrl(url) };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "endpoint_resolution_failed";
+    return { ok: false, error: msg };
+  }
+}
+
 export function normalizeWebhookEndpointUrl(url: URL): string {
   const path = url.pathname.endsWith("/") && url.pathname !== "/"
     ? url.pathname.slice(0, -1)

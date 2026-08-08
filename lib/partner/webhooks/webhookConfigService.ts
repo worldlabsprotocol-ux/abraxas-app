@@ -59,14 +59,34 @@ export async function upsertPartnerWebhookEndpoint(input: {
     .maybeSingle();
 
   if (existing) {
+    const generated = generateWebhookSigningSecret();
+    const encrypted = encryptWebhookSigningSecret(generated.raw);
+    if (!encrypted) return { ok: false, error: "webhook_master_key_unconfigured" };
+
     const { data, error } = await sb
       .from(CONFIG)
-      .update({ endpoint_url: endpointUrl, updated_at: now })
+      .update({
+        endpoint_url: endpointUrl,
+        signing_secret_ciphertext: encrypted.ciphertext,
+        signing_secret_iv: encrypted.iv,
+        signing_secret_prefix: generated.prefix,
+        enabled: false,
+        enabled_at: null,
+        secret_revealed_at: now,
+        last_rotated_at: now,
+        updated_at: now,
+      })
       .eq("partner_id", input.partnerId)
       .select("*")
       .single();
+
     if (error || !data) return { ok: false, error: error?.message ?? "update_failed" };
-    return { ok: true, config: mapConfig(data) };
+    return {
+      ok: true,
+      config: mapConfig(data),
+      signing_secret: generated.raw,
+      notice: "Endpoint changed — webhooks disabled and signing secret rotated. Copy the new secret now (shown once), update your verifier, then re-enable delivery.",
+    };
   }
 
   const generated = generateWebhookSigningSecret();

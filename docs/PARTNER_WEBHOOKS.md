@@ -12,8 +12,8 @@ Apply manually in order:
 
 | Variable | Purpose |
 |----------|---------|
-| `ABRAXAS_WEBHOOK_MASTER_KEY` | Encrypt signing secrets at rest (falls back to `ABRAXAS_SIGNING_KEY`) |
-| `CRON_SECRET` | Protects `/api/cron/partner-webhook-dispatch` |
+| `ABRAXAS_WEBHOOK_MASTER_KEY` | **Required.** Dedicated key to encrypt webhook signing secrets at rest. Do not reuse `ABRAXAS_SIGNING_KEY` — rotating receipt signing keys must not brick stored webhook secrets. |
+| `CRON_SECRET` | **Required for dispatch.** Protects `/api/cron/partner-webhook-dispatch`. Route returns `503 cron_not_configured` when unset; returns `401` when Authorization is wrong. |
 | `REQUIRE_PARTNER_API_KEY` | When `true`, partner delivery history requires API key |
 
 ## Event types
@@ -57,6 +57,8 @@ Never includes email, wallet, OAuth subject, JWTs, claims, documents, or storage
 3. Copy signing secret on first save or rotate (shown **once only**)
 4. Explicitly **Enable delivery** (disabled by default)
 
+**Endpoint changes reset trust:** saving a new endpoint URL automatically disables delivery, rotates the signing secret, and reveals the new secret once. The admin must re-enable after the partner updates its verifier. The previous endpoint and secret cannot receive new signed events.
+
 Delivery health: pending, delivering, delivered, retrying, failed.
 
 ## Partner delivery history API
@@ -81,7 +83,15 @@ Requires `webhooks:read` scope on the partner API key. Returns only that partner
 
 Vercel Hobby accounts only allow daily cron expressions; use an external scheduler (or upgrade to Pro) to call `GET /api/cron/partner-webhook-dispatch` with `Authorization: Bearer $CRON_SECRET` every 5 minutes until Pro cron is enabled.
 
-Set `CRON_SECRET` in Vercel project settings. The cron route processes up to 50 pending/retrying outbox events per run with bounded exponential backoff (1m, 5m, 15m, 1h, 4h; max 6 attempts).
+Set `CRON_SECRET` in Vercel project settings. The cron route **fails closed** without it and never dispatches without a valid `Authorization: Bearer $CRON_SECRET` header. It processes up to 50 pending/retrying outbox events per run with bounded exponential backoff (1m, 5m, 15m, 1h, 4h; max 6 attempts).
+
+Outbox events use a **delivery lease** (`delivery_lease_until`, `delivery_worker_id`). If a cron invocation crashes while `status=delivering`, the lease expires after 5 minutes and a later worker reclaims the event.
+
+## SSRF and DNS rebinding
+
+- Endpoint URLs are validated at admin configuration time (HTTPS only, no query/fragment, blocked hostnames, DNS resolution to public addresses).
+- **Every delivery re-resolves DNS** immediately before `fetch()`. If resolution becomes unsafe (private/loopback/link-local/metadata), delivery is rejected with no outbound request.
+- **Vercel limitation:** true IP pinning / fixed egress is not available on serverless functions. Defense relies on delivery-time DNS revalidation plus `redirect: manual`. If an endpoint fails delivery-time validation, events remain in `retrying`/`failed` — delivery stays disabled until the endpoint passes validation again.
 
 ## Partner signature verification example (Node.js)
 
@@ -118,5 +128,7 @@ function verifyAbraxasWebhook({ rawBody, timestamp, signatureHeader, secret, max
 
 - Enqueue is **best-effort** — never blocks Partner Flow, revocation, privacy, or receipt issuance
 - At-least-once delivery with idempotent `event_id`
-- SSRF protections on endpoint configuration and delivery (`redirect: manual`)
+- SSRF protections on endpoint configuration **and** every delivery attempt (`redirect: manual`, delivery-time DNS revalidation)
+- Endpoint changes disable delivery and rotate signing secrets automatically
+- Durable delivery leases recover from crashed cron workers
 - No Supabase Storage or PII in webhook payloads

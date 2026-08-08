@@ -7,6 +7,9 @@
 --
 -- Webhooks are notification-only. Partners must re-fetch public receipts and
 -- validate currently_valid before granting access.
+--
+-- Outbox delivery leases (delivery_lease_until, delivery_worker_id) prevent
+-- stuck `delivering` rows when a cron worker crashes mid-dispatch.
 
 CREATE TABLE IF NOT EXISTS public.partner_webhook_configs (
   partner_id                 text        PRIMARY KEY REFERENCES public.partners(partner_id),
@@ -37,6 +40,8 @@ CREATE TABLE IF NOT EXISTS public.partner_webhook_outbox (
   next_attempt_at   timestamptz NOT NULL DEFAULT now(),
   delivered_at      timestamptz,
   last_error_code   text,
+  delivery_lease_until timestamptz,
+  delivery_worker_id   text,
   created_at        timestamptz NOT NULL DEFAULT now(),
   updated_at        timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT partner_webhook_outbox_event_type_check
@@ -53,6 +58,10 @@ CREATE TABLE IF NOT EXISTS public.partner_webhook_outbox (
 CREATE INDEX IF NOT EXISTS partner_webhook_outbox_dispatch_idx
   ON public.partner_webhook_outbox (status, next_attempt_at ASC)
   WHERE status IN ('pending', 'retrying');
+
+CREATE INDEX IF NOT EXISTS partner_webhook_outbox_expired_lease_idx
+  ON public.partner_webhook_outbox (delivery_lease_until ASC)
+  WHERE status = 'delivering';
 
 CREATE INDEX IF NOT EXISTS partner_webhook_outbox_partner_occurred_idx
   ON public.partner_webhook_outbox (partner_id, occurred_at DESC);

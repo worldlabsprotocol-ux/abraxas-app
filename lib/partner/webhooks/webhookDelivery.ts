@@ -8,7 +8,12 @@ import {
   WEBHOOK_TIMESTAMP_HEADER,
   signWebhookBody,
 } from "@/lib/partner/webhooks/webhookSigning";
-import { mapOutboxRow } from "@/lib/partner/webhooks/webhookOutbox";
+import { validateWebhookEndpointForDelivery } from "@/lib/partner/webhooks/webhookEndpointValidation";
+import {
+  claimWebhookOutboxEvent,
+  listDispatchableWebhookEvents,
+  mapOutboxRow,
+} from "@/lib/partner/webhooks/webhookOutbox";
 import type { PartnerWebhookOutboxRecord } from "@/lib/partner/webhooks/types";
 import { WEBHOOK_MAX_ATTEMPTS, WEBHOOK_RETRY_DELAYS_MS } from "@/lib/partner/webhooks/types";
 
@@ -47,17 +52,23 @@ export async function deliverPartnerWebhookEvent(
   record: PartnerWebhookOutboxRecord,
   signingSecret: string,
   endpointUrl: string,
+  deps?: { fetchFn?: typeof fetch },
 ): Promise<{ ok: true; httpStatus: number } | { ok: false; errorCode: string; httpStatus?: number }> {
+  const endpointCheck = await validateWebhookEndpointForDelivery(endpointUrl);
+  if (!endpointCheck.ok) {
+    return { ok: false, errorCode: endpointCheck.error };
+  }
+
   const rawBody = JSON.stringify(record.payload);
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = signWebhookBody({ secret: signingSecret, timestamp, rawBody });
 
+  const fetchFn = deps?.fetchFn ?? fetch;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
-  const started = Date.now();
 
   try {
-    const response = await fetch(endpointUrl, {
+    const response = await fetchFn(endpointCheck.deliveryUrl, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -69,9 +80,6 @@ export async function deliverPartnerWebhookEvent(
       redirect: "manual",
       signal: controller.signal,
     });
-
-    const durationMs = Date.now() - started;
-    const responseSnippet = (await response.text().catch(() => "")).slice(0, 240);
 
     if (response.status >= 300 && response.status < 400) {
       return { ok: false, errorCode: "redirect_not_allowed", httpStatus: response.status };
@@ -94,20 +102,20 @@ export async function deliverPartnerWebhookEvent(
   }
 }
 
+function clearDeliveryLeaseFields() {
+  return {
+    delivery_lease_until: null,
+    delivery_worker_id: null,
+  };
+}
+
 export async function processWebhookOutboxEvent(
   outboxId: string,
+  workerId: string,
 ): Promise<"delivered" | "retrying" | "failed" | "skipped"> {
   const sb = requireSupabaseAdmin();
-  const { data: locked } = await sb
-    .from(OUTBOX)
-    .update({ status: "delivering", updated_at: new Date().toISOString() })
-    .eq("id", outboxId)
-    .in("status", ["pending", "retrying"])
-    .select("*")
-    .maybeSingle();
-
-  if (!locked) return "skipped";
-  const record = mapOutboxRow(locked);
+  const record = await claimWebhookOutboxEvent({ outboxId, workerId });
+  if (!record) return "skipped";
 
   const config = await loadSigningSecret(record.partner_id);
   if (!config) {
@@ -115,6 +123,7 @@ export async function processWebhookOutboxEvent(
       status: "failed",
       last_error_code: "webhook_disabled",
       updated_at: new Date().toISOString(),
+      ...clearDeliveryLeaseFields(),
     }).eq("id", outboxId);
     return "failed";
   }
@@ -142,6 +151,7 @@ export async function processWebhookOutboxEvent(
       attempt_count: attemptNumber,
       last_error_code: null,
       updated_at: new Date().toISOString(),
+      ...clearDeliveryLeaseFields(),
     }).eq("id", outboxId);
     return "delivered";
   }
@@ -153,6 +163,7 @@ export async function processWebhookOutboxEvent(
     last_error_code: result.errorCode,
     next_attempt_at: failedPermanently ? record.next_attempt_at : nextAttemptAt(attemptNumber),
     updated_at: new Date().toISOString(),
+    ...clearDeliveryLeaseFields(),
   }).eq("id", outboxId);
 
   return failedPermanently ? "failed" : "retrying";
@@ -160,6 +171,7 @@ export async function processWebhookOutboxEvent(
 
 export async function processWebhookOutboxBatch(input?: {
   limit?: number;
+  workerId?: string;
 }): Promise<{
   scanned: number;
   delivered: number;
@@ -167,12 +179,13 @@ export async function processWebhookOutboxBatch(input?: {
   failed: number;
   skipped: number;
 }> {
-  const { listDispatchableWebhookEvents } = await import("@/lib/partner/webhooks/webhookOutbox");
+  const { randomUUID } = await import("crypto");
+  const workerId = input?.workerId ?? randomUUID();
   const events = await listDispatchableWebhookEvents(input?.limit ?? 25);
 
   const summary = { scanned: events.length, delivered: 0, retrying: 0, failed: 0, skipped: 0 };
   for (const event of events) {
-    const outcome = await processWebhookOutboxEvent(event.id);
+    const outcome = await processWebhookOutboxEvent(event.id, workerId);
     summary[outcome === "delivered" ? "delivered"
       : outcome === "retrying" ? "retrying"
         : outcome === "failed" ? "failed"

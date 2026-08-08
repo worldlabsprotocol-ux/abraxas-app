@@ -3,16 +3,19 @@
 // Vercel cron: add to vercel.json — see docs/PARTNER_WEBHOOKS.md
 
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeCronRequest } from "@/lib/partner/webhooks/cronAuth";
 import { processWebhookOutboxBatch } from "@/lib/partner/webhooks/webhookDelivery";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
+  const auth = authorizeCronRequest({
+    cronSecret: process.env.CRON_SECRET,
+    authorizationHeader: req.headers.get("authorization"),
+  });
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   try {

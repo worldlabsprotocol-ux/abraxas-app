@@ -56,6 +56,8 @@ export interface PartnerWebhookOutboxRecord {
   next_attempt_at: string;
   delivered_at: string | null;
   last_error_code: string | null;
+  delivery_lease_until: string | null;
+  delivery_worker_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -69,6 +71,9 @@ export const WEBHOOK_RETRY_DELAYS_MS = [
 ] as const;
 
 export const WEBHOOK_MAX_ATTEMPTS = WEBHOOK_RETRY_DELAYS_MS.length + 1;
+
+/** Lease duration while a worker holds an outbox event in `delivering`. */
+export const WEBHOOK_DELIVERY_LEASE_MS = 5 * 60_000;
 
 export function isPartnerWebhookEventType(value: string): value is PartnerWebhookEventType {
   return (PARTNER_WEBHOOK_EVENT_TYPES as readonly string[]).includes(value);

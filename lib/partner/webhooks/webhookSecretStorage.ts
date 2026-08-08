@@ -5,7 +5,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypt
 import { hashWebhookSigningSecret } from "@/lib/partner/webhooks/webhookSigning";
 
 function masterKey(): Buffer | null {
-  const raw = process.env.ABRAXAS_WEBHOOK_MASTER_KEY ?? process.env.ABRAXAS_SIGNING_KEY;
+  const raw = process.env.ABRAXAS_WEBHOOK_MASTER_KEY?.trim();
   if (!raw) return null;
   return createHash("sha256").update(raw, "utf8").digest();
 }
