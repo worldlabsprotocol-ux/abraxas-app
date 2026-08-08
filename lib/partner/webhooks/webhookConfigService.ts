@@ -11,6 +11,19 @@ import { encryptWebhookSigningSecret } from "@/lib/partner/webhooks/webhookSecre
 import type { PartnerWebhookConfigRecord } from "@/lib/partner/webhooks/types";
 
 const CONFIG = "partner_webhook_configs";
+const PARTNERS = "partners";
+
+async function assertPartnerExists(partnerId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from(PARTNERS)
+    .select("partner_id")
+    .eq("partner_id", partnerId)
+    .maybeSingle();
+
+  if (!data?.partner_id) return { ok: false, error: "partner_not_found" };
+  return { ok: true };
+}
 
 function mapConfig(row: Record<string, unknown>): PartnerWebhookConfigRecord {
   return {
@@ -47,6 +60,9 @@ export async function upsertPartnerWebhookEndpoint(input: {
 > {
   const validation = await validateWebhookEndpointUrl(input.endpointUrl);
   if (!validation.ok) return validation;
+
+  const partnerCheck = await assertPartnerExists(input.partnerId.trim());
+  if (!partnerCheck.ok) return partnerCheck;
 
   const endpointUrl = normalizeWebhookEndpointUrl(validation.url);
   const sb = requireSupabaseAdmin();

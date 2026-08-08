@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAccess } from "@/lib/adminAuth";
+import { getWebhookDispatchRunHealth } from "@/lib/partner/webhooks/webhookDispatchHealth";
 import { getWebhookDeliveryHealth } from "@/lib/partner/webhooks/webhookOutbox";
 import { webhookHealthLabel } from "@/lib/partner/webhooks/types";
 
@@ -11,11 +12,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const counts = await getWebhookDeliveryHealth();
+  const [counts, dispatch] = await Promise.all([
+    getWebhookDeliveryHealth(),
+    getWebhookDispatchRunHealth(),
+  ]);
+
   return NextResponse.json({
     counts,
     labels: Object.fromEntries(
       Object.entries(counts).map(([status, count]) => [status, { count, label: webhookHealthLabel(status as keyof typeof counts) }]),
     ),
+    dispatch,
+    alerts_configured: false,
   });
 }

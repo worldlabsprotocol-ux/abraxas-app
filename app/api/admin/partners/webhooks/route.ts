@@ -8,6 +8,7 @@ import {
   setPartnerWebhookEnabled,
   upsertPartnerWebhookEndpoint,
 } from "@/lib/partner/webhooks/webhookConfigService";
+import { webhookEndpointFormErrorMessage } from "@/lib/partner/webhooks/webhookEndpointFormValidation";
 import { WEBHOOK_NOTIFICATION_DISCLAIMER } from "@/lib/partner/webhooks/webhookPayloadContract";
 
 export async function GET(req: NextRequest) {
@@ -42,7 +43,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json({
+      error: result.error,
+      message: webhookEndpointFormErrorMessage(result.error),
+    }, { status: 400 });
   }
 
   return NextResponse.json({
