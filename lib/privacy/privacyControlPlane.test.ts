@@ -20,6 +20,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   })),
   getSupabaseAdmin: vi.fn(() => ({
     from: (...args: unknown[]) => fromMock(...args),
+    rpc: (...args: unknown[]) => rpcMock(...args),
   })),
 }));
 
@@ -37,18 +38,22 @@ vi.mock("@/lib/decisionReceipts/pseudonym", () => ({
 
 import { revokeSubjectClaims } from "@/lib/credentials/claimsService";
 
-function chainable(result: { data?: unknown; error?: unknown }) {
+function privacyRequestTableMock(handlers: {
+  maybeSingle?: ReturnType<typeof vi.fn>;
+  single?: ReturnType<typeof vi.fn>;
+}) {
   const chain = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    or: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn().mockResolvedValue(result),
-    single: vi.fn().mockResolvedValue(result),
+    maybeSingle: handlers.maybeSingle ?? vi.fn().mockResolvedValue({ data: null, error: null }),
+    single: handlers.single ?? vi.fn().mockResolvedValue({ data: null, error: null }),
   };
+  chain.insert.mockReturnValue({ select: vi.fn().mockReturnValue({ single: chain.single }) });
   return chain;
 }
 
@@ -97,35 +102,23 @@ describe("privacy control plane", () => {
   });
 
   it("creates privacy request idempotently", async () => {
-    const insertChain = chainable({
-      data: {
-        ...sampleRecord,
-        request_type: "data_export",
-        status: "requested",
-        reason_code: "holder_requested",
-      },
-      error: null,
-    });
-    const eventChain = chainable({ data: null, error: null });
-    const lookupChain = chainable({ data: null, error: null });
+    const insertData = {
+      ...sampleRecord,
+      request_type: "data_export",
+      status: "requested",
+      reason_code: "holder_requested",
+    };
 
     fromMock.mockImplementation((table: string) => {
       if (table === "privacy_requests") {
-        return {
-          ...insertChain,
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: lookupChain.maybeSingle,
-            }),
-            single: insertChain.single,
-          }),
-          insert: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({ single: insertChain.single }),
-          }),
-        };
+        return privacyRequestTableMock({
+          single: vi.fn().mockResolvedValue({ data: insertData, error: null }),
+        });
       }
-      if (table === "privacy_request_events") return eventChain;
-      return insertChain;
+      if (table === "privacy_request_events") {
+        return privacyRequestTableMock({});
+      }
+      return privacyRequestTableMock({});
     });
 
     const result = await createPrivacyRequest({
@@ -143,15 +136,8 @@ describe("privacy control plane", () => {
   });
 
   it("lists requests for subject without cross-subject leakage", async () => {
-    const listChain = chainable({
-      data: [{
-        ...sampleRecord,
-        request_type: "data_export",
-        status: "requested",
-      }],
-      error: null,
-    });
-    listChain.eq = vi.fn().mockReturnValue({
+    const listChain = privacyRequestTableMock({});
+    listChain.eq.mockReturnValue({
       order: vi.fn().mockReturnValue({
         limit: vi.fn().mockResolvedValue({ data: [{
           ...sampleRecord,
@@ -169,48 +155,61 @@ describe("privacy control plane", () => {
     expect(rows[0].request_ref).toHaveLength(8);
   });
 
-  it("approved deletion revokes access only when explicitly approved", async () => {
-    let call = 0;
-    const getChain = chainable({ data: sampleRecord, error: null });
-
+  it("returns existing active request for same subject and type", async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === "privacy_requests") {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({ maybeSingle: getChain.maybeSingle }),
+        return privacyRequestTableMock({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { ...sampleRecord, request_type: "data_export", status: "requested" },
+            error: null,
           }),
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockImplementation(async () => {
-                  call += 1;
-                  const status = call === 1 ? "approved" : "access_revoked_pending_purge";
-                  return {
-                    data: { ...sampleRecord, status },
-                    error: null,
-                  };
-                }),
-              }),
-            }),
-          }),
-        };
+        });
       }
-      if (table === "privacy_request_events") {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) }),
-          }),
-          insert: vi.fn().mockResolvedValue({ error: null }),
-        };
+      return privacyRequestTableMock({});
+    });
+
+    const result = await createPrivacyRequest({
+      subjectSui: SAMPLE_SUI,
+      requestType: "data_export",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.created).toBe(false);
+      expect(result.request.status).toBe("requested");
+    }
+  });
+
+  it("approved deletion uses atomic RPC and does not call revokeSubjectClaims directly", async () => {
+    const pendingRecord = {
+      ...sampleRecord,
+      status: "access_revoked_pending_purge" as const,
+    };
+
+    rpcMock.mockResolvedValue({
+      data: {
+        ok: true,
+        request_id: sampleRecord.id,
+        status: "access_revoked_pending_purge",
+        access_revoked: true,
+      },
+      error: null,
+    });
+
+    let lookupCalls = 0;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "privacy_requests") {
+        const chain = privacyRequestTableMock({});
+        chain.maybeSingle = vi.fn(async () => {
+          lookupCalls += 1;
+          return {
+            data: lookupCalls === 1 ? sampleRecord : pendingRecord,
+            error: null,
+          };
+        });
+        return chain;
       }
-      if (table === "identity_verifications") {
-        return {
-          update: vi.fn().mockReturnValue({
-            or: vi.fn().mockResolvedValue({ error: null }),
-          }),
-        };
-      }
-      return getChain;
+      return privacyRequestTableMock({});
     });
 
     const result = await approveDeletionPrivacyRequest({
@@ -223,6 +222,10 @@ describe("privacy control plane", () => {
       expect(result.accessRevoked).toBe(true);
       expect(result.request.status).toBe("access_revoked_pending_purge");
     }
-    expect(revokeSubjectClaims).toHaveBeenCalledWith(SAMPLE_SUI, "privacy_deletion_approved");
+    expect(rpcMock).toHaveBeenCalledWith("approve_privacy_deletion_atomic", expect.objectContaining({
+      p_request_id: sampleRecord.id,
+      p_admin_actor_category: "admin_pin",
+    }));
+    expect(revokeSubjectClaims).not.toHaveBeenCalled();
   });
 });

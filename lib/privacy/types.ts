@@ -59,12 +59,20 @@ export interface PrivacyRequestEventRecord {
   created_at: string;
 }
 
+export const PRIVACY_ACTIVE_STATUSES = [
+  "requested",
+  "under_review",
+  "approved",
+  "legal_hold",
+  "access_revoked_pending_purge",
+] as const;
+export type PrivacyActiveStatus = (typeof PRIVACY_ACTIVE_STATUSES)[number];
+
 export interface HolderPrivacyRequestView {
   request_ref: string;
   request_type: PrivacyRequestType;
   status: PrivacyRequestStatus;
   status_label: string;
-  reason_code: PrivacyReasonCode | null;
   created_at: string;
   updated_at: string;
 }
@@ -102,7 +110,6 @@ export function toHolderView(record: PrivacyRequestRecord): HolderPrivacyRequest
     request_type: record.request_type,
     status: record.status,
     status_label: PRIVACY_STATUS_LABELS[record.status],
-    reason_code: record.reason_code,
     created_at: record.created_at,
     updated_at: record.updated_at,
   };

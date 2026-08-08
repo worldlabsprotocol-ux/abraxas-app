@@ -17,6 +17,7 @@ import {
   partnerFlowRevocationDeniedFields,
 } from "@/lib/partner/partnerFlowReceiptAccess";
 import type { PartnerFlowEvaluateResult } from "@/lib/partner/relyingPartyFlow";
+import { subjectHasPrivacyAccessRevoked } from "@/lib/privacy/privacySubjectAccess";
 
 export type PartnerFlowRuntimeOperation = "evaluate" | "complete" | "refresh";
 
@@ -147,6 +148,10 @@ export async function findRevokedPartnerSessionReceipt(input: {
 export async function checkPartnerFlowRevocationGate(
   input: PartnerFlowRevocationGateInput,
 ): Promise<RevocationDenialFields | null> {
+  if (await subjectHasPrivacyAccessRevoked(input.subjectId)) {
+    return denialFromReason("access_revoked");
+  }
+
   const revokedClaim = await findRevokedPolicyClaims({
     subjectId: input.subjectId,
     partnerId: input.partnerId,

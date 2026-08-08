@@ -2,7 +2,8 @@
 -- Append-only privacy request ledger for holder export/deletion workflows.
 --
 -- Prerequisite: 006_abraxas_id.sql, 007_sui_zklogin.sql
--- OPERATOR: apply manually in Supabase SQL editor when ready.
+-- Follow-up: 061_privacy_deletion_approve_atomic.sql (atomic deletion approval RPC)
+-- OPERATOR: run 060_preflight.sql (read-only), apply 060, apply 061, run post_apply_verify.sql
 -- No production apply from this PR.
 --
 -- Design notes:

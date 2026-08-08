@@ -187,9 +187,20 @@ function activeReceipt(id = "dr_active") {
 
 function installCredentialTables(
   claimRows: Array<{ claim_type: string; status: string }>,
-  options: { allowDecisionInsert?: boolean } = {},
+  options: { allowDecisionInsert?: boolean; privacyAccessRevoked?: boolean } = {},
 ) {
   fromMock.mockImplementation((table: string) => {
+    if (table === "privacy_requests") {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: options.privacyAccessRevoked ? { id: "privacy-req-1" } : null,
+          error: null,
+        }),
+      };
+    }
     if (table === "identity_verifications") {
       return {
         select: vi.fn().mockReturnThis(),
@@ -454,6 +465,46 @@ describe("partner-flow revocation runtime routes", () => {
     expect(refreshBody.partner_result?.receipt_id).toBe("dr_refreshed");
     expect(refreshBody.replay_status).toBe("issued");
     expect(issueReceiptForDecision).toHaveBeenCalledTimes(1);
+  });
+
+  it("privacy access_revoked_pending_purge denies evaluate, complete, and refresh", async () => {
+    installCredentialTables([], { privacyAccessRevoked: true });
+
+    const evaluateRes = await evaluatePOST(postJson("http://localhost/api/v1/partner-flow/evaluate", {
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+    }));
+    const evaluateBody = await evaluateRes.json();
+    expect(evaluateRes.status).toBe(200);
+    expect(evaluateBody.next).toBe("denied");
+    expect(evaluateBody.invalidation_reasons).toContain("access_revoked");
+
+    const completeRes = await completePOST(postJson("http://localhost/api/v1/partner-flow/complete", {
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+      verification_request_id: VR_ID,
+      flow_trace_id: SHARED_TRACE,
+    }));
+    const completeBody = await completeRes.json();
+    expect(completeRes.status).toBe(200);
+    expect(completeBody.next).toBe("denied");
+    expect(completeBody.invalidation_reasons).toContain("access_revoked");
+
+    const refreshRes = await refreshPOST(postJson("http://localhost/api/v1/partner-flow/refresh", {
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+    }));
+    const refreshBody = await refreshRes.json();
+    expect(refreshRes.status).toBe(200);
+    expect(refreshBody.next).toBe("denied");
+    expect(refreshBody.invalidation_reasons).toContain("access_revoked");
+
+    expect(auditActions()).not.toContain("partner_flow.receipt_issued");
+    expect(recordPartnerFlowReceiptMeteringBestEffort).not.toHaveBeenCalled();
+    expect(issueReceiptForDecision).not.toHaveBeenCalled();
   });
 
   it("non-revoked control flow still evaluates to enter with receipt issuance audit", async () => {

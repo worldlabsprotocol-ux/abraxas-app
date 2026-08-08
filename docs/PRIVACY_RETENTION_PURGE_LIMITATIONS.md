@@ -36,8 +36,8 @@ Comments reference "Purge via ops cron" — **no cron or purge worker exists**.
 
 ## Storage deletion gaps
 
-1. **`passport-documents` bucket** — private; paths tied to email-safe folders and session IDs. No API deletes objects on deletion approval.
-2. **Legacy path formats** — mixed with current `identity/{emailSafe}/{sessionId}/` layout; purge must handle both.
+1. **`passport-documents` bucket** — private; legacy paths embed email-safe folders. **New v2 paths use opaque UUIDs only** (`identity/v2/{sessionUuid}/...`). Legacy objects are not bulk-moved or deleted in this project.
+2. **Legacy path formats** — mixed with current `identity/v2/` layout; purge must handle both.
 3. **Orphan detection** — no job correlates `passport_documents.storage_path` with approved deletion requests.
 
 ## Immutable tables

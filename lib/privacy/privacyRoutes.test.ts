@@ -48,7 +48,6 @@ describe("privacy API routes", () => {
       request_type: "data_export",
       status: "requested",
       status_label: "Request received",
-      reason_code: "holder_requested",
       created_at: "2026-01-01T00:00:00.000Z",
       updated_at: "2026-01-01T00:00:00.000Z",
     }]);
@@ -58,6 +57,7 @@ describe("privacy API routes", () => {
 
     expect(res.status).toBe(200);
     expect(body.requests[0]).not.toHaveProperty("subject_sui");
+    expect(body.requests[0]).not.toHaveProperty("reason_code");
     expect(body.requests[0]).not.toHaveProperty("id");
     expect(JSON.stringify(body)).not.toContain("storage_path");
   });
@@ -71,7 +71,6 @@ describe("privacy API routes", () => {
         request_type: "account_deletion",
         status: "requested",
         status_label: "Request received",
-        reason_code: "holder_requested",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
       },

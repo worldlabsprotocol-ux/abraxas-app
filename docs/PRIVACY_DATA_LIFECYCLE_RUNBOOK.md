@@ -4,9 +4,12 @@ Technical infrastructure for holder export and deletion **requests**. This is no
 
 ## Prerequisites
 
-1. Apply `supabase/migrations/060_privacy_request_ledger.sql` manually in the Supabase SQL editor when ready.
-2. Confirm `ABRAXAS_BROWSER_SESSION_SECRET` (or `ABRAXAS_SIGNING_KEY`) is set for holder session auth.
-3. Confirm admin access via `ABRAXAS_ADMIN_EMAILS` and/or `ADMIN_PIN`.
+1. Run read-only preflight: `supabase/migrations/060_privacy_request_ledger_preflight.sql`
+2. Apply `supabase/migrations/060_privacy_request_ledger.sql` manually in the Supabase SQL editor when ready.
+3. Apply `supabase/migrations/061_privacy_deletion_approve_atomic.sql` for atomic deletion approval.
+4. Run read-only post-apply verify: `supabase/migrations/060_privacy_request_ledger_post_apply_verify.sql`
+5. Confirm `ABRAXAS_BROWSER_SESSION_SECRET` (or `ABRAXAS_SIGNING_KEY`) is set for holder session auth.
+6. Confirm admin access via `ABRAXAS_ADMIN_EMAILS` and/or `ADMIN_PIN`.
 
 ## Data inventory (what Abraxas holds)
 
@@ -21,8 +24,10 @@ Technical infrastructure for holder export and deletion **requests**. This is no
 
 ### Storage paths (`passport-documents` bucket)
 
-- Current: `identity/{emailSafe}/{sessionId}/id_front.{ext}`, `selfie.{ext}`
-- Legacy: `{stampId}/{emailSafe}/{timestamp}_{filename}`
+- **New uploads (v2):** `identity/v2/{captureSessionUuid}/{id_front|selfie}.{ext}` or `{stampId}/v2/{uploadSessionUuid}/{filename}`
+- **Legacy (read-only, not migrated):** `identity/{emailSafe}/{sessionId}/...` and `{stampId}/{emailSafe}/{timestamp}_{filename}`
+
+Legacy email-based paths remain a known historical limitation pending a separate migration/purge project. New uploads never embed email or wallet identifiers in paths.
 
 **No automated blob deletion exists in this release.**
 
@@ -41,18 +46,19 @@ Admin queue: `/admin/privacy`
 |--------|--------|
 | `start_review` | Status → `under_review` |
 | `approve_export` | Status → `approved` (operator fulfills export manually) |
-| `approve_deletion` | Status → `approved` then `access_revoked_pending_purge`; revokes claims + identity status |
+| `approve_deletion` | Atomic RPC: status → `access_revoked_pending_purge`; revokes claims, credentials, identity, wallet bindings |
 | `legal_hold` | Status → `legal_hold` (cannot delete yet) |
 | `complete` | Status → `completed` |
 | `deny` | Status → `denied` |
 
 ### Deletion approval (safe path)
 
-When approving deletion:
+When approving deletion via `approve_privacy_deletion_atomic` RPC:
 
-1. **Does:** revoke active credential claims, set `identity_verifications.status = revoked`.
-2. **Does not:** delete storage blobs, audit rows, decision receipts, metering, or legal/security evidence.
-3. **Status:** `access_revoked_pending_purge` — physical deletion requires separate retention/purge implementation.
+1. **Atomically does:** update privacy request status, revoke active credential claims (with status events), revoke credentials, identity verification, wallet bindings, append privacy event + audit row.
+2. **Does not:** delete storage blobs, audit history, decision receipts, metering, or legal/security evidence.
+3. **On failure:** entire transaction rolls back — no partial revocation.
+4. **Runtime:** `access_revoked_pending_purge` denies Partner Flow evaluate/complete/refresh before issuance.
 
 ### Export fulfillment
 

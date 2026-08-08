@@ -3,7 +3,6 @@
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
-import { revokeSubjectClaims } from "@/lib/credentials/claimsService";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AdminActorCategory } from "@/lib/admin/adminActorCategory";
@@ -15,6 +14,7 @@ import {
   isPrivacyReasonCode,
   isPrivacyRequestType,
   isPrivacyRequestStatus,
+  PRIVACY_ACTIVE_STATUSES,
   toAdminView,
   toHolderView,
   type AdminPrivacyRequestView,
@@ -142,6 +142,18 @@ export async function createPrivacyRequest(input: {
     }
   }
 
+  const { data: activeExisting } = await sb
+    .from(TABLE)
+    .select("*")
+    .eq("subject_sui", subject)
+    .eq("request_type", input.requestType)
+    .in("status", [...PRIVACY_ACTIVE_STATUSES])
+    .maybeSingle();
+
+  if (activeExisting) {
+    return { ok: true, request: toHolderView(mapRequestRow(activeExisting)), created: false };
+  }
+
   const { data, error } = await sb
     .from(TABLE)
     .insert({
@@ -156,14 +168,26 @@ export async function createPrivacyRequest(input: {
     .single();
 
   if (error || !data) {
-    if (error?.code === "23505" && input.idempotencyKey) {
+    if (error?.code === "23505") {
       const { data: replay } = await sb
         .from(TABLE)
         .select("*")
-        .eq("idempotency_key", input.idempotencyKey)
+        .eq("subject_sui", subject)
+        .eq("request_type", input.requestType)
+        .in("status", [...PRIVACY_ACTIVE_STATUSES])
         .maybeSingle();
       if (replay) {
         return { ok: true, request: toHolderView(mapRequestRow(replay)), created: false };
+      }
+      if (input.idempotencyKey) {
+        const { data: idemReplay } = await sb
+          .from(TABLE)
+          .select("*")
+          .eq("idempotency_key", input.idempotencyKey)
+          .maybeSingle();
+        if (idemReplay) {
+          return { ok: true, request: toHolderView(mapRequestRow(idemReplay)), created: false };
+        }
       }
     }
     return { ok: false, error: error?.message ?? "create_failed" };
@@ -423,7 +447,7 @@ export async function placePrivacyRequestOnLegalHold(input: {
 }
 
 /**
- * Approved deletion: revoke access/credentials only — never purge storage or audit rows.
+ * Approved deletion: atomic RPC revokes access/credentials — never purges storage or audit rows.
  */
 export async function approveDeletionPrivacyRequest(input: {
   requestId: string;
@@ -443,58 +467,37 @@ export async function approveDeletionPrivacyRequest(input: {
   }
 
   const approveKey = input.idempotencyKey ?? `approve_deletion:${input.requestId}`;
-
-  const approved = await transitionRequest({
-    requestId: input.requestId,
-    toStatus: "approved",
-    reasonCode: "deletion_access_revoked",
-    changedByCategory: "admin",
-    adminActorCategory: input.adminActorCategory,
-    idempotencyKey: `${approveKey}:approved`,
-    metadata: buildPrivacyAuditMetadata({
-      requestType: existing.request_type,
-      fromStatus: existing.status,
-      toStatus: "approved",
-      reasonCode: "deletion_access_revoked",
-      changedByCategory: "admin",
-      adminActorCategory: input.adminActorCategory,
-      idempotencyKey: approveKey,
-      accessRevoked: false,
-      purgePending: true,
-      outcome: "deletion_approved",
-    }),
-  });
-  if (!approved.ok) return approved;
-
-  await revokeSubjectClaims(existing.subject_sui, "privacy_deletion_approved");
-
   const sb = requireSupabaseAdmin();
-  await sb.from("identity_verifications")
-    .update({ status: "revoked", updated_at: new Date().toISOString() })
-    .or(`sui_address.eq.${existing.subject_sui},wallet_address.eq.${existing.subject_sui}`);
-
-  const pending = await transitionRequest({
-    requestId: input.requestId,
-    toStatus: "access_revoked_pending_purge",
-    reasonCode: "deletion_purge_pending",
-    changedByCategory: "system",
-    idempotencyKey: `${approveKey}:pending_purge`,
-    metadata: buildPrivacyAuditMetadata({
-      requestType: existing.request_type,
-      fromStatus: "approved",
-      toStatus: "access_revoked_pending_purge",
-      reasonCode: "deletion_purge_pending",
-      changedByCategory: "system",
-      adminActorCategory: input.adminActorCategory,
-      idempotencyKey: approveKey,
-      accessRevoked: true,
-      purgePending: true,
-      outcome: "access_revoked_no_purge",
-    }),
+  const { data, error } = await sb.rpc("approve_privacy_deletion_atomic", {
+    p_request_id: input.requestId,
+    p_admin_actor_category: input.adminActorCategory,
+    p_idempotency_key: approveKey,
   });
-  if (!pending.ok) return pending;
 
-  return { ok: true, request: toAdminView(pending.request), accessRevoked: true };
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  const result = data as {
+    ok?: boolean;
+    error?: string;
+    request_id?: string;
+    status?: PrivacyRequestStatus;
+    access_revoked?: boolean;
+  };
+
+  if (!result?.ok) {
+    return { ok: false, error: result?.error ?? "deletion_approve_failed" };
+  }
+
+  const updated = await getPrivacyRequestById(input.requestId);
+  if (!updated) return { ok: false, error: "request_not_found_after_rpc" };
+
+  return {
+    ok: true,
+    request: toAdminView(updated),
+    accessRevoked: Boolean(result.access_revoked),
+  };
 }
 
 /** User request alone never performs destructive actions. */
