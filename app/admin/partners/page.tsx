@@ -9,12 +9,13 @@ import Link from "next/link";
 import { PartnerOnboardingConsole } from "@/components/admin/PartnerOnboardingConsole";
 import { AdminPartnerKeysPanel } from "@/components/admin/AdminPartnerKeysPanel";
 import { PartnerMeteringPanel } from "@/components/admin/PartnerMeteringPanel";
+import { PartnerWebhooksPanel } from "@/components/admin/PartnerWebhooksPanel";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
 
-type Tab = "onboarding" | "keys" | "usage";
+type Tab = "onboarding" | "keys" | "usage" | "webhooks";
 
 export default function AdminPartnersPage() {
   const [tab, setTab] = useState<Tab>("onboarding");
@@ -41,7 +42,7 @@ export default function AdminPartnersPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-          {(["onboarding", "keys", "usage"] as const).map(t => (
+          {(["onboarding", "keys", "usage", "webhooks"] as const).map(t => (
             <button key={t} type="button" onClick={() => setTab(t)}
               style={{
                 padding: "0.45rem 0.9rem", borderRadius: 999, cursor: "pointer",
@@ -50,7 +51,7 @@ export default function AdminPartnersPage() {
                 color: tab === t ? ACCENT : "rgba(255,255,255,0.55)",
                 fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
               }}>
-              {t === "onboarding" ? "Onboarding" : t === "keys" ? "API keys" : "Usage metering"}
+              {t === "onboarding" ? "Onboarding" : t === "keys" ? "API keys" : t === "usage" ? "Usage metering" : "Webhooks"}
             </button>
           ))}
           <input
@@ -70,8 +71,10 @@ export default function AdminPartnersPage() {
           <PartnerOnboardingConsole adminPin={pin} />
         ) : tab === "keys" ? (
           <AdminPartnerKeysPanel pin={pin} />
-        ) : (
+        ) : tab === "usage" ? (
           <PartnerMeteringPanel adminPin={pin} />
+        ) : (
+          <PartnerWebhooksPanel adminPin={pin} />
         )}
       </div>
     </div>

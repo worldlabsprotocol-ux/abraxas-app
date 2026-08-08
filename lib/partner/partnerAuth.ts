@@ -13,7 +13,8 @@ export type PartnerScope =
   | "verify:registry"
   | "verify:requests"
   | "verify:screening"
-  | "metering:read";
+  | "metering:read"
+  | "webhooks:read";
 
 export interface PartnerAuthContext {
   partnerId: string;
