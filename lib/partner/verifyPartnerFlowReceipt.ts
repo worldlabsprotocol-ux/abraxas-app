@@ -15,6 +15,17 @@ export interface PartnerFlowPublicReceipt {
   expires_at?: string | null;
   status?: string;
   production_usable?: boolean;
+  evaluated_claim_refs?: Array<{
+    claim_id?: string;
+    claim_type?: string;
+    issuer_id?: string;
+    status?: string;
+    issued_at?: string;
+    expires_at?: string | null;
+  }>;
+  currently_valid?: boolean;
+  validity?: string;
+  invalidation_reasons?: string[];
 }
 
 export interface PartnerFlowReceiptExpectations {

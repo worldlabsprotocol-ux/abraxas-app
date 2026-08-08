@@ -13,6 +13,7 @@ import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionRecei
 
 export type TrustValidityState =
   | ReceiptValidityState
+  | "access_revoked"
   | "decision_not_approved"
   | "decision_manual_review"
   | "partner_mismatch"
@@ -42,8 +43,23 @@ function productionUsableForRecord(input: {
   return input.decision_context === "production" && !isSandboxPolicyId(input.policy_id);
 }
 
+function resolveSyncClaimInvalidation(
+  claimRefs: PartnerFlowPublicReceipt["evaluated_claim_refs"],
+): string | null {
+  if (!claimRefs?.length) return null;
+  for (const ref of claimRefs) {
+    const status = ref.status?.toLowerCase();
+    if (status === "revoked") return "claim_revoked";
+    if (status === "suspended" || status === "under_review") return "access_revoked";
+    if (status === "expired") return "claim_expired";
+  }
+  return null;
+}
+
 function applyTrustGates(
-  base: Pick<ReceiptValidityResult, "currently_valid" | "validity" | "signature_valid" | "invalidation_reasons">,
+  base: Pick<ReceiptValidityResult, "currently_valid" | "signature_valid" | "invalidation_reasons"> & {
+    validity: TrustValidityState;
+  },
   record: {
     decision_result: string;
     partner_id: string;
@@ -170,7 +186,9 @@ export function evaluatePublicReceiptTrust(
   const storedStatus = receipt.status;
   const production_usable = receipt.production_usable === true;
 
-  let base: Pick<ReceiptValidityResult, "currently_valid" | "validity" | "signature_valid" | "invalidation_reasons">;
+  let base: Pick<ReceiptValidityResult, "currently_valid" | "signature_valid" | "invalidation_reasons"> & {
+    validity: TrustValidityState;
+  };
 
   if (!signature_valid) {
     base = {
@@ -182,7 +200,7 @@ export function evaluatePublicReceiptTrust(
   } else if (storedStatus === "revoked") {
     base = {
       currently_valid: false,
-      validity: "invalidated",
+      validity: "access_revoked",
       signature_valid: true,
       invalidation_reasons: ["receipt_revoked"],
     };
@@ -222,12 +240,33 @@ export function evaluatePublicReceiptTrust(
       invalidation_reasons: ["receipt_expired"],
     };
   } else {
-    base = {
-      currently_valid: true,
-      validity: "active",
-      signature_valid: true,
-      invalidation_reasons: [],
-    };
+    const claimInvalidation = resolveSyncClaimInvalidation(receipt.evaluated_claim_refs);
+    if (claimInvalidation) {
+      base = {
+        currently_valid: false,
+        validity: "access_revoked",
+        signature_valid: true,
+        invalidation_reasons: [claimInvalidation],
+      };
+    } else if (
+      receipt.currently_valid === false
+      && Array.isArray(receipt.invalidation_reasons)
+      && receipt.invalidation_reasons.length > 0
+    ) {
+      base = {
+        currently_valid: false,
+        validity: (receipt.validity as TrustValidityState | undefined) ?? "access_revoked",
+        signature_valid: true,
+        invalidation_reasons: receipt.invalidation_reasons,
+      };
+    } else {
+      base = {
+        currently_valid: true,
+        validity: "active",
+        signature_valid: true,
+        invalidation_reasons: [],
+      };
+    }
   }
 
   return applyTrustGates(
@@ -250,7 +289,9 @@ export function evaluateDecisionReceiptTrustSync(
   const storedStatus = resolveReceiptStatus(record);
   const signature_valid = verifyRecordSignature(record);
 
-  let base: Pick<ReceiptValidityResult, "currently_valid" | "validity" | "signature_valid" | "invalidation_reasons">;
+  let base: Pick<ReceiptValidityResult, "currently_valid" | "signature_valid" | "invalidation_reasons"> & {
+    validity: TrustValidityState;
+  };
 
   if (!signature_valid) {
     base = {

@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicReceipt } from "@/lib/decisionReceipts/service";
+import { publicReceiptLiveTrustHasNoPii } from "@/lib/decisionReceipts/publicReceiptLiveTrust";
 import { assertNoPiiInPublicView } from "@/lib/decisionReceipts/views";
 import {
   enforcePartnerFlowRateLimit,
@@ -40,6 +41,9 @@ export async function GET(
   }
 
   assertNoPiiInPublicView(view);
+  if (!publicReceiptLiveTrustHasNoPii(view)) {
+    throw new Error("Public receipt live trust view must not contain PII");
+  }
 
   recordPartnerFlowRequestOutcome({
     request: req,
@@ -51,7 +55,7 @@ export async function GET(
 
   return NextResponse.json(view, {
     headers: {
-      "Cache-Control": "public, max-age=60",
+      "Cache-Control": "no-store, must-revalidate",
       "Access-Control-Allow-Origin": "*",
     },
   });

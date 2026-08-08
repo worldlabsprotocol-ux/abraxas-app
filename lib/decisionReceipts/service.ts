@@ -15,6 +15,7 @@ import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { toPartnerView, toPublicView } from "@/lib/decisionReceipts/views";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
+import { buildPublicReceiptWithLiveTrust } from "@/lib/decisionReceipts/publicReceiptLiveTrust";
 import type {
   DecisionReceiptContext,
   DecisionReceiptRecord,
@@ -198,28 +199,16 @@ export async function issueDecisionReceipt(
 export async function revokeDecisionReceipt(
   receiptId: string,
   actorId: string,
+  reasonCode?: import("@/lib/decisionReceipts/revocationControlPlane").RevocationReasonCode,
 ): Promise<DecisionReceiptRecord | null> {
-  const sb = requireSupabaseAdmin();
-  const now = new Date().toISOString();
-  const { data, error } = await sb
-    .from("decision_receipts")
-    .update({ status: "revoked", revoked_at: now })
-    .eq("id", receiptId)
-    .eq("status", "active")
-    .select("*")
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  await appendAuditEvent({
-    actor_type: "admin",
-    actor_id: actorId,
-    action: "decision_receipt.revoked",
-    object_type: "decision_receipt",
-    object_id: receiptId,
+  const { revokeDecisionReceiptControlled } = await import("@/lib/decisionReceipts/revocationControlPlane");
+  const result = await revokeDecisionReceiptControlled({
+    receiptId,
+    reasonCode: reasonCode ?? "operator_security_review",
+    changedBy: actorId,
   });
-
-  return mapRow(data as Record<string, unknown>);
+  if (!result.ok) return null;
+  return getReceiptById(receiptId);
 }
 
 export async function consentAllowsPartnerReceipt(
@@ -244,7 +233,7 @@ export async function consentAllowsPartnerReceipt(
 export async function getPublicReceipt(receiptId: string) {
   const record = await getReceiptById(receiptId);
   if (!record) return null;
-  return toPublicView(record);
+  return buildPublicReceiptWithLiveTrust(record);
 }
 
 export async function getPartnerReceipt(receiptId: string, partnerId: string) {

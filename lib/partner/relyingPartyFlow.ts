@@ -4,7 +4,14 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
-import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, findSessionReceiptForSupersede, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
+import {
+  findActiveSessionDecision,
+  findDecisionByVerificationRequest,
+  findDecisionByIdempotencyKey,
+  findReceiptForVerificationRequest,
+  findSessionReceiptForSupersede,
+  supersedeActiveSessionDecisions,
+} from "@/lib/partner/sessionDecision";
 import {
   isMissingIdempotencyKeyColumnError,
   isVerificationDecisionIdempotencyKeyAvailable,
@@ -28,6 +35,11 @@ import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAll
 import { computeSessionReceiptExpiresAt } from "@/lib/partner/sessionReceipt";
 import { buildPartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import type { PartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
+import {
+  partnerFlowReceiptAccessBlocked,
+  partnerFlowRevocationDeniedFields,
+} from "@/lib/partner/partnerFlowReceiptAccess";
+import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
 const APP_URL = getPublicAppOrigin();
@@ -152,6 +164,28 @@ async function evaluateHolderPolicy(
   return evaluatePolicyForSubject({ suiAddress, policyId, partnerId });
 }
 
+async function denyIfPartnerFlowRevoked(input: {
+  suiAddress: string;
+  partnerId: string;
+  policyId: string;
+  operation: "evaluate" | "complete" | "refresh";
+  verificationRequestId?: string;
+}): Promise<PartnerFlowEvaluateResult | null> {
+  const denied = await checkPartnerFlowRevocationGate({
+    subjectId: input.suiAddress,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: input.operation,
+    verificationRequestId: input.verificationRequestId,
+  });
+  if (!denied) return null;
+  const policy = await getPolicy(input.policyId);
+  return {
+    ...denied,
+    policy_version: policy?.version,
+  };
+}
+
 export async function issuePartnerSessionReceipt(input: {
   suiAddress: string;
   partnerId: string;
@@ -231,6 +265,16 @@ export async function issuePartnerSessionReceipt(input: {
   }
 
   if (!decisionId) {
+    if (vrId) {
+      const staleVrContext = await findReceiptForVerificationRequest({
+        verificationRequestId: vrId,
+        subjectId: subject,
+      });
+      if (staleVrContext?.receipt.status === "revoked") {
+        throw new Error("receipt_revoked");
+      }
+    }
+
     replay_status = "issued";
     if (input.supersedePriorSession) {
       replacedReceiptId = await findSessionReceiptForSupersede({
@@ -408,6 +452,14 @@ export async function evaluatePartnerFlow(input: {
   }
 
   if (credential.status === "active" && credential.credential_jti) {
+    const revoked = await denyIfPartnerFlowRevoked({
+      suiAddress: subject,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      operation: "evaluate",
+    });
+    if (revoked) return revoked;
+
     const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
 
     if (evaluation.decision === "approved") {
@@ -427,6 +479,13 @@ export async function evaluatePartnerFlow(input: {
         policy_id: input.policyId,
         partner_id: input.partnerId,
       });
+
+      if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
+        return {
+          ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
+          policy_version: policy.version,
+        };
+      }
 
       return {
         next: "enter",
@@ -491,6 +550,17 @@ export async function completePartnerFlowAfterApproval(input: {
     return { ok: false, error: "Credential not yet active" };
   }
 
+  const revoked = await denyIfPartnerFlowRevoked({
+    suiAddress: input.suiAddress,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: "complete",
+    verificationRequestId: input.verificationRequestId,
+  });
+  if (revoked) {
+    return { ok: true, ...revoked };
+  }
+
   const issued = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
@@ -511,6 +581,14 @@ export async function completePartnerFlowAfterApproval(input: {
     policy_id: input.policyId,
     partner_id: input.partnerId,
   });
+
+  if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
+    return {
+      ok: true,
+      ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
+      policy_version: policy?.version,
+    };
+  }
 
   return {
     ok: true,
@@ -538,6 +616,14 @@ export async function refreshPartnerSessionReceipt(input: {
     return { next: "passport" };
   }
 
+  const revoked = await denyIfPartnerFlowRevoked({
+    suiAddress: input.suiAddress,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: "refresh",
+  });
+  if (revoked) return revoked;
+
   const { policy, evaluation } = await evaluateHolderPolicy(input.suiAddress, input.partnerId, input.policyId);
   if (evaluation.decision !== "approved") {
     return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
@@ -560,6 +646,13 @@ export async function refreshPartnerSessionReceipt(input: {
     policy_id: input.policyId,
     partner_id: input.partnerId,
   });
+
+  if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
+    return {
+      ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
+      policy_version: policy.version,
+    };
+  }
 
   return {
     next: "enter",

@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
 
 const MONO = "'JetBrains Mono',monospace";
 
@@ -44,6 +45,7 @@ export default function AdminReceiptsPage() {
   const [detail, setDetail] = useState<ReceiptDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [reasonCode, setReasonCode] = useState<string>(REVOCATION_REASON_CODES[0]);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -79,13 +81,22 @@ export default function AdminReceiptsPage() {
   useEffect(() => { void loadList(); }, [loadList]);
 
   async function revokeReceipt(receiptId: string) {
-    if (!confirm("Revoke this eligibility decision receipt?")) return;
+    const confirmed = window.confirm(
+      `Revoke receipt ${receiptId}?\n\nReason: ${reasonCode}\n\n`
+      + "This immediately prevents future partner validation using this receipt. "
+      + "The signed artifact remains cryptographically valid; live validity becomes revoked.",
+    );
+    if (!confirmed) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/receipts/${receiptId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-pin": pin },
-        body: JSON.stringify({ action: "revoke" }),
+        body: JSON.stringify({
+          action: "revoke",
+          reason_code: reasonCode,
+          idempotency_key: `receipt_revoke:${receiptId}:${reasonCode}`,
+        }),
       });
       if (!res.ok) {
         const data = await res.json() as { error?: string };
@@ -207,13 +218,38 @@ export default function AdminReceiptsPage() {
               )}
 
               {detail.resolved_status === "active" && (
-                <button
-                  type="button"
-                  onClick={() => void revokeReceipt(detail.receipt.receipt_id)}
-                  style={{ marginTop: "1rem", padding: "0.4rem 0.75rem", background: "rgba(242,107,107,0.12)", border: "1px solid rgba(242,107,107,0.25)", borderRadius: 4, color: "#f26b6b", cursor: "pointer", fontSize: "0.65rem" }}
-                >
-                  Revoke receipt
-                </button>
+                <div style={{ marginTop: "1rem" }}>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.62rem", color: "rgba(255,255,255,0.45)" }}>
+                    Revocation reason code
+                    <select
+                      value={reasonCode}
+                      onChange={e => setReasonCode(e.target.value)}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        marginTop: 4,
+                        padding: "0.35rem 0.5rem",
+                        borderRadius: 4,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(0,0,0,0.25)",
+                        color: "#f0f0f0",
+                        fontFamily: MONO,
+                        fontSize: "0.62rem",
+                      }}
+                    >
+                      {REVOCATION_REASON_CODES.map(code => (
+                        <option key={code} value={code}>{code}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void revokeReceipt(detail.receipt.receipt_id)}
+                    style={{ padding: "0.4rem 0.75rem", background: "rgba(242,107,107,0.12)", border: "1px solid rgba(242,107,107,0.25)", borderRadius: 4, color: "#f26b6b", cursor: "pointer", fontSize: "0.65rem" }}
+                  >
+                    Revoke receipt
+                  </button>
+                </div>
               )}
 
               <div style={{ marginTop: "0.75rem", fontSize: "0.6rem" }}>

@@ -108,6 +108,13 @@ export const FROZEN_PUBLIC_RECEIPT_VIEW_KEYS = [
   "artifact_type",
 ] as const;
 
+export const FROZEN_PUBLIC_RECEIPT_LIVE_TRUST_KEYS = [
+  ...FROZEN_PUBLIC_RECEIPT_VIEW_KEYS,
+  "currently_valid",
+  "validity",
+  "invalidation_reasons",
+] as const;
+
 export const FROZEN_PARTNER_FLOW_EVALUATE_ENTER_KEYS = [
   "next",
   "redirect_url",

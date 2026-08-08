@@ -45,11 +45,32 @@ info:
     **Fail closed by default** (production). Integrators must verify on the public receipt view:
     - `signature_valid === true`
     - `decision_result === "approved"`
-    - `status === "active"` (missing status fails)
+    - `currently_valid === true` (server-computed live trust — additive field)
+    - `status === "active"` for receipt-level state (missing status fails)
     - `expires_at` present, valid ISO-8601, and not expired at verification time
     - `production_usable === true`
     - `partner_id` matches your integration id
     - `policy_id` matches your policy gate id
+    - `invalidation_reasons` must be empty for access; stable codes include `claim_revoked`, `receipt_revoked`, `access_revoked`
+    - `evaluated_claim_refs[].status` reflects live credential state at fetch time
+    Re-fetch the public receipt for **each access decision**. Do not cache longer than your
+    receipt/revocation freshness guarantee (`Cache-Control: no-store` on the public endpoint).
+
+    ## Revocation runtime (evaluate / complete / refresh)
+
+    Partner Flow browser APIs fail closed **before** issuing or replaying receipts when:
+    - a policy-required credential claim is `revoked`, `suspended`, or `under_review`
+      (`claim_revoked` / `access_revoked`, `next: "denied"`)
+    - an existing partner session receipt is `revoked` (`receipt_revoked`, `next: "denied"`)
+
+  x-abraxas-receipt-only-revocation: |
+    Receipt-only revocation does **not** restore access via ordinary `refresh` or idempotent replay.
+    A revoked receipt remains cryptographically verifiable but `currently_valid: false`.
+    `POST /api/v1/partner-flow/complete` with the **original** `verification_request_id` after receipt
+    revoke is denied (`receipt_revoked`) — it cannot mint a replacement receipt from stale context.
+    Minting a replacement receipt after receipt-only revoke requires a **new verification request**
+    (fresh Passport → complete), producing a new `decision_id` and `receipt_id`.
+    Natural receipt expiry (TTL elapsed, status still `active`) may still use `refresh` to supersede.
     Sandbox/pilot policies: accept `production_usable: false` only with **explicit opt-in**
     (`allowSandbox: true` in `validatePartnerFlowPublicReceipt` or equivalent in your stack).
 
@@ -307,18 +328,18 @@ paths:
       operationId: getPublicReceipt
       summary: Public eligibility decision receipt
       description: |
-        Fetch the signed receipt from your server after the holder callback. No authentication required.
-        Response includes `signature_valid` (computed server-side). **Callbacks contain no PII** —
-        this endpoint is the source of truth for eligibility verification.
+        Response includes `signature_valid` (computed server-side) and additive live trust fields
+        (`currently_valid`, `validity`, `invalidation_reasons`). **Callbacks contain no PII** —
+        this endpoint is the source of truth for eligibility verification. Re-fetch for each access decision.
       parameters:
         - $ref: "#/components/parameters/ReceiptId"
       responses:
         "200":
-          description: Public receipt view (cacheable 60s, CORS `*`).
+          description: Public receipt view with live trust (no-store, CORS `*`).
           headers:
             Cache-Control:
               schema: { type: string }
-              example: "public, max-age=60"
+              example: "no-store, must-revalidate"
             Access-Control-Allow-Origin:
               schema: { type: string }
               example: "*"
@@ -771,6 +792,23 @@ components:
         artifact_type:
           type: string
           enum: [eligibility_decision_receipt]
+        currently_valid:
+          type: boolean
+          description: Server-computed live trust at fetch time. Must be true for access.
+        validity:
+          type: string
+          description: Live trust state (e.g. active, access_revoked, expired).
+        invalidation_reasons:
+          type: array
+          description: Stable non-PII invalidation codes when currently_valid is false.
+          items:
+            type: string
+            enum:
+              - receipt_revoked
+              - claim_revoked
+              - access_revoked
+              - receipt_expired
+              - signature_invalid
 
     PartnerFlowReceiptValidationExpectations:
       type: object
@@ -804,3 +842,6 @@ components:
           - expires_at_invalid
           - receipt_expired
           - production_not_usable
+          - receipt_revoked
+          - claim_revoked
+          - access_revoked

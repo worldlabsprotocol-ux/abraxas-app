@@ -9,6 +9,7 @@ import {
   FROZEN_PARTNER_FLOW_EVALUATE_ENTER_KEYS,
   FROZEN_PARTNER_VERIFICATION_RESULT_KEYS,
   FROZEN_PUBLIC_RECEIPT_VIEW_KEYS,
+  FROZEN_PUBLIC_RECEIPT_LIVE_TRUST_KEYS,
   FROZEN_TRUST_DECISION_KEYS,
   FROZEN_TRUST_DECISION_PROOF_KEYS,
   PARTNER_CALLBACK_PARAMS,
@@ -44,6 +45,8 @@ export const FROZEN_RECEIPT_INVALIDATION_REASON_PREFIXES = [
   "receipt_missing",
   "signature_invalid",
   "receipt_revoked",
+  "claim_revoked",
+  "access_revoked",
   "status_not_active",
   "expires_at_missing",
   "expires_at_invalid",
@@ -114,6 +117,9 @@ export interface PartnerFlowCompatibilityManifest {
   public_receipt: {
     required_view_fields: readonly string[];
     frozen_view_fields: readonly string[];
+    additive_live_trust_fields: readonly string[];
+    live_trust_view_fields: readonly string[];
+    cache_policy: string;
     validation_rules: typeof PARTNER_FLOW_RECEIPT_VALIDATION_RULES;
     invalidation_reason_prefixes: readonly string[];
   };
@@ -184,6 +190,9 @@ export function buildPartnerFlowCompatibilityManifest(
     public_receipt: {
       required_view_fields: [...PARTNER_FLOW_RECEIPT_VALIDATION_RULES.map(r => r.field)],
       frozen_view_fields: [...FROZEN_PUBLIC_RECEIPT_VIEW_KEYS],
+      additive_live_trust_fields: ["currently_valid", "validity", "invalidation_reasons"],
+      live_trust_view_fields: [...FROZEN_PUBLIC_RECEIPT_LIVE_TRUST_KEYS],
+      cache_policy: "no-store, must-revalidate — re-fetch for each access decision",
       validation_rules: PARTNER_FLOW_RECEIPT_VALIDATION_RULES,
       invalidation_reason_prefixes: [...FROZEN_RECEIPT_INVALIDATION_REASON_PREFIXES],
     },
@@ -225,5 +234,11 @@ export function assertManifestSynchronizedWithImplementation(
   );
   if (!subset) {
     throw new Error("PUBLIC_RECEIPT_VIEW_FIELDS must remain subset of frozen public receipt view");
+  }
+  if (manifest.public_receipt.additive_live_trust_fields.join() !== "currently_valid,validity,invalidation_reasons") {
+    throw new Error("additive_live_trust_fields drift — bump compatibility version");
+  }
+  if (manifest.public_receipt.live_trust_view_fields.join() !== FROZEN_PUBLIC_RECEIPT_LIVE_TRUST_KEYS.join()) {
+    throw new Error("live_trust_view_fields drift — bump compatibility version");
   }
 }

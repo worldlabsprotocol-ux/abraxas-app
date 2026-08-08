@@ -1,6 +1,7 @@
 // FILE: lib/partner/sessionDecision.ts
 // Idempotent session decision lookup — reuse active decision within TTL.
 
+import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import type { StoredPartnerFlowDecisionIdentity } from "@/lib/partner/partnerFlowIdempotency";
@@ -66,6 +67,35 @@ export async function findActiveSessionDecision(input: {
   if (error) throw new Error(error.message);
   if (!data?.id) return null;
   return toActiveSessionDecision(data.id as string, data.valid_until as string);
+}
+
+/** Complete-context lookup — any decision status (revocation gate for stale VR reuse). */
+export async function findReceiptForVerificationRequest(input: {
+  verificationRequestId: string;
+  subjectId: string;
+}): Promise<{ decision_id: string; receipt_id: string; receipt: NonNullable<Awaited<ReturnType<typeof getReceiptByDecisionId>>> } | null> {
+  const sb = requireSupabaseAdmin();
+  const subject = normalizeSuiAddress(input.subjectId);
+  const { data, error } = await sb
+    .from("verification_decisions")
+    .select("id")
+    .eq("request_id", input.verificationRequestId)
+    .eq("subject_id", subject)
+    .order("decided_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data?.id) return null;
+
+  const receipt = await getReceiptByDecisionId(data.id as string);
+  if (!receipt) return null;
+
+  return {
+    decision_id: data.id as string,
+    receipt_id: receipt.id,
+    receipt,
+  };
 }
 
 /** Complete-path idempotency — reuse decision issued for a verification request. */
