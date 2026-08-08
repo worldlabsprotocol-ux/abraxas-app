@@ -130,8 +130,9 @@ describe("privacy control plane", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.created).toBe(true);
-      expect(result.request.request_ref).toHaveLength(8);
       expect(result.request).not.toHaveProperty("subject_sui");
+      expect(result.request).not.toHaveProperty("request_ref");
+      expect(result.request).not.toHaveProperty("id");
     }
   });
 
@@ -152,7 +153,8 @@ describe("privacy control plane", () => {
     const rows = await listPrivacyRequestsForSubject(SAMPLE_SUI);
     expect(rows).toHaveLength(1);
     expect(rows[0]).not.toHaveProperty("subject_sui");
-    expect(rows[0].request_ref).toHaveLength(8);
+    expect(rows[0]).not.toHaveProperty("request_ref");
+    expect(rows[0]).not.toHaveProperty("id");
   });
 
   it("returns existing active request for same subject and type", async () => {

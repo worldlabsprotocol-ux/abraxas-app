@@ -69,7 +69,6 @@ export const PRIVACY_ACTIVE_STATUSES = [
 export type PrivacyActiveStatus = (typeof PRIVACY_ACTIVE_STATUSES)[number];
 
 export interface HolderPrivacyRequestView {
-  request_ref: string;
   request_type: PrivacyRequestType;
   status: PrivacyRequestStatus;
   status_label: string;
@@ -106,7 +105,6 @@ export function isPrivacyReasonCode(value: string): value is PrivacyReasonCode {
 
 export function toHolderView(record: PrivacyRequestRecord): HolderPrivacyRequestView {
   return {
-    request_ref: record.id.slice(0, 8),
     request_type: record.request_type,
     status: record.status,
     status_label: PRIVACY_STATUS_LABELS[record.status],

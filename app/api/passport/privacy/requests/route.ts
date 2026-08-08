@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       disclaimer: PRIVACY_CENTER_DISCLAIMER,
       data_categories: PRIVACY_DATA_CATEGORIES.map(c => ({
-        id: c.id,
+        category_key: c.id,
         title: c.title,
         summary: c.summary,
         partner_exposure: c.partnerExposure,

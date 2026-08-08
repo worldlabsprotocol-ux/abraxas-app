@@ -1,17 +1,19 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import {
+  holderPrivacyPayloadHasNoForbiddenFields,
+  holderPrivacyRequestHasOnlyAllowedFields,
+} from "@/lib/privacy/holderResponseContract";
 
 const createPrivacyRequestMock = vi.fn();
 const listPrivacyRequestsForSubjectMock = vi.fn();
 const checkAdminAccessMock = vi.fn();
 const resolveAdminAccessMock = vi.fn();
 const approveDeletionPrivacyRequestMock = vi.fn();
+const requireBrowserSessionMock = vi.fn();
 
 vi.mock("@/lib/auth/browserSession", () => ({
-  requireBrowserSession: vi.fn(async () => ({
-    ok: true,
-    session: { suiAddress: "0xholder" },
-  })),
+  requireBrowserSession: (...args: unknown[]) => requireBrowserSessionMock(...args),
 }));
 
 vi.mock("@/lib/privacy/privacyControlPlane", () => ({
@@ -35,31 +37,52 @@ vi.mock("@/lib/adminAuth", () => ({
 import { GET as holderGet, POST as holderPost } from "@/app/api/passport/privacy/requests/route";
 import { POST as adminPost } from "@/app/api/admin/privacy/requests/[requestId]/route";
 
+const HOLDER_REQUEST = {
+  request_type: "data_export",
+  status: "requested",
+  status_label: "Request received",
+  created_at: "2026-01-01T00:00:00.000Z",
+  updated_at: "2026-01-01T00:00:00.000Z",
+};
+
 describe("privacy API routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     checkAdminAccessMock.mockResolvedValue(true);
     resolveAdminAccessMock.mockResolvedValue({ authorized: true, method: "pin_header" });
+    requireBrowserSessionMock.mockResolvedValue({
+      ok: true,
+      session: { suiAddress: "0x0000000000000000000000000000000000000000000000000000000000000001" },
+    });
   });
 
-  it("holder GET returns requests without internal subject fields", async () => {
-    listPrivacyRequestsForSubjectMock.mockResolvedValue([{
-      request_ref: "abcd1234",
-      request_type: "data_export",
-      status: "requested",
-      status_label: "Request received",
-      created_at: "2026-01-01T00:00:00.000Z",
-      updated_at: "2026-01-01T00:00:00.000Z",
-    }]);
+  it("holder GET returns status and dates only", async () => {
+    listPrivacyRequestsForSubjectMock.mockResolvedValue([HOLDER_REQUEST]);
 
     const res = await holderGet(new NextRequest("http://localhost/api/passport/privacy/requests"));
     const body = await res.json() as { requests: Record<string, unknown>[] };
 
     expect(res.status).toBe(200);
-    expect(body.requests[0]).not.toHaveProperty("subject_sui");
-    expect(body.requests[0]).not.toHaveProperty("reason_code");
-    expect(body.requests[0]).not.toHaveProperty("id");
-    expect(JSON.stringify(body)).not.toContain("storage_path");
+    expect(holderPrivacyRequestHasOnlyAllowedFields(body.requests[0])).toBe(true);
+    expect(holderPrivacyPayloadHasNoForbiddenFields(body)).toBe(true);
+  });
+
+  it("holder GET scopes list to signed-in session subject only", async () => {
+    listPrivacyRequestsForSubjectMock.mockResolvedValue([]);
+
+    await holderGet(new NextRequest("http://localhost/api/passport/privacy/requests"));
+
+    expect(listPrivacyRequestsForSubjectMock).toHaveBeenCalledWith(
+      "0x0000000000000000000000000000000000000000000000000000000000000001",
+    );
+  });
+
+  it("holder GET returns 401 without session", async () => {
+    requireBrowserSessionMock.mockResolvedValueOnce({ ok: false, status: 401, error: "Sign in required" });
+
+    const res = await holderGet(new NextRequest("http://localhost/api/passport/privacy/requests"));
+    expect(res.status).toBe(401);
+    expect(listPrivacyRequestsForSubjectMock).not.toHaveBeenCalled();
   });
 
   it("holder POST create does not revoke or delete", async () => {
@@ -67,12 +90,8 @@ describe("privacy API routes", () => {
       ok: true,
       created: true,
       request: {
-        request_ref: "abcd1234",
+        ...HOLDER_REQUEST,
         request_type: "account_deletion",
-        status: "requested",
-        status_label: "Request received",
-        created_at: "2026-01-01T00:00:00.000Z",
-        updated_at: "2026-01-01T00:00:00.000Z",
       },
     });
 
@@ -80,10 +99,12 @@ describe("privacy API routes", () => {
       method: "POST",
       body: JSON.stringify({ request_type: "account_deletion", idempotency_key: "k1" }),
     }));
+    const body = await res.json() as { request: Record<string, unknown> };
 
     expect(res.status).toBe(201);
+    expect(holderPrivacyRequestHasOnlyAllowedFields(body.request)).toBe(true);
     expect(createPrivacyRequestMock).toHaveBeenCalledWith({
-      subjectSui: "0xholder",
+      subjectSui: "0x0000000000000000000000000000000000000000000000000000000000000001",
       requestType: "account_deletion",
       idempotencyKey: "k1",
     });
@@ -111,7 +132,6 @@ describe("privacy API routes", () => {
       accessRevoked: true,
       request: {
         id: "r1",
-        request_ref: "r1ref",
         status: "access_revoked_pending_purge",
       },
     });

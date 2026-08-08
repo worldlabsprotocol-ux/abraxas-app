@@ -10,18 +10,16 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
 interface DataCategory {
-  id: string;
+  category_key: string;
   title: string;
   summary: string;
   partner_exposure: string;
 }
 
 interface PrivacyRequest {
-  request_ref: string;
   request_type: "data_export" | "account_deletion";
   status: string;
   status_label: string;
-  reason_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -142,7 +140,7 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
         )}
 
         {data?.data_categories.map(cat => (
-          <div key={cat.id} style={{
+          <div key={cat.category_key} style={{
             padding: "0.55rem 0.65rem", borderRadius: 10, marginBottom: "0.4rem",
             background: "var(--surface)", border: "1px solid var(--border)",
           }}>
@@ -233,23 +231,21 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
         )}
 
         {data?.requests.map(req => (
-          <div key={`${req.request_ref}-${req.created_at}`} style={{
+          <div key={`${req.request_type}-${req.created_at}`} style={{
             padding: "0.55rem 0.65rem", borderRadius: 10, marginBottom: "0.4rem",
             background: "var(--surface)", border: "1px solid var(--border)",
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}>
-              <span style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                {formatType(req.request_type)}
-              </span>
-              <span style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>
-                Ref {req.request_ref}
-              </span>
+            <div style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 600, color: "var(--text-primary)" }}>
+              {formatType(req.request_type)}
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)", margin: "0.3rem 0 0", lineHeight: 1.5 }}>
               {req.status_label}
             </p>
             <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0.25rem 0 0" }}>
-              {new Date(req.created_at).toLocaleString()}
+              Submitted {new Date(req.created_at).toLocaleString()}
+              {req.updated_at !== req.created_at && (
+                <> · Updated {new Date(req.updated_at).toLocaleString()}</>
+              )}
             </p>
           </div>
         ))}
