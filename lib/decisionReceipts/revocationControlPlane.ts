@@ -7,6 +7,11 @@ import { appendAuditEvent } from "@/lib/verification/audit";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
+import {
+  maybeEnqueuePartnerAccessRevoked,
+  maybeEnqueuePartnerCredentialRevoked,
+  maybeEnqueuePartnerReceiptRevoked,
+} from "@/lib/partner/webhooks/webhookHooks";
 
 export const REVOCATION_REASON_CODES = [
   "operator_security_review",
@@ -147,6 +152,15 @@ export async function revokeDecisionReceiptControlled(input: {
         partner_id: record.partner_id,
       },
     });
+
+    maybeEnqueuePartnerReceiptRevoked({
+      partnerId: record.partner_id,
+      receiptId,
+      decisionId: rpc.decision_id ?? record.verification_decision_id,
+      policyId: record.policy_id,
+      reasonCode: input.reasonCode,
+      alreadyRevoked: false,
+    });
   }
 
   return {
@@ -190,6 +204,12 @@ export async function revokeCredentialClaimControlled(input: {
         reason_code: input.reasonCode,
         affected_receipt_ids: rpc.affected_receipt_ids ?? [],
       },
+    });
+
+    void notifyPartnersForCredentialRevocation({
+      claimId: input.claimId,
+      reasonCode: input.reasonCode,
+      affectedReceiptIds: rpc.affected_receipt_ids ?? [],
     });
   }
 
@@ -346,6 +366,14 @@ export async function revokeSubjectPartnerAccess(input: {
     },
   });
 
+  if (revokedReceiptIds.length > 0) {
+    maybeEnqueuePartnerAccessRevoked({
+      partnerId,
+      reasonCode: input.reasonCode,
+      resourceId: `${access.subject_pseudonym_id}:${partnerId}:${input.idempotencyKey ?? "access_revoke"}`,
+    });
+  }
+
   return {
     ok: true,
     partnerId,
@@ -361,4 +389,28 @@ export function revocationAuditMetadataHasNoPii(metadata: Record<string, unknown
     && !text.includes("reviewer")
     && !text.includes("note")
     && !text.includes("0x");
+}
+
+async function notifyPartnersForCredentialRevocation(input: {
+  claimId: string;
+  reasonCode: string;
+  affectedReceiptIds: string[];
+}): Promise<void> {
+  if (!input.affectedReceiptIds.length) return;
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from("decision_receipts")
+    .select("id, partner_id, policy_id, verification_decision_id")
+    .in("id", input.affectedReceiptIds);
+
+  for (const row of data ?? []) {
+    maybeEnqueuePartnerCredentialRevoked({
+      partnerId: row.partner_id as string,
+      claimId: input.claimId,
+      reasonCode: input.reasonCode,
+      receiptId: row.id as string,
+      policyId: row.policy_id as string,
+      decisionId: row.verification_decision_id as string,
+    });
+  }
 }

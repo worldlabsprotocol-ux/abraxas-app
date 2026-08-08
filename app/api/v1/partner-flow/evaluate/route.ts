@@ -13,6 +13,7 @@ import {
 import { buildPartnerFlowVerificationRequestIdempotencyKey } from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMeteringHooks";
+import { maybeEnqueuePartnerReceiptIssued } from "@/lib/partner/webhooks/webhookHooks";
 import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocationRuntime";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import {
@@ -166,6 +167,15 @@ export async function POST(request: NextRequest) {
     }
 
     maybeRecordPartnerFlowReceiptMetering({
+      partnerId,
+      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+      decision: result.partner_result?.decision,
+      receiptId: result.partner_result?.receipt_id,
+      policyId,
+      decisionId: result.decision_id,
+    });
+
+    maybeEnqueuePartnerReceiptIssued({
       partnerId,
       replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
       decision: result.partner_result?.decision,
