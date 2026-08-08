@@ -17,6 +17,7 @@ import {
 } from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMeteringHooks";
+import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocationRuntime";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      if (result.replay_status) {
+      if (result.replay_status && !isPartnerFlowRevocationDenied(result)) {
         await auditPartnerFlowReceiptOutcome({
           flowTraceId,
           partnerId,
@@ -206,7 +207,7 @@ export async function POST(request: NextRequest) {
 
     maybeRecordPartnerFlowReceiptMetering({
       partnerId,
-      replayStatus: result.replay_status,
+      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
       decision: result.partner_result?.decision,
       receiptId: result.partner_result?.receipt_id,
       policyId,

@@ -36,7 +36,7 @@ describe("partner flow receipt access", () => {
     });
     expect(denied.next).toBe("denied");
     expect(denied.currently_valid).toBe(false);
-    expect(denied.reason_codes).toEqual(["access_revoked"]);
+    expect(denied.reason_codes).toEqual(["receipt_revoked"]);
     expect(JSON.stringify(denied)).not.toContain("@");
     expect(JSON.stringify(denied)).not.toContain("reviewer");
   });

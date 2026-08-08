@@ -29,11 +29,12 @@ export function partnerFlowRevocationDeniedFields(input: {
   invalidation_reasons: string[];
   reason_codes: string[];
 } {
+  const stableReasons = input.invalidation_reasons.filter(isPartnerFlowRevocationReason);
   return {
     next: "denied",
     currently_valid: false,
     validity: input.validity,
     invalidation_reasons: input.invalidation_reasons,
-    reason_codes: [...PARTNER_FLOW_REVOCATION_REASON_CODES],
+    reason_codes: stableReasons.length > 0 ? stableReasons : [...PARTNER_FLOW_REVOCATION_REASON_CODES],
   };
 }

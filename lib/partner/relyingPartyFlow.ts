@@ -32,6 +32,7 @@ import {
   partnerFlowReceiptAccessBlocked,
   partnerFlowRevocationDeniedFields,
 } from "@/lib/partner/partnerFlowReceiptAccess";
+import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
 const APP_URL = getPublicAppOrigin();
@@ -154,6 +155,28 @@ async function evaluateHolderPolicy(
   policyId: string,
 ) {
   return evaluatePolicyForSubject({ suiAddress, policyId, partnerId });
+}
+
+async function denyIfPartnerFlowRevoked(input: {
+  suiAddress: string;
+  partnerId: string;
+  policyId: string;
+  operation: "evaluate" | "complete" | "refresh";
+  verificationRequestId?: string;
+}): Promise<PartnerFlowEvaluateResult | null> {
+  const denied = await checkPartnerFlowRevocationGate({
+    subjectId: input.suiAddress,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: input.operation,
+    verificationRequestId: input.verificationRequestId,
+  });
+  if (!denied) return null;
+  const policy = await getPolicy(input.policyId);
+  return {
+    ...denied,
+    policy_version: policy?.version,
+  };
 }
 
 export async function issuePartnerSessionReceipt(input: {
@@ -412,6 +435,14 @@ export async function evaluatePartnerFlow(input: {
   }
 
   if (credential.status === "active" && credential.credential_jti) {
+    const revoked = await denyIfPartnerFlowRevoked({
+      suiAddress: subject,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      operation: "evaluate",
+    });
+    if (revoked) return revoked;
+
     const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
 
     if (evaluation.decision === "approved") {
@@ -502,6 +533,17 @@ export async function completePartnerFlowAfterApproval(input: {
     return { ok: false, error: "Credential not yet active" };
   }
 
+  const revoked = await denyIfPartnerFlowRevoked({
+    suiAddress: input.suiAddress,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: "complete",
+    verificationRequestId: input.verificationRequestId,
+  });
+  if (revoked) {
+    return { ok: true, ...revoked };
+  }
+
   const issued = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
@@ -556,6 +598,14 @@ export async function refreshPartnerSessionReceipt(input: {
   if (credential.status !== "active" || !credential.credential_jti) {
     return { next: "passport" };
   }
+
+  const revoked = await denyIfPartnerFlowRevoked({
+    suiAddress: input.suiAddress,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: "refresh",
+  });
+  if (revoked) return revoked;
 
   const { policy, evaluation } = await evaluateHolderPolicy(input.suiAddress, input.partnerId, input.policyId);
   if (evaluation.decision !== "approved") {
