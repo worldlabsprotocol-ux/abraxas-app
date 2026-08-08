@@ -70,7 +70,7 @@ Requires `webhooks:read` scope on the partner API key. Returns only that partner
 
 ## Required Vercel cron configuration
 
-Add to `vercel.json` (included in this PR):
+**Pro plan (production):** add to `vercel.json` `crons` array:
 
 ```json
 {
@@ -78,6 +78,8 @@ Add to `vercel.json` (included in this PR):
   "schedule": "*/5 * * * *"
 }
 ```
+
+Vercel Hobby accounts only allow daily cron expressions; use an external scheduler (or upgrade to Pro) to call `GET /api/cron/partner-webhook-dispatch` with `Authorization: Bearer $CRON_SECRET` every 5 minutes until Pro cron is enabled.
 
 Set `CRON_SECRET` in Vercel project settings. The cron route processes up to 50 pending/retrying outbox events per run with bounded exponential backoff (1m, 5m, 15m, 1h, 4h; max 6 attempts).
 
