@@ -11,8 +11,8 @@ import {
 import { validateWebhookEndpointForDelivery } from "@/lib/partner/webhooks/webhookEndpointValidation";
 import {
   claimWebhookOutboxEvent,
+  finalizeWebhookOutboxDelivery,
   listDispatchableWebhookEvents,
-  mapOutboxRow,
 } from "@/lib/partner/webhooks/webhookOutbox";
 import type { PartnerWebhookOutboxRecord } from "@/lib/partner/webhooks/types";
 import { WEBHOOK_MAX_ATTEMPTS, WEBHOOK_RETRY_DELAYS_MS } from "@/lib/partner/webhooks/types";
@@ -102,33 +102,41 @@ export async function deliverPartnerWebhookEvent(
   }
 }
 
-function clearDeliveryLeaseFields() {
+function claimScope(record: PartnerWebhookOutboxRecord, workerId: string) {
+  if (!record.delivery_claim_id || !record.delivery_lease_until) {
+    throw new Error("delivery_claim_missing");
+  }
   return {
-    delivery_lease_until: null,
-    delivery_worker_id: null,
+    outboxId: record.id,
+    workerId,
+    deliveryClaimId: record.delivery_claim_id,
+    deliveryLeaseUntil: record.delivery_lease_until,
   };
 }
 
 export async function processWebhookOutboxEvent(
   outboxId: string,
   workerId: string,
-): Promise<"delivered" | "retrying" | "failed" | "skipped"> {
+): Promise<"delivered" | "retrying" | "failed" | "skipped" | "stale"> {
   const sb = requireSupabaseAdmin();
   const record = await claimWebhookOutboxEvent({ outboxId, workerId });
   if (!record) return "skipped";
 
+  const scope = claimScope(record, workerId);
+  const attemptNumber = record.delivery_attempt_number ?? record.attempt_count + 1;
+
   const config = await loadSigningSecret(record.partner_id);
   if (!config) {
-    await sb.from(OUTBOX).update({
-      status: "failed",
-      last_error_code: "webhook_disabled",
-      updated_at: new Date().toISOString(),
-      ...clearDeliveryLeaseFields(),
-    }).eq("id", outboxId);
-    return "failed";
+    const finalized = await finalizeWebhookOutboxDelivery({
+      ...scope,
+      patch: {
+        status: "failed",
+        last_error_code: "webhook_disabled",
+      },
+    });
+    return finalized ? "failed" : "stale";
   }
 
-  const attemptNumber = record.attempt_count + 1;
   const result = await deliverPartnerWebhookEvent(
     record,
     config.signingSecret,
@@ -139,33 +147,37 @@ export async function processWebhookOutboxEvent(
     outbox_event_id: record.id,
     partner_id: record.partner_id,
     attempt_number: attemptNumber,
+    delivery_claim_id: scope.deliveryClaimId,
     http_status: result.ok ? result.httpStatus : result.httpStatus ?? null,
     error_code: result.ok ? null : result.errorCode,
     duration_ms: null,
   });
 
   if (result.ok) {
-    await sb.from(OUTBOX).update({
-      status: "delivered",
-      delivered_at: new Date().toISOString(),
-      attempt_count: attemptNumber,
-      last_error_code: null,
-      updated_at: new Date().toISOString(),
-      ...clearDeliveryLeaseFields(),
-    }).eq("id", outboxId);
-    return "delivered";
+    const finalized = await finalizeWebhookOutboxDelivery({
+      ...scope,
+      patch: {
+        status: "delivered",
+        delivered_at: new Date().toISOString(),
+        attempt_count: attemptNumber,
+        last_error_code: null,
+      },
+    });
+    return finalized ? "delivered" : "stale";
   }
 
   const failedPermanently = attemptNumber >= WEBHOOK_MAX_ATTEMPTS;
-  await sb.from(OUTBOX).update({
-    status: failedPermanently ? "failed" : "retrying",
-    attempt_count: attemptNumber,
-    last_error_code: result.errorCode,
-    next_attempt_at: failedPermanently ? record.next_attempt_at : nextAttemptAt(attemptNumber),
-    updated_at: new Date().toISOString(),
-    ...clearDeliveryLeaseFields(),
-  }).eq("id", outboxId);
+  const finalized = await finalizeWebhookOutboxDelivery({
+    ...scope,
+    patch: {
+      status: failedPermanently ? "failed" : "retrying",
+      attempt_count: attemptNumber,
+      last_error_code: result.errorCode,
+      next_attempt_at: failedPermanently ? record.next_attempt_at : nextAttemptAt(attemptNumber),
+    },
+  });
 
+  if (!finalized) return "stale";
   return failedPermanently ? "failed" : "retrying";
 }
 
@@ -178,18 +190,20 @@ export async function processWebhookOutboxBatch(input?: {
   retrying: number;
   failed: number;
   skipped: number;
+  stale: number;
 }> {
   const { randomUUID } = await import("crypto");
   const workerId = input?.workerId ?? randomUUID();
   const events = await listDispatchableWebhookEvents(input?.limit ?? 25);
 
-  const summary = { scanned: events.length, delivered: 0, retrying: 0, failed: 0, skipped: 0 };
+  const summary = { scanned: events.length, delivered: 0, retrying: 0, failed: 0, skipped: 0, stale: 0 };
   for (const event of events) {
     const outcome = await processWebhookOutboxEvent(event.id, workerId);
     summary[outcome === "delivered" ? "delivered"
       : outcome === "retrying" ? "retrying"
         : outcome === "failed" ? "failed"
-          : "skipped"] += 1;
+          : outcome === "stale" ? "stale"
+            : "skipped"] += 1;
   }
   return summary;
 }

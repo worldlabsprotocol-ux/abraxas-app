@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS public.partner_webhook_outbox (
   last_error_code   text,
   delivery_lease_until timestamptz,
   delivery_worker_id   text,
+  delivery_claim_id    uuid,
+  delivery_attempt_number integer,
   created_at        timestamptz NOT NULL DEFAULT now(),
   updated_at        timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT partner_webhook_outbox_event_type_check
@@ -73,12 +75,14 @@ CREATE TABLE IF NOT EXISTS public.partner_webhook_delivery_attempts (
   outbox_event_id   uuid        NOT NULL REFERENCES public.partner_webhook_outbox(id) ON DELETE RESTRICT,
   partner_id        text        NOT NULL REFERENCES public.partners(partner_id),
   attempt_number    integer     NOT NULL,
+  delivery_claim_id uuid        NOT NULL,
   http_status       integer,
   error_code        text,
   response_snippet  text,
   duration_ms       integer,
   attempted_at      timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT partner_webhook_delivery_attempts_unique UNIQUE (outbox_event_id, attempt_number)
+  CONSTRAINT partner_webhook_delivery_attempts_unique UNIQUE (outbox_event_id, attempt_number),
+  CONSTRAINT partner_webhook_delivery_attempts_claim_unique UNIQUE (outbox_event_id, delivery_claim_id)
 );
 
 CREATE INDEX IF NOT EXISTS partner_webhook_delivery_attempts_partner_idx

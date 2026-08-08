@@ -85,12 +85,13 @@ Vercel Hobby accounts only allow daily cron expressions; use an external schedul
 
 Set `CRON_SECRET` in Vercel project settings. The cron route **fails closed** without it and never dispatches without a valid `Authorization: Bearer $CRON_SECRET` header. It processes up to 50 pending/retrying outbox events per run with bounded exponential backoff (1m, 5m, 15m, 1h, 4h; max 6 attempts).
 
-Outbox events use a **delivery lease** (`delivery_lease_until`, `delivery_worker_id`). If a cron invocation crashes while `status=delivering`, the lease expires after 5 minutes and a later worker reclaims the event.
+Outbox events use a **delivery lease** (`delivery_lease_until`, `delivery_worker_id`, `delivery_claim_id`). Final status writes are scoped to the claiming worker and claim token; stale workers cannot overwrite a newer reclaim. If a cron invocation crashes while `status=delivering`, the lease expires after 5 minutes and a later worker reclaims the event.
 
 ## SSRF and DNS rebinding
 
-- Endpoint URLs are validated at admin configuration time (HTTPS only, no query/fragment, blocked hostnames, DNS resolution to public addresses).
-- **Every delivery re-resolves DNS** immediately before `fetch()`. If resolution becomes unsafe (private/loopback/link-local/metadata), delivery is rejected with no outbound request.
+- Endpoint URLs are validated at admin configuration time (HTTPS only, no query/fragment, blocked hostnames, DNS resolution to public addresses only).
+- **Public IP classifier** (`webhookPublicIp.ts`) rejects all non-globally-routable ranges: IPv4 `0.0.0.0/8`, `10/8`, `100.64/10`, `127/8`, `169.254/16`, `172.16/12`, `192.0.0/24`, documentation (`192.0.2/24`, `198.51.100/24`, `203.0.113/24`), benchmark (`198.18/15`), multicast, reserved, broadcast; IPv6 unspecified, loopback, link-local, unique-local, documentation, multicast, and IPv4-mapped unsafe addresses.
+- **Every delivery re-resolves DNS** immediately before `fetch()`. If resolution becomes unsafe, delivery is rejected with no outbound request.
 - **Vercel limitation:** true IP pinning / fixed egress is not available on serverless functions. Defense relies on delivery-time DNS revalidation plus `redirect: manual`. If an endpoint fails delivery-time validation, events remain in `retrying`/`failed` — delivery stays disabled until the endpoint passes validation again.
 
 ## Partner signature verification example (Node.js)

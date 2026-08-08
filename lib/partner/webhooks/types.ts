@@ -58,6 +58,8 @@ export interface PartnerWebhookOutboxRecord {
   last_error_code: string | null;
   delivery_lease_until: string | null;
   delivery_worker_id: string | null;
+  delivery_claim_id: string | null;
+  delivery_attempt_number: number | null;
   created_at: string;
   updated_at: string;
 }

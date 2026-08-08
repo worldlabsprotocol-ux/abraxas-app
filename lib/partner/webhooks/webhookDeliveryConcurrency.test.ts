@@ -1,11 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { processWebhookOutboxEvent } from "@/lib/partner/webhooks/webhookDelivery";
 
 const claimMock = vi.fn();
 const fromMock = vi.fn();
 
+vi.mock("@/lib/partner/webhooks/webhookConfigService", () => ({
+  loadPartnerWebhookSigningSecret: vi.fn().mockResolvedValue("abx_whsec_test_secret_value_12345"),
+}));
+
+vi.mock("@/lib/partner/webhooks/webhookEndpointValidation", () => ({
+  validateWebhookEndpointForDelivery: vi.fn().mockResolvedValue({
+    ok: true,
+    deliveryUrl: "https://hooks.example/a",
+  }),
+}));
+
 vi.mock("@/lib/partner/webhooks/webhookOutbox", () => ({
   claimWebhookOutboxEvent: (...args: unknown[]) => claimMock(...args),
+  finalizeWebhookOutboxDelivery: vi.fn().mockResolvedValue(true),
   listDispatchableWebhookEvents: vi.fn(),
   mapOutboxRow: vi.fn(),
 }));
@@ -13,6 +24,8 @@ vi.mock("@/lib/partner/webhooks/webhookOutbox", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   requireSupabaseAdmin: vi.fn(() => ({ from: (...args: unknown[]) => fromMock(...args) })),
 }));
+
+import { processWebhookOutboxEvent } from "@/lib/partner/webhooks/webhookDelivery";
 
 describe("concurrent webhook dispatch", () => {
   beforeEach(() => {
@@ -43,6 +56,8 @@ describe("concurrent webhook dispatch", () => {
         last_error_code: null,
         delivery_lease_until: "2026-01-01T00:05:00.000Z",
         delivery_worker_id: "worker-a",
+        delivery_claim_id: "claim-a",
+        delivery_attempt_number: 1,
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
       })
@@ -53,10 +68,15 @@ describe("concurrent webhook dispatch", () => {
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockResolvedValue({ data: { endpoint_url: "https://hooks.example/a", enabled: false } }),
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { endpoint_url: "https://hooks.example/a", enabled: true },
+              }),
             }),
           }),
         };
+      }
+      if (table === "partner_webhook_delivery_attempts") {
+        return { insert: vi.fn().mockResolvedValue({}) };
       }
       if (table === "partner_webhook_outbox") {
         return {

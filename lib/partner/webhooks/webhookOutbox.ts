@@ -18,6 +18,7 @@ import { WEBHOOK_DELIVERY_LEASE_MS } from "@/lib/partner/webhooks/types";
 
 const OUTBOX = "partner_webhook_outbox";
 const CONFIG = "partner_webhook_configs";
+const ATTEMPTS = "partner_webhook_delivery_attempts";
 
 function mapOutboxRow(row: Record<string, unknown>): PartnerWebhookOutboxRecord {
   return {
@@ -35,8 +36,36 @@ function mapOutboxRow(row: Record<string, unknown>): PartnerWebhookOutboxRecord 
     last_error_code: (row.last_error_code as string | null) ?? null,
     delivery_lease_until: (row.delivery_lease_until as string | null) ?? null,
     delivery_worker_id: (row.delivery_worker_id as string | null) ?? null,
+    delivery_claim_id: (row.delivery_claim_id as string | null) ?? null,
+    delivery_attempt_number: (row.delivery_attempt_number as number | null) ?? null,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
+  };
+}
+
+async function resolveDeliveryAttemptNumber(input: {
+  outboxId: string;
+  attemptCount: number;
+}): Promise<number> {
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from(ATTEMPTS)
+    .select("attempt_number")
+    .eq("outbox_event_id", input.outboxId)
+    .order("attempt_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const maxLogged = (data?.attempt_number as number | undefined) ?? 0;
+  return Math.max(input.attemptCount, maxLogged) + 1;
+}
+
+function clearDeliveryLeaseFields() {
+  return {
+    delivery_lease_until: null,
+    delivery_worker_id: null,
+    delivery_claim_id: null,
+    delivery_attempt_number: null,
   };
 }
 
@@ -159,10 +188,27 @@ export async function claimWebhookOutboxEvent(input: {
   const now = new Date();
   const nowIso = now.toISOString();
   const leaseUntil = new Date(now.getTime() + WEBHOOK_DELIVERY_LEASE_MS).toISOString();
+
+  const { data: current } = await sb
+    .from(OUTBOX)
+    .select("attempt_count")
+    .eq("id", input.outboxId)
+    .maybeSingle();
+
+  if (!current) return null;
+
+  const deliveryClaimId = randomUUID();
+  const deliveryAttemptNumber = await resolveDeliveryAttemptNumber({
+    outboxId: input.outboxId,
+    attemptCount: current.attempt_count as number,
+  });
+
   const claimFields = {
     status: "delivering" as const,
     delivery_lease_until: leaseUntil,
     delivery_worker_id: input.workerId,
+    delivery_claim_id: deliveryClaimId,
+    delivery_attempt_number: deliveryAttemptNumber,
     updated_at: nowIso,
   };
 
@@ -187,6 +233,38 @@ export async function claimWebhookOutboxEvent(input: {
     .maybeSingle();
 
   return reclaimed ? mapOutboxRow(reclaimed) : null;
+}
+
+/**
+ * Finalize outbox state only when the caller still owns the active delivery claim.
+ * Returns false when a stale worker attempts to overwrite a newer claim.
+ */
+export async function finalizeWebhookOutboxDelivery(input: {
+  outboxId: string;
+  workerId: string;
+  deliveryClaimId: string;
+  deliveryLeaseUntil: string;
+  patch: Record<string, unknown>;
+}): Promise<boolean> {
+  const sb = requireSupabaseAdmin();
+  const nowIso = new Date().toISOString();
+
+  const { data } = await sb
+    .from(OUTBOX)
+    .update({
+      ...input.patch,
+      updated_at: nowIso,
+      ...clearDeliveryLeaseFields(),
+    })
+    .eq("id", input.outboxId)
+    .eq("status", "delivering")
+    .eq("delivery_worker_id", input.workerId)
+    .eq("delivery_claim_id", input.deliveryClaimId)
+    .gte("delivery_lease_until", nowIso)
+    .select("id")
+    .maybeSingle();
+
+  return Boolean(data?.id);
 }
 
 export async function listPartnerWebhookDeliveries(input: {

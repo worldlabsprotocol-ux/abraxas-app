@@ -2,6 +2,7 @@
 // SSRF-safe HTTPS webhook endpoint validation.
 
 import { isIP } from "net";
+import { isPublicWebhookIp } from "@/lib/partner/webhooks/webhookPublicIp";
 
 const BLOCKED_HOSTNAMES = new Set([
   "localhost",
@@ -20,22 +21,9 @@ export function parseWebhookEndpointUrl(raw: string): URL | null {
   }
 }
 
-function isPrivateOrLocalIp(address: string): boolean {
-  if (address === "::1" || address === "0:0:0:0:0:0:0:1") return true;
-  if (address.startsWith("fe80:") || address.startsWith("fc") || address.startsWith("fd")) return true;
-
-  const ipVersion = isIP(address);
-  if (ipVersion === 4) {
-    const parts = address.split(".").map(Number);
-    if (parts[0] === 127) return true;
-    if (parts[0] === 10) return true;
-    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
-    if (parts[0] === 192 && parts[1] === 168) return true;
-    if (parts[0] === 169 && parts[1] === 254) return true;
-    if (address === "0.0.0.0") return true;
-    if (address === METADATA_IPV4) return true;
-  }
-  return false;
+function isUnsafeWebhookIp(address: string): boolean {
+  if (isIP(address) === 0) return false;
+  return !isPublicWebhookIp(address);
 }
 
 export function isWebhookEndpointStructurallyAllowed(url: URL): boolean {
@@ -49,7 +37,7 @@ export function isWebhookEndpointStructurallyAllowed(url: URL): boolean {
   if (BLOCKED_HOSTNAMES.has(hostname)) return false;
   if (hostname.endsWith(".localhost") || hostname.endsWith(".local")) return false;
   if (hostname === METADATA_IPV4) return false;
-  if (isPrivateOrLocalIp(hostname)) return false;
+  if (isUnsafeWebhookIp(hostname)) return false;
 
   return true;
 }
@@ -62,14 +50,14 @@ export async function resolveWebhookEndpointAddresses(hostname: string): Promise
 
 export async function assertWebhookEndpointResolvable(url: URL): Promise<void> {
   const hostname = url.hostname.toLowerCase();
-  if (isPrivateOrLocalIp(hostname)) {
+  if (isUnsafeWebhookIp(hostname)) {
     throw new Error("webhook_endpoint_private_ip");
   }
 
   const addresses = await resolveWebhookEndpointAddresses(hostname);
   if (!addresses.length) throw new Error("webhook_endpoint_dns_failed");
   for (const address of addresses) {
-    if (isPrivateOrLocalIp(address)) {
+    if (isUnsafeWebhookIp(address)) {
       throw new Error("webhook_endpoint_resolves_private");
     }
   }
