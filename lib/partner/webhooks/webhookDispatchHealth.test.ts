@@ -33,6 +33,23 @@ describe("webhook dispatch health", () => {
     expect(isWebhookDispatchSchedulerConfigured()).toBe(false);
   });
 
+  it("treats only the normalized string true as configured", () => {
+    process.env.PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED = "true";
+    expect(isWebhookDispatchSchedulerConfigured()).toBe(true);
+
+    process.env.PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED = " true ";
+    expect(isWebhookDispatchSchedulerConfigured()).toBe(true);
+
+    process.env.PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED = "false";
+    expect(isWebhookDispatchSchedulerConfigured()).toBe(false);
+
+    process.env.PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED = "TRUE";
+    expect(isWebhookDispatchSchedulerConfigured()).toBe(false);
+
+    process.env.PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED = "1";
+    expect(isWebhookDispatchSchedulerConfigured()).toBe(false);
+  });
+
   it("records non-PII dispatch run summaries", async () => {
     const insertMock = vi.fn().mockResolvedValue({});
     fromMock.mockReturnValue({ insert: insertMock });

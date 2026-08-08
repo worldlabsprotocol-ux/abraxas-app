@@ -77,4 +77,41 @@ describe("partner webhook dispatch cron route", () => {
     expect(processBatchMock).toHaveBeenCalledWith({ limit: 50 });
     expect(recordRunMock).toHaveBeenCalled();
   });
+
+  it("records successful empty-outbox dispatch run without secrets in response", async () => {
+    process.env.CRON_SECRET = "cron-test-secret";
+    const emptySummary = {
+      scanned: 0,
+      delivered: 0,
+      retrying: 0,
+      failed: 0,
+      skipped: 0,
+      stale: 0,
+    };
+    processBatchMock.mockResolvedValue(emptySummary);
+
+    const res = await GET(new NextRequest("http://localhost/api/cron/partner-webhook-dispatch", {
+      headers: { authorization: "Bearer cron-test-secret" },
+    }));
+    const body = await res.json() as { success: boolean; summary: typeof emptySummary };
+
+    expect(res.status).toBe(200);
+    expect(body.summary).toEqual(emptySummary);
+    expect(recordRunMock).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      summary: emptySummary,
+    }));
+    expect(JSON.stringify(body)).not.toContain("cron-test-secret");
+    expect(JSON.stringify(body)).not.toMatch(/@|0x[a-fA-F0-9]{8,}/);
+  });
+
+  it("records failed dispatch runs without invoking batch when unauthorized", async () => {
+    process.env.CRON_SECRET = "cron-test-secret";
+
+    await GET(new NextRequest("http://localhost/api/cron/partner-webhook-dispatch", {
+      headers: { authorization: "Bearer wrong-secret" },
+    }));
+
+    expect(recordRunMock).not.toHaveBeenCalled();
+  });
 });

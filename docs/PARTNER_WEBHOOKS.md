@@ -13,9 +13,9 @@ Apply manually in order:
 
 | Variable | Purpose |
 |----------|---------|
-| `ABRAXAS_WEBHOOK_MASTER_KEY` | **Required.** Dedicated key to encrypt webhook signing secrets at rest. Do not reuse `ABRAXAS_SIGNING_KEY` — rotating receipt signing keys must not brick stored webhook secrets. |
-| `CRON_SECRET` | **Required for dispatch.** Protects `/api/cron/partner-webhook-dispatch`. Route returns `503 cron_not_configured` when unset; returns `401` when Authorization is wrong. |
-| `PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED` | Set to `true` after Vercel cron or external scheduler is live. Admin UI shows “Dispatch scheduler not yet configured” until this is set (and `CRON_SECRET` is present). |
+| `ABRAXAS_WEBHOOK_MASTER_KEY` | **Required.** Server-only dedicated key to encrypt webhook signing secrets at rest. Never use a `NEXT_PUBLIC_` variable. Do not reuse `ABRAXAS_SIGNING_KEY`. |
+| `CRON_SECRET` | **Required for dispatch.** Server-only bearer token for `/api/cron/partner-webhook-dispatch`. Never use a `NEXT_PUBLIC_` variable. Route returns `503 cron_not_configured` when unset; returns `401` when Authorization is wrong. |
+| `PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED` | Set to `true` (exact string, server-only) **only after** the dispatch cron deployment is live. Admin UI shows “Dispatch scheduler not yet configured” until this is set and `CRON_SECRET` is present. |
 | `REQUIRE_PARTNER_API_KEY` | When `true`, partner delivery history requires API key |
 
 ## Event types
@@ -85,7 +85,7 @@ Requires `webhooks:read` scope on the partner API key. Returns only that partner
 
 ## Required Vercel cron configuration
 
-**Pro plan (production):** add to `vercel.json` `crons` array:
+**Production (Vercel Pro):** `vercel.json` includes a cron entry that invokes the dispatcher every five minutes:
 
 ```json
 {
@@ -94,9 +94,18 @@ Requires `webhooks:read` scope on the partner API key. Returns only that partner
 }
 ```
 
-Vercel Hobby accounts only allow daily cron expressions; use an external scheduler (or upgrade to Pro) to call `GET /api/cron/partner-webhook-dispatch` with `Authorization: Bearer $CRON_SECRET` every 5 minutes until Pro cron is enabled.
+Vercel sends `Authorization: Bearer $CRON_SECRET` on each cron invocation when `CRON_SECRET` is set in the project environment.
 
-Set `CRON_SECRET` in Vercel project settings. The cron route **fails closed** without it and never dispatches without a valid `Authorization: Bearer $CRON_SECRET` header. It processes up to 50 pending/retrying outbox events per run with bounded exponential backoff (1m, 5m, 15m, 1h, 4h; max 6 attempts).
+**Alternative (external scheduler):** if not using Vercel cron, call `GET /api/cron/partner-webhook-dispatch` with `Authorization: Bearer $CRON_SECRET` every five minutes from your scheduler.
+
+### Post-deployment operator steps
+
+1. Deploy this cron entry to production (main branch).
+2. Confirm `CRON_SECRET` and `ABRAXAS_WEBHOOK_MASTER_KEY` are set as **server-only** Vercel environment variables (never `NEXT_PUBLIC_`).
+3. **After** the deployment is live and cron is firing, set `PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED=true` in Vercel Production and redeploy if required.
+4. Verify `/admin/partners` → **Webhooks** shows the scheduler configured and records a successful dispatch run.
+
+Set `CRON_SECRET` in Vercel project settings. The cron route **fails closed** without it and never dispatches without a valid `Authorization: Bearer $CRON_SECRET` header. It processes up to 50 pending/retrying outbox events per run with bounded exponential backoff (1m, 5m, 15m, 1h, 4h; max 6 attempts). Overlapping cron invocations are safe: delivery leases prevent duplicate final writes.
 
 Outbox events use a **delivery lease** (`delivery_lease_until`, `delivery_worker_id`, `delivery_claim_id`). Final status writes are scoped to the claiming worker and claim token; stale workers cannot overwrite a newer reclaim. If a cron invocation crashes while `status=delivering`, the lease expires after 5 minutes and a later worker reclaims the event.
 

@@ -6,7 +6,7 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 const DISPATCH_RUNS = "partner_webhook_dispatch_runs";
 
 export function isWebhookDispatchSchedulerConfigured(): boolean {
-  return process.env.PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED === "true";
+  return process.env.PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED?.trim() === "true";
 }
 
 export function isWebhookCronSecretConfigured(): boolean {
