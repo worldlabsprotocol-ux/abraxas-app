@@ -9,6 +9,7 @@ import { getReceiptByDecisionId, getReceiptById } from "@/lib/decisionReceipts/s
 import {
   findActiveSessionDecision,
   findDecisionByVerificationRequest,
+  findReceiptForVerificationRequest,
   findSessionReceiptForSupersede,
 } from "@/lib/partner/sessionDecision";
 import {
@@ -154,6 +155,17 @@ export async function checkPartnerFlowRevocationGate(
   if (revokedClaim) {
     const reason = claimRevocationReason(revokedClaim.status);
     return denialFromReason(reason);
+  }
+
+  const vrId = input.verificationRequestId?.trim();
+  if (vrId) {
+    const vrContext = await findReceiptForVerificationRequest({
+      verificationRequestId: vrId,
+      subjectId: input.subjectId,
+    });
+    if (vrContext?.receipt.status === "revoked") {
+      return denialFromReason("receipt_revoked");
+    }
   }
 
   const revokedReceipt = await findRevokedPartnerSessionReceipt({

@@ -66,8 +66,10 @@ info:
   x-abraxas-receipt-only-revocation: |
     Receipt-only revocation does **not** restore access via ordinary `refresh` or idempotent replay.
     A revoked receipt remains cryptographically verifiable but `currently_valid: false`.
-    Minting a replacement receipt after receipt-only revoke requires a **fresh Passport issuance path**
-    (new verification request → complete), not automatic refresh/supersede of the revoked receipt.
+    `POST /api/v1/partner-flow/complete` with the **original** `verification_request_id` after receipt
+    revoke is denied (`receipt_revoked`) — it cannot mint a replacement receipt from stale context.
+    Minting a replacement receipt after receipt-only revoke requires a **new verification request**
+    (fresh Passport → complete), producing a new `decision_id` and `receipt_id`.
     Natural receipt expiry (TTL elapsed, status still `active`) may still use `refresh` to supersede.
     Sandbox/pilot policies: accept `production_usable: false` only with **explicit opt-in**
     (`allowSandbox: true` in `validatePartnerFlowPublicReceipt` or equivalent in your stack).

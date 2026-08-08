@@ -4,7 +4,14 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
-import { findActiveSessionDecision, findDecisionByVerificationRequest, findDecisionByIdempotencyKey, findSessionReceiptForSupersede, supersedeActiveSessionDecisions } from "@/lib/partner/sessionDecision";
+import {
+  findActiveSessionDecision,
+  findDecisionByVerificationRequest,
+  findDecisionByIdempotencyKey,
+  findReceiptForVerificationRequest,
+  findSessionReceiptForSupersede,
+  supersedeActiveSessionDecisions,
+} from "@/lib/partner/sessionDecision";
 import {
   isMissingIdempotencyKeyColumnError,
   isVerificationDecisionIdempotencyKeyAvailable,
@@ -258,6 +265,16 @@ export async function issuePartnerSessionReceipt(input: {
   }
 
   if (!decisionId) {
+    if (vrId) {
+      const staleVrContext = await findReceiptForVerificationRequest({
+        verificationRequestId: vrId,
+        subjectId: subject,
+      });
+      if (staleVrContext?.receipt.status === "revoked") {
+        throw new Error("receipt_revoked");
+      }
+    }
+
     replay_status = "issued";
     if (input.supersedePriorSession) {
       replacedReceiptId = await findSessionReceiptForSupersede({

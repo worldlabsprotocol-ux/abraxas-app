@@ -9,6 +9,7 @@ const fromMock = vi.fn();
 const getPartnerPolicy = vi.fn();
 const findActiveSessionDecision = vi.fn();
 const findDecisionByVerificationRequest = vi.fn();
+const findReceiptForVerificationRequest = vi.fn();
 const findSessionReceiptForSupersede = vi.fn();
 const getReceiptByDecisionId = vi.fn();
 const getReceiptById = vi.fn();
@@ -24,6 +25,7 @@ vi.mock("@/lib/policy/getPolicy", () => ({
 vi.mock("@/lib/partner/sessionDecision", () => ({
   findActiveSessionDecision: (...args: unknown[]) => findActiveSessionDecision(...args),
   findDecisionByVerificationRequest: (...args: unknown[]) => findDecisionByVerificationRequest(...args),
+  findReceiptForVerificationRequest: (...args: unknown[]) => findReceiptForVerificationRequest(...args),
   findSessionReceiptForSupersede: (...args: unknown[]) => findSessionReceiptForSupersede(...args),
 }));
 
@@ -61,6 +63,7 @@ describe("partnerFlowRevocationRuntime", () => {
     });
     findActiveSessionDecision.mockResolvedValue(null);
     findDecisionByVerificationRequest.mockResolvedValue(null);
+    findReceiptForVerificationRequest.mockResolvedValue(null);
     findSessionReceiptForSupersede.mockResolvedValue(null);
     getReceiptByDecisionId.mockResolvedValue(null);
     getReceiptById.mockResolvedValue(null);
@@ -96,6 +99,24 @@ describe("partnerFlowRevocationRuntime", () => {
 
     expect(denied?.next).toBe("denied");
     expect(denied?.invalidation_reasons).toContain("claim_revoked");
+  });
+
+  it("blocks complete when verification request context has revoked receipt", async () => {
+    findReceiptForVerificationRequest.mockResolvedValue({
+      decision_id: "vd_old",
+      receipt_id: "dr_old",
+      receipt: { id: "dr_old", status: "revoked" },
+    });
+
+    const denied = await checkPartnerFlowRevocationGate({
+      subjectId: "0xabc",
+      partnerId: "partner-a",
+      policyId: "partner-policy-v1",
+      operation: "complete",
+      verificationRequestId: "vr-old",
+    });
+
+    expect(denied?.invalidation_reasons).toContain("receipt_revoked");
   });
 
   it("blocks refresh when receipt-only revocation exists", async () => {

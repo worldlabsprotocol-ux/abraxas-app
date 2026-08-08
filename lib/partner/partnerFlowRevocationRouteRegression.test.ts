@@ -10,12 +10,14 @@ const RETURN_URL = "https://abraxas-app.vercel.app/demo/partner-access";
 const PARTNER_ID = "good-trouble-cannabis";
 const POLICY_ID = "good-trouble-retail-v1";
 const VR_ID = "00000000-0000-4000-8000-00000000c101";
+const VR_ID_FRESH = "00000000-0000-4000-8000-00000000c202";
 const SHARED_TRACE = flowTraceIdFromVerificationRequest(VR_ID);
 
 const fromMock = vi.fn();
 const evaluatePolicyForSubject = vi.fn();
 const findActiveSessionDecision = vi.fn();
 const findDecisionByVerificationRequest = vi.fn();
+const findReceiptForVerificationRequest = vi.fn();
 const findSessionReceiptForSupersede = vi.fn();
 const getReceiptByDecisionId = vi.fn();
 const getReceiptById = vi.fn();
@@ -26,6 +28,14 @@ const recordPartnerFlowReceiptMeteringBestEffort = vi.fn();
 vi.mock("@/lib/supabase/admin", () => ({
   requireSupabaseAdmin: vi.fn(() => ({ from: fromMock })),
   getSupabaseAdmin: vi.fn(() => ({ from: fromMock })),
+}));
+
+vi.mock("@/lib/partner/verificationDecisionsSchema", () => ({
+  isVerificationDecisionIdempotencyKeyAvailable: vi.fn(async () => true),
+  isMissingIdempotencyKeyColumnError: vi.fn(() => false),
+  markVerificationDecisionIdempotencyKeyAbsent: vi.fn(),
+  markVerificationDecisionIdempotencyKeyAvailable: vi.fn(),
+  resetVerificationDecisionSchemaProbeForTests: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/browserSession", () => ({
@@ -76,6 +86,7 @@ vi.mock("@/lib/policy/evaluateSubjectPolicy", () => ({
 vi.mock("@/lib/partner/sessionDecision", () => ({
   findActiveSessionDecision: (...args: unknown[]) => findActiveSessionDecision(...args),
   findDecisionByVerificationRequest: (...args: unknown[]) => findDecisionByVerificationRequest(...args),
+  findReceiptForVerificationRequest: (...args: unknown[]) => findReceiptForVerificationRequest(...args),
   findDecisionByIdempotencyKey: vi.fn(async () => null),
   findSessionReceiptForSupersede: (...args: unknown[]) => findSessionReceiptForSupersede(...args),
   supersedeActiveSessionDecisions: vi.fn(async () => undefined),
@@ -174,7 +185,10 @@ function activeReceipt(id = "dr_active") {
   };
 }
 
-function installCredentialTables(claimRows: Array<{ claim_type: string; status: string }>) {
+function installCredentialTables(
+  claimRows: Array<{ claim_type: string; status: string }>,
+  options: { allowDecisionInsert?: boolean } = {},
+) {
   fromMock.mockImplementation((table: string) => {
     if (table === "identity_verifications") {
       return {
@@ -226,6 +240,18 @@ function installCredentialTables(claimRows: Array<{ claim_type: string; status: 
         }),
       };
     }
+    if (table === "verification_decisions" && options.allowDecisionInsert) {
+      return {
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: { id: "vd_fresh" },
+              error: null,
+            }),
+          }),
+        }),
+      };
+    }
     return {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -247,6 +273,7 @@ describe("partner-flow revocation runtime routes", () => {
     evaluatePolicyForSubject.mockResolvedValue(approvedPolicy());
     findActiveSessionDecision.mockResolvedValue(null);
     findDecisionByVerificationRequest.mockResolvedValue(null);
+    findReceiptForVerificationRequest.mockResolvedValue(null);
     findSessionReceiptForSupersede.mockResolvedValue(null);
     issueReceiptForDecision.mockResolvedValue({ id: "dr_new" });
     getReceiptByDecisionId.mockResolvedValue(null);
@@ -333,6 +360,100 @@ describe("partner-flow revocation runtime routes", () => {
     expect(refreshBody.partner_result).toBeUndefined();
     expect(issueReceiptForDecision).not.toHaveBeenCalled();
     expect(recordPartnerFlowReceiptMeteringBestEffort).not.toHaveBeenCalled();
+  });
+
+  it("receipt-only revoke blocks complete with old verification_request_id", async () => {
+    installCredentialTables([]);
+    const revokedReceipt = { ...activeReceipt("dr_old"), status: "revoked", verification_decision_id: "vd_old" };
+    findDecisionByVerificationRequest.mockResolvedValue(null);
+    findReceiptForVerificationRequest.mockResolvedValue({
+      decision_id: "vd_old",
+      receipt_id: "dr_old",
+      receipt: revokedReceipt,
+    });
+
+    const completeRes = await completePOST(postJson("http://localhost/api/v1/partner-flow/complete", {
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+      verification_request_id: VR_ID,
+      flow_trace_id: SHARED_TRACE,
+    }));
+    const completeBody = await completeRes.json();
+
+    expect(completeRes.status).toBe(200);
+    expect(completeBody.next).toBe("denied");
+    expect(completeBody.invalidation_reasons).toContain("receipt_revoked");
+    expect(completeBody.reason_codes).toContain("receipt_revoked");
+    expect(completeBody.partner_result).toBeUndefined();
+    expect(completeBody.replay_status).toBeUndefined();
+    expect(auditActions()).toEqual(["partner_flow.complete"]);
+    expect(auditActions()).not.toContain("partner_flow.receipt_issued");
+    expect(auditActions()).not.toContain("partner_flow.idempotent_replay");
+    expect(recordPartnerFlowReceiptMeteringBestEffort).not.toHaveBeenCalled();
+    expect(issueReceiptForDecision).not.toHaveBeenCalled();
+  });
+
+  it("fresh verification request issues new receipt on complete", async () => {
+    installCredentialTables([], { allowDecisionInsert: true });
+    findReceiptForVerificationRequest.mockResolvedValue(null);
+    findDecisionByVerificationRequest.mockResolvedValue(null);
+    issueReceiptForDecision.mockResolvedValue({ id: "dr_fresh" });
+    getReceiptByDecisionId.mockImplementation(async (decisionId: string) => ({
+      ...activeReceipt("dr_fresh"),
+      id: "dr_fresh",
+      verification_decision_id: decisionId,
+    }));
+
+    const freshTrace = flowTraceIdFromVerificationRequest(VR_ID_FRESH);
+    const completeRes = await completePOST(postJson("http://localhost/api/v1/partner-flow/complete", {
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+      verification_request_id: VR_ID_FRESH,
+      flow_trace_id: freshTrace,
+    }));
+    const completeBody = await completeRes.json();
+
+    expect(completeRes.status).toBe(200);
+    expect(completeBody.next).toBe("enter");
+    expect(completeBody.decision_id).toBe("vd_fresh");
+    expect(completeBody.partner_result?.receipt_id).toBe("dr_fresh");
+    expect(completeBody.replay_status).toBe("issued");
+    expect(auditActions()).toContain("partner_flow.receipt_issued");
+    expect(issueReceiptForDecision).toHaveBeenCalledTimes(1);
+    expect(recordPartnerFlowReceiptMeteringBestEffort).toHaveBeenCalled();
+  });
+
+  it("natural expiry refresh still supersedes active expired receipt", async () => {
+    installCredentialTables([], { allowDecisionInsert: true });
+    const expiredReceipt = {
+      ...activeReceipt("dr_expired"),
+      expires_at: "2020-01-01T00:00:00.000Z",
+      status: "active",
+    };
+    findActiveSessionDecision.mockResolvedValue(null);
+    findSessionReceiptForSupersede.mockResolvedValue("dr_expired");
+    getReceiptById.mockResolvedValue(expiredReceipt);
+    issueReceiptForDecision.mockResolvedValue({ id: "dr_refreshed" });
+    getReceiptByDecisionId.mockImplementation(async (decisionId: string) => ({
+      ...activeReceipt("dr_refreshed"),
+      id: "dr_refreshed",
+      verification_decision_id: decisionId,
+    }));
+
+    const refreshRes = await refreshPOST(postJson("http://localhost/api/v1/partner-flow/refresh", {
+      partner_id: PARTNER_ID,
+      policy_id: POLICY_ID,
+      return_url: RETURN_URL,
+    }));
+    const refreshBody = await refreshRes.json();
+
+    expect(refreshRes.status).toBe(200);
+    expect(refreshBody.next).toBe("enter");
+    expect(refreshBody.partner_result?.receipt_id).toBe("dr_refreshed");
+    expect(refreshBody.replay_status).toBe("issued");
+    expect(issueReceiptForDecision).toHaveBeenCalledTimes(1);
   });
 
   it("non-revoked control flow still evaluates to enter with receipt issuance audit", async () => {
