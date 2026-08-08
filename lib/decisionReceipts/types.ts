@@ -87,6 +87,10 @@ export interface DecisionReceiptPublicView {
   signature_valid: boolean;
   anchor_reference: string | null;
   artifact_type: "eligibility_decision_receipt";
+  /** Additive live trust — server-computed at fetch time; partners must re-fetch per access decision. */
+  currently_valid?: boolean;
+  validity?: string;
+  invalidation_reasons?: string[];
 }
 
 /** Partner view — full permitted receipt when consent scope allows */

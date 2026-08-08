@@ -15,6 +15,7 @@ import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { toPartnerView, toPublicView } from "@/lib/decisionReceipts/views";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
+import { buildPublicReceiptWithLiveTrust } from "@/lib/decisionReceipts/publicReceiptLiveTrust";
 import type {
   DecisionReceiptContext,
   DecisionReceiptRecord,
@@ -232,7 +233,7 @@ export async function consentAllowsPartnerReceipt(
 export async function getPublicReceipt(receiptId: string) {
   const record = await getReceiptById(receiptId);
   if (!record) return null;
-  return toPublicView(record);
+  return buildPublicReceiptWithLiveTrust(record);
 }
 
 export async function getPartnerReceipt(receiptId: string, partnerId: string) {

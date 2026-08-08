@@ -4,10 +4,8 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
-import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
-import { transitionClaimStatus } from "@/lib/trust/credentialStatusRegistry";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 
 export const REVOCATION_REASON_CODES = [
@@ -49,18 +47,67 @@ export interface SubjectPartnerReceiptItem {
   revocation_reason_code: string | null;
 }
 
+interface RpcReceiptRevokeResult {
+  ok: boolean;
+  error?: string;
+  receipt_id?: string;
+  decision_id?: string;
+  revoked_at?: string;
+  reason_code?: string;
+  already_revoked?: boolean;
+  claim_ids?: string[];
+}
+
+interface RpcClaimRevokeResult {
+  ok: boolean;
+  error?: string;
+  claim_id?: string;
+  from_status?: string;
+  to_status?: string;
+  already_revoked?: boolean;
+  affected_receipt_ids?: string[];
+}
+
 export function isRevocationReasonCode(value: string): value is RevocationReasonCode {
   return (REVOCATION_REASON_CODES as readonly string[]).includes(value);
 }
 
-async function loadRevocationEventByKey(idempotencyKey: string) {
+async function revokeDecisionReceiptAtomic(input: {
+  receiptId: string;
+  reasonCode: RevocationReasonCode;
+  changedBy: string;
+  idempotencyKey?: string;
+}): Promise<RpcReceiptRevokeResult> {
   const sb = requireSupabaseAdmin();
-  const { data } = await sb
-    .from("decision_receipt_revocation_events")
-    .select("receipt_id, verification_decision_id, reason_code, created_at, claim_ids")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-  return data;
+  const { data, error } = await sb.rpc("revoke_decision_receipt_atomic", {
+    p_receipt_id: input.receiptId,
+    p_reason_code: input.reasonCode,
+    p_changed_by: input.changedBy,
+    p_idempotency_key: input.idempotencyKey ?? null,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  if (!data || typeof data !== "object") return { ok: false, error: "receipt_revoke_failed" };
+  return data as RpcReceiptRevokeResult;
+}
+
+async function revokeCredentialClaimAtomic(input: {
+  claimId: string;
+  reasonCode: RevocationReasonCode;
+  changedBy: string;
+  idempotencyKey?: string;
+}): Promise<RpcClaimRevokeResult> {
+  const sb = requireSupabaseAdmin();
+  const { data, error } = await sb.rpc("revoke_credential_claim_atomic", {
+    p_claim_id: input.claimId,
+    p_reason_code: input.reasonCode,
+    p_changed_by: input.changedBy,
+    p_idempotency_key: input.idempotencyKey ?? null,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  if (!data || typeof data !== "object") return { ok: false, error: "claim_revoke_failed" };
+  return data as RpcClaimRevokeResult;
 }
 
 export async function revokeDecisionReceiptControlled(input: {
@@ -76,113 +123,41 @@ export async function revokeDecisionReceiptControlled(input: {
   const receiptId = input.receiptId.trim();
   if (!receiptId) return { ok: false, error: "receipt_id_required" };
 
-  if (input.idempotencyKey) {
-    const existingEvent = await loadRevocationEventByKey(input.idempotencyKey);
-    if (existingEvent) {
-      return {
-        ok: true,
-        receiptId: existingEvent.receipt_id as string,
-        decisionId: existingEvent.verification_decision_id as string,
-        status: "revoked",
-        revokedAt: existingEvent.created_at as string,
-        reasonCode: existingEvent.reason_code as RevocationReasonCode,
-        alreadyRevoked: true,
-        claimIds: (existingEvent.claim_ids as string[]) ?? [],
-      };
-    }
-  }
-
   const record = await getReceiptById(receiptId);
   if (!record) return { ok: false, error: "receipt_not_found" };
 
-  const deps = await getReceiptDependencies(receiptId);
-  const claimIds = deps.length
-    ? deps.map(dep => dep.claim_id as string)
-    : record.evaluated_claim_refs.map(ref => ref.claim_id);
-
-  if (record.status === "revoked" || record.revoked_at) {
-    return {
-      ok: true,
-      receiptId: record.id,
-      decisionId: record.verification_decision_id,
-      status: "revoked",
-      revokedAt: record.revoked_at ?? new Date().toISOString(),
-      reasonCode: input.reasonCode,
-      alreadyRevoked: true,
-      claimIds,
-    };
+  const rpc = await revokeDecisionReceiptAtomic(input);
+  if (!rpc.ok) {
+    return { ok: false, error: rpc.error ?? "receipt_revoke_failed" };
   }
 
-  if (record.status !== "active") {
-    return { ok: false, error: "receipt_not_active" };
+  if (!rpc.already_revoked) {
+    await appendAuditEvent({
+      actor_type: "admin_operator",
+      actor_id: input.changedBy,
+      action: "decision_receipt.revoked",
+      object_type: "decision_receipt",
+      object_id: receiptId,
+      policy_id: record.policy_id,
+      policy_version: record.policy_version,
+      metadata: {
+        reason_code: input.reasonCode,
+        verification_decision_id: rpc.decision_id ?? record.verification_decision_id,
+        claim_ids: rpc.claim_ids ?? [],
+        partner_id: record.partner_id,
+      },
+    });
   }
-
-  const sb = requireSupabaseAdmin();
-  const now = new Date().toISOString();
-  const { data, error } = await sb
-    .from("decision_receipts")
-    .update({
-      status: "revoked",
-      revoked_at: now,
-      revocation_reason_code: input.reasonCode,
-    })
-    .eq("id", receiptId)
-    .eq("status", "active")
-    .select("*")
-    .maybeSingle();
-
-  if (error) return { ok: false, error: error.message };
-  if (!data) {
-    const raced = await getReceiptById(receiptId);
-    if (raced?.status === "revoked") {
-      return {
-        ok: true,
-        receiptId: raced.id,
-        decisionId: raced.verification_decision_id,
-        status: "revoked",
-        revokedAt: raced.revoked_at ?? now,
-        reasonCode: input.reasonCode,
-        alreadyRevoked: true,
-        claimIds,
-      };
-    }
-    return { ok: false, error: "receipt_revoke_failed" };
-  }
-
-  await sb.from("decision_receipt_revocation_events").insert({
-    receipt_id: receiptId,
-    verification_decision_id: record.verification_decision_id,
-    reason_code: input.reasonCode,
-    changed_by: input.changedBy,
-    idempotency_key: input.idempotencyKey ?? null,
-    claim_ids: claimIds,
-  });
-
-  await appendAuditEvent({
-    actor_type: "admin_operator",
-    actor_id: input.changedBy,
-    action: "decision_receipt.revoked",
-    object_type: "decision_receipt",
-    object_id: receiptId,
-    policy_id: record.policy_id,
-    policy_version: record.policy_version,
-    metadata: {
-      reason_code: input.reasonCode,
-      verification_decision_id: record.verification_decision_id,
-      claim_ids: claimIds,
-      partner_id: record.partner_id,
-    },
-  });
 
   return {
     ok: true,
-    receiptId,
-    decisionId: record.verification_decision_id,
+    receiptId: rpc.receipt_id ?? receiptId,
+    decisionId: rpc.decision_id ?? record.verification_decision_id,
     status: "revoked",
-    revokedAt: now,
-    reasonCode: input.reasonCode,
-    alreadyRevoked: false,
-    claimIds,
+    revokedAt: rpc.revoked_at ?? new Date().toISOString(),
+    reasonCode: (rpc.reason_code as RevocationReasonCode) ?? input.reasonCode,
+    alreadyRevoked: rpc.already_revoked === true,
+    claimIds: rpc.claim_ids ?? [],
   };
 }
 
@@ -199,42 +174,47 @@ export async function revokeCredentialClaimControlled(input: {
     return { ok: false, error: "invalid_reason_code" };
   }
 
-  const result = await transitionClaimStatus({
-    claimId: input.claimId,
-    toStatus: "revoked",
-    reasonCode: input.reasonCode,
-    changedBy: input.changedBy,
-    idempotencyKey: input.idempotencyKey,
-  });
+  const rpc = await revokeCredentialClaimAtomic(input);
+  if (!rpc.ok) {
+    return { ok: false, error: rpc.error ?? "claim_revoke_failed" };
+  }
 
-  if (!result.ok) return { ok: false, error: result.error };
-
-  const sb = requireSupabaseAdmin();
-  const { data: event } = await sb
-    .from("credential_status_events")
-    .select("affected_receipt_ids")
-    .eq("claim_id", input.claimId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  if (!rpc.already_revoked) {
+    await appendAuditEvent({
+      actor_type: "admin_operator",
+      actor_id: input.changedBy,
+      action: "credential_status.revoked",
+      object_type: "credential_claim",
+      object_id: input.claimId,
+      metadata: {
+        reason_code: input.reasonCode,
+        affected_receipt_ids: rpc.affected_receipt_ids ?? [],
+      },
+    });
+  }
 
   return {
     ok: true,
-    claimId: input.claimId,
+    claimId: rpc.claim_id ?? input.claimId,
     status: "revoked",
-    alreadyRevoked: result.from === "revoked",
-    affectedReceiptIds: (event?.affected_receipt_ids as string[]) ?? [],
+    alreadyRevoked: rpc.already_revoked === true,
+    affectedReceiptIds: rpc.affected_receipt_ids ?? [],
   };
 }
 
-export async function listSubjectPartnerAccess(subjectId: string): Promise<{
+export async function listSubjectPartnerAccess(
+  subjectId: string,
+  partnerId?: string,
+): Promise<{
   subject_pseudonym_id: string;
+  partner_id: string | null;
   claims: SubjectPartnerAccessItem[];
   receipts: SubjectPartnerReceiptItem[];
 }> {
   const subject = normalizeSuiAddress(subjectId);
   const pseudonym = subjectPseudonymId(subject);
   const sb = requireSupabaseAdmin();
+  const scopedPartnerId = partnerId?.trim() || null;
 
   const claims = (await getActiveClaims(subject)).map(claim => ({
     claim_id: claim.id,
@@ -243,10 +223,16 @@ export async function listSubjectPartnerAccess(subjectId: string): Promise<{
     status_reason_code: claim.revocation_reference,
   }));
 
-  const { data: receiptRows } = await sb
+  let receiptQuery = sb
     .from("decision_receipts")
     .select("id, verification_decision_id, partner_id, policy_id, status, revoked_at, revocation_reason_code")
-    .eq("subject_pseudonym_id", pseudonym)
+    .eq("subject_pseudonym_id", pseudonym);
+
+  if (scopedPartnerId) {
+    receiptQuery = receiptQuery.eq("partner_id", scopedPartnerId);
+  }
+
+  const { data: receiptRows } = await receiptQuery
     .order("evaluated_at", { ascending: false })
     .limit(50);
 
@@ -260,49 +246,79 @@ export async function listSubjectPartnerAccess(subjectId: string): Promise<{
     revocation_reason_code: (row.revocation_reason_code as string | null) ?? null,
   }));
 
+  const scopedClaims = scopedPartnerId
+    ? await filterClaimsToPartnerScope(claims, receipts, scopedPartnerId)
+    : claims;
+
   return {
     subject_pseudonym_id: pseudonym,
-    claims,
+    partner_id: scopedPartnerId,
+    claims: scopedClaims,
     receipts,
   };
 }
 
+async function filterClaimsToPartnerScope(
+  claims: SubjectPartnerAccessItem[],
+  receipts: SubjectPartnerReceiptItem[],
+  partnerId: string,
+): Promise<SubjectPartnerAccessItem[]> {
+  if (!receipts.length) return [];
+
+  const sb = requireSupabaseAdmin();
+  const receiptIds = receipts
+    .filter(receipt => receipt.partner_id === partnerId)
+    .map(receipt => receipt.receipt_id);
+
+  if (!receiptIds.length) return [];
+
+  const { data } = await sb
+    .from("receipt_claim_dependencies")
+    .select("claim_id")
+    .in("receipt_id", receiptIds);
+
+  const claimIds = new Set((data ?? []).map(row => row.claim_id as string));
+  return claims.filter(claim => claimIds.has(claim.claim_id));
+}
+
 export async function revokeSubjectPartnerAccess(input: {
   subjectId: string;
+  partnerId: string;
   reasonCode: RevocationReasonCode;
   changedBy: string;
   idempotencyKey?: string;
 }): Promise<{
   ok: true;
-  revokedClaimIds: string[];
+  partnerId: string;
   revokedReceiptIds: string[];
   alreadyRevokedReceiptIds: string[];
+  skippedForeignReceiptIds: string[];
 }> {
   const subject = normalizeSuiAddress(input.subjectId);
-  const access = await listSubjectPartnerAccess(subject);
-  const revokedClaimIds: string[] = [];
-  const revokedReceiptIds: string[] = [];
-  const alreadyRevokedReceiptIds: string[] = [];
-
-  for (const claim of access.claims) {
-    const claimKey = input.idempotencyKey ? `${input.idempotencyKey}:claim:${claim.claim_id}` : undefined;
-    const result = await revokeCredentialClaimControlled({
-      claimId: claim.claim_id,
-      reasonCode: input.reasonCode,
-      changedBy: input.changedBy,
-      idempotencyKey: claimKey,
-    });
-    if (result.ok) revokedClaimIds.push(claim.claim_id);
+  const partnerId = input.partnerId.trim();
+  if (!partnerId) {
+    throw new Error("partner_id_required");
   }
 
+  const access = await listSubjectPartnerAccess(subject, partnerId);
+  const revokedReceiptIds: string[] = [];
+  const alreadyRevokedReceiptIds: string[] = [];
+  const skippedForeignReceiptIds: string[] = [];
+
   for (const receipt of access.receipts) {
+    if (receipt.partner_id !== partnerId) {
+      skippedForeignReceiptIds.push(receipt.receipt_id);
+      continue;
+    }
     if (receipt.status === "revoked") {
       alreadyRevokedReceiptIds.push(receipt.receipt_id);
       continue;
     }
     if (receipt.status !== "active") continue;
 
-    const receiptKey = input.idempotencyKey ? `${input.idempotencyKey}:receipt:${receipt.receipt_id}` : undefined;
+    const receiptKey = input.idempotencyKey
+      ? `${input.idempotencyKey}:receipt:${receipt.receipt_id}`
+      : undefined;
     const result = await revokeDecisionReceiptControlled({
       receiptId: receipt.receipt_id,
       reasonCode: input.reasonCode,
@@ -322,18 +338,20 @@ export async function revokeSubjectPartnerAccess(input: {
     object_type: "subject_pseudonym",
     object_id: access.subject_pseudonym_id,
     metadata: {
+      partner_id: partnerId,
       reason_code: input.reasonCode,
-      revoked_claim_ids: revokedClaimIds,
       revoked_receipt_ids: revokedReceiptIds,
       already_revoked_receipt_ids: alreadyRevokedReceiptIds,
+      skipped_foreign_receipt_ids: skippedForeignReceiptIds,
     },
   });
 
   return {
     ok: true,
-    revokedClaimIds,
+    partnerId,
     revokedReceiptIds,
     alreadyRevokedReceiptIds,
+    skippedForeignReceiptIds,
   };
 }
 

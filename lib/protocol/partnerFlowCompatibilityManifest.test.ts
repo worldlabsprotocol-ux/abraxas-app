@@ -66,6 +66,12 @@ describe("Partner Flow compatibility manifest", () => {
     expect([...manifest.public_receipt.frozen_view_fields].sort()).toEqual(
       [...FROZEN_PUBLIC_RECEIPT_VIEW_KEYS].sort(),
     );
+    expect(manifest.public_receipt.additive_live_trust_fields).toEqual([
+      "currently_valid",
+      "validity",
+      "invalidation_reasons",
+    ]);
+    expect(manifest.public_receipt.cache_policy).toContain("no-store");
     expect(manifest.public_receipt.validation_rules.length).toBeGreaterThan(0);
     expect(manifest.public_receipt.required_view_fields).toContain("signature_valid");
     expect(manifest.public_receipt.required_view_fields).toContain("production_usable");

@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     receipt_id?: string;
     claim_id?: string;
     subject_id?: string;
+    partner_id?: string;
     reason_code?: string;
     idempotency_key?: string;
   };
@@ -95,26 +96,32 @@ export async function POST(req: NextRequest) {
   }
 
   const subjectId = body.subject_id?.trim();
+  const partnerId = body.partner_id?.trim();
   if (!subjectId) {
     return NextResponse.json({ error: "subject_id required" }, { status: 400 });
+  }
+  if (!partnerId) {
+    return NextResponse.json({ error: "partner_id required for subject_access" }, { status: 400 });
   }
 
   const result = await revokeSubjectPartnerAccess({
     subjectId,
+    partnerId,
     reasonCode: body.reason_code,
     changedBy,
     idempotencyKey: body.idempotency_key,
   });
 
-  const subjectAccess = await listSubjectPartnerAccess(subjectId);
+  const subjectAccess = await listSubjectPartnerAccess(subjectId, partnerId);
 
   return NextResponse.json({
     ok: true,
     target_type: "subject_access",
     subject_pseudonym_id: subjectAccess.subject_pseudonym_id,
+    partner_id: partnerId,
     reason_code: body.reason_code,
-    revoked_claim_ids: result.revokedClaimIds,
     revoked_receipt_ids: result.revokedReceiptIds,
     already_revoked_receipt_ids: result.alreadyRevokedReceiptIds,
+    skipped_foreign_receipt_ids: result.skippedForeignReceiptIds,
   });
 }

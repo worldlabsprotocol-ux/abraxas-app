@@ -5,6 +5,8 @@ export const PARTNER_FLOW_REVOCATION_REASON_CODES = ["access_revoked"] as const;
 
 export function isPartnerFlowRevocationReason(invalidationReason: string): boolean {
   return invalidationReason === "receipt_revoked"
+    || invalidationReason === "claim_revoked"
+    || invalidationReason === "access_revoked"
     || invalidationReason.startsWith("claim_revoked:");
 }
 

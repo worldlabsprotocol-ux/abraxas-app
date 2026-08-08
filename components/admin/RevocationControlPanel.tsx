@@ -2,7 +2,7 @@
 // FILE: components/admin/RevocationControlPanel.tsx
 // Admin revocation control — safe identifiers only, confirmation required.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
 
 const MONO = "'JetBrains Mono',monospace";
@@ -11,6 +11,7 @@ const ACCENT = "#F87171";
 
 interface SubjectAccessView {
   subject_pseudonym_id: string;
+  partner_id: string | null;
   claims: Array<{
     claim_id: string;
     claim_type: string;
@@ -71,22 +72,35 @@ export function RevocationControlPanel({
     void loadAccess();
   }, [loadAccess]);
 
-  async function revokeSubjectAccess() {
+  const receiptsByPartner = useMemo(() => {
+    const grouped = new Map<string, SubjectAccessView["receipts"]>();
+    for (const receipt of access?.receipts ?? []) {
+      const list = grouped.get(receipt.partner_id) ?? [];
+      list.push(receipt);
+      grouped.set(receipt.partner_id, list);
+    }
+    return grouped;
+  }, [access?.receipts]);
+
+  async function revokePartnerScopedAccess(partnerId: string) {
     const id = subjectId?.trim();
     if (!id) return;
-    const activeReceipts = access?.receipts.filter(r => r.status === "active").length ?? 0;
-    const activeClaims = access?.claims.filter(c => c.status === "active").length ?? 0;
-    if (activeReceipts === 0 && activeClaims === 0) {
-      setError("No active partner receipts or credentials to revoke.");
+
+    const partnerReceipts = receiptsByPartner.get(partnerId) ?? [];
+    const activeReceipts = partnerReceipts.filter(r => r.status === "active");
+    if (activeReceipts.length === 0) {
+      setError(`No active receipts for partner ${partnerId}.`);
       return;
     }
 
     const confirmed = window.confirm(
-      `Revoke partner access for this subject?\n\n`
-      + `Active claims: ${activeClaims}\n`
-      + `Active receipts: ${activeReceipts}\n`
+      `REVOKE PARTNER-SCOPED ACCESS ONLY\n\n`
+      + `Partner: ${partnerId}\n`
+      + `Active receipts to revoke: ${activeReceipts.length}\n`
       + `Reason: ${reasonCode}\n\n`
-      + "This immediately prevents future partner validation using those receipts. "
+      + "This revokes ONLY this partner's receipts for this subject. "
+      + "Receipts belonging to other partners are NOT affected. "
+      + "Credential claims are NOT globally revoked. "
       + "Restoring access requires a new valid issuance flow.",
     );
     if (!confirmed) return;
@@ -103,15 +117,15 @@ export function RevocationControlPanel({
         body: JSON.stringify({
           target_type: "subject_access",
           subject_id: id,
+          partner_id: partnerId,
           reason_code: reasonCode,
-          idempotency_key: `subject_revoke:${id}:${reasonCode}`,
+          idempotency_key: `subject_revoke:${id}:${partnerId}:${reasonCode}`,
         }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? `Revoke failed (${res.status})`);
       setSuccess(
-        `Revoked ${body.revoked_receipt_ids?.length ?? 0} receipt(s) and `
-        + `${body.revoked_claim_ids?.length ?? 0} claim(s).`,
+        `Revoked ${body.revoked_receipt_ids?.length ?? 0} receipt(s) for partner ${partnerId} only.`,
       );
       await loadAccess();
     } catch (e) {
@@ -122,9 +136,6 @@ export function RevocationControlPanel({
   }
 
   if (!subjectId?.trim()) return null;
-
-  const activeReceipts = access?.receipts.filter(r => r.status === "active") ?? [];
-  const activeClaims = access?.claims.filter(c => c.status === "active") ?? [];
 
   return (
     <section
@@ -138,11 +149,11 @@ export function RevocationControlPanel({
       }}
     >
       <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: ACCENT }}>
-        Partner access revocation
+        Partner-scoped access revocation
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.6)", margin: "0.35rem 0 0.75rem", lineHeight: 1.5 }}>
-        Revoking immediately prevents future partner validation using affected receipts.
-        Signatures remain verifiable; live validity becomes revoked. No identity documents are deleted.
+        Revoke per partner only. Other partners&apos; receipts for this subject are never affected.
+        Signatures remain verifiable; live public validity becomes revoked.
       </p>
 
       {loading && <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)" }}>Loading…</p>}
@@ -154,46 +165,6 @@ export function RevocationControlPanel({
           <p style={{ fontFamily: MONO, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginBottom: "0.65rem" }}>
             pseudonym={access.subject_pseudonym_id.slice(0, 12)}…
           </p>
-
-          {activeClaims.length > 0 && (
-            <div style={{ marginBottom: "0.65rem" }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>
-                Active credentials
-              </div>
-              {activeClaims.map(claim => (
-                <div key={claim.claim_id} style={{ fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.7)" }}>
-                  {claim.claim_type} · {claim.claim_id.slice(0, 8)}… · {claim.status}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeReceipts.length > 0 && (
-            <div style={{ marginBottom: "0.65rem" }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>
-                Active partner receipts
-              </div>
-              {activeReceipts.map(receipt => (
-                <div key={receipt.receipt_id} style={{ fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.7)" }}>
-                  {receipt.receipt_id} · {receipt.partner_id} · {receipt.policy_id}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {access.receipts.some(r => r.status === "revoked") && (
-            <div style={{ marginBottom: "0.65rem" }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>
-                Revoked receipts
-              </div>
-              {access.receipts.filter(r => r.status === "revoked").map(receipt => (
-                <div key={receipt.receipt_id} style={{ fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.55)" }}>
-                  {receipt.receipt_id} · {receipt.revocation_reason_code ?? "revoked"}
-                  {receipt.revoked_at ? ` · ${new Date(receipt.revoked_at).toISOString()}` : ""}
-                </div>
-              ))}
-            </div>
-          )}
 
           <label style={{ display: "block", marginBottom: "0.65rem" }}>
             <span style={{ fontFamily: FONT, fontSize: "0.65rem", color: "rgba(255,255,255,0.55)" }}>Reason code</span>
@@ -219,25 +190,62 @@ export function RevocationControlPanel({
             </select>
           </label>
 
-          <button
-            type="button"
-            disabled={loading || (activeReceipts.length === 0 && activeClaims.length === 0)}
-            onClick={() => void revokeSubjectAccess()}
-            style={{
-              padding: "0.45rem 0.75rem",
-              borderRadius: 6,
-              border: "1px solid rgba(248,113,113,0.35)",
-              background: "rgba(248,113,113,0.12)",
-              color: ACCENT,
-              fontFamily: FONT,
-              fontSize: "0.68rem",
-              fontWeight: 700,
-              cursor: loading ? "wait" : "pointer",
-              opacity: activeReceipts.length === 0 && activeClaims.length === 0 ? 0.5 : 1,
-            }}
-          >
-            Revoke partner access
-          </button>
+          {Array.from(receiptsByPartner.entries()).map(([partnerId, receipts]) => {
+            const active = receipts.filter(r => r.status === "active");
+            const revoked = receipts.filter(r => r.status === "revoked");
+            return (
+              <div
+                key={partnerId}
+                style={{
+                  marginBottom: "0.75rem",
+                  padding: "0.65rem",
+                  borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(0,0,0,0.15)",
+                }}
+              >
+                <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, marginBottom: 4 }}>
+                  Partner: {partnerId}
+                </div>
+                {active.map(receipt => (
+                  <div key={receipt.receipt_id} style={{ fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.7)" }}>
+                    active · {receipt.receipt_id} · {receipt.policy_id}
+                  </div>
+                ))}
+                {revoked.map(receipt => (
+                  <div key={receipt.receipt_id} style={{ fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.5)" }}>
+                    revoked · {receipt.receipt_id} · {receipt.revocation_reason_code ?? "revoked"}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  disabled={loading || active.length === 0}
+                  onClick={() => void revokePartnerScopedAccess(partnerId)}
+                  style={{
+                    marginTop: "0.5rem",
+                    padding: "0.4rem 0.7rem",
+                    borderRadius: 6,
+                    border: "1px solid rgba(248,113,113,0.35)",
+                    background: "rgba(248,113,113,0.12)",
+                    color: ACCENT,
+                    fontFamily: FONT,
+                    fontSize: "0.65rem",
+                    fontWeight: 700,
+                    cursor: loading ? "wait" : "pointer",
+                    opacity: active.length === 0 ? 0.5 : 1,
+                  }}
+                >
+                  Revoke ONLY {partnerId} partner access
+                </button>
+              </div>
+            );
+          })}
+
+          {receiptsByPartner.size === 0 && (
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)" }}>
+              No partner receipts on file for this subject.
+            </p>
+          )}
         </>
       )}
     </section>

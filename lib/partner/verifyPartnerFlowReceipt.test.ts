@@ -88,12 +88,33 @@ describe("validatePartnerFlowPublicReceipt", () => {
 
   it("rejects revoked receipt", () => {
     const result = validatePartnerFlowPublicReceipt(
-      validReceipt({ status: "revoked" }),
+      validReceipt({ status: "revoked", currently_valid: false, invalidation_reasons: ["receipt_revoked"] }),
       { ...EXPECTED, now: NOW },
     );
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("receipt_revoked");
     expect(result.trust?.currently_valid).toBe(false);
+  });
+
+  it("rejects claim-revoked public response synchronously", () => {
+    const result = validatePartnerFlowPublicReceipt(
+      validReceipt({
+        currently_valid: false,
+        validity: "access_revoked",
+        invalidation_reasons: ["claim_revoked"],
+        evaluated_claim_refs: [{
+          claim_id: "claim-1",
+          claim_type: "identity_verified",
+          issuer_id: "issuer:abraxas",
+          status: "revoked",
+          issued_at: "2026-01-01T00:00:00.000Z",
+          expires_at: null,
+        }],
+      }),
+      { ...EXPECTED, now: NOW },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("claim_revoked");
   });
 
   it("rejects production_usable=false by default", () => {

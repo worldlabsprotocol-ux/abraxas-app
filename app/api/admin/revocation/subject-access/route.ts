@@ -13,15 +13,19 @@ export async function GET(req: NextRequest) {
   }
 
   const subjectId = req.nextUrl.searchParams.get("subject_id")?.trim();
+  const partnerId = req.nextUrl.searchParams.get("partner_id")?.trim() || undefined;
   if (!subjectId) {
     return NextResponse.json({ error: "subject_id required" }, { status: 400 });
   }
 
-  const access = await listSubjectPartnerAccess(subjectId);
+  const access = await listSubjectPartnerAccess(subjectId, partnerId);
   return NextResponse.json({
     subject_pseudonym_id: access.subject_pseudonym_id,
+    partner_id: access.partner_id,
     claims: access.claims,
     receipts: access.receipts,
-    note: "Revoking access immediately prevents future partner validation using affected receipts.",
+    note: partnerId
+      ? `Partner-scoped view for ${partnerId}. Revocation affects only this partner's receipts for the subject.`
+      : "Provide partner_id to scope revocation to a single partner.",
   });
 }

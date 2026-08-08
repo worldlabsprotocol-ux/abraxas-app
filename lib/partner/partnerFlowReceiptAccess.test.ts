@@ -14,10 +14,10 @@ describe("partner flow receipt access", () => {
   });
 
   it("blocks access when underlying claim is revoked", () => {
-    expect(isPartnerFlowRevocationReason("claim_revoked:claim-1")).toBe(true);
+    expect(isPartnerFlowRevocationReason("claim_revoked")).toBe(true);
     expect(partnerFlowReceiptAccessBlocked({
       currently_valid: false,
-      invalidation_reasons: ["claim_revoked:claim-1"],
+      invalidation_reasons: ["claim_revoked"],
     })).toBe(true);
   });
 

@@ -19,40 +19,32 @@ import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlo
 
 const TEST_KEY = generateTestSigningKeyPair();
 
-const insertMock = vi.fn();
-const updateMock = vi.fn().mockReturnThis();
-const eqMock = vi.fn().mockReturnThis();
-const selectMock = vi.fn().mockReturnThis();
-const maybeSingleMock = vi.fn();
-const fromMock = vi.fn(() => ({
-  insert: insertMock,
-  update: updateMock,
-  select: selectMock,
-  eq: eqMock,
-  maybeSingle: maybeSingleMock,
-  order: vi.fn().mockReturnThis(),
-  limit: vi.fn().mockReturnThis(),
-}));
+const rpcMock = vi.fn();
+const fromMock = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
-  requireSupabaseAdmin: vi.fn(() => ({ from: fromMock })),
-  getSupabaseAdmin: vi.fn(() => ({ from: fromMock })),
+  requireSupabaseAdmin: vi.fn(() => ({
+    from: fromMock,
+    rpc: (...args: unknown[]) => rpcMock(...args),
+  })),
+  getSupabaseAdmin: vi.fn(() => ({
+    from: fromMock,
+    rpc: (...args: unknown[]) => rpcMock(...args),
+  })),
 }));
 
 vi.mock("@/lib/verification/audit", () => ({
   appendAuditEvent: vi.fn().mockResolvedValue("audit-1"),
 }));
 
-vi.mock("@/lib/decisionReceipts/dependencies", () => ({
-  getReceiptDependencies: vi.fn().mockResolvedValue([
-    { claim_id: "claim-1", claim_type: "identity_verified", issuer_id: "issuer:abraxas" },
-  ]),
+vi.mock("@/lib/decisionReceipts/service", () => ({
+  getReceiptById: vi.fn(),
 }));
 
 function sampleRecord(overrides: Partial<DecisionReceiptRecord> = {}): DecisionReceiptRecord {
   const payload = buildCanonicalPayload({
     receipt_id: "dr_revoke_test",
-    decision_id: "00000000-0000-4000-8000-000000000099",
+    decision_id: "00000000-0000-4000-8000-000000000001",
     policy_id: "partner-policy-v1",
     policy_version: 1,
     partner_id: "partner-a",
@@ -104,16 +96,11 @@ function sampleRecord(overrides: Partial<DecisionReceiptRecord> = {}): DecisionR
   };
 }
 
-vi.mock("@/lib/decisionReceipts/service", () => ({
-  getReceiptById: vi.fn(),
-}));
-
 describe("revocation control plane", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.ABRAXAS_PUBLIC_KEY = JSON.stringify(TEST_KEY.publicKeyJwk);
-    insertMock.mockResolvedValue({ error: null });
-    maybeSingleMock.mockResolvedValue({ data: null, error: null });
+    rpcMock.mockReset();
   });
 
   it("accepts only fixed non-pii reason codes", () => {
@@ -165,12 +152,22 @@ describe("revocation control plane", () => {
     expect(JSON.stringify(publicView)).not.toContain("reviewer");
   });
 
-  it("revokes an active receipt and writes immutable event + audit metadata", async () => {
+  it("revokes via atomic rpc and writes audit on first revoke only", async () => {
     const { getReceiptById } = await import("@/lib/decisionReceipts/service");
     vi.mocked(getReceiptById).mockResolvedValue(sampleRecord());
-    maybeSingleMock
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({ data: sampleRecord(), error: null });
+
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        ok: true,
+        receipt_id: "dr_revoke_test",
+        decision_id: "00000000-0000-4000-8000-000000000001",
+        revoked_at: "2026-06-02T00:00:00.000Z",
+        reason_code: "operator_security_review",
+        already_revoked: false,
+        claim_ids: ["claim-1"],
+      },
+      error: null,
+    });
 
     const result = await revokeDecisionReceiptControlled({
       receiptId: "dr_revoke_test",
@@ -182,58 +179,47 @@ describe("revocation control plane", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.alreadyRevoked).toBe(false);
-    expect(result.reasonCode).toBe("operator_security_review");
-    expect(updateMock).toHaveBeenCalled();
-    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
-      receipt_id: "dr_revoke_test",
-      reason_code: "operator_security_review",
-      changed_by: "admin_pin",
-      idempotency_key: "revoke:dr_revoke_test",
+    expect(rpcMock).toHaveBeenCalledWith("revoke_decision_receipt_atomic", expect.objectContaining({
+      p_receipt_id: "dr_revoke_test",
+      p_idempotency_key: "revoke:dr_revoke_test",
     }));
   });
 
-  it("duplicate revoke is idempotent", async () => {
+  it("duplicate revoke is idempotent via rpc", async () => {
     const { getReceiptById } = await import("@/lib/decisionReceipts/service");
-    const revoked = sampleRecord({
+    vi.mocked(getReceiptById).mockResolvedValue(sampleRecord({
       status: "revoked",
       revoked_at: "2026-06-02T00:00:00.000Z",
-    });
-    vi.mocked(getReceiptById).mockResolvedValue(revoked);
-    maybeSingleMock.mockResolvedValueOnce({
+    }));
+
+    rpcMock.mockResolvedValueOnce({
       data: {
+        ok: true,
         receipt_id: "dr_revoke_test",
-        verification_decision_id: revoked.verification_decision_id,
+        decision_id: "00000000-0000-4000-8000-000000000001",
+        revoked_at: "2026-06-02T00:00:00.000Z",
         reason_code: "operator_security_review",
-        created_at: revoked.revoked_at,
+        already_revoked: true,
         claim_ids: ["claim-1"],
       },
       error: null,
     });
 
-    const byKey = await revokeDecisionReceiptControlled({
+    const result = await revokeDecisionReceiptControlled({
       receiptId: "dr_revoke_test",
       reasonCode: "operator_security_review",
       changedBy: "admin_pin",
       idempotencyKey: "revoke:dr_revoke_test",
     });
-    expect(byKey.ok).toBe(true);
-    if (byKey.ok) expect(byKey.alreadyRevoked).toBe(true);
 
-    vi.mocked(getReceiptById).mockResolvedValue(revoked);
-    maybeSingleMock.mockResolvedValueOnce({ data: null, error: null });
-    const second = await revokeDecisionReceiptControlled({
-      receiptId: "dr_revoke_test",
-      reasonCode: "operator_security_review",
-      changedBy: "admin_pin",
-    });
-    expect(second.ok).toBe(true);
-    if (second.ok) expect(second.alreadyRevoked).toBe(true);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.alreadyRevoked).toBe(true);
   });
 
   it("audit metadata contains no pii or reviewer notes", () => {
     const metadata = {
       reason_code: "operator_security_review",
-      verification_decision_id: "00000000-0000-4000-8000-000000000099",
+      verification_decision_id: "00000000-0000-4000-8000-000000000001",
       claim_ids: ["claim-1"],
       partner_id: "partner-a",
     };
