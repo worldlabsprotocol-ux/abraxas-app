@@ -15,6 +15,7 @@ import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { IndependentBiometricStatusCard } from "@/components/passport/IndependentBiometricStatusCard";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
+import { PassportPrivacyCenter } from "@/components/passport/PassportPrivacyCenter";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { TransactionEligibilitySection } from "@/components/passport/TransactionEligibilitySection";
 import {
@@ -922,6 +923,7 @@ function PartnerAccessSection({
         </div>
       )}
       <PassportShareHistoryCard suiAddress={suiAddress} verifiedView={verifiedView} />
+      <PassportPrivacyCenter suiAddress={suiAddress} />
     </section>
   );
 }

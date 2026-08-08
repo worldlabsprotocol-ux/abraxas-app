@@ -12,6 +12,7 @@ import { analyzeBiometricCapture } from "@/lib/idv/biometric/analyzeCapture";
 import { checkCaptureRateLimit, logCaptureAudit } from "@/lib/idv/biometric/captureGuard";
 import { resolveCaptureBiometricPolicy } from "@/lib/idv/biometric/resolveCapturePolicy";
 import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
+import { buildOpaqueCaptureStoragePath, opaqueStoragePathHasNoPii } from "@/lib/idv/passportDocumentStoragePath";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
@@ -28,13 +29,18 @@ async function uploadCaptureBuffer(
   supabase: SupabaseClient,
   buffer: Buffer,
   contentType: string,
-  email: string,
   sessionId: string,
   documentType: "id_front" | "selfie",
 ) {
-  const emailSafe = email.replace(/[^a-zA-Z0-9]/g, "_");
-  const ext = contentType.includes("png") ? "png" : "jpg";
-  const path = `identity/${emailSafe}/${sessionId}/${documentType}.${ext}`;
+  const path = buildOpaqueCaptureStoragePath({
+    captureSessionId: sessionId,
+    documentType,
+    contentType,
+  });
+
+  if (!opaqueStoragePathHasNoPii(path)) {
+    throw new Error("opaque_storage_path_validation_failed");
+  }
 
   const { error: uploadError } = await supabase.storage
     .from("passport-documents")
@@ -44,6 +50,7 @@ async function uploadCaptureBuffer(
     throw new Error(uploadError.message);
   }
 
+  const ext = contentType.includes("png") ? "png" : "jpg";
   return { path, fileName: `${documentType}.${ext}` };
 }
 
@@ -212,8 +219,8 @@ export async function POST(req: NextRequest) {
     }
 
     const [idUpload, selfieUpload] = await Promise.all([
-      uploadCaptureBuffer(supabase, idBuffer, idFront.type, email, captureSessionId, "id_front"),
-      uploadCaptureBuffer(supabase, selfieBuffer, selfie.type, email, captureSessionId, "selfie"),
+      uploadCaptureBuffer(supabase, idBuffer, idFront.type, captureSessionId, "id_front"),
+      uploadCaptureBuffer(supabase, selfieBuffer, selfie.type, captureSessionId, "selfie"),
     ]);
 
     const rows = [

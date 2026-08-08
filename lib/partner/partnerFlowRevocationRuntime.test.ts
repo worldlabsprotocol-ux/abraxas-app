@@ -4,6 +4,7 @@ import {
   findRevokedPartnerSessionReceipt,
   isPartnerFlowRevocationDenied,
 } from "@/lib/partner/partnerFlowRevocationRuntime";
+import { subjectHasPrivacyAccessRevoked } from "@/lib/privacy/privacySubjectAccess";
 
 const fromMock = vi.fn();
 const getPartnerPolicy = vi.fn();
@@ -20,6 +21,10 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 vi.mock("@/lib/policy/getPolicy", () => ({
   getPartnerPolicy: (...args: unknown[]) => getPartnerPolicy(...args),
+}));
+
+vi.mock("@/lib/privacy/privacySubjectAccess", () => ({
+  subjectHasPrivacyAccessRevoked: vi.fn(async () => false),
 }));
 
 vi.mock("@/lib/partner/sessionDecision", () => ({
@@ -67,6 +72,20 @@ describe("partnerFlowRevocationRuntime", () => {
     findSessionReceiptForSupersede.mockResolvedValue(null);
     getReceiptByDecisionId.mockResolvedValue(null);
     getReceiptById.mockResolvedValue(null);
+  });
+
+  it("blocks evaluate when privacy deletion left access_revoked_pending_purge", async () => {
+    vi.mocked(subjectHasPrivacyAccessRevoked).mockResolvedValueOnce(true);
+
+    const denied = await checkPartnerFlowRevocationGate({
+      subjectId: "0xabc",
+      partnerId: "partner-a",
+      policyId: "partner-policy-v1",
+      operation: "evaluate",
+    });
+
+    expect(denied?.next).toBe("denied");
+    expect(denied?.invalidation_reasons).toContain("access_revoked");
   });
 
   it("blocks evaluate when policy claim is revoked", async () => {

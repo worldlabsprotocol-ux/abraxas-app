@@ -4,8 +4,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { randomUUID } from "crypto";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import {
+  buildOpaqueStampUploadPath,
+  opaqueStoragePathHasNoPii,
+} from "@/lib/idv/passportDocumentStoragePath";
 
 function getSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -50,7 +55,17 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    const path = `${stampId}/${email.replace(/[^a-zA-Z0-9]/g, "_")}/${Date.now()}_${file.name}`;
+    const uploadSessionId = randomUUID();
+    const path = buildOpaqueStampUploadPath({
+      stampId,
+      uploadSessionId,
+      originalFileName: file.name,
+    });
+
+    if (!opaqueStoragePathHasNoPii(path, [email, suiAddress])) {
+      return NextResponse.json({ error: "opaque_storage_path_validation_failed" }, { status: 500 });
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const { error: uploadError } = await supabase.storage
