@@ -8,6 +8,7 @@ Apply manually in order:
 
 1. `supabase/migrations/062_partner_webhook_outbox.sql`
 2. `supabase/migrations/063_partner_webhook_operator_ops.sql`
+3. `supabase/migrations/064_partner_webhook_alert_state.sql`
 
 ## Environment
 
@@ -16,6 +17,10 @@ Apply manually in order:
 | `ABRAXAS_WEBHOOK_MASTER_KEY` | **Required.** Server-only dedicated key to encrypt webhook signing secrets at rest. Never use a `NEXT_PUBLIC_` variable. Do not reuse `ABRAXAS_SIGNING_KEY`. |
 | `CRON_SECRET` | **Required for dispatch.** Server-only bearer token for `/api/cron/partner-webhook-dispatch`. Never use a `NEXT_PUBLIC_` variable. Route returns `503 cron_not_configured` when unset; returns `401` when Authorization is wrong. |
 | `PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED` | Set to `true` (exact string, server-only) **only after** the dispatch cron deployment is live. Admin UI shows “Dispatch scheduler not yet configured” until this is set and `CRON_SECRET` is present. |
+| `PARTNER_WEBHOOK_ALERTS_ENABLED` | Set to `true` (trimmed exact string, server-only) to enable operational email alerts. Requires `RESEND_API_KEY`, `EMAIL_FROM`, and `ABRAXAS_ADMIN_EMAILS`. Never use `NEXT_PUBLIC_` variables. |
+| `RESEND_API_KEY` | Resend API key for operational alert emails (server-only). |
+| `EMAIL_FROM` | Verified Resend sender address for alert emails (server-only). |
+| `ABRAXAS_ADMIN_EMAILS` | Comma-separated admin recipient emails for operational alerts (server-only). Required — no `ADMIN_EMAIL` fallback. |
 | `REQUIRE_PARTNER_API_KEY` | When `true`, partner delivery history requires API key |
 
 ## Event types
@@ -72,7 +77,36 @@ Admin UI (`/admin/partners` → Webhooks) lists failed deliveries (metadata only
 
 Manual retry requeues the **same** `event_id` and payload. It does not create a new Partner Flow receipt or billable event. Retries are refused when webhook delivery is disabled for that partner. Each retry is audited in `partner_webhook_retry_audit` (migration 063).
 
-Dispatch run telemetry is stored in `partner_webhook_dispatch_runs` (migration 063). No alert provider is wired — health is shown in admin UI only.
+Dispatch run telemetry is stored in `partner_webhook_dispatch_runs` (migration 063).
+
+## Operational email alerts
+
+When `PARTNER_WEBHOOK_ALERTS_ENABLED=true` and Resend is configured (`RESEND_API_KEY`, `EMAIL_FROM`, `ABRAXAS_ADMIN_EMAILS`), Abraxas sends **metadata-only** operational emails for:
+
+| Alert | Trigger | Owner |
+|-------|---------|-------|
+| Dispatcher execution failure | Dispatch cron throws before completing | Dispatch cron (`/api/cron/partner-webhook-dispatch`) |
+| Terminal delivery failure | One or more outbox rows in `failed` status | Health monitor cron |
+| Excessive backlog | `pending + retrying` ≥ 50 | Health monitor cron |
+| Dispatcher stale | Scheduler configured but no successful dispatch run in 15+ minutes | Health monitor cron |
+| Signing secret failure | Enabled config cannot decrypt signing secret (or master key missing) | Health monitor cron |
+
+Anti-spam: durable cooldown state in `partner_webhook_alert_state` (migration 064) with atomic PostgreSQL claim/finalize RPCs (`claim_partner_webhook_alert_delivery`, `finalize_partner_webhook_alert_delivery`). One alert key per category, 60-minute default cooldown, recovery email when a condition clears. Failed provider delivery releases the claim without advancing cooldown or inactive state. Alerts never include payloads, secrets, authorization headers, response bodies, PII, wallets, JWTs, raw exception text, or full endpoint URLs — only allowlisted error categories and optional SHA-256 fingerprints for dispatcher failures.
+
+Admin UI (`/admin/partners` → Webhooks) shows whether alerting is configured and lists active alert keys (safe metadata only).
+
+### Required Vercel cron configuration (health monitor)
+
+`vercel.json` includes a health monitor cron every 15 minutes:
+
+```json
+{
+  "path": "/api/cron/partner-webhook-health",
+  "schedule": "*/15 * * * *"
+}
+```
+
+This route uses the same `CRON_SECRET` bearer auth and fail-closed behavior as dispatch. It does **not** duplicate dispatcher execution failure alerts — those are owned by the dispatch cron only.
 
 ## Partner delivery history API
 
