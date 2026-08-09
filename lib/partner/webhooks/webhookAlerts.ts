@@ -7,6 +7,7 @@ import {
   adminEmailTable,
   sendOperationalAdminEmail,
 } from "@/lib/notify/adminResend";
+import { dispatcherErrorMetadata } from "@/lib/partner/webhooks/webhookDispatchError";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const WEBHOOK_ALERT_KEYS = [
@@ -20,22 +21,13 @@ export const WEBHOOK_ALERT_KEYS = [
 export type WebhookAlertKey = (typeof WEBHOOK_ALERT_KEYS)[number];
 
 export const WEBHOOK_ALERT_COOLDOWN_MS = 60 * 60 * 1000;
+export const WEBHOOK_ALERT_CLAIM_TTL_MS = 2 * 60 * 1000;
 export const WEBHOOK_BACKLOG_ALERT_THRESHOLD = 50;
 export const WEBHOOK_DISPATCHER_STALE_MS = 15 * 60 * 1000;
 
 const ALERT_STATE = "partner_webhook_alert_state";
 
 export type WebhookAlertSafeMetadata = Record<string, string | number | boolean | null>;
-
-interface AlertStateRow {
-  alert_key: WebhookAlertKey;
-  is_active: boolean;
-  last_sent_at: string | null;
-  last_recovery_at: string | null;
-  cooldown_until: string | null;
-  safe_metadata: WebhookAlertSafeMetadata;
-  updated_at: string;
-}
 
 const ALERT_LABELS: Record<WebhookAlertKey, string> = {
   dispatcher_execution_failure: "Dispatcher execution failure",
@@ -44,6 +36,11 @@ const ALERT_LABELS: Record<WebhookAlertKey, string> = {
   dispatcher_stale: "Dispatcher stale (no recent success)",
   signing_secret_failure: "Signing secret decryption/configuration failure",
 };
+
+const SAFE_METADATA_STRING_KEYS = new Set([
+  "error_category",
+  "error_fingerprint",
+]);
 
 export function isPartnerWebhookAlertsEnabled(): boolean {
   return process.env.PARTNER_WEBHOOK_ALERTS_ENABLED?.trim() === "true";
@@ -87,7 +84,9 @@ function sanitizeMetadata(metadata: WebhookAlertSafeMetadata): WebhookAlertSafeM
   for (const [key, value] of Object.entries(metadata)) {
     if (value === undefined) continue;
     if (typeof value === "string") {
-      safe[key] = value.slice(0, 240);
+      if (SAFE_METADATA_STRING_KEYS.has(key)) {
+        safe[key] = value.slice(0, 64);
+      }
       continue;
     }
     if (typeof value === "number" || typeof value === "boolean" || value === null) {
@@ -115,49 +114,75 @@ function alertEmailHtml(input: {
   );
 }
 
-async function loadAlertState(alertKey: WebhookAlertKey): Promise<AlertStateRow | null> {
-  const sb = requireSupabaseAdmin();
-  const { data, error } = await sb
-    .from(ALERT_STATE)
-    .select("*")
-    .eq("alert_key", alertKey)
-    .maybeSingle();
+type ClaimResult =
+  | { claimed: true; claim_id: string; kind: "alert" | "recovery" }
+  | { claimed: false; reason: string };
 
-  if (error) {
-    console.error("[webhookAlerts] load state failed", alertKey, error.message);
-    return null;
-  }
-  return data as AlertStateRow | null;
-}
+type FinalizeResult =
+  | { finalized: true; released?: boolean }
+  | { finalized: false; reason: string };
 
-async function persistAlertState(input: {
+async function claimAlertDelivery(input: {
   alertKey: WebhookAlertKey;
-  isActive: boolean;
-  safeMetadata: WebhookAlertSafeMetadata;
-  lastSentAt?: string | null;
-  lastRecoveryAt?: string | null;
-  cooldownUntil?: string | null;
-}): Promise<void> {
+  kind: "alert" | "recovery";
+  now: Date;
+}): Promise<ClaimResult> {
   const sb = requireSupabaseAdmin();
-  const now = new Date().toISOString();
-  const { error } = await sb.from(ALERT_STATE).upsert({
-    alert_key: input.alertKey,
-    is_active: input.isActive,
-    safe_metadata: input.safeMetadata,
-    last_sent_at: input.lastSentAt ?? null,
-    last_recovery_at: input.lastRecoveryAt ?? null,
-    cooldown_until: input.cooldownUntil ?? null,
-    updated_at: now,
-  }, { onConflict: "alert_key" });
+  const { data, error } = await sb.rpc("claim_partner_webhook_alert_delivery", {
+    p_alert_key: input.alertKey,
+    p_kind: input.kind,
+    p_now: input.now.toISOString(),
+    p_claim_ttl_seconds: Math.floor(WEBHOOK_ALERT_CLAIM_TTL_MS / 1000),
+    p_cooldown_seconds: Math.floor(WEBHOOK_ALERT_COOLDOWN_MS / 1000),
+  });
 
   if (error) {
-    console.error("[webhookAlerts] persist state failed", input.alertKey, error.message);
+    console.error("[webhookAlerts] claim failed", input.alertKey, error.message);
+    return { claimed: false, reason: "claim_error" };
   }
+
+  const body = data as { claimed?: boolean; claim_id?: string; kind?: string; reason?: string };
+  if (!body?.claimed || !body.claim_id) {
+    return { claimed: false, reason: body?.reason ?? "not_claimed" };
+  }
+
+  return {
+    claimed: true,
+    claim_id: body.claim_id,
+    kind: body.kind === "recovery" ? "recovery" : "alert",
+  };
 }
 
-function isCooldownActive(row: AlertStateRow | null, nowMs: number): boolean {
-  if (!row?.cooldown_until) return false;
-  return Date.parse(row.cooldown_until) > nowMs;
+async function finalizeAlertDelivery(input: {
+  alertKey: WebhookAlertKey;
+  claimId: string;
+  kind: "alert" | "recovery";
+  success: boolean;
+  safeMetadata: WebhookAlertSafeMetadata;
+  now: Date;
+}): Promise<FinalizeResult> {
+  const sb = requireSupabaseAdmin();
+  const { data, error } = await sb.rpc("finalize_partner_webhook_alert_delivery", {
+    p_alert_key: input.alertKey,
+    p_claim_id: input.claimId,
+    p_kind: input.kind,
+    p_success: input.success,
+    p_safe_metadata: input.safeMetadata,
+    p_now: input.now.toISOString(),
+    p_cooldown_seconds: Math.floor(WEBHOOK_ALERT_COOLDOWN_MS / 1000),
+  });
+
+  if (error) {
+    console.error("[webhookAlerts] finalize failed", input.alertKey, error.message);
+    return { finalized: false, reason: "finalize_error" };
+  }
+
+  const body = data as { finalized?: boolean; reason?: string };
+  if (!body?.finalized) {
+    return { finalized: false, reason: body?.reason ?? "not_finalized" };
+  }
+
+  return { finalized: true, released: Boolean((data as { released?: boolean }).released) };
 }
 
 export async function syncWebhookAlert(input: {
@@ -172,61 +197,52 @@ export async function syncWebhookAlert(input: {
   }
 
   const now = input.now ?? new Date();
-  const nowMs = now.getTime();
   const safeMetadata = sanitizeMetadata(input.metadata ?? {});
-  const existing = await loadAlertState(input.alertKey);
   const label = ALERT_LABELS[input.alertKey];
+  const kind = input.active ? "alert" : "recovery";
 
-  if (input.active) {
-    if (existing?.is_active && isCooldownActive(existing, nowMs)) {
-      return { sent: false, kind: "skipped" };
-    }
-
-    const sendResult = await sendOperationalAdminEmail({
-      subject: `[Abraxas Webhooks] ${label}`,
-      html: alertEmailHtml({ title: label, recovery: false, metadata: safeMetadata }),
-    });
-
-    if (sendResult.skipped) {
-      return { sent: false, kind: "skipped" };
-    }
-
-    const cooldownUntil = new Date(nowMs + WEBHOOK_ALERT_COOLDOWN_MS).toISOString();
-    await persistAlertState({
-      alertKey: input.alertKey,
-      isActive: true,
-      safeMetadata,
-      lastSentAt: now.toISOString(),
-      lastRecoveryAt: existing?.last_recovery_at ?? null,
-      cooldownUntil,
-    });
-
-    return { sent: sendResult.ok, kind: "alert" };
-  }
-
-  if (!existing?.is_active) {
+  const claim = await claimAlertDelivery({ alertKey: input.alertKey, kind, now });
+  if (!claim.claimed) {
     return { sent: false, kind: "skipped" };
   }
 
   const sendResult = await sendOperationalAdminEmail({
-    subject: `[Abraxas Webhooks] ${label} — recovered`,
-    html: alertEmailHtml({ title: label, recovery: true, metadata: safeMetadata }),
+    subject: input.active
+      ? `[Abraxas Webhooks] ${label}`
+      : `[Abraxas Webhooks] ${label} — recovered`,
+    html: alertEmailHtml({
+      title: label,
+      recovery: !input.active,
+      metadata: safeMetadata,
+    }),
   });
 
-  if (sendResult.skipped) {
+  if (sendResult.skipped || !sendResult.ok) {
+    await finalizeAlertDelivery({
+      alertKey: input.alertKey,
+      claimId: claim.claim_id,
+      kind: claim.kind,
+      success: false,
+      safeMetadata,
+      now,
+    });
     return { sent: false, kind: "skipped" };
   }
 
-  await persistAlertState({
+  const finalized = await finalizeAlertDelivery({
     alertKey: input.alertKey,
-    isActive: false,
+    claimId: claim.claim_id,
+    kind: claim.kind,
+    success: true,
     safeMetadata,
-    lastSentAt: existing.last_sent_at,
-    lastRecoveryAt: now.toISOString(),
-    cooldownUntil: null,
+    now,
   });
 
-  return { sent: sendResult.ok, kind: "recovery" };
+  if (!finalized.finalized) {
+    return { sent: false, kind: "skipped" };
+  }
+
+  return { sent: true, kind: claim.kind };
 }
 
 export async function getActiveWebhookAlerts(): Promise<Array<{
@@ -253,11 +269,11 @@ export async function getActiveWebhookAlerts(): Promise<Array<{
   }));
 }
 
-export async function notifyDispatcherExecutionFailure(errorCode: string): Promise<void> {
+export async function notifyDispatcherExecutionFailure(err: unknown): Promise<void> {
   await syncWebhookAlert({
     alertKey: "dispatcher_execution_failure",
     active: true,
-    metadata: { error_code: errorCode.slice(0, 120) },
+    metadata: dispatcherErrorMetadata(err),
   });
 }
 

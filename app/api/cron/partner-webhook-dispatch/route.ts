@@ -8,10 +8,22 @@ import {
   clearDispatcherExecutionFailureAlert,
   notifyDispatcherExecutionFailure,
 } from "@/lib/partner/webhooks/webhookAlerts";
+import { classifyDispatcherError } from "@/lib/partner/webhooks/webhookDispatchError";
 import { recordWebhookDispatchRun } from "@/lib/partner/webhooks/webhookDispatchHealth";
 import { processWebhookOutboxBatch } from "@/lib/partner/webhooks/webhookDelivery";
 
 export const dynamic = "force-dynamic";
+
+async function runAlertStep(step: () => Promise<void>): Promise<void> {
+  try {
+    await step();
+  } catch (err) {
+    console.error(
+      "[partner-webhook-dispatch] alert step failed",
+      err instanceof Error ? err.message : err,
+    );
+  }
+}
 
 export async function GET(req: NextRequest) {
   const startedAt = new Date().toISOString();
@@ -33,23 +45,26 @@ export async function GET(req: NextRequest) {
       success: true,
       summary,
     });
-    void clearDispatcherExecutionFailureAlert();
+    await runAlertStep(() => clearDispatcherExecutionFailureAlert());
     return NextResponse.json({
       success: true,
       dispatchedAt: finishedAt,
       summary,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const classified = classifyDispatcherError(err);
     const finishedAt = new Date().toISOString();
     await recordWebhookDispatchRun({
       startedAt,
       finishedAt,
       success: false,
-      errorCode: msg.slice(0, 240),
+      errorCode: classified.category,
       summary: { scanned: 0, delivered: 0, retrying: 0, failed: 0, skipped: 0, stale: 0 },
     }).catch(() => undefined);
-    void notifyDispatcherExecutionFailure(msg);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    await runAlertStep(() => notifyDispatcherExecutionFailure(err));
+    return NextResponse.json(
+      { success: false, error: classified.category },
+      { status: 500 },
+    );
   }
 }

@@ -91,7 +91,7 @@ When `PARTNER_WEBHOOK_ALERTS_ENABLED=true` and Resend is configured (`RESEND_API
 | Dispatcher stale | Scheduler configured but no successful dispatch run in 15+ minutes | Health monitor cron |
 | Signing secret failure | Enabled config cannot decrypt signing secret (or master key missing) | Health monitor cron |
 
-Anti-spam: durable cooldown state in `partner_webhook_alert_state` (migration 064), one alert key per category, 60-minute default cooldown, recovery email when a condition clears. Alerts never include payloads, secrets, authorization headers, response bodies, PII, wallets, JWTs, or full endpoint URLs.
+Anti-spam: durable cooldown state in `partner_webhook_alert_state` (migration 064) with atomic PostgreSQL claim/finalize RPCs (`claim_partner_webhook_alert_delivery`, `finalize_partner_webhook_alert_delivery`). One alert key per category, 60-minute default cooldown, recovery email when a condition clears. Failed provider delivery releases the claim without advancing cooldown or inactive state. Alerts never include payloads, secrets, authorization headers, response bodies, PII, wallets, JWTs, raw exception text, or full endpoint URLs — only allowlisted error categories and optional SHA-256 fingerprints for dispatcher failures.
 
 Admin UI (`/admin/partners` → Webhooks) shows whether alerting is configured and lists active alert keys (safe metadata only).
 

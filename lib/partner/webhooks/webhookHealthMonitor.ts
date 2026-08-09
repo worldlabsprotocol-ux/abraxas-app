@@ -66,8 +66,8 @@ export async function evaluateWebhookHealthAlerts(input?: { now?: Date }): Promi
     metadata: { failed_count: failedCount },
     now,
   });
-  if (terminalResult.kind === "alert") sent.push("terminal_delivery_failure");
-  if (terminalResult.kind === "recovery") recovered.push("terminal_delivery_failure");
+  if (terminalResult.sent) sent.push("terminal_delivery_failure");
+  if (terminalResult.kind === "recovery" && terminalResult.sent) recovered.push("terminal_delivery_failure");
 
   const backlog = counts.pending + counts.retrying;
   evaluated.push("excessive_backlog");
@@ -81,8 +81,8 @@ export async function evaluateWebhookHealthAlerts(input?: { now?: Date }): Promi
     },
     now,
   });
-  if (backlogResult.kind === "alert") sent.push("excessive_backlog");
-  if (backlogResult.kind === "recovery") recovered.push("excessive_backlog");
+  if (backlogResult.sent) sent.push("excessive_backlog");
+  if (backlogResult.kind === "recovery" && backlogResult.sent) recovered.push("excessive_backlog");
 
   const schedulerConfigured = isWebhookDispatchSchedulerConfigured()
     && dispatchHealth.cron_secret_configured;
@@ -111,8 +111,8 @@ export async function evaluateWebhookHealthAlerts(input?: { now?: Date }): Promi
     },
     now,
   });
-  if (staleResult.kind === "alert") sent.push("dispatcher_stale");
-  if (staleResult.kind === "recovery") recovered.push("dispatcher_stale");
+  if (staleResult.sent) sent.push("dispatcher_stale");
+  if (staleResult.kind === "recovery" && staleResult.sent) recovered.push("dispatcher_stale");
 
   evaluated.push("signing_secret_failure");
   const signingResult = await syncWebhookAlert({
@@ -124,8 +124,8 @@ export async function evaluateWebhookHealthAlerts(input?: { now?: Date }): Promi
     },
     now,
   });
-  if (signingResult.kind === "alert") sent.push("signing_secret_failure");
-  if (signingResult.kind === "recovery") recovered.push("signing_secret_failure");
+  if (signingResult.sent) sent.push("signing_secret_failure");
+  if (signingResult.kind === "recovery" && signingResult.sent) recovered.push("signing_secret_failure");
 
   return { evaluated, sent, recovered };
 }

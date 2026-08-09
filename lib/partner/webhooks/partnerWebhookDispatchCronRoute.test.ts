@@ -125,13 +125,42 @@ describe("partner webhook dispatch cron route", () => {
 
   it("notifies dispatcher execution failure alert on batch error", async () => {
     process.env.CRON_SECRET = "cron-test-secret";
+    const err = new Error("postgres connection failed");
+    processBatchMock.mockRejectedValue(err);
+
+    const res = await GET(new NextRequest("http://localhost/api/cron/partner-webhook-dispatch", {
+      headers: { authorization: "Bearer cron-test-secret" },
+    }));
+    const body = await res.json() as { success: boolean; error: string };
+
+    expect(res.status).toBe(500);
+    expect(body.error).toBe("database_error");
+    expect(notifyFailureMock).toHaveBeenCalledWith(err);
+    expect(JSON.stringify(body)).not.toContain("postgres");
+  });
+
+  it("returns dispatch success even when alert recovery fails", async () => {
+    process.env.CRON_SECRET = "cron-test-secret";
+    clearFailureMock.mockRejectedValue(new Error("alert_provider_down"));
+
+    const res = await GET(new NextRequest("http://localhost/api/cron/partner-webhook-dispatch", {
+      headers: { authorization: "Bearer cron-test-secret" },
+    }));
+
+    expect(res.status).toBe(200);
+    expect(clearFailureMock).toHaveBeenCalled();
+  });
+
+  it("returns dispatch failure even when alert notification fails", async () => {
+    process.env.CRON_SECRET = "cron-test-secret";
     processBatchMock.mockRejectedValue(new Error("db_down"));
+    notifyFailureMock.mockRejectedValue(new Error("alert_provider_down"));
 
     const res = await GET(new NextRequest("http://localhost/api/cron/partner-webhook-dispatch", {
       headers: { authorization: "Bearer cron-test-secret" },
     }));
 
     expect(res.status).toBe(500);
-    expect(notifyFailureMock).toHaveBeenCalledWith("db_down");
+    expect(notifyFailureMock).toHaveBeenCalled();
   });
 });

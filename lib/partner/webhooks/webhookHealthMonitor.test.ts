@@ -101,4 +101,19 @@ describe("webhook health monitor", () => {
       alertKey: "dispatcher_execution_failure",
     }));
   });
+
+  it("only reports sent/recovered when result.sent is true", async () => {
+    syncMock
+      .mockResolvedValueOnce({ sent: false, kind: "alert" })
+      .mockResolvedValueOnce({ sent: true, kind: "alert" })
+      .mockResolvedValueOnce({ sent: false, kind: "recovery" })
+      .mockResolvedValueOnce({ sent: true, kind: "recovery" });
+
+    const result = await evaluateWebhookHealthAlerts({
+      now: new Date("2026-01-01T00:00:00.000Z"),
+    });
+
+    expect(result.sent).toEqual(["excessive_backlog", "signing_secret_failure"]);
+    expect(result.recovered).toEqual(["signing_secret_failure"]);
+  });
 });
