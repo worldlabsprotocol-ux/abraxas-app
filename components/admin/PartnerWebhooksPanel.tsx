@@ -38,6 +38,20 @@ interface DispatchHealth {
   last_failure_error_code: string | null;
 }
 
+interface AlertsStatus {
+  enabled: boolean;
+  configured: boolean;
+  recipient_count: number;
+  message: string;
+  missing: string[];
+}
+
+interface ActiveAlert {
+  alert_key: string;
+  updated_at: string;
+  safe_metadata: Record<string, string | number | boolean | null>;
+}
+
 interface FailedDelivery {
   outbox_id: string;
   partner_id: string;
@@ -67,9 +81,10 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
   const [configs, setConfigs] = useState<WebhookConfig[]>([]);
   const [health, setHealth] = useState<HealthCounts | null>(null);
   const [dispatch, setDispatch] = useState<DispatchHealth | null>(null);
+  const [alerts, setAlerts] = useState<AlertsStatus | null>(null);
+  const [activeAlerts, setActiveAlerts] = useState<ActiveAlert[]>([]);
   const [failedDeliveries, setFailedDeliveries] = useState<FailedDelivery[]>([]);
   const [disclaimer, setDisclaimer] = useState("");
-  const [alertsConfigured, setAlertsConfigured] = useState(false);
   const [secretReveal, setSecretReveal] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -108,7 +123,9 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
       const healthBody = await healthRes.json() as {
         counts?: HealthCounts;
         dispatch?: DispatchHealth;
+        alerts?: AlertsStatus;
         alerts_configured?: boolean;
+        active_alerts?: ActiveAlert[];
         error?: string;
       };
       const failedBody = await failedRes.json() as { deliveries?: FailedDelivery[]; error?: string };
@@ -121,7 +138,8 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
       setDisclaimer(configBody.disclaimer ?? "");
       setHealth(healthBody.counts ?? null);
       setDispatch(healthBody.dispatch ?? null);
-      setAlertsConfigured(Boolean(healthBody.alerts_configured));
+      setAlerts(healthBody.alerts ?? null);
+      setActiveAlerts(healthBody.active_alerts ?? []);
       setFailedDeliveries(failedBody.deliveries ?? []);
 
       const existing = configBody.configs?.find(c => c.partner_id === partnerId.trim());
@@ -250,8 +268,23 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
             </span>
             <span>Last successful run: {formatTs(dispatch.last_successful_run_at)}</span>
             <span>Last failure: {formatTs(dispatch.last_failure_at)}{dispatch.last_failure_error_code ? ` (${dispatch.last_failure_error_code})` : ""}</span>
-            {!alertsConfigured && (
-              <span style={{ color: "rgba(255,255,255,0.45)" }}>No alert provider is configured. Status is shown here only.</span>
+            {alerts && (
+              <span style={{ color: alerts.configured ? ACCENT : WARN }}>
+                {alerts.message}
+                {alerts.configured && alerts.recipient_count > 0
+                  ? ` · ${alerts.recipient_count} recipient(s)`
+                  : ""}
+              </span>
+            )}
+            {activeAlerts.length > 0 && (
+              <span style={{ color: WARN }}>
+                Active alerts: {activeAlerts.map(item => item.alert_key.replaceAll("_", " ")).join(", ")}
+              </span>
+            )}
+            {alerts && !alerts.configured && (
+              <span style={{ color: "rgba(255,255,255,0.45)" }}>
+                Status is shown here only until alerting is fully configured.
+              </span>
             )}
           </div>
         )}

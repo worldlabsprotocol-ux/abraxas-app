@@ -1,16 +1,38 @@
 // FILE: lib/notify/adminResend.ts
 // Shared Resend admin notification — never blocks caller on failure.
 
+import { getAdminEmails } from "@/lib/adminAuth";
+
 export interface AdminEmailInput {
   subject: string;
   html: string;
 }
 
-export async function sendAdminEmail(input: AdminEmailInput): Promise<{ ok: boolean; skipped?: boolean }> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const adminEmail = process.env.ADMIN_EMAIL;
+function resolveLegacyAdminRecipient(): string | null {
+  const adminEmail = process.env.ADMIN_EMAIL?.trim();
+  return adminEmail || null;
+}
 
-  if (!apiKey || !adminEmail) {
+export function resolveOperationalAdminRecipients(): string[] {
+  const allowlist = getAdminEmails();
+  if (allowlist.length > 0) return allowlist;
+  const legacy = resolveLegacyAdminRecipient();
+  return legacy ? [legacy] : [];
+}
+
+export function resolveEmailFromAddress(): string {
+  const from = process.env.EMAIL_FROM?.trim();
+  if (!from) return "Abraxas Protocol <onboarding@resend.dev>";
+  return from.includes("<") ? from : `Abraxas Protocol <${from}>`;
+}
+
+async function sendResendEmail(input: {
+  to: string[];
+  subject: string;
+  html: string;
+}): Promise<{ ok: boolean; skipped?: boolean }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || input.to.length === 0) {
     return { ok: true, skipped: true };
   }
 
@@ -22,8 +44,8 @@ export async function sendAdminEmail(input: AdminEmailInput): Promise<{ ok: bool
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Abraxas Protocol <onboarding@resend.dev>",
-        to: [adminEmail],
+        from: resolveEmailFromAddress(),
+        to: input.to,
         subject: input.subject,
         html: input.html,
       }),
@@ -34,6 +56,23 @@ export async function sendAdminEmail(input: AdminEmailInput): Promise<{ ok: bool
     console.error("[adminResend]", err instanceof Error ? err.message : err);
     return { ok: false };
   }
+}
+
+export async function sendAdminEmail(input: AdminEmailInput): Promise<{ ok: boolean; skipped?: boolean }> {
+  const legacy = resolveLegacyAdminRecipient();
+  if (!legacy) {
+    return { ok: true, skipped: true };
+  }
+  return sendResendEmail({ to: [legacy], subject: input.subject, html: input.html });
+}
+
+/** Operational alerts — prefers ABRAXAS_ADMIN_EMAILS, then legacy ADMIN_EMAIL. */
+export async function sendOperationalAdminEmail(input: AdminEmailInput): Promise<{ ok: boolean; skipped?: boolean }> {
+  return sendResendEmail({
+    to: resolveOperationalAdminRecipients(),
+    subject: input.subject,
+    html: input.html,
+  });
 }
 
 export function adminEmailTable(rows: Record<string, string | number | null | undefined>): string {

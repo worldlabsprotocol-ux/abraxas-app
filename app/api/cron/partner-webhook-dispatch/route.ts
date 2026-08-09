@@ -4,6 +4,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeCronRequest } from "@/lib/partner/webhooks/cronAuth";
+import {
+  clearDispatcherExecutionFailureAlert,
+  notifyDispatcherExecutionFailure,
+} from "@/lib/partner/webhooks/webhookAlerts";
 import { recordWebhookDispatchRun } from "@/lib/partner/webhooks/webhookDispatchHealth";
 import { processWebhookOutboxBatch } from "@/lib/partner/webhooks/webhookDelivery";
 
@@ -29,6 +33,7 @@ export async function GET(req: NextRequest) {
       success: true,
       summary,
     });
+    void clearDispatcherExecutionFailureAlert();
     return NextResponse.json({
       success: true,
       dispatchedAt: finishedAt,
@@ -44,6 +49,7 @@ export async function GET(req: NextRequest) {
       errorCode: msg.slice(0, 240),
       summary: { scanned: 0, delivered: 0, retrying: 0, failed: 0, skipped: 0, stale: 0 },
     }).catch(() => undefined);
+    void notifyDispatcherExecutionFailure(msg);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
