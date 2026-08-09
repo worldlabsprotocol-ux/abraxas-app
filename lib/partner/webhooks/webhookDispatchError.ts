@@ -56,3 +56,14 @@ export function dispatcherErrorMetadata(err: unknown): {
     error_fingerprint: classified.fingerprint,
   };
 }
+
+/** Generic operational classifier for cron and alert paths. */
+export const classifyOperationalError = classifyDispatcherError;
+
+export function logSafeOperationalError(operation: string, err: unknown): void {
+  const { category, fingerprint } = classifyOperationalError(err);
+  console.error(`[${operation}]`, {
+    error_category: category,
+    error_fingerprint: fingerprint,
+  });
+}

@@ -7,7 +7,10 @@ import {
   adminEmailTable,
   sendOperationalAdminEmail,
 } from "@/lib/notify/adminResend";
-import { dispatcherErrorMetadata } from "@/lib/partner/webhooks/webhookDispatchError";
+import {
+  dispatcherErrorMetadata,
+  logSafeOperationalError,
+} from "@/lib/partner/webhooks/webhookDispatchError";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const WEBHOOK_ALERT_KEYS = [
@@ -137,7 +140,7 @@ async function claimAlertDelivery(input: {
   });
 
   if (error) {
-    console.error("[webhookAlerts] claim failed", input.alertKey, error.message);
+    logSafeOperationalError(`webhookAlerts.claim:${input.alertKey}`, error);
     return { claimed: false, reason: "claim_error" };
   }
 
@@ -173,7 +176,7 @@ async function finalizeAlertDelivery(input: {
   });
 
   if (error) {
-    console.error("[webhookAlerts] finalize failed", input.alertKey, error.message);
+    logSafeOperationalError(`webhookAlerts.finalize:${input.alertKey}`, error);
     return { finalized: false, reason: "finalize_error" };
   }
 
@@ -258,7 +261,7 @@ export async function getActiveWebhookAlerts(): Promise<Array<{
     .order("updated_at", { ascending: false });
 
   if (error) {
-    console.error("[webhookAlerts] list active failed", error.message);
+    logSafeOperationalError("webhookAlerts.list_active", error);
     return [];
   }
 

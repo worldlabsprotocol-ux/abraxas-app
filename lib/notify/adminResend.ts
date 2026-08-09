@@ -2,6 +2,7 @@
 // Shared Resend admin notification — never blocks caller on failure.
 
 import { getAdminEmails } from "@/lib/adminAuth";
+import { logSafeOperationalError } from "@/lib/partner/webhooks/webhookDispatchError";
 
 export interface AdminEmailInput {
   subject: string;
@@ -13,11 +14,9 @@ function resolveLegacyAdminRecipient(): string | null {
   return adminEmail || null;
 }
 
+/** Partner webhook operational alerts — ABRAXAS_ADMIN_EMAILS only (no ADMIN_EMAIL fallback). */
 export function resolveOperationalAdminRecipients(): string[] {
-  const allowlist = getAdminEmails();
-  if (allowlist.length > 0) return allowlist;
-  const legacy = resolveLegacyAdminRecipient();
-  return legacy ? [legacy] : [];
+  return getAdminEmails();
 }
 
 export function resolveEmailFromAddress(): string {
@@ -53,7 +52,7 @@ async function sendResendEmail(input: {
 
     return { ok: res.ok };
   } catch (err) {
-    console.error("[adminResend]", err instanceof Error ? err.message : err);
+    logSafeOperationalError("adminResend.send", err);
     return { ok: false };
   }
 }
@@ -66,7 +65,7 @@ export async function sendAdminEmail(input: AdminEmailInput): Promise<{ ok: bool
   return sendResendEmail({ to: [legacy], subject: input.subject, html: input.html });
 }
 
-/** Operational alerts — prefers ABRAXAS_ADMIN_EMAILS, then legacy ADMIN_EMAIL. */
+/** Operational alerts — requires ABRAXAS_ADMIN_EMAILS (see resolveOperationalAdminRecipients). */
 export async function sendOperationalAdminEmail(input: AdminEmailInput): Promise<{ ok: boolean; skipped?: boolean }> {
   return sendResendEmail({
     to: resolveOperationalAdminRecipients(),

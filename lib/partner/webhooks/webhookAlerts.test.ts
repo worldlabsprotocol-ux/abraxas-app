@@ -115,6 +115,28 @@ describe("webhook alerts", () => {
     expect(JSON.stringify(status)).not.toContain("re_test");
   });
 
+  it("does not treat legacy ADMIN_EMAIL as an operational alert recipient", async () => {
+    delete process.env.ABRAXAS_ADMIN_EMAILS;
+    process.env.ADMIN_EMAIL = "legacy@example.com";
+
+    const status = getPartnerWebhookAlertsStatus();
+    expect(status.configured).toBe(false);
+    expect(status.missing).toContain("ABRAXAS_ADMIN_EMAILS");
+    expect(status.recipient_count).toBe(0);
+
+    mockClaimSuccess();
+    const result = await syncWebhookAlert({
+      alertKey: "excessive_backlog",
+      active: true,
+      metadata: { pending: 60, retrying: 0, threshold: 50 },
+    });
+
+    expect(result).toEqual({ sent: false, kind: "skipped" });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    delete process.env.ADMIN_EMAIL;
+  });
+
   it("sends alert email and finalizes cooldown only after provider success", async () => {
     mockClaimSuccess();
 

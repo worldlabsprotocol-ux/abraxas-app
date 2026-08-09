@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeCronRequest } from "@/lib/partner/webhooks/cronAuth";
+import { classifyOperationalError } from "@/lib/partner/webhooks/webhookDispatchError";
 import { evaluateWebhookHealthAlerts } from "@/lib/partner/webhooks/webhookHealthMonitor";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,14 @@ export async function GET(req: NextRequest) {
       recoveriesSent: result.recovered,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ success: false, error: msg.slice(0, 240) }, { status: 500 });
+    const classified = classifyOperationalError(err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: classified.category,
+        error_fingerprint: classified.fingerprint,
+      },
+      { status: 500 },
+    );
   }
 }

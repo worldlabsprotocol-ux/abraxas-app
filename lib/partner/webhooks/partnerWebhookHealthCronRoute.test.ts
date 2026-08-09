@@ -62,4 +62,28 @@ describe("partner webhook health cron route", () => {
     expect(body.alertsSent).toEqual(["excessive_backlog"]);
     expect(evaluateMock).toHaveBeenCalled();
   });
+
+  it("returns safe operational error category on failure without raw exception text", async () => {
+    process.env.CRON_SECRET = "cron-test-secret";
+    evaluateMock.mockRejectedValue(
+      new Error("supabase relation partner_webhook_alert_state missing at https://secret.internal"),
+    );
+
+    const res = await GET(new NextRequest("http://localhost/api/cron/partner-webhook-health", {
+      headers: { authorization: "Bearer cron-test-secret" },
+    }));
+    const body = await res.json() as {
+      success: boolean;
+      error: string;
+      error_fingerprint: string;
+    };
+
+    expect(res.status).toBe(500);
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("database_error");
+    expect(body.error_fingerprint).toMatch(/^[a-f0-9]{16}$/);
+    expect(JSON.stringify(body)).not.toContain("supabase");
+    expect(JSON.stringify(body)).not.toContain("secret.internal");
+    expect(JSON.stringify(body)).not.toContain("relation");
+  });
 });

@@ -8,7 +8,10 @@ import {
   clearDispatcherExecutionFailureAlert,
   notifyDispatcherExecutionFailure,
 } from "@/lib/partner/webhooks/webhookAlerts";
-import { classifyDispatcherError } from "@/lib/partner/webhooks/webhookDispatchError";
+import {
+  classifyDispatcherError,
+  logSafeOperationalError,
+} from "@/lib/partner/webhooks/webhookDispatchError";
 import { recordWebhookDispatchRun } from "@/lib/partner/webhooks/webhookDispatchHealth";
 import { processWebhookOutboxBatch } from "@/lib/partner/webhooks/webhookDelivery";
 
@@ -18,10 +21,7 @@ async function runAlertStep(step: () => Promise<void>): Promise<void> {
   try {
     await step();
   } catch (err) {
-    console.error(
-      "[partner-webhook-dispatch] alert step failed",
-      err instanceof Error ? err.message : err,
-    );
+    logSafeOperationalError("partner-webhook-dispatch.alert_step", err);
   }
 }
 

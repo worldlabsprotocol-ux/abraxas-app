@@ -20,7 +20,7 @@ Apply manually in order:
 | `PARTNER_WEBHOOK_ALERTS_ENABLED` | Set to `true` (trimmed exact string, server-only) to enable operational email alerts. Requires `RESEND_API_KEY`, `EMAIL_FROM`, and `ABRAXAS_ADMIN_EMAILS`. Never use `NEXT_PUBLIC_` variables. |
 | `RESEND_API_KEY` | Resend API key for operational alert emails (server-only). |
 | `EMAIL_FROM` | Verified Resend sender address for alert emails (server-only). |
-| `ABRAXAS_ADMIN_EMAILS` | Comma-separated admin recipient emails for operational alerts (server-only). |
+| `ABRAXAS_ADMIN_EMAILS` | Comma-separated admin recipient emails for operational alerts (server-only). Required — no `ADMIN_EMAIL` fallback. |
 | `REQUIRE_PARTNER_API_KEY` | When `true`, partner delivery history requires API key |
 
 ## Event types
