@@ -5,7 +5,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  LIVE_PARTNER_NETWORK_CARDS,
+  PARTNER_NETWORK_CARDS,
   PARTNER_NETWORK_SUBTITLE,
   PARTNER_NETWORK_TITLE,
   partnerNetworkStatusEmoji,
@@ -86,7 +86,7 @@ export function HomePartnerNetwork() {
       </div>
 
       <div className="abx-partner-network-grid">
-        {LIVE_PARTNER_NETWORK_CARDS.map((card) => (
+        {PARTNER_NETWORK_CARDS.map((card) => (
           <PartnerCard key={card.id} card={card} />
         ))}
       </div>

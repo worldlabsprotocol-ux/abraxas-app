@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-08-10T15:08:56.901Z",
+  "updatedAt": "2026-08-10T15:34:39.042Z",
   "files": {
-    "components/redesign/RedesignHome.tsx": "cde88a97ee3ecf60234c6787acb71bea16486c449e3a1e2e66a383b81a3ae85c",
+    "components/redesign/RedesignHome.tsx": "3e4fa34fbfd429bf4b7e327716b2cde816fbc62c000726237714b101d3564915",
     "components/redesign/AbraxasBootScreen.tsx": "360bd44557e8b9b126d045e7f9189b78ff4d4b01051e233484155e20379a6c7a",
     "components/home/HomeSharpHero.tsx": "193713ea2234e21c2c4e30479ac1c77de31ef0490e5bd8d08e7b7c64834d89d0",
     "components/home/HomeProtocolInAction.tsx": "385b45b667a70550752015fbb41f4f7b6d68dbede8c0ac3362a1ffac469283a7",
-    "components/home/HomePartnerNetwork.tsx": "d0454429a3b0e04ec89f13f34c006caedd5bbabe5f75c33b57547b32c4363083",
+    "components/home/HomePartnerNetwork.tsx": "e355f5a1c0615b3afb42299178f4e7d1d3e4abd394bf8d1242c61355356e7b3e",
     "components/home/HomeWhyAbraxas.tsx": "dbbdd393551b7d76523a5129938df98d0a2d7f30b191b26642d1f2e6a7b7ad2b",
     "components/home/HomeVerifyOnceDiagram.tsx": "5354960db6ee5e358fd142aabc733b8c3c2d98be1cbce73e66f7db5f97d76188",
     "components/home/HomeVerificationPipeline.tsx": "f2e9fa4d0f9d93cb466035486fc675a6788d004edff939305b8dfd1dded2804a",
