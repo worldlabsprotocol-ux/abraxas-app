@@ -7,7 +7,6 @@ import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { useZkLoginSignInChooserOptional } from "@/components/sui/ZkLoginSignInChooserProvider";
 import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
 import {
-  MARKETING_HERO_PILLARS_LINE,
   MARKETING_HERO_SUPPORTING,
   MARKETING_HERO_TAGLINE,
   MARKETING_HERO_TAGLINE_CLOSER,
@@ -32,7 +31,7 @@ export function HomeSharpHero() {
       }}
     >
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
-        Reusable identity · eligibility infrastructure
+        What is Abraxas?
       </div>
 
       <h1
@@ -75,19 +74,6 @@ export function HomeSharpHero() {
         }}
       >
         {MARKETING_HERO_SUPPORTING}
-      </p>
-      <p
-        style={{
-          fontFamily: FONT,
-          fontSize: "clamp(0.92rem, 2.2vw, 1.02rem)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          margin: "0 auto 1.25rem",
-          lineHeight: 1.45,
-          maxWidth: 640,
-        }}
-      >
-        {MARKETING_HERO_PILLARS_LINE}
       </p>
 
       <div className="abx-home-hero-actions">

@@ -33,7 +33,7 @@ export const MARKETING_HERO_TAGLINE_CLOSER = "Reveal nothing else.";
 
 /** Homepage hero supporting copy. */
 export const MARKETING_HERO_SUPPORTING =
-  "Abraxas lets a person verify once and gives approved partners signed answers to specific eligibility questions—without receiving the complete identity profile or collecting the same documents again.";
+  "Abraxas lets a person verify once and gives approved partners signed answers to specific eligibility questions—without handing every platform their complete identity profile or repeatedly uploading the same documents.";
 
 /** Homepage hero pillars line. */
 export const MARKETING_HERO_PILLARS_LINE =

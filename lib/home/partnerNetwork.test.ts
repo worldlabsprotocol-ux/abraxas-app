@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   DESIGN_PARTNER_NETWORK_CARDS,
   GOOD_TROUBLE_PARTNER_IMAGE,
+  HOMEPAGE_PARTNER_INTEGRATION_CARDS,
   INTEGRATION_PARTNER_NETWORK_CARDS,
   PARTNER_NETWORK_CARDS,
   PREMIERE_PARTNER_IMAGE,
@@ -45,20 +46,25 @@ describe("partnerNetwork", () => {
     );
   });
 
-  it("uses script logo for Good Trouble in Partner Network", () => {
+  it("exposes homepage integration cards without design-partner brand wall", () => {
+    expect(HOMEPAGE_PARTNER_INTEGRATION_CARDS.map((c) => c.id)).toEqual(["good-trouble"]);
+    expect(HOMEPAGE_PARTNER_INTEGRATION_CARDS.every((c) => !c.image)).toBe(true);
+  });
+
+  it("uses script logo for Good Trouble in full partner registry", () => {
     const premiere = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "premiere");
     const smakd = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "smakd");
     const gt = INTEGRATION_PARTNER_NETWORK_CARDS[0];
     expect(premiere?.image?.src).toBe(PREMIERE_PARTNER_IMAGE.src);
     expect(smakd?.image?.src).toBe(SMAKD_PARTNER_IMAGE.src);
-    expect(gt?.image?.src).toBe(GOOD_TROUBLE_PARTNER_IMAGE.src);
+    expect(gt?.image).toBeUndefined();
     expect(GOOD_TROUBLE_PARTNER_IMAGE.src).toContain("good-trouble/brand-logo");
     expect(PREMIERE_PARTNER_IMAGE.src).toMatch(/premiere-lookbook-cover/);
     expect(SMAKD_PARTNER_IMAGE.src).toMatch(/smakd-brand-lifestyle/);
   });
 
-  it("fills Good Trouble Partner Network card with cover + brand orange field", () => {
-    expect(INTEGRATION_PARTNER_NETWORK_CARDS[0]?.image?.fit).toBe("cover");
-    expect(INTEGRATION_PARTNER_NETWORK_CARDS[0]?.image?.mediaBackground).toBe("#c45c2a");
+  it("keeps Good Trouble registry image available outside homepage cards", () => {
+    expect(GOOD_TROUBLE_PARTNER_IMAGE.fit).toBe("cover");
+    expect(GOOD_TROUBLE_PARTNER_IMAGE.mediaBackground).toBe("#c45c2a");
   });
 });

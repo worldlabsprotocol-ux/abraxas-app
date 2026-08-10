@@ -57,7 +57,6 @@ export const INTEGRATION_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
     description:
       "Integration in development for reusable age-verification workflows through Abraxas Passport.",
     href: "/good-trouble",
-    image: GOOD_TROUBLE_PARTNER_IMAGE,
   },
 ];
 
@@ -84,6 +83,9 @@ export const PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
   ...INTEGRATION_PARTNER_NETWORK_CARDS,
   ...DESIGN_PARTNER_NETWORK_CARDS,
 ];
+
+/** Cards shown on the public homepage — integration partners only (no design-partner brand wall). */
+export const HOMEPAGE_PARTNER_INTEGRATION_CARDS = INTEGRATION_PARTNER_NETWORK_CARDS;
 
 /** @deprecated Use INTEGRATION_PARTNER_NETWORK_CARDS */
 export const LIVE_PARTNER_NETWORK_CARDS = INTEGRATION_PARTNER_NETWORK_CARDS;

@@ -22,7 +22,7 @@ export function HomeRegulatedIndustries() {
           margin: "0 0 0.5rem",
         }}
       >
-        Designed for permissioned applications
+        Commercial use cases
       </h2>
       <p className="abx-home-section-lead">
         The same eligibility layer supports age-gated commerce, gaming, financial products,
