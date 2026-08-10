@@ -18,10 +18,10 @@ export const ABRAXAS_PRODUCT =
 export const ABRAXAS_EMOTION_HEADLINE = "Stop proving your assets over and over.";
 
 /** Homepage layer 2. mechanism (marketing: simple). */
-export const ABRAXAS_MECHANISM = "One verification. Every application.";
+export const ABRAXAS_MECHANISM = "Verify once. Prove what matters.";
 
 /** Homepage layer 3. tagline / payoff. */
-export const ABRAXAS_HEADLINE = "Verify once. Transact everywhere.";
+export const ABRAXAS_HEADLINE = "Verify once. Prove what matters.";
 
 /** @deprecated Use ABRAXAS_EMOTION_HEADLINE + layers on marketing surfaces. */
 export const ABRAXAS_TAGLINE = ABRAXAS_HEADLINE;

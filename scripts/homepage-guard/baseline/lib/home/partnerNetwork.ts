@@ -1,7 +1,7 @@
 // FILE: lib/home/partnerNetwork.ts
 // Partner Network section — live implementations vs design partners (separate from Protocol in Action).
 
-export type PartnerNetworkStatus = "live" | "design_partner";
+export type PartnerNetworkStatus = "integration_in_development" | "design_partner";
 
 export interface PartnerNetworkImage {
   src: string;
@@ -49,13 +49,13 @@ export const SMAKD_PARTNER_IMAGE: PartnerNetworkImage = {
   objectPosition: "center 35%",
 };
 
-export const LIVE_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
+export const INTEGRATION_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
   {
     id: "good-trouble",
     name: "Good Trouble",
-    status: "live",
+    status: "integration_in_development",
     description:
-      "First relying party demonstrating reusable age verification through Abraxas Passport.",
+      "Integration in development for reusable age-verification workflows through Abraxas Passport.",
     href: "/good-trouble",
     image: GOOD_TROUBLE_PARTNER_IMAGE,
   },
@@ -81,14 +81,35 @@ export const DESIGN_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
 ];
 
 export const PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
-  ...LIVE_PARTNER_NETWORK_CARDS,
+  ...INTEGRATION_PARTNER_NETWORK_CARDS,
   ...DESIGN_PARTNER_NETWORK_CARDS,
 ];
 
+/** @deprecated Use INTEGRATION_PARTNER_NETWORK_CARDS */
+export const LIVE_PARTNER_NETWORK_CARDS = INTEGRATION_PARTNER_NETWORK_CARDS;
+
 export function partnerNetworkStatusLabel(status: PartnerNetworkStatus): string {
-  return status === "live" ? "Live" : "Design Partner";
+  switch (status) {
+    case "integration_in_development":
+      return "Integration in development";
+    case "design_partner":
+      return "Design Partner";
+    default: {
+      const _exhaustive: never = status;
+      throw new Error(`Unsupported partner network status: ${_exhaustive}`);
+    }
+  }
 }
 
 export function partnerNetworkStatusEmoji(status: PartnerNetworkStatus): string {
-  return status === "live" ? "🟢" : "🟡";
+  switch (status) {
+    case "integration_in_development":
+      return "🟡";
+    case "design_partner":
+      return "🟡";
+    default: {
+      const _exhaustive: never = status;
+      throw new Error(`Unsupported partner network status: ${_exhaustive}`);
+    }
+  }
 }

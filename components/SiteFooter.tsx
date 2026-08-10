@@ -115,7 +115,7 @@ export function SiteFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. Sui-native verification for real-world assets.
+              Verify once. Prove what matters. Reusable identity and signed eligibility outcomes for approved partners.
             </p>
             <p style={{
               fontFamily: S,

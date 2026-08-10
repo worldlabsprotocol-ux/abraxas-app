@@ -298,7 +298,7 @@ export function AbraxasPassport({
                   letterSpacing: "-0.03em", margin: "0 0 0.625rem",
                 }}>
                   Verify once.<br />
-                  <span style={{ color: ACCENT }}>Transact everywhere.</span>
+                  <span style={{ color: ACCENT }}>Prove what matters.</span>
                 </h2>
                 <p style={{
                   fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)",

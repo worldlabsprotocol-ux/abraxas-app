@@ -124,6 +124,33 @@
   justify-content: center;
   margin-bottom: 0.5rem;
 }
+.abx-home-use-case-grid {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 540px) {
+  .abx-home-use-case-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .abx-home-use-case-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .abx-home-use-case-grid > * {
+    grid-column: span 2;
+  }
+  .abx-home-use-case-grid > :nth-child(4) {
+    grid-column: 2 / span 2;
+  }
+  .abx-home-use-case-grid > :nth-child(5) {
+    grid-column: 4 / span 2;
+  }
+}
 
 /* Partner Network — protocol participants, not sponsor logos */
 .abx-partner-network {

@@ -22,14 +22,15 @@ export function HomeRegulatedIndustries() {
           margin: "0 0 0.5rem",
         }}
       >
-        Built for regulated industries
+        Designed for permissioned applications
       </h2>
       <p className="abx-home-section-lead">
-        The same verification layer solves different regulatory problems: age eligibility, property
-        ownership, wallet identity, and financial compliance.
+        The same eligibility layer supports age-gated commerce, gaming, financial products,
+        tokenized assets, and digital marketplaces—without each partner collecting a complete
+        identity profile again.
       </p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", maxWidth: 960, margin: "0 auto", width: "100%" }}>
+      <div className="abx-home-use-case-grid">
         {REGULATED_INDUSTRY_PILLARS.map((item) => (
           <article
             key={item.id}

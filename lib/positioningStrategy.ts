@@ -23,10 +23,33 @@ export const COMPANY_MISSION = ABRAXAS_CATEGORY;
 export const MERCHANT_PRODUCT_PITCH = "Never build verification again.";
 
 /** Mechanism tagline. How it works for users. */
-export const MECHANISM_TAGLINE = "Verify once. Reuse everywhere.";
+export const MECHANISM_TAGLINE = "Verify once. Prove what matters.";
 
-/** Homepage hero. Protocol surface; mechanism variant in MECHANISM_TAGLINE. */
-export const MARKETING_HERO_TAGLINE = "Verify once. Transact everywhere.";
+/** Homepage hero primary line. */
+export const MARKETING_HERO_TAGLINE = "Verify once. Prove what matters.";
+
+/** Homepage hero closer — canonical positioning (paired with MARKETING_HERO_TAGLINE). */
+export const MARKETING_HERO_TAGLINE_CLOSER = "Reveal nothing else.";
+
+/** Homepage hero supporting copy. */
+export const MARKETING_HERO_SUPPORTING =
+  "Abraxas lets a person verify once and gives approved partners signed answers to specific eligibility questions—without receiving the complete identity profile or collecting the same documents again.";
+
+/** Homepage hero pillars line. */
+export const MARKETING_HERO_PILLARS_LINE =
+  "Reusable identity. Minimum necessary disclosure. Verifiable outcomes.";
+
+/** Core product explanation — public messaging foundation. */
+export const ABRAXAS_CORE_EXPLANATION =
+  "Abraxas allows a person to verify once and lets approved partners request specific eligibility decisions. Partners receive signed, independently verifiable outcomes without receiving the person's complete identity profile or repeatedly collecting identity documents.";
+
+/** Example policy question for product explanation. */
+export const ABRAXAS_POLICY_QUESTION_EXAMPLE =
+  "Is this person verified, over 21, eligible in this jurisdiction, and currently authorized?";
+
+/** Partner-facing integrate page lead. */
+export const INTEGRATE_PAGE_LEAD =
+  "Designed to reduce repeated identity collection while delivering signed, revocable eligibility decisions that integrate with existing applications.";
 
 /** Every business asks this. Identity is one input. */
 export const TRUST_DECISION_QUESTION = "Can I trust this user enough to do X?";

@@ -7,7 +7,7 @@ export const ABRAXAS_INFRA_EMOTION = "Stop proving your assets over and over.";
 
 export const ABRAXAS_INFRA_MECHANISM = "One verification. Unlimited applications.";
 
-export const ABRAXAS_INFRA_HEADLINE = "Verify once. Transact everywhere.";
+export const ABRAXAS_INFRA_HEADLINE = "Verify once. Prove what matters.";
 
 export const ABRAXAS_INFRA_NARRATIVE =
   "Every RWA app and asset tokenization platform rebuilds trust from scratch. Abraxas is the verification infrastructure that makes proof portable.";

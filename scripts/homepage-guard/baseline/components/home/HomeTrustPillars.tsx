@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeTrustPillars.tsx
-// Four protocol pillars introduced after the problem statement.
+// Three product pillars — reusable identity, policy-based proof, verifiable outcomes.
 
 import Link from "next/link";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
@@ -9,28 +9,22 @@ const FONT = ABRAXAS_FONT_SANS;
 
 const PILLARS = [
   {
-    title: "Passport",
+    title: "Reusable identity",
     href: "/passport",
-    summary: "Sign in once. Wallet and identity anchor created automatically.",
+    summary: "Verify once and reuse an Abraxas Passport across approved applications.",
     accent: "#10B981",
   },
   {
-    title: "Biometrics",
-    href: "/passport",
-    summary: "Government ID, selfie, fraud screening, and human review when needed.",
+    title: "Policy-based proof",
+    href: "/docs/partner-flow",
+    summary: "Partners ask specific eligibility questions instead of requesting an entire identity profile.",
     accent: "#A78BFA",
   },
   {
-    title: "Trust Registry",
+    title: "Verifiable outcomes",
     href: "/docs/credential-portability",
-    summary: "Reusable credentials partners can verify without asking users to upload documents again.",
+    summary: "Signed receipts can be independently checked, metered, expired, audited, and revoked.",
     accent: "#38BDF8",
-  },
-  {
-    title: "Assets",
-    href: "/build",
-    summary: "Tokenization workflow with compliance gates and due diligence stages.",
-    accent: "#F59E0B",
   },
 ] as const;
 
@@ -42,10 +36,10 @@ export function HomeTrustPillars() {
         fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
         letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.45rem",
       }}>
-        How Abraxas solves it
+        What Abraxas provides
       </h2>
       <p className="abx-home-section-lead">
-        Four pillars work together so verification happens once and trust travels with the user.
+        Designed for permissioned eligibility decisions—share only what a policy requires to answer.
       </p>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem", maxWidth: 960, margin: "0 auto", width: "100%" }}>

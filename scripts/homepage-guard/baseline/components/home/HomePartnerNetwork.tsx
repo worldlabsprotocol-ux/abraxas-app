@@ -14,11 +14,8 @@ import {
 } from "@/lib/home/partnerNetwork";
 
 function StatusBadge({ status }: { status: PartnerNetworkCard["status"] }) {
-  const isLive = status === "live";
   return (
-    <span
-      className={`abx-partner-network-badge${isLive ? " abx-partner-network-badge--live" : " abx-partner-network-badge--design"}`}
-    >
+    <span className="abx-partner-network-badge abx-partner-network-badge--design">
       <span aria-hidden="true">{partnerNetworkStatusEmoji(status)}</span>
       {partnerNetworkStatusLabel(status)}
     </span>

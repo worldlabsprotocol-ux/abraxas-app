@@ -1,9 +1,9 @@
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Integrate RWA Infrastructure | Asset Tokenization Platform. Abraxas",
+  title: "Build with Abraxas | Integrate eligibility infrastructure",
   description:
-    "Embed reusable verification for tokenization companies. RWA infrastructure, digital asset verification, and RWA compliance without rebuilding KYC on every asset tokenization platform.",
+    "Designed to reduce repeated identity collection. Integrate signed, revocable eligibility decisions with Partner Flow, APIs, and audit-ready receipts.",
   path: "/integrate",
 });
 

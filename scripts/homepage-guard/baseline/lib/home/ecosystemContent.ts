@@ -42,10 +42,11 @@ export const WITH_ABRAXAS_INDUSTRIES: IndustryCard[] = [
 ];
 
 export const REGULATED_INDUSTRY_PILLARS = [
-  { id: "cannabis", title: "Cannabis", summary: "21+ eligibility and identity" },
-  { id: "real-estate", title: "Real Estate", summary: "Ownership and property verification" },
-  { id: "digital-assets", title: "Digital Assets", summary: "Wallet-linked credentials" },
-  { id: "finance", title: "Financial Services", summary: "Reusable compliance" },
+  { id: "age-gated", title: "Age-gated commerce", summary: "Signed age and eligibility answers designed for gated checkout" },
+  { id: "gaming", title: "Gaming and wagering", summary: "Jurisdiction and age policy checks at decision time" },
+  { id: "finance", title: "Financial applications", summary: "Reusable eligibility proof for onboarding and access" },
+  { id: "rwa", title: "Tokenized real-world assets", summary: "Ownership and eligibility proof for asset workflows" },
+  { id: "marketplaces", title: "Digital marketplaces", summary: "Permissioned access with minimum necessary disclosure" },
 ] as const;
 
 export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [

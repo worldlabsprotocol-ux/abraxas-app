@@ -1,9 +1,9 @@
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Abraxas Passport | Reusable Verification for Real-World Assets",
+  title: "Abraxas Passport | Verify once. Prove what matters.",
   description:
-    "Verify once for tokenized real-world assets. digital asset verification, blockchain verification, and portable proof for institutional RWA workflows.",
+    "Verify once and receive a reusable Abraxas Passport. Share signed eligibility outcomes with approved partners—designed for minimum necessary disclosure.",
   path: "/passport",
 });
 

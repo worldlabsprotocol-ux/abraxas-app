@@ -24,7 +24,8 @@ import {
   ABRAXAS_CATEGORY,
   COMPANY_MISSION_LONG_TERM,
   ABRAXAS_ICONIC_LINE,
-  MERCHANT_PRODUCT_PITCH,
+  INTEGRATE_PAGE_LEAD,
+  MARKETING_HERO_TAGLINE,
   WHY_INTEGRATE_ABRAXAS,
   FIRST_WEDGE_FOCUS,
 } from "@/lib/positioningStrategy";
@@ -49,8 +50,8 @@ export default function IntegratePage() {
     <RedesignPage maxWidth={880}>
       <PageHeader
         eyebrow={ABRAXAS_CATEGORY}
-        title={MERCHANT_PRODUCT_PITCH}
-        subtitle={`${ABRAXAS_ICONIC_LINE} Add trusted eligibility in minutes, not months. One API call instead of building identity, age verification, fraud, review queues, and audit logs.`}
+        title={MARKETING_HERO_TAGLINE}
+        subtitle={`${INTEGRATE_PAGE_LEAD} ${ABRAXAS_ICONIC_LINE}`}
       />
 
       <p style={{

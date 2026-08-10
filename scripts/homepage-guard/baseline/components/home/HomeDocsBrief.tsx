@@ -41,8 +41,9 @@ export function HomeDocsBrief() {
           </Link>
         ))}
       </div>
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <Btn href="/docs" variant="secondary" size="sm">Read documentation</Btn>
+        <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow</Btn>
       </div>
     </section>
   );

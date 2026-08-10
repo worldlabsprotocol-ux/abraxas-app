@@ -6,6 +6,12 @@ import { Btn } from "@/components/redesign/ui";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { useZkLoginSignInChooserOptional } from "@/components/sui/ZkLoginSignInChooserProvider";
 import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
+import {
+  MARKETING_HERO_PILLARS_LINE,
+  MARKETING_HERO_SUPPORTING,
+  MARKETING_HERO_TAGLINE,
+  MARKETING_HERO_TAGLINE_CLOSER,
+} from "@/lib/positioningStrategy";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -26,7 +32,7 @@ export function HomeSharpHero() {
       }}
     >
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
-        Live protocol · not a waitlist
+        Reusable identity · eligibility infrastructure
       </div>
 
       <h1
@@ -38,11 +44,24 @@ export function HomeSharpHero() {
           letterSpacing: "-0.045em",
           lineHeight: 1.02,
           color: "var(--text-primary)",
+          margin: "0 0 0.35rem",
+        }}
+      >
+        {MARKETING_HERO_TAGLINE}
+      </h1>
+
+      <p
+        style={{
+          fontFamily: ABRAXAS_FONT_DISPLAY,
+          fontSize: "clamp(1.1rem, 3vw, 1.35rem)",
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          color: "var(--accent)",
           margin: "0 0 0.85rem",
         }}
       >
-        Verify once. Transact everywhere.
-      </h1>
+        {MARKETING_HERO_TAGLINE_CLOSER}
+      </p>
 
       <p
         style={{
@@ -55,20 +74,20 @@ export function HomeSharpHero() {
           maxWidth: 640,
         }}
       >
-        Reusable identity infrastructure. Users verify once. Applications consume trusted credentials.
+        {MARKETING_HERO_SUPPORTING}
       </p>
       <p
         style={{
           fontFamily: FONT,
-          fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
-          fontWeight: 600,
+          fontSize: "clamp(0.92rem, 2.2vw, 1.02rem)",
+          fontWeight: 700,
           color: "var(--text-primary)",
           margin: "0 auto 1.25rem",
           lineHeight: 1.45,
           maxWidth: 640,
         }}
       >
-        Identity becomes portable instead of repetitive.
+        {MARKETING_HERO_PILLARS_LINE}
       </p>
 
       <div className="abx-home-hero-actions">
@@ -79,7 +98,7 @@ export function HomeSharpHero() {
         ) : (
           <Btn href="/passport" size="lg">Create Passport</Btn>
         )}
-        <Btn href="/integrate" variant="secondary" size="lg">Explore Protocol</Btn>
+        <Btn href="/integrate" variant="secondary" size="lg">Build with Abraxas</Btn>
       </div>
     </section>
   );

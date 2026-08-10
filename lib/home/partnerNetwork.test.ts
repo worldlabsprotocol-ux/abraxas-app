@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   DESIGN_PARTNER_NETWORK_CARDS,
   GOOD_TROUBLE_PARTNER_IMAGE,
-  LIVE_PARTNER_NETWORK_CARDS,
+  INTEGRATION_PARTNER_NETWORK_CARDS,
   PARTNER_NETWORK_CARDS,
   PREMIERE_PARTNER_IMAGE,
   SMAKD_PARTNER_IMAGE,
@@ -13,14 +13,16 @@ import {
 } from "./partnerNetwork";
 
 describe("partnerNetwork", () => {
-  it("keeps live and design partner lists separate", () => {
-    expect(LIVE_PARTNER_NETWORK_CARDS).toHaveLength(1);
+  it("keeps integration and design partner lists separate", () => {
+    expect(INTEGRATION_PARTNER_NETWORK_CARDS).toHaveLength(1);
     expect(DESIGN_PARTNER_NETWORK_CARDS).toHaveLength(2);
-    expect(LIVE_PARTNER_NETWORK_CARDS.every((c) => c.status === "live")).toBe(true);
+    expect(
+      INTEGRATION_PARTNER_NETWORK_CARDS.every((c) => c.status === "integration_in_development"),
+    ).toBe(true);
     expect(DESIGN_PARTNER_NETWORK_CARDS.every((c) => c.status === "design_partner")).toBe(true);
   });
 
-  it("orders cards as live first, then design partners", () => {
+  it("orders cards as integration first, then design partners", () => {
     expect(PARTNER_NETWORK_CARDS.map((c) => c.id)).toEqual([
       "good-trouble",
       "smakd",
@@ -28,17 +30,25 @@ describe("partnerNetwork", () => {
     ]);
   });
 
-  it("labels status accurately", () => {
-    expect(partnerNetworkStatusLabel("live")).toBe("Live");
+  it("labels status accurately with exhaustive mapping", () => {
+    expect(partnerNetworkStatusLabel("integration_in_development")).toBe(
+      "Integration in development",
+    );
     expect(partnerNetworkStatusLabel("design_partner")).toBe("Design Partner");
-    expect(partnerNetworkStatusEmoji("live")).toBe("🟢");
+    expect(partnerNetworkStatusEmoji("integration_in_development")).toBe("🟡");
     expect(partnerNetworkStatusEmoji("design_partner")).toBe("🟡");
+  });
+
+  it("describes Good Trouble integration honestly", () => {
+    expect(INTEGRATION_PARTNER_NETWORK_CARDS[0]?.description).toBe(
+      "Integration in development for reusable age-verification workflows through Abraxas Passport.",
+    );
   });
 
   it("uses script logo for Good Trouble in Partner Network", () => {
     const premiere = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "premiere");
     const smakd = DESIGN_PARTNER_NETWORK_CARDS.find((c) => c.id === "smakd");
-    const gt = LIVE_PARTNER_NETWORK_CARDS[0];
+    const gt = INTEGRATION_PARTNER_NETWORK_CARDS[0];
     expect(premiere?.image?.src).toBe(PREMIERE_PARTNER_IMAGE.src);
     expect(smakd?.image?.src).toBe(SMAKD_PARTNER_IMAGE.src);
     expect(gt?.image?.src).toBe(GOOD_TROUBLE_PARTNER_IMAGE.src);
@@ -48,7 +58,7 @@ describe("partnerNetwork", () => {
   });
 
   it("fills Good Trouble Partner Network card with cover + brand orange field", () => {
-    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image?.fit).toBe("cover");
-    expect(LIVE_PARTNER_NETWORK_CARDS[0]?.image?.mediaBackground).toBe("#c45c2a");
+    expect(INTEGRATION_PARTNER_NETWORK_CARDS[0]?.image?.fit).toBe("cover");
+    expect(INTEGRATION_PARTNER_NETWORK_CARDS[0]?.image?.mediaBackground).toBe("#c45c2a");
   });
 });

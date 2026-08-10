@@ -102,7 +102,7 @@ export function AbraxasBootScreen({ onReady }: { onReady?: (ready: boolean) => v
               lineHeight: 1.5,
               margin: "0 0 1.25rem",
             }}>
-              Reusable verification for regulated apps. Browse live proofs. No wallet required to explore.
+              Reusable identity and signed eligibility outcomes. Browse live proofs. No wallet required to explore.
             </p>
 
             <button

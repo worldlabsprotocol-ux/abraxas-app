@@ -19,10 +19,11 @@ describe("ecosystemContent", () => {
 
   it("includes regulated industry pillars", () => {
     expect(REGULATED_INDUSTRY_PILLARS.map((p) => p.title)).toEqual([
-      "Cannabis",
-      "Real Estate",
-      "Digital Assets",
-      "Financial Services",
+      "Age-gated commerce",
+      "Gaming and wagering",
+      "Financial applications",
+      "Tokenized real-world assets",
+      "Digital marketplaces",
     ]);
   });
 
