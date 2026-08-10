@@ -23,6 +23,8 @@ import {
   toDemoPublicReceiptView,
   type DemoPassportStatusView,
   type DemoPublicReceiptView,
+  type DemoEvaluationView,
+  type DemoCompletionView,
 } from "@/lib/demo/partnerSandboxDemoViews";
 
 function configuredSubjectId(): string {
@@ -47,15 +49,7 @@ export async function getPartnerSandboxDemoPassportStatus(): Promise<DemoPasspor
   });
 }
 
-export async function evaluatePartnerSandboxDemoPolicy(): Promise<{
-  partner_id: typeof DEMO_SANDBOX_PARTNER_ID;
-  policy_id: typeof DEMO_SANDBOX_POLICY_ID;
-  decision: string;
-  reason_codes: string[];
-  missing_claims: string[];
-  decision_context: string;
-  production_usable: boolean;
-}> {
+export async function evaluatePartnerSandboxDemoPolicy(): Promise<DemoEvaluationView> {
   const subjectId = configuredSubjectId();
   assertSandboxDemoPartnerPolicy({
     partnerId: DEMO_SANDBOX_PARTNER_ID,
@@ -79,14 +73,7 @@ export async function evaluatePartnerSandboxDemoPolicy(): Promise<{
   };
 }
 
-export async function completePartnerSandboxDemoReceipt(): Promise<{
-  partner_id: typeof DEMO_SANDBOX_PARTNER_ID;
-  policy_id: typeof DEMO_SANDBOX_POLICY_ID;
-  decision_id: string;
-  receipt_id: string;
-  replay_status: string;
-  decision: string;
-}> {
+export async function completePartnerSandboxDemoReceipt(): Promise<DemoCompletionView> {
   const subjectId = configuredSubjectId();
   assertSandboxDemoPartnerPolicy({
     partnerId: DEMO_SANDBOX_PARTNER_ID,

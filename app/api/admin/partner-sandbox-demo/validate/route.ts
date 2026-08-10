@@ -7,11 +7,17 @@ import {
   rejectClientSuppliedSubject,
   validateDemoReceiptId,
 } from "@/lib/demo/partnerSandboxDemoBoundaries";
+import {
+  classifyPartnerSandboxDemoError,
+  logPartnerSandboxDemoInternalError,
+} from "@/lib/demo/partnerSandboxDemoErrors";
 import { guardPartnerSandboxDemoRoute, partnerSandboxDemoJson } from "@/lib/demo/partnerSandboxDemoRouteGuard";
 import { validatePartnerSandboxDemoReceipt } from "@/lib/demo/partnerSandboxDemoService";
 import { demoViewHasNoForbiddenKeys } from "@/lib/demo/partnerSandboxDemoViews";
 
 export const dynamic = "force-dynamic";
+
+const OPERATION = "partner_sandbox_demo.validate";
 
 export async function GET(req: NextRequest) {
   const blocked = guardPartnerSandboxDemoRoute(req);
@@ -38,9 +44,11 @@ export async function GET(req: NextRequest) {
       policy_id: DEMO_SANDBOX_POLICY_ID,
       receipt,
     });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "validation_failed";
-    const status = msg.includes("not_allowed") || msg.includes("not_sandbox") ? 403 : 400;
-    return partnerSandboxDemoJson({ error: msg }, { status });
+  } catch (error: unknown) {
+    const classified = classifyPartnerSandboxDemoError(error);
+    if (classified.status === 500) {
+      logPartnerSandboxDemoInternalError(OPERATION, error);
+    }
+    return partnerSandboxDemoJson({ error: classified.error }, { status: classified.status });
   }
 }

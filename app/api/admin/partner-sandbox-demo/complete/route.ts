@@ -2,10 +2,23 @@
 
 import { NextRequest } from "next/server";
 import { rejectClientSuppliedSubject } from "@/lib/demo/partnerSandboxDemoBoundaries";
+import {
+  classifyPartnerSandboxDemoError,
+  logPartnerSandboxDemoInternalError,
+} from "@/lib/demo/partnerSandboxDemoErrors";
 import { guardPartnerSandboxDemoRoute, partnerSandboxDemoJson } from "@/lib/demo/partnerSandboxDemoRouteGuard";
 import { completePartnerSandboxDemoReceipt } from "@/lib/demo/partnerSandboxDemoService";
+import {
+  DEMO_COMPLETION_FIELDS,
+  demoResponseHasNoOperationalClaims,
+  demoViewHasNoForbiddenKeys,
+  demoViewHasOnlyAllowedKeys,
+  toDemoCompletionView,
+} from "@/lib/demo/partnerSandboxDemoViews";
 
 export const dynamic = "force-dynamic";
+
+const OPERATION = "partner_sandbox_demo.complete";
 
 export async function POST(req: NextRequest) {
   const blocked = guardPartnerSandboxDemoRoute(req);
@@ -22,11 +35,22 @@ export async function POST(req: NextRequest) {
       return partnerSandboxDemoJson({ error: "client_partner_policy_not_allowed" }, { status: 400 });
     }
 
-    const result = await completePartnerSandboxDemoReceipt();
-    return partnerSandboxDemoJson({ ok: true, issuance: result });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "issuance_failed";
-    const status = msg.includes("not_configured") ? 503 : 400;
-    return partnerSandboxDemoJson({ error: msg }, { status });
+    const issuance = toDemoCompletionView(await completePartnerSandboxDemoReceipt());
+    if (!demoViewHasOnlyAllowedKeys(issuance as unknown as Record<string, unknown>, DEMO_COMPLETION_FIELDS)) {
+      throw new Error("demo_completion_view_unsafe");
+    }
+    if (!demoViewHasNoForbiddenKeys(issuance as unknown as Record<string, unknown>)) {
+      throw new Error("demo_completion_view_unsafe");
+    }
+    if (!demoResponseHasNoOperationalClaims(issuance)) {
+      throw new Error("demo_completion_view_unsafe");
+    }
+    return partnerSandboxDemoJson({ ok: true, issuance });
+  } catch (error: unknown) {
+    const classified = classifyPartnerSandboxDemoError(error);
+    if (classified.status === 500) {
+      logPartnerSandboxDemoInternalError(OPERATION, error);
+    }
+    return partnerSandboxDemoJson({ error: classified.error }, { status: classified.status });
   }
 }

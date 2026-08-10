@@ -6,7 +6,8 @@ import {
   DEMO_SANDBOX_PARTNER_ID,
   DEMO_SANDBOX_POLICY_ID,
 } from "@/lib/demo/partnerSandboxDemoBoundaries";
-import { demoViewHasNoForbiddenKeys, demoResponseHasNoOperationalClaims } from "@/lib/demo/partnerSandboxDemoViews";
+import { demoViewHasNoForbiddenKeys, demoResponseHasNoOperationalClaims, DEMO_EVALUATION_FIELDS, DEMO_COMPLETION_FIELDS } from "@/lib/demo/partnerSandboxDemoViews";
+import { PARTNER_SANDBOX_DEMO_INTERNAL_ERROR } from "@/lib/demo/partnerSandboxDemoErrors";
 
 const checkAdminMock = vi.fn();
 const getPassportStatusMock = vi.fn();
@@ -33,6 +34,8 @@ import { GET as validateGET } from "@/app/api/admin/partner-sandbox-demo/validat
 const SUBJECT = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
 const RECEIPT_ID = "dr_sandbox_demo_receipt01";
 const ADMIN_PIN = "test-admin-pin";
+const SENSITIVE_ERROR =
+  "Supabase failed for subject 0x123 with postgres connection secret";
 
 function adminHeaders(extra: Record<string, string> = {}): Record<string, string> {
   return { "x-admin-pin": ADMIN_PIN, ...extra };
@@ -330,6 +333,150 @@ describe("partner sandbox demo API routes", () => {
     const body = await res.json();
     expect(body.error).toBe("partner_sandbox_demo_subject_not_configured");
     expect(JSON.stringify(body)).not.toMatch(/supabase|postgres|stack/i);
+  });
+
+  it.each([
+    ["status", () => getPassportStatusMock, () => statusGET(new NextRequest("http://localhost/api/admin/partner-sandbox-demo/status", { headers: adminHeaders() }))],
+    [
+      "evaluate",
+      () => evaluatePolicyMock,
+      () =>
+        evaluatePOST(
+          new NextRequest("http://localhost/api/admin/partner-sandbox-demo/evaluate", {
+            method: "POST",
+            headers: { ...adminHeaders(), "content-type": "application/json" },
+            body: JSON.stringify({}),
+          }),
+        ),
+    ],
+    [
+      "complete",
+      () => completeReceiptMock,
+      () =>
+        completePOST(
+          new NextRequest("http://localhost/api/admin/partner-sandbox-demo/complete", {
+            method: "POST",
+            headers: { ...adminHeaders(), "content-type": "application/json" },
+            body: JSON.stringify({}),
+          }),
+        ),
+    ],
+    [
+      "validate",
+      () => validateReceiptMock,
+      () =>
+        validateGET(
+          new NextRequest(
+            `http://localhost/api/admin/partner-sandbox-demo/validate?receipt_id=${RECEIPT_ID}`,
+            { headers: adminHeaders() },
+          ),
+        ),
+    ],
+  ])("%s hides sensitive internal errors", async (_name, getMock, callRoute) => {
+    getMock().mockRejectedValue(new Error(SENSITIVE_ERROR));
+    const res = await callRoute();
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe(PARTNER_SANDBOX_DEMO_INTERNAL_ERROR);
+    const serialized = JSON.stringify(body);
+    expect(serialized).not.toMatch(/supabase/i);
+    expect(serialized).not.toMatch(/postgres/i);
+    expect(serialized).not.toContain("0x123");
+    expect(serialized).not.toContain("secret");
+    expect(serialized).not.toContain(SENSITIVE_ERROR);
+  });
+
+  it("evaluate strips extra fields from service response", async () => {
+    evaluatePolicyMock.mockResolvedValue({
+      partner_id: DEMO_SANDBOX_PARTNER_ID,
+      policy_id: DEMO_SANDBOX_POLICY_ID,
+      decision: "approved",
+      reason_codes: [],
+      missing_claims: [],
+      decision_context: "sandbox_only",
+      production_usable: false,
+      subject_id: SUBJECT,
+      api_key: "secret-key",
+    });
+    const res = await evaluatePOST(
+      new NextRequest("http://localhost/api/admin/partner-sandbox-demo/evaluate", {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({}),
+      }),
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(Object.keys(body.evaluation).sort()).toEqual([...DEMO_EVALUATION_FIELDS].sort());
+    expect(JSON.stringify(body)).not.toContain(SUBJECT);
+    expect(JSON.stringify(body)).not.toContain("secret-key");
+  });
+
+  it("complete strips extra fields from service response", async () => {
+    completeReceiptMock.mockResolvedValue({
+      partner_id: DEMO_SANDBOX_PARTNER_ID,
+      policy_id: DEMO_SANDBOX_POLICY_ID,
+      decision_id: "dec-demo",
+      receipt_id: RECEIPT_ID,
+      replay_status: "issued",
+      decision: "approved",
+      webhook: { enqueued: true },
+      metering: { recorded: true },
+    });
+    const res = await completePOST(
+      new NextRequest("http://localhost/api/admin/partner-sandbox-demo/complete", {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({}),
+      }),
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(Object.keys(body.issuance).sort()).toEqual([...DEMO_COMPLETION_FIELDS].sort());
+    expect(body.issuance).not.toHaveProperty("webhook");
+    expect(body.issuance).not.toHaveProperty("metering");
+  });
+
+  it.each([
+    { route: "status", code: "partner_sandbox_demo_subject_not_configured", status: 503, call: () => {
+      getPassportStatusMock.mockRejectedValue(new Error("partner_sandbox_demo_subject_not_configured"));
+      return statusGET(new NextRequest("http://localhost/api/admin/partner-sandbox-demo/status", { headers: adminHeaders() }));
+    }},
+    { route: "evaluate", code: "demo_partner_not_allowed", status: 403, call: () => {
+      evaluatePolicyMock.mockRejectedValue(new Error("demo_partner_not_allowed"));
+      return evaluatePOST(new NextRequest("http://localhost/api/admin/partner-sandbox-demo/evaluate", {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({}),
+      }));
+    }},
+    { route: "complete", code: "demo_credential_not_active", status: 400, call: () => {
+      completeReceiptMock.mockRejectedValue(new Error("demo_credential_not_active"));
+      return completePOST(new NextRequest("http://localhost/api/admin/partner-sandbox-demo/complete", {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({}),
+      }));
+    }},
+    { route: "complete", code: "demo_receipt_not_found", status: 404, call: () => {
+      completeReceiptMock.mockRejectedValue(new Error("demo_receipt_not_found"));
+      return completePOST(new NextRequest("http://localhost/api/admin/partner-sandbox-demo/complete", {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({}),
+      }));
+    }},
+    { route: "validate", code: "demo_public_receipt_unavailable", status: 503, call: () => {
+      validateReceiptMock.mockRejectedValue(new Error("demo_public_receipt_unavailable"));
+      return validateGET(new NextRequest(
+        `http://localhost/api/admin/partner-sandbox-demo/validate?receipt_id=${RECEIPT_ID}`,
+        { headers: adminHeaders() },
+      ));
+    }},
+  ])("$route returns recognized code $code with HTTP $status", async ({ code, status, call }) => {
+    const res = await call();
+    expect(res.status).toBe(status);
+    expect((await res.json()).error).toBe(code);
   });
 
   it("complete response contains no operational success claims", async () => {

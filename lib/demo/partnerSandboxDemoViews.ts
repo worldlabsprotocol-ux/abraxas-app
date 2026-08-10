@@ -22,6 +22,25 @@ export const DEMO_PUBLIC_RECEIPT_FIELDS = [
   "invalidation_reasons",
 ] as const;
 
+export const DEMO_EVALUATION_FIELDS = [
+  "partner_id",
+  "policy_id",
+  "decision",
+  "reason_codes",
+  "missing_claims",
+  "decision_context",
+  "production_usable",
+] as const;
+
+export const DEMO_COMPLETION_FIELDS = [
+  "partner_id",
+  "policy_id",
+  "decision_id",
+  "receipt_id",
+  "replay_status",
+  "decision",
+] as const;
+
 export type DemoPassportStatusView = {
   label: string;
   credential_status: string;
@@ -41,6 +60,25 @@ export type DemoPublicReceiptView = Pick<
   | "currently_valid"
   | "invalidation_reasons"
 >;
+
+export type DemoEvaluationView = {
+  partner_id: string;
+  policy_id: string;
+  decision: string;
+  reason_codes: string[];
+  missing_claims: string[];
+  decision_context: string;
+  production_usable: boolean;
+};
+
+export type DemoCompletionView = {
+  partner_id: string;
+  policy_id: string;
+  decision_id: string;
+  receipt_id: string;
+  replay_status: string;
+  decision: string;
+};
 
 const REQUIRED_SANDBOX_CLAIM_TYPES = [
   "identity_verified",
@@ -75,6 +113,37 @@ export function toDemoPublicReceiptView(view: PublicReceiptLiveTrustView): DemoP
     currently_valid: view.currently_valid ?? false,
     invalidation_reasons: view.invalidation_reasons ?? [],
   };
+}
+
+export function toDemoEvaluationView(input: DemoEvaluationView): DemoEvaluationView {
+  return {
+    partner_id: input.partner_id,
+    policy_id: input.policy_id,
+    decision: input.decision,
+    reason_codes: [...input.reason_codes],
+    missing_claims: [...input.missing_claims],
+    decision_context: input.decision_context,
+    production_usable: input.production_usable,
+  };
+}
+
+export function toDemoCompletionView(input: DemoCompletionView): DemoCompletionView {
+  return {
+    partner_id: input.partner_id,
+    policy_id: input.policy_id,
+    decision_id: input.decision_id,
+    receipt_id: input.receipt_id,
+    replay_status: input.replay_status,
+    decision: input.decision,
+  };
+}
+
+export function demoViewHasOnlyAllowedKeys(
+  payload: Record<string, unknown>,
+  allowed: readonly string[],
+): boolean {
+  const keys = Object.keys(payload).sort();
+  return keys.length === allowed.length && keys.every((key, index) => key === [...allowed].sort()[index]);
 }
 
 export function demoViewHasNoForbiddenKeys(payload: Record<string, unknown>): boolean {
