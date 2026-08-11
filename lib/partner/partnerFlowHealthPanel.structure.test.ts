@@ -14,8 +14,8 @@ function read(rel: string): string {
 describe("PartnerFlowHealthPanel operator UX structure", () => {
   it("uses plain-language protection labels in the view model", () => {
     const vm = read("lib/partner/partnerFlowHealthViewModel.ts");
-    expect(vm).toContain("Protection active");
-    expect(vm).toContain("Basic protection");
+    expect(vm).toContain("Network-wide protection active");
+    expect(vm).toContain("Basic per-instance protection active");
     expect(vm).toContain("Network-wide protection not enabled");
     expect(vm).toContain("No activity yet");
   });
@@ -52,7 +52,9 @@ describe("PartnerFlowHealthPanel operator UX structure", () => {
 
   it("explains yellow banner is not a failure", () => {
     const vm = read("lib/partner/partnerFlowHealthViewModel.ts");
-    expect(vm).toMatch(/not a failure/i);
+    expect(vm).toMatch(/protection configuration warning/i);
     expect(vm).toMatch(/not an outage/i);
+    expect(vm).toMatch(/limits are not yet shared/i);
+    expect(vm).toMatch(/network-wide protection/i);
   });
 });

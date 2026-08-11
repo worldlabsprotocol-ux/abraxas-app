@@ -112,7 +112,7 @@ export function buildMetricCards(
 export function buildProtectionStatus(rateLimit: RateLimitInfo): ProtectionStatusView {
   const yellowBannerTitle = "Network-wide protection not enabled";
   const yellowBannerBody =
-    "This is not a failure. Rate limits are working on each server, but limits are not yet shared across all Vercel instances. "
+    "This is a protection configuration warning, not an outage. Rate limits are working on each server, but limits are not yet shared across all Vercel instances. "
     + "A busy partner could still send more traffic than intended until network-wide protection is configured.";
 
   if (!rateLimit.enabled) {

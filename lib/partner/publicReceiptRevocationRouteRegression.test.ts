@@ -22,6 +22,7 @@ const NOW = new Date("2026-01-01T00:00:00.000Z");
 
 const rpcMock = vi.fn();
 const fromMock = vi.fn();
+let decisionReceiptsInMock: ReturnType<typeof vi.fn>;
 
 let receiptRecord: DecisionReceiptRecord;
 const claimStatuses = new Map<string, string>();
@@ -111,17 +112,30 @@ function mapReceiptRow(record: DecisionReceiptRecord) {
 }
 
 function installSupabaseMocks() {
+  decisionReceiptsInMock = vi.fn().mockImplementation(async (_col: string, ids: string[]) => ({
+    data: ids.map(id => ({
+      id,
+      partner_id: receiptRecord.partner_id,
+      policy_id: receiptRecord.policy_id,
+      verification_decision_id: receiptRecord.verification_decision_id,
+    })),
+    error: null,
+  }));
+
   fromMock.mockImplementation((table: string) => {
     if (table === "decision_receipts") {
-      return {
-        select: vi.fn().mockReturnThis(),
+      const selectChain = {
         eq: vi.fn().mockReturnThis(),
         maybeSingle: vi.fn().mockImplementation(async () => ({
           data: mapReceiptRow(receiptRecord),
           error: null,
         })),
+        in: decisionReceiptsInMock,
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+      return {
+        select: vi.fn().mockReturnValue(selectChain),
       };
     }
     if (table === "credential_claims") {
@@ -238,6 +252,10 @@ describe("GET /api/receipts/{id}/public — revocation regression", () => {
     });
     const revokeRes = await adminRevocationPOST(revokeReq);
     expect(revokeRes.status).toBe(200);
+
+    await vi.waitFor(() => {
+      expect(decisionReceiptsInMock).toHaveBeenCalledWith("id", [RECEIPT_ID]);
+    });
 
     claimStatuses.set(CLAIM_ID, "revoked");
 
