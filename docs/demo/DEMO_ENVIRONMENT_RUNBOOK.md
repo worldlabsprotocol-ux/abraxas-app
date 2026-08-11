@@ -104,6 +104,84 @@ Extension catalog verification is **UNVERIFIABLE** via Supabase REST in Phase A;
 
 RLS, `pg_policies`, `pg_indexes`, functions/RPCs, and `information_schema` column catalog checks are also **UNVERIFIABLE** through REST in Phase A.
 
+## Phase B — Database bootstrap (manifest-scoped migrations)
+
+**Current state:** `npm run demo:migrate` performs a **dry-run by default**. It does not connect to a database unless you pass `--apply` with an explicit confirmation matching `DEMO_SUPABASE_PROJECT_REF`. No provisioning or cleanup tooling exists yet.
+
+### PowerShell — local shell-only credentials
+
+Create `.env.demo.local` in the repository root (gitignored). Use **variable names only** below; paste values locally and never commit them.
+
+```powershell
+# Required safety + demo target (names only — set values locally)
+$env:DEMO_SUPABASE_PROJECT_REF = "<demo-project-ref>"
+$env:PRODUCTION_SUPABASE_PROJECT_REF = "bztwutzprwsdrtqdpymf"
+$env:NEXT_PUBLIC_SUPABASE_URL = "https://<demo-project-ref>.supabase.co"
+# Apply mode only (not required for dry-run):
+# $env:DEMO_SUPABASE_DATABASE_URL = "<demo-direct-db-connection-string>"
+# Optional:
+# $env:DEMO_DENIED_SUPABASE_PROJECT_REFS = "<ref-a>,<ref-b>"
+```
+
+Load from file without bash `source` / `set -a`:
+
+```powershell
+Get-Content .env.demo.local | ForEach-Object {
+  if ($_ -match '^\s*#' -or $_ -match '^\s*$') { return }
+  $name, $value = $_ -split '=', 2
+  Set-Item -Path "Env:$name" -Value $value
+}
+```
+
+### PowerShell — dry-run (fully offline)
+
+Dry-run requires only the guard variables above. It performs **no DNS lookup, database connection, ledger creation, or SQL execution**.
+
+```powershell
+npm run demo:migrate
+```
+
+Expected output:
+- masked demo project ref;
+- masked database target derived from `DEMO_SUPABASE_PROJECT_REF` only;
+- exact 17-file manifest order with `sha256` hashes and transaction mode (`055_policy_immutable_versions.sql` reports `normalized_transaction_wrapper`);
+- `No DNS lookup, database connection, ledger creation, or SQL execution performed.`
+
+Save sanitized output locally (optional):
+
+```powershell
+New-Item -ItemType Directory -Force -Path reports | Out-Null
+npm run demo:migrate | Out-File -FilePath ("reports\demo-migrate-dryrun-{0}.log" -f (Get-Date -Format "yyyyMMddTHHmmssZ")) -Encoding utf8
+```
+
+### PowerShell — apply (explicit approval only)
+
+**Do not run until operator review approves.** Requires direct `db.<demo-project-ref>.supabase.co` connection string (pooler URLs are rejected), plus `--apply` and `--confirm` equal to `DEMO_SUPABASE_PROJECT_REF`.
+
+```powershell
+$env:DEMO_SUPABASE_DATABASE_URL = "<demo-direct-db-connection-string>"
+npm run demo:migrate -- --apply --confirm <demo-project-ref>
+```
+
+The authoritative ledger is `demo_ops.migration_ledger` in the isolated demo database. The runner acquires a PostgreSQL advisory lock, initializes `demo_ops` idempotently, and stops on the first error. Migration `055_policy_immutable_versions.sql` uses `normalized_transaction_wrapper`: the runner strips only top-level `BEGIN;` / `COMMIT;` from an execution copy, records the original source `sha256` in the ledger, and applies both inside one outer transaction.
+
+### PowerShell — post-migration validation
+
+```powershell
+$env:SUPABASE_SERVICE_ROLE_KEY = "<demo-service-role-key>"
+npm run demo:validate | Out-File -FilePath "reports\demo-validate-$(Get-Date -Format yyyyMMddTHHmmssZ).log" -Encoding utf8
+```
+
+Record only `PASS` / `FAIL` / `UNVERIFIABLE` lines. **UNVERIFIABLE is not a security success.**
+
+### Forbidden during bootstrap
+
+- `supabase db push` or bulk migration discovery
+- Applying files outside `DEMO_REQUIRED_MIGRATION_ORDER`
+- Excluded migrations `028`–`031` or `018_policy_verification_repair.sql`
+- Production credentials, backups, or copied rows/storage
+- Arbitrary file arguments to the migration runner
+
 ## Phase B — Future provisioning (not implemented)
 
 The offline provisioner (`scripts/demo/provision-partner-sandbox-holder.ts`) will:
