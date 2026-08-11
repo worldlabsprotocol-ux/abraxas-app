@@ -90,9 +90,10 @@ describe("partnerFlowHealthViewModel", () => {
     expect(view.showYellowBanner).toBe(false);
   });
 
-  it("explains yellow state is not a failure for basic protection", () => {
+  it("explains yellow state is a configuration warning, not an outage", () => {
     const view = buildProtectionStatus(baseReport().rate_limit);
-    expect(view.yellowBannerBody).toMatch(/not a failure/i);
+    expect(view.yellowBannerBody).toMatch(/protection configuration warning/i);
+    expect(view.yellowBannerBody).toMatch(/not an outage/i);
     expect(view.yellowBannerBody).toMatch(/each server/i);
   });
 
