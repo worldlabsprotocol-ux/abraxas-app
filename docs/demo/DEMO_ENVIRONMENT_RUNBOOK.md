@@ -156,12 +156,30 @@ npm run demo:migrate | Out-File -FilePath ("reports\demo-migrate-dryrun-{0}.log"
 
 ### PowerShell — apply (explicit approval only)
 
-**Do not run until operator review approves.** Requires direct `db.<demo-project-ref>.supabase.co` connection string (pooler URLs are rejected), plus `--apply` and `--confirm` equal to `DEMO_SUPABASE_PROJECT_REF`.
+**Do not run until operator review approves.** Requires `--apply` and `--confirm` equal to `DEMO_SUPABASE_PROJECT_REF`.
+
+The runner accepts **one of two approved transports**:
+
+1. **Direct** — `db.<demo-project-ref>.supabase.co:5432` with username `postgres`
+2. **IPv4 Session Pooler** — `*.pooler.supabase.com:5432` with username `postgres.<demo-project-ref>` and explicit SSL
+
+**Why only Session Pooler (not Transaction Pooler)?** Port `6543` is the Supabase **transaction** pooler. It cannot hold session-scoped PostgreSQL advisory locks across statements, which the migration runner requires. Port `5432` on `*.pooler.supabase.com` is the **session** pooler: one backend connection for the whole client session, so advisory locks, transactions, and ledger writes remain atomic. Use the session pooler when direct `db.<ref>.supabase.co` is unreachable (for example IPv6-only endpoints from IPv4-only networks).
+
+**Direct example (placeholders only):**
 
 ```powershell
-$env:DEMO_SUPABASE_DATABASE_URL = "<demo-direct-db-connection-string>"
+$env:DEMO_SUPABASE_DATABASE_URL = "postgresql://postgres:<password>@db.<demo-project-ref>.supabase.co:5432/postgres"
 npm run demo:migrate -- --apply --confirm <demo-project-ref>
 ```
+
+**IPv4 Session Pooler example (placeholders only):**
+
+```powershell
+$env:DEMO_SUPABASE_DATABASE_URL = "postgresql://postgres.<demo-project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require"
+npm run demo:migrate -- --apply --confirm <demo-project-ref>
+```
+
+Rejected automatically: transaction pooler port `6543`, username `postgres` without the demo ref on a pooler host, production refs, deceptive hostnames, missing SSL, and TLS-weakening query parameters.
 
 The authoritative ledger is `demo_ops.migration_ledger` in the isolated demo database. The runner acquires a PostgreSQL advisory lock, initializes `demo_ops` idempotently, and stops on the first error. Migration `055_policy_immutable_versions.sql` uses `normalized_transaction_wrapper`: the runner strips only top-level `BEGIN;` / `COMMIT;` from an execution copy, records the original source `sha256` in the ledger, and applies both inside one outer transaction.
 
