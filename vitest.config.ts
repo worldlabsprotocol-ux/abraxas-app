@@ -4,7 +4,11 @@ import path from "path";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "examples/partner-access-nextjs-starter/**/*.test.ts"],
+    include: [
+      "lib/**/*.test.ts",
+      "scripts/demo/**/*.test.ts",
+      "examples/partner-access-nextjs-starter/**/*.test.ts",
+    ],
   },
   resolve: {
     alias: {

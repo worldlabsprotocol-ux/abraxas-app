@@ -37,7 +37,8 @@
     "homepage:baseline:refresh": "npx tsx scripts/homepage-guard/refresh-baseline.ts --approved",
     "identity:verify-schema": "npx tsx scripts/verify-admin-identity-schema.ts",
     "wallet-binding:verify-schema": "npx tsx scripts/verify-wallet-binding-schema.ts",
-    "identity:seed-review-queue": "npx tsx scripts/seed-identity-review-queue.ts"
+    "identity:seed-review-queue": "npx tsx scripts/seed-identity-review-queue.ts",
+    "demo:validate": "npx tsx scripts/demo/validate-partner-sandbox-environment.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

@@ -26,6 +26,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.demo.local
 
 # vercel
 .vercel
@@ -33,6 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Partner Sandbox demo local state (Phase B)
+scripts/demo/.sandbox-holder.json
+reports/demo-*
+scripts/demo/*.validation-report.*
 
 # Local Claude fix scripts
 fix_*.py
