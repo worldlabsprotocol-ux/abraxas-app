@@ -12,6 +12,10 @@ import {
   DEMO_SANDBOX_POLICY_ID,
 } from "./demoMigrationManifest";
 import { maskSubjectId } from "./demoProjectGuard";
+import {
+  classifyPostgrestError,
+  formatClassifiedPostgrestError,
+} from "./demoPostgrestError";
 
 export type CheckStatus = "pass" | "fail" | "warn" | "skip" | "unverifiable";
 
@@ -212,18 +216,19 @@ async function checkTableExists(
       id: `table_${table}`,
       label: `Table ${table}`,
       status: optional ? "warn" : "fail",
-      detail: optional ? "Optional table missing" : "Required table missing",
+      detail: formatClassifiedPostgrestError(classifyPostgrestError(error)),
       evidence,
       optional,
     };
   }
 
   if (error) {
+    const classified = classifyPostgrestError(error);
     return {
       id: `table_${table}`,
       label: `Table ${table}`,
       status: optional ? "warn" : "fail",
-      detail: `Query error: ${error.message}`,
+      detail: formatClassifiedPostgrestError(classified),
       evidence,
       optional,
     };
@@ -267,11 +272,12 @@ async function checkVerificationDecisionsIdempotency(client: SupabaseClient): Pr
   }
 
   if (error) {
+    const classified = classifyPostgrestError(error);
     return {
       id: "idempotency_column",
       label: "verification_decisions.idempotency_key",
       status: "fail",
-      detail: error.message,
+      detail: formatClassifiedPostgrestError(classified),
       evidence,
     };
   }
@@ -294,11 +300,14 @@ async function checkSandboxPartner(client: SupabaseClient): Promise<EnvironmentC
     .maybeSingle();
 
   if (error || !data) {
+    const classified = error ? classifyPostgrestError(error) : null;
     return {
       id: "sandbox_partner",
       label: "Sandbox partner row",
       status: "fail",
-      detail: error?.message ?? `Missing partner ${DEMO_SANDBOX_PARTNER_ID}`,
+      detail: classified
+        ? formatClassifiedPostgrestError(classified)
+        : `Missing partner ${DEMO_SANDBOX_PARTNER_ID}`,
       evidence,
     };
   }
@@ -332,11 +341,14 @@ async function checkSandboxPolicy(client: SupabaseClient): Promise<EnvironmentCh
     .maybeSingle();
 
   if (error || !data) {
+    const classified = error ? classifyPostgrestError(error) : null;
     return {
       id: "sandbox_policy",
       label: "Sandbox policy row",
       status: "fail",
-      detail: error?.message ?? `Missing active policy ${DEMO_SANDBOX_POLICY_ID}`,
+      detail: classified
+        ? formatClassifiedPostgrestError(classified)
+        : `Missing active policy ${DEMO_SANDBOX_POLICY_ID}`,
       evidence,
     };
   }
@@ -394,11 +406,14 @@ async function checkSandboxIssuer(client: SupabaseClient): Promise<EnvironmentCh
     .maybeSingle();
 
   if (error || !data) {
+    const classified = error ? classifyPostgrestError(error) : null;
     return {
       id: "sandbox_issuer",
       label: "Sandbox issuer row",
       status: "fail",
-      detail: error?.message ?? `Missing issuer ${DEMO_SANDBOX_ISSUER_ID}`,
+      detail: classified
+        ? formatClassifiedPostgrestError(classified)
+        : `Missing issuer ${DEMO_SANDBOX_ISSUER_ID}`,
       evidence,
     };
   }
@@ -446,7 +461,7 @@ async function checkWebhookDeliveryDisabled(client: SupabaseClient): Promise<Env
       id: "webhook_delivery",
       label: "Webhook delivery posture",
       status: "warn",
-      detail: error.message,
+      detail: formatClassifiedPostgrestError(classifyPostgrestError(error)),
       evidence,
       optional: true,
     };
@@ -533,7 +548,7 @@ async function checkDemoSubjectCredential(
       id: "demo_subject_credential",
       label: "Demo subject credential",
       status: "warn",
-      detail: error.message,
+      detail: formatClassifiedPostgrestError(classifyPostgrestError(error)),
       evidence,
       optional: true,
     };

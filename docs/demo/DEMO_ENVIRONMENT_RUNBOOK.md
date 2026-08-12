@@ -102,7 +102,46 @@ A fresh Supabase project requires **more than migrations 018 onward**. The depen
 
 Extension catalog verification is **UNVERIFIABLE** via Supabase REST in Phase A; missing extensions must be caught during migration apply or a future read-only RPC. **UNVERIFIABLE** results are not security validation successes.
 
-RLS, `pg_policies`, `pg_indexes`, functions/RPCs, and `information_schema` column catalog checks are also **UNVERIFIABLE** through REST in Phase A.
+RLS, `pg_policies`, `pg_indexes`, functions/RPCs, and `information_schema` column catalog checks are **UNVERIFIABLE** through REST in Phase A. Use **catalog mode** (below) for authoritative structural validation.
+
+### Bash — REST validation (PostgREST)
+
+```bash
+export DEMO_SUPABASE_PROJECT_REF="<demo-project-ref>"
+export PRODUCTION_SUPABASE_PROJECT_REF="bztwutzprwsdrtqdpymf"
+export NEXT_PUBLIC_SUPABASE_URL="https://<demo-project-ref>.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="<demo-service-role-key>"
+# Optional until Phase B:
+# export PARTNER_SANDBOX_DEMO_SUBJECT_ID="0x<64-hex-chars>"
+
+npm run demo:validate
+```
+
+### Bash — catalog validation (direct Postgres, read-only)
+
+Catalog mode uses `DEMO_SUPABASE_DATABASE_URL` and verified TLS only. It does **not** require or print `SUPABASE_SERVICE_ROLE_KEY`.
+
+```bash
+export DEMO_SUPABASE_PROJECT_REF="<demo-project-ref>"
+export PRODUCTION_SUPABASE_PROJECT_REF="bztwutzprwsdrtqdpymf"
+export NEXT_PUBLIC_SUPABASE_URL="https://<demo-project-ref>.supabase.co"
+export DEMO_SUPABASE_DATABASE_URL="postgresql://postgres.<demo-project-ref>:<password>@<region>.pooler.supabase.com:5432/postgres"
+export DEMO_SUPABASE_SSL_ROOT_CERT_PATH="<operator-local-path>/supabase-demo-ca.crt"
+
+npm run demo:validate -- --catalog --confirm <demo-project-ref>
+```
+
+Save sanitized output locally (optional):
+
+```bash
+mkdir -p reports
+npm run demo:validate -- --catalog --confirm <demo-project-ref> \
+  | tee "reports/demo-validate-catalog-$(date -u +%Y%m%dT%H%M%SZ).log"
+```
+
+Rejected automatically before any database connection: production denylist match, ref mismatch, missing or incorrect `--confirm`, `NODE_TLS_REJECT_UNAUTHORIZED=0`, session pooler without `DEMO_SUPABASE_SSL_ROOT_CERT_PATH`, and TLS-weakening connection-string query parameters on pooler URLs.
+
+Catalog mode runs `BEGIN TRANSACTION READ ONLY`, applies fixed local timeouts (`statement_timeout=30s`, `lock_timeout=5s`, `idle_in_transaction_session_timeout=30s`), verifies `transaction_read_only=on` and `current_database()='postgres'`, executes only hardcoded allowlisted `SELECT` statements from `scripts/demo/lib/demoCatalogQueryRegistry.ts`, then `ROLLBACK` and closes the connection. It never mutates schema or data.
 
 ## Phase B — Database bootstrap (manifest-scoped migrations)
 
@@ -190,14 +229,30 @@ Rejected automatically: transaction pooler port `6543`, username `postgres` with
 
 The authoritative ledger is `demo_ops.migration_ledger` in the isolated demo database. The runner acquires a PostgreSQL advisory lock, initializes `demo_ops` idempotently, and stops on the first error. Migration `055_policy_immutable_versions.sql` uses `normalized_transaction_wrapper`: the runner strips only top-level `BEGIN;` / `COMMIT;` from an execution copy, records the original source `sha256` in the ledger, and applies both inside one outer transaction.
 
-### PowerShell — post-migration validation
+### PowerShell — post-migration REST validation
 
 ```powershell
 $env:SUPABASE_SERVICE_ROLE_KEY = "<demo-service-role-key>"
 npm run demo:validate | Out-File -FilePath "reports\demo-validate-$(Get-Date -Format yyyyMMddTHHmmssZ).log" -Encoding utf8
 ```
 
-Record only `PASS` / `FAIL` / `UNVERIFIABLE` lines. **UNVERIFIABLE is not a security success.**
+### PowerShell — post-migration catalog validation
+
+Catalog mode uses the database URL and verified CA only. Do **not** set `SUPABASE_SERVICE_ROLE_KEY` for catalog runs.
+
+```powershell
+$env:DEMO_SUPABASE_PROJECT_REF = "<demo-project-ref>"
+$env:PRODUCTION_SUPABASE_PROJECT_REF = "bztwutzprwsdrtqdpymf"
+$env:NEXT_PUBLIC_SUPABASE_URL = "https://<demo-project-ref>.supabase.co"
+$env:DEMO_SUPABASE_DATABASE_URL = "postgresql://postgres.<demo-project-ref>:<password>@<region>.pooler.supabase.com:5432/postgres"
+$env:DEMO_SUPABASE_SSL_ROOT_CERT_PATH = "C:\operator\secrets\supabase-demo-ca.crt"
+
+New-Item -ItemType Directory -Force -Path reports | Out-Null
+npm run demo:validate -- --catalog --confirm <demo-project-ref> `
+  | Out-File -FilePath ("reports\demo-validate-catalog-{0}.log" -f (Get-Date -Format "yyyyMMddTHHmmssZ")) -Encoding utf8
+```
+
+Record only `PASS` / `FAIL` / `UNVERIFIABLE` / `WARN` lines. **UNVERIFIABLE is not a security success.**
 
 ### Forbidden during bootstrap
 

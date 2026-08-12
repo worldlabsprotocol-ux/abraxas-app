@@ -93,6 +93,29 @@ describe("demoEnvironmentChecks", () => {
     expect(() => assertReadOnlyPolicyModules()).not.toThrow();
   });
 
+  it("classifies permission_denied for required table probe", async () => {
+    const client = makeClient({
+      partners: { error: { message: "permission denied for table partners", code: "42501" } },
+    });
+
+    const report = await runEnvironmentChecks({ client: client as never });
+    const partners = report.results.find((r) => r.id === "table_partners");
+    expect(partners?.detail).toContain("permission_denied");
+    expect(partners?.detail).toContain("42501");
+    expect(partners?.detail).not.toContain("permission denied for table");
+  });
+
+  it("classifies schema cache errors for required table probe", async () => {
+    const client = makeClient({
+      partners: { error: { message: "", code: "PGRST205" } },
+    });
+
+    const report = await runEnvironmentChecks({ client: client as never });
+    const partners = report.results.find((r) => r.id === "table_partners");
+    expect(partners?.detail).toContain("schema_cache_unavailable");
+    expect(partners?.detail).not.toBe("Query error: ");
+  });
+
   it("returns exit 1 when required table missing", async () => {
     const client = makeClient({
       decision_receipts: { error: { message: 'relation "decision_receipts" does not exist', code: "42P01" } },

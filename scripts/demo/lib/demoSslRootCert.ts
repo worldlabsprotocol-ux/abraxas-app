@@ -20,7 +20,7 @@ export class DemoSslRootCertError extends Error {
 export function assertNodeTlsVerificationEnabled(): void {
   if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
     throw new DemoSslRootCertError(
-      "NODE_TLS_REJECT_UNAUTHORIZED=0 is not permitted for demo migration apply",
+      "NODE_TLS_REJECT_UNAUTHORIZED=0 is not permitted for demo database tooling",
     );
   }
 }
