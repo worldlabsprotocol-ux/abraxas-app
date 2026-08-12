@@ -3,9 +3,9 @@ import { auditRequiredDemoMigrations } from "./demoMigrationTransactionAudit";
 import { DEMO_REQUIRED_MIGRATION_ORDER } from "./demoMigrationManifest";
 
 describe("demoMigrationTransactionAudit", () => {
-  it("audits all 17 required migrations", () => {
+  it("audits all 18 required migrations", () => {
     const audit = auditRequiredDemoMigrations();
-    expect(audit).toHaveLength(17);
+    expect(audit).toHaveLength(18);
     expect(audit.map((entry) => entry.file)).toEqual([...DEMO_REQUIRED_MIGRATION_ORDER]);
   });
 
@@ -23,8 +23,13 @@ describe("demoMigrationTransactionAudit", () => {
 
   it("marks the remaining required migrations as atomic_wrapper", () => {
     const audit = auditRequiredDemoMigrations();
-    const atomic = audit.filter((entry) => entry.file !== "055_policy_immutable_versions.sql");
+    const atomic = audit.filter(
+      (entry) => entry.file !== "055_policy_immutable_versions.sql",
+    );
     expect(atomic.every((entry) => entry.mode === "atomic_wrapper")).toBe(true);
     expect(atomic.every((entry) => entry.hazards.length === 0)).toBe(true);
+    expect(atomic.find((entry) => entry.file === "065_service_role_runtime_grants.sql")?.mode).toBe(
+      "atomic_wrapper",
+    );
   });
 });

@@ -301,9 +301,9 @@ describe("demo denylist and reference checks", () => {
 });
 
 describe("demoMigrationRunner manifest scope", () => {
-  it("loads exactly the approved 17-file order", () => {
+  it("loads exactly the approved 18-file order", () => {
     const plan = loadRequiredMigrationPlan();
-    expect(plan).toHaveLength(17);
+    expect(plan).toHaveLength(18);
     expect(plan.map((entry) => entry.file)).toEqual([...DEMO_REQUIRED_MIGRATION_ORDER]);
   });
 
@@ -326,6 +326,7 @@ describe("demoMigrationRunner manifest scope", () => {
     const report = buildDryRunReport(config);
     const output = formatDryRunReport(report);
     expect(output).toContain("DRY RUN");
+    expect(output).toContain("Approved manifest (18 files)");
     expect(output).toContain("No DNS lookup");
     expect(output).not.toContain(DEMO_REF);
     expect(output).toContain(

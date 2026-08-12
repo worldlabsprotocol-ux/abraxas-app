@@ -12,9 +12,19 @@ export type TablePrivilege =
   | "REFERENCES"
   | "TRIGGER";
 
+export const FORBIDDEN_SERVICE_ROLE_PRIVILEGES = [
+  "DELETE",
+  "TRUNCATE",
+  "REFERENCES",
+  "TRIGGER",
+] as const satisfies readonly TablePrivilege[];
+
 export interface ServiceRolePrivilegeExpectation {
-  table: (typeof DEMO_REQUIRED_TABLES)[number];
-  privileges: readonly TablePrivilege[];
+  table: string;
+  privileges: readonly Exclude<
+    TablePrivilege,
+    (typeof FORBIDDEN_SERVICE_ROLE_PRIVILEGES)[number]
+  >[];
   /** Library call sites supporting the expectation (no SQL). */
   evidence: readonly string[];
 }
@@ -169,31 +179,76 @@ export const DEMO_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS: readonly ServiceRolePrivi
   },
 ] as const;
 
-/** Adjacent tables used by Phase 1 sandbox-demo routes (proposed migration scope only). */
-export const DEMO_ADJACENT_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS = [
+/** Adjacent tables used by Phase 1 sandbox-demo routes (audited call-site scope). */
+export const DEMO_ADJACENT_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS: readonly ServiceRolePrivilegeExpectation[] = [
   {
     table: "partner_api_keys",
-    privileges: ["SELECT", "INSERT", "UPDATE"] as const,
+    privileges: ["SELECT", "INSERT", "UPDATE"],
     evidence: ["lib/partner/partnerAuth.ts", "lib/partner/promoteDesignPartner.ts"],
   },
   {
     table: "partner_api_usage",
-    privileges: ["SELECT", "INSERT"] as const,
+    privileges: ["SELECT", "INSERT"],
     evidence: ["lib/partner/logPartnerUsage.ts#insert"],
   },
   {
     table: "wallet_binding_challenges",
-    privileges: ["SELECT", "INSERT", "UPDATE"] as const,
+    privileges: ["SELECT", "INSERT", "UPDATE"],
     evidence: ["lib/walletAuthority/service.ts", "lib/walletBinding/suiChallenge.ts"],
   },
   {
     table: "connect_authorization_requests",
-    privileges: ["SELECT", "INSERT", "UPDATE"] as const,
+    privileges: ["SELECT", "INSERT", "UPDATE"],
     evidence: ["lib/connect/authorizationService.ts"],
   },
   {
     table: "sui_zklogin_identities",
-    privileges: ["SELECT", "INSERT", "UPDATE"] as const,
+    privileges: ["SELECT", "INSERT", "UPDATE"],
     evidence: ["app/api/auth/zklogin/register/route.ts#upsert"],
   },
 ] as const;
+
+/** Full audited runtime matrix: 19 required tables + 5 adjacent runtime tables. */
+export const DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS: readonly ServiceRolePrivilegeExpectation[] = [
+  ...DEMO_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS,
+  ...DEMO_ADJACENT_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS,
+] as const;
+
+export const DEMO_SERVICE_ROLE_GRANT_TABLES = DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS.map(
+  (entry) => entry.table,
+) as readonly string[];
+
+export function assertRequiredTablesCoveredByPrivilegeMatrix(): void {
+  for (const table of DEMO_REQUIRED_TABLES) {
+    if (!DEMO_SERVICE_ROLE_GRANT_TABLES.includes(table)) {
+      throw new Error(`Required table missing from service_role privilege matrix: ${table}`);
+    }
+  }
+}
+
+export function buildServiceRolePrivilegeMatrixSqlValues(): string {
+  const rows: string[] = [];
+  for (const entry of DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS) {
+    for (const privilege of entry.privileges) {
+      rows.push(`  ('${entry.table}', '${privilege}')`);
+    }
+  }
+  return rows.join(",\n");
+}
+
+export function renderServiceRolePrivilegeMatrix(): string {
+  return DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS.map((entry) =>
+    `${entry.table}: ${entry.privileges.join(", ")}`,
+  ).join("\n");
+}
+
+/** Hardcoded GRANT literals expected inside 065_service_role_runtime_grants.sql. */
+export function buildExpected065GrantLiterals(): readonly string[] {
+  const grants: string[] = ["GRANT USAGE ON SCHEMA public TO service_role;"];
+  for (const entry of DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS) {
+    grants.push(
+      `GRANT ${entry.privileges.join(", ")} ON TABLE public.${entry.table} TO service_role;`,
+    );
+  }
+  return grants;
+}

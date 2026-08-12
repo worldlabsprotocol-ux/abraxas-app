@@ -12,8 +12,25 @@ import {
   type DemoCatalogSelectQueryId,
 } from "./demoCatalogQueryRegistry";
 import { rejectDynamicCatalogSql } from "./demoCatalogSession";
+import {
+  DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS,
+  DEMO_SERVICE_ROLE_GRANT_TABLES,
+} from "./demoServiceRolePrivilegeExpectations";
 
 describe("demoCatalogQueryRegistry", () => {
+  it("audits all 24 runtime tables in service_role_table_privileges", () => {
+    const sql = DEMO_CATALOG_SELECT_REGISTRY.service_role_table_privileges.sql;
+    for (const table of DEMO_SERVICE_ROLE_GRANT_TABLES) {
+      expect(sql).toContain(`('${table}'`);
+    }
+    const expectedRows = DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS.reduce(
+      (count, entry) => count + entry.privileges.length,
+      0,
+    );
+    expect(expectedRows).toBe(62);
+    expect((sql.match(/\('\w/g) ?? []).length).toBeGreaterThanOrEqual(62);
+  });
+
   it("separates control and catalog allowlists", () => {
     const controlIds = new Set(Object.keys(DEMO_CATALOG_CONTROL_REGISTRY));
     const catalogIds = new Set(Object.keys(DEMO_CATALOG_SELECT_REGISTRY));

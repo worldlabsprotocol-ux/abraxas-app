@@ -101,6 +101,46 @@ describe("demoCatalogValidator", () => {
     expect(report.results.some((r) => r.id === "catalog_privilege_partners_SELECT" && r.status === "fail")).toBe(true);
   });
 
+  it("fails when an adjacent runtime table privilege is missing", async () => {
+    const report = await runCatalogEnvironmentChecks({
+      config: catalogConfig(),
+      env: {},
+      runSession: mockRunSession({
+        pgcrypto_installed: [{ installed: true }],
+        required_tables_exist: [{ table_name: "partners", exists: true }],
+        idempotency_column_exists: [{ exists: true }],
+        required_tables_rls_enabled: [{ table_name: "partners", rls_enabled: true }],
+        legacy_006_policy_names: [],
+        required_indexes_exist: [{ index_name: "partners_status_idx", exists: true }],
+        publish_policy_draft_function_exists: [{ exists: true }],
+        publish_policy_draft_executable: [{ executable: true }],
+        service_role_table_privileges: [{
+          table_name: "partner_api_keys",
+          privilege_type: "SELECT",
+          granted: false,
+        }],
+        sandbox_partner_seed: [{ partner_id: "abraxas-partner-sandbox", status: "sandbox" }],
+        sandbox_policy_seed: [{
+          id: "partner-sandbox-gate-v1",
+          partner_id: "abraxas-partner-sandbox",
+          status: "active",
+          sandbox_only: true,
+          has_identity_verified: true,
+          has_wallet_binding_confirmed: true,
+          has_screening_outcome: true,
+        }],
+        sandbox_issuer_seed: [{ id: "issuer:abraxas-sandbox", issuer_status: "active" }],
+      }) as never,
+    });
+
+    expect(report.exitCode).toBe(1);
+    expect(
+      report.results.some(
+        (r) => r.id === "catalog_privilege_partner_api_keys_SELECT" && r.status === "fail",
+      ),
+    ).toBe(true);
+  });
+
   it("sanitizes evidence labels without row payloads", async () => {
     const report = await runCatalogEnvironmentChecks({
       config: catalogConfig(),

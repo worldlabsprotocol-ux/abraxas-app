@@ -117,7 +117,10 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "056_publish_partner_policy_draft_rpc.sql",
   "058_partner_metering_foundation.sql",
   "062_partner_webhook_outbox.sql",
+  "065_service_role_runtime_grants.sql",
 ] as const;
+
+export const DEMO_MIGRATION_065_FILENAME = "065_service_role_runtime_grants.sql" as const;
 
 /**
  * Fresh-database migration apply order.
@@ -334,6 +337,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     seeds: [],
     extensions: [],
     notes: "Alert state RPCs; optional when alerts disabled.",
+  },
+  {
+    file: "065_service_role_runtime_grants.sql",
+    tier: "required",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Explicit per-table service_role grants after catalog evidence. Does not enable automatic table exposure.",
   },
 ];
 
