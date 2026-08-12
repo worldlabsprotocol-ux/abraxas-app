@@ -1,10 +1,17 @@
 // FILE: scripts/demo/lib/demoDatabaseUrl.ts
 // Parse and validate demo-only Postgres connection URLs without logging secrets.
 
+import { KNOWN_PRODUCTION_SUPABASE_PROJECT_REFS } from "./knownProductionSupabaseProjectRefs";
 import { DemoProjectGuardError, maskProjectRef } from "./demoProjectGuard";
 
 const DIRECT_DB_HOST_PATTERN = /^db\.([a-z0-9-]+)\.supabase\.co$/i;
-const POOLER_HOST_PATTERN = /pooler\.supabase\.com$/i;
+const SESSION_POOLER_HOST_SUFFIX = ".pooler.supabase.com";
+const SESSION_POOLER_USERNAME_PATTERN = /^postgres\.([a-z0-9-]+)$/i;
+const DIRECT_USERNAME = "postgres";
+const REQUIRED_PORT = "5432";
+const REQUIRED_DATABASE = "postgres";
+const WEAK_SSL_MODES = new Set(["disable", "allow", "prefer"]);
+const STRONG_SSL_MODES = new Set(["require", "verify-ca", "verify-full"]);
 
 export class DemoDatabaseUrlError extends Error {
   constructor(message: string) {
@@ -13,17 +20,14 @@ export class DemoDatabaseUrlError extends Error {
   }
 }
 
+export type DemoDatabaseTransport = "direct" | "supabase_session_pooler";
+
 export interface ParsedDemoDatabaseUrl {
   projectRef: string;
-  hostStyle: "direct";
+  transport: DemoDatabaseTransport;
 }
 
-/** Extract Supabase project ref from a direct Postgres connection URL. */
-export function parseSupabaseProjectRefFromDatabaseUrl(databaseUrl: string): string {
-  return parseDemoDatabaseUrl(databaseUrl).projectRef;
-}
-
-export function parseDemoDatabaseUrl(databaseUrl: string): ParsedDemoDatabaseUrl {
+function parsePostgresUrl(databaseUrl: string): URL {
   let parsed: URL;
   try {
     parsed = new URL(databaseUrl.trim());
@@ -35,44 +39,225 @@ export function parseDemoDatabaseUrl(databaseUrl: string): ParsedDemoDatabaseUrl
     throw new DemoDatabaseUrlError("DEMO_SUPABASE_DATABASE_URL must use postgres:// or postgresql://");
   }
 
-  if (POOLER_HOST_PATTERN.test(parsed.hostname)) {
+  return parsed;
+}
+
+function resolvedPort(parsed: URL): string {
+  return parsed.port || REQUIRED_PORT;
+}
+
+function assertPortAndDatabase(parsed: URL): void {
+  const port = resolvedPort(parsed);
+  if (port === "6543") {
     throw new DemoDatabaseUrlError(
-      "DEMO_SUPABASE_DATABASE_URL must use the direct db.<project-ref>.supabase.co hostname — generic pooler URLs are not accepted",
+      "DEMO_SUPABASE_DATABASE_URL port 6543 is the transaction pooler — only session pooler port 5432 is supported",
+    );
+  }
+  if (port !== REQUIRED_PORT) {
+    throw new DemoDatabaseUrlError(
+      `DEMO_SUPABASE_DATABASE_URL port must be ${REQUIRED_PORT}`,
     );
   }
 
+  const database = parsed.pathname.replace(/^\//, "");
+  if (database !== REQUIRED_DATABASE) {
+    throw new DemoDatabaseUrlError(
+      `DEMO_SUPABASE_DATABASE_URL database must be ${REQUIRED_DATABASE}`,
+    );
+  }
+}
+
+function assertNoAmbiguousQueryParams(parsed: URL): void {
+  for (const [key, value] of parsed.searchParams.entries()) {
+    const normalizedKey = key.toLowerCase();
+    const normalizedValue = value.toLowerCase();
+
+    if (normalizedKey === "sslmode" && WEAK_SSL_MODES.has(normalizedValue)) {
+      throw new DemoDatabaseUrlError(
+        "DEMO_SUPABASE_DATABASE_URL query parameter sslmode weakens TLS",
+      );
+    }
+    if (normalizedKey === "ssl" && (normalizedValue === "false" || normalizedValue === "0")) {
+      throw new DemoDatabaseUrlError(
+        "DEMO_SUPABASE_DATABASE_URL must not disable SSL",
+      );
+    }
+  }
+}
+
+function assertSslRequired(parsed: URL, transport: DemoDatabaseTransport): void {
+  assertNoAmbiguousQueryParams(parsed);
+
+  const sslmode = parsed.searchParams.get("sslmode")?.toLowerCase();
+  const ssl = parsed.searchParams.get("ssl")?.toLowerCase();
+
+  if (sslmode && WEAK_SSL_MODES.has(sslmode)) {
+    throw new DemoDatabaseUrlError("DEMO_SUPABASE_DATABASE_URL sslmode weakens TLS");
+  }
+  if (ssl === "false" || ssl === "0") {
+    throw new DemoDatabaseUrlError("DEMO_SUPABASE_DATABASE_URL must not disable SSL");
+  }
+
+  if (transport !== "supabase_session_pooler") {
+    return;
+  }
+
+  const hasStrongSslMode = sslmode !== null && sslmode !== "" && STRONG_SSL_MODES.has(sslmode);
+  const hasExplicitSsl = ssl === "true" || ssl === "1";
+  if (!hasStrongSslMode && !hasExplicitSsl) {
+    throw new DemoDatabaseUrlError(
+      "DEMO_SUPABASE_DATABASE_URL session pooler connections must enable SSL (sslmode=require, verify-ca, verify-full, or ssl=true)",
+    );
+  }
+}
+
+function isOfficialSessionPoolerHost(hostname: string): boolean {
+  if (!hostname.endsWith(SESSION_POOLER_HOST_SUFFIX)) {
+    return false;
+  }
+
+  const prefix = hostname.slice(0, hostname.length - SESSION_POOLER_HOST_SUFFIX.length);
+  if (!prefix || prefix.endsWith(".")) {
+    return false;
+  }
+
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)*$/i.test(hostname)) {
+    return false;
+  }
+
+  return true;
+}
+
+function decodeUsername(parsed: URL): string {
+  return decodeURIComponent(parsed.username);
+}
+
+function assertProjectRefNotDenied(projectRef: string): void {
+  if ((KNOWN_PRODUCTION_SUPABASE_PROJECT_REFS as readonly string[]).includes(projectRef)) {
+    throw new DemoProjectGuardError(
+      "target_is_production",
+      `DEMO_SUPABASE_DATABASE_URL targets denied production project ref (${maskProjectRef(projectRef)})`,
+    );
+  }
+}
+
+function assertUsernameDoesNotEmbedProductionRef(username: string): void {
+  for (const deniedRef of KNOWN_PRODUCTION_SUPABASE_PROJECT_REFS) {
+    if (username.includes(deniedRef)) {
+      throw new DemoProjectGuardError(
+        "target_is_production",
+        `DEMO_SUPABASE_DATABASE_URL username must not embed production project ref (${maskProjectRef(deniedRef)})`,
+      );
+    }
+  }
+}
+
+function parseDirectDatabaseUrl(parsed: URL): ParsedDemoDatabaseUrl {
   const hostMatch = DIRECT_DB_HOST_PATTERN.exec(parsed.hostname);
   if (!hostMatch?.[1]) {
     throw new DemoDatabaseUrlError(
-      "DEMO_SUPABASE_DATABASE_URL must target db.<project-ref>.supabase.co",
+      "DEMO_SUPABASE_DATABASE_URL must target db.<project-ref>.supabase.co for direct connections",
     );
   }
 
+  const username = decodeUsername(parsed);
+  if (username !== DIRECT_USERNAME) {
+    throw new DemoDatabaseUrlError(
+      "DEMO_SUPABASE_DATABASE_URL direct connections must use username postgres",
+    );
+  }
+
+  const projectRef = hostMatch[1];
+  assertProjectRefNotDenied(projectRef);
+  assertPortAndDatabase(parsed);
+  assertSslRequired(parsed, "direct");
+
   return {
-    projectRef: hostMatch[1],
-    hostStyle: "direct",
+    projectRef,
+    transport: "direct",
   };
 }
 
-export function assertDatabaseUrlMatchesDemoRef(databaseUrl: string, demoProjectRef: string): void {
-  const parsedRef = parseSupabaseProjectRefFromDatabaseUrl(databaseUrl);
-  if (parsedRef !== demoProjectRef.trim()) {
-    throw new DemoProjectGuardError(
-      "demo_ref_mismatch",
-      `DEMO_SUPABASE_DATABASE_URL project ref (${maskProjectRef(parsedRef)}) does not match DEMO_SUPABASE_PROJECT_REF (${maskProjectRef(demoProjectRef)})`,
+function parseSessionPoolerDatabaseUrl(parsed: URL): ParsedDemoDatabaseUrl {
+  if (!isOfficialSessionPoolerHost(parsed.hostname)) {
+    throw new DemoDatabaseUrlError(
+      "DEMO_SUPABASE_DATABASE_URL must use an official Supabase Session Pooler hostname ending in .pooler.supabase.com",
     );
   }
+
+  const username = decodeUsername(parsed);
+  assertUsernameDoesNotEmbedProductionRef(username);
+
+  if (username === DIRECT_USERNAME) {
+    throw new DemoDatabaseUrlError(
+      "DEMO_SUPABASE_DATABASE_URL session pooler connections must use username postgres.<demo-project-ref>",
+    );
+  }
+
+  const usernameMatch = SESSION_POOLER_USERNAME_PATTERN.exec(username);
+  if (!usernameMatch?.[1]) {
+    throw new DemoDatabaseUrlError(
+      "DEMO_SUPABASE_DATABASE_URL session pooler username must be exactly postgres.<demo-project-ref>",
+    );
+  }
+
+  const projectRef = usernameMatch[1];
+  assertProjectRefNotDenied(projectRef);
+  assertPortAndDatabase(parsed);
+  assertSslRequired(parsed, "supabase_session_pooler");
+
+  return {
+    projectRef,
+    transport: "supabase_session_pooler",
+  };
 }
 
-/** Mask a Postgres connection URL for operator logs without DNS lookup. */
+/** Extract Supabase project ref from an approved Postgres connection URL. */
+export function parseSupabaseProjectRefFromDatabaseUrl(databaseUrl: string): string {
+  return parseDemoDatabaseUrl(databaseUrl).projectRef;
+}
+
+export function parseDemoDatabaseUrl(databaseUrl: string): ParsedDemoDatabaseUrl {
+  const parsed = parsePostgresUrl(databaseUrl);
+
+  if (parsed.hostname.includes("pooler")) {
+    return parseSessionPoolerDatabaseUrl(parsed);
+  }
+
+  return parseDirectDatabaseUrl(parsed);
+}
+
+export function assertDatabaseUrlMatchesDemoRef(databaseUrl: string, demoProjectRef: string): ParsedDemoDatabaseUrl {
+  const parsed = parseDemoDatabaseUrl(databaseUrl);
+  const expectedRef = demoProjectRef.trim();
+
+  if (parsed.projectRef !== expectedRef) {
+    throw new DemoProjectGuardError(
+      "demo_ref_mismatch",
+      `DEMO_SUPABASE_DATABASE_URL project ref (${maskProjectRef(parsed.projectRef)}) does not match DEMO_SUPABASE_PROJECT_REF (${maskProjectRef(expectedRef)})`,
+    );
+  }
+
+  return parsed;
+}
+
+/** Mask database target for dry-run without a connection URL. */
 export function maskDatabaseUrlFromProjectRef(projectRef: string): string {
-  return `postgresql://***@${maskProjectRef(projectRef)}.supabase.co:****/postgres`;
+  return `transport=unresolved project=${maskProjectRef(projectRef)}`;
+}
+
+export function maskDatabaseTransport(transport: DemoDatabaseTransport): string {
+  return transport;
+}
+
+export function maskDatabaseTarget(parsed: ParsedDemoDatabaseUrl): string {
+  return `transport=${maskDatabaseTransport(parsed.transport)} project=${maskProjectRef(parsed.projectRef)}`;
 }
 
 export function maskDatabaseUrl(databaseUrl: string): string {
   try {
-    const ref = parseSupabaseProjectRefFromDatabaseUrl(databaseUrl);
-    return maskDatabaseUrlFromProjectRef(ref);
+    const parsed = parseDemoDatabaseUrl(databaseUrl);
+    return maskDatabaseTarget(parsed);
   } catch {
     return "<invalid-database-url>";
   }

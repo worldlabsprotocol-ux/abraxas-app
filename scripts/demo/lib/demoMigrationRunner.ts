@@ -10,7 +10,8 @@ import {
 import {
   assertDatabaseUrlMatchesDemoRef,
   DemoDatabaseUrlError,
-  maskDatabaseUrl,
+  type DemoDatabaseTransport,
+  maskDatabaseTarget,
   maskDatabaseUrlFromProjectRef,
   redactDatabaseSecrets,
 } from "./demoDatabaseUrl";
@@ -50,6 +51,7 @@ export interface DemoMigrationDryRunConfig {
 
 export interface DemoMigrationApplyConfig extends DemoMigrationDryRunConfig {
   databaseUrl: string;
+  databaseTransport: DemoDatabaseTransport;
 }
 
 export interface DemoMigrationDryRunReport {
@@ -62,6 +64,7 @@ export interface DemoMigrationDryRunReport {
 export interface DemoMigrationApplyReport {
   mode: "apply";
   maskedProjectRef: string;
+  databaseTransport: DemoDatabaseTransport;
   applied: string[];
   skipped: string[];
 }
@@ -139,12 +142,13 @@ export function validateApplyDemoMigrationConfig(
     );
   }
 
-  assertDatabaseUrlMatchesDemoRef(databaseUrl, dryRun.demoProjectRef);
+  const parsed = assertDatabaseUrlMatchesDemoRef(databaseUrl, dryRun.demoProjectRef);
 
   return {
     ...dryRun,
     databaseUrl,
-    maskedDatabaseTarget: maskDatabaseUrl(databaseUrl),
+    databaseTransport: parsed.transport,
+    maskedDatabaseTarget: maskDatabaseTarget(parsed),
   };
 }
 
@@ -292,6 +296,7 @@ export async function applyDemoMigrations(input: {
   return {
     mode: "apply",
     maskedProjectRef: maskProjectRef(input.config.demoProjectRef),
+    databaseTransport: input.config.databaseTransport,
     applied,
     skipped,
   };
@@ -302,6 +307,7 @@ export function formatApplyReport(report: DemoMigrationApplyReport): string {
     "Demo Migration Runner — APPLY COMPLETE",
     "====================================",
     `Target project: ${report.maskedProjectRef}`,
+    `Database transport: ${report.databaseTransport}`,
     `Applied: ${report.applied.length}`,
     `Skipped (database ledger): ${report.skipped.length}`,
   ];

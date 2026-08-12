@@ -33,6 +33,7 @@ import {
 const DEMO_REF = "ocntwbxarpjeixdnzide";
 const PROD_REF = KNOWN_PRODUCTION_SUPABASE_PROJECT_REFS[0];
 const DEMO_DB_URL = `postgresql://postgres:plain-secret@db.${DEMO_REF}.supabase.co:5432/postgres`;
+const DEMO_POOLER_URL = `postgresql://postgres.${DEMO_REF}:plain-secret@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require`;
 const ENCODED_DB_URL = `postgresql://postgres:${encodeURIComponent("p@ss:word")}@db.${DEMO_REF}.supabase.co:5432/postgres`;
 
 function baseEnv(overrides: Record<string, string | undefined> = {}) {
@@ -207,12 +208,64 @@ describe("demo denylist and reference checks", () => {
     ).toThrow(/does not match DEMO_SUPABASE_PROJECT_REF/i);
   });
 
-  it("rejects generic pooler URLs", () => {
+  it("rejects transaction pooler port 6543 and unbound pooler usernames", () => {
     expect(() =>
       parseSupabaseProjectRefFromDatabaseUrl(
-        `postgresql://postgres.${DEMO_REF}:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres`,
+        `postgresql://postgres.${DEMO_REF}:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require`,
       ),
-    ).toThrow(/pooler URLs are not accepted/i);
+    ).toThrow(/6543|transaction pooler/i);
+
+    expect(() =>
+      parseSupabaseProjectRefFromDatabaseUrl(
+        `postgresql://postgres:secret@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require`,
+      ),
+    ).toThrow(/username postgres\.<demo-project-ref>/i);
+  });
+
+  it("accepts official session pooler URLs for apply validation", () => {
+    const config = validateApplyDemoMigrationConfig(
+      baseEnv({ DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL }),
+    );
+    expect(config.databaseTransport).toBe("supabase_session_pooler");
+    expect(config.maskedDatabaseTarget).toBe(
+      "transport=supabase_session_pooler project=ocnt…zide",
+    );
+  });
+
+  it("retains advisory lock behavior on a single session for session pooler transport", async () => {
+    let migrationSqlSeen = 0;
+    const mock = createMockDatabase({
+      failOnQuery: (sql) => {
+        if (
+          !sql.includes("demo_ops") &&
+          !sql.includes("advisory") &&
+          sql !== "BEGIN" &&
+          sql !== "COMMIT" &&
+          sql !== "ROLLBACK"
+        ) {
+          migrationSqlSeen += 1;
+          if (migrationSqlSeen > 1) {
+            throw new Error("stop on first migration error");
+          }
+        }
+      },
+    });
+    const config = validateApplyDemoMigrationConfig(
+      baseEnv({ DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL }),
+    );
+
+    await expect(
+      applyDemoMigrations({
+        config,
+        confirmation: DEMO_REF,
+        env: baseEnv({ DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL }),
+        createClient: async () => mock.executor,
+      }),
+    ).rejects.toThrow(/stop on first migration error/i);
+
+    expect(mock.state.lockHeld).toBe(false);
+    expect(mock.state.ended).toBe(true);
+    expect(config.databaseTransport).toBe("supabase_session_pooler");
   });
 });
 
@@ -238,7 +291,7 @@ describe("demoMigrationRunner manifest scope", () => {
       PRODUCTION_SUPABASE_PROJECT_REF: PROD_REF,
       NEXT_PUBLIC_SUPABASE_URL: `https://${DEMO_REF}.supabase.co`,
     });
-    expect(config.maskedDatabaseTarget).toContain("ocnt…zide");
+    expect(config.maskedDatabaseTarget).toBe("transport=unresolved project=ocnt…zide");
     const report = buildDryRunReport(config);
     const output = formatDryRunReport(report);
     expect(output).toContain("DRY RUN");
