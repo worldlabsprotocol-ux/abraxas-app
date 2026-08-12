@@ -156,14 +156,14 @@ export function maskSupabaseUrl(supabaseUrl: string): string {
 export function maskProjectRef(ref: string): string {
   const trimmed = ref.trim();
   if (trimmed.length <= 8) return "***";
-  return `${trimmed.slice(0, 4)}…${trimmed.slice(-4)}`;
+  return `${trimmed.slice(0, 4)}...${trimmed.slice(-4)}`;
 }
 
 /** Mask a Sui address for logs. */
 export function maskSubjectId(subjectId: string): string {
   const trimmed = subjectId.trim();
   if (!trimmed.startsWith("0x") || trimmed.length < 12) return "<masked-subject>";
-  return `${trimmed.slice(0, 8)}…${trimmed.slice(-6)}`;
+  return `${trimmed.slice(0, 8)}...${trimmed.slice(-6)}`;
 }
 
 /**

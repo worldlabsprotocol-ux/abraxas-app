@@ -232,7 +232,7 @@ describe("demo denylist and reference checks", () => {
     );
     expect(config.databaseTransport).toBe("supabase_session_pooler");
     expect(config.maskedDatabaseTarget).toBe(
-      "transport=supabase_session_pooler project=ocnt…zide",
+      "transport=supabase_session_pooler project=ocnt...zide",
     );
   });
 
@@ -322,7 +322,7 @@ describe("demoMigrationRunner manifest scope", () => {
       PRODUCTION_SUPABASE_PROJECT_REF: PROD_REF,
       NEXT_PUBLIC_SUPABASE_URL: `https://${DEMO_REF}.supabase.co`,
     });
-    expect(config.maskedDatabaseTarget).toBe("transport=unresolved project=ocnt…zide");
+    expect(config.maskedDatabaseTarget).toBe("transport=unresolved project=ocnt...zide");
     const report = buildDryRunReport(config);
     const output = formatDryRunReport(report);
     expect(output).toContain("DRY RUN");

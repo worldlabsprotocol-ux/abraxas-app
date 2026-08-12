@@ -221,8 +221,8 @@ describe("demoProjectGuard", () => {
   });
 
   it("masks URLs and subject ids", () => {
-    expect(maskSupabaseUrl("https://abcdefghijklmnop.supabase.co")).toContain("abcd…mnop");
-    expect(maskProjectRef("abcdefghijklmnop")).toBe("abcd…mnop");
-    expect(maskSubjectId("0x" + "a".repeat(64))).toMatch(/^0x[a-f0-9]{6}…[a-f0-9]{6}$/);
+    expect(maskSupabaseUrl("https://abcdefghijklmnop.supabase.co")).toContain("abcd...mnop");
+    expect(maskProjectRef("abcdefghijklmnop")).toBe("abcd...mnop");
+    expect(maskSubjectId("0x" + "a".repeat(64))).toMatch(/^0x[a-f0-9]{6}\.\.\.[a-f0-9]{6}$/);
   });
 });
