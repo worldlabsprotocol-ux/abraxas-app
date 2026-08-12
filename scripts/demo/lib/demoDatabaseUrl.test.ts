@@ -24,7 +24,7 @@ describe("demoDatabaseUrl session pooler support", () => {
     expect(parsed.projectRef).toBe(DEMO_REF);
     expect(parsed.poolerHostname).toBe(POOLER_HOST);
     expect(maskDatabaseTarget(parsed)).toBe(
-      `transport=supabase_session_pooler project=ocnt…zide`,
+      `transport=supabase_session_pooler project=ocnt...zide`,
     );
   });
 
@@ -32,7 +32,7 @@ describe("demoDatabaseUrl session pooler support", () => {
     const parsed = parseDemoDatabaseUrl(VALID_DIRECT_URL);
     expect(parsed.transport).toBe("direct");
     expect(parsed.projectRef).toBe(DEMO_REF);
-    expect(maskDatabaseUrl(VALID_DIRECT_URL)).toBe(`transport=direct project=ocnt…zide`);
+    expect(maskDatabaseUrl(VALID_DIRECT_URL)).toBe(`transport=direct project=ocnt...zide`);
   });
 
   it("requires exact username and demo ref binding on session pooler URLs", () => {

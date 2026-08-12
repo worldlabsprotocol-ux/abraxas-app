@@ -13,9 +13,11 @@ import {
 } from "./demoMigrationManifest";
 import { maskSubjectId } from "./demoProjectGuard";
 import {
-  classifyPostgrestError,
+  classifyPostgrestProbeError,
   formatClassifiedPostgrestError,
+  type PostgrestErrorLike,
 } from "./demoPostgrestError";
+import { getRestTableProbePlan, isFrozenWriteOnlyRequiredTable } from "./demoRestProbeRegistry";
 
 export type CheckStatus = "pass" | "fail" | "warn" | "skip" | "unverifiable";
 
@@ -26,6 +28,8 @@ export interface EnvironmentCheckResult {
   detail: string;
   evidence?: string;
   optional?: boolean;
+  /** Required check satisfied by catalog validation; REST cannot probe without mutation. */
+  catalogValidatedOnly?: boolean;
 }
 
 export interface EnvironmentValidationReport {
@@ -52,6 +56,26 @@ interface PolicyRulesJson {
 
 const CATALOG_INSPECTION_BLOCKER =
   "Supabase REST cannot read pg_catalog / information_schema in Phase A; requires a future read-only RPC or direct Postgres connection.";
+
+function classifyRestProbe(
+  error: PostgrestErrorLike,
+  operation: string,
+  table?: string,
+  httpStatus?: number | null,
+) {
+  return classifyPostgrestProbeError(error, { operation, table, httpStatus });
+}
+
+function formatRestProbeFailure(
+  error: PostgrestErrorLike,
+  operation: string,
+  table?: string,
+  httpStatus?: number | null,
+): string {
+  return formatClassifiedPostgrestError(
+    classifyRestProbe(error, operation, table, httpStatus),
+  );
+}
 
 export async function probeExtensionAvailability(
   _client: SupabaseClient,
@@ -92,7 +116,10 @@ export async function runEnvironmentChecks(input: {
 
   const hasUnsafeConfig = results.some((r) => r.id === "demo_subject_config" && r.status === "fail");
   const hasMissingRequired = results.some(
-    (r) => !r.optional && (r.status === "fail" || r.status === "unverifiable"),
+    (r) =>
+      !r.optional
+      && !r.catalogValidatedOnly
+      && (r.status === "fail" || r.status === "unverifiable"),
   );
 
   const exitCode: 0 | 1 | 2 = hasUnsafeConfig
@@ -206,8 +233,46 @@ async function checkTableExists(
   table: string,
   optional: boolean,
 ): Promise<EnvironmentCheckResult> {
-  const evidence = `client.from("${table}").select("*", { count: "exact", head: true })`;
-  const { count, error } = await client
+  const probePlan = getRestTableProbePlan(table, optional);
+
+  if (probePlan.mode === "registry_missing") {
+    return {
+      id: `table_${table}`,
+      label: `Table ${table}`,
+      status: "fail",
+      detail: "Required table missing from frozen service_role privilege registry",
+      evidence: probePlan.evidence,
+      optional,
+    };
+  }
+
+  if (probePlan.mode === "catalog_validated_write_only") {
+    if (!isFrozenWriteOnlyRequiredTable(table) || optional) {
+      return {
+        id: `table_${table}`,
+        label: `Table ${table}`,
+        status: "fail",
+        detail: "Write-only REST bypass is not allowlisted for this table",
+        evidence: probePlan.evidence,
+        optional,
+      };
+    }
+
+    const privilegeList = probePlan.expectedPrivileges.join(", ");
+    return {
+      id: `table_${table}`,
+      label: `Table ${table}`,
+      status: "unverifiable",
+      detail:
+        `Write-only table (${privilegeList} only) - REST cannot verify existence without mutation`,
+      evidence: probePlan.evidence,
+      optional,
+      catalogValidatedOnly: true,
+    };
+  }
+
+  const evidence = probePlan.evidence;
+  const { count, error, status } = await client
     .from(table as "partners")
     .select("*", { count: "exact", head: true });
 
@@ -216,19 +281,18 @@ async function checkTableExists(
       id: `table_${table}`,
       label: `Table ${table}`,
       status: optional ? "warn" : "fail",
-      detail: formatClassifiedPostgrestError(classifyPostgrestError(error)),
+      detail: formatRestProbeFailure(error, "head_count", table, status),
       evidence,
       optional,
     };
   }
 
   if (error) {
-    const classified = classifyPostgrestError(error);
     return {
       id: `table_${table}`,
       label: `Table ${table}`,
       status: optional ? "warn" : "fail",
-      detail: formatClassifiedPostgrestError(classified),
+      detail: formatRestProbeFailure(error, "head_count", table, status),
       evidence,
       optional,
     };
@@ -246,7 +310,7 @@ async function checkTableExists(
 
 async function checkVerificationDecisionsIdempotency(client: SupabaseClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("verification_decisions").select("idempotency_key").limit(1)`;
-  const { error } = await client
+  const { error, status } = await client
     .from("verification_decisions")
     .select("idempotency_key")
     .limit(1);
@@ -256,7 +320,7 @@ async function checkVerificationDecisionsIdempotency(client: SupabaseClient): Pr
       id: "idempotency_column",
       label: "verification_decisions.idempotency_key",
       status: "fail",
-      detail: "Column missing — apply 053_partner_flow_idempotency.sql",
+      detail: "Column missing - apply 053_partner_flow_idempotency.sql",
       evidence,
     };
   }
@@ -272,12 +336,11 @@ async function checkVerificationDecisionsIdempotency(client: SupabaseClient): Pr
   }
 
   if (error) {
-    const classified = classifyPostgrestError(error);
     return {
       id: "idempotency_column",
       label: "verification_decisions.idempotency_key",
       status: "fail",
-      detail: formatClassifiedPostgrestError(classified),
+      detail: formatRestProbeFailure(error, "select_limit", "verification_decisions", status),
       evidence,
     };
   }
@@ -293,20 +356,19 @@ async function checkVerificationDecisionsIdempotency(client: SupabaseClient): Pr
 
 async function checkSandboxPartner(client: SupabaseClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("partners").select("partner_id, status").eq("partner_id", "${DEMO_SANDBOX_PARTNER_ID}").maybeSingle()`;
-  const { data, error } = await client
+  const { data, error, status } = await client
     .from("partners")
     .select("partner_id, status")
     .eq("partner_id", DEMO_SANDBOX_PARTNER_ID)
     .maybeSingle();
 
   if (error || !data) {
-    const classified = error ? classifyPostgrestError(error) : null;
     return {
       id: "sandbox_partner",
       label: "Sandbox partner row",
       status: "fail",
-      detail: classified
-        ? formatClassifiedPostgrestError(classified)
+      detail: error
+        ? formatRestProbeFailure(error, "maybe_single", "partners", status)
         : `Missing partner ${DEMO_SANDBOX_PARTNER_ID}`,
       evidence,
     };
@@ -333,7 +395,7 @@ async function checkSandboxPartner(client: SupabaseClient): Promise<EnvironmentC
 
 async function checkSandboxPolicy(client: SupabaseClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("partner_policies").select("id, partner_id, status, rules_json").eq("id", "${DEMO_SANDBOX_POLICY_ID}").eq("status", "active").maybeSingle()`;
-  const { data, error } = await client
+  const { data, error, status } = await client
     .from("partner_policies")
     .select("id, partner_id, status, rules_json")
     .eq("id", DEMO_SANDBOX_POLICY_ID)
@@ -341,13 +403,12 @@ async function checkSandboxPolicy(client: SupabaseClient): Promise<EnvironmentCh
     .maybeSingle();
 
   if (error || !data) {
-    const classified = error ? classifyPostgrestError(error) : null;
     return {
       id: "sandbox_policy",
       label: "Sandbox policy row",
       status: "fail",
-      detail: classified
-        ? formatClassifiedPostgrestError(classified)
+      detail: error
+        ? formatRestProbeFailure(error, "maybe_single", "partner_policies", status)
         : `Missing active policy ${DEMO_SANDBOX_POLICY_ID}`,
       evidence,
     };
@@ -399,20 +460,19 @@ async function checkSandboxPolicy(client: SupabaseClient): Promise<EnvironmentCh
 
 async function checkSandboxIssuer(client: SupabaseClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("credential_issuers").select("id, issuer_status").eq("id", "${DEMO_SANDBOX_ISSUER_ID}").maybeSingle()`;
-  const { data, error } = await client
+  const { data, error, status } = await client
     .from("credential_issuers")
     .select("id, issuer_status")
     .eq("id", DEMO_SANDBOX_ISSUER_ID)
     .maybeSingle();
 
   if (error || !data) {
-    const classified = error ? classifyPostgrestError(error) : null;
     return {
       id: "sandbox_issuer",
       label: "Sandbox issuer row",
       status: "fail",
-      detail: classified
-        ? formatClassifiedPostgrestError(classified)
+      detail: error
+        ? formatRestProbeFailure(error, "maybe_single", "credential_issuers", status)
         : `Missing issuer ${DEMO_SANDBOX_ISSUER_ID}`,
       evidence,
     };
@@ -439,7 +499,7 @@ async function checkSandboxIssuer(client: SupabaseClient): Promise<EnvironmentCh
 
 async function checkWebhookDeliveryDisabled(client: SupabaseClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("partner_webhook_configs").select("partner_id, enabled").eq("partner_id", "${DEMO_SANDBOX_PARTNER_ID}").maybeSingle()`;
-  const { data, error } = await client
+  const { data, error, status } = await client
     .from("partner_webhook_configs")
     .select("partner_id, enabled")
     .eq("partner_id", DEMO_SANDBOX_PARTNER_ID)
@@ -461,7 +521,7 @@ async function checkWebhookDeliveryDisabled(client: SupabaseClient): Promise<Env
       id: "webhook_delivery",
       label: "Webhook delivery posture",
       status: "warn",
-      detail: formatClassifiedPostgrestError(classifyPostgrestError(error)),
+      detail: formatRestProbeFailure(error, "maybe_single", "partner_webhook_configs", status),
       evidence,
       optional: true,
     };
@@ -472,7 +532,7 @@ async function checkWebhookDeliveryDisabled(client: SupabaseClient): Promise<Env
       id: "webhook_delivery",
       label: "Webhook delivery posture",
       status: "pass",
-      detail: "No webhook config row — delivery disabled",
+      detail: "No webhook config row - delivery disabled",
       evidence,
       optional: true,
     };
@@ -483,7 +543,7 @@ async function checkWebhookDeliveryDisabled(client: SupabaseClient): Promise<Env
       id: "webhook_delivery",
       label: "Webhook delivery posture",
       status: "warn",
-      detail: `Delivery enabled for ${DEMO_SANDBOX_PARTNER_ID} — disable for Phase 1 presenter flow`,
+      detail: `Delivery enabled for ${DEMO_SANDBOX_PARTNER_ID} - disable for Phase 1 presenter flow`,
       evidence,
       optional: true,
     };
@@ -507,7 +567,7 @@ function checkDemoSubjectConfiguration(demoSubjectId?: string): EnvironmentCheck
       id: "demo_subject_config",
       label: "PARTNER_SANDBOX_DEMO_SUBJECT_ID",
       status: "warn",
-      detail: "Not configured — required before presenter rehearsal (Phase B provisioner)",
+      detail: "Not configured - required before presenter rehearsal (Phase B provisioner)",
       evidence,
       optional: true,
     };
@@ -537,7 +597,7 @@ async function checkDemoSubjectCredential(
   subjectId: string,
 ): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("identity_verifications").select("status, credential_jti").or("sui_address.eq.${maskSubjectId(subjectId)}").maybeSingle()`;
-  const { data, error } = await client
+  const { data, error, status } = await client
     .from("identity_verifications")
     .select("status, credential_jti")
     .or(`sui_address.eq.${subjectId},wallet_address.eq.${subjectId}`)
@@ -548,7 +608,7 @@ async function checkDemoSubjectCredential(
       id: "demo_subject_credential",
       label: "Demo subject credential",
       status: "warn",
-      detail: formatClassifiedPostgrestError(classifyPostgrestError(error)),
+      detail: formatRestProbeFailure(error, "maybe_single", "identity_verifications", status),
       evidence,
       optional: true,
     };

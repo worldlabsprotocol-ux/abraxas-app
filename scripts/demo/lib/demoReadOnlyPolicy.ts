@@ -49,6 +49,7 @@ export const READ_ONLY_POLICY_SCAN_ROOTS = [
   "scripts/demo/lib/demoCatalogValidator.ts",
   "scripts/demo/lib/demoCatalogQueryRegistry.ts",
   "scripts/demo/lib/demoServiceRolePrivilegeExpectations.ts",
+  "scripts/demo/lib/demoRestProbeRegistry.ts",
   "scripts/demo/lib/demoCatalogIndexes.ts",
 ] as const;
 

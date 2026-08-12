@@ -8,8 +8,8 @@ function catalogConfig(): DemoCatalogValidationConfig {
   return {
     demoProjectRef: "demo-ref-abc",
     productionProjectRef: "prod-ref-xyz",
-    maskedSupabaseUrl: "https://demo…-abc.supabase.co",
-    maskedDatabaseTarget: "transport=direct project=demo…-abc",
+    maskedSupabaseUrl: "https://demo...-abc.supabase.co",
+    maskedDatabaseTarget: "transport=direct project=demo...-abc",
     databaseUrl: "postgresql://postgres:pw@db.demo-ref-abc.supabase.co:5432/postgres",
     databaseTransport: "direct",
   };

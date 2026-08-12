@@ -34,7 +34,7 @@ The validator remains intentionally unusable until **both** `DEMO_SUPABASE_PROJE
 
 ### Prerequisites
 
-Set in `.env.demo.local` (never commit — covered by `.env*.local` and explicit `.env.demo.local` gitignore entry):
+Set non-secret guard variables in `.env.demo.local` (never commit). **Do not store `SUPABASE_SERVICE_ROLE_KEY` in any file.**
 
 ```bash
 DEMO_SUPABASE_PROJECT_REF=<demo-project-ref>
@@ -42,17 +42,32 @@ PRODUCTION_SUPABASE_PROJECT_REF=bztwutzprwsdrtqdpymf
 # Optional extra denylist:
 # DEMO_DENIED_SUPABASE_PROJECT_REFS=<ref-a>,<ref-b>
 NEXT_PUBLIC_SUPABASE_URL=https://<demo-project-ref>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<demo-service-role-key>
 # Optional until Phase B:
 PARTNER_SANDBOX_DEMO_SUBJECT_ID=0x...
 ```
 
-`PRODUCTION_SUPABASE_PROJECT_REF` must match `scripts/demo/lib/knownProductionSupabaseProjectRefs.ts`. The immutable denylist cannot be overridden or removed through environment variables.
+`SUPABASE_SERVICE_ROLE_KEY` is required for REST validation only. Provide it at runtime via a hidden Bash prompt (input not echoed), then unset it immediately after validation completes.
+
+Write-only required tables (currently `audit_events`, INSERT-only per migration 065) are **UNVERIFIABLE** in REST mode and do not fail REST exit status. Use catalog mode for authoritative existence and INSERT privilege evidence.
 
 ### Run validation
 
+**REST mode** (requires demo `service_role` key at runtime only):
+
 ```bash
-DOTENV_CONFIG_PATH=.env.demo.local npm run demo:validate
+set -a
+source .env.demo.local
+set +a
+read -rsp "Demo SUPABASE_SERVICE_ROLE_KEY: " SUPABASE_SERVICE_ROLE_KEY
+echo
+npm run demo:validate
+unset SUPABASE_SERVICE_ROLE_KEY
+```
+
+**Catalog mode** (no `service_role` key; uses database URL + CA from `.env.demo.local`):
+
+```bash
+DOTENV_CONFIG_PATH=.env.demo.local npm run demo:validate -- --catalog --confirm <demo-ref>
 ```
 
 ### Exit codes
@@ -137,11 +152,13 @@ RLS, `pg_policies`, `pg_indexes`, functions/RPCs, and `information_schema` colum
 export DEMO_SUPABASE_PROJECT_REF="<demo-project-ref>"
 export PRODUCTION_SUPABASE_PROJECT_REF="bztwutzprwsdrtqdpymf"
 export NEXT_PUBLIC_SUPABASE_URL="https://<demo-project-ref>.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="<demo-service-role-key>"
 # Optional until Phase B:
 # export PARTNER_SANDBOX_DEMO_SUBJECT_ID="0x<64-hex-chars>"
 
+read -rsp "Demo SUPABASE_SERVICE_ROLE_KEY: " SUPABASE_SERVICE_ROLE_KEY
+echo
 npm run demo:validate
+unset SUPABASE_SERVICE_ROLE_KEY
 ```
 
 ### Bash — catalog validation (direct Postgres, read-only)
@@ -261,8 +278,13 @@ On a database that already ledgered migrations 1–17, apply mode skips those fi
 ### PowerShell — post-migration REST validation
 
 ```powershell
-$env:SUPABASE_SERVICE_ROLE_KEY = "<demo-service-role-key>"
+$env:SUPABASE_SERVICE_ROLE_KEY = Read-Host "Demo SUPABASE_SERVICE_ROLE_KEY" -AsSecureString
+# Convert SecureString to plain text only for the current process, then clear:
+$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($env:SUPABASE_SERVICE_ROLE_KEY)
+$env:SUPABASE_SERVICE_ROLE_KEY = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
 npm run demo:validate | Out-File -FilePath "reports\demo-validate-$(Get-Date -Format yyyyMMddTHHmmssZ).log" -Encoding utf8
+Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
 ```
 
 ### PowerShell — post-migration catalog validation
@@ -335,5 +357,6 @@ Cookies are host-scoped; demo sessions do not cross to Production.
 
 - `docs/demo/DEMO_VARIABLE_MATRIX.md`
 - `docs/demo/DEMO_SECURITY_CHECKLIST.md`
+- `docs/demo/REST_VALIDATION_OPERATOR_CHECKLIST.md` - REST vs catalog divergence
 - `docs/demo/PARTNER_SANDBOX_PHASE1_SCRIPT.md`
 - `docs/TIER3_AND_RELYING_PARTNERS.md`
