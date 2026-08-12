@@ -161,9 +161,11 @@ npm run demo:migrate | Out-File -FilePath ("reports\demo-migrate-dryrun-{0}.log"
 The runner accepts **one of two approved transports**:
 
 1. **Direct** — `db.<demo-project-ref>.supabase.co:5432` with username `postgres`
-2. **IPv4 Session Pooler** — `*.pooler.supabase.com:5432` with username `postgres.<demo-project-ref>` and explicit SSL
+2. **IPv4 Session Pooler** — `*.pooler.supabase.com:5432` with username `postgres.<demo-project-ref>` and verified TLS via a local Supabase CA file
 
 **Why only Session Pooler (not Transaction Pooler)?** Port `6543` is the Supabase **transaction** pooler. It cannot hold session-scoped PostgreSQL advisory locks across statements, which the migration runner requires. Port `5432` on `*.pooler.supabase.com` is the **session** pooler: one backend connection for the whole client session, so advisory locks, transactions, and ledger writes remain atomic. Use the session pooler when direct `db.<ref>.supabase.co` is unreachable (for example IPv6-only endpoints from IPv4-only networks).
+
+**Why verified TLS with a local CA file?** Supabase Session Pooler presents a certificate signed by the Supabase project CA, not a public Web PKI root in Node's default trust store. A prior apply attempt reached TLS setup but failed with `self-signed certificate in certificate chain` before authentication or SQL execution. The runner therefore requires the official Supabase database CA downloaded from the demo project's database/SSL settings, saved **outside the repository**, and referenced only through the local environment variable `DEMO_SUPABASE_SSL_ROOT_CERT_PATH`. Do **not** commit the CA file. Do **not** set `NODE_TLS_REJECT_UNAUTHORIZED=0`. Do **not** put `sslmode`, `sslrootcert`, or other TLS parameters in the connection string — verified TLS is configured explicitly by the runner.
 
 **Direct example (placeholders only):**
 
@@ -174,12 +176,17 @@ npm run demo:migrate -- --apply --confirm <demo-project-ref>
 
 **IPv4 Session Pooler example (placeholders only):**
 
+1. In the isolated demo Supabase project, open **Database → SSL** and download the official database CA certificate.
+2. Save it outside the repository, for example `C:\operator\secrets\supabase-demo-ca.crt` or `~/secrets/supabase-demo-ca.crt`.
+3. Set the local-only CA path and a pooler URL **without** TLS query parameters:
+
 ```powershell
-$env:DEMO_SUPABASE_DATABASE_URL = "postgresql://postgres.<demo-project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require"
+$env:DEMO_SUPABASE_SSL_ROOT_CERT_PATH = "C:\operator\secrets\supabase-demo-ca.crt"
+$env:DEMO_SUPABASE_DATABASE_URL = "postgresql://postgres.<demo-project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres"
 npm run demo:migrate -- --apply --confirm <demo-project-ref>
 ```
 
-Rejected automatically: transaction pooler port `6543`, username `postgres` without the demo ref on a pooler host, production refs, deceptive hostnames, missing SSL, and TLS-weakening query parameters.
+Rejected automatically: transaction pooler port `6543`, username `postgres` without the demo ref on a pooler host, production refs, deceptive hostnames, TLS query parameters in the connection string, missing `DEMO_SUPABASE_SSL_ROOT_CERT_PATH`, unreadable CA files, and TLS-weakening environment overrides.
 
 The authoritative ledger is `demo_ops.migration_ledger` in the isolated demo database. The runner acquires a PostgreSQL advisory lock, initializes `demo_ops` idempotently, and stops on the first error. Migration `055_policy_immutable_versions.sql` uses `normalized_transaction_wrapper`: the runner strips only top-level `BEGIN;` / `COMMIT;` from an execution copy, records the original source `sha256` in the ledger, and applies both inside one outer transaction.
 

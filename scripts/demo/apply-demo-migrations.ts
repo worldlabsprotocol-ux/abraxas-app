@@ -12,6 +12,7 @@ import {
 import { createDemoPgClient } from "./lib/demoPgClient";
 import { DemoProjectGuardError, redactSecrets } from "./lib/demoProjectGuard";
 import { DemoDatabaseUrlError, redactDatabaseSecrets } from "./lib/demoDatabaseUrl";
+import { DemoSslRootCertError } from "./lib/demoSslRootCert";
 
 function parseArgs(argv: string[]): { apply: boolean; confirm?: string } {
   let apply = false;
@@ -67,6 +68,10 @@ async function main(): Promise<number> {
       return 2;
     }
     if (error instanceof DemoDatabaseUrlError) {
+      console.error(redactDatabaseSecrets(redactSecrets(error.message), process.env));
+      return 2;
+    }
+    if (error instanceof DemoSslRootCertError) {
       console.error(redactDatabaseSecrets(redactSecrets(error.message), process.env));
       return 2;
     }

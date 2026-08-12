@@ -1,19 +1,16 @@
 // FILE: scripts/demo/lib/demoPgClient.ts
 // Postgres client factory for demo migration apply mode only.
 
-import { parseDemoDatabaseUrl } from "./demoDatabaseUrl";
+import { buildDemoPgClientConfig } from "./demoPgClientConfig";
 import type { DatabaseExecutor } from "./demoDatabaseLedger";
 
-export async function createDemoPgClient(databaseUrl: string): Promise<DatabaseExecutor> {
-  const parsed = parseDemoDatabaseUrl(databaseUrl);
+export async function createDemoPgClient(input: {
+  databaseUrl: string;
+  env: Record<string, string | undefined>;
+}): Promise<DatabaseExecutor> {
+  const { clientOptions } = buildDemoPgClientConfig(input);
   const pg = await import("pg");
-  const client = new pg.Client({
-    connectionString: databaseUrl,
-    ssl:
-      parsed.transport === "supabase_session_pooler"
-        ? { rejectUnauthorized: true }
-        : undefined,
-  });
+  const client = new pg.Client(clientOptions);
   await client.connect();
 
   const executor: DatabaseExecutor = {
