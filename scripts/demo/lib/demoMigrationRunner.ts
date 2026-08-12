@@ -15,6 +15,7 @@ import {
   maskDatabaseUrlFromProjectRef,
   redactDatabaseSecrets,
 } from "./demoDatabaseUrl";
+import { assertSslRootCertPathConfigured } from "./demoSslRootCert";
 import {
   assertDatabaseLedgerCompatible,
   computeDemoMigrationAdvisoryLockKey,
@@ -143,6 +144,9 @@ export function validateApplyDemoMigrationConfig(
   }
 
   const parsed = assertDatabaseUrlMatchesDemoRef(databaseUrl, dryRun.demoProjectRef);
+  if (parsed.transport === "supabase_session_pooler") {
+    assertSslRootCertPathConfigured(env);
+  }
 
   return {
     ...dryRun,
@@ -243,7 +247,10 @@ export async function applyDemoMigrations(input: {
   config: DemoMigrationApplyConfig;
   confirmation: string;
   env: Record<string, string | undefined>;
-  createClient: (databaseUrl: string) => Promise<DatabaseExecutor>;
+  createClient: (input: {
+    databaseUrl: string;
+    env: Record<string, string | undefined>;
+  }) => Promise<DatabaseExecutor>;
 }): Promise<DemoMigrationApplyReport> {
   assertApplyConfirmation(input.confirmation, input.config.demoProjectRef);
 
@@ -252,7 +259,10 @@ export async function applyDemoMigrations(input: {
   const skipped: string[] = [];
   const lockKey = computeDemoMigrationAdvisoryLockKey(input.config.demoProjectRef);
 
-  const client = await input.createClient(input.config.databaseUrl);
+  const client = await input.createClient({
+    databaseUrl: input.config.databaseUrl,
+    env: input.env,
+  });
   let lockHeld = false;
   try {
     lockHeld = await client.tryAdvisoryLock(lockKey);

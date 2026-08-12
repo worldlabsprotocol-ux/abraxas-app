@@ -33,7 +33,8 @@ import {
 const DEMO_REF = "ocntwbxarpjeixdnzide";
 const PROD_REF = KNOWN_PRODUCTION_SUPABASE_PROJECT_REFS[0];
 const DEMO_DB_URL = `postgresql://postgres:plain-secret@db.${DEMO_REF}.supabase.co:5432/postgres`;
-const DEMO_POOLER_URL = `postgresql://postgres.${DEMO_REF}:plain-secret@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require`;
+const DEMO_POOLER_URL = `postgresql://postgres.${DEMO_REF}:plain-secret@aws-0-us-east-1.pooler.supabase.com:5432/postgres`;
+const DEMO_SSL_CERT_PATH = "/operator/local-only/supabase-ca.pem";
 const ENCODED_DB_URL = `postgresql://postgres:${encodeURIComponent("p@ss:word")}@db.${DEMO_REF}.supabase.co:5432/postgres`;
 
 function baseEnv(overrides: Record<string, string | undefined> = {}) {
@@ -211,25 +212,49 @@ describe("demo denylist and reference checks", () => {
   it("rejects transaction pooler port 6543 and unbound pooler usernames", () => {
     expect(() =>
       parseSupabaseProjectRefFromDatabaseUrl(
-        `postgresql://postgres.${DEMO_REF}:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require`,
+        `postgresql://postgres.${DEMO_REF}:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres`,
       ),
     ).toThrow(/6543|transaction pooler/i);
 
     expect(() =>
       parseSupabaseProjectRefFromDatabaseUrl(
-        `postgresql://postgres:secret@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require`,
+        `postgresql://postgres:secret@aws-0-us-east-1.pooler.supabase.com:5432/postgres`,
       ),
     ).toThrow(/username postgres\.<demo-project-ref>/i);
   });
 
-  it("accepts official session pooler URLs for apply validation", () => {
+  it("accepts official session pooler URLs for apply validation when CA path is configured", () => {
     const config = validateApplyDemoMigrationConfig(
-      baseEnv({ DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL }),
+      baseEnv({
+        DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL,
+        DEMO_SUPABASE_SSL_ROOT_CERT_PATH: DEMO_SSL_CERT_PATH,
+      }),
     );
     expect(config.databaseTransport).toBe("supabase_session_pooler");
     expect(config.maskedDatabaseTarget).toBe(
       "transport=supabase_session_pooler project=ocnt…zide",
     );
+  });
+
+  it("requires DEMO_SUPABASE_SSL_ROOT_CERT_PATH for session pooler apply validation", () => {
+    expect(() =>
+      validateApplyDemoMigrationConfig(
+        baseEnv({ DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL }),
+      ),
+    ).toThrow(/DEMO_SUPABASE_SSL_ROOT_CERT_PATH is required/i);
+  });
+
+  it("rejects production pooler config before SSL root certificate loading", () => {
+    expect(() =>
+      validateApplyDemoMigrationConfig(
+        baseEnv({
+          DEMO_SUPABASE_PROJECT_REF: PROD_REF,
+          NEXT_PUBLIC_SUPABASE_URL: `https://${PROD_REF}.supabase.co`,
+          DEMO_SUPABASE_DATABASE_URL: `postgresql://postgres.${PROD_REF}:secret@aws-0-us-east-1.pooler.supabase.com:5432/postgres`,
+          DEMO_SUPABASE_SSL_ROOT_CERT_PATH: DEMO_SSL_CERT_PATH,
+        }),
+      ),
+    ).toThrow(/production|denied|must not equal/i);
   });
 
   it("retains advisory lock behavior on a single session for session pooler transport", async () => {
@@ -251,14 +276,20 @@ describe("demo denylist and reference checks", () => {
       },
     });
     const config = validateApplyDemoMigrationConfig(
-      baseEnv({ DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL }),
+      baseEnv({
+        DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL,
+        DEMO_SUPABASE_SSL_ROOT_CERT_PATH: DEMO_SSL_CERT_PATH,
+      }),
     );
 
     await expect(
       applyDemoMigrations({
         config,
         confirmation: DEMO_REF,
-        env: baseEnv({ DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL }),
+        env: baseEnv({
+          DEMO_SUPABASE_DATABASE_URL: DEMO_POOLER_URL,
+          DEMO_SUPABASE_SSL_ROOT_CERT_PATH: DEMO_SSL_CERT_PATH,
+        }),
         createClient: async () => mock.executor,
       }),
     ).rejects.toThrow(/stop on first migration error/i);
@@ -304,7 +335,10 @@ describe("demoMigrationRunner manifest scope", () => {
     expect(() => validateDryRunDemoMigrationConfig(baseEnv())).not.toThrow();
     expect(() =>
       validateDryRunDemoMigrationConfig(
-        baseEnv({ DEMO_SUPABASE_DATABASE_URL: undefined }),
+        baseEnv({
+          DEMO_SUPABASE_DATABASE_URL: undefined,
+          DEMO_SUPABASE_SSL_ROOT_CERT_PATH: undefined,
+        }),
       ),
     ).not.toThrow();
   });

@@ -11,7 +11,14 @@ const DIRECT_USERNAME = "postgres";
 const REQUIRED_PORT = "5432";
 const REQUIRED_DATABASE = "postgres";
 const WEAK_SSL_MODES = new Set(["disable", "allow", "prefer"]);
-const STRONG_SSL_MODES = new Set(["require", "verify-ca", "verify-full"]);
+const FORBIDDEN_POOLER_TLS_QUERY_PARAMS = new Set([
+  "sslmode",
+  "ssl",
+  "sslrootcert",
+  "sslcert",
+  "sslkey",
+  "sslcompression",
+]);
 
 export class DemoDatabaseUrlError extends Error {
   constructor(message: string) {
@@ -25,6 +32,7 @@ export type DemoDatabaseTransport = "direct" | "supabase_session_pooler";
 export interface ParsedDemoDatabaseUrl {
   projectRef: string;
   transport: DemoDatabaseTransport;
+  poolerHostname?: string;
 }
 
 function parsePostgresUrl(databaseUrl: string): URL {
@@ -67,7 +75,17 @@ function assertPortAndDatabase(parsed: URL): void {
   }
 }
 
-function assertNoAmbiguousQueryParams(parsed: URL): void {
+function assertNoPoolerTlsQueryParams(parsed: URL): void {
+  for (const key of parsed.searchParams.keys()) {
+    if (FORBIDDEN_POOLER_TLS_QUERY_PARAMS.has(key.toLowerCase())) {
+      throw new DemoDatabaseUrlError(
+        "DEMO_SUPABASE_DATABASE_URL session pooler connections must not include TLS query parameters — verified TLS is configured by the runner",
+      );
+    }
+  }
+}
+
+function assertDirectTlsQueryParams(parsed: URL): void {
   for (const [key, value] of parsed.searchParams.entries()) {
     const normalizedKey = key.toLowerCase();
     const normalizedValue = value.toLowerCase();
@@ -86,7 +104,12 @@ function assertNoAmbiguousQueryParams(parsed: URL): void {
 }
 
 function assertSslRequired(parsed: URL, transport: DemoDatabaseTransport): void {
-  assertNoAmbiguousQueryParams(parsed);
+  if (transport === "supabase_session_pooler") {
+    assertNoPoolerTlsQueryParams(parsed);
+    return;
+  }
+
+  assertDirectTlsQueryParams(parsed);
 
   const sslmode = parsed.searchParams.get("sslmode")?.toLowerCase();
   const ssl = parsed.searchParams.get("ssl")?.toLowerCase();
@@ -96,18 +119,6 @@ function assertSslRequired(parsed: URL, transport: DemoDatabaseTransport): void 
   }
   if (ssl === "false" || ssl === "0") {
     throw new DemoDatabaseUrlError("DEMO_SUPABASE_DATABASE_URL must not disable SSL");
-  }
-
-  if (transport !== "supabase_session_pooler") {
-    return;
-  }
-
-  const hasStrongSslMode = sslmode !== null && sslmode !== "" && STRONG_SSL_MODES.has(sslmode);
-  const hasExplicitSsl = ssl === "true" || ssl === "1";
-  if (!hasStrongSslMode && !hasExplicitSsl) {
-    throw new DemoDatabaseUrlError(
-      "DEMO_SUPABASE_DATABASE_URL session pooler connections must enable SSL (sslmode=require, verify-ca, verify-full, or ssl=true)",
-    );
   }
 }
 
@@ -209,7 +220,19 @@ function parseSessionPoolerDatabaseUrl(parsed: URL): ParsedDemoDatabaseUrl {
   return {
     projectRef,
     transport: "supabase_session_pooler",
+    poolerHostname: parsed.hostname,
   };
+}
+
+/** Strip TLS query parameters so pg connection-string parsing cannot override explicit ssl options. */
+export function buildSessionPoolerConnectionString(databaseUrl: string): string {
+  const parsed = parsePostgresUrl(databaseUrl);
+  for (const key of [...parsed.searchParams.keys()]) {
+    if (FORBIDDEN_POOLER_TLS_QUERY_PARAMS.has(key.toLowerCase())) {
+      parsed.searchParams.delete(key);
+    }
+  }
+  return parsed.toString();
 }
 
 /** Extract Supabase project ref from an approved Postgres connection URL. */
@@ -281,7 +304,11 @@ export function redactDatabaseSecrets(
   env: Record<string, string | undefined>,
 ): string {
   let redacted = text;
-  const secretKeys = ["DEMO_SUPABASE_DATABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] as const;
+  const secretKeys = [
+    "DEMO_SUPABASE_DATABASE_URL",
+    "DEMO_SUPABASE_SSL_ROOT_CERT_PATH",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  ] as const;
   for (const key of secretKeys) {
     const value = env[key];
     if (!value || value.length === 0) continue;
@@ -292,5 +319,8 @@ export function redactDatabaseSecrets(
       // ignore malformed URI encoding in env values
     }
   }
-  return redactPasswordPatterns(redacted);
+  return redactPasswordPatterns(redacted).replace(
+    /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g,
+    "<redacted:certificate>",
+  );
 }
