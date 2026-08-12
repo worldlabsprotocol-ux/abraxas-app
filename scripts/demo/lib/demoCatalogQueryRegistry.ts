@@ -1,6 +1,8 @@
 // FILE: scripts/demo/lib/demoCatalogQueryRegistry.ts
 // Allowlisted read-only catalog queries — no dynamic SQL or user-supplied identifiers.
 
+import { buildServiceRolePrivilegeMatrixSqlValues } from "./demoServiceRolePrivilegeExpectations";
+
 /** Hardcoded session bounds — not user-configurable. */
 export const DEMO_CATALOG_SESSION_TIMEOUTS = {
   statement_timeout: "30s",
@@ -99,56 +101,7 @@ const LEGACY_POLICY_VALUES = `
   ('credential_presentations', 'anon_insert_presentations')
 `.trim();
 
-const SERVICE_ROLE_PRIVILEGE_MATRIX = `
-  ('identity_verifications', 'SELECT'),
-  ('identity_verifications', 'INSERT'),
-  ('identity_verifications', 'UPDATE'),
-  ('abraxas_credentials', 'SELECT'),
-  ('abraxas_credentials', 'INSERT'),
-  ('abraxas_credentials', 'UPDATE'),
-  ('credential_claims', 'SELECT'),
-  ('credential_claims', 'INSERT'),
-  ('credential_claims', 'UPDATE'),
-  ('wallet_bindings', 'SELECT'),
-  ('wallet_bindings', 'INSERT'),
-  ('wallet_bindings', 'UPDATE'),
-  ('partner_policies', 'SELECT'),
-  ('partner_policies', 'INSERT'),
-  ('partner_policies', 'UPDATE'),
-  ('partners', 'SELECT'),
-  ('partners', 'INSERT'),
-  ('partners', 'UPDATE'),
-  ('verification_requests', 'SELECT'),
-  ('verification_requests', 'INSERT'),
-  ('verification_requests', 'UPDATE'),
-  ('verification_decisions', 'SELECT'),
-  ('verification_decisions', 'INSERT'),
-  ('verification_decisions', 'UPDATE'),
-  ('consent_receipts', 'SELECT'),
-  ('consent_receipts', 'INSERT'),
-  ('audit_events', 'INSERT'),
-  ('credential_issuers', 'SELECT'),
-  ('decision_receipts', 'SELECT'),
-  ('decision_receipts', 'INSERT'),
-  ('credential_status_events', 'SELECT'),
-  ('credential_status_events', 'INSERT'),
-  ('receipt_claim_dependencies', 'SELECT'),
-  ('receipt_claim_dependencies', 'INSERT'),
-  ('receipt_claim_dependencies', 'UPDATE'),
-  ('partner_metering_events', 'SELECT'),
-  ('partner_metering_events', 'INSERT'),
-  ('partner_entitlements', 'SELECT'),
-  ('partner_entitlements', 'INSERT'),
-  ('partner_entitlements', 'UPDATE'),
-  ('partner_webhook_configs', 'SELECT'),
-  ('partner_webhook_configs', 'INSERT'),
-  ('partner_webhook_configs', 'UPDATE'),
-  ('partner_webhook_outbox', 'SELECT'),
-  ('partner_webhook_outbox', 'INSERT'),
-  ('partner_webhook_outbox', 'UPDATE'),
-  ('partner_webhook_delivery_attempts', 'SELECT'),
-  ('partner_webhook_delivery_attempts', 'INSERT')
-`.trim();
+const SERVICE_ROLE_PRIVILEGE_MATRIX = buildServiceRolePrivilegeMatrixSqlValues();
 
 export const DEMO_CATALOG_CONTROL_REGISTRY: Record<
   DemoCatalogControlQueryId,

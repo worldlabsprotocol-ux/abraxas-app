@@ -90,8 +90,35 @@ A fresh Supabase project requires **more than migrations 018 onward**. The depen
 | 15 | `056_publish_partner_policy_draft_rpc.sql` | Publish RPC |
 | 16 | `058_partner_metering_foundation.sql` | Metering tables |
 | 17 | `062_partner_webhook_outbox.sql` | Webhook outbox (delivery disabled by default) |
+| 18 | `065_service_role_runtime_grants.sql` | Explicit `service_role` table grants (after catalog evidence) |
 
 **Do not run:** `028`–`031` (superseded by `032`), `018_policy_verification_repair.sql` (destructive).
+
+### Why migration 065 exists
+
+Authoritative read-only **catalog validation** (`npm run demo:validate -- --catalog --confirm <demo-ref>`) confirmed on the isolated demo project:
+
+- all 19 required tables, RLS, 26 indexes, `publish_partner_policy_draft` RPC, and sandbox seeds are present;
+- every expected `service_role` table privilege was **missing**.
+
+REST-mode validation (`npm run demo:validate`) produced `permission denied` false negatives for the same reason: the demo project keeps **“Automatically expose new tables” disabled**, so PostgREST with `SUPABASE_SERVICE_ROLE_KEY` cannot reach tables until explicit `GRANT`s exist.
+
+Migration `065_service_role_runtime_grants.sql` adds **only** audited, per-table `service_role` grants. It does **not**:
+
+- enable automatic table exposure or default privileges in the Supabase dashboard;
+- grant `DELETE`, `TRUNCATE`, `REFERENCES`, or `TRIGGER`;
+- grant privileges to `anon` or `authenticated`;
+- revoke or alter existing privileges (`GRANT USAGE ON SCHEMA public` is idempotent).
+
+Catalog privilege checks cover **24 tables** (19 required runtime tables plus 5 adjacent call-site tables). Schema/RLS required-table checks remain scoped to the 19-table demo runtime set.
+
+**Deployment scope:** `065` is a **general server-runtime privilege correction**, not a demo-only schema change. It is **not** applied automatically by Vercel deployment or repository merge. Production Supabase application requires a **separate reviewed operator decision**. After merge, the **only authorized immediate apply target** is the isolated demo project `ocntwbxarpjeixdnzide` via the guarded `npm run demo:migrate -- --apply` workflow.
+
+**Atomicity:** `065` is one fixed PL/pgSQL `DO` block. Role assertion, all 24 fixed `to_regclass` table assertions, `GRANT USAGE`, and all 62 table grants execute as a single independently atomic unit. Any failure rolls back every grant made by that block, even when executed outside the demo runner.
+
+### Re-applying migrations on a database that already has 001–017 ledgered
+
+When `demo_ops.migration_ledger` already contains the first 17 manifest files with matching `sha256` hashes, the guarded runner **skips** those files and applies **only** `065_service_role_runtime_grants.sql`. Hashes for the existing 17 files are immutable; do not edit ledgered migration sources in place.
 
 ### Platform prerequisites (fresh Supabase project)
 
@@ -183,7 +210,7 @@ npm run demo:migrate
 Expected output:
 - masked demo project ref;
 - masked database target derived from `DEMO_SUPABASE_PROJECT_REF` only;
-- exact 17-file manifest order with `sha256` hashes and transaction mode (`055_policy_immutable_versions.sql` reports `normalized_transaction_wrapper`);
+- exact 18-file manifest order with `sha256` hashes and transaction mode (`055_policy_immutable_versions.sql` reports `normalized_transaction_wrapper`; `065_service_role_runtime_grants.sql` reports `atomic_wrapper`);
 - `No DNS lookup, database connection, ledger creation, or SQL execution performed.`
 
 Save sanitized output locally (optional):
@@ -227,7 +254,9 @@ npm run demo:migrate -- --apply --confirm <demo-project-ref>
 
 Rejected automatically: transaction pooler port `6543`, username `postgres` without the demo ref on a pooler host, production refs, deceptive hostnames, TLS query parameters in the connection string, missing `DEMO_SUPABASE_SSL_ROOT_CERT_PATH`, unreadable CA files, and TLS-weakening environment overrides.
 
-The authoritative ledger is `demo_ops.migration_ledger` in the isolated demo database. The runner acquires a PostgreSQL advisory lock, initializes `demo_ops` idempotently, and stops on the first error. Migration `055_policy_immutable_versions.sql` uses `normalized_transaction_wrapper`: the runner strips only top-level `BEGIN;` / `COMMIT;` from an execution copy, records the original source `sha256` in the ledger, and applies both inside one outer transaction.
+The authoritative ledger is `demo_ops.migration_ledger` in the isolated demo database. The runner acquires a PostgreSQL advisory lock, initializes `demo_ops` idempotently, and stops on the first error. Migration `055_policy_immutable_versions.sql` uses `normalized_transaction_wrapper`: the runner strips only top-level `BEGIN;` / `COMMIT;` from an execution copy, records the original source `sha256` in the ledger, and applies both inside one outer transaction. Migration `065_service_role_runtime_grants.sql` is `atomic_wrapper` and additionally self-atomic via one fixed `DO` block (assertions + grants roll back together independent of the runner).
+
+On a database that already ledgered migrations 1–17, apply mode skips those files when hashes match and executes only `065_service_role_runtime_grants.sql`. Do **not** apply `065` to production Supabase without a separate reviewed operator decision; authorized immediate target after merge is demo project `ocntwbxarpjeixdnzide` only.
 
 ### PowerShell — post-migration REST validation
 
