@@ -340,12 +340,16 @@ Live `--apply` is **disabled** until a separately reviewed repository PR commits
 - `npm run demo:provision -- --verify` works with a hidden database URL prompt.
 - `npm run demo:provision -- --apply` fails closed with `demo_signing_key_not_configured` (exit **2**) **before** any database URL prompt, certificate read, DNS, advisory lock, transaction, or mutation.
 
-Operators must **not** edit source at apply time. Future bootstrap steps:
+Operators must **not** edit source at apply time. See **`docs/demo/DEMO_SIGNING_KEY_BOOTSTRAP.md`** for the full workflow.
 
-1. Generate a **demo-only** `ABRAXAS_SIGNING_KEY` in the demo Vercel environment (never production).
-2. Derive the canonical public JWK thumbprint (SHA-256 of sorted `{"crv","kty","x"}` JSON).
-3. Open a reviewed PR that sets `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` to that hex digest only.
-4. At apply time, enter the demo private key via hidden prompt; it must match the committed thumbprint exactly.
+1. Create a **durable directory outside the repository** (not `/tmp`).
+2. `npm run demo:signing-key:generate -- --output-dir <absolute-path>`
+3. `npm run demo:signing-key:verify -- --private-jwk ... --public-jwk ... --metadata ...`
+4. Confirm **encrypted backup** of the private JWK (manual — tooling prints `signing_key_backup_required` and does not upload secrets).
+5. Open a reviewed PR that sets `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` to the verified hex digest only.
+6. **Before Vercel install:** verify demo Custom Environment isolation (demo domain, demo Supabase ref, no Production variable inheritance).
+7. Install demo `ABRAXAS_SIGNING_KEY` + `ABRAXAS_PUBLIC_KEY` on the **demo Vercel environment only** (never Production).
+8. At apply time, enter the demo private key via hidden prompt; it must match the committed thumbprint exactly.
 
 Production-key denylist entries in `knownProductionSigningKeyThumbprints.ts` are defense in depth only.
 

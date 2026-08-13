@@ -46,7 +46,11 @@ The offline provisioner (`npm run demo:provision`) must:
 - [ ] Never store database URL, signing key, or service-role key in env files or state file
 - [ ] Require hidden prompt for `DEMO_SUPABASE_DATABASE_URL` and `ABRAXAS_SIGNING_KEY` on apply; unset afterward
 - [ ] Live `--apply` disabled until reviewed thumbprint PR merges (`EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` not null)
-- [ ] Require signing key thumbprint to match committed `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` at apply time (hidden prompt only)
+- [ ] Generate demo signing keys only with `npm run demo:signing-key:generate` outside repository/workspace
+- [ ] Verify generated keys with `npm run demo:signing-key:verify` before thumbprint PR
+- [ ] Confirm encrypted backup before thumbprint PR (`signing_key_backup_required`)
+- [ ] Never commit `demo-signing-*.jwk` or `demo-signing-bootstrap.json`
+- [ ] Verify Vercel demo-environment isolation before installing signing keys
 - [ ] Never print full subject ID (masked only); `provision_id` may be printed after successful apply
 - [ ] `--verify --recover` accepts UUID `provision_id` only
 - [ ] Never create real Google accounts, documents, biometrics, email, name, or DOB
