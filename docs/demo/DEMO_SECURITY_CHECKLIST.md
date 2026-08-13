@@ -1,6 +1,6 @@
 # Partner Sandbox Demo — Security Checklist
 
-**Current state:** Phase A supplies **read-only validation only**. It cannot provision, clean up, migrate, or modify a database.
+**Current state:** Phase A validation and Phase C provisioning CLI are available. Phase C.1 cleanup is not implemented.
 
 The validator remains intentionally unusable until both Production and Demo refs are configured correctly. The production project reference (`KNOWN_PRODUCTION_SUPABASE_PROJECT_REFS`) is a non-secret deployment identifier; rotating production Supabase projects requires a reviewed update to that immutable denylist.
 
@@ -36,33 +36,38 @@ The validator remains intentionally unusable until both Production and Demo refs
 - [ ] Webhook delivery **disabled** or no config row for sandbox partner
 - [ ] Legacy `006` anon policies reviewed manually (validator reports UNVERIFIABLE for policy catalog)
 
-## Phase B provisioner constraints (future — not implemented)
+## Phase C provisioner constraints
 
-The offline provisioner must:
+The offline provisioner (`npm run demo:provision`) must:
 
-- [ ] Generate subject internally — **no `--subject-id` option**
-- [ ] Write `scripts/demo/.sandbox-holder.json` with demo project ref + generated subject
-- [ ] Cleanup reads **only** the state file; refuses project ref mismatch
-- [ ] Never accept arbitrary Production subject IDs
+- [ ] Generate subject internally from opaque UUID — **no `--subject-id` option**
+- [ ] Use transaction-bound PostgreSQL only for mutations (no PostgREST writes)
+- [ ] Write `scripts/demo/.sandbox-holder.json` after DB commit with mode `0600`, atomic rename, symlink rejection, 4 KB max, schema v1, project-ref binding
+- [ ] Never store database URL, signing key, or service-role key in env files or state file
+- [ ] Require hidden prompt for `DEMO_SUPABASE_DATABASE_URL` and `ABRAXAS_SIGNING_KEY` on apply; unset afterward
+- [ ] Live `--apply` disabled until reviewed thumbprint PR merges (`EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` not null)
+- [ ] Require signing key thumbprint to match committed `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` at apply time (hidden prompt only)
+- [ ] Never print full subject ID (masked only); `provision_id` may be printed after successful apply
+- [ ] `--verify --recover` accepts UUID `provision_id` only
 - [ ] Never create real Google accounts, documents, biometrics, email, name, or DOB
-- [ ] Never call `/api/credentials/issue`
-- [ ] Stop if any issuer/claim would be production-usable outside sandbox policy
-- [ ] Require `--confirm` and refuse `NODE_ENV=production`
+- [ ] Never call `/api/credentials/issue` or production issuance PostgREST helpers
+- [ ] Require `--apply --confirm <demo-ref>` and refuse `NODE_ENV=production`
 - [ ] Never be exposed via a web route
+- [ ] Exit 3 on conflicts without mutation — Phase C.1 required for cleanup
 
-## Runtime demo environment (future)
+## Phase C.1 cleanup (not implemented)
+
+- [ ] Revoke synthetic credential via scoped cleanup command
+- [ ] Verify no active claims remain for generated subject
+- [ ] Delete local state file after cleanup
+- [ ] Re-run `npm run demo:validate` before next rehearsal
+
+## Runtime demo environment
 
 - [ ] `PARTNER_SANDBOX_DEMO_ENABLED=true` on demo only
 - [ ] `INTERNAL_API_SECRET` **not set** on demo
-- [ ] `PILOT_TIER3_SCREENING` **not required** (direct library calls)
+- [ ] `PILOT_TIER3_SCREENING` **not required** (provisioner writes sandbox screening directly)
 - [ ] Cookies host-scoped to `demo.abraxasworld.xyz`
 - [ ] No cross-environment session cookies with Production
 - [ ] Webhook delivery disabled or demo-only receiver URL
 - [ ] No `RESEND_API_KEY` — demo emails cannot reach real users
-
-## Cleanup / revocation (Phase B)
-
-- [ ] Revoke synthetic credential via library cleanup script
-- [ ] Verify no active claims remain for generated subject
-- [ ] Delete local state file after cleanup
-- [ ] Re-run `npm run demo:validate` before next rehearsal

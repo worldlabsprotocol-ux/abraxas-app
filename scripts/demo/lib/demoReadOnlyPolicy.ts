@@ -51,6 +51,11 @@ export const READ_ONLY_POLICY_SCAN_ROOTS = [
   "scripts/demo/lib/demoServiceRolePrivilegeExpectations.ts",
   "scripts/demo/lib/demoRestProbeRegistry.ts",
   "scripts/demo/lib/demoCatalogIndexes.ts",
+  "scripts/demo/lib/demoProvisionerConfig.ts",
+  "scripts/demo/lib/demoProvisionerDryRun.ts",
+  "scripts/demo/lib/demoProvisionerGuard.ts",
+  "scripts/demo/lib/expectedDemoSigningKeyThumbprint.ts",
+  "scripts/demo/lib/knownProductionSigningKeyThumbprints.ts",
 ] as const;
 
 export interface ReadOnlyPolicyViolation {

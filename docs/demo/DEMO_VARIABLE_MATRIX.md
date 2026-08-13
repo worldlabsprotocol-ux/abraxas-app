@@ -1,6 +1,6 @@
 # Partner Sandbox Demo — Variable Matrix
 
-**Current state:** Phase A supplies **read-only validation only**. It cannot provision, clean up, migrate, or modify a database.
+**Current state:** Phase A validation and Phase C provisioning CLI are available. Phase C.1 cleanup is not implemented.
 
 The validator is intentionally unusable until **both** `DEMO_SUPABASE_PROJECT_REF` and `PRODUCTION_SUPABASE_PROJECT_REF` are configured correctly: the demo ref must differ from every production/denied ref, and the production safety input must match the immutable denylist in `scripts/demo/lib/knownProductionSupabaseProjectRefs.ts`.
 
@@ -17,7 +17,21 @@ This matrix covers the **admin-only synthetic-subject demo** at `demo.abraxaswor
 | `DEMO_DENIED_SUPABASE_PROJECT_REFS` | Optional | No | Comma-separated extra project refs that must never be targeted |
 | `NEXT_PUBLIC_SUPABASE_URL` | **Yes** | No | Must match `DEMO_SUPABASE_PROJECT_REF` and must not match any denied production ref |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | Read-only validation queries (demo project only) |
-| `PARTNER_SANDBOX_DEMO_SUBJECT_ID` | Optional | No | Warn if missing; validate shape if present |
+| `PARTNER_SANDBOX_DEMO_SUBJECT_ID` | Optional | No | Warn if missing in validate; set from Phase C state file for presenter flow |
+
+## Phase C provisioning (CLI apply / verify)
+
+| Variable | Required | Secret? | Purpose |
+|----------|----------|---------|---------|
+| `DEMO_SUPABASE_DATABASE_URL` | Apply + verify | **Yes** | Hidden prompt only — Session Pooler URL; never in `.env.demo.local` |
+| `DEMO_SUPABASE_SSL_ROOT_CERT_PATH` | Pooler apply/verify | No (path) | Verified TLS CA for Session Pooler |
+| `ABRAXAS_SIGNING_KEY` | Apply only | **Yes** | Hidden prompt only — must match `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` |
+| `ABRAXAS_ISSUER_URL` / `NEXT_PUBLIC_APP_URL` | Apply | No | Credential JWT issuer (demo origin) |
+| `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` | Apply (when enabled) | No | Committed in `scripts/demo/lib/expectedDemoSigningKeyThumbprint.ts`; `null` disables live apply |
+
+Live `--apply` remains disabled while `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` is `null`. Do not store secrets in env files or the state file.
+
+Verify uses read-only PostgreSQL only (not PostgREST). Apply uses one `pg.Client` transaction for all mutations.
 
 ## Phase A catalog limits
 
@@ -42,7 +56,7 @@ RLS flags, `pg_policies`, `pg_indexes`, database functions/RPCs, `information_sc
 | `ABRAXAS_BROWSER_SESSION_SECRET` | **No** | Yes | Admin session cookies |
 | `ADMIN_PIN` | **No** | No | Demo-only presenter PIN |
 | `PARTNER_SANDBOX_DEMO_ENABLED` | **No** | Yes | Exact `true` on demo only |
-| `PARTNER_SANDBOX_DEMO_SUBJECT_ID` | **No** | Yes | Synthetic holder from Phase B provisioner |
+| `PARTNER_SANDBOX_DEMO_SUBJECT_ID` | **No** | Yes | From `scripts/demo/.sandbox-holder.json` after Phase C verify |
 
 ## Explicitly omitted (Phase 1 synthetic-subject demo)
 
@@ -53,7 +67,7 @@ These are **not required** for the offline fixture provisioner or admin-only dem
 | `NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID` | No Google account for synthetic holder |
 | `GOOGLE_ZKLOGIN_CLIENT_ID` | Same |
 | `GOOGLE_ZKLOGIN_LEGACY_CLIENT_IDS` | Same |
-| `PILOT_TIER3_SCREENING` | Provisioner calls `applySandboxScreeningClear` directly |
+| `PILOT_TIER3_SCREENING` | Provisioner writes sandbox screening claim directly via SQL repository |
 | `CRON_SECRET` | Webhook dispatch not required for Phase 1 rehearsal |
 | `ABRAXAS_WEBHOOK_MASTER_KEY` | Webhook delivery disabled by default |
 | `PARTNER_WEBHOOK_DISPATCH_SCHEDULER_CONFIGURED` | Not required when delivery disabled |
@@ -81,7 +95,7 @@ Webhook endpoint must point to a **demo-only HTTPS receiver**, never a productio
 | `GOOGLE_ZKLOGIN_CLIENT_ID` | Server audience verification |
 | Google Console origins | `https://demo.abraxasworld.xyz` |
 
-Not needed for Phase B offline synthetic holder provisioning.
+Not needed for Phase C offline synthetic holder provisioning.
 
 ## Production must keep disabled
 
