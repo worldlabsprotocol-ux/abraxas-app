@@ -31,6 +31,13 @@ This matrix covers the **admin-only synthetic-subject demo** at `demo.abraxaswor
 
 Live `--apply` remains disabled while `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` is `null`. Do not store secrets in env files or the state file.
 
+| Tooling | Purpose |
+|---------|---------|
+| `npm run demo:signing-key:generate` | Local demo key generation outside repository |
+| `npm run demo:signing-key:verify` | Local JWK + JWT + receipt verification before thumbprint PR |
+
+See `docs/demo/DEMO_SIGNING_KEY_BOOTSTRAP.md`.
+
 Verify uses read-only PostgreSQL only (not PostgREST). Apply uses one `pg.Client` transaction for all mutations.
 
 ## Phase A catalog limits
