@@ -313,16 +313,122 @@ Record only `PASS` / `FAIL` / `UNVERIFIABLE` / `WARN` lines. **UNVERIFIABLE is n
 - Production credentials, backups, or copied rows/storage
 - Arbitrary file arguments to the migration runner
 
-## Phase B — Future provisioning (not implemented)
+## Phase C — Synthetic holder provisioning (CLI)
 
-The offline provisioner (`scripts/demo/provision-partner-sandbox-holder.ts`) will:
+The offline provisioner (`npm run demo:provision`) creates a **synthetic, non-PII** Partner Sandbox holder using a transaction-bound PostgreSQL repository (Strategy B). It does **not** call PostgREST mutation helpers and does **not** expose a web route.
 
-- **Generate** the synthetic subject itself (no `--subject-id` flag)
-- Call internal library functions directly (`issueManualIdentityCredential`, `applySandboxScreeningClear`)
-- Write state to `scripts/demo/.sandbox-holder.json` (gitignored) with demo project ref + subject
-- Refuse cleanup if project ref differs from state file
-- Stop if any claim would be production-usable outside sandbox policy scope
-- **Not** require Google OAuth, `PILOT_TIER3_SCREENING`, or `/api/credentials/issue`
+### Prerequisites
+
+Non-secret variables in `.env.demo.local` only (never commit secrets):
+
+```bash
+DEMO_SUPABASE_PROJECT_REF=ocntwbxarpjeixdnzide
+PRODUCTION_SUPABASE_PROJECT_REF=bztwutzprwsdrtqdpymf
+NEXT_PUBLIC_SUPABASE_URL=https://ocntwbxarpjeixdnzide.supabase.co
+NEXT_PUBLIC_APP_URL=https://demo.abraxasworld.xyz
+ABRAXAS_ISSUER_URL=https://demo.abraxasworld.xyz
+DEMO_SUPABASE_SSL_ROOT_CERT_PATH=<operator-local-path>/supabase-demo-ca.crt
+```
+
+**Do not store** `DEMO_SUPABASE_DATABASE_URL`, `ABRAXAS_SIGNING_KEY`, or `SUPABASE_SERVICE_ROLE_KEY` in any file.
+
+### Signing-key bootstrap (required before live apply)
+
+Live `--apply` is **disabled** until a separately reviewed repository PR commits the demo-only signing public-key thumbprint to `scripts/demo/lib/expectedDemoSigningKeyThumbprint.ts`. Until then:
+
+- `npm run demo:provision` (dry-run) works offline.
+- `npm run demo:provision -- --verify` works with a hidden database URL prompt.
+- `npm run demo:provision -- --apply` fails closed with `demo_signing_key_not_configured` (exit **2**) **before** any database URL prompt, certificate read, DNS, advisory lock, transaction, or mutation.
+
+Operators must **not** edit source at apply time. Future bootstrap steps:
+
+1. Generate a **demo-only** `ABRAXAS_SIGNING_KEY` in the demo Vercel environment (never production).
+2. Derive the canonical public JWK thumbprint (SHA-256 of sorted `{"crv","kty","x"}` JSON).
+3. Open a reviewed PR that sets `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` to that hex digest only.
+4. At apply time, enter the demo private key via hidden prompt; it must match the committed thumbprint exactly.
+
+Production-key denylist entries in `knownProductionSigningKeyThumbprints.ts` are defense in depth only.
+
+### Dry-run (default — offline)
+
+```bash
+DOTENV_CONFIG_PATH=.env.demo.local npm run demo:provision
+```
+
+Performs no DNS, certificate read, database client creation, secret prompt, state-file access, or mutation. Illustrative output is labeled **non-persisted**.
+
+### Apply (guarded)
+
+```bash
+set -a
+source .env.demo.local
+set +a
+read -rsp "Demo DEMO_SUPABASE_DATABASE_URL: " DEMO_SUPABASE_DATABASE_URL
+echo
+read -rsp "Demo ABRAXAS_SIGNING_KEY: " ABRAXAS_SIGNING_KEY
+echo
+npm run demo:provision -- --apply --confirm ocntwbxarpjeixdnzide
+unset DEMO_SUPABASE_DATABASE_URL ABRAXAS_SIGNING_KEY
+```
+
+- All database mutations run on **one** guarded Session Pooler `pg.Client` in **one** explicit transaction.
+- State file write (`scripts/demo/.sandbox-holder.json`) occurs **after** `COMMIT` and is **not** atomic with the database.
+- If commit succeeds but state write fails (exit **4**), note the printed `provision_id` and recover (below).
+- The signing key must match the committed `EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT` exactly when bootstrap is configured.
+- Screening refresh on re-apply: only when expired or within **4 hours** of expiry.
+- No `--subject-id`. Apply reloads identity only from a valid existing state file.
+
+### Verify (read-only PostgreSQL)
+
+```bash
+set -a
+source .env.demo.local
+set +a
+read -rsp "Demo DEMO_SUPABASE_DATABASE_URL: " DEMO_SUPABASE_DATABASE_URL
+echo
+npm run demo:provision -- --verify
+unset DEMO_SUPABASE_DATABASE_URL
+```
+
+Uses `BEGIN TRANSACTION READ ONLY` on the Session Pooler with verified TLS, production-ref denylist, timeouts, and redaction — **not** PostgREST.
+
+- Reports policy decision, screening `expires_at`, and remaining validity.
+- Rehearsal gate: fails when screening remaining **< 2 hours**.
+- Verify **never** refreshes screening.
+
+### Recovery (state file missing)
+
+```bash
+npm run demo:provision -- --verify --recover <provision_id-uuid>
+```
+
+- Accepts **only** a UUID `provision_id` (non-secret recovery handle).
+- Never accepts a subject ID.
+- Rebuilds `scripts/demo/.sandbox-holder.json` when markers are consistent.
+- Fails closed on zero/multiple matches or marker disagreement.
+
+### Recovery markers (database)
+
+| Location | Value |
+|----------|-------|
+| `identity_verifications.veriff_decision_id` | `provision_id` (UUID) |
+| `credential_claims.evidence_reference` | `manual_review:{provision_id}` |
+| `credential_claims.evidence_reference` | `sandbox:provision:{provision_id}` |
+
+### Phase C.1 boundary
+
+Cleanup/revocation of conflicting or partial data is **not** implemented in Phase C. Conflicts exit **3** without mutation. A separately reviewed Phase C.1 command is required before reprovisioning live conflicting rows.
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success / verify rehearsal ready |
+| 1 | Operational or verify rehearsal failure |
+| 2 | Configuration / signing-key / guard error |
+| 3 | Conflict — Phase C.1 required |
+| 4 | DB committed, state file write failed — use `--verify --recover` |
+| 5 | Advisory lock held (concurrent apply) |
 
 ## Stable domain and OAuth (documentation only)
 
@@ -347,11 +453,12 @@ Cookies are host-scoped; demo sessions do not cross to Production.
 4. Configure Vercel demo environment variables
 5. Attach `demo.abraxasworld.xyz`
 6. Configure Google OAuth (demo client)
-7. Run Phase B provisioner (when implemented)
-8. Set `PARTNER_SANDBOX_DEMO_SUBJECT_ID` + `PARTNER_SANDBOX_DEMO_ENABLED=true`
-9. Redeploy demo environment
-10. Five-minute rehearsal (`docs/demo/PARTNER_SANDBOX_PHASE1_SCRIPT.md`)
-11. Test cleanup + reprovision cycle
+7. Run Phase C provisioner (`npm run demo:provision -- --apply --confirm <demo-ref>`)
+8. Run `npm run demo:provision -- --verify` (exit 0, rehearsal ready)
+9. Set `PARTNER_SANDBOX_DEMO_SUBJECT_ID` from `scripts/demo/.sandbox-holder.json` + `PARTNER_SANDBOX_DEMO_ENABLED=true`
+10. Redeploy demo environment
+11. Five-minute rehearsal (`docs/demo/PARTNER_SANDBOX_PHASE1_SCRIPT.md`)
+12. Phase C.1 cleanup cycle (when implemented) before reprovision after conflicts
 
 ## Related docs
 
