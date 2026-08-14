@@ -8,6 +8,10 @@ import Link from "next/link";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { PassportDashboard } from "@/components/passport/PassportDashboard";
+import { PassportSetupPanel } from "@/components/passport/PassportSetupPanel";
+import { PassportSetupStepRail } from "@/components/passport/PassportSetupStepRail";
+import { PassportVerifySetupRequired } from "@/components/passport/PassportVerifySetupRequired";
+import { passportVerifyNeedsSetup } from "@/lib/passport/passportVerifyAccess";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { VerificationSuccessPanel } from "@/components/passport/VerificationSuccessPanel";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
@@ -101,6 +105,8 @@ function PassportPageInner() {
   }, [identityStatus, hasCredential, verificationParam]);
 
   const showVeriffHint = idvProvider === "veriff" && (identityStatus === "pending" || starting);
+  const guidedOnboarding = !setup.profileComplete || !setup.identityComplete;
+  const verifySetupIncomplete = passportVerifyNeedsSetup(setup);
 
   const loadVeriffScript = (src: string): Promise<void> =>
     new Promise((resolve, reject) => {
@@ -204,11 +210,17 @@ function PassportPageInner() {
         </Suspense>
 
         {pageView === "verify" ? (
-          <Suspense fallback={
-            <p style={{ fontFamily: S, fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading verifier…</p>
-          }>
-            <VerifyClient audience="holder" />
-          </Suspense>
+          <>
+            <PassportSetupStepRail setup={setup} />
+            {verifySetupIncomplete && (
+              <PassportVerifySetupRequired setup={setup} partnerParams={searchParams} />
+            )}
+            <Suspense fallback={
+              <p style={{ fontFamily: S, fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading verifier…</p>
+            }>
+              <VerifyClient audience="holder" />
+            </Suspense>
+          </>
         ) : (
           <>
             <PartnerFlowReturnHandler
@@ -236,6 +248,29 @@ function PassportPageInner() {
               />
             )}
 
+            <PassportSetupStepRail setup={setup} />
+
+            {guidedOnboarding && (
+              <PassportSetupPanel
+                walletDone={walletDone}
+                suiAddress={suiAddress}
+                email={email}
+                setup={setup}
+                identityStatus={identityStatus}
+                credential={credential}
+                isPolling={isPolling}
+                isRefreshing={isRefreshing || isPolling}
+                starting={starting}
+                error={error}
+                veriffConfigured={veriffConfigured}
+                idvProvider={idvProvider}
+                onStartIdCheck={startIdentityVerification}
+                onRefresh={refresh}
+                onWalletBound={refresh}
+                returnPath={returnPathParam}
+              />
+            )}
+
             <PassportDashboard
               walletDone={walletDone}
               authLoading={authLoading}
@@ -256,6 +291,7 @@ function PassportPageInner() {
               onRefresh={refresh}
               onWalletBound={refresh}
               returnPath={returnPathParam}
+              guidedOnboarding={guidedOnboarding}
               capturePolicy={{
                 verificationRequestId: verifyRequestId,
                 policyId: policyIdParam,
