@@ -17,25 +17,24 @@ export function VerifyPageIntro() {
         letterSpacing: "-0.03em", color: "var(--text-primary)",
         margin: "0 0 0.75rem", lineHeight: 1.1,
       }}>
-        Verify an Abraxas record
+        Verify Abraxas proofs
       </h1>
       <p style={{
         fontFamily: "'Inter',system-ui,sans-serif",
         fontSize: "0.9rem", color: "var(--text-secondary)",
         lineHeight: 1.7, maxWidth: 720, margin: "0 0 0.5rem",
       }}>
-        Independent verification of Abraxas attestations. credentials, policy decisions, and reference asset records.
-        Cryptographic proofs are verifiable without signing in; owner submissions are not auto-published here.
+        Three distinct tools for three audiences: Partner Flow receipt verification for integrators,
+        registry lookup for asset records, and credential JWT testing for relying-party demos.
       </p>
       <p style={{
         fontFamily: "'Inter',system-ui,sans-serif",
         fontSize: "0.78rem", color: "var(--text-muted)",
         lineHeight: 1.65, maxWidth: 720, margin: "0 0 1.25rem",
       }}>
-        Four modes: <strong style={{ color: "var(--text-secondary)" }}>Registry</strong> ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Profile</strong> ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Credential</strong> ·{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>Policy</strong>
+        <strong style={{ color: "var(--text-secondary)" }}>Partner receipt</strong> ·{" "}
+        <strong style={{ color: "var(--text-secondary)" }}>Registry lookup</strong> ·{" "}
+        <strong style={{ color: "var(--text-secondary)" }}>Credential JWT</strong>
       </p>
     </div>
   );

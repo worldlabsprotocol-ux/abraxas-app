@@ -108,8 +108,8 @@ export default function IntegrationsPage() {
           {INTEGRATION_SDK_SNIPPET}
         </pre>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href="/verify?mode=credential" size="sm">Live credential tester →</Btn>
-          <Btn href="/docs/ail" size="sm" variant="secondary">Full AIL spec →</Btn>
+          <Btn href="/docs/partner-flow" size="sm">Partner Flow docs →</Btn>
+          <Btn href="/verify?mode=receipt" size="sm" variant="secondary">Receipt tester →</Btn>
           <Btn href="/docs/architecture" variant="tertiary" size="sm">Architecture</Btn>
         </div>
       </ContentCard>
@@ -160,25 +160,38 @@ export default function IntegrationsPage() {
 
       <div id="apply" style={{ scrollMarginTop: 96 }}>
       <ContentCard title="Become a design partner">
-        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
-          RWA marketplaces, lenders, and DeFi protocols: pilot Abraxas Passport as your trust rail.
-          We prioritize partners with real volume and a clear conversion metric.
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.5rem" }}>
+          For age-gated digital commerce teams integrating Partner Flow. We prioritize partners with a clear conversion metric and a defined eligibility gate.
+        </p>
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
+          <strong style={{ color: "var(--text-secondary)" }}>What happens next:</strong> manual review (typically within a few business days).
+          No self-serve production access or automatic API-key issuance. Sandbox credentials are operator-provisioned after approval.
         </p>
         <BulletList items={[...DESIGN_PARTNER_CRITERIA]} />
 
         {sent ? (
           <div style={{ marginTop: "1rem", padding: "1rem", borderRadius: 12, background: `${ACCENT}12`, border: `1px solid ${ACCENT}33` }}>
             <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: ACCENT }}>Application received</div>
-            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0" }}>
-              We review design partner applications manually. Expect a reply at the email you provided.
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0.75rem", lineHeight: 1.6 }}>
+              We review design partner applications manually. If approved, operators will provision sandbox policies and callback allowlists — not instant production access.
             </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              <Btn href="/docs/partner-flow" size="sm">Read Partner Flow docs</Btn>
+              <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Explore receipt tester</Btn>
+            </div>
           </div>
         ) : (
-          <form onSubmit={submit} style={{ marginTop: "1rem", display: "grid", gap: "0.65rem" }}>
-            <Field label="Company / protocol" value={form.company} onChange={v => setForm(f => ({ ...f, company: v }))} required />
-            <Field label="Contact name" value={form.contact_name} onChange={v => setForm(f => ({ ...f, contact_name: v }))} />
-            <Field label="Email" type="email" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} required />
-            <Field label="Website" value={form.website} onChange={v => setForm(f => ({ ...f, website: v }))} />
+          <form onSubmit={submit} style={{ marginTop: "1rem", display: "grid", gap: "0.65rem" }} noValidate={false}>
+            <Field
+              label="Company / protocol"
+              value={form.company}
+              onChange={v => setForm(f => ({ ...f, company: v }))}
+              required
+              helper="Legal entity or product name we should recognize in review."
+            />
+            <Field label="Contact name" value={form.contact_name} onChange={v => setForm(f => ({ ...f, contact_name: v }))} helper="Primary technical or business contact." />
+            <Field label="Work email" type="email" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} required helper="We reply here — use a domain you control." />
+            <Field label="Website" value={form.website} onChange={v => setForm(f => ({ ...f, website: v }))} helper="Product or company URL (optional)." />
             <label style={labelStyle}>
               Integration type
               <select value={form.integration_type} onChange={e => setForm(f => ({ ...f, integration_type: e.target.value }))}
@@ -188,27 +201,43 @@ export default function IntegrationsPage() {
                 <option value="asset_attestation">Asset attestation / RWA listing</option>
                 <option value="lending_collateral">Lending / collateral verification</option>
               </select>
+              <span style={helperStyle}>Closest match — Partner Flow is the default path for age-gated checkout gates.</span>
             </label>
             <label style={labelStyle}>
               Use case
               <textarea value={form.use_case} onChange={e => setForm(f => ({ ...f, use_case: e.target.value }))}
-                rows={3} style={{ ...inputStyle, resize: "vertical" }} placeholder="What workflow would Abraxas replace or accelerate?" />
+                rows={3} style={{ ...inputStyle, resize: "vertical" }}
+                placeholder="Describe the eligibility gate (e.g. age-gated retail checkout), expected holder flow, and your callback URL pattern." />
+              <span style={helperStyle}>Helps us assess fit and sandbox provisioning needs.</span>
             </label>
-            <Field label="Expected monthly verification volume" value={form.monthly_volume} onChange={v => setForm(f => ({ ...f, monthly_volume: v }))} />
+            <Field
+              label="Expected monthly verification volume"
+              value={form.monthly_volume}
+              onChange={v => setForm(f => ({ ...f, monthly_volume: v }))}
+              helper="Rough order of magnitude is fine (e.g. 500 / month)."
+            />
             <label style={{ ...labelStyle, flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
               <input type="checkbox" checked={form.public_name_ok} onChange={e => setForm(f => ({ ...f, public_name_ok: e.target.checked }))} />
               <span style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
                 OK to name us publicly after a successful pilot
               </span>
             </label>
-            {err && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: 0 }}>{err}</p>}
-            <button type="submit" disabled={busy} style={{
+            {err && (
+              <div role="alert" style={{ padding: "0.65rem 0.75rem", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: 0 }}>{err}</p>
+              </div>
+            )}
+            <button type="submit" disabled={busy} aria-busy={busy} style={{
               padding: "0.75rem 1.25rem", borderRadius: 999, border: "none",
               background: busy ? `${ACCENT}66` : ACCENT, color: "#000",
               fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, cursor: busy ? "wait" : "pointer",
             }}>
-              {busy ? "Submitting…" : "Apply as design partner →"}
+              {busy ? "Submitting application…" : "Submit for manual review →"}
             </button>
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+              Already approved? Read <Link href="/docs/partner-flow" style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>Partner Flow docs</Link> and test receipts at{" "}
+              <Link href="/verify?mode=receipt" style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>/verify</Link>.
+            </p>
           </form>
         )}
       </ContentCard>
@@ -223,13 +252,14 @@ export default function IntegrationsPage() {
   );
 }
 
-function Field({ label, value, onChange, type = "text", required }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean;
+function Field({ label, value, onChange, type = "text", required, helper }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; helper?: string;
 }) {
   return (
     <label style={labelStyle}>
-      {label}
+      {label}{required ? " *" : ""}
       <input type={type} value={value} required={required} onChange={e => onChange(e.target.value)} style={inputStyle} />
+      {helper && <span style={helperStyle}>{helper}</span>}
     </label>
   );
 }
@@ -243,4 +273,12 @@ const inputStyle: React.CSSProperties = {
   padding: "0.55rem 0.65rem", borderRadius: 8,
   border: "1px solid var(--border)", background: "var(--surface)",
   color: "var(--text-primary)", fontFamily: FONT, fontSize: "0.85rem",
+};
+
+const helperStyle: React.CSSProperties = {
+  fontFamily: FONT,
+  fontSize: "0.68rem",
+  fontWeight: 500,
+  color: "var(--text-muted)",
+  lineHeight: 1.45,
 };
