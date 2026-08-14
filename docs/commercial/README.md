@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Status** | Draft · beta-stage · engineering-owned · **not legal advice** |
-| **Base** | `origin/main` at `136bac31be96b90845e0a6c62852ef315e76a871` |
+| **Base** | `origin/main` at `3a92bd44ab1bfa64d4e8edf9cd71b4934a1e085a` |
 | **Last reconciled** | 2026-08-13 |
 
 ## Fact tiers (how to read these documents)
@@ -40,6 +40,19 @@ Abraxas is a **trust and authorization layer**, not a KYC provider. Licensed or 
 | [SUPPORT_AND_ESCALATION_v0.md](./SUPPORT_AND_ESCALATION_v0.md) | Engineering | Draft v0 | Operators, founders |
 | [BETA_SERVICE_LEVEL_APPENDIX.md](./BETA_SERVICE_LEVEL_APPENDIX.md) | Engineering | Draft | Operators, integrators (non-contractual) |
 | [INCIDENT_RESPONSE_PLAN_v0.md](./INCIDENT_RESPONSE_PLAN_v0.md) | Engineering | Draft v0 | Operators, founders |
+
+### Outreach drafts (not executed engagements)
+
+| File | Owner | Status | Primary audience |
+|------|-------|--------|------------------|
+| [SECURITY_REVIEW_RFP_v1.md](./SECURITY_REVIEW_RFP_v1.md) | Founder | Draft v1 | Security firms |
+| [SECURITY_REVIEW_OUTREACH_EMAIL.md](./SECURITY_REVIEW_OUTREACH_EMAIL.md) | Founder | Draft | Security firms |
+| [AGE_GATED_COMMERCE_COUNSEL_BRIEF_v1.md](./AGE_GATED_COMMERCE_COUNSEL_BRIEF_v1.md) | Founder | Draft v1 | Startup/privacy/regulated-commerce counsel |
+| [COUNSEL_OUTREACH_EMAIL.md](./COUNSEL_OUTREACH_EMAIL.md) | Founder | Draft | Counsel |
+| [PAID_PILOT_DISCOVERY_CALL_SCRIPT.md](./PAID_PILOT_DISCOVERY_CALL_SCRIPT.md) | Founder | Draft | Sales / founder |
+| [PAID_PILOT_ONE_PAGER.md](./PAID_PILOT_ONE_PAGER.md) | Founder | Draft | Age-gated commerce prospects |
+
+Outreach drafts are **not** contracts, legal advice, security certifications, or binding commercial offers. Independent security review is **planned and not yet completed** — `docs/EXTERNAL_SECURITY_REVIEW_PACKAGE.md` L3.
 
 ---
 
