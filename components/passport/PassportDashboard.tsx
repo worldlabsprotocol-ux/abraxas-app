@@ -34,6 +34,7 @@ import { shouldShowVerifiedHero } from "@/lib/passport/verifiedHero";
 import { PassportVerifiedHero } from "@/components/passport/PassportVerifiedHero";
 import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
+import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -76,6 +77,7 @@ interface Props {
   onRefresh: () => void;
   onWalletBound?: () => void;
   returnPath?: string | null;
+  guidedOnboarding?: boolean;
   capturePolicy?: CapturePolicyContext;
 }
 
@@ -99,6 +101,7 @@ export function PassportDashboard({
   onRefresh,
   onWalletBound,
   returnPath,
+  guidedOnboarding = false,
   capturePolicy,
 }: Props) {
   const auth = useSuiAuthOptional();
@@ -139,7 +142,7 @@ export function PassportDashboard({
 
   async function bindWallet() {
     if (!suiAddress) {
-      setBindError("Sign in first using the button at the top right.");
+      setBindError("Sign in first to create your Abraxas wallet.");
       return;
     }
     setBindLoading(true);
@@ -217,7 +220,7 @@ export function PassportDashboard({
         />
       )}
 
-      {!authLoading && !walletDone && (
+      {!authLoading && !walletDone && !guidedOnboarding && (
         <section style={CARD} aria-labelledby="passport-signin-heading">
           <h2 id="passport-signin-heading" style={{
             fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
@@ -229,34 +232,13 @@ export function PassportDashboard({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 520,
           }}>
-            Tap <strong style={{ color: "var(--text-primary)" }}>Sign in</strong> once at the top right.
-            Google creates your Abraxas wallet — no seed phrase.
+            Google sign-in creates your Abraxas account and Sui wallet — no seed phrase.
           </p>
+          <ZkLoginSignIn />
         </section>
       )}
 
-      {!authLoading && walletDone && !setup.identityComplete && identityUi !== "under_review" && (
-        <section style={{ ...CARD, border: "2px solid rgba(16,185,129,0.28)" }}>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem" }}>
-            Verify who you are
-          </h2>
-          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
-            Name, ID photo, and selfie. Reviewed by Abraxas. Partners only see yes/no — not your documents.
-          </p>
-          {manualMode ? (
-            <AbraxasIdentityCapture
-              email={email}
-              suiAddress={suiAddress}
-              onSubmitted={onRefresh}
-              capturePolicy={capturePolicy}
-            />
-          ) : (
-            <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Start identity check →</Btn>
-          )}
-        </section>
-      )}
-
-      {!authLoading && walletDone && (
+      {!authLoading && walletDone && !guidedOnboarding && (
         <>
           {showVerifiedHero && (
             <PassportVerifiedHero
@@ -291,7 +273,7 @@ export function PassportDashboard({
                 fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
                 color: "var(--text-primary)", margin: "0 0 0.5rem",
               }}>
-                Bind your wallet (optional)
+                Bind your wallet
               </h2>
               <p style={{
                 fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
@@ -299,7 +281,7 @@ export function PassportDashboard({
               }}>
                 {showVerifiedHero
                   ? "One signature proves wallet control for partners that require it. No funds move — your verified identity already works on its own."
-                  : "One signature proves wallet control. No funds move. Optional — unlocks partner pilots after you verify your identity."}
+                  : "One signature proves wallet control. No funds move. Required before optional identity verification."}
               </p>
               {suiAddress && (
                 <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
@@ -318,6 +300,27 @@ export function PassportDashboard({
                 <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, margin: "0.65rem 0 0", lineHeight: 1.55 }}>
                   {bindError}
                 </p>
+              )}
+            </section>
+          )}
+
+          {!setup.identityComplete && identityUi !== "under_review" && (
+            <section style={{ ...CARD, border: "2px solid rgba(16,185,129,0.28)" }}>
+              <h2 style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem" }}>
+                Verify identity when required
+              </h2>
+              <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
+                Optional until a partner policy requires it. Partners only see yes/no — not your documents.
+              </p>
+              {manualMode ? (
+                <AbraxasIdentityCapture
+                  email={email}
+                  suiAddress={suiAddress}
+                  onSubmitted={onRefresh}
+                  capturePolicy={capturePolicy}
+                />
+              ) : (
+                <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Start identity check →</Btn>
               )}
             </section>
           )}
@@ -408,6 +411,51 @@ export function PassportDashboard({
               </section>
             </>
           )}
+        </>
+      )}
+
+      {!authLoading && walletDone && guidedOnboarding && (
+        <>
+          {!showVerifiedHero && setup.walletBound && (
+            <PassportStatusCard
+              tier={tier}
+              suiAddress={suiAddress}
+              walletBindingL3={walletBindingL3}
+              identityUi={identityUi}
+              assuranceLabel={assuranceLabel}
+              availableNow={availableNow}
+              returnPath={returnPath}
+            />
+          )}
+
+          <CredentialsSection
+            walletBindingL3={walletBindingL3}
+            identityUi={identityUi}
+            assuranceLabel={assuranceLabel}
+            manualMode={manualMode}
+            credential={credential}
+            verifiedView={false}
+          />
+
+          <PartnerAccessSection suiAddress={suiAddress} verifiedView={false} />
+
+          <TransactionEligibilitySection enabled={walletDone} />
+
+          <details style={{ ...CARD, marginBottom: "1.5rem" }}>
+            <summary style={{
+              fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600,
+              color: "var(--text-muted)", cursor: "pointer",
+            }}>
+              Advanced security & business stamps
+            </summary>
+            <div style={{ marginTop: "0.85rem" }}>
+              <PassportIntentCard suiAddress={suiAddress} />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+                <Btn href="/passport#stamps" variant="secondary" size="sm">Business stamps →</Btn>
+                <Btn href="/build" variant="ghost" size="sm">Submit an asset →</Btn>
+              </div>
+            </div>
+          </details>
         </>
       )}
     </div>
