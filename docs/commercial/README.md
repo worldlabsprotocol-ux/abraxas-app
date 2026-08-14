@@ -3,8 +3,8 @@
 | Field | Value |
 |-------|-------|
 | **Status** | Draft · beta-stage · engineering-owned · **not legal advice** |
-| **Base** | `origin/main` at `3a92bd44ab1bfa64d4e8edf9cd71b4934a1e085a` |
-| **Last reconciled** | 2026-08-13 |
+| **Base** | `origin/main` at `f41f5bad33a277a52606053e6c5cf9535293a8d2` |
+| **Last reconciled** | 2026-08-14 |
 
 ## Fact tiers (how to read these documents)
 
@@ -53,6 +53,17 @@ Abraxas is a **trust and authorization layer**, not a KYC provider. Licensed or 
 | [PAID_PILOT_ONE_PAGER.md](./PAID_PILOT_ONE_PAGER.md) | Founder | Draft | Age-gated commerce prospects |
 
 Outreach drafts are **not** contracts, legal advice, security certifications, or binding commercial offers. Independent security review is **planned and not yet completed** — `docs/EXTERNAL_SECURITY_REVIEW_PACKAGE.md` L3.
+
+### Internal operations (operator-filled)
+
+| File | Owner | Status | Primary audience |
+|------|-------|--------|------------------|
+| [OUTREACH_PIPELINE_TEMPLATE.md](./OUTREACH_PIPELINE_TEMPLATE.md) | Founder | Draft | Founders, operators |
+| [SECURITY_VENDOR_EVALUATION_SCORECARD.md](./SECURITY_VENDOR_EVALUATION_SCORECARD.md) | Founder | Draft | Founders, operators |
+| [COUNSEL_EVALUATION_SCORECARD.md](./COUNSEL_EVALUATION_SCORECARD.md) | Founder | Draft | Founders, operators |
+| [PILOT_PROSPECT_EVALUATION_SCORECARD.md](./PILOT_PROSPECT_EVALUATION_SCORECARD.md) | Founder | Draft | Founders, operators |
+
+Internal trackers are **internal-only**, **not contracts**, and must not store personal contact information. Populate organization names and scores outside any public or prospect-facing materials.
 
 ---
 
