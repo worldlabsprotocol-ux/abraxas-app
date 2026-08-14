@@ -2,6 +2,7 @@
 // FILE: components/partner/PartnerVerifyClient.tsx
 // Abraxas Verify entry — lazy Passport creation, permission or policy routing.
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
@@ -10,6 +11,7 @@ import { Btn } from "@/components/redesign/ui";
 import { getPermissionDefinition } from "@/lib/verify/permissions";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const ACCENT = "var(--accent)";
 
 interface FlowResult {
   next: string;
@@ -19,11 +21,58 @@ interface FlowResult {
   error?: string;
 }
 
+type ViewState = "loading" | "invalid_link" | "sign_in" | "evaluating" | "success" | "error";
+
+function describeInvalidLink(input: {
+  relyingPartyId: string;
+  returnUrl: string;
+  policyId: string;
+  permission: string;
+}): string | null {
+  const missing: string[] = [];
+  if (!input.relyingPartyId) missing.push("partner identifier (relying_party_id)");
+  if (!input.returnUrl) missing.push("return URL (return_url)");
+  if (!input.policyId && !input.permission) missing.push("permission or policy to verify");
+  if (missing.length === 0) return null;
+  if (missing.length === 1) {
+    return `This link is missing the ${missing[0]}. Ask the site that sent you here for a fresh Partner Flow link.`;
+  }
+  return `This link is missing ${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}. Ask the site that sent you here for a fresh Partner Flow link.`;
+}
+
+function InvalidLinkPanel({ message }: { message: string }) {
+  return (
+    <div
+      role="alert"
+      style={{
+        padding: "1rem 1.1rem",
+        borderRadius: 14,
+        border: "1px solid rgba(239,68,68,0.35)",
+        background: "rgba(239,68,68,0.08)",
+      }}
+    >
+      <h2 style={{ fontFamily: FONT, fontSize: "1rem", fontWeight: 800, margin: "0 0 0.5rem", color: "var(--text-primary)" }}>
+        This verification link isn&apos;t valid
+      </h2>
+      <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
+        {message}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
+        <Btn href="/" size="sm">Return home</Btn>
+        <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+      </div>
+      <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: "0.85rem 0 0", lineHeight: 1.55 }}>
+        If you followed a link from a partner site, contact that partner&apos;s support — they issue the redirect URL with the required parameters.
+      </p>
+    </div>
+  );
+}
+
 export function PartnerVerifyClient() {
   const searchParams = useSearchParams();
   const { suiAddress, isLoading: authLoading } = useSuiAuth();
-  const [status, setStatus] = useState("Preparing verification…");
-  const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [flowError, setFlowError] = useState<string | null>(null);
   const [evaluating, setEvaluating] = useState(false);
 
   const relyingPartyId = searchParams.get("relying_party_id")
@@ -34,21 +83,22 @@ export function PartnerVerifyClient() {
   const policyId = searchParams.get("policy_id") ?? "";
   const returnUrl = searchParams.get("return_url") ?? "";
 
+  const invalidLinkMessage = useMemo(
+    () => describeInvalidLink({ relyingPartyId, returnUrl, policyId, permission }),
+    [relyingPartyId, returnUrl, policyId, permission],
+  );
+
   const permissionLabel = useMemo(() => {
     if (!permission) return null;
     return getPermissionDefinition(permission)?.consentLabel ?? permission;
   }, [permission]);
 
   const evaluate = useCallback(async () => {
-    if (!relyingPartyId || !returnUrl || (!policyId && !permission)) {
-      setError("Missing relying party, return URL, and permission or policy.");
-      return;
-    }
-    if (!suiAddress) return;
+    if (invalidLinkMessage || !suiAddress) return;
 
     setEvaluating(true);
-    setError(null);
-    setStatus("Checking your credentials…");
+    setFlowError(null);
+    setStatusMessage("Checking your credentials…");
 
     try {
       const res = await fetch("/api/v1/partner-flow/evaluate", {
@@ -67,43 +117,56 @@ export function PartnerVerifyClient() {
       if (!res.ok) throw new Error(data.error ?? "Evaluation failed");
 
       if (data.next === "enter" && data.redirect_url) {
-        setStatus("Verified — returning…");
+        setStatusMessage("Verified — returning…");
         window.location.href = data.redirect_url;
         return;
       }
       if (data.next === "passport" && data.passport_url) {
-        setStatus("Completing verification…");
+        setStatusMessage("Completing verification…");
         window.location.href = data.passport_url;
         return;
       }
       if (data.next === "pending_review") {
-        setStatus("Your verification is under review. Check back after approval.");
+        setStatusMessage("Your verification is under review. Check back after approval.");
         return;
       }
       if (data.next === "denied") {
-        setError(`Access denied${data.reason_codes?.length ? `: ${data.reason_codes.join(", ")}` : "."}`);
+        setFlowError(`Access denied${data.reason_codes?.length ? `: ${data.reason_codes.join(", ")}` : "."}`);
         return;
       }
-      setStatus(`Next step: ${data.next}`);
+      setStatusMessage(`Next step: ${data.next}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Verification failed");
+      setFlowError(e instanceof Error ? e.message : "Verification failed");
     } finally {
       setEvaluating(false);
     }
-  }, [relyingPartyId, permission, permissionVersion, policyId, returnUrl, suiAddress]);
+  }, [
+    invalidLinkMessage,
+    suiAddress,
+    relyingPartyId,
+    permission,
+    permissionVersion,
+    policyId,
+    returnUrl,
+  ]);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!relyingPartyId || !returnUrl || (!policyId && !permission)) {
-      setError("Invalid verification link. A permission or policy is required.");
-      return;
-    }
+    if (authLoading || invalidLinkMessage) return;
     if (suiAddress) {
       void evaluate();
     } else {
-      setStatus("Sign in to continue with Abraxas.");
+      setStatusMessage("Sign in to continue with Abraxas.");
     }
-  }, [authLoading, suiAddress, relyingPartyId, policyId, permission, returnUrl, evaluate]);
+  }, [authLoading, invalidLinkMessage, suiAddress, evaluate]);
+
+  let view: ViewState = "loading";
+  if (!authLoading) {
+    if (invalidLinkMessage) view = "invalid_link";
+    else if (!suiAddress) view = "sign_in";
+    else if (evaluating) view = "evaluating";
+    else if (flowError) view = "error";
+    else view = "success";
+  }
 
   return (
     <div style={{
@@ -115,30 +178,68 @@ export function PartnerVerifyClient() {
       <div style={{ fontSize: "0.7rem", color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 8 }}>
         ABRAXAS VERIFY
       </div>
-      <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.75rem", fontWeight: 800 }}>
-        Continue with Abraxas
-      </h1>
-      <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 1rem" }}>
-        {permissionLabel
-          ? <>Verifying: <strong>{permissionLabel}</strong></>
-          : <>Policy <strong>{policyId}</strong></>}
-      </p>
 
-      {!suiAddress && !authLoading && (
-        <div style={{ marginBottom: "1rem" }}>
-          <SuiSignInNavButton prominent />
-        </div>
+      {view === "loading" && (
+        <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-muted)", margin: 0 }}>
+          Preparing verification…
+        </p>
       )}
 
-      <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>{status}</p>
-      {error && <p style={{ fontSize: "0.82rem", color: "#EF4444", marginTop: "0.5rem" }}>{error}</p>}
+      {view === "invalid_link" && invalidLinkMessage && (
+        <InvalidLinkPanel message={invalidLinkMessage} />
+      )}
 
-      {suiAddress && error && (
-        <div style={{ marginTop: "1rem" }}>
-          <Btn onClick={() => void evaluate()} disabled={evaluating} size="sm">
-            {evaluating ? "Retrying…" : "Try again"}
-          </Btn>
-        </div>
+      {view !== "loading" && view !== "invalid_link" && (
+        <>
+          <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.75rem", fontWeight: 800 }}>
+            Continue with Abraxas
+          </h1>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 1rem" }}>
+            {permissionLabel
+              ? <>Verifying: <strong>{permissionLabel}</strong></>
+              : policyId
+                ? <>Policy <strong>{policyId}</strong></>
+                : "Partner verification request"}
+          </p>
+
+          {view === "sign_in" && (
+            <div style={{ marginBottom: "1rem" }}>
+              <SuiSignInNavButton prominent />
+            </div>
+          )}
+
+          {(view === "evaluating" || view === "success") && statusMessage && (
+            <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: 0 }}>{statusMessage}</p>
+          )}
+
+          {view === "error" && flowError && (
+            <div role="alert">
+              <p style={{ fontSize: "0.84rem", color: "#EF4444", margin: "0 0 1rem", lineHeight: 1.55 }}>
+                {flowError}
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
+                <Btn onClick={() => void evaluate()} disabled={evaluating} size="sm">
+                  {evaluating ? "Retrying…" : "Try again"}
+                </Btn>
+                <Btn href="/" variant="secondary" size="sm">Return home</Btn>
+                <Btn href="/docs/partner-flow" variant="ghost" size="sm">Partner Flow docs</Btn>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {view === "sign_in" && statusMessage && (
+        <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "0.75rem 0 0" }}>{statusMessage}</p>
+      )}
+
+      {view !== "invalid_link" && view !== "loading" && (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "1rem 0 0", lineHeight: 1.5 }}>
+          Questions about this request?{" "}
+          <Link href="/docs/partner-flow" style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>
+            Read Partner Flow docs
+          </Link>
+        </p>
       )}
     </div>
   );

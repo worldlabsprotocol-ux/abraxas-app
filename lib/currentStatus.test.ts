@@ -5,11 +5,16 @@ import {
   CURRENT_STATUS_LIVE,
   DEEP_DIVE_LINKS,
   HOMEPAGE_STATUS_LEAD,
+  INTEGRATE_PRODUCTION_NOTE,
 } from "./currentStatus";
 
 describe("currentStatus", () => {
-  it("leads homepage with live production proof", () => {
-    expect(HOMEPAGE_STATUS_LEAD.toLowerCase()).toContain("live in production");
+  it("frames integrate page for public beta", () => {
+    expect(INTEGRATE_PRODUCTION_NOTE.toLowerCase()).toContain("public beta");
+  });
+
+  it("keeps homepage status lead honest about rollout", () => {
+    expect(HOMEPAGE_STATUS_LEAD.toLowerCase()).toMatch(/live|pilot|beta/);
   });
 
   it("balances progress with remaining gates", () => {

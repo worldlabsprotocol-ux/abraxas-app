@@ -21,6 +21,9 @@ export interface HomeStatCard {
 
 export type HomeMetricsStatus = "loading" | "ready" | "error";
 
+/** Hide low-volume counts on the public homepage to avoid credibility noise. */
+export const HOMEPAGE_METRIC_MIN_VOLUME = 10;
+
 export function formatMetricValue(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "n/a";
   return value.toLocaleString();
@@ -35,9 +38,16 @@ export function buildHomeStatCards(metrics: PublicMetrics | null | undefined): H
   const assets = metrics?.verified_assets;
 
   return [
-    { key: "verified_ids", label: "Verified identities", value: formatMetricValue(verifiedIds), numeric: verifiedIds ?? null },
-    { key: "verified_assets", label: "Verified assets", value: formatMetricValue(assets), numeric: assets ?? null },
-    { key: "pending_reviews", label: "Pending reviews", value: formatMetricValue(pending), numeric: pending ?? null },
-    { key: "active_credentials", label: "Active credentials", value: formatMetricValue(credentials), numeric: credentials ?? null },
+    { key: "verified_ids", label: "Verified identities (beta)", value: formatMetricValue(verifiedIds), numeric: verifiedIds ?? null },
+    { key: "verified_assets", label: "Verified assets (beta)", value: formatMetricValue(assets), numeric: assets ?? null },
+    { key: "pending_reviews", label: "Pending reviews (beta)", value: formatMetricValue(pending), numeric: pending ?? null },
+    { key: "active_credentials", label: "Active credentials (beta)", value: formatMetricValue(credentials), numeric: credentials ?? null },
   ];
+}
+
+/** Public homepage: omit low-volume beta metrics that can read as empty traction. */
+export function buildHomepageStatCards(metrics: PublicMetrics | null | undefined): HomeStatCard[] {
+  return buildHomeStatCards(metrics).filter(
+    (card) => card.numeric == null || card.numeric >= HOMEPAGE_METRIC_MIN_VOLUME,
+  );
 }

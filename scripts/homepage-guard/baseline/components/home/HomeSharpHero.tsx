@@ -26,7 +26,7 @@ export function HomeSharpHero() {
       }}
     >
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
-        Live protocol · not a waitlist
+        Public beta · design partners welcome
       </div>
 
       <h1
