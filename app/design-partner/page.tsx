@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { IntegratorStartHerePanel } from "@/components/integrate/IntegratorStartHerePanel";
 import {
   PRODUCTION_INTEGRATION_PATH,
   RELYING_PARTY_CHECKLIST,
@@ -21,19 +22,22 @@ export default function DesignPartnerPage() {
     <RedesignPage maxWidth={880}>
       <PageHeader
         eyebrow="Design partner program"
-        title="Apply to integrate Abraxas verification"
-        subtitle={RELYING_PARTY_DEFINITION}
+        title="Apply to integrate Abraxas Partner Flow"
+        subtitle={`${RELYING_PARTY_DEFINITION} Applications are reviewed manually — sandbox and production access are operator-provisioned, not self-serve.`}
       />
 
-      <ContentCard title="Integration guide (start here)">
+      <IntegratorStartHerePanel id="partner-start-here" />
+
+      <ContentCard title="Partner Flow guide (start here)">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
-          One API call returns a decision plus cryptographic proof that any relying party can verify independently.
-          Copy-paste examples, curl commands, and JSON schemas cover what you need before you apply.
+          For age-gated digital commerce with a browser redirect: holders complete verification on Abraxas,
+          return to your callback with a receipt_id, and your server verifies{" "}
+          <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>GET /api/receipts/{"{id}"}/public</code> before granting access.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href="/docs/relying-party-verify" size="sm">Read integration guide</Btn>
-          <Btn href="/api/docs/relying-party" variant="secondary" size="sm">JSON API</Btn>
-          <Btn href="/api/proof/reference/ABX-RE-HOSP-001" variant="ghost" size="sm">Live Cielo demo</Btn>
+          <Btn href="/docs/partner-flow" size="sm">Partner Flow docs</Btn>
+          <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Receipt tester</Btn>
+          <Btn href="/docs/partner-flow-api" variant="ghost" size="sm">OpenAPI</Btn>
         </div>
       </ContentCard>
 
@@ -64,7 +68,11 @@ export default function DesignPartnerPage() {
         </div>
       </ContentCard>
 
-      <ContentCard title="Production checklist">
+      <ContentCard title="Production checklist (after approval)">
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
+          Production relying-party access requires operator provisioning and passing the same gates Abraxas holds internally.
+          No automatic production key issuance.
+        </p>
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((step, i) => `${i + 1}. ${step}`)} />
       </ContentCard>
 
@@ -72,28 +80,31 @@ export default function DesignPartnerPage() {
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
           <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>1 · Apply</div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-            Submit integration intent. We review within 48h and issue an <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>abx_test_</code> sandbox key on approval.
+            Submit integration intent. Abraxas reviews manually; sandbox credentials may be issued after approval — not instantly.
           </p>
           <Btn href="/integrations#apply" size="sm">Submit application</Btn>
         </div>
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
           <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>2 · Sandbox test</div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-            Verify against <Link href="/verify/ABX-RE-HOSP-001" style={{ color: "var(--accent)" }}>ABX-RE-HOSP-001</Link> or Passport Tier 3 demo before production wiring.
+            When provisioned, test Partner Flow receipts at{" "}
+            <Link href="/verify?mode=receipt" style={{ color: "var(--accent)" }}>/verify</Link> or registry demos at{" "}
+            <Link href="/verify/ABX-RE-HOSP-001" style={{ color: "var(--accent)" }}>ABX-RE-HOSP-001</Link>.
           </p>
-          <Btn href="/verify" variant="secondary" size="sm">Public verifier</Btn>
+          <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Receipt tester</Btn>
         </div>
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>3 · Partner portal</div>
+          <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>3 · Conformance</div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-            Paste your issued API key to view usage, onboarding progress, and integration status.
+            After operators provision partner_id, policy_id, and return_url, run{" "}
+            <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>npm run partner:conformance</code>.
           </p>
-          <Btn href="/developers/partner" variant="secondary" size="sm">Open portal</Btn>
+          <Btn href="/docs/partner-flow#start-here" variant="secondary" size="sm">Conformance command</Btn>
         </div>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
-        <Btn href="/integrations/relying-parties" size="lg">Program docs</Btn>
+        <Btn href="/integrations#apply" size="lg">Apply for review</Btn>
         <Btn href="/integrate" variant="secondary" size="lg">Integrate overview</Btn>
       </div>
     </RedesignPage>

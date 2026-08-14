@@ -40,6 +40,7 @@ import {
 import { EliteConceptDemo } from "@/components/home/ConceptDemoVideo";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { BUILD_ELITE_DEMO, STACK_ELITE_DEMO, REFERENCE_ELITE_DEMO } from "@/lib/eliteDemoSlides";
+import { IntegratorStartHerePanel } from "@/components/integrate/IntegratorStartHerePanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -50,8 +51,10 @@ export default function IntegratePage() {
       <PageHeader
         eyebrow={ABRAXAS_CATEGORY}
         title={MERCHANT_PRODUCT_PITCH}
-        subtitle={`${ABRAXAS_ICONIC_LINE} Add trusted eligibility in minutes, not months. One API call instead of building identity, age verification, fraud, review queues, and audit logs.`}
+        subtitle={`${ABRAXAS_ICONIC_LINE} Reusable eligibility for age-gated digital commerce. Partner Flow for web redirects; server-side receipt verification before you grant access.`}
       />
+
+      <IntegratorStartHerePanel />
 
       <p style={{
         fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-muted)",
@@ -197,20 +200,21 @@ export default function IntegratePage() {
         </p>
         <BulletList items={[...INTEGRATE_CAPABILITIES]} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/docs/partner-verification-requests" size="sm">Partner API docs</Btn>
-          <Btn href="/docs/relying-party-verify" variant="secondary" size="sm">Integration guide</Btn>
+          <Btn href="/docs/partner-flow" size="sm">Partner Flow docs</Btn>
+          <Btn href="/docs/partner-verification-requests" variant="secondary" size="sm">Server verification requests</Btn>
+          <Btn href="/docs/relying-party-verify" variant="ghost" size="sm">Credential verify guide</Btn>
         </div>
       </ContentCard>
 
       <ContentCard title="Design partner program">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.65rem" }}>
-          Design partners get sandbox credentials, documented verify paths, and hands-on support while wiring production flows.
-          External production keys ship when your integration passes the same verification gates we hold ourselves to.
+          Design partners receive hands-on support while wiring Partner Flow. Applications are reviewed manually;
+          sandbox credentials and policies are operator-provisioned after approval — not self-serve.
         </p>
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((step, i) => `${i + 1}. ${step}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/design-partner" size="sm">Apply for integration program</Btn>
-          <Btn href="/docs/relying-party-verify" variant="secondary" size="sm">Integration guide</Btn>
+          <Btn href="/integrations#apply" size="sm">Apply for review</Btn>
+          <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
         </div>
       </ContentCard>
 
@@ -229,8 +233,8 @@ export default function IntegratePage() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
-        <Btn href="/design-partner" size="lg">Apply for integration program</Btn>
-        <Btn href="/trust-framework#trust-over-time" variant="secondary" size="lg">How trust stays current</Btn>
+        <Btn href="/integrations#apply" size="lg">Apply for review</Btn>
+        <Btn href="/docs/partner-flow" variant="secondary" size="lg">Partner Flow docs</Btn>
         <Link href="/docs" style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center", textDecoration: "none" }}>
           Documentation
         </Link>

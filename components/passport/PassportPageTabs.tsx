@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PassportPageTabs.tsx
-// Top-level switch between Passport setup and Verify tools on one page.
+// Top-level switch between Passport setup and holder-facing verify tools.
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -10,27 +10,25 @@ const ACCENT = "#10B981";
 
 export type PassportPageView = "passport" | "verify";
 
+function holderVerifyMode(mode: string | null): string {
+  if (mode === "credential" || mode === "policy") return "credential";
+  return "registry";
+}
+
 export function PassportPageTabs({ active }: { active: PassportPageView }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const verifyMode = searchParams.get("mode");
-
-  function verifyHref(mode?: string) {
-    const base = pathname?.startsWith("/verify") ? "/verify" : "/passport";
-    const params = new URLSearchParams();
-    params.set("view", "verify");
-    if (mode) params.set("mode", mode);
-    return `${base}?${params.toString()}`;
-  }
-
-  function passportHref() {
-    const base = pathname?.startsWith("/verify") ? "/passport" : (pathname ?? "/passport");
-    return base.split("?")[0];
-  }
+  const onVerifyRoute = pathname?.startsWith("/verify");
 
   const tabs: Array<{ id: PassportPageView; label: string; href: string }> = [
-    { id: "passport", label: "My Passport", href: passportHref() },
-    { id: "verify", label: "Verify", href: verifyHref(verifyMode ?? undefined) },
+    { id: "passport", label: "My Passport", href: "/passport" },
+    {
+      id: "verify",
+      label: "Verify",
+      href: onVerifyRoute
+        ? `/verify?mode=${searchParams.get("mode") ?? "receipt"}`
+        : `/passport?view=verify&mode=${holderVerifyMode(searchParams.get("mode"))}`,
+    },
   ];
 
   return (

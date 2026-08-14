@@ -194,7 +194,7 @@ function PassportPageInner() {
             lineHeight: 1.65, maxWidth: 560, margin: 0,
           }}>
             {pageView === "verify"
-              ? "Look up registry records, run policy checks, and verify credentials. same tools partners integrate server-side."
+              ? "Look up registry records, run policy checks, and verify credentials tied to your Passport."
               : "Bind a wallet once. Share only the proof a partner needs. Add identity verification only when a policy requires it."}
           </p>
         </div>
@@ -207,7 +207,7 @@ function PassportPageInner() {
           <Suspense fallback={
             <p style={{ fontFamily: S, fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading verifier…</p>
           }>
-            <VerifyClient />
+            <VerifyClient audience="holder" />
           </Suspense>
         ) : (
           <>
