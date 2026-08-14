@@ -16,7 +16,7 @@ export const CONFIDENT_STATUS_FRAMING =
   "Core verification and Passport issuance are live in production with real assets and pilot partners. We're deliberately taking a staged approach to full open mainnet. the remaining gates are Sui mainnet Passport deployment, published audits, first external relying party transactions, and automated asset state monitoring.";
 
 export const INTEGRATE_PRODUCTION_NOTE =
-  "Abraxas is in production with real assets. Cielo Sunrise and Chickasaw land diligence are live reference integrations for design partners embedding verification today.";
+  "Abraxas is in public beta with pilot partners and reference integrations. Cielo Sunrise and Chickasaw land diligence are live design-partner examples for teams embedding verification today.";
 
 export type StatusItemState = "live" | "in_progress" | "planned";
 

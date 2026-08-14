@@ -191,7 +191,7 @@ export async function getVerificationLayerStatus(): Promise<VerificationLayerSta
 
   const summary =
     liveCount === items.length
-      ? "All verification-layer items are production-ready."
+      ? "All verification-layer engineering checks are passing."
       : liveCount + partialCount > 0
         ? `${liveCount} live, ${partialCount} partial — see blockers per item.`
         : "Verification layer code exists but production keys and persistence are not configured.";

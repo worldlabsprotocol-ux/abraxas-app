@@ -4,6 +4,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
 import { VerifyPageIntroDemo } from "@/components/verify/VerifyPageIntroDemo";
 import { VerifyStaticSample } from "@/components/verify/VerifyStaticSample";
@@ -31,14 +32,10 @@ export default function VerifyPage({ searchParams }: PageProps) {
       <VerifyPageIntroDemo />
       <VerifyStaticSample />
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
-        <Suspense fallback={null}>
+        <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active="verify" />
         </Suspense>
-        <Suspense fallback={
-          <p style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-            Loading verifier…
-          </p>
-        }>
+        <Suspense fallback={<RedesignPageLoading label="Loading verifier…" compact />}>
           <VerifyClient />
         </Suspense>
       </div>

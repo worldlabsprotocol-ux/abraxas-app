@@ -1,11 +1,22 @@
+// FILE: app/verification/layout.tsx
+// Internal engineering dashboard — exclude from public search indexes.
+
+import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata = pageMetadata({
-  title: "RWA Verification Layer | Digital Asset Verification. Abraxas",
-  description:
-    "Production scoreboard for the RWA verification app. asset verification, blockchain verification, and reusable verification infrastructure for tokenized real-world assets.",
-  path: "/verification",
-});
+export const metadata: Metadata = {
+  ...pageMetadata({
+    title: "Engineering status · Abraxas",
+    description:
+      "Internal verification-layer engineering checklist and bootstrap diagnostics. Not a public attestation or third-party certification.",
+    path: "/verification",
+  }),
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  },
+};
 
 export default function VerificationLayout({ children }: { children: React.ReactNode }) {
   return children;

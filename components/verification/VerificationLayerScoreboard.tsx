@@ -87,10 +87,10 @@ export function VerificationLayerScoreboard({ compact = false }: { compact?: boo
               background: `${progress.isFullyReady ? COSMIC_PALETTE.emerald : COSMIC_PALETTE.gold}12`,
             }}
           >
-            {progress.done}/{progress.total} VERIFICATION LAYER
+            {progress.done}/{progress.total} ENGINEERING CHECKS
           </span>
           <span style={{ fontFamily: MONO, fontSize: "0.58rem", color: COSMIC_PALETTE.textMuted }}>
-            {progress.percent}% production-ready · Sui {data?.sui_network ?? ", "}
+            {progress.percent}% checks passing · Sui {data?.sui_network ?? "—"}
           </span>
         </div>
 

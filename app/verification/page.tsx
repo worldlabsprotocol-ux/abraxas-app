@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/verification/page.tsx
-// Verification layer scoreboard. seven items to production-ready.
+// Internal engineering status dashboard for the verification layer.
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
@@ -27,7 +27,7 @@ const BOOTSTRAP_STEPS = [
   {
     n: 4,
     title: "Confirm E2E",
-    body: "GET /api/verify/e2e. all steps green including proof-lookup-roundtrip. Target: /verification shows 7/7.",
+    body: "GET /api/verify/e2e. all steps green including proof-lookup-roundtrip. Use this page to track engineering checks.",
   },
 ];
 
@@ -35,9 +35,9 @@ export default function VerificationPage() {
   return (
     <RedesignPage maxWidth={960}>
       <PageHeader
-        eyebrow="Verification layer"
-        title="7/7 production scoreboard"
-        subtitle="Digital asset verification and blockchain verification for tokenized real-world assets. the cryptographic verify → proof → lookup loop behind the RWA verification app."
+        eyebrow="Internal engineering · not a public attestation"
+        title="Verification layer status"
+        subtitle="Operator checklist for the verify → proof → lookup stack. For engineering and bootstrap diagnostics only — not third-party certification, compliance attestation, or a public verification product."
       />
 
       <VerificationLayerScoreboard />

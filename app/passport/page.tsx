@@ -16,6 +16,7 @@ import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
+import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { DeveloperDetails } from "@/components/redesign/DeveloperDetails";
 import { Btn } from "@/components/redesign/ui";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
@@ -29,7 +30,7 @@ const G = "#10B981";
 
 export default function PassportPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<RedesignPageLoading label="Loading Passport…" compact />}>
       <PassportPageInner />
     </Suspense>
   );

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Streamlined nav. Home · Integrate · profile menu (Passport when signed in).
+// Streamlined nav. Home · Passport · Integrate · profile menu.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -18,6 +18,7 @@ const MotionLink = motion.create(Link);
 
 const LINKS = [
   { href: "/", label: "Home", exact: true },
+  { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] },
   { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
 ];
 
@@ -204,7 +205,6 @@ export function RedesignNav() {
             {signedIn && (
               <>
                 <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
-                <Link href="/passport" onClick={() => setOpen(false)} style={mobileSubLink}>Passport</Link>
                 <Link href="/account" onClick={() => setOpen(false)} style={mobileSubLink}>My account</Link>
                 <Link href="/build" onClick={() => setOpen(false)} style={mobileSubLink}>Submit asset</Link>
               </>

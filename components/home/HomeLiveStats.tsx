@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
-  buildHomeStatCards,
+  buildHomepageStatCards,
   type HomeMetricsStatus,
   type PublicMetrics,
 } from "@/lib/home/publicMetrics";
@@ -54,32 +54,39 @@ export function HomeLiveStats() {
       });
   }, []);
 
-  const cards = buildHomeStatCards(metrics);
+  const cards = buildHomepageStatCards(metrics);
   const loading = status === "loading";
+  const showPlaceholder = !loading && status === "ready" && cards.length === 0;
 
   return (
     <section aria-labelledby="home-live-stats" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
-        Live protocol
+        Beta metrics
       </div>
       <h2 id="home-live-stats" className="abx-home-section-title" style={{ marginBottom: "1rem" }}>
-        Trust in motion
+        Early pilot activity
       </h2>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "center" }}>
-        {cards.map((card) => (
-          <StatCard
-            key={card.key}
-            label={card.label}
-            value={loading ? "…" : card.value}
-            loading={loading}
-          />
-        ))}
-      </div>
+      {showPlaceholder ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-muted)", margin: 0, maxWidth: 520 }}>
+          Pilot volume is still ramping. Aggregate beta metrics will appear here as design-partner activity grows.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "center" }}>
+          {cards.map((card) => (
+            <StatCard
+              key={card.key}
+              label={card.label}
+              value={loading ? "…" : card.value}
+              loading={loading}
+            />
+          ))}
+        </div>
+      )}
       {status === "error" && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.75rem 0 0" }}>
-          Live metrics temporarily unavailable. Counts will refresh when the API recovers.
+          Beta metrics temporarily unavailable. Counts will refresh when the API recovers.
         </p>
       )}
     </section>
