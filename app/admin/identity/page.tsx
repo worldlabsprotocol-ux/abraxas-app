@@ -8,7 +8,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { IdentityReviewSubNav } from "@/components/admin/IdentityReviewSubNav";
 import { RevocationControlPanel } from "@/components/admin/RevocationControlPanel";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { adminFetch } from "@/lib/admin/adminFetch";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import { resolveIdentityReviewQueueTab } from "@/lib/admin/identityReviewQueueStates";
 import { buildBiometricSignalRows } from "@/lib/admin/biometricSignalRows";
 
@@ -175,6 +177,7 @@ export default function AdminIdentityPage() {
   const [error, setError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
@@ -223,6 +226,17 @@ export default function AdminIdentityPage() {
 
   const idDoc = (item: QueueItem) => item.documents?.find(d => d.document_type === "id_front");
   const selfieDoc = (item: QueueItem) => item.documents?.find(d => d.document_type === "selfie");
+
+  function promptReview(item: QueueItem, action: "approve" | "reject") {
+    requestConfirm({
+      actionKey: action === "approve" ? "identity.approve" : "identity.reject",
+      context: {
+        subjectLabel: item.legal_name ?? item.user_email,
+        assuranceLevel: item.biometric?.assurance_level === "L3" ? "3" : "2",
+      },
+      onConfirmed: () => runReview(item, action),
+    });
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#f0f0f0", padding: "2rem 1.25rem" }}>
@@ -305,8 +319,8 @@ export default function AdminIdentityPage() {
                         />
                         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                           <button
-                            onClick={() => void runReview(item, "approve")}
-                            disabled={actionId === item.id || !item.sui_address || !item.capture_complete}
+                            onClick={() => promptReview(item, "approve")}
+                            disabled={actionId === item.id || confirmDialogProps.busy || !item.sui_address || !item.capture_complete}
                             title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
@@ -331,8 +345,8 @@ export default function AdminIdentityPage() {
                             Resubmit
                           </button>
                           <button
-                            onClick={() => void runReview(item, "reject")}
-                            disabled={actionId === item.id}
+                            onClick={() => promptReview(item, "reject")}
+                            disabled={actionId === item.id || confirmDialogProps.busy}
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6,
                               border: "1px solid rgba(239,68,68,0.4)", background: "transparent",
@@ -367,6 +381,7 @@ export default function AdminIdentityPage() {
           </div>
         )}
       </div>
+      <AdminConfirmDialog {...confirmDialogProps} />
     </div>
   );
 }

@@ -3,6 +3,8 @@
 // Partner API key issuance (existing admin flow).
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -28,6 +30,7 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
   const [keyEnvironment, setKeyEnvironment] = useState<"live" | "test">("live");
   const [newKey, setNewKey] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const loadKeys = useCallback(async () => {
     setLoading(true);
@@ -86,8 +89,7 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
     }
   }
 
-  async function revokeKey(id: string) {
-    if (!window.confirm("Revoke this API key? Partner integrations will stop working immediately.")) return;
+  async function executeRevokeKey(id: string) {
     setActionId(id);
     setError("");
     try {
@@ -108,6 +110,17 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
     } finally {
       setActionId(null);
     }
+  }
+
+  function promptRevokeKey(row: PartnerKeyRow) {
+    requestConfirm({
+      actionKey: "partner_key.revoke",
+      context: {
+        keyPrefix: row.key_prefix,
+        partnerId: row.partner_id,
+      },
+      onConfirmed: () => executeRevokeKey(row.id),
+    });
   }
 
   return (
@@ -177,7 +190,7 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
                   </div>
                 </div>
                 {!row.revoked_at && (
-                  <button type="button" onClick={() => void revokeKey(row.id)} disabled={actionId === row.id}
+                  <button type="button" onClick={() => promptRevokeKey(row)} disabled={actionId === row.id || confirmDialogProps.busy}
                     style={{ padding: "0.45rem 0.85rem", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "transparent", color: "#FCA5A5", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, cursor: "pointer" }}>
                     Revoke
                   </button>
@@ -187,6 +200,7 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
           ))}
         </div>
       )}
+      <AdminConfirmDialog {...confirmDialogProps} />
     </div>
   );
 }

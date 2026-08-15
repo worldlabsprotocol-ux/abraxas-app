@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { adminFetch } from "@/lib/admin/adminFetch";
+import type { AdminConfirmActionKey } from "@/lib/admin/adminConfirmCopy";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -22,11 +25,19 @@ interface RequestRow {
   updated_at: string;
 }
 
+const PRIVACY_CONFIRM_ACTIONS: Partial<Record<string, AdminConfirmActionKey>> = {
+  approve_deletion: "privacy.approve_deletion",
+  approve_export: "privacy.approve_export",
+  deny: "privacy.deny",
+  legal_hold: "privacy.legal_hold",
+};
+
 export default function AdminPrivacyPage() {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -45,8 +56,7 @@ export default function AdminPrivacyPage() {
 
   useEffect(() => { void loadList(); }, [loadList]);
 
-  async function runAction(requestId: string, action: string, confirmText?: string) {
-    if (confirmText && !window.confirm(confirmText)) return;
+  async function runAction(requestId: string, action: string) {
     setLoading(true);
     setMessage("");
     setError("");
@@ -72,6 +82,22 @@ export default function AdminPrivacyPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function promptAction(req: RequestRow, action: string) {
+    const actionKey = PRIVACY_CONFIRM_ACTIONS[action];
+    if (!actionKey) {
+      void runAction(req.id, action);
+      return;
+    }
+    requestConfirm({
+      actionKey,
+      context: {
+        requestRef: req.request_ref,
+        requestType: req.request_type,
+      },
+      onConfirmed: () => runAction(req.id, action),
+    });
   }
 
   return (
@@ -100,23 +126,40 @@ export default function AdminPrivacyPage() {
             Subject pseudonym: {req.subject_pseudonym_id.slice(0, 12)}… · {new Date(req.created_at).toISOString()}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            <ActionBtn label="Review" onClick={() => void runAction(req.id, "start_review")} />
+            <ActionBtn
+              label="Review"
+              disabled={confirmDialogProps.busy}
+              onClick={() => void runAction(req.id, "start_review")}
+            />
             {req.request_type === "data_export" && (
-              <ActionBtn label="Approve export" onClick={() => void runAction(req.id, "approve_export")} />
+              <ActionBtn
+                label="Approve export"
+                disabled={confirmDialogProps.busy}
+                onClick={() => promptAction(req, "approve_export")}
+              />
             )}
             {req.request_type === "account_deletion" && (
               <ActionBtn
                 label="Approve deletion (revoke access)"
-                onClick={() => void runAction(
-                  req.id,
-                  "approve_deletion",
-                  "Approve deletion? This revokes Passport access and credentials. It does NOT purge storage blobs or audit records.",
-                )}
+                disabled={confirmDialogProps.busy}
+                onClick={() => promptAction(req, "approve_deletion")}
               />
             )}
-            <ActionBtn label="Legal hold" onClick={() => void runAction(req.id, "legal_hold")} />
-            <ActionBtn label="Complete" onClick={() => void runAction(req.id, "complete")} />
-            <ActionBtn label="Deny" onClick={() => void runAction(req.id, "deny")} />
+            <ActionBtn
+              label="Legal hold"
+              disabled={confirmDialogProps.busy}
+              onClick={() => promptAction(req, "legal_hold")}
+            />
+            <ActionBtn
+              label="Complete"
+              disabled={confirmDialogProps.busy}
+              onClick={() => void runAction(req.id, "complete")}
+            />
+            <ActionBtn
+              label="Deny"
+              disabled={confirmDialogProps.busy}
+              onClick={() => promptAction(req, "deny")}
+            />
           </div>
         </div>
       ))}
@@ -124,18 +167,31 @@ export default function AdminPrivacyPage() {
       {!loading && requests.length === 0 && (
         <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)" }}>No privacy requests in queue.</p>
       )}
+
+      <AdminConfirmDialog {...confirmDialogProps} />
     </div>
   );
 }
 
-function ActionBtn({ label, onClick }: { label: string; onClick: () => void }) {
+function ActionBtn({
+  label,
+  onClick,
+  disabled = false,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       style={{
         padding: "0.3rem 0.55rem", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)",
-        background: "rgba(255,255,255,0.05)", color: "#f0f0f0", fontSize: "0.68rem", cursor: "pointer",
+        background: "rgba(255,255,255,0.05)", color: "#f0f0f0", fontSize: "0.68rem",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.55 : 1,
       }}
     >
       {label}
