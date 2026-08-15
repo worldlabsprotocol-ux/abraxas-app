@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/admin/adminFetch";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -22,7 +23,6 @@ interface RequestRow {
 }
 
 export default function AdminPrivacyPage() {
-  const [pin, setPin] = useState("");
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +32,7 @@ export default function AdminPrivacyPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/privacy/requests", { headers: { "x-admin-pin": pin } });
+      const res = await adminFetch("/api/admin/privacy/requests");
       const data = await res.json() as { requests?: RequestRow[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
       setRequests(data.requests ?? []);
@@ -41,7 +41,7 @@ export default function AdminPrivacyPage() {
     } finally {
       setLoading(false);
     }
-  }, [pin]);
+  }, []);
 
   useEffect(() => { void loadList(); }, [loadList]);
 
@@ -51,9 +51,9 @@ export default function AdminPrivacyPage() {
     setMessage("");
     setError("");
     try {
-      const res = await fetch(`/api/admin/privacy/requests/${requestId}`, {
+      const res = await adminFetch(`/api/admin/privacy/requests/${requestId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action,
           idempotency_key: `admin:${action}:${requestId}`,
@@ -83,19 +83,6 @@ export default function AdminPrivacyPage() {
       <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1rem" }}>
         Review holder export and deletion requests. Deletion approval revokes access only — no automatic storage purge.
       </p>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <input
-          type="password"
-          value={pin}
-          onChange={e => setPin(e.target.value)}
-          placeholder="Admin PIN (if not session-authed)"
-          style={{
-            padding: "0.5rem 0.65rem", borderRadius: 8, width: "100%", maxWidth: 280,
-            border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f0f0f0",
-          }}
-        />
-      </div>
 
       {error && <p style={{ color: "#FCA5A5", fontSize: "0.78rem" }}>{error}</p>}
       {message && <p style={{ color: "#10B981", fontSize: "0.78rem" }}>{message}</p>}

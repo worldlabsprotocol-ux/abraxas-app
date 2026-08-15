@@ -3,6 +3,7 @@
 // Admin revocation control — safe identifiers only, confirmation required.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
 
 const MONO = "'JetBrains Mono',monospace";
@@ -31,10 +32,8 @@ interface SubjectAccessView {
 
 export function RevocationControlPanel({
   subjectId,
-  adminPin,
 }: {
   subjectId: string | null;
-  adminPin: string;
 }) {
   const [reasonCode, setReasonCode] = useState<string>(REVOCATION_REASON_CODES[0]);
   const [access, setAccess] = useState<SubjectAccessView | null>(null);
@@ -51,12 +50,10 @@ export function RevocationControlPanel({
     setLoading(true);
     setError(null);
     try {
-      const headers: Record<string, string> = {};
-      if (adminPin) headers["x-admin-pin"] = adminPin;
-      const res = await fetch(`/api/admin/revocation/subject-access?subject_id=${encodeURIComponent(id)}`, {
-        cache: "no-store",
-        headers,
-      });
+      const res = await adminFetch(
+        `/api/admin/revocation/subject-access?subject_id=${encodeURIComponent(id)}`,
+        { cache: "no-store" },
+      );
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? `Load failed (${res.status})`);
       setAccess(body as SubjectAccessView);
@@ -66,7 +63,7 @@ export function RevocationControlPanel({
     } finally {
       setLoading(false);
     }
-  }, [adminPin, subjectId]);
+  }, [subjectId]);
 
   useEffect(() => {
     void loadAccess();
@@ -109,11 +106,9 @@ export function RevocationControlPanel({
     setError(null);
     setSuccess(null);
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (adminPin) headers["x-admin-pin"] = adminPin;
-      const res = await fetch("/api/admin/revocation", {
+      const res = await adminFetch("/api/admin/revocation", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           target_type: "subject_access",
           subject_id: id,
