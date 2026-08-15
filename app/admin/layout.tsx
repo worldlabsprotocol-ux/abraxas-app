@@ -4,6 +4,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -86,5 +87,5 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return <AdminShell>{children}</AdminShell>;
 }
