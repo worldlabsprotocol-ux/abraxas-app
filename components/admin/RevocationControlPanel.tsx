@@ -3,7 +3,9 @@
 // Admin revocation control — safe identifiers only, confirmation required.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { adminFetch } from "@/lib/admin/adminFetch";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
 
 const MONO = "'JetBrains Mono',monospace";
@@ -40,6 +42,7 @@ export function RevocationControlPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const loadAccess = useCallback(async () => {
     const id = subjectId?.trim();
@@ -79,28 +82,9 @@ export function RevocationControlPanel({
     return grouped;
   }, [access?.receipts]);
 
-  async function revokePartnerScopedAccess(partnerId: string) {
+  async function executeRevokePartnerScopedAccess(partnerId: string) {
     const id = subjectId?.trim();
     if (!id) return;
-
-    const partnerReceipts = receiptsByPartner.get(partnerId) ?? [];
-    const activeReceipts = partnerReceipts.filter(r => r.status === "active");
-    if (activeReceipts.length === 0) {
-      setError(`No active receipts for partner ${partnerId}.`);
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `REVOKE PARTNER-SCOPED ACCESS ONLY\n\n`
-      + `Partner: ${partnerId}\n`
-      + `Active receipts to revoke: ${activeReceipts.length}\n`
-      + `Reason: ${reasonCode}\n\n`
-      + "This revokes ONLY this partner's receipts for this subject. "
-      + "Receipts belonging to other partners are NOT affected. "
-      + "Credential claims are NOT globally revoked. "
-      + "Restoring access requires a new valid issuance flow.",
-    );
-    if (!confirmed) return;
 
     setLoading(true);
     setError(null);
@@ -128,6 +112,28 @@ export function RevocationControlPanel({
     } finally {
       setLoading(false);
     }
+  }
+
+  function promptRevokePartnerScopedAccess(partnerId: string) {
+    const id = subjectId?.trim();
+    if (!id) return;
+
+    const partnerReceipts = receiptsByPartner.get(partnerId) ?? [];
+    const activeReceipts = partnerReceipts.filter(r => r.status === "active");
+    if (activeReceipts.length === 0) {
+      setError(`No active receipts for partner ${partnerId}.`);
+      return;
+    }
+
+    requestConfirm({
+      actionKey: "revocation.partner_scoped",
+      context: {
+        partnerId,
+        activeReceiptCount: activeReceipts.length,
+        reasonCode,
+      },
+      onConfirmed: () => executeRevokePartnerScopedAccess(partnerId),
+    });
   }
 
   if (!subjectId?.trim()) return null;
@@ -214,8 +220,8 @@ export function RevocationControlPanel({
                 ))}
                 <button
                   type="button"
-                  disabled={loading || active.length === 0}
-                  onClick={() => void revokePartnerScopedAccess(partnerId)}
+                  disabled={loading || confirmDialogProps.busy || active.length === 0}
+                  onClick={() => promptRevokePartnerScopedAccess(partnerId)}
                   style={{
                     marginTop: "0.5rem",
                     padding: "0.4rem 0.7rem",
@@ -243,6 +249,7 @@ export function RevocationControlPanel({
           )}
         </>
       )}
+      <AdminConfirmDialog {...confirmDialogProps} />
     </section>
   );
 }

@@ -54,7 +54,7 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
     void loadKeys();
   }, [loadKeys]);
 
-  async function createKey() {
+  async function executeCreateKey() {
     if (!partnerId.trim() || !displayName.trim()) {
       setError("Partner ID and display name required.");
       return;
@@ -87,6 +87,21 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function promptCreateKey() {
+    if (!partnerId.trim() || !displayName.trim()) {
+      setError("Partner ID and display name required.");
+      return;
+    }
+    requestConfirm({
+      actionKey: "partner_key.issue",
+      context: {
+        partnerId: partnerId.trim(),
+        keyEnvironment,
+      },
+      onConfirmed: () => executeCreateKey(),
+    });
   }
 
   async function executeRevokeKey(id: string) {
@@ -158,7 +173,7 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
             </button>
           ))}
         </div>
-        <button type="button" onClick={() => void createKey()} disabled={loading}
+        <button type="button" onClick={() => promptCreateKey()} disabled={loading || confirmDialogProps.busy}
           style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
           Generate API key
         </button>

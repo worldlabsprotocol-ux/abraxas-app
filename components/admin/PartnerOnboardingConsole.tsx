@@ -3,6 +3,8 @@
 // Admin-only relying-party onboarding console (pilot provisioning + readiness).
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -52,6 +54,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
   const [callbackUrl, setCallbackUrl] = useState("");
   const [policyId, setPolicyId] = useState("");
   const [policyName, setPolicyName] = useState("");
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const headers = useCallback((): HeadersInit => {
     const h: HeadersInit = { "Content-Type": "application/json" };
@@ -174,7 +177,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     }
   }
 
-  async function publishDraft() {
+  async function executePublishDraft() {
     if (!selected?.draft_policy) return;
     setLoading(true);
     setError("");
@@ -198,6 +201,19 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     } finally {
       setLoading(false);
     }
+  }
+
+  function promptPublishDraft() {
+    if (!selected?.draft_policy) return;
+    requestConfirm({
+      actionKey: "policy.publish",
+      context: {
+        partnerId: selected.partner_id,
+        policyId: selected.draft_policy.id,
+        version: selected.draft_policy.version,
+      },
+      onConfirmed: () => executePublishDraft(),
+    });
   }
 
   const inputStyle: React.CSSProperties = {
@@ -354,7 +370,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 0 }}>
                       Draft {selected.draft_policy.id} v{selected.draft_policy.version} — publish to activate (immutable after publish).
                     </p>
-                    <button type="button" onClick={() => void publishDraft()} disabled={loading}
+                    <button type="button" onClick={() => promptPublishDraft()} disabled={loading || confirmDialogProps.busy}
                       style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
                       Publish draft
                     </button>
@@ -389,6 +405,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
           </section>
         </div>
       </div>
+      <AdminConfirmDialog {...confirmDialogProps} />
     </div>
   );
 }

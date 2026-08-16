@@ -10,10 +10,15 @@ export type AdminConfirmActionKey =
   | "identity.reject"
   | "receipt.revoke"
   | "partner_key.revoke"
+  | "partner_key.issue"
   | "privacy.approve_deletion"
   | "privacy.approve_export"
   | "privacy.deny"
-  | "privacy.legal_hold";
+  | "privacy.legal_hold"
+  | "webhook.rotate_secret"
+  | "policy.publish"
+  | "revocation.partner_scoped"
+  | "design_partner.promote";
 
 export interface AdminConfirmCopy {
   title: string;
@@ -122,6 +127,73 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
     confirmLabel: "Apply legal hold",
     cancelLabel: "Cancel",
     risk: "medium",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "webhook.rotate_secret": {
+    title: "Rotate webhook signing secret?",
+    body:
+      "This generates a new signing secret for partner {{partnerId}}. "
+      + "The previous secret will no longer verify webhook signatures. "
+      + "The new secret is returned once in the rotation response. "
+      + "Store it in your approved secret manager immediately. Delivery enable/disable is unchanged.",
+    confirmLabel: "Rotate signing secret",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "policy.publish": {
+    title: "Publish partner policy draft?",
+    body:
+      "This publishes {{policyId}} v{{version}} for partner {{partnerId}}. "
+      + "The draft becomes the active policy and is immutable after publish. "
+      + "A previously active version may be deprecated.",
+    confirmLabel: "Publish policy",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "revocation.partner_scoped": {
+    title: "Revoke partner-scoped access?",
+    body:
+      "This revokes {{activeReceiptCount}} active receipt(s) for partner {{partnerId}} on this subject. "
+      + "Other partners' receipts are not affected. Credential claims are not globally revoked. "
+      + "Reason: {{reasonCode}}. Restoring access requires a new valid issuance flow.",
+    confirmLabel: "Revoke partner access",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: true,
+    reasonCodeOptions: REVOCATION_REASON_CODES,
+  },
+  "design_partner.promote": {
+    title: "Promote design partner application?",
+    body:
+      "This creates partner org {{partnerId}} for {{company}} and issues a sandbox API key (abx_test_). "
+      + "The application is marked onboarded. The API key is shown once — "
+      + "store it in your approved secret manager immediately.",
+    confirmLabel: "Promote and issue sandbox key",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "partner_key.issue": {
+    title: "Issue partner API key?",
+    body:
+      "This generates a new {{keyEnvironment}} API key (abx_{{keyEnvironment}}_) for partner {{partnerId}}. "
+      + "The raw key is shown once after creation. Existing keys are not revoked automatically. "
+      + "Store it in your approved secret manager immediately.",
+    confirmLabel: "Issue API key",
+    cancelLabel: "Cancel",
+    risk: "high",
     requireNote: false,
     noteOptional: false,
     requireReasonCode: false,
