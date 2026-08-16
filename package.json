@@ -81,11 +81,15 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.4",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.19",
     "encoding": "^0.1.13",
+    "jsdom": "^29.1.1",
     "pino-pretty": "^11.2.2",
     "postcss": "^8.4.39",
     "typescript": "^5.5.3",

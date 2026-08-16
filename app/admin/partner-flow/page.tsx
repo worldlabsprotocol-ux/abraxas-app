@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PartnerFlowHealthPanel } from "@/components/admin/PartnerFlowHealthPanel";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import type { PartnerFlowHealthReport } from "@/lib/partner/partnerFlowHealth";
 
 const MONO = "'JetBrains Mono',monospace";
@@ -22,7 +23,7 @@ export default function AdminPartnerFlowHealthPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/admin/partner-flow/health", { cache: "no-store" });
+        const res = await adminFetch("/api/admin/partner-flow/health", { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json() as PartnerFlowHealthReport;
         if (!cancelled) setReport(data);

@@ -8,6 +8,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { IdentityReviewSubNav } from "@/components/admin/IdentityReviewSubNav";
 import { RevocationControlPanel } from "@/components/admin/RevocationControlPanel";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { adminFetch } from "@/lib/admin/adminFetch";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import { resolveIdentityReviewQueueTab } from "@/lib/admin/identityReviewQueueStates";
 import { buildBiometricSignalRows } from "@/lib/admin/biometricSignalRows";
 
@@ -122,11 +125,9 @@ function BiometricSignalsPanel({ item }: { item: QueueItem }) {
 }
 
 function CapturePreview({
-  pin,
   doc,
   label,
 }: {
-  pin: string;
   doc: DocRow | undefined;
   label: string;
 }) {
@@ -136,16 +137,14 @@ function CapturePreview({
   useEffect(() => {
     if (!doc?.storage_path) return;
     let cancelled = false;
-    void fetch(`/api/admin/identity/document-url?path=${encodeURIComponent(doc.storage_path)}`, {
-      headers: { "x-admin-pin": pin },
-    })
+    void adminFetch(`/api/admin/identity/document-url?path=${encodeURIComponent(doc.storage_path)}`)
       .then(r => r.json())
       .then((data: { signed_url?: string }) => {
         if (!cancelled && data.signed_url) setUrl(data.signed_url);
       })
       .catch(() => { if (!cancelled) setErr(true); });
     return () => { cancelled = true; };
-  }, [doc?.storage_path, pin]);
+  }, [doc?.storage_path]);
 
   return (
     <div style={{ flex: "1 1 140px", minWidth: 120 }}>
@@ -173,20 +172,18 @@ function CapturePreview({
 export default function AdminIdentityPage() {
   const searchParams = useSearchParams();
   const activeTab = resolveIdentityReviewQueueTab(searchParams.get("status"));
-  const [pin, setPin] = useState("");
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/identity/queue?status=${encodeURIComponent(activeTab.queryStatus)}`, {
-        headers: { "x-admin-pin": pin },
-      });
+      const res = await adminFetch(`/api/admin/identity/queue?status=${encodeURIComponent(activeTab.queryStatus)}`);
       const data = await res.json() as { items?: QueueItem[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load queue");
       setItems(data.items ?? []);
@@ -195,7 +192,7 @@ export default function AdminIdentityPage() {
     } finally {
       setLoading(false);
     }
-  }, [pin, activeTab.queryStatus]);
+  }, [activeTab.queryStatus]);
 
   useEffect(() => {
     void loadQueue();
@@ -205,9 +202,9 @@ export default function AdminIdentityPage() {
     setActionId(item.id);
     setError("");
     try {
-      const res = await fetch("/api/admin/identity/approve", {
+      const res = await adminFetch("/api/admin/identity/approve", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           document_id: item.id,
           action,
@@ -230,6 +227,17 @@ export default function AdminIdentityPage() {
   const idDoc = (item: QueueItem) => item.documents?.find(d => d.document_type === "id_front");
   const selfieDoc = (item: QueueItem) => item.documents?.find(d => d.document_type === "selfie");
 
+  function promptReview(item: QueueItem, action: "approve" | "reject") {
+    requestConfirm({
+      actionKey: action === "approve" ? "identity.approve" : "identity.reject",
+      context: {
+        subjectLabel: item.legal_name ?? item.user_email,
+        assuranceLevel: item.biometric?.assurance_level === "L3" ? "3" : "2",
+      },
+      onConfirmed: () => runReview(item, action),
+    });
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#f0f0f0", padding: "2rem 1.25rem" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
@@ -241,17 +249,6 @@ export default function AdminIdentityPage() {
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-          <input
-            type="password"
-            value={pin}
-            onChange={e => setPin(e.target.value)}
-            placeholder="Admin PIN"
-            style={{
-              padding: "0.55rem 0.75rem", borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)",
-              color: "#f0f0f0", fontFamily: MONO, fontSize: "0.72rem",
-            }}
-          />
           <button
             onClick={() => void loadQueue()}
             disabled={loading}
@@ -322,8 +319,8 @@ export default function AdminIdentityPage() {
                         />
                         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                           <button
-                            onClick={() => void runReview(item, "approve")}
-                            disabled={actionId === item.id || !item.sui_address || !item.capture_complete}
+                            onClick={() => promptReview(item, "approve")}
+                            disabled={actionId === item.id || confirmDialogProps.busy || !item.sui_address || !item.capture_complete}
                             title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
@@ -348,8 +345,8 @@ export default function AdminIdentityPage() {
                             Resubmit
                           </button>
                           <button
-                            onClick={() => void runReview(item, "reject")}
-                            disabled={actionId === item.id}
+                            onClick={() => promptReview(item, "reject")}
+                            disabled={actionId === item.id || confirmDialogProps.busy}
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6,
                               border: "1px solid rgba(239,68,68,0.4)", background: "transparent",
@@ -371,19 +368,20 @@ export default function AdminIdentityPage() {
 
                 {item.capture_session_id && (
                   <div style={{ display: "flex", gap: "0.65rem", marginTop: "0.85rem", flexWrap: "wrap" }}>
-                    <CapturePreview pin={pin} doc={idDoc(item)} label="Government ID" />
-                    <CapturePreview pin={pin} doc={selfieDoc(item)} label="Selfie" />
+                    <CapturePreview doc={idDoc(item)} label="Government ID" />
+                    <CapturePreview doc={selfieDoc(item)} label="Selfie" />
                   </div>
                 )}
 
                 {item.sui_address && (
-                  <RevocationControlPanel subjectId={item.sui_address} adminPin={pin} />
+                  <RevocationControlPanel subjectId={item.sui_address} />
                 )}
               </div>
             ))}
           </div>
         )}
       </div>
+      <AdminConfirmDialog {...confirmDialogProps} />
     </div>
   );
 }

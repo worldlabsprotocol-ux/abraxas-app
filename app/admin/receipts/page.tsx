@@ -6,6 +6,8 @@ export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
 
 const MONO = "'JetBrains Mono',monospace";
@@ -46,6 +48,7 @@ export default function AdminReceiptsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [reasonCode, setReasonCode] = useState<string>(REVOCATION_REASON_CODES[0]);
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -80,13 +83,7 @@ export default function AdminReceiptsPage() {
 
   useEffect(() => { void loadList(); }, [loadList]);
 
-  async function revokeReceipt(receiptId: string) {
-    const confirmed = window.confirm(
-      `Revoke receipt ${receiptId}?\n\nReason: ${reasonCode}\n\n`
-      + "This immediately prevents future partner validation using this receipt. "
-      + "The signed artifact remains cryptographically valid; live validity becomes revoked.",
-    );
-    if (!confirmed) return;
+  async function executeRevokeReceipt(receiptId: string) {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/receipts/${receiptId}`, {
@@ -109,6 +106,14 @@ export default function AdminReceiptsPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function promptRevokeReceipt(receiptId: string) {
+    requestConfirm({
+      actionKey: "receipt.revoke",
+      context: { receiptId, reasonCode },
+      onConfirmed: () => executeRevokeReceipt(receiptId),
+    });
   }
 
   return (
@@ -244,7 +249,8 @@ export default function AdminReceiptsPage() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => void revokeReceipt(detail.receipt.receipt_id)}
+                    onClick={() => promptRevokeReceipt(detail.receipt.receipt_id)}
+                    disabled={confirmDialogProps.busy}
                     style={{ padding: "0.4rem 0.75rem", background: "rgba(242,107,107,0.12)", border: "1px solid rgba(242,107,107,0.25)", borderRadius: 4, color: "#f26b6b", cursor: "pointer", fontSize: "0.65rem" }}
                   >
                     Revoke receipt
@@ -261,6 +267,7 @@ export default function AdminReceiptsPage() {
           )}
         </div>
       </div>
+      <AdminConfirmDialog {...confirmDialogProps} />
     </div>
   );
 }
