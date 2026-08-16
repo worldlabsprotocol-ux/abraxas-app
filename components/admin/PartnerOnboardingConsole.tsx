@@ -46,6 +46,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const [newPartnerId, setNewPartnerId] = useState("");
   const [newCompany, setNewCompany] = useState("");
@@ -62,9 +63,12 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     return h;
   }, [adminPin]);
 
-  const loadPartners = useCallback(async () => {
+  const actionsDisabled = loading || confirmDialogProps.open || confirmDialogProps.busy;
+
+  const loadPartners = useCallback(async (options?: { clearNotice?: boolean }) => {
     setLoading(true);
     setError("");
+    if (options?.clearNotice) setNotice("");
     try {
       const res = await fetch("/api/admin/partners/onboarding", {
         headers: adminPin ? { "x-admin-pin": adminPin } : undefined,
@@ -96,27 +100,30 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     }
     setLoading(true);
     setError("");
+    setNotice("");
     try {
       const id = newPartnerId.trim();
+      const company = newCompany.trim();
       const res = await fetch("/api/admin/partners/onboarding", {
         method: "POST",
         headers: headers(),
         credentials: "include",
         body: JSON.stringify({
           partner_id: id,
-          company: newCompany.trim(),
+          company,
           use_case: newUseCase.trim() || undefined,
           status: "pilot",
           allowed_environments: ["sandbox"],
         }),
       });
-      const data = await res.json() as { error?: string };
+      const data = await res.json() as { error?: string; partner?: { partner_id: string; status: string } };
       if (!res.ok) throw new Error(data.error ?? "Create failed");
       setNewPartnerId("");
       setNewCompany("");
       setNewUseCase("");
       await loadPartners();
       setSelectedId(id);
+      setNotice(`Pilot partner created: ${id} (${company}). Status: pilot.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create failed");
     } finally {
@@ -126,22 +133,26 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
 
   async function addCallbackUrl() {
     if (!selected || !callbackUrl.trim()) return;
+    const savedUrl = callbackUrl.trim();
+    const partnerId = selected.partner_id;
     setLoading(true);
     setError("");
+    setNotice("");
     try {
       const res = await fetch("/api/admin/partners/onboarding/return-urls", {
         method: "POST",
         headers: headers(),
         credentials: "include",
         body: JSON.stringify({
-          partner_id: selected.partner_id,
-          return_urls: [callbackUrl.trim()],
+          partner_id: partnerId,
+          return_urls: [savedUrl],
         }),
       });
       const data = await res.json() as { error?: string; rejected?: Array<{ url: string; errors: string[] }> };
       if (!res.ok) throw new Error(data.error ?? "Add callback URL failed");
       setCallbackUrl("");
       await loadPartners();
+      setNotice(`Callback URL saved for ${partnerId}: ${savedUrl}.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Add callback URL failed");
     } finally {
@@ -151,8 +162,11 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
 
   async function createPolicyDraft() {
     if (!selected || !policyId.trim()) return;
+    const draftPolicyId = policyId.trim();
+    const partnerId = selected.partner_id;
     setLoading(true);
     setError("");
+    setNotice("");
     try {
       const res = await fetch("/api/admin/partners/onboarding/policies", {
         method: "POST",
@@ -160,16 +174,18 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
         credentials: "include",
         body: JSON.stringify({
           action: "create_initial_draft",
-          partner_id: selected.partner_id,
-          policy_id: policyId.trim(),
-          name: policyName.trim() || `${selected.partner_id} pilot policy`,
+          partner_id: partnerId,
+          policy_id: draftPolicyId,
+          name: policyName.trim() || `${partnerId} pilot policy`,
         }),
       });
-      const data = await res.json() as { error?: string };
+      const data = await res.json() as { error?: string; policy?: { id: string; version: number } };
       if (!res.ok) throw new Error(data.error ?? "Create policy draft failed");
+      const version = data.policy?.version ?? 1;
       setPolicyId("");
       setPolicyName("");
       await loadPartners();
+      setNotice(`Draft policy created: ${draftPolicyId} v${version} for ${partnerId}.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create policy draft failed");
     } finally {
@@ -181,6 +197,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     if (!selected?.draft_policy) return;
     setLoading(true);
     setError("");
+    setNotice("");
     try {
       const res = await fetch("/api/admin/partners/onboarding/policies", {
         method: "POST",
@@ -245,6 +262,10 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
         </div>
       )}
 
+      {notice && (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0 0 1rem" }}>{notice}</p>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: "1rem", alignItems: "start" }}>
         <div style={{
           padding: "0.85rem", borderRadius: 10,
@@ -253,13 +274,13 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
           <div style={{ fontFamily: MONO, fontSize: "0.55rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
             Partners
           </div>
-          <button type="button" onClick={() => void loadPartners()} disabled={loading}
+          <button type="button" onClick={() => void loadPartners({ clearNotice: true })} disabled={loading}
             style={{ marginBottom: "0.65rem", padding: "0.4rem 0.75rem", borderRadius: 6, border: "none", background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>
             {loading ? "Loading…" : "Refresh"}
           </button>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", maxHeight: 360, overflowY: "auto" }}>
             {partners.map(p => (
-              <button key={p.partner_id} type="button" onClick={() => setSelectedId(p.partner_id)}
+              <button key={p.partner_id} type="button" onClick={() => { setNotice(""); setSelectedId(p.partner_id); }} disabled={loading}
                 style={{
                   textAlign: "left", padding: "0.55rem 0.65rem", borderRadius: 8, cursor: "pointer",
                   border: `1px solid ${selectedId === p.partner_id ? `${ACCENT}66` : "rgba(255,255,255,0.08)"}`,
@@ -344,7 +365,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
                 </div>
                 <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                   <input value={callbackUrl} onChange={e => setCallbackUrl(e.target.value)} placeholder="https://your-app.example.com/auth/abraxas/callback" style={{ ...inputStyle, flex: 1, minWidth: 220 }} />
-                  <button type="button" onClick={() => void addCallbackUrl()} disabled={loading}
+                  <button type="button" onClick={() => void addCallbackUrl()} disabled={actionsDisabled}
                     style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: "rgba(16,185,129,0.25)", color: ACCENT, fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
                     Add URL
                   </button>
@@ -359,7 +380,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
                   <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.65rem" }}>
                     <input value={policyId} onChange={e => setPolicyId(e.target.value)} placeholder="policy_id (e.g. your-protocol-policy-v1)" style={inputStyle} />
                     <input value={policyName} onChange={e => setPolicyName(e.target.value)} placeholder="Policy display name (optional)" style={inputStyle} />
-                    <button type="button" onClick={() => void createPolicyDraft()} disabled={loading}
+                    <button type="button" onClick={() => void createPolicyDraft()} disabled={actionsDisabled}
                       style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: "rgba(16,185,129,0.25)", color: ACCENT, fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", justifySelf: "start" }}>
                       Create draft policy
                     </button>
@@ -370,7 +391,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 0 }}>
                       Draft {selected.draft_policy.id} v{selected.draft_policy.version} — publish to activate (immutable after publish).
                     </p>
-                    <button type="button" onClick={() => promptPublishDraft()} disabled={loading || confirmDialogProps.busy}
+                    <button type="button" onClick={() => promptPublishDraft()} disabled={actionsDisabled}
                       style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
                       Publish draft
                     </button>
@@ -398,7 +419,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
               <input value={newCompany} onChange={e => setNewCompany(e.target.value)} placeholder="Company name" style={inputStyle} />
               <input value={newUseCase} onChange={e => setNewUseCase(e.target.value)} placeholder="Use case (optional)" style={inputStyle} />
             </div>
-            <button type="button" onClick={() => void createPartner()} disabled={loading}
+            <button type="button" onClick={() => void createPartner()} disabled={actionsDisabled}
               style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
               Create pilot partner
             </button>
