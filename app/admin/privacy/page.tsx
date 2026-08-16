@@ -84,6 +84,8 @@ export default function AdminPrivacyPage() {
     }
   }
 
+  const actionsDisabled = loading || confirmDialogProps.open || confirmDialogProps.busy;
+
   function promptAction(req: RequestRow, action: string) {
     const actionKey = PRIVACY_CONFIRM_ACTIONS[action];
     if (!actionKey) {
@@ -128,36 +130,36 @@ export default function AdminPrivacyPage() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
             <ActionBtn
               label="Review"
-              disabled={confirmDialogProps.busy}
+              disabled={actionsDisabled}
               onClick={() => void runAction(req.id, "start_review")}
             />
             {req.request_type === "data_export" && (
               <ActionBtn
                 label="Approve export"
-                disabled={confirmDialogProps.busy}
+                disabled={actionsDisabled}
                 onClick={() => promptAction(req, "approve_export")}
               />
             )}
             {req.request_type === "account_deletion" && (
               <ActionBtn
                 label="Approve deletion (revoke access)"
-                disabled={confirmDialogProps.busy}
+                disabled={actionsDisabled}
                 onClick={() => promptAction(req, "approve_deletion")}
               />
             )}
             <ActionBtn
               label="Legal hold"
-              disabled={confirmDialogProps.busy}
+              disabled={actionsDisabled}
               onClick={() => promptAction(req, "legal_hold")}
             />
             <ActionBtn
               label="Complete"
-              disabled={confirmDialogProps.busy}
+              disabled={actionsDisabled}
               onClick={() => void runAction(req.id, "complete")}
             />
             <ActionBtn
               label="Deny"
-              disabled={confirmDialogProps.busy}
+              disabled={actionsDisabled}
               onClick={() => promptAction(req, "deny")}
             />
           </div>

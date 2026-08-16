@@ -175,9 +175,13 @@ export default function AdminIdentityPage() {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
+
+  const itemBusy = (id: string) =>
+    actionId === id || loading || confirmDialogProps.open || confirmDialogProps.busy;
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
@@ -198,9 +202,20 @@ export default function AdminIdentityPage() {
     void loadQueue();
   }, [loadQueue]);
 
+  useEffect(() => {
+    setSuccess(null);
+  }, [activeTab.queryStatus]);
+
+  const REVIEW_SUCCESS_COPY: Record<ReviewAction, string> = {
+    approve: "Identity approved. Queue refreshed.",
+    reject: "Identity submission rejected. Queue refreshed.",
+    request_resubmission: "Submission marked for resubmission. Queue refreshed.",
+  };
+
   async function runReview(item: QueueItem, action: ReviewAction) {
     setActionId(item.id);
     setError("");
+    setSuccess(null);
     try {
       const res = await adminFetch("/api/admin/identity/approve", {
         method: "POST",
@@ -216,6 +231,7 @@ export default function AdminIdentityPage() {
       });
       const data = await res.json() as { ok?: boolean; error?: string; reviewer_decision?: string };
       if (!res.ok) throw new Error(data.error ?? `${action} failed`);
+      setSuccess(REVIEW_SUCCESS_COPY[action]);
       await loadQueue();
     } catch (e) {
       setError(e instanceof Error ? e.message : `${action} failed`);
@@ -228,6 +244,7 @@ export default function AdminIdentityPage() {
   const selfieDoc = (item: QueueItem) => item.documents?.find(d => d.document_type === "selfie");
 
   function promptReview(item: QueueItem, action: "approve" | "reject") {
+    setSuccess(null);
     requestConfirm({
       actionKey: action === "approve" ? "identity.approve" : "identity.reject",
       context: {
@@ -267,6 +284,14 @@ export default function AdminIdentityPage() {
             background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
             fontFamily: FONT, fontSize: "0.75rem", color: "#FCA5A5" }}>
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={{ padding: "0.65rem 0.85rem", borderRadius: 8, marginBottom: "1rem",
+            background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)",
+            fontFamily: FONT, fontSize: "0.75rem", color: "#86EFAC" }}>
+            {success}
           </div>
         )}
 
@@ -311,6 +336,7 @@ export default function AdminIdentityPage() {
                           onChange={e => setNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
                           placeholder="Reviewer notes"
                           rows={2}
+                          disabled={itemBusy(item.id)}
                           style={{
                             width: "100%", minWidth: 180, padding: "0.45rem 0.55rem", borderRadius: 6,
                             border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.25)",
@@ -320,7 +346,7 @@ export default function AdminIdentityPage() {
                         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                           <button
                             onClick={() => promptReview(item, "approve")}
-                            disabled={actionId === item.id || confirmDialogProps.busy || !item.sui_address || !item.capture_complete}
+                            disabled={itemBusy(item.id) || !item.sui_address || !item.capture_complete}
                             title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
@@ -334,7 +360,7 @@ export default function AdminIdentityPage() {
                           </button>
                           <button
                             onClick={() => void runReview(item, "request_resubmission")}
-                            disabled={actionId === item.id}
+                            disabled={itemBusy(item.id)}
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6,
                               border: "1px solid rgba(251,191,36,0.45)", background: "transparent",
@@ -346,7 +372,7 @@ export default function AdminIdentityPage() {
                           </button>
                           <button
                             onClick={() => promptReview(item, "reject")}
-                            disabled={actionId === item.id || confirmDialogProps.busy}
+                            disabled={itemBusy(item.id)}
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6,
                               border: "1px solid rgba(239,68,68,0.4)", background: "transparent",
