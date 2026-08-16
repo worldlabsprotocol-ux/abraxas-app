@@ -3,6 +3,8 @@
 // Admin partner webhook configuration, dispatch health, and dead-letter recovery.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import {
   isWebhookHttpsEndpointWellFormed,
   webhookEndpointFormErrorMessage,
@@ -90,6 +92,7 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
   const [error, setError] = useState("");
   const [endpointError, setEndpointError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const headers: Record<string, string> = {};
   if (adminPin) headers["x-admin-pin"] = adminPin;
@@ -209,7 +212,7 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
     }
   }
 
-  async function rotateSecret() {
+  async function executeRotateSecret() {
     setLoading(true);
     setError("");
     setSecretReveal("");
@@ -228,6 +231,15 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function promptRotateSecret() {
+    if (!partnerId.trim()) return;
+    requestConfirm({
+      actionKey: "webhook.rotate_secret",
+      context: { partnerId: partnerId.trim() },
+      onConfirmed: () => executeRotateSecret(),
+    });
   }
 
   async function retryFailed(outboxId: string) {
@@ -343,7 +355,7 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
             </button>
           )}
           {selected && (
-            <button type="button" disabled={loading} onClick={() => void rotateSecret()}
+            <button type="button" disabled={loading || confirmDialogProps.busy} onClick={() => promptRotateSecret()}
               style={{ padding: "0.45rem 0.85rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#f0f0f0", cursor: "pointer" }}>
               Rotate signing secret
             </button>
@@ -412,6 +424,7 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
       )}
       {error && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#FCA5A5", margin: 0 }}>{error}</p>}
       {loading && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", margin: 0 }}>Loading…</p>}
+      <AdminConfirmDialog {...confirmDialogProps} />
     </div>
   );
 }

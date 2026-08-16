@@ -4,6 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { slugifyPartnerId } from "@/lib/partner/partnerOnboarding";
@@ -31,6 +33,7 @@ export default function AdminDesignPartnersPage() {
   const [msg, setMsg] = useState("");
   const [newKey, setNewKey] = useState<string | null>(null);
   const [partnerIds, setPartnerIds] = useState<Record<string, string>>({});
+  const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   useEffect(() => {
     try {
@@ -75,7 +78,7 @@ export default function AdminDesignPartnersPage() {
     await refresh();
   }
 
-  async function promote(app: Application, issueLive = false) {
+  async function executePromote(app: Application, issueLive = false) {
     setMsg("");
     setNewKey(null);
     const partnerId = partnerIds[app.id] || slugifyPartnerId(app.company);
@@ -96,6 +99,18 @@ export default function AdminDesignPartnersPage() {
     setNewKey(data.api_key ?? null);
     setMsg(`Promoted ${data.partner_id} · prefix ${data.key_prefix}`);
     await refresh();
+  }
+
+  function promptPromote(app: Application) {
+    const partnerId = partnerIds[app.id] || slugifyPartnerId(app.company);
+    requestConfirm({
+      actionKey: "design_partner.promote",
+      context: {
+        partnerId,
+        company: app.company,
+      },
+      onConfirmed: () => executePromote(app, false),
+    });
   }
 
   if (!authed) {
@@ -172,7 +187,7 @@ export default function AdminDesignPartnersPage() {
                     <button type="button" onClick={() => void updateStatus(app.id, "approved")} style={smallBtn}>
                       Approve
                     </button>
-                    <button type="button" onClick={() => void promote(app, false)} style={smallBtn}>
+                    <button type="button" onClick={() => promptPromote(app)} disabled={confirmDialogProps.busy} style={smallBtn}>
                       Promote + test key
                     </button>
                     <button type="button" onClick={() => void updateStatus(app.id, "rejected")} style={{ ...smallBtn, background: "transparent", border: "1px solid var(--border)" }}>
@@ -192,6 +207,7 @@ export default function AdminDesignPartnersPage() {
         {" "}(set allowed_environments + issue abx_live_ key).{" "}
         <Link href="/admin/inquiries" style={{ color: "var(--accent)" }}>Asset inquiries →</Link>
       </p>
+      <AdminConfirmDialog {...confirmDialogProps} />
     </RedesignPage>
   );
 }

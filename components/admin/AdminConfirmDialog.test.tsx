@@ -32,6 +32,31 @@ function renderReceiptRevokeDialog(
   return { onConfirm, onCancel, ...utils };
 }
 
+function renderPartnerScopedRevokeDialog(
+  props: Partial<ComponentProps<typeof AdminConfirmDialog>> = {},
+) {
+  const onConfirm = vi.fn();
+  const onCancel = vi.fn();
+  const { context, ...rest } = props;
+  const utils = render(
+    <AdminConfirmDialog
+      open
+      busy={false}
+      actionKey="revocation.partner_scoped"
+      context={{
+        partnerId: "partner_demo",
+        activeReceiptCount: 2,
+        reasonCode: "",
+        ...context,
+      }}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      {...rest}
+    />,
+  );
+  return { onConfirm, onCancel, ...utils };
+}
+
 function EscapeFocusHarness() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -66,6 +91,20 @@ describe("AdminConfirmDialog", () => {
     });
 
     expect(screen.getByRole("button", { name: "Revoke receipt" })).toBeEnabled();
+  });
+
+  it("disables partner-scoped revoke Confirm until a required reason code is selected", () => {
+    renderPartnerScopedRevokeDialog({ context: { reasonCode: "" } });
+
+    expect(screen.getByRole("button", { name: "Revoke partner access" })).toBeDisabled();
+  });
+
+  it("enables partner-scoped revoke Confirm when reason code is present in context", () => {
+    renderPartnerScopedRevokeDialog({
+      context: { reasonCode: "operator_security_review" },
+    });
+
+    expect(screen.getByRole("button", { name: "Revoke partner access" })).toBeEnabled();
   });
 
   it("does not call onConfirm before an explicit Confirm click", async () => {
