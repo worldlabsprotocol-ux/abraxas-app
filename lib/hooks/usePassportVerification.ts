@@ -27,6 +27,7 @@ import { computePassportSetupState, resolveCredentialStatus, resolveIdentityVeri
 
 export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined" | "resubmission_requested";
 export type CredentialVerifyState = "idle" | "checking" | "valid" | "invalid";
+export type PassportStatusFetchError = "load_failed" | "refresh_failed";
 
 export interface MeCredentialResponse {
   verified: boolean;
@@ -70,6 +71,7 @@ interface PipelineResult {
   veriffConfigured: boolean;
   idvProvider: "veriff" | "manual";
   walletBindingL3: boolean;
+  autoProvisionFailed?: boolean;
 }
 
 async function runIdentityPipeline(
@@ -88,13 +90,13 @@ async function runIdentityPipeline(
   let veriffConfigured = false;
   let idvProvider: "veriff" | "manual" = "manual";
   let walletBindingL3 = false;
+  let autoProvisionFailed = false;
 
   if (!suiAddress && !email) {
-    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3 };
+    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3, autoProvisionFailed };
   }
 
   let data: IdentityStatusResponse = await fetchIdentityStatus(suiAddress, email);
-  veriffConfigured = data.veriff_configured ?? false;
   idvProvider = data.idv_provider ?? (veriffConfigured ? "veriff" : "manual");
   walletBindingL3 = data.wallet_binding_l3 ?? false;
   setup = data.setup ?? null;
@@ -132,9 +134,13 @@ async function runIdentityPipeline(
     if (onChain?.needs_provision) {
       try {
         const provisioned = await provisionOnChainPassport(suiAddress);
-        if (provisioned.object_id) onChain = provisioned;
+        if (provisioned.object_id) {
+          onChain = provisioned;
+        } else if (provisioned.error) {
+          autoProvisionFailed = true;
+        }
       } catch {
-        /* best-effort */
+        autoProvisionFailed = true;
       }
     }
   } else if (data.status === "pending") {
@@ -161,7 +167,7 @@ async function runIdentityPipeline(
     }
   }
 
-  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3 };
+  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3, autoProvisionFailed };
 }
 
 export function usePassportVerification(
@@ -171,7 +177,7 @@ export function usePassportVerification(
   const queryClient = useQueryClient();
   const verifiedJtiRef = useRef<string | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
-  const [provisionError, setProvisionError] = useState<string | null>(null);
+  const [provisionFailed, setProvisionFailed] = useState(false);
   const provisioningRef = useRef(false);
 
   const pipelineQuery = useQuery({
@@ -218,12 +224,12 @@ export function usePassportVerification(
     if (!suiAddress || provisioningRef.current) return;
     provisioningRef.current = true;
     setIsProvisioning(true);
-    setProvisionError(null);
+    setProvisionFailed(false);
     try {
       const status = await fetchOnChainPassportStatus(suiAddress);
       if (status?.needs_provision) {
         const data = await provisionOnChainPassport(suiAddress);
-        if (data.error) setProvisionError(data.error);
+        if (data.error) setProvisionFailed(true);
         queryClient.setQueryData(
           passportQueryKeys.identity(suiAddress, email),
           (old: PipelineResult | undefined) =>
@@ -232,7 +238,7 @@ export function usePassportVerification(
       }
       await refresh();
     } catch {
-      setProvisionError("On-chain provision failed");
+      setProvisionFailed(true);
     } finally {
       provisioningRef.current = false;
       setIsProvisioning(false);
@@ -240,8 +246,15 @@ export function usePassportVerification(
   }, [suiAddress, email, queryClient, refresh]);
 
   const data = pipelineQuery.data;
+  const hasStatusSnapshot = Boolean(pipelineQuery.data);
+  const isStatusFetchError = pipelineQuery.isError;
+  const statusFetchError: PassportStatusFetchError | null = isStatusFetchError
+    ? (hasStatusSnapshot ? "refresh_failed" : "load_failed")
+    : null;
   const identityStatus = data?.identityStatus ?? "not_started";
-  const isPolling = identityStatus === "pending" || Boolean(data?.onChain?.needs_provision);
+  const isPolling = identityStatus === "pending"
+    || identityStatus === "resubmission_requested"
+    || Boolean(data?.onChain?.needs_provision);
 
   const setup = data?.setup ?? (suiAddress ? computePassportSetupState({
     walletDone: Boolean(suiAddress),
@@ -263,8 +276,11 @@ export function usePassportVerification(
     onChain: data?.onChain ?? null,
     isRefreshing: pipelineQuery.isFetching && !pipelineQuery.isLoading,
     isProvisioning,
-    provisionError,
+    provisionFailed: provisionFailed || Boolean(data?.autoProvisionFailed),
     syncMessage: data?.syncMessage ?? null,
+    isStatusFetchError,
+    statusFetchError,
+    hasStatusSnapshot,
     lastChecked: pipelineQuery.dataUpdatedAt ? new Date(pipelineQuery.dataUpdatedAt) : null,
     refresh,
     retryProvision,

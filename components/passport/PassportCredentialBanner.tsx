@@ -31,12 +31,11 @@ export function PassportCredentialBanner({
   verifyResult,
   onChain,
   isProvisioning,
-  provisionError,
+  provisionFailed,
   onRetryProvision,
   isRefreshing,
   isPolling,
   onRefresh,
-  syncMessage,
   manualMode = true,
 }: {
   identityStatus: IdentityStampStatus;
@@ -46,12 +45,11 @@ export function PassportCredentialBanner({
   verifyResult: VerificationResult | null;
   onChain: OnChainPassportStatus | null;
   isProvisioning: boolean;
-  provisionError: string | null;
+  provisionFailed: boolean;
   onRetryProvision: () => void;
   isRefreshing: boolean;
   isPolling: boolean;
   onRefresh: () => void;
-  syncMessage?: string | null;
   manualMode?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
@@ -75,14 +73,9 @@ export function PassportCredentialBanner({
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
           {manualMode
-            ? "Your capture is in the Abraxas Verify queue. This page polls every few seconds and issues your credential when approved."
-            : `Your documents are being reviewed${via ? ` (${via})` : ""}. This page polls every few seconds and issues your credential automatically when approved.`}
+            ? "Your capture is in the Abraxas Verify queue. This page checks for updates every few seconds."
+            : `Your documents are being reviewed${via ? ` (${via})` : ""}. This page checks for updates every few seconds.`}
         </p>
-        {syncMessage && (
-          <p style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
-            {syncMessage}
-          </p>
-        )}
         <button type="button" onClick={onRefresh} disabled={isRefreshing}
           style={{
             padding: "0.45rem 0.9rem", borderRadius: 999, border: `1px solid ${AMBER}55`,
@@ -195,7 +188,7 @@ export function PassportCredentialBanner({
             padding: "0.75rem 0.9rem", marginBottom: "0.85rem",
           }}>
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
-              Creating your on-chain Passport on Sui devnet. sponsor wallet is paying gas…
+              Updating your on-chain Passport record… This may take a moment in beta.
             </div>
           </div>
         )}
@@ -237,20 +230,27 @@ export function PassportCredentialBanner({
             padding: "0.75rem 0.9rem", marginBottom: "0.85rem",
           }}>
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
-              {provisionError
-                ? provisionError
+              {provisionFailed
+                ? "On-chain update didn't complete. Try again below. If this keeps happening, contact support."
                 : onChain.issuer_configured
-                  ? "Queuing on-chain passport. this page will update automatically."
-                  : "Off-chain credential is active. On-chain stamps appear once sponsor wallet env is set in Vercel."}
+                  ? (isPolling || onChain.needs_provision)
+                    ? "On-chain update in progress. This page checks for updates every few seconds. You can also refresh this page."
+                    : "On-chain update in progress. Refresh this page to check the update."
+                  : "On-chain stamps aren't available in this beta environment yet. Verification progress still appears on this page."}
             </div>
-            {provisionError && (
+            {provisionFailed && credential && (
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.5rem" }}>
+                Your verification status on this page is unchanged.
+              </p>
+            )}
+            {provisionFailed && (
               <button type="button" onClick={onRetryProvision}
                 style={{
                   padding: "0.45rem 0.9rem", borderRadius: 999, border: `1px solid ${ACCENT}55`,
                   background: "transparent", color: ACCENT, fontFamily: FONT, fontSize: "0.75rem",
                   fontWeight: 600, cursor: "pointer",
                 }}>
-                Retry on-chain provision
+                Retry on-chain update
               </button>
             )}
           </div>

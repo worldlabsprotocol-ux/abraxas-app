@@ -8,14 +8,16 @@ import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
 import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
-import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
+import type { IdentityStampStatus, CredentialVerifyState, OnChainPassportStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
+import type { VerificationResult } from "@/lib/credentials/types";
 import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { IndependentBiometricStatusCard } from "@/components/passport/IndependentBiometricStatusCard";
 import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
 import { PassportPrivacyCenter } from "@/components/passport/PassportPrivacyCenter";
+import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
 import { TransactionEligibilitySection } from "@/components/passport/TransactionEligibilitySection";
 import {
@@ -79,6 +81,12 @@ interface Props {
   returnPath?: string | null;
   guidedOnboarding?: boolean;
   capturePolicy?: CapturePolicyContext;
+  verifyState?: CredentialVerifyState;
+  verifyResult?: VerificationResult | null;
+  onChain?: OnChainPassportStatus | null;
+  isProvisioning?: boolean;
+  provisionFailed?: boolean;
+  onRetryProvision?: () => void;
 }
 
 export function PassportDashboard({
@@ -103,6 +111,12 @@ export function PassportDashboard({
   returnPath,
   guidedOnboarding = false,
   capturePolicy,
+  verifyState = "idle",
+  verifyResult = null,
+  onChain = null,
+  isProvisioning = false,
+  provisionFailed = false,
+  onRetryProvision,
 }: Props) {
   const auth = useSuiAuthOptional();
   const signInRecovery = auth?.signInRecovery ?? null;
@@ -139,6 +153,32 @@ export function PassportDashboard({
     via,
   });
   const showVerifiedHero = shouldShowVerifiedHero(identityUi, hasCredential);
+
+  const showCredentialBanner = walletDone && (
+    identityStatus === "pending"
+    || identityStatus === "resubmission_requested"
+    || identityStatus === "declined"
+    || isPolling
+    || (identityStatus === "earned" && Boolean(credential))
+  );
+
+  const credentialBanner = showCredentialBanner ? (
+    <PassportCredentialBanner
+      identityStatus={identityStatus}
+      via={via}
+      credential={credential}
+      verifyState={verifyState}
+      verifyResult={verifyResult}
+      onChain={onChain}
+      isProvisioning={isProvisioning}
+      provisionFailed={provisionFailed}
+      onRetryProvision={onRetryProvision ?? (() => {})}
+      isRefreshing={isRefreshing}
+      isPolling={isPolling}
+      onRefresh={onRefresh}
+      manualMode={manualMode}
+    />
+  ) : null;
 
   async function bindWallet() {
     if (!suiAddress) {
@@ -247,6 +287,8 @@ export function PassportDashboard({
               returnPath={returnPath}
             />
           )}
+
+          {credentialBanner}
 
           {!showVerifiedHero && (
             <IndependentBiometricStatusCard
@@ -427,6 +469,8 @@ export function PassportDashboard({
               returnPath={returnPath}
             />
           )}
+
+          {credentialBanner}
 
           <CredentialsSection
             walletBindingL3={walletBindingL3}
