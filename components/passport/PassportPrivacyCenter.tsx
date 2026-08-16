@@ -59,7 +59,7 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["passport", "privacy", suiAddress],
     queryFn: fetchPrivacyCenter,
     enabled: Boolean(suiAddress),
@@ -134,9 +134,22 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
         )}
 
         {isError && (
-          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
-            Privacy center requires migration 060 applied.
-          </p>
+          <div>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
+              Privacy settings aren&apos;t available right now. Try again in a moment.
+            </p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              style={{
+                padding: "0.4rem 0.75rem", borderRadius: 8, border: "1px solid var(--border-strong)",
+                background: "var(--surface)", color: "var(--text-primary)",
+                fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              Try again
+            </button>
+          </div>
         )}
 
         {data?.data_categories.map(cat => (

@@ -2,6 +2,7 @@
 // FILE: components/passport/PassportSetupPanel.tsx
 // Dominant guided onboarding. account → identity → wallet bind.
 
+import { useState } from "react";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
@@ -20,6 +21,14 @@ import Link from "next/link";
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
+
+type BindErrorKind = "signing_unavailable" | "challenge_failed" | "confirm_failed";
+
+const BIND_ERROR_COPY: Record<BindErrorKind, string> = {
+  signing_unavailable: "Wallet binding isn't available right now. Sign in again, then try again.",
+  challenge_failed: "Couldn't start wallet binding. Try again in a moment.",
+  confirm_failed: "Couldn't confirm wallet binding. Try again in a moment.",
+};
 
 const UNLOCKS = [
   "Verified asset submissions",
@@ -69,21 +78,31 @@ export function PassportSetupPanel({
   const manualMode = idvProvider === "manual";
   const assuranceLabel = credential?.level?.toUpperCase() ?? (manualMode ? "L2" : "L3");
   const completedCount = [setup.accountComplete, setup.walletBound, setup.identityComplete].filter(Boolean).length;
+  const [bindLoading, setBindLoading] = useState(false);
+  const [bindErrorKind, setBindErrorKind] = useState<BindErrorKind | null>(null);
+  const [bindSuccess, setBindSuccess] = useState(false);
 
   async function bindWallet() {
-    if (!suiAddress) return;
+    if (!suiAddress || bindLoading) return;
+    setBindLoading(true);
+    setBindErrorKind(null);
+    setBindSuccess(false);
     try {
       const secret = getEphemeralSecretKey();
-      if (!secret) throw new Error("Sign in again to enable wallet signing.");
+      if (!secret) {
+        setBindErrorKind("signing_unavailable");
+        return;
+      }
 
       const chRes = await fetch("/api/wallet/binding/challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sui_address: suiAddress }),
       });
-      const challenge = await chRes.json() as { challenge_id?: string; message?: string; error?: string };
+      const challenge = await chRes.json() as { challenge_id?: string; message?: string };
       if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
-        throw new Error(challenge.error ?? "Challenge failed");
+        setBindErrorKind("challenge_failed");
+        return;
       }
 
       const { signature, publicKey } = await signIntentMessage(challenge.message, secret);
@@ -98,11 +117,17 @@ export function PassportSetupPanel({
           public_key: publicKey,
         }),
       });
-      const result = await confirmRes.json() as { ok?: boolean; error?: string };
-      if (!confirmRes.ok) throw new Error(result.error ?? "Confirm failed");
+      const result = await confirmRes.json() as { ok?: boolean };
+      if (!confirmRes.ok || !result.ok) {
+        setBindErrorKind("confirm_failed");
+        return;
+      }
+      setBindSuccess(true);
       onWalletBound?.();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      setBindErrorKind("confirm_failed");
+    } finally {
+      setBindLoading(false);
     }
   }
 
@@ -205,12 +230,22 @@ export function PassportSetupPanel({
                 Bind this wallet to your Passport
               </div>
               <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
-                Signing proves you control this wallet. It does not authorize a transaction or move funds.
+                This step signs a wallet-binding message through your Abraxas session.
                 This completes your core profile. no ID upload required.
               </p>
-              <Btn size="lg" fullWidth onClick={() => void bindWallet()}>
-                Sign to bind wallet →
+              <Btn size="lg" fullWidth loading={bindLoading} disabled={bindLoading} onClick={() => void bindWallet()}>
+                {bindLoading ? "Waiting for signature…" : "Sign to bind wallet →"}
               </Btn>
+              {bindSuccess && (
+                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
+                  Wallet bound. Continue with the next setup step.
+                </p>
+              )}
+              {bindErrorKind && (
+                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0.65rem 0 0", lineHeight: 1.55 }}>
+                  {BIND_ERROR_COPY[bindErrorKind]}
+                </p>
+              )}
             </div>
           )}
 

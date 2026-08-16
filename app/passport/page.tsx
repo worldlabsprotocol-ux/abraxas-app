@@ -23,6 +23,7 @@ import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { DeveloperDetails } from "@/components/redesign/DeveloperDetails";
 import { Btn } from "@/components/redesign/ui";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { VerifyClient } from "@/app/verify/VerifyClient";
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
@@ -62,6 +63,13 @@ function PassportPageInner() {
     idvProvider,
     walletBindingL3,
     onChain,
+    verifyState,
+    verifyResult,
+    isProvisioning,
+    provisionFailed,
+    retryProvision,
+    isStatusFetchError,
+    statusFetchError,
   } = usePassportVerification(suiAddress, email || null);
 
   const verifyRequestId = searchParams.get("verify_request");
@@ -233,6 +241,26 @@ function PassportPageInner() {
               verificationRequestId={verifyRequestId}
             />
 
+            {isStatusFetchError && statusFetchError && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <StatusBanner
+                  tone="error"
+                  title={statusFetchError === "load_failed"
+                    ? "Couldn't load your Passport status."
+                    : "Couldn't refresh your Passport status."}
+                  action={(
+                    <Btn size="sm" variant="secondary" onClick={() => void refresh()}>
+                      Refresh
+                    </Btn>
+                  )}
+                >
+                  {statusFetchError === "load_failed"
+                    ? "Check your connection and tap Refresh."
+                    : "Information below is from your last successful check. Tap Refresh to try again."}
+                </StatusBanner>
+              </div>
+            )}
+
             {verifyRequestId && suiAddress && !partnerConsentDismissed && (
               <ConsentCeremony
                 requestId={verifyRequestId}
@@ -297,6 +325,12 @@ function PassportPageInner() {
                 policyId: policyIdParam,
                 partnerId: partnerIdParam,
               }}
+              verifyState={verifyState}
+              verifyResult={verifyResult}
+              onChain={onChain}
+              isProvisioning={isProvisioning}
+              provisionFailed={provisionFailed}
+              onRetryProvision={() => void retryProvision()}
             />
 
             {!walletDone && authLoading && (
