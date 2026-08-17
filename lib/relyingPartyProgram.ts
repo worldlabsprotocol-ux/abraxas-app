@@ -3,7 +3,7 @@
 
 import { SITE_URL } from "@/lib/siteUrl";
 export const RELYING_PARTY_DEFINITION =
-  "A relying party is any lender, marketplace, registry, or protocol that accepts an Abraxas credential or Passport state to clear a downstream action. without re-running KYC on the user.";
+  "A relying party is any lender, marketplace, registry, or protocol that accepts an Abraxas credential or Passport state to clear a downstream action without repeating identity verification on the user.";
 
 export const RELYING_PARTY_CHECKLIST = [
   {
@@ -14,7 +14,7 @@ export const RELYING_PARTY_CHECKLIST = [
   {
     step: 2,
     title: "Test in sandbox",
-    body: "Use /verify/ABX-RE-HOSP-001 or POST with your abx_live_ key. Confirm decision: approved before wiring production gates.",
+    body: "When operators provision sandbox credentials, test Partner Flow receipts with operator-provided IDs. Use the public receipt tester only as a mirror of your server-side check. Registry demos (e.g. /verify/ABX-RE-HOSP-001) are separate artifacts.",
   },
   {
     step: 3,
@@ -123,8 +123,8 @@ await fetch("${SITE_URL}/api/v1/asset-signals", {
 });`;
 
 export const PRODUCTION_INTEGRATION_PATH = [
-  "Read /docs/relying-party-verify. one verify call → proof → independent check",
-  "Issue abx_live_ key with verify:credential scope",
+  "Read /docs/relying-party-verify — one verify call, proof, independent check",
+  "Operators may issue production API credentials after approval and conformance — not via a self-serve dashboard",
   "Implement server-side POST /api/credentials/verify at your transaction gate",
   "Confirm GET /api/proof/{proof_id} returns signature_valid: true",
   "First approved production verify logs toward the external RP mainnet gate",

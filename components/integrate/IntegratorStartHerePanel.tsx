@@ -7,6 +7,12 @@ import { Btn } from "@/components/redesign/ui";
 import {
   INTEGRATOR_SANDBOX_BOUNDARY,
   INTEGRATOR_START_HERE_STEPS,
+  PARTNER_APPLICATION_PATH,
+  PARTNER_POST_APPLY_HEADLINE,
+  PARTNER_POST_APPLY_STEPS,
+  PARTNER_RECEIPT_DOCS_ANCHOR,
+  PARTNER_RECEIPT_MIRROR_NOTE,
+  PARTNER_RECEIPT_VERIFIER_PATH,
   type IntegratorAvailability,
 } from "@/lib/integrate/partnerJourney";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
@@ -32,6 +38,7 @@ export function IntegratorStartHerePanel({ id = "start-here" }: { id?: string })
         borderRadius: 18,
         border: "1px solid rgba(232,197,71,0.35)",
         background: "linear-gradient(135deg, rgba(232,197,71,0.08) 0%, rgba(16,185,129,0.05) 100%)",
+        maxWidth: "100%",
       }}
     >
       <div
@@ -108,7 +115,7 @@ export function IntegratorStartHerePanel({ id = "start-here" }: { id?: string })
             >
               {item.step}
             </span>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", alignItems: "center", marginBottom: 4 }}>
                 <span style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)" }}>
                   {item.title}
@@ -177,10 +184,38 @@ export function IntegratorStartHerePanel({ id = "start-here" }: { id?: string })
         </div>
       </div>
 
+      <div style={{
+        marginTop: "1rem",
+        padding: "0.85rem 1rem",
+        borderRadius: 12,
+        border: "1px solid var(--border)",
+        background: "var(--surface-inset)",
+      }}>
+        <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+          {PARTNER_POST_APPLY_HEADLINE}
+        </div>
+        <ol style={{
+          margin: "0 0 0.5rem",
+          paddingLeft: "1.15rem",
+          fontFamily: FONT,
+          fontSize: "0.74rem",
+          color: "var(--text-secondary)",
+          lineHeight: 1.55,
+        }}>
+          {PARTNER_POST_APPLY_STEPS.map((step) => (
+            <li key={step} style={{ marginBottom: 3 }}>{step}</li>
+          ))}
+        </ol>
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+          {PARTNER_RECEIPT_MIRROR_NOTE}
+        </p>
+      </div>
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1rem" }}>
         <Btn href="/docs/partner-flow" size="sm">Partner Flow docs</Btn>
-        <Btn href="/integrations#apply" variant="secondary" size="sm">Apply for review</Btn>
-        <Btn href="/verify?mode=receipt" variant="ghost" size="sm">Receipt tester</Btn>
+        <Btn href={PARTNER_APPLICATION_PATH} variant="secondary" size="sm">Apply for review</Btn>
+        <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification</Btn>
+        <Btn href={PARTNER_RECEIPT_VERIFIER_PATH} variant="ghost" size="sm">Receipt tester (mirror)</Btn>
       </div>
     </section>
   );

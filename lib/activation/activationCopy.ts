@@ -36,10 +36,10 @@ export const AUDIENCE_HOLDER = {
 
 export const AUDIENCE_PARTNER = {
   title: "I'm integrating Partner Flow",
-  body: "Redirect holders to Abraxas, then verify the signed receipt on your server before granting access.",
+  body: "Redirect holders to Abraxas, then verify the signed receipt on your server before granting access. Apply for manual review to receive sandbox provisioning.",
   badge: "Sandbox after review",
-  cta: "Start integration",
-  href: "/design-partner#partner-start-here",
+  cta: "Apply for review",
+  href: "/integrations#apply",
 } as const;
 
 export const AUDIENCE_OPERATOR = {
@@ -57,7 +57,7 @@ export const METRICS_FOOTNOTE_PREFIX =
 export const METRICS_EMPTY =
   "Pilot volume is below our public display threshold. Counters appear here as activity grows.";
 export const METRICS_EMPTY_CTA = "Apply as a design partner";
-export const METRICS_EMPTY_HREF = "/design-partner";
+export const METRICS_EMPTY_HREF = "/integrations#apply";
 export const METRICS_ERROR = "Pilot metrics are temporarily unavailable.";
 export const METRICS_LOADING = "Loading pilot metrics…";
 

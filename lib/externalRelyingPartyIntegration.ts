@@ -300,7 +300,7 @@ export function getExternalRelyingPartyIntegrationGuide() {
       curl_proof: CURL_PROOF_EXAMPLE,
     },
     errors: EXTERNAL_RP_ERRORS,
-    apply: `${EXTERNAL_RP_BASE_URL}/design-partner`,
+    apply: `${EXTERNAL_RP_BASE_URL}${PARTNER_APPLICATION_PATH}`,
     docs_page: `${EXTERNAL_RP_BASE_URL}/docs/relying-party-verify`,
     agent_docs: `${EXTERNAL_RP_BASE_URL}/docs/ai-agents`,
   };

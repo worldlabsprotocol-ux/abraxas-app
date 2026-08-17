@@ -3,8 +3,13 @@
 // Sticky table of contents for Partner Flow docs.
 
 import Link from "next/link";
-import { PARTNER_FLOW_FIRST_TASKS } from "@/lib/integrate/partnerJourney";
-import { PARTNER_FLOW_CONFORMANCE_COMMAND } from "@/lib/integrate/partnerJourney";
+import type { CSSProperties } from "react";
+import {
+  PARTNER_FLOW_CONFORMANCE_COMMAND,
+  PARTNER_FLOW_FIRST_TASKS,
+  PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL,
+  PARTNER_RECEIPT_DOCS_ANCHOR,
+} from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -22,6 +27,8 @@ export const PARTNER_FLOW_DOC_SECTIONS = [
   { id: "redirect-example", label: "Redirect example" },
   { id: "provisioning", label: "Provisioning" },
 ] as const;
+
+const RECEIPT_SECTION_ID = "receipt-verification";
 
 export function PartnerFlowStartHereCard() {
   return (
@@ -57,7 +64,9 @@ export function PartnerFlowStartHereCard() {
           lineHeight: 1.5,
           padding: "0.75rem",
           borderRadius: 10,
-          overflow: "auto",
+          overflowX: "auto",
+          overflowY: "hidden",
+          maxWidth: "100%",
           background: "var(--surface-inset)",
           border: "1px solid var(--border)",
           color: "var(--text-secondary)",
@@ -67,6 +76,125 @@ export function PartnerFlowStartHereCard() {
         {PARTNER_FLOW_CONFORMANCE_COMMAND}
       </pre>
     </section>
+  );
+}
+
+function sectionPillStyle(highlight: boolean): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "0.45rem 0.75rem",
+    borderRadius: 999,
+    border: `1px solid ${highlight ? `${ACCENT}88` : "var(--border)"}`,
+    background: highlight ? `${ACCENT}14` : "var(--surface-inset)",
+    fontFamily: FONT,
+    fontSize: "0.72rem",
+    fontWeight: highlight ? 700 : 600,
+    color: highlight ? ACCENT : "var(--text-secondary)",
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  };
+}
+
+export function PartnerFlowDocMobileJump() {
+  return (
+    <nav
+      aria-label="Partner Flow section navigation"
+      className="partner-flow-doc-mobile-jump"
+      style={{
+        marginBottom: "1rem",
+        maxWidth: "100%",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        className="partner-flow-doc-mobile-jump-scroll"
+        style={{
+          display: "flex",
+          gap: "0.4rem",
+          overflowX: "auto",
+          overflowY: "hidden",
+          maxWidth: "100%",
+          paddingBottom: "0.25rem",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {PARTNER_FLOW_DOC_SECTIONS.map((section) => {
+          const highlight = section.id === RECEIPT_SECTION_ID;
+          return (
+            <Link
+              key={section.id}
+              href={`#${section.id}`}
+              style={sectionPillStyle(highlight)}
+              aria-label={highlight ? PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL : section.label}
+            >
+              {highlight ? PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL : section.label}
+            </Link>
+          );
+        })}
+      </div>
+      <style>{`
+        @media (min-width: 961px) {
+          .partner-flow-doc-mobile-jump { display: none !important; }
+        }
+        @media (max-width: 960px) {
+          .partner-flow-doc-mobile-jump { display: block; }
+        }
+        .partner-flow-doc-mobile-jump-scroll:focus-within {
+          outline: 2px solid ${ACCENT};
+          outline-offset: 2px;
+          border-radius: 8px;
+        }
+        .partner-flow-doc-mobile-jump a:focus-visible {
+          outline: 2px solid ${ACCENT};
+          outline-offset: 2px;
+        }
+      `}</style>
+    </nav>
+  );
+}
+
+export function PartnerFlowMobileReceiptCallout() {
+  return (
+    <div
+      className="partner-flow-mobile-receipt-callout"
+      style={{
+        marginBottom: "1.25rem",
+        padding: "0.85rem 1rem",
+        borderRadius: 14,
+        border: `1px solid ${ACCENT}44`,
+        background: `${ACCENT}10`,
+        maxWidth: "100%",
+      }}
+    >
+      <p style={{
+        fontFamily: FONT,
+        fontSize: "0.78rem",
+        color: "var(--text-secondary)",
+        lineHeight: 1.6,
+        margin: "0 0 0.65rem",
+      }}>
+        <strong style={{ color: "var(--text-primary)" }}>Server-side receipt check:</strong>{" "}
+        Your backend must call{" "}
+        <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>GET /api/receipts/{"{receipt_id}"}/public</code>{" "}
+        and validate the signed result before granting access. The public receipt tester is a mirror only.
+      </p>
+      <Link href={PARTNER_RECEIPT_DOCS_ANCHOR} style={{
+        fontFamily: FONT,
+        fontSize: "0.76rem",
+        fontWeight: 700,
+        color: ACCENT,
+        textDecoration: "none",
+      }}>
+        Jump to receipt verification docs
+      </Link>
+      <style>{`
+        @media (min-width: 961px) {
+          .partner-flow-mobile-receipt-callout { display: none !important; }
+        }
+      `}</style>
+    </div>
   );
 }
 
