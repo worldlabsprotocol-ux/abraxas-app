@@ -22,6 +22,7 @@ import {
 } from "@/lib/nav/navSignInButtonState";
 import { useZkLoginSignInChooser } from "@/components/sui/ZkLoginSignInChooserProvider";
 import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
+import { HOLDER_VERIFY_DEFAULT_PATH } from "@/lib/integrate/partnerJourney";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
@@ -35,7 +36,7 @@ const OTHER_ADMIN_MENU_ITEMS = [
 const MENU_ITEMS = [
   { label: "Passport", href: "/passport", description: "Your proofs & verification" },
   { label: "Account settings", href: "/account", description: "Name, profile, status" },
-  { label: "Verify a record", href: "/verify", description: "Look up an asset" },
+  { label: "My records & credentials", href: HOLDER_VERIFY_DEFAULT_PATH, description: "Registry lookup and credential JWT" },
   { label: "Tokenize an asset", href: "/build", description: "Start owner intake" },
   { label: "Design partners", href: "/design-partner", description: "For apps integrating Abraxas" },
 ] as const;

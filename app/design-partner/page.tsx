@@ -8,6 +8,12 @@ import { PageHeader, ContentCard, BulletList } from "@/components/redesign/Redes
 import { Btn } from "@/components/redesign/ui";
 import { IntegratorStartHerePanel } from "@/components/integrate/IntegratorStartHerePanel";
 import {
+  INTEGRATOR_SANDBOX_BOUNDARY,
+  PARTNER_APPLICATION_PATH,
+  PARTNER_RECEIPT_DOCS_ANCHOR,
+  PARTNER_RECEIPT_VERIFIER_PATH,
+} from "@/lib/integrate/partnerJourney";
+import {
   PRODUCTION_INTEGRATION_PATH,
   RELYING_PARTY_CHECKLIST,
   RELYING_PARTY_DEFINITION,
@@ -36,7 +42,8 @@ export default function DesignPartnerPage() {
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href="/docs/partner-flow" size="sm">Partner Flow docs</Btn>
-          <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Receipt tester</Btn>
+          <Btn href={PARTNER_RECEIPT_VERIFIER_PATH} variant="secondary" size="sm">Receipt tester</Btn>
+          <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification docs</Btn>
           <Btn href="/docs/partner-flow-api" variant="ghost" size="sm">OpenAPI</Btn>
         </div>
       </ContentCard>
@@ -82,16 +89,23 @@ export default function DesignPartnerPage() {
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
             Submit integration intent. Abraxas reviews manually; sandbox credentials may be issued after approval — not instantly.
           </p>
-          <Btn href="/integrations#apply" size="sm">Submit application</Btn>
+          <Btn href={PARTNER_APPLICATION_PATH} size="sm">Submit application</Btn>
         </div>
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
           <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>2 · Sandbox test</div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-            When provisioned, test Partner Flow receipts at{" "}
-            <Link href="/verify?mode=receipt" style={{ color: "var(--accent)" }}>/verify</Link> or registry demos at{" "}
+            <strong style={{ color: "var(--text-primary)" }}>{INTEGRATOR_SANDBOX_BOUNDARY.receiptTesterLabel}:</strong>{" "}
+            {INTEGRATOR_SANDBOX_BOUNDARY.receiptTesterDetail}{" "}
+            <Link href={PARTNER_RECEIPT_VERIFIER_PATH} style={{ color: "var(--accent)" }}>/verify</Link>
+            {" · "}
+            <strong style={{ color: "var(--text-primary)" }}>{INTEGRATOR_SANDBOX_BOUNDARY.registryDemoLabel}:</strong>{" "}
+            {INTEGRATOR_SANDBOX_BOUNDARY.registryDemoDetail}{" "}
             <Link href="/verify/ABX-RE-HOSP-001" style={{ color: "var(--accent)" }}>ABX-RE-HOSP-001</Link>.
           </p>
-          <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Receipt tester</Btn>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
+            <Btn href={PARTNER_RECEIPT_VERIFIER_PATH} variant="secondary" size="sm">Receipt tester</Btn>
+            <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Server verification</Btn>
+          </div>
         </div>
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
           <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>3 · Conformance</div>
@@ -104,7 +118,7 @@ export default function DesignPartnerPage() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
-        <Btn href="/integrations#apply" size="lg">Apply for review</Btn>
+        <Btn href={PARTNER_APPLICATION_PATH} size="lg">Apply for review</Btn>
         <Btn href="/integrate" variant="secondary" size="lg">Integrate overview</Btn>
       </div>
     </RedesignPage>

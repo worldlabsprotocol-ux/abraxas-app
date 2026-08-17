@@ -30,6 +30,12 @@ import { VerifyClient } from "@/app/verify/VerifyClient";
 import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
+import {
+  HOLDER_VERIFY_DEFAULT_PATH,
+  HOLDER_VERIFY_EYEBROW,
+  HOLDER_VERIFY_HEADLINE,
+  HOLDER_VERIFY_SUBHEAD,
+} from "@/lib/integrate/partnerJourney";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const G = "#10B981";
@@ -206,20 +212,20 @@ function PassportPageInner() {
       }}>
         <div style={{ marginBottom: "1.5rem" }}>
           <div style={{ fontFamily: S, fontSize: "0.72rem", fontWeight: 600, color: G, marginBottom: "0.625rem" }}>
-            Abraxas Passport
+            {pageView === "verify" ? HOLDER_VERIFY_EYEBROW : "Abraxas Passport"}
           </div>
           <h1 style={{
             fontFamily: S, fontSize: "clamp(1.35rem, 3.5vw, 1.85rem)", fontWeight: 800,
             lineHeight: 1.15, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 0.65rem",
           }}>
-            {pageView === "verify" ? "Verify records & credentials" : "Your reusable access layer"}
+            {pageView === "verify" ? HOLDER_VERIFY_HEADLINE : "Your reusable access layer"}
           </h1>
           <p style={{
             fontFamily: S, fontSize: "0.85rem", color: "var(--text-secondary)",
             lineHeight: 1.65, maxWidth: 560, margin: 0,
           }}>
             {pageView === "verify"
-              ? "Look up registry records, run policy checks, and verify credentials tied to your Passport."
+              ? HOLDER_VERIFY_SUBHEAD
               : "Bind a wallet once. Share only the proof a partner needs. Add identity verification only when a policy requires it."}
           </p>
         </div>
@@ -447,7 +453,7 @@ function PassportPageInner() {
             </DeveloperDetails>
 
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", paddingBottom: "3rem" }}>
-              <Btn href="/verify">Verify records →</Btn>
+              <Btn href={HOLDER_VERIFY_DEFAULT_PATH}>Verify records →</Btn>
               <Btn href="/build" variant="tertiary">Submit an asset</Btn>
             </div>
           </>
