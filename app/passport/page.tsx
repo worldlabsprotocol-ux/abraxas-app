@@ -12,6 +12,7 @@ import { PassportSetupPanel } from "@/components/passport/PassportSetupPanel";
 import { PassportSetupStepRail } from "@/components/passport/PassportSetupStepRail";
 import { PassportVerifySetupRequired } from "@/components/passport/PassportVerifySetupRequired";
 import { passportVerifyNeedsSetup } from "@/lib/passport/passportVerifyAccess";
+import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { VerificationSuccessPanel } from "@/components/passport/VerificationSuccessPanel";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
@@ -115,6 +116,16 @@ function PassportPageInner() {
   const showVeriffHint = idvProvider === "veriff" && (identityStatus === "pending" || starting);
   const guidedOnboarding = !setup.profileComplete || !setup.identityComplete;
   const verifySetupIncomplete = passportVerifyNeedsSetup(setup);
+
+  const handoff = usePartnerFlowHandoff({
+    suiAddress,
+    identityStatus,
+    hasCredential,
+    returnPath: returnPathParam,
+    partnerId: partnerIdParam,
+    policyId: policyIdParam,
+    verificationRequestId: verifyRequestId,
+  });
 
   const loadVeriffScript = (src: string): Promise<void> =>
     new Promise((resolve, reject) => {
@@ -231,15 +242,15 @@ function PassportPageInner() {
           </>
         ) : (
           <>
-            <PartnerFlowReturnHandler
-              suiAddress={suiAddress}
-              identityStatus={identityStatus}
-              hasCredential={hasCredential}
-              returnPath={returnPathParam}
-              partnerId={partnerIdParam}
-              policyId={policyIdParam}
-              verificationRequestId={verifyRequestId}
-            />
+            {verifyRequestId && !suiAddress && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <StatusBanner tone="pending" title="Partner verification (beta)">
+                  A partner app sent you here to complete Abraxas verification. Sign in to review what will be shared.
+                </StatusBanner>
+              </div>
+            )}
+
+            <PartnerFlowReturnHandler handoff={handoff} />
 
             {isStatusFetchError && statusFetchError && (
               <div style={{ marginBottom: "1.25rem" }}>
@@ -264,6 +275,7 @@ function PassportPageInner() {
             {verifyRequestId && suiAddress && !partnerConsentDismissed && (
               <ConsentCeremony
                 requestId={verifyRequestId}
+                identityComplete={setup.identityComplete}
                 onDismiss={() => setPartnerConsentDismissed(true)}
               />
             )}
@@ -295,7 +307,7 @@ function PassportPageInner() {
                 onStartIdCheck={startIdentityVerification}
                 onRefresh={refresh}
                 onWalletBound={refresh}
-                returnPath={returnPathParam}
+                handoff={handoff}
               />
             )}
 
@@ -318,7 +330,7 @@ function PassportPageInner() {
               onStartIdCheck={startIdentityVerification}
               onRefresh={refresh}
               onWalletBound={refresh}
-              returnPath={returnPathParam}
+              handoff={handoff}
               guidedOnboarding={guidedOnboarding}
               capturePolicy={{
                 verificationRequestId: verifyRequestId,

@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { buildPassportSetupHref } from "@/lib/passport/passportVerifyAccess";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -15,20 +16,31 @@ function holderVerifyMode(mode: string | null): string {
   return "registry";
 }
 
+function buildVerifyTabHref(searchParams: URLSearchParams, onVerifyRoute: boolean): string {
+  if (onVerifyRoute) {
+    return `/verify?mode=${searchParams.get("mode") ?? "receipt"}`;
+  }
+  const params = new URLSearchParams();
+  for (const key of ["verify_request", "policy_id", "partner_id", "return", "verification"] as const) {
+    const value = searchParams.get(key);
+    if (value) params.set(key, value);
+  }
+  params.set("view", "verify");
+  params.set("mode", holderVerifyMode(searchParams.get("mode")));
+  return `/passport?${params.toString()}`;
+}
+
 export function PassportPageTabs({ active }: { active: PassportPageView }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const onVerifyRoute = pathname?.startsWith("/verify");
 
+  const passportHref = buildPassportSetupHref(searchParams);
+  const verifyHref = buildVerifyTabHref(searchParams, onVerifyRoute);
+
   const tabs: Array<{ id: PassportPageView; label: string; href: string }> = [
-    { id: "passport", label: "My Passport", href: "/passport" },
-    {
-      id: "verify",
-      label: "Verify",
-      href: onVerifyRoute
-        ? `/verify?mode=${searchParams.get("mode") ?? "receipt"}`
-        : `/passport?view=verify&mode=${holderVerifyMode(searchParams.get("mode"))}`,
-    },
+    { id: "passport", label: "My Passport", href: passportHref },
+    { id: "verify", label: "Verify", href: verifyHref },
   ];
 
   return (

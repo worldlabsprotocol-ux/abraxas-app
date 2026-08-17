@@ -34,6 +34,9 @@ import {
 } from "@/lib/passport/identityUiState";
 import { shouldShowVerifiedHero } from "@/lib/passport/verifiedHero";
 import { PassportVerifiedHero } from "@/components/passport/PassportVerifiedHero";
+import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
+import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
+import { IDLE_PARTNER_FLOW_HANDOFF } from "@/lib/passport/partnerFlowHandoff";
 import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
@@ -78,7 +81,7 @@ interface Props {
   onStartIdCheck: () => void;
   onRefresh: () => void;
   onWalletBound?: () => void;
-  returnPath?: string | null;
+  handoff?: PartnerFlowHandoffController;
   guidedOnboarding?: boolean;
   capturePolicy?: CapturePolicyContext;
   verifyState?: CredentialVerifyState;
@@ -108,7 +111,7 @@ export function PassportDashboard({
   onStartIdCheck,
   onRefresh,
   onWalletBound,
-  returnPath,
+  handoff = IDLE_PARTNER_FLOW_HANDOFF,
   guidedOnboarding = false,
   capturePolicy,
   verifyState = "idle",
@@ -284,7 +287,7 @@ export function PassportDashboard({
             <PassportVerifiedHero
               assuranceLevel={assuranceLabel}
               expiresAt={credential?.expires_at}
-              returnPath={returnPath}
+              handoff={handoff}
             />
           )}
 
@@ -305,7 +308,7 @@ export function PassportDashboard({
               identityUi={identityUi}
               assuranceLabel={assuranceLabel}
               availableNow={availableNow}
-              returnPath={returnPath}
+              handoff={handoff}
             />
           )}
 
@@ -466,7 +469,7 @@ export function PassportDashboard({
               identityUi={identityUi}
               assuranceLabel={assuranceLabel}
               availableNow={availableNow}
-              returnPath={returnPath}
+              handoff={handoff}
             />
           )}
 
@@ -513,7 +516,7 @@ function PassportStatusCard({
   identityUi,
   assuranceLabel,
   availableNow,
-  returnPath,
+  handoff,
 }: {
   tier: PassportTier;
   suiAddress: string | null;
@@ -521,7 +524,7 @@ function PassportStatusCard({
   identityUi: IdentityUiState;
   assuranceLabel: string;
   availableNow: string[];
-  returnPath?: string | null;
+  handoff: PartnerFlowHandoffController;
 }) {
   return (
     <section style={{
@@ -610,8 +613,8 @@ function PassportStatusCard({
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        {returnPath ? (
-          <Btn href={decodeURIComponent(returnPath)} size="sm">Return to flow →</Btn>
+        {handoff.isPartnerFlowContext ? (
+          <PartnerReturnCta handoff={handoff} label="Return to flow →" />
         ) : (
           <Btn href="/partners" size="sm">Explore compatible access →</Btn>
         )}
