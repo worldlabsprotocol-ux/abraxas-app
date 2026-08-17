@@ -6,6 +6,14 @@ import { Btn } from "@/components/redesign/ui";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { useZkLoginSignInChooserOptional } from "@/components/sui/ZkLoginSignInChooserProvider";
 import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
+import {
+  ACTIVATION_AVAILABILITY,
+  ACTIVATION_EYEBROW,
+  ACTIVATION_HEADLINE,
+  ACTIVATION_SUBHEAD,
+  AUDIENCE_HOLDER,
+  AUDIENCE_PARTNER,
+} from "@/lib/activation/activationCopy";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -26,7 +34,7 @@ export function HomeSharpHero() {
       }}
     >
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.65rem" }}>
-        Public beta · design partners welcome
+        {ACTIVATION_EYEBROW}
       </div>
 
       <h1
@@ -41,7 +49,7 @@ export function HomeSharpHero() {
           margin: "0 0 0.85rem",
         }}
       >
-        Verify once. Transact everywhere.
+        {ACTIVATION_HEADLINE}
       </h1>
 
       <p
@@ -55,31 +63,35 @@ export function HomeSharpHero() {
           maxWidth: 640,
         }}
       >
-        Reusable identity infrastructure. Users verify once. Applications consume trusted credentials.
+        {ACTIVATION_SUBHEAD}
       </p>
       <p
         style={{
           fontFamily: FONT,
-          fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
+          fontSize: "clamp(0.9rem, 2.2vw, 1rem)",
           fontWeight: 600,
-          color: "var(--text-primary)",
+          color: "var(--text-muted)",
           margin: "0 auto 1.25rem",
           lineHeight: 1.45,
           maxWidth: 640,
         }}
       >
-        Identity becomes portable instead of repetitive.
+        {ACTIVATION_AVAILABILITY}
       </p>
 
       <div className="abx-home-hero-actions">
         {useChooser ? (
           <Btn size="lg" onClick={() => chooser?.openChooser()}>
-            Create Passport
+            {AUDIENCE_HOLDER.cta}
           </Btn>
         ) : (
-          <Btn href="/passport" size="lg">Create Passport</Btn>
+          <Btn href={AUDIENCE_HOLDER.href} size="lg">
+            {AUDIENCE_HOLDER.cta}
+          </Btn>
         )}
-        <Btn href="/integrate" variant="secondary" size="lg">Explore Protocol</Btn>
+        <Btn href={AUDIENCE_PARTNER.href} variant="secondary" size="lg">
+          {AUDIENCE_PARTNER.cta}
+        </Btn>
       </div>
     </section>
   );
