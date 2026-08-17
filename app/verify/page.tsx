@@ -29,15 +29,28 @@ export default function VerifyPage({ searchParams }: PageProps) {
   return (
     <RedesignShell>
       <VerifyPageIntro />
-      <VerifyPageIntroDemo />
-      <VerifyStaticSample />
-      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem)" }}>
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active="verify" />
         </Suspense>
         <Suspense fallback={<RedesignPageLoading label="Loading verifier…" compact />}>
           <VerifyClient />
         </Suspense>
+      </div>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
+        <p style={{
+          fontFamily: "'Inter',system-ui,sans-serif",
+          fontSize: "0.72rem",
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: "var(--text-muted)",
+          margin: "0 0 0.75rem",
+        }}>
+          Reference demos (below the live tools)
+        </p>
+        <VerifyPageIntroDemo />
+        <VerifyStaticSample />
       </div>
     </RedesignShell>
   );

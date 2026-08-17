@@ -8,6 +8,12 @@ import { PublicVerifierPanel } from "@/components/verify/PublicVerifierPanel";
 import { RelyingPartyVerifyPanel } from "@/components/verify/RelyingPartyVerifyPanel";
 import { PartnerReceiptVerifyPanel } from "@/components/verify/PartnerReceiptVerifyPanel";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import {
+  HOLDER_PARTNER_RECEIPT_LINK_LABEL,
+  HOLDER_VERIFY_SUBHEAD,
+  PARTNER_RECEIPT_SERVER_STEP,
+  PARTNER_RECEIPT_VERIFIER_PATH,
+} from "@/lib/integrate/partnerJourney";
 
 export type VerifyTab = "receipt" | "registry" | "credential";
 export type VerifyAudience = "integrator" | "holder";
@@ -54,8 +60,8 @@ export function VerifyClient({ audience = "integrator" }: { audience?: VerifyAud
       margin: "0 0 1rem",
     }}>
       Are you a partner testing a receipt?{" "}
-      <Link href="/verify?mode=receipt" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-        Open the Partner Receipt Verifier
+      <Link href={PARTNER_RECEIPT_VERIFIER_PATH} style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+        {HOLDER_PARTNER_RECEIPT_LINK_LABEL}
       </Link>
       .
     </p>
@@ -88,9 +94,9 @@ function VerifyTabs({
       ];
     }
     return [
-      { id: "receipt" as const, label: "Partner receipt", hint: "Integrators" },
-      { id: "registry" as const, label: "Registry lookup", hint: "Assets" },
-      { id: "credential" as const, label: "Credential JWT", hint: "RP demo" },
+      { id: "receipt" as const, label: "Partner receipt (server test)", hint: "Integrators" },
+      { id: "registry" as const, label: "Registry lookup", hint: "Public records" },
+      { id: "credential" as const, label: "Credential JWT", hint: "Claims demo" },
     ];
   }, [audience]);
 
@@ -108,14 +114,12 @@ function VerifyTabs({
         maxWidth: 640,
       }}>
         {audience === "holder" ? (
-          <>
-            Look up registry records tied to your Passport, or test how a credential JWT verifies against Abraxas claims.
-          </>
+          <>{HOLDER_VERIFY_SUBHEAD}</>
         ) : (
           <>
-            <strong style={{ color: "var(--text-primary)" }}>Partner integrators:</strong> verify Partner Flow session receipts server-side (test here).
-            {" "}<strong style={{ color: "var(--text-primary)" }}>Asset viewers:</strong> look up registry records by ABX ID.
-            {" "}<strong style={{ color: "var(--text-primary)" }}>Credential testers:</strong> validate a JWT against Abraxas claims.
+            <strong style={{ color: "var(--text-primary)" }}>Partner integrators:</strong> {PARTNER_RECEIPT_SERVER_STEP}
+            {" "}<strong style={{ color: "var(--text-primary)" }}>Registry viewers:</strong> look up public registry records by ABX ID.
+            {" "}<strong style={{ color: "var(--text-primary)" }}>Credential testers:</strong> validate a JWT against documented claims.
           </>
         )}
       </p>
@@ -159,10 +163,10 @@ function VerifyTabs({
           color: "var(--text-muted)",
           margin: "0 0 1.25rem",
         }}>
-          {activeTab === "receipt" && "Fetch GET /api/receipts/{receipt_id}/public — the same path your backend calls after a Partner Flow callback."}
+          {activeTab === "receipt" && "Mirror GET /api/receipts/{receipt_id}/public on your server after callback — do not grant access from this UI alone."}
           {activeTab === "registry" && (audience === "holder"
-            ? "Look up asset records and on-registry attestations — holder-facing registry tools."
-            : "Look up tokenized asset records, Passport DIDs, or on-registry attestations — not Partner Flow session receipts.")}
+            ? "Look up public registry records by ABX ID — separate from Partner Flow session receipts."
+            : "Look up public registry records by ABX ID — not Partner Flow session receipts.")}
           {activeTab === "credential" && (audience === "holder"
             ? "Test your Abraxas credential JWT and required claims before sharing with a partner."
             : "Test POST /api/credentials/verify with a holder JWT and required claims — separate from Partner Flow receipts.")}

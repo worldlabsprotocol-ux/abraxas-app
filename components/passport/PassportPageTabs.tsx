@@ -5,6 +5,10 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { buildPassportSetupHref } from "@/lib/passport/passportVerifyAccess";
+import {
+  HOLDER_VERIFY_DEFAULT_PATH,
+  PARTNER_RECEIPT_VERIFIER_PATH,
+} from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -16,10 +20,7 @@ function holderVerifyMode(mode: string | null): string {
   return "registry";
 }
 
-function buildVerifyTabHref(searchParams: URLSearchParams, onVerifyRoute: boolean): string {
-  if (onVerifyRoute) {
-    return `/verify?mode=${searchParams.get("mode") ?? "receipt"}`;
-  }
+function buildHolderVerifyTabHref(searchParams: URLSearchParams): string {
   const params = new URLSearchParams();
   for (const key of ["verify_request", "policy_id", "partner_id", "return", "verification"] as const) {
     const value = searchParams.get(key);
@@ -30,17 +31,25 @@ function buildVerifyTabHref(searchParams: URLSearchParams, onVerifyRoute: boolea
   return `/passport?${params.toString()}`;
 }
 
+function buildPartnerVerifierTabHref(): string {
+  return PARTNER_RECEIPT_VERIFIER_PATH;
+}
+
 export function PassportPageTabs({ active }: { active: PassportPageView }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const onVerifyRoute = pathname?.startsWith("/verify");
 
   const passportHref = buildPassportSetupHref(searchParams);
-  const verifyHref = buildVerifyTabHref(searchParams, onVerifyRoute);
+  const verifyHref = onVerifyRoute
+    ? buildPartnerVerifierTabHref()
+    : buildHolderVerifyTabHref(searchParams);
+
+  const verifyLabel = onVerifyRoute ? "Partner verifier" : "My records & credentials";
 
   const tabs: Array<{ id: PassportPageView; label: string; href: string }> = [
     { id: "passport", label: "My Passport", href: passportHref },
-    { id: "verify", label: "Verify", href: verifyHref },
+    { id: "verify", label: verifyLabel, href: verifyHref },
   ];
 
   return (
@@ -63,6 +72,26 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
           {tab.label}
         </Link>
       ))}
+      {onVerifyRoute && (
+        <Link
+          href={HOLDER_VERIFY_DEFAULT_PATH}
+          style={{
+            marginLeft: "auto",
+            alignSelf: "center",
+            padding: "0.35rem 0.75rem",
+            borderRadius: 999,
+            textDecoration: "none",
+            fontFamily: FONT,
+            fontSize: "0.72rem",
+            fontWeight: 600,
+            color: "var(--accent)",
+            border: "1px solid var(--border)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Holder tools
+        </Link>
+      )}
     </div>
   );
 }

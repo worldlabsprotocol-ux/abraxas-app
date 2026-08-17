@@ -4,6 +4,7 @@
 
 import { DEFAULT_POLICY_ID } from "@/lib/partner/partnerDecision";
 import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
+import { PARTNER_APPLICATION_PATH } from "@/lib/integrate/partnerJourney";
 
 export const EXTERNAL_RP_BASE_URL = getSdkDefaultBaseUrl();
 
@@ -12,7 +13,7 @@ export const EXTERNAL_RP_HEADLINE =
 
 export const EXTERNAL_RP_SUMMARY = {
   whatTheyDo: [
-    "Request an API key (abx_live_…) with verify:credential scope",
+    `Apply at ${PARTNER_APPLICATION_PATH} for manual review — operators may provision API credentials after approval`,
     "Call POST /api/credentials/verify server-side at your transaction gate",
     "Gate on decision === \"approved\" (or handle denied / manual_review)",
     "Optionally GET /api/proof/{proof_id} to independently confirm signature_valid === true",
@@ -201,8 +202,8 @@ export const CURL_PROOF_EXAMPLE = `curl -s ${EXTERNAL_RP_BASE_URL}/api/proof/apr
 export const EXTERNAL_RP_ONBOARDING_STEPS = [
   {
     step: 1,
-    title: "Get an API key",
-    body: "Apply at /design-partner. You receive abx_test_ (sandbox) then abx_live_ (production) with verify:credential scope.",
+    title: "Apply for manual review",
+    body: `Submit a design partner application at ${PARTNER_APPLICATION_PATH}. Abraxas operators review applications manually and may provision sandbox or production credentials — there is no automatic API-key issuance.`,
   },
   {
     step: 2,
