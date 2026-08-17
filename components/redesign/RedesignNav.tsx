@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Streamlined nav. Home · Passport · Integrate · profile menu.
+// Streamlined nav. Home · Passport · Integrate · Verify · Docs · profile menu.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -16,16 +16,30 @@ const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "var(--accent)";
 const MotionLink = motion.create(Link);
 
-const LINKS = [
+type NavLink = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  matchPrefixes?: string[];
+};
+
+const PRIMARY_LINKS: NavLink[] = [
   { href: "/", label: "Home", exact: true },
   { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] },
   { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
 ];
 
-const MOBILE_DISCOVERY_LINKS = [
+const DESKTOP_LINKS: NavLink[] = [
+  ...PRIMARY_LINKS,
+  { href: "/verify", label: "Verify", matchPrefixes: ["/verify"] },
+  { href: "/docs/partner-flow", label: "Docs", matchPrefixes: ["/docs"] },
+];
+
+const MOBILE_DRAWER_LINKS: NavLink[] = [
+  ...PRIMARY_LINKS,
   { href: "/docs", label: "Documentation" },
-  { href: "/verify", label: "Verify records" },
-] as const;
+  { href: "/verify", label: "Verify proofs" },
+];
 
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {
   if (matchPrefixes?.length) {
@@ -85,9 +99,9 @@ export function RedesignNav() {
 
       <div
         className="rd-nav-links"
-        style={{ display: "none", flex: 1, justifyContent: "center", gap: "0.25rem", alignItems: "center" }}
+        style={{ display: "none", flex: 1, justifyContent: "center", gap: "0.15rem", alignItems: "center", flexWrap: "wrap", minWidth: 0 }}
       >
-        {LINKS.map((l) => {
+        {DESKTOP_LINKS.map((l) => {
           const active = isLinkActive(
             pathname,
             l.href,
@@ -102,13 +116,14 @@ export function RedesignNav() {
               whileTap={reduce ? undefined : { scale: 0.95 }}
               style={{
                 position: "relative",
-                padding: "0.45rem 0.9rem",
+                padding: "0.4rem 0.7rem",
                 borderRadius: 999,
                 textDecoration: "none",
                 fontFamily: FONT,
-                fontSize: "0.88rem",
+                fontSize: "clamp(0.78rem, 1.1vw, 0.86rem)",
                 fontWeight: active ? 700 : 500,
                 color: active ? ACCENT : "var(--text-secondary)",
+                whiteSpace: "nowrap",
               }}
             >
               {active && (
@@ -186,9 +201,9 @@ export function RedesignNav() {
               gap: "0.35rem",
             }}
           >
-            {LINKS.map((l) => (
+            {MOBILE_DRAWER_LINKS.map((l) => (
               <Link
-                key={l.href}
+                key={`${l.href}-${l.label}`}
                 href={l.href}
                 onClick={() => setOpen(false)}
                 style={{
@@ -202,22 +217,11 @@ export function RedesignNav() {
                     pathname,
                     l.href,
                     l.exact,
-                    "matchPrefixes" in l ? l.matchPrefixes : undefined,
+                    l.matchPrefixes,
                   )
                     ? ACCENT
                     : "var(--text-primary)",
                 }}
-              >
-                {l.label}
-              </Link>
-            ))}
-            <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
-            {MOBILE_DISCOVERY_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                style={mobileSubLink}
               >
                 {l.label}
               </Link>

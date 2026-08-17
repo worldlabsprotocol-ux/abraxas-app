@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // FILE: lib/home/homeClarityBatch1.test.ts
-// Regression guards for Homepage Clarity Batch 1.
+// Regression guards for Homepage Clarity Batch 1 + Phase 6 nav alignment.
 
 import "@testing-library/jest-dom/vitest";
 import { readFileSync, existsSync } from "node:fs";
@@ -8,6 +8,7 @@ import { resolve } from "node:path";
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { METRICS_ERROR } from "@/lib/activation/activationCopy";
 import { AbraxasBootScreen, BOOT_DISMISSED_SESSION_KEY } from "@/components/redesign/AbraxasBootScreen";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
@@ -78,12 +79,18 @@ describe("homepage clarity batch 1 static guards", () => {
     }
   });
 
-  it("exposes mobile docs and verify links with accessible menu state", () => {
+  it("exposes desktop Verify/Docs and mobile drawer links without duplicate discovery entries", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
+    expect(nav).toContain("DESKTOP_LINKS");
+    expect(nav).toContain("MOBILE_DRAWER_LINKS");
+    expect(nav).toContain('href: "/docs/partner-flow"');
     expect(nav).toContain('href: "/docs"');
     expect(nav).toContain('href: "/verify"');
+    expect(nav).toContain('label: "Verify proofs"');
+    expect(nav).toContain('label: "Documentation"');
     expect(nav).toContain("aria-expanded={open}");
     expect(nav).toContain('id="rd-nav-mobile-drawer"');
+    expect(nav).not.toContain("MOBILE_DISCOVERY_LINKS");
   });
 });
 
@@ -98,12 +105,12 @@ describe("HomeLiveStats recovery", () => {
       .mockRejectedValueOnce(new Error("network"))
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ metrics: { verified_assets: 12 } }),
+        json: async () => ({ metrics: { zklogin_wallets: 12 } }),
       } as Response);
 
     render(React.createElement(HomeLiveStats));
 
-    expect(await screen.findByText(/pilot rollup, not audited financial data/i)).toBeInTheDocument();
+    expect(await screen.findByText(METRICS_ERROR)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 
     await waitFor(() => {
@@ -138,13 +145,19 @@ describe("AbraxasBootScreen accessibility and persistence", () => {
 });
 
 describe("RedesignNav mobile discoverability", () => {
-  it("shows Documentation and Verify records links in the mobile drawer", () => {
+  it("shows Documentation and Verify proofs links in the mobile drawer without duplicates", () => {
     render(React.createElement(RedesignNav));
 
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute("aria-expanded", "true");
 
     expect(screen.getByRole("link", { name: "Documentation" })).toHaveAttribute("href", "/docs");
-    expect(screen.getByRole("link", { name: "Verify records" })).toHaveAttribute("href", "/verify");
+    expect(screen.getByRole("link", { name: "Verify proofs" })).toHaveAttribute("href", "/verify");
+
+    const drawerLinks = screen.getAllByRole("link");
+    const verifyLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Verify" || t === "Verify proofs");
+    const docsLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Docs" || t === "Documentation");
+    expect(verifyLabels).toEqual(["Verify proofs"]);
+    expect(docsLabels).toEqual(["Documentation"]);
   });
 });
