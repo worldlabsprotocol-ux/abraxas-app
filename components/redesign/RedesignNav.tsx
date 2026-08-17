@@ -22,6 +22,11 @@ const LINKS = [
   { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
 ];
 
+const MOBILE_DISCOVERY_LINKS = [
+  { href: "/docs", label: "Documentation" },
+  { href: "/verify", label: "Verify records" },
+] as const;
+
 function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {
   if (matchPrefixes?.length) {
     return matchPrefixes.some((p) => pathname === p || (pathname?.startsWith(p + "/") ?? false));
@@ -135,8 +140,11 @@ export function RedesignNav() {
       <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
         {signedIn ? <NavProfileMenu /> : <NavSignInButton />}
         <button
+          type="button"
           onClick={() => setOpen((o) => !o)}
           aria-label="Menu"
+          aria-expanded={open}
+          aria-controls="rd-nav-mobile-drawer"
           style={{
             width: 40,
             height: 40,
@@ -160,6 +168,7 @@ export function RedesignNav() {
       <AnimatePresence>
         {open && (
           <motion.div
+            id="rd-nav-mobile-drawer"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -198,6 +207,17 @@ export function RedesignNav() {
                     ? ACCENT
                     : "var(--text-primary)",
                 }}
+              >
+                {l.label}
+              </Link>
+            ))}
+            <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
+            {MOBILE_DISCOVERY_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                style={mobileSubLink}
               >
                 {l.label}
               </Link>

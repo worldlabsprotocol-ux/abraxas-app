@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { CieloPaymentPanel } from "@/components/cielo/CieloPaymentPanel";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
+import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 
 const FONT = "'Inter',system-ui,sans-serif";
@@ -46,7 +47,7 @@ export default function CieloPayPage() {
     <div data-theme="dark" style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)" }}>
       <AmbientGlow />
       <RedesignNav />
-      <Suspense fallback={null}>
+      <Suspense fallback={<RedesignPageLoading label="Loading payment…" compact />}>
         <PayInner />
       </Suspense>
     </div>

@@ -1,8 +1,8 @@
 "use client";
 // FILE: components/home/HomeLiveStats.tsx
-// Live protocol counters from /api/metrics/public.
+// Beta pilot counters from /api/metrics/public.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   buildHomepageStatCards,
@@ -34,28 +34,36 @@ function StatCard({ label, value, loading }: { label: string; value: string; loa
   );
 }
 
+async function fetchPublicMetrics(): Promise<PublicMetrics | null> {
+  const response = await fetch("/api/metrics/public");
+  if (!response.ok) throw new Error("metrics_unavailable");
+  const data = await response.json() as { metrics?: PublicMetrics };
+  return data.metrics ?? null;
+}
+
 export function HomeLiveStats() {
   const [metrics, setMetrics] = useState<PublicMetrics | null>(null);
   const [status, setStatus] = useState<HomeMetricsStatus>("loading");
 
-  useEffect(() => {
-    void fetch("/api/metrics/public")
-      .then(async (r) => {
-        if (!r.ok) throw new Error("metrics_unavailable");
-        return r.json() as Promise<{ metrics?: PublicMetrics }>;
-      })
-      .then((data) => {
-        setMetrics(data.metrics ?? null);
-        setStatus("ready");
-      })
-      .catch(() => {
-        setMetrics(null);
-        setStatus("error");
-      });
+  const loadMetrics = useCallback(async () => {
+    setStatus("loading");
+    try {
+      const nextMetrics = await fetchPublicMetrics();
+      setMetrics(nextMetrics);
+      setStatus("ready");
+    } catch {
+      setMetrics(null);
+      setStatus("error");
+    }
   }, []);
+
+  useEffect(() => {
+    void loadMetrics();
+  }, [loadMetrics]);
 
   const cards = buildHomepageStatCards(metrics);
   const loading = status === "loading";
+  const refreshing = loading && metrics !== null;
   const showPlaceholder = !loading && status === "ready" && cards.length === 0;
 
   return (
@@ -78,15 +86,39 @@ export function HomeLiveStats() {
             <StatCard
               key={card.key}
               label={card.label}
-              value={loading ? "…" : card.value}
-              loading={loading}
+              value={loading && !refreshing ? "…" : card.value}
+              loading={loading && !refreshing}
             />
           ))}
         </div>
       )}
       {status === "error" && (
+        <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, maxWidth: 520, textAlign: "center" }}>
+            Beta metrics are temporarily unavailable. This counter is a pilot rollup, not audited financial data.
+          </p>
+          <button
+            type="button"
+            onClick={() => void loadMetrics()}
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              padding: "0.45rem 0.85rem",
+              borderRadius: 999,
+              border: "1px solid var(--border-strong)",
+              background: "var(--surface-raised)",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+      {refreshing && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.75rem 0 0" }}>
-          Beta metrics temporarily unavailable. Counts will refresh when the API recovers.
+          Refreshing…
         </p>
       )}
     </section>
