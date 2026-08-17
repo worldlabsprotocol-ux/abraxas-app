@@ -11,6 +11,9 @@ import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
 import { Btn } from "@/components/redesign/ui";
+import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
+import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
+import { IDLE_PARTNER_FLOW_HANDOFF } from "@/lib/passport/partnerFlowHandoff";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { IndependentBiometricStatusCard } from "@/components/passport/IndependentBiometricStatusCard";
@@ -54,7 +57,7 @@ interface Props {
   onStartIdCheck: () => void;
   onRefresh: () => void;
   onWalletBound?: () => void;
-  returnPath?: string | null;
+  handoff?: PartnerFlowHandoffController;
 }
 
 export function PassportSetupPanel({
@@ -73,7 +76,7 @@ export function PassportSetupPanel({
   onStartIdCheck,
   onRefresh,
   onWalletBound,
-  returnPath,
+  handoff = IDLE_PARTNER_FLOW_HANDOFF,
 }: Props) {
   const manualMode = idvProvider === "manual";
   const assuranceLabel = credential?.level?.toUpperCase() ?? (manualMode ? "L2" : "L3");
@@ -262,8 +265,8 @@ export function PassportSetupPanel({
                   Tier 1 complete. wallet bound. Browse, connect apps, and use the Cielo verified-rate pilot without ID verification.
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {returnPath ? (
-                    <Btn href={decodeURIComponent(returnPath)} size="sm">Return to flow →</Btn>
+                  {handoff.isPartnerFlowContext ? (
+                    <PartnerReturnCta handoff={handoff} label="Return to flow →" />
                   ) : (
                     <Btn href="/cielo/verified-rate" size="sm">Try Cielo verified rate →</Btn>
                   )}
@@ -388,14 +391,23 @@ export function PassportSetupPanel({
                     >
                       Add identity verification. optional →
                     </Btn>
-                    <Btn
-                      variant="ghost"
-                      size="sm"
-                      fullWidth
-                      href={returnPath ? decodeURIComponent(returnPath) : "/cielo/verified-rate"}
-                    >
-                      Skip for now →
-                    </Btn>
+                    {handoff.isPartnerFlowContext ? (
+                      <p style={{
+                        fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+                        lineHeight: 1.55, margin: "0.35rem 0 0", textAlign: "center",
+                      }}>
+                        Finish consent and identity verification to return to the partner app.
+                      </p>
+                    ) : (
+                      <Btn
+                        variant="ghost"
+                        size="sm"
+                        fullWidth
+                        href="/cielo/verified-rate"
+                      >
+                        Skip for now →
+                      </Btn>
+                    )}
                   </>
                 )}
 

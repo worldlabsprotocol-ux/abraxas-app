@@ -3,12 +3,14 @@
 // Verified-state hero — calm, trustworthy, action-oriented. No PII.
 
 import { Btn } from "@/components/redesign/ui";
+import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
 import {
   VERIFIED_HERO_HEADLINE,
   VERIFIED_HERO_SUPPORTING,
   VERIFIED_HERO_PRIVACY,
   buildVerifiedHeroPublicState,
 } from "@/lib/passport/verifiedHero";
+import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
 import { GOOD_TROUBLE_PILOT_LABEL } from "@/lib/goodTrouble/pilotExample";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -25,10 +27,10 @@ const CARD: React.CSSProperties = {
 interface Props {
   assuranceLevel: string;
   expiresAt?: string | null;
-  returnPath?: string | null;
+  handoff: PartnerFlowHandoffController;
 }
 
-export function PassportVerifiedHero({ assuranceLevel, expiresAt, returnPath }: Props) {
+export function PassportVerifiedHero({ assuranceLevel, expiresAt, handoff }: Props) {
   const state = buildVerifiedHeroPublicState({ assuranceLevel, expiresAt });
 
   return (
@@ -107,10 +109,8 @@ export function PassportVerifiedHero({ assuranceLevel, expiresAt, returnPath }: 
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.85rem" }}>
-        {returnPath ? (
-          <Btn href={decodeURIComponent(returnPath)} size="lg">
-            Return to partner flow →
-          </Btn>
+        {handoff.isPartnerFlowContext ? (
+          <PartnerReturnCta handoff={handoff} size="lg" label="Return to partner flow →" />
         ) : (
           <Btn href="/partners" size="lg">
             Explore compatible access →

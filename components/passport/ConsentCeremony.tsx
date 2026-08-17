@@ -23,10 +23,12 @@ export interface ConsentPreview {
 
 export function ConsentCeremony({
   requestId,
+  identityComplete = false,
   onComplete,
   onDismiss,
 }: {
   requestId: string;
+  identityComplete?: boolean;
   suiAddress?: string;
   onComplete?: (result: { decision: string; decision_reference: string }) => void;
   onDismiss?: () => void;
@@ -120,7 +122,9 @@ export function ConsentCeremony({
           Partner decision: {meta.label}
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.35rem", lineHeight: 1.55 }}>
-          {meta.description}
+          {result.decision === "approved" && !identityComplete
+            ? "Consent recorded. Finish identity verification above to return to the partner app."
+            : meta.description}
         </p>
         <div style={{ fontFamily: MONO, fontSize: "0.52rem", color: "var(--text-muted)" }}>
           Audit ref {result.decision_reference.slice(0, 12)}… · Only authorized claims were shared
@@ -161,7 +165,9 @@ export function ConsentCeremony({
       <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
         <strong>{preview.partner_id}</strong>
         {preview.requested_action ? ` requests access for: ${preview.requested_action.replace(/_/g, " ")}` : " requests eligibility claims."}
-        {" "}Review what will be shared. not your raw documents.
+      </p>
+      <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
+        Abraxas is designed to return the policy decision needed for this request rather than automatically sharing your ID files.
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
@@ -175,7 +181,7 @@ export function ConsentCeremony({
             </div>
           )) : (
             <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-              Policy outcome only. no personal documents
+              Policy outcome only. No personal documents.
             </div>
           )}
         </div>
