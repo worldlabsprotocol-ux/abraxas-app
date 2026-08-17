@@ -11,6 +11,7 @@ export default defineConfig({
       "lib/**/*.test.ts",
       "components/**/*.test.tsx",
       "scripts/demo/**/*.test.ts",
+      "scripts/trust-contract-drift/**/*.test.ts",
       "examples/partner-access-nextjs-starter/**/*.test.ts",
     ],
   },

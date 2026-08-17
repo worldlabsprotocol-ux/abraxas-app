@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -30,6 +32,9 @@ jobs:
 
       - name: Homepage invariant tests
         run: npm run check:homepage
+
+      - name: Trust contract drift check (report-only)
+        run: npm run check:trust-contract-drift
 
       - name: Type check
         run: npx tsc --noEmit
