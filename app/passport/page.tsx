@@ -224,7 +224,7 @@ function PassportPageInner() {
           </p>
         </div>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active={pageView} />
         </Suspense>
 

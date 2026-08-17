@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
+import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { CieloBookingStatusPanel } from "@/components/cielo/CieloBookingStatusPanel";
 
@@ -35,7 +36,7 @@ export default function CieloStatusPage() {
     <div data-theme="dark" style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)" }}>
       <AmbientGlow />
       <RedesignNav />
-      <Suspense fallback={null}>
+      <Suspense fallback={<RedesignPageLoading label="Loading booking status…" compact />}>
         <StatusInner />
       </Suspense>
     </div>

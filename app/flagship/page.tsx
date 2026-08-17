@@ -11,7 +11,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 export default function FlagshipPage() {
   return (
     <RedesignPage maxWidth={900}>
-      <Link href="/#registry" style={{
+      <Link href="/" style={{
         display: "inline-block",
         fontFamily: FONT,
         fontSize: "0.8rem",
@@ -20,7 +20,7 @@ export default function FlagshipPage() {
         textDecoration: "none",
         marginBottom: "1rem",
       }}>
-        ← Back to verified assets
+        ← Back to home
       </Link>
       <FlagshipAssetPage />
     </RedesignPage>
