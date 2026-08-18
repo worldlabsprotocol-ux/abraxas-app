@@ -10,7 +10,8 @@
  * Reviewed demo signing public-key thumbprint.
  * `null` means live apply is not yet bootstrapped — fail closed before any DB work.
  */
-export const EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT: string | null = null;
+export const EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT: string | null =
+  "0c8516d0f341a7d717c5f4d1d8bf0d1e226b864b1ea066531af6223af4a3daf3";
 
 export function isDemoSigningKeyBootstrapConfigured(): boolean {
   const value = EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT?.trim();
