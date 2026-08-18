@@ -7,6 +7,11 @@ import Link from "next/link";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import {
+  HOLDER_VERIFY_DEFAULT_PATH,
+  VERIFY_ERROR_BODY,
+  VERIFY_ERROR_HOLDER_LINK_LABEL,
+} from "@/lib/integrate/partnerJourney";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -63,12 +68,15 @@ export default function VerifyError({
             margin: "0 0 1.5rem",
           }}
         >
-          The lookup tools hit an unexpected error. Retry, or verify a record ID directly if you have one.
+          {VERIFY_ERROR_BODY}
         </p>
         <div style={{ display: "flex", gap: "0.65rem", justifyContent: "center", flexWrap: "wrap" }}>
           <Btn onClick={() => reset()}>Try again</Btn>
           <Btn href="/verify" variant="secondary">
-            Open verifier
+            Open partner verify
+          </Btn>
+          <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="ghost">
+            {VERIFY_ERROR_HOLDER_LINK_LABEL}
           </Btn>
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "1.25rem" }}>

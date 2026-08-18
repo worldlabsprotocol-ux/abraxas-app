@@ -55,6 +55,62 @@ export const DASHBOARD_LEGACY_BODY =
 
 export const DASHBOARD_LEGACY_CTA = "Open Passport →";
 
+export const BOTTOM_NAV_ACCOUNT_LABEL = "Account";
+
+export const BOTTOM_NAV_ACCOUNT_HREF = "/account";
+
+export const PAYMENT_RETURN_EYEBROW = "Checkout return · public beta";
+
+export const PAYMENT_RETURN_HEADLINE = "Next steps";
+
+export const PAYMENT_RETURN_LEAD =
+  "If your payment completed, check your email for a receipt and next steps.";
+
+export const PAYMENT_RETURN_UNKNOWN_PRODUCT_LABEL = "Your selected product";
+
+export const PAYMENT_RETURN_DEFAULT_STEPS = [
+  "If your payment completed, check your email for a receipt and any intake instructions.",
+  "Open Passport to bind your wallet and review verification status.",
+  "Use Build to submit asset documents when you are ready.",
+  "This beta has no self-serve case tracker — follow email instructions for updates.",
+] as const;
+
+export const PAYMENT_RETURN_PRIMARY_CTA = "Open Passport →";
+
+export const PAYMENT_RETURN_SECONDARY_CTA = "Back to home";
+
+export const PAYMENT_RETURN_SECONDARY_HREF = "/";
+
+export const APPLE_WALLET_EYEBROW = "Apple Wallet · beta";
+
+export const APPLE_WALLET_HEADLINE = "Apple Wallet passes are not available in this beta.";
+
+export const APPLE_WALLET_BODY =
+  "Use Passport to review your records or test a credential JWT. Partner receipt verification is a separate integrator tool.";
+
+export const APPLE_WALLET_FETCH_ERROR = "Could not reach the wallet pass service. Check your connection and try again.";
+
+export const APPLE_WALLET_RETRY_LABEL = "Try again";
+
+export const HOME_WALLET_HREF = "/passport";
+
+export const HOME_WALLET_LINK_BOUND = "Review wallet binding in Passport →";
+
+export const HOME_WALLET_LINK_UNBOUND = "Bind wallet in Passport →";
+
+export const VERIFY_ERROR_BODY =
+  "The partner verify tools hit an unexpected error. Retry, open the verifier home, or use holder tools in Passport if you are checking your own records or credential JWT.";
+
+export const VERIFY_ERROR_HOLDER_LINK_LABEL = "Open holder verify in Passport";
+
+export const PARTNERS_REFERENCE_ONLY_NOTE =
+  "Reference listing only. No public website link is available.";
+
+export const SETUP_WALLET_READY_HEADLINE = "Wallet ready — browse, verify, and connect";
+
+export const SETUP_WALLET_READY_SUB =
+  "Wallet bound · Account active · Add identity verification only when a partner policy requires it.";
+
 export const PARTNER_FLOW_DOCS_PATH = "/docs/partner-flow";
 
 export const PARTNER_RECEIPT_DOCS_ANCHOR = "/docs/partner-flow#receipt-verification";
