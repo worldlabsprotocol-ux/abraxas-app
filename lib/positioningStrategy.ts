@@ -43,13 +43,6 @@ export const ELIGIBILITY_NORTH_STAR =
 export const GOOD_TROUBLE_PROOF_LINE =
   "Good Trouble trusts an existing Abraxas credential instead of asking users to verify again.";
 
-/** Current focus — protocol validation phase. */
-export const CURRENT_FOCUS = [
-  "Execute the Institutional Acceptance Test against production.",
-  "Freeze the public contract in PROTOCOL_COMPATIBILITY.md.",
-  "Tag v1.0.0-beta.0 and begin P1 integrity hardening.",
-] as const;
-
 /** Proof points to gather after launch (make positioning tangible). */
 export const TARGET_PROOF_METRICS = [
   "Time to integrate: under 30 minutes",

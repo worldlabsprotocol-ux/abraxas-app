@@ -1,25 +1,31 @@
 "use client";
 // FILE: components/home/HomeRoadmapBrief.tsx
-// Current focus on the homepage — three objectives, not a manifesto.
+// Public beta overview on the homepage — factual customer-facing copy only.
 
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { CURRENT_FOCUS } from "@/lib/positioningStrategy";
+import {
+  AUDIENCE_PARTNER,
+  HOME_BETA_READINESS_DISCLAIMER,
+  HOME_BETA_READINESS_EYEBROW,
+  HOME_BETA_READINESS_HEADING,
+  HOME_BETA_READINESS_POINTS,
+} from "@/lib/activation/activationCopy";
 
 const FONT = ABRAXAS_FONT_SANS;
 
 export function HomeRoadmapBrief() {
   return (
-    <section aria-labelledby="home-roadmap-heading" id="roadmap" className="abx-home-section-center" style={{ width: "100%" }}>
+    <section aria-labelledby="home-beta-readiness-heading" id="how-it-works" className="abx-home-section-center" style={{ width: "100%" }}>
       <div className="abx-home-intro">
       <div className="abx-eyebrow-violet" style={{ marginBottom: "0.5rem" }}>
-        Current focus
+        {HOME_BETA_READINESS_EYEBROW}
       </div>
-      <h2 id="home-roadmap-heading" style={{
+      <h2 id="home-beta-readiness-heading" style={{
         fontFamily: FONT, fontSize: "clamp(1.15rem, 3vw, 1.45rem)", fontWeight: 800,
         letterSpacing: "-0.03em", color: "var(--text-primary)", margin: "0 0 0.75rem",
       }}>
-        What we are shipping now
+        {HOME_BETA_READINESS_HEADING}
       </h2>
       </div>
       <ol style={{
@@ -32,9 +38,9 @@ export function HomeRoadmapBrief() {
         maxWidth: 720,
         width: "100%",
       }}>
-        {CURRENT_FOCUS.map((objective, index) => (
+        {HOME_BETA_READINESS_POINTS.map((point, index) => (
           <li
-            key={objective}
+            key={point}
             style={{
               padding: "0.85rem 1rem",
               borderRadius: 12,
@@ -61,12 +67,22 @@ export function HomeRoadmapBrief() {
               margin: 0,
               lineHeight: 1.55,
             }}>
-              {objective}
+              {point}
             </p>
           </li>
         ))}
       </ol>
-      <Btn href="/roadmap" variant="secondary" size="sm">View full roadmap</Btn>
+      <p style={{
+        fontFamily: FONT,
+        fontSize: "0.78rem",
+        color: "var(--text-muted)",
+        margin: "0 auto 1rem",
+        maxWidth: 720,
+        lineHeight: 1.55,
+      }}>
+        {HOME_BETA_READINESS_DISCLAIMER}
+      </p>
+      <Btn href={AUDIENCE_PARTNER.href} variant="secondary" size="sm">{AUDIENCE_PARTNER.cta}</Btn>
     </section>
   );
 }

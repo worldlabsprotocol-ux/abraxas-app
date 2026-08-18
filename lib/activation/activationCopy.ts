@@ -61,6 +61,20 @@ export const METRICS_EMPTY_HREF = "/integrations#apply";
 export const METRICS_ERROR = "Pilot metrics are temporarily unavailable.";
 export const METRICS_LOADING = "Loading pilot metrics…";
 
+/** Homepage beta overview — customer-facing; no internal engineering or release checklist language. */
+export const HOME_BETA_READINESS_EYEBROW = "Public beta";
+
+export const HOME_BETA_READINESS_HEADING = "How Abraxas works in beta";
+
+export const HOME_BETA_READINESS_POINTS = [
+  "A holder completes verification once in Abraxas Passport when a partner policy requires it.",
+  "A partner receives or verifies only the documented policy outcome — a signed receipt your server checks before granting access.",
+  "Partner integration begins with an application and manual review; sandbox access is operator-provisioned after approval.",
+] as const;
+
+export const HOME_BETA_READINESS_DISCLAIMER =
+  "Beta only. Abraxas does not certify compliance, provide legal advice, guarantee privacy outcomes, promise production availability, scale, or an SLA.";
+
 /** Copy guard — must not appear on Phase 6 activation surfaces. */
 export const ACTIVATION_FORBIDDEN_TERMS = [
   "kyc",
