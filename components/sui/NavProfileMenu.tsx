@@ -35,7 +35,7 @@ const OTHER_ADMIN_MENU_ITEMS = [
 
 const MENU_ITEMS = [
   { label: "Passport", href: "/passport", description: "Your proofs & verification" },
-  { label: "Account settings", href: "/account", description: "Name, profile, status" },
+  { label: "Account", href: "/account", description: "Status summary and wallet" },
   { label: "My records & credentials", href: HOLDER_VERIFY_DEFAULT_PATH, description: "Registry lookup and credential JWT" },
   { label: "Tokenize an asset", href: "/build", description: "Start owner intake" },
   { label: "Design partners", href: "/design-partner", description: "For apps integrating Abraxas" },

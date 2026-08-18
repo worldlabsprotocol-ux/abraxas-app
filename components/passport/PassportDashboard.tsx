@@ -40,6 +40,7 @@ import { IDLE_PARTNER_FLOW_HANDOFF } from "@/lib/passport/partnerFlowHandoff";
 import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { HOLDER_VERIFY_DEFAULT_PATH } from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -618,7 +619,7 @@ function PassportStatusCard({
         ) : (
           <Btn href="/partners" size="sm">Explore compatible access →</Btn>
         )}
-        <Btn href="/verify" variant="secondary" size="sm">Verify records →</Btn>
+        <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="secondary" size="sm">Verify records →</Btn>
       </div>
     </section>
   );

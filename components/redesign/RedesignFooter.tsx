@@ -3,12 +3,12 @@
 // Minimal footer — plain language, few links.
 
 import Link from "next/link";
+import { FOOTER_PASSPORT_TOOLS_LABEL, FOOTER_TAGLINE } from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
 const LINKS = [
-  { label: "Passport", href: "/passport" },
-  { label: "Verify assets", href: "/verify" },
+  { label: FOOTER_PASSPORT_TOOLS_LABEL, href: "/passport" },
   { label: "Tokenize", href: "/build" },
   { label: "Blog", href: "/blog" },
   { label: "Privacy", href: "/legal/privacy" },
@@ -33,12 +33,12 @@ export function RedesignFooter() {
             ABRAXAS
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0, maxWidth: 420 }}>
-            Prove it once. Use it everywhere. Verify assets, hold your proof, tokenize what you own.
+            {FOOTER_TAGLINE}
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem 1.25rem", marginBottom: "1.25rem" }}>
           {LINKS.map(item => (
-            <Link key={item.href} href={item.href} style={{
+            <Link key={item.href + item.label} href={item.href} style={{
               fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", textDecoration: "none",
             }}>
               {item.label}
