@@ -5,6 +5,7 @@ import {
   assertNoProvisionerConflict,
   loadRecoveryMarkers,
   provisionIdentityBundle,
+  upsertIdentityVerification,
   type CredentialClaimRow,
   type IdentityVerificationRow,
 } from "./demoProvisionerRepository";
@@ -120,6 +121,42 @@ describe("demoProvisionerRepository", () => {
     });
 
     await expect(loadRecoveryMarkers(tx, provisionId)).rejects.toThrow(/Multiple identity/);
+  });
+
+  it("does not reference optional identity_verifications.veriff_session_id", async () => {
+    const queries: string[] = [];
+    const tx: ProvisionerPgExecutor = {
+      async query(sql: string) {
+        queries.push(sql);
+        if (sql.includes("RETURNING wallet_address")) {
+          return { rows: [{ wallet_address: subjectId }] };
+        }
+        if (sql.includes("RETURNING id") && sql.includes("identity_verification_events")) {
+          return { rows: [{ id: "evt-1" }] };
+        }
+        return { rows: [] };
+      },
+      async tryAdvisoryLock() {
+        return true;
+      },
+      async advisoryUnlock() {
+        return undefined;
+      },
+    };
+    const now = new Date("2026-01-01T00:00:00.000Z");
+
+    await upsertIdentityVerification(tx, {
+      subjectId,
+      provisionId,
+      jti: `urn:uuid:${provisionId}`,
+      now,
+    });
+
+    const identityInsert = queries.find((sql) =>
+      sql.includes("INSERT INTO public.identity_verifications"),
+    );
+    expect(identityInsert).toBeDefined();
+    expect(identityInsert).not.toContain("veriff_session_id");
   });
 
   it("rolls back when a later statement fails", async () => {

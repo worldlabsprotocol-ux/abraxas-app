@@ -17,6 +17,7 @@ import {
   type ProvisionerDatabaseConfig,
 } from "./demoProvisionerGuard";
 import { runProvisionerApplySession } from "./demoProvisionerPgSession";
+import { assertProvisionerSchemaCompatible } from "./demoProvisionerSchemaPreflight";
 import {
   assertNoProvisionerConflict,
   fetchCredentialByJti,
@@ -95,6 +96,8 @@ export async function runProvisionerApply(input: {
     env: input.env,
     advisoryLockKey: computeProvisionerAdvisoryLockKey(input.config.demoProjectRef),
     execute: async (tx) => {
+      await assertProvisionerSchemaCompatible(tx);
+
       const identity = await fetchIdentityBySubject(tx, subjectId);
       const credential = identity?.credential_jti
         ? await fetchCredentialByJti(tx, identity.credential_jti)
