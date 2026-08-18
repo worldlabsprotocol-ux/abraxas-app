@@ -20,6 +20,10 @@ import { IndependentBiometricStatusCard } from "@/components/passport/Independen
 import { MyVerificationPanel } from "@/components/passport/MyVerificationPanel";
 import { PassportTierCapabilities } from "@/components/passport/PassportTierCapabilities";
 import Link from "next/link";
+import {
+  HOLDER_VERIFY_CREDENTIAL_PATH,
+  HOLDER_VERIFY_DEFAULT_PATH,
+} from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -270,7 +274,7 @@ export function PassportSetupPanel({
                   ) : (
                     <Btn href="/cielo/verified-rate" size="sm">Try Cielo verified rate →</Btn>
                   )}
-                  <Btn href="/verify" variant="ghost" size="sm">Verify records</Btn>
+                  <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="ghost" size="sm">Verify records</Btn>
                 </div>
               </div>
 
@@ -439,9 +443,9 @@ export function PassportSetupPanel({
                 Wallet bound · Core account active · Add optional ID check above when a deal requires enhanced trust.
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-                <Btn href="/account" size="sm">Set up public profile →</Btn>
-                <Btn href="/verify" variant="secondary" size="sm">Test verification</Btn>
-                <Btn href="/verify" variant="ghost" size="sm">Verify records</Btn>
+                <Btn href="/account" size="sm">Account summary →</Btn>
+                <Btn href={HOLDER_VERIFY_CREDENTIAL_PATH} variant="secondary" size="sm">Test credential JWT</Btn>
+                <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="ghost" size="sm">Verify records</Btn>
               </div>
             </div>
           )}
@@ -459,10 +463,9 @@ export function PassportSetupPanel({
                 {credential.expires_at && <> · Expires {new Date(credential.expires_at).toLocaleDateString()}</>}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-                <Btn href="/verify?mode=credential" size="sm">Verify credential publicly →</Btn>
-                <Btn href="/verify?mode=credential" variant="secondary" size="sm">Run policy check</Btn>
+                <Btn href={HOLDER_VERIFY_CREDENTIAL_PATH} size="sm">Test credential JWT →</Btn>
+                <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="secondary" size="sm">Verify records</Btn>
                 <Btn href="/build" variant="secondary" size="sm">Submit an asset</Btn>
-                <Btn href="/verify" variant="ghost" size="sm">Verify records</Btn>
               </div>
             </div>
           )}

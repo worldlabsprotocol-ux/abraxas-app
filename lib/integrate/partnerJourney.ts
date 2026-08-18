@@ -16,7 +16,44 @@ export const PARTNER_APPLICATION_PATH = "/integrations#apply";
 
 export const HOLDER_VERIFY_DEFAULT_PATH = "/passport?view=verify&mode=registry";
 
+export const HOLDER_VERIFY_CREDENTIAL_PATH = "/passport?view=verify&mode=credential";
+
 export const PARTNER_RECEIPT_VERIFIER_PATH = "/verify?mode=receipt";
+
+export const NAV_PARTNER_VERIFY_LABEL = "Partner verify";
+
+export const HOLDER_ACCOUNT_EYEBROW = "Account · public beta";
+
+export const HOLDER_ACCOUNT_TITLE = "Your Passport status";
+
+export const HOLDER_ACCOUNT_SUBHEAD =
+  "Summary of your wallet, verification progress, and shortcuts to Passport tools.";
+
+export const HOLDER_ACCOUNT_SIGNED_OUT_TITLE = "Your Abraxas account";
+
+export const HOLDER_ACCOUNT_SIGNED_OUT_SUBHEAD =
+  "Sign in with Google to see your wallet address and open Passport for setup and verification tools.";
+
+export const HOLDER_ACCOUNT_ERROR_TITLE = "Status unavailable";
+
+export const HOLDER_ACCOUNT_ERROR_BODY =
+  "Could not load your current Passport status. Check your connection and try again, or open Passport directly.";
+
+export const HOLDER_VERIFIED_HERO_SECONDARY_CTA = "Test my credential JWT";
+
+export const FOOTER_TAGLINE =
+  "Reusable identity and proof for partner flows. Optional identity verification when a policy requires it.";
+
+export const FOOTER_PASSPORT_TOOLS_LABEL = "Passport tools";
+
+export const DASHBOARD_LEGACY_EYEBROW = "Legacy URL · public beta";
+
+export const DASHBOARD_LEGACY_TITLE = "This dashboard has moved";
+
+export const DASHBOARD_LEGACY_BODY =
+  "The old /dashboard page showed browser-only drafts and demo pipeline views that did not reflect your live Passport status. Use Passport for wallet binding, identity review, credentials, and holder verify tools.";
+
+export const DASHBOARD_LEGACY_CTA = "Open Passport →";
 
 export const PARTNER_FLOW_DOCS_PATH = "/docs/partner-flow";
 

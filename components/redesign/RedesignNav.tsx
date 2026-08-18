@@ -11,6 +11,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { NavProfileMenu, NavSignInButton } from "@/components/sui/NavProfileMenu";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { NAV_PARTNER_VERIFY_LABEL } from "@/lib/integrate/partnerJourney";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "var(--accent)";
@@ -31,7 +32,7 @@ const PRIMARY_LINKS: NavLink[] = [
 
 const DESKTOP_LINKS: NavLink[] = [
   ...PRIMARY_LINKS,
-  { href: "/verify", label: "Verify", matchPrefixes: ["/verify"] },
+  { href: "/verify", label: NAV_PARTNER_VERIFY_LABEL, matchPrefixes: ["/verify"] },
   { href: "/docs/partner-flow", label: "Docs", matchPrefixes: ["/docs"] },
 ];
 

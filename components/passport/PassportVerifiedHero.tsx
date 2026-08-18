@@ -12,6 +12,10 @@ import {
 } from "@/lib/passport/verifiedHero";
 import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
 import { GOOD_TROUBLE_PILOT_LABEL } from "@/lib/goodTrouble/pilotExample";
+import {
+  HOLDER_VERIFIED_HERO_SECONDARY_CTA,
+  HOLDER_VERIFY_CREDENTIAL_PATH,
+} from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -116,8 +120,8 @@ export function PassportVerifiedHero({ assuranceLevel, expiresAt, handoff }: Pro
             Explore compatible access →
           </Btn>
         )}
-        <Btn href="/verify" variant="secondary" size="lg">
-          Verify with a partner →
+        <Btn href={HOLDER_VERIFY_CREDENTIAL_PATH} variant="secondary" size="lg">
+          {HOLDER_VERIFIED_HERO_SECONDARY_CTA} →
         </Btn>
       </div>
 
