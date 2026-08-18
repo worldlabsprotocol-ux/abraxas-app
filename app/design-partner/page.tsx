@@ -10,6 +10,9 @@ import { IntegratorStartHerePanel } from "@/components/integrate/IntegratorStart
 import {
   INTEGRATOR_SANDBOX_BOUNDARY,
   PARTNER_APPLICATION_PATH,
+  PARTNER_POST_APPLY_HEADLINE,
+  PARTNER_POST_APPLY_STEPS,
+  PARTNER_POST_APPLY_SUBHEAD,
   PARTNER_RECEIPT_DOCS_ANCHOR,
   PARTNER_RECEIPT_VERIFIER_PATH,
 } from "@/lib/integrate/partnerJourney";
@@ -33,6 +36,17 @@ export default function DesignPartnerPage() {
       />
 
       <IntegratorStartHerePanel id="partner-start-here" />
+
+      <ContentCard title={PARTNER_POST_APPLY_HEADLINE}>
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
+          {PARTNER_POST_APPLY_SUBHEAD}
+        </p>
+        <BulletList items={PARTNER_POST_APPLY_STEPS.map((step, i) => `${i + 1}. ${step}`)} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+          <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} size="sm">Receipt verification docs</Btn>
+          <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+        </div>
+      </ContentCard>
 
       <ContentCard title="Partner Flow guide (start here)">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>

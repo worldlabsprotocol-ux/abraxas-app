@@ -15,6 +15,16 @@ import {
   STATUS_COLOR,
   type IntegrationStatus,
 } from "@/lib/protocolIntegrations";
+import {
+  INTEGRATIONS_APPLY_NOTE,
+  INTEGRATIONS_HUB_SUBHEAD,
+  INTEGRATIONS_SDK_NOTE,
+  PARTNER_APPLICATION_PATH,
+  PARTNER_POST_APPLY_STEPS,
+  PARTNER_RECEIPT_DOCS_ANCHOR,
+  PARTNER_RECEIPT_MIRROR_NOTE,
+  PARTNER_RECEIPT_VERIFIER_PATH,
+} from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -52,13 +62,46 @@ export default function IntegrationsPage() {
 
   const liveCount = PROTOCOL_INTEGRATIONS.filter(p => p.status === "live").length;
 
+  const preBlockStyle: React.CSSProperties = {
+    fontFamily: MONO,
+    fontSize: "0.68rem",
+    lineHeight: 1.6,
+    padding: "1rem",
+    borderRadius: 10,
+    overflowX: "auto",
+    overflowY: "hidden",
+    maxWidth: "100%",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    color: "var(--text-secondary)",
+    margin: "0 0 0.75rem",
+  };
+
   return (
     <RedesignPage maxWidth={900}>
       <PageHeader
         eyebrow="Integrations"
         title="The reusable verification primitive"
-        subtitle={`${liveCount} live integration surfaces today. External protocols integrate Abraxas Passport in ~4 lines. no re-KYC for users.`}
+        subtitle={INTEGRATIONS_HUB_SUBHEAD}
       />
+
+      <div style={{
+        marginBottom: "1.25rem",
+        padding: "1rem 1.1rem",
+        borderRadius: 14,
+        border: `1px solid ${ACCENT}44`,
+        background: `${ACCENT}10`,
+        maxWidth: "100%",
+      }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
+          <strong style={{ color: "var(--text-primary)" }}>{INTEGRATIONS_APPLY_NOTE}</strong>
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href={PARTNER_APPLICATION_PATH} size="sm">Apply for manual review</Btn>
+          <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+          <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification</Btn>
+        </div>
+      </div>
 
       <ContentCard title="Relying party program">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>
@@ -99,26 +142,27 @@ export default function IntegrationsPage() {
       </div>
 
       <ContentCard title="Quick integration">
-        <pre style={{
-          fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.6,
-          padding: "1rem", borderRadius: 10, overflow: "auto",
-          background: "var(--surface)", border: "1px solid var(--border)",
-          color: "var(--text-secondary)", margin: "0 0 0.75rem",
-        }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.65rem" }}>
+          {INTEGRATIONS_SDK_NOTE}
+        </p>
+        <pre style={preBlockStyle}>
           {INTEGRATION_SDK_SNIPPET}
         </pre>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href="/docs/partner-flow" size="sm">Partner Flow docs →</Btn>
-          <Btn href="/verify?mode=receipt" size="sm" variant="secondary">Receipt tester →</Btn>
+          <Btn href="/docs/partner-flow" size="sm">Partner Flow docs</Btn>
+          <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} size="sm" variant="secondary">Receipt verification</Btn>
           <Btn href="/docs/architecture" variant="tertiary" size="sm">Architecture</Btn>
         </div>
       </ContentCard>
 
-      <ContentCard title="Integration registry">
+      <ContentCard title={`Integration registry (${liveCount} pilot surfaces)`}>
         {PROTOCOL_INTEGRATIONS.map(p => (
           <div key={p.id} style={{
-            display: "grid", gridTemplateColumns: "1fr auto", gap: "0.75rem",
-            padding: "0.85rem 0", borderBottom: "1px solid var(--border)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.35rem",
+            padding: "0.85rem 0",
+            borderBottom: "1px solid var(--border)",
           }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -137,7 +181,18 @@ export default function IntegrationsPage() {
                 {p.description}
               </p>
               {p.api && (
-                <code style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT, display: "block", marginTop: "0.35rem" }}>{p.api}</code>
+                <code style={{
+                  fontFamily: MONO,
+                  fontSize: "0.62rem",
+                  color: ACCENT,
+                  display: "block",
+                  marginTop: "0.35rem",
+                  overflowX: "auto",
+                  maxWidth: "100%",
+                  wordBreak: "break-all",
+                }}>
+                  {p.api}
+                </code>
               )}
               {(p.href || p.website) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginTop: "0.45rem" }}>
@@ -175,9 +230,25 @@ export default function IntegrationsPage() {
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0.75rem", lineHeight: 1.6 }}>
               We review design partner applications manually. If approved, operators will provision sandbox policies and callback allowlists — not instant production access.
             </p>
+            <ol style={{
+              margin: "0 0 0.75rem",
+              paddingLeft: "1.15rem",
+              fontFamily: FONT,
+              fontSize: "0.76rem",
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+            }}>
+              {PARTNER_POST_APPLY_STEPS.map((step) => (
+                <li key={step} style={{ marginBottom: 4 }}>{step}</li>
+              ))}
+            </ol>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
+              {PARTNER_RECEIPT_MIRROR_NOTE}
+            </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              <Btn href="/docs/partner-flow" size="sm">Read Partner Flow docs</Btn>
-              <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Explore receipt tester</Btn>
+              <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} size="sm">Receipt verification docs</Btn>
+              <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+              <Btn href={PARTNER_RECEIPT_VERIFIER_PATH} variant="ghost" size="sm">Receipt tester (mirror)</Btn>
             </div>
           </div>
         ) : (
@@ -235,8 +306,15 @@ export default function IntegrationsPage() {
               {busy ? "Submitting application…" : "Submit for manual review →"}
             </button>
             <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-              Already approved? Read <Link href="/docs/partner-flow" style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>Partner Flow docs</Link> and test receipts at{" "}
-              <Link href="/verify?mode=receipt" style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>/verify</Link>.
+              Already approved? Read{" "}
+              <Link href={PARTNER_RECEIPT_DOCS_ANCHOR} style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>
+                server-side receipt verification
+              </Link>
+              {" "}docs and use the{" "}
+              <Link href={PARTNER_RECEIPT_VERIFIER_PATH} style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>
+                receipt tester
+              </Link>
+              {" "}as a public mirror only.
             </p>
           </form>
         )}

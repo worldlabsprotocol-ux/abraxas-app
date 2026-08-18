@@ -22,6 +22,32 @@ export const PARTNER_FLOW_DOCS_PATH = "/docs/partner-flow";
 
 export const PARTNER_RECEIPT_DOCS_ANCHOR = "/docs/partner-flow#receipt-verification";
 
+export const INTEGRATIONS_HUB_SUBHEAD =
+  "Public beta · design partner applications reviewed manually. Submit integration intent below — sandbox policies and callback allowlists are operator-provisioned after approval, not self-serve.";
+
+export const INTEGRATIONS_APPLY_NOTE =
+  "Apply once at this form. Abraxas operators review applications manually. There is no self-serve production portal or automatic API-key issuance.";
+
+export const INTEGRATIONS_SDK_NOTE =
+  "Example server-side pattern only. API credentials are operator-provisioned after manual approval — not self-serve.";
+
+export const PARTNER_RECEIPT_MIRROR_NOTE =
+  "The public receipt tester mirrors GET /api/receipts/{receipt_id}/public — it is not a production access gate. Your server must verify before granting access.";
+
+export const PARTNER_POST_APPLY_HEADLINE = "After you apply";
+
+export const PARTNER_POST_APPLY_SUBHEAD =
+  "While Abraxas operators review your application (typically a few business days), start with the Partner Flow contract and server-side receipt checks.";
+
+export const PARTNER_POST_APPLY_STEPS = [
+  "Read /docs/partner-flow — entry URL, callback params, and lifecycle.",
+  "Implement server-side receipt verification — GET /api/receipts/{receipt_id}/public before granting access (/docs/partner-flow#receipt-verification).",
+  "When operators provision sandbox partner_id, policy_id, and allowlisted return_url, test with the receipt tester (public mirror only).",
+  "Run npm run partner:conformance after sandbox credentials are issued.",
+] as const;
+
+export const PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL = "Receipt verification (server)";
+
 export const VERIFY_HUB_EYEBROW = "Partner integrators · public beta";
 
 export const VERIFY_HUB_HEADLINE = "Test a Partner Flow session receipt";

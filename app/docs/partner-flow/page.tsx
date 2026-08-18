@@ -6,7 +6,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { PartnerFlowDocToc, PartnerFlowStartHereCard } from "@/components/docs/PartnerFlowDocToc";
+import { PartnerFlowDocToc, PartnerFlowStartHereCard, PartnerFlowDocMobileJump, PartnerFlowMobileReceiptCallout } from "@/components/docs/PartnerFlowDocToc";
 import {
   PARTNER_FLOW_HEADLINE,
   PARTNER_FLOW_SUMMARY,
@@ -76,6 +76,8 @@ export default function PartnerFlowDocsPage() {
         </Link>
       </p>
 
+      <PartnerFlowDocMobileJump />
+
       <div
         className="partner-flow-doc-layout"
         style={{
@@ -83,12 +85,15 @@ export default function PartnerFlowDocsPage() {
           gridTemplateColumns: "minmax(180px, 220px) minmax(0, 1fr)",
           gap: "1.25rem",
           alignItems: "start",
+          maxWidth: "100%",
+          overflow: "hidden",
         }}
       >
         <PartnerFlowDocToc />
 
-        <div>
+        <div style={{ minWidth: 0, maxWidth: "100%" }}>
           <PartnerFlowStartHereCard />
+          <PartnerFlowMobileReceiptCallout />
 
           <SectionCard id="choose-path" title="Choose your integration path">
             <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -151,7 +156,7 @@ export default function PartnerFlowDocsPage() {
             </table>
             <pre style={{
               fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
-              padding: "0.85rem", borderRadius: 10, overflow: "auto",
+              padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%",
               background: "var(--surface-inset)", border: "1px solid var(--border)",
               color: "var(--text-secondary)", margin: 0,
             }}>
@@ -205,7 +210,7 @@ export default function PartnerFlowDocsPage() {
             <BulletList items={PARTNER_FLOW_RECEIPT_CHECKS.map((c) => `${c.check} — ${c.why}`)} />
             <pre style={{
               fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
-              padding: "0.85rem", borderRadius: 10, overflow: "auto", marginTop: "0.75rem",
+              padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%", marginTop: "0.75rem",
               background: "var(--surface-inset)", border: "1px solid var(--border)",
               color: "var(--text-secondary)",
             }}>
@@ -226,7 +231,8 @@ export default function PartnerFlowDocsPage() {
           </SectionCard>
 
           <SectionCard id="errors" title="Errors and status behavior">
-            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.76rem" }}>
+            <div className="partner-flow-error-table-wrap" style={{ overflowX: "auto", maxWidth: "100%" }}>
+            <table className="partner-flow-error-table" style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.76rem", minWidth: 480 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
                   <th style={{ textAlign: "left", padding: "0.4rem" }}>Condition</th>
@@ -244,12 +250,13 @@ export default function PartnerFlowDocsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </SectionCard>
 
           <SectionCard id="redirect-example" title="Copy-paste redirect">
             <pre style={{
               fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
-              padding: "0.85rem", borderRadius: 10, overflow: "auto",
+              padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%",
               background: "var(--surface-inset)", border: "1px solid var(--border)",
               color: "var(--text-secondary)", margin: 0,
             }}>
@@ -276,6 +283,10 @@ export default function PartnerFlowDocsPage() {
       <style>{`
         @media (max-width: 960px) {
           .partner-flow-doc-layout { grid-template-columns: 1fr !important; }
+        }
+        .partner-flow-error-table-wrap {
+          overflow-x: auto;
+          max-width: 100%;
         }
       `}</style>
     </RedesignPage>
