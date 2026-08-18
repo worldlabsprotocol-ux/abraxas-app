@@ -3,6 +3,7 @@
 // Persistent footer on all protocol pages. Theme-aware.
 
 import { SITE_URL } from "@/lib/siteUrl";
+import { FOOTER_TAGLINE } from "@/lib/integrate/partnerJourney";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -12,7 +13,6 @@ const LINKS = {
   product: [
     { label: "Marketplace", href: "/terminal" },
     { label: "Passport",    href: "/passport" },
-    { label: "Dashboard",   href: "/dashboard" },
     { label: "Build",       href: "/build" },
     { label: "Swap",        href: "/swap" },
   ],
@@ -115,7 +115,7 @@ export function SiteFooter() {
               lineHeight: 1.6,
               maxWidth: 220,
             }}>
-              Verify once. Transact everywhere. Sui-native verification for real-world assets.
+              {FOOTER_TAGLINE}
             </p>
             <p style={{
               fontFamily: S,
@@ -143,7 +143,6 @@ export function SiteFooter() {
           lineHeight: 1.6,
         }}>
           © {new Date().getFullYear()} Abraxas Protocol, World Labs Protocol. Not investment advice.
-          RWA offerings may involve securities. Past performance does not guarantee future results.
         </div>
       </div>
     </footer>

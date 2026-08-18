@@ -23,6 +23,8 @@ import Link from "next/link";
 import {
   HOLDER_VERIFY_CREDENTIAL_PATH,
   HOLDER_VERIFY_DEFAULT_PATH,
+  SETUP_WALLET_READY_HEADLINE,
+  SETUP_WALLET_READY_SUB,
 } from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -166,7 +168,7 @@ export function PassportSetupPanel({
             {setup.nextAction === "ready"
               ? setup.identityComplete
                 ? "Your Abraxas Passport is ready"
-                : "Your profile is ready"
+                : SETUP_WALLET_READY_HEADLINE
               : "Complete your profile once"}
           </h2>
           <p style={{
@@ -437,10 +439,10 @@ export function PassportSetupPanel({
               background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)",
             }}>
               <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: ACCENT, marginBottom: "0.5rem" }}>
-                ✓ Profile ready. browse, verify, and connect
+                ✓ {SETUP_WALLET_READY_HEADLINE}
               </div>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
-                Wallet bound · Core account active · Add optional ID check above when a deal requires enhanced trust.
+                {SETUP_WALLET_READY_SUB}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
                 <Btn href="/account" size="sm">Account summary →</Btn>

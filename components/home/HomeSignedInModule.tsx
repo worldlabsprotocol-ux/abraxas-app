@@ -10,6 +10,11 @@ import { buildTrustStatusLine } from "@/lib/passport/passportCanonicalState";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
 import { resolveIdentityUiState } from "@/lib/passport/identityUiState";
 import { Btn } from "@/components/redesign/ui";
+import {
+  HOME_WALLET_HREF,
+  HOME_WALLET_LINK_BOUND,
+  HOME_WALLET_LINK_UNBOUND,
+} from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "var(--accent)";
@@ -18,7 +23,7 @@ export function HomeSignedInModule() {
   const { suiAddress, isAuthenticated, session } = useSuiAuth();
   const email = session?.email ?? null;
   const { data: profile } = useUserProfile();
-  const { setup, identityStatus, credential, idvProvider, via } = usePassportVerification(suiAddress, email);
+  const { identityStatus, credential, idvProvider, via } = usePassportVerification(suiAddress, email);
 
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const identityUi = resolveIdentityUiState({
@@ -41,6 +46,9 @@ export function HomeSignedInModule() {
   const initial = profileInitial(profile, email);
   const avatarColor = profile?.avatar_color ?? ACCENT;
   const statusLine = canonical ? buildTrustStatusLine(canonical) : "Passport active";
+  const walletLinkLabel = canonical?.wallets.hasActiveBinding
+    ? HOME_WALLET_LINK_BOUND
+    : HOME_WALLET_LINK_UNBOUND;
 
   return (
     <section style={{
@@ -49,13 +57,13 @@ export function HomeSignedInModule() {
       borderRadius: 18,
       background: "var(--surface-raised)",
       border: "1px solid var(--border-strong)",
-      display: "grid",
-      gridTemplateColumns: "auto 1fr auto",
+      display: "flex",
+      flexWrap: "wrap",
       gap: "1rem",
       alignItems: "center",
     }}>
       <div style={{
-        width: 48, height: 48, borderRadius: 999,
+        width: 48, height: 48, borderRadius: 999, flexShrink: 0,
         background: `${avatarColor}33`, border: `2px solid ${avatarColor}`,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT, fontSize: "1.1rem", fontWeight: 800, color: avatarColor,
@@ -63,18 +71,23 @@ export function HomeSignedInModule() {
         {initial}
       </div>
 
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.15rem" }}>
+      <div style={{ flex: "1 1 180px", minWidth: 0 }}>
+        <div style={{
+          fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
+          color: "var(--text-primary)", marginBottom: "0.15rem",
+        }}>
           {label}
         </div>
-        <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+        <div style={{
+          fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.5,
+        }}>
           {statusLine}
         </div>
-        <Link href="/passport?tab=wallets" style={{
+        <Link href={HOME_WALLET_HREF} style={{
           fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: ACCENT,
           textDecoration: "none", marginTop: "0.25rem", display: "inline-block",
         }}>
-          {canonical?.wallets.hasActiveBinding ? "Manage wallets" : "Add wallet"} →
+          {walletLinkLabel}
         </Link>
       </div>
 

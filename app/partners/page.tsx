@@ -6,6 +6,7 @@
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
+import { PARTNERS_REFERENCE_ONLY_NOTE } from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -16,7 +17,7 @@ interface Partner {
   category: string;
   description: string;
   appliesTo: string;
-  url: string;
+  url: string | null;
   isVerificationPartner: boolean;
 }
 
@@ -25,16 +26,16 @@ const PARTNERS: Partner[] = [
     name: "Utila",
     category: "Custody",
     description: "MPC-based custody infrastructure for assets verified on Abraxas, stronger protection than a typical self-custody wallet.",
-    appliesTo: "All verified assets",
+    appliesTo: "Custody for verified assets",
     url: "https://utila.io",
     isVerificationPartner: true,
   },
   {
     name: "CV5 Capital",
     category: "Fund Structure",
-    description: "CIMA-regulated fund structure partner, advises on the legal structure behind investment offerings.",
-    appliesTo: "Fund structure and compliance advisory",
-    url: "#",
+    description: "Listed as a fund-structure reference in Abraxas materials. No active integration link is published in this beta.",
+    appliesTo: "Reference listing only",
+    url: null,
     isVerificationPartner: true,
   },
   {
@@ -65,7 +66,7 @@ function PartnerCard({ partner }: { partner: Partner }) {
             {partner.category.toUpperCase()}
           </div>
         </div>
-        {partner.url !== "#" && (
+        {partner.url && (
           <a href={partner.url} target="_blank" rel="noopener noreferrer"
              style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, textDecoration: "underline" }}>
             Visit site →
@@ -76,6 +77,14 @@ function PartnerCard({ partner }: { partner: Partner }) {
                    lineHeight: 1.6, margin: "0.625rem 0 0.375rem" }}>
         {partner.description}
       </p>
+      {partner.url === null && (
+        <p style={{
+          fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
+          lineHeight: 1.55, margin: "0.375rem 0 0",
+        }}>
+          {PARTNERS_REFERENCE_ONLY_NOTE}
+        </p>
+      )}
       {partner.isVerificationPartner && (
         <div style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)" }}>
           Applies to: {partner.appliesTo}
