@@ -218,14 +218,14 @@ export async function upsertIdentityVerification(
        document_type, document_country, document_state,
        document_verified, liveness_passed, liveness_provider,
        status, identity_verification_status, credential_status,
-       credential_jti, veriff_session_id, veriff_decision_id,
+       credential_jti, veriff_decision_id,
        last_verified_at, credential_issued_at, error_message, updated_at
      ) VALUES (
        $1, $1, NULL,
        $2, $3, NULL,
        TRUE, TRUE, 'manual_review',
        'approved', 'approved', 'active',
-       $4, NULL, $5,
+       $4, $5,
        $6, $6, NULL, $6
      )
      ON CONFLICT (wallet_address) DO UPDATE SET
