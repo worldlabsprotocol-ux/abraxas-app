@@ -1,7 +1,7 @@
 // FILE: scripts/demo/lib/demoEnvironmentChecks.ts
 // Read-only database and configuration checks for Partner Sandbox demo environments.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DemoRestProbeClient } from "./demoRestClient";
 import {
   DEMO_OPTIONAL_TABLES,
   DEMO_REQUIRED_EXTENSIONS,
@@ -40,7 +40,7 @@ export interface EnvironmentValidationReport {
 export type ExtensionProbeResult = "available" | "missing" | "unverifiable";
 
 export type ExtensionProbe = (
-  client: SupabaseClient,
+  client: DemoRestProbeClient,
   extensionName: string,
 ) => Promise<ExtensionProbeResult>;
 
@@ -78,14 +78,14 @@ function formatRestProbeFailure(
 }
 
 export async function probeExtensionAvailability(
-  _client: SupabaseClient,
+  _client: DemoRestProbeClient,
   _extensionName: string,
 ): Promise<ExtensionProbeResult> {
   return "unverifiable";
 }
 
 export async function runEnvironmentChecks(input: {
-  client: SupabaseClient;
+  client: DemoRestProbeClient;
   demoSubjectId?: string;
   extensionProbe?: ExtensionProbe;
 }): Promise<EnvironmentValidationReport> {
@@ -132,7 +132,7 @@ export async function runEnvironmentChecks(input: {
 }
 
 async function checkRequiredExtensions(
-  client: SupabaseClient,
+  client: DemoRestProbeClient,
   extensionProbe: ExtensionProbe,
 ): Promise<EnvironmentCheckResult[]> {
   const results: EnvironmentCheckResult[] = [];
@@ -229,7 +229,7 @@ async function checkCatalogInspectionLimits(): Promise<EnvironmentCheckResult[]>
 }
 
 async function checkTableExists(
-  client: SupabaseClient,
+  client: DemoRestProbeClient,
   table: string,
   optional: boolean,
 ): Promise<EnvironmentCheckResult> {
@@ -308,7 +308,7 @@ async function checkTableExists(
   };
 }
 
-async function checkVerificationDecisionsIdempotency(client: SupabaseClient): Promise<EnvironmentCheckResult> {
+async function checkVerificationDecisionsIdempotency(client: DemoRestProbeClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("verification_decisions").select("idempotency_key").limit(1)`;
   const { error, status } = await client
     .from("verification_decisions")
@@ -354,7 +354,7 @@ async function checkVerificationDecisionsIdempotency(client: SupabaseClient): Pr
   };
 }
 
-async function checkSandboxPartner(client: SupabaseClient): Promise<EnvironmentCheckResult> {
+async function checkSandboxPartner(client: DemoRestProbeClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("partners").select("partner_id, status").eq("partner_id", "${DEMO_SANDBOX_PARTNER_ID}").maybeSingle()`;
   const { data, error, status } = await client
     .from("partners")
@@ -393,7 +393,7 @@ async function checkSandboxPartner(client: SupabaseClient): Promise<EnvironmentC
   };
 }
 
-async function checkSandboxPolicy(client: SupabaseClient): Promise<EnvironmentCheckResult> {
+async function checkSandboxPolicy(client: DemoRestProbeClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("partner_policies").select("id, partner_id, status, rules_json").eq("id", "${DEMO_SANDBOX_POLICY_ID}").eq("status", "active").maybeSingle()`;
   const { data, error, status } = await client
     .from("partner_policies")
@@ -458,7 +458,7 @@ async function checkSandboxPolicy(client: SupabaseClient): Promise<EnvironmentCh
   };
 }
 
-async function checkSandboxIssuer(client: SupabaseClient): Promise<EnvironmentCheckResult> {
+async function checkSandboxIssuer(client: DemoRestProbeClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("credential_issuers").select("id, issuer_status").eq("id", "${DEMO_SANDBOX_ISSUER_ID}").maybeSingle()`;
   const { data, error, status } = await client
     .from("credential_issuers")
@@ -497,7 +497,7 @@ async function checkSandboxIssuer(client: SupabaseClient): Promise<EnvironmentCh
   };
 }
 
-async function checkWebhookDeliveryDisabled(client: SupabaseClient): Promise<EnvironmentCheckResult> {
+async function checkWebhookDeliveryDisabled(client: DemoRestProbeClient): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("partner_webhook_configs").select("partner_id, enabled").eq("partner_id", "${DEMO_SANDBOX_PARTNER_ID}").maybeSingle()`;
   const { data, error, status } = await client
     .from("partner_webhook_configs")
@@ -593,7 +593,7 @@ function checkDemoSubjectConfiguration(demoSubjectId?: string): EnvironmentCheck
 }
 
 async function checkDemoSubjectCredential(
-  client: SupabaseClient,
+  client: DemoRestProbeClient,
   subjectId: string,
 ): Promise<EnvironmentCheckResult> {
   const evidence = `client.from("identity_verifications").select("status, credential_jti").or("sui_address.eq.${maskSubjectId(subjectId)}").maybeSingle()`;
