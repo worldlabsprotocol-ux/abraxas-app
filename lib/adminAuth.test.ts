@@ -1,25 +1,42 @@
 // FILE: lib/adminAuth.test.ts
 
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { getAdminEmails, isAdminEmail } from "./adminAuth";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+import {
+  checkAdmin,
+  getAdminEmails,
+  getConfiguredAdminPin,
+  isAdminEmail,
+  normalizeSubmittedAdminPin,
+} from "./adminAuth";
 
 describe("adminAuth", () => {
-  const original = process.env.ABRAXAS_ADMIN_EMAILS;
-
   afterEach(() => {
-    if (original === undefined) delete process.env.ABRAXAS_ADMIN_EMAILS;
-    else process.env.ABRAXAS_ADMIN_EMAILS = original;
+    vi.unstubAllEnvs();
   });
 
   it("parses admin email allowlist", () => {
-    process.env.ABRAXAS_ADMIN_EMAILS = "Admin@Example.com, reviewer@test.io";
+    vi.stubEnv("ABRAXAS_ADMIN_EMAILS", "Admin@Example.com, reviewer@test.io");
     expect(getAdminEmails()).toEqual(["admin@example.com", "reviewer@test.io"]);
     expect(isAdminEmail("admin@example.com")).toBe(true);
     expect(isAdminEmail("other@test.io")).toBe(false);
   });
 
   it("returns false when allowlist empty", () => {
-    delete process.env.ABRAXAS_ADMIN_EMAILS;
+    vi.stubEnv("ABRAXAS_ADMIN_EMAILS", "");
     expect(isAdminEmail("admin@example.com")).toBe(false);
+  });
+
+  it("trims configured and submitted PIN values before comparison", () => {
+    vi.stubEnv("ADMIN_PIN", "  demo-pin  ");
+    vi.stubEnv("NODE_ENV", "production");
+
+    expect(getConfiguredAdminPin()).toBe("demo-pin");
+    expect(normalizeSubmittedAdminPin(" demo-pin ")).toBe("demo-pin");
+
+    const req = new NextRequest("http://localhost/api/admin/session", {
+      headers: { "x-admin-pin": " demo-pin " },
+    });
+    expect(checkAdmin(req)).toBe(true);
   });
 });

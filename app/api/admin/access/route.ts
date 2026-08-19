@@ -4,6 +4,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAdminAccess } from "@/lib/adminAuth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const access = await resolveAdminAccess(req);
   return NextResponse.json({
