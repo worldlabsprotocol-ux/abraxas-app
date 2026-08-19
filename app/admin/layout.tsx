@@ -32,7 +32,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       body: JSON.stringify({ pin }),
     });
     if (!res.ok) {
-      setPinError("Invalid PIN");
+      setPinError(
+        res.status === 503
+          ? "Admin PIN is not configured on this server"
+          : "Invalid PIN",
+      );
       return;
     }
     await checkAccess();

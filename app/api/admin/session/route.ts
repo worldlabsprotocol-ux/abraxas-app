@@ -7,11 +7,19 @@ import {
   adminSessionCookieMaxAgeSec,
   adminSessionCookieValue,
   checkAdmin,
+  getConfiguredAdminPin,
+  normalizeSubmittedAdminPin,
 } from "@/lib/adminAuth";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as { pin?: string };
-  const pin = body.pin ?? req.headers.get("x-admin-pin") ?? "";
+  const pin = normalizeSubmittedAdminPin(body.pin ?? req.headers.get("x-admin-pin"));
+
+  if (!getConfiguredAdminPin()) {
+    return NextResponse.json({ error: "Admin PIN not configured" }, { status: 503 });
+  }
 
   const pinReq = new Request(req.url, {
     headers: new Headers({ "x-admin-pin": pin }),

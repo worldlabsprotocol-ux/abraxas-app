@@ -61,7 +61,7 @@ RLS flags, `pg_policies`, `pg_indexes`, database functions/RPCs, `information_sc
 | `ABRAXAS_SIGNING_KEY` | **No** (fresh demo key) | Yes | Receipt/credential signing |
 | `ABRAXAS_PUBLIC_KEY` | **No** | Yes | Verification |
 | `ABRAXAS_BROWSER_SESSION_SECRET` | **No** | Yes | Admin session cookies |
-| `ADMIN_PIN` | **No** | No | Demo-only presenter PIN |
+| `ADMIN_PIN` | **No** | Yes | Demo-only presenter PIN |
 | `PARTNER_SANDBOX_DEMO_ENABLED` | **No** | Yes | Exact `true` on demo only |
 | `PARTNER_SANDBOX_DEMO_SUBJECT_ID` | **No** | Yes | From `scripts/demo/.sandbox-holder.json` after Phase C verify |
 

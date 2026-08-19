@@ -7,12 +7,20 @@ import { createClient } from "@supabase/supabase-js";
 import { resolveBrowserSession } from "@/lib/auth/browserSession";
 
 export const ADMIN_SESSION_COOKIE = "abraxas_admin_session";
-const ADMIN_PIN = process.env.ADMIN_PIN ?? "";
 const ADMIN_SESSION_TTL_SEC = 60 * 60 * 8;
 
+export function getConfiguredAdminPin(): string {
+  return (process.env.ADMIN_PIN ?? "").trim();
+}
+
+export function normalizeSubmittedAdminPin(pin: string | null | undefined): string {
+  return (pin ?? "").trim();
+}
+
 function adminSessionToken(): string | null {
-  if (!ADMIN_PIN) return null;
-  return createHash("sha256").update(`abraxas-admin:${ADMIN_PIN}`).digest("hex");
+  const configuredPin = getConfiguredAdminPin();
+  if (!configuredPin) return null;
+  return createHash("sha256").update(`abraxas-admin:${configuredPin}`).digest("hex");
 }
 
 export function getAdminEmails(): string[] {
@@ -32,14 +40,17 @@ export function isAdminEmail(email: string | null | undefined): boolean {
 /** Legacy sync PIN check — prefer checkAdminAccess for routes. */
 export function checkAdmin(req: NextRequest): boolean {
   if (hasValidAdminSessionCookie(req)) return true;
-  if (!ADMIN_PIN) return process.env.NODE_ENV !== "production";
-  return req.headers.get("x-admin-pin") === ADMIN_PIN;
+  const configuredPin = getConfiguredAdminPin();
+  if (!configuredPin) return process.env.NODE_ENV !== "production";
+  return normalizeSubmittedAdminPin(req.headers.get("x-admin-pin")) === configuredPin;
 }
 
 export function hasValidAdminSessionCookie(req: NextRequest): boolean {
   const token = adminSessionToken();
   if (!token) return false;
-  return req.cookies.get(ADMIN_SESSION_COOKIE)?.value === token;
+  const cookieStore = req.cookies;
+  if (!cookieStore) return false;
+  return cookieStore.get(ADMIN_SESSION_COOKIE)?.value === token;
 }
 
 export function adminSessionCookieValue(): string | null {
