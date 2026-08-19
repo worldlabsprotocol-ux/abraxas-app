@@ -50,6 +50,7 @@ export const READ_ONLY_POLICY_SCAN_ROOTS = [
   "scripts/demo/lib/demoCatalogQueryRegistry.ts",
   "scripts/demo/lib/demoServiceRolePrivilegeExpectations.ts",
   "scripts/demo/lib/demoRestProbeRegistry.ts",
+  "scripts/demo/lib/demoRestClient.ts",
   "scripts/demo/lib/demoCatalogIndexes.ts",
   "scripts/demo/lib/demoProvisionerConfig.ts",
   "scripts/demo/lib/demoProvisionerDryRun.ts",

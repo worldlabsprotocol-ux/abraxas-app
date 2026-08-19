@@ -1,7 +1,7 @@
 // FILE: scripts/demo/validate-partner-sandbox-environment.ts
 // Read-only Partner Sandbox demo environment validator — Phase A.
 
-import { createClient } from "@supabase/supabase-js";
+import { createDemoRestReadClient } from "./lib/demoRestClient";
 import { validateCatalogDemoConfig } from "./lib/demoCatalogConfig";
 import {
   formatCatalogValidationReport,
@@ -68,9 +68,7 @@ async function runRestValidation(): Promise<number> {
     return 2;
   }
 
-  const client = createClient(supabaseUrl!, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const client = createDemoRestReadClient(supabaseUrl!, serviceRoleKey);
 
   console.log("Partner Sandbox Environment Validation");
   console.log("======================================");
