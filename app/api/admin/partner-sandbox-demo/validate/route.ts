@@ -12,8 +12,12 @@ import {
   logPartnerSandboxDemoInternalError,
 } from "@/lib/demo/partnerSandboxDemoErrors";
 import { guardPartnerSandboxDemoRoute, partnerSandboxDemoJson } from "@/lib/demo/partnerSandboxDemoRouteGuard";
-import { validatePartnerSandboxDemoReceipt } from "@/lib/demo/partnerSandboxDemoService";
+import {
+  diagnosePartnerSandboxDemoReceiptIntegrity,
+  validatePartnerSandboxDemoReceipt,
+} from "@/lib/demo/partnerSandboxDemoService";
 import { demoViewHasNoForbiddenKeys } from "@/lib/demo/partnerSandboxDemoViews";
+import { integrityResponseHasNoSecrets } from "@/lib/decisionReceipts/receiptIntegrityDiagnostics";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +36,14 @@ export async function GET(req: NextRequest) {
     const validated = validateDemoReceiptId(rawReceiptId);
     if (!validated.ok) {
       return partnerSandboxDemoJson({ error: validated.error }, { status: 400 });
+    }
+
+    if (req.nextUrl.searchParams.get("integrity") === "1") {
+      const integrity = await diagnosePartnerSandboxDemoReceiptIntegrity(validated.receiptId);
+      if (!integrityResponseHasNoSecrets(integrity)) {
+        throw new Error("demo_receipt_integrity_response_unsafe");
+      }
+      return partnerSandboxDemoJson(integrity);
     }
 
     const receipt = await validatePartnerSandboxDemoReceipt(validated.receiptId);

@@ -2,8 +2,8 @@
 // Admin-only sandbox partner demonstration — reuses production policy and receipt paths.
 
 import { getActiveClaims } from "@/lib/credentials/claimsService";
-import { getPublicReceipt } from "@/lib/decisionReceipts/service";
-import { getReceiptById } from "@/lib/decisionReceipts/service";
+import { getPublicReceipt, getReceiptById } from "@/lib/decisionReceipts/service";
+import { evaluateReceiptIntegrity } from "@/lib/decisionReceipts/receiptIntegrityDiagnostics";
 import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMeteringHooks";
 import {
   getHolderCredentialStatus,
@@ -146,4 +146,23 @@ export async function validatePartnerSandboxDemoReceipt(
   }
 
   return toDemoPublicReceiptView(publicView);
+}
+
+export async function diagnosePartnerSandboxDemoReceiptIntegrity(
+  receiptId: string,
+): Promise<{
+  payload_hash_matches_recomputed: boolean;
+  signature_valid: boolean;
+}> {
+  assertSandboxDemoPartnerPolicy({
+    partnerId: DEMO_SANDBOX_PARTNER_ID,
+    policyId: DEMO_SANDBOX_POLICY_ID,
+  });
+
+  const record = await getReceiptById(receiptId);
+  if (!record) {
+    throw new Error("demo_receipt_not_found");
+  }
+  assertSandboxDemoReceipt(record);
+  return evaluateReceiptIntegrity(record);
 }
