@@ -4,6 +4,13 @@
 import { createHash } from "crypto";
 import type { DecisionReceiptCanonicalPayload } from "@/lib/decisionReceipts/types";
 
+/** Postgres TIMESTAMPTZ may return +00:00; signing uses Z — normalize before verify. */
+export function normalizeDecisionReceiptTimestamp(value: string): string {
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) return value;
+  return new Date(ms).toISOString();
+}
+
 function sortValue(value: unknown): unknown {
   if (value === null || typeof value !== "object") return value;
   if (Array.isArray(value)) return value.map(sortValue);
@@ -52,7 +59,9 @@ export function buildCanonicalPayload(
       .sort((a, b) => a.claim_id.localeCompare(b.claim_id)),
     issuer_refs: [...input.issuer_refs].sort(),
     decision_context: input.decision_context,
-    evaluated_at: input.evaluated_at,
-    expires_at: input.expires_at,
+    evaluated_at: normalizeDecisionReceiptTimestamp(input.evaluated_at),
+    expires_at: input.expires_at
+      ? normalizeDecisionReceiptTimestamp(input.expires_at)
+      : null,
   };
 }
