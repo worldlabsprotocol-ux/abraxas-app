@@ -104,6 +104,18 @@ describe("decision receipt canonicalization", () => {
     });
     expect(hashCanonicalPayload(p1)).toBe(hashCanonicalPayload(p2));
   });
+
+  it("normalizes equivalent evaluated_at and expires_at offsets to Z", () => {
+    const zPayload = samplePayload({
+      evaluated_at: "2026-06-01T12:00:00.000Z",
+      expires_at: "2026-07-01T12:00:00.000Z",
+    });
+    const offsetPayload = samplePayload({
+      evaluated_at: "2026-06-01T12:00:00.000+00:00",
+      expires_at: "2026-07-01T12:00:00.000+00:00",
+    });
+    expect(hashCanonicalPayload(zPayload)).toBe(hashCanonicalPayload(offsetPayload));
+  });
 });
 
 describe("decision receipt signing", () => {
@@ -127,6 +139,22 @@ describe("decision receipt signing", () => {
     const { signature } = signReceiptPayload(payload, TEST_KEY.privateKeyJwk);
     const tampered = { ...payload, decision_result: "denied" as const };
     expect(verifyReceiptSignature(tampered, signature, TEST_KEY.publicKeyJwk)).toBe(false);
+  });
+
+  it("verifies signature after Postgres TIMESTAMPTZ roundtrip (+00:00 vs Z)", () => {
+    const record = sampleRecord();
+    const pgRecord = sampleRecord({
+      evaluated_at: record.evaluated_at.replace("Z", "+00:00"),
+      expires_at: record.expires_at!.replace("Z", "+00:00"),
+    });
+    expect(verifyRecordSignature(pgRecord)).toBe(true);
+    expect(toPublicView(pgRecord).signature_valid).toBe(true);
+  });
+
+  it("rejects genuinely malformed evaluated_at on verify", () => {
+    const record = sampleRecord({ evaluated_at: "not-a-timestamp" });
+    expect(verifyRecordSignature(record)).toBe(false);
+    expect(toPublicView(record).signature_valid).toBe(false);
   });
 });
 

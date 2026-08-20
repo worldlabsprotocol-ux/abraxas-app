@@ -80,19 +80,26 @@ describe("receiptIntegrityDiagnostics", () => {
     expect(integrityResponseHasNoSecrets(report)).toBe(true);
   });
 
-  it("detects Z versus +00:00 timestamp drift without normalizing", () => {
+  it("accepts equivalent +00:00 evaluated_at read-back after signing with Z", () => {
     const record = sampleRecord({
       evaluated_at: "2026-08-20T12:00:00.000+00:00",
     });
     const report = evaluateReceiptIntegrity(record);
-    expect(report.payload_hash_matches_recomputed).toBe(false);
-    expect(report.signature_valid).toBe(false);
+    expect(report.payload_hash_matches_recomputed).toBe(true);
+    expect(report.signature_valid).toBe(true);
   });
 
-  it("detects expires_at drift with the same pattern", () => {
+  it("accepts equivalent +00:00 expires_at read-back after signing with Z", () => {
     const record = sampleRecord({
       expires_at: "2026-08-21T12:00:00.000+00:00",
     });
+    const report = evaluateReceiptIntegrity(record);
+    expect(report.payload_hash_matches_recomputed).toBe(true);
+    expect(report.signature_valid).toBe(true);
+  });
+
+  it("rejects genuinely malformed evaluated_at on integrity check", () => {
+    const record = sampleRecord({ evaluated_at: "not-a-timestamp" });
     const report = evaluateReceiptIntegrity(record);
     expect(report.payload_hash_matches_recomputed).toBe(false);
     expect(report.signature_valid).toBe(false);
