@@ -14,6 +14,7 @@ const getPassportStatusMock = vi.fn();
 const evaluatePolicyMock = vi.fn();
 const completeReceiptMock = vi.fn();
 const validateReceiptMock = vi.fn();
+const diagnoseIntegrityMock = vi.fn();
 
 vi.mock("@/lib/adminAuth", () => ({
   checkAdmin: (...args: unknown[]) => checkAdminMock(...args),
@@ -24,12 +25,17 @@ vi.mock("@/lib/demo/partnerSandboxDemoService", () => ({
   evaluatePartnerSandboxDemoPolicy: (...args: unknown[]) => evaluatePolicyMock(...args),
   completePartnerSandboxDemoReceipt: (...args: unknown[]) => completeReceiptMock(...args),
   validatePartnerSandboxDemoReceipt: (...args: unknown[]) => validateReceiptMock(...args),
+  diagnosePartnerSandboxDemoReceiptIntegrity: (...args: unknown[]) => diagnoseIntegrityMock(...args),
 }));
 
 import { GET as statusGET } from "@/app/api/admin/partner-sandbox-demo/status/route";
 import { POST as evaluatePOST } from "@/app/api/admin/partner-sandbox-demo/evaluate/route";
 import { POST as completePOST } from "@/app/api/admin/partner-sandbox-demo/complete/route";
 import { GET as validateGET } from "@/app/api/admin/partner-sandbox-demo/validate/route";
+import { GET as signingHealthGET } from "@/app/api/admin/partner-sandbox-demo/signing-health/route";
+import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
+import { signingHealthResponseHasNoSecrets } from "@/lib/decisionReceipts/signingKeyDiagnostics";
+import { integrityResponseHasNoSecrets } from "@/lib/decisionReceipts/receiptIntegrityDiagnostics";
 
 const SUBJECT = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
 const RECEIPT_ID = "dr_sandbox_demo_receipt01";
@@ -84,6 +90,10 @@ describe("partner sandbox demo API routes", () => {
       signature_valid: true,
       currently_valid: true,
       invalidation_reasons: [],
+    });
+    diagnoseIntegrityMock.mockResolvedValue({
+      payload_hash_matches_recomputed: false,
+      signature_valid: false,
     });
   });
 
@@ -505,5 +515,72 @@ describe("partner sandbox demo API routes", () => {
     );
     expect(res.status).toBe(200);
     expectNoStore(res);
+  });
+
+  describe("signing-health diagnostics", () => {
+    it("returns 404 when feature flag is missing", async () => {
+      vi.stubEnv("PARTNER_SANDBOX_DEMO_ENABLED", "");
+      const res = await signingHealthGET(
+        new NextRequest("http://localhost/api/admin/partner-sandbox-demo/signing-health", {
+          headers: adminHeaders(),
+        }),
+      );
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 401 without admin authorization", async () => {
+      checkAdminMock.mockReturnValue(false);
+      const res = await signingHealthGET(
+        new NextRequest("http://localhost/api/admin/partner-sandbox-demo/signing-health"),
+      );
+      expect(res.status).toBe(401);
+    });
+
+    it("returns boolean-only health report without secret material", async () => {
+      const keyPair = generateTestSigningKeyPair();
+      vi.stubEnv("ABRAXAS_SIGNING_KEY", JSON.stringify(keyPair.privateKeyJwk));
+      vi.stubEnv("ABRAXAS_PUBLIC_KEY", JSON.stringify(keyPair.publicKeyJwk));
+
+      const res = await signingHealthGET(
+        new NextRequest("http://localhost/api/admin/partner-sandbox-demo/signing-health", {
+          headers: adminHeaders(),
+        }),
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(signingHealthResponseHasNoSecrets(body)).toBe(true);
+      expect(body.ok).toBe(true);
+      expect(JSON.stringify(body)).not.toContain(keyPair.privateKeyJwk.d);
+      expect(JSON.stringify(body)).not.toContain(keyPair.publicKeyJwk.x);
+    });
+  });
+
+  describe("validate integrity diagnostics", () => {
+    it("returns 401 without admin authorization", async () => {
+      checkAdminMock.mockReturnValue(false);
+      const res = await validateGET(
+        new NextRequest(
+          `http://localhost/api/admin/partner-sandbox-demo/validate?receipt_id=${RECEIPT_ID}&integrity=1`,
+        ),
+      );
+      expect(res.status).toBe(401);
+    });
+
+    it("returns only integrity booleans for existing receipt", async () => {
+      const res = await validateGET(
+        new NextRequest(
+          `http://localhost/api/admin/partner-sandbox-demo/validate?receipt_id=${RECEIPT_ID}&integrity=1`,
+          { headers: adminHeaders() },
+        ),
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(integrityResponseHasNoSecrets(body)).toBe(true);
+      expect(body).toEqual({
+        payload_hash_matches_recomputed: false,
+        signature_valid: false,
+      });
+      expect(diagnoseIntegrityMock).toHaveBeenCalledWith(RECEIPT_ID);
+    });
   });
 });
