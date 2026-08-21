@@ -1,7 +1,7 @@
 -- 066_partner_production_env_promotion_atomic.sql
 -- Production partner environment promotion — atomic RPC with write-time readiness and audit.
 --
--- Prerequisite: 018_policy_verification.sql (audit_events), 024_partner_api_keys.sql, 039_partner_onboarding.sql
+-- Prerequisite: 018_policy_verification.sql (audit_events), 024_partner_api_keys.sql, 039_partner_onboarding.sql, 055_policy_immutable_versions.sql
 -- OPERATOR: apply manually. Do not auto-apply from this PR.
 
 -- ── Return URL helpers (mirror lib/connect/returnUrlAllowlistSemantics.ts) ─────
@@ -191,6 +191,7 @@ DECLARE
   v_new_envs text[];
   v_previous_envs text[];
   v_previous_status text;
+  v_active_policy_count int := 0;
   v_id_pattern constant text := '^[a-z0-9][a-z0-9-]{0,127}$';
 BEGIN
   v_checks := jsonb_build_object(
@@ -433,31 +434,55 @@ BEGIN
     END IF;
   END IF;
 
-  SELECT * INTO v_policy
+  -- Lock complete policy-version family (serializes with publish_partner_policy_draft).
+  PERFORM 1
   FROM public.partner_policies
   WHERE id = p_policy_id
   FOR UPDATE;
 
-  IF NOT FOUND THEN
-    v_checks := jsonb_set(v_checks, '{policy_row_exists}', 'false'::jsonb);
-    RETURN jsonb_build_object('ok', false, 'code', 'readiness_failed', 'checks', v_checks);
+  SELECT count(*) INTO v_active_policy_count
+  FROM public.partner_policies
+  WHERE id = p_policy_id
+    AND status = 'active';
+
+  v_checks := jsonb_set(
+    v_checks,
+    '{policy_row_exists}',
+    to_jsonb(EXISTS (
+      SELECT 1 FROM public.partner_policies WHERE id = p_policy_id
+    ))
+  );
+
+  v_checks := jsonb_set(
+    v_checks,
+    '{policy_active}',
+    to_jsonb(v_active_policy_count = 1)
+  );
+
+  IF v_active_policy_count = 1 THEN
+    SELECT * INTO v_policy
+    FROM public.partner_policies
+    WHERE id = p_policy_id
+      AND status = 'active';
+
+    v_checks := jsonb_set(v_checks, '{policy_partner_match}', to_jsonb(v_policy.partner_id = p_partner_id));
+    v_checks := jsonb_set(
+      v_checks,
+      '{policy_not_sandbox}',
+      to_jsonb(
+        NOT public.partner_is_sandbox_policy_id(p_policy_id)
+        AND COALESCE((v_policy.rules_json->>'sandbox_only')::boolean, false) IS NOT TRUE
+      )
+    );
+  ELSE
+    v_checks := jsonb_set(v_checks, '{policy_partner_match}', 'false'::jsonb);
+    v_checks := jsonb_set(v_checks, '{policy_not_sandbox}', 'false'::jsonb);
   END IF;
 
-  v_checks := jsonb_set(v_checks, '{policy_row_exists}', 'true'::jsonb);
-  v_checks := jsonb_set(v_checks, '{policy_active}', to_jsonb(v_policy.status = 'active'));
-  v_checks := jsonb_set(v_checks, '{policy_partner_match}', to_jsonb(v_policy.partner_id = p_partner_id));
   v_checks := jsonb_set(
     v_checks,
     '{policy_assigned_match}',
     to_jsonb(v_partner.assigned_policy_id = p_policy_id)
-  );
-  v_checks := jsonb_set(
-    v_checks,
-    '{policy_not_sandbox}',
-    to_jsonb(
-      NOT public.partner_is_sandbox_policy_id(p_policy_id)
-      AND COALESCE((v_policy.rules_json->>'sandbox_only')::boolean, false) IS NOT TRUE
-    )
   );
   v_checks := jsonb_set(
     v_checks,
