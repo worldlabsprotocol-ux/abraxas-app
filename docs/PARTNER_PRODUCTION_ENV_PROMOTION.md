@@ -11,8 +11,10 @@ Operator runbook for hardened Production partner environment activation and reve
 ## Prerequisites
 
 1. External partner promoted and onboarded (return URLs, assigned policy published and non-sandbox).
-2. Readiness preflight (`GET /api/admin/partner-flow/provisioning-preflight`) may be used as a **preview only** — the RPC decides on submit.
-3. Allowlisted admin browser session on Production (no PIN on this path).
+2. Migration `055_policy_immutable_versions.sql` applied — `partner_policies` may have **multiple rows per `id`** (draft, active, deprecated). This is normal.
+3. Assigned policy family must have **exactly one** row with `status = 'active'` at activation time. Zero or multiple active versions fail closed inside the RPC (`policy_active = false`; no partner/key/audit writes).
+4. Readiness preflight (`GET /api/admin/partner-flow/provisioning-preflight`) may be used as a **preview only** — the RPC decides on submit.
+5. Allowlisted admin browser session on Production (no PIN on this path).
 
 ## Activate
 
@@ -91,10 +93,37 @@ SELECT has_function_privilege(
 ## Migration assumptions
 
 - Manual apply of `066_partner_production_env_promotion_atomic.sql` after review (not auto-applied from CI).
+- Requires migration `055_policy_immutable_versions.sql` (composite `(id, version)` PK; multiple rows per policy `id`).
 - Requires existing tables: `partners`, `partner_policies`, `partner_api_keys`, `audit_events`.
 - Requires `service_role` `UPDATE` on `partners` and `partner_api_keys`, `INSERT` on `audit_events` (see `065_service_role_runtime_grants.sql`).
 - No `pgcrypto` / digest extension required.
 
+### Policy versioning (post-055)
+
+After migration 055, a policy **family** (`partner_policies.id`) may contain draft, active, and deprecated version rows. Production activation does **not** assume a single row per `id`.
+
+The RPC:
+
+1. Locks the full policy family: `PERFORM 1 FROM public.partner_policies WHERE id = p_policy_id FOR UPDATE` (serializes with `publish_partner_policy_draft`).
+2. Sets `policy_row_exists` when **any** version row exists for `id`.
+3. Sets `policy_active` only when **exactly one** active version exists (`count(*) WHERE status = 'active' = 1`).
+4. Validates partner match and sandbox rules **only** on that sole active row.
+5. Fails closed when active count is 0 or >1 — `policy_partner_match` and `policy_not_sandbox` stay false; no promotion write occurs.
+
+**Operator preflight (read-only):**
+
+```sql
+SELECT id,
+       count(*) FILTER (WHERE status = 'active') AS active_rows,
+       count(*) AS total_versions
+FROM public.partner_policies
+WHERE id = '<assigned_policy_id>'
+GROUP BY id;
+-- Expect active_rows = 1 before attempting activation.
+```
+
+Use `publish_partner_policy_draft` (migration 056) to publish drafts; never leave a policy family with zero or multiple active versions.
+
 ## Concurrency note
 
-Policy or return-URL changes between UI preflight and POST are re-evaluated inside the RPC after `FOR UPDATE` locks on partner and policy rows. UI preflight is never authoritative.
+Policy or return-URL changes between UI preflight and POST are re-evaluated inside the RPC after `FOR UPDATE` locks on the partner row and the full policy-version family. UI preflight is never authoritative.

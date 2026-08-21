@@ -186,11 +186,26 @@ describe("partnerProductionEnvPromotion", () => {
       expect(migrationSql).toContain("TO postgres, service_role");
     });
 
-    it("locks partner, policy, and live key rows", () => {
+    it("locks partner, policy family, and live key rows", () => {
       expect(migrationSql).toContain("FROM public.partners");
       expect(migrationSql).toContain("FOR UPDATE");
       expect(migrationSql).toContain("FROM public.partner_policies");
       expect(migrationSql).toContain("FROM public.partner_api_keys");
+      expect(migrationSql).toContain("PERFORM 1");
+      expect(migrationSql).toContain("WHERE id = p_policy_id");
+    });
+
+    it("requires exactly one active policy version after family lock (post-055)", () => {
+      expect(migrationSql).toContain("055_policy_immutable_versions.sql");
+      expect(migrationSql).toContain("v_active_policy_count");
+      expect(migrationSql).toContain("AND status = 'active'");
+      expect(migrationSql).toContain("to_jsonb(v_active_policy_count = 1)");
+      expect(migrationSql).toContain("EXISTS (");
+      expect(migrationSql).toContain("SELECT 1 FROM public.partner_policies WHERE id = p_policy_id");
+      expect(migrationSql).toContain("IF v_active_policy_count = 1 THEN");
+      expect(migrationSql).toMatch(
+        /ELSE\s+v_checks := jsonb_set\(v_checks, '\{policy_partner_match\}', 'false'::jsonb\)/,
+      );
     });
 
     it("does not introduce pg_catalog.digest or pgcrypto dependency for audit hashing", () => {
@@ -363,7 +378,7 @@ describe("partnerProductionEnvPromotion", () => {
       expect(body.checks?.all_stored_return_urls_compliant).toBe(false);
     });
 
-    it("returns 409 when policy deactivates between preflight and RPC lock", async () => {
+    it("returns 409 when policy has zero active versions at RPC lock", async () => {
       rpcMock.mockResolvedValue({
         data: {
           ok: false,
@@ -400,6 +415,47 @@ describe("partnerProductionEnvPromotion", () => {
       const body = await res.json() as { checks?: Record<string, boolean> };
       expect(res.status).toBe(409);
       expect(body.checks?.policy_active).toBe(false);
+    });
+
+    it("returns 409 when policy has multiple active versions at RPC lock", async () => {
+      rpcMock.mockResolvedValue({
+        data: {
+          ok: false,
+          code: "readiness_failed",
+          checks: {
+            query_valid: true,
+            return_url_syntax_valid: true,
+            partner_row_exists: true,
+            partner_is_external: true,
+            partner_status_usable: true,
+            return_urls_configured: true,
+            return_url_request_allowlisted: true,
+            all_stored_return_urls_compliant: true,
+            policy_row_exists: true,
+            policy_active: false,
+            policy_partner_match: false,
+            policy_assigned_match: true,
+            policy_not_sandbox: false,
+            onboarding_fields_present: true,
+          },
+        },
+        error: null,
+      });
+
+      const res = await activatePOST(productionPostRequest(
+        "/api/admin/partners/production-environment/activate",
+        {
+          partner_id: PARTNER_ID,
+          confirm_partner_id: PARTNER_ID,
+          policy_id: POLICY_ID,
+          return_url: RETURN_URL,
+        },
+      ));
+      const body = await res.json() as { checks?: Record<string, boolean> };
+      expect(res.status).toBe(409);
+      expect(body.checks?.policy_active).toBe(false);
+      expect(body.checks?.policy_partner_match).toBe(false);
+      expect(body.checks?.policy_not_sandbox).toBe(false);
     });
 
     it("returns 200 on RPC success without key material", async () => {
