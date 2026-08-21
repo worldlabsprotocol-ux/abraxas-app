@@ -48,7 +48,10 @@ export default function AdminDesignPartnersPage() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/admin/design-partners", { headers: { "x-admin-pin": pin } });
+    const res = await fetch("/api/admin/design-partners", {
+      headers: { "x-admin-pin": pin },
+      credentials: "include",
+    });
     if (!res.ok) return;
     const data = await res.json();
     setApps(data.applications ?? []);
@@ -69,6 +72,7 @@ export default function AdminDesignPartnersPage() {
     const res = await fetch("/api/admin/design-partners", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      credentials: "include",
       body: JSON.stringify({ id, status }),
     });
     if (!res.ok) {
@@ -85,6 +89,7 @@ export default function AdminDesignPartnersPage() {
     const res = await fetch("/api/admin/design-partners/promote", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      credentials: "include",
       body: JSON.stringify({
         application_id: app.id,
         partner_id: partnerId,

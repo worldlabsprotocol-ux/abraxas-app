@@ -2,7 +2,7 @@
 // Operator-only policy version lifecycle (P1-1). Not self-serve partner onboarding.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdmin } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import { PolicyImmutabilityError } from "@/lib/policy/policyLifecycle";
 import {
   createPolicyDraftFromActive,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/policy/policyVersioning";
 
 export async function GET(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
