@@ -6,13 +6,17 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
+import {
+  ProductionAdminSessionStatus,
+  PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
+  useProductionAdminSessionGate,
+} from "@/lib/admin/productionAdminSessionUi";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { slugifyPartnerId } from "@/lib/partner/partnerOnboarding";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
-const PIN_KEY = "abraxas_admin_pin";
 
 interface Application {
   id: string;
@@ -27,54 +31,40 @@ interface Application {
 }
 
 export default function AdminDesignPartnersPage() {
-  const [pin, setPin] = useState("");
-  const [authed, setAuthed] = useState(false);
+  const gate = useProductionAdminSessionGate();
   const [apps, setApps] = useState<Application[]>([]);
   const [msg, setMsg] = useState("");
   const [newKey, setNewKey] = useState<string | null>(null);
   const [partnerIds, setPartnerIds] = useState<Record<string, string>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(PIN_KEY);
-      if (saved) {
-        setPin(saved);
-        setAuthed(true);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/admin/design-partners", {
-      headers: { "x-admin-pin": pin },
-      credentials: "include",
-    });
+    const res = await gate.adminRequest("/api/admin/design-partners", { cache: "no-store" });
+    if (res.status === 401 && !gate.usePinUnlock) {
+      setMsg(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json();
     setApps(data.applications ?? []);
-  }, [pin]);
+  }, [gate.adminRequest, gate.usePinUnlock]);
 
   useEffect(() => {
-    if (!authed || !pin) return;
+    if (!gate.authorized || gate.loading) return;
     void refresh();
-  }, [authed, pin, refresh]);
-
-  async function login() {
-    sessionStorage.setItem(PIN_KEY, pin);
-    setAuthed(true);
-  }
+  }, [gate.authorized, gate.loading, refresh]);
 
   async function updateStatus(id: string, status: string) {
     setMsg("");
-    const res = await fetch("/api/admin/design-partners", {
+    const res = await gate.adminRequest("/api/admin/design-partners", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
-      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, status }),
     });
+    if (res.status === 401 && !gate.usePinUnlock) {
+      setMsg(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+      return;
+    }
     if (!res.ok) {
       setMsg("Status update failed");
       return;
@@ -86,16 +76,19 @@ export default function AdminDesignPartnersPage() {
     setMsg("");
     setNewKey(null);
     const partnerId = partnerIds[app.id] || slugifyPartnerId(app.company);
-    const res = await fetch("/api/admin/design-partners/promote", {
+    const res = await gate.adminRequest("/api/admin/design-partners/promote", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
-      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         application_id: app.id,
         partner_id: partnerId,
         issue_live: issueLive,
       }),
     });
+    if (res.status === 401 && !gate.usePinUnlock) {
+      setMsg(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+      return;
+    }
     const data = await res.json();
     if (!res.ok) {
       setMsg(data.error ?? "Promote failed");
@@ -118,16 +111,39 @@ export default function AdminDesignPartnersPage() {
     });
   }
 
-  if (!authed) {
+  if (gate.loading) {
     return (
       <RedesignPage maxWidth={720}>
         <PageHeader eyebrow="Admin" title="Design partner queue" subtitle="Review applications and issue sandbox keys." />
-        <ContentCard title="Admin PIN">
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="Admin PIN" style={inputStyle} />
-            <button type="button" onClick={() => void login()} style={btnStyle}>Unlock</button>
-          </div>
-        </ContentCard>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>Checking admin session…</p>
+      </RedesignPage>
+    );
+  }
+
+  if (!gate.authorized) {
+    return (
+      <RedesignPage maxWidth={720}>
+        <PageHeader eyebrow="Admin" title="Design partner queue" subtitle="Review applications and issue sandbox keys." />
+        {gate.usePinUnlock ? (
+          <ContentCard title="Admin PIN">
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <input
+                type="password"
+                value={gate.pin}
+                onChange={(event) => gate.setPin(event.target.value)}
+                placeholder="Admin PIN"
+                style={inputStyle}
+              />
+              <button type="button" onClick={gate.unlockWithPin} style={btnStyle}>Unlock</button>
+            </div>
+          </ContentCard>
+        ) : (
+          <ContentCard title="Admin access">
+            <p role="alert" style={{ fontFamily: FONT, fontSize: "0.82rem", color: "#FCA5A5", margin: 0, lineHeight: 1.6 }}>
+              {gate.unauthorizedMessage}
+            </p>
+          </ContentCard>
+        )}
       </RedesignPage>
     );
   }
@@ -140,6 +156,11 @@ export default function AdminDesignPartnersPage() {
         eyebrow="Admin · Relying parties"
         title="Design partner applications"
         subtitle={`${pending.length} pending · promote creates org + issues API key`}
+      />
+
+      <ProductionAdminSessionStatus
+        gate={gate}
+        style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--accent)", marginBottom: "0.75rem" }}
       />
 
       {msg && <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--accent)", marginBottom: "0.75rem" }}>{msg}</p>}

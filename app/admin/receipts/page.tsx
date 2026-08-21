@@ -8,6 +8,11 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
+import {
+  ProductionAdminSessionStatus,
+  PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
+  useProductionAdminSessionGate,
+} from "@/lib/admin/productionAdminSessionUi";
 import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
 
 const MONO = "'JetBrains Mono',monospace";
@@ -62,7 +67,7 @@ function formatRevokeSuccess(data: RevokeResponse): string {
 }
 
 export default function AdminReceiptsPage() {
-  const [pin, setPin] = useState("");
+  const gate = useProductionAdminSessionGate();
   const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState<ReceiptDetail | null>(null);
@@ -77,15 +82,18 @@ export default function AdminReceiptsPage() {
   const revokeControlsDisabled =
     revokingId !== null || confirmDialogProps.open || confirmDialogProps.busy;
 
+  const canLoad = gate.usePinUnlock ? Boolean(gate.pin) : gate.authorized;
+
   const loadList = useCallback(async () => {
+    if (gate.loading || !canLoad) return;
     setListLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/receipts", {
-        headers: { "x-admin-pin": pin },
-        credentials: "include",
-      });
+      const res = await gate.adminRequest("/api/admin/receipts", { cache: "no-store" });
       const data = await res.json() as { receipts?: ReceiptRow[]; error?: string };
+      if (res.status === 401 && !gate.usePinUnlock) {
+        throw new Error(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+      }
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
       setReceipts(data.receipts ?? []);
     } catch (e) {
@@ -93,14 +101,18 @@ export default function AdminReceiptsPage() {
     } finally {
       setListLoading(false);
     }
-  }, [pin]);
+  }, [canLoad, gate.adminRequest, gate.loading, gate.usePinUnlock]);
 
   const loadDetail = useCallback(async (receiptId: string) => {
+    if (!canLoad) return;
     setDetailLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/receipts/${receiptId}`, { headers: { "x-admin-pin": pin } });
+      const res = await gate.adminRequest(`/api/admin/receipts/${receiptId}`, { cache: "no-store" });
       const data = await res.json() as ReceiptDetail & { error?: string };
+      if (res.status === 401 && !gate.usePinUnlock) {
+        throw new Error(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+      }
       if (!res.ok) throw new Error(data.error ?? "Failed to load detail");
       setDetail(data);
       setSelected(receiptId);
@@ -109,7 +121,7 @@ export default function AdminReceiptsPage() {
     } finally {
       setDetailLoading(false);
     }
-  }, [pin]);
+  }, [canLoad, gate.adminRequest, gate.usePinUnlock]);
 
   useEffect(() => { void loadList(); }, [loadList]);
 
@@ -118,9 +130,9 @@ export default function AdminReceiptsPage() {
     setError("");
     setSuccess("");
     try {
-      const res = await fetch(`/api/admin/receipts/${receiptId}`, {
+      const res = await gate.adminRequest(`/api/admin/receipts/${receiptId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "revoke",
           reason_code: reasonCode,
@@ -128,6 +140,9 @@ export default function AdminReceiptsPage() {
         }),
       });
       const data = await res.json() as RevokeResponse;
+      if (res.status === 401 && !gate.usePinUnlock) {
+        throw new Error(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+      }
       if (!res.ok) {
         throw new Error(data.error ?? "Revoke failed");
       }
@@ -166,16 +181,28 @@ export default function AdminReceiptsPage() {
             Eligibility decision receipts. signed policy evaluation artifacts
           </p>
         </div>
-        <input
-          type="password"
-          value={pin}
-          onChange={e => setPin(e.target.value)}
-          placeholder="Admin PIN"
-          style={{ padding: "0.4rem 0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, color: "#f0f0f0", fontSize: "0.7rem" }}
-        />
+        {gate.usePinUnlock ? (
+          <input
+            type="password"
+            value={gate.pin}
+            onChange={event => gate.setPin(event.target.value)}
+            placeholder="Admin PIN"
+            style={{ padding: "0.4rem 0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, color: "#f0f0f0", fontSize: "0.7rem" }}
+          />
+        ) : (
+          <ProductionAdminSessionStatus
+            gate={gate}
+            style={{ fontSize: "0.68rem", color: gate.authorized ? "#86EFAC" : "#f26b6b", margin: 0, maxWidth: 280, lineHeight: 1.5 }}
+          />
+        )}
       </header>
 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "1rem 1.5rem 3rem" }}>
+        {!gate.usePinUnlock && !gate.loading && !gate.authorized && (
+          <div style={{ padding: "0.5rem 0.75rem", marginBottom: "1rem", background: "rgba(242,107,107,0.1)", border: "1px solid rgba(242,107,107,0.25)", borderRadius: 4, fontSize: "0.7rem", color: "#f26b6b" }}>
+            {gate.unauthorizedMessage}
+          </div>
+        )}
         {error && (
           <div style={{ padding: "0.5rem 0.75rem", marginBottom: "1rem", background: "rgba(242,107,107,0.1)", border: "1px solid rgba(242,107,107,0.25)", borderRadius: 4, fontSize: "0.7rem", color: "#f26b6b" }}>
             {error}
