@@ -64,6 +64,8 @@ const MIGRATED_SOURCES = [
   "app/admin/partner-flow/page.tsx",
   "app/admin/identity/page.tsx",
   "app/admin/privacy/page.tsx",
+  "app/admin/design-partners/page.tsx",
+  "app/admin/receipts/page.tsx",
   "components/admin/RevocationControlPanel.tsx",
 ] as const;
 
@@ -101,16 +103,28 @@ describe("Phase 3b-2a migrated admin surfaces", () => {
     expect(source).toContain("adminFetch");
     expect(source).not.toMatch(/type="password"/);
   });
+
+  it("design-partners page uses production session gate with PIN fallback", () => {
+    const source = readSource("app/admin/design-partners/page.tsx");
+    expect(source).toContain("useProductionAdminSessionGate");
+    expect(source).toContain("usePinUnlock");
+    expect(source).toContain("gate.adminRequest");
+  });
+
+  it("receipts page uses production session gate with PIN fallback", () => {
+    const source = readSource("app/admin/receipts/page.tsx");
+    expect(source).toContain("useProductionAdminSessionGate");
+    expect(source).toContain("usePinUnlock");
+    expect(source).toContain("gate.adminRequest");
+  });
 });
 
 describe("admin auth behavior unchanged (non-migrated surfaces)", () => {
   const UNTOUCHED_WITH_PIN = [
     "app/admin/partners/page.tsx",
-    "app/admin/receipts/page.tsx",
     "app/admin/trust/page.tsx",
     "app/admin/connect/page.tsx",
     "app/admin/partner-sandbox-demo/PartnerSandboxDemoClient.tsx",
-    "app/admin/design-partners/page.tsx",
     "app/admin/inquiries/page.tsx",
     "app/admin/listings/page.tsx",
     "app/admin/cielo/page.tsx",
