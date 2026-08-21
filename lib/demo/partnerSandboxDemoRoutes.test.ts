@@ -153,8 +153,17 @@ describe("partner sandbox demo API routes", () => {
 
     it("enables when trimmed lowercase true", async () => {
       vi.stubEnv("PARTNER_SANDBOX_DEMO_ENABLED", " true ");
+      vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://demo.abraxasworld.xyz");
       const res = await callRoute();
       expect(res.status).not.toBe(404);
+    });
+
+    it("returns 404 on production origin even when feature flag is enabled", async () => {
+      vi.stubEnv("PARTNER_SANDBOX_DEMO_ENABLED", "true");
+      vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://abraxasworld.xyz");
+      const res = await callRoute();
+      expect(res.status).toBe(404);
+      expectNoStore(res);
     });
   });
 

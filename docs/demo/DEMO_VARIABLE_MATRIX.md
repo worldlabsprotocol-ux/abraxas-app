@@ -106,6 +106,8 @@ Not needed for Phase C offline synthetic holder provisioning.
 
 ## Production must keep disabled
 
+Partner Sandbox Demo admin/API routes also enforce a **runtime origin gate** from configured env (`NEXT_PUBLIC_APP_URL`, then `ABRAXAS_ISSUER_URL`) — not request Host headers. If either resolves to `https://abraxasworld.xyz`, demo routes fail closed (404) even when `PARTNER_SANDBOX_DEMO_ENABLED=true`.
+
 | Variable | Production value |
 |----------|------------------|
 | `PARTNER_SANDBOX_DEMO_ENABLED` | unset or not `true` |

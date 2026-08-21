@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdmin } from "@/lib/adminAuth";
 import { isPartnerSandboxDemoEnabled } from "@/lib/demo/partnerSandboxDemoConfig";
+import { isPartnerSandboxDemoOriginAllowed } from "@/lib/demo/partnerSandboxDemoEnvironmentGuard";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store, must-revalidate" } as const;
 
@@ -23,6 +24,9 @@ export function partnerSandboxDemoUnavailable(): NextResponse {
 
 export function guardPartnerSandboxDemoRoute(req: NextRequest): NextResponse | null {
   if (!isPartnerSandboxDemoEnabled()) {
+    return partnerSandboxDemoUnavailable();
+  }
+  if (!isPartnerSandboxDemoOriginAllowed()) {
     return partnerSandboxDemoUnavailable();
   }
   if (!checkAdmin(req)) {
