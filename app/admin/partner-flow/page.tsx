@@ -51,9 +51,14 @@ export default function AdminPartnerFlowHealthPage() {
               A plain-language view of partner API activity and abuse protection for the last 24 hours.
             </p>
           </div>
-          <Link href="/admin/partners" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
-            ← Partners
-          </Link>
+          <div style={{ display: "flex", gap: "0.85rem", flexWrap: "wrap" }}>
+            <Link href="/admin/partner-flow/readiness" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
+              Production readiness →
+            </Link>
+            <Link href="/admin/partners" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
+              ← Partners
+            </Link>
+          </div>
         </div>
 
         {loading && <p style={{ color: "rgba(255,255,255,0.5)", fontFamily: FONT }}>Loading…</p>}

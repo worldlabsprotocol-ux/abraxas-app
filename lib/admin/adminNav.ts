@@ -31,7 +31,7 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     id: "partner-flow",
     href: "/admin/partner-flow",
     label: "Partner Flow",
-    description: "Partner Flow health and operational signals",
+    description: "Partner Flow health, Production readiness checks, and operational signals",
     section: "protocol",
   },
   {
