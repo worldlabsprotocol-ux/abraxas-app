@@ -1,11 +1,12 @@
 "use client";
 // FILE: app/admin/partner-flow/readiness/page.tsx
-// Production-only partner activation readiness console (read-only).
+// Production partner activation readiness console with promotion actions.
 
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { PartnerFlowProductionReadinessPanel } from "@/components/admin/PartnerFlowProductionReadinessPanel";
+import { PartnerProductionEnvPromotionPanel } from "@/components/admin/PartnerProductionEnvPromotionPanel";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -24,7 +25,7 @@ export default function AdminPartnerFlowReadinessPage() {
               Production Partner Activation
             </h1>
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: "0.35rem 0 0", lineHeight: 1.5 }}>
-              Read-only readiness checks before manually onboarding the first external design partner.
+              Readiness checks and hardened production environment promotion for external design partners.
             </p>
           </div>
           <Link href="/admin/partner-flow" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
@@ -32,7 +33,10 @@ export default function AdminPartnerFlowReadinessPage() {
           </Link>
         </div>
 
-        <PartnerFlowProductionReadinessPanel />
+        <div style={{ display: "grid", gap: "1.25rem" }}>
+          <PartnerFlowProductionReadinessPanel />
+          <PartnerProductionEnvPromotionPanel />
+        </div>
       </div>
     </div>
   );
