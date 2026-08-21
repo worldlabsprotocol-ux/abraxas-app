@@ -89,3 +89,40 @@ Cannot be verified without a browser session / holder:
 - [Partner Flow integrator kit](/docs/partner-flow)
 - [Partner Flow OpenAPI](/docs/partner-flow-api)
 - [Partner onboarding checklist](./PARTNER_ONBOARDING_CHECKLIST.md)
+
+## Production browser-session HTTP probes
+
+Read-only **boolean-only** admin routes for Production external partner readiness. They do **not** replace the CLI above; they add a browser-session probe on the canonical Production deployment only.
+
+**Prerequisites**
+
+1. Sign in with Google on `https://abraxasworld.xyz`.
+2. Confirm `GET /api/admin/access` returns `{ "authorized": true, "method": "email" }` with browser credentials.
+
+**Endpoints**
+
+```bash
+# Signing + demo-isolation booleans (13 keys)
+GET https://abraxasworld.xyz/api/admin/partner-flow/signing-health
+
+# Partner/policy/allowlist booleans (12 keys)
+GET "https://abraxasworld.xyz/api/admin/partner-flow/provisioning-preflight?partner_id=<id>&policy_id=<id>&return_url=<https callback>"
+```
+
+Send cookies (`credentials: "include"`). Responses are boolean-only with `Cache-Control: no-store`. No policy rules, URLs, IDs, emails, or secrets are returned.
+
+**Expected readiness signals**
+
+| Stage | signing-health | provisioning-preflight |
+|-------|----------------|------------------------|
+| Before first partner row | All 13 booleans `true` | `query_valid: true`, `partner_row_exists: false`, `ok: false` |
+| After manual provision | All 13 booleans `true` | `policy_active: true`, `policy_not_sandbox: true`, `ok: true` when partner/policy/allowlist align |
+| Inactive policy row exists | *(unchanged)* | `policy_row_exists: true`, `policy_active: false`, `ok: false` |
+| Policy with `rules_json.sandbox_only === true` | *(unchanged)* | `policy_not_sandbox: false`, `ok: false` — publish a non-sandbox active policy before go-live |
+
+**Availability**
+
+- **404** on Demo, Preview, localhost, test, missing/invalid/unknown configured origins — even with a valid Demo PIN.
+- **401** on Production when the browser session is missing or not on `ABRAXAS_ADMIN_EMAILS` (PIN headers/cookies do not authorize these routes).
+
+**Note:** `GET /api/admin/partner-flow/health` remains operational telemetry (24h aggregates), not this readiness probe.
