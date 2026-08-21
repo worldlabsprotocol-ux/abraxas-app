@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkAdmin } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import { generatePartnerKey, type PartnerScope } from "@/lib/partner/partnerAuth";
 import { validatePartnerKeyIssuance } from "@/lib/partner/validatePartnerKeyIssuance";
 
@@ -13,7 +13,7 @@ const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const DEFAULT_SCOPES: PartnerScope[] = ["verify:credential", "verify:registry"];
 
 export async function GET(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {

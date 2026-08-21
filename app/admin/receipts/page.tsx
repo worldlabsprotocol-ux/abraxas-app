@@ -81,7 +81,10 @@ export default function AdminReceiptsPage() {
     setListLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/receipts", { headers: { "x-admin-pin": pin } });
+      const res = await fetch("/api/admin/receipts", {
+        headers: { "x-admin-pin": pin },
+        credentials: "include",
+      });
       const data = await res.json() as { receipts?: ReceiptRow[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
       setReceipts(data.receipts ?? []);

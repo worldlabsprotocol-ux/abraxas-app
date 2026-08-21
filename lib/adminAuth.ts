@@ -5,6 +5,10 @@ import { createHash } from "crypto";
 import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { resolveBrowserSession } from "@/lib/auth/browserSession";
+import {
+  isProductionAppOrigin,
+  resolveConfiguredAppOrigin,
+} from "@/lib/demo/partnerSandboxDemoEnvironmentGuard";
 
 export const ADMIN_SESSION_COOKIE = "abraxas_admin_session";
 const ADMIN_SESSION_TTL_SEC = 60 * 60 * 8;
@@ -128,4 +132,74 @@ export async function resolveAdminAccess(req: NextRequest): Promise<{
 export async function checkAdminAccess(req: NextRequest): Promise<boolean> {
   const access = await resolveAdminAccess(req);
   return access.authorized;
+}
+
+/** True when configured app origin is canonical Production — strict session-email auth applies. */
+export function shouldEnforceStrictProductionAdminAccess(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  const configured = resolveConfiguredAppOrigin(env);
+  if (!configured) return false;
+  return isProductionAppOrigin(configured);
+}
+
+/**
+ * Production-only admin gate — session email allowlist only.
+ * Does not call checkAdmin, checkAdminAccess, or resolveAdminAccess.
+ * Ignores PIN headers and abraxas_admin_session cookies.
+ */
+export async function resolveStrictProductionAdminAccess(req: NextRequest): Promise<{
+  authorized: boolean;
+  method: AdminAccessMethod;
+  email?: string | null;
+  reason: AdminAccessReason;
+  allowlist_configured: boolean;
+}> {
+  const allowlistConfigured = getAdminEmails().length > 0;
+  if (!allowlistConfigured) {
+    return {
+      authorized: false,
+      method: null,
+      reason: "allowlist_empty",
+      allowlist_configured: false,
+    };
+  }
+
+  const session = await resolveBrowserSession(req);
+  if (!session) {
+    return {
+      authorized: false,
+      method: null,
+      reason: "no_session",
+      allowlist_configured: true,
+    };
+  }
+
+  const email = await emailForSuiAddress(session.suiAddress);
+  if (!isAdminEmail(email)) {
+    return {
+      authorized: false,
+      method: null,
+      email: email ?? null,
+      reason: "email_not_allowlisted",
+      allowlist_configured: true,
+    };
+  }
+
+  return {
+    authorized: true,
+    method: "email",
+    email,
+    reason: "email_allowlisted",
+    allowlist_configured: true,
+  };
+}
+
+/** Strict on Production origin; legacy checkAdminAccess elsewhere (demo, localhost, tests). */
+export async function checkProductionSensitiveAdminAccess(req: NextRequest): Promise<boolean> {
+  if (shouldEnforceStrictProductionAdminAccess()) {
+    const access = await resolveStrictProductionAdminAccess(req);
+    return access.authorized;
+  }
+  return checkAdminAccess(req);
 }

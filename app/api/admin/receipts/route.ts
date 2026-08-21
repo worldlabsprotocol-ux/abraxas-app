@@ -2,12 +2,12 @@
 // Admin list of decision receipts.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdmin } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import { listReceiptsForAdmin } from "@/lib/decisionReceipts/service";
 import { toPublicView } from "@/lib/decisionReceipts/views";
 
 export async function GET(req: NextRequest) {
-  if (!checkAdmin(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
