@@ -101,9 +101,22 @@ Check (fail closed on any failure):
 
 For sandbox/pilot policies only, pass `--allow-sandbox` to the example verifier or set `allowSandbox: true` in `validatePartnerFlowPublicReceipt`. Never accept `production_usable: false` in production by default.
 
+**Sandbox cannot be used for Production access.** `abx_test_` keys and sandbox policies are for integration wiring only.
+
 ### 4. Grant access only after verification passes
 
 Fail closed on any validation error. Do not parse or trust callback parameters without fetching and verifying the receipt.
+
+## Callback outcome handling
+
+| Evaluate `next` | Callback fires? | Your server should |
+|-----------------|-----------------|-------------------|
+| `enter` (approved) | Yes — `receipt_id` on return_url | Verify receipt; grant access only when validation passes |
+| `denied` | May include denial status | Show denial UX; fail closed |
+| `pending_review` | Usually no final receipt | Hold access; ask holder to return later |
+| `authenticate` / `passport` | No — holder stays on Abraxas | Wait for holder to complete flow |
+
+For sandbox testing, enable `allowSandbox: true` in your validator only — sandbox receipts with `production_usable: false` **cannot** be used for Production access.
 
 ## Auth boundary
 

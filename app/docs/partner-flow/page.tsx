@@ -16,6 +16,11 @@ import {
   PARTNER_FLOW_LIFECYCLE,
   PARTNER_FLOW_CALLBACK_PARAMS,
   PARTNER_FLOW_CALLBACK_PII_NOTE,
+  PARTNER_FLOW_SANDBOX_NOTICE,
+  PARTNER_FLOW_SANDBOX_GUIDE,
+  PARTNER_FLOW_RETURN_URL_SEMANTICS,
+  PARTNER_FLOW_OUTCOME_MATRIX,
+  PARTNER_FLOW_ANTI_PATTERNS,
   PARTNER_FLOW_RECEIPT_CHECKS,
   PARTNER_FLOW_ERROR_TABLE,
   PARTNER_FLOW_AUTH_BOUNDARY,
@@ -200,6 +205,70 @@ export default function PartnerFlowDocsPage() {
           <SectionCard id="callback" title="Callback query parameters (frozen — no PII)">
             <p style={body}>{PARTNER_FLOW_CALLBACK_PII_NOTE}</p>
             <BulletList items={[...PARTNER_FLOW_CALLBACK_PARAMS]} />
+          </SectionCard>
+
+          <SectionCard id="sandbox" title="Sandbox testing (not for Production access)">
+            <p style={{ ...body, color: "#F59E0B", fontWeight: 600 }}>{PARTNER_FLOW_SANDBOX_NOTICE}</p>
+            <div style={{ display: "grid", gap: "0.65rem", marginTop: "0.75rem" }}>
+              {PARTNER_FLOW_SANDBOX_GUIDE.map((row) => (
+                <div key={row.topic} style={{ padding: "0.75rem", borderRadius: 10, border: "1px solid var(--border)" }}>
+                  <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem", marginBottom: 4 }}>{row.topic}</div>
+                  <p style={body}>{row.body}</p>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard id="return-url-semantics" title="Return URL allowlist semantics">
+            <p style={body}>
+              Your <code style={{ fontFamily: MONO }}>return_url</code> must match an operator-configured entry in{" "}
+              <code style={{ fontFamily: MONO }}>partners.allowed_return_urls</code>. Matching is normalized and fail-closed.
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "0.75rem", fontFamily: FONT, fontSize: "0.76rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  <th style={{ textAlign: "left", padding: "0.4rem" }}>Rule</th>
+                  <th style={{ textAlign: "left", padding: "0.4rem" }}>Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PARTNER_FLOW_RETURN_URL_SEMANTICS.map((row) => (
+                  <tr key={row.rule} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "0.4rem", fontWeight: 600 }}>{row.rule}</td>
+                    <td style={{ padding: "0.4rem", color: "var(--text-secondary)" }}>{row.detail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </SectionCard>
+
+          <SectionCard id="outcomes" title="Outcome handling (denied, review, approved)">
+            <p style={body}>
+              Partner Flow evaluate/complete responses use <code style={{ fontFamily: MONO }}>next</code> to signal holder state.
+              Your callback may fire only when a redirect occurs — handle each outcome explicitly.
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "0.75rem", fontFamily: FONT, fontSize: "0.76rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  <th style={{ textAlign: "left", padding: "0.4rem" }}>Outcome</th>
+                  <th style={{ textAlign: "left", padding: "0.4rem" }}>Callback</th>
+                  <th style={{ textAlign: "left", padding: "0.4rem" }}>Your action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PARTNER_FLOW_OUTCOME_MATRIX.map((row) => (
+                  <tr key={row.outcome} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "0.4rem", fontFamily: MONO, fontSize: "0.68rem" }}>{row.outcome}</td>
+                    <td style={{ padding: "0.4rem", color: "var(--text-secondary)" }}>{row.callback}</td>
+                    <td style={{ padding: "0.4rem", color: "var(--text-secondary)" }}>{row.partnerAction}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </SectionCard>
+
+          <SectionCard id="anti-patterns" title="Anti-patterns">
+            <BulletList items={[...PARTNER_FLOW_ANTI_PATTERNS]} />
           </SectionCard>
 
           <SectionCard id="receipt-verification" title="Receipt verification (server-side)">
