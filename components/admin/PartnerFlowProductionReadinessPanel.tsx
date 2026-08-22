@@ -3,9 +3,11 @@
 // Read-only Production partner activation readiness console — browser session only.
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   fetchProvisioningPreflightReport,
   fetchSigningHealthReport,
+  parseReadinessSearchParams,
   provisioningPreflightCheckItems,
   ReadinessFetchError,
   signingHealthCheckItems,
@@ -91,6 +93,7 @@ function ReadinessChecklist({
 }
 
 export function PartnerFlowProductionReadinessPanel() {
+  const searchParams = useSearchParams();
   const [signingReport, setSigningReport] = useState<SigningHealthReport | null>(null);
   const [signingError, setSigningError] = useState("");
   const [signingLoading, setSigningLoading] = useState(true);
@@ -102,6 +105,13 @@ export function PartnerFlowProductionReadinessPanel() {
   const [preflightError, setPreflightError] = useState("");
   const [preflightLoading, setPreflightLoading] = useState(false);
   const [preflightRan, setPreflightRan] = useState(false);
+
+  useEffect(() => {
+    const params = parseReadinessSearchParams(searchParams);
+    if (params.partnerId) setPartnerId(params.partnerId);
+    if (params.policyId) setPolicyId(params.policyId);
+    if (params.returnUrl) setReturnUrl(params.returnUrl);
+  }, [searchParams]);
 
   const loadSigningHealth = useCallback(async () => {
     setSigningLoading(true);

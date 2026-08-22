@@ -163,6 +163,35 @@ export async function fetchSigningHealthReport(): Promise<SigningHealthReport> {
   return parseSigningHealthResponse(payload);
 }
 
+export interface ReadinessConsoleSearchParams {
+  partnerId: string;
+  policyId: string;
+  returnUrl: string;
+}
+
+export function parseReadinessSearchParams(
+  input: URLSearchParams | { get: (key: string) => string | null },
+): ReadinessConsoleSearchParams {
+  return {
+    partnerId: input.get("partner_id")?.trim() ?? "",
+    policyId: input.get("policy_id")?.trim() ?? "",
+    returnUrl: input.get("return_url")?.trim() ?? "",
+  };
+}
+
+export function buildReadinessConsoleUrl(input: {
+  partnerId: string;
+  policyId: string;
+  returnUrl: string;
+}): string {
+  const params = new URLSearchParams({
+    partner_id: input.partnerId.trim(),
+    policy_id: input.policyId.trim(),
+    return_url: input.returnUrl.trim(),
+  });
+  return `/admin/partner-flow/readiness?${params.toString()}`;
+}
+
 export async function fetchProvisioningPreflightReport(input: {
   partnerId: string;
   policyId: string;

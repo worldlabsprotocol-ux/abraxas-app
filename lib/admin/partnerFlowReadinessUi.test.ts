@@ -6,11 +6,22 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
+
+const readinessSearchState = vi.hoisted(() => ({
+  params: new URLSearchParams(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => readinessSearchState.params,
+}));
+
 import { PartnerFlowProductionReadinessPanel } from "@/components/admin/PartnerFlowProductionReadinessPanel";
 import AdminPartnerFlowReadinessPage from "@/app/admin/partner-flow/readiness/page";
 import * as adminFetchModule from "@/lib/admin/adminFetch";
 import {
+  buildReadinessConsoleUrl,
   parseProvisioningPreflightResponse,
+  parseReadinessSearchParams,
   parseSigningHealthResponse,
   provisioningPreflightCheckItems,
   signingHealthCheckItems,
@@ -85,6 +96,7 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
+  readinessSearchState.params = new URLSearchParams();
 });
 
 describe("partnerFlowReadinessUi parsers", () => {
@@ -107,6 +119,18 @@ describe("partnerFlowReadinessUi parsers", () => {
     const report = parseProvisioningPreflightResponse(preflightReady);
     expect(report.ok).toBe(true);
     expect(provisioningPreflightCheckItems(report).every((item) => item.pass)).toBe(true);
+  });
+
+  it("round-trips readiness console search params", () => {
+    const url = buildReadinessConsoleUrl({
+      partnerId: "good-trouble-cannabis",
+      policyId: "good-trouble-retail-v1",
+      returnUrl: "https://abraxasworld.xyz/good-trouble/enter",
+    });
+    const params = parseReadinessSearchParams(new URL(url, "https://abraxasworld.xyz").searchParams);
+    expect(params.partnerId).toBe("good-trouble-cannabis");
+    expect(params.policyId).toBe("good-trouble-retail-v1");
+    expect(params.returnUrl).toBe("https://abraxasworld.xyz/good-trouble/enter");
   });
 });
 
@@ -193,6 +217,23 @@ describe("PartnerFlowProductionReadinessPanel", () => {
     expect(container.textContent?.toLowerCase()).not.toContain("admin pin");
     expect(screen.queryByPlaceholderText("Admin PIN")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/pin/i)).not.toBeInTheDocument();
+  });
+
+  it("prefills partner, policy, and return URL from search params without auto-running preflight", async () => {
+    readinessSearchState.params = new URLSearchParams({
+      partner_id: "good-trouble-cannabis",
+      policy_id: "good-trouble-retail-v1",
+      return_url: "https://abraxasworld.xyz/good-trouble/enter",
+    });
+
+    mockAdminFetch({});
+    render(createElement(PartnerFlowProductionReadinessPanel));
+    await screen.findByText("Environment & signing");
+
+    expect(screen.getByPlaceholderText("partner_id")).toHaveValue("good-trouble-cannabis");
+    expect(screen.getByPlaceholderText("policy_id")).toHaveValue("good-trouble-retail-v1");
+    expect(screen.getByPlaceholderText("https://…")).toHaveValue("https://abraxasworld.xyz/good-trouble/enter");
+    expect(screen.queryByText("Provisioning readiness")).not.toBeInTheDocument();
   });
 });
 

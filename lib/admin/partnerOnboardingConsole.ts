@@ -61,6 +61,32 @@ export const DEFAULT_PILOT_POLICY_RULES: PartnerPolicyRules = {
   ],
 };
 
+/** Non-sandbox draft starting point — operators must review before publish. */
+export const DEFAULT_PRODUCTION_POLICY_RULES: PartnerPolicyRules = {
+  ...DEFAULT_PILOT_POLICY_RULES,
+  sandbox_only: false,
+};
+
+export const PRODUCTION_POLICY_DRAFT_OPERATOR_NOTE =
+  "Non-sandbox draft template for operator review only. Confirm claim requirements, age gates, and jurisdictional rules with your partner before publishing — this template is not legally or commercially certified for every partner.";
+
+export function buildPartnersOnboardingUrl(partnerId: string, promoted = false): string {
+  const params = new URLSearchParams({ partner_id: partnerId });
+  if (promoted) params.set("promoted", "1");
+  return `/admin/partners?${params.toString()}`;
+}
+
+export function resolveReadinessDeepLinkInput(
+  record: Pick<PartnerOnboardingRecord, "partner_id" | "assigned_policy_id" | "allowed_return_urls"> & {
+    active_policy?: { id: string } | null;
+  },
+): { partnerId: string; policyId: string; returnUrl: string } | null {
+  const returnUrl = record.allowed_return_urls[0]?.trim();
+  const policyId = record.assigned_policy_id ?? record.active_policy?.id ?? null;
+  if (!returnUrl || !policyId) return null;
+  return { partnerId: record.partner_id, policyId, returnUrl };
+}
+
 export function isAllowedPilotPartnerCreateStatus(status: string): status is PilotPartnerCreateStatus {
   return (PILOT_PARTNER_CREATE_STATUSES as readonly string[]).includes(status);
 }

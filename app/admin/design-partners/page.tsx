@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import {
@@ -14,6 +15,7 @@ import {
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { slugifyPartnerId } from "@/lib/partner/partnerOnboarding";
+import { buildPartnersOnboardingUrl } from "@/lib/admin/partnerOnboardingConsole";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -32,9 +34,12 @@ interface Application {
 
 export default function AdminDesignPartnersPage() {
   const gate = useProductionAdminSessionGate();
+  const router = useRouter();
   const [apps, setApps] = useState<Application[]>([]);
   const [msg, setMsg] = useState("");
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [promotedPartnerId, setPromotedPartnerId] = useState<string | null>(null);
+  const [keyCopiedAck, setKeyCopiedAck] = useState(false);
   const [partnerIds, setPartnerIds] = useState<Record<string, string>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
@@ -95,6 +100,8 @@ export default function AdminDesignPartnersPage() {
       return;
     }
     setNewKey(data.api_key ?? null);
+    setPromotedPartnerId(data.partner_id ?? null);
+    setKeyCopiedAck(false);
     setMsg(`Promoted ${data.partner_id} · prefix ${data.key_prefix}`);
     await refresh();
   }
@@ -170,7 +177,33 @@ export default function AdminDesignPartnersPage() {
           background: "rgba(232,197,71,0.08)", border: "1px solid rgba(232,197,71,0.35)",
           fontFamily: MONO, fontSize: "0.62rem", wordBreak: "break-all",
         }}>
-          New API key (copy now): {newKey}
+          <div style={{ marginBottom: "0.65rem" }}>
+            New sandbox API key (copy now — shown once): {newKey}
+          </div>
+          {promotedPartnerId && (
+            <div style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)" }}>
+              <label style={{ display: "flex", gap: "0.45rem", alignItems: "center", marginBottom: "0.55rem" }}>
+                <input
+                  type="checkbox"
+                  checked={keyCopiedAck}
+                  onChange={(event) => setKeyCopiedAck(event.target.checked)}
+                />
+                I copied the sandbox API key to my approved secret manager.
+              </label>
+              <button
+                type="button"
+                disabled={!keyCopiedAck}
+                onClick={() => router.push(buildPartnersOnboardingUrl(promotedPartnerId, true))}
+                style={{
+                  ...btnStyle,
+                  opacity: keyCopiedAck ? 1 : 0.55,
+                  cursor: keyCopiedAck ? "pointer" : "not-allowed",
+                }}
+              >
+                Continue to partner onboarding →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -228,9 +261,11 @@ export default function AdminDesignPartnersPage() {
       </ContentCard>
 
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-        After sandbox pilot: promote to production at{" "}
+        After promote: continue onboarding at{" "}
         <Link href="/admin/partners" style={{ color: "var(--accent)" }}>/admin/partners</Link>
-        {" "}(set allowed_environments + issue abx_live_ key).{" "}
+        {" "}(callback URLs, reviewed policy draft, manual publish), then run preflight at{" "}
+        <Link href="/admin/partner-flow/readiness" style={{ color: "var(--accent)" }}>/admin/partner-flow/readiness</Link>
+        {" "}before any Production activation.{" "}
         <Link href="/admin/inquiries" style={{ color: "var(--accent)" }}>Asset inquiries →</Link>
       </p>
       <AdminConfirmDialog {...confirmDialogProps} />

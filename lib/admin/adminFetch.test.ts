@@ -66,6 +66,7 @@ const MIGRATED_SOURCES = [
   "app/admin/privacy/page.tsx",
   "app/admin/design-partners/page.tsx",
   "app/admin/receipts/page.tsx",
+  "app/admin/partners/page.tsx",
   "components/admin/RevocationControlPanel.tsx",
 ] as const;
 
@@ -117,11 +118,19 @@ describe("Phase 3b-2a migrated admin surfaces", () => {
     expect(source).toContain("usePinUnlock");
     expect(source).toContain("gate.adminRequest");
   });
+
+  it("partners page uses production session gate with Demo-only PIN fallback", () => {
+    const source = readSource("app/admin/partners/page.tsx");
+    expect(source).toContain("useProductionAdminSessionGate");
+    expect(source).toContain("usePinUnlock");
+    expect(source).toContain("gate.adminRequest");
+    expect(source).toContain("initialPartnerId");
+    expect(source).toMatch(/gate\.usePinUnlock\s*&&/);
+  });
 });
 
 describe("admin auth behavior unchanged (non-migrated surfaces)", () => {
   const UNTOUCHED_WITH_PIN = [
-    "app/admin/partners/page.tsx",
     "app/admin/trust/page.tsx",
     "app/admin/connect/page.tsx",
     "app/admin/partner-sandbox-demo/PartnerSandboxDemoClient.tsx",
