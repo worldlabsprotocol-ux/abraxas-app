@@ -3,11 +3,17 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import {
+  checkProductionSensitiveAdminAccess,
+  shouldEnforceStrictProductionAdminAccess,
+} from "@/lib/adminAuth";
 import { assertPilotPartnerCreateStatus } from "@/lib/admin/partnerOnboardingConsole";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+const CLIENT_ALLOWED_ENVIRONMENTS_FORBIDDEN =
+  "allowed_environments cannot be set directly on Production — use production-environment activation";
 
 type PartnerRow = {
   id: string;
@@ -26,7 +32,7 @@ type PartnerRow = {
 };
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!SB_URL || !SB_KEY) {
@@ -66,11 +72,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!SB_URL || !SB_KEY) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
   const body = (await req.json().catch(() => ({}))) as {
@@ -85,6 +88,14 @@ export async function POST(req: NextRequest) {
     allowed_environments?: string[];
     onboarding_notes?: string;
   };
+
+  if (shouldEnforceStrictProductionAdminAccess() && body.allowed_environments !== undefined) {
+    return NextResponse.json({ error: CLIENT_ALLOWED_ENVIRONMENTS_FORBIDDEN }, { status: 403 });
+  }
+
+  if (!SB_URL || !SB_KEY) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
 
   const partnerId = body.partner_id?.trim();
   const company = body.company?.trim();
@@ -130,11 +141,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!SB_URL || !SB_KEY) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
   const body = (await req.json().catch(() => ({}))) as {
@@ -143,6 +151,14 @@ export async function PATCH(req: NextRequest) {
     allowed_environments?: string[];
     public_listing_ok?: boolean;
   };
+
+  if (shouldEnforceStrictProductionAdminAccess() && body.allowed_environments !== undefined) {
+    return NextResponse.json({ error: CLIENT_ALLOWED_ENVIRONMENTS_FORBIDDEN }, { status: 403 });
+  }
+
+  if (!SB_URL || !SB_KEY) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
 
   if (!body.partner_id) {
     return NextResponse.json({ error: "partner_id required" }, { status: 400 });

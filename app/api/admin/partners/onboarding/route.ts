@@ -2,7 +2,10 @@
 // Admin Partner Onboarding Console — list, detail, create pilot partners.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import {
+  checkProductionSensitiveAdminAccess,
+  shouldEnforceStrictProductionAdminAccess,
+} from "@/lib/adminAuth";
 import { logAdminPartnerConfigAudit } from "@/lib/admin/partnerOnboardingAudit";
 import {
   assertPilotPartnerCreateStatus,
@@ -14,8 +17,11 @@ import {
 } from "@/lib/admin/partnerOnboardingService";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
+const CLIENT_ALLOWED_ENVIRONMENTS_FORBIDDEN =
+  "allowed_environments cannot be set directly on Production — use production-environment activation";
+
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -40,7 +46,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -54,6 +60,10 @@ export async function POST(req: NextRequest) {
     status?: string;
     allowed_environments?: string[];
   };
+
+  if (shouldEnforceStrictProductionAdminAccess() && body.allowed_environments !== undefined) {
+    return NextResponse.json({ error: CLIENT_ALLOWED_ENVIRONMENTS_FORBIDDEN }, { status: 403 });
+  }
 
   const partnerId = body.partner_id?.trim();
   const company = body.company?.trim();

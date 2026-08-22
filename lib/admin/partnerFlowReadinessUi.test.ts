@@ -9,6 +9,7 @@ import { createElement } from "react";
 import { PartnerFlowProductionReadinessPanel } from "@/components/admin/PartnerFlowProductionReadinessPanel";
 import AdminPartnerFlowReadinessPage from "@/app/admin/partner-flow/readiness/page";
 import * as adminFetchModule from "@/lib/admin/adminFetch";
+import { ACTIVATE_PROMOTION_CHECK_KEYS } from "@/lib/admin/partnerProductionEnvPromotion";
 import {
   parseProvisioningPreflightResponse,
   parseSigningHealthResponse,
@@ -35,14 +36,17 @@ const signingHealthOk = {
 const preflightNotReady = {
   ok: false,
   query_valid: true,
+  return_url_syntax_valid: true,
   partner_row_exists: false,
-  partner_status_usable: false,
   partner_is_external: false,
+  partner_status_usable: false,
   return_urls_configured: false,
-  return_url_allowlisted: false,
+  return_url_request_allowlisted: false,
+  all_stored_return_urls_compliant: false,
   policy_row_exists: false,
   policy_active: false,
   policy_partner_match: false,
+  policy_assigned_match: false,
   policy_not_sandbox: false,
   onboarding_fields_present: false,
 };
@@ -51,13 +55,15 @@ const preflightReady = {
   ...preflightNotReady,
   ok: true,
   partner_row_exists: true,
-  partner_status_usable: true,
   partner_is_external: true,
+  partner_status_usable: true,
   return_urls_configured: true,
-  return_url_allowlisted: true,
+  return_url_request_allowlisted: true,
+  all_stored_return_urls_compliant: true,
   policy_row_exists: true,
   policy_active: true,
   policy_partner_match: true,
+  policy_assigned_match: true,
   policy_not_sandbox: true,
   onboarding_fields_present: true,
 };
@@ -94,7 +100,10 @@ describe("partnerFlowReadinessUi parsers", () => {
       import("@/lib/admin/partnerProvisioningPreflight"),
     ]);
     expect(PRODUCTION_SIGNING_HEALTH_KEYS.size).toBe(13);
-    expect(PROVISIONING_PREFLIGHT_KEYS.size).toBe(12);
+    expect(PROVISIONING_PREFLIGHT_KEYS.size).toBe(ACTIVATE_PROMOTION_CHECK_KEYS.length + 1);
+    for (const key of ACTIVATE_PROMOTION_CHECK_KEYS) {
+      expect(PROVISIONING_PREFLIGHT_KEYS.has(key)).toBe(true);
+    }
   });
 
   it("accepts boolean-only signing health payloads", () => {
@@ -106,6 +115,10 @@ describe("partnerFlowReadinessUi parsers", () => {
   it("accepts boolean-only provisioning preflight payloads", () => {
     const report = parseProvisioningPreflightResponse(preflightReady);
     expect(report.ok).toBe(true);
+    expect(report.return_url_request_allowlisted).toBe(true);
+    expect(report.all_stored_return_urls_compliant).toBe(true);
+    expect(report.policy_assigned_match).toBe(true);
+    expect(provisioningPreflightCheckItems(report)).toHaveLength(ACTIVATE_PROMOTION_CHECK_KEYS.length);
     expect(provisioningPreflightCheckItems(report).every((item) => item.pass)).toBe(true);
   });
 });

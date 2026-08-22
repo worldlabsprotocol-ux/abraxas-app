@@ -4,10 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { SITE_URL } from "@/lib/siteUrl";
 import { SANDBOX_POLICY_ID } from "@/lib/partner/sandboxPartner";
+import { ACTIVATE_PROMOTION_CHECK_KEYS } from "@/lib/admin/partnerProductionEnvPromotion";
 import { EXPECTED_DEMO_SIGNING_KEY_THUMBPRINT } from "@/scripts/demo/lib/expectedDemoSigningKeyThumbprint";
 import {
   evaluatePartnerProvisioningPreflight,
   type PartnerProvisioningPreflightDeps,
+  type PolicyActivationPreflightContext,
   PROVISIONING_PREFLIGHT_KEYS,
   provisioningPreflightResponseHasNoSecrets,
 } from "@/lib/admin/partnerProvisioningPreflight";
@@ -22,7 +24,6 @@ const createClientMock = vi.hoisted(() => vi.fn());
 const fromMock = vi.hoisted(() => vi.fn());
 const maybeSingleMock = vi.hoisted(() => vi.fn());
 const eqMock = vi.hoisted(() => vi.fn());
-const selectMock = vi.hoisted(() => vi.fn());
 const isReturnUrlAllowedMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/auth/browserSession", () => ({
@@ -81,17 +82,25 @@ function allowlistedSessionHeaders(): HeadersInit {
   return { cookie: "abraxas_browser_session=test-token" };
 }
 
-function readyPartnerRow() {
+function readyPartnerRow(overrides: Partial<{
+  assigned_policy_id: string | null;
+  onboarding_checklist: unknown;
+  allowed_return_urls: string[];
+  status: string;
+}> = {}) {
   return {
     partner_id: PARTNER_ID,
-    status: "active",
-    allowed_return_urls: [`${SITE_URL}/good-trouble/enter`],
+    status: "pilot",
+    allowed_return_urls: [RETURN_URL],
     is_external: true,
     onboarding_checklist: {},
+    assigned_policy_id: POLICY_ID,
+    ...overrides,
   };
 }
 
 function readyPolicyRow(overrides: Partial<{
+  id: string;
   status: string;
   rules_json: Record<string, unknown> | null;
   partner_id: string;
@@ -105,18 +114,28 @@ function readyPolicyRow(overrides: Partial<{
   };
 }
 
+function readyPolicyContext(
+  overrides: Partial<PolicyActivationPreflightContext> = {},
+): PolicyActivationPreflightContext {
+  const activePolicy = readyPolicyRow();
+  return {
+    familyExists: true,
+    activeCount: 1,
+    activePolicy,
+    ...overrides,
+  };
+}
+
 function setupSupabaseChain(partnerData: unknown, policyData: unknown, email = "ops@example.com"): void {
   eqMock.mockReset();
-  selectMock.mockReset();
   maybeSingleMock.mockReset();
   fromMock.mockReset();
 
   const chain = {
-    select: selectMock,
+    select: vi.fn(() => chain),
     eq: eqMock,
     maybeSingle: maybeSingleMock,
   };
-  selectMock.mockReturnValue(chain);
   eqMock.mockReturnValue(chain);
 
   maybeSingleMock
@@ -179,6 +198,7 @@ describe("production partner flow readiness routes", () => {
       const preflightBody = await preflightRes.json() as Record<string, unknown>;
       assertBooleanOnlyBody(preflightBody, PROVISIONING_PREFLIGHT_KEYS);
       expect(provisioningPreflightResponseHasNoSecrets(preflightBody)).toBe(true);
+      expect(PROVISIONING_PREFLIGHT_KEYS.size).toBe(ACTIVATE_PROMOTION_CHECK_KEYS.length + 1);
     });
 
     it("returns 401 for PIN-only requests on Production origin", async () => {
@@ -231,21 +251,68 @@ describe("production partner flow readiness routes", () => {
   });
 
   describe("policy query construction", () => {
-    it("loads policy by id only without filtering status in the query", async () => {
+    it("filters active policy versions by status for post-055 families", async () => {
       productionEnv();
       resolveBrowserSessionMock.mockResolvedValue({ suiAddress: SUI });
-      setupSupabaseChain(null, readyPolicyRow({ status: "deprecated" }));
 
-      await provisioningPreflightGET(
+      eqMock.mockReset();
+      maybeSingleMock.mockReset();
+      fromMock.mockReset();
+
+      let statusFilterSeen = false;
+      let headSelectCalls = 0;
+
+      const countResult = Promise.resolve({ count: 1, error: null });
+
+      const defaultChain = {
+        select: vi.fn((...args: unknown[]) => {
+          const opts = args[1] as { head?: boolean } | undefined;
+          if (opts?.head) {
+            headSelectCalls += 1;
+            if (headSelectCalls === 1) {
+              // Family existence count: .eq("id", policyId) only.
+              return {
+                eq: vi.fn(() => countResult),
+              };
+            }
+            // Active version count: .eq("id", policyId).eq("status", "active").
+            return {
+              eq: vi.fn(() => ({
+                eq: vi.fn((column: string, value: string) => {
+                  if (column === "status" && value === "active") {
+                    statusFilterSeen = true;
+                  }
+                  return countResult;
+                }),
+              })),
+            };
+          }
+          // Auth, partner, and policy row queries use the default eq → maybeSingle chain.
+          return defaultChain;
+        }),
+        eq: eqMock,
+        maybeSingle: maybeSingleMock,
+      };
+
+      eqMock.mockReturnValue(defaultChain);
+      maybeSingleMock
+        .mockResolvedValueOnce({ data: { email: "ops@example.com" }, error: null })
+        .mockResolvedValueOnce({ data: readyPartnerRow(), error: null })
+        .mockResolvedValueOnce({ data: readyPolicyRow(), error: null });
+
+      fromMock.mockReturnValue(defaultChain);
+      createClientMock.mockReturnValue({ from: fromMock });
+
+      const res = await provisioningPreflightGET(
         new NextRequest(
           `http://localhost/api/admin/partner-flow/provisioning-preflight?partner_id=${PARTNER_ID}&policy_id=${POLICY_ID}&return_url=${encodeURIComponent(RETURN_URL)}`,
           { headers: allowlistedSessionHeaders() },
         ),
       );
 
-      const policyEqCalls = eqMock.mock.calls.filter((call) => call[0] === "id");
-      expect(policyEqCalls).toEqual([[ "id", POLICY_ID ]]);
-      expect(eqMock.mock.calls.some((call) => call[0] === "status")).toBe(false);
+      expect(res.status).toBe(200);
+      expect(headSelectCalls).toBe(2);
+      expect(statusFilterSeen).toBe(true);
     });
   });
 });
@@ -259,42 +326,54 @@ describe("evaluatePartnerProvisioningPreflight", () => {
 
   function deps(
     partner: ReturnType<typeof readyPartnerRow> | null,
-    policy: ReturnType<typeof readyPolicyRow> | null,
+    policyContext: PolicyActivationPreflightContext,
     allowlisted = true,
   ): PartnerProvisioningPreflightDeps {
     return {
       loadPartner: vi.fn(async () => partner),
-      loadPolicy: vi.fn(async () => policy),
+      loadPolicyActivationContext: vi.fn(async () => policyContext),
       isReturnUrlAllowed: vi.fn(async () => allowlisted),
     };
   }
 
   it("reports pre-provision state with partner_row_exists false and ok false", async () => {
-    const report = await evaluatePartnerProvisioningPreflight(baseInput, deps(null, null));
+    const report = await evaluatePartnerProvisioningPreflight(
+      baseInput,
+      deps(null, { familyExists: false, activeCount: 0, activePolicy: null }),
+    );
     expect(report.query_valid).toBe(true);
+    expect(report.return_url_syntax_valid).toBe(true);
     expect(report.partner_row_exists).toBe(false);
     expect(report.ok).toBe(false);
   });
 
-  it("fails policy_not_sandbox when rules_json.sandbox_only is true on a normal policy id", async () => {
+  it("fails policy_not_sandbox when rules_json.sandbox_only is true on the sole active version", async () => {
     const report = await evaluatePartnerProvisioningPreflight(
       baseInput,
       deps(
         readyPartnerRow(),
-        readyPolicyRow({ rules_json: { sandbox_only: true } }),
+        readyPolicyContext({
+          activePolicy: readyPolicyRow({ rules_json: { sandbox_only: true } }),
+        }),
       ),
     );
     expect(report.policy_row_exists).toBe(true);
+    expect(report.policy_active).toBe(true);
     expect(report.policy_not_sandbox).toBe(false);
     expect(report.ok).toBe(false);
   });
 
-  it("passes policy_not_sandbox when rules_json has no sandbox_only and all other checks pass", async () => {
+  it("passes all activate promotion checks when the sole active policy is production-ready", async () => {
     const report = await evaluatePartnerProvisioningPreflight(
       baseInput,
-      deps(readyPartnerRow(), readyPolicyRow({ rules_json: {} })),
+      deps(readyPartnerRow(), readyPolicyContext()),
     );
-    expect(report.policy_not_sandbox).toBe(true);
+    for (const key of ACTIVATE_PROMOTION_CHECK_KEYS) {
+      expect(report[key], key).toBe(true);
+    }
+    expect(report.return_url_request_allowlisted).toBe(true);
+    expect(report.all_stored_return_urls_compliant).toBe(true);
+    expect(report.policy_assigned_match).toBe(true);
     expect(report.ok).toBe(true);
   });
 
@@ -302,51 +381,96 @@ describe("evaluatePartnerProvisioningPreflight", () => {
     const report = await evaluatePartnerProvisioningPreflight(
       { ...baseInput, policyId: SANDBOX_POLICY_ID },
       deps(
-        readyPartnerRow(),
-        readyPolicyRow({ partner_id: PARTNER_ID }),
+        readyPartnerRow({ assigned_policy_id: SANDBOX_POLICY_ID }),
+        readyPolicyContext({
+          activePolicy: readyPolicyRow({ id: SANDBOX_POLICY_ID, partner_id: PARTNER_ID }),
+        }),
       ),
     );
     expect(report.policy_not_sandbox).toBe(false);
     expect(report.ok).toBe(false);
   });
 
-  it("reports inactive normal policy with policy_row_exists true, policy_active false, ok false", async () => {
+  it("reports deprecated-only families with policy_active false and policy_not_sandbox false", async () => {
     const report = await evaluatePartnerProvisioningPreflight(
       baseInput,
       deps(
         readyPartnerRow(),
-        readyPolicyRow({ status: "deprecated", rules_json: {} }),
+        {
+          familyExists: true,
+          activeCount: 0,
+          activePolicy: null,
+        },
       ),
     );
     expect(report.policy_row_exists).toBe(true);
     expect(report.policy_active).toBe(false);
-    expect(report.policy_not_sandbox).toBe(true);
+    expect(report.policy_partner_match).toBe(false);
+    expect(report.policy_not_sandbox).toBe(false);
     expect(report.ok).toBe(false);
   });
 
-  it("reports inactive policy with sandbox_only rules as policy_not_sandbox false", async () => {
+  it("fails policy_active when multiple active versions exist", async () => {
     const report = await evaluatePartnerProvisioningPreflight(
       baseInput,
       deps(
         readyPartnerRow(),
-        readyPolicyRow({ status: "deprecated", rules_json: { sandbox_only: true } }),
+        {
+          familyExists: true,
+          activeCount: 2,
+          activePolicy: null,
+        },
       ),
     );
-    expect(report.policy_row_exists).toBe(true);
     expect(report.policy_active).toBe(false);
+    expect(report.policy_partner_match).toBe(false);
     expect(report.policy_not_sandbox).toBe(false);
+    expect(report.ok).toBe(false);
+  });
+
+  it("fails policy_assigned_match when assigned_policy_id mismatches", async () => {
+    const report = await evaluatePartnerProvisioningPreflight(
+      baseInput,
+      deps(
+        readyPartnerRow({ assigned_policy_id: "other-policy" }),
+        readyPolicyContext(),
+      ),
+    );
+    expect(report.policy_assigned_match).toBe(false);
+    expect(report.ok).toBe(false);
+  });
+
+  it("fails all_stored_return_urls_compliant for HTTP stored URLs", async () => {
+    const report = await evaluatePartnerProvisioningPreflight(
+      baseInput,
+      deps(
+        readyPartnerRow({ allowed_return_urls: ["http://insecure.example/callback"] }),
+        readyPolicyContext(),
+      ),
+    );
+    expect(report.all_stored_return_urls_compliant).toBe(false);
+    expect(report.ok).toBe(false);
+  });
+
+  it("fails return_url_request_allowlisted when request URL is not allowlisted", async () => {
+    const report = await evaluatePartnerProvisioningPreflight(
+      baseInput,
+      deps(readyPartnerRow(), readyPolicyContext(), false),
+    );
+    expect(report.return_url_request_allowlisted).toBe(false);
     expect(report.ok).toBe(false);
   });
 
   it("does not call deps when query_valid is false", async () => {
-    const mocked = deps(readyPartnerRow(), readyPolicyRow());
+    const mocked = deps(readyPartnerRow(), readyPolicyContext());
     const report = await evaluatePartnerProvisioningPreflight(
       { partnerId: "", policyId: POLICY_ID, returnUrl: RETURN_URL },
       mocked,
     );
     expect(report.query_valid).toBe(false);
+    expect(report.return_url_syntax_valid).toBe(false);
     expect(mocked.loadPartner).not.toHaveBeenCalled();
-    expect(mocked.loadPolicy).not.toHaveBeenCalled();
+    expect(mocked.loadPolicyActivationContext).not.toHaveBeenCalled();
   });
 });
 

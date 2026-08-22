@@ -3,18 +3,21 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
+import {
+  checkProductionSensitiveAdminAccess,
+  shouldEnforceStrictProductionAdminAccess,
+} from "@/lib/adminAuth";
 import { promoteDesignPartnerApplication } from "@/lib/partner/promoteDesignPartner";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+const ISSUE_LIVE_FORBIDDEN_ON_PRODUCTION =
+  "issue_live promotion is not permitted on Production — use production-environment activation";
+
 export async function POST(req: NextRequest) {
   if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!SB_URL || !SB_KEY) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
   const body = (await req.json().catch(() => ({}))) as {
@@ -22,6 +25,14 @@ export async function POST(req: NextRequest) {
     partner_id?: string;
     issue_live?: boolean;
   };
+
+  if (shouldEnforceStrictProductionAdminAccess() && body.issue_live === true) {
+    return NextResponse.json({ error: ISSUE_LIVE_FORBIDDEN_ON_PRODUCTION }, { status: 403 });
+  }
+
+  if (!SB_URL || !SB_KEY) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
 
   if (!body.application_id) {
     return NextResponse.json({ error: "application_id required" }, { status: 400 });

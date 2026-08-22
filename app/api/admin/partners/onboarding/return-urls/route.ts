@@ -2,7 +2,7 @@
 // Add validated HTTPS callback URLs to partner allowlist.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import { logAdminPartnerConfigAudit } from "@/lib/admin/partnerOnboardingAudit";
 import {
   mergeReturnUrlAllowlist,
@@ -15,7 +15,7 @@ import {
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
