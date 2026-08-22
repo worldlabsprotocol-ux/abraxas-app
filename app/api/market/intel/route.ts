@@ -4,7 +4,9 @@
 
 import { NextResponse } from "next/server";
 
-export const revalidate = 300;
+// Request-time only: route-level revalidate caused Next to pre-render this handler at
+// build time and block on external RSS fetches (Vercel SSG timeout).
+export const dynamic = "force-dynamic";
 
 interface FeedItem {
   id: string;
