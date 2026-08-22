@@ -39,9 +39,29 @@ interface Dashboard {
   mainnet_gate: { eligible: boolean; criteria: string };
 }
 
+interface IntegrationWiring {
+  partner_id: string;
+  key_environment: "sandbox" | "production";
+  key_prefix: string;
+  sandbox_notice: string;
+  wiring: {
+    return_urls_configured: boolean;
+    return_url_count: number;
+    active_policy_configured: boolean;
+    policy_id: string | null;
+    webhook_enabled: boolean;
+    partner_flow_ready: boolean;
+  };
+  docs: {
+    partner_flow_guide: string;
+    integration_status_endpoint: string;
+  };
+}
+
 export default function PartnerPortalPage() {
   const [apiKey, setApiKey] = useState("");
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [integrationWiring, setIntegrationWiring] = useState<IntegrationWiring | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -62,16 +82,25 @@ export default function PartnerPortalPage() {
 
   async function loadDashboard(key: string) {
     setError("");
-    const res = await fetch("/api/partner/dashboard", {
-      headers: { Authorization: `Bearer ${key}` },
-    });
-    const data = await res.json();
-    if (!res.ok) {
+    const headers = { Authorization: `Bearer ${key}` };
+    const [dashRes, wiringRes] = await Promise.all([
+      fetch("/api/partner/dashboard", { headers }),
+      fetch("/api/partner/integration-status", { headers }),
+    ]);
+    const data = await dashRes.json();
+    if (!dashRes.ok) {
       setDashboard(null);
+      setIntegrationWiring(null);
       setError(data.error ?? "Invalid API key");
       return;
     }
     setDashboard(data.dashboard);
+    if (wiringRes.ok) {
+      const wiringData = await wiringRes.json() as { integration_status?: IntegrationWiring };
+      setIntegrationWiring(wiringData.integration_status ?? null);
+    } else {
+      setIntegrationWiring(null);
+    }
     try {
       sessionStorage.setItem(KEY_STORAGE, key);
     } catch {
@@ -82,6 +111,7 @@ export default function PartnerPortalPage() {
   function logout() {
     setApiKey("");
     setDashboard(null);
+    setIntegrationWiring(null);
     try {
       sessionStorage.removeItem(KEY_STORAGE);
     } catch {
@@ -142,6 +172,63 @@ export default function PartnerPortalPage() {
               ))}
             </div>
           </ContentCard>
+
+          {integrationWiring && (
+            <ContentCard title="Integration wiring">
+              <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "#F59E0B", lineHeight: 1.55, margin: "0 0 0.65rem", fontWeight: 600 }}>
+                {integrationWiring.sandbox_notice}
+              </p>
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.65rem" }}>
+                Environment: <strong>{integrationWiring.key_environment}</strong> · key prefix {integrationWiring.key_prefix}…
+              </p>
+              <div style={{ display: "grid", gap: "0.45rem" }}>
+                {[
+                  {
+                    label: "Return URLs allowlisted",
+                    done: integrationWiring.wiring.return_urls_configured,
+                    detail: integrationWiring.wiring.return_urls_configured
+                      ? `${integrationWiring.wiring.return_url_count} URL(s) configured`
+                      : "Ask Abraxas ops to allowlist your callback URL",
+                  },
+                  {
+                    label: "Active policy configured",
+                    done: integrationWiring.wiring.active_policy_configured,
+                    detail: integrationWiring.wiring.policy_id
+                      ? `Policy ${integrationWiring.wiring.policy_id}`
+                      : "No active policy for this partner",
+                  },
+                  {
+                    label: "Webhook delivery enabled",
+                    done: integrationWiring.wiring.webhook_enabled,
+                    detail: integrationWiring.wiring.webhook_enabled
+                      ? "Webhook notifications enabled"
+                      : "Optional — configure via Abraxas ops",
+                  },
+                  {
+                    label: "Partner Flow ready to test",
+                    done: integrationWiring.wiring.partner_flow_ready,
+                    detail: integrationWiring.wiring.partner_flow_ready
+                      ? "Redirect + callback wiring prerequisites met"
+                      : "Complete allowlist and policy setup first",
+                  },
+                ].map((item) => (
+                  <div key={item.label} style={{
+                    padding: "0.6rem 0.75rem", borderRadius: 10,
+                    border: `1px solid ${item.done ? "rgba(16,185,129,0.35)" : "var(--border)"}`,
+                    background: item.done ? "rgba(16,185,129,0.06)" : "transparent",
+                  }}>
+                    <div style={{ fontFamily: FONT, fontSize: "0.8rem", fontWeight: 700, color: item.done ? "#10B981" : "var(--text-primary)" }}>
+                      {item.done ? "✓" : "○"} {item.label}
+                    </div>
+                    <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.25rem 0 0" }}>{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: "0.75rem" }}>
+                <Btn href={integrationWiring.docs.partner_flow_guide} size="sm">Partner Flow integration guide →</Btn>
+              </div>
+            </ContentCard>
+          )}
 
           <ContentCard title="Onboarding progress">
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.65rem" }}>

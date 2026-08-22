@@ -91,6 +91,80 @@ export const PARTNER_FLOW_CALLBACK_PARAMS = PARTNER_CALLBACK_PARAMS;
 export const PARTNER_FLOW_CALLBACK_PII_NOTE =
   "Callback query parameters contain no PII — no legal name, DOB, document numbers, images, or wallet address. Verify eligibility via the signed receipt, not the URL alone.";
 
+export const PARTNER_FLOW_SANDBOX_NOTICE =
+  "Sandbox access (abx_test_ keys and sandbox policies) cannot be used for Production access. Receipts with production_usable: false must not gate live user actions unless you explicitly opt in during integration testing.";
+
+export const PARTNER_FLOW_SANDBOX_GUIDE = [
+  {
+    topic: "What sandbox is for",
+    body: "Use your operator-issued abx_test_ key and sandbox policy to wire redirects, callbacks, and server-side receipt validation before production promotion.",
+  },
+  {
+    topic: "What sandbox is not for",
+    body: "Sandbox cannot be used for Production access. Do not ship production gates that accept production_usable: false receipts unless allowSandbox is explicitly enabled in your validator during testing only.",
+  },
+  {
+    topic: "Conformance harness",
+    body: "Run npm run partner:conformance with PARTNER_FLOW_RP_* env vars set to your operator-provisioned sandbox ids. The harness validates redirect URL shape and receipt checks — it does not provision partners.",
+  },
+  {
+    topic: "Integration status API",
+    body: "GET /api/partner/integration-status with your abx_test_ key returns own-partner wiring booleans (allowlist count, active policy, webhook enabled). No secrets, PII, or cross-partner data.",
+  },
+  {
+    topic: "Promotion to production",
+    body: "Production policy publish, abx_live_ key issuance, and environment activation are operator-only. There is no self-serve production provisioning.",
+  },
+] as const;
+
+export const PARTNER_FLOW_RETURN_URL_SEMANTICS = [
+  { rule: "Exact origin + path match", detail: "Callback URL must match an allowlisted entry after normalization (scheme, host, pathname)." },
+  { rule: "Trailing slashes ignored", detail: "https://app.example.com/callback and https://app.example.com/callback/ are equivalent." },
+  { rule: "Prefix paths allowed", detail: "Allowlisting https://app.example.com/callback also permits https://app.example.com/callback/complete." },
+  { rule: "Query and fragment stripped", detail: "?state=1#frag on the return URL does not affect allowlist matching." },
+  { rule: "HTTPS required (except localhost)", detail: "http:// is accepted only for localhost callbacks during local development." },
+  { rule: "Fail closed", detail: "Unlisted hosts or paths return 400 return_url is not allowlisted — ask Abraxas ops to add your exact callback." },
+] as const;
+
+export const PARTNER_FLOW_OUTCOME_MATRIX = [
+  {
+    outcome: "approved (next=enter)",
+    callback: "Yes — redirect to return_url with receipt_id and frozen params",
+    partnerAction: "Verify receipt server-side; grant gated action only when validation passes",
+  },
+  {
+    outcome: "denied (next=denied)",
+    callback: "May redirect with denial status — still verify receipt if receipt_id present",
+    partnerAction: "Show denial UX; fail closed; do not grant access",
+  },
+  {
+    outcome: "pending_review (next=pending_review)",
+    callback: "Usually no final receipt — holder may see in-progress UI",
+    partnerAction: "Poll or ask holder to return later; do not grant access until approved receipt",
+  },
+  {
+    outcome: "manual_review",
+    callback: "No production-usable receipt until operator review completes",
+    partnerAction: "Hold access; surface review-pending messaging",
+  },
+  {
+    outcome: "authenticate / passport",
+    callback: "No — holder remains on Abraxas until evaluate returns enter or denied",
+    partnerAction: "Wait for holder to complete sign-in or passport capture",
+  },
+] as const;
+
+export const PARTNER_FLOW_ANTI_PATTERNS = [
+  "Embedding abx_test_ or abx_live_ API keys in browser JavaScript or mobile app bundles",
+  "Trusting callback query parameters without fetching GET /api/receipts/{receipt_id}/public",
+  "Accepting production_usable: false receipts in production gates without explicit sandbox opt-in",
+  "Using sandbox policies or abx_test_ keys for Production access",
+  "Storing partner API keys in client-side sessionStorage for end-user apps (portal key entry is operator-only)",
+  "Granting access when signature_valid is false or expires_at has passed",
+  "Hard-coding return_url values that are not operator-allowlisted",
+  "Polling cross-partner admin health or preflight endpoints for integration status",
+] as const;
+
 export const PARTNER_FLOW_RECEIPT_CHECKS = [
   { check: "signature_valid === true", why: "Ed25519 signature over canonical payload_hash" },
   { check: "decision_result === \"approved\"", why: "Fail closed on denied or manual_review" },
