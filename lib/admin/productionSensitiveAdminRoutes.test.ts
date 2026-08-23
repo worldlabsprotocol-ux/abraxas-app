@@ -37,6 +37,34 @@ vi.mock("@supabase/supabase-js", () => ({
 }));
 
 import { GET as partnerKeysGET } from "@/app/api/admin/partner-keys/route";
+import { GET as webhookObservabilityGET } from "@/app/api/admin/partners/webhooks/observability/route";
+
+vi.mock("@/lib/partner/webhooks/webhookOperatorObservability", () => ({
+  getPartnerWebhookObservability: vi.fn().mockResolvedValue({
+    partner_id: "partner-a",
+    webhook_configured: true,
+    webhook_delivery_enabled: true,
+    status_counts: {
+      pending: 0,
+      delivering: 0,
+      retrying: 0,
+      delivered: 0,
+      failed: 0,
+      unknown: 0,
+    },
+    dispatch_summary_available: false,
+    follow_up: { recommended: false, reasons: [] },
+    deliveries: [],
+    disclaimer: "Queued, delivering, or retrying does not mean delivered.",
+  }),
+  getPartnerWebhookDeliveryAttempts: vi.fn(),
+  validateObservabilityPartnerId: (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return { ok: false, error: "partner_id_required" };
+    return { ok: true, value: trimmed };
+  },
+  validateObservabilityEventId: vi.fn(),
+}));
 
 const SUI = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
 
@@ -143,5 +171,30 @@ describe("production-sensitive admin routes", () => {
     );
     expect(source).toContain("checkAdmin");
     expect(source).not.toContain("checkProductionSensitiveAdminAccess");
+  });
+
+  describe("webhook observability route", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest(
+        "http://localhost/api/admin/partners/webhooks/observability?partner_id=partner-a",
+        { headers: { "x-admin-pin": "test-admin-pin" } },
+      );
+      const res = await webhookObservabilityGET(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("allows allowlisted browser session on Production origin", async () => {
+      productionEnv();
+      resolveBrowserSessionMock.mockResolvedValue({ suiAddress: SUI });
+      const req = new NextRequest(
+        "http://localhost/api/admin/partners/webhooks/observability?partner_id=partner-a",
+        { headers: { cookie: "abraxas_browser_session=test-token" } },
+      );
+      const res = await webhookObservabilityGET(req);
+      expect(res.status).not.toBe(401);
+      const body = await res.json() as { error?: string };
+      expect(body.error).not.toBe("Unauthorized");
+    });
   });
 });
