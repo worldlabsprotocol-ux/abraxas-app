@@ -22,6 +22,10 @@ import {
   PARTNER_FLOW_REDIRECT_EXAMPLE,
   PARTNER_FLOW_CALLBACK_VERIFY_EXAMPLE,
   buildPartnerFlowEntryUrl,
+  PARTNER_WEBHOOK_SANDBOX_EVENT_TYPE,
+  PARTNER_WEBHOOK_LIFECYCLE_EVENT_TYPES,
+  PARTNER_WEBHOOK_SANDBOX_GUIDE,
+  PARTNER_WEBHOOK_SANDBOX_VS_LIFECYCLE_NOTE,
 } from "@/lib/partner/partnerFlowIntegratorKit";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -228,6 +232,23 @@ export default function PartnerFlowDocsPage() {
             <BulletList items={[...PARTNER_FLOW_AUTH_BOUNDARY.serverApiKey]} />
             <p style={{ ...body, margin: "0.75rem 0 0.5rem" }}><strong>Public (no auth):</strong></p>
             <BulletList items={[...PARTNER_FLOW_AUTH_BOUNDARY.publicNoAuth]} />
+          </SectionCard>
+
+          <SectionCard id={PARTNER_WEBHOOK_SANDBOX_GUIDE.docsAnchor} title={PARTNER_WEBHOOK_SANDBOX_GUIDE.headline}>
+            <p style={body}>{PARTNER_WEBHOOK_SANDBOX_GUIDE.summary}</p>
+            <p style={{ ...body, color: "#F59E0B", fontWeight: 600 }}>{PARTNER_WEBHOOK_SANDBOX_VS_LIFECYCLE_NOTE}</p>
+            <BulletList items={[
+              `Sandbox test event type: ${PARTNER_WEBHOOK_SANDBOX_EVENT_TYPE} (test: true only)`,
+              `Lifecycle event types: ${PARTNER_WEBHOOK_LIFECYCLE_EVENT_TYPES.join(", ")}`,
+              `Status API: ${PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.status}`,
+              `Delivery history: ${PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.delivery_history}`,
+              `Test enqueue (sandbox key + webhooks:read, user-initiated only): ${PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.sandbox_test_enqueue}`,
+              PARTNER_WEBHOOK_SANDBOX_GUIDE.queuedDisclaimer,
+              "Webhook endpoint URL and signing secret are configured by Abraxas ops — not self-serve.",
+            ]} />
+            <div style={{ marginTop: "0.75rem" }}>
+              <Btn href={PARTNER_WEBHOOK_SANDBOX_GUIDE.portalPath} size="sm">Open partner portal</Btn>
+            </div>
           </SectionCard>
 
           <SectionCard id="errors" title="Errors and status behavior">
