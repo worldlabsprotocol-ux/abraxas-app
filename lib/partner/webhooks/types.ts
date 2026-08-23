@@ -8,7 +8,19 @@ export const PARTNER_WEBHOOK_EVENT_TYPES = [
   "partner.credential.revoked",
 ] as const;
 
+export const PARTNER_WEBHOOK_TEST_EVENT_TYPE = "partner.webhook.test" as const;
+
 export type PartnerWebhookEventType = (typeof PARTNER_WEBHOOK_EVENT_TYPES)[number];
+
+export type PartnerWebhookTestEventType = typeof PARTNER_WEBHOOK_TEST_EVENT_TYPE;
+
+export interface PartnerWebhookTestPayload {
+  event_id: string;
+  event_type: PartnerWebhookTestEventType;
+  occurred_at: string;
+  partner_id: string;
+  test: true;
+}
 
 export const PARTNER_WEBHOOK_STATUSES = [
   "pending",
