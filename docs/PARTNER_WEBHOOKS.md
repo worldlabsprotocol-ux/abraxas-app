@@ -117,6 +117,30 @@ Authorization: Bearer abx_live_…
 
 Requires `webhooks:read` scope on the partner API key. Returns only that partner's delivery records.
 
+## Read-only delivery observability (Production admin)
+
+**Read-only.** No retry, requeue, config update, secret rotation, enable/disable, key issue, partner activation, or migration work from this surface.
+
+1. Open `/admin/partners` → **Delivery observability** tab
+2. Enter an explicit `partner_id` and click **Load** — no observability query runs until both are provided
+3. Expand a delivery row to load attempt metadata for that `event_id` (scoped to the selected partner)
+
+### API
+
+```
+GET /api/admin/partners/webhooks/observability?partner_id=<partner_id>
+GET /api/admin/partners/webhooks/observability?partner_id=<partner_id>&event_id=<event_id>
+```
+
+- **Production:** requires an allowlisted browser session (`checkProductionSensitiveAdminAccess`). PIN-only requests return `401`.
+- **Demo/local:** legacy PIN-based admin access remains unchanged for other routes; this observability route still uses Production-sensitive session gating when on Production origin.
+- `partner_id` is required; `event_id` is optional (attempts mode).
+- Cross-partner or missing `event_id` lookups return generic `404 Delivery not found`.
+- Delivery history is bounded (50 rows per partner).
+- Dispatch scheduler context is optional: when `partner_webhook_dispatch_runs` is unavailable, partner-specific data still returns with `dispatch_summary_available: false`.
+
+**Never returned or rendered:** endpoint URLs, signing secrets/prefixes, ciphertext, payloads, response snippets, env/cron values, SQL details, or alert-state data.
+
 ## Required Vercel cron configuration
 
 **Production (Vercel Pro):** `vercel.json` includes a cron entry that invokes the dispatcher every five minutes:
