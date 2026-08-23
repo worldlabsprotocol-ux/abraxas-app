@@ -55,6 +55,14 @@ describe("webhookTestDelivery", () => {
       );
       expect(migrationSql).toContain("TO postgres, service_role");
     });
+
+    it("uses valid EXTRACT(EPOCH FROM ...) syntax for retry_after_sec", () => {
+      expect(migrationSql).not.toContain("pg_catalog.extract");
+      expect(migrationSql).not.toMatch(/\bextract\s*\(\s*epoch\s+FROM/);
+      expect(migrationSql).toMatch(
+        /EXTRACT\s*\(\s*EPOCH\s+FROM\s*\(\s*v_oldest_recent\s*\+\s*pg_catalog\.make_interval\(secs\s*=>\s*60\)\s*-\s*pg_catalog\.now\(\)\s*\)\s*\)/,
+      );
+    });
   });
 
   it("calls only the atomic enqueue RPC", async () => {
