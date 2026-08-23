@@ -15,6 +15,38 @@ import {
   useProductionAdminSessionGate,
 } from "@/lib/admin/productionAdminSessionUi";
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock("@/components/admin/PartnerOnboardingConsole", () => ({
+  PartnerOnboardingConsole: ({
+    adminRequest,
+  }: {
+    adminRequest?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+  }) => {
+    const { useEffect } = require("react") as typeof import("react");
+    useEffect(() => {
+      void adminRequest?.("/api/admin/partners/onboarding");
+    }, [adminRequest]);
+    return createElement("div", { "data-testid": "onboarding-console" });
+  },
+}));
+
+vi.mock("@/components/admin/AdminPartnerKeysPanel", () => ({
+  AdminPartnerKeysPanel: () => null,
+}));
+
+vi.mock("@/components/admin/PartnerMeteringPanel", () => ({
+  PartnerMeteringPanel: () => null,
+}));
+
+vi.mock("@/components/admin/PartnerWebhooksPanel", () => ({
+  PartnerWebhooksPanel: () => null,
+}));
+
+import AdminPartnersPage from "@/app/admin/partners/page";
+
 function readSource(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
 }
@@ -179,6 +211,57 @@ describe("migrated admin pages", () => {
     expect(source).toContain("useProductionAdminSessionGate");
     expect(source).toContain("gate.usePinUnlock");
     expect(source).toContain("gate.adminRequest");
+  });
+
+  it("partners page uses production session gate with Demo-only PIN fallback", () => {
+    const source = readSource("app/admin/partners/page.tsx");
+    expect(source).toContain("useProductionAdminSessionGate");
+    expect(source).toContain("gate.usePinUnlock");
+    expect(source).toContain("gate.adminRequest");
+    expect(source).toMatch(/gate\.usePinUnlock\s*&&/);
+  });
+});
+
+describe("AdminPartnersPage Production session UX", () => {
+  it("hides PIN UI on Production and passes session-only adminRequest to onboarding", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", SITE_URL);
+    vi.stubEnv("NODE_ENV", "production");
+
+    const fetchMock = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/admin/access")) {
+        return new Response(JSON.stringify({ authorized: true, method: "email" }), { status: 200 });
+      }
+      if (url.endsWith("/api/admin/partners/onboarding")) {
+        expect(new Headers(init?.headers).has("x-admin-pin")).toBe(false);
+        expect(init?.credentials).toBe("include");
+        return new Response(JSON.stringify({ partners: [] }), { status: 200 });
+      }
+      return new Response("{}", { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(createElement(AdminPartnersPage));
+
+    expect(await screen.findByTestId("onboarding-console")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Admin PIN (if not signed in)")).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Admin PIN")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/admin/partners/onboarding",
+        expect.objectContaining({ credentials: "include" }),
+      );
+    });
+  });
+
+  it("shows PIN UI on demo origin when unauthorized", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://demo.abraxasworld.xyz");
+    vi.stubEnv("NODE_ENV", "production");
+    mockAccessFetch({ authorized: false, method: null });
+
+    render(createElement(AdminPartnersPage));
+
+    expect(await screen.findByPlaceholderText("Admin PIN")).toBeInTheDocument();
   });
 });
 

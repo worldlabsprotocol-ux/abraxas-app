@@ -2,9 +2,16 @@
 // FILE: components/admin/PartnerOnboardingConsole.tsx
 // Admin-only relying-party onboarding console (pilot provisioning + readiness).
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
+import {
+  DEFAULT_PRODUCTION_POLICY_RULES,
+  PRODUCTION_POLICY_DRAFT_OPERATOR_NOTE,
+  resolveReadinessDeepLinkInput,
+} from "@/lib/admin/partnerOnboardingConsole";
+import { buildReadinessConsoleUrl } from "@/lib/admin/partnerFlowReadinessUi";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -41,7 +48,17 @@ function readinessColor(level: ReadinessLevel | "ready" | "not_ready"): string {
   return "#F87171";
 }
 
-export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string }) {
+export function PartnerOnboardingConsole({
+  adminPin = "",
+  initialPartnerId = null,
+  showPromotedBanner = false,
+  adminRequest,
+}: {
+  adminPin?: string;
+  initialPartnerId?: string | null;
+  showPromotedBanner?: boolean;
+  adminRequest?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}) {
   const [partners, setPartners] = useState<PartnerDetail[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,13 +72,26 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
   const [callbackUrl, setCallbackUrl] = useState("");
   const [policyId, setPolicyId] = useState("");
   const [policyName, setPolicyName] = useState("");
+  const [useProductionPolicyTemplate, setUseProductionPolicyTemplate] = useState(false);
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
+  const initialSelectionApplied = useRef(false);
 
   const headers = useCallback((): HeadersInit => {
     const h: HeadersInit = { "Content-Type": "application/json" };
     if (adminPin) h["x-admin-pin"] = adminPin;
     return h;
   }, [adminPin]);
+
+  const request = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (adminRequest) {
+      return adminRequest(input, init);
+    }
+    return fetch(input, {
+      ...init,
+      headers: adminPin ? headers() : init?.headers,
+      credentials: "include",
+    });
+  }, [adminPin, adminRequest, headers]);
 
   const actionsDisabled = loading || confirmDialogProps.open || confirmDialogProps.busy;
 
@@ -70,28 +100,33 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     if (options?.clearNotice) setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding", {
-        headers: adminPin ? { "x-admin-pin": adminPin } : undefined,
-        credentials: "include",
-      });
+      const res = await request("/api/admin/partners/onboarding");
       const data = await res.json() as { partners?: PartnerDetail[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load partners");
-      setPartners(data.partners ?? []);
-      if (!selectedId && data.partners?.[0]) {
-        setSelectedId(data.partners[0].partner_id);
+      const list = data.partners ?? [];
+      setPartners(list);
+
+      if (!initialSelectionApplied.current) {
+        if (initialPartnerId && list.some((p) => p.partner_id === initialPartnerId)) {
+          setSelectedId(initialPartnerId);
+        } else if (!selectedId && list[0]) {
+          setSelectedId(list[0].partner_id);
+        }
+        initialSelectionApplied.current = true;
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
       setLoading(false);
     }
-  }, [adminPin, selectedId]);
+  }, [initialPartnerId, request, selectedId]);
 
   useEffect(() => {
     void loadPartners();
   }, [loadPartners]);
 
   const selected = partners.find(p => p.partner_id === selectedId) ?? null;
+  const readinessDeepLink = selected ? resolveReadinessDeepLinkInput(selected) : null;
 
   async function createPartner() {
     if (!newPartnerId.trim() || !newCompany.trim()) {
@@ -104,10 +139,9 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     try {
       const id = newPartnerId.trim();
       const company = newCompany.trim();
-      const res = await fetch("/api/admin/partners/onboarding", {
+      const res = await request("/api/admin/partners/onboarding", {
         method: "POST",
         headers: headers(),
-        credentials: "include",
         body: JSON.stringify({
           partner_id: id,
           company,
@@ -139,10 +173,9 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding/return-urls", {
+      const res = await request("/api/admin/partners/onboarding/return-urls", {
         method: "POST",
         headers: headers(),
-        credentials: "include",
         body: JSON.stringify({
           partner_id: partnerId,
           return_urls: [savedUrl],
@@ -168,26 +201,59 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding/policies", {
+      const body: Record<string, unknown> = {
+        action: "create_initial_draft",
+        partner_id: partnerId,
+        policy_id: draftPolicyId,
+        name: policyName.trim() || `${partnerId} pilot policy`,
+      };
+      if (useProductionPolicyTemplate) {
+        body.rules_json = DEFAULT_PRODUCTION_POLICY_RULES;
+      }
+
+      const res = await request("/api/admin/partners/onboarding/policies", {
         method: "POST",
         headers: headers(),
-        credentials: "include",
-        body: JSON.stringify({
-          action: "create_initial_draft",
-          partner_id: partnerId,
-          policy_id: draftPolicyId,
-          name: policyName.trim() || `${partnerId} pilot policy`,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json() as { error?: string; policy?: { id: string; version: number } };
       if (!res.ok) throw new Error(data.error ?? "Create policy draft failed");
       const version = data.policy?.version ?? 1;
       setPolicyId("");
       setPolicyName("");
+      setUseProductionPolicyTemplate(false);
       await loadPartners();
-      setNotice(`Draft policy created: ${draftPolicyId} v${version} for ${partnerId}.`);
+      setNotice(`Draft policy created: ${draftPolicyId} v${version} for ${partnerId}. Review rules before publishing.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create policy draft failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function applyProductionTemplateToDraft() {
+    if (!selected?.draft_policy) return;
+    setLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await request("/api/admin/partners/onboarding/policies", {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          action: "update_draft",
+          partner_id: selected.partner_id,
+          policy_id: selected.draft_policy.id,
+          version: selected.draft_policy.version,
+          rules_json: DEFAULT_PRODUCTION_POLICY_RULES,
+        }),
+      });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Update draft failed");
+      await loadPartners();
+      setNotice("Non-sandbox draft template applied. Review rules before publishing.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Update draft failed");
     } finally {
       setLoading(false);
     }
@@ -199,10 +265,9 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding/policies", {
+      const res = await request("/api/admin/partners/onboarding/policies", {
         method: "POST",
         headers: headers(),
-        credentials: "include",
         body: JSON.stringify({
           action: "publish",
           partner_id: selected.partner_id,
@@ -213,6 +278,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Publish failed");
       await loadPartners();
+      setNotice(`Published ${selected.draft_policy.id} v${selected.draft_policy.version}. Run production readiness preflight before activation.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Publish failed");
     } finally {
@@ -247,9 +313,19 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
 
   return (
     <div>
+      {showPromotedBanner && initialPartnerId && (
+        <div style={{
+          padding: "0.85rem 1rem", borderRadius: 10, marginBottom: "1rem",
+          background: "rgba(16,185,129,0.1)", border: `1px solid ${ACCENT}44`,
+          fontFamily: FONT, fontSize: "0.76rem", color: "#D1FAE5", lineHeight: 1.55,
+        }}>
+          Partner <strong>{initialPartnerId}</strong> promoted. Add callback URLs, create a reviewed non-sandbox policy draft, publish manually, then open the production readiness console.
+        </div>
+      )}
+
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1rem" }}>
         Provision pilot relying parties without manual SQL. Creates partners in <strong>pilot</strong> state only.
-        Policies are draft until published via the immutable-policy workflow. No API key secrets are shown here.
+        Policies are draft until you publish them manually. No API key secrets are shown here.
       </p>
 
       {error && (
@@ -331,6 +407,20 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
                   Active policy: {selected.active_policy ? `${selected.active_policy.id} v${selected.active_policy.version}` : "—"}
                   {selected.draft_policy ? ` · Draft v${selected.draft_policy.version}` : ""}
                 </div>
+                {readinessDeepLink ? (
+                  <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+                    <Link
+                      href={buildReadinessConsoleUrl(readinessDeepLink)}
+                      style={{ fontFamily: FONT, fontSize: "0.76rem", color: ACCENT, textDecoration: "none", fontWeight: 700 }}
+                    >
+                      Open production readiness check →
+                    </Link>
+                  </p>
+                ) : (
+                  <p style={{ marginTop: "0.75rem", marginBottom: 0, fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)" }}>
+                    Save a callback URL and assign or publish a policy before opening the production readiness console.
+                  </p>
+                )}
               </section>
 
               <section style={{ padding: "1rem", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -380,6 +470,20 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
                   <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.65rem" }}>
                     <input value={policyId} onChange={e => setPolicyId(e.target.value)} placeholder="policy_id (e.g. your-protocol-policy-v1)" style={inputStyle} />
                     <input value={policyName} onChange={e => setPolicyName(e.target.value)} placeholder="Policy display name (optional)" style={inputStyle} />
+                    <label style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.7)" }}>
+                      <input
+                        type="checkbox"
+                        checked={useProductionPolicyTemplate}
+                        onChange={(e) => setUseProductionPolicyTemplate(e.target.checked)}
+                        style={{ marginTop: 3 }}
+                      />
+                      <span>
+                        Start from non-sandbox draft template (operator review required)
+                        <span style={{ display: "block", fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+                          {PRODUCTION_POLICY_DRAFT_OPERATOR_NOTE}
+                        </span>
+                      </span>
+                    </label>
                     <button type="button" onClick={() => void createPolicyDraft()} disabled={actionsDisabled}
                       style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: "rgba(16,185,129,0.25)", color: ACCENT, fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", justifySelf: "start" }}>
                       Create draft policy
@@ -389,12 +493,21 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
                 {selected.draft_policy && (
                   <div>
                     <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 0 }}>
-                      Draft {selected.draft_policy.id} v{selected.draft_policy.version} — publish to activate (immutable after publish).
+                      Draft {selected.draft_policy.id} v{selected.draft_policy.version} — review rules, then publish manually (immutable after publish).
                     </p>
-                    <button type="button" onClick={() => promptPublishDraft()} disabled={actionsDisabled}
-                      style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
-                      Publish draft
-                    </button>
+                    <p style={{ fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.45)", margin: "0 0 0.65rem" }}>
+                      {PRODUCTION_POLICY_DRAFT_OPERATOR_NOTE}
+                    </p>
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                      <button type="button" onClick={() => void applyProductionTemplateToDraft()} disabled={actionsDisabled}
+                        style={{ padding: "0.55rem 1rem", borderRadius: 8, border: `1px solid ${ACCENT}66`, background: "transparent", color: ACCENT, fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
+                        Apply non-sandbox template to draft
+                      </button>
+                      <button type="button" onClick={() => promptPublishDraft()} disabled={actionsDisabled}
+                        style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "none", background: ACCENT, color: "#000", fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
+                        Publish draft
+                      </button>
+                    </div>
                   </div>
                 )}
                 {selected.active_policy && !selected.draft_policy && (
