@@ -7,6 +7,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { PartnerWebhookSandboxPanel } from "@/components/partner/PartnerWebhookSandboxPanel";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -162,6 +163,8 @@ export default function PartnerPortalPage() {
               ))}
             </div>
           </ContentCard>
+
+          <PartnerWebhookSandboxPanel apiKey={apiKey} />
 
           <ContentCard title="Mainnet gate #5">
             <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.5rem" }}>

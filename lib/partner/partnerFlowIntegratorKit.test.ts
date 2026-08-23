@@ -6,6 +6,10 @@ import {
   PARTNER_FLOW_REDIRECT_EXAMPLE,
   PARTNER_FLOW_CALLBACK_VERIFY_EXAMPLE,
   INTEGRATION_PATH_DECISION_TREE,
+  PARTNER_WEBHOOK_SANDBOX_EVENT_TYPE,
+  PARTNER_WEBHOOK_LIFECYCLE_EVENT_TYPES,
+  PARTNER_WEBHOOK_SANDBOX_GUIDE,
+  PARTNER_WEBHOOK_SANDBOX_VS_LIFECYCLE_NOTE,
 } from "@/lib/partner/partnerFlowIntegratorKit";
 import { SITE_URL } from "@/lib/siteUrl";
 import { readFileSync } from "node:fs";
@@ -64,5 +68,22 @@ describe("partnerFlowIntegratorKit", () => {
     expect(page).toContain("partner-flow");
     expect(page).toContain("PARTNER_FLOW_HEADLINE");
     expect(page).toContain("PARTNER_FLOW_CANONICAL_HOST");
+  });
+
+  it("documents sandbox webhook test separately from lifecycle events", () => {
+    expect(PARTNER_WEBHOOK_SANDBOX_EVENT_TYPE).toBe("partner.webhook.test");
+    expect(PARTNER_WEBHOOK_LIFECYCLE_EVENT_TYPES).not.toContain("partner.webhook.test");
+    expect(PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.status).toBe("/api/partner/webhooks/status");
+    expect(PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.delivery_history).toBe("/api/v1/partner/webhooks/deliveries");
+    expect(PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.sandbox_test_enqueue).toBe("/api/partner/webhooks/test-delivery");
+    expect(PARTNER_WEBHOOK_SANDBOX_VS_LIFECYCLE_NOTE).toContain("partner.webhook.test");
+
+    const page = readFileSync(
+      join(process.cwd(), "app/docs/partner-flow/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain("PARTNER_WEBHOOK_SANDBOX_GUIDE.docsAnchor");
+    expect(page).toContain("PARTNER_WEBHOOK_SANDBOX_GUIDE");
+    expect(page).not.toContain("https://partner.example.com/webhook");
   });
 });

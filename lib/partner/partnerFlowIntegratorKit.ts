@@ -180,3 +180,30 @@ if (!result.ok) {
 }
 
 // Grant gated action — receipt cryptographically verified`;
+
+export const PARTNER_WEBHOOK_SANDBOX_EVENT_TYPE = "partner.webhook.test" as const;
+
+export const PARTNER_WEBHOOK_LIFECYCLE_EVENT_TYPES = [
+  "partner.receipt.issued",
+  "partner.receipt.revoked",
+  "partner.access.revoked",
+  "partner.credential.revoked",
+] as const;
+
+export const PARTNER_WEBHOOK_SANDBOX_GUIDE = {
+  headline: "Webhook sandbox test delivery",
+  summary:
+    "Queue a single partner.webhook.test event from the partner portal with an abx_test_ key. Queued does not mean delivered — confirm in your handler and delivery history.",
+  queuedDisclaimer:
+    "A successful enqueue returns queued: true. Delivery is asynchronous; inspect delivery history for delivered, retrying, or failed outcomes.",
+  portalPath: "/developers/partner",
+  docsAnchor: "webhook-sandbox",
+  endpoints: {
+    status: "/api/partner/webhooks/status",
+    delivery_history: "/api/v1/partner/webhooks/deliveries",
+    sandbox_test_enqueue: "/api/partner/webhooks/test-delivery",
+  },
+} as const;
+
+export const PARTNER_WEBHOOK_SANDBOX_VS_LIFECYCLE_NOTE =
+  "Sandbox test events (partner.webhook.test with test: true) are for signature and handler verification only. They are not Partner Flow lifecycle notifications such as partner.receipt.issued.";
