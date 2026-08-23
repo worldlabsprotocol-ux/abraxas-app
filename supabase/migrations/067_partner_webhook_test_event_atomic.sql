@@ -82,9 +82,7 @@ BEGIN
     v_retry_after_sec := pg_catalog.greatest(
       1,
       pg_catalog.ceil(
-        pg_catalog.extract(
-          epoch FROM (v_oldest_recent + pg_catalog.make_interval(secs => 60) - pg_catalog.now())
-        )
+        EXTRACT(EPOCH FROM (v_oldest_recent + pg_catalog.make_interval(secs => 60) - pg_catalog.now()))
       )::integer
     );
 
