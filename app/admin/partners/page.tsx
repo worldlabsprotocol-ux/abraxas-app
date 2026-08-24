@@ -11,12 +11,13 @@ import { AdminPartnerKeysPanel } from "@/components/admin/AdminPartnerKeysPanel"
 import { PartnerMeteringPanel } from "@/components/admin/PartnerMeteringPanel";
 import { PartnerWebhooksPanel } from "@/components/admin/PartnerWebhooksPanel";
 import { PartnerWebhookObservabilityPanel } from "@/components/admin/PartnerWebhookObservabilityPanel";
+import { PartnerWebhookSandboxReceiptsPanel } from "@/components/admin/PartnerWebhookSandboxReceiptsPanel";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
 
-type Tab = "onboarding" | "keys" | "usage" | "webhooks" | "observability";
+type Tab = "onboarding" | "keys" | "usage" | "webhooks" | "observability" | "sandbox-receipts";
 
 export default function AdminPartnersPage() {
   const [tab, setTab] = useState<Tab>("onboarding");
@@ -43,7 +44,7 @@ export default function AdminPartnersPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-          {(["onboarding", "keys", "usage", "webhooks", "observability"] as const).map(t => (
+          {(["onboarding", "keys", "usage", "webhooks", "observability", "sandbox-receipts"] as const).map(t => (
             <button key={t} type="button" onClick={() => setTab(t)}
               style={{
                 padding: "0.45rem 0.9rem", borderRadius: 999, cursor: "pointer",
@@ -52,7 +53,17 @@ export default function AdminPartnersPage() {
                 color: tab === t ? ACCENT : "rgba(255,255,255,0.55)",
                 fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
               }}>
-              {t === "onboarding" ? "Onboarding" : t === "keys" ? "API keys" : t === "usage" ? "Usage metering" : t === "webhooks" ? "Webhooks" : "Delivery observability"}
+              {t === "onboarding"
+                ? "Onboarding"
+                : t === "keys"
+                  ? "API keys"
+                  : t === "usage"
+                    ? "Usage metering"
+                    : t === "webhooks"
+                      ? "Webhooks"
+                      : t === "observability"
+                        ? "Delivery observability"
+                        : "Sandbox receipts"}
             </button>
           ))}
           <input
@@ -76,8 +87,10 @@ export default function AdminPartnersPage() {
           <PartnerMeteringPanel adminPin={pin} />
         ) : tab === "webhooks" ? (
           <PartnerWebhooksPanel adminPin={pin} />
-        ) : (
+        ) : tab === "observability" ? (
           <PartnerWebhookObservabilityPanel />
+        ) : (
+          <PartnerWebhookSandboxReceiptsPanel />
         )}
       </div>
     </div>
