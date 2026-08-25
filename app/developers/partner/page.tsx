@@ -8,6 +8,8 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { PartnerSandboxIntegrationPanel } from "@/components/partner/PartnerSandboxIntegrationPanel";
+import type { PartnerDashboardReadiness } from "@/lib/partner/partnerPortalReadiness";
+import type { PartnerFlowPortalOnboardingProgress } from "@/lib/partner/partnerOnboarding";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -31,12 +33,8 @@ interface Dashboard {
     decision: string | null;
     created_at: string;
   }>;
-  onboarding: {
-    steps: Array<{ id: string; title: string; description: string; done: boolean }>;
-    completed: number;
-    total: number;
-    productionGateEligible: boolean;
-  };
+  onboarding: PartnerFlowPortalOnboardingProgress;
+  readiness: PartnerDashboardReadiness;
   mainnet_gate: { eligible: boolean; criteria: string };
 }
 
@@ -147,8 +145,11 @@ export default function PartnerPortalPage() {
           </ContentCard>
 
           <ContentCard title="Onboarding progress">
-            <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.65rem" }}>
-              {dashboard.onboarding.completed}/{dashboard.onboarding.total} steps complete
+            <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.35rem" }}>
+              {dashboard.onboarding.completed}/{dashboard.onboarding.total} configuration steps complete
+            </p>
+            <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.65rem" }}>
+              {dashboard.readiness.sandbox_notice}
             </p>
             <div style={{ display: "grid", gap: "0.45rem" }}>
               {dashboard.onboarding.steps.map(step => (
@@ -170,6 +171,7 @@ export default function PartnerPortalPage() {
             apiKey={apiKey}
             partnerId={dashboard.partner_id}
             scopes={dashboard.scopes}
+            readiness={dashboard.readiness}
           />
 
           <ContentCard title="Mainnet gate #5">

@@ -155,6 +155,26 @@ export interface SandboxReceiptCheckResult {
   detail: string;
 }
 
+export const PARTNER_FLOW_ENTRY_RETURN_URL_PLACEHOLDER =
+  "<Abraxas ops supplies exact allowlisted URL>";
+
+export interface SandboxEntryUrlFields {
+  partner_id: string;
+  policy_id: string;
+  return_url: string;
+}
+
+export function buildSandboxEntryUrlFields(input: {
+  partnerId: string;
+  activePolicyId: string | null;
+}): SandboxEntryUrlFields {
+  return {
+    partner_id: input.partnerId,
+    policy_id: input.activePolicyId ?? "<policy_id>",
+    return_url: PARTNER_FLOW_ENTRY_RETURN_URL_PLACEHOLDER,
+  };
+}
+
 export function buildSandboxEntryUrlTemplate(partnerId: string, origin?: string): string {
   const base = (origin ?? SITE_URL).replace(/\/$/, "");
   const params = new URLSearchParams({
