@@ -3,8 +3,10 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { computeOnboardingProgress } from "@/lib/partner/partnerOnboarding";
-import { computePartnerFlowPortalOnboarding } from "@/lib/partner/partnerOnboarding";
-import type { PartnerFlowPortalOnboardingProgress } from "@/lib/partner/partnerOnboarding";
+import {
+  computeCapabilityAwarePortalOnboarding,
+  type CapabilityAwarePortalOnboarding,
+} from "@/lib/partner/partnerPortalCapabilities";
 import type { PartnerScope } from "@/lib/partner/partnerAuth";
 import {
   loadPartnerPortalReadiness,
@@ -40,7 +42,7 @@ export interface PartnerDashboardData {
     created_at: string;
   }>;
   readiness: PartnerDashboardReadiness;
-  onboarding: PartnerFlowPortalOnboardingProgress;
+  onboarding: CapabilityAwarePortalOnboarding;
   mainnet_gate: {
     eligible: boolean;
     criteria: string;
@@ -103,7 +105,7 @@ export async function getPartnerDashboard(
   });
 
   const { readiness } = portalReadiness;
-  const onboarding = computePartnerFlowPortalOnboarding(readiness);
+  const onboarding = computeCapabilityAwarePortalOnboarding({ scopes, readiness });
 
   return {
     partner_id: partnerId,
