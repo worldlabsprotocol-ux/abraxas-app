@@ -7,7 +7,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { PartnerWebhookSandboxPanel } from "@/components/partner/PartnerWebhookSandboxPanel";
+import { PartnerSandboxIntegrationPanel } from "@/components/partner/PartnerSandboxIntegrationPanel";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -105,13 +105,15 @@ export default function PartnerPortalPage() {
             <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>abx_live_</code> key issued after application approval.
             No key yet? <Link href="/design-partner" style={{ color: "var(--accent)", fontWeight: 700 }}>Apply →</Link>
           </p>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "stretch" }}>
             <input
               type="password"
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
               placeholder="abx_test_… or abx_live_…"
-              style={inputStyle}
+              autoComplete="off"
+              inputMode="text"
+              style={{ ...inputStyle, minWidth: 0 }}
             />
             <button type="button" onClick={() => void loadDashboard(apiKey)} style={btnStyle}>
               View dashboard
@@ -134,7 +136,7 @@ export default function PartnerPortalPage() {
               {[
                 { label: "30d calls", value: dashboard.stats.calls_30d },
                 { label: "7d calls", value: dashboard.stats.calls_7d },
-                { label: "Success rate", value: dashboard.stats.success_rate != null ? `${dashboard.stats.success_rate}%` : ", " },
+                { label: "Success rate", value: dashboard.stats.success_rate != null ? `${dashboard.stats.success_rate}%` : "—" },
               ].map(stat => (
                 <div key={stat.label} style={{ padding: "0.65rem", borderRadius: 10, border: "1px solid var(--border)" }}>
                   <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)" }}>{stat.label}</div>
@@ -164,7 +166,11 @@ export default function PartnerPortalPage() {
             </div>
           </ContentCard>
 
-          <PartnerWebhookSandboxPanel apiKey={apiKey} />
+          <PartnerSandboxIntegrationPanel
+            apiKey={apiKey}
+            partnerId={dashboard.partner_id}
+            scopes={dashboard.scopes}
+          />
 
           <ContentCard title="Mainnet gate #5">
             <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.5rem" }}>
@@ -182,7 +188,7 @@ export default function PartnerPortalPage() {
               <div style={{ display: "grid", gap: "0.35rem" }}>
                 {dashboard.recent_events.slice(0, 8).map((ev, i) => (
                   <div key={`${ev.endpoint}-${i}`} style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)" }}>
-                    {ev.endpoint} · {ev.decision ?? ", "} · {new Date(ev.created_at).toLocaleString()}
+                    {ev.endpoint} · {ev.decision ?? "—"} · {new Date(ev.created_at).toLocaleString()}
                   </div>
                 ))}
               </div>

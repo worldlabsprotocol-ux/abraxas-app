@@ -27,6 +27,16 @@ import {
   PARTNER_WEBHOOK_SANDBOX_GUIDE,
   PARTNER_WEBHOOK_SANDBOX_VS_LIFECYCLE_NOTE,
 } from "@/lib/partner/partnerFlowIntegratorKit";
+import {
+  PARTNER_SANDBOX_INTEGRATION_SUMMARY,
+  PARTNER_FLOW_TRACK_MILESTONES,
+  WEBHOOK_TRACK_MILESTONES,
+  SANDBOX_RECEIPT_CHECKS,
+  SANDBOX_RECEIPT_PRODUCTION_WARNING,
+  WEBHOOK_TEST_NOT_RECEIPT_API_NOTE,
+  PARTNER_FLOW_ENTRY_PLACEHOLDER_NOTE,
+  buildSandboxEntryUrlTemplate,
+} from "@/lib/partner/partnerSandboxIntegrationKit";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -248,6 +258,41 @@ export default function PartnerFlowDocsPage() {
             ]} />
             <div style={{ marginTop: "0.75rem" }}>
               <Btn href={PARTNER_WEBHOOK_SANDBOX_GUIDE.portalPath} size="sm">Open partner portal</Btn>
+            </div>
+          </SectionCard>
+
+          <SectionCard id="external-design-partner-sandbox" title="External design partner sandbox">
+            <p style={body}>{PARTNER_SANDBOX_INTEGRATION_SUMMARY}</p>
+            <p style={{ ...body, color: "#F59E0B", fontWeight: 600 }}>{SANDBOX_RECEIPT_PRODUCTION_WARNING}</p>
+
+            <p style={{ ...body, marginTop: "0.75rem", fontWeight: 700 }}>Track A — Partner Flow</p>
+            <BulletList items={PARTNER_FLOW_TRACK_MILESTONES.map((m) => `${m.title}: ${m.description}`)} />
+            <p style={{ ...body, marginTop: "0.5rem", color: "#F59E0B", fontWeight: 600 }}>
+              {PARTNER_FLOW_ENTRY_PLACEHOLDER_NOTE}
+            </p>
+            <pre style={{
+              fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
+              padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%",
+              background: "var(--surface-inset)", border: "1px solid var(--border)",
+              color: "var(--text-secondary)", margin: "0.5rem 0 0",
+            }}>
+              {buildSandboxEntryUrlTemplate("your-partner-id")}
+            </pre>
+
+            <p style={{ ...body, marginTop: "0.85rem", fontWeight: 700 }}>Sandbox receipt checks</p>
+            <BulletList items={SANDBOX_RECEIPT_CHECKS.map((c) => `${c.check} — ${c.why}`)} />
+
+            <p style={{ ...body, marginTop: "0.85rem", fontWeight: 700 }}>Track B — Webhooks (optional)</p>
+            <p style={body}>{WEBHOOK_TEST_NOT_RECEIPT_API_NOTE}</p>
+            <BulletList items={WEBHOOK_TRACK_MILESTONES.map((m) => `${m.title}: ${m.description}`)} />
+            <p style={{ ...body, marginTop: "0.5rem" }}>
+              Default promote keys include <code style={{ fontFamily: MONO }}>verify:credential</code> and{" "}
+              <code style={{ fontFamily: MONO }}>verify:registry</code> only. Request{" "}
+              <code style={{ fontFamily: MONO }}>webhooks:read</code> via Abraxas ops for webhook testing.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <Btn href="/developers/partner" size="sm">Open partner portal</Btn>
+              <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Receipt tester</Btn>
             </div>
           </SectionCard>
 
