@@ -96,7 +96,33 @@ describe("PartnerSandboxIntegrationPanel", () => {
     expect(container.textContent).not.toContain("foreign-policy");
   });
 
-  it("blocks webhook track without webhooks:read and does not mount webhook panel", () => {
+  it("hides Partner Flow track for webhook-only keys", () => {
+    render(
+      <PartnerSandboxIntegrationPanel
+        apiKey="abx_test_secret"
+        partnerId="acme-v1"
+        scopes={["webhooks:read"]}
+        readiness={{
+          ...baseReadiness,
+          verify_scopes_available: false,
+          webhook_track: {
+            applicable: true,
+            scope_ready: true,
+            endpoint_configured: true,
+            delivery_enabled: true,
+            sandbox_test_available: false,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.queryByTestId("partner-flow-track")).not.toBeInTheDocument();
+    expect(screen.getByTestId("webhook-track")).toBeInTheDocument();
+    expect(screen.getByTestId("webhook-sandbox-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("signature-verified-ack")).toBeInTheDocument();
+  });
+
+  it("hides webhook track and panel for verify-only keys", () => {
     render(
       <PartnerSandboxIntegrationPanel
         apiKey="abx_test_secret"
@@ -106,12 +132,13 @@ describe("PartnerSandboxIntegrationPanel", () => {
       />,
     );
 
-    expect(screen.getByTestId("webhook-track-blocked")).toBeInTheDocument();
+    expect(screen.getByTestId("partner-flow-track")).toBeInTheDocument();
+    expect(screen.queryByTestId("webhook-track")).not.toBeInTheDocument();
     expect(screen.queryByTestId("webhook-sandbox-panel")).not.toBeInTheDocument();
     expect(screen.queryByTestId("signature-verified-ack")).not.toBeInTheDocument();
   });
 
-  it("mounts webhook panel only when webhooks:read scope is present", () => {
+  it("shows both tracks for combined-scope keys", () => {
     render(
       <PartnerSandboxIntegrationPanel
         apiKey="abx_test_secret"
@@ -130,9 +157,51 @@ describe("PartnerSandboxIntegrationPanel", () => {
       />,
     );
 
-    expect(screen.queryByTestId("webhook-track-blocked")).not.toBeInTheDocument();
+    expect(screen.getByTestId("partner-flow-track")).toBeInTheDocument();
+    expect(screen.getByTestId("webhook-track")).toBeInTheDocument();
     expect(screen.getByTestId("webhook-sandbox-panel")).toBeInTheDocument();
-    expect(screen.getByTestId("signature-verified-ack")).toBeInTheDocument();
+  });
+
+  it("shows unsupported-scope guidance without integration tracks", () => {
+    render(
+      <PartnerSandboxIntegrationPanel
+        apiKey="abx_test_secret"
+        partnerId="acme-v1"
+        scopes={[]}
+        readiness={{
+          ...baseReadiness,
+          verify_scopes_available: false,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("unsupported-scope")).toBeInTheDocument();
+    expect(screen.queryByTestId("partner-flow-track")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("webhook-track")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("webhook-sandbox-panel")).not.toBeInTheDocument();
+  });
+
+  it("includes other-keys scope disclaimer", () => {
+    render(
+      <PartnerSandboxIntegrationPanel
+        apiKey="abx_test_secret"
+        partnerId="acme-v1"
+        scopes={["webhooks:read"]}
+        readiness={{
+          ...baseReadiness,
+          verify_scopes_available: false,
+          webhook_track: {
+            applicable: true,
+            scope_ready: true,
+            endpoint_configured: false,
+            delivery_enabled: false,
+            sandbox_test_available: false,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("portal-scope-disclaimer").textContent).toMatch(/other keys/i);
   });
 
   it("signature verified acknowledgment is manual session state only", async () => {
@@ -146,6 +215,7 @@ describe("PartnerSandboxIntegrationPanel", () => {
         scopes={["webhooks:read"]}
         readiness={{
           ...baseReadiness,
+          verify_scopes_available: false,
           webhook_track: {
             applicable: true,
             scope_ready: true,
