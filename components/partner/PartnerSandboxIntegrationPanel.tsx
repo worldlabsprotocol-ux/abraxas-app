@@ -6,6 +6,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { PartnerWebhookSandboxPanel } from "@/components/partner/PartnerWebhookSandboxPanel";
+import type { PartnerDashboardReadiness } from "@/lib/partner/partnerPortalReadiness";
 import {
   PARTNER_SANDBOX_INTEGRATION_HEADLINE,
   PARTNER_SANDBOX_INTEGRATION_SUMMARY,
@@ -15,7 +16,7 @@ import {
   SANDBOX_RECEIPT_PRODUCTION_WARNING,
   WEBHOOK_TEST_NOT_RECEIPT_API_NOTE,
   PARTNER_FLOW_ENTRY_PLACEHOLDER_NOTE,
-  buildSandboxEntryUrlTemplate,
+  buildSandboxEntryUrlFields,
   partnerHasWebhooksReadScope,
 } from "@/lib/partner/partnerSandboxIntegrationKit";
 
@@ -28,16 +29,21 @@ interface PartnerSandboxIntegrationPanelProps {
   apiKey: string;
   partnerId: string;
   scopes: readonly string[];
+  readiness: PartnerDashboardReadiness;
 }
 
 export function PartnerSandboxIntegrationPanel({
   apiKey,
   partnerId,
   scopes,
+  readiness,
 }: PartnerSandboxIntegrationPanelProps) {
   const [signatureVerifiedAck, setSignatureVerifiedAck] = useState(false);
   const hasWebhooksScope = partnerHasWebhooksReadScope(scopes);
-  const entryUrlTemplate = buildSandboxEntryUrlTemplate(partnerId);
+  const entryFields = buildSandboxEntryUrlFields({
+    partnerId,
+    activePolicyId: readiness.active_policy_id,
+  });
 
   return (
     <>
@@ -45,6 +51,15 @@ export function PartnerSandboxIntegrationPanel({
         <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
           {PARTNER_SANDBOX_INTEGRATION_SUMMARY}
         </p>
+
+        {readiness.partner_flow_config_ready && (
+          <p
+            data-testid="partner-flow-config-ready"
+            style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, fontWeight: 700, margin: "0 0 0.75rem" }}
+          >
+            Operator provisioning complete — you may start a Partner Flow sandbox test. This does not confirm callback or receipt success.
+          </p>
+        )}
 
         <div
           data-testid="partner-flow-track"
@@ -61,23 +76,64 @@ export function PartnerSandboxIntegrationPanel({
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: WARN, lineHeight: 1.55, margin: "0 0 0.65rem", fontWeight: 600 }}>
             {PARTNER_FLOW_ENTRY_PLACEHOLDER_NOTE}
           </p>
-          <pre
-            data-testid="entry-url-template"
-            style={{
-              fontFamily: MONO,
-              fontSize: "0.62rem",
-              lineHeight: 1.5,
-              padding: "0.65rem",
-              borderRadius: 8,
-              overflowX: "auto",
-              background: "var(--surface-inset)",
-              border: "1px solid var(--border)",
-              color: "var(--text-secondary)",
-              margin: "0 0 0.65rem",
-            }}
+
+          {readiness.active_policy_ambiguous && (
+            <p
+              data-testid="policy-ambiguous-warning"
+              style={{ fontFamily: FONT, fontSize: "0.72rem", color: WARN, fontWeight: 600, margin: "0 0 0.65rem" }}
+            >
+              Multiple active versions found for your assigned policy family. Contact Abraxas ops before testing.
+            </p>
+          )}
+
+          <div
+            data-testid="entry-url-fields"
+            style={{ display: "grid", gap: "0.45rem", marginBottom: "0.65rem" }}
           >
-            {entryUrlTemplate}
-          </pre>
+            {([
+              ["partner_id", entryFields.partner_id],
+              ["policy_id", entryFields.policy_id],
+              ["return_url", entryFields.return_url],
+            ] as const).map(([label, value]) => (
+              <div
+                key={label}
+                data-testid={`entry-field-${label}`}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(72px, 88px) minmax(0, 1fr)",
+                  gap: "0.5rem",
+                  alignItems: "start",
+                  padding: "0.45rem 0.55rem",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  background: "var(--surface-inset)",
+                }}
+              >
+                <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)" }}>
+                  {label}
+                </div>
+                <div
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: "0.62rem",
+                    lineHeight: 1.5,
+                    color: "var(--text-secondary)",
+                    wordBreak: "break-all",
+                    minWidth: 0,
+                  }}
+                >
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {readiness.callback_allowlist_configured && (
+            <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.65rem" }}>
+              Callback allowlist is configured. Abraxas ops will provide your exact return_url out-of-band.
+            </p>
+          )}
+
           <div style={{ display: "grid", gap: "0.4rem", marginBottom: "0.65rem" }}>
             {PARTNER_FLOW_TRACK_MILESTONES.map((milestone) => (
               <div key={milestone.id} style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>

@@ -3,7 +3,13 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { computeOnboardingProgress } from "@/lib/partner/partnerOnboarding";
-import type { RpOnboardingProgress } from "@/lib/partner/partnerOnboarding";
+import { computePartnerFlowPortalOnboarding } from "@/lib/partner/partnerOnboarding";
+import type { PartnerFlowPortalOnboardingProgress } from "@/lib/partner/partnerOnboarding";
+import type { PartnerScope } from "@/lib/partner/partnerAuth";
+import {
+  loadPartnerPortalReadiness,
+  type PartnerDashboardReadiness,
+} from "@/lib/partner/partnerPortalReadiness";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -33,7 +39,8 @@ export interface PartnerDashboardData {
     response_time_ms: number | null;
     created_at: string;
   }>;
-  onboarding: RpOnboardingProgress;
+  readiness: PartnerDashboardReadiness;
+  onboarding: PartnerFlowPortalOnboardingProgress;
   mainnet_gate: {
     eligible: boolean;
     criteria: string;
@@ -49,7 +56,7 @@ export async function getPartnerDashboard(
   partnerId: string,
   keyPrefix: string,
   displayName: string,
-  scopes: string[],
+  scopes: PartnerScope[],
 ): Promise<PartnerDashboardData | null> {
   const client = sb();
   if (!client) return null;
@@ -58,7 +65,7 @@ export async function getPartnerDashboard(
   const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
   const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [partnerRes, usage30Res, usage7Count, recentRes] = await Promise.all([
+  const [partnerRes, usage30Res, usage7Count, recentRes, portalReadiness] = await Promise.all([
     client
       .from("partners")
       .select("company, status")
@@ -80,6 +87,7 @@ export async function getPartnerDashboard(
       .eq("partner_id", partnerId)
       .order("created_at", { ascending: false })
       .limit(20),
+    loadPartnerPortalReadiness({ partnerId, keyPrefix, scopes }),
   ]);
 
   const usage30 = usage30Res.data ?? [];
@@ -87,12 +95,15 @@ export async function getPartnerDashboard(
   const recent = (recentRes.data ?? []) as PartnerDashboardData["recent_events"];
   const approvedCount = recent.filter(r => r.decision === "approved").length;
 
-  const onboarding = computeOnboardingProgress({
+  const productionGate = computeOnboardingProgress({
     hasKey: true,
     keyPrefix,
     calls30d: usage30.length,
     approvedDecisions: approvedCount,
   });
+
+  const { readiness } = portalReadiness;
+  const onboarding = computePartnerFlowPortalOnboarding(readiness);
 
   return {
     partner_id: partnerId,
@@ -108,9 +119,10 @@ export async function getPartnerDashboard(
       calls_7d: usage7Count.count ?? 0,
     },
     recent_events: recent,
+    readiness,
     onboarding,
     mainnet_gate: {
-      eligible: onboarding.productionGateEligible,
+      eligible: productionGate.productionGateEligible,
       criteria:
         "Unaffiliated abx_live_ partner with decision: approved on a production verify call.",
     },
