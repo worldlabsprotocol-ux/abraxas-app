@@ -74,6 +74,16 @@ beforeEach(() => {
 });
 
 describe("PartnerWebhookSandboxPanel", () => {
+  it("does not fetch when enabled is false", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<PartnerWebhookSandboxPanel apiKey="abx_test_secret" enabled={false} />);
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("does not POST to test-delivery on mount", async () => {
     const fetchMock = mockFetchSequence([
       () => new Response(JSON.stringify({ webhook_status: statusPayload }), { status: 200 }),
@@ -120,7 +130,6 @@ describe("PartnerWebhookSandboxPanel", () => {
         ok: true,
         queued: true,
         event_id: "evt-queued-1",
-        message: "Test event queued. Queued does not mean delivered.",
       }), { status: 200 }),
       () => new Response(JSON.stringify({ webhook_status: statusPayload }), { status: 200 }),
       () => new Response(JSON.stringify(deliveriesPayload), { status: 200 }),
@@ -141,11 +150,72 @@ describe("PartnerWebhookSandboxPanel", () => {
     expect(successText.toLowerCase()).toContain("queued");
     expect(successText.toLowerCase()).not.toContain("delivered: true");
     expect(successText.toLowerCase()).not.toMatch(/\bwas delivered\b/);
+    expect(successText.toLowerCase()).toContain("transport");
 
     const postCalls = fetchMock.mock.calls.filter(([url, init]) =>
       String(url).includes("/api/partner/webhooks/test-delivery") && init?.method === "POST",
     );
     expect(postCalls).toHaveLength(1);
+  });
+
+  it("renders webhook progress steps without inferring signature verified from delivery", async () => {
+    mockFetchSequence([
+      () => new Response(JSON.stringify({ webhook_status: statusPayload }), { status: 200 }),
+      () => new Response(JSON.stringify({
+        deliveries: [
+          {
+            event_id: "evt-delivered-1",
+            event_type: "partner.webhook.test",
+            status: "delivered",
+            occurred_at: "2026-08-08T00:00:00.000Z",
+            delivered_at: "2026-08-08T00:00:05.000Z",
+            attempt_count: 1,
+            last_error_code: null,
+          },
+        ],
+      }), { status: 200 }),
+    ]);
+
+    render(
+      <PartnerWebhookSandboxPanel
+        apiKey="abx_test_secret"
+        signatureVerifiedAcknowledged={false}
+      />,
+    );
+
+    await screen.findByTestId("webhook-progress");
+    expect(screen.getByTestId("webhook-progress-delivered")).toBeInTheDocument();
+    expect(screen.getByTestId("webhook-progress-signature_verified").textContent).not.toMatch(/^✓/);
+  });
+
+  it("marks signature verified only when manually acknowledged", async () => {
+    mockFetchSequence([
+      () => new Response(JSON.stringify({ webhook_status: statusPayload }), { status: 200 }),
+      () => new Response(JSON.stringify({
+        deliveries: [
+          {
+            event_id: "evt-delivered-1",
+            event_type: "partner.webhook.test",
+            status: "delivered",
+            occurred_at: "2026-08-08T00:00:00.000Z",
+            delivered_at: "2026-08-08T00:00:05.000Z",
+            attempt_count: 1,
+            last_error_code: null,
+          },
+        ],
+      }), { status: 200 }),
+    ]);
+
+    render(
+      <PartnerWebhookSandboxPanel
+        apiKey="abx_test_secret"
+        signatureVerifiedAcknowledged
+      />,
+    );
+
+    await screen.findByTestId("webhook-progress");
+    const sigStep = screen.getByTestId("webhook-progress-signature_verified").textContent ?? "";
+    expect(sigStep).toMatch(/^✓/);
   });
 
   it("renders delivery history delivered status without exposing endpoint or secret", async () => {
@@ -157,7 +227,8 @@ describe("PartnerWebhookSandboxPanel", () => {
     const { container } = render(<PartnerWebhookSandboxPanel apiKey="abx_test_secret" />);
 
     await screen.findByTestId("delivery-history-table");
-    expect(screen.getByText("delivered")).toBeInTheDocument();
+    const table = screen.getByTestId("delivery-history-table");
+    expect(table.textContent).toContain("delivered");
 
     const text = container.textContent ?? "";
     expect(text).not.toContain("https://partner.example.com/webhook");

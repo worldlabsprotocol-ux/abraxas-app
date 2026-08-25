@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import type { PartnerWebhookPortalStatus } from "@/lib/partner/partnerWebhookPortalStatus";
 import { PARTNER_WEBHOOK_TEST_EVENT_TYPE } from "@/lib/partner/webhooks/types";
+import { deriveWebhookProgress } from "@/lib/partner/partnerSandboxIntegrationKit";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -35,7 +36,13 @@ const BLOCKED_REASON_COPY: Record<string, string> = {
 };
 
 const QUEUED_SUCCESS_COPY =
-  "Test event queued. Queued does not mean delivered — confirm receipt in your handler and check delivery history below.";
+  "Test event queued. Queued means accepted for delivery — check delivery history for HTTP delivered status. Delivered is transport only, not signature verification.";
+
+const WEBHOOK_PROGRESS_STEPS = [
+  { id: "queued", label: "Queued", detail: "Event accepted for async delivery" },
+  { id: "delivered", label: "HTTP delivered", detail: "Your endpoint returned a successful HTTP response" },
+  { id: "signature_verified", label: "Signature verified by your receiver", detail: "Manual acknowledgment — not inferred from delivery" },
+] as const;
 
 function authHeaders(apiKey: string): HeadersInit {
   return { Authorization: `Bearer ${apiKey}` };
@@ -45,7 +52,15 @@ function isSandboxTestEvent(eventType: string): boolean {
   return eventType === PARTNER_WEBHOOK_TEST_EVENT_TYPE;
 }
 
-export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
+export function PartnerWebhookSandboxPanel({
+  apiKey,
+  enabled = true,
+  signatureVerifiedAcknowledged = false,
+}: {
+  apiKey: string;
+  enabled?: boolean;
+  signatureVerifiedAcknowledged?: boolean;
+}) {
   const [status, setStatus] = useState<PartnerWebhookPortalStatus | null>(null);
   const [deliveries, setDeliveries] = useState<DeliveryRow[]>([]);
   const [loadError, setLoadError] = useState("");
@@ -53,9 +68,11 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
   const [queueEventId, setQueueEventId] = useState("");
   const [queueError, setQueueError] = useState("");
   const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   const refreshData = useCallback(async () => {
+    if (!enabled) return;
+
     setLoadError("");
     setLoading(true);
     try {
@@ -86,11 +103,12 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
     } finally {
       setLoading(false);
     }
-  }, [apiKey]);
+  }, [apiKey, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     void refreshData();
-  }, [refreshData]);
+  }, [refreshData, enabled]);
 
   async function sendSandboxTest() {
     if (!status?.sandbox_test.available || sending) return;
@@ -134,6 +152,10 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
     }
   }
 
+  if (!enabled) {
+    return null;
+  }
+
   if (loading && !status) {
     return (
       <ContentCard title="Webhook sandbox">
@@ -147,7 +169,7 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
   if (loadError) {
     return (
       <ContentCard title="Webhook sandbox">
-        <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "#ef4444", margin: 0 }}>{loadError}</p>
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#ef4444", margin: 0 }}>{loadError}</p>
       </ContentCard>
     );
   }
@@ -155,6 +177,16 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
   if (!status) return null;
 
   const testAvailable = status.sandbox_test.available;
+  const sandboxTestDeliveries = deliveries.filter((row) => isSandboxTestEvent(row.event_type));
+  const hasQueuedTestEvent = sandboxTestDeliveries.some((row) =>
+    ["queued", "pending", "retrying", "delivered"].includes(row.status),
+  );
+  const hasDeliveredTestEvent = sandboxTestDeliveries.some((row) => row.status === "delivered");
+  const progressStage = deriveWebhookProgress({
+    hasQueuedTestEvent: hasQueuedTestEvent || Boolean(queueEventId),
+    hasDeliveredTestEvent,
+    signatureVerifiedAcknowledged,
+  });
 
   return (
     <ContentCard title="Webhook sandbox">
@@ -164,6 +196,49 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
       <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
         {status.disclaimer}
       </p>
+
+      <div
+        data-testid="webhook-progress"
+        style={{
+          display: "grid",
+          gap: "0.4rem",
+          marginBottom: "0.85rem",
+          padding: "0.65rem",
+          borderRadius: 10,
+          border: "1px solid var(--border)",
+        }}
+      >
+        <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, marginBottom: "0.15rem" }}>
+          Webhook test progression
+        </div>
+        {WEBHOOK_PROGRESS_STEPS.map((step, index) => {
+          const stageOrder = ["not_started", "queued", "delivered", "signature_verified"] as const;
+          const currentIndex = stageOrder.indexOf(progressStage);
+          const stepIndex = index + 1;
+          const done = currentIndex >= stepIndex;
+          const active = currentIndex + 1 === stepIndex || (progressStage === "not_started" && index === 0 && !done);
+
+          return (
+            <div
+              key={step.id}
+              data-testid={`webhook-progress-${step.id}`}
+              style={{
+                padding: "0.45rem 0.55rem",
+                borderRadius: 8,
+                border: `1px solid ${done ? "rgba(16,185,129,0.35)" : active ? `${WARN}55` : "var(--border)"}`,
+                background: done ? "rgba(16,185,129,0.06)" : "transparent",
+              }}
+            >
+              <div style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: done ? ACCENT : "var(--text-primary)" }}>
+                {done ? "✓" : "○"} {step.label}
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.15rem 0 0" }}>
+                {step.detail}
+              </p>
+            </div>
+          );
+        })}
+      </div>
 
       <div style={{ display: "grid", gap: "0.45rem", marginBottom: "0.85rem" }}>
         {[
@@ -222,7 +297,7 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.5rem" }}>
           Sends a single <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>{PARTNER_WEBHOOK_TEST_EVENT_TYPE}</code>{" "}
           event with <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>test: true</code>.
-          This is not a real Partner Flow lifecycle notification.
+          This is not a Partner Flow lifecycle notification and is not validated via the public receipt API.
         </p>
 
         {!testAvailable && status.sandbox_test.blocked_reasons.length > 0 && (
@@ -295,7 +370,8 @@ export function PartnerWebhookSandboxPanel({ apiKey }: { apiKey: string }) {
           </button>
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.5rem" }}>
-          Automatic retries run on schedule. Manual requeue is operator-only — contact Abraxas ops for failed deliveries.
+          Status <strong>delivered</strong> means HTTP delivery succeeded only. Signature verification is your responsibility.
+          Automatic retries run on schedule. Manual requeue is operator-only.
         </p>
 
         {deliveries.length === 0 ? (

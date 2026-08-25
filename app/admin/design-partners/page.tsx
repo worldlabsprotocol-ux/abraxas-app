@@ -17,6 +17,7 @@ import { slugifyPartnerId } from "@/lib/partner/partnerOnboarding";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
+const WARN = "#F59E0B";
 
 interface Application {
   id: string;
@@ -35,6 +36,9 @@ export default function AdminDesignPartnersPage() {
   const [apps, setApps] = useState<Application[]>([]);
   const [msg, setMsg] = useState("");
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [promotedPartnerId, setPromotedPartnerId] = useState<string | null>(null);
+  const [handoffPolicyId, setHandoffPolicyId] = useState("");
+  const [handoffReturnUrl, setHandoffReturnUrl] = useState("");
   const [partnerIds, setPartnerIds] = useState<Record<string, string>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
@@ -75,6 +79,9 @@ export default function AdminDesignPartnersPage() {
   async function executePromote(app: Application, issueLive = false) {
     setMsg("");
     setNewKey(null);
+    setPromotedPartnerId(null);
+    setHandoffPolicyId("");
+    setHandoffReturnUrl("");
     const partnerId = partnerIds[app.id] || slugifyPartnerId(app.company);
     const res = await gate.adminRequest("/api/admin/design-partners/promote", {
       method: "POST",
@@ -95,6 +102,7 @@ export default function AdminDesignPartnersPage() {
       return;
     }
     setNewKey(data.api_key ?? null);
+    setPromotedPartnerId(data.partner_id ?? null);
     setMsg(`Promoted ${data.partner_id} · prefix ${data.key_prefix}`);
     await refresh();
   }
@@ -172,6 +180,55 @@ export default function AdminDesignPartnersPage() {
         }}>
           New API key (copy now): {newKey}
         </div>
+      )}
+
+      {promotedPartnerId && (
+        <ContentCard title="Sandbox handoff — operator assistance">
+          <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
+            Share these values with the design partner. Default key scopes are verify:credential and verify:registry only.
+            Webhook testing requires a separate key with webhooks:read from{" "}
+            <Link href="/admin/partners" style={{ color: "var(--accent)", fontWeight: 600 }}>/admin/partners</Link>.
+          </p>
+          <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.65rem" }}>
+            <label style={{ fontFamily: FONT, fontSize: "0.72rem" }}>
+              <span style={{ display: "block", fontWeight: 700, marginBottom: "0.25rem" }}>partner_id</span>
+              <input
+                readOnly
+                value={promotedPartnerId}
+                data-testid="handoff-partner-id"
+                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem" }}
+              />
+            </label>
+            <label style={{ fontFamily: FONT, fontSize: "0.72rem" }}>
+              <span style={{ display: "block", fontWeight: 700, marginBottom: "0.25rem" }}>policy_id (ops supplies)</span>
+              <input
+                value={handoffPolicyId}
+                onChange={(e) => setHandoffPolicyId(e.target.value)}
+                placeholder="sandbox-policy-v1"
+                data-testid="handoff-policy-id"
+                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem" }}
+              />
+            </label>
+            <label style={{ fontFamily: FONT, fontSize: "0.72rem" }}>
+              <span style={{ display: "block", fontWeight: 700, marginBottom: "0.25rem" }}>return_url (ops allowlists)</span>
+              <input
+                value={handoffReturnUrl}
+                onChange={(e) => setHandoffReturnUrl(e.target.value)}
+                placeholder="https://partner.example.com/auth/abraxas/callback"
+                data-testid="handoff-return-url"
+                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem" }}
+              />
+            </label>
+          </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.5rem" }}>
+            Partner portal: <Link href="/developers/partner" style={{ color: "var(--accent)" }}>/developers/partner</Link>
+            {" · "}
+            Docs: <Link href="/docs/partner-flow#external-design-partner-sandbox" style={{ color: "var(--accent)" }}>External design partner sandbox</Link>
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: WARN, margin: 0, fontWeight: 600 }}>
+            These handoff fields are session-only operator notes — not persisted in browser storage.
+          </p>
+        </ContentCard>
       )}
 
       <ContentCard title="Application queue">
