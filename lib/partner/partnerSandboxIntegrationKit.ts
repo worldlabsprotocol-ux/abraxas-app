@@ -282,3 +282,53 @@ export function deriveWebhookProgress(input: {
   if (input.hasQueuedTestEvent) return "queued";
   return "not_started";
 }
+
+export interface SandboxTestDeliveryRow {
+  event_type: string;
+  status: string;
+}
+
+export type SandboxTestSendUiMode =
+  | "blocked"
+  | "first_send_ready"
+  | "repeat_idle"
+  | "repeat_confirming"
+  | "sending";
+
+export const SANDBOX_TEST_REPEAT_CONFIRM_COPY =
+  "This action queues a new partner.webhook.test event with a new event ID. It does not retry or resend an existing delivery.";
+
+export function hasDeliveredSandboxTest(deliveries: readonly SandboxTestDeliveryRow[]): boolean {
+  return deliveries
+    .filter((row) => row.event_type === PARTNER_WEBHOOK_TEST_EVENT_TYPE)
+    .some((row) => row.status === "delivered");
+}
+
+export function deriveSandboxTestSendUiMode(input: {
+  testAvailable: boolean;
+  deliveries: readonly SandboxTestDeliveryRow[];
+  confirmingRepeat: boolean;
+  sending: boolean;
+}): SandboxTestSendUiMode {
+  if (!input.testAvailable) return "blocked";
+  if (input.sending) return "sending";
+  if (hasDeliveredSandboxTest(input.deliveries)) {
+    return input.confirmingRepeat ? "repeat_confirming" : "repeat_idle";
+  }
+  return "first_send_ready";
+}
+
+export function formatWebhookTestRateLimitMessage(retryAfterSec?: number | null): string {
+  if (typeof retryAfterSec === "number" && Number.isFinite(retryAfterSec) && retryAfterSec > 0) {
+    const seconds = Math.ceil(retryAfterSec);
+    return `Rate limit exceeded. You can queue another test in ${seconds} seconds. Sandbox test enqueue is limited to one request per minute per partner.`;
+  }
+  return "Rate limit exceeded. Wait about a minute before queueing another sandbox test.";
+}
+
+export function parseWebhookTestRetryAfterSec(headerValue: string | null): number | null {
+  if (!headerValue) return null;
+  const parsed = Number.parseInt(headerValue, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return parsed;
+}
