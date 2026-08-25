@@ -12,6 +12,7 @@ import { PartnerMeteringPanel } from "@/components/admin/PartnerMeteringPanel";
 import { PartnerWebhooksPanel } from "@/components/admin/PartnerWebhooksPanel";
 import { PartnerWebhookObservabilityPanel } from "@/components/admin/PartnerWebhookObservabilityPanel";
 import { PartnerWebhookSandboxReceiptsPanel } from "@/components/admin/PartnerWebhookSandboxReceiptsPanel";
+import { useProductionAdminSessionGate } from "@/lib/admin/productionAdminSessionUi";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -21,7 +22,7 @@ type Tab = "onboarding" | "keys" | "usage" | "webhooks" | "observability" | "san
 
 export default function AdminPartnersPage() {
   const [tab, setTab] = useState<Tab>("onboarding");
-  const [pin, setPin] = useState("");
+  const gate = useProductionAdminSessionGate();
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#f0f0f0", padding: "2rem 1.25rem" }}>
@@ -66,27 +67,49 @@ export default function AdminPartnersPage() {
                         : "Sandbox receipts"}
             </button>
           ))}
-          <input
-            type="password"
-            value={pin}
-            onChange={e => setPin(e.target.value)}
-            placeholder="Admin PIN (if not signed in)"
-            style={{
-              marginLeft: "auto", padding: "0.45rem 0.75rem", borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)",
-              color: "#f0f0f0", fontFamily: MONO, fontSize: "0.68rem",
-            }}
-          />
+          {gate.loading ? (
+            <span
+              data-testid="admin-partners-session-loading"
+              style={{
+                marginLeft: "auto",
+                fontFamily: FONT,
+                fontSize: "0.68rem",
+                color: "rgba(255,255,255,0.45)",
+              }}
+            >
+              Checking admin session…
+            </span>
+          ) : gate.usePinUnlock ? (
+            <input
+              type="password"
+              value={gate.pin}
+              onChange={e => gate.setPin(e.target.value)}
+              placeholder="Admin PIN (if not signed in)"
+              data-testid="admin-partners-pin-input"
+              style={{
+                marginLeft: "auto", padding: "0.45rem 0.75rem", borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)",
+                color: "#f0f0f0", fontFamily: MONO, fontSize: "0.68rem",
+              }}
+            />
+          ) : null}
         </div>
 
-        {tab === "onboarding" ? (
-          <PartnerOnboardingConsole adminPin={pin} />
+        {gate.loading ? (
+          <p
+            data-testid="admin-partners-panel-loading"
+            style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.5)" }}
+          >
+            Checking admin session…
+          </p>
+        ) : tab === "onboarding" ? (
+          <PartnerOnboardingConsole adminRequest={gate.adminRequest} />
         ) : tab === "keys" ? (
-          <AdminPartnerKeysPanel pin={pin} />
+          <AdminPartnerKeysPanel adminRequest={gate.adminRequest} />
         ) : tab === "usage" ? (
-          <PartnerMeteringPanel adminPin={pin} />
+          <PartnerMeteringPanel adminRequest={gate.adminRequest} />
         ) : tab === "webhooks" ? (
-          <PartnerWebhooksPanel adminPin={pin} />
+          <PartnerWebhooksPanel adminRequest={gate.adminRequest} />
         ) : tab === "observability" ? (
           <PartnerWebhookObservabilityPanel />
         ) : (

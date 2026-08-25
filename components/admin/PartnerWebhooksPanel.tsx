@@ -9,6 +9,7 @@ import {
   isWebhookHttpsEndpointWellFormed,
   webhookEndpointFormErrorMessage,
 } from "@/lib/partner/webhooks/webhookEndpointFormValidation";
+import type { ProductionAdminRequest } from "@/lib/admin/productionAdminSessionUi";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -77,7 +78,7 @@ function formatTs(value: string | null): string {
   return new Date(value).toLocaleString();
 }
 
-export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
+export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: ProductionAdminRequest }) {
   const [partnerId, setPartnerId] = useState("");
   const [endpointUrl, setEndpointUrl] = useState("");
   const [configs, setConfigs] = useState<WebhookConfig[]>([]);
@@ -93,9 +94,6 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
   const [endpointError, setEndpointError] = useState("");
   const [loading, setLoading] = useState(false);
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
-
-  const headers: Record<string, string> = {};
-  if (adminPin) headers["x-admin-pin"] = adminPin;
 
   const endpointValidation = useMemo(
     () => isWebhookHttpsEndpointWellFormed(endpointUrl),
@@ -117,9 +115,9 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
         : "/api/admin/partners/webhooks/failed-deliveries";
 
       const [configRes, healthRes, failedRes] = await Promise.all([
-        fetch("/api/admin/partners/webhooks", { headers }),
-        fetch("/api/admin/partners/webhooks/delivery-health", { headers }),
-        fetch(failedUrl, { headers }),
+        adminRequest("/api/admin/partners/webhooks"),
+        adminRequest("/api/admin/partners/webhooks/delivery-health"),
+        adminRequest(failedUrl),
       ]);
 
       const configBody = await configRes.json() as { configs?: WebhookConfig[]; disclaimer?: string; error?: string; message?: string };
@@ -152,7 +150,7 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
     } finally {
       setLoading(false);
     }
-  }, [adminPin, partnerId]);
+  }, [adminRequest, partnerId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -175,9 +173,9 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
     setNotice("");
     setSecretReveal("");
     try {
-      const res = await fetch("/api/admin/partners/webhooks", {
+      const res = await adminRequest("/api/admin/partners/webhooks", {
         method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ partner_id: partnerId.trim(), endpoint_url: endpointUrl.trim() }),
       });
       const body = await res.json() as { signing_secret?: string; notice?: string; error?: string; message?: string };
@@ -196,9 +194,9 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/partners/webhooks", {
+      const res = await adminRequest("/api/admin/partners/webhooks", {
         method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ partner_id: partnerId.trim(), enabled }),
       });
       const body = await res.json() as { error?: string; message?: string };
@@ -217,9 +215,9 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
     setError("");
     setSecretReveal("");
     try {
-      const res = await fetch("/api/admin/partners/webhooks/rotate-secret", {
+      const res = await adminRequest("/api/admin/partners/webhooks/rotate-secret", {
         method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ partner_id: partnerId.trim() }),
       });
       const body = await res.json() as { signing_secret?: string; notice?: string; error?: string };
@@ -247,9 +245,9 @@ export function PartnerWebhooksPanel({ adminPin }: { adminPin: string }) {
     setError("");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/webhooks/retry", {
+      const res = await adminRequest("/api/admin/partners/webhooks/retry", {
         method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outbox_id: outboxId }),
       });
       const body = await res.json() as { message?: string; error?: string };

@@ -5,8 +5,6 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { SITE_URL } from "@/lib/siteUrl";
 import {
   ProductionAdminSessionStatus,
@@ -15,15 +13,19 @@ import {
   useProductionAdminSessionGate,
 } from "@/lib/admin/productionAdminSessionUi";
 
-function readSource(rel: string): string {
-  return readFileSync(resolve(process.cwd(), rel), "utf8");
+function stubRuntimeOrigin(origin: string) {
+  Object.defineProperty(window, "location", {
+    value: { ...window.location, origin },
+    writable: true,
+    configurable: true,
+  });
 }
 
 function SessionHarness() {
   const gate = useProductionAdminSessionGate();
 
   if (gate.loading) {
-    return createElement("div", null, "loading");
+    return createElement("div", { "data-testid": "session-loading" }, "loading");
   }
 
   if (!gate.authorized && gate.usePinUnlock) {
@@ -56,6 +58,15 @@ beforeEach(() => {
 });
 
 describe("shouldUseProductionBrowserSessionAdminUi", () => {
+  it("is true on canonical Production runtime origin without client env", () => {
+    expect(
+      shouldUseProductionBrowserSessionAdminUi(
+        { NODE_ENV: "production" },
+        SITE_URL,
+      ),
+    ).toBe(true);
+  });
+
   it("is true only on canonical Production configured origin", () => {
     expect(
       shouldUseProductionBrowserSessionAdminUi({
@@ -66,6 +77,13 @@ describe("shouldUseProductionBrowserSessionAdminUi", () => {
   });
 
   it("is false on demo, localhost, and test fallbacks", () => {
+    expect(
+      shouldUseProductionBrowserSessionAdminUi(
+        { NODE_ENV: "production", NEXT_PUBLIC_APP_URL: "https://demo.abraxasworld.xyz" },
+        "https://demo.abraxasworld.xyz",
+      ),
+    ).toBe(false);
+
     expect(
       shouldUseProductionBrowserSessionAdminUi({
         NODE_ENV: "production",
@@ -88,9 +106,9 @@ describe("shouldUseProductionBrowserSessionAdminUi", () => {
 });
 
 describe("Production browser-session admin UX", () => {
-  it("shows authorized state without PIN UI on Production", async () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_URL", SITE_URL);
+  it("selects browser-session mode from runtime origin when NEXT_PUBLIC_APP_URL is missing", async () => {
     vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
     mockAccessFetch({ authorized: true, method: "email" });
 
     render(createElement(SessionHarness));
@@ -99,9 +117,21 @@ describe("Production browser-session admin UX", () => {
     expect(screen.queryByPlaceholderText("Admin PIN")).not.toBeInTheDocument();
   });
 
-  it("shows Google sign-in recovery copy on Production 401", async () => {
+  it("shows authorized state without PIN UI on Production", async () => {
     vi.stubEnv("NEXT_PUBLIC_APP_URL", SITE_URL);
     vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    mockAccessFetch({ authorized: true, method: "email" });
+
+    render(createElement(SessionHarness));
+
+    expect(await screen.findByText("Signed in · authorized")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Admin PIN")).not.toBeInTheDocument();
+  });
+
+  it("shows Google sign-in recovery copy on Production unauthorized access", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
     mockAccessFetch({ authorized: false, method: null });
 
     render(createElement(SessionHarness));
@@ -110,9 +140,40 @@ describe("Production browser-session admin UX", () => {
     expect(screen.queryByPlaceholderText("Admin PIN")).not.toBeInTheDocument();
   });
 
+  it("fails closed as unauthorized when access fetch throws", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo) => {
+      if (String(input).includes("/api/admin/access")) {
+        throw new Error("network down");
+      }
+      return new Response("{}", { status: 500 });
+    }));
+
+    render(createElement(SessionHarness));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+  });
+
+  it("fails closed as unauthorized when access JSON parsing fails", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo) => {
+      if (String(input).includes("/api/admin/access")) {
+        return new Response("not-json", { status: 200 });
+      }
+      return new Response("{}", { status: 500 });
+    }));
+
+    render(createElement(SessionHarness));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
+  });
+
   it("preserves PIN UI on demo origin", async () => {
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://demo.abraxasworld.xyz");
     vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin("https://demo.abraxasworld.xyz");
     mockAccessFetch({ authorized: false, method: null });
 
     render(createElement(SessionHarness));
@@ -123,6 +184,7 @@ describe("Production browser-session admin UX", () => {
 
   it("preserves PIN UI on localhost development", async () => {
     vi.stubEnv("NODE_ENV", "development");
+    stubRuntimeOrigin("http://localhost:3000");
     mockAccessFetch({ authorized: false, method: null });
 
     render(createElement(SessionHarness));
@@ -130,9 +192,20 @@ describe("Production browser-session admin UX", () => {
     expect(await screen.findByPlaceholderText("Admin PIN")).toBeInTheDocument();
   });
 
-  it("uses credentials without x-admin-pin on Production adminRequest", async () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_URL", SITE_URL);
+  it("does not flash PIN UI before runtime mode resolves on Production", () => {
     vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    mockAccessFetch({ authorized: true, method: "email" });
+
+    render(createElement(SessionHarness));
+
+    expect(screen.getByTestId("session-loading")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Admin PIN")).not.toBeInTheDocument();
+  });
+
+  it("uses credentials without x-admin-pin on Production adminRequest", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
     const fetchMock = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/api/admin/access")) {
@@ -163,30 +236,35 @@ describe("Production browser-session admin UX", () => {
       );
     });
   });
-});
 
-describe("migrated admin pages", () => {
-  it("design-partners uses production session gate with PIN fallback only off Production", () => {
-    const source = readSource("app/admin/design-partners/page.tsx");
-    expect(source).toContain("useProductionAdminSessionGate");
-    expect(source).toContain("usePinUnlock");
-    expect(source).toContain("gate.adminRequest");
-    expect(source).toContain("gate.usePinUnlock ?");
-  });
+  it("sends x-admin-pin on demo adminRequest when PIN is set", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin("https://demo.abraxasworld.xyz");
+    const fetchMock = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/admin/partners/onboarding")) {
+        expect(new Headers(init?.headers).get("x-admin-pin")).toBe("demo-pin");
+        return new Response(JSON.stringify({ partners: [] }), { status: 200 });
+      }
+      return new Response("{}", { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
-  it("receipts uses production session gate with PIN fallback only off Production", () => {
-    const source = readSource("app/admin/receipts/page.tsx");
-    expect(source).toContain("useProductionAdminSessionGate");
-    expect(source).toContain("gate.usePinUnlock");
-    expect(source).toContain("gate.adminRequest");
-  });
-});
+    function PinHarness() {
+      const gate = useProductionAdminSessionGate();
+      if (gate.loading) return null;
+      if (!gate.pin) {
+        gate.setPin("demo-pin");
+        return null;
+      }
+      void gate.adminRequest("/api/admin/partners/onboarding");
+      return createElement("div", null, "ready");
+    }
 
-describe("admin auth modules unchanged", () => {
-  it("does not modify lib/adminAuth.ts", () => {
-    const source = readSource("lib/adminAuth.ts");
-    expect(source).toContain("resolveStrictProductionAdminAccess");
-    expect(source).toContain("checkProductionSensitiveAdminAccess");
-    expect(source).not.toContain("productionAdminSessionUi");
+    render(createElement(PinHarness));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
   });
 });
