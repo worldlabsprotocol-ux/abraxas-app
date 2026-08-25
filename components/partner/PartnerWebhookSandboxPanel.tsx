@@ -2,12 +2,18 @@
 // FILE: components/partner/PartnerWebhookSandboxPanel.tsx
 // Sandbox webhook status, manual test enqueue, and delivery history for the partner portal.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import type { PartnerWebhookPortalStatus } from "@/lib/partner/partnerWebhookPortalStatus";
 import { PARTNER_WEBHOOK_TEST_EVENT_TYPE } from "@/lib/partner/webhooks/types";
-import { deriveWebhookProgress } from "@/lib/partner/partnerSandboxIntegrationKit";
+import {
+  deriveSandboxTestSendUiMode,
+  deriveWebhookProgress,
+  formatWebhookTestRateLimitMessage,
+  parseWebhookTestRetryAfterSec,
+  SANDBOX_TEST_REPEAT_CONFIRM_COPY,
+} from "@/lib/partner/partnerSandboxIntegrationKit";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -69,6 +75,10 @@ export function PartnerWebhookSandboxPanel({
   const [queueError, setQueueError] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(enabled);
+  const [confirmingRepeat, setConfirmingRepeat] = useState(false);
+  const repeatButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelConfirmRef = useRef<HTMLButtonElement>(null);
+  const confirmDialogRef = useRef<HTMLDivElement>(null);
 
   const refreshData = useCallback(async () => {
     if (!enabled) return;
@@ -110,6 +120,30 @@ export function PartnerWebhookSandboxPanel({
     void refreshData();
   }, [refreshData, enabled]);
 
+  const closeRepeatConfirmation = useCallback(() => {
+    setConfirmingRepeat(false);
+    requestAnimationFrame(() => {
+      repeatButtonRef.current?.focus();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!confirmingRepeat) return;
+
+    cancelConfirmRef.current?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || sending) return;
+      event.preventDefault();
+      closeRepeatConfirmation();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [confirmingRepeat, sending, closeRepeatConfirmation]);
+
   async function sendSandboxTest() {
     if (!status?.sandbox_test.available || sending) return;
 
@@ -133,18 +167,25 @@ export function PartnerWebhookSandboxPanel({
       };
 
       if (!res.ok) {
-        setQueueError(body.error ?? body.code ?? "Test delivery unavailable");
+        if (res.status === 429 || body.code === "rate_limited") {
+          setQueueError(formatWebhookTestRateLimitMessage(
+            parseWebhookTestRetryAfterSec(res.headers.get("Retry-After")),
+          ));
+        } else {
+          setQueueError("Test delivery unavailable");
+        }
         return;
       }
 
       if (body.queued === true) {
         setQueueMessage(body.message ?? QUEUED_SUCCESS_COPY);
         setQueueEventId(body.event_id ?? "");
+        setConfirmingRepeat(false);
         await refreshData();
         return;
       }
 
-      setQueueError("Unexpected response from test delivery");
+      setQueueError("Test delivery unavailable");
     } catch {
       setQueueError("Test delivery request failed");
     } finally {
@@ -186,6 +227,12 @@ export function PartnerWebhookSandboxPanel({
     hasQueuedTestEvent: hasQueuedTestEvent || Boolean(queueEventId),
     hasDeliveredTestEvent,
     signatureVerifiedAcknowledged,
+  });
+  const sendUiMode = deriveSandboxTestSendUiMode({
+    testAvailable,
+    deliveries,
+    confirmingRepeat,
+    sending,
   });
 
   return (
@@ -300,7 +347,7 @@ export function PartnerWebhookSandboxPanel({
           This is not a Partner Flow lifecycle notification and is not validated via the public receipt API.
         </p>
 
-        {!testAvailable && status.sandbox_test.blocked_reasons.length > 0 && (
+        {sendUiMode === "blocked" && status.sandbox_test.blocked_reasons.length > 0 && (
           <ul style={{ margin: "0 0 0.65rem", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>
             {status.sandbox_test.blocked_reasons.map((reason) => (
               <li key={reason}>{BLOCKED_REASON_COPY[reason] ?? reason}</li>
@@ -308,25 +355,137 @@ export function PartnerWebhookSandboxPanel({
           </ul>
         )}
 
-        <button
-          type="button"
-          data-testid="sandbox-test-button"
-          disabled={!testAvailable || sending}
-          onClick={() => void sendSandboxTest()}
-          style={{
-            padding: "0.55rem 0.9rem",
-            borderRadius: 10,
-            border: "none",
-            background: testAvailable ? "var(--accent)" : "var(--surface-inset)",
-            color: testAvailable ? "#1a1408" : "var(--text-muted)",
-            fontFamily: FONT,
-            fontSize: "0.76rem",
-            fontWeight: 700,
-            cursor: testAvailable && !sending ? "pointer" : "not-allowed",
-          }}
-        >
-          {sending ? "Queueing…" : "Send sandbox test event"}
-        </button>
+        {sendUiMode === "first_send_ready" && (
+          <button
+            type="button"
+            data-testid="sandbox-test-button"
+            disabled={sending}
+            onClick={() => void sendSandboxTest()}
+            style={{
+              padding: "0.55rem 0.9rem",
+              borderRadius: 10,
+              border: "none",
+              background: "var(--accent)",
+              color: "#1a1408",
+              fontFamily: FONT,
+              fontSize: "0.76rem",
+              fontWeight: 700,
+              cursor: sending ? "not-allowed" : "pointer",
+            }}
+          >
+            {sending ? "Queueing…" : "Send sandbox test event"}
+          </button>
+        )}
+
+        {(sendUiMode === "repeat_idle" || sendUiMode === "repeat_confirming" || (sendUiMode === "sending" && hasDeliveredTestEvent)) && (
+          <div data-testid="sandbox-test-repeat-section">
+            <p
+              data-testid="sandbox-test-completed"
+              style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, lineHeight: 1.55, margin: "0 0 0.65rem", fontWeight: 600 }}
+            >
+              ✓ A sandbox test event was HTTP-delivered. Check delivery history for the latest status. Signature verification is your responsibility.
+            </p>
+            <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.65rem" }}>
+              Each send creates a new event with a new event ID. This does not retry or resend a previous delivery.
+            </p>
+
+            {sendUiMode !== "repeat_confirming" && (
+              <button
+                ref={repeatButtonRef}
+                type="button"
+                data-testid="sandbox-test-repeat-button"
+                disabled={sending}
+                onClick={() => setConfirmingRepeat(true)}
+                style={{
+                  padding: "0.55rem 0.9rem",
+                  borderRadius: 10,
+                  border: "1px solid var(--border-strong)",
+                  background: "transparent",
+                  color: "var(--text-primary)",
+                  fontFamily: FONT,
+                  fontSize: "0.76rem",
+                  fontWeight: 700,
+                  cursor: sending ? "not-allowed" : "pointer",
+                }}
+              >
+                Send another test
+              </button>
+            )}
+
+            {sendUiMode === "repeat_confirming" && (
+              <div
+                ref={confirmDialogRef}
+                role="dialog"
+                aria-labelledby="sandbox-test-repeat-dialog-title"
+                aria-describedby="sandbox-test-repeat-dialog-body"
+                data-testid="sandbox-test-repeat-dialog"
+                style={{
+                  marginTop: "0.65rem",
+                  padding: "0.75rem",
+                  borderRadius: 10,
+                  border: `1px solid ${WARN}55`,
+                  background: "var(--surface-inset)",
+                }}
+              >
+                <div
+                  id="sandbox-test-repeat-dialog-title"
+                  style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, marginBottom: "0.35rem" }}
+                >
+                  Send another sandbox test?
+                </div>
+                <p
+                  id="sandbox-test-repeat-dialog-body"
+                  style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.65rem" }}
+                >
+                  {SANDBOX_TEST_REPEAT_CONFIRM_COPY}
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <button
+                    ref={cancelConfirmRef}
+                    type="button"
+                    data-testid="sandbox-test-repeat-cancel"
+                    disabled={sending}
+                    onClick={closeRepeatConfirmation}
+                    style={{
+                      padding: "0.55rem 0.9rem",
+                      borderRadius: 10,
+                      border: "1px solid var(--border-strong)",
+                      background: "transparent",
+                      color: "var(--text-primary)",
+                      fontFamily: FONT,
+                      fontSize: "0.76rem",
+                      fontWeight: 700,
+                      cursor: sending ? "not-allowed" : "pointer",
+                      flex: "1 1 140px",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="sandbox-test-repeat-confirm"
+                    disabled={sending}
+                    onClick={() => void sendSandboxTest()}
+                    style={{
+                      padding: "0.55rem 0.9rem",
+                      borderRadius: 10,
+                      border: "none",
+                      background: "var(--accent)",
+                      color: "#1a1408",
+                      fontFamily: FONT,
+                      fontSize: "0.76rem",
+                      fontWeight: 700,
+                      cursor: sending ? "not-allowed" : "pointer",
+                      flex: "1 1 140px",
+                    }}
+                  >
+                    {sending ? "Queueing…" : "Queue new test event"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {queueMessage && (
           <p
@@ -343,7 +502,11 @@ export function PartnerWebhookSandboxPanel({
           </p>
         )}
         {queueError && (
-          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#ef4444", margin: "0.65rem 0 0" }}>
+          <p
+            data-testid="sandbox-test-error"
+            role="alert"
+            style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#ef4444", margin: "0.65rem 0 0" }}
+          >
             {queueError}
           </p>
         )}
@@ -354,6 +517,7 @@ export function PartnerWebhookSandboxPanel({
           <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800 }}>Delivery history</div>
           <button
             type="button"
+            data-testid="delivery-history-refresh"
             onClick={() => void refreshData()}
             style={{
               padding: "0.3rem 0.55rem",
