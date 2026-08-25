@@ -31,6 +31,10 @@ const partner = {
   conformance_command: null,
 };
 
+function createAdminRequestFromFetch() {
+  return async (input: RequestInfo | URL, init?: RequestInit) => fetch(input, init);
+}
+
 function mockOnboardingFetch() {
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo, init?: RequestInit) => {
     const url = String(input);
@@ -68,7 +72,7 @@ beforeEach(() => {
 describe("PartnerOnboardingConsole notices", () => {
   it("shows notice after creating a pilot partner", async () => {
     mockOnboardingFetch();
-    render(createElement(PartnerOnboardingConsole));
+    render(createElement(PartnerOnboardingConsole, { adminRequest: createAdminRequestFromFetch() }));
     await screen.findByText("Demo Co");
 
     const user = userEvent.setup();
@@ -83,7 +87,7 @@ describe("PartnerOnboardingConsole notices", () => {
 
   it("shows notice after saving a callback URL", async () => {
     mockOnboardingFetch();
-    render(createElement(PartnerOnboardingConsole));
+    render(createElement(PartnerOnboardingConsole, { adminRequest: createAdminRequestFromFetch() }));
     await screen.findByText("Demo Co");
 
     const user = userEvent.setup();
@@ -100,7 +104,7 @@ describe("PartnerOnboardingConsole notices", () => {
 
   it("shows notice after creating a policy draft", async () => {
     mockOnboardingFetch();
-    render(createElement(PartnerOnboardingConsole));
+    render(createElement(PartnerOnboardingConsole, { adminRequest: createAdminRequestFromFetch() }));
     await screen.findByText("Demo Co");
 
     const user = userEvent.setup();
@@ -119,7 +123,7 @@ describe("PartnerOnboardingConsole notices", () => {
     ];
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ partners }), { status: 200 })));
 
-    render(createElement(PartnerOnboardingConsole));
+    render(createElement(PartnerOnboardingConsole, { adminRequest: createAdminRequestFromFetch() }));
     await screen.findByText("Demo Co");
 
     const user = userEvent.setup();

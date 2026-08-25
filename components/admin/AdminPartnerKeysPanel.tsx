@@ -2,7 +2,7 @@
 // FILE: components/admin/AdminPartnerKeysPanel.tsx
 // Partner API key issuance (existing admin flow).
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import {
@@ -12,6 +12,7 @@ import {
   partnerAllowsProductionKeys,
 } from "@/lib/partner/partnerKeyIssuance";
 import type { PartnerScope } from "@/lib/partner/partnerAuth";
+import type { ProductionAdminRequest } from "@/lib/admin/productionAdminSessionUi";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -30,7 +31,7 @@ interface PartnerKeyRow {
 
 type ScopePreset = "webhook_sandbox" | "verify_apis" | "custom";
 
-export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
+export function AdminPartnerKeysPanel({ adminRequest }: { adminRequest: ProductionAdminRequest }) {
   const [keys, setKeys] = useState<PartnerKeyRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -45,17 +46,12 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
   const [actionId, setActionId] = useState<string | null>(null);
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
-  const requestHeaders = useMemo(() => ({
-    ...(pin ? { "x-admin-pin": pin } : {}),
-  }), [pin]);
-
   const loadKeys = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/partner-keys", {
-        headers: requestHeaders,
-        credentials: "include",
+      const res = await adminRequest("/api/admin/partner-keys", {
+        cache: "no-store",
       });
       const data = await res.json() as { keys?: PartnerKeyRow[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load keys");
@@ -65,7 +61,7 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
     } finally {
       setLoading(false);
     }
-  }, [requestHeaders]);
+  }, [adminRequest]);
 
   useEffect(() => {
     void loadKeys();
@@ -81,11 +77,10 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
 
     setPartnerLookupMessage("Checking partner environments…");
     try {
-      const res = await fetch(
+      const res = await adminRequest(
         `/api/admin/partners/onboarding?partner_id=${encodeURIComponent(trimmed)}`,
         {
-          headers: requestHeaders,
-          credentials: "include",
+          cache: "no-store",
         },
       );
       const data = await res.json() as {
@@ -152,13 +147,11 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
     setError("");
     setNewKey(null);
     try {
-      const res = await fetch("/api/admin/partner-keys", {
+      const res = await adminRequest("/api/admin/partner-keys", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...requestHeaders,
         },
-        credentials: "include",
         body: JSON.stringify({
           partner_id: partnerId.trim(),
           display_name: displayName.trim(),
@@ -204,13 +197,11 @@ export function AdminPartnerKeysPanel({ pin }: { pin: string }) {
     setActionId(id);
     setError("");
     try {
-      const res = await fetch("/api/admin/partner-keys", {
+      const res = await adminRequest("/api/admin/partner-keys", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          ...requestHeaders,
         },
-        credentials: "include",
         body: JSON.stringify({ id, revoke: true }),
       });
       const data = await res.json() as { ok?: boolean; error?: string };

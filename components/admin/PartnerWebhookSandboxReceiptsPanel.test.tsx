@@ -9,13 +9,19 @@ import { PartnerWebhookSandboxReceiptsPanel } from "./PartnerWebhookSandboxRecei
 
 const adminRequestMock = vi.fn();
 
+const gateState = vi.hoisted(() => ({
+  usePinUnlock: false,
+  loading: false,
+  authorized: true,
+}));
+
 vi.mock("@/lib/admin/productionAdminSessionUi", () => ({
   PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE: "Sign in with an authorized Google account.",
   ProductionAdminSessionStatus: () => <div>session-status</div>,
   useProductionAdminSessionGate: () => ({
-    usePinUnlock: false,
-    loading: false,
-    authorized: true,
+    usePinUnlock: gateState.usePinUnlock,
+    loading: gateState.loading,
+    authorized: gateState.authorized,
     pin: "",
     setPin: vi.fn(),
     unlockWithPin: vi.fn(),
@@ -43,6 +49,9 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
+  gateState.usePinUnlock = false;
+  gateState.loading = false;
+  gateState.authorized = true;
 });
 
 describe("PartnerWebhookSandboxReceiptsPanel", () => {
@@ -98,5 +107,16 @@ describe("PartnerWebhookSandboxReceiptsPanel", () => {
     expect(text).not.toContain("signing_secret");
     expect(text).not.toContain("response_snippet");
     expect(text).not.toContain("\"payload\"");
+  });
+
+  it("shows Google sign-in copy when unauthorized in browser-session mode", () => {
+    gateState.usePinUnlock = false;
+    gateState.loading = false;
+    gateState.authorized = false;
+
+    render(<PartnerWebhookSandboxReceiptsPanel />);
+
+    expect(screen.getByText("Sign in with an authorized Google account.")).toBeInTheDocument();
+    expect(screen.queryByText(/Sign in via the admin layout gate/i)).not.toBeInTheDocument();
   });
 });

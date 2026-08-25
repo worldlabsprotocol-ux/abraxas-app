@@ -3,6 +3,7 @@
 // Admin partner usage metering view — aggregates only, no pricing.
 
 import { useCallback, useEffect, useState } from "react";
+import type { ProductionAdminRequest } from "@/lib/admin/productionAdminSessionUi";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -41,7 +42,7 @@ interface EntitlementsView {
   enforcement_label: string;
 }
 
-export function PartnerMeteringPanel({ adminPin }: { adminPin: string }) {
+export function PartnerMeteringPanel({ adminRequest }: { adminRequest: ProductionAdminRequest }) {
   const [partnerId, setPartnerId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,17 +55,12 @@ export function PartnerMeteringPanel({ adminPin }: { adminPin: string }) {
     setLoading(true);
     setError(null);
     try {
-      const headers: Record<string, string> = {};
-      if (adminPin) headers["x-admin-pin"] = adminPin;
-
       const [meteringRes, entRes] = await Promise.all([
-        fetch(`/api/admin/partners/metering?partner_id=${encodeURIComponent(id)}`, {
+        adminRequest(`/api/admin/partners/metering?partner_id=${encodeURIComponent(id)}`, {
           cache: "no-store",
-          headers,
         }),
-        fetch(`/api/admin/partners/entitlements?partner_id=${encodeURIComponent(id)}`, {
+        adminRequest(`/api/admin/partners/entitlements?partner_id=${encodeURIComponent(id)}`, {
           cache: "no-store",
-          headers,
         }),
       ]);
 
@@ -89,7 +85,7 @@ export function PartnerMeteringPanel({ adminPin }: { adminPin: string }) {
     } finally {
       setLoading(false);
     }
-  }, [adminPin, partnerId]);
+  }, [adminRequest, partnerId]);
 
   useEffect(() => {
     if (partnerId.trim()) void load();

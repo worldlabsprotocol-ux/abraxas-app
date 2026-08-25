@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
+import type { ProductionAdminRequest } from "@/lib/admin/productionAdminSessionUi";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -41,7 +42,7 @@ function readinessColor(level: ReadinessLevel | "ready" | "not_ready"): string {
   return "#F87171";
 }
 
-export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string }) {
+export function PartnerOnboardingConsole({ adminRequest }: { adminRequest: ProductionAdminRequest }) {
   const [partners, setPartners] = useState<PartnerDetail[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,11 +58,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
   const [policyName, setPolicyName] = useState("");
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
-  const headers = useCallback((): HeadersInit => {
-    const h: HeadersInit = { "Content-Type": "application/json" };
-    if (adminPin) h["x-admin-pin"] = adminPin;
-    return h;
-  }, [adminPin]);
+  const jsonHeaders = useCallback((): HeadersInit => ({ "Content-Type": "application/json" }), []);
 
   const actionsDisabled = loading || confirmDialogProps.open || confirmDialogProps.busy;
 
@@ -70,9 +67,8 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     if (options?.clearNotice) setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding", {
-        headers: adminPin ? { "x-admin-pin": adminPin } : undefined,
-        credentials: "include",
+      const res = await adminRequest("/api/admin/partners/onboarding", {
+        cache: "no-store",
       });
       const data = await res.json() as { partners?: PartnerDetail[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load partners");
@@ -85,7 +81,7 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     } finally {
       setLoading(false);
     }
-  }, [adminPin, selectedId]);
+  }, [adminRequest, selectedId]);
 
   useEffect(() => {
     void loadPartners();
@@ -104,10 +100,9 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     try {
       const id = newPartnerId.trim();
       const company = newCompany.trim();
-      const res = await fetch("/api/admin/partners/onboarding", {
+      const res = await adminRequest("/api/admin/partners/onboarding", {
         method: "POST",
-        headers: headers(),
-        credentials: "include",
+        headers: jsonHeaders(),
         body: JSON.stringify({
           partner_id: id,
           company,
@@ -139,10 +134,9 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding/return-urls", {
+      const res = await adminRequest("/api/admin/partners/onboarding/return-urls", {
         method: "POST",
-        headers: headers(),
-        credentials: "include",
+        headers: jsonHeaders(),
         body: JSON.stringify({
           partner_id: partnerId,
           return_urls: [savedUrl],
@@ -168,10 +162,9 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding/policies", {
+      const res = await adminRequest("/api/admin/partners/onboarding/policies", {
         method: "POST",
-        headers: headers(),
-        credentials: "include",
+        headers: jsonHeaders(),
         body: JSON.stringify({
           action: "create_initial_draft",
           partner_id: partnerId,
@@ -199,10 +192,9 @@ export function PartnerOnboardingConsole({ adminPin = "" }: { adminPin?: string 
     setError("");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/partners/onboarding/policies", {
+      const res = await adminRequest("/api/admin/partners/onboarding/policies", {
         method: "POST",
-        headers: headers(),
-        credentials: "include",
+        headers: jsonHeaders(),
         body: JSON.stringify({
           action: "publish",
           partner_id: selected.partner_id,

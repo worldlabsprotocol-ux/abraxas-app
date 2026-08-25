@@ -9,6 +9,10 @@ import { AdminPartnerKeysPanel } from "./AdminPartnerKeysPanel";
 
 const fetchMock = vi.fn();
 
+function createAdminRequest() {
+  return async (input: RequestInfo | URL, init?: RequestInit) => fetchMock(input, init);
+}
+
 vi.mock("@/lib/admin/useAdminConfirm", () => ({
   useAdminConfirm: () => ({
     requestConfirm: ({ onConfirmed }: { onConfirmed: () => void }) => onConfirmed(),
@@ -56,7 +60,7 @@ afterEach(() => {
 
 describe("AdminPartnerKeysPanel", () => {
   it("defaults to sandbox environment and webhook sandbox scopes", () => {
-    render(<AdminPartnerKeysPanel pin="" />);
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
 
     expect(screen.getByTestId("partner-key-env-test")).toHaveStyle({ color: "#10B981" });
     expect(screen.getByTestId("partner-key-scope-webhooks-read")).toBeChecked();
@@ -65,7 +69,7 @@ describe("AdminPartnerKeysPanel", () => {
 
   it("disables live issuance for sandbox-only partners after lookup", async () => {
     const user = userEvent.setup();
-    render(<AdminPartnerKeysPanel pin="" />);
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
 
     await user.type(screen.getByTestId("partner-key-partner-input"), "sandbox-partner");
     await user.tab();
@@ -77,7 +81,7 @@ describe("AdminPartnerKeysPanel", () => {
 
   it("posts explicit non-empty webhooks:read scopes", async () => {
     const user = userEvent.setup();
-    render(<AdminPartnerKeysPanel pin="" />);
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
 
     await user.type(screen.getByTestId("partner-key-partner-input"), "sandbox-partner");
     await user.type(screen.getByTestId("partner-key-display-name-input"), "Webhook sandbox");
@@ -99,9 +103,25 @@ describe("AdminPartnerKeysPanel", () => {
     });
   });
 
+  it("does not send x-admin-pin through adminRequest on Production-style session calls", async () => {
+    const adminRequest = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(new Headers(init?.headers).has("x-admin-pin")).toBe(false);
+      return new Response(JSON.stringify({ keys: [] }), { status: 200 });
+    });
+
+    render(<AdminPartnerKeysPanel adminRequest={adminRequest} />);
+
+    await waitFor(() => {
+      expect(adminRequest).toHaveBeenCalledWith(
+        "/api/admin/partner-keys",
+        expect.objectContaining({ cache: "no-store" }),
+      );
+    });
+  });
+
   it("does not persist the raw key in browser storage", async () => {
     const user = userEvent.setup();
-    render(<AdminPartnerKeysPanel pin="" />);
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
 
     await user.type(screen.getByTestId("partner-key-partner-input"), "sandbox-partner");
     await user.type(screen.getByTestId("partner-key-display-name-input"), "Webhook sandbox");

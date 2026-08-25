@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { adminFetch } from "@/lib/admin/adminFetch";
-import { shouldUseProductionBrowserSessionAdminUi } from "@/lib/admin/productionAdminSessionUi";
+import { useProductionBrowserSessionAdminUiMode } from "@/lib/admin/productionAdminSessionUi";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -24,7 +24,7 @@ type PromotionResponse = {
 };
 
 export function PartnerProductionEnvPromotionPanel() {
-  const productionOnly = shouldUseProductionBrowserSessionAdminUi();
+  const mode = useProductionBrowserSessionAdminUiMode();
   const [partnerId, setPartnerId] = useState("");
   const [policyId, setPolicyId] = useState("");
   const [returnUrl, setReturnUrl] = useState("");
@@ -39,7 +39,25 @@ export function PartnerProductionEnvPromotionPanel() {
   const [activateError, setActivateError] = useState("");
   const [reverseError, setReverseError] = useState("");
 
-  if (!productionOnly) {
+  if (!mode.resolved) {
+    return (
+      <section
+        aria-label="Production environment promotion"
+        style={{
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12,
+          padding: "1rem 1.1rem",
+          background: "rgba(255,255,255,0.02)",
+        }}
+      >
+        <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "rgba(255,255,255,0.55)", margin: 0 }}>
+          Checking deployment context…
+        </p>
+      </section>
+    );
+  }
+
+  if (!mode.useBrowserSession) {
     return (
       <section
         aria-label="Production environment promotion"

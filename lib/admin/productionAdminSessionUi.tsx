@@ -14,9 +14,21 @@ export const ADMIN_PIN_STORAGE_KEY = "abraxas_admin_pin";
 export const PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE = "Sign in with an authorized Google account.";
 export const PRODUCTION_ADMIN_AUTHORIZED_LABEL = "Signed in · authorized";
 
+export function resolveRuntimeBrowserOrigin(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.location.origin;
+}
+
 export function shouldUseProductionBrowserSessionAdminUi(
   env: Record<string, string | undefined> = process.env,
+  runtimeOrigin?: string | null,
 ): boolean {
+  if (runtimeOrigin) {
+    return isProductionAppOrigin(runtimeOrigin);
+  }
+
   const configured = resolveConfiguredAppOrigin(env);
   if (!configured) return false;
   return isProductionAppOrigin(configured);
@@ -26,15 +38,22 @@ export async function fetchProductionAdminAccessState(): Promise<{
   authorized: boolean;
   method: string | null;
 }> {
-  const res = await fetch("/api/admin/access", {
-    credentials: "include",
-    cache: "no-store",
-  });
-  const data = await res.json() as { authorized?: boolean; method?: string | null };
-  return {
-    authorized: data.authorized === true,
-    method: data.method ?? null,
-  };
+  try {
+    const res = await fetch("/api/admin/access", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const data = await res.json() as { authorized?: boolean; method?: string | null };
+    return {
+      authorized: data.authorized === true,
+      method: data.method ?? null,
+    };
+  } catch {
+    return {
+      authorized: false,
+      method: null,
+    };
+  }
 }
 
 export interface ProductionAdminSessionGate {
@@ -46,17 +65,56 @@ export interface ProductionAdminSessionGate {
   unlockWithPin: () => void;
   unauthorizedMessage: string;
   authorizedLabel: string;
-  adminRequest: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+  adminRequest: ProductionAdminRequest;
+}
+
+export type ProductionAdminRequest = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
+export function useProductionBrowserSessionAdminUiMode(): {
+  resolved: boolean;
+  useBrowserSession: boolean;
+  usePinUnlock: boolean;
+} {
+  const [resolved, setResolved] = useState(false);
+  const [useBrowserSession, setUseBrowserSession] = useState(false);
+
+  useEffect(() => {
+    const runtimeOrigin = resolveRuntimeBrowserOrigin();
+    const browserSession = shouldUseProductionBrowserSessionAdminUi(process.env, runtimeOrigin);
+    setUseBrowserSession(browserSession);
+    setResolved(true);
+  }, []);
+
+  return {
+    resolved,
+    useBrowserSession,
+    usePinUnlock: resolved ? !useBrowserSession : true,
+  };
 }
 
 export function useProductionAdminSessionGate(): ProductionAdminSessionGate {
-  const usePinUnlock = !shouldUseProductionBrowserSessionAdminUi();
+  const [modeResolved, setModeResolved] = useState(false);
+  const [usePinUnlock, setUsePinUnlock] = useState(true);
   const [loading, setLoading] = useState(true);
   const [sessionAuthorized, setSessionAuthorized] = useState(false);
   const [pin, setPin] = useState("");
   const [pinAuthed, setPinAuthed] = useState(false);
 
   useEffect(() => {
+    const runtimeOrigin = resolveRuntimeBrowserOrigin();
+    const browserSession = shouldUseProductionBrowserSessionAdminUi(process.env, runtimeOrigin);
+    setUsePinUnlock(!browserSession);
+    setModeResolved(true);
+  }, []);
+
+  useEffect(() => {
+    if (!modeResolved) {
+      return;
+    }
+
     let cancelled = false;
 
     if (usePinUnlock) {
@@ -69,35 +127,48 @@ export function useProductionAdminSessionGate(): ProductionAdminSessionGate {
       } catch {
         /* ignore */
       }
-      setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+      }
       return () => {
         cancelled = true;
       };
     }
 
+    setLoading(true);
     void (async () => {
       try {
         const access = await fetchProductionAdminAccessState();
-        if (!cancelled) setSessionAuthorized(access.authorized);
+        if (!cancelled) {
+          setSessionAuthorized(access.authorized);
+        }
+      } catch {
+        if (!cancelled) {
+          setSessionAuthorized(false);
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [usePinUnlock]);
+  }, [modeResolved, usePinUnlock]);
 
   const unlockWithPin = useCallback(() => {
     sessionStorage.setItem(ADMIN_PIN_STORAGE_KEY, pin);
     setPinAuthed(true);
   }, [pin]);
 
-  const adminRequest = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+  const adminRequest = useCallback<ProductionAdminRequest>(async (input, init) => {
     if (usePinUnlock) {
       const headers = new Headers(init?.headers);
-      headers.set("x-admin-pin", pin);
+      if (pin) {
+        headers.set("x-admin-pin", pin);
+      }
       return fetch(input, {
         ...init,
         credentials: "include",
