@@ -6,7 +6,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { PartnerSandboxSignoffPanel } from "@/components/admin/PartnerSandboxSignoffPanel";
+import { DesignPartnerPilotSummaryBar } from "@/components/admin/DesignPartnerPilotSummaryBar";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
+import type { DesignPartnerPilotSummaryDto } from "@/lib/admin/designPartnerPilotSummary";
 import {
   ProductionAdminSessionStatus,
   PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
@@ -41,7 +43,22 @@ export default function AdminDesignPartnersPage() {
   const [handoffPolicyId, setHandoffPolicyId] = useState("");
   const [handoffReturnUrl, setHandoffReturnUrl] = useState("");
   const [partnerIds, setPartnerIds] = useState<Record<string, string>>({});
+  const [pilotSummaries, setPilotSummaries] = useState<Record<string, DesignPartnerPilotSummaryDto>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
+
+  const refreshPilotSummaries = useCallback(async () => {
+    const res = await gate.adminRequest("/api/admin/design-partners/pilot-summary", { cache: "no-store" });
+    if (res.status === 401 && !gate.usePinUnlock) {
+      return;
+    }
+    if (!res.ok) return;
+    const data = await res.json() as { summaries?: DesignPartnerPilotSummaryDto[] };
+    const next: Record<string, DesignPartnerPilotSummaryDto> = {};
+    for (const summary of data.summaries ?? []) {
+      next[summary.application_id] = summary;
+    }
+    setPilotSummaries(next);
+  }, [gate.adminRequest, gate.usePinUnlock]);
 
   const refresh = useCallback(async () => {
     const res = await gate.adminRequest("/api/admin/design-partners", { cache: "no-store" });
@@ -52,7 +69,8 @@ export default function AdminDesignPartnersPage() {
     if (!res.ok) return;
     const data = await res.json();
     setApps(data.applications ?? []);
-  }, [gate.adminRequest, gate.usePinUnlock]);
+    await refreshPilotSummaries();
+  }, [gate.adminRequest, gate.usePinUnlock, refreshPilotSummaries]);
 
   useEffect(() => {
     if (!gate.authorized || gate.loading) return;
@@ -273,7 +291,15 @@ export default function AdminDesignPartnersPage() {
                     <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0.35rem 0" }}>
                       Partner ID: {app.promoted_partner_id}
                     </p>
-                    <div style={{ marginTop: "0.65rem", paddingTop: "0.65rem", borderTop: "1px solid var(--border)" }}>
+                    {pilotSummaries[app.id] && (
+                      <div style={{ marginTop: "0.65rem" }}>
+                        <DesignPartnerPilotSummaryBar summary={pilotSummaries[app.id]} />
+                      </div>
+                    )}
+                    <div
+                      id={`pilot-signoff-${app.promoted_partner_id}`}
+                      style={{ marginTop: "0.65rem", paddingTop: "0.65rem", borderTop: "1px solid var(--border)" }}
+                    >
                       <PartnerSandboxSignoffPanel
                         partnerId={app.promoted_partner_id}
                         applicationId={app.id}
