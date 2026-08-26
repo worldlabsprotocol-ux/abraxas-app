@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/siteUrl";
 import {
   applyChecklistCasFilter,
   defaultSandboxPilotSignoff,
+  defaultWebhookTrackGates,
   describeChecklistCasFilter,
 } from "@/lib/admin/partnerSandboxSignoff";
 
@@ -317,6 +318,117 @@ describe("sandbox-signoff route", () => {
       evidence: { receipt_id: "abx_test_leaked" },
     }));
     expect(res.status).toBe(400);
+  });
+
+  it("PATCH persists webhook_track gates with event_id", async () => {
+    const raw = { future_key: 1 };
+    setupPromotedPartner({ onboarding_checklist: raw });
+    designPartnersChain.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: APP_ID,
+        status: "onboarded",
+        promoted_partner_id: PARTNER_ID,
+        reviewer_notes: null,
+      },
+      error: null,
+    });
+    partnersChain.maybeSingle.mockResolvedValueOnce({
+      data: {
+        partner_id: PARTNER_ID,
+        onboarding_checklist: raw,
+        updated_at: "2026-01-01T00:00:00.000Z",
+      },
+      error: null,
+    });
+    partnersChain.maybeSingle.mockResolvedValueOnce({
+      data: { partner_id: PARTNER_ID, updated_at: "2026-01-02T00:00:00.000Z" },
+      error: null,
+    });
+
+    const eventId = "11111111-1111-4111-8111-111111111111";
+    const res = await PATCH(patchRequest({
+      partner_id: PARTNER_ID,
+      evidence: { event_id: eventId },
+      gates: {
+        webhook_track: {
+          queued: { operator_ack: true },
+        },
+      },
+    }));
+    const body = await res.json() as { signoff: { gates: { webhook_track?: { queued: { operator_ack: boolean } } }; evidence: { event_id?: string } } };
+    expect(res.status).toBe(200);
+    expect(body.signoff.gates.webhook_track?.queued.operator_ack).toBe(true);
+    expect(body.signoff.evidence.event_id).toBe(eventId);
+  });
+
+  it("PATCH rejects webhook queued without event_id", async () => {
+    setupPromotedPartner({ onboarding_checklist: {} });
+    designPartnersChain.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: APP_ID,
+        status: "onboarded",
+        promoted_partner_id: PARTNER_ID,
+        reviewer_notes: null,
+      },
+      error: null,
+    });
+    partnersChain.maybeSingle.mockResolvedValueOnce({
+      data: {
+        partner_id: PARTNER_ID,
+        onboarding_checklist: {},
+        updated_at: "2026-01-01T00:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const res = await PATCH(patchRequest({
+      partner_id: PARTNER_ID,
+      gates: { webhook_track: { queued: { operator_ack: true } } },
+    }));
+    expect(res.status).toBe(400);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe("webhook_event_id_required");
+  });
+
+  it("PATCH rejects event_id change while webhook gates acknowledged", async () => {
+    const eventId = "11111111-1111-4111-8111-111111111111";
+    const priorSignoff = defaultSandboxPilotSignoff(APP_ID);
+    priorSignoff.evidence.event_id = eventId;
+    priorSignoff.gates.webhook_track = defaultWebhookTrackGates();
+    priorSignoff.gates.webhook_track.queued.operator_ack = true;
+    priorSignoff.gates.webhook_track.queued.acknowledged_at = "t";
+    const raw = { sandbox_pilot_signoff: priorSignoff };
+    setupPromotedPartner({ onboarding_checklist: raw });
+    designPartnersChain.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: APP_ID,
+        status: "onboarded",
+        promoted_partner_id: PARTNER_ID,
+        reviewer_notes: null,
+      },
+      error: null,
+    });
+    partnersChain.maybeSingle.mockResolvedValueOnce({
+      data: {
+        partner_id: PARTNER_ID,
+        onboarding_checklist: raw,
+        updated_at: "2026-01-01T00:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const res = await PATCH(patchRequest({
+      partner_id: PARTNER_ID,
+      evidence: { event_id: "22222222-2222-4222-8222-222222222222" },
+      gates: {
+        webhook_track: {
+          queued: { operator_ack: true },
+        },
+      },
+    }));
+    expect(res.status).toBe(400);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe("webhook_event_change_requires_gate_reset");
   });
 });
 
