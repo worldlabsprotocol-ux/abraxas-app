@@ -290,9 +290,16 @@ export default function PartnerFlowDocsPage() {
               <code style={{ fontFamily: MONO }}>verify:registry</code> only. Request{" "}
               <code style={{ fontFamily: MONO }}>webhooks:read</code> via Abraxas ops for webhook testing.
             </p>
+            <p style={{ ...body, marginTop: "0.75rem" }}>
+              Approved design partners: your Abraxas operator shares the full 14-day external pilot playbook during
+              secure sandbox handoff. Use this section plus{" "}
+              <Link href="/design-partner" style={{ color: "var(--accent)", fontWeight: 600 }}>/design-partner</Link>{" "}
+              while you wait. Production activation is a separate later step.
+            </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-              <Btn href="/developers/partner" size="sm">Open partner portal</Btn>
-              <Btn href="/verify?mode=receipt" variant="secondary" size="sm">Receipt tester</Btn>
+              <Btn href="/design-partner" size="sm">Design partner program</Btn>
+              <Btn href="/developers/partner" variant="secondary" size="sm">Open partner portal</Btn>
+              <Btn href="/verify?mode=receipt" variant="ghost" size="sm">Receipt tester</Btn>
             </div>
           </SectionCard>
 
