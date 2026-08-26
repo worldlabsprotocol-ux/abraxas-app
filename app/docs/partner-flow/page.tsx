@@ -339,8 +339,8 @@ export default function PartnerFlowDocsPage() {
 
           <SectionCard id="provisioning" title="Operator provisioning">
             <p style={body}>
-              Partner rows, policies, and callback allowlists are provisioned by Abraxas operators after manual review.
-              There is no self-serve portal and no automatic API-key issuance.
+              Partner rows, policies, callback allowlists, and sandbox credentials are provisioned by Abraxas operators after manual review.
+              Approved partners then use the Partner Portal to validate their assigned integration. There is no self-serve Production provisioning or automatic API-key issuance.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
               <Link href="/integrations#apply">
