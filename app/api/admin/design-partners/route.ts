@@ -56,13 +56,18 @@ export async function PATCH(req: NextRequest) {
   }
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+  const updates: Record<string, unknown> = {
+    status: body.status,
+    reviewed_at: new Date().toISOString(),
+  };
+  if ("reviewer_notes" in body) {
+    const trimmed = body.reviewer_notes?.trim();
+    updates.reviewer_notes = trimmed ? trimmed : null;
+  }
+
   const { data, error } = await sb
     .from("design_partners")
-    .update({
-      status: body.status,
-      reviewer_notes: body.reviewer_notes?.trim() ?? null,
-      reviewed_at: new Date().toISOString(),
-    })
+    .update(updates)
     .eq("id", body.id)
     .select()
     .single();
