@@ -4,11 +4,74 @@
 
 Use this checklist before a third-party protocol or app redirects holders to Abraxas Partner Flow in production.
 
+**External design partner playbook (share with approved partners):** `docs/EXTERNAL_DESIGN_PARTNER_PILOT.md`
+
 **Second relying-party pilot:** operator runbook with conformance + live flow steps — `docs/SECOND_PARTNER_PILOT_RUNBOOK.md`
 
 **Admin console (pilot provisioning):** `/admin/partners` — `docs/PARTNER_ONBOARDING_CONSOLE.md`
 
 **Design partner promotion:** `/admin/design-partners` — issues default verify-only sandbox key
+
+---
+
+## Secure handoff package (external pilot)
+
+Deliver to the partner through a **secure channel** after promote at `/admin/design-partners`. Do not paste API keys or signing secrets into reviewer notes, tickets, or email if a safer channel is available.
+
+| Item | Operator action |
+|------|-----------------|
+| `partner_id` | From promote — share with partner |
+| `policy_id` | Active sandbox policy assigned to the partner row |
+| `return_url` | Exact HTTPS callback URL added to `allowed_return_urls` |
+| Sandbox API key | One-time reveal at promote — scopes `verify:credential`, `verify:registry` by default |
+| Partner portal | `https://abraxasworld.xyz/developers/partner` |
+| Partner Flow docs | `https://abraxasworld.xyz/docs/partner-flow` |
+| External pilot playbook | `docs/EXTERNAL_DESIGN_PARTNER_PILOT.md` |
+
+**Optional webhook track (separate step at `/admin/partners`):**
+
+| Item | Operator action |
+|------|-----------------|
+| API key with `webhooks:read` | Separate key — not included on default promote |
+| Webhook endpoint URL | Registered and delivery enabled by ops |
+| Webhook signing secret | Deliver securely — partner validates signatures in their receiver |
+
+Remind partners: credentials stay **server-side only**. Sandbox receipts never authorize Production access.
+
+---
+
+## Operator evidence checklist (sandbox-complete)
+
+Record evidence for sandbox-complete review. **Do not store API keys or signing secrets** in reviewer notes or application records.
+
+### Provisioning
+
+- [ ] `partner_id`, `policy_id`, and allowlisted `return_url` documented (IDs only — no secrets)
+- [ ] Partner received secure handoff package
+- [ ] Partner portal sign-in confirmed at `/developers/partner`
+
+### Track A — Partner Flow
+
+- [ ] End-to-end sandbox flow completed — **manual** partner confirmation
+- [ ] Sample `receipt_id` captured (no PII)
+- [ ] `signature_valid === true` on public receipt — **manual** partner confirmation
+- [ ] `partner_id` and `policy_id` match provisioned values — **manual** partner confirmation
+- [ ] `decision_result === approved` where applicable — **manual** partner confirmation
+- [ ] Partner acknowledges `production_usable: false` and `currently_valid: false` as expected sandbox behavior — **manual**
+- [ ] `npm run partner:conformance` exit 0 (if partner ran harness)
+
+### Track B — Webhooks (optional)
+
+- [ ] Separate `webhooks:read` key issued — operator record
+- [ ] Sandbox test reached **queued** — **manual** partner confirmation
+- [ ] Sandbox test reached **HTTP delivered** — **manual** partner confirmation (transport only)
+- [ ] **Signature verified by partner receiver** — **manual** partner confirmation (never inferred from delivery history)
+
+### Production promotion (separate review — not sandbox-complete)
+
+- [ ] Sandbox-complete evidence reviewed
+- [ ] Production activation requested and approved on its own timeline
+- [ ] Live keys and production policy promotion tracked separately from sandbox pilot
 
 ---
 
@@ -136,6 +199,7 @@ Keys are issued at `/admin/partners` by Abraxas operators. **Never** embed `abx_
 
 ## References
 
+- **External design partner playbook:** `docs/EXTERNAL_DESIGN_PARTNER_PILOT.md`
 - Integrator guide: `/docs/partner-flow`
 - External design partner sandbox: `/docs/partner-flow#external-design-partner-sandbox`
 - Partner portal: `/developers/partner`

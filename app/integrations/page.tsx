@@ -228,7 +228,9 @@ export default function IntegrationsPage() {
           <div style={{ marginTop: "1rem", padding: "1rem", borderRadius: 12, background: `${ACCENT}12`, border: `1px solid ${ACCENT}33` }}>
             <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: ACCENT }}>Application received</div>
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0.75rem", lineHeight: 1.6 }}>
-              We review design partner applications manually. If approved, operators will provision sandbox policies and callback allowlists — not instant production access.
+              We review design partner applications manually. If approved, Abraxas operators will assist with
+              sandbox provisioning — partner_id, policy_id, allowlisted return_url, and a server-side API key —
+              not instant production access or self-serve key issuance.
             </p>
             <ol style={{
               margin: "0 0 0.75rem",
@@ -242,12 +244,17 @@ export default function IntegrationsPage() {
                 <li key={step} style={{ marginBottom: 4 }}>{step}</li>
               ))}
             </ol>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
+              If approved, your Abraxas operator will share the external pilot playbook during secure sandbox handoff.
+              For pilot support after handoff, use the operator contact provided with your credentials — not public tickets.
+            </p>
             <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
               {PARTNER_RECEIPT_MIRROR_NOTE}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} size="sm">Receipt verification docs</Btn>
-              <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+              <Btn href="/docs/partner-flow#external-design-partner-sandbox" size="sm">Sandbox pilot guide</Btn>
+              <Btn href="/design-partner" variant="secondary" size="sm">Design partner program</Btn>
+              <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification docs</Btn>
               <Btn href={PARTNER_RECEIPT_VERIFIER_PATH} variant="ghost" size="sm">Receipt tester (mirror)</Btn>
             </div>
           </div>

@@ -220,10 +220,23 @@ export default function AdminDesignPartnersPage() {
               />
             </label>
           </div>
-          <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.5rem" }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
             Partner portal: <Link href="/developers/partner" style={{ color: "var(--accent)" }}>/developers/partner</Link>
             {" · "}
             Docs: <Link href="/docs/partner-flow#external-design-partner-sandbox" style={{ color: "var(--accent)" }}>External design partner sandbox</Link>
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
+            Runbooks:{" "}
+            <code style={{ fontFamily: MONO, fontSize: "0.62rem" }}>docs/EXTERNAL_DESIGN_PARTNER_PILOT.md</code>
+            {" · "}
+            <a
+              href="https://github.com/worldlabsprotocol-ux/abraxas-app/blob/main/docs/PARTNER_ONBOARDING_CHECKLIST.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--accent)" }}
+            >
+              Operator onboarding checklist
+            </a>
           </p>
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: WARN, margin: 0, fontWeight: 600 }}>
             These handoff fields are session-only operator notes — not persisted in browser storage.
