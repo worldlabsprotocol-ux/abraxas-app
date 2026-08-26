@@ -4,8 +4,9 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { PartnerOnboardingConsole } from "@/components/admin/PartnerOnboardingConsole";
 import { AdminPartnerKeysPanel } from "@/components/admin/AdminPartnerKeysPanel";
 import { PartnerMeteringPanel } from "@/components/admin/PartnerMeteringPanel";
@@ -20,9 +21,32 @@ const ACCENT = "#10B981";
 
 type Tab = "onboarding" | "keys" | "usage" | "webhooks" | "observability" | "sandbox-receipts";
 
+function resolveTab(value: string | null): Tab {
+  if (
+    value === "keys"
+    || value === "usage"
+    || value === "webhooks"
+    || value === "observability"
+    || value === "sandbox-receipts"
+  ) {
+    return value;
+  }
+  return "onboarding";
+}
+
 export default function AdminPartnersPage() {
-  const [tab, setTab] = useState<Tab>("onboarding");
+  const searchParams = useSearchParams();
+  const initialTab = useMemo(() => resolveTab(searchParams.get("tab")), [searchParams]);
+  const initialPartnerId = useMemo(
+    () => searchParams.get("partner_id")?.trim() || undefined,
+    [searchParams],
+  );
+  const [tab, setTab] = useState<Tab>(initialTab);
   const gate = useProductionAdminSessionGate();
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#f0f0f0", padding: "2rem 1.25rem" }}>
@@ -103,7 +127,10 @@ export default function AdminPartnersPage() {
             Checking admin session…
           </p>
         ) : tab === "onboarding" ? (
-          <PartnerOnboardingConsole adminRequest={gate.adminRequest} />
+          <PartnerOnboardingConsole
+            adminRequest={gate.adminRequest}
+            initialSelectedPartnerId={initialPartnerId}
+          />
         ) : tab === "keys" ? (
           <AdminPartnerKeysPanel adminRequest={gate.adminRequest} />
         ) : tab === "usage" ? (

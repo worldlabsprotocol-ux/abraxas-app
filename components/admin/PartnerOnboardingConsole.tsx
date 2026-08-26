@@ -42,7 +42,13 @@ function readinessColor(level: ReadinessLevel | "ready" | "not_ready"): string {
   return "#F87171";
 }
 
-export function PartnerOnboardingConsole({ adminRequest }: { adminRequest: ProductionAdminRequest }) {
+export function PartnerOnboardingConsole({
+  adminRequest,
+  initialSelectedPartnerId,
+}: {
+  adminRequest: ProductionAdminRequest;
+  initialSelectedPartnerId?: string;
+}) {
   const [partners, setPartners] = useState<PartnerDetail[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -73,7 +79,10 @@ export function PartnerOnboardingConsole({ adminRequest }: { adminRequest: Produ
       const data = await res.json() as { partners?: PartnerDetail[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load partners");
       setPartners(data.partners ?? []);
-      if (!selectedId && data.partners?.[0]) {
+      const preferredId = initialSelectedPartnerId?.trim();
+      if (preferredId && data.partners?.some((partner) => partner.partner_id === preferredId)) {
+        setSelectedId(preferredId);
+      } else if (!selectedId && data.partners?.[0]) {
         setSelectedId(data.partners[0].partner_id);
       }
     } catch (e) {
@@ -81,7 +90,7 @@ export function PartnerOnboardingConsole({ adminRequest }: { adminRequest: Produ
     } finally {
       setLoading(false);
     }
-  }, [adminRequest, selectedId]);
+  }, [adminRequest, initialSelectedPartnerId, selectedId]);
 
   useEffect(() => {
     void loadPartners();
