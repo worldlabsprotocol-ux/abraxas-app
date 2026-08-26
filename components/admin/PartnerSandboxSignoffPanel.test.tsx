@@ -180,10 +180,33 @@ describe("PartnerSandboxSignoffPanel", () => {
     expect((screen.getByTestId("gate-webhook-queued") as HTMLInputElement).checked).toBe(true);
   });
 
-  it("includes observability and sandbox receipt links with honest partner ID copy", async () => {
+  it("includes prefilled observability and sandbox receipt links for valid partner IDs", async () => {
     render(
       <PartnerSandboxSignoffPanel
         partnerId="acme-v1"
+        applicationId="app-1"
+        adminRequest={fetch}
+        usePinUnlock={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("link-webhook-observability").getAttribute("href")).toBe(
+        "/admin/partners?tab=observability&partner_id=acme-v1",
+      );
+      expect(screen.getByTestId("link-webhook-sandbox-receipts").getAttribute("href")).toBe(
+        "/admin/partners?tab=sandbox-receipts&partner_id=acme-v1",
+      );
+      expect(screen.getByText(/prefilled/)).toBeTruthy();
+      expect(screen.getByText(/click Load to fetch data/)).toBeTruthy();
+      expect(screen.getByText(/informational only and never auto-check gates/)).toBeTruthy();
+      expect(screen.getByText(/acme-v1/)).toBeTruthy();
+    });
+  });
+
+  it("uses tab-only links and honest copy for invalid partner IDs", async () => {
+    render(
+      <PartnerSandboxSignoffPanel
+        partnerId="bad id"
         applicationId="app-1"
         adminRequest={fetch}
         usePinUnlock={false}
@@ -197,7 +220,9 @@ describe("PartnerSandboxSignoffPanel", () => {
         "/admin/partners?tab=sandbox-receipts",
       );
       expect(screen.getByText(/partner ID is not prefilled/)).toBeTruthy();
-      expect(screen.getByText(/acme-v1/)).toBeTruthy();
+      expect(screen.getByText(/click Load/)).toBeTruthy();
+      expect(screen.getByText(/informational only and never auto-check gates/)).toBeTruthy();
+      expect(screen.getByText(/bad id/)).toBeTruthy();
     });
   });
 

@@ -12,6 +12,7 @@ import {
   type PartnerSandboxPilotSignoff,
   type WebhookTrackGates,
 } from "@/lib/admin/partnerSandboxSignoff";
+import { buildAdminPartnersHref, parseAdminPartnerIdQuery } from "@/lib/admin/adminPartnerDeepLink";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -291,8 +292,9 @@ export function PartnerSandboxSignoffPanel({
   }
 
   const webhookTrack = signoff.gates.webhook_track;
-  const observabilityHref = "/admin/partners?tab=observability";
-  const sandboxReceiptsHref = "/admin/partners?tab=sandbox-receipts";
+  const parsedPartnerId = parseAdminPartnerIdQuery(partnerId);
+  const observabilityHref = buildAdminPartnersHref({ tab: "observability", partnerId });
+  const sandboxReceiptsHref = buildAdminPartnersHref({ tab: "sandbox-receipts", partnerId });
 
   return (
     <section
@@ -438,7 +440,19 @@ export function PartnerSandboxSignoffPanel({
           </Link>
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-          Enter partner ID <code style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{partnerId}</code> on those pages and click Load — partner ID is not prefilled.
+          {parsedPartnerId ? (
+            <>
+              Delivery observability and sandbox receipts open with partner ID{" "}
+              <code style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{parsedPartnerId}</code> prefilled — click Load to fetch data.
+              These views are informational only and never auto-check gates.
+            </>
+          ) : (
+            <>
+              Enter partner ID{" "}
+              <code style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{partnerId}</code> on those pages and click Load — partner ID is not prefilled.
+              These views are informational only and never auto-check gates.
+            </>
+          )}
         </p>
       </div>
 
