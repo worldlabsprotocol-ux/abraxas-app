@@ -1,10 +1,14 @@
 // FILE: app/api/admin/design-partners/promote/route.ts
-// Promote approved application → partner org + sandbox (or live) API key.
+// Promote approved application → sandbox partner org + abx_test_ API key (atomic RPC).
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
-import { promoteDesignPartnerApplication } from "@/lib/partner/promoteDesignPartner";
+import { mapPromoteRpcCodeToHttpStatus } from "@/lib/admin/designPartnerApplicationLifecycle";
+import {
+  DesignPartnerPromoteError,
+  promoteDesignPartnerApplication,
+} from "@/lib/partner/promoteDesignPartner";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -20,37 +24,43 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     application_id?: string;
     partner_id?: string;
-    issue_live?: boolean;
   };
 
   if (!body.application_id) {
-    return NextResponse.json({ error: "application_id required" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
   const { data, error } = await sb
     .from("design_partners")
-    .select("*")
+    .select("id, company, contact_name, email, use_case, integration_type, public_name_ok, status, promoted_partner_id")
     .eq("id", body.application_id)
     .maybeSingle();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Application not found" }, { status: 404 });
+    return NextResponse.json({ error: "application_not_found" }, { status: 404 });
   }
 
   try {
     const result = await promoteDesignPartnerApplication(data, {
       partner_id: body.partner_id,
-      issue_live: body.issue_live,
     });
 
     return NextResponse.json({
       ok: true,
-      ...result,
+      partner_id: result.partner_id,
+      key_prefix: result.key_prefix,
+      application_id: result.application_id,
+      api_key: result.api_key,
       notice: "Copy api_key now — it will not be shown again. Share via secure channel only.",
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 400 });
+    if (err instanceof DesignPartnerPromoteError) {
+      return NextResponse.json(
+        { error: err.code },
+        { status: mapPromoteRpcCodeToHttpStatus(err.code) },
+      );
+    }
+    return NextResponse.json({ error: "promotion_failed" }, { status: 500 });
   }
 }

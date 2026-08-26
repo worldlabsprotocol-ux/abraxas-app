@@ -1,14 +1,19 @@
 // FILE: lib/partner/promoteDesignPartner.ts
-// Promote design partner application → registered org + sandbox API key.
+// Promote design partner application → sandbox partner org + abx_test_ API key via atomic RPC.
 
 import { createClient } from "@supabase/supabase-js";
-import { generatePartnerKey, type PartnerScope } from "@/lib/partner/partnerAuth";
+import {
+  createSandboxPromotionKeyMaterial,
+  parsePromoteRpcResult,
+  validatePromoteRpcInputs,
+  type DesignPartnerPromoteRpcCode,
+} from "@/lib/admin/designPartnerApplicationLifecycle";
 import { slugifyPartnerId } from "@/lib/partner/partnerOnboarding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-const DEFAULT_SCOPES: PartnerScope[] = ["verify:credential", "verify:registry"];
+const PROMOTE_RPC = "design_partner_promote_atomic";
 
 export interface DesignPartnerApplication {
   id: string;
@@ -30,74 +35,62 @@ export interface PromoteResult {
   application_id: string;
 }
 
+export class DesignPartnerPromoteError extends Error {
+  constructor(readonly code: DesignPartnerPromoteRpcCode) {
+    super(code);
+    this.name = "DesignPartnerPromoteError";
+  }
+}
+
+function mapRpcException(message: string): DesignPartnerPromoteRpcCode {
+  if (message === "partner_id_conflict") return "partner_id_conflict";
+  if (message === "key_insert_failed") return "key_insert_failed";
+  return "promotion_failed";
+}
+
 export async function promoteDesignPartnerApplication(
   application: DesignPartnerApplication,
-  options?: { partner_id?: string; issue_live?: boolean },
+  options?: { partner_id?: string },
 ): Promise<PromoteResult> {
   if (!SB_URL || !SB_KEY) {
-    throw new Error("Supabase not configured");
+    throw new DesignPartnerPromoteError("promotion_failed");
   }
 
-  if (application.promoted_partner_id) {
-    throw new Error(`Application already promoted as ${application.promoted_partner_id}`);
+  const partnerId = options?.partner_id?.trim() || slugifyPartnerId(application.company);
+  const { raw, prefix, hash } = createSandboxPromotionKeyMaterial();
+
+  const invalid = validatePromoteRpcInputs({
+    applicationId: application.id,
+    partnerId,
+    keyPrefix: prefix,
+    keyHash: hash,
+  });
+  if (invalid) {
+    throw new DesignPartnerPromoteError(invalid);
   }
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-  const partnerId = options?.partner_id?.trim() || slugifyPartnerId(application.company);
-  const environment = options?.issue_live ? "live" : "test";
-
-  const { error: partnerError } = await sb.from("partners").upsert(
-    {
-      partner_id: partnerId,
-      company: application.company,
-      contact_name: application.contact_name,
-      contact_email: application.email,
-      use_case: application.use_case,
-      status: "pilot",
-      allowed_environments: environment === "live" ? ["sandbox", "production"] : ["sandbox"],
-      is_external: true,
-      public_listing_ok: Boolean(application.public_name_ok),
-      onboarding_notes: `Promoted from design partner application ${application.id}`,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "partner_id" },
-  );
-
-  if (partnerError) {
-    throw new Error(partnerError.message);
-  }
-
-  const { raw, prefix, hash } = generatePartnerKey(environment);
-  const { error: keyError } = await sb.from("partner_api_keys").insert({
-    partner_id: partnerId,
-    display_name: `${application.company} · ${environment === "live" ? "production" : "sandbox"}`,
-    key_prefix: prefix,
-    key_hash: hash,
-    scopes: DEFAULT_SCOPES,
+  const { data, error } = await sb.rpc(PROMOTE_RPC, {
+    p_application_id: application.id,
+    p_partner_id: partnerId,
+    p_key_prefix: prefix,
+    p_key_hash: hash,
   });
 
-  if (keyError) {
-    throw new Error(keyError.message);
+  if (error) {
+    throw new DesignPartnerPromoteError(mapRpcException(error.message));
   }
 
-  const { error: appError } = await sb
-    .from("design_partners")
-    .update({
-      status: "onboarded",
-      promoted_partner_id: partnerId,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq("id", application.id);
-
-  if (appError) {
-    throw new Error(appError.message);
+  const parsed = parsePromoteRpcResult(data);
+  if (!parsed.ok || parsed.code !== "ok" || !parsed.partner_id || !parsed.key_prefix) {
+    throw new DesignPartnerPromoteError(parsed.code);
   }
 
   return {
-    partner_id: partnerId,
+    partner_id: parsed.partner_id,
     company: application.company,
     api_key: raw,
-    key_prefix: prefix,
+    key_prefix: parsed.key_prefix,
     application_id: application.id,
   };
 }

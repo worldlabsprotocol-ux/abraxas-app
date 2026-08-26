@@ -18,7 +18,8 @@ export type AdminConfirmActionKey =
   | "webhook.rotate_secret"
   | "policy.publish"
   | "revocation.partner_scoped"
-  | "design_partner.promote";
+  | "design_partner.promote"
+  | "design_partner.reject";
 
 export interface AdminConfirmCopy {
   title: string;
@@ -179,6 +180,18 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
       + "The application is marked onboarded. The API key is shown once — "
       + "store it in your approved secret manager immediately.",
     confirmLabel: "Promote and issue sandbox key",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "design_partner.reject": {
+    title: "Reject this design partner application?",
+    body:
+      "This marks {{company}} as rejected. No partner org, API key, or policy will be created. "
+      + "The application record is kept for audit.",
+    confirmLabel: "Reject application",
     cancelLabel: "Cancel",
     risk: "high",
     requireNote: false,
