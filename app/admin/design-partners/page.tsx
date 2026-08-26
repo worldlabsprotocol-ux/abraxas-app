@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { PartnerSandboxSignoffPanel } from "@/components/admin/PartnerSandboxSignoffPanel";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import {
   ProductionAdminSessionStatus,
@@ -268,9 +269,20 @@ export default function AdminDesignPartnersPage() {
                   </p>
                 )}
                 {app.promoted_partner_id && (
-                  <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0.35rem 0" }}>
-                    Partner ID: {app.promoted_partner_id}
-                  </p>
+                  <>
+                    <p style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", margin: "0.35rem 0" }}>
+                      Partner ID: {app.promoted_partner_id}
+                    </p>
+                    <div style={{ marginTop: "0.65rem", paddingTop: "0.65rem", borderTop: "1px solid var(--border)" }}>
+                      <PartnerSandboxSignoffPanel
+                        partnerId={app.promoted_partner_id}
+                        applicationId={app.id}
+                        adminRequest={gate.adminRequest}
+                        usePinUnlock={gate.usePinUnlock}
+                        onUnauthorized={() => setMsg(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE)}
+                      />
+                    </div>
+                  </>
                 )}
                 {!app.promoted_partner_id && (
                   <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", marginTop: "0.55rem", alignItems: "center" }}>
