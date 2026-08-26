@@ -2,11 +2,13 @@
 
 import { describe, expect, it, vi } from "vitest";
 import {
+  anyWebhookGateAcknowledged,
   applyChecklistCasFilter,
   applySandboxSignoffCasUpdate,
   buildDesignPartnerPatchPayload,
   buildNextChecklist,
   defaultSandboxPilotSignoff,
+  defaultWebhookTrackGates,
   describeChecklistCasFilter,
   findForbiddenClientChecklistField,
   mergeSignoffPatch,
@@ -15,7 +17,40 @@ import {
   splitPriorChecklist,
   validateEvidenceValue,
   validateGateDependencies,
+  validateWebhookEventIdBinding,
+  webhookEventIdChangeBlocked,
 } from "@/lib/admin/partnerSandboxSignoff";
+
+const SAMPLE_EVENT_ID = "11111111-1111-4111-8111-111111111111";
+const OTHER_EVENT_ID = "22222222-2222-4222-8222-222222222222";
+
+function webhookPatch(
+  gates: Partial<{
+    queued: boolean;
+    http_delivered: boolean;
+    signature_verified: boolean;
+    signature_manual: boolean;
+  }>,
+  eventId = SAMPLE_EVENT_ID,
+) {
+  return {
+    evidence: { event_id: eventId },
+    gates: {
+      webhook_track: {
+        ...(gates.queued !== undefined ? { queued: { operator_ack: gates.queued } } : {}),
+        ...(gates.http_delivered !== undefined ? { http_delivered: { operator_ack: gates.http_delivered } } : {}),
+        ...(gates.signature_verified !== undefined
+          ? {
+              signature_verified_by_receiver: {
+                operator_ack: gates.signature_verified,
+                ...(gates.signature_manual ? { manual_partner_confirmation: true } : {}),
+              },
+            }
+          : {}),
+      },
+    },
+  };
+}
 
 describe("partnerSandboxSignoff", () => {
   it("preserves unrelated top-level checklist keys on merge", () => {
@@ -149,14 +184,227 @@ describe("partnerSandboxSignoff", () => {
     expect(payload.reviewer_notes).toBeNull();
   });
 
-  it("validateGateDependencies rejects delivered without manual signature confirmation", () => {
+  it("validateGateDependencies rejects signature without manual partner confirmation", () => {
     const signoff = defaultSandboxPilotSignoff("app-1");
     signoff.gates.webhook_track = {
-      queued: { operator_ack: true, acknowledged_at: "t", manual_partner_confirmation: true },
-      http_delivered: { operator_ack: true, acknowledged_at: "t", manual_partner_confirmation: true },
+      queued: { operator_ack: true, acknowledged_at: "t" },
+      http_delivered: { operator_ack: true, acknowledged_at: "t" },
       signature_verified_by_receiver: { operator_ack: true, acknowledged_at: "t" },
     };
+    signoff.evidence.event_id = SAMPLE_EVENT_ID;
     expect(() => validateGateDependencies(signoff)).toThrow("manual_partner_confirmation_required");
+  });
+
+  it("rejects queued webhook gate without event_id", () => {
+    const prior = defaultSandboxPilotSignoff("app-1");
+    expect(() =>
+      mergeSignoffPatch(prior, { gates: { webhook_track: { queued: { operator_ack: true } } } }, "app-1"),
+    ).toThrow("webhook_event_id_required");
+  });
+
+  it("rejects http_delivered webhook gate without event_id", () => {
+    let prior = defaultSandboxPilotSignoff("app-1");
+    prior = mergeSignoffPatch(
+      prior,
+      webhookPatch({ queued: true }),
+      "app-1",
+    );
+    prior.evidence = {};
+    expect(() =>
+      mergeSignoffPatch(
+        prior,
+        {
+          gates: {
+            webhook_track: {
+              queued: { operator_ack: true },
+              http_delivered: { operator_ack: true },
+            },
+          },
+        },
+        "app-1",
+      ),
+    ).toThrow("webhook_event_id_required");
+  });
+
+  it("rejects signature webhook gate without event_id", () => {
+    let prior = defaultSandboxPilotSignoff("app-1");
+    prior = mergeSignoffPatch(prior, webhookPatch({ queued: true, http_delivered: true }), "app-1");
+    prior.evidence = {};
+    expect(() =>
+      mergeSignoffPatch(
+        prior,
+        {
+          gates: {
+            webhook_track: {
+              queued: { operator_ack: true },
+              http_delivered: { operator_ack: true },
+              signature_verified_by_receiver: {
+                operator_ack: true,
+                manual_partner_confirmation: true,
+              },
+            },
+          },
+        },
+        "app-1",
+      ),
+    ).toThrow("webhook_event_id_required");
+  });
+
+  it("rejects changing event_id while webhook gates remain acknowledged", () => {
+    let prior = defaultSandboxPilotSignoff("app-1");
+    prior = mergeSignoffPatch(prior, webhookPatch({ queued: true }), "app-1");
+    expect(() =>
+      mergeSignoffPatch(
+        prior,
+        {
+          evidence: { event_id: OTHER_EVENT_ID },
+          gates: {
+            webhook_track: {
+              queued: { operator_ack: true },
+            },
+          },
+        },
+        "app-1",
+      ),
+    ).toThrow("webhook_event_change_requires_gate_reset");
+  });
+
+  it("allows changing event_id after all webhook gates are cleared", () => {
+    let prior = defaultSandboxPilotSignoff("app-1");
+    prior = mergeSignoffPatch(prior, webhookPatch({ queued: true }), "app-1");
+    const cleared = mergeSignoffPatch(
+      prior,
+      {
+        evidence: { event_id: OTHER_EVENT_ID },
+        gates: {
+          webhook_track: {
+            queued: { operator_ack: false },
+            http_delivered: { operator_ack: false },
+            signature_verified_by_receiver: { operator_ack: false },
+          },
+        },
+      },
+      "app-1",
+    );
+    expect(cleared.evidence.event_id).toBe(OTHER_EVENT_ID);
+    expect(cleared.gates.webhook_track?.queued.operator_ack).toBe(false);
+  });
+
+  it("allows progressive webhook acknowledgements with unchanged event_id", () => {
+    let signoff = defaultSandboxPilotSignoff("app-1");
+    signoff = mergeSignoffPatch(signoff, webhookPatch({ queued: true }), "app-1");
+    signoff = mergeSignoffPatch(
+      signoff,
+      webhookPatch({ queued: true, http_delivered: true }),
+      "app-1",
+    );
+    signoff = mergeSignoffPatch(
+      signoff,
+      webhookPatch({
+        queued: true,
+        http_delivered: true,
+        signature_verified: true,
+        signature_manual: true,
+      }),
+      "app-1",
+    );
+    expect(signoff.evidence.event_id).toBe(SAMPLE_EVENT_ID);
+    expect(signoff.gates.webhook_track?.signature_verified_by_receiver.operator_ack).toBe(true);
+  });
+
+  it("event_id alone does not acknowledge webhook gates", () => {
+    const prior = defaultSandboxPilotSignoff("app-1");
+    const next = mergeSignoffPatch(prior, { evidence: { event_id: SAMPLE_EVENT_ID } }, "app-1");
+    expect(next.evidence.event_id).toBe(SAMPLE_EVENT_ID);
+    expect(anyWebhookGateAcknowledged(next.gates.webhook_track)).toBe(false);
+  });
+
+  it("rejects http_delivered without queued", () => {
+    const prior = defaultSandboxPilotSignoff("app-1");
+    expect(() =>
+      mergeSignoffPatch(
+        prior,
+        webhookPatch({ http_delivered: true }),
+        "app-1",
+      ),
+    ).toThrow("webhook_queued_required");
+  });
+
+  it("rejects signature verified without http_delivered", () => {
+    const prior = defaultSandboxPilotSignoff("app-1");
+    expect(() =>
+      mergeSignoffPatch(
+        prior,
+        webhookPatch({ queued: true, signature_verified: true, signature_manual: true }),
+        "app-1",
+      ),
+    ).toThrow("webhook_delivered_required");
+  });
+
+  it("http_delivered ack does not set signature verified", () => {
+    const next = mergeSignoffPatch(
+      defaultSandboxPilotSignoff("app-1"),
+      webhookPatch({ queued: true, http_delivered: true }),
+      "app-1",
+    );
+    expect(next.gates.webhook_track?.http_delivered.operator_ack).toBe(true);
+    expect(next.gates.webhook_track?.signature_verified_by_receiver.operator_ack).toBe(false);
+  });
+
+  it("rejects invalid event_id format", () => {
+    expect(validateEvidenceValue("event_id", "https://evil.example/event")).toMatch(/URLs/);
+    expect(validateEvidenceValue("event_id", "bad id with spaces")).toMatch(/whitespace/);
+    expect(validateEvidenceValue("event_id", "!!!invalid!!!")).toMatch(/safe event ID/);
+  });
+
+  it("webhookEventIdChangeBlocked detects blocked replacement", () => {
+    const signoff = defaultSandboxPilotSignoff("app-1");
+    signoff.gates.webhook_track = defaultWebhookTrackGates();
+    signoff.gates.webhook_track.queued.operator_ack = true;
+    signoff.evidence.event_id = SAMPLE_EVENT_ID;
+    expect(webhookEventIdChangeBlocked(signoff, SAMPLE_EVENT_ID, OTHER_EVENT_ID)).toBe(true);
+    expect(webhookEventIdChangeBlocked(signoff, SAMPLE_EVENT_ID, SAMPLE_EVENT_ID)).toBe(false);
+  });
+
+  it("validateWebhookEventIdBinding allows event change when gates cleared", () => {
+    const prior = mergeSignoffPatch(
+      defaultSandboxPilotSignoff("app-1"),
+      webhookPatch({ queued: true }),
+      "app-1",
+    );
+    const next = mergeSignoffPatch(
+      prior,
+      {
+        evidence: { event_id: OTHER_EVENT_ID },
+        gates: {
+          webhook_track: {
+            queued: { operator_ack: false },
+            http_delivered: { operator_ack: false },
+            signature_verified_by_receiver: { operator_ack: false },
+          },
+        },
+      },
+      "app-1",
+    );
+    expect(() => validateWebhookEventIdBinding(prior, next)).not.toThrow();
+  });
+
+  it("approved continuation does not require webhook track gates", () => {
+    let signoff = defaultSandboxPilotSignoff("app-1");
+    signoff = mergeSignoffPatch(signoff, { gates: { configured: { operator_ack: true } } }, "app-1");
+    signoff = mergeSignoffPatch(signoff, { gates: { partner_flow_tested: { operator_ack: true } } }, "app-1");
+    signoff = mergeSignoffPatch(
+      signoff,
+      { gates: { partner_verified: { operator_ack: true, manual_partner_confirmation: true } } },
+      "app-1",
+    );
+    signoff = mergeSignoffPatch(
+      signoff,
+      { gates: { approved_for_pilot_continuation: { operator_ack: true } } },
+      "app-1",
+    );
+    expect(anyWebhookGateAcknowledged(signoff.gates.webhook_track)).toBe(false);
+    expect(signoff.gates.approved_for_pilot_continuation.operator_ack).toBe(true);
   });
 
   it("successful continuation requires configured, tested, and partner-verified gates", () => {

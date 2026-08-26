@@ -82,6 +82,11 @@ export interface ChecklistCasQueryable {
 const SECRET_OR_KEY_PATTERN =
   /^(abx_(test|live)_|whsec_|sk_(live|test)_|eyJ[A-Za-z0-9_-]+\.eyJ)/i;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const WEBHOOK_EVENT_ID_PATTERN = /^[a-zA-Z0-9._:-]+$/;
+const WEBHOOK_EVENT_ID_MAX_LENGTH = 128;
+
+export const WEBHOOK_EVENT_CHANGE_REQUIRES_GATE_RESET_MESSAGE =
+  "Clear the webhook-track gates before recording a different test event.";
 
 function emptyGate(): GateState {
   return { operator_ack: false, acknowledged_at: null };
@@ -203,10 +208,46 @@ export function findForbiddenClientChecklistField(
 export function validateEvidenceValue(field: string, value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return `${field} cannot be empty`;
+  if (/\s/.test(trimmed)) return `${field} must not contain whitespace`;
   if (SECRET_OR_KEY_PATTERN.test(trimmed)) return `${field} must not contain secrets or API keys`;
   if (EMAIL_PATTERN.test(trimmed)) return `${field} must not contain email addresses`;
+  if (/^https?:\/\//i.test(trimmed) || trimmed.includes("://")) {
+    return `${field} must not contain URLs`;
+  }
   if (trimmed.length > 256) return `${field} is too long`;
+  if (field === "event_id" && !isValidWebhookEventId(trimmed)) {
+    return `${field} must use a safe event ID format`;
+  }
   return null;
+}
+
+export function isValidWebhookEventId(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > WEBHOOK_EVENT_ID_MAX_LENGTH) return false;
+  if (/\s/.test(trimmed)) return false;
+  return WEBHOOK_EVENT_ID_PATTERN.test(trimmed);
+}
+
+export function anyWebhookGateAcknowledged(
+  webhook: WebhookTrackGates | undefined,
+): boolean {
+  if (!webhook) return false;
+  return (
+    webhook.queued.operator_ack
+    || webhook.http_delivered.operator_ack
+    || webhook.signature_verified_by_receiver.operator_ack
+  );
+}
+
+export function webhookEventIdChangeBlocked(
+  signoff: PartnerSandboxPilotSignoff,
+  priorEventId: string,
+  nextEventId: string,
+): boolean {
+  const priorTrimmed = priorEventId.trim();
+  const nextTrimmed = nextEventId.trim();
+  if (!priorTrimmed || priorTrimmed === nextTrimmed) return false;
+  return anyWebhookGateAcknowledged(signoff.gates.webhook_track);
 }
 
 export function validateEvidencePatch(
@@ -290,8 +331,31 @@ export function mergeSignoffPatch(
     next.gates.webhook_track = prior.gates.webhook_track;
   }
 
+  validateWebhookEventIdBinding(prior, next);
   validateGateDependencies(next);
   return next;
+}
+
+export function validateWebhookEventIdBinding(
+  prior: PartnerSandboxPilotSignoff,
+  next: PartnerSandboxPilotSignoff,
+): void {
+  const priorEventId = prior.evidence.event_id?.trim() ?? "";
+  const nextEventId = next.evidence.event_id?.trim() ?? "";
+  if (!priorEventId || priorEventId === nextEventId) return;
+  if (!anyWebhookGateAcknowledged(prior.gates.webhook_track)) return;
+  if (anyWebhookGateAcknowledged(next.gates.webhook_track)) {
+    throw new Error("webhook_event_change_requires_gate_reset");
+  }
+}
+
+function requireWebhookEventIdForAcknowledgedGates(signoff: PartnerSandboxPilotSignoff): void {
+  const webhook = signoff.gates.webhook_track;
+  if (!webhook || !anyWebhookGateAcknowledged(webhook)) return;
+  const eventId = signoff.evidence.event_id?.trim();
+  if (!eventId || !isValidWebhookEventId(eventId)) {
+    throw new Error("webhook_event_id_required");
+  }
 }
 
 export function validateGateDependencies(signoff: PartnerSandboxPilotSignoff): void {
@@ -300,8 +364,20 @@ export function validateGateDependencies(signoff: PartnerSandboxPilotSignoff): v
     throw new Error("manual_partner_confirmation_required");
   }
   const webhook = gates.webhook_track;
-  if (webhook?.signature_verified_by_receiver.operator_ack && !webhook.signature_verified_by_receiver.manual_partner_confirmation) {
-    throw new Error("manual_partner_confirmation_required");
+  if (webhook) {
+    requireWebhookEventIdForAcknowledgedGates(signoff);
+    if (webhook.http_delivered.operator_ack && !webhook.queued.operator_ack) {
+      throw new Error("webhook_queued_required");
+    }
+    if (webhook.signature_verified_by_receiver.operator_ack && !webhook.http_delivered.operator_ack) {
+      throw new Error("webhook_delivered_required");
+    }
+    if (
+      webhook.signature_verified_by_receiver.operator_ack
+      && !webhook.signature_verified_by_receiver.manual_partner_confirmation
+    ) {
+      throw new Error("manual_partner_confirmation_required");
+    }
   }
   if (gates.approved_for_pilot_continuation.operator_ack) {
     if (!gates.configured.operator_ack || !gates.partner_flow_tested.operator_ack || !gates.partner_verified.operator_ack) {

@@ -4,9 +4,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { PartnerSandboxSignoffPanel } from "@/components/admin/PartnerSandboxSignoffPanel";
-import { defaultSandboxPilotSignoff } from "@/lib/admin/partnerSandboxSignoff";
+import {
+  defaultSandboxPilotSignoff,
+  WEBHOOK_EVENT_CHANGE_REQUIRES_GATE_RESET_MESSAGE,
+} from "@/lib/admin/partnerSandboxSignoff";
 
 const signoff = defaultSandboxPilotSignoff("app-1");
+const SAMPLE_EVENT_ID = "11111111-1111-4111-8111-111111111111";
 
 function mockFetchSequence(responses: Array<{ status: number; body?: unknown }>) {
   return vi.fn(async () => {
@@ -67,6 +71,151 @@ describe("PartnerSandboxSignoffPanel", () => {
     });
   });
 
+  it("renders separate Partner Flow and webhook track sections", async () => {
+    render(
+      <PartnerSandboxSignoffPanel
+        partnerId="acme-v1"
+        applicationId="app-1"
+        adminRequest={fetch}
+        usePinUnlock={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("partner-flow-signoff-section")).toBeTruthy();
+      expect(screen.getByTestId("webhook-track-signoff-section")).toBeTruthy();
+      expect(screen.getByTestId("gate-webhook-queued")).toBeTruthy();
+      expect(screen.getByTestId("gate-webhook-http-delivered")).toBeTruthy();
+      expect(screen.getByTestId("gate-webhook-signature-verified")).toBeTruthy();
+    });
+  });
+
+  it("toggling http delivered does not check signature verified", async () => {
+    render(
+      <PartnerSandboxSignoffPanel
+        partnerId="acme-v1"
+        applicationId="app-1"
+        adminRequest={fetch}
+        usePinUnlock={false}
+      />,
+    );
+    await waitFor(() => screen.getByTestId("gate-webhook-queued"));
+    fireEvent.click(screen.getByTestId("gate-webhook-queued"));
+    fireEvent.click(screen.getByTestId("gate-webhook-http-delivered"));
+    expect((screen.getByTestId("gate-webhook-http-delivered") as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByTestId("gate-webhook-signature-verified") as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("blocks event_id replacement while webhook gates remain acknowledged", async () => {
+    const loaded = defaultSandboxPilotSignoff("app-1");
+    loaded.evidence.event_id = SAMPLE_EVENT_ID;
+    loaded.gates.webhook_track = {
+      queued: { operator_ack: true, acknowledged_at: "t" },
+      http_delivered: { operator_ack: false, acknowledged_at: null },
+      signature_verified_by_receiver: { operator_ack: false, acknowledged_at: null },
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      mockFetchSequence([
+        {
+          status: 200,
+          body: { signoff: loaded, reviewer_notes: "", application: { id: "app-1", status: "onboarded" } },
+        },
+      ]),
+    );
+
+    render(
+      <PartnerSandboxSignoffPanel
+        partnerId="acme-v1"
+        applicationId="app-1"
+        adminRequest={fetch}
+        usePinUnlock={false}
+      />,
+    );
+
+    await waitFor(() => screen.getByTestId("evidence-event-id"));
+    const input = screen.getByTestId("evidence-event-id") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "22222222-2222-4222-8222-222222222222" } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("event-id-blocked-message").textContent).toBe(
+        WEBHOOK_EVENT_CHANGE_REQUIRES_GATE_RESET_MESSAGE,
+      );
+    });
+    expect((screen.getByTestId("save-signoff") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("does not auto-reset webhook gates when event_id is edited", async () => {
+    const loaded = defaultSandboxPilotSignoff("app-1");
+    loaded.evidence.event_id = SAMPLE_EVENT_ID;
+    loaded.gates.webhook_track = {
+      queued: { operator_ack: true, acknowledged_at: "t" },
+      http_delivered: { operator_ack: false, acknowledged_at: null },
+      signature_verified_by_receiver: { operator_ack: false, acknowledged_at: null },
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      mockFetchSequence([
+        {
+          status: 200,
+          body: { signoff: loaded, reviewer_notes: "", application: { id: "app-1", status: "onboarded" } },
+        },
+      ]),
+    );
+
+    render(
+      <PartnerSandboxSignoffPanel
+        partnerId="acme-v1"
+        applicationId="app-1"
+        adminRequest={fetch}
+        usePinUnlock={false}
+      />,
+    );
+
+    await waitFor(() => screen.getByTestId("evidence-event-id"));
+    fireEvent.change(screen.getByTestId("evidence-event-id"), {
+      target: { value: "22222222-2222-4222-8222-222222222222" },
+    });
+    expect((screen.getByTestId("gate-webhook-queued") as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("includes observability and sandbox receipt links with honest partner ID copy", async () => {
+    render(
+      <PartnerSandboxSignoffPanel
+        partnerId="acme-v1"
+        applicationId="app-1"
+        adminRequest={fetch}
+        usePinUnlock={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("link-webhook-observability").getAttribute("href")).toBe(
+        "/admin/partners?tab=observability",
+      );
+      expect(screen.getByTestId("link-webhook-sandbox-receipts").getAttribute("href")).toBe(
+        "/admin/partners?tab=sandbox-receipts",
+      );
+      expect(screen.getByText(/partner ID is not prefilled/)).toBeTruthy();
+      expect(screen.getByText(/acme-v1/)).toBeTruthy();
+    });
+  });
+
+  it("does not render webhook send, retry, or observability load controls", async () => {
+    render(
+      <PartnerSandboxSignoffPanel
+        partnerId="acme-v1"
+        applicationId="app-1"
+        adminRequest={fetch}
+        usePinUnlock={false}
+      />,
+    );
+    await waitFor(() => screen.getByTestId("webhook-track-signoff-section"));
+    expect(screen.queryByTestId("observability-load-button")).toBeNull();
+    expect(screen.queryByText(/Send test/i)).toBeNull();
+    expect(screen.queryByText(/Retry/i)).toBeNull();
+  });
+
   it("keeps notes state unchanged when sign-off save returns 409", async () => {
     const adminRequest = vi.fn()
       .mockResolvedValueOnce(
@@ -102,6 +251,10 @@ describe("PartnerSandboxSignoffPanel", () => {
       expect(screen.getByText(/Another update occurred/)).toBeTruthy();
     });
     expect((screen.getByTestId("reviewer-notes") as HTMLTextAreaElement).value).toBe("keep");
+    expect(adminRequest).toHaveBeenCalledTimes(2);
+    const patchCall = adminRequest.mock.calls[1]?.[1] as RequestInit | undefined;
+    expect(patchCall?.method).toBe("PATCH");
+    expect(String(patchCall?.body)).not.toContain("/api/partner/webhooks");
   });
 
   it("wraps at narrow width without horizontal overflow class issues", async () => {
