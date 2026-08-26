@@ -47,7 +47,6 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder' }}
           SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder' }}
-          NEXTAUTH_URL:    https://abraxas-app.vercel.app
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-placeholder-secret' }}
           NEXT_PUBLIC_SOLANA_RPC: https://api.mainnet-beta.solana.com
           NEXT_PUBLIC_VERIFICATION_PROGRAM_ID: ABRAXASverify1111111111111111111111111111111
