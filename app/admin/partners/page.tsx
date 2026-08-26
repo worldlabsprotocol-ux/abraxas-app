@@ -4,49 +4,50 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PartnerOnboardingConsole } from "@/components/admin/PartnerOnboardingConsole";
 import { AdminPartnerKeysPanel } from "@/components/admin/AdminPartnerKeysPanel";
 import { PartnerMeteringPanel } from "@/components/admin/PartnerMeteringPanel";
 import { PartnerWebhooksPanel } from "@/components/admin/PartnerWebhooksPanel";
 import { PartnerWebhookObservabilityPanel } from "@/components/admin/PartnerWebhookObservabilityPanel";
 import { PartnerWebhookSandboxReceiptsPanel } from "@/components/admin/PartnerWebhookSandboxReceiptsPanel";
+import {
+  ADMIN_PARTNERS_TABS,
+  buildAdminPartnersHref,
+  parseAdminPartnerIdQuery,
+  resolveAdminPartnersTab,
+  type AdminPartnersTab,
+} from "@/lib/admin/adminPartnerDeepLink";
 import { useProductionAdminSessionGate } from "@/lib/admin/productionAdminSessionUi";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
 
-type Tab = "onboarding" | "keys" | "usage" | "webhooks" | "observability" | "sandbox-receipts";
-
-function resolveTab(value: string | null): Tab {
-  if (
-    value === "keys"
-    || value === "usage"
-    || value === "webhooks"
-    || value === "observability"
-    || value === "sandbox-receipts"
-  ) {
-    return value;
-  }
-  return "onboarding";
-}
+const TAB_LABELS: Record<AdminPartnersTab, string> = {
+  onboarding: "Onboarding",
+  keys: "API keys",
+  usage: "Usage metering",
+  webhooks: "Webhooks",
+  observability: "Delivery observability",
+  "sandbox-receipts": "Sandbox receipts",
+};
 
 export default function AdminPartnersPage() {
   const searchParams = useSearchParams();
-  const initialTab = useMemo(() => resolveTab(searchParams.get("tab")), [searchParams]);
+  const router = useRouter();
+  const tab = useMemo(() => resolveAdminPartnersTab(searchParams.get("tab")), [searchParams]);
   const initialPartnerId = useMemo(
-    () => searchParams.get("partner_id")?.trim() || undefined,
+    () => parseAdminPartnerIdQuery(searchParams.get("partner_id")),
     [searchParams],
   );
-  const [tab, setTab] = useState<Tab>(initialTab);
   const gate = useProductionAdminSessionGate();
 
-  useEffect(() => {
-    setTab(initialTab);
-  }, [initialTab]);
+  const navigateToTab = useCallback((nextTab: AdminPartnersTab) => {
+    router.push(buildAdminPartnersHref({ tab: nextTab, partnerId: initialPartnerId }));
+  }, [initialPartnerId, router]);
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#f0f0f0", padding: "2rem 1.25rem" }}>
@@ -69,26 +70,20 @@ export default function AdminPartnersPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-          {(["onboarding", "keys", "usage", "webhooks", "observability", "sandbox-receipts"] as const).map(t => (
-            <button key={t} type="button" onClick={() => setTab(t)}
+          {ADMIN_PARTNERS_TABS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => navigateToTab(t)}
               style={{
                 padding: "0.45rem 0.9rem", borderRadius: 999, cursor: "pointer",
                 border: `1px solid ${tab === t ? `${ACCENT}66` : "rgba(255,255,255,0.12)"}`,
                 background: tab === t ? "rgba(16,185,129,0.15)" : "transparent",
                 color: tab === t ? ACCENT : "rgba(255,255,255,0.55)",
                 fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
-              }}>
-              {t === "onboarding"
-                ? "Onboarding"
-                : t === "keys"
-                  ? "API keys"
-                  : t === "usage"
-                    ? "Usage metering"
-                    : t === "webhooks"
-                      ? "Webhooks"
-                      : t === "observability"
-                        ? "Delivery observability"
-                        : "Sandbox receipts"}
+              }}
+            >
+              {TAB_LABELS[t]}
             </button>
           ))}
           {gate.loading ? (
@@ -138,9 +133,9 @@ export default function AdminPartnersPage() {
         ) : tab === "webhooks" ? (
           <PartnerWebhooksPanel adminRequest={gate.adminRequest} />
         ) : tab === "observability" ? (
-          <PartnerWebhookObservabilityPanel />
+          <PartnerWebhookObservabilityPanel initialPartnerId={initialPartnerId} />
         ) : (
-          <PartnerWebhookSandboxReceiptsPanel />
+          <PartnerWebhookSandboxReceiptsPanel initialPartnerId={initialPartnerId} />
         )}
       </div>
     </div>

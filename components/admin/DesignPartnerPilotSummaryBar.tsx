@@ -5,6 +5,7 @@
 import Link from "next/link";
 import type { DesignPartnerPilotSummaryDto } from "@/lib/admin/designPartnerPilotSummary";
 import { PILOT_SUMMARY_BLOCKER_COPY } from "@/lib/admin/designPartnerPilotSummary";
+import { buildAdminPartnersHref, parseAdminPartnerIdQuery } from "@/lib/admin/adminPartnerDeepLink";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const WARN = "#F59E0B";
@@ -25,6 +26,10 @@ export function DesignPartnerPilotSummaryBar({ summary }: DesignPartnerPilotSumm
   const productionLabel = summary.technical.production_environment_active
     ? "Production environment active."
     : "Production environment not active.";
+
+  const partnerId = parseAdminPartnerIdQuery(summary.promoted_partner_id);
+  const observabilityHref = buildAdminPartnersHref({ tab: "observability", partnerId });
+  const sandboxReceiptsHref = buildAdminPartnersHref({ tab: "sandbox-receipts", partnerId });
 
   return (
     <section
@@ -72,8 +77,11 @@ export function DesignPartnerPilotSummaryBar({ summary }: DesignPartnerPilotSumm
         <a href={summary.links.signoff} data-testid="pilot-link-signoff" style={linkStyle}>
           Sign-off
         </a>
-        <Link href={summary.links.observability} data-testid="pilot-link-observability" style={linkStyle}>
+        <Link href={observabilityHref} data-testid="pilot-link-observability" style={linkStyle}>
           Delivery observability
+        </Link>
+        <Link href={sandboxReceiptsHref} data-testid="pilot-link-sandbox-receipts" style={linkStyle}>
+          Sandbox receipts
         </Link>
         <Link href={summary.links.production_activation} data-testid="pilot-link-production" style={linkStyle}>
           Production activation
@@ -81,7 +89,7 @@ export function DesignPartnerPilotSummaryBar({ summary }: DesignPartnerPilotSumm
       </div>
 
       <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-        Delivery observability opens the correct tab — enter partner ID there. Production activation is a separate manual workflow and is not implied by sandbox progress.
+        Delivery observability and sandbox receipts open the correct tab with partner ID prefilled — click Load to fetch data. Production activation is a separate manual workflow and is not implied by sandbox progress.
       </p>
 
       {summary.blocker_codes.length > 0 && (

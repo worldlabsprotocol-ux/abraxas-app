@@ -44,10 +44,17 @@ describe("DesignPartnerPilotSummaryBar", () => {
     expect(screen.getByTestId("pilot-summary-bar").textContent).not.toMatch(/eligible|entitlement|ready for production/i);
   });
 
-  it("renders onboarding link with partner_id and observability helper copy", () => {
+  it("renders onboarding link with partner_id and prefilled observability deep links", () => {
     render(<DesignPartnerPilotSummaryBar summary={summary} />);
     expect(screen.getByTestId("pilot-link-onboarding").getAttribute("href")).toContain("partner_id=acme-v1");
-    expect(screen.getByText(/enter partner ID there/i)).toBeTruthy();
+    expect(screen.getByTestId("pilot-link-observability").getAttribute("href")).toBe(
+      "/admin/partners?tab=observability&partner_id=acme-v1",
+    );
+    expect(screen.getByTestId("pilot-link-sandbox-receipts").getAttribute("href")).toBe(
+      "/admin/partners?tab=sandbox-receipts&partner_id=acme-v1",
+    );
+    expect(screen.getByText(/partner ID prefilled/i)).toBeTruthy();
+    expect(screen.queryByText(/enter partner ID there/i)).toBeNull();
   });
 
   it("renders safe blocker copy instead of raw codes", () => {
@@ -82,5 +89,22 @@ describe("DesignPartnerPilotSummaryBar", () => {
     );
     expect(screen.getByText("Sandbox sign-off state needs operator review.")).toBeTruthy();
     expect(screen.getByText(/operator review/i).textContent).not.toMatch(/manual_partner_confirmation|approved_for_pilot/i);
+  });
+
+  it("omits partner_id from deep links when promoted_partner_id is invalid", () => {
+    render(
+      <DesignPartnerPilotSummaryBar
+        summary={{
+          ...summary,
+          promoted_partner_id: "bad partner id",
+        }}
+      />,
+    );
+    expect(screen.getByTestId("pilot-link-observability").getAttribute("href")).toBe(
+      "/admin/partners?tab=observability",
+    );
+    expect(screen.getByTestId("pilot-link-sandbox-receipts").getAttribute("href")).toBe(
+      "/admin/partners?tab=sandbox-receipts",
+    );
   });
 });

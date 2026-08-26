@@ -62,6 +62,30 @@ describe("PartnerWebhookSandboxReceiptsPanel", () => {
     expect(adminRequestMock).not.toHaveBeenCalled();
   });
 
+  it("prefills partner input from initialPartnerId without fetching", () => {
+    render(<PartnerWebhookSandboxReceiptsPanel initialPartnerId="partner-sandbox" />);
+
+    expect(screen.getByTestId("sandbox-receipts-partner-input")).toHaveValue("partner-sandbox");
+    expect(adminRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("clears stale receipt results when initialPartnerId changes", async () => {
+    const user = userEvent.setup();
+    adminRequestMock.mockResolvedValue(
+      new Response(JSON.stringify(receiptsPayload), { status: 200 }),
+    );
+
+    const { rerender } = render(<PartnerWebhookSandboxReceiptsPanel initialPartnerId="partner-sandbox" />);
+    await user.click(screen.getByTestId("sandbox-receipts-load-button"));
+    await screen.findByTestId("sandbox-receipts-table");
+
+    rerender(<PartnerWebhookSandboxReceiptsPanel initialPartnerId="partner-other" />);
+
+    expect(screen.getByTestId("sandbox-receipts-partner-input")).toHaveValue("partner-other");
+    expect(screen.queryByTestId("sandbox-receipts-table")).not.toBeInTheDocument();
+    expect(adminRequestMock).toHaveBeenCalledTimes(1);
+  });
+
   it("uses adminRequest after explicit partner entry and Load click", async () => {
     const user = userEvent.setup();
     adminRequestMock.mockResolvedValue(

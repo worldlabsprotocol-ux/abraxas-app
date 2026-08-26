@@ -2,7 +2,7 @@
 // FILE: components/admin/PartnerWebhookObservabilityPanel.tsx
 // Read-only Production-session webhook delivery observability for a selected partner.
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   ProductionAdminSessionStatus,
   PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
@@ -66,15 +66,28 @@ function isSandboxTestEvent(eventType: string): boolean {
   return eventType === PARTNER_WEBHOOK_TEST_EVENT_TYPE;
 }
 
-export function PartnerWebhookObservabilityPanel() {
+export function PartnerWebhookObservabilityPanel({
+  initialPartnerId,
+}: {
+  initialPartnerId?: string;
+}) {
   const gate = useProductionAdminSessionGate();
-  const [partnerInput, setPartnerInput] = useState("");
+  const [partnerInput, setPartnerInput] = useState(initialPartnerId ?? "");
   const [loadedPartnerId, setLoadedPartnerId] = useState("");
   const [snapshot, setSnapshot] = useState<ObservabilitySnapshot | null>(null);
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [attemptsByEvent, setAttemptsByEvent] = useState<Record<string, AttemptRow[]>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPartnerInput(initialPartnerId ?? "");
+    setLoadedPartnerId("");
+    setSnapshot(null);
+    setExpandedEventId(null);
+    setAttemptsByEvent({});
+    setError("");
+  }, [initialPartnerId]);
 
   async function loadObservability() {
     const partnerId = partnerInput.trim();
