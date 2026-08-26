@@ -2,7 +2,7 @@
 // FILE: components/admin/PartnerWebhookSandboxReceiptsPanel.tsx
 // Read-only Production-session sandbox webhook test receipt metadata.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ProductionAdminSessionStatus,
   PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
@@ -20,12 +20,22 @@ interface SandboxReceiptRow {
   received_at: string;
 }
 
-export function PartnerWebhookSandboxReceiptsPanel() {
+export function PartnerWebhookSandboxReceiptsPanel({
+  initialPartnerId,
+}: {
+  initialPartnerId?: string;
+}) {
   const gate = useProductionAdminSessionGate();
-  const [partnerInput, setPartnerInput] = useState("");
+  const [partnerInput, setPartnerInput] = useState(initialPartnerId ?? "");
   const [receipts, setReceipts] = useState<SandboxReceiptRow[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPartnerInput(initialPartnerId ?? "");
+    setReceipts([]);
+    setError("");
+  }, [initialPartnerId]);
 
   async function loadReceipts() {
     const partnerId = partnerInput.trim();

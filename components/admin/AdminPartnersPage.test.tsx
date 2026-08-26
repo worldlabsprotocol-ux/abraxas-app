@@ -9,6 +9,8 @@ import AdminPartnersPage from "@/app/admin/partners/page";
 import { SITE_URL } from "@/lib/siteUrl";
 
 const fetchMock = vi.fn();
+const pushMock = vi.fn();
+let searchParams = new URLSearchParams();
 
 function stubRuntimeOrigin(origin: string) {
   Object.defineProperty(window, "location", {
@@ -18,10 +20,25 @@ function stubRuntimeOrigin(origin: string) {
   });
 }
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => searchParams,
+  useRouter: () => ({ push: pushMock }),
+}));
+
 vi.mock("@/components/admin/PartnerOnboardingConsole", () => ({
-  PartnerOnboardingConsole: ({ adminRequest }: { adminRequest: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> }) => {
+  PartnerOnboardingConsole: ({
+    adminRequest,
+    initialSelectedPartnerId,
+  }: {
+    adminRequest: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+    initialSelectedPartnerId?: string;
+  }) => {
     void adminRequest("/api/admin/partners/onboarding", { cache: "no-store" });
-    return <div data-testid="onboarding-panel">onboarding</div>;
+    return (
+      <div data-testid="onboarding-panel" data-initial-partner-id={initialSelectedPartnerId ?? ""}>
+        onboarding
+      </div>
+    );
   },
 }));
 
@@ -35,16 +52,26 @@ vi.mock("@/components/admin/PartnerWebhooksPanel", () => ({
   PartnerWebhooksPanel: () => <div>webhooks</div>,
 }));
 vi.mock("@/components/admin/PartnerWebhookObservabilityPanel", () => ({
-  PartnerWebhookObservabilityPanel: () => <div data-testid="observability-panel">observability</div>,
+  PartnerWebhookObservabilityPanel: ({ initialPartnerId }: { initialPartnerId?: string }) => (
+    <div data-testid="observability-panel" data-initial-partner-id={initialPartnerId ?? ""}>
+      observability
+    </div>
+  ),
 }));
 vi.mock("@/components/admin/PartnerWebhookSandboxReceiptsPanel", () => ({
-  PartnerWebhookSandboxReceiptsPanel: () => <div data-testid="sandbox-receipts-panel">sandbox</div>,
+  PartnerWebhookSandboxReceiptsPanel: ({ initialPartnerId }: { initialPartnerId?: string }) => (
+    <div data-testid="sandbox-receipts-panel" data-initial-partner-id={initialPartnerId ?? ""}>
+      sandbox
+    </div>
+  ),
 }));
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.stubGlobal("fetch", fetchMock);
-  fetchMock.mockImplementation(async (input: RequestInfo, init?: RequestInit) => {
+  searchParams = new URLSearchParams();
+  pushMock.mockReset();
+  fetchMock.mockImplementation(async (input: RequestInfo) => {
     const url = String(input);
     if (url.includes("/api/admin/access")) {
       return new Response(JSON.stringify({ authorized: true, method: "email" }), { status: 200 });
@@ -137,6 +164,63 @@ describe("AdminPartnersPage session mode", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Delivery observability" }));
-    expect(screen.getByTestId("observability-panel")).toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/admin/partners?tab=observability");
+  });
+});
+
+describe("AdminPartnersPage deep links", () => {
+  it("opens observability tab with validated partner_id prefilled from query", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    searchParams = new URLSearchParams("tab=observability&partner_id=acme-v1");
+
+    render(<AdminPartnersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("observability-panel")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("observability-panel")).toHaveAttribute("data-initial-partner-id", "acme-v1");
+  });
+
+  it("opens sandbox receipts tab with validated partner_id prefilled from query", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    searchParams = new URLSearchParams("tab=sandbox-receipts&partner_id=acme-v1");
+
+    render(<AdminPartnersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("sandbox-receipts-panel")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("sandbox-receipts-panel")).toHaveAttribute("data-initial-partner-id", "acme-v1");
+  });
+
+  it("falls back to onboarding for invalid tab and ignores invalid partner_id", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    searchParams = new URLSearchParams("tab=not-a-tab&partner_id=bad%20id");
+
+    render(<AdminPartnersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("onboarding-panel")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("onboarding-panel")).toHaveAttribute("data-initial-partner-id", "");
+  });
+
+  it("uses router.push with partner_id preserved when switching tabs", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    stubRuntimeOrigin(SITE_URL);
+    searchParams = new URLSearchParams("tab=observability&partner_id=acme-v1");
+
+    const user = userEvent.setup();
+    render(<AdminPartnersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("observability-panel")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Sandbox receipts" }));
+    expect(pushMock).toHaveBeenCalledWith("/admin/partners?tab=sandbox-receipts&partner_id=acme-v1");
   });
 });

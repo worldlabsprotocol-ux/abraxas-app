@@ -80,6 +80,30 @@ describe("PartnerWebhookObservabilityPanel", () => {
     expect(adminRequestMock).not.toHaveBeenCalled();
   });
 
+  it("prefills partner input from initialPartnerId without fetching", () => {
+    render(<PartnerWebhookObservabilityPanel initialPartnerId="partner-a" />);
+
+    expect(screen.getByTestId("observability-partner-input")).toHaveValue("partner-a");
+    expect(adminRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("clears stale observability results when initialPartnerId changes", async () => {
+    const user = userEvent.setup();
+    adminRequestMock.mockResolvedValue(
+      new Response(JSON.stringify({ observability: observabilityPayload }), { status: 200 }),
+    );
+
+    const { rerender } = render(<PartnerWebhookObservabilityPanel initialPartnerId="partner-a" />);
+    await user.click(screen.getByTestId("observability-load-button"));
+    await screen.findByTestId("observability-delivery-table");
+
+    rerender(<PartnerWebhookObservabilityPanel initialPartnerId="partner-b" />);
+
+    expect(screen.getByTestId("observability-partner-input")).toHaveValue("partner-b");
+    expect(screen.queryByTestId("observability-delivery-table")).not.toBeInTheDocument();
+    expect(adminRequestMock).toHaveBeenCalledTimes(1);
+  });
+
   it("uses adminRequest after explicit partner entry and Load click", async () => {
     const user = userEvent.setup();
     adminRequestMock.mockResolvedValue(
