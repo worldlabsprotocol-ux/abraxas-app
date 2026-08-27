@@ -2,7 +2,8 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { mapDesignPartnerApplicationRows } from "@/lib/admin/designPartnerApplicationDetail";
 
 vi.mock("@/components/redesign/RedesignPage", () => ({
   RedesignPage: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -83,24 +84,16 @@ vi.mock("@/components/admin/DesignPartnerIntakeHealthCard", () => ({
   DesignPartnerIntakeHealthCard: () => null,
 }));
 
-vi.mock("@/components/admin/DesignPartnerApplicationDetailPanel", () => ({
-  DesignPartnerApplicationDetailPanel: ({
-    application,
-  }: {
-    application: { id: string };
-  }) => <div data-testid={`detail-panel-${application.id}`} />,
-}));
-
 import AdminDesignPartnersPage from "@/app/admin/design-partners/page";
 
-const submittedApp = {
+const submittedDbRow = {
   id: "app-submitted",
   company: "Test Co",
-  contact_name: "Ops",
+  contact_name: null,
   email: "hidden@example.com",
-  website: "https://example.com",
-  use_case: "sandbox",
-  monthly_volume: "low",
+  website: null,
+  use_case: null,
+  monthly_volume: null,
   public_name_ok: false,
   integration_type: "passport_gate",
   status: "submitted",
@@ -109,6 +102,8 @@ const submittedApp = {
   created_at: "2026-01-01T00:00:00.000Z",
   reviewed_at: null,
 };
+
+const submittedApp = mapDesignPartnerApplicationRows([submittedDbRow])[0]!;
 
 const approvedApp = {
   ...submittedApp,
@@ -133,7 +128,13 @@ function mockList(apps: unknown[]) {
         headers: { "Content-Type": "application/json" },
       });
     }
-    if (url.includes("/design-partners") && (!init || init.method === undefined)) {
+    if (url.includes("/intake-health")) {
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (url.endsWith("/api/admin/design-partners") && (!init || init.method === undefined)) {
       return new Response(JSON.stringify({ applications: apps }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -175,10 +176,44 @@ describe("AdminDesignPartnersPage", () => {
     await waitFor(() => screen.getByTestId(`promote-${approvedApp.id}`));
   });
 
-  it("renders detail panel mount point for pending applications", async () => {
+  it("renders View application details for sparse GET DTOs with mostly null optional fields", async () => {
+    mockList(mapDesignPartnerApplicationRows([submittedDbRow]));
+    render(<AdminDesignPartnersPage />);
+    await waitFor(() => screen.getByTestId("design-partner-detail-toggle-app-submitted"));
+    expect(screen.getByText("View application details")).toBeTruthy();
+    expect(screen.queryByTestId("design-partner-detail-panel-app-submitted")).toBeNull();
+  });
+
+  it("expands and collapses read-only detail without network calls", async () => {
     mockList([submittedApp]);
     render(<AdminDesignPartnersPage />);
-    await waitFor(() => screen.getByTestId("detail-panel-app-submitted"));
+    await waitFor(() => screen.getByTestId("design-partner-detail-toggle-app-submitted"));
+    const initialCalls = gateState.adminRequest.mock.calls.length;
+
+    fireEvent.click(screen.getByTestId("design-partner-detail-toggle-app-submitted"));
+    await waitFor(() => {
+      expect(screen.getByTestId("design-partner-detail-panel-app-submitted")).toBeTruthy();
+      expect(screen.getByTestId("design-partner-detail-email").textContent).toBe("hidden@example.com");
+    });
+    expect(gateState.adminRequest.mock.calls.length).toBe(initialCalls);
+
+    fireEvent.click(screen.getByTestId("design-partner-detail-toggle-app-submitted"));
+    await waitFor(() => {
+      expect(screen.queryByTestId("design-partner-detail-panel-app-submitted")).toBeNull();
+    });
+    expect(gateState.adminRequest.mock.calls.length).toBe(initialCalls);
+  });
+
+  it("places disclosure before reviewer notes and mutation controls", async () => {
+    mockList([submittedApp]);
+    render(<AdminDesignPartnersPage />);
+    await waitFor(() => screen.getByTestId(`design-partner-app-${submittedApp.id}`));
+    const card = screen.getByTestId(`design-partner-app-${submittedApp.id}`);
+    const disclosure = within(card).getByTestId("design-partner-detail-toggle-app-submitted");
+    const notes = within(card).getByTestId(`reviewer-notes-${submittedApp.id}`);
+    const approve = within(card).getByText("Approve");
+    expect(disclosure.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(disclosure.compareDocumentPosition(approve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("opens reject confirm with company only", async () => {
