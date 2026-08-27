@@ -74,23 +74,65 @@ function getRatelimiter(
   windowSec: number,
   env: Record<string, string | undefined> = process.env,
 ): Ratelimit {
-  const cacheKey = limiterCacheKey(endpoint, limit, windowSec);
-  const cached = limiterCache.get(cacheKey);
+  return getRatelimiterWithPrefix({
+    prefix: PARTNER_FLOW_UPSTASH_PREFIX,
+    cacheKey: limiterCacheKey(endpoint, limit, windowSec),
+    limit,
+    windowSec,
+    env,
+  });
+}
+
+function getRatelimiterWithPrefix(input: {
+  prefix: string;
+  cacheKey: string;
+  limit: number;
+  windowSec: number;
+  env?: Record<string, string | undefined>;
+}): Ratelimit {
+  const cached = limiterCache.get(input.cacheKey);
   if (cached) return cached;
 
-  const redis = getPartnerFlowUpstashRedis(env);
+  const redis = getPartnerFlowUpstashRedis(input.env);
   if (!redis) {
     throw new Error("partner_flow_upstash_not_configured");
   }
 
   const limiter = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(limit, `${windowSec} s`),
-    prefix: PARTNER_FLOW_UPSTASH_PREFIX,
+    limiter: Ratelimit.slidingWindow(input.limit, `${input.windowSec} s`),
+    prefix: input.prefix,
     analytics: false,
   });
-  limiterCache.set(cacheKey, limiter);
+  limiterCache.set(input.cacheKey, limiter);
   return limiter;
+}
+
+/** Upstash rate limit for non–Partner Flow namespaces (e.g. design-partner apply intake). */
+export async function checkUpstashRateLimitWithPrefix(input: {
+  prefix: string;
+  bucketKey: string;
+  limit: number;
+  windowSec: number;
+  env?: Record<string, string | undefined>;
+}): Promise<UpstashRateLimitCheckResult> {
+  const cacheKey = `${input.prefix}:${input.limit}:${input.windowSec}`;
+  const ratelimit = getRatelimiterWithPrefix({
+    prefix: input.prefix,
+    cacheKey,
+    limit: input.limit,
+    windowSec: input.windowSec,
+    env: input.env,
+  });
+  const { success, limit, remaining, reset } = await ratelimit.limit(input.bucketKey);
+  const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+  const attemptsInWindow = success ? limit - remaining : limit;
+
+  return {
+    allowed: success,
+    attemptsInWindow,
+    retryAfterSec,
+  };
 }
 
 export async function checkPartnerFlowUpstashRateLimit(input: {
