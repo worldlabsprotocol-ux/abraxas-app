@@ -50,3 +50,34 @@ jobs:
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-placeholder-secret' }}
           NEXT_PUBLIC_SOLANA_RPC: https://api.mainnet-beta.solana.com
           NEXT_PUBLIC_VERIFICATION_PROGRAM_ID: ABRAXASverify1111111111111111111111111111111
+
+  audit-hash-parity:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: migration_072_parity
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d migration_072_parity"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit hash SQL parity
+        run: bash scripts/ci/run-audit-hash-sql-parity.sh
+        env:
+          AUDIT_HASH_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_072_parity
