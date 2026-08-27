@@ -35,8 +35,10 @@ vi.mock("@/lib/partner/partnerAuth", async (importOriginal) => {
   };
 });
 
-import { PATCH as designPartnersPATCH } from "@/app/api/admin/design-partners/route";
+import { GET as designPartnersGET, PATCH as designPartnersPATCH } from "@/app/api/admin/design-partners/route";
 import { POST as promotePOST } from "@/app/api/admin/design-partners/promote/route";
+import { DESIGN_PARTNER_APPLICATION_ADMIN_DTO_KEYS } from "@/lib/admin/designPartnerApplicationDetailContract";
+import { DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS } from "@/lib/admin/designPartnerApplicationDetail";
 
 const APP_ID = "00000000-0000-4000-8000-000000000001";
 const MIGRATION_PATH = join(
@@ -134,6 +136,58 @@ describe("070_design_partner_promote_atomic migration contract", () => {
     expect(migrationSql).not.toContain("audit_events");
     expect(migrationSql).not.toContain("p_raw");
     expect(migrationSql).toContain("invalid_input");
+  });
+});
+
+describe("design-partners GET list", () => {
+  let designPartnersChain: ReturnType<typeof createChain>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    checkProductionSensitiveAdminAccessMock.mockResolvedValue(true);
+    designPartnersChain = createChain();
+    createClientMock.mockReturnValue({ from: vi.fn(() => designPartnersChain) });
+  });
+
+  it("projects allowlisted application DTO fields", async () => {
+    designPartnersChain.limit.mockResolvedValueOnce({
+      data: [{
+        id: APP_ID,
+        promoted_partner_id: null,
+        reviewer_notes: null,
+        company: "Acme",
+        contact_name: "Ops",
+        email: "ops@example.com",
+        website: "https://example.com",
+        integration_type: "passport_gate",
+        use_case: "Pilot",
+        monthly_volume: "low",
+        public_name_ok: true,
+        status: "submitted",
+        created_at: "2026-01-01T00:00:00.000Z",
+        reviewed_at: null,
+        proof_id: "must-not-leak",
+      }],
+      error: null,
+    });
+
+    const res = await designPartnersGET(new NextRequest("http://localhost/api/admin/design-partners"));
+    expect(res.status).toBe(200);
+    expect(designPartnersChain.select).toHaveBeenCalledWith(DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS);
+    const body = await res.json() as { applications: Array<Record<string, unknown>> };
+    expect(body.applications).toHaveLength(1);
+    expect(Object.keys(body.applications[0]!).sort()).toEqual([...DESIGN_PARTNER_APPLICATION_ADMIN_DTO_KEYS].sort());
+    expect(JSON.stringify(body)).not.toContain("proof_id");
+    expect(JSON.stringify(body)).not.toContain("must-not-leak");
+  });
+
+  it("returns 401 when admin access is denied", async () => {
+    checkProductionSensitiveAdminAccessMock.mockResolvedValueOnce(false);
+    const res = await designPartnersGET(new NextRequest("http://localhost/api/admin/design-partners"));
+    expect(res.status).toBe(401);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe("Unauthorized");
+    expect(JSON.stringify(body)).not.toContain("@");
   });
 });
 
