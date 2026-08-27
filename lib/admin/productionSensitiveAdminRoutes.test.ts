@@ -38,6 +38,7 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import { GET as partnerKeysGET } from "@/app/api/admin/partner-keys/route";
 import { GET as webhookObservabilityGET } from "@/app/api/admin/partners/webhooks/observability/route";
+import { GET as intakeHealthGET } from "@/app/api/admin/design-partners/intake-health/route";
 
 vi.mock("@/lib/partner/webhooks/webhookOperatorObservability", () => ({
   getPartnerWebhookObservability: vi.fn().mockResolvedValue({
@@ -192,6 +193,29 @@ describe("production-sensitive admin routes", () => {
         { headers: { cookie: "abraxas_browser_session=test-token" } },
       );
       const res = await webhookObservabilityGET(req);
+      expect(res.status).not.toBe(401);
+      const body = await res.json() as { error?: string };
+      expect(body.error).not.toBe("Unauthorized");
+    });
+  });
+
+  describe("design-partner intake health route", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/design-partners/intake-health", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await intakeHealthGET(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("allows allowlisted browser session on Production origin", async () => {
+      productionEnv();
+      resolveBrowserSessionMock.mockResolvedValue({ suiAddress: SUI });
+      const req = new NextRequest("http://localhost/api/admin/design-partners/intake-health", {
+        headers: { cookie: "abraxas_browser_session=test-token" },
+      });
+      const res = await intakeHealthGET(req);
       expect(res.status).not.toBe(401);
       const body = await res.json() as { error?: string };
       expect(body.error).not.toBe("Unauthorized");
