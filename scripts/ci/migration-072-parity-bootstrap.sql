@@ -17,7 +17,8 @@ BEGIN
   END IF;
 END $$;
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 CREATE TABLE IF NOT EXISTS public.audit_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
