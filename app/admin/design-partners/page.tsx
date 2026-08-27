@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { PartnerSandboxSignoffPanel } from "@/components/admin/PartnerSandboxSignoffPanel";
 import { DesignPartnerPilotSummaryBar } from "@/components/admin/DesignPartnerPilotSummaryBar";
+import { DesignPartnerIntakeHealthCard } from "@/components/admin/DesignPartnerIntakeHealthCard";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import type { DesignPartnerPilotSummaryDto } from "@/lib/admin/designPartnerPilotSummary";
 import {
@@ -365,6 +366,12 @@ export default function AdminDesignPartnersPage() {
       <ProductionAdminSessionStatus
         gate={gate}
         style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--accent)", marginBottom: "0.75rem" }}
+      />
+
+      <DesignPartnerIntakeHealthCard
+        authorized={gate.authorized}
+        loading={gate.loading}
+        adminRequest={gate.adminRequest}
       />
 
       {msg && <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--accent)", marginBottom: "0.75rem" }}>{msg}</p>}
