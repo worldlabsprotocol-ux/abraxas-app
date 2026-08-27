@@ -3,8 +3,10 @@
 import { describe, expect, it } from "vitest";
 import {
   DESIGN_PARTNER_APPLICATION_ADMIN_DTO_KEYS,
+  DESIGN_PARTNER_APPLICATION_PAGE_RESPONSE_KEYS,
   isDesignPartnerApplicationAdminDto,
   parseDesignPartnerApplicationListResponse,
+  parseDesignPartnerApplicationPageResponse,
 } from "@/lib/admin/designPartnerApplicationDetailContract";
 import {
   classifyDesignPartnerWebsiteDisplay,
@@ -48,8 +50,30 @@ describe("mapDesignPartnerApplicationRow", () => {
   it("parses strict list responses", () => {
     const response = parseDesignPartnerApplicationListResponse({
       applications: mapDesignPartnerApplicationRows([BASE_ROW]),
+      next_cursor: null,
+      has_more: false,
     });
     expect(response.applications).toHaveLength(1);
+  });
+
+  it("parses paginated page responses", () => {
+    const response = parseDesignPartnerApplicationPageResponse({
+      applications: mapDesignPartnerApplicationRows([BASE_ROW]),
+      next_cursor: "cursor-token",
+      has_more: true,
+    });
+    expect(response.applications).toHaveLength(1);
+    expect(response.next_cursor).toBe("cursor-token");
+    expect(response.has_more).toBe(true);
+    expect(Object.keys(response).sort()).toEqual([...DESIGN_PARTNER_APPLICATION_PAGE_RESPONSE_KEYS].sort());
+  });
+
+  it("rejects page responses when has_more disagrees with next_cursor", () => {
+    expect(() => parseDesignPartnerApplicationPageResponse({
+      applications: mapDesignPartnerApplicationRows([BASE_ROW]),
+      next_cursor: null,
+      has_more: true,
+    })).toThrow();
   });
 
   it("rejects list responses with extra keys", () => {

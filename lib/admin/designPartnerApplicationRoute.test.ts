@@ -39,6 +39,10 @@ import { GET as designPartnersGET, PATCH as designPartnersPATCH } from "@/app/ap
 import { POST as promotePOST } from "@/app/api/admin/design-partners/promote/route";
 import { DESIGN_PARTNER_APPLICATION_ADMIN_DTO_KEYS } from "@/lib/admin/designPartnerApplicationDetailContract";
 import { DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS } from "@/lib/admin/designPartnerApplicationDetail";
+import {
+  buildDesignPartnerQueueKeysetOrFilter,
+  encodeDesignPartnerQueueCursor,
+} from "@/lib/admin/designPartnerApplicationQueueCursor";
 
 const APP_ID = "00000000-0000-4000-8000-000000000001";
 const MIGRATION_PATH = join(
@@ -51,6 +55,8 @@ function createChain() {
     select: vi.fn(),
     eq: vi.fn(),
     is: vi.fn(),
+    not: vi.fn(),
+    or: vi.fn(),
     update: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
@@ -62,6 +68,27 @@ function createChain() {
   }
   return chain;
 }
+
+function listRequest(query: string) {
+  return new NextRequest(`http://localhost/api/admin/design-partners?${query}`);
+}
+
+const LIST_ROW = {
+  id: APP_ID,
+  promoted_partner_id: null,
+  reviewer_notes: null,
+  company: "Acme",
+  contact_name: "Ops",
+  email: "ops@example.com",
+  website: "https://example.com",
+  integration_type: "passport_gate",
+  use_case: "Pilot",
+  monthly_volume: "low",
+  public_name_ok: true,
+  status: "submitted",
+  created_at: "2026-01-01T00:00:00.000Z",
+  reviewed_at: null,
+};
 
 function designPartnerPatchRequest(body: unknown) {
   return new NextRequest("http://localhost/api/admin/design-partners", {
@@ -149,45 +176,134 @@ describe("design-partners GET list", () => {
     createClientMock.mockReturnValue({ from: vi.fn(() => designPartnersChain) });
   });
 
-  it("projects allowlisted application DTO fields", async () => {
+  it("projects allowlisted application DTO fields with pagination metadata", async () => {
     designPartnersChain.limit.mockResolvedValueOnce({
-      data: [{
-        id: APP_ID,
-        promoted_partner_id: null,
-        reviewer_notes: null,
-        company: "Acme",
-        contact_name: "Ops",
-        email: "ops@example.com",
-        website: "https://example.com",
-        integration_type: "passport_gate",
-        use_case: "Pilot",
-        monthly_volume: "low",
-        public_name_ok: true,
-        status: "submitted",
-        created_at: "2026-01-01T00:00:00.000Z",
-        reviewed_at: null,
-        proof_id: "must-not-leak",
-      }],
+      data: [{ ...LIST_ROW, proof_id: "must-not-leak" }],
       error: null,
     });
 
-    const res = await designPartnersGET(new NextRequest("http://localhost/api/admin/design-partners"));
+    const res = await designPartnersGET(listRequest("status=submitted"));
     expect(res.status).toBe(200);
     expect(designPartnersChain.select).toHaveBeenCalledWith(DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS);
-    const body = await res.json() as { applications: Array<Record<string, unknown>> };
+    expect(designPartnersChain.order).toHaveBeenNthCalledWith(1, "created_at", { ascending: false });
+    expect(designPartnersChain.order).toHaveBeenNthCalledWith(2, "id", { ascending: false });
+    expect(designPartnersChain.limit).toHaveBeenCalledWith(26);
+    const body = await res.json() as {
+      applications: Array<Record<string, unknown>>;
+      next_cursor: string | null;
+      has_more: boolean;
+    };
     expect(body.applications).toHaveLength(1);
     expect(Object.keys(body.applications[0]!).sort()).toEqual([...DESIGN_PARTNER_APPLICATION_ADMIN_DTO_KEYS].sort());
+    expect(body.next_cursor).toBeNull();
+    expect(body.has_more).toBe(false);
     expect(JSON.stringify(body)).not.toContain("proof_id");
     expect(JSON.stringify(body)).not.toContain("must-not-leak");
   });
 
-  it("returns 401 when admin access is denied", async () => {
+  it("returns 401 when admin access is denied before query validation", async () => {
     checkProductionSensitiveAdminAccessMock.mockResolvedValueOnce(false);
-    const res = await designPartnersGET(new NextRequest("http://localhost/api/admin/design-partners"));
+    const res = await designPartnersGET(listRequest("status=submitted&limit=abc"));
     expect(res.status).toBe(401);
     const body = await res.json() as { error: string };
     expect(body.error).toBe("Unauthorized");
     expect(JSON.stringify(body)).not.toContain("@");
+    expect(designPartnersChain.limit).not.toHaveBeenCalled();
+  });
+
+  it("defaults absent limit to 25 and rejects invalid supplied limits", async () => {
+    designPartnersChain.limit.mockResolvedValue({ data: [], error: null });
+
+    const defaultRes = await designPartnersGET(listRequest("status=submitted"));
+    expect(defaultRes.status).toBe(200);
+    expect(designPartnersChain.limit).toHaveBeenLastCalledWith(26);
+
+    for (const invalid of ["0", "51", "abc", ""]) {
+      const res = await designPartnersGET(listRequest(`status=submitted&limit=${invalid}`));
+      expect(res.status).toBe(400);
+      const body = await res.json() as { error: string; code: string };
+      expect(body).toEqual({ error: "Invalid request", code: "invalid_input" });
+    }
+  });
+
+  it("accepts limit 1 and 50", async () => {
+    designPartnersChain.limit.mockResolvedValue({ data: [], error: null });
+    const one = await designPartnersGET(listRequest("status=submitted&limit=1"));
+    expect(one.status).toBe(200);
+    expect(designPartnersChain.limit).toHaveBeenLastCalledWith(2);
+
+    const fifty = await designPartnersGET(listRequest("status=submitted&limit=50"));
+    expect(fifty.status).toBe(200);
+    expect(designPartnersChain.limit).toHaveBeenLastCalledWith(51);
+  });
+
+  it("rejects unknown and repeated query parameters", async () => {
+    const unknown = await designPartnersGET(listRequest("status=submitted&company=Acme"));
+    expect(unknown.status).toBe(400);
+
+    const repeated = await designPartnersGET(listRequest("status=submitted&limit=25&limit=25"));
+    expect(repeated.status).toBe(400);
+  });
+
+  it("returns stable next_cursor and has_more when a trailing page exists", async () => {
+    const secondId = "00000000-0000-4000-8000-000000000002";
+    designPartnersChain.limit.mockResolvedValueOnce({
+      data: [
+        LIST_ROW,
+        { ...LIST_ROW, id: secondId, created_at: "2026-01-01T00:00:00.000Z" },
+      ],
+      error: null,
+    });
+
+    const res = await designPartnersGET(listRequest("status=submitted&limit=1"));
+    const body = await res.json() as { next_cursor: string | null; has_more: boolean };
+    expect(body.has_more).toBe(true);
+    expect(body.next_cursor).toBe(
+      encodeDesignPartnerQueueCursor("submitted", LIST_ROW.created_at, LIST_ROW.id),
+    );
+  });
+
+  it("applies exact keyset filter for equal created_at tie-break pages", async () => {
+    const cursor = encodeDesignPartnerQueueCursor(
+      "submitted",
+      "2026-01-01T00:00:00.000Z",
+      APP_ID,
+    );
+    designPartnersChain.limit.mockResolvedValueOnce({ data: [], error: null });
+
+    const res = await designPartnersGET(listRequest(`status=submitted&cursor=${cursor}`));
+    expect(res.status).toBe(200);
+    expect(designPartnersChain.or).toHaveBeenCalledWith(
+      buildDesignPartnerQueueKeysetOrFilter("2026-01-01T00:00:00.000Z", APP_ID),
+    );
+  });
+
+  it("rejects malformed cursor payloads and cursor status mismatch", async () => {
+    const mismatch = encodeDesignPartnerQueueCursor("submitted", LIST_ROW.created_at, LIST_ROW.id);
+    const mismatchRes = await designPartnersGET(listRequest(`status=approved&cursor=${mismatch}`));
+    expect(mismatchRes.status).toBe(400);
+    const mismatchBody = await mismatchRes.json() as { code: string };
+    expect(mismatchBody.code).toBe("invalid_cursor");
+
+    const malformedRes = await designPartnersGET(listRequest("status=submitted&cursor=%%%"));
+    expect(malformedRes.status).toBe(400);
+  });
+
+  it("accepts structurally valid modified cursor values as unsigned position tokens", async () => {
+    const modified = encodeDesignPartnerQueueCursor(
+      "submitted",
+      "2025-12-31T23:59:59.999Z",
+      "00000000-0000-4000-8000-000000000099",
+    );
+    designPartnersChain.limit.mockResolvedValueOnce({ data: [], error: null });
+    const res = await designPartnersGET(listRequest(`status=submitted&cursor=${modified}`));
+    expect(res.status).toBe(200);
+    expect(designPartnersChain.or).toHaveBeenCalledWith(
+      buildDesignPartnerQueueKeysetOrFilter(
+        "2025-12-31T23:59:59.999Z",
+        "00000000-0000-4000-8000-000000000099",
+      ),
+    );
   });
 });
 
