@@ -182,15 +182,30 @@ export function resolveTrustedClientIpIdentity(request: NextRequest): TrustedCli
  * Privacy-preserving rate-limit bucket key.
  * Requires an explicit strong server secret — never uses public literals.
  */
+/** Privacy-preserving HMAC bucket key for any rate-limit namespace. */
+export function hashRateLimitBucketKey(input: {
+  namespace: string;
+  routeKey: string;
+  identityMaterial: string;
+  secret: string;
+}): string {
+  return createHmac("sha256", input.secret)
+    .update(`${input.namespace}:${input.routeKey}:${input.identityMaterial}`, "utf8")
+    .digest("hex")
+    .slice(0, 32);
+}
+
 export function hashPartnerFlowClientBucketKey(input: {
   endpoint: PartnerFlowRateLimitEndpoint;
   identityMaterial: string;
   secret: string;
 }): string {
-  return createHmac("sha256", input.secret)
-    .update(`${RATE_LIMIT_NAMESPACE}:${input.endpoint}:${input.identityMaterial}`, "utf8")
-    .digest("hex")
-    .slice(0, 32);
+  return hashRateLimitBucketKey({
+    namespace: RATE_LIMIT_NAMESPACE,
+    routeKey: input.endpoint,
+    identityMaterial: input.identityMaterial,
+    secret: input.secret,
+  });
 }
 
 function warnRateLimitMisconfigured(): void {

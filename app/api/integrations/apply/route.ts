@@ -1,82 +1,135 @@
 // FILE: app/api/integrations/apply/route.ts
-// Design partner application — on-chain authentication proof (primary).
+// Design partner application — validated intake, best-effort dedup, safe logging.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { issueAuthenticationProof } from "@/lib/authenticationProof/issue";
 import { adminEmailShell, adminEmailTable, sendAdminEmail } from "@/lib/notify/adminResend";
+import {
+  findRecentDuplicateDesignPartnerApplication,
+  parseDesignPartnerApplicationFields,
+  readBoundedJsonBody,
+  validateDesignPartnerApplicationEnvelope,
+} from "@/lib/integrations/designPartnerApplicationIntake";
+import {
+  checkDesignPartnerApplyRateLimit,
+  designPartnerApplyRateLimitResponse,
+  designPartnerApplyRateLimitUnavailableResponse,
+} from "@/lib/integrations/designPartnerApplicationRateLimit";
+import { logSafeOperationalError } from "@/lib/partner/webhooks/webhookDispatchError";
+
+function getSupabaseConfig(): { url: string; key: string } {
+  return {
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+  };
+}
+
+function invalidRequestResponse(): NextResponse {
+  return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+}
+
+function successResponse(): NextResponse {
+  return NextResponse.json({ ok: true });
+}
 
 export async function POST(req: NextRequest) {
+  const bounded = await readBoundedJsonBody(req);
+  if (!bounded.ok) {
+    return invalidRequestResponse();
+  }
+
+  let body: unknown;
   try {
-    const body = await req.json() as {
-      company?: string;
-      contact_name?: string;
-      email?: string;
-      website?: string;
-      use_case?: string;
-      monthly_volume?: string;
-      integration_type?: string;
-      public_name_ok?: boolean;
-    };
+    body = JSON.parse(bounded.text);
+  } catch {
+    return invalidRequestResponse();
+  }
 
-    const email = body.email?.trim();
-    const company = body.company?.trim();
-    if (!email?.includes("@") || !company) {
-      return NextResponse.json({ error: "Company and valid email required" }, { status: 400 });
-    }
+  const envelope = validateDesignPartnerApplicationEnvelope(body);
+  if (!envelope.ok) {
+    return invalidRequestResponse();
+  }
+  if (envelope.action === "honeypot") {
+    return successResponse();
+  }
 
-    const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-    const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-    if (!SB_URL || !SB_KEY) {
-      return NextResponse.json({ error: "Database not configured" }, { status: 503 });
-    }
+  const parsed = parseDesignPartnerApplicationFields(body);
+  if (!parsed.ok) {
+    return invalidRequestResponse();
+  }
 
-    const row = {
-      company,
-      contact_name: body.contact_name?.trim() ?? null,
-      email,
-      website: body.website?.trim() ?? null,
-      use_case: body.use_case?.trim() ?? null,
-      monthly_volume: body.monthly_volume?.trim() ?? null,
-      integration_type: body.integration_type?.trim() ?? "passport_gate",
-      public_name_ok: Boolean(body.public_name_ok),
-      status: "submitted",
-    };
+  const rateLimit = await checkDesignPartnerApplyRateLimit(req);
+  if (
+    rateLimit.backend === "identity_unavailable"
+    || rateLimit.backend === "distributed_config_incomplete"
+    || rateLimit.backend === "distributed_unavailable"
+  ) {
+    return designPartnerApplyRateLimitUnavailableResponse();
+  }
+  if (!rateLimit.allowed) {
+    return designPartnerApplyRateLimitResponse(rateLimit);
+  }
 
-    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-    const { data, error } = await sb.from("design_partners").insert(row).select("id").single();
+  const { url: sbUrl, key: sbKey } = getSupabaseConfig();
+  if (!sbUrl || !sbKey) {
+    return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
+  }
 
-    if (error) {
-      console.error("[integrations/apply]", error.message);
-      return NextResponse.json({ error: "Could not save application" }, { status: 500 });
-    }
+  const sb = createClient(sbUrl, sbKey, { auth: { persistSession: false } });
 
-    const recordId = data.id as string;
+  const duplicate = await findRecentDuplicateDesignPartnerApplication(sb, {
+    emailDedupNorm: parsed.emailDedupNorm,
+    companyDedupNorm: parsed.companyDedupNorm,
+  });
+  if (duplicate.duplicate) {
+    return successResponse();
+  }
+
+  const row = parsed.row;
+  const { data, error } = await sb.from("design_partners").insert(row).select("id").single();
+
+  if (error || !data?.id) {
+    logSafeOperationalError("integrations.apply.insert", error ?? new Error("insert_missing_id"));
+    return NextResponse.json({ error: "Could not save application" }, { status: 500 });
+  }
+
+  const recordId = data.id as string;
+  let proofIdLabel = "unavailable";
+
+  try {
     const proof = await issueAuthenticationProof({
       eventType: "design_partner_apply",
       recordId,
       recordPayload: { ...row, record_id: recordId },
     });
+    if (proof.proof_id) {
+      proofIdLabel = proof.proof_id;
+    }
+  } catch (err) {
+    logSafeOperationalError("integrations.apply.proof", err);
+  }
 
-    void sendAdminEmail({
-      subject: `Design partner apply — ${company}`,
+  try {
+    await sendAdminEmail({
+      subject: `Design partner apply — ${row.company}`,
       html: adminEmailShell(
         "New integration application",
         adminEmailTable({
-          Company: company,
-          Contact: body.contact_name?.trim() ?? "—",
-          Email: email,
-          Website: body.website?.trim() ?? "—",
-          "Use case": body.use_case?.trim() ?? "—",
-          Volume: body.monthly_volume?.trim() ?? "—",
-          Type: body.integration_type?.trim() ?? "passport_gate",
-          "Proof ID": proof.proof_id ?? recordId,
+          Company: row.company,
+          Contact: row.contact_name ?? "—",
+          Email: row.email,
+          Website: row.website ?? "—",
+          "Use case": row.use_case ?? "—",
+          Volume: row.monthly_volume ?? "—",
+          Type: row.integration_type,
+          "Proof ID": proofIdLabel,
         }),
       ),
     });
-
-    return NextResponse.json({ ok: true, record_id: recordId, proof });
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  } catch (err) {
+    logSafeOperationalError("integrations.apply.notify", err);
   }
+
+  return successResponse();
 }
