@@ -233,6 +233,48 @@ describe.skipIf(!PG_URL)("auditEventHash SQL parity", () => {
     await client?.end();
   });
 
+  it("matches Supabase Production pgcrypto layout and applies migration 072", async () => {
+    const { rows: extRows } = await client.query<{ schema_name: string }>(
+      `SELECT n.nspname AS schema_name
+         FROM pg_extension e
+         JOIN pg_namespace n ON n.oid = e.extnamespace
+        WHERE e.extname = 'pgcrypto'`,
+    );
+    expect(extRows).toHaveLength(1);
+    expect(extRows[0]?.schema_name).toBe("extensions");
+
+    const { rows: extensionsDigestRows } = await client.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+         FROM pg_proc p
+         JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'extensions'
+          AND p.proname = 'digest'`,
+    );
+    expect(Number(extensionsDigestRows[0]?.count ?? 0)).toBeGreaterThanOrEqual(2);
+
+    const { rows: publicDigestRows } = await client.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1
+           FROM pg_proc p
+           JOIN pg_namespace n ON n.oid = p.pronamespace
+          WHERE n.nspname = 'public'
+            AND p.proname = 'digest'
+       ) AS exists`,
+    );
+    expect(publicDigestRows[0]?.exists).toBe(false);
+
+    const { rows: migrationRows } = await client.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1
+           FROM pg_proc p
+           JOIN pg_namespace n ON n.oid = p.pronamespace
+          WHERE n.nspname = 'public'
+            AND p.proname = '_compute_lifecycle_audit_event_hash'
+       ) AS exists`,
+    );
+    expect(migrationRows[0]?.exists).toBe(true);
+  });
+
   it("matches TypeScript hash for every golden vector", async () => {
     for (const vector of LIFECYCLE_AUDIT_HASH_GOLDEN_VECTORS) {
       const tsHash = computeLifecycleAuditEventHash(vector.input);

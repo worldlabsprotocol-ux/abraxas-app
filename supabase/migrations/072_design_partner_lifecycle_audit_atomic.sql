@@ -2,7 +2,7 @@
 -- Design-partner lifecycle audit trail (atomic promote/transition + bounded list RPC).
 --
 -- Prerequisite: 016_design_partners.sql, 024_partner_api_keys.sql, 032_reconcile_sandbox_and_cielo_operator_workflow.sql,
---               039_partner_onboarding.sql, 018_policy_verification.sql (audit_events + pgcrypto in public)
+--               039_partner_onboarding.sql, 018_policy_verification.sql (audit_events; pgcrypto in extensions on Supabase)
 -- OPERATOR: apply manually after merge. Do not apply during PR validation.
 
 -- ── Pure helpers (SECURITY INVOKER; not granted to application roles) ─────────
@@ -147,7 +147,7 @@ SECURITY INVOKER
 SET search_path = ''
 AS $$
   SELECT encode(
-    public.digest(
+    extensions.digest(
       convert_to(
         public._serialize_lifecycle_audit_hash_payload(
           p_actor_category,
