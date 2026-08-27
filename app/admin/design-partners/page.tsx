@@ -8,8 +8,13 @@ import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { PartnerSandboxSignoffPanel } from "@/components/admin/PartnerSandboxSignoffPanel";
 import { DesignPartnerPilotSummaryBar } from "@/components/admin/DesignPartnerPilotSummaryBar";
 import { DesignPartnerIntakeHealthCard } from "@/components/admin/DesignPartnerIntakeHealthCard";
+import { DesignPartnerApplicationDetailPanel } from "@/components/admin/DesignPartnerApplicationDetailPanel";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import type { DesignPartnerPilotSummaryDto } from "@/lib/admin/designPartnerPilotSummary";
+import {
+  parseDesignPartnerApplicationListResponse,
+  type DesignPartnerApplicationAdminDto,
+} from "@/lib/admin/designPartnerApplicationDetailContract";
 import {
   ProductionAdminSessionStatus,
   PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
@@ -24,18 +29,7 @@ const MONO = "'JetBrains Mono',monospace";
 const WARN = "#F59E0B";
 const REJECT = "#FCA5A5";
 
-interface Application {
-  id: string;
-  company: string;
-  contact_name: string | null;
-  email: string;
-  use_case: string | null;
-  integration_type: string | null;
-  status: string;
-  promoted_partner_id: string | null;
-  created_at: string;
-  reviewer_notes?: string | null;
-}
+interface Application extends DesignPartnerApplicationAdminDto {}
 
 function ApplicationMeta({ app }: { app: Application }) {
   return (
@@ -82,7 +76,8 @@ export default function AdminDesignPartnersPage() {
     }
     if (!res.ok) return;
     const data = await res.json();
-    const nextApps = (data.applications ?? []) as Application[];
+    const parsed = parseDesignPartnerApplicationListResponse(data);
+    const nextApps = parsed.applications;
     setApps(nextApps);
     setReviewerNotes((prev) => {
       const merged = { ...prev };
@@ -205,11 +200,10 @@ export default function AdminDesignPartnersPage() {
           </div>
           <span style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--accent)" }}>{app.status}</span>
         </div>
-        {app.use_case && (
-          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0.5rem 0" }}>
-            {app.use_case}
-          </p>
-        )}
+        <DesignPartnerApplicationDetailPanel
+          application={app}
+          showChecklist={mode === "pending"}
+        />
         {app.reviewer_notes && mode === "rejected" && (
           <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0.35rem 0", lineHeight: 1.5 }}>
             Reviewer notes: {app.reviewer_notes}

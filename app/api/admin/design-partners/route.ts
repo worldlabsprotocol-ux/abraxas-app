@@ -13,6 +13,10 @@ import {
   type DesignPartnerApplicationRow,
   type DesignPartnerTransitionError,
 } from "@/lib/admin/designPartnerApplicationLifecycle";
+import {
+  DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS,
+  mapDesignPartnerApplicationRows,
+} from "@/lib/admin/designPartnerApplicationDetail";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -161,7 +165,7 @@ export async function GET(req: NextRequest) {
 
   let query = sb
     .from("design_partners")
-    .select("*")
+    .select(DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS)
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -174,7 +178,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "status_conflict" }, { status: 500 });
   }
 
-  return NextResponse.json({ applications: data ?? [] });
+  return NextResponse.json({ applications: mapDesignPartnerApplicationRows(data ?? []) });
 }
 
 export async function PATCH(req: NextRequest) {

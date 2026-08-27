@@ -79,6 +79,18 @@ vi.mock("@/components/admin/DesignPartnerPilotSummaryBar", () => ({
   DesignPartnerPilotSummaryBar: () => <div data-testid="pilot-summary" />,
 }));
 
+vi.mock("@/components/admin/DesignPartnerIntakeHealthCard", () => ({
+  DesignPartnerIntakeHealthCard: () => null,
+}));
+
+vi.mock("@/components/admin/DesignPartnerApplicationDetailPanel", () => ({
+  DesignPartnerApplicationDetailPanel: ({
+    application,
+  }: {
+    application: { id: string };
+  }) => <div data-testid={`detail-panel-${application.id}`} />,
+}));
+
 import AdminDesignPartnersPage from "@/app/admin/design-partners/page";
 
 const submittedApp = {
@@ -86,11 +98,16 @@ const submittedApp = {
   company: "Test Co",
   contact_name: "Ops",
   email: "hidden@example.com",
+  website: "https://example.com",
   use_case: "sandbox",
+  monthly_volume: "low",
+  public_name_ok: false,
   integration_type: "passport_gate",
   status: "submitted",
   promoted_partner_id: null,
+  reviewer_notes: null,
   created_at: "2026-01-01T00:00:00.000Z",
+  reviewed_at: null,
 };
 
 const approvedApp = {
@@ -156,6 +173,12 @@ describe("AdminDesignPartnersPage", () => {
     mockList([approvedApp]);
     render(<AdminDesignPartnersPage />);
     await waitFor(() => screen.getByTestId(`promote-${approvedApp.id}`));
+  });
+
+  it("renders detail panel mount point for pending applications", async () => {
+    mockList([submittedApp]);
+    render(<AdminDesignPartnersPage />);
+    await waitFor(() => screen.getByTestId("detail-panel-app-submitted"));
   });
 
   it("opens reject confirm with company only", async () => {
