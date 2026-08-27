@@ -2,7 +2,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { DesignPartnerApplicationDetailPanel } from "@/components/admin/DesignPartnerApplicationDetailPanel";
 import type { DesignPartnerApplicationAdminDto } from "@/lib/admin/designPartnerApplicationDetailContract";
 import {
@@ -27,6 +27,16 @@ const application: DesignPartnerApplicationAdminDto = {
   reviewed_at: null,
 };
 
+function renderPanel(app: DesignPartnerApplicationAdminDto = application) {
+  return render(
+    <DesignPartnerApplicationDetailPanel
+      application={app}
+      regionId={`design-partner-detail-panel-${app.id}`}
+      labelledBy={`design-partner-detail-toggle-${app.id}`}
+    />,
+  );
+}
+
 describe("DesignPartnerApplicationDetailPanel", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -36,58 +46,32 @@ describe("DesignPartnerApplicationDetailPanel", () => {
     cleanup();
   });
 
-  it("does not fetch when opening details", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
-    render(<DesignPartnerApplicationDetailPanel application={application} />);
-    fireEvent.click(screen.getByTestId("design-partner-detail-toggle-app-submitted"));
-    await waitFor(() => {
-      expect(screen.getByTestId("design-partner-detail-panel-app-submitted")).toBeTruthy();
-    });
-    expect(fetchSpy).not.toHaveBeenCalled();
+  it("renders safe HTTPS website link with rel attributes", () => {
+    renderPanel();
+    const link = screen.getByTestId("design-partner-website-safe-link") as HTMLAnchorElement;
+    expect(link.textContent).toBe(DESIGN_PARTNER_WEBSITE_SAFE_LINK_LABEL);
+    expect(link.getAttribute("href")).toBe("https://example.com/");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
   });
 
-  it("renders safe HTTPS website link with rel attributes", async () => {
-    render(<DesignPartnerApplicationDetailPanel application={application} />);
-    fireEvent.click(screen.getByTestId("design-partner-detail-toggle-app-submitted"));
-    await waitFor(() => {
-      const link = screen.getByTestId("design-partner-website-safe-link") as HTMLAnchorElement;
-      expect(link.textContent).toBe(DESIGN_PARTNER_WEBSITE_SAFE_LINK_LABEL);
-      expect(link.getAttribute("href")).toBe("https://example.com/");
-      expect(link.getAttribute("target")).toBe("_blank");
-      expect(link.getAttribute("rel")).toBe("noopener noreferrer");
-    });
+  it("keeps malicious website values inert", () => {
+    renderPanel({ ...application, website: "javascript:alert(1)" });
+    expect(screen.getByTestId("design-partner-website-inert").textContent).toBe("javascript:alert(1)");
+    expect(screen.getByTestId("design-partner-website-warning").textContent)
+      .toBe(DESIGN_PARTNER_WEBSITE_INERT_WARNING);
+    expect(screen.queryByTestId("design-partner-website-safe-link")).toBeNull();
   });
 
-  it("keeps malicious website values inert", async () => {
-    render(
-      <DesignPartnerApplicationDetailPanel
-        application={{ ...application, website: "javascript:alert(1)" }}
-      />,
-    );
-    fireEvent.click(screen.getByTestId("design-partner-detail-toggle-app-submitted"));
-    await waitFor(() => {
-      expect(screen.getByTestId("design-partner-website-inert").textContent).toBe("javascript:alert(1)");
-      expect(screen.getByTestId("design-partner-website-warning").textContent)
-        .toBe(DESIGN_PARTNER_WEBSITE_INERT_WARNING);
-      expect(screen.queryByTestId("design-partner-website-safe-link")).toBeNull();
-    });
+  it("exposes accessible region labelling", () => {
+    renderPanel();
+    const panel = screen.getByTestId("design-partner-detail-panel-app-submitted");
+    expect(panel.getAttribute("role")).toBe("region");
+    expect(panel.getAttribute("aria-labelledby")).toBe("design-partner-detail-toggle-app-submitted");
   });
 
-  it("exposes accessible disclosure state", () => {
-    render(<DesignPartnerApplicationDetailPanel application={application} />);
-    const toggle = screen.getByTestId("design-partner-detail-toggle-app-submitted");
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByTestId("design-partner-detail-panel-app-submitted").getAttribute("role")).toBe("region");
-  });
-
-  it("shows email only inside detail panel", async () => {
-    render(<DesignPartnerApplicationDetailPanel application={application} />);
-    expect(screen.queryByTestId("design-partner-detail-email")).toBeNull();
-    fireEvent.click(screen.getByTestId("design-partner-detail-toggle-app-submitted"));
-    await waitFor(() => {
-      expect(screen.getByTestId("design-partner-detail-email").textContent).toBe("hidden@example.com");
-    });
+  it("shows email only inside detail panel body", () => {
+    renderPanel();
+    expect(screen.getByTestId("design-partner-detail-email").textContent).toBe("hidden@example.com");
   });
 });

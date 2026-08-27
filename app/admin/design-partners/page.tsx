@@ -28,6 +28,8 @@ const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
 const WARN = "#F59E0B";
 const REJECT = "#FCA5A5";
+const APPLICATION_DETAIL_DISCLOSURE_LABEL = "View application details";
+const APPLICATION_DETAIL_HIDE_LABEL = "Hide application details";
 
 interface Application extends DesignPartnerApplicationAdminDto {}
 
@@ -51,6 +53,7 @@ export default function AdminDesignPartnersPage() {
   const [reviewerNotes, setReviewerNotes] = useState<Record<string, string>>({});
   const [busyAppId, setBusyAppId] = useState<string | null>(null);
   const [rejectedExpanded, setRejectedExpanded] = useState(false);
+  const [detailOpenByAppId, setDetailOpenByAppId] = useState<Record<string, boolean>>({});
   const [pilotSummaries, setPilotSummaries] = useState<Record<string, DesignPartnerPilotSummaryDto>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
@@ -183,8 +186,15 @@ export default function AdminDesignPartnersPage() {
     });
   }
 
+  function toggleApplicationDetail(appId: string) {
+    setDetailOpenByAppId((prev) => ({ ...prev, [appId]: !prev[appId] }));
+  }
+
   function renderApplicationCard(app: Application, mode: "pending" | "rejected" | "onboarded") {
     const busy = busyAppId === app.id || confirmDialogProps.busy;
+    const detailOpen = Boolean(detailOpenByAppId[app.id]);
+    const detailToggleId = `design-partner-detail-toggle-${app.id}`;
+    const detailRegionId = `design-partner-detail-panel-${app.id}`;
     return (
       <div
         key={app.id}
@@ -200,10 +210,30 @@ export default function AdminDesignPartnersPage() {
           </div>
           <span style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--accent)" }}>{app.status}</span>
         </div>
-        <DesignPartnerApplicationDetailPanel
-          application={app}
-          showChecklist={mode === "pending"}
-        />
+        {app.use_case && (
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0.5rem 0 0", lineHeight: 1.55 }}>
+            {app.use_case}
+          </p>
+        )}
+        <button
+          type="button"
+          id={detailToggleId}
+          aria-expanded={detailOpen}
+          aria-controls={detailRegionId}
+          data-testid={detailToggleId}
+          onClick={() => toggleApplicationDetail(app.id)}
+          style={detailDisclosureBtn}
+        >
+          {detailOpen ? APPLICATION_DETAIL_HIDE_LABEL : APPLICATION_DETAIL_DISCLOSURE_LABEL}
+        </button>
+        {detailOpen && (
+          <DesignPartnerApplicationDetailPanel
+            application={app}
+            showChecklist={mode === "pending"}
+            regionId={detailRegionId}
+            labelledBy={detailToggleId}
+          />
+        )}
         {app.reviewer_notes && mode === "rejected" && (
           <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0.35rem 0", lineHeight: 1.5 }}>
             Reviewer notes: {app.reviewer_notes}
@@ -527,4 +557,15 @@ const rejectBtn: React.CSSProperties = {
   background: "transparent",
   color: REJECT,
   border: "1px solid rgba(239,68,68,0.4)",
+};
+
+const detailDisclosureBtn: React.CSSProperties = {
+  ...inputStyle,
+  width: "100%",
+  textAlign: "left",
+  minHeight: 44,
+  marginTop: "0.55rem",
+  fontWeight: 600,
+  fontSize: "0.72rem",
+  cursor: "pointer",
 };

@@ -1,8 +1,8 @@
 "use client";
 // FILE: components/admin/DesignPartnerApplicationDetailPanel.tsx
-// Read-only expandable application detail and UI-only manual review checklist.
+// Read-only application detail body and UI-only manual review checklist.
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import type { DesignPartnerApplicationAdminDto } from "@/lib/admin/designPartnerApplicationDetailContract";
 import {
   DESIGN_PARTNER_REVIEW_CHECKLIST_ITEMS,
@@ -73,112 +73,81 @@ function WebsiteValue({ website }: { website: string | null }) {
 export function DesignPartnerApplicationDetailPanel({
   application,
   showChecklist = true,
+  regionId,
+  labelledBy,
 }: {
   application: DesignPartnerApplicationAdminDto;
   showChecklist?: boolean;
+  regionId: string;
+  labelledBy: string;
 }) {
-  const [open, setOpen] = useState(false);
   const [checklist, setChecklist] = useState<Record<DesignPartnerReviewChecklistItemId, boolean>>(() => (
     Object.fromEntries(
       DESIGN_PARTNER_REVIEW_CHECKLIST_ITEMS.map((item) => [item, false]),
     ) as Record<DesignPartnerReviewChecklistItemId, boolean>
   ));
-  const panelId = useId();
-  const summaryId = useId();
 
   function toggleChecklistItem(item: DesignPartnerReviewChecklistItemId) {
     setChecklist((prev) => ({ ...prev, [item]: !prev[item] }));
   }
 
   return (
-    <div style={{ marginTop: "0.65rem" }}>
-      <button
-        type="button"
-        id={summaryId}
-        aria-expanded={open}
-        aria-controls={panelId}
-        data-testid={`design-partner-detail-toggle-${application.id}`}
-        onClick={() => setOpen((value) => !value)}
-        style={{
-          ...smallBtn,
-          width: "100%",
-          textAlign: "left",
-          minHeight: 44,
-        }}
-      >
-        {open ? "Hide application details" : "View application details"}
-      </button>
+    <section
+      id={regionId}
+      role="region"
+      aria-labelledby={labelledBy}
+      data-testid={`design-partner-detail-panel-${application.id}`}
+      style={{
+        marginTop: "0.55rem",
+        padding: "0.75rem",
+        borderRadius: 10,
+        border: "1px solid var(--border)",
+        display: "grid",
+        gap: "0.65rem",
+      }}
+    >
+      <DetailRow label="Company">{application.company}</DetailRow>
+      <DetailRow label="Contact name">{application.contact_name ?? "—"}</DetailRow>
+      <DetailRow label="Work email">
+        <span data-testid="design-partner-detail-email">{application.email}</span>
+      </DetailRow>
+      <DetailRow label="Website">
+        <WebsiteValue website={application.website} />
+      </DetailRow>
+      <DetailRow label="Integration type">{application.integration_type}</DetailRow>
+      <DetailRow label="Use case">{application.use_case ?? "—"}</DetailRow>
+      <DetailRow label="Expected monthly volume">{application.monthly_volume ?? "—"}</DetailRow>
+      <DetailRow label="Public-naming consent">
+        {application.public_name_ok ? "Yes" : "No"}
+      </DetailRow>
+      <DetailRow label="Submitted">{formatTimestamp(application.created_at)}</DetailRow>
+      <DetailRow label="Reviewed">{formatTimestamp(application.reviewed_at)}</DetailRow>
+      <DetailRow label="Lifecycle status">
+        <span style={{ fontFamily: MONO, fontSize: "0.68rem" }}>{application.status}</span>
+      </DetailRow>
 
-      {open && (
-        <section
-          id={panelId}
-          role="region"
-          aria-labelledby={summaryId}
-          data-testid={`design-partner-detail-panel-${application.id}`}
-          style={{
-            marginTop: "0.55rem",
-            padding: "0.75rem",
-            borderRadius: 10,
-            border: "1px solid var(--border)",
-            display: "grid",
-            gap: "0.65rem",
-          }}
-        >
-          <DetailRow label="Company">{application.company}</DetailRow>
-          <DetailRow label="Contact name">{application.contact_name ?? "—"}</DetailRow>
-          <DetailRow label="Work email">
-            <span data-testid="design-partner-detail-email">{application.email}</span>
-          </DetailRow>
-          <DetailRow label="Website">
-            <WebsiteValue website={application.website} />
-          </DetailRow>
-          <DetailRow label="Integration type">{application.integration_type}</DetailRow>
-          <DetailRow label="Use case">{application.use_case ?? "—"}</DetailRow>
-          <DetailRow label="Expected monthly volume">{application.monthly_volume ?? "—"}</DetailRow>
-          <DetailRow label="Public-naming consent">
-            {application.public_name_ok ? "Yes" : "No"}
-          </DetailRow>
-          <DetailRow label="Submitted">{formatTimestamp(application.created_at)}</DetailRow>
-          <DetailRow label="Reviewed">{formatTimestamp(application.reviewed_at)}</DetailRow>
-          <DetailRow label="Lifecycle status">
-            <span style={{ fontFamily: MONO, fontSize: "0.68rem" }}>{application.status}</span>
-          </DetailRow>
-
-          {showChecklist && (
-            <div style={{ marginTop: "0.25rem", paddingTop: "0.65rem", borderTop: "1px solid var(--border)" }}>
-              <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, marginBottom: "0.45rem" }}>
-                Manual review checklist (session only)
-              </div>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.45rem" }}>
-                {DESIGN_PARTNER_REVIEW_CHECKLIST_ITEMS.map((item) => (
-                  <li key={item}>
-                    <label style={{ fontFamily: FONT, fontSize: "0.72rem", display: "flex", gap: "0.45rem", alignItems: "flex-start" }}>
-                      <input
-                        type="checkbox"
-                        checked={checklist[item]}
-                        onChange={() => toggleChecklistItem(item)}
-                        data-testid={`design-partner-checklist-${application.id}-${item}`}
-                      />
-                      <span>{DESIGN_PARTNER_REVIEW_CHECKLIST_LABELS[item]}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
+      {showChecklist && (
+        <div style={{ marginTop: "0.25rem", paddingTop: "0.65rem", borderTop: "1px solid var(--border)" }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, marginBottom: "0.45rem" }}>
+            Manual review checklist (session only)
+          </div>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.45rem" }}>
+            {DESIGN_PARTNER_REVIEW_CHECKLIST_ITEMS.map((item) => (
+              <li key={item}>
+                <label style={{ fontFamily: FONT, fontSize: "0.72rem", display: "flex", gap: "0.45rem", alignItems: "flex-start" }}>
+                  <input
+                    type="checkbox"
+                    checked={checklist[item]}
+                    onChange={() => toggleChecklistItem(item)}
+                    data-testid={`design-partner-checklist-${application.id}-${item}`}
+                  />
+                  <span>{DESIGN_PARTNER_REVIEW_CHECKLIST_LABELS[item]}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-    </div>
+    </section>
   );
 }
-
-const smallBtn: React.CSSProperties = {
-  padding: "0.55rem 0.75rem",
-  borderRadius: 10,
-  border: "1px solid var(--border-strong)",
-  background: "var(--surface-inset)",
-  color: "var(--text-primary)",
-  fontFamily: FONT,
-  fontWeight: 600,
-  cursor: "pointer",
-};
