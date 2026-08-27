@@ -12,9 +12,13 @@ import { DesignPartnerApplicationDetailPanel } from "@/components/admin/DesignPa
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import type { DesignPartnerPilotSummaryDto } from "@/lib/admin/designPartnerPilotSummary";
 import {
-  parseDesignPartnerApplicationListResponse,
+  parseDesignPartnerApplicationPageResponse,
   type DesignPartnerApplicationAdminDto,
 } from "@/lib/admin/designPartnerApplicationDetailContract";
+import {
+  DESIGN_PARTNER_QUEUE_STATUS_FILTERS,
+  type DesignPartnerQueueStatusFilter,
+} from "@/lib/admin/designPartnerApplicationQueueCursor";
 import {
   ProductionAdminSessionStatus,
   PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
@@ -30,8 +34,55 @@ const WARN = "#F59E0B";
 const REJECT = "#FCA5A5";
 const APPLICATION_DETAIL_DISCLOSURE_LABEL = "View application details";
 const APPLICATION_DETAIL_HIDE_LABEL = "Hide application details";
+const QUEUE_PAGE_LIMIT = 25;
+
+const STATUS_TAB_LABELS: Record<DesignPartnerQueueStatusFilter, string> = {
+  submitted: "Submitted",
+  approved: "Approved",
+  rejected: "Rejected",
+  onboarded: "Onboarded",
+  all: "All",
+};
 
 interface Application extends DesignPartnerApplicationAdminDto {}
+
+function dedupeApplicationsById(
+  existing: Application[],
+  incoming: Application[],
+): Application[] {
+  const seen = new Set(existing.map((app) => app.id));
+  const merged = [...existing];
+  for (const app of incoming) {
+    if (!seen.has(app.id)) {
+      seen.add(app.id);
+      merged.push(app);
+    }
+  }
+  return merged;
+}
+
+function cardModeForApp(
+  app: Application,
+  statusFilter: DesignPartnerQueueStatusFilter,
+): "pending" | "rejected" | "onboarded" {
+  if (statusFilter === "rejected") return "rejected";
+  if (statusFilter === "onboarded") return "onboarded";
+  if (statusFilter === "submitted" || statusFilter === "approved") return "pending";
+  if (app.promoted_partner_id) return "onboarded";
+  if (app.status === "rejected") return "rejected";
+  return "pending";
+}
+
+function showChecklistForApp(
+  app: Application,
+  statusFilter: DesignPartnerQueueStatusFilter,
+): boolean {
+  if (statusFilter === "submitted" || statusFilter === "approved") return true;
+  if (statusFilter === "all") {
+    return (app.status === "submitted" || app.status === "approved") && !app.promoted_partner_id;
+  }
+  return false;
+}
 
 function ApplicationMeta({ app }: { app: Application }) {
   return (
@@ -52,7 +103,11 @@ export default function AdminDesignPartnersPage() {
   const [partnerIds, setPartnerIds] = useState<Record<string, string>>({});
   const [reviewerNotes, setReviewerNotes] = useState<Record<string, string>>({});
   const [busyAppId, setBusyAppId] = useState<string | null>(null);
-  const [rejectedExpanded, setRejectedExpanded] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<DesignPartnerQueueStatusFilter>("submitted");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [detailOpenByAppId, setDetailOpenByAppId] = useState<Record<string, boolean>>({});
   const [pilotSummaries, setPilotSummaries] = useState<Record<string, DesignPartnerPilotSummaryDto>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
@@ -71,33 +126,92 @@ export default function AdminDesignPartnersPage() {
     setPilotSummaries(next);
   }, [gate.adminRequest, gate.usePinUnlock]);
 
-  const refresh = useCallback(async () => {
-    const res = await gate.adminRequest("/api/admin/design-partners", { cache: "no-store" });
+  const fetchApplications = useCallback(async (options?: {
+    cursor?: string | null;
+    append?: boolean;
+    status?: DesignPartnerQueueStatusFilter;
+  }) => {
+    const activeStatus = options?.status ?? statusFilter;
+    const params = new URLSearchParams({
+      status: activeStatus,
+      limit: String(QUEUE_PAGE_LIMIT),
+    });
+    if (options?.cursor) {
+      params.set("cursor", options.cursor);
+    }
+
+    const res = await gate.adminRequest(`/api/admin/design-partners?${params.toString()}`, {
+      cache: "no-store",
+    });
     if (res.status === 401 && !gate.usePinUnlock) {
       setMsg(PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE);
-      return;
+      return false;
     }
-    if (!res.ok) return;
+    if (!res.ok) return false;
+
     const data = await res.json();
-    const parsed = parseDesignPartnerApplicationListResponse(data);
-    const nextApps = parsed.applications;
-    setApps(nextApps);
+    const parsed = parseDesignPartnerApplicationPageResponse(data);
+    setApps((prev) => (
+      options?.append ? dedupeApplicationsById(prev, parsed.applications) : parsed.applications
+    ));
+    setNextCursor(parsed.next_cursor);
+    setHasMore(parsed.has_more);
     setReviewerNotes((prev) => {
       const merged = { ...prev };
-      for (const app of nextApps) {
+      for (const app of parsed.applications) {
         if (merged[app.id] === undefined) {
           merged[app.id] = app.reviewer_notes ?? "";
         }
       }
       return merged;
     });
+    return true;
+  }, [gate.adminRequest, gate.usePinUnlock, statusFilter]);
+
+  const loadFirstPage = useCallback(async (status: DesignPartnerQueueStatusFilter = statusFilter) => {
+    setQueueLoading(true);
+    setMsg("");
+    try {
+      return await fetchApplications({ status, append: false });
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [fetchApplications, statusFilter]);
+
+  const refresh = useCallback(async () => {
+    const loaded = await loadFirstPage(statusFilter);
+    if (!loaded) return;
     await refreshPilotSummaries();
-  }, [gate.adminRequest, gate.usePinUnlock, refreshPilotSummaries]);
+  }, [loadFirstPage, refreshPilotSummaries, statusFilter]);
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || !nextCursor || loadingMore || queueLoading) return;
+    setLoadingMore(true);
+    try {
+      await fetchApplications({ cursor: nextCursor, append: true });
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchApplications, hasMore, loadingMore, nextCursor, queueLoading]);
 
   useEffect(() => {
     if (!gate.authorized || gate.loading) return;
-    void refresh();
-  }, [gate.authorized, gate.loading, refresh]);
+    setApps([]);
+    setNextCursor(null);
+    setHasMore(false);
+    setDetailOpenByAppId({});
+    setQueueLoading(true);
+    void (async () => {
+      try {
+        const loaded = await fetchApplications({ status: statusFilter, append: false });
+        if (loaded) {
+          await refreshPilotSummaries();
+        }
+      } finally {
+        setQueueLoading(false);
+      }
+    })();
+  }, [gate.authorized, gate.loading, statusFilter, fetchApplications, refreshPilotSummaries]);
 
   async function patchApplication(
     app: Application,
@@ -190,7 +304,11 @@ export default function AdminDesignPartnersPage() {
     setDetailOpenByAppId((prev) => ({ ...prev, [appId]: !prev[appId] }));
   }
 
-  function renderApplicationCard(app: Application, mode: "pending" | "rejected" | "onboarded") {
+  function renderApplicationCard(
+    app: Application,
+    mode: "pending" | "rejected" | "onboarded",
+    showChecklist: boolean,
+  ) {
     const busy = busyAppId === app.id || confirmDialogProps.busy;
     const detailOpen = Boolean(detailOpenByAppId[app.id]);
     const detailToggleId = `design-partner-detail-toggle-${app.id}`;
@@ -229,7 +347,7 @@ export default function AdminDesignPartnersPage() {
         {detailOpen && (
           <DesignPartnerApplicationDetailPanel
             application={app}
-            showChecklist={mode === "pending"}
+            showChecklist={showChecklist}
             regionId={detailRegionId}
             labelledBy={detailToggleId}
           />
@@ -375,16 +493,16 @@ export default function AdminDesignPartnersPage() {
     );
   }
 
-  const pendingApps = apps.filter(a => (a.status === "submitted" || a.status === "approved") && !a.promoted_partner_id);
-  const rejectedApps = apps.filter(a => a.status === "rejected");
-  const onboardedApps = apps.filter(a => Boolean(a.promoted_partner_id));
+  const queueSummary = hasMore
+    ? `Showing ${apps.length} applications · more available`
+    : `Showing ${apps.length} application${apps.length === 1 ? "" : "s"}`;
 
   return (
     <RedesignPage maxWidth={960}>
       <PageHeader
         eyebrow="Admin · Relying parties"
         title="Design partner applications"
-        subtitle={`${pendingApps.length} pending · ${rejectedApps.length} rejected · ${onboardedApps.length} in pilot`}
+        subtitle={queueSummary}
       />
 
       <ProductionAdminSessionStatus
@@ -471,47 +589,73 @@ export default function AdminDesignPartnersPage() {
         </ContentCard>
       )}
 
-      <ContentCard title="Pending review">
-        {pendingApps.length === 0 ? (
-          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>No pending applications.</p>
+      <ContentCard title="Application queue">
+        <div
+          role="tablist"
+          aria-label="Application status filter"
+          style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", marginBottom: "0.75rem" }}
+        >
+          {DESIGN_PARTNER_QUEUE_STATUS_FILTERS.map((status) => {
+            const selected = statusFilter === status;
+            return (
+              <button
+                key={status}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                data-testid={`design-partner-status-tab-${status}`}
+                onClick={() => setStatusFilter(status)}
+                style={{
+                  ...smallBtn,
+                  minHeight: 44,
+                  background: selected ? "var(--accent)" : "transparent",
+                  color: selected ? "#1a1408" : "var(--text-primary)",
+                  border: "1px solid var(--border-strong)",
+                }}
+              >
+                {STATUS_TAB_LABELS[status]}
+              </button>
+            );
+          })}
+        </div>
+
+        <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
+          New applications appear after refreshing the current status or switching away and back.
+          Load more continues strictly below the captured cursor.
+        </p>
+
+        {queueLoading ? (
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+            Loading applications…
+          </p>
+        ) : apps.length === 0 ? (
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+            No applications in this status.
+          </p>
         ) : (
           <div style={{ display: "grid", gap: "0.65rem" }}>
-            {pendingApps.map((app) => renderApplicationCard(app, "pending"))}
+            {apps.map((app) => renderApplicationCard(
+              app,
+              cardModeForApp(app, statusFilter),
+              showChecklistForApp(app, statusFilter),
+            ))}
           </div>
         )}
-      </ContentCard>
 
-      {rejectedApps.length > 0 && (
-        <ContentCard title={`Rejected (audit) · ${rejectedApps.length}`}>
+        {hasMore && (
           <button
             type="button"
-            onClick={() => setRejectedExpanded((value) => !value)}
-            data-testid="toggle-rejected-section"
+            data-testid="design-partner-load-more"
+            disabled={loadingMore || queueLoading}
+            onClick={() => void loadMore()}
             style={{
-              ...smallBtn,
-              background: "transparent",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border)",
-              marginBottom: rejectedExpanded ? "0.65rem" : 0,
+              ...detailDisclosureBtn,
+              marginTop: "0.75rem",
+              textAlign: "center",
             }}
           >
-            {rejectedExpanded ? "Collapse rejected" : "Show rejected"}
+            {loadingMore ? "Loading more…" : "Load more applications"}
           </button>
-          {rejectedExpanded && (
-            <div style={{ display: "grid", gap: "0.65rem" }}>
-              {rejectedApps.map((app) => renderApplicationCard(app, "rejected"))}
-            </div>
-          )}
-        </ContentCard>
-      )}
-
-      <ContentCard title="Onboarded / in pilot">
-        {onboardedApps.length === 0 ? (
-          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>No onboarded applications yet.</p>
-        ) : (
-          <div style={{ display: "grid", gap: "0.65rem" }}>
-            {onboardedApps.map((app) => renderApplicationCard(app, "onboarded"))}
-          </div>
         )}
       </ContentCard>
 

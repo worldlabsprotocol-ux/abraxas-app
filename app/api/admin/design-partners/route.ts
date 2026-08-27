@@ -17,6 +17,11 @@ import {
   DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS,
   mapDesignPartnerApplicationRows,
 } from "@/lib/admin/designPartnerApplicationDetail";
+import {
+  buildDesignPartnerQueueKeysetOrFilter,
+  encodeDesignPartnerQueueCursor,
+  validateDesignPartnerQueueQuery,
+} from "@/lib/admin/designPartnerApplicationQueueCursor";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -152,6 +157,14 @@ async function patchDesignPartner(
   return { ok: false, error: "invalid_input", status: 400 };
 }
 
+function invalidInputResponse() {
+  return NextResponse.json({ error: "Invalid request", code: "invalid_input" }, { status: 400 });
+}
+
+function invalidCursorResponse() {
+  return NextResponse.json({ error: "Invalid request", code: "invalid_cursor" }, { status: 400 });
+}
+
 export async function GET(req: NextRequest) {
   if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -160,25 +173,58 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
-  const status = req.nextUrl.searchParams.get("status");
+  const queryValidation = validateDesignPartnerQueueQuery(req.nextUrl.searchParams);
+  if (!queryValidation.ok) {
+    return queryValidation.code === "invalid_cursor"
+      ? invalidCursorResponse()
+      : invalidInputResponse();
+  }
+
+  const { status, limit, cursor } = queryValidation.value;
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
   let query = sb
     .from("design_partners")
     .select(DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .order("id", { ascending: false });
 
-  if (status) {
-    query = query.eq("status", status);
+  if (status === "submitted") {
+    query = query.eq("status", "submitted");
+  } else if (status === "approved") {
+    query = query.eq("status", "approved").is("promoted_partner_id", null);
+  } else if (status === "rejected") {
+    query = query.eq("status", "rejected");
+  } else if (status === "onboarded") {
+    query = query.not("promoted_partner_id", "is", null);
   }
 
-  const { data, error } = await query;
+  if (cursor) {
+    query = query.or(buildDesignPartnerQueueKeysetOrFilter(cursor.createdAt, cursor.id));
+  }
+
+  const { data, error } = await query.limit(limit + 1);
   if (error) {
     return NextResponse.json({ error: "status_conflict" }, { status: 500 });
   }
 
-  return NextResponse.json({ applications: mapDesignPartnerApplicationRows(data ?? []) });
+  const rows = data ?? [];
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const applications = mapDesignPartnerApplicationRows(pageRows);
+  const lastRow = pageRows[pageRows.length - 1] as { created_at?: unknown; id?: unknown } | undefined;
+  const nextCursor = hasMore
+    && lastRow
+    && typeof lastRow.created_at === "string"
+    && typeof lastRow.id === "string"
+    ? encodeDesignPartnerQueueCursor(status, lastRow.created_at, lastRow.id)
+    : null;
+
+  return NextResponse.json({
+    applications,
+    next_cursor: nextCursor,
+    has_more: hasMore,
+  });
 }
 
 export async function PATCH(req: NextRequest) {

@@ -42,6 +42,18 @@ export interface DesignPartnerApplicationListResponse {
   applications: DesignPartnerApplicationAdminDto[];
 }
 
+export const DESIGN_PARTNER_APPLICATION_PAGE_RESPONSE_KEYS = [
+  "applications",
+  "next_cursor",
+  "has_more",
+] as const;
+
+export interface DesignPartnerApplicationPageResponse {
+  applications: DesignPartnerApplicationAdminDto[];
+  next_cursor: string | null;
+  has_more: boolean;
+}
+
 export const DESIGN_PARTNER_REVIEW_CHECKLIST_ITEMS = [
   "company_contact_reviewed",
   "email_format_reviewed",
@@ -95,13 +107,22 @@ export function isDesignPartnerApplicationAdminDto(
   return true;
 }
 
-export function parseDesignPartnerApplicationListResponse(
+export function parseDesignPartnerApplicationPageResponse(
   payload: unknown,
-): DesignPartnerApplicationListResponse {
+): DesignPartnerApplicationPageResponse {
   if (!payload || typeof payload !== "object") {
     throw new Error("invalid_response");
   }
-  const applications = (payload as Record<string, unknown>).applications;
+  const record = payload as Record<string, unknown>;
+  const keys = Object.keys(record);
+  if (keys.length !== DESIGN_PARTNER_APPLICATION_PAGE_RESPONSE_KEYS.length) {
+    throw new Error("invalid_response");
+  }
+  for (const key of DESIGN_PARTNER_APPLICATION_PAGE_RESPONSE_KEYS) {
+    if (!(key in record)) throw new Error("invalid_response");
+  }
+
+  const applications = record.applications;
   if (!Array.isArray(applications)) {
     throw new Error("invalid_response");
   }
@@ -110,5 +131,31 @@ export function parseDesignPartnerApplicationListResponse(
       throw new Error("invalid_response");
     }
   }
-  return { applications: applications as DesignPartnerApplicationAdminDto[] };
+
+  const nextCursor = record.next_cursor;
+  if (!(nextCursor === null || typeof nextCursor === "string")) {
+    throw new Error("invalid_response");
+  }
+
+  if (typeof record.has_more !== "boolean") {
+    throw new Error("invalid_response");
+  }
+
+  if (record.has_more !== (nextCursor !== null)) {
+    throw new Error("invalid_response");
+  }
+
+  return {
+    applications: applications as DesignPartnerApplicationAdminDto[],
+    next_cursor: nextCursor,
+    has_more: record.has_more,
+  };
+}
+
+/** @deprecated Use parseDesignPartnerApplicationPageResponse for paginated GET responses. */
+export function parseDesignPartnerApplicationListResponse(
+  payload: unknown,
+): DesignPartnerApplicationListResponse {
+  const page = parseDesignPartnerApplicationPageResponse(payload);
+  return { applications: page.applications };
 }
