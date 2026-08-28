@@ -1,35 +1,22 @@
 // FILE: lib/partner/promoteDesignPartner.ts
-// Promote design partner application → sandbox partner org + abx_test_ API key via atomic RPC.
+// Promote design partner application → sandbox partner org + abx_test_ API key via atomic v2 RPC.
 
 import { createClient } from "@supabase/supabase-js";
+import type { AdminActorCategory } from "@/lib/admin/adminActorCategory";
 import {
   createSandboxPromotionKeyMaterial,
   parsePromoteRpcResult,
   validatePromoteRpcInputs,
   type DesignPartnerPromoteRpcCode,
 } from "@/lib/admin/designPartnerApplicationLifecycle";
-import { slugifyPartnerId } from "@/lib/partner/partnerOnboarding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-const PROMOTE_RPC = "design_partner_promote_atomic";
-
-export interface DesignPartnerApplication {
-  id: string;
-  company: string;
-  contact_name: string | null;
-  email: string;
-  use_case: string | null;
-  integration_type: string | null;
-  public_name_ok: boolean | null;
-  status: string;
-  promoted_partner_id: string | null;
-}
+export const DESIGN_PARTNER_PROMOTE_RPC_V2 = "design_partner_promote_atomic_v2";
 
 export interface PromoteResult {
   partner_id: string;
-  company: string;
   api_key: string;
   key_prefix: string;
   application_id: string;
@@ -48,19 +35,20 @@ function mapRpcException(message: string): DesignPartnerPromoteRpcCode {
   return "promotion_failed";
 }
 
-export async function promoteDesignPartnerApplication(
-  application: DesignPartnerApplication,
-  options?: { partner_id?: string },
-): Promise<PromoteResult> {
+export async function promoteDesignPartnerApplication(input: {
+  applicationId: string;
+  partnerId: string;
+  actorCategory: AdminActorCategory;
+}): Promise<PromoteResult> {
   if (!SB_URL || !SB_KEY) {
     throw new DesignPartnerPromoteError("promotion_failed");
   }
 
-  const partnerId = options?.partner_id?.trim() || slugifyPartnerId(application.company);
+  const partnerId = input.partnerId.trim();
   const { raw, prefix, hash } = createSandboxPromotionKeyMaterial();
 
   const invalid = validatePromoteRpcInputs({
-    applicationId: application.id,
+    applicationId: input.applicationId,
     partnerId,
     keyPrefix: prefix,
     keyHash: hash,
@@ -70,11 +58,12 @@ export async function promoteDesignPartnerApplication(
   }
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-  const { data, error } = await sb.rpc(PROMOTE_RPC, {
-    p_application_id: application.id,
+  const { data, error } = await sb.rpc(DESIGN_PARTNER_PROMOTE_RPC_V2, {
+    p_application_id: input.applicationId,
     p_partner_id: partnerId,
     p_key_prefix: prefix,
     p_key_hash: hash,
+    p_actor_category: input.actorCategory,
   });
 
   if (error) {
@@ -88,9 +77,8 @@ export async function promoteDesignPartnerApplication(
 
   return {
     partner_id: parsed.partner_id,
-    company: application.company,
     api_key: raw,
     key_prefix: parsed.key_prefix,
-    application_id: application.id,
+    application_id: input.applicationId,
   };
 }

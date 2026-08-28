@@ -110,7 +110,38 @@ export default function AdminDesignPartnersPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [detailOpenByAppId, setDetailOpenByAppId] = useState<Record<string, boolean>>({});
   const [pilotSummaries, setPilotSummaries] = useState<Record<string, DesignPartnerPilotSummaryDto>>({});
+  const [timelineRefreshByAppId, setTimelineRefreshByAppId] = useState<Record<string, number>>({});
+  const [queueRefreshNotice, setQueueRefreshNotice] = useState("");
+
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
+
+  const mergeApplicationFromPatch = useCallback((application: {
+    id: string;
+    status: string;
+    promoted_partner_id: string | null;
+    reviewer_notes?: string | null;
+  }) => {
+    setApps((prev) => prev.map((entry) => (
+      entry.id === application.id
+        ? {
+          ...entry,
+          status: application.status,
+          promoted_partner_id: application.promoted_partner_id,
+          reviewer_notes: application.reviewer_notes ?? null,
+        }
+        : entry
+    )));
+    if (application.reviewer_notes !== undefined) {
+      setReviewerNotes((prev) => ({
+        ...prev,
+        [application.id]: application.reviewer_notes ?? "",
+      }));
+    }
+    setTimelineRefreshByAppId((prev) => ({
+      ...prev,
+      [application.id]: (prev[application.id] ?? 0) + 1,
+    }));
+  }, []);
 
   const refreshPilotSummaries = useCallback(async () => {
     const res = await gate.adminRequest("/api/admin/design-partners/pilot-summary", { cache: "no-store" });
@@ -184,6 +215,24 @@ export default function AdminDesignPartnersPage() {
     await refreshPilotSummaries();
   }, [loadFirstPage, refreshPilotSummaries, statusFilter]);
 
+  const reconcileQueueAfterMutation = useCallback(async () => {
+    try {
+      const loaded = await fetchApplications({ status: statusFilter, append: false });
+      if (!loaded) {
+        setQueueRefreshNotice(
+          "Queue refresh failed. Reload the page or switch status tabs to see the latest data.",
+        );
+        return;
+      }
+      setQueueRefreshNotice("");
+      await refreshPilotSummaries();
+    } catch {
+      setQueueRefreshNotice(
+        "Queue refresh failed. Reload the page or switch status tabs to see the latest data.",
+      );
+    }
+  }, [fetchApplications, refreshPilotSummaries, statusFilter]);
+
   const loadMore = useCallback(async () => {
     if (!hasMore || !nextCursor || loadingMore || queueLoading) return;
     setLoadingMore(true);
@@ -218,8 +267,10 @@ export default function AdminDesignPartnersPage() {
     status: string,
     options?: { includeNotes?: boolean },
   ) {
+    if (busyAppId === app.id || confirmDialogProps.busy) return;
     setBusyAppId(app.id);
     setMsg("");
+    setQueueRefreshNotice("");
     try {
       const payload: Record<string, string> = { id: app.id, status };
       if (options?.includeNotes) {
@@ -239,15 +290,31 @@ export default function AdminDesignPartnersPage() {
         setMsg(data.error ?? "Status update failed");
         return;
       }
-      await refresh();
+      const data = await res.json() as { application?: {
+        id: string;
+        status: string;
+        promoted_partner_id: string | null;
+        reviewer_notes?: string | null;
+      } };
+      if (data.application) {
+        mergeApplicationFromPatch(data.application);
+      }
+      if (status === "approved") {
+        setMsg(`Approved ${app.company}`);
+      } else if (status === "rejected") {
+        setMsg(`Rejected ${app.company}`);
+      }
+      await reconcileQueueAfterMutation();
     } finally {
       setBusyAppId(null);
     }
   }
 
   async function executePromote(app: Application) {
+    if (busyAppId === app.id || confirmDialogProps.busy) return;
     setBusyAppId(app.id);
     setMsg("");
+    setQueueRefreshNotice("");
     setNewKey(null);
     setPromotedPartnerId(null);
     setHandoffPolicyId("");
@@ -274,7 +341,13 @@ export default function AdminDesignPartnersPage() {
       setNewKey(data.api_key ?? null);
       setPromotedPartnerId(data.partner_id ?? null);
       setMsg(`Promoted ${data.partner_id} · prefix ${data.key_prefix}`);
-      await refresh();
+      mergeApplicationFromPatch({
+        id: app.id,
+        status: "onboarded",
+        promoted_partner_id: data.partner_id ?? null,
+        reviewer_notes: app.reviewer_notes,
+      });
+      await reconcileQueueAfterMutation();
     } finally {
       setBusyAppId(null);
     }
@@ -289,6 +362,14 @@ export default function AdminDesignPartnersPage() {
         company: app.company,
       },
       onConfirmed: () => executePromote(app),
+    });
+  }
+
+  function promptApprove(app: Application) {
+    requestConfirm({
+      actionKey: "design_partner.approve",
+      context: { company: app.company },
+      onConfirmed: () => patchApplication(app, "approved"),
     });
   }
 
@@ -350,6 +431,7 @@ export default function AdminDesignPartnersPage() {
             showChecklist={showChecklist}
             regionId={detailRegionId}
             labelledBy={detailToggleId}
+            timelineRefreshToken={timelineRefreshByAppId[app.id]}
           />
         )}
         {app.reviewer_notes && mode === "rejected" && (
@@ -412,7 +494,7 @@ export default function AdminDesignPartnersPage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => void patchApplication(app, "approved")}
+                  onClick={() => promptApprove(app)}
                   style={smallBtn}
                 >
                   Approve
@@ -517,6 +599,15 @@ export default function AdminDesignPartnersPage() {
       />
 
       {msg && <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--accent)", marginBottom: "0.75rem" }}>{msg}</p>}
+      {queueRefreshNotice && (
+        <p
+          role="status"
+          data-testid="design-partner-queue-refresh-notice"
+          style={{ fontFamily: FONT, fontSize: "0.76rem", color: WARN, marginBottom: "0.75rem", lineHeight: 1.55 }}
+        >
+          {queueRefreshNotice}
+        </p>
+      )}
       {newKey && (
         <div style={{
           padding: "0.85rem", borderRadius: 12, marginBottom: "0.75rem",

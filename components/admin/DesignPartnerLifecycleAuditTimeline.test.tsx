@@ -175,6 +175,28 @@ describe("DesignPartnerLifecycleAuditTimeline", () => {
     expect(screen.getByText("Approved")).toBeTruthy();
   });
 
+  it("refetches page 1 when refreshToken changes without polling", async () => {
+    const { rerender } = render(<DesignPartnerLifecycleAuditTimeline applicationId={APPLICATION_ID} />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    rerender(<DesignPartnerLifecycleAuditTimeline applicationId={APPLICATION_ID} refreshToken={1} />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+    const secondUrl = String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[1]?.[0]);
+    expect(secondUrl).not.toContain("cursor=");
+  });
+
+  it("keeps timeline refresh failure local to timeline status", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({}),
+    } as Response);
+    render(<DesignPartnerLifecycleAuditTimeline applicationId={APPLICATION_ID} />);
+    await waitFor(() => {
+      expect(screen.getByTestId("design-partner-lifecycle-audit-status").textContent)
+        .toBe("Lifecycle history unavailable.");
+    });
+  });
+
   it("does not issue lifecycle mutation requests", async () => {
     render(<DesignPartnerLifecycleAuditTimeline applicationId={APPLICATION_ID} />);
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());

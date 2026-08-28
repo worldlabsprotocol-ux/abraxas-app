@@ -19,6 +19,7 @@ export type AdminConfirmActionKey =
   | "policy.publish"
   | "revocation.partner_scoped"
   | "design_partner.promote"
+  | "design_partner.approve"
   | "design_partner.reject";
 
 export interface AdminConfirmCopy {
@@ -180,6 +181,18 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
       + "The application is marked onboarded. The API key is shown once — "
       + "store it in your approved secret manager immediately.",
     confirmLabel: "Promote and issue sandbox key",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "design_partner.approve": {
+    title: "Approve this design partner application?",
+    body:
+      "This marks {{company}} as approved for sandbox promotion. "
+      + "No partner org or API key is created yet.",
+    confirmLabel: "Approve application",
     cancelLabel: "Cancel",
     risk: "high",
     requireNote: false,

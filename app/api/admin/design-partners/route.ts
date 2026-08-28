@@ -3,13 +3,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
+import { resolveDesignPartnerAdminActorCategory } from "@/lib/admin/designPartnerAdminActor";
 import {
   buildNotesOnlyUpdatePayload,
-  buildTransitionUpdatePayload,
   canNotesOnlyUpdate,
-  classifyTransitionFailure,
-  transitionFromStatuses,
+  parseDesignPartnerPatchRequestBody,
   type DesignPartnerApplicationRow,
   type DesignPartnerTransitionError,
 } from "@/lib/admin/designPartnerApplicationLifecycle";
@@ -17,18 +15,20 @@ import {
   DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS,
   mapDesignPartnerApplicationRows,
 } from "@/lib/admin/designPartnerApplicationDetail";
+import { invokeDesignPartnerReviewTransition } from "@/lib/admin/designPartnerReviewTransitionLoader";
 import {
   buildDesignPartnerQueueKeysetOrFilter,
   encodeDesignPartnerQueueCursor,
   validateDesignPartnerQueueQuery,
 } from "@/lib/admin/designPartnerApplicationQueueCursor";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 const CLASSIFICATION_COLUMNS = "id, status, promoted_partner_id, reviewer_notes";
 
-function errorResponse(error: DesignPartnerTransitionError, status: number) {
+function errorResponse(error: DesignPartnerTransitionError | "invalid_actor_category" | "review_transition_failed", status: number) {
   return NextResponse.json({ error }, { status });
 }
 
@@ -44,30 +44,6 @@ async function loadApplicationRow(
 
   if (error || !data) return null;
   return data as DesignPartnerApplicationRow;
-}
-
-async function attemptTransition(
-  sb: SupabaseClient,
-  id: string,
-  nextStatus: "approved" | "rejected",
-  reviewerNotes?: string,
-): Promise<DesignPartnerApplicationRow | null> {
-  for (const fromStatus of transitionFromStatuses(nextStatus)) {
-    const { data, error } = await sb
-      .from("design_partners")
-      .update(buildTransitionUpdatePayload(nextStatus, reviewerNotes))
-      .eq("id", id)
-      .eq("status", fromStatus)
-      .is("promoted_partner_id", null)
-      .select(CLASSIFICATION_COLUMNS)
-      .maybeSingle();
-
-    if (!error && data) {
-      return data as DesignPartnerApplicationRow;
-    }
-  }
-
-  return null;
 }
 
 async function attemptNotesOnlyUpdate(
@@ -94,67 +70,28 @@ async function attemptNotesOnlyUpdate(
   return data as DesignPartnerApplicationRow;
 }
 
-async function patchDesignPartner(
+async function patchOnboardedNotesOnly(
   sb: SupabaseClient,
-  body: { id: string; status: string; reviewer_notes?: string },
+  body: { id: string; reviewerNotes?: string },
 ): Promise<
-  | { ok: true; application: DesignPartnerApplicationRow; noOp?: boolean }
+  | { ok: true; application: DesignPartnerApplicationRow }
   | { ok: false; error: DesignPartnerTransitionError; status: number }
 > {
-  const hasReviewerNotesKey = "reviewer_notes" in body;
-
-  if (body.status === "onboarded" && hasReviewerNotesKey) {
-    const row = await loadApplicationRow(sb, body.id);
-    if (!row) {
-      return { ok: false, error: "application_not_found", status: 404 };
-    }
-    if (!canNotesOnlyUpdate(row, "onboarded")) {
-      if (row.promoted_partner_id) {
-        return { ok: false, error: "application_already_promoted", status: 409 };
-      }
-      return { ok: false, error: "status_conflict", status: 409 };
-    }
-    const updated = await attemptNotesOnlyUpdate(sb, body.id, row, "onboarded", body.reviewer_notes);
-    if (!updated) {
-      return { ok: false, error: "status_conflict", status: 409 };
-    }
-    return { ok: true, application: updated };
+  const row = await loadApplicationRow(sb, body.id);
+  if (!row) {
+    return { ok: false, error: "application_not_found", status: 404 };
   }
-
-  if (body.status === "approved" || body.status === "rejected") {
-    const transitioned = await attemptTransition(
-      sb,
-      body.id,
-      body.status,
-      hasReviewerNotesKey ? body.reviewer_notes : undefined,
-    );
-    if (transitioned) {
-      return { ok: true, application: transitioned };
-    }
-
-    const row = await loadApplicationRow(sb, body.id);
-    if (!row) {
-      return { ok: false, error: "application_not_found", status: 404 };
-    }
-
-    const classification = classifyTransitionFailure(row, body.status, hasReviewerNotesKey);
-    if (classification === "no_op") {
-      return { ok: true, application: row, noOp: true };
-    }
-    if (classification === "notes_only") {
-      const updated = await attemptNotesOnlyUpdate(sb, body.id, row, body.status, body.reviewer_notes);
-      if (!updated) {
-        return { ok: false, error: "status_conflict", status: 409 };
-      }
-      return { ok: true, application: updated };
-    }
-    if (classification === "application_already_promoted") {
+  if (!canNotesOnlyUpdate(row, "onboarded")) {
+    if (row.promoted_partner_id) {
       return { ok: false, error: "application_already_promoted", status: 409 };
     }
     return { ok: false, error: "status_conflict", status: 409 };
   }
-
-  return { ok: false, error: "invalid_input", status: 400 };
+  const updated = await attemptNotesOnlyUpdate(sb, body.id, row, "onboarded", body.reviewerNotes);
+  if (!updated) {
+    return { ok: false, error: "status_conflict", status: 409 };
+  }
+  return { ok: true, application: updated };
 }
 
 function invalidInputResponse() {
@@ -235,26 +172,37 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    id?: string;
-    status?: string;
-    reviewer_notes?: string;
-  };
-
-  if (!body.id || !body.status) {
+  const rawBody = await req.json().catch(() => null);
+  const parsedBody = parseDesignPartnerPatchRequestBody(rawBody);
+  if (!parsedBody.ok) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
+  const { id, status, reviewerNotes, reviewerNotesPresent } = parsedBody.value;
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-  const result = await patchDesignPartner(sb, {
-    id: body.id,
-    status: body.status,
-    ...( "reviewer_notes" in body ? { reviewer_notes: body.reviewer_notes } : {}),
-  });
 
-  if (!result.ok) {
-    return errorResponse(result.error, result.status);
+  if (status === "onboarded" && reviewerNotesPresent) {
+    const result = await patchOnboardedNotesOnly(sb, { id, reviewerNotes });
+    if (!result.ok) {
+      return errorResponse(result.error, result.status);
+    }
+    return NextResponse.json({ application: result.application });
   }
 
-  return NextResponse.json({ application: result.application });
+  if (status === "approved" || status === "rejected") {
+    const actorCategory = await resolveDesignPartnerAdminActorCategory(req);
+    const result = await invokeDesignPartnerReviewTransition(sb, {
+      applicationId: id,
+      targetStatus: status,
+      actorCategory,
+      reviewerNotes,
+      reviewerNotesPresent,
+    });
+    if (!result.ok) {
+      return errorResponse(result.error, result.status);
+    }
+    return NextResponse.json({ application: result.application });
+  }
+
+  return NextResponse.json({ error: "invalid_input" }, { status: 400 });
 }

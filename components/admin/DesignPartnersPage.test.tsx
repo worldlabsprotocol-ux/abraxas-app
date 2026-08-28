@@ -32,17 +32,22 @@ vi.mock("@/components/admin/AdminConfirmDialog", () => ({
     actionKey,
     context,
     onConfirm,
+    onCancel,
   }: {
     open: boolean;
     actionKey: string | null;
     context: Record<string, string>;
     onConfirm: () => void;
+    onCancel: () => void;
   }) => (
     open ? (
       <div>
         <div data-testid="confirm-action-key">{actionKey}</div>
         <div data-testid="confirm-company">{context.company}</div>
-        <button type="button" onClick={onConfirm}>Reject application</button>
+        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" onClick={onConfirm}>
+          {actionKey === "design_partner.approve" ? "Approve application" : "Reject application"}
+        </button>
       </div>
     ) : null
   ),
@@ -292,6 +297,20 @@ describe("AdminDesignPartnersPage", () => {
     expect(screen.queryByTestId("design-partner-load-more")).toBeNull();
   });
 
+  it("opens approve confirm with company only and zero requests before confirmation", async () => {
+    mockQueue([{ status: "submitted", apps: [submittedApp] }]);
+    render(<AdminDesignPartnersPage />);
+    await waitFor(() => screen.getByText("Approve"));
+    const before = gateState.adminRequest.mock.calls.length;
+    fireEvent.click(screen.getByText("Approve"));
+    await waitFor(() => {
+      expect(screen.getByTestId("confirm-action-key").textContent).toBe("design_partner.approve");
+      expect(screen.getByTestId("confirm-company").textContent).toBe("Test Co");
+      expect(screen.getByTestId("confirm-company").textContent).not.toContain("@");
+    });
+    expect(gateState.adminRequest.mock.calls.length).toBe(before);
+  });
+
   it("opens reject confirm with company only", async () => {
     mockQueue([{ status: "submitted", apps: [submittedApp] }]);
     render(<AdminDesignPartnersPage />);
@@ -314,6 +333,58 @@ describe("AdminDesignPartnersPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Rejected Co")).toBeTruthy();
       expect(screen.getByText(/Rejected applications are retained for audit/)).toBeTruthy();
+    });
+  });
+
+  it("keeps mutation success when queue refresh fails", async () => {
+    let patchCount = 0;
+    let queueGetCount = 0;
+    gateState.adminRequest.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), "http://localhost");
+      if (url.pathname.includes("/pilot-summary")) {
+        return new Response(JSON.stringify({ summaries: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (url.pathname.includes("/intake-health")) {
+        return new Response(JSON.stringify({}), { status: 200 });
+      }
+      if (url.pathname === "/api/admin/design-partners" && (!init || init.method === undefined)) {
+        queueGetCount += 1;
+        if (queueGetCount > 1) {
+          return new Response(JSON.stringify({ error: "queue_failed" }), { status: 500 });
+        }
+        return new Response(JSON.stringify({
+          applications: [submittedApp],
+          next_cursor: null,
+          has_more: false,
+        }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      if (init?.method === "PATCH") {
+        patchCount += 1;
+        return new Response(JSON.stringify({
+          application: {
+            id: submittedApp.id,
+            status: "approved",
+            promoted_partner_id: null,
+            reviewer_notes: "",
+          },
+        }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+
+    render(<AdminDesignPartnersPage />);
+    await waitFor(() => screen.getByText("Approve"));
+    fireEvent.click(screen.getByText("Approve"));
+    await waitFor(() => screen.getByText("Approve application"));
+    fireEvent.click(screen.getByText("Approve application"));
+    await waitFor(() => {
+      expect(patchCount).toBe(1);
+      expect(screen.getByText(`Approved ${submittedApp.company}`)).toBeTruthy();
+      expect(screen.getByTestId("design-partner-queue-refresh-notice").textContent)
+        .toContain("Queue refresh failed");
     });
   });
 

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const checkProductionSensitiveAdminAccessMock = vi.hoisted(() => vi.fn());
+const resolveDesignPartnerAdminActorCategoryMock = vi.hoisted(() => vi.fn());
 const createClientMock = vi.hoisted(() => vi.fn());
 const rpcMock = vi.hoisted(() => vi.fn());
 
@@ -17,6 +18,23 @@ vi.hoisted(() => {
 vi.mock("@/lib/adminAuth", () => ({
   checkProductionSensitiveAdminAccess: (...args: unknown[]) =>
     checkProductionSensitiveAdminAccessMock(...args),
+}));
+
+vi.mock("@/lib/admin/designPartnerAdminActor", () => ({
+  resolveDesignPartnerAdminActorCategory: (...args: unknown[]) =>
+    resolveDesignPartnerAdminActorCategoryMock(...args),
+  recordContainsForbiddenClientMutationFields: (record: Record<string, unknown>) =>
+    Object.keys(record).some((key) => [
+      "actor_category",
+      "audit_event_id",
+      "key_hash",
+      "key_prefix",
+      "api_key",
+    ].includes(key)),
+  hasOnlyAllowlistedKeys: (record: Record<string, unknown>, allowlist: readonly string[]) => {
+    const keys = Object.keys(record);
+    return keys.length > 0 && keys.every((key) => allowlist.includes(key));
+  },
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -37,6 +55,8 @@ vi.mock("@/lib/partner/partnerAuth", async (importOriginal) => {
 
 import { GET as designPartnersGET, PATCH as designPartnersPATCH } from "@/app/api/admin/design-partners/route";
 import { POST as promotePOST } from "@/app/api/admin/design-partners/promote/route";
+import { DESIGN_PARTNER_REVIEW_TRANSITION_RPC } from "@/lib/admin/designPartnerReviewTransitionLoader";
+import { DESIGN_PARTNER_PROMOTE_RPC_V2 } from "@/lib/partner/promoteDesignPartner";
 import { DESIGN_PARTNER_APPLICATION_ADMIN_DTO_KEYS } from "@/lib/admin/designPartnerApplicationDetailContract";
 import { DESIGN_PARTNER_APPLICATION_SELECT_COLUMNS } from "@/lib/admin/designPartnerApplicationDetail";
 import {
@@ -313,52 +333,177 @@ describe("design-partners PATCH lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     checkProductionSensitiveAdminAccessMock.mockResolvedValue(true);
+    resolveDesignPartnerAdminActorCategoryMock.mockResolvedValue("admin_pin");
     designPartnersChain = createChain();
-    createClientMock.mockReturnValue({ from: vi.fn(() => designPartnersChain) });
+    rpcMock.mockReset();
+    createClientMock.mockReturnValue({
+      from: vi.fn(() => designPartnersChain),
+      rpc: rpcMock,
+    });
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("rejects submitted application with conditional transition", async () => {
-    designPartnersChain.maybeSingle.mockResolvedValueOnce({
+  it("rejects unknown parsed JSON object keys", async () => {
+    const res = await designPartnersPATCH(designPartnerPatchRequest({
+      id: APP_ID,
+      status: "approved",
+      company: "Acme",
+    }));
+    expect(res.status).toBe(400);
+    expect(rpcMock).not.toHaveBeenCalled();
+    expect(designPartnersChain.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects client-supplied actor_category", async () => {
+    const res = await designPartnersPATCH(designPartnerPatchRequest({
+      id: APP_ID,
+      status: "approved",
+      actor_category: "admin_pin",
+    }));
+    expect(res.status).toBe(400);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("approves via review transition RPC exactly once with server actor category", async () => {
+    rpcMock.mockResolvedValueOnce({
       data: {
-        id: APP_ID,
-        status: "rejected",
-        promoted_partner_id: null,
-        reviewer_notes: null,
+        ok: true,
+        code: "ok",
+        application: {
+          id: APP_ID,
+          status: "approved",
+          promoted_partner_id: null,
+          reviewer_notes: null,
+        },
+        audit_event_id: "evt-hidden",
+      },
+      error: null,
+    });
+
+    const res = await designPartnersPATCH(designPartnerPatchRequest({ id: APP_ID, status: "approved" }));
+    expect(res.status).toBe(200);
+    expect(rpcMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock.mock.calls[0]?.[0]).toBe(DESIGN_PARTNER_REVIEW_TRANSITION_RPC);
+    expect(rpcMock.mock.calls[0]?.[1]).toMatchObject({
+      p_application_id: APP_ID,
+      p_target_status: "approved",
+      p_actor_category: "admin_pin",
+      p_reviewer_notes_present: false,
+    });
+    expect(designPartnersChain.update).not.toHaveBeenCalled();
+    const body = await res.json() as { application: Record<string, unknown> };
+    expect(body.application).toEqual({
+      id: APP_ID,
+      status: "approved",
+      promoted_partner_id: null,
+      reviewer_notes: null,
+    });
+    expect(JSON.stringify(body)).not.toContain("audit_event_id");
+  });
+
+  it("rejects via review transition RPC exactly once and performs no direct status UPDATE", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        ok: true,
+        code: "ok",
+        application: {
+          id: APP_ID,
+          status: "rejected",
+          promoted_partner_id: null,
+          reviewer_notes: "no",
+        },
+      },
+      error: null,
+    });
+
+    const res = await designPartnersPATCH(designPartnerPatchRequest({
+      id: APP_ID,
+      status: "rejected",
+      reviewer_notes: "no",
+    }));
+    expect(res.status).toBe(200);
+    expect(rpcMock).toHaveBeenCalledTimes(1);
+    expect(designPartnersChain.update).not.toHaveBeenCalled();
+  });
+
+  it("returns no_op from RPC without direct UPDATE", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        ok: true,
+        code: "no_op",
+        application: {
+          id: APP_ID,
+          status: "rejected",
+          promoted_partner_id: null,
+          reviewer_notes: "keep",
+        },
       },
       error: null,
     });
 
     const res = await designPartnersPATCH(designPartnerPatchRequest({ id: APP_ID, status: "rejected" }));
     expect(res.status).toBe(200);
-    const updatePayload = designPartnersChain.update.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(updatePayload.status).toBe("rejected");
-    expect(designPartnersChain.eq).toHaveBeenCalledWith("status", "submitted");
-    expect(designPartnersChain.is).toHaveBeenCalledWith("promoted_partner_id", null);
+    expect(designPartnersChain.update).not.toHaveBeenCalled();
   });
 
-  it("returns no-op for already rejected without notes", async () => {
-    designPartnersChain.maybeSingle
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({
-        data: {
+  it("maps notes_only and empty-note clearing through RPC", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        ok: true,
+        code: "notes_only",
+        application: {
           id: APP_ID,
-          status: "rejected",
+          status: "approved",
           promoted_partner_id: null,
-          reviewer_notes: "keep",
+          reviewer_notes: null,
         },
-        error: null,
-      });
+      },
+      error: null,
+    });
+
+    const res = await designPartnersPATCH(designPartnerPatchRequest({
+      id: APP_ID,
+      status: "approved",
+      reviewer_notes: "",
+    }));
+    expect(res.status).toBe(200);
+    expect(rpcMock.mock.calls[0]?.[1]).toMatchObject({
+      p_reviewer_notes_present: true,
+      p_reviewer_notes: "",
+    });
+    const body = await res.json() as { application: { reviewer_notes: string | null } };
+    expect(body.application.reviewer_notes).toBeNull();
+  });
+
+  it("maps promoted race to application_already_promoted", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: { ok: false, code: "application_already_promoted" },
+      error: null,
+    });
 
     const res = await designPartnersPATCH(designPartnerPatchRequest({ id: APP_ID, status: "rejected" }));
-    expect(res.status).toBe(200);
-    expect(designPartnersChain.update).toHaveBeenCalledTimes(2);
+    expect(res.status).toBe(409);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe("application_already_promoted");
+    expect(designPartnersChain.update).not.toHaveBeenCalled();
   });
 
-  it("updates notes only for onboarded promoted applications", async () => {
+  it("maps status_conflict for stale transitions", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: { ok: false, code: "status_conflict" },
+      error: null,
+    });
+
+    const res = await designPartnersPATCH(designPartnerPatchRequest({ id: APP_ID, status: "approved" }));
+    expect(res.status).toBe(409);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe("status_conflict");
+  });
+
+  it("updates notes only for onboarded promoted applications via direct UPDATE", async () => {
     designPartnersChain.maybeSingle.mockResolvedValueOnce({
       data: {
         id: APP_ID,
@@ -385,135 +530,23 @@ describe("design-partners PATCH lifecycle", () => {
     }));
 
     expect(res.status).toBe(200);
+    expect(rpcMock).not.toHaveBeenCalled();
     const notesPayload = designPartnersChain.update.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(notesPayload).toEqual({ reviewer_notes: "ops" });
-    expect(notesPayload).not.toHaveProperty("reviewed_at");
-    expect(notesPayload).not.toHaveProperty("status");
-  });
-
-  it("fails closed when reject races a promoted application", async () => {
-    designPartnersChain.maybeSingle
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({
-        data: {
-          id: APP_ID,
-          status: "onboarded",
-          promoted_partner_id: "acme-v1",
-          reviewer_notes: null,
-        },
-        error: null,
-      });
-
-    const res = await designPartnersPATCH(designPartnerPatchRequest({ id: APP_ID, status: "rejected" }));
-    expect(res.status).toBe(409);
-    const body = await res.json() as { error: string };
-    expect(body.error).toBe("application_already_promoted");
-    expect(JSON.stringify(body)).not.toContain("@");
-    expect(designPartnersChain.update).toHaveBeenCalledTimes(2);
-  });
-
-  it("does not commit reviewer_notes when reject with notes loses to promotion", async () => {
-    designPartnersChain.maybeSingle
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({
-        data: {
-          id: APP_ID,
-          status: "onboarded",
-          promoted_partner_id: "acme-v1",
-          reviewer_notes: null,
-        },
-        error: null,
-      });
-
-    const res = await designPartnersPATCH(designPartnerPatchRequest({
-      id: APP_ID,
-      status: "rejected",
-      reviewer_notes: "race loser",
-    }));
-
-    expect(res.status).toBe(409);
-    const body = await res.json() as { error: string };
-    expect(body.error).toBe("application_already_promoted");
-    expect(designPartnersChain.update).toHaveBeenCalledTimes(2);
-    for (const call of designPartnersChain.update.mock.calls) {
-      const payload = call[0] as Record<string, unknown>;
-      expect(payload).toHaveProperty("status", "rejected");
-      expect(payload).toHaveProperty("reviewed_at");
-      expect(payload.reviewer_notes).toBe("race loser");
-    }
-  });
-
-  it("clears reviewer_notes on approved idempotent patch when empty string provided", async () => {
-    designPartnersChain.maybeSingle
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({
-        data: {
-          id: APP_ID,
-          status: "approved",
-          promoted_partner_id: null,
-          reviewer_notes: "keep me",
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: APP_ID,
-          status: "approved",
-          promoted_partner_id: null,
-          reviewer_notes: null,
-        },
-        error: null,
-      });
-
-    const res = await designPartnersPATCH(designPartnerPatchRequest({
-      id: APP_ID,
-      status: "approved",
-      reviewer_notes: "",
-    }));
-
-    expect(res.status).toBe(200);
-    expect(designPartnersChain.update).toHaveBeenCalledTimes(2);
-    const transitionPayload = designPartnersChain.update.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(transitionPayload.status).toBe("approved");
-    expect(transitionPayload.reviewer_notes).toBeNull();
-    const notesPayload = designPartnersChain.update.mock.calls[1]?.[0] as Record<string, unknown>;
-    expect(notesPayload.reviewer_notes).toBeNull();
-    expect(notesPayload).not.toHaveProperty("reviewed_at");
     expect(notesPayload).not.toHaveProperty("status");
   });
 });
 
 describe("design-partners promote route", () => {
-  let designPartnersChain: ReturnType<typeof createChain>;
-
   beforeEach(() => {
     vi.clearAllMocks();
     checkProductionSensitiveAdminAccessMock.mockResolvedValue(true);
-    designPartnersChain = createChain();
+    resolveDesignPartnerAdminActorCategoryMock.mockResolvedValue("admin_authorized_email");
     rpcMock.mockReset();
-    createClientMock.mockReturnValue({
-      from: vi.fn(() => designPartnersChain),
-      rpc: rpcMock,
-    });
+    createClientMock.mockReturnValue({ rpc: rpcMock });
   });
 
-  it("calls promote RPC exactly once and returns sandbox key prefix only in HTTP body", async () => {
-    designPartnersChain.maybeSingle.mockResolvedValueOnce({
-      data: {
-        id: APP_ID,
-        company: "Acme",
-        contact_name: "Ops",
-        email: "hidden@example.com",
-        use_case: "test",
-        integration_type: "passport_gate",
-        public_name_ok: false,
-        status: "approved",
-        promoted_partner_id: null,
-      },
-      error: null,
-    });
+  it("calls promote v2 RPC exactly once with no pre-load query and never calls v1", async () => {
     rpcMock.mockResolvedValueOnce({
       data: {
         ok: true,
@@ -531,34 +564,39 @@ describe("design-partners promote route", () => {
     }));
 
     expect(res.status).toBe(200);
+    expect(createClientMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledTimes(1);
-    expect(rpcMock.mock.calls[0]?.[0]).toBe("design_partner_promote_atomic");
+    expect(rpcMock.mock.calls[0]?.[0]).toBe(DESIGN_PARTNER_PROMOTE_RPC_V2);
+    expect(rpcMock.mock.calls[0]?.[0]).not.toBe("design_partner_promote_atomic");
     expect(rpcMock.mock.calls[0]?.[1]).toMatchObject({
       p_application_id: APP_ID,
       p_partner_id: "acme-v1",
       p_key_prefix: "abx_test_abcdefg",
       p_key_hash: "a".repeat(64),
+      p_actor_category: "admin_authorized_email",
     });
     const body = await res.json() as { api_key: string; error?: string };
     expect(body.api_key).toBe("abx_test_abcdefg_restignored");
     expect(JSON.stringify(body)).not.toContain("@");
   });
 
+  it("requires partner_id in request body", async () => {
+    const res = await promotePOST(promoteRequest({ application_id: APP_ID }));
+    expect(res.status).toBe(400);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects client spoof actor_category", async () => {
+    const res = await promotePOST(promoteRequest({
+      application_id: APP_ID,
+      partner_id: "acme-v1",
+      actor_category: "admin_pin",
+    }));
+    expect(res.status).toBe(400);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("maps rejected applications to application_rejected without extra rpc retries", async () => {
-    designPartnersChain.maybeSingle.mockResolvedValueOnce({
-      data: {
-        id: APP_ID,
-        company: "Acme",
-        contact_name: null,
-        email: "hidden@example.com",
-        use_case: null,
-        integration_type: null,
-        public_name_ok: false,
-        status: "rejected",
-        promoted_partner_id: null,
-      },
-      error: null,
-    });
     rpcMock.mockResolvedValueOnce({
       data: { ok: false, code: "application_rejected" },
       error: null,
@@ -572,20 +610,6 @@ describe("design-partners promote route", () => {
   });
 
   it("maps rpc partner_id_conflict without leaking sql details", async () => {
-    designPartnersChain.maybeSingle.mockResolvedValueOnce({
-      data: {
-        id: APP_ID,
-        company: "Acme",
-        contact_name: null,
-        email: "hidden@example.com",
-        use_case: null,
-        integration_type: null,
-        public_name_ok: false,
-        status: "approved",
-        promoted_partner_id: null,
-      },
-      error: null,
-    });
     rpcMock.mockResolvedValueOnce({
       data: null,
       error: { message: "partner_id_conflict" },
