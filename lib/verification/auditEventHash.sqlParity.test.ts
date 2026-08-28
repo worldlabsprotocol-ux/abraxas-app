@@ -15,6 +15,10 @@ const ENTRY_FUNCTIONS = [
   { name: "design_partner_promote_atomic_v2", args: "p_application_id uuid, p_partner_id text, p_key_prefix text, p_key_hash text, p_actor_category text" },
   { name: "design_partner_review_transition_atomic", args: "p_application_id uuid, p_target_status text, p_actor_category text, p_reviewer_notes text, p_reviewer_notes_present boolean" },
   { name: "design_partner_lifecycle_audit_list", args: "p_application_id uuid, p_limit integer" },
+  {
+    name: "design_partner_lifecycle_audit_list_v2",
+    args: "p_application_id uuid, p_limit integer, p_cursor_occurred_at timestamp with time zone, p_cursor_id uuid",
+  },
 ] as const;
 
 const INTERNAL_FUNCTIONS = [
@@ -28,6 +32,24 @@ const INTERNAL_FUNCTIONS = [
 
 const KEY_PREFIX = "abx_test_abcdefg";
 const KEY_HASH = "a".repeat(64);
+
+const LIST_V2_IDENTITY_ARGS =
+  "p_application_id uuid, p_limit integer, p_cursor_occurred_at timestamp with time zone, p_cursor_id uuid";
+const LIST_V1_IDENTITY_ARGS = "p_application_id uuid, p_limit integer";
+const LIFECYCLE_AUDIT_EVENT_KEYS = [
+  "event_type",
+  "application_id",
+  "from_status",
+  "to_status",
+  "promoted_partner_id",
+  "occurred_at",
+  "operator_category",
+] as const;
+
+interface LifecycleAuditListV2Envelope {
+  events: Array<Record<string, unknown>>;
+  next_cursor: { occurred_at: string; id: string } | null;
+}
 
 const INTERNAL_FUNCTION_ARGS: Record<string, string> = {
   _design_partner_promote_impl: "p_application_id uuid, p_partner_id text, p_key_prefix text, p_key_hash text, p_actor_category text",
@@ -269,6 +291,135 @@ async function promote(
     [appId, partnerId, keyPrefix, keyHash],
   );
   return rows[0]?.result ?? { ok: false, code: "missing" };
+}
+
+async function listLifecycleAuditV2(
+  client: Client,
+  applicationId: string | null,
+  limit?: number | null,
+  cursor?: { occurred_at: string; id: string } | null,
+): Promise<LifecycleAuditListV2Envelope> {
+  const { rows } = await client.query<{ result: LifecycleAuditListV2Envelope }>(
+    `SELECT public.design_partner_lifecycle_audit_list_v2(
+       $1::uuid,
+       $2::integer,
+       $3::timestamptz,
+       $4::uuid
+     ) AS result`,
+    [
+      applicationId,
+      limit ?? null,
+      cursor?.occurred_at ?? null,
+      cursor?.id ?? null,
+    ],
+  );
+  return rows[0]?.result ?? { events: [], next_cursor: null };
+}
+
+async function getFunctionOwner(
+  client: Client,
+  fnName: string,
+  identityArgs: string,
+): Promise<string> {
+  const { rows } = await client.query<{ owner: string }>(
+    `SELECT pg_get_userbyid(p.proowner) AS owner
+       FROM pg_proc p
+       JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public'
+        AND p.proname = $1
+        AND pg_get_function_identity_arguments(p.oid) = $2`,
+    [fnName, identityArgs],
+  );
+  return rows[0]?.owner ?? "";
+}
+
+async function getFunctionProconfig(
+  client: Client,
+  fnName: string,
+  identityArgs: string,
+): Promise<string[]> {
+  const { rows } = await client.query<{ proconfig: string[] | null }>(
+    `SELECT p.proconfig
+       FROM pg_proc p
+       JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public'
+        AND p.proname = $1
+        AND pg_get_function_identity_arguments(p.oid) = $2`,
+    [fnName, identityArgs],
+  );
+  return rows[0]?.proconfig ?? [];
+}
+
+async function insertRawLifecycleAuditRow(
+  client: Client,
+  input: {
+    id: string;
+    objectId: string;
+    action: "admin.design_partner.approved" | "admin.design_partner.rejected" | "admin.design_partner.promoted";
+    fromStatus?: string;
+    toStatus?: string;
+    accessMethod?: string;
+    actorId?: string | null;
+    promotedPartnerId?: string | null;
+    createdAt: string;
+    invalid?: boolean;
+  },
+): Promise<void> {
+  const metadata = input.invalid
+    ? {
+        from_status: "invalid-status",
+        to_status: "approved",
+        admin_access_method: "email",
+      }
+    : {
+        from_status: input.fromStatus ?? "submitted",
+        to_status: input.toStatus ?? "approved",
+        admin_access_method: input.accessMethod ?? "email",
+        ...(input.action === "admin.design_partner.promoted" && input.promotedPartnerId
+          ? { promoted_partner_id: input.promotedPartnerId }
+          : {}),
+      };
+
+  await client.query(
+    `INSERT INTO public.audit_events (
+       id, actor_type, actor_id, action, object_type, object_id, metadata, event_hash, created_at
+     ) VALUES (
+       $1::uuid,
+       'admin_operator',
+       $2,
+       $3,
+       'design_partner_application',
+       $4,
+       $5::jsonb,
+       'parity-fixture-hash',
+       $6::timestamptz
+     )`,
+    [
+      input.id,
+      input.actorId ?? "admin_authorized_email",
+      input.action,
+      input.objectId.toLowerCase(),
+      JSON.stringify(metadata),
+      input.createdAt,
+    ],
+  );
+}
+
+function assertLifecycleAuditListV2Envelope(envelope: LifecycleAuditListV2Envelope): void {
+  expect(Object.keys(envelope).sort()).toEqual(["events", "next_cursor"]);
+  expect(Array.isArray(envelope.events)).toBe(true);
+  if (envelope.next_cursor !== null) {
+    expect(Object.keys(envelope.next_cursor).sort()).toEqual(["id", "occurred_at"]);
+  }
+  for (const event of envelope.events) {
+    expect(Object.keys(event).sort()).toEqual([...LIFECYCLE_AUDIT_EVENT_KEYS].sort());
+    expect(event).not.toHaveProperty("id");
+    expect(event).not.toHaveProperty("metadata");
+    expect(event).not.toHaveProperty("event_hash");
+    expect(event).not.toHaveProperty("actor_type");
+    expect(event).not.toHaveProperty("admin_access_method");
+    expect(JSON.stringify(event)).not.toMatch(/@|api[_-]?key|Bearer|eyJ[a-zA-Z0-9_-]+\./i);
+  }
 }
 
 describe("auditEventHash SQL parity", () => {
@@ -749,5 +900,251 @@ describe("auditEventHash SQL parity", () => {
     } finally {
       await client.query("ROLLBACK");
     }
+  });
+
+  describe("design_partner_lifecycle_audit_list_v2", () => {
+    it("exists with exact identity arguments and hardened security posture", async () => {
+      const { rows } = await client.query<{ args: string }>(
+        `SELECT pg_get_function_identity_arguments(p.oid) AS args
+           FROM pg_proc p
+           JOIN pg_namespace n ON n.oid = p.pronamespace
+          WHERE n.nspname = 'public'
+            AND p.proname = 'design_partner_lifecycle_audit_list_v2'`,
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.args).toBe(LIST_V2_IDENTITY_ARGS);
+      expect(
+        await isSecurityDefiner(client, "design_partner_lifecycle_audit_list_v2", LIST_V2_IDENTITY_ARGS),
+      ).toBe(true);
+      const proconfig = await getFunctionProconfig(
+        client,
+        "design_partner_lifecycle_audit_list_v2",
+        LIST_V2_IDENTITY_ARGS,
+      );
+      expect(proconfig.some((entry) => entry.startsWith("search_path="))).toBe(true);
+      const v2Owner = await getFunctionOwner(
+        client,
+        "design_partner_lifecycle_audit_list_v2",
+        LIST_V2_IDENTITY_ARGS,
+      );
+      const v1Owner = await getFunctionOwner(
+        client,
+        "design_partner_lifecycle_audit_list",
+        LIST_V1_IDENTITY_ARGS,
+      );
+      expect(v2Owner).toBe("postgres");
+      expect(v2Owner).toBe(v1Owner);
+    });
+
+    it("revokes PUBLIC, anon, and authenticated execute and grants postgres and service_role only", async () => {
+      expect(
+        await publicAclGrantsExecute(
+          client,
+          "design_partner_lifecycle_audit_list_v2",
+          LIST_V2_IDENTITY_ARGS,
+        ),
+      ).toBe(false);
+      expect(
+        await hasExecutePrivilege(
+          client,
+          "anon",
+          "design_partner_lifecycle_audit_list_v2",
+          LIST_V2_IDENTITY_ARGS,
+        ),
+      ).toBe(false);
+      expect(
+        await hasExecutePrivilege(
+          client,
+          "authenticated",
+          "design_partner_lifecycle_audit_list_v2",
+          LIST_V2_IDENTITY_ARGS,
+        ),
+      ).toBe(false);
+      expect(
+        await hasExecutePrivilege(
+          client,
+          "parity_unprivileged",
+          "design_partner_lifecycle_audit_list_v2",
+          LIST_V2_IDENTITY_ARGS,
+        ),
+      ).toBe(false);
+      expect(
+        await hasExecutePrivilege(
+          client,
+          "postgres",
+          "design_partner_lifecycle_audit_list_v2",
+          LIST_V2_IDENTITY_ARGS,
+        ),
+      ).toBe(true);
+      expect(
+        await hasExecutePrivilege(
+          client,
+          "service_role",
+          "design_partner_lifecycle_audit_list_v2",
+          LIST_V2_IDENTITY_ARGS,
+        ),
+      ).toBe(true);
+    });
+
+    it("returns the fixed envelope for null application id and cursor XOR", async () => {
+      const nullApp = await listLifecycleAuditV2(client, null);
+      assertLifecycleAuditListV2Envelope(nullApp);
+      expect(nullApp.events).toEqual([]);
+      expect(nullApp.next_cursor).toBeNull();
+
+      const appId = "00000000-0000-4000-8000-0000000000b1";
+      const { rows: timestampOnlyRows } = await client.query<{ result: LifecycleAuditListV2Envelope }>(
+        `SELECT public.design_partner_lifecycle_audit_list_v2($1::uuid, 25, $2::timestamptz, NULL::uuid) AS result`,
+        [appId, "2026-01-01T00:00:00.000Z"],
+      );
+      const timestampOnly = timestampOnlyRows[0]?.result ?? { events: [], next_cursor: null };
+      assertLifecycleAuditListV2Envelope(timestampOnly);
+      expect(timestampOnly.events).toEqual([]);
+      expect(timestampOnly.next_cursor).toBeNull();
+
+      const { rows: idOnlyRows } = await client.query<{ result: LifecycleAuditListV2Envelope }>(
+        `SELECT public.design_partner_lifecycle_audit_list_v2($1::uuid, 25, NULL::timestamptz, $2::uuid) AS result`,
+        [appId, "00000000-0000-4000-8000-000000000001"],
+      );
+      const idOnly = idOnlyRows[0]?.result ?? { events: [], next_cursor: null };
+      assertLifecycleAuditListV2Envelope(idOnly);
+      expect(idOnly.events).toEqual([]);
+      expect(idOnly.next_cursor).toBeNull();
+    });
+
+    it("preserves migration 072 v1 list behavior unchanged", async () => {
+      await client.query("BEGIN");
+      try {
+        const appId = "00000000-0000-4000-8000-0000000000b2";
+        await insertApplication(client, { id: appId, status: "submitted" });
+        expect((await transition(client, appId, "approved", "admin_authorized_email", null, false)).code).toBe("ok");
+
+        const { rows: v1Rows } = await client.query<{ result: unknown }>(
+          `SELECT public.design_partner_lifecycle_audit_list($1::uuid, 25) AS result`,
+          [appId],
+        );
+        const v1 = v1Rows[0]?.result;
+        expect(Array.isArray(v1)).toBe(true);
+        expect((v1 as unknown[]).length).toBe(1);
+
+        const v2 = await listLifecycleAuditV2(client, appId, 25);
+        assertLifecycleAuditListV2Envelope(v2);
+        expect(v2.events).toHaveLength(1);
+        expect(v2.next_cursor).toBeNull();
+        expect(v2.events[0]?.event_type).toBe("admin.design_partner.approved");
+      } finally {
+        await client.query("ROLLBACK");
+      }
+    });
+
+    it("paginates valid rows without duplicates, gaps, or false cursors", async () => {
+      await client.query("BEGIN");
+      try {
+        const appId = "00000000-0000-4000-8000-0000000000b3";
+        const objectId = appId.toLowerCase();
+        const validIds = [
+          "10000000-0000-4000-8000-000000000001",
+          "10000000-0000-4000-8000-000000000002",
+          "10000000-0000-4000-8000-000000000003",
+          "10000000-0000-4000-8000-000000000004",
+          "10000000-0000-4000-8000-000000000005",
+        ] as const;
+
+        await insertRawLifecycleAuditRow(client, {
+          id: "20000000-0000-4000-8000-000000000001",
+          objectId,
+          action: "admin.design_partner.approved",
+          fromStatus: "submitted",
+          toStatus: "approved",
+          createdAt: "2026-06-01T12:00:00.000Z",
+          invalid: true,
+        });
+        for (let index = 0; index < validIds.length; index += 1) {
+          await insertRawLifecycleAuditRow(client, {
+            id: validIds[index]!,
+            objectId,
+            action: "admin.design_partner.approved",
+            fromStatus: "submitted",
+            toStatus: "approved",
+            createdAt: `2026-06-0${5 - index}T12:00:00.000Z`,
+          });
+        }
+        await insertRawLifecycleAuditRow(client, {
+          id: "20000000-0000-4000-8000-000000000002",
+          objectId,
+          action: "admin.design_partner.rejected",
+          fromStatus: "approved",
+          toStatus: "rejected",
+          createdAt: "2026-06-01T11:30:00.000Z",
+          invalid: true,
+        });
+
+        const page1 = await listLifecycleAuditV2(client, appId, 2);
+        assertLifecycleAuditListV2Envelope(page1);
+        expect(page1.events).toHaveLength(2);
+        expect(page1.next_cursor).not.toBeNull();
+        expect(page1.events[0]?.occurred_at).toBe("2026-06-05T12:00:00.000Z");
+        expect(page1.events[1]?.occurred_at).toBe("2026-06-04T12:00:00.000Z");
+
+        const page2 = await listLifecycleAuditV2(client, appId, 2, page1.next_cursor!);
+        assertLifecycleAuditListV2Envelope(page2);
+        expect(page2.events).toHaveLength(2);
+        expect(page2.next_cursor).not.toBeNull();
+
+        const page3 = await listLifecycleAuditV2(client, appId, 2, page2.next_cursor!);
+        assertLifecycleAuditListV2Envelope(page3);
+        expect(page3.events).toHaveLength(1);
+        expect(page3.next_cursor).toBeNull();
+
+        const seen = new Set<string>();
+        for (const page of [page1, page2, page3]) {
+          for (const event of page.events) {
+            const key = `${event.occurred_at as string}:${event.event_type as string}:${event.from_status as string}:${event.to_status as string}`;
+            expect(seen.has(key)).toBe(false);
+            seen.add(key);
+          }
+        }
+        expect(seen.size).toBe(5);
+      } finally {
+        await client.query("ROLLBACK");
+      }
+    });
+
+    it("defaults to 25 events and clamps oversized limits defensively", async () => {
+      await client.query("BEGIN");
+      try {
+        const appId = "00000000-0000-4000-8000-0000000000b4";
+        const objectId = appId.toLowerCase();
+        for (let index = 0; index < 30; index += 1) {
+          await insertRawLifecycleAuditRow(client, {
+            id: `30000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+            objectId,
+            action: "admin.design_partner.approved",
+            fromStatus: "submitted",
+            toStatus: "approved",
+            createdAt: `2026-07-${String(30 - index).padStart(2, "0")}T12:00:00.000Z`,
+          });
+        }
+
+        const defaultPage = await listLifecycleAuditV2(client, appId, null);
+        assertLifecycleAuditListV2Envelope(defaultPage);
+        expect(defaultPage.events).toHaveLength(25);
+        expect(defaultPage.next_cursor).not.toBeNull();
+
+        const clampedPage = await listLifecycleAuditV2(client, appId, 100);
+        assertLifecycleAuditListV2Envelope(clampedPage);
+        expect(clampedPage.events).toHaveLength(25);
+        expect(clampedPage.next_cursor).not.toBeNull();
+      } finally {
+        await client.query("ROLLBACK");
+      }
+    });
+
+    it("does not change audit row count when listing lifecycle events", async () => {
+      const before = await auditCount(client);
+      await listLifecycleAuditV2(client, "00000000-0000-4000-8000-0000000000b5", 25);
+      await listLifecycleAuditV2(client, null, 25);
+      expect(await auditCount(client)).toBe(before);
+    });
   });
 });

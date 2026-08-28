@@ -1,5 +1,7 @@
 -- FILE: scripts/ci/migration-072-parity-bootstrap.sql
--- Minimal faithful fixture for migration 072 CI parity (roles, tables, grants).
+-- Fixture-only bootstrap for lifecycle audit SQL parity CI.
+-- Creates roles, extensions, tables, and pre-073 privilege drift grants.
+-- Does NOT apply or emulate migrations 072, 073, or 074 — the parity runner applies those in order.
 
 DO $$
 BEGIN
