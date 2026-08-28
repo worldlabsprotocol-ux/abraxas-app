@@ -19,7 +19,7 @@ describe("demoRestProbeRegistry", () => {
   it("returns catalog-validated write-only plan for audit_events without SELECT evidence", () => {
     const plan = getRestTableProbePlan("audit_events", false);
     expect(plan.mode).toBe("catalog_validated_write_only");
-    expect(plan.expectedPrivileges).toEqual(["INSERT"]);
+    expect(plan.expectedPrivileges).toEqual(["INSERT", "SELECT"]);
     expect(plan.evidence).toContain("No REST SELECT probe");
     expect(plan.evidence).not.toContain(".select(");
   });

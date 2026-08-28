@@ -24,11 +24,12 @@ const PRIVILEGE_BY_TABLE = new Map(
   DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS.map((entry) => [entry.table, entry.privileges]),
 );
 
-/** Required tables that intentionally lack service_role SELECT (frozen; currently audit_events only). */
-export const DEMO_REST_WRITE_ONLY_REQUIRED_TABLES = DEMO_REQUIRED_TABLES.filter((table) => {
-  const privileges = PRIVILEGE_BY_TABLE.get(table);
-  return privileges !== undefined && privileges.length > 0 && !privileges.includes("SELECT");
-}) as readonly string[];
+/**
+ * Required tables excluded from REST SELECT head/count probes (frozen; audit_events only).
+ * Independent of post-073 effective privileges — audit_events keeps INSERT+SELECT in catalog
+ * validation but must not be SELECT-probed via Supabase REST.
+ */
+export const DEMO_REST_WRITE_ONLY_REQUIRED_TABLES = ["audit_events"] as const satisfies readonly (typeof DEMO_REQUIRED_TABLES)[number][];
 
 const FROZEN_WRITE_ONLY_REQUIRED_TABLES = new Set<string>(DEMO_REST_WRITE_ONLY_REQUIRED_TABLES);
 
@@ -41,6 +42,9 @@ export function getServiceRolePrivileges(table: string): readonly TablePrivilege
 }
 
 export function serviceRoleExpectsSelect(table: string): boolean {
+  if (FROZEN_WRITE_ONLY_REQUIRED_TABLES.has(table)) {
+    return false;
+  }
   const privileges = PRIVILEGE_BY_TABLE.get(table);
   if (!privileges) {
     return true;
@@ -70,8 +74,8 @@ export function getRestTableProbePlan(table: string, optional: boolean): RestTab
       optional,
       expectedPrivileges: registryPrivileges!,
       evidence:
-        `No REST SELECT probe (write-only posture: ${privilegeList} only); `
-        + "use catalog mode to validate table existence and INSERT privilege",
+        `No REST SELECT probe (effective privileges: ${privilegeList}; catalog-validated only); `
+        + "use catalog mode to validate table existence and privileges",
     };
   }
 

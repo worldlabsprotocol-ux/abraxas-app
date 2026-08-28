@@ -7,7 +7,7 @@ import { computeLifecycleAuditEventHash } from "@/lib/verification/auditEventHas
 import { LIFECYCLE_AUDIT_HASH_GOLDEN_VECTORS } from "@/lib/verification/auditEventHash.test";
 import { mapOperatorCategoryToAccessMethod } from "@/lib/admin/designPartnerApplicationLifecycleAuditMetadata";
 
-const PG_URL = process.env.AUDIT_HASH_PG_URL;
+const PG_URL = process.env.AUDIT_HASH_PG_URL?.trim() || undefined;
 const FIXTURE_EMAIL = "applicant@example.invalid";
 
 const ENTRY_FUNCTIONS = [
@@ -125,6 +125,56 @@ async function publicAclGrantsExecute(
   return Boolean(rows[0]?.grants_execute);
 }
 
+async function tableGrants(
+  client: Client,
+  grantee: string,
+): Promise<string[]> {
+  const { rows } = await client.query<{ privilege_type: string }>(
+    `SELECT privilege_type
+       FROM information_schema.role_table_grants
+      WHERE table_schema = 'public'
+        AND table_name = 'audit_events'
+        AND grantee = $1
+      ORDER BY privilege_type`,
+    [grantee],
+  );
+  return rows.map((row: { privilege_type: string }) => row.privilege_type);
+}
+
+async function hasTablePrivilege(
+  client: Client,
+  role: string,
+  privilege: string,
+): Promise<boolean> {
+  const { rows } = await client.query<{ allowed: boolean }>(
+    `SELECT has_table_privilege($1, 'public.audit_events', $2) AS allowed`,
+    [role, privilege],
+  );
+  return Boolean(rows[0]?.allowed);
+}
+
+async function publicTableAclGrantsPrivilege(
+  client: Client,
+  privilege: string,
+): Promise<boolean> {
+  const { rows } = await client.query<{ grants_privilege: boolean }>(
+    `
+      SELECT EXISTS (
+        SELECT 1
+          FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) AS acl
+         WHERE n.nspname = 'public'
+           AND c.relname = 'audit_events'
+           AND acl.grantee = 0
+           AND acl.privilege_type = $1
+      ) AS grants_privilege
+    `,
+    [privilege],
+  );
+  return Boolean(rows[0]?.grants_privilege);
+}
+
 async function auditCount(client: Client): Promise<number> {
   const { rows } = await client.query<{ count: string }>(
     `SELECT count(*)::text AS count FROM public.audit_events`,
@@ -221,7 +271,12 @@ async function promote(
   return rows[0]?.result ?? { ok: false, code: "missing" };
 }
 
-describe.skipIf(!PG_URL)("auditEventHash SQL parity", () => {
+describe("auditEventHash SQL parity", () => {
+  if (!PG_URL) {
+    it.skip("requires AUDIT_HASH_PG_URL (database parity runs via scripts/ci/run-audit-hash-sql-parity.sh)", () => {});
+    return;
+  }
+
   let client: Client;
 
   beforeAll(async () => {
@@ -353,16 +408,72 @@ describe.skipIf(!PG_URL)("auditEventHash SQL parity", () => {
     }
   });
 
-  it("keeps service_role INSERT-only on audit_events", async () => {
-    const { rows } = await client.query<{ privilege_type: string }>(
-      `SELECT privilege_type
-         FROM information_schema.role_table_grants
-        WHERE table_schema = 'public'
-          AND table_name = 'audit_events'
-          AND grantee = 'service_role'
-        ORDER BY privilege_type`,
+  it("hardens audit_events table ACLs via migration 073", async () => {
+    for (const grantee of ["PUBLIC", "anon", "authenticated"] as const) {
+      expect(await tableGrants(client, grantee)).toEqual([]);
+    }
+
+    expect(await tableGrants(client, "service_role")).toEqual(["INSERT", "SELECT"]);
+
+    for (const privilege of ["INSERT", "SELECT"] as const) {
+      expect(await hasTablePrivilege(client, "service_role", privilege)).toBe(true);
+    }
+    for (const privilege of ["UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"] as const) {
+      expect(await hasTablePrivilege(client, "service_role", privilege)).toBe(false);
+    }
+
+    for (const privilege of ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "TRIGGER", "REFERENCES"] as const) {
+      expect(await publicTableAclGrantsPrivilege(client, privilege)).toBe(false);
+    }
+
+    const { rows: rlsRows } = await client.query<{
+      row_security: boolean;
+      force_row_security: boolean;
+    }>(
+      `SELECT c.relrowsecurity AS row_security,
+              c.relforcerowsecurity AS force_row_security
+         FROM pg_class c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'audit_events'`,
     );
-    expect(rows.map((row: { privilege_type: string }) => row.privilege_type)).toEqual(["INSERT"]);
+    expect(rlsRows[0]?.row_security).toBe(true);
+    expect(rlsRows[0]?.force_row_security).toBe(false);
+
+    const { rows: policyRows } = await client.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+         FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'audit_events'`,
+    );
+    expect(Number(policyRows[0]?.count ?? 0)).toBe(0);
+  });
+
+  it("keeps service_role INSERT and SELECT compatible with append-return reads", async () => {
+    await client.query("BEGIN");
+    try {
+      await client.query("SET LOCAL ROLE service_role");
+      const { rows: insertRows } = await client.query<{ id: string }>(
+        `INSERT INTO public.audit_events (
+           actor_type, action, metadata
+         ) VALUES (
+           'system', 'parity.phase1.insert_probe', '{}'::jsonb
+         )
+         RETURNING id::text AS id`,
+      );
+      const insertedId = insertRows[0]?.id;
+      expect(insertedId).toBeTruthy();
+
+      const { rows: selectRows } = await client.query<{ id: string }>(
+        `SELECT id::text AS id
+           FROM public.audit_events
+          WHERE id = $1::uuid`,
+        [insertedId],
+      );
+      expect(selectRows[0]?.id).toBe(insertedId);
+    } finally {
+      await client.query("ROLLBACK");
+    }
   });
 
   it("records exactly one approved audit row for submitted to approved", async () => {

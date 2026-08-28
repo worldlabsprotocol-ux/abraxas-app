@@ -264,7 +264,7 @@ async function checkTableExists(
       label: `Table ${table}`,
       status: "unverifiable",
       detail:
-        `Write-only table (${privilegeList} only) - REST cannot verify existence without mutation`,
+        `No REST SELECT probe (${privilegeList} effective) - REST cannot verify existence without mutation`,
       evidence: probePlan.evidence,
       optional,
       catalogValidatedOnly: true,

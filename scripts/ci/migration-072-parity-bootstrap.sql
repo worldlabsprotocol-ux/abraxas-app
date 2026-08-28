@@ -102,7 +102,16 @@ ALTER TABLE public.partners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.partner_api_keys ENABLE ROW LEVEL SECURITY;
 
 GRANT USAGE ON SCHEMA public TO service_role;
-GRANT INSERT ON TABLE public.audit_events TO service_role;
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT USAGE ON SCHEMA public TO authenticated;
+
+-- Reproduce pre-073 Production privilege drift (Supabase default-style broad grants).
+-- Migration 073 must reset these to the Phase 1 hardened posture.
+GRANT ALL ON TABLE public.audit_events TO PUBLIC;
+GRANT ALL ON TABLE public.audit_events TO anon;
+GRANT ALL ON TABLE public.audit_events TO authenticated;
+GRANT ALL ON TABLE public.audit_events TO service_role;
+
 GRANT SELECT, INSERT, UPDATE ON TABLE public.design_partners TO service_role;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.partners TO service_role;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.partner_api_keys TO service_role;

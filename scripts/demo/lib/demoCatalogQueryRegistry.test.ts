@@ -27,8 +27,8 @@ describe("demoCatalogQueryRegistry", () => {
       (count, entry) => count + entry.privileges.length,
       0,
     );
-    expect(expectedRows).toBe(62);
-    expect((sql.match(/\('\w/g) ?? []).length).toBeGreaterThanOrEqual(62);
+    expect(expectedRows).toBe(63);
+    expect((sql.match(/\('\w/g) ?? []).length).toBeGreaterThanOrEqual(63);
   });
 
   it("separates control and catalog allowlists", () => {

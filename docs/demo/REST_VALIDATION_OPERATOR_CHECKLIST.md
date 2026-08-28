@@ -12,14 +12,18 @@ Catalog mode proves PostgreSQL structure, RLS, indexes, sandbox seeds, and `serv
 
 ## Write-only required tables (audit_events)
 
-Migration 065 grants `service_role` **INSERT only** on `public.audit_events`. REST validation:
+Migration 065 originally documented `service_role` **INSERT only** on `public.audit_events`. Production pre-073 drift exposed broader table ACLs (including `SELECT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES`, `TRIGGER`).
+
+Migration **073** (Phase 1 privilege hardening) resets `audit_events` to **`service_role` INSERT + SELECT only** (SELECT retained temporarily for `appendAuditEvent` insert-return and direct receipt/trace reads until Phase 2 read RPCs and Phase 3 append RPC + SELECT revoke land in separate PRs).
+
+REST validation:
 
 - does **not** issue a SELECT/head probe;
 - does **not** perform an INSERT;
 - marks `audit_events` as **UNVERIFIABLE** / `catalogValidatedOnly`;
 - does **not** fail REST exit status when all other required probes pass.
 
-Run catalog mode for authoritative table existence and INSERT privilege evidence.
+Run catalog mode for authoritative table existence and privilege evidence. After migration 073 is applied in an environment, catalog should expect `INSERT` and `SELECT` for `service_role` on `audit_events`, not `UPDATE`/`DELETE`/`TRUNCATE`.
 
 ## 1. Data API enabled
 
