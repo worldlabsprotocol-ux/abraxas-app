@@ -10,6 +10,7 @@ import {
   DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS,
   DEMO_SERVICE_ROLE_GRANT_TABLES,
   FORBIDDEN_SERVICE_ROLE_PRIVILEGES,
+  getMigration065TablePrivileges,
 } from "./demoServiceRolePrivilegeExpectations";
 import { auditMigrationFileTransactionCompatibility } from "./demoMigrationTransactionAudit";
 import { hashMigrationContent } from "./demoMigrationLedger";
@@ -147,15 +148,16 @@ describe("065_service_role_runtime_grants migration", () => {
     expect(grantStatements).toEqual(expectedGrants);
     const privilegePairs = new Map<string, Set<string>>();
     for (const entry of DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS) {
-      privilegePairs.set(entry.table, new Set(entry.privileges));
+      privilegePairs.set(entry.table, new Set(getMigration065TablePrivileges(entry)));
     }
     expect(privilegePairs.size).toBe(24);
     expect(
       DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS.reduce(
-        (count, entry) => count + entry.privileges.length,
+        (count, entry) => count + getMigration065TablePrivileges(entry).length,
         0,
       ),
     ).toBe(62);
+    expect(privilegePairs.get("audit_events")).toEqual(new Set(["INSERT"]));
   });
 
   it("does not use dynamic SQL, concatenation, catalog-driven targets, or user input", () => {

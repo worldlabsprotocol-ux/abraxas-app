@@ -42,17 +42,42 @@ describe("demoServiceRolePrivilegeExpectations", () => {
     }
   });
 
+  it("expects Phase 1 audit_events service_role privileges (INSERT + SELECT only)", () => {
+    const auditEvents = DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS.find(
+      (entry) => entry.table === "audit_events",
+    );
+    expect(auditEvents).toBeDefined();
+    expect(auditEvents?.privileges).toEqual(["INSERT", "SELECT"]);
+    expect(auditEvents?.privileges).not.toContain("UPDATE");
+    for (const forbidden of FORBIDDEN_SERVICE_ROLE_PRIVILEGES) {
+      expect(auditEvents?.privileges).not.toContain(forbidden);
+    }
+  });
+
   it("builds a stable SQL values matrix for catalog validation", () => {
     const values = buildServiceRolePrivilegeMatrixSqlValues();
     expect(values).toContain("('partners', 'SELECT')");
     expect(values).toContain("('partner_api_keys', 'UPDATE')");
     expect(values).toContain("('sui_zklogin_identities', 'INSERT')");
-    expect(values.split("),").length).toBe(62);
+
+    for (const entry of ["('audit_events', 'INSERT')", "('audit_events', 'SELECT')"] as const) {
+      expect(values).toContain(entry);
+    }
+    for (const forbidden of ["UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"] as const) {
+      expect(values).not.toContain(`('audit_events', '${forbidden}')`);
+    }
+
+    const derivedPrivilegeCount = DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS.reduce(
+      (sum, entry) => sum + entry.privileges.length,
+      0,
+    );
+    expect(derivedPrivilegeCount).toBe(63);
+    expect(values.split("),").length).toBe(derivedPrivilegeCount);
   });
 
   it("renders the audited privilege matrix for operator review", () => {
     const matrix = renderServiceRolePrivilegeMatrix();
-    expect(matrix).toContain("audit_events: INSERT");
+    expect(matrix).toContain("audit_events: INSERT, SELECT");
     expect(matrix).toContain("partner_api_keys: SELECT, INSERT, UPDATE");
     expect(matrix).not.toMatch(/\bDELETE\b|\bTRUNCATE\b/);
   });

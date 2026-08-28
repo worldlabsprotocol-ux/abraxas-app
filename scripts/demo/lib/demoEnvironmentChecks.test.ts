@@ -244,7 +244,7 @@ describe("demoEnvironmentChecks", () => {
     expect(client.getSelectProbes()).not.toContain("audit_events");
     expect(auditEvents?.status).toBe("unverifiable");
     expect(auditEvents?.catalogValidatedOnly).toBe(true);
-    expect(auditEvents?.detail).toContain("Write-only table");
+    expect(auditEvents?.detail).toContain("No REST SELECT probe");
     expect(auditEvents?.evidence).toContain("No REST SELECT probe");
     expect(auditEvents?.evidence).not.toContain("authorization_denied");
     expect(report.exitCode).toBe(0);

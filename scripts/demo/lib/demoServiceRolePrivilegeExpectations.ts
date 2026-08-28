@@ -117,8 +117,11 @@ export const DEMO_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS: readonly ServiceRolePrivi
   },
   {
     table: "audit_events",
-    privileges: ["INSERT"],
-    evidence: ["lib/verification/audit.ts#appendAuditEvent"],
+    privileges: ["INSERT", "SELECT"],
+    evidence: [
+      "lib/verification/audit.ts#appendAuditEvent",
+      "lib/decisionReceipts/service.ts#getReceiptAuditTimeline",
+    ],
   },
   {
     table: "credential_issuers",
@@ -218,6 +221,32 @@ export const DEMO_SERVICE_ROLE_GRANT_TABLES = DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EX
   (entry) => entry.table,
 ) as readonly string[];
 
+/**
+ * Migration 065 historical grants that differ from the current post-073 effective posture.
+ * Migration 065 granted INSERT only on audit_events; migration 073 adds temporary SELECT.
+ */
+export const DEMO_MIGRATION_065_PRIVILEGE_OVERRIDES: Readonly<
+  Partial<Record<string, readonly Exclude<TablePrivilege, (typeof FORBIDDEN_SERVICE_ROLE_PRIVILEGES)[number]>[]>>
+> = {
+  audit_events: ["INSERT"],
+};
+
+export function getMigration065TablePrivileges(
+  entry: ServiceRolePrivilegeExpectation,
+): readonly Exclude<TablePrivilege, (typeof FORBIDDEN_SERVICE_ROLE_PRIVILEGES)[number]>[] {
+  return DEMO_MIGRATION_065_PRIVILEGE_OVERRIDES[entry.table] ?? entry.privileges;
+}
+
+export function buildMigration065PrivilegeMatrixSqlValues(): string {
+  const rows: string[] = [];
+  for (const entry of DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS) {
+    for (const privilege of getMigration065TablePrivileges(entry)) {
+      rows.push(`  ('${entry.table}', '${privilege}')`);
+    }
+  }
+  return rows.join(",\n");
+}
+
 export function assertRequiredTablesCoveredByPrivilegeMatrix(): void {
   for (const table of DEMO_REQUIRED_TABLES) {
     if (!DEMO_SERVICE_ROLE_GRANT_TABLES.includes(table)) {
@@ -246,8 +275,9 @@ export function renderServiceRolePrivilegeMatrix(): string {
 export function buildExpected065GrantLiterals(): readonly string[] {
   const grants: string[] = ["GRANT USAGE ON SCHEMA public TO service_role;"];
   for (const entry of DEMO_ALL_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS) {
+    const privileges = getMigration065TablePrivileges(entry);
     grants.push(
-      `GRANT ${entry.privileges.join(", ")} ON TABLE public.${entry.table} TO service_role;`,
+      `GRANT ${privileges.join(", ")} ON TABLE public.${entry.table} TO service_role;`,
     );
   }
   return grants;
