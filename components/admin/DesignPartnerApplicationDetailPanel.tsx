@@ -13,6 +13,7 @@ import {
   classifyDesignPartnerWebsiteDisplay,
   DESIGN_PARTNER_WEBSITE_SAFE_LINK_LABEL,
 } from "@/lib/admin/designPartnerApplicationWebsiteDisplay";
+import { DesignPartnerLifecycleAuditTimeline } from "@/components/admin/DesignPartnerLifecycleAuditTimeline";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -125,6 +126,8 @@ export function DesignPartnerApplicationDetailPanel({
       <DetailRow label="Lifecycle status">
         <span style={{ fontFamily: MONO, fontSize: "0.68rem" }}>{application.status}</span>
       </DetailRow>
+
+      <DesignPartnerLifecycleAuditTimeline applicationId={application.id} />
 
       {showChecklist && (
         <div style={{ marginTop: "0.25rem", paddingTop: "0.65rem", borderTop: "1px solid var(--border)" }}>
