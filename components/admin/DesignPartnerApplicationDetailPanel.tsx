@@ -76,11 +76,13 @@ export function DesignPartnerApplicationDetailPanel({
   showChecklist = true,
   regionId,
   labelledBy,
+  timelineRefreshToken,
 }: {
   application: DesignPartnerApplicationAdminDto;
   showChecklist?: boolean;
   regionId: string;
   labelledBy: string;
+  timelineRefreshToken?: number;
 }) {
   const [checklist, setChecklist] = useState<Record<DesignPartnerReviewChecklistItemId, boolean>>(() => (
     Object.fromEntries(
@@ -127,7 +129,10 @@ export function DesignPartnerApplicationDetailPanel({
         <span style={{ fontFamily: MONO, fontSize: "0.68rem" }}>{application.status}</span>
       </DetailRow>
 
-      <DesignPartnerLifecycleAuditTimeline applicationId={application.id} />
+      <DesignPartnerLifecycleAuditTimeline
+        applicationId={application.id}
+        refreshToken={timelineRefreshToken}
+      />
 
       {showChecklist && (
         <div style={{ marginTop: "0.25rem", paddingTop: "0.65rem", borderTop: "1px solid var(--border)" }}>

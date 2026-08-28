@@ -61,8 +61,10 @@ function formatOccurredAt(value: string): string {
 
 export function DesignPartnerLifecycleAuditTimeline({
   applicationId,
+  refreshToken,
 }: {
   applicationId: string;
+  refreshToken?: number;
 }) {
   const gate = useProductionAdminSessionGate();
   const [events, setEvents] = useState<DesignPartnerLifecycleAuditEventDto[]>([]);
@@ -185,6 +187,41 @@ export function DesignPartnerLifecycleAuditTimeline({
       controller.abort();
     };
   }, [applicationId, fetchPage, gate.authorized, gate.loading]);
+
+  useEffect(() => {
+    if (refreshToken == null || refreshToken === 0) return;
+    if (gate.loading || !gate.authorized) return;
+
+    requestGenerationRef.current += 1;
+    const generation = requestGenerationRef.current;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setLoading(true);
+    setError(false);
+    consumedCursorsRef.current = new Set();
+    inFlightCursorsRef.current = new Set();
+
+    void (async () => {
+      try {
+        await fetchPage(null, { append: false, generation, signal: controller.signal });
+      } catch {
+        if (!controller.signal.aborted && generation === requestGenerationRef.current) {
+          setError(true);
+        }
+      } finally {
+        if (!controller.signal.aborted && generation === requestGenerationRef.current) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, [fetchPage, gate.authorized, gate.loading, refreshToken]);
 
   async function handleLoadMore() {
     if (!nextCursor || loadingMore) return;

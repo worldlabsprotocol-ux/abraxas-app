@@ -29,6 +29,7 @@ const BATCH_TWO_KEYS: AdminConfirmActionKey[] = [
   "policy.publish",
   "revocation.partner_scoped",
   "design_partner.promote",
+  "design_partner.approve",
   "design_partner.reject",
   "partner_key.issue",
 ];
@@ -133,6 +134,18 @@ describe("adminConfirmCopy batch 2 registry", () => {
     expect(body.toLowerCase()).not.toContain("abx_live");
   });
 
+  it("design_partner.approve copy uses company only and states no side effects yet", () => {
+    const copy = getAdminConfirmCopy("design_partner.approve");
+    const body = interpolateConfirmCopy(copy.body, { company: "Acme Corp" });
+    expect(body).toContain("Acme Corp");
+    expect(body).not.toContain("{{company}}");
+    expect(body).not.toContain("@");
+    expect(body.toLowerCase()).toContain("no partner");
+    expect(body.toLowerCase()).toContain("api key");
+    expect(copy.body).not.toContain("{{email}}");
+    expect(copy.body).not.toContain("email");
+  });
+
   it("design_partner.reject copy uses company only and states no side effects", () => {
     const copy = getAdminConfirmCopy("design_partner.reject");
     const body = interpolateConfirmCopy(copy.body, { company: "Acme Corp" });
@@ -160,7 +173,7 @@ describe("adminConfirmCopy batch 2 registry", () => {
     expect(body.toLowerCase()).not.toContain("api key");
   });
 
-  it("exports exactly fourteen keys across batch 1 and batch 2", () => {
+  it("exports exactly fifteen keys across batch 1 and batch 2", () => {
     expect(Object.keys(ADMIN_CONFIRM_COPY).sort()).toEqual([...ALL_KEYS].sort());
   });
 });

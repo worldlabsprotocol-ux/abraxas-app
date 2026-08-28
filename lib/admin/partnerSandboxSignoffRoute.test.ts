@@ -60,9 +60,20 @@ vi.mock("@/lib/adminAuth", () => ({
     checkProductionSensitiveAdminAccessMock(...args),
 }));
 
+vi.mock("@/lib/admin/designPartnerAdminActor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/admin/designPartnerAdminActor")>();
+  return {
+    ...actual,
+    resolveDesignPartnerAdminActorCategory: vi.fn().mockResolvedValue("admin_pin"),
+  };
+});
+
+const rpcMock = vi.fn();
+
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({
     from: vi.fn((table: string) => tableChains[table] ?? createChain()),
+    rpc: rpcMock,
   })),
 }));
 
@@ -436,28 +447,49 @@ describe("design-partners PATCH reviewer_notes clobber fix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     checkProductionSensitiveAdminAccessMock.mockResolvedValue(true);
+    rpcMock.mockReset();
     designPartnersChain.single = vi.fn();
     designPartnersChain.select.mockReturnValue(designPartnersChain);
     designPartnersChain.update.mockReturnValue(designPartnersChain);
     designPartnersChain.eq.mockReturnValue(designPartnersChain);
   });
 
-  it("omits reviewer_notes when field not present", async () => {
-    designPartnersChain.single.mockResolvedValueOnce({
-      data: { id: APP_ID, status: "approved", reviewer_notes: "keep me" },
+  it("omits reviewer_notes when field not present via RPC", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        ok: true,
+        code: "no_op",
+        application: {
+          id: APP_ID,
+          status: "approved",
+          promoted_partner_id: null,
+          reviewer_notes: "keep me",
+        },
+      },
       error: null,
     });
 
     await designPartnersPATCH(designPartnerPatchRequest({ id: APP_ID, status: "approved" }));
 
-    const payload = designPartnersChain.update.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(payload).not.toHaveProperty("reviewer_notes");
-    expect(payload.status).toBe("approved");
+    expect(rpcMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock.mock.calls[0]?.[1]).toMatchObject({
+      p_reviewer_notes_present: false,
+    });
+    expect(designPartnersChain.update).not.toHaveBeenCalled();
   });
 
-  it("clears reviewer_notes when empty string provided", async () => {
-    designPartnersChain.single.mockResolvedValueOnce({
-      data: { id: APP_ID, status: "approved", reviewer_notes: null },
+  it("clears reviewer_notes when empty string provided via RPC notes_only", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        ok: true,
+        code: "notes_only",
+        application: {
+          id: APP_ID,
+          status: "approved",
+          promoted_partner_id: null,
+          reviewer_notes: null,
+        },
+      },
       error: null,
     });
 
@@ -467,8 +499,12 @@ describe("design-partners PATCH reviewer_notes clobber fix", () => {
       reviewer_notes: "",
     }));
 
-    const payload = designPartnersChain.update.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(payload.reviewer_notes).toBeNull();
+    expect(rpcMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock.mock.calls[0]?.[1]).toMatchObject({
+      p_reviewer_notes_present: true,
+      p_reviewer_notes: "",
+    });
+    expect(designPartnersChain.update).not.toHaveBeenCalled();
   });
 });
 
