@@ -9,6 +9,11 @@ import {
   loadDesignPartnerLifecycleAuditWithClient,
 } from "@/lib/admin/designPartnerLifecycleAuditLoader";
 import { encodeDesignPartnerLifecycleAuditCursor } from "@/lib/admin/designPartnerLifecycleAuditCursor";
+import {
+  PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID,
+  PRODUCTION_LIFECYCLE_AUDIT_APPROVED_API_RESPONSE,
+  PRODUCTION_LIFECYCLE_AUDIT_APPROVED_RPC_ENVELOPE,
+} from "@/lib/admin/designPartnerLifecycleAuditProductionFixture";
 
 const APPLICATION_ID = "00000000-0000-4000-8000-000000000001";
 const ROW_ID = "10000000-0000-4000-8000-000000000003";
@@ -150,6 +155,19 @@ describe("loadDesignPartnerLifecycleAuditWithClient", () => {
       limit: 25,
       cursor: null,
     })).rejects.toThrow("invalid_rpc_envelope");
+  });
+
+  it("maps the exact Production v2 approved RPC envelope to the public DTO", async () => {
+    const { client } = createSupabaseMock({
+      rpc: { data: PRODUCTION_LIFECYCLE_AUDIT_APPROVED_RPC_ENVELOPE, error: null },
+    });
+    const response = await loadDesignPartnerLifecycleAuditWithClient(client, {
+      applicationId: PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID,
+      limit: 25,
+      cursor: null,
+    });
+    expect(response).toEqual(PRODUCTION_LIFECYCLE_AUDIT_APPROVED_API_RESPONSE);
+    expect(response.events[0]).not.toHaveProperty("operator_category");
   });
 });
 
