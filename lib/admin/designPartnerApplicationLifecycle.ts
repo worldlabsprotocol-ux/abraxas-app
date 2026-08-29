@@ -6,6 +6,12 @@ import {
   recordContainsForbiddenClientMutationFields,
 } from "@/lib/admin/designPartnerAdminActor";
 import { generatePartnerKey } from "@/lib/partner/partnerAuth";
+import {
+  isValidPartnerId as isValidPartnerIdFormat,
+  PARTNER_ID_MAX_LENGTH,
+} from "@/lib/partner/partnerIdFormat";
+
+export { PARTNER_ID_MAX_LENGTH } from "@/lib/partner/partnerIdFormat";
 
 export const DESIGN_PARTNER_STATUSES = [
   "submitted",
@@ -71,9 +77,6 @@ export interface DesignPartnerApplicationRow {
   reviewer_notes?: string | null;
 }
 
-export const PARTNER_ID_MAX_LENGTH = 128;
-const PARTNER_ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/i;
-
 /** Matches generatePartnerKey("test").prefix — raw.slice(0, 16) where raw is abx_test_ + 24 base64url chars. */
 export const SANDBOX_KEY_PREFIX_LENGTH = 16;
 export const SANDBOX_KEY_PREFIX_PATTERN = /^abx_test_[A-Za-z0-9_-]{7}$/;
@@ -88,9 +91,7 @@ const TRANSITION_FROM: Record<"approved" | "rejected", DesignPartnerStatus[]> = 
 const NOTES_ONLY_STATUSES: DesignPartnerStatus[] = ["approved", "rejected", "onboarded"];
 
 export function isValidPartnerId(partnerId: string): boolean {
-  const trimmed = partnerId.trim();
-  if (!trimmed || trimmed.length > PARTNER_ID_MAX_LENGTH) return false;
-  return PARTNER_ID_PATTERN.test(trimmed);
+  return isValidPartnerIdFormat(partnerId);
 }
 
 export function isValidSandboxKeyPrefix(prefix: string): boolean {
