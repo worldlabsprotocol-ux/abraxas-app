@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T19:54:37.099Z",
+  "updatedAt": "2026-08-18T18:25:39.856Z",
   "files": {
     "components/redesign/RedesignHome.tsx": "7f89ff2e6100885873bdc396056a3afb85317d25c81dcea329e0abe26b3ec0b8",
     "components/redesign/AbraxasBootScreen.tsx": "c8e2d8815064f0bf65f0421303b35b3c7187354a90810ce689ac9a1918fbfe9f",
@@ -13,7 +13,7 @@
     "components/home/HomeRegulatedIndustries.tsx": "c62c4c821d4e92a8578f9cc50985967925c7bd42cde25979f1847e4ebeba9fa1",
     "components/home/HomeLiveStats.tsx": "58be1ebe6e71fc277609ec28169fe614550c145642ace686b92430b49701d68a",
     "components/home/HomeDocsBrief.tsx": "175357a186ef4b66a1602ec53d85280bc53fa44fb135de9ef393f77bd04f7f85",
-    "components/home/HomeRoadmapBrief.tsx": "1530611df12ebd5464c3243384e9cbb672a3d44d437654a0b2989e795819c0f8",
+    "components/home/HomeRoadmapBrief.tsx": "2b9e9f36d21220de802b031abc892bc38036031e7866713e95026afc09f5220e",
     "components/home/HomeRegistrySlideshow.tsx": "973238ea187bdb5db94a95c5810346d308947fefcdc3636ef2438ec9e828f9b7",
     "lib/home/protocolProofLogos.ts": "07ab289ba019127293daac5fc5e38bab900c73f8043c6a088817826888cfca98",
     "lib/home/protocolProofMedia.ts": "23e094aea4b2d1c120c815a50dded852319a7fde91ad4914c04a6131177faba7",
