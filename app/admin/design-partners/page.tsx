@@ -9,7 +9,16 @@ import { PartnerSandboxSignoffPanel } from "@/components/admin/PartnerSandboxSig
 import { DesignPartnerPilotSummaryBar } from "@/components/admin/DesignPartnerPilotSummaryBar";
 import { DesignPartnerIntakeHealthCard } from "@/components/admin/DesignPartnerIntakeHealthCard";
 import { DesignPartnerApplicationDetailPanel } from "@/components/admin/DesignPartnerApplicationDetailPanel";
+import { AdminCopyButton } from "@/components/admin/AdminCopyButton";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
+import {
+  APPROVED_PROMOTE_GUIDANCE,
+  COPY_PARTNER_ID_LABEL,
+  COPY_SANDBOX_KEY_LABEL,
+  evaluatePartnerIdForPromote,
+  PROMOTE_READINESS_DOC_PATH,
+  PROMOTE_READINESS_LINKS,
+} from "@/lib/admin/designPartnerPromoteReadiness";
 import type { DesignPartnerPilotSummaryDto } from "@/lib/admin/designPartnerPilotSummary";
 import {
   parseDesignPartnerApplicationPageResponse,
@@ -320,13 +329,14 @@ export default function AdminDesignPartnersPage() {
     setHandoffPolicyId("");
     setHandoffReturnUrl("");
     const partnerId = partnerIds[app.id] || slugifyPartnerId(app.company);
+    const partnerIdEvaluation = evaluatePartnerIdForPromote(partnerId);
     try {
       const res = await gate.adminRequest("/api/admin/design-partners/promote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           application_id: app.id,
-          partner_id: partnerId,
+          partner_id: partnerIdEvaluation.normalized,
         }),
       });
       if (res.status === 401 && !gate.usePinUnlock) {
@@ -355,10 +365,12 @@ export default function AdminDesignPartnersPage() {
 
   function promptPromote(app: Application) {
     const partnerId = partnerIds[app.id] || slugifyPartnerId(app.company);
+    const evaluation = evaluatePartnerIdForPromote(partnerId);
+    if (!evaluation.formatValid) return;
     requestConfirm({
       actionKey: "design_partner.promote",
       context: {
-        partnerId,
+        partnerId: evaluation.normalized,
         company: app.company,
       },
       onConfirmed: () => executePromote(app),
@@ -394,6 +406,9 @@ export default function AdminDesignPartnersPage() {
     const detailOpen = Boolean(detailOpenByAppId[app.id]);
     const detailToggleId = `design-partner-detail-toggle-${app.id}`;
     const detailRegionId = `design-partner-detail-panel-${app.id}`;
+    const partnerIdValue = partnerIds[app.id] ?? slugifyPartnerId(app.company);
+    const partnerIdEvaluation = evaluatePartnerIdForPromote(partnerIdValue);
+    const partnerIdValidationId = `design-partner-partner-id-validation-${app.id}`;
     return (
       <div
         key={app.id}
@@ -432,6 +447,7 @@ export default function AdminDesignPartnersPage() {
             regionId={detailRegionId}
             labelledBy={detailToggleId}
             timelineRefreshToken={timelineRefreshByAppId[app.id]}
+            partnerIdEvaluation={partnerIdEvaluation}
           />
         )}
         {app.reviewer_notes && mode === "rejected" && (
@@ -485,10 +501,13 @@ export default function AdminDesignPartnersPage() {
             </label>
             <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", marginTop: "0.55rem", alignItems: "center" }}>
               <input
-                value={partnerIds[app.id] ?? slugifyPartnerId(app.company)}
-                onChange={e => setPartnerIds(prev => ({ ...prev, [app.id]: e.target.value }))}
+                value={partnerIdValue}
+                onChange={(e) => setPartnerIds((prev) => ({ ...prev, [app.id]: e.target.value }))}
                 placeholder="partner_id"
-                style={{ ...inputStyle, flex: "1 1 160px", fontSize: "0.72rem" }}
+                aria-invalid={app.status === "approved" && !partnerIdEvaluation.formatValid}
+                aria-describedby={app.status === "approved" ? partnerIdValidationId : undefined}
+                data-testid={`partner-id-${app.id}`}
+                style={{ ...inputStyle, flex: "1 1 160px", fontSize: "0.72rem", minHeight: 44 }}
               />
               {app.status === "submitted" && (
                 <button
@@ -503,9 +522,10 @@ export default function AdminDesignPartnersPage() {
               {app.status === "approved" && (
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || !partnerIdEvaluation.formatValid}
                   onClick={() => promptPromote(app)}
                   data-testid={`promote-${app.id}`}
+                  aria-describedby={partnerIdValidationId}
                   style={smallBtn}
                 >
                   Promote + test key
@@ -526,6 +546,25 @@ export default function AdminDesignPartnersPage() {
               <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.45rem 0 0", lineHeight: 1.5 }}>
                 Approve before promoting. Promotion issues a sandbox abx_test_ key only — Production activation is separate.
               </p>
+            )}
+            {app.status === "approved" && (
+              <>
+                <p
+                  id={partnerIdValidationId}
+                  data-testid={`approved-promote-guidance-${app.id}`}
+                  style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.45rem 0 0", lineHeight: 1.5 }}
+                >
+                  {APPROVED_PROMOTE_GUIDANCE}
+                </p>
+                {!partnerIdEvaluation.formatValid && (
+                  <p
+                    data-testid={`partner-id-validation-${app.id}`}
+                    style={{ fontFamily: FONT, fontSize: "0.68rem", color: WARN, margin: "0.35rem 0 0", lineHeight: 1.5, fontWeight: 600 }}
+                  >
+                    {partnerIdEvaluation.message}
+                  </p>
+                )}
+              </>
             )}
           </>
         )}
@@ -609,12 +648,31 @@ export default function AdminDesignPartnersPage() {
         </p>
       )}
       {newKey && (
-        <div style={{
-          padding: "0.85rem", borderRadius: 12, marginBottom: "0.75rem",
-          background: "rgba(232,197,71,0.08)", border: "1px solid rgba(232,197,71,0.35)",
-          fontFamily: MONO, fontSize: "0.62rem", wordBreak: "break-all",
-        }}>
-          New sandbox API key (copy now): {newKey}
+        <div
+          role="alert"
+          data-testid="sandbox-api-key-reveal"
+          style={{
+            padding: "0.85rem", borderRadius: 12, marginBottom: "0.75rem",
+            background: "rgba(232,197,71,0.08)", border: "1px solid rgba(232,197,71,0.35)",
+            display: "grid",
+            gap: "0.55rem",
+          }}
+        >
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
+            New sandbox API key (copy now — shown once):
+          </p>
+          <div
+            data-testid="sandbox-api-key-value"
+            style={{ fontFamily: MONO, fontSize: "0.62rem", wordBreak: "break-all", userSelect: "text" }}
+          >
+            {newKey}
+          </div>
+          <AdminCopyButton
+            text={newKey}
+            label={COPY_SANDBOX_KEY_LABEL}
+            resetKey={newKey}
+            testId="sandbox-api-key-copy"
+          />
         </div>
       )}
 
@@ -632,9 +690,15 @@ export default function AdminDesignPartnersPage() {
                 readOnly
                 value={promotedPartnerId}
                 data-testid="handoff-partner-id"
-                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem" }}
+                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem", minHeight: 44 }}
               />
             </label>
+            <AdminCopyButton
+              text={promotedPartnerId}
+              label={COPY_PARTNER_ID_LABEL}
+              resetKey={promotedPartnerId}
+              testId="handoff-partner-id-copy"
+            />
             <label style={{ fontFamily: FONT, fontSize: "0.72rem" }}>
               <span style={{ display: "block", fontWeight: 700, marginBottom: "0.25rem" }}>policy_id (ops supplies)</span>
               <input
@@ -642,7 +706,7 @@ export default function AdminDesignPartnersPage() {
                 onChange={(e) => setHandoffPolicyId(e.target.value)}
                 placeholder="sandbox-policy-v1"
                 data-testid="handoff-policy-id"
-                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem" }}
+                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem", minHeight: 44 }}
               />
             </label>
             <label style={{ fontFamily: FONT, fontSize: "0.72rem" }}>
@@ -652,30 +716,22 @@ export default function AdminDesignPartnersPage() {
                 onChange={(e) => setHandoffReturnUrl(e.target.value)}
                 placeholder="https://partner.example.com/auth/abraxas/callback"
                 data-testid="handoff-return-url"
-                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem" }}
+                style={{ ...inputStyle, width: "100%", fontFamily: MONO, fontSize: "0.68rem", minHeight: 44 }}
               />
             </label>
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
             Partner portal: <Link href="/developers/partner" style={{ color: "var(--accent)" }}>/developers/partner</Link>
             {" · "}
-            Docs: <Link href="/docs/partner-flow#external-design-partner-sandbox" style={{ color: "var(--accent)" }}>External design partner sandbox</Link>
+            Docs: <Link href={PROMOTE_READINESS_LINKS.sandboxDocs} style={{ color: "var(--accent)" }}>External design partner sandbox</Link>
+            {" · "}
+            Production activation: <Link href={PROMOTE_READINESS_LINKS.productionActivation} style={{ color: "var(--accent)" }}>/admin/partner-flow/readiness</Link>
           </p>
           <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
-            Runbooks:{" "}
-            <code style={{ fontFamily: MONO, fontSize: "0.62rem" }}>docs/EXTERNAL_DESIGN_PARTNER_PILOT.md</code>
-            {" · "}
-            <a
-              href="https://github.com/worldlabsprotocol-ux/abraxas-app/blob/main/docs/PARTNER_ONBOARDING_CHECKLIST.md"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "var(--accent)" }}
-            >
-              Operator onboarding checklist
-            </a>
+            Runbook: <code style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{PROMOTE_READINESS_DOC_PATH}</code>
           </p>
-          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: WARN, margin: 0, fontWeight: 600 }}>
-            These handoff fields are session-only operator notes — not persisted in browser storage.
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: WARN, margin: 0, fontWeight: 600, lineHeight: 1.5 }}>
+            These handoff fields are session-only operator notes — not persisted in browser storage or auto-provisioned.
           </p>
         </ContentCard>
       )}

@@ -14,6 +14,8 @@ import {
   DESIGN_PARTNER_WEBSITE_SAFE_LINK_LABEL,
 } from "@/lib/admin/designPartnerApplicationWebsiteDisplay";
 import { DesignPartnerLifecycleAuditTimeline } from "@/components/admin/DesignPartnerLifecycleAuditTimeline";
+import { DesignPartnerPromoteReadinessPanel } from "@/components/admin/DesignPartnerPromoteReadinessPanel";
+import type { PartnerIdPromoteEvaluation } from "@/lib/admin/designPartnerPromoteReadiness";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -77,12 +79,14 @@ export function DesignPartnerApplicationDetailPanel({
   regionId,
   labelledBy,
   timelineRefreshToken,
+  partnerIdEvaluation,
 }: {
   application: DesignPartnerApplicationAdminDto;
   showChecklist?: boolean;
   regionId: string;
   labelledBy: string;
   timelineRefreshToken?: number;
+  partnerIdEvaluation?: PartnerIdPromoteEvaluation;
 }) {
   const [checklist, setChecklist] = useState<Record<DesignPartnerReviewChecklistItemId, boolean>>(() => (
     Object.fromEntries(
@@ -128,6 +132,12 @@ export function DesignPartnerApplicationDetailPanel({
       <DetailRow label="Lifecycle status">
         <span style={{ fontFamily: MONO, fontSize: "0.68rem" }}>{application.status}</span>
       </DetailRow>
+
+      {application.status === "approved"
+        && !application.promoted_partner_id
+        && partnerIdEvaluation && (
+        <DesignPartnerPromoteReadinessPanel partnerIdEvaluation={partnerIdEvaluation} />
+      )}
 
       <DesignPartnerLifecycleAuditTimeline
         applicationId={application.id}
