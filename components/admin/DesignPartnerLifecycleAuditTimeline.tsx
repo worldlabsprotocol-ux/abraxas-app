@@ -2,9 +2,9 @@
 // FILE: components/admin/DesignPartnerLifecycleAuditTimeline.tsx
 // Read-only lifecycle audit timeline for an expanded application detail panel.
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { adminFetch } from "@/lib/admin/adminFetch";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useProductionAdminSessionGate } from "@/lib/admin/productionAdminSessionUi";
+import { canonicalizeLifecycleApplicationUuid } from "@/lib/admin/designPartnerApplicationLifecycleAuditMetadata";
 import {
   DESIGN_PARTNER_LIFECYCLE_AUDIT_EVENT_DTO_KEYS,
   DESIGN_PARTNER_LIFECYCLE_AUDIT_RESPONSE_KEYS,
@@ -67,84 +67,78 @@ export function DesignPartnerLifecycleAuditTimeline({
   refreshToken?: number;
 }) {
   const gate = useProductionAdminSessionGate();
+  const canonicalApplicationId = useMemo(
+    () => canonicalizeLifecycleApplicationUuid(applicationId),
+    [applicationId],
+  );
+  const gateReady = !gate.loading && gate.authorized;
+  const awaitingGate = gate.loading || (!gate.authorized && !gate.usePinUnlock);
+
   const [events, setEvents] = useState<DesignPartnerLifecycleAuditEventDto[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
 
-  const requestGenerationRef = useRef(0);
-  const initialFetchedForApplicationRef = useRef<string | null>(null);
   const consumedCursorsRef = useRef<Set<string>>(new Set());
   const inFlightCursorsRef = useRef<Set<string>>(new Set());
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  const requestLifecycleAudit = useCallback(async (
-    url: string,
-    signal: AbortSignal,
-  ) => {
-    if (gate.usePinUnlock) {
-      const headers = new Headers();
-      if (gate.pin) {
-        headers.set("x-admin-pin", gate.pin);
-      }
-      return fetch(url, {
-        cache: "no-store",
-        credentials: "include",
-        headers,
-        signal,
-      });
-    }
-    return adminFetch(url, { cache: "no-store", signal });
-  }, [gate.pin, gate.usePinUnlock]);
+  const adminRequestRef = useRef(gate.adminRequest);
+  adminRequestRef.current = gate.adminRequest;
 
   const fetchPage = useCallback(async (
     cursor: string | null,
-    options: { append: boolean; generation: number; signal: AbortSignal },
+    options: { append: boolean; signal: AbortSignal },
   ) => {
+    if (!canonicalApplicationId) {
+      setError(true);
+      return false;
+    }
+
     const params = new URLSearchParams();
     if (cursor) {
       params.set("cursor", cursor);
     }
 
-    const url = `/api/admin/design-partners/${encodeURIComponent(applicationId)}/lifecycle-audit${
+    const url = `/api/admin/design-partners/${encodeURIComponent(canonicalApplicationId)}/lifecycle-audit${
       params.size > 0 ? `?${params.toString()}` : ""
     }`;
 
-    const res = await requestLifecycleAudit(url, options.signal);
+    const res = await adminRequestRef.current(url, { cache: "no-store", signal: options.signal });
 
-    if (options.signal.aborted || options.generation !== requestGenerationRef.current) {
-      return;
+    if (options.signal.aborted) {
+      return false;
     }
 
     if (!res.ok) {
       setError(true);
-      return;
+      return false;
     }
 
     const payload = await res.json();
-    if (options.signal.aborted || options.generation !== requestGenerationRef.current) {
-      return;
+    if (options.signal.aborted) {
+      return false;
     }
 
-    if (!isLifecycleAuditResponse(payload) || payload.application_id !== applicationId) {
+    const responseApplicationId = canonicalizeLifecycleApplicationUuid(
+      typeof payload?.application_id === "string" ? payload.application_id : "",
+    );
+    if (!isLifecycleAuditResponse(payload) || responseApplicationId !== canonicalApplicationId) {
       setError(true);
-      return;
+      return false;
     }
 
     setError(false);
     setNextCursor(payload.next_cursor);
     setEvents((current) => (options.append ? [...current, ...payload.events] : payload.events));
-  }, [applicationId, requestLifecycleAudit]);
+    return true;
+  }, [canonicalApplicationId]);
+
+  const fetchPageRef = useRef(fetchPage);
+  fetchPageRef.current = fetchPage;
 
   useEffect(() => {
-    requestGenerationRef.current += 1;
-    const generation = requestGenerationRef.current;
-
     abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     setEvents([]);
     setNextCursor(null);
     setError(false);
@@ -152,48 +146,12 @@ export function DesignPartnerLifecycleAuditTimeline({
     setLoadingMore(false);
     consumedCursorsRef.current = new Set();
     inFlightCursorsRef.current = new Set();
-    initialFetchedForApplicationRef.current = null;
-
-    if (gate.loading || !gate.authorized) {
-      return () => {
-        controller.abort();
-      };
-    }
-
-    if (initialFetchedForApplicationRef.current === applicationId) {
-      return () => {
-        controller.abort();
-      };
-    }
-
-    initialFetchedForApplicationRef.current = applicationId;
-    setLoading(true);
-
-    void (async () => {
-      try {
-        await fetchPage(null, { append: false, generation, signal: controller.signal });
-      } catch {
-        if (!controller.signal.aborted && generation === requestGenerationRef.current) {
-          setError(true);
-        }
-      } finally {
-        if (!controller.signal.aborted && generation === requestGenerationRef.current) {
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      controller.abort();
-    };
-  }, [applicationId, fetchPage, gate.authorized, gate.loading]);
+  }, [canonicalApplicationId]);
 
   useEffect(() => {
-    if (refreshToken == null || refreshToken === 0) return;
-    if (gate.loading || !gate.authorized) return;
-
-    requestGenerationRef.current += 1;
-    const generation = requestGenerationRef.current;
+    if (!gateReady || !canonicalApplicationId) {
+      return undefined;
+    }
 
     abortControllerRef.current?.abort();
     const controller = new AbortController();
@@ -206,13 +164,13 @@ export function DesignPartnerLifecycleAuditTimeline({
 
     void (async () => {
       try {
-        await fetchPage(null, { append: false, generation, signal: controller.signal });
+        await fetchPageRef.current(null, { append: false, signal: controller.signal });
       } catch {
-        if (!controller.signal.aborted && generation === requestGenerationRef.current) {
+        if (!controller.signal.aborted) {
           setError(true);
         }
       } finally {
-        if (!controller.signal.aborted && generation === requestGenerationRef.current) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
@@ -221,7 +179,7 @@ export function DesignPartnerLifecycleAuditTimeline({
     return () => {
       controller.abort();
     };
-  }, [fetchPage, gate.authorized, gate.loading, refreshToken]);
+  }, [canonicalApplicationId, gateReady, refreshToken]);
 
   async function handleLoadMore() {
     if (!nextCursor || loadingMore) return;
@@ -233,27 +191,22 @@ export function DesignPartnerLifecycleAuditTimeline({
     inFlightCursorsRef.current.add(cursor);
     setLoadingMore(true);
 
-    const generation = requestGenerationRef.current;
     const controller = new AbortController();
 
     try {
-      await fetchPage(cursor, { append: true, generation, signal: controller.signal });
-      if (generation === requestGenerationRef.current) {
+      const ok = await fetchPageRef.current(cursor, { append: true, signal: controller.signal });
+      if (ok) {
         consumedCursorsRef.current.add(cursor);
       }
     } catch {
-      if (generation === requestGenerationRef.current) {
-        setError(true);
-      }
+      setError(true);
     } finally {
       inFlightCursorsRef.current.delete(cursor);
-      if (generation === requestGenerationRef.current) {
-        setLoadingMore(false);
-      }
+      setLoadingMore(false);
     }
   }
 
-  const statusText = loading
+  const statusText = loading || awaitingGate
     ? LOADING_COPY
     : error
       ? LOAD_ERROR_COPY

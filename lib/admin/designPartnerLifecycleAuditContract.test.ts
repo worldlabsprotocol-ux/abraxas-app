@@ -12,6 +12,11 @@ import {
   parseDesignPartnerLifecycleAuditRpcEnvelope,
   serializeDesignPartnerLifecycleAuditResponse,
 } from "@/lib/admin/designPartnerLifecycleAuditContract";
+import {
+  PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID,
+  PRODUCTION_LIFECYCLE_AUDIT_APPROVED_DTO_EVENT,
+  PRODUCTION_LIFECYCLE_AUDIT_APPROVED_RPC_ENVELOPE,
+} from "@/lib/admin/designPartnerLifecycleAuditProductionFixture";
 
 const APPLICATION_ID = "00000000-0000-4000-8000-000000000001";
 
@@ -66,6 +71,20 @@ describe("parseDesignPartnerLifecycleAuditRpcEnvelope", () => {
       events: [validRpcEvent({ from_status: "draft" })],
       next_cursor: null,
     })).toThrow("invalid_rpc_event");
+  });
+
+  it("accepts the exact Production v2 approved RPC envelope", () => {
+    const envelope = parseDesignPartnerLifecycleAuditRpcEnvelope(
+      PRODUCTION_LIFECYCLE_AUDIT_APPROVED_RPC_ENVELOPE,
+    );
+    expect(envelope.events).toHaveLength(1);
+    expect(envelope.events[0]).toEqual({
+      ...PRODUCTION_LIFECYCLE_AUDIT_APPROVED_RPC_ENVELOPE.events[0],
+      application_id: PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID,
+    });
+    expect(envelope.next_cursor).toBeNull();
+    expect(mapRpcEventToDto(envelope.events[0]!, PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID))
+      .toEqual(PRODUCTION_LIFECYCLE_AUDIT_APPROVED_DTO_EVENT);
   });
 });
 

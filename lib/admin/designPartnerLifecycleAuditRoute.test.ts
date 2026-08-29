@@ -12,6 +12,11 @@ import {
   DESIGN_PARTNER_LIFECYCLE_AUDIT_CURSOR_MAX_ENCODED_LENGTH,
 } from "@/lib/admin/designPartnerLifecycleAuditCursor";
 import { DESIGN_PARTNER_LIFECYCLE_AUDIT_RPC_NAME } from "@/lib/admin/designPartnerLifecycleAuditLoader";
+import {
+  PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID,
+  PRODUCTION_LIFECYCLE_AUDIT_APPROVED_API_RESPONSE,
+  PRODUCTION_LIFECYCLE_AUDIT_APPROVED_RPC_ENVELOPE,
+} from "@/lib/admin/designPartnerLifecycleAuditProductionFixture";
 
 vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co";
@@ -210,6 +215,23 @@ describe("lifecycle-audit route", () => {
       expect(events[0]).not.toHaveProperty(forbidden);
     }
     expect(JSON.stringify(body)).not.toContain("operator_category");
+  });
+
+  it("returns mapped Production v2 approved RPC envelope for the requested application", async () => {
+    mockSupabase({ rpcData: PRODUCTION_LIFECYCLE_AUDIT_APPROVED_RPC_ENVELOPE });
+    const res = await GET(
+      lifecycleAuditRequest(PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID),
+      { params: Promise.resolve({ applicationId: PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID }) },
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual(PRODUCTION_LIFECYCLE_AUDIT_APPROVED_API_RESPONSE);
+    expect(rpcMock).toHaveBeenCalledWith(
+      DESIGN_PARTNER_LIFECYCLE_AUDIT_RPC_NAME,
+      expect.objectContaining({
+        p_application_id: PRODUCTION_LIFECYCLE_AUDIT_APPLICATION_ID,
+      }),
+    );
   });
 
   it("does not expose mutation handlers", async () => {

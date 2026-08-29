@@ -2,6 +2,7 @@
 // Loader for design-partner lifecycle audit pages — existence check + v2 RPC only.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { canonicalizeLifecycleApplicationUuid } from "@/lib/admin/designPartnerApplicationLifecycleAuditMetadata";
 import {
   buildDesignPartnerLifecycleAuditResponse,
   mapRpcEventToDto,
@@ -55,13 +56,18 @@ export async function loadDesignPartnerLifecycleAuditWithClient(
     cursor: DesignPartnerLifecycleAuditCursorPosition | null;
   },
 ): Promise<DesignPartnerLifecycleAuditResponse> {
-  const exists = await assertDesignPartnerApplicationExists(sb, input.applicationId);
+  const canonicalApplicationId = canonicalizeLifecycleApplicationUuid(input.applicationId);
+  if (!canonicalApplicationId) {
+    throw new Error("application_not_found");
+  }
+
+  const exists = await assertDesignPartnerApplicationExists(sb, canonicalApplicationId);
   if (!exists) {
     throw new Error("application_not_found");
   }
 
   const rpcArgs = {
-    p_application_id: input.applicationId,
+    p_application_id: canonicalApplicationId,
     p_limit: input.limit,
     p_cursor_occurred_at: input.cursor?.occurredAt ?? null,
     p_cursor_id: input.cursor?.id ?? null,
@@ -79,17 +85,17 @@ export async function loadDesignPartnerLifecycleAuditWithClient(
     throw new Error("invalid_rpc_envelope");
   }
 
-  const events = envelope.events.map((event) => mapRpcEventToDto(event, input.applicationId));
+  const events = envelope.events.map((event) => mapRpcEventToDto(event, canonicalApplicationId));
   const nextCursor = envelope.next_cursor
     ? encodeDesignPartnerLifecycleAuditCursor(
-      input.applicationId,
+      canonicalApplicationId,
       envelope.next_cursor.occurred_at,
       envelope.next_cursor.id,
     )
     : null;
 
   const response = buildDesignPartnerLifecycleAuditResponse(
-    input.applicationId,
+    canonicalApplicationId,
     events,
     nextCursor,
   );
