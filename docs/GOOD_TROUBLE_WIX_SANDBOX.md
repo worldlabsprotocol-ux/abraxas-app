@@ -68,7 +68,32 @@ Each `createAbraxasVerificationStart` call requires a **Wix reCAPTCHA token** (`
 | Error surface | Generic `{ error: "rate_limited" }` — no counts leaked |
 | Traditional path | `#yesButton` self-attestation is independent — never blocked by Abraxas capacity |
 
-**Operator monitoring:** schedule a daily backend job calling `purgeStale` (or equivalent CMS cleanup) and alert on elevated `rate_limited` / `captcha_invalid` rates. No automated cleanup ships in this reference.
+**Operator monitoring:** schedule a daily backend job calling `purgeStale` (see **Scheduled purge** below) and alert on elevated `rate_limited` / `captcha_invalid` rates. No automated cleanup ships in this reference — operator approval required before deploying a scheduled job.
+
+### Scheduled purge (`purgeStale`) — operator requirement
+
+`flowCapacity.js` invokes `store.purgeStale()` before every capacity check. `wixNonceStore.purgeStale` deletes:
+
+| Category | Condition |
+|----------|-----------|
+| Expired flows | `expiresAt <= now` |
+| Stale consumed | `state = consumed` and `consumedAt` older than 24h |
+
+Each invocation removes at most 100 rows per query (expired + stale consumed). Start-time purge alone does not guarantee CMS hygiene under low traffic or between bursts.
+
+**Required before Production at scale:** operator schedules a Wix backend job (e.g. daily) that calls `createWixNonceStore().purgeStale()`. This repository does **not** create, deploy, or enable that job — explicit operator approval required.
+
+Example job skeleton (do not deploy without approval):
+
+```javascript
+// backend/jobs/purgeAbraxasNonces.web.js — NOT deployed by this reference
+import { createWixNonceStore } from "backend/wixNonceStore";
+
+export async function purgeAbraxasNonces() {
+  const store = createWixNonceStore();
+  return store.purgeStale();
+}
+```
 
 ## Pilot session flag trust boundary
 
@@ -200,7 +225,15 @@ Reference: `examples/good-trouble-wix/backend/abraxasReceiptValidator.js`
 | `createAbraxasVerificationStart` | **Anyone** | Requires CAPTCHA token; `webMethod(Permissions.Anyone, …)` in `.web.js` |
 | `completeAbraxasVerification` | **Anyone** | PKCE verifier required |
 
-Configure `wix-crypto` SHA-256 via `configureAbraxasHashFn` before go-live.
+SHA-256 for PKCE challenges is **auto-wired** via `sha256Adapter.js` (`node:crypto` `createHash`). No manual init call is required. Optional `configureAbraxasHashFn` remains for tests/diagnostics only.
+
+## Wix runtime files (`src/backend`)
+
+Copy these **10** backend modules (see `examples/good-trouble-wix/README.md` for full table):
+
+`constants.js`, `sha256Adapter.js`, `pkceProof.js`, `nonceLifecycle.js`, `flowCapacity.js`, `captchaGate.js`, `wixNonceStore.js`, `abraxasReceiptValidator.js`, `abraxasVerificationService.js`, `abraxasVerification.web.js`
+
+Plus page code: `pages/AgeVerificationPopup.js`, `pages/AgeVerificationResult.js`.
 
 ## CMS collection permissions
 
@@ -219,7 +252,8 @@ Confirm via admin APIs or onboarding console **without exposing secrets**:
 | No duplicate `goodtroublecanna` partner | List/search partners — expect absent or unused |
 | Sandbox API key (boolean only) | `GET /api/admin/partner-keys?partner_id=good-trouble-cannabis` — count active `abx_test_` prefixes; **not required** for public-receipt path |
 | Preflight | `GET /api/admin/partner-flow/provisioning-preflight?partner_id=...&policy_id=...&return_url=...` |
-| `configureAbraxasHashFn` wired | Wix backend init with `wix-crypto` sha256 |
+| `sha256Adapter.js` copied to Wix backend | Auto-wired `node:crypto` SHA-256 — no manual hash init |
+| Scheduled `purgeStale` job approved | Operator schedules daily cleanup (not deployed by this reference) |
 | `#abraxasButton` disabled until config passes | Operator enables after checklist green |
 
 **Not required for this integration:** `abx_test_…` key for redirect or public receipt GET.

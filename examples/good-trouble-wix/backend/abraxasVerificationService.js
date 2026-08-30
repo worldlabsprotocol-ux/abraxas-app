@@ -12,10 +12,16 @@ import {
   buildVerificationStartPayload,
   completeAbraxasVerificationCore,
 } from "./nonceLifecycle.js";
+import { sha256Hex as defaultSha256Hex } from "./sha256Adapter.js";
 
 /** @type {((value: string) => Promise<string> | string) | null} */
 let configuredHashFn = null;
 
+/**
+ * Optional override for tests or operator diagnostics.
+ * Production uses node:crypto via sha256Adapter automatically — no init call required.
+ * @param {(value: string) => Promise<string> | string} hashFn
+ */
 export function configureAbraxasHashFn(hashFn) {
   configuredHashFn = hashFn;
 }
@@ -25,9 +31,14 @@ export function __testOnlySetHashFn(hashFn) {
   configuredHashFn = hashFn;
 }
 
-async function sha256Hex(value) {
-  if (configuredHashFn) return configuredHashFn(value);
-  throw new Error("Configure wix-crypto sha256 via configureAbraxasHashFn before deployment");
+/**
+ * Resolve hash function: deps override → configured override → node:crypto default.
+ * @returns {(value: string) => Promise<string> | string}
+ */
+function resolveHashFn(depsHashFn) {
+  if (depsHashFn) return depsHashFn;
+  if (configuredHashFn) return configuredHashFn;
+  return defaultSha256Hex;
 }
 
 async function resolveStore(deps) {
@@ -57,7 +68,7 @@ export async function createAbraxasVerificationStartService(captchaToken, deps =
   }
 
   const store = await resolveStore(deps);
-  const hashFn = deps.hashFn ?? sha256Hex;
+  const hashFn = resolveHashFn(deps.hashFn);
   const now = deps.now ?? new Date();
 
   const capacity = await assertCapacityAvailable(
@@ -98,7 +109,7 @@ export async function createAbraxasVerificationStartService(captchaToken, deps =
  */
 export async function completeAbraxasVerificationService(receiptId, flowId, verifier, deps = {}) {
   const store = await resolveStore(deps);
-  const hashFn = deps.hashFn ?? sha256Hex;
+  const hashFn = resolveHashFn(deps.hashFn);
 
   const defaultValidateReceipt = async (id) => {
     try {
