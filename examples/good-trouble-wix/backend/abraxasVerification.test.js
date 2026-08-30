@@ -1,30 +1,40 @@
 // FILE: examples/good-trouble-wix/backend/abraxasVerification.test.js
 
-import { createHash } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { describe, expect, it, beforeEach } from "vitest";
 import {
   ABRAXAS_ORIGIN,
+  FLOW_ID_RE,
   GTV_PARAM,
   NONCE_STATE,
   PARTNER_ID,
   POLICY_ID,
   RECEIPT_VALIDATION_MODE,
   RETURN_URL_BASE,
+  VERIFIER_RE,
 } from "./constants.js";
 import {
   buildVerificationStartPayload,
-  claimPendingNonce,
+  claimPendingFlow,
   completeAbraxasVerificationCore,
   INTEGRATION_CONSTANTS,
-  markNonceConsumed,
+  markFlowConsumed,
 } from "./nonceLifecycle.js";
 import { createMemoryNonceStore } from "./memoryNonceStore.js";
-import { resolveTrustedSessionBinding } from "./sessionBinding.js";
+import {
+  timingSafeEqualStrings,
+  validateFlowId,
+  validateVerifier,
+  verifyVerifierChallenge,
+} from "./pkceProof.js";
 import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import {
+  createAbraxasVerificationStart,
+  completeAbraxasVerification,
+  __testOnlySetHashFn,
+} from "./abraxasVerification.web.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
-const MEMBER_ID = "wix-member-abc123";
-const TRUSTED_CONTEXT = { memberId: MEMBER_ID };
 
 const VALID_SANDBOX_RECEIPT = {
   signature_valid: true,
@@ -41,26 +51,54 @@ const VALID_SANDBOX_RECEIPT = {
   invalidation_reasons: ["production_not_usable:false"],
 };
 
-async function seedNonce(store, rawNonce, sessionBinding = `member:${MEMBER_ID}`) {
-  const payload = await buildVerificationStartPayload({
-    sessionBinding,
-    hashFn,
-  });
+async function seedFlow(store, overrides = {}) {
+  const payload = await buildVerificationStartPayload({ hashFn });
   const record = await store.insert({
-    ...payload.nonceRecord,
-    nonceHash: await hashFn(rawNonce),
+    ...payload.flowRecord,
+    ...overrides,
   });
-  return { record, rawNonce };
+  return {
+    record,
+    flowId: payload.flowId,
+    verifier: payload.verifier,
+    verifyUrl: payload.verifyUrl,
+  };
 }
 
-describe("sessionBinding", () => {
-  it("derives binding from trusted Wix member backend context only", () => {
-    expect(resolveTrustedSessionBinding({ memberId: MEMBER_ID })).toEqual({
-      ok: true,
-      sessionBinding: `member:${MEMBER_ID}`,
+beforeEach(() => {
+  __testOnlySetHashFn(hashFn);
+});
+
+describe("PKCE proof validation", () => {
+  it("accepts well-formed flow IDs and verifiers", () => {
+    expect(validateFlowId("gtf_" + "a".repeat(64)).ok).toBe(true);
+    expect(validateVerifier("b".repeat(64)).ok).toBe(true);
+    expect(FLOW_ID_RE.test("gtf_" + "a".repeat(64))).toBe(true);
+    expect(VERIFIER_RE.test("b".repeat(64))).toBe(true);
+  });
+
+  it("rejects missing or malformed verifier", () => {
+    expect(validateVerifier("").code).toBe("missing_verifier");
+    expect(validateVerifier("short").code).toBe("invalid_verifier");
+  });
+
+  it("verifies challenge with timing-safe comparison", async () => {
+    const verifier = "c".repeat(64);
+    const challenge = await hashFn(verifier);
+    expect(await verifyVerifierChallenge(verifier, challenge, hashFn)).toEqual({ ok: true });
+    expect(await verifyVerifierChallenge("d".repeat(64), challenge, hashFn)).toEqual({
+      ok: false,
+      code: "verifier_mismatch",
     });
-    expect(resolveTrustedSessionBinding({ memberId: "" }).ok).toBe(false);
-    expect(resolveTrustedSessionBinding({ memberId: null }).code).toBe("anonymous_session_unsupported");
+  });
+
+  it("uses timing-safe equal for equal-length hex strings", () => {
+    const a = "aa";
+    const b = "aa";
+    const c = "ab";
+    expect(timingSafeEqualStrings(a, b)).toBe(true);
+    expect(timingSafeEqualStrings(a, c)).toBe(false);
+    expect(timingSafeEqual(Buffer.from(a), Buffer.from(b))).toBe(true);
   });
 });
 
@@ -78,11 +116,8 @@ describe("integration constants", () => {
 });
 
 describe("buildVerificationStartPayload", () => {
-  it("builds query-free allowlist origin with gtv added only at runtime", async () => {
-    const payload = await buildVerificationStartPayload({
-      sessionBinding: `member:${MEMBER_ID}`,
-      hashFn,
-    });
+  it("puts opaque flowId in return_url gtv — never the verifier", async () => {
+    const payload = await buildVerificationStartPayload({ hashFn });
 
     expect(payload.verifyUrl.startsWith(`${ABRAXAS_ORIGIN}/partner/verify?`)).toBe(true);
     const url = new URL(payload.verifyUrl);
@@ -91,120 +126,158 @@ describe("buildVerificationStartPayload", () => {
 
     const returnUrl = url.searchParams.get("return_url");
     expect(returnUrl).toBeTruthy();
-    expect(returnUrl.startsWith(`${RETURN_URL_BASE}?${GTV_PARAM}=`)).toBe(true);
+    expect(returnUrl).toContain(`${GTV_PARAM}=${encodeURIComponent(payload.flowId)}`);
+    expect(returnUrl).not.toContain(payload.verifier);
     expect(returnUrl).not.toContain("api_key");
     expect(returnUrl).not.toContain("abx_");
   });
 
-  it("stores only hashed nonce and session binding metadata", async () => {
-    const payload = await buildVerificationStartPayload({
-      sessionBinding: `member:${MEMBER_ID}`,
-      hashFn,
-    });
-    expect(payload.nonceRecord).toMatchObject({
-      sessionBinding: `member:${MEMBER_ID}`,
+  it("stores only verifier challenge — no raw verifier", async () => {
+    const payload = await buildVerificationStartPayload({ hashFn });
+    expect(payload.flowRecord).toMatchObject({
+      flowId: payload.flowId,
       state: NONCE_STATE.PENDING,
       validationAttempts: 0,
     });
-    expect(payload.nonceRecord).not.toHaveProperty("rawNonce");
-    expect(payload.nonceRecord.nonceHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(payload.flowRecord.verifierChallenge).toMatch(/^[a-f0-9]{64}$/);
+    expect(payload.flowRecord).not.toHaveProperty("verifier");
+    expect(payload.flowRecord.verifierChallenge).toBe(await hashFn(payload.verifier));
   });
 });
 
-describe("completeAbraxasVerificationCore", () => {
-  it("verifies with trusted session binding and consumes nonce before success", async () => {
+describe("createAbraxasVerificationStart web method wrapper", () => {
+  it("returns verifyUrl, flowId, and verifier over TLS response", async () => {
     const store = createMemoryNonceStore();
-    const rawNonce = "raw-nonce-success";
-    await seedNonce(store, rawNonce);
+    const result = await createAbraxasVerificationStart({ store, hashFn });
+
+    expect(result.error).toBeUndefined();
+    expect(result.verifyUrl).toMatch(/^https:\/\/abraxasworld\.xyz\/partner\/verify\?/);
+    expect(result.flowId).toMatch(FLOW_ID_RE);
+    expect(result.verifier).toMatch(VERIFIER_RE);
+    expect(result.verifyUrl).not.toContain(result.verifier);
+
+    const stored = await store.findByFlowId(result.flowId);
+    expect(stored?.verifierChallenge).toBe(await hashFn(result.verifier));
+  });
+
+  it("does not require Wix membership", async () => {
+    const store = createMemoryNonceStore();
+    const result = await createAbraxasVerificationStart({ store, hashFn });
+    expect(result.flowId).toBeTruthy();
+    expect(result.verifier).toBeTruthy();
+  });
+
+  it("returns rate_limited when outstanding pending flows exceed cap", async () => {
+    const store = createMemoryNonceStore();
+    const original = store.countPending;
+    store.countPending = async () => 10_000;
+    const result = await createAbraxasVerificationStart({ store, hashFn });
+    store.countPending = original;
+    expect(result).toEqual({ error: "rate_limited" });
+  });
+});
+
+describe("completeAbraxasVerificationCore — PKCE", () => {
+  it("verifies with possession proof and consumes flow before success", async () => {
+    const store = createMemoryNonceStore();
+    const { flowId, verifier } = await seedFlow(store);
 
     const result = await completeAbraxasVerificationCore({
       store,
-      trustedBackendContext: TRUSTED_CONTEXT,
       receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
+      flowId,
+      verifier,
       hashFn,
       validateReceipt: async () => ({ verified: true }),
     });
 
     expect(result).toEqual({ verified: true, code: "verified" });
-    const stored = await store.findByHash(await hashFn(rawNonce));
+    const stored = await store.findByFlowId(flowId);
     expect(stored?.state).toBe(NONCE_STATE.CONSUMED);
+  });
+
+  it("rejects copied callback URL without verifier (missing_verifier)", async () => {
+    const store = createMemoryNonceStore();
+    const { flowId } = await seedFlow(store);
+
+    const result = await completeAbraxasVerificationCore({
+      store,
+      receiptId: "dr_sandbox_valid_12345678",
+      flowId,
+      verifier: "",
+      hashFn,
+      validateReceipt: async () => ({ verified: true }),
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.code).toBe("missing_verifier");
+  });
+
+  it("rejects wrong verifier", async () => {
+    const store = createMemoryNonceStore();
+    const { flowId } = await seedFlow(store);
+
+    const result = await completeAbraxasVerificationCore({
+      store,
+      receiptId: "dr_sandbox_valid_12345678",
+      flowId,
+      verifier: "f".repeat(64),
+      hashFn,
+      validateReceipt: async () => ({ verified: true }),
+    });
+
+    expect(result).toEqual({ verified: false, code: "verifier_mismatch" });
   });
 
   it("rejects replay after consumption", async () => {
     const store = createMemoryNonceStore();
-    const rawNonce = "raw-nonce-replay";
-    await seedNonce(store, rawNonce);
+    const { flowId, verifier } = await seedFlow(store);
 
     const base = {
       store,
-      trustedBackendContext: TRUSTED_CONTEXT,
       receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
+      flowId,
+      verifier,
       hashFn,
       validateReceipt: async () => ({ verified: true }),
     };
 
     expect((await completeAbraxasVerificationCore(base)).verified).toBe(true);
     const replay = await completeAbraxasVerificationCore(base);
-    expect(replay).toEqual({ verified: false, code: "nonce_already_consumed" });
+    expect(replay).toEqual({ verified: false, code: "flow_already_consumed" });
   });
 
-  it("rejects session mismatch", async () => {
+  it("rejects expired flow", async () => {
     const store = createMemoryNonceStore();
-    const rawNonce = "raw-nonce-mismatch";
-    await seedNonce(store, rawNonce, "member:other-member");
-
-    const result = await completeAbraxasVerificationCore({
-      store,
-      trustedBackendContext: TRUSTED_CONTEXT,
-      receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
-      hashFn,
-      validateReceipt: async () => ({ verified: true }),
-    });
-
-    expect(result).toEqual({ verified: false, code: "session_mismatch" });
-  });
-
-  it("rejects expired nonce", async () => {
-    const store = createMemoryNonceStore();
-    const rawNonce = "raw-nonce-expired";
     const past = new Date("2020-01-01T00:00:00.000Z");
-    const payload = await buildVerificationStartPayload({
-      sessionBinding: `member:${MEMBER_ID}`,
-      hashFn,
-      now: past,
-    });
+    const payload = await buildVerificationStartPayload({ hashFn, now: past });
     await store.insert({
-      ...payload.nonceRecord,
-      nonceHash: await hashFn(rawNonce),
+      ...payload.flowRecord,
       expiresAt: new Date(past.getTime() + 1000),
     });
 
     const result = await completeAbraxasVerificationCore({
       store,
-      trustedBackendContext: TRUSTED_CONTEXT,
       receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
+      flowId: payload.flowId,
+      verifier: payload.verifier,
       hashFn,
       now: new Date("2020-01-01T00:05:00.000Z"),
       validateReceipt: async () => ({ verified: true }),
     });
 
-    expect(result).toEqual({ verified: false, code: "nonce_expired" });
+    expect(result).toEqual({ verified: false, code: "flow_expired" });
   });
 
-  it("rejects concurrent callback — at most one succeeds", async () => {
+  it("rejects concurrent completion — at most one succeeds", async () => {
     const store = createMemoryNonceStore();
-    const rawNonce = "raw-nonce-concurrent";
-    await seedNonce(store, rawNonce);
+    const { flowId, verifier } = await seedFlow(store);
 
     const base = {
       store,
-      trustedBackendContext: TRUSTED_CONTEXT,
       receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
+      flowId,
+      verifier,
       hashFn,
       validateReceipt: async () => new Promise((resolve) => {
         setTimeout(() => resolve({ verified: true }), 5);
@@ -220,68 +293,102 @@ describe("completeAbraxasVerificationCore", () => {
     expect(successes).toHaveLength(1);
     const failures = [first, second].filter((r) => !r.verified);
     expect(failures.length).toBe(1);
-    expect(["concurrent_callback_rejected", "nonce_already_consumed", "nonce_claim_in_progress"]).toContain(failures[0].code);
+    expect([
+      "concurrent_completion_rejected",
+      "flow_already_consumed",
+      "flow_claim_in_progress",
+    ]).toContain(failures[0].code);
   });
 
-  it("releases claim on transient receipt-fetch failure for bounded retry", async () => {
+  it("never grants verification on transient receipt failure; allows bounded retry", async () => {
     const store = createMemoryNonceStore();
-    const rawNonce = "raw-nonce-transient";
-    await seedNonce(store, rawNonce);
+    const { flowId, verifier } = await seedFlow(store);
+    let attempts = 0;
 
     const transient = await completeAbraxasVerificationCore({
       store,
-      trustedBackendContext: TRUSTED_CONTEXT,
       receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
+      flowId,
+      verifier,
       hashFn,
-      validateReceipt: async () => ({ verified: false, transientFailure: true }),
+      validateReceipt: async () => {
+        attempts += 1;
+        return { verified: false, transientFailure: true };
+      },
     });
-    expect(transient).toEqual({ verified: false, code: "receipt_fetch_transient_failure" });
 
-    const stored = await store.findByHash(await hashFn(rawNonce));
+    expect(transient.verified).toBe(false);
+    expect(transient.code).toBe("receipt_fetch_transient_failure");
+    expect(transient.retryable).toBe(true);
+
+    const stored = await store.findByFlowId(flowId);
     expect(stored?.state).toBe(NONCE_STATE.PENDING);
 
     const success = await completeAbraxasVerificationCore({
       store,
-      trustedBackendContext: TRUSTED_CONTEXT,
       receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
+      flowId,
+      verifier,
       hashFn,
       validateReceipt: async () => ({ verified: true }),
     });
     expect(success.verified).toBe(true);
+    expect(attempts).toBeGreaterThan(0);
   });
 
-  it("permanently consumes nonce on invalid sandbox receipt", async () => {
+  it("permanently consumes flow on invalid sandbox receipt", async () => {
     const store = createMemoryNonceStore();
-    const rawNonce = "raw-nonce-invalid-receipt";
-    await seedNonce(store, rawNonce);
+    const { flowId, verifier } = await seedFlow(store);
 
     const result = await completeAbraxasVerificationCore({
       store,
-      trustedBackendContext: TRUSTED_CONTEXT,
       receiptId: "dr_sandbox_valid_12345678",
-      rawNonce,
+      flowId,
+      verifier,
       hashFn,
       validateReceipt: async () => ({ verified: false, transientFailure: false }),
     });
 
     expect(result).toEqual({ verified: false, code: "receipt_invalid" });
-    const stored = await store.findByHash(await hashFn(rawNonce));
+    const stored = await store.findByFlowId(flowId);
     expect(stored?.state).toBe(NONCE_STATE.CONSUMED);
   });
+});
 
-  it("rejects anonymous sessions without inventing visitor identity", async () => {
+describe("completeAbraxasVerification web method wrapper", () => {
+  it("delegates to core with injected store", async () => {
     const store = createMemoryNonceStore();
-    const result = await completeAbraxasVerificationCore({
-      store,
-      trustedBackendContext: { memberId: null },
-      receiptId: "dr_sandbox_valid_12345678",
-      rawNonce: "any",
-      hashFn,
-      validateReceipt: async () => ({ verified: true }),
-    });
-    expect(result).toEqual({ verified: false, code: "anonymous_session_unsupported" });
+    const { flowId, verifier } = await seedFlow(store);
+
+    const result = await completeAbraxasVerification(
+      "dr_sandbox_valid_12345678",
+      flowId,
+      verifier,
+      {
+        store,
+        hashFn,
+        validateReceipt: async () => ({ verified: true }),
+      },
+    );
+
+    expect(result.verified).toBe(true);
+  });
+});
+
+describe("claimPendingFlow direct transitions", () => {
+  it("transitions pending to validating with claim expiry", async () => {
+    const store = createMemoryNonceStore();
+    const { flowId, verifier, record } = await seedFlow(store);
+    expect(record.state).toBe(NONCE_STATE.PENDING);
+
+    const claim = await claimPendingFlow(store, { flowId, verifier, hashFn });
+    expect(claim.ok).toBe(true);
+    expect(claim.record.state).toBe(NONCE_STATE.VALIDATING);
+    expect(claim.record.claimExpiresAt).toBeInstanceOf(Date);
+
+    const consumed = await markFlowConsumed(store, claim.record);
+    expect(consumed.ok).toBe(true);
+    expect(consumed.record.state).toBe(NONCE_STATE.CONSUMED);
   });
 });
 
@@ -301,40 +408,18 @@ describe("abraxasReceiptValidator sandbox strict mode", () => {
     const withKey = { ...VALID_SANDBOX_RECEIPT, api_key: "abx_test_secret" };
     const result = validateSandboxReceipt(withKey, { now: new Date("2026-01-01") });
     expect(result.verified).toBe(true);
-    expect(withKey.api_key).toBe("abx_test_secret");
   });
 });
 
 describe("traditional self-attestation path", () => {
-  it("remains independent — no Abraxas nonce or receipt required", () => {
+  it("remains independent — no Abraxas flow or receipt required", () => {
     const traditionalPath = {
+      buttonId: "yesButton",
       buttonLabel: "Yes, I'm 21 or older",
       requiresAbraxas: false,
       usesLocalStorageAuthority: false,
     };
     expect(traditionalPath.requiresAbraxas).toBe(false);
-    expect(traditionalPath.buttonLabel).toBe("Yes, I'm 21 or older");
-  });
-});
-
-describe("claimPendingNonce direct transitions", () => {
-  it("transitions pending to validating with claim expiry", async () => {
-    const store = createMemoryNonceStore();
-    const rawNonce = "claim-test";
-    const { record } = await seedNonce(store, rawNonce);
-    expect(record.state).toBe(NONCE_STATE.PENDING);
-
-    const claim = await claimPendingNonce(store, {
-      sessionBinding: `member:${MEMBER_ID}`,
-      rawNonce,
-      hashFn,
-    });
-    expect(claim.ok).toBe(true);
-    expect(claim.record.state).toBe(NONCE_STATE.VALIDATING);
-    expect(claim.record.claimExpiresAt).toBeInstanceOf(Date);
-
-    const consumed = await markNonceConsumed(store, claim.record);
-    expect(consumed.ok).toBe(true);
-    expect(consumed.record.state).toBe(NONCE_STATE.CONSUMED);
+    expect(traditionalPath.buttonId).toBe("yesButton");
   });
 });

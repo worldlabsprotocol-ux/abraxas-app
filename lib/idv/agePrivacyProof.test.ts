@@ -77,8 +77,8 @@ describe("age privacy proof scans", () => {
   });
 
   it("Wix response DTO and safe log args exclude secrets and PII", () => {
-    const wixDto = { verified: false, code: "session_mismatch" };
-    const logArgs = [{ event: "abraxas_callback_rejected", code: "session_mismatch" }];
+    const wixDto = { verified: false, code: "verifier_mismatch" };
+    const logArgs = [{ event: "abraxas_callback_rejected", code: "verifier_mismatch" }];
     assertAgePrivacySafe(wixDto, "wix_dto");
     assertAgePrivacySafe(logArgs, "log_args");
     expect(scanValueForAgePrivacyViolations({ receipt: SANDBOX_RECEIPT_FIXTURE }).ok).toBe(true);

@@ -1,24 +1,26 @@
 // FILE: examples/good-trouble-wix/backend/memoryNonceStore.js
-// In-memory nonce store for tests — mirrors guarded update semantics.
+// In-memory flow store for tests — mirrors guarded update semantics.
 
-/** @returns {import("./nonceLifecycle.js").NonceStore} */
+import { NONCE_STATE } from "./constants.js";
+
+/** @returns {import("./nonceLifecycle.js").FlowStore} */
 export function createMemoryNonceStore() {
-  /** @type {Map<string, import("./nonceLifecycle.js").NonceRecord>} */
+  /** @type {Map<string, import("./nonceLifecycle.js").FlowRecord>} */
   const byId = new Map();
   /** @type {Map<string, string>} */
-  const idByHash = new Map();
+  const idByFlowId = new Map();
   let seq = 0;
 
   return {
     async insert(record) {
-      const _id = `nonce_${++seq}`;
+      const _id = `flow_${++seq}`;
       const stored = { ...record, _id };
       byId.set(_id, structuredClone(stored));
-      idByHash.set(record.nonceHash, _id);
+      idByFlowId.set(record.flowId, _id);
       return structuredClone(stored);
     },
-    async findByHash(nonceHash) {
-      const id = idByHash.get(nonceHash);
+    async findByFlowId(flowId) {
+      const id = idByFlowId.get(flowId);
       if (!id) return null;
       const record = byId.get(id);
       return record ? structuredClone(record) : null;
@@ -27,11 +29,21 @@ export function createMemoryNonceStore() {
       const current = byId.get(recordId);
       if (!current) return null;
       if (guards.expectedState && current.state !== guards.expectedState) return null;
-      if (guards.sessionBinding && current.sessionBinding !== guards.sessionBinding) return null;
+      if (guards.flowId && current.flowId !== guards.flowId) return null;
 
       const next = { ...current, ...patch, _id: recordId };
       byId.set(recordId, structuredClone(next));
       return structuredClone(next);
+    },
+    async countPending() {
+      const now = Date.now();
+      let count = 0;
+      for (const record of byId.values()) {
+        if (record.state === NONCE_STATE.PENDING && record.expiresAt.getTime() > now) {
+          count += 1;
+        }
+      }
+      return count;
     },
   };
 }
