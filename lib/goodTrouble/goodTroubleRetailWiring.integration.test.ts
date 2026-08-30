@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   abraxasCaptureApprovedClaims,
   manualApprovedClaims,
+  productEligibilityClaim,
   veriffApprovedClaims,
   walletBindingClaim,
   type CredentialClaimRecord,
@@ -36,6 +37,7 @@ function withStatus(
 
 function fullGoodTroubleClaimBundle(
   provider: "capture" | "manual" | "veriff",
+  options?: { includeAgeEligibility?: boolean },
 ): CredentialClaimRecord[] {
   const base = {
     subjectId: HOLDER,
@@ -63,6 +65,16 @@ function fullGoodTroubleClaimBundle(
       walletAddress: HOLDER,
       bindingMethod: "zklogin",
     }),
+    ...(options?.includeAgeEligibility !== false
+      ? [
+          productEligibilityClaim({
+            subjectId: HOLDER,
+            jti: JTI,
+            outcome: "over_21",
+            expiresAt: EXPIRES,
+          }),
+        ]
+      : []),
   ]);
 }
 
@@ -80,6 +92,17 @@ describe("Good Trouble retail — full backend wiring", () => {
     });
     expect(evaluation.decision).toBe("denied");
     expect(evaluation.missing_claims).toContain("residency_country");
+  });
+
+  it("denies when product_eligibility over_21 is missing despite identity_verified", () => {
+    const claims = fullGoodTroubleClaimBundle("capture", { includeAgeEligibility: false });
+    const evaluation = evaluatePolicyRules(gtPolicy.rules, claims, {
+      jurisdiction: "US",
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+    });
+    expect(evaluation.decision).toBe("denied");
+    expect(evaluation.missing_claims).toContain("product_eligibility");
   });
 
   for (const provider of ["capture", "manual", "veriff"] as const) {
@@ -134,8 +157,8 @@ describe("Good Trouble retail — full backend wiring", () => {
     });
   }
 
-  it("mirrors migration 049+050+051 policy rules", () => {
-    expect(gtPolicy.rules.required_claims).toHaveLength(4);
+  it("mirrors migration 049+050+051+075 policy rules", () => {
+    expect(gtPolicy.rules.required_claims).toHaveLength(5);
     expect(gtPolicy.rules.biometric_thresholds?.face_min).toBe(0.90);
     expect(gtPolicy.rules.minimum_age).toBe(21);
     expect(gtPolicy.rules.session_receipt_hours).toBe(24);

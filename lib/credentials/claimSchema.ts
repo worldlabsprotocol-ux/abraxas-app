@@ -290,6 +290,32 @@ export function veriffApprovedClaims(input: {
   ];
 }
 
+/** Non-PII product eligibility outcome — never includes DOB or computed age. */
+export function productEligibilityClaim(input: {
+  subjectId: string;
+  jti: string;
+  outcome: "over_21";
+  expiresAt: Date;
+  issuerId?: string;
+  evidenceReference?: string | null;
+}): Omit<CredentialClaimRecord, "id" | "status"> {
+  const issuedAt = new Date().toISOString();
+  return {
+    subject_id: input.subjectId,
+    credential_jti: input.jti,
+    claim_type: "product_eligibility",
+    claim_value: { outcome: input.outcome },
+    issuer_id: input.issuerId ?? CLAIM_ISSUERS.abraxas,
+    assurance_level: "L2",
+    issued_at: issuedAt,
+    expires_at: input.expiresAt.toISOString(),
+    revocation_reference: null,
+    evidence_reference: input.evidenceReference ?? null,
+    jurisdiction: null,
+    policy_scope: "compliance",
+  };
+}
+
 /** Wallet binding claim after zkLogin registration */
 export function walletBindingClaim(input: {
   subjectId: string;

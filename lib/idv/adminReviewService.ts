@@ -24,6 +24,9 @@ export interface AdminReviewRequest {
   rejectionReasons?: string[];
   jurisdiction?: string;
   documentType?: string;
+  /** Authoritative document DOB (YYYY-MM-DD) — internal reviewer input, never exposed. */
+  documentDateOfBirth?: string;
+  minimumAgeGate?: number;
 }
 
 export interface AdminReviewResult {
@@ -195,6 +198,8 @@ export async function executeAdminReviewAction(
       biometricScores: assessment
         ? { face_match: assessment.scores.face_match, liveness: assessment.scores.liveness }
         : undefined,
+      documentDateOfBirth: request.documentDateOfBirth,
+      minimumAgeGate: request.minimumAgeGate,
     });
 
     if (!issued.ok) {

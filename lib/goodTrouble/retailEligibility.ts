@@ -13,10 +13,12 @@ export const GOOD_TROUBLE_RETAIL_POLICY_RULES = {
     { claim_type: "liveness_passed", max_age_hours: 8760 },
     { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L2" },
     { claim_type: "residency_country", max_age_hours: 8760 },
+    { claim_type: "product_eligibility", must_equal: "over_21", max_age_hours: 8760, min_assurance: "L2" },
   ],
   account_required: true,
   consent_required: true,
-  /** Missouri adult-use — partner maps approved decision to 21+ gate in their POS */
+  minimum_age: 21,
+  /** Missouri adult-use — eligibility enforced via product_eligibility claim, not raw DOB */
   product_eligibility_action: "regulated_retail_purchase",
 } as const;
 
