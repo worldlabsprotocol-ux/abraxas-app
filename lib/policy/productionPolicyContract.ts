@@ -93,6 +93,7 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
         { claim_type: "liveness_passed", max_age_hours: 8760 },
         { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L2" },
         { claim_type: "residency_country", max_age_hours: 8760 },
+        { claim_type: "product_eligibility", must_equal: "over_21", max_age_hours: 8760, min_assurance: "L2" },
       ],
       account_required: true,
       consent_required: true,
@@ -233,11 +234,17 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
   },
   product_eligibility: {
     claimType: "product_eligibility",
-    issuedBy: ["not_implemented"],
-    storedIn: "credential_claims (planned)",
-    resolvedBy: "getActiveClaims",
+    issuedBy: ["abraxasCaptureApprovedClaims", "manualApprovedClaims", "veriffApprovedClaims"],
+    storedIn: "credential_claims",
+    resolvedBy: "getActiveClaims → claim_value.outcome",
     evaluatedBy: "evaluatePolicyRules",
-    regressionTests: [],
+    regressionTests: [
+      "lib/idv/buildProductEligibilityClaims.test.ts",
+      "lib/idv/ageEligibility.test.ts",
+      "lib/idv/agePrivacyProof.test.ts",
+      "lib/policy/evaluatePolicy.test.ts",
+      "lib/goodTrouble/goodTroubleRetailWiring.integration.test.ts",
+    ],
   },
   wallet_risk_band: {
     claimType: "wallet_risk_band",
@@ -269,7 +276,7 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
 export const POLICY_FLAGS_ENFORCED_EXTERNALLY: Record<string, string> = {
   account_required: "Partner flow / evaluateCieloVerifiedGuest",
   consent_required: "Partner flow consent gate / evaluateCieloVerifiedGuest",
-  minimum_age: "buildPartnerVerificationResult (over_21, no raw DOB)",
+  minimum_age: "evaluatePolicyRules via product_eligibility claim (over_21); buildPartnerVerificationResult (over_21 boolean, no raw DOB)",
   session_receipt_hours: "computeSessionReceiptExpiresAt",
   product_eligibility_action: "createVerificationRequest requestedAction",
   biometric_thresholds: "resolveCapturePolicy / analyzeCapture",

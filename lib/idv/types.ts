@@ -8,6 +8,8 @@ export interface VeriffDecisionInput {
     firstName?: string;
     lastName?: string;
     nationality?: string;
+    /** Authoritative document DOB (YYYY-MM-DD) — internal IDV only, never exposed to partners. */
+    dateOfBirth?: string;
   };
   document?: {
     type?: string;

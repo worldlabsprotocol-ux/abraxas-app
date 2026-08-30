@@ -11,6 +11,7 @@ import {
   walletBindingClaim,
 } from "@/lib/credentials/claimSchema";
 import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
+import { buildProductEligibilityClaimsForIssuance } from "@/lib/idv/buildProductEligibilityClaims";
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
 import { getSuiNetwork } from "@/lib/sui/network";
 import type { VeriffDecisionInput } from "./types";
@@ -39,6 +40,10 @@ export async function issueIdentityCredential(
     assuranceLevel?: "L2" | "L3";
     reviewMethod?: "automated_biometric" | "human_biometric_match";
     biometricScores?: { face_match: number; liveness: number };
+    /** Authoritative document DOB (YYYY-MM-DD) — used only to derive product_eligibility, never stored in claim. */
+    documentDateOfBirth?: string;
+    /** When >= 21, issuance may attach product_eligibility=out_21 when DOB evidence qualifies. */
+    minimumAgeGate?: number;
   },
 ): Promise<IssueIdentityCredentialResult> {
   const provider = options?.provider ?? "veriff";
@@ -182,36 +187,58 @@ export async function issueIdentityCredential(
     }, { onConflict: "jti" });
 
     await upsertWalletBinding(normalized, normalized, "zklogin");
-    await upsertClaims([
-      ...(provider === "veriff"
-        ? veriffApprovedClaims({
+
+    const documentDateOfBirth =
+      options?.documentDateOfBirth?.trim()
+      || decision.person?.dateOfBirth?.trim()
+      || undefined;
+    const minimumAgeGate = options?.minimumAgeGate;
+    const eligibilityEvidenceRef = provider === "veriff"
+      ? `veriff:${decision.id}`
+      : provider === "abraxas_capture" && options?.captureSessionId
+        ? `abraxas_capture:${options.captureSessionId}`
+        : `manual_review:${reviewRef}`;
+
+    const identityClaims = provider === "veriff"
+      ? veriffApprovedClaims({
+          subjectId: normalized,
+          jti,
+          jurisdiction: juris,
+          documentType: docType,
+          veriffSessionId: decision.id,
+          expiresAt,
+        })
+      : provider === "abraxas_capture" && options?.captureSessionId
+        ? abraxasCaptureApprovedClaims({
             subjectId: normalized,
             jti,
             jurisdiction: juris,
             documentType: docType,
-            veriffSessionId: decision.id,
+            captureSessionId: options.captureSessionId,
             expiresAt,
+            assuranceLevel: options.assuranceLevel,
+            reviewMethod: options.reviewMethod,
+            biometricScores: options.biometricScores,
           })
-        : provider === "abraxas_capture" && options?.captureSessionId
-          ? abraxasCaptureApprovedClaims({
-              subjectId: normalized,
-              jti,
-              jurisdiction: juris,
-              documentType: docType,
-              captureSessionId: options.captureSessionId,
-              expiresAt,
-              assuranceLevel: options.assuranceLevel,
-              reviewMethod: options.reviewMethod,
-              biometricScores: options.biometricScores,
-            })
-          : manualApprovedClaims({
-              subjectId: normalized,
-              jti,
-              jurisdiction: juris,
-              documentType: docType,
-              reviewId: reviewRef,
-              expiresAt,
-            })),
+        : manualApprovedClaims({
+            subjectId: normalized,
+            jti,
+            jurisdiction: juris,
+            documentType: docType,
+            reviewId: reviewRef,
+            expiresAt,
+          });
+
+    await upsertClaims([
+      ...identityClaims,
+      ...buildProductEligibilityClaimsForIssuance({
+        subjectId: normalized,
+        jti,
+        documentDateOfBirth,
+        minimumAgeGate,
+        expiresAt,
+        evidenceReference: eligibilityEvidenceRef,
+      }),
       walletBindingClaim({
         subjectId: normalized,
         walletAddress: normalized,
@@ -256,6 +283,9 @@ export interface ManualReviewApproval {
   assuranceLevel?: "L2" | "L3";
   reviewMethod?: "automated_biometric" | "human_biometric_match";
   biometricScores?: { face_match: number; liveness: number };
+  /** Authoritative document DOB (YYYY-MM-DD) — internal only. */
+  documentDateOfBirth?: string;
+  minimumAgeGate?: number;
 }
 
 /** Issue credential after admin manual review (Veriff unavailable). Assurance L2. */
@@ -287,6 +317,8 @@ export async function issueManualIdentityCredential(
       assuranceLevel: approval.assuranceLevel,
       reviewMethod: approval.reviewMethod,
       biometricScores: approval.biometricScores,
+      documentDateOfBirth: approval.documentDateOfBirth,
+      minimumAgeGate: approval.minimumAgeGate,
     },
   );
 }

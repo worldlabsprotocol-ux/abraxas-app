@@ -13,6 +13,7 @@ export default defineConfig({
       "scripts/demo/**/*.test.ts",
       "scripts/trust-contract-drift/**/*.test.ts",
       "examples/partner-access-nextjs-starter/**/*.test.ts",
+      "examples/good-trouble-wix/**/*.test.js",
     ],
   },
   resolve: {

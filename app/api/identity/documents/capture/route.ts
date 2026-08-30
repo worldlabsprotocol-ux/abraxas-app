@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const legalName = (formData.get("legal_name") as string | null)?.trim();
+    const documentDateOfBirth = (formData.get("document_date_of_birth") as string | null)?.trim() || undefined;
     const idFront = formData.get("id_front") as File | null;
     const selfie = formData.get("selfie") as File | null;
 
@@ -270,6 +271,8 @@ export async function POST(req: NextRequest) {
           face_match: assessment.scores.face_match,
           liveness: assessment.scores.liveness,
         },
+        documentDateOfBirth,
+        minimumAgeGate: policyContext.policyRules?.minimum_age,
       });
 
       if (issued.ok) {
