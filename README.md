@@ -67,6 +67,21 @@ Grounded in the current `main` branch:
 - **Passport (holder tools)** — `/passport` for zkLogin sign-in and optional identity capture; separate from Partner Flow receipt gates
 - **Credential verify path** — `POST /api/credentials/verify` for relying parties gating on existing credentials (see [/docs/relying-party-verify](https://abraxasworld.xyz/docs/relying-party-verify))
 
+### In development (not live)
+
+These capabilities are **planned** — do not implement against them until documented as shipped:
+
+- **Consented passwordless partner-account creation** — create or recover a partner-local account from an Abraxas verification
+- **Pairwise partner identity** — per-partner subject identifiers; partners cannot correlate users across services
+- **Optional email sharing** — separate `contact.email` consent scope
+- **Separate newsletter / marketing consent** — never bundled with eligibility verification; never preselected
+- **Returning “Continue with Abraxas” login** — faster return visits; partner sessions remain partner-owned
+- **Partner-owned sessions and benefits** — purchases, rewards, and communications stay on the partner
+
+Planning reference: [docs/PARTNER_PASSWORDLESS_ONBOARDING_PLAN.md](docs/PARTNER_PASSWORDLESS_ONBOARDING_PLAN.md) (repository only — **not deployed**).
+
+**Positioning:** “One verification. Faster onboarding. Fewer forms.” — Abraxas helps users prove eligibility without repeatedly exposing sensitive identity information. Partners receive only authorized claims; Abraxas does not send ID photos or date of birth to partners.
+
 ---
 
 ## External design partners

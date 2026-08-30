@@ -207,3 +207,16 @@ export const PARTNER_WEBHOOK_SANDBOX_GUIDE = {
 
 export const PARTNER_WEBHOOK_SANDBOX_VS_LIFECYCLE_NOTE =
   "Sandbox test events (partner.webhook.test with test: true) are for signature and handler verification only. They are not Partner Flow lifecycle notifications such as partner.receipt.issued.";
+
+export {
+  PARTNER_ONBOARDING_HEADLINE,
+  PARTNER_ONBOARDING_SUPPORTING_COPY,
+  PARTNER_ONBOARDING_FUTURE_EXPLAINER,
+  PARTNER_ONBOARDING_FUTURE_LABEL,
+  PARTNER_ONBOARDING_AVAILABLE_NOW,
+  PARTNER_ONBOARDING_IN_DEVELOPMENT,
+  PARTNER_ONBOARDING_PRIVACY_PRINCIPLES,
+  PARTNER_ONBOARDING_HOW_IT_WORKS,
+  PARTNER_CONSENT_MOCKUP_CONTROLS,
+  PARTNER_CONSENT_MOCKUP_NOTE,
+} from "@/lib/partner/partnerOnboardingPositioning";

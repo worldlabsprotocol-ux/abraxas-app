@@ -25,6 +25,7 @@ export const PARTNER_FLOW_DOC_SECTIONS = [
   { id: "auth-boundary", label: "Auth boundary" },
   { id: "errors", label: "Errors" },
   { id: "redirect-example", label: "Redirect example" },
+  { id: "planned-passwordless-onboarding", label: "Planned onboarding" },
   { id: "provisioning", label: "Provisioning" },
 ] as const;
 

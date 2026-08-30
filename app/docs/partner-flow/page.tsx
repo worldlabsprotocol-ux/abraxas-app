@@ -7,6 +7,7 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { PartnerFlowDocToc, PartnerFlowStartHereCard, PartnerFlowDocMobileJump, PartnerFlowMobileReceiptCallout } from "@/components/docs/PartnerFlowDocToc";
+import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
 import {
   PARTNER_FLOW_HEADLINE,
   PARTNER_FLOW_SUMMARY,
@@ -336,6 +337,16 @@ export default function PartnerFlowDocsPage() {
               {PARTNER_FLOW_REDIRECT_EXAMPLE}
             </pre>
           </SectionCard>
+
+          <div id="planned-passwordless-onboarding" style={{ scrollMarginTop: 96 }}>
+            <PartnerOnboardingPositioningPanel compact />
+            <p style={{ ...body, marginTop: "0.75rem" }}>
+              Technical planning (not deployed): see{" "}
+              <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>docs/PARTNER_PASSWORDLESS_ONBOARDING_PLAN.md</code>{" "}
+              in the repository. Good Trouble Canna sandbox eligibility reference:{" "}
+              <Link href="/good-trouble" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>/good-trouble</Link>.
+            </p>
+          </div>
 
           <SectionCard id="provisioning" title="Operator provisioning">
             <p style={body}>

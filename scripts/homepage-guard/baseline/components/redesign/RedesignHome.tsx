@@ -17,6 +17,7 @@ import { HomeRegulatedIndustries } from "@/components/home/HomeRegulatedIndustri
 import { HomeProtocolInAction } from "@/components/home/HomeProtocolInAction";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { HomeDocsBrief } from "@/components/home/HomeDocsBrief";
+import { HomePartnerOnboardingStrip } from "@/components/home/HomePartnerOnboardingStrip";
 import { HomeRoadmapBrief } from "@/components/home/HomeRoadmapBrief";
 
 const MAXW: React.CSSProperties = {
@@ -33,6 +34,7 @@ function HomeContent() {
       <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
         <HomeSharpHero />
         <HomePolicyOutcomeStrip />
+        <HomePartnerOnboardingStrip />
         <HomeAudienceFork />
         <HomeWhyAbraxas />
         <HomeVerifyOnceDiagram />
