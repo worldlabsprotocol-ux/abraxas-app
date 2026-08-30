@@ -13,6 +13,7 @@ Account bootstrap, email sharing, newsletters, and partner SSO remain **in devel
 | Path | Purpose |
 |------|---------|
 | `backend/constants.js` | Integration constants (`sandbox`, partner/policy ids, TTLs) |
+| `backend/sha256Adapter.js` | Backend-only SHA-256 via `node:crypto` (auto-wired; no init call) |
 | `backend/pkceProof.js` | Flow/verifier validation + timing-safe challenge compare |
 | `backend/nonceLifecycle.js` | Flow state machine + PKCE callback workflow |
 | `backend/memoryNonceStore.js` | In-memory store for tests |
@@ -68,7 +69,41 @@ No web method exposes collection CRUD. Only backend code uses `wix-data` on `Abr
 - Max outstanding pending flows: 100 (soft cap)
 - Strict `gtf_` flow ID, 64-hex verifier, and `dr_` receipt ID formats
 - Bounded input lengths; generic error codes (no PII in responses)
-- **Cleanup guidance:** schedule a backend job to delete `consumed` / expired records older than 24h
+- **Cleanup guidance:** schedule a backend job to delete `consumed` / expired records older than 24h (see **Scheduled purge** below)
+
+## Wix runtime files (`src/backend`)
+
+Copy these **10** backend modules into Wix **Backend** (`src/backend`). Do **not** copy test-only files (`memoryNonceStore.js`, `*.test.js`).
+
+| File | Purpose |
+|------|---------|
+| `constants.js` | Integration constants, TTLs, collection name |
+| `sha256Adapter.js` | Auto-wired SHA-256 for PKCE challenges (`node:crypto`) |
+| `pkceProof.js` | Flow/verifier validation + timing-safe compare |
+| `nonceLifecycle.js` | Flow state machine + PKCE callback workflow |
+| `flowCapacity.js` | Purge-before-count + post-insert rollback |
+| `captchaGate.js` | Wix reCAPTCHA authorization wrapper |
+| `wixNonceStore.js` | `wix-data` adapter (Admin-only collection) |
+| `abraxasReceiptValidator.js` | Strict sandbox receipt validation |
+| `abraxasVerificationService.js` | CAPTCHA + capacity + PKCE lifecycle |
+| `abraxasVerification.web.js` | Wix Velo `webMethod` exports |
+
+Also copy `pages/AgeVerificationPopup.js` and `pages/AgeVerificationResult.js` into the matching Wix page code panels.
+
+**SHA-256:** `sha256Adapter.js` uses `node:crypto` `createHash("sha256")` — the same runtime API already used by `pkceProof.js`. No manual `configureAbraxasHashFn` call is required for production; hashing is wired automatically into start and completion flows.
+
+## Scheduled purge (`purgeStale`) — operator requirement
+
+`flowCapacity.js` calls `store.purgeStale()` before every capacity check. `wixNonceStore.purgeStale` removes:
+
+- flows past `expiresAt` (expired pending/validating), and
+- `consumed` flows with `consumedAt` older than 24 hours (`CONSUMED_FLOW_RETENTION_MS`).
+
+Each purge pass is capped at 100 rows per category per call. Under sustained traffic, **relying only on start-time purge is insufficient** — stale rows can accumulate between starts.
+
+**Operator action (approval required before deploy):** schedule a Wix backend job (e.g. daily) that imports `createWixNonceStore` and calls `purgeStale()`. This reference does **not** ship or deploy that scheduled job. Do not enable without explicit operator sign-off.
+
+Monitor `rate_limited` and captcha error rates; elevated rates may indicate missing scheduled cleanup.
 
 ## CMS collection: AbraxasVerificationNonces
 

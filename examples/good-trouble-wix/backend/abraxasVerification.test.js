@@ -34,6 +34,7 @@ import {
   completeAbraxasVerificationService,
   __testOnlySetHashFn,
 } from "./abraxasVerificationService.js";
+import { sha256Hex as defaultSha256Hex } from "./sha256Adapter.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -68,6 +69,63 @@ async function seedFlow(store, overrides = {}) {
 
 beforeEach(() => {
   __testOnlySetHashFn(hashFn);
+});
+
+describe("default SHA-256 auto-wiring (no manual init)", () => {
+  it("uses node:crypto sha256 for start flow when no hash override is configured", async () => {
+    __testOnlySetHashFn(null);
+    const store = createMemoryNonceStore();
+    const result = await createAbraxasVerificationStartService("captcha-token", {
+      store,
+      skipCaptcha: true,
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.flowId).toMatch(FLOW_ID_RE);
+    expect(result.verifier).toMatch(VERIFIER_RE);
+
+    const stored = await store.findByFlowId(result.flowId);
+    expect(stored?.verifierChallenge).toBe(await defaultSha256Hex(result.verifier));
+    expect(stored?.verifierChallenge).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("uses node:crypto sha256 for completion flow when no hash override is configured", async () => {
+    __testOnlySetHashFn(null);
+    const store = createMemoryNonceStore();
+    const payload = await buildVerificationStartPayload({ hashFn: defaultSha256Hex });
+    await store.insert(payload.flowRecord);
+
+    const result = await completeAbraxasVerificationService(
+      "dr_sandbox_valid_12345678",
+      payload.flowId,
+      payload.verifier,
+      {
+        store,
+        validateReceipt: async () => ({ verified: true }),
+      },
+    );
+
+    expect(result).toEqual({ verified: true, code: "verified" });
+  });
+
+  it("propagates hash function failure during completion (fail closed)", async () => {
+    const store = createMemoryNonceStore();
+    const { flowId, verifier } = await seedFlow(store);
+    const failingHashFn = () => {
+      throw new Error("hash_unavailable");
+    };
+
+    await expect(
+      completeAbraxasVerificationCore({
+        store,
+        receiptId: "dr_sandbox_valid_12345678",
+        flowId,
+        verifier,
+        hashFn: failingHashFn,
+        validateReceipt: async () => ({ verified: true }),
+      }),
+    ).rejects.toThrow("hash_unavailable");
+  });
 });
 
 describe("PKCE proof validation", () => {

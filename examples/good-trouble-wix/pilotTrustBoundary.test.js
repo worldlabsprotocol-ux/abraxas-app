@@ -31,6 +31,7 @@ describe("good_trouble_age_verified_pilot trust boundary", () => {
       "wixNonceStore.js",
       "memoryNonceStore.js",
       "abraxasReceiptValidator.js",
+      "sha256Adapter.js",
     ].map((name) => readFileSync(join(BACKEND_DIR, name), "utf8")).join("\n");
     expect(sensitive).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
     expect(sensitive).not.toContain("good_trouble_age_verified_pilot");
