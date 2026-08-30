@@ -75,4 +75,60 @@ describe("evaluateAgeEligibilityFromDateOfBirth", () => {
     const result = evaluateAgeEligibilityFromDateOfBirth(dob!, 21, AS_OF);
     expect(result.eligible).toBe(true);
   });
+
+  it("handles leap-day DOB boundary (Feb 29)", () => {
+    // Policy note: March 1 eligibility for Feb 29 births is an operating-jurisdiction
+    // decision Good Trouble must confirm before treating Abraxas as a legal cannabis gate.
+    const leapDob = parseAuthoritativeDateOfBirth("2004-02-29");
+    expect(leapDob).not.toBeNull();
+
+    const dayBefore21 = evaluateAgeEligibilityFromDateOfBirth(
+      leapDob!,
+      21,
+      new Date("2025-02-28T12:00:00.000Z"),
+    );
+    expect(dayBefore21.eligible).toBe(false);
+    expect(dayBefore21.failureReason).toBe("under_minimum");
+
+    const on21stBirthday = evaluateAgeEligibilityFromDateOfBirth(
+      leapDob!,
+      21,
+      new Date("2025-03-01T12:00:00.000Z"),
+    );
+    expect(on21stBirthday.eligible).toBe(true);
+  });
+});
+
+describe("evaluateAgeEligibilityFromDocumentDate timezone matrix", () => {
+  const dob = "1990-06-15";
+  const minimumAge = 21;
+
+  const asOfInstants = [
+    new Date("2011-06-15T00:00:00.000Z"),
+    new Date("2011-06-15T08:00:00-08:00"),
+    new Date("2011-06-14T16:00:00-08:00"),
+    new Date("2011-06-15T23:59:59.999Z"),
+  ];
+
+  it("produces identical eligibility for the same UTC calendar day", () => {
+    const results = asOfInstants.map((asOf) =>
+      evaluateAgeEligibilityFromDocumentDate(dob, minimumAge, asOf),
+    );
+    for (const result of results) {
+      expect(result.eligible).toBe(true);
+      expect(result.failureReason).toBeUndefined();
+    }
+  });
+
+  it("denies one UTC day before 21st birthday across offset representations", () => {
+    const underInstants = [
+      new Date("2011-06-14T23:59:59.999Z"),
+      new Date("2011-06-14T15:59:59.999-08:00"),
+    ];
+    for (const asOf of underInstants) {
+      const result = evaluateAgeEligibilityFromDocumentDate(dob, minimumAge, asOf);
+      expect(result.eligible).toBe(false);
+      expect(result.failureReason).toBe("under_minimum");
+    }
+  });
 });

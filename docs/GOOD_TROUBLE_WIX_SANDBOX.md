@@ -2,12 +2,18 @@
 
 Planning reference for optional Abraxas Passport age verification on Wix. **Do not treat as live until operator configuration is confirmed.**
 
+Account bootstrap, email sharing, newsletters, and partner SSO remain **in development** and are **not implemented** in this reference.
+
 ## Experience
 
 | Path | Behavior |
 |------|----------|
-| **Primary** | “Yes, I’m 21 or older” — existing Wix self-attestation only |
-| **Secondary** | “Verify with Abraxas Passport” — redirect to Abraxas Partner Flow |
+| **Primary** | “Yes, I’m 21 or older” (`#yesButton`) — existing Wix self-attestation only |
+| **Secondary** | “Verify with Abraxas Passport” (`#abraxasButton`) — PKCE flow, no Wix membership required |
+
+Supporting copy (`#abraxasStatusText`):
+
+> Optional verification for faster future setup. Your ID photos and date of birth are not shared with Good Trouble.
 
 ## Abraxas constants
 
@@ -18,13 +24,84 @@ entry=https://abraxasworld.xyz/partner/verify
 callback=https://www.goodtroublecanna.com/age-verification-result
 ```
 
-Allowlist stores the callback **without** query string. Runtime `return_url` may include `?gtv={nonce}`; Abraxas preserves it on redirect.
+Allowlist stores the callback **without** query string. Runtime `return_url` may include `?gtv={flowId}`; Abraxas preserves it on redirect. The **verifier never appears in any URL**.
+
+## PKCE proof-of-possession (anonymous-compatible)
+
+```mermaid
+sequenceDiagram
+  participant V as Visitor browser
+  participant B as Wix backend
+  participant A as Abraxas
+
+  V->>B: createAbraxasVerificationStart(captchaToken)
+  B->>B: wix-captcha-backend.authorize(token)
+  B->>B: purge stale + capacity check
+  B->>B: flowId + verifier + SHA-256 challenge (pending)
+  B->>V: verifyUrl + flowId + verifier (TLS)
+  V->>V: sessionStorage[abraxas_gt_verifier_{flowId}] = verifier
+  V->>A: Navigate to /partner/verify?return_url=...%3Fgtv%3DflowId
+  A->>V: .../age-verification-result?gtv=flowId&receipt_id=...
+  V->>V: Read verifier from sessionStorage
+  V->>B: completeAbraxasVerification(receiptId, flowId, verifier)
+  B->>B: PKCE verify → claim pending→validating
+  B->>A: GET /api/receipts/{id}/public (no API key)
+  B->>B: Strict sandbox validate → consumed
+  B->>V: verified boolean
+  V->>V: Delete verifier; set bounded pilot verified flag
+```
+
+| Threat | Mitigation |
+|--------|------------|
+| Copied callback URL | Fails — verifier not in URL; different tab/browser has no sessionStorage entry |
+| Global pending-flow exhaustion | Mitigated — purge stale rows before count; CAPTCHA required per start; post-insert rollback; `#yesButton` unaffected |
+
+## Anti-automation and capacity (sandbox)
+
+Each `createAbraxasVerificationStart` call requires a **Wix reCAPTCHA token** (`#abraxasCaptcha`) verified server-side via `wix-captcha-backend.authorize()`. This prevents unauthenticated scripts from exhausting the shared pending-flow cap without solving CAPTCHAs.
+
+| Control | Behavior |
+|---------|----------|
+| Pending cap | 100 site-wide **non-expired pending** flows (after purge) |
+| Purge before count | Expired flows + consumed flows older than 24h removed before capacity check |
+| Post-insert rollback | If concurrent starts exceed cap, the just-inserted row is deleted |
+| Error surface | Generic `{ error: "rate_limited" }` — no counts leaked |
+| Traditional path | `#yesButton` self-attestation is independent — never blocked by Abraxas capacity |
+
+**Operator monitoring:** schedule a daily backend job calling `purgeStale` (or equivalent CMS cleanup) and alert on elevated `rate_limited` / `captcha_invalid` rates. No automated cleanup ships in this reference.
+
+## Pilot session flag trust boundary
+
+`good_trouble_age_verified_pilot` (`PILOT_VERIFIED_SESSION_FLAG`) is written to **sessionStorage only** after `completeAbraxasVerification` returns `verified: true`.
+
+| Property | Value |
+|----------|-------|
+| Authoritative proof | Consumed backend flow + validated sandbox receipt |
+| Backend acceptance | **Never** — no Wix/Abraxas web method reads this flag |
+| Purchase / regulated commerce | **Not authorized** by this flag alone |
+| Account / email / newsletter | **Not implemented** |
+| Traditional `#yesButton` | Separate self-attestation — not relabeled as Abraxas verification |
+
+## Age-boundary legal policy note
+
+UTC calendar math (including leap-day Feb 29 → eligible on March 1 in tests) is a **technical implementation choice**. Good Trouble must confirm operating-jurisdiction age-boundary semantics with counsel before treating Abraxas as a legal cannabis eligibility gate. Tests prove code behavior only — not legal compliance.
+
+## Wix page files and element IDs
+
+| Page | Slug / usage | Element IDs |
+|------|--------------|-------------|
+| Age Verification popup | Lightbox or page | `#yesButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText` |
+| Age Verification Result | `/age-verification-result` | `#abraxasStatusText`, `#restartAbraxasButton` (optional) |
+
+Copy `examples/good-trouble-wix/pages/*.js` into the corresponding Wix page code panels.
 
 ## Age enforcement (code)
 
 Policy evaluation requires `product_eligibility` with outcome `over_21`, derived server-side from authoritative IDV document DOB. No DOB, age, or document images are exposed to Wix, callbacks, or public receipts.
 
 Migration: `supabase/migrations/075_good_trouble_retail_age_eligibility_claim.sql` — **not applied** by this batch.
+
+Rollback: `supabase/rollbacks/075_good_trouble_retail_age_eligibility_claim_rollback.sql` — removes only the DB rule; `minimum_age` code expansion continues enforcing until code is rolled back separately.
 
 ## Receipt validation (Wix backend)
 
@@ -44,41 +121,18 @@ Use strict **sandbox** mode:
 
 Reference: `examples/good-trouble-wix/backend/abraxasReceiptValidator.js`
 
-## Nonce / replay protection
+## Web method permissions
 
-Session binding uses **Wix Members backend only** (`member:{currentMember.id}`). Anonymous Wix visitors cannot use the Abraxas path — Wix Velo does not expose a non-spoofable server-side visitor identity without trusting frontend input.
+| Method | Wix permission | Notes |
+|--------|----------------|-------|
+| `createAbraxasVerificationStart` | **Anyone** | Requires CAPTCHA token; `webMethod(Permissions.Anyone, …)` in `.web.js` |
+| `completeAbraxasVerification` | **Anyone** | PKCE verifier required |
 
-```mermaid
-sequenceDiagram
-  participant M as Wix member
-  participant B as Wix backend
-  participant A as Abraxas
+Configure `wix-crypto` SHA-256 via `configureAbraxasHashFn` before go-live.
 
-  M->>B: Click Verify with Abraxas (logged in)
-  B->>B: nonce hash + member session binding (pending)
-  B->>M: Redirect to /partner/verify?return_url=...%3Fgtv%3Dnonce
-  M->>A: Passport flow
-  A->>M: .../age-verification-result?gtv=nonce&receipt_id=...
-  M->>B: Callback page (backend web method)
-  B->>B: Atomic claim pending→validating
-  B->>A: GET /api/receipts/{id}/public (no API key)
-  B->>B: Strict sandbox validate → consumed
-  B->>M: verified boolean (session only)
-```
+## CMS collection permissions
 
-### Nonce state transitions
-
-| State | Meaning |
-|-------|---------|
-| `pending` | Issued, awaiting callback |
-| `validating` | Short-lived claim during receipt fetch/validate |
-| `consumed` | Terminal — success or permanent failure |
-
-Concurrent callbacks: at most one `validating` claim succeeds. Transient receipt-fetch failures release to `pending` for bounded retry; invalid receipts consume without granting verification.
-
-### Collection permissions
-
-`AbraxasVerificationNonces` — backend web methods only. No site-visitor or member direct read/create/update/delete. Store hash + session binding + lifecycle metadata only.
+`AbraxasVerificationNonces` — **Admin only** for Read, Create, Update, Delete. Backend web methods only.
 
 ## Operator checklist (read-only — run before go-live)
 
@@ -93,10 +147,10 @@ Confirm via admin APIs or onboarding console **without exposing secrets**:
 | No duplicate `goodtroublecanna` partner | List/search partners — expect absent or unused |
 | Sandbox API key (boolean only) | `GET /api/admin/partner-keys?partner_id=good-trouble-cannabis` — count active `abx_test_` prefixes; **not required** for public-receipt path |
 | Preflight | `GET /api/admin/partner-flow/provisioning-preflight?partner_id=...&policy_id=...&return_url=...` |
+| `configureAbraxasHashFn` wired | Wix backend init with `wix-crypto` sha256 |
+| `#abraxasButton` disabled until config passes | Operator enables after checklist green |
 
 **Not required for this integration:** `abx_test_…` key for redirect or public receipt GET.
-
-**Optional later:** `abx_live_…` key, production env promotion, production receipt validator mode.
 
 ## First-time Abraxas steps (honest)
 

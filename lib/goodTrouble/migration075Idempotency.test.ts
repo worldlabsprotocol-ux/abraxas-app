@@ -36,6 +36,11 @@ function claim(partial: Partial<CredentialClaimRecord> & Pick<CredentialClaimRec
   };
 }
 
+const ROLLBACK_PATH = join(
+  process.cwd(),
+  "supabase/rollbacks/075_good_trouble_retail_age_eligibility_claim_rollback.sql",
+);
+
 describe("075_good_trouble_retail_age_eligibility_claim.sql", () => {
   const sql = readFileSync(MIGRATION_PATH, "utf8");
 
@@ -51,6 +56,24 @@ describe("075_good_trouble_retail_age_eligibility_claim.sql", () => {
     expect(sql).toMatch(/elem->>'claim_type' = 'product_eligibility'/);
     expect(sql).toMatch(/WHERE id = 'good-trouble-retail-v1'/);
     expect(sql).toMatch(/partner_id = 'good-trouble-cannabis'/);
+  });
+});
+
+describe("075_good_trouble_retail_age_eligibility_claim_rollback.sql", () => {
+  const rollback = readFileSync(ROLLBACK_PATH, "utf8");
+
+  it("removes only the exact Good Trouble product_eligibility rule from 075", () => {
+    expect(rollback).toMatch(/product_eligibility/);
+    expect(rollback).toMatch(/must_equal' = 'over_21'/);
+    expect(rollback).toMatch(/max_age_hours'\)::int = 8760/);
+    expect(rollback).toMatch(/min_assurance' = 'L2'/);
+    expect(rollback).toMatch(/good-trouble-retail-v1/);
+    expect(rollback).toMatch(/good-trouble-cannabis/);
+  });
+
+  it("documents that minimum_age code expansion continues enforcing age", () => {
+    expect(rollback).toMatch(/expandRequiredClaimsForMinimumAge/i);
+    expect(rollback).toMatch(/minimum_age/i);
   });
 });
 
