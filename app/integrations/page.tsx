@@ -22,6 +22,7 @@ import {
   PARTNER_RECEIPT_VERIFIER_PATH,
 } from "@/lib/integrate/partnerJourney";
 import { DesignPartnerApplicationForm } from "@/components/integrations/DesignPartnerApplicationForm";
+import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -70,6 +71,8 @@ export default function IntegrationsPage() {
           <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification</Btn>
         </div>
       </div>
+
+      <PartnerOnboardingPositioningPanel />
 
       <ContentCard title="Relying party program">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>

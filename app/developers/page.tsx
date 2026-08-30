@@ -7,6 +7,7 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
+import { PARTNER_ONBOARDING_HEADLINE, PARTNER_ONBOARDING_DOC_LINKS } from "@/lib/partner/partnerOnboardingPositioning";
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
 import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
@@ -22,7 +23,7 @@ export default function DevelopersPage() {
       <PageHeader
         eyebrow="Developers"
         title="Build on Abraxas verification"
-        subtitle="Server-side credential verify, registry lookup, and asset monitoring webhooks. passport-grade trust without rebuilding KYC."
+        subtitle={`${PARTNER_ONBOARDING_HEADLINE} Partner Flow, Passport, and signed receipts are available in beta. Consented passwordless partner accounts and optional email/newsletter scopes are in development — not live.`}
       />
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="developers-demo" />
@@ -30,9 +31,10 @@ export default function DevelopersPage() {
       <ContentCard title="Start here">
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((s, i) => `${i + 1}. ${s}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+          <Btn href="/docs/partner-flow" size="sm">Partner Flow docs →</Btn>
           <Btn href="/docs/relying-party-verify" size="sm">External RP guide →</Btn>
           <Btn href="/design-partner" size="sm">Request API key →</Btn>
-          <Btn href="/developers/partner" variant="secondary" size="sm">Partner portal →</Btn>
+          <Btn href={PARTNER_ONBOARDING_DOC_LINKS.developersPartner} variant="secondary" size="sm">Partner portal →</Btn>
           <Btn href="/integrate" variant="ghost" size="sm">Full integrate guide →</Btn>
         </div>
       </ContentCard>

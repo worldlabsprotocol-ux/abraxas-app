@@ -7,6 +7,7 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { IntegratorStartHerePanel } from "@/components/integrate/IntegratorStartHerePanel";
+import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
 import {
   INTEGRATOR_SANDBOX_BOUNDARY,
   PARTNER_APPLICATION_PATH,
@@ -36,6 +37,8 @@ export default function DesignPartnerPage() {
       />
 
       <IntegratorStartHerePanel id="partner-start-here" />
+
+      <PartnerOnboardingPositioningPanel compact showConsentMockup />
 
       <ContentCard title={PARTNER_POST_APPLY_HEADLINE}>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>

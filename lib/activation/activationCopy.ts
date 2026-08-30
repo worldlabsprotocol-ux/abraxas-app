@@ -3,13 +3,13 @@
 
 export const ACTIVATION_EYEBROW = "Public beta · design partners";
 
-export const ACTIVATION_HEADLINE = "Verify once. Partners get only the policy outcome.";
+export const ACTIVATION_HEADLINE = "One verification. Faster onboarding. Fewer forms.";
 
 export const ACTIVATION_SUBHEAD =
-  "A holder completes required steps in Abraxas Passport when a policy requires them. An approved partner verifies a signed policy result using the documented Partner Flow receipt contract.";
+  "Abraxas helps users prove eligibility and securely continue into partner experiences without repeatedly exposing sensitive identity information. Partners verify signed policy results server-side via Partner Flow today.";
 
 export const ACTIVATION_AVAILABILITY =
-  "Passport sign-in is open in beta. Partner Flow sandbox and production policies are issued manually after review.";
+  "Passport sign-in and Partner Flow are in public beta. Sandbox policies are operator-provisioned after design-partner review. Consented passwordless partner accounts, email sharing, and newsletter enrollment are in development — not live.";
 
 export const POLICY_OUTCOME_STEPS = [
   {
@@ -36,7 +36,7 @@ export const AUDIENCE_HOLDER = {
 
 export const AUDIENCE_PARTNER = {
   title: "I'm integrating Partner Flow",
-  body: "Redirect holders to Abraxas, then verify the signed receipt on your server before granting access. Apply for manual review to receive sandbox provisioning.",
+  body: "Redirect holders to Abraxas Passport, verify the signed receipt on your server, and gate access on policy outcomes. Consented partner-account bootstrap and optional email/newsletter scopes are in development.",
   badge: "Sandbox after review",
   cta: "Apply for review",
   href: "/integrations#apply",
