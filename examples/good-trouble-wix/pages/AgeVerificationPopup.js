@@ -73,7 +73,18 @@ async function handleAbraxasStart() {
   }
 
   try {
-    const result = await createAbraxasVerificationStart();
+    let captchaToken = "";
+    if ($w("#abraxasCaptcha")) {
+      captchaToken = await $w("#abraxasCaptcha").getToken();
+    }
+    if (!captchaToken) {
+      setAbraxasStatus("Verification could not be started. Please try again or use the traditional option.");
+      abraxasStarting = false;
+      setAbraxasButtonEnabled(true);
+      return;
+    }
+
+    const result = await createAbraxasVerificationStart(captchaToken);
 
     if (result?.error) {
       setAbraxasStatus("Verification could not be started. Please try again or use the traditional option.");

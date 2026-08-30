@@ -48,7 +48,9 @@ function randomHex(bytes = 32) {
  * @property {(record: Omit<FlowRecord, "_id">) => Promise<FlowRecord>} insert
  * @property {(flowId: string) => Promise<FlowRecord | null>} findByFlowId
  * @property {(recordId: string, patch: Partial<FlowRecord>, guards?: { expectedState?: string, flowId?: string }) => Promise<FlowRecord | null>} updateGuarded
- * @property {() => Promise<number>} [countPending]
+ * @property {(now?: Date) => Promise<number>} [countPending]
+ * @property {(recordId: string) => Promise<void>} [removeById]
+ * @property {(now?: Date) => Promise<number>} [purgeStale]
  */
 
 /**

@@ -2,7 +2,7 @@
 // wix-data adapter — collection must be Admin-only (no site/member read/write).
 
 import wixData from "wix-data";
-import { NONCE_COLLECTION, NONCE_STATE } from "./constants.js";
+import { CONSUMED_FLOW_RETENTION_MS, NONCE_COLLECTION, NONCE_STATE } from "./constants.js";
 
 /**
  * Collection permissions (Wix CMS — AbraxasVerificationNonces):
@@ -12,10 +12,6 @@ import { NONCE_COLLECTION, NONCE_STATE } from "./constants.js";
  * - Delete: Admin only
  *
  * Only backend web methods operate on this collection.
- *
- * Stored fields: flowId, verifierChallenge, state, createdAt, expiresAt,
- * claimExpiresAt, claimToken, validationAttempts, consumedAt, correlationId.
- * Never store raw verifier, receipt JSON, DOB, document data, API keys, or credentials.
  *
  * @returns {import("./nonceLifecycle.js").FlowStore}
  */
@@ -38,13 +34,35 @@ export function createWixNonceStore() {
       if (guards.flowId && current.flowId !== guards.flowId) return null;
       return wixData.update(NONCE_COLLECTION, { ...current, ...patch, _id: recordId });
     },
-    async countPending() {
-      const now = new Date();
+    async countPending(now = new Date()) {
       const { totalCount } = await wixData.query(NONCE_COLLECTION)
         .eq("state", NONCE_STATE.PENDING)
         .gt("expiresAt", now)
         .count();
       return totalCount ?? 0;
+    },
+    async removeById(recordId) {
+      return wixData.remove(NONCE_COLLECTION, recordId);
+    },
+    async purgeStale(now = new Date()) {
+      const consumedCutoff = new Date(now.getTime() - CONSUMED_FLOW_RETENTION_MS);
+      const { items: expired } = await wixData.query(NONCE_COLLECTION)
+        .le("expiresAt", now)
+        .limit(100)
+        .find();
+      const { items: staleConsumed } = await wixData.query(NONCE_COLLECTION)
+        .eq("state", NONCE_STATE.CONSUMED)
+        .le("consumedAt", consumedCutoff)
+        .limit(100)
+        .find();
+      const toRemove = new Map();
+      for (const item of [...expired, ...staleConsumed]) {
+        toRemove.set(item._id, item);
+      }
+      for (const id of toRemove.keys()) {
+        await wixData.remove(NONCE_COLLECTION, id);
+      }
+      return toRemove.size;
     },
   };
 }

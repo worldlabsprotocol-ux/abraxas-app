@@ -1,6 +1,7 @@
 // FILE: examples/good-trouble-wix/backend/abraxasVerification.test.js
 
 import { createHash, timingSafeEqual } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, beforeEach } from "vitest";
 import {
   ABRAXAS_ORIGIN,
@@ -29,10 +30,10 @@ import {
 } from "./pkceProof.js";
 import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
 import {
-  createAbraxasVerificationStart,
-  completeAbraxasVerification,
+  createAbraxasVerificationStartService,
+  completeAbraxasVerificationService,
   __testOnlySetHashFn,
-} from "./abraxasVerification.web.js";
+} from "./abraxasVerificationService.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -145,10 +146,14 @@ describe("buildVerificationStartPayload", () => {
   });
 });
 
-describe("createAbraxasVerificationStart web method wrapper", () => {
+describe("createAbraxasVerificationStart service", () => {
   it("returns verifyUrl, flowId, and verifier over TLS response", async () => {
     const store = createMemoryNonceStore();
-    const result = await createAbraxasVerificationStart({ store, hashFn });
+    const result = await createAbraxasVerificationStartService("captcha-token", {
+      store,
+      hashFn,
+      skipCaptcha: true,
+    });
 
     expect(result.error).toBeUndefined();
     expect(result.verifyUrl).toMatch(/^https:\/\/abraxasworld\.xyz\/partner\/verify\?/);
@@ -162,18 +167,63 @@ describe("createAbraxasVerificationStart web method wrapper", () => {
 
   it("does not require Wix membership", async () => {
     const store = createMemoryNonceStore();
-    const result = await createAbraxasVerificationStart({ store, hashFn });
+    const result = await createAbraxasVerificationStartService("captcha-token", {
+      store,
+      hashFn,
+      skipCaptcha: true,
+    });
     expect(result.flowId).toBeTruthy();
     expect(result.verifier).toBeTruthy();
   });
 
+  it("requires captcha token unless explicitly skipped in tests", async () => {
+    const store = createMemoryNonceStore();
+    const missing = await createAbraxasVerificationStartService("", { store, hashFn });
+    expect(missing).toEqual({ error: "captcha_required" });
+
+    const invalid = await createAbraxasVerificationStartService("token", {
+      store,
+      hashFn,
+      authorizeCaptcha: async () => {
+        throw new Error("invalid");
+      },
+    });
+    expect(invalid).toEqual({ error: "captcha_invalid" });
+  });
+
   it("returns rate_limited when outstanding pending flows exceed cap", async () => {
     const store = createMemoryNonceStore();
-    const original = store.countPending;
-    store.countPending = async () => 10_000;
-    const result = await createAbraxasVerificationStart({ store, hashFn });
-    store.countPending = original;
+    const now = new Date("2026-01-01T00:00:00.000Z");
+    for (let i = 0; i < 100; i += 1) {
+      const payload = await buildVerificationStartPayload({ hashFn, now });
+      await store.insert(payload.flowRecord);
+    }
+    const result = await createAbraxasVerificationStartService("captcha-token", {
+      store,
+      hashFn,
+      skipCaptcha: true,
+      now,
+    });
     expect(result).toEqual({ error: "rate_limited" });
+  });
+
+  it("purges expired pending flows before capacity evaluation", async () => {
+    const store = createMemoryNonceStore();
+    const past = new Date("2020-01-01T00:00:00.000Z");
+    const payload = await buildVerificationStartPayload({ hashFn, now: past });
+    await store.insert({
+      ...payload.flowRecord,
+      expiresAt: new Date(past.getTime() + 1000),
+    });
+    const now = new Date("2026-01-01T00:00:00.000Z");
+    const result = await createAbraxasVerificationStartService("captcha-token", {
+      store,
+      hashFn,
+      skipCaptcha: true,
+      now,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.flowId).toBeTruthy();
   });
 });
 
@@ -360,7 +410,7 @@ describe("completeAbraxasVerification web method wrapper", () => {
     const store = createMemoryNonceStore();
     const { flowId, verifier } = await seedFlow(store);
 
-    const result = await completeAbraxasVerification(
+    const result = await completeAbraxasVerificationService(
       "dr_sandbox_valid_12345678",
       flowId,
       verifier,
@@ -421,5 +471,29 @@ describe("traditional self-attestation path", () => {
     };
     expect(traditionalPath.requiresAbraxas).toBe(false);
     expect(traditionalPath.buttonId).toBe("yesButton");
+  });
+});
+
+describe("Wix webMethod source contract", () => {
+  it("exports Permissions.Anyone webMethod wrappers in .web.js", () => {
+    const source = readFileSync(
+      new URL("./abraxasVerification.web.js", import.meta.url),
+      "utf8",
+    );
+    expect(source).toContain("webMethod");
+    expect(source).toContain("Permissions.Anyone");
+    expect(source).toContain("wix-captcha-backend");
+    expect(source).not.toContain("wix-data.insert");
+  });
+});
+
+describe("PKCE entropy and independence", () => {
+  it("generates independent random flowId and verifier with 256-bit entropy each", async () => {
+    const a = await buildVerificationStartPayload({ hashFn });
+    const b = await buildVerificationStartPayload({ hashFn });
+    expect(a.flowId).not.toBe(b.flowId);
+    expect(a.verifier).not.toBe(b.verifier);
+    expect(a.verifier).toHaveLength(64);
+    expect(a.flowId.replace("gtf_", "")).toHaveLength(64);
   });
 });

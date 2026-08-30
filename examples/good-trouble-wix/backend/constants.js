@@ -11,8 +11,10 @@ export const FLOW_TTL_MS = 10 * 60 * 1000;
 export const CLAIM_TTL_MS = 2 * 60 * 1000;
 /** Bounded receipt-fetch retries while flow remains pending (never grants verification on transient failure). */
 export const MAX_VALIDATION_ATTEMPTS = 3;
-/** Soft cap on concurrent pending flows — abuse control guidance for operators. */
+/** Soft cap on concurrent pending flows site-wide (after purge). */
 export const MAX_OUTSTANDING_PENDING_FLOWS = 100;
+/** Delete consumed flows older than this during purge (operator cleanup guidance). */
+export const CONSUMED_FLOW_RETENTION_MS = 24 * 60 * 60 * 1000;
 export const GTV_PARAM = "gtv";
 export const RECEIPT_VALIDATION_MODE = "sandbox";
 export const FLOW_ID_PREFIX = "gtf_";
@@ -32,6 +34,12 @@ export const MAX_INPUT_LENGTH = {
 
 /** sessionStorage key prefix — verifier stored as `${VERIFIER_STORAGE_PREFIX}${flowId}`. */
 export const VERIFIER_STORAGE_PREFIX = "abraxas_gt_verifier_";
+
+/**
+ * Pilot UI convenience flag — sessionStorage only.
+ * NOT authoritative; never read by Abraxas or Wix backend web methods.
+ */
+export const PILOT_VERIFIED_SESSION_FLAG = "good_trouble_age_verified_pilot";
 
 /** Nonce / flow lifecycle states — backend collection only. */
 export const NONCE_STATE = {

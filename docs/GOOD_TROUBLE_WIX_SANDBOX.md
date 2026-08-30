@@ -34,7 +34,9 @@ sequenceDiagram
   participant B as Wix backend
   participant A as Abraxas
 
-  V->>B: createAbraxasVerificationStart()
+  V->>B: createAbraxasVerificationStart(captchaToken)
+  B->>B: wix-captcha-backend.authorize(token)
+  B->>B: purge stale + capacity check
   B->>B: flowId + verifier + SHA-256 challenge (pending)
   B->>V: verifyUrl + flowId + verifier (TLS)
   V->>V: sessionStorage[abraxas_gt_verifier_{flowId}] = verifier
@@ -52,10 +54,46 @@ sequenceDiagram
 | Threat | Mitigation |
 |--------|------------|
 | Copied callback URL | Fails — verifier not in URL; different tab/browser has no sessionStorage entry |
-| Frontend-forged visitorId | Not used — no visitor identity |
-| Replay | Flow consumed after first success |
-| Wrong verifier | `verifier_mismatch` |
-| Transient receipt fetch | Release to `pending`; bounded retry; **never** `verified: true` on transient failure |
+| Global pending-flow exhaustion | Mitigated — purge stale rows before count; CAPTCHA required per start; post-insert rollback; `#yesButton` unaffected |
+
+## Anti-automation and capacity (sandbox)
+
+Each `createAbraxasVerificationStart` call requires a **Wix reCAPTCHA token** (`#abraxasCaptcha`) verified server-side via `wix-captcha-backend.authorize()`. This prevents unauthenticated scripts from exhausting the shared pending-flow cap without solving CAPTCHAs.
+
+| Control | Behavior |
+|---------|----------|
+| Pending cap | 100 site-wide **non-expired pending** flows (after purge) |
+| Purge before count | Expired flows + consumed flows older than 24h removed before capacity check |
+| Post-insert rollback | If concurrent starts exceed cap, the just-inserted row is deleted |
+| Error surface | Generic `{ error: "rate_limited" }` — no counts leaked |
+| Traditional path | `#yesButton` self-attestation is independent — never blocked by Abraxas capacity |
+
+**Operator monitoring:** schedule a daily backend job calling `purgeStale` (or equivalent CMS cleanup) and alert on elevated `rate_limited` / `captcha_invalid` rates. No automated cleanup ships in this reference.
+
+## Pilot session flag trust boundary
+
+`good_trouble_age_verified_pilot` (`PILOT_VERIFIED_SESSION_FLAG`) is written to **sessionStorage only** after `completeAbraxasVerification` returns `verified: true`.
+
+| Property | Value |
+|----------|-------|
+| Authoritative proof | Consumed backend flow + validated sandbox receipt |
+| Backend acceptance | **Never** — no Wix/Abraxas web method reads this flag |
+| Purchase / regulated commerce | **Not authorized** by this flag alone |
+| Account / email / newsletter | **Not implemented** |
+| Traditional `#yesButton` | Separate self-attestation — not relabeled as Abraxas verification |
+
+## Age-boundary legal policy note
+
+UTC calendar math (including leap-day Feb 29 → eligible on March 1 in tests) is a **technical implementation choice**. Good Trouble must confirm operating-jurisdiction age-boundary semantics with counsel before treating Abraxas as a legal cannabis eligibility gate. Tests prove code behavior only — not legal compliance.
+
+## Wix page files and element IDs
+
+| Page | Slug / usage | Element IDs |
+|------|--------------|-------------|
+| Age Verification popup | Lightbox or page | `#yesButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText` |
+| Age Verification Result | `/age-verification-result` | `#abraxasStatusText`, `#restartAbraxasButton` (optional) |
+
+Copy `examples/good-trouble-wix/pages/*.js` into the corresponding Wix page code panels.
 
 ## Age enforcement (code)
 
@@ -83,21 +121,12 @@ Use strict **sandbox** mode:
 
 Reference: `examples/good-trouble-wix/backend/abraxasReceiptValidator.js`
 
-## Wix page files and element IDs
-
-| Page | Slug / usage | Element IDs |
-|------|--------------|-------------|
-| Age Verification popup | Lightbox or page | `#yesButton`, `#abraxasButton`, `#abraxasStatusText` |
-| Age Verification Result | `/age-verification-result` | `#abraxasStatusText`, `#restartAbraxasButton` (optional) |
-
-Copy `examples/good-trouble-wix/pages/*.js` into the corresponding Wix page code panels.
-
 ## Web method permissions
 
-| Method | Wix permission |
-|--------|----------------|
-| `createAbraxasVerificationStart` | Anyone (anonymous allowed) |
-| `completeAbraxasVerification` | Anyone (anonymous allowed) |
+| Method | Wix permission | Notes |
+|--------|----------------|-------|
+| `createAbraxasVerificationStart` | **Anyone** | Requires CAPTCHA token; `webMethod(Permissions.Anyone, …)` in `.web.js` |
+| `completeAbraxasVerification` | **Anyone** | PKCE verifier required |
 
 Configure `wix-crypto` SHA-256 via `configureAbraxasHashFn` before go-live.
 

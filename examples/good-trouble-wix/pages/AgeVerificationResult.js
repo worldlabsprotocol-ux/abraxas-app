@@ -3,7 +3,7 @@
 // Element IDs: #abraxasStatusText, #restartAbraxasButton (optional)
 
 import { completeAbraxasVerification } from "backend/abraxasVerification.web";
-import { GTV_PARAM, VERIFIER_STORAGE_PREFIX } from "backend/constants";
+import { GTV_PARAM, PILOT_VERIFIED_SESSION_FLAG, VERIFIER_STORAGE_PREFIX } from "backend/constants";
 import wixLocation from "wix-location";
 
 /** Abraxas frozen callback parameters — never treat status=approved as verification. */
@@ -83,12 +83,14 @@ function clearVerifier(flowId) {
 }
 
 /**
- * Bounded pilot verified state — sessionStorage flag only (not localStorage authority).
- * Account bootstrap, email sharing, newsletters, and partner SSO are not implemented.
+ * Pilot UI convenience only — sessionStorage flag.
+ * NOT accepted by Abraxas or Wix backend. Does not authorize purchases,
+ * regulated commerce, accounts, email/newsletter enrollment, or rewards.
+ * Authoritative proof: consumed backend flow + validated sandbox receipt.
  */
 function setPilotVerifiedState() {
   try {
-    sessionStorage.setItem("good_trouble_age_verified_pilot", "1");
+    sessionStorage.setItem(PILOT_VERIFIED_SESSION_FLAG, "1");
   } catch {
     // fail closed — user can still use traditional path
   }

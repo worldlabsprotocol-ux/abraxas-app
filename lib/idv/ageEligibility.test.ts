@@ -77,6 +77,8 @@ describe("evaluateAgeEligibilityFromDateOfBirth", () => {
   });
 
   it("handles leap-day DOB boundary (Feb 29)", () => {
+    // Policy note: March 1 eligibility for Feb 29 births is an operating-jurisdiction
+    // decision Good Trouble must confirm before treating Abraxas as a legal cannabis gate.
     const leapDob = parseAuthoritativeDateOfBirth("2004-02-29");
     expect(leapDob).not.toBeNull();
 
