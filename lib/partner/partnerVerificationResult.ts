@@ -51,6 +51,8 @@ export function buildPartnerVerificationResult(input: {
   minimumAge?: number;
   assuranceLevel?: string | null;
   reasonCodes?: string[];
+  productEligibilityRequired?: boolean;
+  productEligibilityVerified?: boolean;
 }): PartnerVerificationResult {
   return sanitizePartnerPayload({
     decision: input.decision,
@@ -63,7 +65,8 @@ export function buildPartnerVerificationResult(input: {
     partner_id: input.partnerId,
     identity_verified: input.identityVerified,
     over_21: input.decision === "approved"
-      && (input.minimumAge == null || (input.identityVerified && input.minimumAge >= 21)),
+      && input.productEligibilityRequired === true
+      && input.productEligibilityVerified === true,
     assurance_level: input.assuranceLevel ?? null,
     reason_codes: input.reasonCodes ?? [],
   });

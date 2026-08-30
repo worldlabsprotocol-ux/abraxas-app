@@ -9,7 +9,47 @@ export interface ProductionPartnerPolicy {
   partnerId: string;
   sandboxOnly: boolean;
   rules: PartnerPolicyRules;
+  /** When set, documents rollout state for policies with pending draft successors. */
+  enforcementNote?: string;
 }
+
+/** Claim appended by migration 076 draft; enforced only after operator publish of v2. */
+export const GOOD_TROUBLE_RETAIL_V2_PRODUCT_ELIGIBILITY_CLAIM = {
+  claim_type: "product_eligibility",
+  must_equal: "over_21",
+  max_age_hours: 8760,
+  min_assurance: "L2",
+} as const;
+
+/** Post-076-draft / pre-publish target rules — not active until publish_partner_policy_draft. */
+export const GOOD_TROUBLE_RETAIL_V2_PENDING_RULES: PartnerPolicyRules = {
+  sandbox_only: true,
+  required_claims: [
+    { claim_type: "identity_verified", max_age_hours: 8760, min_assurance: "L2" },
+    { claim_type: "liveness_passed", max_age_hours: 8760 },
+    { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L2" },
+    { claim_type: "residency_country", max_age_hours: 8760 },
+    GOOD_TROUBLE_RETAIL_V2_PRODUCT_ELIGIBILITY_CLAIM,
+  ],
+  account_required: true,
+  consent_required: true,
+  minimum_age: 21,
+  session_receipt_hours: 24,
+  product_eligibility_action: "regulated_retail_purchase",
+  biometric_thresholds: {
+    face_min: 0.90,
+    liveness_min: 0.92,
+    fraud_risk_max: 0.15,
+    alignment_min: 0.45,
+    blur_min: 0.40,
+    lighting_min: 0.38,
+    screen_replay_max: 0.45,
+    deepfake_max: 0.50,
+  },
+};
+
+/** Published-name alias for post-076-draft target rules (operator publish → active v2). */
+export const GOOD_TROUBLE_RETAIL_V2_POLICY_RULES = GOOD_TROUBLE_RETAIL_V2_PENDING_RULES;
 
 /** Active partner policies seeded in migrations — audit against this list. */
 export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
@@ -86,6 +126,8 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
     id: "good-trouble-retail-v1",
     partnerId: "good-trouble-cannabis",
     sandboxOnly: true,
+    enforcementNote:
+      "Active v1: product_eligibility enforcement pending migration 076 draft publish (v2). minimum_age is metadata only.",
     rules: {
       sandbox_only: true,
       required_claims: [
@@ -93,7 +135,6 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
         { claim_type: "liveness_passed", max_age_hours: 8760 },
         { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L2" },
         { claim_type: "residency_country", max_age_hours: 8760 },
-        { claim_type: "product_eligibility", must_equal: "over_21", max_age_hours: 8760, min_assurance: "L2" },
       ],
       account_required: true,
       consent_required: true,
@@ -276,7 +317,7 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
 export const POLICY_FLAGS_ENFORCED_EXTERNALLY: Record<string, string> = {
   account_required: "Partner flow / evaluateCieloVerifiedGuest",
   consent_required: "Partner flow consent gate / evaluateCieloVerifiedGuest",
-  minimum_age: "evaluatePolicyRules via product_eligibility claim (over_21); buildPartnerVerificationResult (over_21 boolean, no raw DOB)",
+  minimum_age: "IDV capture gate + partner_result.over_21 only when product_eligibility is explicitly required in stored required_claims; not expanded from metadata alone",
   session_receipt_hours: "computeSessionReceiptExpiresAt",
   product_eligibility_action: "createVerificationRequest requestedAction",
   biometric_thresholds: "resolveCapturePolicy / analyzeCapture",

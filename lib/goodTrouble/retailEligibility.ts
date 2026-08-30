@@ -7,20 +7,36 @@ import {
 } from "@/lib/goodTrouble/constants";
 import { SITE_URL } from "@/lib/siteUrl";
 
+/** Active v1 rules — product_eligibility enforcement deferred to v2 draft publish (migration 076). */
 export const GOOD_TROUBLE_RETAIL_POLICY_RULES = {
+  sandbox_only: true,
   required_claims: [
     { claim_type: "identity_verified", max_age_hours: 8760, min_assurance: "L2" },
     { claim_type: "liveness_passed", max_age_hours: 8760 },
     { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L2" },
     { claim_type: "residency_country", max_age_hours: 8760 },
-    { claim_type: "product_eligibility", must_equal: "over_21", max_age_hours: 8760, min_assurance: "L2" },
   ],
   account_required: true,
   consent_required: true,
   minimum_age: 21,
-  /** Missouri adult-use — eligibility enforced via product_eligibility claim, not raw DOB */
+  session_receipt_hours: 24,
+  /** Missouri adult-use — eligibility enforced via product_eligibility claim after v2 publish, not raw DOB */
   product_eligibility_action: "regulated_retail_purchase",
+  biometric_thresholds: {
+    face_min: 0.90,
+    liveness_min: 0.92,
+    fraud_risk_max: 0.15,
+    alignment_min: 0.45,
+    blur_min: 0.40,
+    lighting_min: 0.38,
+    screen_replay_max: 0.45,
+    deepfake_max: 0.50,
+  },
 } as const;
+
+export {
+  GOOD_TROUBLE_RETAIL_V2_PENDING_RULES as GOOD_TROUBLE_RETAIL_V2_POLICY_RULES,
+} from "@/lib/policy/productionPolicyContract";
 
 export const GOOD_TROUBLE_VERIFY_EXAMPLE = `// Server-side: verify credential JWT (never wallet-address-only)
 const res = await fetch("${SITE_URL}/api/credentials/verify", {

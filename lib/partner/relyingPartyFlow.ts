@@ -35,6 +35,7 @@ import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAll
 import { computeSessionReceiptExpiresAt } from "@/lib/partner/sessionReceipt";
 import { buildPartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import type { PartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
+import { policyExplicitlyRequiresProductEligibility } from "@/lib/policy/evaluatePolicy";
 import {
   partnerFlowReceiptAccessBlocked,
   partnerFlowRevocationDeniedFields,
@@ -384,6 +385,8 @@ export async function issuePartnerSessionReceipt(input: {
   const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
   const evaluatedAt = new Date().toISOString();
   const identityVerified = Boolean(evaluation.claims.identity_verified);
+  const productEligibilityRequired = policyExplicitlyRequiresProductEligibility(policy.rules_json);
+  const productEligibilityVerified = Boolean(evaluation.claims.product_eligibility);
   const partner_result = buildPartnerVerificationResult({
     decision: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
     credentialJti: input.credentialJti,
@@ -395,6 +398,8 @@ export async function issuePartnerSessionReceipt(input: {
     partnerId: input.partnerId,
     identityVerified,
     minimumAge: policy.rules_json.minimum_age,
+    productEligibilityRequired,
+    productEligibilityVerified,
     assuranceLevel: identityVerified ? "L2" : null,
     reasonCodes: evaluation.reason_codes,
   });
