@@ -18,7 +18,10 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
-import { PRODUCTION_PARTNER_POLICIES } from "@/lib/policy/productionPolicyContract";
+import {
+  GOOD_TROUBLE_RETAIL_V2_POLICY_RULES,
+  PRODUCTION_PARTNER_POLICIES,
+} from "@/lib/policy/productionPolicyContract";
 
 const HOLDER = "0x1234567890abcdef1234567890abcdef12345678";
 const JTI = "urn:uuid:gt-e2e-test";
@@ -37,7 +40,7 @@ function withStatus(
 
 function fullGoodTroubleClaimBundle(
   provider: "capture" | "manual" | "veriff",
-  options?: { includeAgeEligibility?: boolean },
+  options?: { includeProductEligibility?: boolean },
 ): CredentialClaimRecord[] {
   const base = {
     subjectId: HOLDER,
@@ -65,7 +68,7 @@ function fullGoodTroubleClaimBundle(
       walletAddress: HOLDER,
       bindingMethod: "zklogin",
     }),
-    ...(options?.includeAgeEligibility !== false
+    ...(options?.includeProductEligibility
       ? [
           productEligibilityClaim({
             subjectId: HOLDER,
@@ -94,9 +97,20 @@ describe("Good Trouble retail — full backend wiring", () => {
     expect(evaluation.missing_claims).toContain("residency_country");
   });
 
-  it("denies when product_eligibility over_21 is missing despite identity_verified", () => {
-    const claims = fullGoodTroubleClaimBundle("capture", { includeAgeEligibility: false });
+  it("v1 approves without product_eligibility despite minimum_age metadata", () => {
+    const claims = fullGoodTroubleClaimBundle("capture");
     const evaluation = evaluatePolicyRules(gtPolicy.rules, claims, {
+      jurisdiction: "US",
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+    });
+    expect(evaluation.decision).toBe("approved");
+    expect(evaluation.missing_claims).not.toContain("product_eligibility");
+  });
+
+  it("v2 pending rules deny without explicit product_eligibility claim", () => {
+    const claims = fullGoodTroubleClaimBundle("capture");
+    const evaluation = evaluatePolicyRules(GOOD_TROUBLE_RETAIL_V2_POLICY_RULES, claims, {
       jurisdiction: "US",
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
@@ -105,9 +119,19 @@ describe("Good Trouble retail — full backend wiring", () => {
     expect(evaluation.missing_claims).toContain("product_eligibility");
   });
 
+  it("v2 pending rules approve when product_eligibility over_21 is present", () => {
+    const claims = fullGoodTroubleClaimBundle("capture", { includeProductEligibility: true });
+    const evaluation = evaluatePolicyRules(GOOD_TROUBLE_RETAIL_V2_POLICY_RULES, claims, {
+      jurisdiction: "US",
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+    });
+    expect(evaluation.decision).toBe("approved");
+    expect(evaluation.missing_claims).toHaveLength(0);
+  });
+
   for (const provider of ["capture", "manual", "veriff"] as const) {
     it(`${provider} path: credential issuance → policy approved → next enter`, () => {
-      // 1. Document capture / admin approval → credential issuance (claims bundle)
       const claims = fullGoodTroubleClaimBundle(provider);
       expect(claims.some(c => c.claim_type === "residency_country")).toBe(true);
       expect(claims.find(c => c.claim_type === "residency_country")?.claim_value).toEqual({
@@ -115,7 +139,6 @@ describe("Good Trouble retail — full backend wiring", () => {
         state: "MO",
       });
 
-      // 2. Trust Engine policy evaluation
       const evaluation = evaluatePolicyRules(gtPolicy.rules, claims, {
         jurisdiction: "US",
         partnerId: GOOD_TROUBLE_PARTNER_ID,
@@ -125,7 +148,6 @@ describe("Good Trouble retail — full backend wiring", () => {
       expect(evaluation.missing_claims).toHaveLength(0);
       expect(evaluation.decision_context).toBe("sandbox_only");
 
-      // 3. Partner flow step resolution (authenticated holder with active credential)
       const next = resolvePartnerFlowStep({
         authenticated: true,
         credentialStatus: "active",
@@ -133,7 +155,6 @@ describe("Good Trouble retail — full backend wiring", () => {
       });
       expect(next).toBe("enter");
 
-      // 4. Signed Trust Decision payload (session receipt partner result)
       const evaluatedAt = new Date().toISOString();
       const receiptExpiresAt = computeSessionReceiptExpiresAt(gtPolicy.rules);
       const partnerResult = buildPartnerVerificationResult({
@@ -148,17 +169,57 @@ describe("Good Trouble retail — full backend wiring", () => {
         identityVerified: true,
         minimumAge: gtPolicy.rules.minimum_age,
         assuranceLevel: "L2",
+        productEligibilityRequired: false,
+        productEligibilityVerified: false,
       });
 
       expect(partnerResult.decision).toBe("approved");
-      expect(partnerResult.over_21).toBe(true);
+      expect(partnerResult.over_21).toBe(false);
       expect(partnerResult.receipt_id).toBe("dr_gt_e2e");
       expect(partnerResult).not.toHaveProperty("date_of_birth");
     });
   }
 
-  it("mirrors migration 049+050+051+075 policy rules", () => {
-    expect(gtPolicy.rules.required_claims).toHaveLength(5);
+  it("over_21 is true only when product_eligibility is explicitly required and verified", () => {
+    const evaluatedAt = new Date().toISOString();
+    const receiptExpiresAt = computeSessionReceiptExpiresAt(gtPolicy.rules);
+
+    const withoutExplicitRequirement = buildPartnerVerificationResult({
+      decision: "approved",
+      credentialJti: JTI,
+      issuer: "https://abraxas-app.vercel.app",
+      evaluatedAt,
+      receiptId: "dr_gt_v1",
+      receiptExpiresAt,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      identityVerified: true,
+      minimumAge: 21,
+      assuranceLevel: "L2",
+    });
+    expect(withoutExplicitRequirement.over_21).toBe(false);
+
+    const withExplicitRequirement = buildPartnerVerificationResult({
+      decision: "approved",
+      credentialJti: JTI,
+      issuer: "https://abraxas-app.vercel.app",
+      evaluatedAt,
+      receiptId: "dr_gt_v2",
+      receiptExpiresAt,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      identityVerified: true,
+      minimumAge: 21,
+      assuranceLevel: "L2",
+      productEligibilityRequired: true,
+      productEligibilityVerified: true,
+    });
+    expect(withExplicitRequirement.over_21).toBe(true);
+  });
+
+  it("mirrors migration 049+050+051+075 active v1 policy rules", () => {
+    expect(gtPolicy.rules.required_claims).toHaveLength(4);
+    expect(gtPolicy.rules.required_claims?.some(r => r.claim_type === "product_eligibility")).toBe(false);
     expect(gtPolicy.rules.biometric_thresholds?.face_min).toBe(0.90);
     expect(gtPolicy.rules.minimum_age).toBe(21);
     expect(gtPolicy.rules.session_receipt_hours).toBe(24);

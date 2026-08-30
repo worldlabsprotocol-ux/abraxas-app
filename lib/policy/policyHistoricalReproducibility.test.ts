@@ -61,6 +61,23 @@ describe("historical policy reproducibility (P1-1)", () => {
     expect(replayPinned.reason_codes).toEqual(atV1.reason_codes);
   });
 
+  it("does not retroactively require product_eligibility from minimum_age metadata alone", () => {
+    const pinnedV1Rules: PartnerPolicyRules = {
+      minimum_age: 21,
+      sandbox_only: true,
+      required_claims: [{ claim_type: "identity_verified", min_assurance: "L2" }],
+    };
+    const claims = [identityClaim()];
+
+    const result = evaluatePolicyRules(pinnedV1Rules, claims, {
+      partnerId: "good-trouble-cannabis",
+      policyId: "good-trouble-retail-v1",
+    });
+
+    expect(result.decision).toBe("approved");
+    expect(result.missing_claims).not.toContain("product_eligibility");
+  });
+
   it("pins policy_id and policy_version on decision and receipt shaped records", () => {
     const pinnedDecision = {
       policy_id: "good-trouble-retail-v1",

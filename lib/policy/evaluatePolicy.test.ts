@@ -161,25 +161,41 @@ describe("evaluatePolicyRules", () => {
     expect(result.missing_claims).toContain("residency_country");
   });
 
-  it("minimum_age 21 requires product_eligibility over_21 claim", () => {
+  it("minimum_age 21 does not expand into product_eligibility", () => {
     const expanded = expandRequiredClaimsForMinimumAge({ minimum_age: 21, required_claims: [] });
-    expect(expanded.some((r) => r.claim_type === "product_eligibility")).toBe(true);
+    expect(expanded.some((r) => r.claim_type === "product_eligibility")).toBe(false);
   });
 
-  it("denies identity_verified alone when minimum_age is 21", () => {
+  it("approves identity_verified alone when minimum_age is 21 without explicit product_eligibility", () => {
     const policy: PartnerPolicyRules = {
       minimum_age: 21,
       required_claims: [{ claim_type: "identity_verified", min_assurance: "L2" }],
+    };
+    const result = evaluatePolicyRules(policy, [claim({ claim_type: "identity_verified" })]);
+    expect(result.decision).toBe("approved");
+    expect(result.missing_claims).not.toContain("product_eligibility");
+  });
+
+  it("requires product_eligibility only when explicitly listed in required_claims", () => {
+    const policy: PartnerPolicyRules = {
+      minimum_age: 21,
+      required_claims: [
+        { claim_type: "identity_verified", min_assurance: "L2" },
+        { claim_type: "product_eligibility", must_equal: "over_21", max_age_hours: 8760, min_assurance: "L2" },
+      ],
     };
     const result = evaluatePolicyRules(policy, [claim({ claim_type: "identity_verified" })]);
     expect(result.decision).toBe("denied");
     expect(result.missing_claims).toContain("product_eligibility");
   });
 
-  it("approves when product_eligibility over_21 is present for minimum_age 21", () => {
+  it("approves when explicit product_eligibility over_21 is present", () => {
     const policy: PartnerPolicyRules = {
       minimum_age: 21,
-      required_claims: [{ claim_type: "identity_verified", min_assurance: "L2" }],
+      required_claims: [
+        { claim_type: "identity_verified", min_assurance: "L2" },
+        { claim_type: "product_eligibility", must_equal: "over_21", max_age_hours: 8760, min_assurance: "L2" },
+      ],
     };
     const eligibility = productEligibilityClaim({
       subjectId: "0x1",
@@ -194,10 +210,12 @@ describe("evaluatePolicyRules", () => {
     expect(result.decision).toBe("approved");
   });
 
-  it("denies expired product_eligibility claim", () => {
+  it("denies expired explicit product_eligibility claim", () => {
     const policy: PartnerPolicyRules = {
       minimum_age: 21,
-      required_claims: [],
+      required_claims: [
+        { claim_type: "product_eligibility", must_equal: "over_21", max_age_hours: 8760, min_assurance: "L2" },
+      ],
     };
     const eligibility = productEligibilityClaim({
       subjectId: "0x1",

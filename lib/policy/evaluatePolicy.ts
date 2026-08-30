@@ -14,33 +14,35 @@ import type {
 
 const PRODUCT_ELIGIBILITY_CLAIM_TYPE = "product_eligibility";
 
-/** When minimum_age >= 21, policy evaluation requires a non-PII over_21 eligibility claim. */
+/** True when stored rules_json explicitly lists product_eligibility in required_claims. */
+export function policyExplicitlyRequiresProductEligibility(rules: PartnerPolicyRules): boolean {
+  return (rules.required_claims ?? []).some(
+    (rule) => rule.claim_type === PRODUCT_ELIGIBILITY_CLAIM_TYPE,
+  );
+}
+
+/**
+ * Returns stored required_claims only — no minimum_age expansion.
+ * Historical and active policy evaluation must use immutable rules_json as persisted.
+ */
+export function resolveStoredRequiredClaims(rules: PartnerPolicyRules): RequiredClaimRule[] {
+  return [...(rules.required_claims ?? [])];
+}
+
+/**
+ * @deprecated Do not use for policy evaluation. minimum_age metadata does not imply
+ * product_eligibility until explicitly published in required_claims (migration 076 draft → publish).
+ */
 export function expandRequiredClaimsForMinimumAge(
   rules: PartnerPolicyRules,
 ): RequiredClaimRule[] {
-  const required = [...(rules.required_claims ?? [])];
-  const minimumAge = rules.minimum_age;
-  if (minimumAge == null || minimumAge < 21) return required;
-
-  const eligibilityRules = required.filter(
-    (rule) => rule.claim_type === PRODUCT_ELIGIBILITY_CLAIM_TYPE,
-  );
-  if (eligibilityRules.length > 0) {
-    return required;
-  }
-
-  required.push({
-    claim_type: PRODUCT_ELIGIBILITY_CLAIM_TYPE,
-    must_equal: PRODUCT_ELIGIBILITY_OVER_21,
-    max_age_hours: 8760,
-    min_assurance: "L2",
-  });
-  return required;
+  return resolveStoredRequiredClaims(rules);
 }
 
-/** Fail closed when minimum_age requires over_21 but policy declares a conflicting eligibility rule. */
+/** Fail closed when explicit product_eligibility conflicts with minimum_age intent. */
 export function hasConflictingProductEligibilityRule(rules: PartnerPolicyRules): boolean {
   if (rules.minimum_age == null || rules.minimum_age < 21) return false;
+  if (!policyExplicitlyRequiresProductEligibility(rules)) return false;
   return (rules.required_claims ?? []).some(
     (rule) => rule.claim_type === PRODUCT_ELIGIBILITY_CLAIM_TYPE
       && rule.must_equal != null
@@ -181,7 +183,7 @@ export function evaluatePolicyRules(
     };
   }
 
-  const required = expandRequiredClaimsForMinimumAge(rules);
+  const required = resolveStoredRequiredClaims(rules);
   const claimsByType = new Map<string, CredentialClaimRecord>();
   for (const c of claims) {
     if (!claimsByType.has(c.claim_type)) claimsByType.set(c.claim_type, c);

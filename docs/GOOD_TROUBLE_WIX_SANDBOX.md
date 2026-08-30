@@ -97,11 +97,83 @@ Copy `examples/good-trouble-wix/pages/*.js` into the corresponding Wix page code
 
 ## Age enforcement (code)
 
-Policy evaluation requires `product_eligibility` with outcome `over_21`, derived server-side from authoritative IDV document DOB. No DOB, age, or document images are exposed to Wix, callbacks, or public receipts.
+Active v1 evaluates **stored `required_claims` only** — four claims, no `product_eligibility`. `minimum_age: 21` is metadata until v2 is published. IDV may still **issue** `product_eligibility=over_21` from authoritative document DOB internally; no DOB, age, or document images are exposed to Wix, callbacks, or public receipts.
 
-Migration: `supabase/migrations/075_good_trouble_retail_age_eligibility_claim.sql` — **not applied** by this batch.
+Enforcement in policy evaluation begins only after operator publish of migration **076** draft v2. See operator steps below.
 
-Rollback: `supabase/rollbacks/075_good_trouble_retail_age_eligibility_claim_rollback.sql` — removes only the DB rule; `minimum_age` code expansion continues enforcing until code is rolled back separately.
+## Migration 075 compatibility shim
+
+Merged `075_good_trouble_retail_age_eligibility_claim.sql` used an in-place active `UPDATE` that fails post-055 immutability (`P0001: cannot mutate rules_json on good-trouble-retail-v1.1`). The compatibility shim is safe because:
+
+- Production 075 **failed** before any policy mutation (operator-confirmed P0001).
+- `075` is **not** in `DEMO_REQUIRED_MIGRATION_ORDER` (demo ledger stops at `065`); no environment has ledgered the prior hash unless manually added outside manifest.
+- CI fresh sequential path passes: `scripts/ci/run-migration-076-sql-parity.sh` (049→051→055→075 shim→076).
+
+Post-055: 075 detects `trg_partner_policies_immutability` and defers to 076.
+
+## Operator rollout — migration 076 (Production)
+
+**Separate explicit Production approval required.** The Supabase SQL Editor does **not** support psql `\i` — always copy raw SQL from GitHub.
+
+### Preflight (read-only)
+
+**Query A — NEW SQL tab:**
+
+```sql
+SELECT to_regclass('supabase_migrations.schema_migrations') AS migration_ledger_relation;
+```
+
+`NULL` → skip Query B. Non-null → run Query B in the **same** tab.
+
+**Query B — SAME SQL tab (only if Query A is non-null):**
+
+```sql
+SELECT version, name
+FROM supabase_migrations.schema_migrations
+WHERE version LIKE '%075%' OR version LIKE '%076%' OR name LIKE '%075%' OR name LIKE '%076%'
+ORDER BY version;
+```
+
+Production’s earlier 075 attempt failed with P0001 and performed **no policy mutation** — but ledger rows must be confirmed via Query B, not inferred.
+
+**Policy state — NEW SQL tab:**
+
+```sql
+SELECT id, version, status,
+       jsonb_array_length(COALESCE(rules_json->'required_claims', '[]'::jsonb)) AS required_claim_count,
+       EXISTS (
+         SELECT 1 FROM jsonb_array_elements(COALESCE(rules_json->'required_claims', '[]'::jsonb)) e
+         WHERE e->>'claim_type' = 'product_eligibility'
+       ) AS has_product_eligibility
+FROM public.partner_policies
+WHERE id = 'good-trouble-retail-v1'
+ORDER BY version;
+
+SELECT partner_id, assigned_policy_id
+FROM public.partners
+WHERE partner_id = 'good-trouble-cannabis';
+```
+
+### a. Apply 076 draft — NEW SQL tab
+
+1. Open `supabase/migrations/076_good_trouble_retail_product_eligibility_draft.sql` on GitHub → **Raw** → copy all.
+2. Supabase SQL Editor → **New SQL tab** → paste → run (after approval).
+
+### b. Verify draft — SAME SQL tab or NEW SQL tab
+
+Re-run the policy state query above. Expect v1 `active` unchanged (4 claims); v2 `draft` with one `product_eligibility` claim.
+
+### c. Publish v2 — separate approval, NEW SQL tab
+
+```sql
+SELECT public.publish_partner_policy_draft('good-trouble-retail-v1', 2);
+```
+
+### Rollback 076 (draft only, pre-publish) — NEW SQL tab
+
+Copy raw SQL from `supabase/rollbacks/076_good_trouble_retail_product_eligibility_draft_rollback.sql` on GitHub. **New SQL tab** → paste → run (separate rollback approval). Never mutates active/deprecated rows.
+
+075 rollback on post-055 Production is a no-op; use 076 rollback for the draft.
 
 ## Receipt validation (Wix backend)
 
@@ -174,6 +246,6 @@ Returning users with an active credential may complete in seconds.
 ## Related code
 
 - `lib/idv/ageEligibility.ts` — DOB parsing and eligibility (internal only)
-- `lib/policy/evaluatePolicy.ts` — `minimum_age` → `product_eligibility` requirement
+- `lib/policy/evaluatePolicy.ts` — stored `required_claims` only; `product_eligibility` when explicitly published in policy version
 - `lib/partner/verifyPartnerFlowReceipt.ts` — strict sandbox/production modes
 - `examples/good-trouble-wix/` — Wix Velo reference

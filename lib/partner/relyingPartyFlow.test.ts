@@ -108,7 +108,28 @@ describe("partner verification result — no PII", () => {
     expect(payload.receipt_id).toBe("dr_test");
   });
 
-  it("returns over_21 for approved 21+ policy without raw DOB", () => {
+  it("returns over_21 only when product_eligibility is explicitly required and verified", () => {
+    const result = buildPartnerVerificationResult({
+      decision: "approved",
+      credentialJti: "cred-123",
+      issuer: "https://abraxas.example",
+      evaluatedAt: "2026-07-18T12:00:00Z",
+      receiptId: "dr_abc",
+      receiptExpiresAt: "2026-07-19T12:00:00Z",
+      policyId: "good-trouble-retail-v1",
+      partnerId: "good-trouble-cannabis",
+      identityVerified: true,
+      minimumAge: 21,
+      assuranceLevel: "L2",
+      productEligibilityRequired: true,
+      productEligibilityVerified: true,
+    });
+    expect(result.over_21).toBe(true);
+    expect(result).not.toHaveProperty("date_of_birth");
+    expect(result).not.toHaveProperty("legal_name");
+  });
+
+  it("returns over_21 false when minimum_age is set but product_eligibility is not explicitly required", () => {
     const result = buildPartnerVerificationResult({
       decision: "approved",
       credentialJti: "cred-123",
@@ -122,9 +143,26 @@ describe("partner verification result — no PII", () => {
       minimumAge: 21,
       assuranceLevel: "L2",
     });
-    expect(result.over_21).toBe(true);
-    expect(result).not.toHaveProperty("date_of_birth");
-    expect(result).not.toHaveProperty("legal_name");
+    expect(result.over_21).toBe(false);
+  });
+
+  it("returns over_21 false when product_eligibility is required but not verified", () => {
+    const result = buildPartnerVerificationResult({
+      decision: "approved",
+      credentialJti: "cred-123",
+      issuer: "https://abraxas.example",
+      evaluatedAt: "2026-07-18T12:00:00Z",
+      receiptId: "dr_abc",
+      receiptExpiresAt: "2026-07-19T12:00:00Z",
+      policyId: "good-trouble-retail-v1",
+      partnerId: "good-trouble-cannabis",
+      identityVerified: true,
+      minimumAge: 21,
+      assuranceLevel: "L2",
+      productEligibilityRequired: true,
+      productEligibilityVerified: false,
+    });
+    expect(result.over_21).toBe(false);
   });
 
   it("denies over_21 when decision denied", () => {

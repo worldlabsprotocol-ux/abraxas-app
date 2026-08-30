@@ -57,6 +57,8 @@ describe("age privacy proof scans", () => {
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       identityVerified: true,
       minimumAge: 21,
+      productEligibilityRequired: true,
+      productEligibilityVerified: true,
     });
     assertAgePrivacySafe(partnerResult, "partner_result");
   });

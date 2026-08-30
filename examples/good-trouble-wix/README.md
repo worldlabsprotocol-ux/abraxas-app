@@ -111,4 +111,4 @@ Stored fields: `flowId`, `verifierChallenge`, `state`, `createdAt`, `expiresAt`,
 
 Receipt validation mirrors `lib/partner/verifyPartnerFlowReceipt.ts` with `mode: "sandbox"`.
 
-Age eligibility is enforced server-side via `product_eligibility=over_21` claim — see migration `075_good_trouble_retail_age_eligibility_claim.sql` (not applied by this reference). Rollback: `supabase/rollbacks/075_good_trouble_retail_age_eligibility_claim_rollback.sql`.
+Age eligibility is enforced when `product_eligibility=over_21` is **explicitly published** in policy `required_claims` (migration 076 draft → operator publish v2). Active v1 has no DB age gate. Copy/paste operator SQL from GitHub raw files — never use `\i` in Supabase SQL Editor. See `docs/GOOD_TROUBLE_WIX_SANDBOX.md` operator section.
