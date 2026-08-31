@@ -1,45 +1,99 @@
 // FILE: examples/good-trouble-wix/pages/AgeVerificationPopup.js
 // Wix Velo page code — Age Verification popup (lightbox or page).
-// Element IDs: #yesButton, #abraxasButton, #abraxasStatusText
+// Wix deployment: paste into the Age Verification popup page code panel.
+// Required element IDs: #yesButton, #noButton, #abraxasButton, #abraxasCaptcha, #abraxasStatusText
 
 import { createAbraxasVerificationStart } from "backend/abraxasVerification.web";
 import { VERIFIER_STORAGE_PREFIX } from "backend/constants";
+import wixWindow from "wix-window";
+import {
+  ABRAXAS_LABEL,
+  createPopupController,
+} from "public/ageVerificationPopupLogic";
 
-const ABRAXAS_LABEL = "Verify with Abraxas Passport";
-const ABRAXAS_SUPPORT =
-  "Optional verification for faster future setup. Your ID photos and date of birth are not shared with Good Trouble.";
-
-let abraxasStarting = false;
+/** @type {ReturnType<typeof createPopupController> | null} */
+let popupController = null;
 
 $w.onReady(() => {
   if ($w("#abraxasButton")) {
     $w("#abraxasButton").label = ABRAXAS_LABEL;
   }
-  if ($w("#abraxasStatusText")) {
-    $w("#abraxasStatusText").text = ABRAXAS_SUPPORT;
-  }
 
+  popupController = createPopupController({
+    setAbraxasButtonEnabled(enabled) {
+      setButtonEnabled("#abraxasButton", enabled);
+    },
+    setStatus(message) {
+      if ($w("#abraxasStatusText")) {
+        $w("#abraxasStatusText").text = message;
+      }
+    },
+    async getCaptchaToken() {
+      if (!$w("#abraxasCaptcha")) return "";
+      return $w("#abraxasCaptcha").getToken();
+    },
+    resetCaptcha() {
+      if ($w("#abraxasCaptcha")) {
+        $w("#abraxasCaptcha").reset();
+      }
+    },
+    startAbraxasVerification: (token) => createAbraxasVerificationStart(token),
+    sessionStorageAvailable,
+    storeVerifier(flowId, verifier) {
+      sessionStorage.setItem(verifierStorageKey(flowId), verifier);
+    },
+    navigateToVerifyUrl(url) {
+      window.location.href = url;
+    },
+    storage: typeof localStorage !== "undefined" ? localStorage : null,
+    onTraditionalYesComplete() {
+      if (wixWindow.lightbox) {
+        wixWindow.lightbox.close();
+      }
+    },
+  });
+
+  popupController.onReady();
+
+  wireCaptchaElement();
+  wireButtons();
+});
+
+function setButtonEnabled(selector, enabled) {
+  const element = $w(selector);
+  if (!element) return;
+  element.enable();
+  if (!enabled) element.disable();
+}
+
+function wireCaptchaElement() {
+  const captcha = $w("#abraxasCaptcha");
+  if (!captcha || !popupController) return;
+
+  captcha.onVerified(() => {
+    popupController.onCaptchaVerified();
+  });
+
+  captcha.onTimeout(() => {
+    popupController.onCaptchaInvalidated();
+  });
+
+  captcha.onError(() => {
+    popupController.onCaptchaInvalidated();
+  });
+}
+
+function wireButtons() {
+  // Traditional self-attestation — enabled on load; no CAPTCHA required.
   $w("#yesButton").onClick(() => {
-    // Traditional self-attestation — unchanged, independent of Abraxas.
-    // Operator: close lightbox / grant age gate per existing Good Trouble logic.
+    void popupController?.onTraditionalYesClick();
   });
 
   $w("#abraxasButton").onClick(() => {
-    void handleAbraxasStart();
+    void popupController?.onAbraxasClick();
   });
-});
 
-function setAbraxasStatus(message) {
-  if ($w("#abraxasStatusText")) {
-    $w("#abraxasStatusText").text = message;
-  }
-}
-
-function setAbraxasButtonEnabled(enabled) {
-  if ($w("#abraxasButton")) {
-    $w("#abraxasButton").enable();
-    if (!enabled) $w("#abraxasButton").disable();
-  }
+  // #noButton ("No, I'm not") intentionally not gated — remains enabled by default.
 }
 
 function sessionStorageAvailable() {
@@ -55,57 +109,4 @@ function sessionStorageAvailable() {
 
 function verifierStorageKey(flowId) {
   return `${VERIFIER_STORAGE_PREFIX}${flowId}`;
-}
-
-async function handleAbraxasStart() {
-  if (abraxasStarting) return;
-  abraxasStarting = true;
-  setAbraxasButtonEnabled(false);
-  setAbraxasStatus("Starting verification…");
-
-  if (!sessionStorageAvailable()) {
-    setAbraxasStatus(
-      "Verification is unavailable in this browser mode. Use “Yes, I’m 21 or older” or try another browser.",
-    );
-    abraxasStarting = false;
-    setAbraxasButtonEnabled(true);
-    return;
-  }
-
-  try {
-    let captchaToken = "";
-    if ($w("#abraxasCaptcha")) {
-      captchaToken = await $w("#abraxasCaptcha").getToken();
-    }
-    if (!captchaToken) {
-      setAbraxasStatus("Verification could not be started. Please try again or use the traditional option.");
-      abraxasStarting = false;
-      setAbraxasButtonEnabled(true);
-      return;
-    }
-
-    const result = await createAbraxasVerificationStart(captchaToken);
-
-    if (result?.error) {
-      setAbraxasStatus("Verification could not be started. Please try again or use the traditional option.");
-      abraxasStarting = false;
-      setAbraxasButtonEnabled(true);
-      return;
-    }
-
-    const { verifyUrl, flowId, verifier } = result;
-    if (!verifyUrl || !flowId || !verifier) {
-      setAbraxasStatus("Verification could not be started. Please try again or use the traditional option.");
-      abraxasStarting = false;
-      setAbraxasButtonEnabled(true);
-      return;
-    }
-
-    sessionStorage.setItem(verifierStorageKey(flowId), verifier);
-    window.location.href = verifyUrl;
-  } catch {
-    setAbraxasStatus("Verification could not be started. Please try again or use the traditional option.");
-    abraxasStarting = false;
-    setAbraxasButtonEnabled(true);
-  }
 }
