@@ -8,8 +8,9 @@ Account bootstrap, email sharing, newsletters, and partner SSO remain **in devel
 
 | Path | Behavior |
 |------|----------|
-| **Primary** | “Yes, I’m 21 or older” (`#yesButton`) — existing Wix self-attestation only |
-| **Secondary** | “Verify with Abraxas Passport” (`#abraxasButton`) — PKCE flow, no Wix membership required |
+| **Primary** | “Yes, I’m 21 or older” (`#yesButton`) — quick age self-attestation; no CAPTCHA required |
+| **Exit** | “No, I’m not” (`#noButton`) — always enabled |
+| **Secondary** | “Verify with Abraxas Passport” (`#abraxasButton`) — stronger, reusable policy-backed verification; requires `#abraxasCaptcha` before start |
 
 Supporting copy (`#abraxasStatusText`):
 
@@ -58,7 +59,7 @@ sequenceDiagram
 
 ## Anti-automation and capacity (sandbox)
 
-Each `createAbraxasVerificationStart` call requires a **Wix reCAPTCHA token** (`#abraxasCaptcha`) verified server-side via `wix-captcha-backend.authorize()`. This prevents unauthenticated scripts from exhausting the shared pending-flow cap without solving CAPTCHAs.
+Each `createAbraxasVerificationStart` call requires a **Wix reCAPTCHA token** (`#abraxasCaptcha`) verified server-side via `wix-captcha-backend.authorize()`. Only `#abraxasButton` is gated: it stays disabled until `#abraxasCaptcha.onVerified()` fires. `#yesButton` and `#noButton` remain enabled — traditional self-attestation does not require CAPTCHA. CAPTCHA is a **human check for Abraxas start only** — never described as age, identity, or eligibility verification. Traditional Yes writes a 30-day `localStorage` self-attestation (`good_trouble_age_self_attested`) — not Abraxas authority.
 
 | Control | Behavior |
 |---------|----------|
@@ -115,10 +116,26 @@ UTC calendar math (including leap-day Feb 29 → eligible on March 1 in tests) i
 
 | Page | Slug / usage | Element IDs |
 |------|--------------|-------------|
-| Age Verification popup | Lightbox or page | `#yesButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText` |
+| Age Verification popup | Lightbox or page | `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText` |
 | Age Verification Result | `/age-verification-result` | `#abraxasStatusText`, `#restartAbraxasButton` (optional) |
 
-Copy `examples/good-trouble-wix/pages/*.js` into the corresponding Wix page code panels.
+Copy `examples/good-trouble-wix/pages/AgeVerificationResult.js` into the `/age-verification-result` page code panel.
+
+### Wix page deployment (`src/public` + popup page)
+
+| Repository file | Wix destination |
+|-----------------|-----------------|
+| `pages/ageVerificationPopupLogic.js` | `src/public/ageVerificationPopupLogic.js` |
+| `pages/AgeVerificationPopup.js` | Age Verification popup page code panel |
+| `pages/AgeVerificationResult.js` | `/age-verification-result` page code panel |
+
+`AgeVerificationPopup.js` imports the logic module with:
+
+```javascript
+import { createPopupController, ABRAXAS_LABEL } from "public/ageVerificationPopupLogic";
+```
+
+Required popup element IDs (exact): `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText`.
 
 ## Age enforcement (code)
 
@@ -233,7 +250,7 @@ Copy these **10** backend modules (see `examples/good-trouble-wix/README.md` for
 
 `constants.js`, `sha256Adapter.js`, `pkceProof.js`, `nonceLifecycle.js`, `flowCapacity.js`, `captchaGate.js`, `wixNonceStore.js`, `abraxasReceiptValidator.js`, `abraxasVerificationService.js`, `abraxasVerification.web.js`
 
-Plus page code: `pages/AgeVerificationPopup.js`, `pages/AgeVerificationResult.js`.
+Plus: `pages/ageVerificationPopupLogic.js` → `src/public/ageVerificationPopupLogic.js`; `pages/AgeVerificationPopup.js` → popup page panel; `pages/AgeVerificationResult.js` → callback page panel.
 
 ## CMS collection permissions
 
