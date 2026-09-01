@@ -21,8 +21,8 @@ Account bootstrap, email sharing, newsletters, and partner SSO remain **in devel
 | `backend/abraxasReceiptValidator.js` | Strict sandbox receipt validation |
 | `backend/abraxasVerification.web.js` | Wix Velo web-method wrapper |
 | `backend/abraxasVerification.test.js` | Reference module tests |
-| `pages/ageVerificationPopupLogic.js` | CAPTCHA gating + traditional self-attestation logic → Wix `src/public/ageVerificationPopupLogic.js` |
-| `pages/AgeVerificationPopup.js` | Popup page code → Age Verification popup panel; imports `public/ageVerificationPopupLogic` |
+| `pages/ageVerificationPopupLogic.js` | CAPTCHA state machine → Wix `src/public/ageVerificationPopupLogic.js` |
+| `pages/AgeVerificationPopup.js` | Popup page panel; uses `captcha.token` + `wixLocationFrontend.to()` |
 | `pages/AgeVerificationResult.js` | Callback page (`/age-verification-result`) |
 | `../docs/GOOD_TROUBLE_WIX_SANDBOX.md` | Operator checklist + UX copy |
 
@@ -101,11 +101,13 @@ Also copy `pages/ageVerificationPopupLogic.js` to `src/public/ageVerificationPop
 | `pages/AgeVerificationPopup.js` | Age Verification popup page code panel |
 | `pages/AgeVerificationResult.js` | `/age-verification-result` page code panel |
 
-`AgeVerificationPopup.js` must import the logic module with the Wix Public-module path:
+`AgeVerificationPopup.js` must import the logic module with the Wix Public-module path and keep `#abraxasButton` link set to **None**:
 
 ```javascript
-import { createPopupController, ABRAXAS_LABEL } from "public/ageVerificationPopupLogic";
+import { createPopupController, createPopupInitializationGuard } from "public/ageVerificationPopupLogic";
 ```
+
+Use `#abraxasCaptcha.token` after `onVerified` (not `getToken()`). Redirect with `wixLocationFrontend.to(verifyUrl)` on Test Site / published Site; Editor Preview shows the explicit pass message instead.
 
 Required popup element IDs (exact): `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText`.
 

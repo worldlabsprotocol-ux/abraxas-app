@@ -10,7 +10,7 @@ import {
 
 /**
  * Start Abraxas verification after Wix reCAPTCHA backend authorization.
- * @param {string} captchaToken from `#abraxasCaptcha` element getToken()
+ * @param {string} captchaToken from `#abraxasCaptcha` element `.token` after onVerified
  */
 export const createAbraxasVerificationStart = webMethod(
   Permissions.Anyone,

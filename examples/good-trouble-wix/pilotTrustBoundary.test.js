@@ -58,6 +58,18 @@ describe("good_trouble_age_verified_pilot trust boundary", () => {
     expect(traditionalHandler).not.toContain("captcha");
   });
 
+  it("does not navigate popup directly to the result page", () => {
+    const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
+    expect(popupSource).not.toContain("age-verification-result");
+    expect(popupSource).toContain("wixLocationFrontend.to(url)");
+  });
+
+  it("uses captcha.token rather than getToken for Abraxas start", () => {
+    const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
+    expect(popupSource).toContain("captcha.token");
+    expect(popupSource).not.toContain("getToken()");
+  });
+
   it("uses traditional self-attestation localStorage only — not Abraxas pilot flag", () => {
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
     expect(logicSource).toContain("good_trouble_age_self_attested");
