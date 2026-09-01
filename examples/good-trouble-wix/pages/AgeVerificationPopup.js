@@ -5,65 +5,92 @@
 
 import { createAbraxasVerificationStart } from "backend/abraxasVerification.web";
 import { VERIFIER_STORAGE_PREFIX } from "backend/constants";
+import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
+import wixWindowFrontend from "wix-window-frontend";
 import {
-  ABRAXAS_LABEL,
   createPopupController,
+  createPopupInitializationGuard,
 } from "public/ageVerificationPopupLogic";
+
+const popupInitGuard = createPopupInitializationGuard();
 
 /** @type {ReturnType<typeof createPopupController> | null} */
 let popupController = null;
 
 $w.onReady(() => {
-  if ($w("#abraxasButton")) {
-    $w("#abraxasButton").label = ABRAXAS_LABEL;
+  if (!isBrowserRenderEnvironment()) {
+    return;
   }
 
-  popupController = createPopupController({
-    setAbraxasButtonEnabled(enabled) {
-      setButtonEnabled("#abraxasButton", enabled);
-    },
-    setStatus(message) {
-      if ($w("#abraxasStatusText")) {
-        $w("#abraxasStatusText").text = message;
-      }
-    },
-    async getCaptchaToken() {
-      if (!$w("#abraxasCaptcha")) return "";
-      return $w("#abraxasCaptcha").getToken();
-    },
-    resetCaptcha() {
-      if ($w("#abraxasCaptcha")) {
-        $w("#abraxasCaptcha").reset();
-      }
-    },
-    startAbraxasVerification: (token) => createAbraxasVerificationStart(token),
-    sessionStorageAvailable,
-    storeVerifier(flowId, verifier) {
-      sessionStorage.setItem(verifierStorageKey(flowId), verifier);
-    },
-    navigateToVerifyUrl(url) {
-      window.location.href = url;
-    },
-    storage: typeof localStorage !== "undefined" ? localStorage : null,
-    onTraditionalYesComplete() {
-      if (wixWindow.lightbox) {
-        wixWindow.lightbox.close();
-      }
-    },
+  const initialized = popupInitGuard.initializeOnce(() => {
+    popupController = createPopupController({
+      async setAbraxasButtonEnabled(enabled) {
+        await setButtonEnabled("#abraxasButton", enabled);
+      },
+      setAbraxasButtonLabel(label) {
+        setButtonLabel("#abraxasButton", label);
+      },
+      setStatus(message) {
+        if ($w("#abraxasStatusText")) {
+          $w("#abraxasStatusText").text = message;
+        }
+      },
+      resetCaptcha() {
+        if ($w("#abraxasCaptcha")) {
+          $w("#abraxasCaptcha").reset();
+        }
+      },
+      startAbraxasVerification: (token) => createAbraxasVerificationStart(token),
+      sessionStorageAvailable,
+      storeVerifier(flowId, verifier) {
+        sessionStorage.setItem(verifierStorageKey(flowId), verifier);
+      },
+      navigateToVerifyUrl(url) {
+        wixLocationFrontend.to(url);
+      },
+      getViewMode: () => wixWindowFrontend.viewMode,
+      storage: typeof localStorage !== "undefined" ? localStorage : null,
+      onTraditionalYesComplete() {
+        if (wixWindow.lightbox) {
+          wixWindow.lightbox.close();
+        }
+      },
+    });
+
+    void popupController.onReady();
+    wireCaptchaElement();
+    wireButtons();
   });
 
-  popupController.onReady();
-
-  wireCaptchaElement();
-  wireButtons();
+  if (!initialized.ok) {
+    return;
+  }
 });
 
-function setButtonEnabled(selector, enabled) {
+function isBrowserRenderEnvironment() {
+  try {
+    return wixWindow.rendering.env === "browser";
+  } catch {
+    return typeof window !== "undefined";
+  }
+}
+
+async function setButtonEnabled(selector, enabled) {
   const element = $w(selector);
   if (!element) return;
-  element.enable();
-  if (!enabled) element.disable();
+
+  if (enabled) {
+    await element.enable();
+  } else {
+    await element.disable();
+  }
+}
+
+function setButtonLabel(selector, label) {
+  const element = $w(selector);
+  if (!element) return;
+  element.label = label;
 }
 
 function wireCaptchaElement() {
@@ -71,15 +98,16 @@ function wireCaptchaElement() {
   if (!captcha || !popupController) return;
 
   captcha.onVerified(() => {
-    popupController.onCaptchaVerified();
+    const token = typeof captcha.token === "string" ? captcha.token : "";
+    void popupController.onCaptchaVerified(token);
   });
 
   captcha.onTimeout(() => {
-    popupController.onCaptchaInvalidated();
+    void popupController.onCaptchaInvalidated();
   });
 
   captcha.onError(() => {
-    popupController.onCaptchaInvalidated();
+    void popupController.onCaptchaInvalidated();
   });
 }
 

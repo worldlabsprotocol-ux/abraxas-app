@@ -132,10 +132,60 @@ Copy `examples/good-trouble-wix/pages/AgeVerificationResult.js` into the `/age-v
 `AgeVerificationPopup.js` imports the logic module with:
 
 ```javascript
-import { createPopupController, ABRAXAS_LABEL } from "public/ageVerificationPopupLogic";
+import { createPopupController, createPopupInitializationGuard } from "public/ageVerificationPopupLogic";
 ```
 
 Required popup element IDs (exact): `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText`.
+
+### Popup state machine (Abraxas path)
+
+| State | UI behavior |
+|-------|-------------|
+| `waiting_for_captcha` | `#abraxasButton` disabled; status asks for human check |
+| `captcha_verified` | `#abraxasButton` enabled; label “Continue with Abraxas” |
+| `starting_backend` | Label “Starting…”; status “Contacting the Good Trouble verification backend…” |
+| `preview_backend_passed` | Editor Preview only — no external navigation |
+| `redirecting` | Test Site / published Site — `wixLocationFrontend.to(verifyUrl)` |
+| `recoverable_error` | Safe code-specific message; CAPTCHA reset; label “Try Abraxas Again” |
+
+Frontend uses `#abraxasCaptcha.token` after `onVerified` — **not** `getToken()`. Navigation uses `wix-location-frontend` — **not** `window.location.href`. `#abraxasButton` link in Wix Editor must remain **None** (code-owned).
+
+### Wix Studio responsive / full-viewport contract (manual canvas)
+
+The homepage flash cannot be eliminated by code because the age gate is a Wix popup over the homepage. Minimize it with an opaque, full-viewport popup surface. **These settings must be applied in Wix Studio** — repository JavaScript cannot set popup width, overlay opacity, or element X/Y anchors.
+
+| Setting | Desktop | Tablet | Mobile |
+|---------|---------|--------|--------|
+| Popup width | 100% | 100% | 100% |
+| Popup minimum height | 100vh | 100vh | 100vh |
+| Overlay / background | Opaque (not transparent) | Opaque | Opaque |
+| Content wrapper alignment | Centered horizontally + vertically | Centered | Centered |
+| Content wrapper width | `min(92vw, 760px)` | `min(92vw, 760px)` | `min(92vw, 760px)` |
+| Element X/Y position | 0 — no negative offsets | 0 | 0 |
+| Child section width | Fluid — **no** fixed `1280px` | Fluid | Fluid |
+| Heading text | Responsive size; wrap enabled | Same | Same |
+| Buttons container | Wrap / stack on narrow widths | Stack preferred | Stack |
+| `#abraxasCaptcha` | Centered; no scaling transform | Centered | Centered |
+| Text boxes (`#abraxasStatusText`) | Auto height | Auto height | Auto height |
+| Overflow | Vertical visible; horizontal hidden | Same | Same |
+
+**Test widths in Studio:** 1280, 1024, 768, 430, 390.
+
+**Cannot be done in repository JS (Studio only):** popup dimensions, overlay opacity, element anchor X/Y, section fixed widths, heading typography, button layout grid, CAPTCHA canvas position, text box sizing.
+
+### Backend runtime chain audit
+
+| Step | Module | Confirmed |
+|------|--------|-----------|
+| Popup click | `AgeVerificationPopup.js` | Calls `createAbraxasVerificationStart(token)` |
+| Web method | `abraxasVerification.web.js` | `wixCaptcha.authorize(token)` |
+| Service | `abraxasVerificationService.js` | `authorizeCaptchaToken` → `sha256Adapter` default |
+| CAPTCHA gate | `captchaGate.js` | Fail-closed on empty/invalid token |
+| SHA-256 | `sha256Adapter.js` | Auto-imported; not optional at runtime |
+| Flow build | `nonceLifecycle.js` | `partner_id=good-trouble-cannabis`, `policy_id=good-trouble-retail-v1`, sandbox |
+| CMS store | `wixNonceStore.js` | Collection `AbraxasVerificationNonces`; fields match `flowRecord` |
+
+Return URL remains exactly `https://www.goodtroublecanna.com/age-verification-result`. No production policy/key/partner mutation in this reference.
 
 ## Age enforcement (code)
 
