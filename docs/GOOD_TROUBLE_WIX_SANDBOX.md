@@ -10,11 +10,15 @@ Account bootstrap, email sharing, newsletters, and partner SSO remain **in devel
 |------|----------|
 | **Primary** | “Yes, I’m 21 or older” (`#yesButton`) — quick age self-attestation; no CAPTCHA required |
 | **Exit** | “No, I’m not” (`#noButton`) — always enabled |
-| **Secondary** | “Verify with Abraxas Passport” (`#abraxasButton`) — stronger, reusable policy-backed verification; requires `#abraxasCaptcha` before start |
+| **Secondary** | “Verify with Abraxas Passport” (`#abraxasButton`) — reusable, policy-backed verification gate; one click starts the backend flow |
+
+Abraxas Passport is the verification gate for the stronger route. Unlike a basic CAPTCHA, which only attempts to distinguish a person from automation, Abraxas validates the required policy and returns a privacy-preserving receipt. Good Trouble does not receive the visitor’s ID photos or date of birth.
+
+Abraxas is not represented as a general-purpose CAPTCHA. Backend capacity and lifecycle controls continue to protect flow creation, while a validated Abraxas receipt protects the verified outcome. Automated flow creation does not grant verification; verification requires a valid, bound Abraxas receipt.
 
 Supporting copy (`#abraxasStatusText`):
 
-> Optional verification for faster future setup. Your ID photos and date of birth are not shared with Good Trouble.
+> Use Abraxas Passport for reusable, privacy-preserving verification.
 
 ## Abraxas constants
 
@@ -35,8 +39,7 @@ sequenceDiagram
   participant B as Wix backend
   participant A as Abraxas
 
-  V->>B: createAbraxasVerificationStart(captchaToken)
-  B->>B: wix-captcha-backend.authorize(token)
+  V->>B: createAbraxasVerificationStart()
   B->>B: purge stale + capacity check
   B->>B: flowId + verifier + SHA-256 challenge (pending)
   B->>V: verifyUrl + flowId + verifier (TLS)
@@ -55,21 +58,31 @@ sequenceDiagram
 | Threat | Mitigation |
 |--------|------------|
 | Copied callback URL | Fails — verifier not in URL; different tab/browser has no sessionStorage entry |
-| Global pending-flow exhaustion | Mitigated — purge stale rows before count; CAPTCHA required per start; post-insert rollback; `#yesButton` unaffected |
+| Global pending-flow exhaustion | Mitigated — purge stale rows before count; post-insert rollback; `#yesButton` unaffected |
 
-## Anti-automation and capacity (sandbox)
+## Endpoint abuse resistance (sandbox)
 
-Each `createAbraxasVerificationStart` call requires a **Wix reCAPTCHA token** (`#abraxasCaptcha`) verified server-side via `wix-captcha-backend.authorize()`. Only `#abraxasButton` is gated: it stays disabled until `#abraxasCaptcha.onVerified()` fires. `#yesButton` and `#noButton` remain enabled — traditional self-attestation does not require CAPTCHA. CAPTCHA is a **human check for Abraxas start only** — never described as age, identity, or eligibility verification. Traditional Yes writes a 30-day `localStorage` self-attestation (`good_trouble_age_self_attested`) — not Abraxas authority.
+`createAbraxasVerificationStart` accepts **no client parameters**. The server applies a CAPTCHA bypass for this pilot route; `skipCaptcha` is never exposed to the browser. Abraxas Passport is the visible verification gate — not a CAPTCHA substitute.
 
 | Control | Behavior |
 |---------|----------|
 | Pending cap | 100 site-wide **non-expired pending** flows (after purge) |
 | Purge before count | Expired flows + consumed flows older than 24h removed before capacity check |
 | Post-insert rollback | If concurrent starts exceed cap, the just-inserted row is deleted |
-| Error surface | Generic `{ error: "rate_limited" }` — no counts leaked |
+| Flow TTL | 10 minutes |
+| Flow ID entropy | Opaque `gtf_{64hex}` |
+| PKCE binding | Verifier in `sessionStorage`; SHA-256 challenge server-side only |
+| Single-use consumption | Flow marked `consumed` before returning `verified: true` |
+| Receipt validation | Strict sandbox rules; bounded retries; receipt expiration |
+| Partner / policy | `good-trouble-cannabis` / `good-trouble-retail-v1` enforced at validation |
+| Error surface | Generic `{ error: "rate_limited" }` or safe codes — no counts or provider details leaked |
 | Traditional path | `#yesButton` self-attestation is independent — never blocked by Abraxas capacity |
 
-**Operator monitoring:** schedule a daily backend job calling `purgeStale` (see **Scheduled purge** below) and alert on elevated `rate_limited` / `captcha_invalid` rates. No automated cleanup ships in this reference — operator approval required before deploying a scheduled job.
+**No additional request-throttling control** beyond global pending-flow capacity exists in this reference. There is no IP fingerprinting, device fingerprinting, cookie-based throttling, PII collection, or new database schema for anonymous flow starts.
+
+**Security claim (honest):** Automated flow creation does not grant verification; verification requires a valid, bound Abraxas receipt.
+
+**Operator monitoring:** schedule a daily backend job calling `purgeStale` (see **Scheduled purge** below) and alert on elevated `rate_limited` rates. No automated cleanup ships in this reference — operator approval required before deploying a scheduled job.
 
 ### Scheduled purge (`purgeStale`) — operator requirement
 
@@ -116,7 +129,7 @@ UTC calendar math (including leap-day Feb 29 → eligible on March 1 in tests) i
 
 | Page | Slug / usage | Element IDs |
 |------|--------------|-------------|
-| Age Verification popup | Lightbox or page | `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText` |
+| Age Verification popup | Lightbox or page | `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasStatusText` |
 | Age Verification Result | `/age-verification-result` | `#abraxasStatusText`, `#restartAbraxasButton` (optional) |
 
 Copy `examples/good-trouble-wix/pages/AgeVerificationResult.js` into the `/age-verification-result` page code panel.
@@ -135,20 +148,19 @@ Copy `examples/good-trouble-wix/pages/AgeVerificationResult.js` into the `/age-v
 import { createPopupController, createPopupInitializationGuard } from "public/ageVerificationPopupLogic";
 ```
 
-Required popup element IDs (exact): `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText`.
+Required popup element IDs (exact): `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasStatusText`. The legacy `#abraxasCaptcha` element may be removed from the popup — it is no longer used.
 
 ### Popup state machine (Abraxas path)
 
 | State | UI behavior |
 |-------|-------------|
-| `waiting_for_captcha` | `#abraxasButton` disabled; status asks for human check |
-| `captcha_verified` | `#abraxasButton` enabled; label “Continue with Abraxas” |
-| `starting_backend` | Label “Starting…”; status “Contacting the Good Trouble verification backend…” |
+| `ready` | `#abraxasButton` enabled; label “Verify with Abraxas Passport” |
+| `starting_backend` | Button disabled; status “Starting secure verification with Abraxas Passport…” |
 | `preview_backend_passed` | Editor Preview only — no external navigation |
 | `redirecting` | Test Site / published Site — `wixLocationFrontend.to(verifyUrl)` |
-| `recoverable_error` | Safe code-specific message; CAPTCHA reset; label “Try Abraxas Again” |
+| `recoverable_error` | Safe generic retry message; button re-enabled |
 
-Frontend uses `#abraxasCaptcha.token` after `onVerified` — **not** `getToken()`. Navigation uses `wix-location-frontend` — **not** `window.location.href`. `#abraxasButton` link in Wix Editor must remain **None** (code-owned).
+Navigation uses `wix-location-frontend` — **not** `window.location.href`. `#abraxasButton` link in Wix Editor must remain **None** (code-owned).
 
 ### Wix Studio responsive / full-viewport contract (manual canvas)
 
@@ -165,22 +177,20 @@ The homepage flash cannot be eliminated by code because the age gate is a Wix po
 | Child section width | Fluid — **no** fixed `1280px` | Fluid | Fluid |
 | Heading text | Responsive size; wrap enabled | Same | Same |
 | Buttons container | Wrap / stack on narrow widths | Stack preferred | Stack |
-| `#abraxasCaptcha` | Centered; no scaling transform | Centered | Centered |
 | Text boxes (`#abraxasStatusText`) | Auto height | Auto height | Auto height |
 | Overflow | Vertical visible; horizontal hidden | Same | Same |
 
 **Test widths in Studio:** 1280, 1024, 768, 430, 390.
 
-**Cannot be done in repository JS (Studio only):** popup dimensions, overlay opacity, element anchor X/Y, section fixed widths, heading typography, button layout grid, CAPTCHA canvas position, text box sizing.
+**Cannot be done in repository JS (Studio only):** popup dimensions, overlay opacity, element anchor X/Y, section fixed widths, heading typography, button layout grid, text box sizing.
 
 ### Backend runtime chain audit
 
 | Step | Module | Confirmed |
 |------|--------|-----------|
-| Popup click | `AgeVerificationPopup.js` | Calls `createAbraxasVerificationStart(token)` |
-| Web method | `abraxasVerification.web.js` | `wixCaptcha.authorize(token)` |
-| Service | `abraxasVerificationService.js` | `authorizeCaptchaToken` → `sha256Adapter` default |
-| CAPTCHA gate | `captchaGate.js` | Fail-closed on empty/invalid token |
+| Popup click | `AgeVerificationPopup.js` | Calls `createAbraxasVerificationStart()` — no client args |
+| Web method | `abraxasVerification.web.js` | Server-owned `skipCaptcha: true`; `Permissions.Anyone` |
+| Service | `abraxasVerificationService.js` | Capacity + `sha256Adapter` default + PKCE lifecycle |
 | SHA-256 | `sha256Adapter.js` | Auto-imported; not optional at runtime |
 | Flow build | `nonceLifecycle.js` | `partner_id=good-trouble-cannabis`, `policy_id=good-trouble-retail-v1`, sandbox |
 | CMS store | `wixNonceStore.js` | Collection `AbraxasVerificationNonces`; fields match `flowRecord` |
@@ -289,7 +299,7 @@ Reference: `examples/good-trouble-wix/backend/abraxasReceiptValidator.js`
 
 | Method | Wix permission | Notes |
 |--------|----------------|-------|
-| `createAbraxasVerificationStart` | **Anyone** | Requires CAPTCHA token; `webMethod(Permissions.Anyone, …)` in `.web.js` |
+| `createAbraxasVerificationStart` | **Anyone** | No client parameters; server-owned bypass; `webMethod(Permissions.Anyone, …)` in `.web.js` |
 | `completeAbraxasVerification` | **Anyone** | PKCE verifier required |
 
 SHA-256 for PKCE challenges is **auto-wired** via `sha256Adapter.js` (`node:crypto` `createHash`). No manual init call is required. Optional `configureAbraxasHashFn` remains for tests/diagnostics only.
