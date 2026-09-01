@@ -1,7 +1,7 @@
 // FILE: examples/good-trouble-wix/pages/AgeVerificationPopup.js
 // Wix Velo page code — Age Verification popup (lightbox or page).
 // Wix deployment: paste into the Age Verification popup page code panel.
-// Required element IDs: #yesButton, #noButton, #abraxasButton, #abraxasCaptcha, #abraxasStatusText
+// Required element IDs: #yesButton, #noButton, #abraxasButton, #abraxasStatusText
 
 import { createAbraxasVerificationStart } from "backend/abraxasVerification.web";
 import { VERIFIER_STORAGE_PREFIX } from "backend/constants";
@@ -36,12 +36,7 @@ $w.onReady(() => {
           $w("#abraxasStatusText").text = message;
         }
       },
-      resetCaptcha() {
-        if ($w("#abraxasCaptcha")) {
-          $w("#abraxasCaptcha").reset();
-        }
-      },
-      startAbraxasVerification: (token) => createAbraxasVerificationStart(token),
+      startAbraxasVerification: () => createAbraxasVerificationStart(),
       sessionStorageAvailable,
       storeVerifier(flowId, verifier) {
         sessionStorage.setItem(verifierStorageKey(flowId), verifier);
@@ -59,7 +54,6 @@ $w.onReady(() => {
     });
 
     void popupController.onReady();
-    wireCaptchaElement();
     wireButtons();
   });
 
@@ -93,26 +87,8 @@ function setButtonLabel(selector, label) {
   element.label = label;
 }
 
-function wireCaptchaElement() {
-  const captcha = $w("#abraxasCaptcha");
-  if (!captcha || !popupController) return;
-
-  captcha.onVerified(() => {
-    const token = typeof captcha.token === "string" ? captcha.token : "";
-    void popupController.onCaptchaVerified(token);
-  });
-
-  captcha.onTimeout(() => {
-    void popupController.onCaptchaInvalidated();
-  });
-
-  captcha.onError(() => {
-    void popupController.onCaptchaInvalidated();
-  });
-}
-
 function wireButtons() {
-  // Traditional self-attestation — enabled on load; no CAPTCHA required.
+  // Traditional self-attestation — enabled on load; independent of Abraxas.
   $w("#yesButton").onClick(() => {
     void popupController?.onTraditionalYesClick();
   });

@@ -47,7 +47,7 @@ describe("good_trouble_age_verified_pilot trust boundary", () => {
     expect(popupSource).not.toContain("good_trouble_age_verified_pilot");
   });
 
-  it("does not gate traditional yesButton behind CAPTCHA", () => {
+  it("does not gate traditional yesButton behind Abraxas or CAPTCHA", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
     expect(popupSource).not.toMatch(/setButtonEnabled\("#yesButton",\s*false\)/);
@@ -64,10 +64,23 @@ describe("good_trouble_age_verified_pilot trust boundary", () => {
     expect(popupSource).toContain("wixLocationFrontend.to(url)");
   });
 
-  it("uses captcha.token rather than getToken for Abraxas start", () => {
+  it("does not require captcha element or token for the Abraxas route", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
-    expect(popupSource).toContain("captcha.token");
-    expect(popupSource).not.toContain("getToken()");
+    const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
+    expect(popupSource).not.toMatch(/\$w\("#abraxasCaptcha"\)/);
+    expect(popupSource).not.toContain("captcha.token");
+    expect(logicSource).not.toContain("onCaptchaVerified");
+    expect(logicSource).not.toContain("onCaptchaInvalidated");
+  });
+
+  it("does not grant pilot verified state when only starting a flow", () => {
+    const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
+    const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
+    const webSource = readFileSync(join(BACKEND_DIR, "abraxasVerification.web.js"), "utf8");
+    expect(popupSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
+    expect(logicSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
+    expect(webSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
+    expect(logicSource).not.toMatch(/verified:\s*true/);
   });
 
   it("uses traditional self-attestation localStorage only — not Abraxas pilot flag", () => {

@@ -21,8 +21,8 @@ Account bootstrap, email sharing, newsletters, and partner SSO remain **in devel
 | `backend/abraxasReceiptValidator.js` | Strict sandbox receipt validation |
 | `backend/abraxasVerification.web.js` | Wix Velo web-method wrapper |
 | `backend/abraxasVerification.test.js` | Reference module tests |
-| `pages/ageVerificationPopupLogic.js` | CAPTCHA state machine → Wix `src/public/ageVerificationPopupLogic.js` |
-| `pages/AgeVerificationPopup.js` | Popup page panel; uses `captcha.token` + `wixLocationFrontend.to()` |
+| `pages/ageVerificationPopupLogic.js` | Abraxas verification gate state machine → Wix `src/public/ageVerificationPopupLogic.js` |
+| `pages/AgeVerificationPopup.js` | Popup page panel; one-click Abraxas start + `wixLocationFrontend.to()` |
 | `pages/AgeVerificationResult.js` | Callback page (`/age-verification-result`) |
 | `../docs/GOOD_TROUBLE_WIX_SANDBOX.md` | Operator checklist + UX copy |
 
@@ -49,7 +49,13 @@ Account bootstrap, email sharing, newsletters, and partner SSO remain **in devel
 | localStorage | Not used as authoritative verified state |
 | Wix membership | **Not required** |
 
-The traditional **“Yes, I’m 21 or older”** (`#yesButton`) self-attestation remains independent and **never requires CAPTCHA**. Only **“Verify with Abraxas Passport”** (`#abraxasButton`) is gated behind `#abraxasCaptcha`. The **“No, I’m not”** exit button (`#noButton`) is always enabled. CAPTCHA is a **human check for Abraxas start only** — not age, identity, or eligibility verification. Traditional Yes writes a **30-day** `localStorage` expiry (`good_trouble_age_self_attested`) — self-attestation only, not Abraxas authority.
+The traditional **“Yes, I’m 21 or older”** (`#yesButton`) self-attestation remains independent. **“Verify with Abraxas Passport”** (`#abraxasButton`) is the verification gate for the stronger route — one click starts the backend flow. The **“No, I’m not”** exit button (`#noButton`) is always enabled.
+
+Abraxas Passport is the verification gate for the stronger route. Unlike a basic CAPTCHA, which only attempts to distinguish a person from automation, Abraxas validates the required policy and returns a privacy-preserving receipt. Good Trouble does not receive the visitor’s ID photos or date of birth.
+
+Abraxas is not represented as a general-purpose CAPTCHA. Backend capacity and lifecycle controls continue to protect flow creation, while a validated Abraxas receipt protects the verified outcome. Automated flow creation does not grant verification; verification requires a valid, bound Abraxas receipt.
+
+Traditional Yes writes a **30-day** `localStorage` expiry (`good_trouble_age_self_attested`) — self-attestation only, not Abraxas authority.
 
 ## Web method permissions
 
@@ -57,7 +63,7 @@ Configure in Wix Editor → Web Methods:
 
 | Method | Permission | Notes |
 |--------|------------|-------|
-| `createAbraxasVerificationStart` | **Anyone** | Returns `verifyUrl`, `flowId`, `verifier` over TLS |
+| `createAbraxasVerificationStart` | **Anyone** | No client parameters; server-owned bypass; returns `verifyUrl`, `flowId`, `verifier` over TLS |
 | `completeAbraxasVerification` | **Anyone** | Requires `receiptId`, `flowId`, `verifier` |
 
 No web method exposes collection CRUD. Only backend code uses `wix-data` on `AbraxasVerificationNonces`.
@@ -86,7 +92,7 @@ Copy these **10** backend modules into Wix **Backend** (`src/backend`). Do **not
 | `captchaGate.js` | Wix reCAPTCHA authorization wrapper |
 | `wixNonceStore.js` | `wix-data` adapter (Admin-only collection) |
 | `abraxasReceiptValidator.js` | Strict sandbox receipt validation |
-| `abraxasVerificationService.js` | CAPTCHA + capacity + PKCE lifecycle |
+| `abraxasVerificationService.js` | Capacity + PKCE lifecycle (server-owned CAPTCHA bypass for pilot) |
 | `abraxasVerification.web.js` | Wix Velo `webMethod` exports |
 
 Also copy `pages/ageVerificationPopupLogic.js` to `src/public/ageVerificationPopupLogic.js`, paste `pages/AgeVerificationPopup.js` into the Age Verification popup page code panel, and copy `pages/AgeVerificationResult.js` into the `/age-verification-result` page code panel. See **Wix page deployment** below.
@@ -107,9 +113,9 @@ Also copy `pages/ageVerificationPopupLogic.js` to `src/public/ageVerificationPop
 import { createPopupController, createPopupInitializationGuard } from "public/ageVerificationPopupLogic";
 ```
 
-Use `#abraxasCaptcha.token` after `onVerified` (not `getToken()`). Redirect with `wixLocationFrontend.to(verifyUrl)` on Test Site / published Site; Editor Preview shows the explicit pass message instead.
+Use `createAbraxasVerificationStart()` with no arguments. Redirect with `wixLocationFrontend.to(verifyUrl)` on Test Site / published Site; Editor Preview shows the explicit pass message instead.
 
-Required popup element IDs (exact): `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasCaptcha`, `#abraxasStatusText`.
+Required popup element IDs (exact): `#yesButton`, `#noButton`, `#abraxasButton`, `#abraxasStatusText`. The legacy `#abraxasCaptcha` element may be removed.
 
 ## Scheduled purge (`purgeStale`) — operator requirement
 
@@ -122,7 +128,7 @@ Each purge pass is capped at 100 rows per category per call. Under sustained tra
 
 **Operator action (approval required before deploy):** schedule a Wix backend job (e.g. daily) that imports `createWixNonceStore` and calls `purgeStale()`. This reference does **not** ship or deploy that scheduled job. Do not enable without explicit operator sign-off.
 
-Monitor `rate_limited` and captcha error rates; elevated rates may indicate missing scheduled cleanup.
+Monitor `rate_limited` error rates; elevated rates may indicate missing scheduled cleanup.
 
 ## CMS collection: AbraxasVerificationNonces
 

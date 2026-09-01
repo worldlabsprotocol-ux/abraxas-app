@@ -533,14 +533,16 @@ describe("traditional self-attestation path", () => {
 });
 
 describe("Wix webMethod source contract", () => {
-  it("exports Permissions.Anyone webMethod wrappers in .web.js", () => {
+  it("exports Permissions.Anyone webMethod wrappers with server-owned CAPTCHA bypass", () => {
     const source = readFileSync(
       new URL("./abraxasVerification.web.js", import.meta.url),
       "utf8",
     );
     expect(source).toContain("webMethod");
     expect(source).toContain("Permissions.Anyone");
-    expect(source).toContain("wix-captcha-backend");
+    expect(source).not.toContain("wix-captcha-backend");
+    expect(source).toContain("skipCaptcha: true");
+    expect(source).toMatch(/async \(\) =>/);
     expect(source).not.toContain("wix-data.insert");
   });
 });
