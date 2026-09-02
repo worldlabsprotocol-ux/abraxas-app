@@ -1,6 +1,7 @@
 // FILE: examples/good-trouble-wix/backend/nonceLifecycle.js
 // Backend-only flow lifecycle with PKCE proof-of-possession and pending → validating → consumed states.
 
+import { randomBytes } from "node:crypto";
 import {
   ABRAXAS_ORIGIN,
   CLAIM_TTL_MS,
@@ -22,10 +23,8 @@ import {
   verifyVerifierChallenge,
 } from "./pkceProof.js";
 
-function randomHex(bytes = 32) {
-  const arr = new Uint8Array(bytes);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
+function randomHex(byteLength) {
+  return randomBytes(byteLength).toString("hex");
 }
 
 /**
