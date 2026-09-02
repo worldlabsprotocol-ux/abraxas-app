@@ -553,6 +553,8 @@ describe("PKCE entropy and independence", () => {
     const b = await buildVerificationStartPayload({ hashFn });
     expect(a.flowId).not.toBe(b.flowId);
     expect(a.verifier).not.toBe(b.verifier);
+    expect(a.verifier).toMatch(VERIFIER_RE);
+    expect(a.flowId).toMatch(FLOW_ID_RE);
     expect(a.verifier).toHaveLength(64);
     expect(a.flowId.replace("gtf_", "")).toHaveLength(64);
   });
