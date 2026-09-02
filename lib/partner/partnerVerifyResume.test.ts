@@ -9,6 +9,7 @@ import {
   isRestorablePartnerVerifyPath,
   loadPartnerVerifyResume,
   parsePartnerVerifyResumeParams,
+  peekPartnerVerifyResumePath,
   savePartnerVerifyResume,
 } from "./partnerVerifyResume";
 
@@ -63,6 +64,12 @@ describe("partnerVerifyResume", () => {
     const path = consumePartnerVerifyResumePath();
     expect(path).toContain(encodeURIComponent(SAMPLE.returnUrl));
     expect(loadPartnerVerifyResume()).toBeNull();
+  });
+
+  it("peeks without consuming resume state", () => {
+    savePartnerVerifyResume(SAMPLE);
+    expect(peekPartnerVerifyResumePath()).toContain("/partner/verify?");
+    expect(loadPartnerVerifyResume()).not.toBeNull();
   });
 
   it("expires stale resume state and clears storage", () => {

@@ -1,18 +1,19 @@
 "use client";
 // FILE: app/auth/zklogin/callback/page.tsx
-// OAuth returns here with #id_token=.... complete zkLogin and land on /passport.
+// OAuth returns here with #id_token=.... complete zkLogin and resume partner verify when saved.
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseIdTokenFromCallbackHash, loadUserSession } from "@/lib/sui/zklogin/session";
-import { completeGoogleZkLogin } from "@/lib/sui/zklogin/completeLogin";
-import { clearLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
-import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
+import { logAuthEvent, toAuthErrorCode } from "@/lib/sui/zklogin/authDebug";
 import {
   buildPassportRecoveryQuery,
   ZkLoginSignInRecoveryError,
 } from "@/lib/sui/zklogin/signInRecovery";
-import { consumePartnerVerifyResumePath } from "@/lib/partner/partnerVerifyResume";
+import { clearLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
+import {
+  completePartnerVerifyOAuthCallback,
+  PartnerVerifyOAuthCallbackError,
+} from "@/lib/partner/partnerVerifyOAuthCallback";
 
 export default function ZkLoginCallbackPage() {
   const router = useRouter();
@@ -26,27 +27,13 @@ export default function ZkLoginCallbackPage() {
 
     async function finish() {
       try {
-        const resumePath = consumePartnerVerifyResumePath();
-
-        const existing = loadUserSession();
-        if (existing?.suiAddress) {
-          router.replace(resumePath ?? "/passport?signed_in=1");
-          return;
-        }
-
-        const idToken = parseIdTokenFromCallbackHash(window.location.hash);
-        if (!idToken) {
-          throw new Error("No id_token in callback URL. Check Google OAuth redirect settings.");
-        }
-        await completeGoogleZkLogin(idToken, { callbackHash: window.location.hash });
-        router.replace(resumePath ?? "/passport?signed_in=1");
+        const { redirectPath } = await completePartnerVerifyOAuthCallback(window.location.hash);
+        router.replace(redirectPath);
       } catch (err) {
         clearLoginInFlight();
-        const message = err instanceof Error ? err.message : "Sign-in failed";
-        logAuthEvent("oauth_callback_error", { error: message });
-        setStatus("error");
-        setErrorMsg(message);
         if (err instanceof ZkLoginSignInRecoveryError) {
+          const message = err.message;
+          logAuthEvent("oauth_callback_error", { errorCode: "recovery_required" });
           router.replace(`/passport?${buildPassportRecoveryQuery({
             message,
             suggestedMode: err.suggestedMode,
@@ -54,6 +41,19 @@ export default function ZkLoginCallbackPage() {
           })}`);
           return;
         }
+
+        const message = err instanceof PartnerVerifyOAuthCallbackError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Sign-in failed";
+        logAuthEvent("oauth_callback_error", {
+          errorCode: err instanceof PartnerVerifyOAuthCallbackError
+            ? "callback_failed"
+            : toAuthErrorCode(message, "callback_failed"),
+        });
+        setStatus("error");
+        setErrorMsg(message);
         router.replace(`/passport?sign_in_error=${encodeURIComponent(message)}`);
       }
     }
@@ -79,7 +79,7 @@ export default function ZkLoginCallbackPage() {
               Signing you in
             </div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-muted, rgba(255,255,255,0.5))" }}>
-              Linking your Google account to your Passport…
+              Securing your session and preparing verification…
             </div>
           </>
         ) : (

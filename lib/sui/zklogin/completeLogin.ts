@@ -11,7 +11,7 @@ import {
 } from "./session";
 import { persistEphemeralKey, saveSigningSession } from "./signingSession";
 import { clearLoginInFlight } from "./loginInFlight";
-import { logAuthEvent } from "./authDebug";
+import { createAuthCorrelationId, logAuthEvent, toAuthErrorCode } from "./authDebug";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import type { ZkLoginLoginMode } from "./audienceCohorts";
@@ -98,13 +98,15 @@ export async function completeGoogleZkLogin(
   if (!pending) {
     const existing = loadUserSession();
     if (existing) {
-      logAuthEvent("zklogin_complete", { suiAddress: existing.suiAddress, detail: "existing_session" });
+      logAuthEvent("zklogin_complete", {
+        correlationId: createAuthCorrelationId(),
+        detail: "existing_session",
+      });
       return existing;
     }
     clearLoginInFlight();
     logAuthEvent("zklogin_complete_error", {
-      error: "pending_session_missing",
-      detail: "OAuth returned but browser lost the in-flight signing key (sessionStorage cleared during redirect).",
+      errorCode: "pending_session_missing",
     });
     throw new Error(
       "Sign-in could not finish: this browser lost the temporary signing key during Google redirect. "
@@ -116,6 +118,7 @@ export async function completeGoogleZkLogin(
   const sub = decoded.sub;
   if (!sub) {
     clearLoginInFlight();
+    logAuthEvent("zklogin_complete_error", { errorCode: "oauth_token_missing_subject" });
     throw new Error("OAuth token missing subject");
   }
 
@@ -125,7 +128,7 @@ export async function completeGoogleZkLogin(
   } catch (e) {
     clearLoginInFlight();
     const err = e instanceof Error ? e.message : ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE;
-    logAuthEvent("zklogin_complete_error", { error: err, detail: "oauth_state_invalid" });
+    logAuthEvent("zklogin_complete_error", { errorCode: toAuthErrorCode(err, "oauth_state_invalid") });
     throw new Error(err);
   }
 
@@ -148,7 +151,9 @@ export async function completeGoogleZkLogin(
   if (!regRes.ok || !regData.sui_address) {
     clearLoginInFlight();
     const err = mapRegisterFailureToUserError(regRes.status, regData, loginMode);
-    logAuthEvent("zklogin_complete_error", { error: err, detail: regData.code });
+    logAuthEvent("zklogin_complete_error", {
+      errorCode: toAuthErrorCode(regData.code ?? err, "register_failed"),
+    });
     const suggestedMode = resolveSuggestedLoginMode(regRes.status, regData, loginMode);
     if (suggestedMode) {
       throw new ZkLoginSignInRecoveryError(err, suggestedMode);
@@ -192,16 +197,16 @@ export async function completeGoogleZkLogin(
   }
 
   clearPendingSession();
-  logAuthEvent("session_saved", { suiAddress: session.suiAddress });
+  logAuthEvent("session_saved");
 
   const browserSession = await ensureBrowserSession(regData.sui_address);
   if (!browserSession.ok) {
     logAuthEvent("browser_session_mint_failed", {
-      suiAddress: regData.sui_address,
-      error: browserSession.error,
+      errorCode: toAuthErrorCode(browserSession.error, "browser_session_mint_failed"),
     });
   }
 
-  logAuthEvent("zklogin_complete", { suiAddress: session.suiAddress });
+  clearLoginInFlight();
+  logAuthEvent("zklogin_complete", { correlationId: createAuthCorrelationId(), detail: "new_session" });
   return session;
 }

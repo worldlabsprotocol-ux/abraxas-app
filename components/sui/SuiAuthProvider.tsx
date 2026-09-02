@@ -75,13 +75,12 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     setCanSignTransactions(signingReady);
     setIsLoading(false);
     logAuthEvent("session_loaded", {
-      suiAddress: loaded?.suiAddress ?? null,
       hasSigning: signingReady,
     });
     if (loaded?.suiAddress) {
-      logAuthEvent("auth_provider_authenticated", { suiAddress: loaded.suiAddress });
+      logAuthEvent("auth_provider_authenticated", { authenticated: true });
     }
-    logAuthEvent("auth_provider_ready", { suiAddress: loaded?.suiAddress ?? null });
+    logAuthEvent("auth_provider_ready", { ready: true });
   }, []);
 
   useEffect(() => {
@@ -122,7 +121,6 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     setCanSignTransactions(signingReady);
     if (session?.suiAddress) {
       logAuthEvent(signingReady ? "wallet_signing_ready" : "wallet_signing_missing", {
-        suiAddress: session.suiAddress,
         hasSigning: signingReady,
       });
       void ensureBrowserSession(session.suiAddress);

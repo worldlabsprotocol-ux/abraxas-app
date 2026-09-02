@@ -10,6 +10,7 @@ export default defineConfig({
     include: [
       "lib/**/*.test.ts",
       "components/**/*.test.tsx",
+      "app/api/**/*.test.ts",
       "scripts/demo/**/*.test.ts",
       "scripts/trust-contract-drift/**/*.test.ts",
       "examples/partner-access-nextjs-starter/**/*.test.ts",

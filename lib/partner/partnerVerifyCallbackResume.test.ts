@@ -5,12 +5,25 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 describe("zklogin callback partner verify resume", () => {
-  it("consumes saved partner verify path after OAuth completion", () => {
-    const source = readFileSync(
+  it("delegates OAuth completion to partner verify callback orchestration", () => {
+    const callbackPage = readFileSync(
       join(process.cwd(), "app/auth/zklogin/callback/page.tsx"),
       "utf8",
     );
-    expect(source).toContain("consumePartnerVerifyResumePath");
-    expect(source).toContain("router.replace(resumePath ?? \"/passport?signed_in=1\")");
+    expect(callbackPage).toContain("completePartnerVerifyOAuthCallback");
+    expect(callbackPage).toContain("router.replace(redirectPath)");
+  });
+
+  it("consumes saved partner verify path only after browser session is ready", () => {
+    const orchestration = readFileSync(
+      join(process.cwd(), "lib/partner/partnerVerifyOAuthCallback.ts"),
+      "utf8",
+    );
+    expect(orchestration).toContain("ensureBrowserSessionReady");
+    expect(orchestration).toContain("consumePartnerVerifyResumePath");
+    expect(orchestration.indexOf("ensureBrowserSessionReady")).toBeLessThan(
+      orchestration.indexOf("consumePartnerVerifyResumePath"),
+    );
+    expect(orchestration).toContain("appendPartnerAuthReadyQuery");
   });
 });

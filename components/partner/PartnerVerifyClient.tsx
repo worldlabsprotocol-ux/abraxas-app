@@ -1,24 +1,30 @@
 "use client";
 // FILE: components/partner/PartnerVerifyClient.tsx
-// Abraxas Verify entry — lazy Passport creation, permission or policy routing.
+// Partner verify orchestration — auth/session gating and institutional shell.
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
-import { Btn } from "@/components/redesign/ui";
-import { getPermissionDefinition } from "@/lib/verify/permissions";
-import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import {
+  createPartnerVerifyCorrelationId,
+  logPartnerVerifyAuthEvent,
+} from "@/lib/partner/partnerVerifyAuthDebug";
+import {
+  resolvePartnerDisplayName,
+  resolvePartnerHomeUrl,
+  resolvePartnerReturnLabel,
+  resolvePolicyRequirement,
+} from "@/lib/partner/partnerVerifyDisplay";
+import {
+  PARTNER_AUTH_READY_QUERY,
+  PARTNER_AUTH_READY_VALUE,
   parsePartnerVerifyResumeParams,
   savePartnerVerifyResume,
 } from "@/lib/partner/partnerVerifyResume";
-
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const ACCENT = "var(--accent)";
-const BROWSER_SESSION_AUTH_ERROR = "Sign in required in this browser";
-const MAX_AUTH_RETRIES = 3;
+import { clearLoginInFlight, clearStaleLoginInFlight, isLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
+import { PartnerVerifyShell, type PartnerVerifyPhase } from "./PartnerVerifyShell";
 
 interface FlowResult {
   next: string;
@@ -28,7 +34,7 @@ interface FlowResult {
   error?: string;
 }
 
-type ViewState = "loading" | "invalid_link" | "sign_in" | "evaluating" | "success" | "error";
+const BROWSER_SESSION_AUTH_ERROR = "Sign in required in this browser";
 
 function describeInvalidLink(input: {
   relyingPartyId: string;
@@ -37,14 +43,11 @@ function describeInvalidLink(input: {
   permission: string;
 }): string | null {
   const missing: string[] = [];
-  if (!input.relyingPartyId) missing.push("partner identifier (relying_party_id)");
-  if (!input.returnUrl) missing.push("return URL (return_url)");
-  if (!input.policyId && !input.permission) missing.push("permission or policy to verify");
+  if (!input.relyingPartyId) missing.push("partner identifier");
+  if (!input.returnUrl) missing.push("return URL");
+  if (!input.policyId && !input.permission) missing.push("policy or permission");
   if (missing.length === 0) return null;
-  if (missing.length === 1) {
-    return `This link is missing the ${missing[0]}. Ask the site that sent you here for a fresh Partner Flow link.`;
-  }
-  return `This link is missing ${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}. Ask the site that sent you here for a fresh Partner Flow link.`;
+  return `This verification link is missing required parameters (${missing.join(", ")}). Ask the partner site for a fresh Partner Flow link.`;
 }
 
 function isBrowserSessionAuthError(message: string): boolean {
@@ -53,45 +56,37 @@ function isBrowserSessionAuthError(message: string): boolean {
     || message.toLowerCase().includes("oauth session expired");
 }
 
-function InvalidLinkPanel({ message }: { message: string }) {
-  return (
-    <div
-      role="alert"
-      style={{
-        padding: "1rem 1.1rem",
-        borderRadius: 14,
-        border: "1px solid rgba(239,68,68,0.35)",
-        background: "rgba(239,68,68,0.08)",
-      }}
-    >
-      <h2 style={{ fontFamily: FONT, fontSize: "1rem", fontWeight: 800, margin: "0 0 0.5rem", color: "var(--text-primary)" }}>
-        This verification link isn&apos;t valid
-      </h2>
-      <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
-        {message}
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
-        <Btn href="/" size="sm">Return home</Btn>
-        <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
-      </div>
-      <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: "0.85rem 0 0", lineHeight: 1.55 }}>
-        If you followed a link from a partner site, contact that partner&apos;s support — they issue the redirect URL with the required parameters.
-      </p>
-    </div>
-  );
+function stripPartnerAuthReadyFromUrl(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get(PARTNER_AUTH_READY_QUERY) !== PARTNER_AUTH_READY_VALUE) return false;
+  params.delete(PARTNER_AUTH_READY_QUERY);
+  const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+  window.history.replaceState(null, "", next);
+  return true;
 }
 
-export function PartnerVerifyClient() {
-  const searchParams = useSearchParams();
-  const { suiAddress, isLoading: authLoading } = useSuiAuth();
-  const { signIn, busy: signInBusy, configured: signInConfigured, disabled: signInDisabled, error: signInError } = useGoogleSignIn();
+interface PartnerVerifyClientProps {
+  previewPhase?: PartnerVerifyPhase | null;
+  previewSignInConfigured?: boolean;
+}
 
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [flowError, setFlowError] = useState<string | null>(null);
-  const [evaluating, setEvaluating] = useState(false);
-  const [needsBrowserSession, setNeedsBrowserSession] = useState(false);
-  const [authRetryCount, setAuthRetryCount] = useState(0);
-  const evaluateInFlightRef = useRef(false);
+export function PartnerVerifyClient({
+  previewPhase = null,
+  previewSignInConfigured = false,
+}: PartnerVerifyClientProps) {
+  const searchParams = useSearchParams();
+  const { suiAddress, isLoading: authLoading, signInWithGoogle } = useSuiAuth();
+  const { signIn, busy: signInBusy, configured: signInConfigured } = useGoogleSignIn();
+
+  const [phase, setPhase] = useState<PartnerVerifyPhase>(previewPhase ?? "loading");
+  const [statusMessage, setStatusMessage] = useState("Preparing verification…");
+  const [correlationId, setCorrelationId] = useState<string | null>(null);
+  const [oauthReturnReady, setOauthReturnReady] = useState(false);
+
+  const evaluateOnceRef = useRef(false);
+  const signInOnceRef = useRef(false);
+  const correlationRef = useRef<string | null>(null);
 
   const relyingPartyId = searchParams.get("relying_party_id")
     ?? searchParams.get("partner_id")
@@ -106,10 +101,24 @@ export function PartnerVerifyClient() {
     [relyingPartyId, returnUrl, policyId, permission],
   );
 
-  const permissionLabel = useMemo(() => {
-    if (!permission) return null;
-    return getPermissionDefinition(permission)?.consentLabel ?? permission;
-  }, [permission]);
+  const partnerName = resolvePartnerDisplayName(relyingPartyId);
+  const partnerReturnLabel = resolvePartnerReturnLabel(relyingPartyId);
+  const partnerHomeUrl = resolvePartnerHomeUrl(relyingPartyId);
+  const policyRequirement = resolvePolicyRequirement(policyId, permission || null);
+
+  useEffect(() => {
+    clearStaleLoginInFlight();
+    if (stripPartnerAuthReadyFromUrl()) {
+      clearLoginInFlight();
+      setOauthReturnReady(true);
+      evaluateOnceRef.current = false;
+      signInOnceRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (previewPhase) setPhase(previewPhase);
+  }, [previewPhase]);
 
   useEffect(() => {
     if (invalidLinkMessage) return;
@@ -117,32 +126,39 @@ export function PartnerVerifyClient() {
     if (resumeParams) savePartnerVerifyResume(resumeParams);
   }, [invalidLinkMessage, searchParams]);
 
-  const evaluate = useCallback(async (options?: { forceReauth?: boolean }) => {
-    if (invalidLinkMessage || evaluateInFlightRef.current) return;
+  useEffect(() => {
+    if (suiAddress) clearLoginInFlight();
+  }, [suiAddress]);
 
-    if (!suiAddress) {
-      setNeedsBrowserSession(true);
-      setStatusMessage("Sign in to continue with Abraxas.");
-      return;
-    }
+  const runEvaluate = useCallback(async () => {
+    if (invalidLinkMessage || !suiAddress) return;
+    if (evaluateOnceRef.current) return;
+    evaluateOnceRef.current = true;
 
-    evaluateInFlightRef.current = true;
-    setEvaluating(true);
-    setFlowError(null);
-    setStatusMessage("Checking your credentials…");
+    const cid = correlationRef.current ?? createPartnerVerifyCorrelationId();
+    correlationRef.current = cid;
+    setCorrelationId(cid);
+
+    setPhase("preparing");
+    setStatusMessage("Preparing secure verification…");
+    logPartnerVerifyAuthEvent("partner_evaluate_started", { correlationId: cid });
 
     try {
-      const browserSession = await ensureBrowserSession(suiAddress);
+      const browserSession = await ensureBrowserSessionReady(suiAddress);
       if (!browserSession.ok) {
-        setNeedsBrowserSession(true);
+        logPartnerVerifyAuthEvent("partner_evaluate_result", {
+          correlationId: cid,
+          outcome: "browser_session_missing",
+          errorCode: "browser_session",
+        });
+        evaluateOnceRef.current = false;
+        setPhase("sign_in");
         setStatusMessage("Sign in to continue with Abraxas.");
-        if (options?.forceReauth) {
-          setAuthRetryCount((count) => count + 1);
-        }
         return;
       }
 
-      setNeedsBrowserSession(false);
+      setPhase("verifying");
+      setStatusMessage("Verifying policy…");
 
       const res = await fetch("/api/v1/partner-flow/evaluate", {
         method: "POST",
@@ -161,40 +177,57 @@ export function PartnerVerifyClient() {
       if (!res.ok) {
         const message = data.error ?? "Evaluation failed";
         if (res.status === 401 && isBrowserSessionAuthError(message)) {
-          setNeedsBrowserSession(true);
+          logPartnerVerifyAuthEvent("partner_evaluate_result", {
+            correlationId: cid,
+            outcome: "auth_required",
+            errorCode: "401",
+          });
+          evaluateOnceRef.current = false;
+          setPhase("sign_in");
           setStatusMessage("Sign in to continue with Abraxas.");
-          if (options?.forceReauth) {
-            setAuthRetryCount((count) => count + 1);
-          }
           return;
         }
-        throw new Error(message);
+        throw new Error("verification_failed");
       }
 
+      logPartnerVerifyAuthEvent("partner_evaluate_result", {
+        correlationId: cid,
+        outcome: data.next,
+      });
+
       if (data.next === "enter" && data.redirect_url) {
-        setStatusMessage("Verified — returning…");
+        setPhase("returning");
+        setStatusMessage("Returning to partner…");
         window.location.href = data.redirect_url;
         return;
       }
       if (data.next === "passport" && data.passport_url) {
+        setPhase("returning");
         setStatusMessage("Completing verification…");
         window.location.href = data.passport_url;
         return;
       }
       if (data.next === "pending_review") {
-        setStatusMessage("Your verification is under review. Check back after approval.");
+        setPhase("pending_review");
+        setStatusMessage("Your verification is under review.");
         return;
       }
       if (data.next === "denied") {
-        setFlowError(`Access denied${data.reason_codes?.length ? `: ${data.reason_codes.join(", ")}` : "."}`);
+        setPhase("denied");
+        setStatusMessage("Policy requirement not met.");
         return;
       }
-      setStatusMessage(`Next step: ${data.next}`);
-    } catch (e) {
-      setFlowError(e instanceof Error ? e.message : "Verification failed");
-    } finally {
-      setEvaluating(false);
-      evaluateInFlightRef.current = false;
+      setPhase("verifying");
+      setStatusMessage("Verification ready.");
+    } catch {
+      logPartnerVerifyAuthEvent("partner_evaluate_result", {
+        correlationId: cid,
+        outcome: "error",
+        errorCode: "evaluate_failed",
+      });
+      evaluateOnceRef.current = false;
+      setPhase("error");
+      setStatusMessage("Verification could not be completed.");
     }
   }, [
     invalidLinkMessage,
@@ -207,146 +240,83 @@ export function PartnerVerifyClient() {
   ]);
 
   useEffect(() => {
-    if (authLoading || invalidLinkMessage) return;
+    if (authLoading) {
+      if (previewPhase) return;
+      setPhase("loading");
+      return;
+    }
+    if (previewPhase) return;
+    if (invalidLinkMessage) {
+      setPhase("invalid_link");
+      return;
+    }
     if (!suiAddress) {
-      setNeedsBrowserSession(true);
+      setPhase("sign_in");
       setStatusMessage("Sign in to continue with Abraxas.");
       return;
     }
-    void evaluate();
-  }, [authLoading, invalidLinkMessage, suiAddress, evaluate]);
+    if (oauthReturnReady || !evaluateOnceRef.current) {
+      void runEvaluate();
+    }
+  }, [authLoading, invalidLinkMessage, suiAddress, oauthReturnReady, runEvaluate, previewPhase]);
 
-  const handleSignIn = useCallback(() => {
+  const handleSignIn = useCallback(async () => {
+    if (signInOnceRef.current || signInBusy || isLoginInFlight()) return;
+    signInOnceRef.current = true;
+
     const resumeParams = parsePartnerVerifyResumeParams(searchParams);
     if (resumeParams) savePartnerVerifyResume(resumeParams);
-    void signIn();
-  }, [searchParams, signIn]);
+
+    clearStaleLoginInFlight();
+    if (isLoginInFlight()) clearLoginInFlight();
+
+    const cid = createPartnerVerifyCorrelationId();
+    correlationRef.current = cid;
+    setCorrelationId(cid);
+    logPartnerVerifyAuthEvent("auth_start", { correlationId: cid });
+
+    setPhase("signing_in");
+    setStatusMessage("Signing you in…");
+
+    const redirected = signInWithGoogle
+      ? await signInWithGoogle()
+      : await signIn();
+
+    if (!redirected) {
+      signInOnceRef.current = false;
+      clearLoginInFlight();
+      setPhase("sign_in");
+      setStatusMessage("Sign in to continue with Abraxas.");
+    }
+  }, [searchParams, signIn, signInBusy, signInWithGoogle]);
 
   const handleTryAgain = useCallback(() => {
-    if (needsBrowserSession) {
-      if (authRetryCount >= MAX_AUTH_RETRIES) {
-        setFlowError("Sign-in could not be confirmed in this browser. Use Sign in with Google below, then return here.");
-        return;
-      }
-      void evaluate({ forceReauth: true });
+    evaluateOnceRef.current = false;
+    signInOnceRef.current = false;
+    clearLoginInFlight();
+    clearStaleLoginInFlight();
+    if (suiAddress) {
+      void runEvaluate();
       return;
     }
-    void evaluate();
-  }, [needsBrowserSession, authRetryCount, evaluate]);
-
-  let view: ViewState = "loading";
-  if (!authLoading) {
-    if (invalidLinkMessage) view = "invalid_link";
-    else if (!suiAddress || needsBrowserSession) view = "sign_in";
-    else if (evaluating) view = "evaluating";
-    else if (flowError) view = "error";
-    else view = "success";
-  }
+    setPhase("sign_in");
+  }, [runEvaluate, suiAddress]);
 
   return (
-    <div style={{
-      maxWidth: 520, margin: "3rem auto", padding: "1.5rem",
-      fontFamily: FONT, color: "var(--text-primary)",
-      background: "var(--surface-raised)", borderRadius: 16,
-      border: "1px solid var(--border-strong)",
-    }}>
-      <div style={{ fontSize: "0.7rem", color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 8 }}>
-        ABRAXAS VERIFY
-      </div>
-
-      {view === "loading" && (
-        <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-muted)", margin: 0 }}>
-          Preparing verification…
-        </p>
-      )}
-
-      {view === "invalid_link" && invalidLinkMessage && (
-        <InvalidLinkPanel message={invalidLinkMessage} />
-      )}
-
-      {view !== "loading" && view !== "invalid_link" && (
-        <>
-          <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.75rem", fontWeight: 800 }}>
-            Continue with Abraxas
-          </h1>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 1rem" }}>
-            {permissionLabel
-              ? <>Verifying: <strong>{permissionLabel}</strong></>
-              : policyId
-                ? <>Policy <strong>{policyId}</strong></>
-                : "Partner verification request"}
-          </p>
-
-          {view === "sign_in" && (
-            <div style={{ marginBottom: "1rem" }}>
-              {signInConfigured ? (
-                <button
-                  type="button"
-                  onClick={handleSignIn}
-                  disabled={signInDisabled}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.4rem",
-                    padding: "0.55rem 1rem",
-                    borderRadius: 999,
-                    border: "none",
-                    background: "#10B981",
-                    color: "#000",
-                    fontFamily: FONT,
-                    fontSize: "0.82rem",
-                    fontWeight: 700,
-                    cursor: signInBusy ? "wait" : "pointer",
-                    opacity: signInBusy ? 0.75 : 1,
-                  }}
-                >
-                  <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
-                  {signInBusy ? "Redirecting…" : "Sign in with Google"}
-                </button>
-              ) : (
-                <Btn href="/passport" size="sm">Sign in</Btn>
-              )}
-              {signInError && (
-                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0.5rem 0 0", lineHeight: 1.45 }}>
-                  {signInError}
-                </p>
-              )}
-            </div>
-          )}
-
-          {(view === "evaluating" || view === "success") && statusMessage && (
-            <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: 0 }}>{statusMessage}</p>
-          )}
-
-          {view === "error" && flowError && (
-            <div role="alert">
-              <p style={{ fontSize: "0.84rem", color: "#EF4444", margin: "0 0 1rem", lineHeight: 1.55 }}>
-                {flowError}
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
-                <Btn onClick={handleTryAgain} disabled={evaluating || authRetryCount >= MAX_AUTH_RETRIES} size="sm">
-                  {evaluating ? "Retrying…" : "Try again"}
-                </Btn>
-                <Btn href="/" variant="secondary" size="sm">Return home</Btn>
-                <Btn href="/docs/partner-flow" variant="ghost" size="sm">Partner Flow docs</Btn>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {view === "sign_in" && statusMessage && (
-        <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "0.75rem 0 0" }}>{statusMessage}</p>
-      )}
-
-      {view !== "invalid_link" && view !== "loading" && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "1rem 0 0", lineHeight: 1.5 }}>
-          Questions about this request?{" "}
-          <Link href="/docs/partner-flow" style={{ color: ACCENT, textDecoration: "none", fontWeight: 600 }}>
-            Read Partner Flow docs
-          </Link>
-        </p>
-      )}
-    </div>
+    <PartnerVerifyShell
+      phase={phase}
+      partnerName={partnerName}
+      policyRequirement={policyRequirement}
+      policyId={policyId}
+      statusMessage={statusMessage}
+      correlationId={correlationId}
+      signInConfigured={signInConfigured || previewSignInConfigured}
+      primaryDisabled={signInBusy || phase === "signing_in"}
+      onSignIn={() => { void handleSignIn(); }}
+      onTryAgain={handleTryAgain}
+      invalidLinkMessage={invalidLinkMessage}
+      partnerReturnLabel={partnerReturnLabel}
+      partnerHomeUrl={partnerHomeUrl}
+    />
   );
 }

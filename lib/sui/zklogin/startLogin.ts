@@ -12,7 +12,7 @@ import {
   isLoginInFlight,
   setLoginInFlight,
 } from "./loginInFlight";
-import { logAuthEvent } from "./authDebug";
+import { logAuthEvent, toAuthErrorCode } from "./authDebug";
 import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 
@@ -39,7 +39,7 @@ export async function startGoogleZkLogin(
   logAuthEvent("oauth_start", { detail: `login_mode=${mode}` });
 
   if (isLoginInFlight()) {
-    logAuthEvent("oauth_start", { error: "blocked_by_login_in_flight" });
+    logAuthEvent("oauth_start", { errorCode: "blocked_by_login_in_flight" });
     return { ok: false, error: "Sign-in already in progress. Wait a moment and try again." };
   }
 
@@ -49,14 +49,11 @@ export async function startGoogleZkLogin(
     const epochResult = await fetchLoginMaxEpoch();
     if (!epochResult.ok) {
       clearLoginInFlight();
-      logAuthEvent("oauth_start", { error: epochResult.error });
+      logAuthEvent("oauth_start", { errorCode: toAuthErrorCode(epochResult.error, "epoch_fetch_failed") });
       return { ok: false, error: epochResult.error };
     }
 
     const maxEpoch = epochResult.maxEpoch;
-    logAuthEvent("oauth_start", {
-      detail: `epoch via ${epochResult.rpcHost} (${epochResult.network})`,
-    });
 
     const stateRes = await fetch("/api/auth/zklogin/login-state", {
       method: "POST",
@@ -102,7 +99,7 @@ export async function startGoogleZkLogin(
   } catch (e) {
     clearLoginInFlight();
     const msg = e instanceof Error ? e.message : "Unexpected sign-in error";
-    logAuthEvent("oauth_start", { error: msg });
+    logAuthEvent("oauth_start", { errorCode: toAuthErrorCode(msg, "redirect_failed") });
     return {
       ok: false,
       error: `Sign-in failed: ${msg}`,

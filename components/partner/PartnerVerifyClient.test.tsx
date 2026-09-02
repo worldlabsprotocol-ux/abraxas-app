@@ -2,12 +2,16 @@
 // FILE: components/partner/PartnerVerifyClient.test.tsx
 
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
 
-const mockEvaluate = vi.fn();
-const mockEnsureBrowserSession = vi.fn();
-const mockSignIn = vi.fn();
+const mockEnsureReady = vi.fn();
+const mockSignInWithGoogle = vi.fn();
+const mockEvaluateResponse = vi.fn();
+const mockAuthState = {
+  suiAddress: "0xabc" as string | null,
+  isLoading: false,
+};
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams({
@@ -19,18 +23,19 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/components/sui/SuiAuthProvider", () => ({
   useSuiAuth: () => ({
-    suiAddress: "0xabc",
-    isLoading: false,
+    suiAddress: mockAuthState.suiAddress,
+    isLoading: mockAuthState.isLoading,
+    signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
   }),
 }));
 
 vi.mock("@/lib/auth/ensureBrowserSession", () => ({
-  ensureBrowserSession: (...args: unknown[]) => mockEnsureBrowserSession(...args),
+  ensureBrowserSessionReady: (...args: unknown[]) => mockEnsureReady(...args),
 }));
 
 vi.mock("@/lib/hooks/useGoogleSignIn", () => ({
   useGoogleSignIn: () => ({
-    signIn: mockSignIn,
+    signIn: vi.fn(),
     busy: false,
     configured: true,
     disabled: false,
@@ -41,11 +46,20 @@ vi.mock("@/lib/hooks/useGoogleSignIn", () => ({
 describe("PartnerVerifyClient auth/session gating", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthState.suiAddress = "0xabc";
+    mockAuthState.isLoading = false;
     sessionStorage.clear();
-    global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    mockEnsureReady.mockResolvedValue({ ok: true });
+    mockSignInWithGoogle.mockResolvedValue(true);
+    mockEvaluateResponse.mockResolvedValue(new Response(JSON.stringify({
+      next: "enter",
+      redirect_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test123&receipt_id=dr_test",
+    }), { status: 200 }));
+
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/v1/partner-flow/evaluate")) {
-        return mockEvaluate(init);
+        return mockEvaluateResponse();
       }
       throw new Error(`Unexpected fetch: ${url}`);
     }) as typeof fetch;
@@ -55,55 +69,82 @@ describe("PartnerVerifyClient auth/session gating", () => {
     cleanup();
   });
 
-  it("shows sign-in prompt when browser session is missing", async () => {
-    mockEnsureBrowserSession.mockResolvedValue({ ok: false, error: "Sign in again — OAuth session expired" });
+  it("auto-evaluates when browser session is ready", async () => {
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(mockEnsureReady).toHaveBeenCalledWith("0xabc");
+      expect(mockEvaluateResponse).toHaveBeenCalled();
+    });
+  });
+
+  it("shows institutional sign-in when browser session is missing", async () => {
+    mockEnsureReady.mockResolvedValue({ ok: false, error: "expired" });
 
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Sign in with Google/i })).toBeTruthy();
-      expect(screen.getAllByText("Sign in to continue with Abraxas.").length).toBeGreaterThan(0);
+      expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
     });
-    expect(mockEvaluate).not.toHaveBeenCalled();
+    expect(mockEvaluateResponse).not.toHaveBeenCalled();
   });
 
-  it("resumes partner flow after browser session is established", async () => {
-    mockEnsureBrowserSession.mockResolvedValue({ ok: true });
-    mockEvaluate.mockResolvedValue(new Response(JSON.stringify({
-      next: "enter",
-      redirect_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test123&receipt_id=dr_test",
-    }), { status: 200 }));
+  it("starts OAuth only once per click", async () => {
+    mockEnsureReady.mockResolvedValue({ ok: false });
+    render(<PartnerVerifyClient />);
 
-    const originalLocation = window.location;
-    Object.defineProperty(window, "location", {
-      configurable: true,
-      value: { ...originalLocation, href: "" },
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
     });
+
+    const button = screen.getByRole("button", { name: /Continue with Google/i });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("resumes automatically after oauth return query flag", async () => {
+    window.history.replaceState(null, "", "/partner/verify?partner_id=good-trouble-cannabis&policy_id=good-trouble-retail-v1&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fage-verification-result%3Fgtv%3Dgtv_test123&partner_auth=ready");
 
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(mockEnsureBrowserSession).toHaveBeenCalledWith("0xabc");
-      expect(mockEvaluate).toHaveBeenCalled();
+      expect(mockEnsureReady).toHaveBeenCalled();
+      expect(mockEvaluateResponse).toHaveBeenCalled();
     });
-
-    Object.defineProperty(window, "location", {
-      configurable: true,
-      value: originalLocation,
-    });
+    expect(window.location.search.includes("partner_auth=ready")).toBe(false);
   });
 
-  it("maps evaluate 401 to sign-in instead of a reload loop", async () => {
-    mockEnsureBrowserSession.mockResolvedValue({ ok: true });
-    mockEvaluate.mockResolvedValue(new Response(JSON.stringify({
+  it("does not show raw backend auth errors", async () => {
+    mockEvaluateResponse.mockResolvedValue(new Response(JSON.stringify({
       error: "Sign in required in this browser",
     }), { status: 401 }));
 
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getAllByText("Sign in to continue with Abraxas.").length).toBeGreaterThan(0);
+      expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
       expect(screen.queryByText("Sign in required in this browser")).toBeNull();
     });
+  });
+
+  it("ignores preview controls when server gate passes disabled props", async () => {
+    mockEnsureReady.mockResolvedValue({ ok: false });
+
+    render(<PartnerVerifyClient previewPhase={null} previewSignInConfigured={false} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
+    });
+    expect(screen.queryByRole("button", { name: /Signing you in/i })).toBeNull();
+  });
+
+  it("applies preview phase only from server-provided props", () => {
+    mockAuthState.suiAddress = null;
+    render(<PartnerVerifyClient previewPhase="signing_in" previewSignInConfigured />);
+    expect(screen.getByRole("button", { name: /Signing you in/i })).toBeTruthy();
   });
 });
