@@ -233,15 +233,30 @@ export function loadPartnerVerifyResume(): PartnerVerifyResumeState | null {
   }
 }
 
-export function consumePartnerVerifyResumePath(): string | null {
+export function peekPartnerVerifyResumePath(): string | null {
   const state = loadPartnerVerifyResume();
   if (!state) return null;
-
   const path = buildPartnerVerifyPath(state);
-  sessionStorage.removeItem(STORAGE_KEY);
+  return isRestorablePartnerVerifyPath(path) ? path : null;
+}
 
-  if (!isRestorablePartnerVerifyPath(path)) return null;
+export function consumePartnerVerifyResumePath(): string | null {
+  const path = peekPartnerVerifyResumePath();
+  if (!path) {
+    clearPartnerVerifyResume();
+    return null;
+  }
+  sessionStorage.removeItem(STORAGE_KEY);
   return path;
+}
+
+export const PARTNER_AUTH_READY_QUERY = "partner_auth";
+export const PARTNER_AUTH_READY_VALUE = "ready";
+
+export function appendPartnerAuthReadyQuery(path: string): string {
+  if (!isRestorablePartnerVerifyPath(path)) return path;
+  const joiner = path.includes("?") ? "&" : "?";
+  return `${path}${joiner}${PARTNER_AUTH_READY_QUERY}=${PARTNER_AUTH_READY_VALUE}`;
 }
 
 export function clearPartnerVerifyResume(): void {
