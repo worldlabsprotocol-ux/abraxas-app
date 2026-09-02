@@ -12,6 +12,7 @@ import {
   buildPassportRecoveryQuery,
   ZkLoginSignInRecoveryError,
 } from "@/lib/sui/zklogin/signInRecovery";
+import { consumePartnerVerifyResumePath } from "@/lib/partner/partnerVerifyResume";
 
 export default function ZkLoginCallbackPage() {
   const router = useRouter();
@@ -25,9 +26,11 @@ export default function ZkLoginCallbackPage() {
 
     async function finish() {
       try {
+        const resumePath = consumePartnerVerifyResumePath();
+
         const existing = loadUserSession();
         if (existing?.suiAddress) {
-          router.replace("/passport?signed_in=1");
+          router.replace(resumePath ?? "/passport?signed_in=1");
           return;
         }
 
@@ -36,7 +39,7 @@ export default function ZkLoginCallbackPage() {
           throw new Error("No id_token in callback URL. Check Google OAuth redirect settings.");
         }
         await completeGoogleZkLogin(idToken, { callbackHash: window.location.hash });
-        router.replace("/passport?signed_in=1");
+        router.replace(resumePath ?? "/passport?signed_in=1");
       } catch (err) {
         clearLoginInFlight();
         const message = err instanceof Error ? err.message : "Sign-in failed";

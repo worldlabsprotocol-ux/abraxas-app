@@ -3,15 +3,22 @@
 // Abraxas Verify entry — lazy Passport creation, permission or policy routing.
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
-import { SuiSignInNavButton } from "@/components/sui/SuiSignInNavButton";
 import { Btn } from "@/components/redesign/ui";
 import { getPermissionDefinition } from "@/lib/verify/permissions";
+import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
+import {
+  parsePartnerVerifyResumeParams,
+  savePartnerVerifyResume,
+} from "@/lib/partner/partnerVerifyResume";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "var(--accent)";
+const BROWSER_SESSION_AUTH_ERROR = "Sign in required in this browser";
+const MAX_AUTH_RETRIES = 3;
 
 interface FlowResult {
   next: string;
@@ -38,6 +45,12 @@ function describeInvalidLink(input: {
     return `This link is missing the ${missing[0]}. Ask the site that sent you here for a fresh Partner Flow link.`;
   }
   return `This link is missing ${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}. Ask the site that sent you here for a fresh Partner Flow link.`;
+}
+
+function isBrowserSessionAuthError(message: string): boolean {
+  return message === BROWSER_SESSION_AUTH_ERROR
+    || message.toLowerCase().includes("sign in again")
+    || message.toLowerCase().includes("oauth session expired");
 }
 
 function InvalidLinkPanel({ message }: { message: string }) {
@@ -71,9 +84,14 @@ function InvalidLinkPanel({ message }: { message: string }) {
 export function PartnerVerifyClient() {
   const searchParams = useSearchParams();
   const { suiAddress, isLoading: authLoading } = useSuiAuth();
+  const { signIn, busy: signInBusy, configured: signInConfigured, disabled: signInDisabled, error: signInError } = useGoogleSignIn();
+
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [flowError, setFlowError] = useState<string | null>(null);
   const [evaluating, setEvaluating] = useState(false);
+  const [needsBrowserSession, setNeedsBrowserSession] = useState(false);
+  const [authRetryCount, setAuthRetryCount] = useState(0);
+  const evaluateInFlightRef = useRef(false);
 
   const relyingPartyId = searchParams.get("relying_party_id")
     ?? searchParams.get("partner_id")
@@ -93,14 +111,39 @@ export function PartnerVerifyClient() {
     return getPermissionDefinition(permission)?.consentLabel ?? permission;
   }, [permission]);
 
-  const evaluate = useCallback(async () => {
-    if (invalidLinkMessage || !suiAddress) return;
+  useEffect(() => {
+    if (invalidLinkMessage) return;
+    const resumeParams = parsePartnerVerifyResumeParams(searchParams);
+    if (resumeParams) savePartnerVerifyResume(resumeParams);
+  }, [invalidLinkMessage, searchParams]);
 
+  const evaluate = useCallback(async (options?: { forceReauth?: boolean }) => {
+    if (invalidLinkMessage || evaluateInFlightRef.current) return;
+
+    if (!suiAddress) {
+      setNeedsBrowserSession(true);
+      setStatusMessage("Sign in to continue with Abraxas.");
+      return;
+    }
+
+    evaluateInFlightRef.current = true;
     setEvaluating(true);
     setFlowError(null);
     setStatusMessage("Checking your credentials…");
 
     try {
+      const browserSession = await ensureBrowserSession(suiAddress);
+      if (!browserSession.ok) {
+        setNeedsBrowserSession(true);
+        setStatusMessage("Sign in to continue with Abraxas.");
+        if (options?.forceReauth) {
+          setAuthRetryCount((count) => count + 1);
+        }
+        return;
+      }
+
+      setNeedsBrowserSession(false);
+
       const res = await fetch("/api/v1/partner-flow/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,7 +157,19 @@ export function PartnerVerifyClient() {
         }),
       });
       const data = await res.json() as FlowResult;
-      if (!res.ok) throw new Error(data.error ?? "Evaluation failed");
+
+      if (!res.ok) {
+        const message = data.error ?? "Evaluation failed";
+        if (res.status === 401 && isBrowserSessionAuthError(message)) {
+          setNeedsBrowserSession(true);
+          setStatusMessage("Sign in to continue with Abraxas.");
+          if (options?.forceReauth) {
+            setAuthRetryCount((count) => count + 1);
+          }
+          return;
+        }
+        throw new Error(message);
+      }
 
       if (data.next === "enter" && data.redirect_url) {
         setStatusMessage("Verified — returning…");
@@ -139,6 +194,7 @@ export function PartnerVerifyClient() {
       setFlowError(e instanceof Error ? e.message : "Verification failed");
     } finally {
       setEvaluating(false);
+      evaluateInFlightRef.current = false;
     }
   }, [
     invalidLinkMessage,
@@ -152,17 +208,36 @@ export function PartnerVerifyClient() {
 
   useEffect(() => {
     if (authLoading || invalidLinkMessage) return;
-    if (suiAddress) {
-      void evaluate();
-    } else {
+    if (!suiAddress) {
+      setNeedsBrowserSession(true);
       setStatusMessage("Sign in to continue with Abraxas.");
+      return;
     }
+    void evaluate();
   }, [authLoading, invalidLinkMessage, suiAddress, evaluate]);
+
+  const handleSignIn = useCallback(() => {
+    const resumeParams = parsePartnerVerifyResumeParams(searchParams);
+    if (resumeParams) savePartnerVerifyResume(resumeParams);
+    void signIn();
+  }, [searchParams, signIn]);
+
+  const handleTryAgain = useCallback(() => {
+    if (needsBrowserSession) {
+      if (authRetryCount >= MAX_AUTH_RETRIES) {
+        setFlowError("Sign-in could not be confirmed in this browser. Use Sign in with Google below, then return here.");
+        return;
+      }
+      void evaluate({ forceReauth: true });
+      return;
+    }
+    void evaluate();
+  }, [needsBrowserSession, authRetryCount, evaluate]);
 
   let view: ViewState = "loading";
   if (!authLoading) {
     if (invalidLinkMessage) view = "invalid_link";
-    else if (!suiAddress) view = "sign_in";
+    else if (!suiAddress || needsBrowserSession) view = "sign_in";
     else if (evaluating) view = "evaluating";
     else if (flowError) view = "error";
     else view = "success";
@@ -204,7 +279,38 @@ export function PartnerVerifyClient() {
 
           {view === "sign_in" && (
             <div style={{ marginBottom: "1rem" }}>
-              <SuiSignInNavButton prominent />
+              {signInConfigured ? (
+                <button
+                  type="button"
+                  onClick={handleSignIn}
+                  disabled={signInDisabled}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    padding: "0.55rem 1rem",
+                    borderRadius: 999,
+                    border: "none",
+                    background: "#10B981",
+                    color: "#000",
+                    fontFamily: FONT,
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    cursor: signInBusy ? "wait" : "pointer",
+                    opacity: signInBusy ? 0.75 : 1,
+                  }}
+                >
+                  <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
+                  {signInBusy ? "Redirecting…" : "Sign in with Google"}
+                </button>
+              ) : (
+                <Btn href="/passport" size="sm">Sign in</Btn>
+              )}
+              {signInError && (
+                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0.5rem 0 0", lineHeight: 1.45 }}>
+                  {signInError}
+                </p>
+              )}
             </div>
           )}
 
@@ -218,7 +324,7 @@ export function PartnerVerifyClient() {
                 {flowError}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
-                <Btn onClick={() => void evaluate()} disabled={evaluating} size="sm">
+                <Btn onClick={handleTryAgain} disabled={evaluating || authRetryCount >= MAX_AUTH_RETRIES} size="sm">
                   {evaluating ? "Retrying…" : "Try again"}
                 </Btn>
                 <Btn href="/" variant="secondary" size="sm">Return home</Btn>
