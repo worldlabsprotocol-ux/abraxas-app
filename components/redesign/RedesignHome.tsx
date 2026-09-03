@@ -7,6 +7,7 @@ import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeAssuranceNetwork } from "@/components/home/HomeAssuranceNetwork";
 import { HomePolicyOutcomeStrip } from "@/components/home/HomePolicyOutcomeStrip";
 import { HomeAudienceFork } from "@/components/home/HomeAudienceFork";
 import { HomeWhyAbraxas } from "@/components/home/HomeWhyAbraxas";
@@ -33,6 +34,7 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1, paddingBottom: "3rem", textAlign: "center" }}>
       <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
         <HomeSharpHero />
+        <HomeAssuranceNetwork />
         <HomePolicyOutcomeStrip />
         <HomePartnerOnboardingStrip />
         <HomeAudienceFork />
