@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { RedesignShell } from "@/components/redesign/RedesignShell";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
+import { DeveloperContextBanner } from "@/components/redesign/DeveloperContextBanner";
 import { VerifyPageIntroDemo } from "@/components/verify/VerifyPageIntroDemo";
 import { VerifyStaticSample } from "@/components/verify/VerifyStaticSample";
 import { VerifyClient } from "./VerifyClient";
@@ -28,6 +29,9 @@ export default function VerifyPage({ searchParams }: PageProps) {
 
   return (
     <RedesignShell>
+      <div style={{ padding: "0 clamp(1rem, 3vw, 2rem)", marginBottom: "1rem" }}>
+        <DeveloperContextBanner title="Developer Receipt Tester" />
+      </div>
       <VerifyPageIntro />
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem)" }}>
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>

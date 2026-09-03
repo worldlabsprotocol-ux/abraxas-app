@@ -31,14 +31,21 @@ import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
 import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import {
+  PASSPORT_PAGE_EYEBROW,
+  PASSPORT_PAGE_HEADLINE,
+  PASSPORT_PAGE_SUBHEAD,
+  PASSPORT_ADVANCED_DETAILS_TITLE,
+  PASSPORT_SECURE_ACCOUNT_EXPLAINER,
+} from "@/lib/passport/passportCustomerCopy";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import {
   HOLDER_VERIFY_DEFAULT_PATH,
   HOLDER_VERIFY_EYEBROW,
   HOLDER_VERIFY_HEADLINE,
   HOLDER_VERIFY_SUBHEAD,
 } from "@/lib/integrate/partnerJourney";
 
-const S = "'Inter',system-ui,-apple-system,sans-serif";
-const G = "#10B981";
+const S = ABRAXAS_FONT_SANS;
 
 export default function PassportPage() {
   return (
@@ -211,22 +218,20 @@ function PassportPageInner() {
         padding: "clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)",
       }}>
         <div style={{ marginBottom: "1.5rem" }}>
-          <div style={{ fontFamily: S, fontSize: "0.72rem", fontWeight: 600, color: G, marginBottom: "0.625rem" }}>
-            {pageView === "verify" ? HOLDER_VERIFY_EYEBROW : "Abraxas Passport"}
+          <div className="abx-eyebrow-violet" style={{ marginBottom: "0.625rem" }}>
+            {pageView === "verify" ? HOLDER_VERIFY_EYEBROW : PASSPORT_PAGE_EYEBROW}
           </div>
           <h1 style={{
             fontFamily: S, fontSize: "clamp(1.35rem, 3.5vw, 1.85rem)", fontWeight: 800,
             lineHeight: 1.15, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 0.65rem",
           }}>
-            {pageView === "verify" ? HOLDER_VERIFY_HEADLINE : "Your reusable access layer"}
+            {pageView === "verify" ? HOLDER_VERIFY_HEADLINE : PASSPORT_PAGE_HEADLINE}
           </h1>
           <p style={{
-            fontFamily: S, fontSize: "0.85rem", color: "var(--text-secondary)",
+            fontFamily: S, fontSize: "0.9rem", color: "var(--text-secondary)",
             lineHeight: 1.65, maxWidth: 560, margin: 0,
           }}>
-            {pageView === "verify"
-              ? HOLDER_VERIFY_SUBHEAD
-              : "Bind a wallet once. Share only the proof a partner needs. Add identity verification only when a policy requires it."}
+            {pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : PASSPORT_PAGE_SUBHEAD}
           </p>
         </div>
 
@@ -294,7 +299,7 @@ function PassportPageInner() {
               />
             )}
 
-            <PassportSetupStepRail setup={setup} />
+            <PassportSetupStepRail setup={setup} compact={guidedOnboarding} />
 
             {guidedOnboarding && (
               <PassportSetupPanel
@@ -391,7 +396,7 @@ function PassportPageInner() {
                     href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"
                     style={{
                       display: "inline-block", marginTop: "0.75rem",
-                      fontFamily: S, fontSize: "0.76rem", fontWeight: 700, color: G, textDecoration: "none",
+                      fontFamily: S, fontSize: "0.76rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none",
                     }}
                   >
                     Contact support for asset-owner review →
@@ -401,8 +406,8 @@ function PassportPageInner() {
             )}
 
             <DeveloperDetails
-              title="Technical details"
-              summary="Built with zkLogin, W3C-compatible credentials, wallet binding, consent receipts, and Sui-based verification states."
+              title={PASSPORT_ADVANCED_DETAILS_TITLE}
+              summary={PASSPORT_SECURE_ACCOUNT_EXPLAINER}
             >
               <div style={{
                 display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
@@ -428,8 +433,15 @@ function PassportPageInner() {
                 ))}
               </div>
               <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+                <Link href="/verify?mode=receipt" style={{
+                  padding: "0.6rem 1.1rem", borderRadius: 999,
+                  border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-secondary)",
+                  fontFamily: S, fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
+                }}>
+                  Developer receipt tester →
+                </Link>
                 <Link href="/docs/sui" style={{
-                  padding: "0.6rem 1.1rem", borderRadius: 999, background: G, color: "#000",
+                  padding: "0.6rem 1.1rem", borderRadius: 999, background: "var(--accent)", color: "#000",
                   fontFamily: S, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
                 }}>
                   Sui integration hub →

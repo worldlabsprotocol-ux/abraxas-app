@@ -1,20 +1,13 @@
 "use client";
 // FILE: components/passport/PassportSetupStepRail.tsx
-// Compact holder onboarding rail derived from PassportSetupState (no new backend state).
+// Compact setup progress — customer language, hidden when redundant with setup panel.
 
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
+import { PASSPORT_SETUP_STEPS } from "@/lib/passport/passportCustomerCopy";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
-const AMBER = "#F59E0B";
-
-const STEPS = [
-  { id: 1 as const, key: "sign_in", label: "Sign in", sub: "Google · zkLogin" },
-  { id: 2 as const, key: "bind_wallet", label: "Bind wallet", sub: "Signed control proof" },
-  { id: 3 as const, key: "verify_identity", label: "Verify identity", sub: "Only when required" },
-  { id: 4 as const, key: "use_credential", label: "Use credential", sub: "Share proofs" },
-] as const;
+const FONT = ABRAXAS_FONT_SANS;
+const ACCENT = "var(--accent)";
 
 function stepDone(setup: PassportSetupState, stepId: number): boolean {
   if (stepId === 1) return setup.accountComplete;
@@ -30,75 +23,70 @@ function stepCurrent(setup: PassportSetupState, stepId: number): boolean {
   return setup.identityComplete && setup.nextAction === "ready";
 }
 
-function stepInReview(setup: PassportSetupState, stepId: number): boolean {
-  return stepId === 3 && setup.nextAction === "wait_review";
-}
+export function PassportSetupStepRail({
+  setup,
+  compact = false,
+}: {
+  setup: PassportSetupState;
+  compact?: boolean;
+}) {
+  if (compact) {
+    return (
+      <p
+        role="status"
+        style={{
+          fontFamily: FONT,
+          fontSize: "0.84rem",
+          color: "var(--text-secondary)",
+          margin: "0 0 1rem",
+          padding: "0.75rem 1rem",
+          borderRadius: 12,
+          border: "1px solid var(--border)",
+          background: "var(--surface)",
+        }}
+      >
+        <strong style={{ color: "var(--text-primary)" }}>Next:</strong> {setup.nextActionLabel}
+      </p>
+    );
+  }
 
-export function PassportSetupStepRail({ setup }: { setup: PassportSetupState }) {
   return (
     <nav aria-label="Passport setup progress" style={{ marginBottom: "1.25rem" }}>
-      <div style={{
-        display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.65rem",
+      <ol style={{
+        listStyle: "none",
+        margin: 0,
+        padding: 0,
+        display: "flex",
+        gap: "0.5rem",
+        flexWrap: "wrap",
       }}>
-        {STEPS.map(step => {
-          const done = stepDone(setup, step.id);
-          const current = stepCurrent(setup, step.id);
-          const inReview = stepInReview(setup, step.id);
-          const col = done ? ACCENT : inReview ? AMBER : current ? ACCENT : "var(--text-muted)";
-          const status = done ? "Done" : inReview ? "In review" : current ? "Now" : step.id === 3 ? "Optional" : "Next";
-
+        {PASSPORT_SETUP_STEPS.map((step, index) => {
+          const id = index + 1;
+          const done = stepDone(setup, id);
+          const current = stepCurrent(setup, id);
           return (
-            <div
+            <li
               key={step.key}
               aria-current={current ? "step" : undefined}
               style={{
-                flex: "1 1 120px",
-                minWidth: 100,
-                padding: "0.65rem 0.75rem",
-                borderRadius: 10,
-                border: `1px solid ${current ? `${ACCENT}55` : "var(--border)"}`,
-                background: done ? `${ACCENT}10` : "var(--surface)",
-                minHeight: 44,
+                flex: "1 1 140px",
+                minWidth: 120,
+                padding: "0.75rem 0.85rem",
+                borderRadius: 12,
+                border: `1px solid ${current ? "rgba(232,197,71,0.35)" : "var(--border)"}`,
+                background: done ? "rgba(232,197,71,0.08)" : "var(--surface)",
               }}
             >
-              <div style={{
-                fontFamily: MONO, fontSize: "0.5rem", color: col,
-                fontWeight: 700, marginBottom: "0.2rem", textTransform: "uppercase",
-              }}>
-                {step.id}. {status}
-              </div>
-              <div style={{
-                fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
-                color: "var(--text-primary)",
-              }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
                 {step.label}
               </div>
-              <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)" }}>
-                {step.sub}
+              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+                {done ? "Complete" : step.sub}
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
-
-      <div style={{
-        display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem",
-        padding: "0.55rem 0.75rem", borderRadius: 10,
-        background: "var(--surface-inset)", border: "1px solid var(--border)",
-      }}>
-        <span style={{
-          fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700,
-          letterSpacing: "0.08em", textTransform: "uppercase", color: ACCENT,
-        }}>
-          Next
-        </span>
-        <span style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)" }}>
-          {setup.nextActionLabel}
-        </span>
-        <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-          · {setup.stepLabel}
-        </span>
-      </div>
+      </ol>
     </nav>
   );
 }

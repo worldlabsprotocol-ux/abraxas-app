@@ -10,6 +10,7 @@ import { HomeSharpHero } from "./HomeSharpHero";
 import { HomeHowItWorks } from "./HomeHowItWorks";
 import { HomeAudiencePanels } from "./HomeAudiencePanels";
 import { HomeTrustClose } from "./HomeTrustClose";
+import { HomePartnerProof } from "./HomePartnerProof";
 import {
   SIMPLIFIED_HOME_CTA_PRIMARY,
   SIMPLIFIED_HOME_CTA_SECONDARY,
@@ -63,6 +64,11 @@ describe("simplified homepage sections", () => {
     expect(screen.getByText("For businesses")).toBeTruthy();
     expect(screen.getAllByRole("link", { name: SIMPLIFIED_HOME_CTA_PRIMARY })).toHaveLength(1);
     expect(screen.getAllByRole("link", { name: SIMPLIFIED_HOME_CTA_SECONDARY })).toHaveLength(1);
+  });
+
+  it("renders partner proof section", () => {
+    render(<HomePartnerProof />);
+    expect(screen.getByRole("heading", { level: 2, name: /built with real partners/i })).toBeTruthy();
   });
 
   it("has zero axe violations across simplified homepage sections", async () => {

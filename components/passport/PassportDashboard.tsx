@@ -41,9 +41,15 @@ import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignI
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { HOLDER_VERIFY_DEFAULT_PATH } from "@/lib/integrate/partnerJourney";
+import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import {
+  PASSPORT_ADVANCED_DETAILS_TITLE,
+  PASSPORT_SECURE_ACCOUNT_EXPLAINER,
+  PASSPORT_SECURE_ACCOUNT_LABEL,
+} from "@/lib/passport/passportCustomerCopy";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const FONT = ABRAXAS_FONT_SANS;
+const MONO = ABRAXAS_FONT_MONO;
 const ACCENT = "#10B981";
 const AMBER = "#F59E0B";
 const RED = "#EF4444";
@@ -295,13 +301,6 @@ export function PassportDashboard({
           {credentialBanner}
 
           {!showVerifiedHero && (
-            <IndependentBiometricStatusCard
-              manualMode={manualMode}
-              isPolling={isPolling || identityUi === "under_review"}
-            />
-          )}
-
-          {!showVerifiedHero && (
             <PassportStatusCard
               tier={tier}
               suiAddress={suiAddress}
@@ -319,23 +318,16 @@ export function PassportDashboard({
                 fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
                 color: "var(--text-primary)", margin: "0 0 0.5rem",
               }}>
-                Bind your wallet
+                {PASSPORT_SECURE_ACCOUNT_LABEL}
               </h2>
               <p style={{
                 fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
                 lineHeight: 1.65, margin: "0 0 1rem",
               }}>
-                {showVerifiedHero
-                  ? "One signature proves wallet control for partners that require it. No funds move — your verified identity already works on its own."
-                  : "One signature proves wallet control. No funds move. Required before optional identity verification."}
+                {PASSPORT_SECURE_ACCOUNT_EXPLAINER}
               </p>
-              {suiAddress && (
-                <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
-                  {truncateSuiAddress(suiAddress, 8, 6)}
-                </div>
-              )}
               <Btn size="lg" fullWidth loading={bindLoading} onClick={() => void bindWallet()}>
-                {bindLoading ? "Waiting for signature…" : "Sign to bind wallet →"}
+                {bindLoading ? "Waiting for confirmation…" : "Confirm securely →"}
               </Btn>
               {bindSuccess && (
                 <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
@@ -353,7 +345,7 @@ export function PassportDashboard({
           {!setup.identityComplete && identityUi !== "under_review" && (
             <section style={{ ...CARD, border: "2px solid rgba(16,185,129,0.28)" }}>
               <h2 style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem" }}>
-                Verify identity when required
+                Add verified information when required
               </h2>
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
                 Optional until a partner policy requires it. Partners only see yes/no — not your documents.
@@ -366,7 +358,7 @@ export function PassportDashboard({
                   capturePolicy={capturePolicy}
                 />
               ) : (
-                <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Start identity check →</Btn>
+                <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>Add verified information →</Btn>
               )}
             </section>
           )}
@@ -410,52 +402,15 @@ export function PassportDashboard({
               isPolling={isPolling}
             />
           ) : (
-            <>
-              <TransactionEligibilitySection enabled={walletDone} />
-
-              <section style={CARD} aria-labelledby="passport-security-heading">
-                <div style={{
-                  fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-                  letterSpacing: "0.1em", textTransform: "uppercase",
-                  color: ACCENT, marginBottom: "0.45rem",
-                }}>
-                  Security
-                </div>
-                <h2 id="passport-security-heading" style={{
-                  fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-                  color: "var(--text-primary)", margin: "0 0 0.35rem",
-                }}>
-                  Confirm wallet control
-                </h2>
-                <p style={{
-                  fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
-                  lineHeight: 1.6, margin: "0 0 0.85rem",
-                }}>
-                  Optional session security check. Signs a message proving you control your connected wallet — not an identity check.
-                </p>
-                <PassportIntentCard suiAddress={suiAddress} />
-              </section>
-
-              <section style={{ ...CARD, marginBottom: "1.5rem" }} aria-labelledby="passport-business-heading">
-                <div style={{
-                  fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-                  letterSpacing: "0.1em", textTransform: "uppercase",
-                  color: ACCENT, marginBottom: "0.45rem",
-                }}>
-                  For businesses and asset owners
-                </div>
-                <h2 id="passport-business-heading" style={{
-                  fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-                  color: "var(--text-primary)", margin: "0 0 0.85rem",
-                }}>
-                  Need a business credential, asset-owner proof, or issuer attestation?
-                </h2>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  <Btn href="/passport#stamps" variant="secondary" size="sm">Stamp a credential →</Btn>
-                  <Btn href="/build" variant="ghost" size="sm">Submit an asset →</Btn>
-                </div>
-              </section>
-            </>
+            <PassportCustomerAdvancedDetails
+              suiAddress={suiAddress}
+              tier={tier}
+              walletBindingL3={walletBindingL3}
+              manualMode={manualMode}
+              isPolling={isPolling}
+              identityUi={identityUi}
+              assuranceLabel={assuranceLabel}
+            />
           )}
         </>
       )}
@@ -527,52 +482,32 @@ function PassportStatusCard({
   availableNow: string[];
   handoff: PartnerFlowHandoffController;
 }) {
+  const readyHeadline = identityUi === "verified"
+    ? "Your Passport is ready to use"
+    : walletBindingL3
+      ? "Your account is connected"
+      : "Finish securing your Passport";
+
   return (
     <section style={{
       ...CARD,
       border: "2px solid rgba(16,185,129,0.28)",
       background: "rgba(16,185,129,0.04)",
     }} aria-labelledby="passport-status-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.45rem",
-      }}>
-        Passport status
-      </div>
       <h2 id="passport-status-heading" style={{
         fontFamily: FONT, fontSize: "1.15rem", fontWeight: 800,
-        color: "var(--text-primary)", margin: "0 0 0.25rem",
+        color: "var(--text-primary)", margin: "0 0 0.35rem",
       }}>
-        {TIER_LABELS[tier]}
+        {readyHeadline}
       </h2>
-      <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: ACCENT, marginBottom: "0.65rem" }}>
-        Tier {tier} · Active
-      </div>
       <p style={{
         fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
         lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 560,
       }}>
-        Your account and wallet are ready for Abraxas applications that accept wallet-bound access.
+        {identityUi === "verified"
+          ? "You can reuse private proof when participating services request it."
+          : "Complete the next step below when you are ready. Verified information is only required when a service asks for it."}
       </p>
-
-      {suiAddress && (
-        <div style={{
-          padding: "0.65rem 0.75rem", borderRadius: 10,
-          background: "var(--surface-inset)", border: "1px solid var(--border)",
-          marginBottom: "0.85rem",
-        }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-            Wallet
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-secondary)" }}>
-            {truncateSuiAddress(suiAddress, 8, 6)}
-          </div>
-          <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: walletBindingL3 ? ACCENT : "var(--text-muted)", marginTop: 4 }}>
-            Control proof: {walletBindingL3 ? "Active" : "zkLogin session"}
-          </div>
-        </div>
-      )}
 
       <div style={{
         padding: "0.65rem 0.75rem", borderRadius: 10,
@@ -580,29 +515,27 @@ function PassportStatusCard({
         marginBottom: "1rem",
       }}>
         <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-          Identity credential
+          Verified information
         </div>
         <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: identityUi === "verified" ? ACCENT : "var(--text-secondary)" }}>
           {IDENTITY_UI_LABELS[identityUi]}
-          {identityUi === "verified" && ` · Assurance ${assuranceLabel}`}
         </div>
         {identityUi !== "verified" && (
           <div style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>
-            Optional until required by a specific partner or transaction.
+            Optional until required by a specific service.
           </div>
         )}
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
         <div style={{
-          fontFamily: MONO, fontSize: "0.52rem", fontWeight: 700,
-          letterSpacing: "0.08em", textTransform: "uppercase",
-          color: "var(--text-muted)", marginBottom: "0.45rem",
+          fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,
+          color: "var(--text-primary)", marginBottom: "0.45rem",
         }}>
           What you can do now
         </div>
         <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-          {availableNow.slice(0, 5).map(label => (
+          {availableNow.slice(0, 4).map(label => (
             <li key={label} style={{
               fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
               lineHeight: 1.6, marginBottom: 4,
@@ -615,11 +548,10 @@ function PassportStatusCard({
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         {handoff.isPartnerFlowContext ? (
-          <PartnerReturnCta handoff={handoff} label="Return to flow →" />
+          <PartnerReturnCta handoff={handoff} label="Return to service →" />
         ) : (
-          <Btn href="/partners" size="sm">Explore compatible access →</Btn>
+          <Btn href="/integrate" size="sm">Learn about compatible services →</Btn>
         )}
-        <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="secondary" size="sm">Verify records →</Btn>
       </div>
     </section>
   );
@@ -877,29 +809,31 @@ function CredentialsSection({
       )}
 
       <CredentialRow
-        title="Wallet binding"
+        title="Account security"
         issuer="Abraxas"
-        assurance={walletBindingL3 ? "L3" : "L2"}
-        status={walletBindingL3 ? "Active" : "Session"}
-        refresh="Every 30 days or before high-value actions"
+        assurance={walletBindingL3 ? "Confirmed" : "Session"}
+        status={walletBindingL3 ? "Connected" : "Sign-in session"}
+        refresh="Reconfirm when a service requires it"
         compact={verifiedView}
+        customerView
       />
       <CredentialRow
-        title="Identity verification"
+        title="Verified information"
         issuer={identityUi === "verified" ? (manualMode ? "Abraxas review" : "Approved identity provider") : "—"}
-        assurance={identityUi === "verified" ? assuranceLabel : "—"}
+        assurance={identityUi === "verified" ? "On file" : "—"}
         status={IDENTITY_UI_LABELS[identityUi]}
         refresh={identityUi === "verified" && credential?.expires_at
-          ? `Expires ${new Date(credential.expires_at).toLocaleDateString()}`
-          : "Only when a partner policy requires it"}
+          ? `Valid through ${new Date(credential.expires_at).toLocaleDateString()}`
+          : "Only when a service requires it"}
         compact={verifiedView}
+        customerView
       />
 
       <Link href="/passport?view=verify&mode=credential" style={{
         display: "inline-block", marginTop: "0.65rem",
         fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: ACCENT, textDecoration: "none",
       }}>
-        View all credentials →
+        Review what you have shared →
       </Link>
     </section>
   );
@@ -912,6 +846,7 @@ function CredentialRow({
   status,
   refresh,
   compact = false,
+  customerView = false,
 }: {
   title: string;
   issuer: string;
@@ -919,7 +854,26 @@ function CredentialRow({
   status: string;
   refresh: string;
   compact?: boolean;
+  customerView?: boolean;
 }) {
+  const rows = customerView
+    ? [
+        ["Status", status],
+        ["Valid through", refresh.replace(/^(Expires |Valid through )/, "")],
+      ]
+    : compact
+      ? [
+          ["Status", status],
+          ["Assurance", assurance],
+          ["Valid through", refresh.replace(/^(Expires |Valid through )/, "")],
+        ]
+      : [
+          ["Issuer", issuer],
+          ["Assurance", assurance],
+          ["Status", status],
+          ["Refresh", refresh],
+        ];
+
   return (
     <div style={{
       padding: "0.75rem 0.85rem", borderRadius: 10,
@@ -930,19 +884,7 @@ function CredentialRow({
         {title}
       </div>
       <div style={{ display: "grid", gap: "0.2rem" }}>
-        {(compact
-          ? [
-              ["Status", status],
-              ["Assurance", assurance],
-              ["Valid through", refresh.replace(/^Expires /, "")],
-            ]
-          : [
-              ["Issuer", issuer],
-              ["Assurance", assurance],
-              ["Status", status],
-              ["Refresh", refresh],
-            ]
-        ).map(([k, v]) => (
+        {rows.map(([k, v]) => (
           <div key={k} style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-secondary)" }}>
             <span style={{ color: "var(--text-muted)" }}>{k}: </span>{v}
           </div>
@@ -958,6 +900,45 @@ function PartnerAccessSection({
 }: {
   suiAddress: string | null;
   verifiedView?: boolean;
+}) {
+  return (
+    <section style={{ marginBottom: "1.25rem" }} aria-labelledby="partner-access-heading">
+      <h2 id="partner-access-heading" style={{
+        fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
+        color: "var(--text-primary)", margin: "0 0 0.5rem",
+      }}>
+        {verifiedView ? "Where your proof was used" : "What you share stays private"}
+      </h2>
+      <p style={{
+        fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
+        lineHeight: 1.65, margin: "0 0 0.85rem",
+      }}>
+        {verifiedView
+          ? "When you approve a service request, the consent record appears here. Each service sees only what its policy requires."
+          : "When a service requests eligibility, you see what information is needed, why, and what access it unlocks."}
+      </p>
+      <PassportShareHistoryCard suiAddress={suiAddress} verifiedView={verifiedView} />
+      <PassportPrivacyCenter suiAddress={suiAddress} />
+    </section>
+  );
+}
+
+function PassportCustomerAdvancedDetails({
+  suiAddress,
+  tier,
+  walletBindingL3,
+  manualMode,
+  isPolling,
+  identityUi,
+  assuranceLabel,
+}: {
+  suiAddress: string | null;
+  tier: PassportTier;
+  walletBindingL3: boolean;
+  manualMode: boolean;
+  isPolling: boolean;
+  identityUi: IdentityUiState;
+  assuranceLabel: string;
 }) {
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
@@ -983,44 +964,61 @@ function PartnerAccessSection({
   }
 
   return (
-    <section style={{ marginBottom: "1.25rem" }} aria-labelledby="partner-access-heading">
-      <div style={{
-        fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ACCENT, marginBottom: "0.45rem",
+    <details style={{ ...CARD, marginBottom: "1.5rem" }}>
+      <summary style={{
+        fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
+        color: "var(--text-secondary)", cursor: "pointer",
       }}>
-        Partner access
-      </div>
-      <h2 id="partner-access-heading" style={{
-        fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800,
-        color: "var(--text-primary)", margin: "0 0 0.5rem",
-      }}>
-        {verifiedView ? "Partner access history" : "Partners never receive your raw documents by default"}
-      </h2>
-      <p style={{
-        fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
-        lineHeight: 1.65, margin: "0 0 0.85rem",
-      }}>
-        {verifiedView
-          ? "When you approve a partner request, the consent receipt appears here. Each partner sees only the claims their policy requires."
-          : "When a partner requests eligibility, you see which claims they need, why, how long approval is valid, and what action the decision unlocks."}
-      </p>
-      {suiAddress && (
-        <div style={{ marginBottom: "0.85rem" }}>
-          <Btn size="sm" variant="secondary" loading={demoBusy} onClick={() => void startDemoRequest()}>
-            Test portable reuse loop →
-          </Btn>
-          {demoError && (
-            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: RED, margin: "0.45rem 0 0" }}>{demoError}</p>
-          )}
-          <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.45rem 0 0", lineHeight: 1.5 }}>
-            Pilot demo. simulates a partner consent request without an API key in your browser.
+        {PASSPORT_ADVANCED_DETAILS_TITLE}
+      </summary>
+      <div style={{ marginTop: "1rem" }}>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)",
+          lineHeight: 1.6, margin: "0 0 0.85rem",
+        }}>
+          {TIER_LABELS[tier]} · Wallet control: {walletBindingL3 ? "signed proof" : "zkLogin session"}
+          {identityUi === "verified" ? ` · Assurance ${assuranceLabel}` : ""}
+          {suiAddress ? ` · ${truncateSuiAddress(suiAddress, 6, 4)}` : ""}
+        </p>
+
+        <IndependentBiometricStatusCard manualMode={manualMode} isPolling={isPolling} />
+
+        <TransactionEligibilitySection enabled />
+
+        <section style={{ marginTop: "1rem", marginBottom: "1rem" }} aria-labelledby="passport-security-heading">
+          <h3 id="passport-security-heading" style={{
+            fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800,
+            color: "var(--text-primary)", margin: "0 0 0.35rem",
+          }}>
+            Confirm wallet control
+          </h3>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)",
+            lineHeight: 1.6, margin: "0 0 0.75rem",
+          }}>
+            Optional session security check — not an identity check.
           </p>
+          <PassportIntentCard suiAddress={suiAddress} />
+        </section>
+
+        {suiAddress && (
+          <div style={{ marginBottom: "1rem" }}>
+            <Btn size="sm" variant="secondary" loading={demoBusy} onClick={() => void startDemoRequest()}>
+              Test portable reuse loop →
+            </Btn>
+            {demoError && (
+              <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: RED, margin: "0.45rem 0 0" }}>{demoError}</p>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="secondary" size="sm">Developer receipt tester →</Btn>
+          <Btn href="/passport#stamps" variant="secondary" size="sm">Business stamps →</Btn>
+          <Btn href="/build" variant="ghost" size="sm">Submit an asset →</Btn>
         </div>
-      )}
-      <PassportShareHistoryCard suiAddress={suiAddress} verifiedView={verifiedView} />
-      <PassportPrivacyCenter suiAddress={suiAddress} />
-    </section>
+      </div>
+    </details>
   );
 }
 
@@ -1043,7 +1041,7 @@ function PassportVerifiedDetails({
         fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
         color: "var(--text-secondary)", cursor: "pointer",
       }}>
-        Details
+        {PASSPORT_ADVANCED_DETAILS_TITLE}
       </summary>
       <div style={{ marginTop: "1rem" }}>
         <p style={{

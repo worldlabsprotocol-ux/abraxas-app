@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Streamlined nav. Home · Passport · Integrate · Verify · Docs · profile menu.
+// Canonical public nav — Home · Passport · For businesses · Docs
 
 import Link from "next/link";
 import Image from "next/image";
@@ -10,10 +10,9 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { NavProfileMenu, NavSignInButton } from "@/components/sui/NavProfileMenu";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
-import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { NAV_PARTNER_VERIFY_LABEL } from "@/lib/integrate/partnerJourney";
+import { PUBLIC_FONT_SANS, PUBLIC_NAV_LINKS } from "@/lib/design/publicSurface";
 
-const FONT = ABRAXAS_FONT_SANS;
+const FONT = PUBLIC_FONT_SANS;
 const ACCENT = "var(--accent)";
 const MotionLink = motion.create(Link);
 
@@ -21,28 +20,12 @@ type NavLink = {
   href: string;
   label: string;
   exact?: boolean;
-  matchPrefixes?: string[];
+  matchPrefixes?: readonly string[];
 };
 
-const PRIMARY_LINKS: NavLink[] = [
-  { href: "/", label: "Home", exact: true },
-  { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] },
-  { href: "/integrate", label: "Integrate", matchPrefixes: ["/integrate", "/developers", "/design-partner"] },
-];
+const PRIMARY_LINKS: NavLink[] = [...PUBLIC_NAV_LINKS];
 
-const DESKTOP_LINKS: NavLink[] = [
-  ...PRIMARY_LINKS,
-  { href: "/verify", label: NAV_PARTNER_VERIFY_LABEL, matchPrefixes: ["/verify"] },
-  { href: "/docs/partner-flow", label: "Docs", matchPrefixes: ["/docs"] },
-];
-
-const MOBILE_DRAWER_LINKS: NavLink[] = [
-  ...PRIMARY_LINKS,
-  { href: "/docs", label: "Documentation" },
-  { href: "/verify", label: "Verify proofs" },
-];
-
-function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: string[]) {
+function isLinkActive(pathname: string | null, href: string, exact?: boolean, matchPrefixes?: readonly string[]) {
   if (matchPrefixes?.length) {
     return matchPrefixes.some((p) => pathname === p || (pathname?.startsWith(p + "/") ?? false));
   }
@@ -102,12 +85,12 @@ export function RedesignNav() {
         className="rd-nav-links"
         style={{ display: "none", flex: 1, justifyContent: "center", gap: "0.15rem", alignItems: "center", flexWrap: "wrap", minWidth: 0 }}
       >
-        {DESKTOP_LINKS.map((l) => {
+        {PRIMARY_LINKS.map((l) => {
           const active = isLinkActive(
             pathname,
             l.href,
             l.exact,
-            "matchPrefixes" in l ? l.matchPrefixes : undefined,
+            l.matchPrefixes,
           );
           return (
             <MotionLink
@@ -134,8 +117,8 @@ export function RedesignNav() {
                     position: "absolute",
                     inset: 0,
                     borderRadius: 999,
-                    background: "rgba(16,185,129,0.12)",
-                    border: "1px solid rgba(16,185,129,0.25)",
+                    background: "rgba(232,197,71,0.12)",
+                    border: "1px solid rgba(232,197,71,0.28)",
                     zIndex: -1,
                   }}
                 />
@@ -202,7 +185,7 @@ export function RedesignNav() {
               gap: "0.35rem",
             }}
           >
-            {MOBILE_DRAWER_LINKS.map((l) => (
+            {PRIMARY_LINKS.map((l) => (
               <Link
                 key={`${l.href}-${l.label}`}
                 href={l.href}
@@ -254,7 +237,7 @@ const mobileSubLink: React.CSSProperties = {
   padding: "0.55rem 0.5rem",
   borderRadius: 10,
   textDecoration: "none",
-  fontFamily: ABRAXAS_FONT_SANS,
+  fontFamily: PUBLIC_FONT_SANS,
   fontSize: "0.88rem",
   fontWeight: 500,
   color: "var(--text-secondary)",

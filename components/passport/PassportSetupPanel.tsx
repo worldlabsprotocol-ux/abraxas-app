@@ -26,6 +26,13 @@ import {
   SETUP_WALLET_READY_HEADLINE,
   SETUP_WALLET_READY_SUB,
 } from "@/lib/integrate/partnerJourney";
+import {
+  PASSPORT_SECURE_ACCOUNT_LABEL,
+  PASSPORT_SECURE_ACCOUNT_SUB,
+  PASSPORT_SECURE_ACCOUNT_EXPLAINER,
+  PASSPORT_ADD_VERIFIED_INFO_LABEL,
+  PASSPORT_ADD_VERIFIED_INFO_SUB,
+} from "@/lib/passport/passportCustomerCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -178,8 +185,8 @@ export function PassportSetupPanel({
             Your reusable eligibility profile. Bind your wallet to finish setup , 
             ID verification is optional until a partner policy requires it.
           </p>
-          <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>
-            Setup progress: {completedCount} of 3 complete · {setup.stepLabel}
+          <div style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
+            {setup.nextActionLabel}
           </div>
         </div>
 
@@ -188,9 +195,9 @@ export function PassportSetupPanel({
           {/* Progress checklist */}
           <ol style={{ listStyle: "none", margin: "0 0 1.25rem", padding: 0, display: "grid", gap: "0.45rem" }}>
             {[
-              { done: setup.accountComplete, label: "Account created", sub: walletDone && suiAddress ? truncateSuiAddress(suiAddress, 8, 6) : "Sign in with Google" },
-              { done: setup.walletBound, label: "Bind wallet", sub: setup.walletBound ? "Signed control proof on file" : "One signature. no funds move" },
-              { done: setup.identityComplete, label: "Verify identity", sub: setup.identityComplete ? `Credential active · ${assuranceLabel}` : "Optional · for payments & enhanced trust" },
+              { done: setup.accountComplete, label: "Account ready", sub: "Signed in with your account" },
+              { done: setup.walletBound, label: PASSPORT_SECURE_ACCOUNT_LABEL, sub: setup.walletBound ? PASSPORT_SECURE_ACCOUNT_SUB : PASSPORT_SECURE_ACCOUNT_EXPLAINER },
+              { done: setup.identityComplete, label: PASSPORT_ADD_VERIFIED_INFO_LABEL, sub: setup.identityComplete ? "Verified information on file" : PASSPORT_ADD_VERIFIED_INFO_SUB },
             ].map(item => (
               <li key={item.label} style={{
                 display: "flex", gap: "0.65rem", alignItems: "flex-start",
@@ -243,7 +250,7 @@ export function PassportSetupPanel({
                 This completes your core profile. no ID upload required.
               </p>
               <Btn size="lg" fullWidth loading={bindLoading} disabled={bindLoading} onClick={() => void bindWallet()}>
-                {bindLoading ? "Waiting for signature…" : "Sign to bind wallet →"}
+                {bindLoading ? "Waiting for signature…" : "Secure your Passport →"}
               </Btn>
               {bindSuccess && (
                 <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
