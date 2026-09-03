@@ -16,7 +16,6 @@ export const PUBLIC_NAV_LINKS = [
   { href: "/", label: "Home", exact: true as const },
   { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] as const },
   { href: "/integrate", label: "For businesses", matchPrefixes: ["/integrate", "/developers", "/design-partner"] as const },
-  { href: "/docs/partner-flow", label: "Docs", matchPrefixes: ["/docs"] as const },
 ] as const;
 
 export const PUBLIC_SURFACE = {

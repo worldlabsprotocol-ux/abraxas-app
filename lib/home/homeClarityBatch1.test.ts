@@ -79,13 +79,12 @@ describe("homepage clarity batch 1 static guards", () => {
     }
   });
 
-  it("exposes canonical public nav without developer tester in primary links", () => {
+  it("exposes consumer-focused public nav without Docs in primary links", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     const surface = read("lib/design/publicSurface.ts");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
     expect(surface).toContain('label: "For businesses"');
-    expect(surface).toContain('href: "/docs/partner-flow"');
-    expect(surface).toContain('label: "Docs"');
+    expect(surface).not.toContain('label: "Docs"');
     expect(surface).not.toContain('href: "/verify"');
     expect(nav).toContain("aria-expanded={open}");
     expect(nav).toContain('id="rd-nav-mobile-drawer"');
@@ -143,17 +142,16 @@ describe("AbraxasBootScreen accessibility and persistence", () => {
 });
 
 describe("RedesignNav mobile discoverability", () => {
-  it("shows Docs in the mobile drawer without partner verify entry", () => {
+  it("shows three consumer links in mobile drawer without Docs or verify", () => {
     render(React.createElement(RedesignNav));
 
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute("aria-expanded", "true");
 
-    expect(screen.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/docs/partner-flow");
+    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Passport" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "For businesses" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Docs" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Verify proofs/i })).not.toBeInTheDocument();
-
-    const drawerLinks = screen.getAllByRole("link");
-    const docsLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Docs");
-    expect(docsLabels).toEqual(["Docs"]);
   });
 });

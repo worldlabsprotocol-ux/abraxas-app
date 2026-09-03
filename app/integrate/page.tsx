@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/integrate/page.tsx
-// For businesses — value before implementation.
+// For businesses — concise commercial positioning.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -10,6 +10,7 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   BUSINESS_BENEFITS,
   BUSINESS_DEV_TOOLS_NOTE,
+  BUSINESS_INTEGRATION_PILLARS,
   BUSINESS_PAGE_CTA_PRIMARY,
   BUSINESS_PAGE_CTA_SECONDARY,
   BUSINESS_PAGE_EYEBROW,
@@ -17,7 +18,6 @@ import {
   BUSINESS_PAGE_SUBHEAD,
   BUSINESS_PARTNER_PROOF_BADGE,
   BUSINESS_PARTNER_PROOF_TITLE,
-  BUSINESS_PROCESS_STEPS,
 } from "@/lib/integrate/businessPageCopy";
 import { PARTNER_APPLICATION_PATH } from "@/lib/integrate/partnerJourney";
 
@@ -65,12 +65,12 @@ export default function IntegratePage() {
         ))}
       </div>
 
-      <ContentCard title="Simple process">
-        <ol style={{ margin: 0, paddingLeft: "1.2rem", fontFamily: FONT, fontSize: "0.88rem", lineHeight: 1.7, color: "var(--text-secondary)" }}>
-          {BUSINESS_PROCESS_STEPS.map((step) => (
-            <li key={step} style={{ marginBottom: "0.35rem" }}>{step}</li>
+      <ContentCard title="Built for real integration">
+        <ul style={{ margin: 0, paddingLeft: "1.2rem", fontFamily: FONT, fontSize: "0.88rem", lineHeight: 1.7, color: "var(--text-secondary)" }}>
+          {BUSINESS_INTEGRATION_PILLARS.map((item) => (
+            <li key={item} style={{ marginBottom: "0.35rem" }}>{item}</li>
           ))}
-        </ol>
+        </ul>
       </ContentCard>
 
       <ContentCard title="Partner proof">
@@ -88,14 +88,13 @@ export default function IntegratePage() {
         </Link>
       </ContentCard>
 
-      <ContentCard title="Developer resources">
+      <ContentCard title="Documentation">
         <p style={{ fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.65, color: "var(--text-secondary)", margin: "0 0 0.85rem" }}>
           {BUSINESS_DEV_TOOLS_NOTE}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
           <Btn href="/docs/partner-flow" size="sm">Partner Flow docs</Btn>
-          <Btn href="/verify" variant="secondary" size="sm">Developer Receipt Tester</Btn>
-          <Btn href="/docs" variant="ghost" size="sm">All documentation</Btn>
+          <Btn href="/docs" variant="secondary" size="sm">All documentation</Btn>
         </div>
       </ContentCard>
     </RedesignPage>

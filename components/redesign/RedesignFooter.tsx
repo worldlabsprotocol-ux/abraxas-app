@@ -1,19 +1,43 @@
 "use client";
 // FILE: components/redesign/RedesignFooter.tsx
-// Minimal footer — plain language, few links.
+// Structured footer — product, developers, company.
 
 import Link from "next/link";
-import { FOOTER_PASSPORT_TOOLS_LABEL, FOOTER_TAGLINE } from "@/lib/integrate/partnerJourney";
+import {
+  FOOTER_COMPANY_LINKS,
+  FOOTER_DEVELOPER_LINKS,
+  FOOTER_PRODUCT_LINKS,
+} from "@/lib/design/footerLinks";
+import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
 
-const FONT = "'Inter',system-ui,sans-serif";
+const FONT = PUBLIC_FONT_SANS;
 
-const LINKS = [
-  { label: FOOTER_PASSPORT_TOOLS_LABEL, href: "/passport" },
-  { label: "Tokenize", href: "/build" },
-  { label: "Blog", href: "/blog" },
-  { label: "Privacy", href: "/legal/privacy" },
-  { label: "Terms", href: "/legal/terms" },
-];
+const FOOTER_TAGLINE =
+  "Reusable private verification for people and participating services.";
+
+function FooterColumn({ title, links }: { title: string; links: readonly { label: string; href: string }[] }) {
+  return (
+    <div style={{ minWidth: 140, flex: "1 1 140px" }}>
+      <div style={{
+        fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
+        textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.55rem",
+      }}>
+        {title}
+      </div>
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.4rem" }}>
+        {links.map((item) => (
+          <li key={item.href + item.label}>
+            <Link href={item.href} style={{
+              fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", textDecoration: "none",
+            }}>
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function RedesignFooter() {
   return (
@@ -28,7 +52,7 @@ export function RedesignFooter() {
         margin: "0 auto",
         padding: "2rem clamp(1rem, 3vw, 2rem) 2.5rem",
       }}>
-        <div style={{ marginBottom: "1.25rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900, color: "var(--accent)", marginBottom: "0.35rem" }}>
             ABRAXAS
           </div>
@@ -36,20 +60,13 @@ export function RedesignFooter() {
             {FOOTER_TAGLINE}
           </p>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem 1.25rem", marginBottom: "1.25rem" }}>
-          {LINKS.map(item => (
-            <Link key={item.href + item.label} href={item.href} style={{
-              fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", textDecoration: "none",
-            }}>
-              {item.label}
-            </Link>
-          ))}
-          <Link href="/design-partner" style={{
-            fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", textDecoration: "none",
-          }}>
-            Design partners
-          </Link>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "1.5rem 2rem", marginBottom: "1.5rem" }}>
+          <FooterColumn title="Product" links={FOOTER_PRODUCT_LINKS} />
+          <FooterColumn title="Developers" links={FOOTER_DEVELOPER_LINKS} />
+          <FooterColumn title="Company" links={FOOTER_COMPANY_LINKS} />
         </div>
+
         <div style={{
           paddingTop: "1rem",
           borderTop: "1px solid var(--border)",
