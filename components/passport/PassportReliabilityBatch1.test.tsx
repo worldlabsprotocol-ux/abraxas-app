@@ -64,7 +64,7 @@ describe("PassportSetupPanel wallet bind", () => {
     render(<PassportSetupPanel {...setupPanelProps} />);
 
     const user = userEvent.setup();
-    const button = screen.getByRole("button", { name: /Sign to bind wallet/i });
+    const button = screen.getByRole("button", { name: /Secure your Passport/i });
     await user.click(button);
 
     await waitFor(() => {
@@ -82,7 +82,7 @@ describe("PassportSetupPanel wallet bind", () => {
     render(<PassportSetupPanel {...setupPanelProps} />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /Sign to bind wallet/i }));
+    await user.click(screen.getByRole("button", { name: /Secure your Passport/i }));
 
     expect(await screen.findByText("Couldn't start wallet binding. Try again in a moment.")).toBeInTheDocument();
     expect(screen.queryByText("db_timeout")).not.toBeInTheDocument();
@@ -100,7 +100,7 @@ describe("PassportSetupPanel wallet bind", () => {
     render(<PassportSetupPanel {...setupPanelProps} />);
 
     const user = userEvent.setup();
-    const button = screen.getByRole("button", { name: /Sign to bind wallet/i });
+    const button = screen.getByRole("button", { name: /Secure your Passport/i });
     await user.dblClick(button);
 
     await waitFor(() => {

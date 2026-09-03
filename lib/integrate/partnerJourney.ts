@@ -141,15 +141,15 @@ export const PARTNER_POST_APPLY_STEPS = [
 
 export const PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL = "Receipt verification (server)";
 
-export const VERIFY_HUB_EYEBROW = "Partner integrators · public beta";
+export const VERIFY_HUB_EYEBROW = "Developer tools";
 
-export const VERIFY_HUB_HEADLINE = "Test a Partner Flow session receipt";
+export const VERIFY_HUB_HEADLINE = "Developer Receipt Tester";
 
 export const VERIFY_HUB_SUBHEAD =
-  "Paste a receipt_id from your callback and inspect the public receipt view. In production, your server must call GET /api/receipts/{receipt_id}/public and validate the signed result before granting access.";
+  "Validate signed Partner Flow receipts, registry records, and credential payloads during integration. This is not the customer verification experience.";
 
 export const VERIFY_HUB_HOLDER_NOTE =
-  "Looking for registry or credential tools? Open holder verify in Passport — not Partner Flow receipt verification.";
+  "Holders can review their own proofs from Passport.";
 
 export const HOLDER_VERIFY_EYEBROW = "Passport tools · public beta";
 

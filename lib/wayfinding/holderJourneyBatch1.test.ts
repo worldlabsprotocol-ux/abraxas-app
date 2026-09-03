@@ -133,12 +133,12 @@ describe("phase 9 holder journey batch 1", () => {
     expect(DASHBOARD_LEGACY_TITLE).toContain("moved");
   });
 
-  it("keeps global nav partner verify on /verify", () => {
+  it("keeps public nav focused on Home, Passport, For businesses, and Docs", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
-    expect(nav).toContain("NAV_PARTNER_VERIFY_LABEL");
-    expect(nav).toContain('href: "/verify"');
-    expect(nav).toContain('"Verify proofs"');
-    expect(nav).not.toContain("HOLDER_VERIFY_DEFAULT_PATH");
+    expect(nav).toContain("PUBLIC_NAV_LINKS");
+    expect(nav).toContain("For businesses");
+    expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
+    expect(nav).not.toMatch(/href:\s*"\/verify"/);
   });
 
   it("routes footer passport tools to /passport not holder verify tab", () => {
@@ -216,9 +216,11 @@ describe("phase 9 holder journey batch 1", () => {
     expect(screen.getByRole("link", { name: /Open Passport/i })).toHaveAttribute("href", "/passport");
   });
 
-  it("global nav partner verify still targets receipt hub path constant", () => {
+  it("keeps receipt tester path available outside primary navigation", () => {
     expect(PARTNER_RECEIPT_VERIFIER_PATH).toBe("/verify?mode=receipt");
     const nav = read("components/redesign/RedesignNav.tsx");
-    expect(nav).toContain('href: "/verify"');
+    expect(nav).not.toMatch(/href:\s*"\/verify"/);
+    const integrate = read("app/integrate/page.tsx");
+    expect(integrate).toContain('href="/verify"');
   });
 });

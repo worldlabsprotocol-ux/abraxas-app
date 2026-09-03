@@ -79,18 +79,16 @@ describe("homepage clarity batch 1 static guards", () => {
     }
   });
 
-  it("exposes desktop Verify/Docs and mobile drawer links without duplicate discovery entries", () => {
+  it("exposes canonical public nav without developer tester in primary links", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
-    expect(nav).toContain("DESKTOP_LINKS");
-    expect(nav).toContain("MOBILE_DRAWER_LINKS");
-    expect(nav).toContain('href: "/docs/partner-flow"');
-    expect(nav).toContain('href: "/docs"');
-    expect(nav).toContain('href: "/verify"');
-    expect(nav).toContain('label: "Verify proofs"');
-    expect(nav).toContain('label: "Documentation"');
+    const surface = read("lib/design/publicSurface.ts");
+    expect(nav).toContain("PUBLIC_NAV_LINKS");
+    expect(surface).toContain('label: "For businesses"');
+    expect(surface).toContain('href: "/docs/partner-flow"');
+    expect(surface).toContain('label: "Docs"');
+    expect(surface).not.toContain('href: "/verify"');
     expect(nav).toContain("aria-expanded={open}");
     expect(nav).toContain('id="rd-nav-mobile-drawer"');
-    expect(nav).not.toContain("MOBILE_DISCOVERY_LINKS");
   });
 });
 
@@ -145,19 +143,17 @@ describe("AbraxasBootScreen accessibility and persistence", () => {
 });
 
 describe("RedesignNav mobile discoverability", () => {
-  it("shows Documentation and Verify proofs links in the mobile drawer without duplicates", () => {
+  it("shows Docs in the mobile drawer without partner verify entry", () => {
     render(React.createElement(RedesignNav));
 
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute("aria-expanded", "true");
 
-    expect(screen.getByRole("link", { name: "Documentation" })).toHaveAttribute("href", "/docs");
-    expect(screen.getByRole("link", { name: "Verify proofs" })).toHaveAttribute("href", "/verify");
+    expect(screen.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/docs/partner-flow");
+    expect(screen.queryByRole("link", { name: /Verify proofs/i })).not.toBeInTheDocument();
 
     const drawerLinks = screen.getAllByRole("link");
-    const verifyLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Verify" || t === "Verify proofs");
-    const docsLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Docs" || t === "Documentation");
-    expect(verifyLabels).toEqual(["Verify proofs"]);
-    expect(docsLabels).toEqual(["Documentation"]);
+    const docsLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Docs");
+    expect(docsLabels).toEqual(["Docs"]);
   });
 });

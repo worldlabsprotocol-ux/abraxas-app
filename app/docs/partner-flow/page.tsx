@@ -39,8 +39,11 @@ import {
   buildSandboxEntryUrlTemplate,
 } from "@/lib/partner/partnerSandboxIntegrationKit";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+import { ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
+
+const FONT = PUBLIC_FONT_SANS;
+const MONO = ABRAXAS_FONT_MONO;
 const ACCENT = "#10B981";
 
 const body: React.CSSProperties = {

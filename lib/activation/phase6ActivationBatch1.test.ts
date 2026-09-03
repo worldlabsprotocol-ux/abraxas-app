@@ -134,15 +134,15 @@ describe("phase 6 activation static guards", () => {
     assertNoForbiddenTerms(renderedCopy);
   });
 
-  it("exposes desktop Verify and Docs links without Apply nav item", () => {
+  it("exposes public nav links without partner verify in primary navigation", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
-    expect(nav).toContain("DESKTOP_LINKS");
-    expect(nav).toContain('href: "/verify"');
-    expect(nav).toContain('href: "/docs/partner-flow"');
-    expect(nav).toContain('label: "Verify proofs"');
-    expect(nav).toContain('label: "Documentation"');
-    expect(nav).not.toMatch(/label:\s*"Apply"/);
-    expect(nav).not.toContain("MOBILE_DISCOVERY_LINKS");
+    const surface = read("lib/design/publicSurface.ts");
+    expect(nav).toContain("PUBLIC_NAV_LINKS");
+    expect(surface).toContain('label: "For businesses"');
+    expect(surface).toContain('href: "/docs/partner-flow"');
+    expect(surface).toContain('label: "Docs"');
+    expect(nav).not.toMatch(/href:\s*"\/verify"/);
+    expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
   });
 });
 
@@ -226,7 +226,9 @@ describe("HomeAudienceFork routing", () => {
     render(React.createElement(HomeAudienceFork));
 
     expect(screen.getByRole("link", { name: AUDIENCE_HOLDER.cta })).toHaveAttribute("href", AUDIENCE_HOLDER.href);
-    expect(screen.getByRole("link", { name: new RegExp(AUDIENCE_PARTNER.cta) })).toHaveAttribute("href", AUDIENCE_PARTNER.href);
+    const partnerLink = screen.getAllByRole("link", { name: new RegExp(AUDIENCE_PARTNER.cta) })
+      .find((link) => link.getAttribute("href") === AUDIENCE_PARTNER.href);
+    expect(partnerLink).toBeTruthy();
     expect(screen.getByText(/operator-managed/i)).toBeInTheDocument();
   });
 });
@@ -237,16 +239,14 @@ describe("HomeSharpHero and RedesignNav smoke", () => {
     expect(screen.getByRole("heading", { level: 1, name: SIMPLIFIED_HOME_HEADLINE })).toBeInTheDocument();
   });
 
-  it("shows Verify proofs in mobile drawer without duplicate Verify/Docs entries", () => {
+  it("shows Docs in mobile drawer without partner verify entry", () => {
     render(React.createElement(RedesignNav));
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
 
-    expect(screen.getByRole("link", { name: "Verify proofs" })).toHaveAttribute("href", "/verify");
-    expect(screen.getByRole("link", { name: "Documentation" })).toHaveAttribute("href", "/docs");
+    expect(screen.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/docs/partner-flow");
+    expect(screen.queryByRole("link", { name: /Verify proofs/i })).not.toBeInTheDocument();
     const drawerLinks = screen.getAllByRole("link");
-    const verifyLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Verify" || t === "Verify proofs");
-    const docsLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Docs" || t === "Documentation");
-    expect(verifyLabels).toEqual(["Verify proofs"]);
-    expect(docsLabels).toEqual(["Documentation"]);
+    const docsLabels = drawerLinks.map((link) => link.textContent?.trim()).filter((t) => t === "Docs");
+    expect(docsLabels).toEqual(["Docs"]);
   });
 });
