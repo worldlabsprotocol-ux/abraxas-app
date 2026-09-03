@@ -1,15 +1,11 @@
 "use client";
 // FILE: app/passport/page.tsx
-// Abraxas Passport. wallet dashboard + verify tab.
+// Abraxas Passport — customer-first default view.
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
-import { PassportDashboard } from "@/components/passport/PassportDashboard";
-import { PassportSetupPanel } from "@/components/passport/PassportSetupPanel";
-import { PassportSetupStepRail } from "@/components/passport/PassportSetupStepRail";
+import { PassportCustomerView } from "@/components/passport/PassportCustomerView";
 import { PassportVerifySetupRequired } from "@/components/passport/PassportVerifySetupRequired";
 import { passportVerifyNeedsSetup } from "@/lib/passport/passportVerifyAccess";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
@@ -22,24 +18,18 @@ import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
-import { DeveloperDetails } from "@/components/redesign/DeveloperDetails";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { VerifyClient } from "@/app/verify/VerifyClient";
-import { SuiIntegrationsPanel } from "@/components/sui/SuiIntegrationsPanel";
-import { SuiDevnetPassportPanel } from "@/components/passport/SuiDevnetPassportPanel";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import {
   PASSPORT_PAGE_EYEBROW,
   PASSPORT_PAGE_HEADLINE,
   PASSPORT_PAGE_SUBHEAD,
-  PASSPORT_ADVANCED_DETAILS_TITLE,
-  PASSPORT_SECURE_ACCOUNT_EXPLAINER,
 } from "@/lib/passport/passportCustomerCopy";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
-  HOLDER_VERIFY_DEFAULT_PATH,
   HOLDER_VERIFY_EYEBROW,
   HOLDER_VERIFY_HEADLINE,
   HOLDER_VERIFY_SUBHEAD,
@@ -76,9 +66,9 @@ function PassportPageInner() {
     veriffConfigured,
     idvProvider,
     walletBindingL3,
-    onChain,
     verifyState,
     verifyResult,
+    onChain,
     isProvisioning,
     provisionFailed,
     retryProvision,
@@ -127,7 +117,6 @@ function PassportPageInner() {
   }, [identityStatus, hasCredential, verificationParam]);
 
   const showVeriffHint = idvProvider === "veriff" && (identityStatus === "pending" || starting);
-  const guidedOnboarding = !setup.profileComplete || !setup.identityComplete;
   const verifySetupIncomplete = passportVerifyNeedsSetup(setup);
 
   const handoff = usePartnerFlowHandoff({
@@ -170,22 +159,18 @@ function PassportPageInner() {
       const sessionRes = await fetch("/api/idv/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sui_address: suiAddress,
-          document_type: "PASSPORT",
-        }),
+        body: JSON.stringify({ sui_address: suiAddress, document_type: "PASSPORT" }),
       });
       const sessionData = await sessionRes.json() as {
         session_url?: string | null;
-        session_id?: string;
         error?: string;
         is_mock?: boolean;
       };
 
       if (!sessionRes.ok || !sessionData.session_url) {
         const msg = sessionData.is_mock
-          ? "Identity verification is not available in this environment. Use manual upload instead."
-          : (sessionData.error ?? "Could not start ID verification. Try again in a moment.");
+          ? "Identity verification is not available in this environment."
+          : (sessionData.error ?? "Could not start verification. Try again.");
         setError(msg);
         return;
       }
@@ -214,10 +199,10 @@ function PassportPageInner() {
       <RedesignNav />
 
       <div style={{
-        position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto",
+        position: "relative", zIndex: 1, maxWidth: 720, margin: "0 auto",
         padding: "clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)",
       }}>
-        <div style={{ marginBottom: "1.5rem" }}>
+        <div style={{ marginBottom: "1.25rem" }}>
           <div className="abx-eyebrow-violet" style={{ marginBottom: "0.625rem" }}>
             {pageView === "verify" ? HOLDER_VERIFY_EYEBROW : PASSPORT_PAGE_EYEBROW}
           </div>
@@ -241,7 +226,6 @@ function PassportPageInner() {
 
         {pageView === "verify" ? (
           <>
-            <PassportSetupStepRail setup={setup} />
             {verifySetupIncomplete && (
               <PassportVerifySetupRequired setup={setup} partnerParams={searchParams} />
             )}
@@ -255,8 +239,8 @@ function PassportPageInner() {
           <>
             {verifyRequestId && !suiAddress && (
               <div style={{ marginBottom: "1.25rem" }}>
-                <StatusBanner tone="pending" title="Partner verification (beta)">
-                  A partner app sent you here to complete Abraxas verification. Sign in to review what will be shared.
+                <StatusBanner tone="pending" title="Service verification">
+                  A participating service sent you here. Sign in to review what will be shared.
                 </StatusBanner>
               </div>
             )}
@@ -276,9 +260,7 @@ function PassportPageInner() {
                     </Btn>
                   )}
                 >
-                  {statusFetchError === "load_failed"
-                    ? "Check your connection and tap Refresh."
-                    : "Information below is from your last successful check. Tap Refresh to try again."}
+                  Check your connection and tap Refresh.
                 </StatusBanner>
               </div>
             )}
@@ -299,30 +281,7 @@ function PassportPageInner() {
               />
             )}
 
-            <PassportSetupStepRail setup={setup} compact={guidedOnboarding} />
-
-            {guidedOnboarding && (
-              <PassportSetupPanel
-                walletDone={walletDone}
-                suiAddress={suiAddress}
-                email={email}
-                setup={setup}
-                identityStatus={identityStatus}
-                credential={credential}
-                isPolling={isPolling}
-                isRefreshing={isRefreshing || isPolling}
-                starting={starting}
-                error={error}
-                veriffConfigured={veriffConfigured}
-                idvProvider={idvProvider}
-                onStartIdCheck={startIdentityVerification}
-                onRefresh={refresh}
-                onWalletBound={refresh}
-                handoff={handoff}
-              />
-            )}
-
-            <PassportDashboard
+            <PassportCustomerView
               walletDone={walletDone}
               authLoading={authLoading}
               suiAddress={suiAddress}
@@ -331,143 +290,26 @@ function PassportPageInner() {
               identityStatus={identityStatus}
               credential={credential}
               via={via}
-              isRefreshing={isRefreshing || isPolling}
-              isPolling={isPolling}
               starting={starting}
               error={error}
               idvProvider={idvProvider}
               veriffConfigured={veriffConfigured}
-              walletBindingL3={walletBindingL3}
               onStartIdCheck={startIdentityVerification}
               onRefresh={refresh}
               onWalletBound={refresh}
               handoff={handoff}
-              guidedOnboarding={guidedOnboarding}
               capturePolicy={{
                 verificationRequestId: verifyRequestId,
                 policyId: policyIdParam,
                 partnerId: partnerIdParam,
               }}
-              verifyState={verifyState}
-              verifyResult={verifyResult}
-              onChain={onChain}
-              isProvisioning={isProvisioning}
-              provisionFailed={provisionFailed}
-              onRetryProvision={() => void retryProvision()}
             />
-
-            {!walletDone && authLoading && (
-              <p style={{ fontFamily: S, fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center" }}>
-                Loading your Passport…
-              </p>
-            )}
 
             {!walletDone && !authLoading && verificationLoading && (
               <p style={{ fontFamily: S, fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center" }}>
                 Loading passport status…
               </p>
             )}
-
-            {walletDone && (
-              <details id="stamps" style={{ marginBottom: "1.5rem" }}>
-                <summary style={{
-                  fontFamily: S, fontSize: "0.78rem", fontWeight: 600,
-                  color: "var(--text-muted)", cursor: "pointer",
-                }}>
-                  Business & asset-owner stamps
-                </summary>
-                <div style={{
-                  marginTop: "0.75rem", padding: "1rem 1.15rem", borderRadius: 16,
-                  background: "var(--surface-raised)", border: "1px solid var(--border)",
-                }}>
-                  <p style={{
-                    fontFamily: S, fontSize: "0.76rem", color: "var(--text-secondary)",
-                    lineHeight: 1.65, margin: "0 0 0.85rem",
-                  }}>
-                    Business verification and asset-owner attestation require identity credentials and document review.
-                  </p>
-                  <DocumentUpload
-                    email={email || suiAddress || ""}
-                    suiAddress={suiAddress}
-                    stampId="business"
-                    color="#3B82F6"
-                  />
-                  <Link
-                    href="mailto:verify@abraxas-app.vercel.app?subject=Passport%20Verification%20Request"
-                    style={{
-                      display: "inline-block", marginTop: "0.75rem",
-                      fontFamily: S, fontSize: "0.76rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none",
-                    }}
-                  >
-                    Contact support for asset-owner review →
-                  </Link>
-                </div>
-              </details>
-            )}
-
-            <DeveloperDetails
-              title={PASSPORT_ADVANCED_DETAILS_TITLE}
-              summary={PASSPORT_SECURE_ACCOUNT_EXPLAINER}
-            >
-              <div style={{
-                display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
-                gap: "0.75rem", marginBottom: "1rem",
-              }}>
-                {[
-                  { title: "Wallet", body: "Google OAuth → zkLogin → deterministic Sui address. No seed phrase." },
-                  { title: "Issuance", body: "W3C Verifiable Credential v2.0, Ed25519 signed by Abraxas. Outcome only. never raw documents." },
-                  { title: "On-chain anchor", body: "Stamp bitmask on Sui Move Passport object after approval." },
-                  { title: "Portability", body: "Third parties verify via W3C credential or GET /api/sui/passport." },
-                ].map(c => (
-                  <div key={c.title} style={{
-                    background: "var(--surface)", border: "1px solid var(--border)",
-                    borderRadius: 10, padding: "1rem",
-                  }}>
-                    <div style={{ fontFamily: S, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.375rem" }}>
-                      {c.title}
-                    </div>
-                    <p style={{ fontFamily: S, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
-                      {c.body}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-                <Link href="/verify?mode=receipt" style={{
-                  padding: "0.6rem 1.1rem", borderRadius: 999,
-                  border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-secondary)",
-                  fontFamily: S, fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
-                }}>
-                  Developer receipt tester →
-                </Link>
-                <Link href="/docs/sui" style={{
-                  padding: "0.6rem 1.1rem", borderRadius: 999, background: "var(--accent)", color: "#000",
-                  fontFamily: S, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
-                }}>
-                  Sui integration hub →
-                </Link>
-                <Link href="/docs/passport-spec" style={{
-                  padding: "0.6rem 1.1rem", borderRadius: 999,
-                  border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-secondary)",
-                  fontFamily: S, fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
-                }}>
-                  Passport spec →
-                </Link>
-              </div>
-              <SuiIntegrationsPanel showSetup />
-              <div style={{ marginTop: "1.25rem" }}>
-                <SuiDevnetPassportPanel
-                  compact
-                  ownerAddress={onChain?.provisioned ? suiAddress : undefined}
-                  objectId={onChain?.object_id ?? undefined}
-                />
-              </div>
-            </DeveloperDetails>
-
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", paddingBottom: "3rem" }}>
-              <Btn href={HOLDER_VERIFY_DEFAULT_PATH}>Verify records →</Btn>
-              <Btn href="/build" variant="tertiary">Submit an asset</Btn>
-            </div>
           </>
         )}
       </div>

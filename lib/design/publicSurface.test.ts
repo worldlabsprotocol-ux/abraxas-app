@@ -8,14 +8,14 @@ import { PUBLIC_NAV_LINKS } from "./publicSurface";
 const ROOT = resolve(__dirname, "../..");
 
 describe("public surface tokens", () => {
-  it("defines primary public navigation without developer tester", () => {
+  it("defines consumer-focused primary navigation without Docs", () => {
     expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
       "Home",
       "Passport",
       "For businesses",
-      "Docs",
     ]);
     const hrefs = PUBLIC_NAV_LINKS.map((link) => link.href);
+    expect(hrefs).not.toContain("/docs/partner-flow");
     expect(hrefs).not.toContain("/verify");
   });
 

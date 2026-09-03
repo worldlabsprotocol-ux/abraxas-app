@@ -106,8 +106,9 @@ describe("phase 7 partner conversion batch 1", () => {
     expect(nav).not.toContain("Verify a record");
 
     const passport = read("app/passport/page.tsx");
-    expect(passport).toContain("HOLDER_VERIFY_DEFAULT_PATH");
+    expect(passport).toContain("PassportCustomerView");
     expect(passport).not.toMatch(/Btn href="\/verify"/);
+    expect(passport).not.toContain("HOLDER_VERIFY_DEFAULT_PATH");
 
     const verifyIntro = read("components/verify/VerifyPageIntro.tsx");
     expect(verifyIntro).toContain("HOLDER_VERIFY_DEFAULT_PATH");

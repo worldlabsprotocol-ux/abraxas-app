@@ -133,7 +133,7 @@ describe("phase 9 holder journey batch 1", () => {
     expect(DASHBOARD_LEGACY_TITLE).toContain("moved");
   });
 
-  it("keeps public nav focused on Home, Passport, For businesses, and Docs", () => {
+  it("keeps public nav focused on Home, Passport, and For businesses", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
     expect(nav).toContain("For businesses");
@@ -141,11 +141,11 @@ describe("phase 9 holder journey batch 1", () => {
     expect(nav).not.toMatch(/href:\s*"\/verify"/);
   });
 
-  it("routes footer passport tools to /passport not holder verify tab", () => {
+  it("routes footer product links to passport and businesses surfaces", () => {
     const footer = read("components/redesign/RedesignFooter.tsx");
-    expect(footer).toContain("FOOTER_PASSPORT_TOOLS_LABEL");
-    expect(footer).toContain("FOOTER_TAGLINE");
-    expect(footer).not.toContain("My records");
+    expect(footer).toContain("FOOTER_PRODUCT_LINKS");
+    expect(footer).toContain("FOOTER_DEVELOPER_LINKS");
+    expect(footer).not.toContain("Tokenize");
     expect(footer).not.toMatch(/href:\s*"\/verify"/);
   });
 
@@ -220,7 +220,10 @@ describe("phase 9 holder journey batch 1", () => {
     expect(PARTNER_RECEIPT_VERIFIER_PATH).toBe("/verify?mode=receipt");
     const nav = read("components/redesign/RedesignNav.tsx");
     expect(nav).not.toMatch(/href:\s*"\/verify"/);
-    const integrate = read("app/integrate/page.tsx");
-    expect(integrate).toContain('href="/verify"');
+    const footer = read("components/redesign/RedesignFooter.tsx");
+    const footerLinks = read("lib/design/footerLinks.ts");
+    expect(footer).toContain("FOOTER_DEVELOPER_LINKS");
+    expect(footerLinks).toContain("Receipt verification");
+    expect(footerLinks).toContain("/verify?mode=receipt");
   });
 });
