@@ -62,7 +62,7 @@ export function VerifierResultCard({
       <div style={{
         padding: "0.85rem 1.15rem",
         background: badge.bg,
-        color: "#fff",
+        color: badge.bg === "#10B981" ? "#04130C" : "#fff",
         fontFamily: FONT, fontSize: compact ? "0.78rem" : "0.85rem", fontWeight: 800,
         letterSpacing: "0.06em",
       }}>

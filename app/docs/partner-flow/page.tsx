@@ -172,7 +172,7 @@ export default function PartnerFlowDocsPage() {
                 ))}
               </tbody>
             </table>
-            <pre style={{
+            <pre tabIndex={0} style={{
               fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
               padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%",
               background: "var(--surface-inset)", border: "1px solid var(--border)",
@@ -226,7 +226,7 @@ export default function PartnerFlowDocsPage() {
               No API key required. Never trust callback URL parameters alone.
             </p>
             <BulletList items={PARTNER_FLOW_RECEIPT_CHECKS.map((c) => `${c.check} — ${c.why}`)} />
-            <pre style={{
+            <pre tabIndex={0} style={{
               fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
               padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%", marginTop: "0.75rem",
               background: "var(--surface-inset)", border: "1px solid var(--border)",
@@ -274,7 +274,7 @@ export default function PartnerFlowDocsPage() {
             <p style={{ ...body, marginTop: "0.5rem", color: "#F59E0B", fontWeight: 600 }}>
               {PARTNER_FLOW_ENTRY_PLACEHOLDER_NOTE}
             </p>
-            <pre style={{
+            <pre tabIndex={0} style={{
               fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
               padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%",
               background: "var(--surface-inset)", border: "1px solid var(--border)",
@@ -308,7 +308,7 @@ export default function PartnerFlowDocsPage() {
           </SectionCard>
 
           <SectionCard id="errors" title="Errors and status behavior">
-            <div className="partner-flow-error-table-wrap" style={{ overflowX: "auto", maxWidth: "100%" }}>
+            <div className="partner-flow-error-table-wrap" tabIndex={0} style={{ overflowX: "auto", maxWidth: "100%" }}>
             <table className="partner-flow-error-table" style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.76rem", minWidth: 480 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
@@ -331,7 +331,7 @@ export default function PartnerFlowDocsPage() {
           </SectionCard>
 
           <SectionCard id="redirect-example" title="Copy-paste redirect">
-            <pre style={{
+            <pre tabIndex={0} style={{
               fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.55,
               padding: "0.85rem", borderRadius: 10, overflowX: "auto", overflowY: "hidden", maxWidth: "100%",
               background: "var(--surface-inset)", border: "1px solid var(--border)",

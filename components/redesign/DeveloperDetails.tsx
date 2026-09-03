@@ -3,9 +3,10 @@
 // Collapsible technical sections. crypto jargon hidden by default.
 
 import { useState, type ReactNode } from "react";
+import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const FONT = ABRAXAS_FONT_SANS;
+const MONO = ABRAXAS_FONT_MONO;
 
 export function DeveloperDetails({
   title = "Technical details (for developers)",
@@ -31,6 +32,8 @@ export function DeveloperDetails({
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        aria-controls="developer-details-panel"
         style={{
           width: "100%",
           display: "flex",
@@ -70,7 +73,7 @@ export function DeveloperDetails({
       </button>
 
       {open && (
-        <div style={{ padding: "0 1.25rem 1.25rem" }}>
+        <div id="developer-details-panel" style={{ padding: "0 1.25rem 1.25rem" }}>
           {children}
         </div>
       )}

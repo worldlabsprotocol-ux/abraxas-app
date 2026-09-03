@@ -433,6 +433,13 @@ function PassportPageInner() {
                 ))}
               </div>
               <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+                <Link href="/verify?mode=receipt" style={{
+                  padding: "0.6rem 1.1rem", borderRadius: 999,
+                  border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-secondary)",
+                  fontFamily: S, fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
+                }}>
+                  Developer receipt tester →
+                </Link>
                 <Link href="/docs/sui" style={{
                   padding: "0.6rem 1.1rem", borderRadius: 999, background: "var(--accent)", color: "#000",
                   fontFamily: S, fontSize: "0.82rem", fontWeight: 700, textDecoration: "none",
