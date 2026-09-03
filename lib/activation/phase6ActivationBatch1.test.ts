@@ -10,8 +10,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACTIVATION_FORBIDDEN_TERMS,
-  ACTIVATION_HEADLINE,
-  ACTIVATION_SUBHEAD,
   ACTIVATION_AVAILABILITY,
   POLICY_OUTCOME_STEPS,
   AUDIENCE_HOLDER,
@@ -20,6 +18,10 @@ import {
   METRICS_EMPTY_HREF,
   METRICS_ERROR,
 } from "@/lib/activation/activationCopy";
+import {
+  SIMPLIFIED_HOME_HEADLINE,
+  SIMPLIFIED_HOME_SUBHEAD,
+} from "@/lib/home/simplifiedHomeCopy";
 import { HomeAudienceFork } from "@/components/home/HomeAudienceFork";
 import { HomeLiveStats } from "@/components/home/HomeLiveStats";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
@@ -101,22 +103,25 @@ afterEach(() => {
 });
 
 describe("phase 6 activation static guards", () => {
-  it("removes homepage boot gate from RedesignHome", () => {
+  it("uses simplified five-section homepage shell", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     expect(home).not.toContain("AbraxasBootScreen");
     expect(home).not.toContain("bootReady");
-    expect(home).toContain("HomePolicyOutcomeStrip");
-    expect(home).toContain("HomeAudienceFork");
+    expect(home).toContain("HomeHowItWorks");
+    expect(home).toContain("HomeAudiencePanels");
+    expect(home).toContain("HomeTrustClose");
+    expect(home).not.toContain("HomeAssuranceNetwork");
+    expect(home).not.toContain("HomeLiveStats");
   });
 
-  it("uses policy-outcome thesis in hero and activation copy module", () => {
+  it("uses simplified human copy in hero", () => {
     const hero = read("components/home/HomeSharpHero.tsx");
-    expect(hero).toContain("ACTIVATION_HEADLINE");
-    expect(hero).toContain("ACTIVATION_SUBHEAD");
-    expect(read("lib/activation/activationCopy.ts")).toContain("Partner Flow receipt contract");
+    expect(hero).toContain("SIMPLIFIED_HOME_HEADLINE");
+    expect(hero).toContain("SIMPLIFIED_HOME_SUBHEAD");
+    expect(read("lib/home/simplifiedHomeCopy.ts")).not.toContain("Partner Flow receipt contract");
     const renderedCopy = [
-      ACTIVATION_HEADLINE,
-      ACTIVATION_SUBHEAD,
+      SIMPLIFIED_HOME_HEADLINE,
+      SIMPLIFIED_HOME_SUBHEAD,
       ACTIVATION_AVAILABILITY,
       ...POLICY_OUTCOME_STEPS.map((s) => `${s.title} ${s.body}`),
       AUDIENCE_HOLDER.title,
@@ -227,9 +232,9 @@ describe("HomeAudienceFork routing", () => {
 });
 
 describe("HomeSharpHero and RedesignNav smoke", () => {
-  it("renders activation headline", () => {
+  it("renders simplified activation headline", () => {
     render(React.createElement(HomeSharpHero));
-    expect(screen.getByRole("heading", { level: 1, name: ACTIVATION_HEADLINE })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: SIMPLIFIED_HOME_HEADLINE })).toBeInTheDocument();
   });
 
   it("shows Verify proofs in mobile drawer without duplicate Verify/Docs entries", () => {
