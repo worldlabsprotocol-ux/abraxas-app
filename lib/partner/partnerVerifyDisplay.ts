@@ -11,7 +11,8 @@ const PARTNER_LABELS: Record<string, { name: string; returnLabel: string }> = {
 };
 
 const POLICY_REQUIREMENTS: Record<string, string> = {
-  [GOOD_TROUBLE_RETAIL_POLICY_ID]: "Confirm eligibility for the requested 21+ policy",
+  [GOOD_TROUBLE_RETAIL_POLICY_ID]:
+    "Complete the verification step required for this purchase. Signing in alone does not verify your age.",
 };
 
 export function resolvePartnerDisplayName(partnerId: string): string {
@@ -24,7 +25,13 @@ export function resolvePartnerReturnLabel(partnerId: string): string {
 
 export function resolvePolicyRequirement(policyId: string, permissionLabel?: string | null): string {
   if (permissionLabel) return permissionLabel;
-  return POLICY_REQUIREMENTS[policyId] ?? "Confirm eligibility for the requested policy";
+  return POLICY_REQUIREMENTS[policyId]
+    ?? "Complete the verification step required by this partner. Signing in alone does not verify your age.";
+}
+
+export function resolvePartnerContinuationIntro(partnerId: string): string {
+  const name = resolvePartnerDisplayName(partnerId);
+  return `${name} uses Abraxas to confirm this requirement without collecting more personal information than necessary.`;
 }
 
 export function resolvePartnerHomeUrl(partnerId: string): string | null {

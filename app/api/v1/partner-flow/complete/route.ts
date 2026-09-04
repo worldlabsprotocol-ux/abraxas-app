@@ -16,6 +16,7 @@ import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMeteringHooks";
 import { maybeEnqueuePartnerReceiptIssued } from "@/lib/partner/webhooks/webhookHooks";
 import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocationRuntime";
+import { enrichPartnerFlowResponse } from "@/lib/partner/enrichPartnerFlowResponse";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -285,5 +286,9 @@ export async function POST(request: NextRequest) {
     httpStatus: 200,
   });
 
-  return NextResponse.json({ ...result, flow_trace_id: flowTraceId });
+  return NextResponse.json({
+    ...enrichPartnerFlowResponse(result),
+    ok: result.ok,
+    flow_trace_id: flowTraceId,
+  });
 }

@@ -24,6 +24,10 @@ import {
   savePartnerVerifyResume,
 } from "@/lib/partner/partnerVerifyResume";
 import { clearLoginInFlight, clearStaleLoginInFlight, isLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
+import {
+  mapFlowNextStepToJourneyState,
+  resolvePartnerJourneyPresentation,
+} from "@/lib/partner/partnerJourneyStateMachine";
 import { PartnerVerifyShell, type PartnerVerifyPhase } from "./PartnerVerifyShell";
 
 interface FlowResult {
@@ -32,6 +36,8 @@ interface FlowResult {
   passport_url?: string;
   reason_codes?: string[];
   error?: string;
+  journey_state?: string;
+  customer_message?: string;
 }
 
 const BROWSER_SESSION_AUTH_ERROR = "Sign in required in this browser";
@@ -197,24 +203,33 @@ export function PartnerVerifyClient({
 
       if (data.next === "enter" && data.redirect_url) {
         setPhase("returning");
-        setStatusMessage("Returning to partner…");
-        window.location.href = data.redirect_url;
+        setStatusMessage(data.customer_message ?? "Returning to partner…");
+        try {
+          window.location.assign(data.redirect_url);
+        } catch {
+          setPhase("return_failed");
+          setStatusMessage("We could not return you automatically. Use the button below.");
+        }
         return;
       }
       if (data.next === "passport" && data.passport_url) {
         setPhase("returning");
-        setStatusMessage("Completing verification…");
-        window.location.href = data.passport_url;
+        setStatusMessage(data.customer_message ?? "Continuing verification…");
+        window.location.assign(data.passport_url);
         return;
       }
       if (data.next === "pending_review") {
         setPhase("pending_review");
-        setStatusMessage("Your verification is under review.");
+        const journey = data.journey_state
+          ? resolvePartnerJourneyPresentation(mapFlowNextStepToJourneyState("pending_review"))
+          : null;
+        setStatusMessage(data.customer_message ?? journey?.customer_message ?? "Your verification is under review.");
         return;
       }
       if (data.next === "denied") {
         setPhase("denied");
-        setStatusMessage("Policy requirement not met.");
+        const journey = resolvePartnerJourneyPresentation(mapFlowNextStepToJourneyState("denied"));
+        setStatusMessage(data.customer_message ?? journey.customer_message);
         return;
       }
       setPhase("verifying");
@@ -305,11 +320,10 @@ export function PartnerVerifyClient({
   return (
     <PartnerVerifyShell
       phase={phase}
+      partnerId={relyingPartyId}
       partnerName={partnerName}
       policyRequirement={policyRequirement}
-      policyId={policyId}
       statusMessage={statusMessage}
-      correlationId={correlationId}
       signInConfigured={signInConfigured || previewSignInConfigured}
       primaryDisabled={signInBusy || phase === "signing_in"}
       onSignIn={() => { void handleSignIn(); }}

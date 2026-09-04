@@ -4,7 +4,7 @@
 // Required element IDs: #yesButton, #noButton, #abraxasButton, #abraxasStatusText
 
 import { createAbraxasVerificationStart } from "backend/abraxasVerification.web";
-import { VERIFIER_STORAGE_PREFIX } from "backend/constants";
+import { VERIFIER_STORAGE_PREFIX, RETURN_DESTINATION_STORAGE_KEY } from "backend/constants";
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
 import wixWindowFrontend from "wix-window-frontend";
@@ -40,6 +40,14 @@ $w.onReady(() => {
       sessionStorageAvailable,
       storeVerifier(flowId, verifier) {
         sessionStorage.setItem(verifierStorageKey(flowId), verifier);
+      },
+      saveReturnDestination() {
+        try {
+          const path = wixLocationFrontend.url.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
+          sessionStorage.setItem(RETURN_DESTINATION_STORAGE_KEY, path);
+        } catch {
+          // non-fatal
+        }
       },
       navigateToVerifyUrl(url) {
         wixLocationFrontend.to(url);

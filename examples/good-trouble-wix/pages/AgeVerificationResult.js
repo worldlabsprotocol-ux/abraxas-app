@@ -3,7 +3,7 @@
 // Element IDs: #abraxasStatusText, #restartAbraxasButton (optional)
 
 import { completeAbraxasVerification } from "backend/abraxasVerification.web";
-import { GTV_PARAM, PILOT_VERIFIED_SESSION_FLAG, VERIFIER_STORAGE_PREFIX } from "backend/constants";
+import { GTV_PARAM, PILOT_VERIFIED_SESSION_FLAG, RETURN_DESTINATION_STORAGE_KEY, VERIFIER_STORAGE_PREFIX } from "backend/constants";
 import wixLocation from "wix-location";
 
 /** Abraxas frozen callback parameters — never treat status=approved as verification. */
@@ -96,6 +96,18 @@ function setPilotVerifiedState() {
   }
 }
 
+function restoreReturnDestination() {
+  try {
+    const dest = sessionStorage.getItem(RETURN_DESTINATION_STORAGE_KEY);
+    sessionStorage.removeItem(RETURN_DESTINATION_STORAGE_KEY);
+    if (dest && typeof dest === "string" && dest.startsWith("/") && !dest.startsWith("//")) {
+      setTimeout(() => wixLocation.to(dest), 1200);
+    }
+  } catch {
+    // keep success message on callback page
+  }
+}
+
 async function handleCallback() {
   if (completionStarted) return;
   completionStarted = true;
@@ -133,6 +145,7 @@ async function handleCallback() {
       clearVerifier(flowId);
       setPilotVerifiedState();
       setStatus(SUCCESS_MESSAGE);
+      restoreReturnDestination();
       return;
     }
 

@@ -35,6 +35,9 @@ export const MAX_INPUT_LENGTH = {
 /** sessionStorage key prefix — verifier stored as `${VERIFIER_STORAGE_PREFIX}${flowId}`. */
 export const VERIFIER_STORAGE_PREFIX = "abraxas_gt_verifier_";
 
+/** Session-only return destination saved before Abraxas redirect (same-origin path). */
+export const RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination";
+
 /**
  * Pilot UI convenience flag — sessionStorage only.
  * NOT authoritative; never read by Abraxas or Wix backend web methods.
