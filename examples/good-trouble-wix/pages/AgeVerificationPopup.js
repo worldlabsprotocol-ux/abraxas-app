@@ -4,7 +4,7 @@
 // Required element IDs: #yesButton, #noButton, #abraxasButton, #abraxasStatusText
 
 import { createAbraxasVerificationStart } from "backend/abraxasVerification.web";
-import { VERIFIER_STORAGE_PREFIX } from "backend/constants";
+import { VERIFIER_STORAGE_PREFIX } from "public/abraxasClientConstants";
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
 import wixWindowFrontend from "wix-window-frontend";

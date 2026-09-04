@@ -15,7 +15,12 @@ export const MAX_VALIDATION_ATTEMPTS = 3;
 export const MAX_OUTSTANDING_PENDING_FLOWS = 100;
 /** Delete consumed flows older than this during purge (operator cleanup guidance). */
 export const CONSUMED_FLOW_RETENTION_MS = 24 * 60 * 60 * 1000;
-export const GTV_PARAM = "gtv";
+export {
+  GTV_PARAM,
+  PILOT_VERIFIED_SESSION_FLAG,
+  RETURN_DESTINATION_STORAGE_KEY,
+  VERIFIER_STORAGE_PREFIX,
+} from "../public/abraxasClientConstants.js";
 export const RECEIPT_VALIDATION_MODE = "sandbox";
 export const FLOW_ID_PREFIX = "gtf_";
 export const VERIFIER_BYTES = 32;
@@ -31,15 +36,6 @@ export const MAX_INPUT_LENGTH = {
   verifier: 128,
   receiptId: 200,
 };
-
-/** sessionStorage key prefix — verifier stored as `${VERIFIER_STORAGE_PREFIX}${flowId}`. */
-export const VERIFIER_STORAGE_PREFIX = "abraxas_gt_verifier_";
-
-/**
- * Pilot UI convenience flag — sessionStorage only.
- * NOT authoritative; never read by Abraxas or Wix backend web methods.
- */
-export const PILOT_VERIFIED_SESSION_FLAG = "good_trouble_age_verified_pilot";
 
 /** Nonce / flow lifecycle states — backend collection only. */
 export const NONCE_STATE = {
