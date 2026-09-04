@@ -12,7 +12,8 @@ Account bootstrap, email sharing, newsletters, and partner SSO remain **in devel
 
 | Path | Purpose |
 |------|---------|
-| `backend/constants.js` | Integration constants (`sandbox`, partner/policy ids, TTLs) |
+| `public/abraxasClientConstants.js` | Browser-safe sessionStorage/query constants for client page code |
+| `backend/constants.js` | Server-only integration constants (`sandbox`, partner/policy ids, TTLs, validation) |
 | `backend/sha256Adapter.js` | Backend-only SHA-256 via `node:crypto` (auto-wired; no init call) |
 | `backend/pkceProof.js` | Flow/verifier validation + timing-safe challenge compare |
 | `backend/nonceLifecycle.js` | Flow state machine + PKCE callback workflow |

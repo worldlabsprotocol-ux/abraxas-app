@@ -3,7 +3,11 @@
 // Element IDs: #abraxasStatusText, #restartAbraxasButton (optional)
 
 import { completeAbraxasVerification } from "backend/abraxasVerification.web";
-import { GTV_PARAM, PILOT_VERIFIED_SESSION_FLAG, VERIFIER_STORAGE_PREFIX } from "backend/constants";
+import {
+  GTV_PARAM,
+  PILOT_VERIFIED_SESSION_FLAG,
+  VERIFIER_STORAGE_PREFIX,
+} from "public/abraxasClientConstants";
 import wixLocation from "wix-location";
 
 /** Abraxas frozen callback parameters — never treat status=approved as verification. */
