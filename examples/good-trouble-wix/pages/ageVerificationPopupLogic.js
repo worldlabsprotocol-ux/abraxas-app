@@ -220,6 +220,9 @@ export function createPopupController(deps) {
         }
 
         deps.storeVerifier(flowId, verifier);
+        if (deps.saveReturnDestination) {
+          deps.saveReturnDestination();
+        }
         state = POPUP_STATE.REDIRECTING;
         deps.navigateToVerifyUrl(verifyUrl);
         return { ok: true, code: "redirecting" };

@@ -87,7 +87,7 @@ export interface PartnerFlowStartInput {
   suiAddress?: string;
 }
 
-export function buildPassportUrl(input: {
+export function buildPartnerEvidenceUrl(input: {
   verificationRequestId: string;
   partnerId: string;
   policyId: string;
@@ -101,7 +101,18 @@ export function buildPassportUrl(input: {
     policy_id: input.policyId,
     return: input.returnUrl,
   });
-  return `${appUrl}/passport?${params.toString()}`;
+  return `${appUrl}/partner/continue?${params.toString()}`;
+}
+
+/** @deprecated Prefer buildPartnerEvidenceUrl for partner-flow evidence steps. */
+export function buildPassportUrl(input: {
+  verificationRequestId: string;
+  partnerId: string;
+  policyId: string;
+  returnUrl: string;
+  appOrigin?: string;
+}): string {
+  return buildPartnerEvidenceUrl(input);
 }
 
 export function buildPartnerVerifyUrl(input: {
