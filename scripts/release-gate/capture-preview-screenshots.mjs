@@ -25,12 +25,12 @@ const ROUTES = [
   {
     name: "holder_under_review",
     path: "/partner/release-gate-preview#under_review",
-    waitFor: "text=Under review",
+    waitFor: "text=Verification under review",
   },
   {
     name: "holder_age_confirmed",
     path: "/partner/release-gate-preview#age_confirmed",
-    waitFor: "text=Age confirmed",
+    waitFor: "text=Age requirement confirmed",
   },
   {
     name: "holder_return_to_good_trouble",
