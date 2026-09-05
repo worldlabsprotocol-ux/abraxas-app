@@ -18,14 +18,24 @@ const ROUTES = [
     waitFor: "text=Verify your age",
   },
   {
-    name: "under_review_partner_continue",
-    path: "/partner/continue?verify_request=demo-gate&partner_id=good-trouble-cannabis&policy_id=good-trouble-retail-v1&return=https%3A%2F%2Fexample.com%2Fage-verification-result",
-    waitFor: "text=Loading",
-  },
-  {
     name: "admin_identity_review",
     path: "/admin/identity",
     waitFor: "text=identity",
+  },
+  {
+    name: "holder_under_review",
+    path: "/partner/release-gate-preview#under_review",
+    waitFor: "text=Under review",
+  },
+  {
+    name: "holder_age_confirmed",
+    path: "/partner/release-gate-preview#age_confirmed",
+    waitFor: "text=Age confirmed",
+  },
+  {
+    name: "holder_return_to_good_trouble",
+    path: "/partner/release-gate-preview#return_to_partner",
+    waitFor: "text=Return to Good Trouble",
   },
 ];
 

@@ -11,6 +11,11 @@ import {
   createAgeEvidenceRecord,
   deriveProviderDecisionFromDob,
 } from "@/lib/assurance/ageEvidence";
+import {
+  finalizeAgeEvidenceLinkage,
+  precheckAgeEvidenceLinkage,
+  resolveReviewPolicySandboxFlag,
+} from "@/lib/assurance/ageEvidenceLinkage";
 import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility";
 
 export type AdminReviewAction = "approve" | "reject" | "request_resubmission";
@@ -45,6 +50,7 @@ export interface AdminReviewResult {
   jti?: string;
   alreadyIssued?: boolean;
   ageEvidenceId?: string;
+  ageEvidenceStorageUnavailable?: boolean;
   error?: string;
   status?: number;
 }
@@ -214,6 +220,23 @@ export async function executeAdminReviewAction(
       }
     }
 
+    const sandboxOnly = await resolveReviewPolicySandboxFlag(sb, {
+      captureSessionId: sessionId,
+      suiAddress: suiRaw!,
+    });
+
+    const linkagePrecheck = await precheckAgeEvidenceLinkage({
+      sandboxOnly,
+      minimumAgeGate: minimumAge,
+    });
+    if (!linkagePrecheck.ok) {
+      return {
+        ok: false,
+        error: linkagePrecheck.error,
+        status: linkagePrecheck.status,
+      };
+    }
+
     const normalized = normalizeSuiAddress(suiRaw);
     const issued = await issueManualIdentityCredential(normalized, {
       reviewId: doc.id as string,
@@ -235,6 +258,7 @@ export async function executeAdminReviewAction(
     }
 
     let ageEvidenceId: string | undefined;
+    let ageEvidenceStorageUnavailable = false;
     if (minimumAge != null && minimumAge >= 21 && request.documentDateOfBirth) {
       const evidence = await createAgeEvidenceRecord({
         subjectSuiAddress: normalized,
@@ -253,7 +277,20 @@ export async function executeAdminReviewAction(
         expiresAt: null,
         credentialJti: issued.jti ?? null,
       });
-      if (evidence.ok) ageEvidenceId = evidence.id;
+      const finalized = finalizeAgeEvidenceLinkage({
+        sandboxOnly,
+        minimumAgeGate: minimumAge,
+        evidence,
+      });
+      if (!finalized.ok) {
+        return {
+          ok: false,
+          error: finalized.error,
+          status: finalized.status,
+        };
+      }
+      ageEvidenceId = finalized.evidenceId;
+      ageEvidenceStorageUnavailable = finalized.storage_unavailable === true;
     }
 
     const docUpdate = {
@@ -299,6 +336,7 @@ export async function executeAdminReviewAction(
       jti: issued.jti,
       alreadyIssued: issued.alreadyIssued ?? false,
       ageEvidenceId,
+      ageEvidenceStorageUnavailable,
     };
   }
 

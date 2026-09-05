@@ -7,10 +7,34 @@
 - `age_evidence_records` is an audit ledger only — credential issuance does not depend on it.
 - `createAgeEvidenceRecord()` checks table availability via `checkAgeEvidenceStorageAvailability()`.
 - Missing table returns `{ ok: false, storage_unavailable: true, error: "age_evidence_storage_unavailable" }`.
-- Admin approve and capture auto-approve continue when ledger insert is unavailable.
-- Tests: `lib/assurance/evidenceStorage.test.ts`, `lib/assurance/ageEvidence.test.ts`
+- Admin approve and capture auto-approve continue when ledger insert is unavailable **in sandbox policies only**.
+- Production/non-sandbox approvals fail closed when storage is unavailable.
+- Tests: `lib/assurance/evidenceStorage.test.ts`, `lib/assurance/ageEvidence.test.ts`, `lib/assurance/ageEvidenceLinkage.test.ts`
 
-**Operator action:** Apply migration 078 before relying on age-evidence audit linkage in production.
+## 1b. Age evidence ledger tightening
+
+| Context | Behavior |
+|---------|----------|
+| Sandbox (`sandbox_only: true`) | Logs `storage_unavailable_sandbox_continue`; issuance continues |
+| Production (`sandbox_only: false`) | Precheck returns 503 before issuance |
+| Post-issuance production | `finalizeAgeEvidenceLinkage` fails closed if insert fails |
+
+
+## Migration 078 deployment order (operator — do not auto-apply)
+
+Apply **before** enabling production age-evidence linkage enforcement:
+
+1. `supabase/migrations/078_age_evidence_records.sql` on staging Supabase
+2. Verify: `SELECT to_regclass('public.age_evidence_records');`
+3. Deploy application revision `87d2a842` or later
+4. Production: repeat step 1 on production Supabase, then promote app
+
+**Backward compatibility:** Pre-migration app revisions continue issuing credentials; sandbox logs `storage_unavailable` audit warnings. Production approvals fail closed until migration 078 exists.
+
+**Staging instance:** `bztwutzprwsdrtqdpymf` (worldlabsprotocol-ux's Project) — `age_evidence_records` **not yet present** as of release gate.
+
+**Parity script:** `bash scripts/ci/run-migration-078-sql-parity.sh` (requires `MIGRATION_078_PG_URL`)
+
 
 ## 2. resolveEffectivePolicyRules audit
 
@@ -26,27 +50,69 @@
 
 Tests: `lib/policy/resolveEffectivePolicyRules.test.ts`, `lib/assurance/crossIndustryCompliance.test.ts`
 
-## 3–5. Journey verification
+## 3–6. Journey verification
 
 | Flow | Verification method |
 |------|-------------------|
-| First visit E2E | Unit/integration: `goodTroubleRetailWiring.integration.test.ts`, `ageLifecycle.test.ts` |
-| Repeat visit | `ageLifecycle.test.ts` — `resolvePartnerFlowStep` → `enter` with existing credential |
-| Pending/denied never unlock GT | `crossIndustryCompliance.test.ts` — `over_21: false` for denied/manual_review; Wix validator rejects without receipt |
+| Wix popup contract | **103/103** tests in `examples/good-trouble-wix/` |
+| First visit E2E | `goodTroubleRetailWiring.integration.test.ts`, `ageLifecycle.test.ts` |
+| Repeat visit | `goodTroubleRepeatVisit.integration.test.ts` — fresh receipt, no re-collection |
+| Pending/denied never unlock GT | `crossIndustryCompliance.test.ts`; Wix `pilotTrustBoundary.test.js` |
 
-Wix callback: `examples/good-trouble-wix/pilotTrustBoundary.test.js` — `status=approved` alone not authoritative.
+Wix callback: `status=approved` alone not authoritative.
 
-## 6. Screenshots
+### Manual authenticated E2E
 
-See walkthrough artifacts (desktop + mobile viewport).
+**Status: BLOCKED in agent environment** — no dedicated test identity in staging `sui_zklogin_identities`; Google OAuth cannot be automated headlessly. Staging Supabase: `bztwutzprwsdrtqdpymf` (shared with Vercel preview). **No production identities modified.**
 
-## 7. Preview data isolation
+Operator manual script: sign in on Vercel preview → `/partner/continue` with GT params → capture + DOB → admin approve → receipt callback.
+
+## 7. Screenshots
+
+Preview holder states (production copy/layout): `/partner/release-gate-preview` on Vercel preview.
+
+See walkthrough artifacts for verify-age and admin review (desktop + mobile).
+
+## 8. Preview data isolation
 
 Vercel preview deployments use project-configured environment variables. Preview connects to the **same Supabase project** as configured in Vercel (typically staging/shared — not isolated per preview). **No production identity approvals were performed during this gate.** All journey verification used unit tests and read-only preview page loads.
 
-## 8. Check suite
+## 9. Check suite (final blockers — local re-run)
 
-Recorded in PR comment after re-run.
+| Check | Result |
+|-------|--------|
+| `npx tsc --noEmit` | **PASS** |
+| Wix popup suite (`examples/good-trouble-wix/`) | **103/103 PASS** |
+| Age evidence linkage tests | **5/5 PASS** |
+| Repeat visit integration | **3/3 PASS** |
+| Migration 078 SQL parity (unit) | **3/3 PASS** |
+| `npm run check:homepage-guard` | **PASS** |
+| `npm run check:homepage` | **PASS** |
+| `npm run check:trust-contract-drift` | **PASS** (no findings on changed files) |
+| `git diff --check` | **PASS** |
+| Full vitest (`npm test`) | **2640 passed**, 9 failed (6 files) — **2 fewer failures than `main`** (11 failed) |
+| `npm run build` (CI placeholder env) | **PASS** on GitHub Actions; local requires same env vars as CI |
+| Audit-hash SQL parity | **PASS** on CI (postgres service) |
+| Migration 076 SQL parity | **PASS** on CI |
+| Migration 078 SQL parity (live postgres) | Requires `MIGRATION_078_PG_URL`; CI job not yet wired — unit parity tests pass |
+
+### Wix popup failures fixed (were 2)
+
+1. **`Wix deployment contract > awaits Wix enable/disable without enable-then-disable`** — test expected single-line `setButtonEnabled` signature; popup uses multiline formatting. Fixed test regex.
+2. **`Wix deployment contract > initializes only in browser render environment with a single handler set`** — popup lacked `wixWindow.rendering.env !== "browser"` guard. Added guard to `AgeVerificationPopup.js`; updated test regex.
+
+### Full-suite failures (pre-existing on `main`, not introduced by PR #257)
+
+| File | Failures | Release impact |
+|------|----------|----------------|
+| `lib/wayfinding/partnerApplicationBatch1.test.ts` | 1 | Integrations page copy — unrelated to age lifecycle |
+| `lib/admin/adminReceiptsPage.test.ts` | 2 | Admin receipts UI — unrelated |
+| `lib/home/publicMetrics.test.ts` | 3 | Homepage metrics copy — unrelated |
+| `lib/integrationReadiness.test.ts` | 1 | Integration readiness manifest — unrelated |
+| `lib/integrate/partnerJourney.test.ts` | 1 | Partner journey wayfinding — unrelated |
+| `lib/nav/navSignInButtonState.test.ts` | 1 | Nav sign-in button — unrelated |
+
+None touch `ageEvidenceLinkage`, Wix popup, migration 078, or partner continue flows.
 
 ## Cross-industry compliance
 

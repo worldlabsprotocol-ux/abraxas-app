@@ -18,6 +18,10 @@ import {
   createAgeEvidenceRecord,
   deriveProviderDecisionFromDob,
 } from "@/lib/assurance/ageEvidence";
+import {
+  finalizeAgeEvidenceLinkage,
+  precheckAgeEvidenceLinkage,
+} from "@/lib/assurance/ageEvidenceLinkage";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -265,6 +269,20 @@ export async function POST(req: NextRequest) {
     const reviewDocId = inserted?.find(r => r.document_type === "id_front")?.id;
 
     if (assessment.decision === "auto_approve" && reviewDocId) {
+      const minimumAge = policyContext.policyRules?.minimum_age;
+      const sandboxOnly = policyContext.policyRules?.sandbox_only === true;
+
+      const linkagePrecheck = await precheckAgeEvidenceLinkage({
+        sandboxOnly,
+        minimumAgeGate: minimumAge,
+      });
+      if (!linkagePrecheck.ok) {
+        return NextResponse.json({
+          error: linkagePrecheck.error,
+          review_unavailable: true,
+        }, { status: linkagePrecheck.status });
+      }
+
       const issued = await issueManualIdentityCredential(suiAddress, {
         reviewId: reviewDocId,
         captureSessionId,
@@ -280,9 +298,8 @@ export async function POST(req: NextRequest) {
       });
 
       if (issued.ok) {
-        const minimumAge = policyContext.policyRules?.minimum_age;
         if (minimumAge != null && minimumAge >= 21 && documentDateOfBirth) {
-          await createAgeEvidenceRecord({
+          const evidence = await createAgeEvidenceRecord({
             subjectSuiAddress: suiAddress,
             passportDocumentId: reviewDocId,
             captureSessionId,
@@ -298,6 +315,14 @@ export async function POST(req: NextRequest) {
             reviewedAt: new Date().toISOString(),
             credentialJti: issued.jti ?? null,
           });
+          const finalized = finalizeAgeEvidenceLinkage({
+            sandboxOnly,
+            minimumAgeGate: minimumAge,
+            evidence,
+          });
+          if (!finalized.ok) {
+            return NextResponse.json({ error: finalized.error }, { status: finalized.status });
+          }
         }
         logCaptureAudit({
           event: "capture_auto_approved",
