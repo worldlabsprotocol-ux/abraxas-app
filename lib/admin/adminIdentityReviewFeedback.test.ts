@@ -71,6 +71,8 @@ describe("AdminIdentityPage review feedback", () => {
     await screen.findByText("Ada Lovelace");
 
     const user = userEvent.setup();
+    await user.type(screen.getByPlaceholderText(/Reviewer reason/i), "Verified DOB from government ID");
+    await user.type(screen.getByTitle(/Document date of birth/i), "1990-01-15");
     await user.click(screen.getByRole("button", { name: /Approve L2/i }));
     await user.click(screen.getByRole("button", { name: /Approve and issue credential/i }));
 
@@ -113,7 +115,7 @@ describe("AdminIdentityPage review feedback", () => {
     await user.click(screen.getByRole("button", { name: "Resubmit" }));
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("Reviewer notes")).toBeDisabled();
+      expect(screen.getByPlaceholderText(/Reviewer reason/i)).toBeDisabled();
     });
   });
 });

@@ -2,9 +2,10 @@
 // FILE: components/partner/PartnerContinueClient.tsx
 // Partner evidence step — not the general Passport dashboard.
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
@@ -17,6 +18,11 @@ import {
   resolvePartnerHomeUrl,
   resolvePartnerReturnLabel,
 } from "@/lib/partner/partnerVerifyDisplay";
+import {
+  resolvePartnerHolderPresentation,
+  type PartnerHolderState,
+} from "@/lib/partner/partnerHolderCopy";
+import { GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/goodTrouble/constants";
 import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
 import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import { Btn } from "@/components/redesign/ui";
@@ -26,6 +32,11 @@ import {
   PASSPORT_SECURE_ACCOUNT_LABEL,
 } from "@/lib/passport/passportCustomerCopy";
 
+function resolveMinimumAge(policyId: string): number | null {
+  if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
+  return null;
+}
+
 function PartnerContinueInner() {
   const searchParams = useSearchParams();
   const { suiAddress, session, isLoading: authLoading } = useSuiAuth();
@@ -33,6 +44,7 @@ function PartnerContinueInner() {
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [starting, setStarting] = useState(false);
   const [bindLoading, setBindLoading] = useState(false);
+  const [captureStarted, setCaptureStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const verifyRequestId = searchParams.get("verify_request");
@@ -52,6 +64,7 @@ function PartnerContinueInner() {
 
   const walletDone = Boolean(suiAddress);
   const hasCredential = Boolean(credential) && identityStatus === "earned";
+  const minimumAge = resolveMinimumAge(policyId);
 
   const setup = setupFromHook ?? computePassportSetupState({
     walletDone,
@@ -77,6 +90,18 @@ function PartnerContinueInner() {
   const partnerName = resolvePartnerDisplayName(partnerId);
   const partnerHomeUrl = resolvePartnerHomeUrl(partnerId);
   const returnLabel = resolvePartnerReturnLabel(partnerId);
+
+  const holderState: PartnerHolderState = useMemo(() => {
+    if (!suiAddress) return "confirm_account";
+    if (credential && new Date(credential.expires_at) < new Date()) return "verification_expired";
+    if (identityStatus === "pending") return "under_review";
+    if (handoff.ready) return "age_confirmed";
+    if (setup.walletBound && !setup.identityComplete) return "verify_age";
+    if (returnPath && handoff.ready) return "return_to_partner";
+    return "verify_age";
+  }, [suiAddress, credential, identityStatus, handoff.ready, returnPath, setup]);
+
+  const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
 
   useEffect(() => {
     if (!verifyRequestId || !partnerId || !returnPath) {
@@ -126,6 +151,10 @@ function PartnerContinueInner() {
 
   async function startIdentityVerification() {
     if (!suiAddress) return;
+    if (idvProvider === "manual") {
+      setCaptureStarted(true);
+      return;
+    }
     setStarting(true);
     setError(null);
     try {
@@ -162,30 +191,48 @@ function PartnerContinueInner() {
     }
   }
 
+  const statusMessage = holderState === "under_review"
+    ? holderCopy.message
+    : holderState === "age_confirmed"
+      ? holderCopy.message
+      : "Complete the step below so we can share the required result with the partner.";
+
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
       intro={resolvePartnerContinuationIntro(partnerId)}
-      statusMessage="Complete the step below so we can share the required result with the partner."
+      statusMessage={statusMessage}
       partnerHomeUrl={partnerHomeUrl}
       partnerReturnLabel={returnLabel}
     >
       {authLoading ? (
         <p role="status">Loading…</p>
       ) : !suiAddress ? (
-        <StatusBanner tone="pending" title="Sign in required">
+        <StatusBanner tone="pending" title={holderCopy.title}>
           Return to the partner site and start verification again.
         </StatusBanner>
       ) : (
         <>
           <PartnerFlowReturnHandler handoff={handoff} />
 
-          {verifyRequestId && !consentDismissed && (
+          {verifyRequestId && !consentDismissed && holderState !== "under_review" && (
             <ConsentCeremony
               requestId={verifyRequestId}
               identityComplete={setup.identityComplete}
               onDismiss={() => setConsentDismissed(true)}
             />
+          )}
+
+          {holderState === "under_review" && (
+            <StatusBanner tone="pending" title={holderCopy.title}>
+              {holderCopy.message}
+            </StatusBanner>
+          )}
+
+          {holderState === "verification_expired" && (
+            <StatusBanner tone="info" title={holderCopy.title}>
+              {holderCopy.message}
+            </StatusBanner>
           )}
 
           {walletDone && !setup.walletBound && (
@@ -199,14 +246,32 @@ function PartnerContinueInner() {
             </div>
           )}
 
-          {setup.walletBound && !setup.identityComplete && (
+          {setup.walletBound && !setup.identityComplete && holderState !== "under_review" && (
             <div style={{ marginBottom: "1rem" }}>
-              <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                This partner requires identity verification. Signing in does not verify your age by itself.
+              <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 600 }}>
+                {holderCopy.title}
               </p>
-              <Btn disabled={starting} onClick={() => void startIdentityVerification()}>
-                {starting ? "Starting…" : idvProvider === "manual" ? "Continue verification" : "Verify identity"}
-              </Btn>
+              <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                {holderCopy.message}
+              </p>
+              {idvProvider === "manual" && captureStarted ? (
+                <AbraxasIdentityCapture
+                  email={email}
+                  suiAddress={suiAddress}
+                  pendingReview={identityStatus === "pending"}
+                  capturePolicy={{
+                    verificationRequestId: verifyRequestId,
+                    policyId,
+                    partnerId,
+                    minimumAge,
+                  }}
+                  onSubmitted={() => void refresh()}
+                />
+              ) : (
+                <Btn disabled={starting} onClick={() => void startIdentityVerification()}>
+                  {starting ? "Starting…" : holderCopy.action_label ?? "Continue verification"}
+                </Btn>
+              )}
               {!veriffConfigured && idvProvider === "veriff" && (
                 <p style={{ marginTop: "0.5rem", fontSize: "0.82rem", color: "var(--text-muted)" }}>
                   Verification is not available in this environment.
@@ -216,7 +281,18 @@ function PartnerContinueInner() {
           )}
 
           {setup.identityComplete && !handoff.ready && (
-            <p role="status">Finishing verification…</p>
+            <p role="status">{holderCopy.title}…</p>
+          )}
+
+          {returnPath && handoff.ready && (
+            <div style={{ marginTop: "1rem" }}>
+              <Btn
+                variant="secondary"
+                onClick={() => { window.location.href = returnPath; }}
+              >
+                {returnLabel}
+              </Btn>
+            </div>
           )}
 
           {error && <p role="alert" style={{ marginTop: "0.75rem", color: "var(--text-secondary)" }}>{error}</p>}

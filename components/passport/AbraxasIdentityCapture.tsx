@@ -10,6 +10,7 @@ import { loadUserSession } from "@/lib/sui/zklogin/session";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
 import {
   identityCaptureStepLabel,
+  identityCaptureSteps,
   type IdentityCaptureStep,
 } from "@/lib/idv/identityCapture";
 import {
@@ -47,8 +48,11 @@ export function AbraxasIdentityCapture({
   const { suiAddress: authAddress, session, isLoading: authLoading, isAuthenticated, refreshSession } = useSuiAuth();
   const email = emailProp || session?.email || "";
   const suiAddress = suiProp ?? authAddress;
+  const requireDateOfBirth = (capturePolicy?.minimumAge ?? 0) >= 21;
+  const steps = identityCaptureSteps(requireDateOfBirth);
   const [step, setStep] = useState<IdentityCaptureStep>("name");
   const [legalName, setLegalName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [idCapture, setIdCapture] = useState<CaptureState | null>(null);
   const [selfieCapture, setSelfieCapture] = useState<CaptureState | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -64,12 +68,13 @@ export function AbraxasIdentityCapture({
   const [checkingPreflight, setCheckingPreflight] = useState(false);
 
   const stepIndex = useMemo(
-    () => ["name", "id_front", "selfie", "review"].indexOf(step),
-    [step],
+    () => steps.indexOf(step),
+    [step, steps],
   );
 
   function canContinue(): boolean {
     if (step === "name") return legalName.trim().length >= 2;
+    if (step === "date_of_birth") return /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth.trim());
     if (step === "id_front") return Boolean(idCapture);
     if (step === "selfie") return Boolean(selfieCapture);
     return true;
@@ -102,15 +107,17 @@ export function AbraxasIdentityCapture({
   }
 
   function goNext() {
-    if (step === "name") setStep("id_front");
-    else if (step === "id_front") setStep("selfie");
-    else if (step === "selfie") setStep("review");
+    const idx = steps.indexOf(step);
+    if (idx >= 0 && idx < steps.length - 1) {
+      setStep(steps[idx + 1]);
+    }
   }
 
   function goBack() {
-    if (step === "id_front") setStep("name");
-    else if (step === "selfie") setStep("id_front");
-    else if (step === "review") setStep("selfie");
+    const idx = steps.indexOf(step);
+    if (idx > 0) {
+      setStep(steps[idx - 1]);
+    }
   }
 
   async function submitCapture() {
@@ -156,6 +163,9 @@ export function AbraxasIdentityCapture({
 
       const formData = new FormData();
       formData.append("legal_name", legalName.trim());
+      if (requireDateOfBirth && dateOfBirth.trim()) {
+        formData.append("document_date_of_birth", dateOfBirth.trim());
+      }
       formData.append("id_front", idCapture.blob, "id_front.jpg");
       formData.append("selfie", selfieCapture.blob, "selfie.jpg");
       for (const [key, value] of Object.entries(capturePolicyFormFields(capturePolicy ?? {}))) {
@@ -254,7 +264,7 @@ export function AbraxasIdentityCapture({
           Name + government ID + selfie. Abraxas engine checks face match and liveness; our team reviews edge cases.
         </p>
         <div style={{ display: "flex", gap: 6 }}>
-          {(["name", "id_front", "selfie", "review"] as const).map((s, i) => (
+          {steps.map((s, i) => (
             <div
               key={s}
               style={{
@@ -268,7 +278,7 @@ export function AbraxasIdentityCapture({
           ))}
         </div>
         <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "var(--text-muted)", marginTop: 6 }}>
-          Step {stepIndex + 1} of 4 · {identityCaptureStepLabel(step)}
+          Step {stepIndex + 1} of {steps.length} · {identityCaptureStepLabel(step)}
         </div>
       </div>
 
@@ -295,6 +305,33 @@ export function AbraxasIdentityCapture({
                 fontSize: "0.85rem",
               }}
             />
+          </div>
+        )}
+
+        {step === "date_of_birth" && (
+          <div>
+            <label style={{ display: "block", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
+              Date of birth (as shown on your ID)
+            </label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={e => setDateOfBirth(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              style={{
+                width: "100%",
+                padding: "0.65rem 0.75rem",
+                borderRadius: 8,
+                border: "1px solid var(--border-strong)",
+                background: "var(--surface-raised)",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.85rem",
+              }}
+            />
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
+              Your birth date is used only to confirm age eligibility. It is never shared with partners.
+            </p>
           </div>
         )}
 
@@ -373,7 +410,7 @@ export function AbraxasIdentityCapture({
         )}
 
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap" }}>
-          {step !== "name" && (
+          {step !== steps[0] && (
             <Btn variant="ghost" size="sm" onClick={goBack} disabled={submitting}>
               Back
             </Btn>

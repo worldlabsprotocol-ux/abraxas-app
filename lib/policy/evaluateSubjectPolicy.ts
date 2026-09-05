@@ -6,6 +6,7 @@ import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
+import { resolveEffectivePolicyRules } from "@/lib/policy/resolveEffectivePolicyRules";
 import { loadPolicyTrustContext } from "@/lib/trust/loadPolicyTrustContext";
 import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import type { PartnerPolicy, PolicyEvaluationResult } from "@/lib/policy/types";
@@ -38,7 +39,8 @@ export async function evaluatePolicyForSubject(input: {
     jurisdiction: residency ?? claims.find(c => c.jurisdiction)?.jurisdiction,
   });
 
-  const evaluation = evaluatePolicyRules(policy.rules_json, claims, {
+  const effectiveRules = resolveEffectivePolicyRules(policy);
+  const evaluation = evaluatePolicyRules(effectiveRules, claims, {
     jurisdiction: trustContext.jurisdiction,
     partnerId: input.partnerId,
     policyId: policy.id,

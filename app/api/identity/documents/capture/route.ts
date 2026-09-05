@@ -14,6 +14,10 @@ import { resolveCaptureBiometricPolicy } from "@/lib/idv/biometric/resolveCaptur
 import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
 import { buildOpaqueCaptureStoragePath, opaqueStoragePathHasNoPii } from "@/lib/idv/passportDocumentStoragePath";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
+import {
+  createAgeEvidenceRecord,
+  deriveProviderDecisionFromDob,
+} from "@/lib/assurance/ageEvidence";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -276,6 +280,25 @@ export async function POST(req: NextRequest) {
       });
 
       if (issued.ok) {
+        const minimumAge = policyContext.policyRules?.minimum_age;
+        if (minimumAge != null && minimumAge >= 21 && documentDateOfBirth) {
+          await createAgeEvidenceRecord({
+            subjectSuiAddress: suiAddress,
+            passportDocumentId: reviewDocId,
+            captureSessionId,
+            evidenceProvider: "abraxas_biometric",
+            evidenceType: "government_id_dob",
+            assuranceLevel: assessment.assurance_level,
+            ageThreshold: minimumAge,
+            providerDecision: deriveProviderDecisionFromDob(documentDateOfBirth, minimumAge),
+            reviewStatus: "approved",
+            providerReference: captureSessionId,
+            reviewerId: "abraxas_biometric_engine",
+            reviewerReason: "auto_approve",
+            reviewedAt: new Date().toISOString(),
+            credentialJti: issued.jti ?? null,
+          });
+        }
         logCaptureAudit({
           event: "capture_auto_approved",
           sui_address: suiAddress,
@@ -316,6 +339,21 @@ export async function POST(req: NextRequest) {
         liveness: assessment.scores.liveness,
       },
     });
+
+    const queuedMinimumAge = policyContext.policyRules?.minimum_age;
+    if (queuedMinimumAge != null && queuedMinimumAge >= 21) {
+      await createAgeEvidenceRecord({
+        subjectSuiAddress: suiAddress,
+        captureSessionId,
+        evidenceProvider: "abraxas_biometric",
+        evidenceType: "government_id_dob",
+        assuranceLevel: assessment.assurance_level,
+        ageThreshold: queuedMinimumAge,
+        providerDecision: deriveProviderDecisionFromDob(documentDateOfBirth, queuedMinimumAge),
+        reviewStatus: "pending",
+        providerReference: captureSessionId,
+      });
+    }
 
     await transitionIdentityVerification(
       suiAddress,

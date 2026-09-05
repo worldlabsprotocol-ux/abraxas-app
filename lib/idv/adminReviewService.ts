@@ -7,6 +7,11 @@ import { getBiometricAssessment } from "./biometric/persistAssessment";
 import type { BiometricDecision } from "./biometric/types";
 import { issueManualIdentityCredential } from "./issueIdentityCredential";
 import { transitionIdentityVerification } from "./identityVerificationDb";
+import {
+  createAgeEvidenceRecord,
+  deriveProviderDecisionFromDob,
+} from "@/lib/assurance/ageEvidence";
+import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility";
 
 export type AdminReviewAction = "approve" | "reject" | "request_resubmission";
 
@@ -39,6 +44,7 @@ export interface AdminReviewResult {
   suiAddress?: string;
   jti?: string;
   alreadyIssued?: boolean;
+  ageEvidenceId?: string;
   error?: string;
   status?: number;
 }
@@ -186,6 +192,28 @@ export async function executeAdminReviewAction(
       };
     }
 
+    const minimumAge = request.minimumAgeGate ?? null;
+    if (minimumAge != null && minimumAge >= 21) {
+      if (!request.note?.trim()) {
+        return {
+          ok: false,
+          error: "Reviewer reason is required for age eligibility approval",
+          status: 400,
+        };
+      }
+      const eligibility = evaluateAgeEligibilityFromDocumentDate(
+        request.documentDateOfBirth,
+        minimumAge,
+      );
+      if (!eligibility.eligible) {
+        return {
+          ok: false,
+          error: `Age eligibility not met: ${eligibility.failureReason ?? "ineligible"}`,
+          status: 400,
+        };
+      }
+    }
+
     const normalized = normalizeSuiAddress(suiRaw);
     const issued = await issueManualIdentityCredential(normalized, {
       reviewId: doc.id as string,
@@ -204,6 +232,28 @@ export async function executeAdminReviewAction(
 
     if (!issued.ok) {
       return { ok: false, error: issued.message ?? "Issuance failed", status: 500 };
+    }
+
+    let ageEvidenceId: string | undefined;
+    if (minimumAge != null && minimumAge >= 21 && request.documentDateOfBirth) {
+      const evidence = await createAgeEvidenceRecord({
+        subjectSuiAddress: normalized,
+        passportDocumentId: doc.id as string,
+        captureSessionId: sessionId,
+        evidenceProvider: "abraxas_manual_review",
+        evidenceType: "government_id_dob",
+        assuranceLevel: assessment?.assurance_level ?? "L2",
+        ageThreshold: minimumAge,
+        providerDecision: deriveProviderDecisionFromDob(request.documentDateOfBirth, minimumAge),
+        reviewStatus: "approved",
+        providerReference: `${doc.id}:${sessionId ?? "none"}`,
+        reviewerId: request.reviewerId,
+        reviewerReason: request.note ?? null,
+        reviewedAt: now,
+        expiresAt: null,
+        credentialJti: issued.jti ?? null,
+      });
+      if (evidence.ok) ageEvidenceId = evidence.id;
     }
 
     const docUpdate = {
@@ -248,6 +298,7 @@ export async function executeAdminReviewAction(
       suiAddress: normalized,
       jti: issued.jti,
       alreadyIssued: issued.alreadyIssued ?? false,
+      ageEvidenceId,
     };
   }
 
