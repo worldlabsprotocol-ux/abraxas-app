@@ -69,7 +69,15 @@ Operator manual script: sign in on Vercel preview → `/partner/continue` with G
 
 ## 7. Screenshots
 
-Preview holder states (production copy/layout): `/partner/release-gate-preview` on Vercel preview.
+Holder states use production copy/layout via `/partner/release-gate-preview` (preview-only gate).
+
+| State | Desktop | Mobile |
+|-------|---------|--------|
+| Under review | `holder_under_review_desktop.png` | `holder_under_review_mobile.png` |
+| Age confirmed | `holder_age_confirmed_desktop.png` | `holder_age_confirmed_mobile.png` |
+| Return to Good Trouble | `holder_return_to_good_trouble_desktop.png` | `holder_return_to_good_trouble_mobile.png` |
+
+Captured locally from production components (`PartnerJourneyLayout` + `partnerHolderCopy`). Vercel preview deployment is behind Vercel SSO; authenticated Google sign-in E2E remains operator-only.
 
 See walkthrough artifacts for verify-age and admin review (desktop + mobile).
 
