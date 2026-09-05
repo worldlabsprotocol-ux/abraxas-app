@@ -62,6 +62,6 @@ export async function GET(request: NextRequest) {
       eligible_for_reuse: existingProofEligible,
     },
     providers: available,
-    unconfigured_count: configured.filter(p => !p.configured).length,
+    unconfigured_count: configured.filter(p => !p.authoritative).length,
   });
 }

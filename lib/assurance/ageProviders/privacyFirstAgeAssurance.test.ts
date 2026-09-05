@@ -132,10 +132,40 @@ describe("authoritative provider results", () => {
 });
 
 describe("provider registry", () => {
-  it("unconfigured providers are not shown as available", () => {
+  it("placeholder providers are disabled by default", () => {
     const configured = listConfiguredAgeAssuranceProviderMeta();
     expect(configured.every(p => !p.configured)).toBe(true);
+    expect(configured.every(p => !p.authoritative)).toBe(true);
     expect(listAvailableAgeAssuranceProviderMeta(21)).toHaveLength(0);
+  });
+
+  it("env flags and API keys cannot make placeholders authoritative", async () => {
+    const prevEnabled = process.env.AGE_ASSURANCE_DIGITAL_WALLET_ENABLED;
+    const prevKey = process.env.AGE_ASSURANCE_DIGITAL_WALLET_API_KEY;
+    process.env.AGE_ASSURANCE_DIGITAL_WALLET_ENABLED = "true";
+    process.env.AGE_ASSURANCE_DIGITAL_WALLET_API_KEY = "operator-supplied-key";
+
+    const { digitalWalletAgeProvider } = await import("./adapters/stubProvider");
+    const { isProviderAuthoritative } = await import("./providerAuthority");
+
+    expect(digitalWalletAgeProvider.isProductionCapable()).toBe(false);
+    expect(digitalWalletAgeProvider.isConfigured()).toBe(false);
+    expect(isProviderAuthoritative(digitalWalletAgeProvider)).toBe(false);
+    expect(listAvailableAgeAssuranceProviderMeta(21)).toHaveLength(0);
+
+    process.env.AGE_ASSURANCE_DIGITAL_WALLET_ENABLED = prevEnabled;
+    process.env.AGE_ASSURANCE_DIGITAL_WALLET_API_KEY = prevKey;
+  });
+
+  it("placeholder verifyCallback always fails closed", async () => {
+    const { digitalWalletAgeProvider } = await import("./adapters/stubProvider");
+    const result = await digitalWalletAgeProvider.verifyCallback({
+      providerSessionId: "ps-1",
+      callbackPayload: { simulated_age_band: "over_21" },
+    });
+    expect(result.verified).toBe(false);
+    expect(result.ageBand).toBe("unknown");
+    expect(result.reasonCode).toBe("placeholder_not_authoritative");
   });
 
   it("rejects unknown provider IDs", () => {

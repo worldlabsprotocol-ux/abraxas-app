@@ -1,19 +1,13 @@
 // FILE: lib/assurance/ageProviders/adapters/stubProvider.ts
-// Config-gated stub adapters — disabled until operator configures vendor credentials.
+// Placeholder adapters — never production-capable; env vars do not enable authority.
 
-import { createHash } from "crypto";
 import type { AgeAssuranceProvider } from "../types";
+import { PLACEHOLDER_CALLBACK_FAIL_CLOSED } from "../providerAuthority";
 
-function envFlag(name: string): boolean {
-  return process.env[name]?.trim() === "1" || process.env[name]?.trim()?.toLowerCase() === "true";
-}
-
-function buildStubAdapter(config: {
+function buildPlaceholderAdapter(config: {
   id: string;
   displayName: string;
   assuranceLevel: string;
-  enableEnv: string;
-  secretEnv: string;
   capabilities: AgeAssuranceProvider["capabilities"];
 }): AgeAssuranceProvider {
   return {
@@ -21,54 +15,26 @@ function buildStubAdapter(config: {
     displayName: config.displayName,
     assuranceLevel: config.assuranceLevel,
     capabilities: config.capabilities,
+    isProductionCapable() {
+      return false;
+    },
     isConfigured() {
-      return envFlag(config.enableEnv) && Boolean(process.env[config.secretEnv]?.trim());
+      // Placeholders are never configured for holder-facing or callback authority.
+      return false;
     },
-    async createSession(input) {
-      if (!this.isConfigured()) {
-        throw new Error("provider_not_configured");
-      }
-      const providerSessionId = createHash("sha256")
-        .update(`${config.id}:${input.sessionNonce}:${input.subjectRef}`)
-        .digest("hex")
-        .slice(0, 32);
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-      const redirectUrl = `${process.env.ABRAXAS_ISSUER_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/age-assurance/callback/${config.id}?state=${encodeURIComponent(input.sessionNonce)}&provider_session_id=${providerSessionId}&return_url=${encodeURIComponent(input.returnUrl)}`;
-      return { providerSessionId, redirectUrl, expiresAt };
+    async createSession() {
+      throw new Error("placeholder_provider_not_authoritative");
     },
-    async verifyCallback(input) {
-      if (!this.isConfigured()) {
-        return {
-          verified: false,
-          ageBand: "unknown",
-          assuranceLevel: config.assuranceLevel,
-          evidenceRefHash: "",
-          reasonCode: "provider_not_configured",
-        };
-      }
-      const payload = input.callbackPayload as { simulated_age_band?: string } | null;
-      const ageBand = (payload?.simulated_age_band ?? "unknown") as "under_18" | "over_18" | "over_21" | "unknown";
-      const verified = ageBand === "over_21" || ageBand === "over_18";
-      const evidenceRefHash = createHash("sha256")
-        .update(`${config.id}:${input.providerSessionId}:${ageBand}`)
-        .digest("hex");
-      return {
-        verified,
-        ageBand,
-        assuranceLevel: config.assuranceLevel,
-        evidenceRefHash,
-        reasonCode: verified ? undefined : "provider_result_insufficient",
-      };
+    async verifyCallback() {
+      return { ...PLACEHOLDER_CALLBACK_FAIL_CLOSED, assuranceLevel: config.assuranceLevel };
     },
   };
 }
 
-export const digitalWalletAgeProvider = buildStubAdapter({
+export const digitalWalletAgeProvider = buildPlaceholderAdapter({
   id: "digital_wallet_age",
   displayName: "Digital wallet age proof",
   assuranceLevel: "L3",
-  enableEnv: "AGE_ASSURANCE_DIGITAL_WALLET_ENABLED",
-  secretEnv: "AGE_ASSURANCE_DIGITAL_WALLET_API_KEY",
   capabilities: {
     over18: true,
     over21: true,
@@ -78,12 +44,10 @@ export const digitalWalletAgeProvider = buildStubAdapter({
   },
 });
 
-export const verifiedEmailAgeProvider = buildStubAdapter({
+export const verifiedEmailAgeProvider = buildPlaceholderAdapter({
   id: "verified_email_age",
   displayName: "Verified email age assurance",
   assuranceLevel: "L2",
-  enableEnv: "AGE_ASSURANCE_VERIFIED_EMAIL_ENABLED",
-  secretEnv: "AGE_ASSURANCE_VERIFIED_EMAIL_API_KEY",
   capabilities: {
     over18: true,
     over21: true,
@@ -93,12 +57,10 @@ export const verifiedEmailAgeProvider = buildStubAdapter({
   },
 });
 
-export const paymentCardAgeProvider = buildStubAdapter({
+export const paymentCardAgeProvider = buildPlaceholderAdapter({
   id: "payment_card_age",
   displayName: "Payment card age assurance",
   assuranceLevel: "L2",
-  enableEnv: "AGE_ASSURANCE_PAYMENT_CARD_ENABLED",
-  secretEnv: "AGE_ASSURANCE_PAYMENT_CARD_API_KEY",
   capabilities: {
     over18: true,
     over21: true,

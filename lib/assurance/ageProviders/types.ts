@@ -28,6 +28,8 @@ export interface AgeAssuranceProviderPublicMeta {
   assuranceLevel: string;
   capabilities: AgeAssuranceProviderCapabilities;
   configured: boolean;
+  /** Production-capable adapter with valid server configuration — safe to offer holders. */
+  authoritative: boolean;
   unavailableReason?: string;
 }
 
@@ -36,6 +38,9 @@ export interface AgeAssuranceProvider {
   displayName: string;
   assuranceLevel: string;
   capabilities: AgeAssuranceProviderCapabilities;
+
+  /** False for placeholders; true only for vendor adapters approved for production. */
+  isProductionCapable(): boolean;
 
   isConfigured(): boolean;
 

@@ -50,15 +50,23 @@ An age-assurance provider may satisfy policy only when:
 3. **Verify another way** — document/selfie fallback (clearly labeled; retention explained before collection)
 4. **Use the traditional partner option** — return to partner without Abraxas verification
 
-### Provider registry (stub adapters until vendor credentials configured)
+### Provider registry (placeholder adapters — never authoritative)
 
-| Provider ID | Display name | Env enable | Env secret |
-|-------------|--------------|------------|------------|
+Placeholder adapters in `lib/assurance/ageProviders/adapters/stubProvider.ts` are **never production-capable**. Setting `AGE_ASSURANCE_*_ENABLED` or supplying an API key does **not** enable holder-facing private verification or callback approval.
+
+| Provider ID | Display name | Future env enable | Future env secret |
+|-------------|--------------|-------------------|-------------------|
 | `digital_wallet_age` | Digital wallet age proof | `AGE_ASSURANCE_DIGITAL_WALLET_ENABLED` | `AGE_ASSURANCE_DIGITAL_WALLET_API_KEY` |
 | `verified_email_age` | Verified email age assurance | `AGE_ASSURANCE_VERIFIED_EMAIL_ENABLED` | `AGE_ASSURANCE_VERIFIED_EMAIL_API_KEY` |
 | `payment_card_age` | Payment card age assurance | `AGE_ASSURANCE_PAYMENT_CARD_ENABLED` | `AGE_ASSURANCE_PAYMENT_CARD_API_KEY` |
 
-When no provider credentials exist, the UI shows **provider unavailable** and document fallback remains operational.
+Until a **production-capable** vendor adapter ships with signed server-to-server verification, holders see only:
+
+1. Reuse existing valid Abraxas credential
+2. ID/manual-review fallback
+3. Return to partner
+
+Callback routes (`/api/age-assurance/callback/[provider]`) return `503 provider_not_authoritative` for placeholders. Query-string or frontend-supplied approval is never accepted.
 
 ## Data collected per method
 
@@ -122,7 +130,7 @@ All routes: authenticated session, return-URL allowlist, rate limiting (partner-
 - [ ] Vendor contract and legal sufficiency review
 - [ ] Adapter implements `AgeAssuranceProvider`
 - [ ] Server-only API keys in deployment secrets
-- [ ] Callback signature verification implemented (replace stub)
+- [ ] Production-capable vendor adapter with signed callback verification implemented
 - [ ] Staging E2E with simulated and live vendor sandbox
 - [ ] Operator enables `AGE_ASSURANCE_*_ENABLED` in production
 - [ ] Migration 080 applied before app deployment
@@ -160,12 +168,12 @@ All routes: authenticated session, return-URL allowlist, rate limiting (partner-
 ## PR dependencies
 
 - **PR #257** — age evidence ledger, fail-closed linkage
-- **PR #258** — identity review queue, raw evidence purge (this branch includes #258 commits; rebase onto `main` after #258 merges)
+- **PR #258** — identity review queue, raw evidence purge (included on this branch; `origin/main` may lag until merge propagates)
 
 ## Remaining production / vendor / legal blockers
 
-- No live privacy-preserving vendor integrations configured (stubs only)
-- Migration 080 not applied to staging/production databases
+- No live privacy-preserving vendor integrations (placeholder adapters only; callbacks hard-disabled with `503 provider_not_authoritative`)
+- Migration 079 and 080 not applied to staging/production databases (apply **079 before 080**)
 - Vendor contracts and jurisdiction legal review outstanding
-- Callback signature verification is stub-level until vendor adapters ship
-- Authenticated preview screenshots require staging deployment
+- Production-capable vendor adapter with signed server-to-server callback verification not yet implemented
+- Authenticated staging E2E blocked until deployment

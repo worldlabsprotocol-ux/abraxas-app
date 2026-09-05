@@ -6,6 +6,7 @@ import {
   assertKnownProvider,
   generateAgeAssuranceSessionNonce,
 } from "@/lib/assurance/ageProviders/registry";
+import { assertProviderAuthoritative } from "@/lib/assurance/ageProviders/providerAuthority";
 import { createAgeAssuranceSessionRow } from "@/lib/assurance/ageProviders/sessionService";
 import {
   ageAssuranceErrorResponse,
@@ -68,12 +69,18 @@ export async function POST(request: NextRequest) {
   let provider;
   try {
     provider = assertKnownProvider(providerId);
-  } catch {
-    return ageAssuranceErrorResponse("unknown_provider", "Unknown provider", 400);
-  }
-
-  if (!provider.isConfigured()) {
-    return ageAssuranceErrorResponse("provider_not_configured", "Provider not available", 503);
+    assertProviderAuthoritative(provider);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "provider_not_available";
+    const code = message === "provider_not_production_capable"
+      ? "provider_not_authoritative"
+      : message === "provider_not_configured"
+        ? "provider_not_configured"
+        : message === "unknown_provider"
+          ? "unknown_provider"
+          : "provider_not_available";
+    const status = code === "unknown_provider" ? 400 : 503;
+    return ageAssuranceErrorResponse(code, "Provider not available", status);
   }
 
   const sessionNonce = generateAgeAssuranceSessionNonce();

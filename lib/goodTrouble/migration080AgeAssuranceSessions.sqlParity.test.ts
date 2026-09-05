@@ -28,4 +28,15 @@ describe("migration 080 age_assurance_sessions SQL parity", () => {
     expect(MIGRATION_080).toContain("idx_age_assurance_expires");
     expect(MIGRATION_080).not.toMatch(/date_of_birth|legal_name|oauth_sub/i);
   });
+
+  it("migration parity script applies 079 before 080", () => {
+    const script = readFileSync(
+      resolve(process.cwd(), "scripts/ci/run-migration-080-sql-parity.sh"),
+      "utf8",
+    );
+    const idx079 = script.indexOf("079_identity_review_sessions.sql");
+    const idx080 = script.indexOf("080_age_assurance_sessions.sql");
+    expect(idx079).toBeGreaterThan(-1);
+    expect(idx080).toBeGreaterThan(idx079);
+  });
 });
