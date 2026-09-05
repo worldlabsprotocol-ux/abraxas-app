@@ -178,6 +178,7 @@ export default function AdminIdentityPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [documentDobs, setDocumentDobs] = useState<Record<string, string>>({});
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const itemBusy = (id: string) =>
@@ -217,17 +218,23 @@ export default function AdminIdentityPage() {
     setError("");
     setSuccess(null);
     try {
+      const minimumAgeGate = 21;
+      const body: Record<string, unknown> = {
+        document_id: item.id,
+        action,
+        jurisdiction: "US",
+        document_type: "passport",
+        reviewer: "admin",
+        note: notes[item.id]?.trim() || undefined,
+      };
+      if (action === "approve") {
+        body.minimum_age_gate = minimumAgeGate;
+        body.document_date_of_birth = documentDobs[item.id]?.trim() || undefined;
+      }
       const res = await adminFetch("/api/admin/identity/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          document_id: item.id,
-          action,
-          jurisdiction: "US",
-          document_type: "passport",
-          reviewer: "admin",
-          note: notes[item.id]?.trim() || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json() as { ok?: boolean; error?: string; reviewer_decision?: string };
       if (!res.ok) throw new Error(data.error ?? `${action} failed`);
@@ -334,7 +341,7 @@ export default function AdminIdentityPage() {
                         <textarea
                           value={notes[item.id] ?? ""}
                           onChange={e => setNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
-                          placeholder="Reviewer notes"
+                          placeholder="Reviewer reason (required for age approval)"
                           rows={2}
                           disabled={itemBusy(item.id)}
                           style={{
@@ -343,11 +350,35 @@ export default function AdminIdentityPage() {
                             color: "#f0f0f0", fontFamily: FONT, fontSize: "0.68rem", resize: "vertical",
                           }}
                         />
+                        <input
+                          type="date"
+                          value={documentDobs[item.id] ?? ""}
+                          onChange={e => setDocumentDobs(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          disabled={itemBusy(item.id)}
+                          title="Document date of birth (internal only — never exposed)"
+                          style={{
+                            width: "100%", minWidth: 180, padding: "0.45rem 0.55rem", borderRadius: 6,
+                            border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.25)",
+                            color: "#f0f0f0", fontFamily: FONT, fontSize: "0.68rem",
+                          }}
+                        />
                         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                           <button
                             onClick={() => promptReview(item, "approve")}
-                            disabled={itemBusy(item.id) || !item.sui_address || !item.capture_complete}
-                            title={!item.sui_address ? "User must sign in" : !item.capture_complete ? "Missing ID or selfie" : undefined}
+                            disabled={
+                              itemBusy(item.id)
+                              || !item.sui_address
+                              || !item.capture_complete
+                              || !notes[item.id]?.trim()
+                              || !documentDobs[item.id]?.trim()
+                            }
+                            title={
+                              !item.sui_address ? "User must sign in"
+                                : !item.capture_complete ? "Missing ID or selfie"
+                                  : !notes[item.id]?.trim() ? "Reviewer reason required"
+                                    : !documentDobs[item.id]?.trim() ? "Document DOB required for age eligibility"
+                                      : undefined
+                            }
                             style={{
                               padding: "0.45rem 0.85rem", borderRadius: 6, border: "none",
                               background: item.sui_address && item.capture_complete ? "#10B981" : "rgba(255,255,255,0.1)",

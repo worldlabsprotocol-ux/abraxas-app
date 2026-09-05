@@ -97,7 +97,18 @@ describe("Good Trouble retail — full backend wiring", () => {
     expect(evaluation.missing_claims).toContain("residency_country");
   });
 
-  it("v1 approves without product_eligibility despite minimum_age metadata", () => {
+  it("effective sandbox rules deny without product_eligibility despite v1 stored rules", () => {
+    const claims = fullGoodTroubleClaimBundle("capture");
+    const evaluation = evaluatePolicyRules(GOOD_TROUBLE_RETAIL_V2_POLICY_RULES, claims, {
+      jurisdiction: "US",
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+    });
+    expect(evaluation.decision).toBe("denied");
+    expect(evaluation.missing_claims).toContain("product_eligibility");
+  });
+
+  it("stored v1 rules alone approve without product_eligibility (audit immutability)", () => {
     const claims = fullGoodTroubleClaimBundle("capture");
     const evaluation = evaluatePolicyRules(gtPolicy.rules, claims, {
       jurisdiction: "US",

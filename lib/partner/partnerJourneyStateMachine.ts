@@ -90,16 +90,16 @@ const MESSAGES: Record<PartnerJourneyState, Omit<PartnerJourneyPresentation, "st
   },
   additional_verification_required: {
     customer_message:
-      "One more step is required before we can share a result with the partner. This may include identity verification — not just signing in.",
+      "Verify your age. This partner requires identity verification — signing in alone does not verify your age.",
     primary_action: "continue",
-    primary_label: "Continue verification",
+    primary_label: "Verify your age",
     terminal: false,
     safe_retry: true,
     telemetry_outcome: "additional_verification_required",
   },
   manual_review_required: {
     customer_message:
-      "Your verification is under review. You can close this window and return to the partner later.",
+      "Verification under review. You can close this window and return to the partner later.",
     primary_action: "return_to_partner",
     primary_label: null,
     terminal: true,
@@ -107,7 +107,7 @@ const MESSAGES: Record<PartnerJourneyState, Omit<PartnerJourneyPresentation, "st
     telemetry_outcome: "manual_review_required",
   },
   approved: {
-    customer_message: "Approved. Returning you to the partner now…",
+    customer_message: "Age requirement confirmed. Returning you to the partner now…",
     primary_action: "none",
     primary_label: null,
     terminal: false,

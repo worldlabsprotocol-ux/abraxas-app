@@ -3,13 +3,23 @@
 
 export type IdentityCaptureDocumentType = "id_front" | "selfie";
 
-export const IDENTITY_CAPTURE_STEPS = ["name", "id_front", "selfie", "review"] as const;
-export type IdentityCaptureStep = (typeof IDENTITY_CAPTURE_STEPS)[number];
+export const IDENTITY_CAPTURE_BASE_STEPS = ["name", "id_front", "selfie", "review"] as const;
+export const IDENTITY_CAPTURE_WITH_DOB_STEPS = ["name", "date_of_birth", "id_front", "selfie", "review"] as const;
+
+export type IdentityCaptureStep =
+  | (typeof IDENTITY_CAPTURE_BASE_STEPS)[number]
+  | "date_of_birth";
+
+export function identityCaptureSteps(requireDateOfBirth: boolean): readonly IdentityCaptureStep[] {
+  return requireDateOfBirth ? IDENTITY_CAPTURE_WITH_DOB_STEPS : IDENTITY_CAPTURE_BASE_STEPS;
+}
 
 export function identityCaptureStepLabel(step: IdentityCaptureStep): string {
   switch (step) {
     case "name":
       return "Legal name";
+    case "date_of_birth":
+      return "Date of birth";
     case "id_front":
       return "Government ID (front)";
     case "selfie":

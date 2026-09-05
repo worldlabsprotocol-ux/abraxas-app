@@ -38,6 +38,10 @@ const popupInitGuard =
 let popupController = null;
 
 $w.onReady(() => {
+  if (wixWindow.rendering.env !== "browser") {
+    return;
+  }
+
   const initialized =
     popupInitGuard.initializeOnce(() => {
       popupController =

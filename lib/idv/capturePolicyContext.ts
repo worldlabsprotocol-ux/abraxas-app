@@ -5,6 +5,8 @@ export interface CapturePolicyContext {
   verificationRequestId?: string | null;
   policyId?: string | null;
   partnerId?: string | null;
+  /** When set (e.g. 21), capture collects authoritative DOB for product_eligibility issuance. */
+  minimumAge?: number | null;
 }
 
 export function capturePolicyFormFields(ctx: CapturePolicyContext): Record<string, string> {

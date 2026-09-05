@@ -66,7 +66,7 @@ describe("Wix deployment contract", () => {
   });
 
   it("awaits Wix enable/disable without enable-then-disable", () => {
-    expect(POPUP_SOURCE).toContain("async function setButtonEnabled(selector, enabled)");
+    expect(POPUP_SOURCE).toMatch(/async function setButtonEnabled\s*\(\s*selector\s*,\s*enabled\s*\)/);
     expect(POPUP_SOURCE).toContain("await element.enable()");
     expect(POPUP_SOURCE).toContain("await element.disable()");
     expect(POPUP_SOURCE).not.toMatch(/element\.enable\(\);\s*\n\s*if \(!enabled\) element\.disable\(\)/);
@@ -80,7 +80,7 @@ describe("Wix deployment contract", () => {
   });
 
   it("initializes only in browser render environment with a single handler set", () => {
-    expect(POPUP_SOURCE).toContain('wixWindow.rendering.env === "browser"');
+    expect(POPUP_SOURCE).toMatch(/wixWindow\.rendering\.env\s*!==\s*"browser"/);
     expect(POPUP_SOURCE).toContain("createPopupInitializationGuard");
     expect(POPUP_SOURCE).toContain("initializeOnce");
   });
