@@ -44,6 +44,10 @@ export async function issueIdentityCredential(
     documentDateOfBirth?: string;
     /** When >= 21, issuance may attach product_eligibility=out_21 when DOB evidence qualifies. */
     minimumAgeGate?: number;
+    /** Authoritative age-band from approved age-assurance provider (not social OAuth). */
+    authoritativeAgeBand?: "over_18" | "over_21";
+    /** Hashed evidence reference for product_eligibility provenance. */
+    eligibilityEvidenceReference?: string;
   },
 ): Promise<IssueIdentityCredentialResult> {
   const provider = options?.provider ?? "veriff";
@@ -193,11 +197,12 @@ export async function issueIdentityCredential(
       || decision.person?.dateOfBirth?.trim()
       || undefined;
     const minimumAgeGate = options?.minimumAgeGate;
-    const eligibilityEvidenceRef = provider === "veriff"
-      ? `veriff:${decision.id}`
-      : provider === "abraxas_capture" && options?.captureSessionId
-        ? `abraxas_capture:${options.captureSessionId}`
-        : `manual_review:${reviewRef}`;
+    const eligibilityEvidenceRef = options?.eligibilityEvidenceReference
+      ?? (provider === "veriff"
+        ? `veriff:${decision.id}`
+        : provider === "abraxas_capture" && options?.captureSessionId
+          ? `abraxas_capture:${options.captureSessionId}`
+          : `manual_review:${reviewRef}`);
 
     const identityClaims = provider === "veriff"
       ? veriffApprovedClaims({
@@ -235,6 +240,7 @@ export async function issueIdentityCredential(
         subjectId: normalized,
         jti,
         documentDateOfBirth,
+        authoritativeAgeBand: options?.authoritativeAgeBand,
         minimumAgeGate,
         expiresAt,
         evidenceReference: eligibilityEvidenceRef,
@@ -286,6 +292,9 @@ export interface ManualReviewApproval {
   /** Authoritative document DOB (YYYY-MM-DD) — internal only. */
   documentDateOfBirth?: string;
   minimumAgeGate?: number;
+  /** Authoritative age-band from approved age-assurance provider. */
+  authoritativeAgeBand?: "over_18" | "over_21";
+  eligibilityEvidenceReference?: string;
 }
 
 /** Issue credential after admin manual review (Veriff unavailable). Assurance L2. */
@@ -319,6 +328,8 @@ export async function issueManualIdentityCredential(
       biometricScores: approval.biometricScores,
       documentDateOfBirth: approval.documentDateOfBirth,
       minimumAgeGate: approval.minimumAgeGate,
+      authoritativeAgeBand: approval.authoritativeAgeBand,
+      eligibilityEvidenceReference: approval.eligibilityEvidenceReference,
     },
   );
 }
