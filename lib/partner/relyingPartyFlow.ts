@@ -140,8 +140,25 @@ export async function getHolderCredentialStatus(suiAddress: string): Promise<Hol
 
   if (!verification) return { status: "none" };
 
-  if (verification.status === "pending" || verification.status === "in_progress") {
+  const { count: pendingDocs } = await sb
+    .from("passport_documents")
+    .select("id", { count: "exact", head: true })
+    .or(`wallet_address.eq.${subject},sui_address.eq.${subject}`)
+    .eq("stamp_id", "identity")
+    .in("status", ["submitted", "under_review"]);
+
+  const { count: pendingSessions } = await sb
+    .from("identity_review_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("sui_address", subject)
+    .eq("review_status", "pending");
+
+  if ((pendingDocs ?? 0) > 0 || (pendingSessions ?? 0) > 0) {
     return { status: "pending_review" };
+  }
+
+  if (verification.status === "pending" || verification.status === "in_progress") {
+    return { status: "none" };
   }
 
   if (verification.status !== "approved" || !verification.credential_jti) {

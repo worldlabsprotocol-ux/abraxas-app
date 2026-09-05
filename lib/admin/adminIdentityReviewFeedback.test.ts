@@ -12,13 +12,13 @@ import * as adminFetchModule from "@/lib/admin/adminFetch";
 const queueItem = {
   id: "doc_1",
   created_at: "2026-08-16T00:00:00.000Z",
-  user_email: "reviewer@example.com",
   sui_address: "0x1234567890abcdef1234567890abcdef12345678",
-  file_name: "passport.jpg",
-  storage_path: "captures/doc_1/front.jpg",
   status: "pending",
-  reviewer_note: null,
+  subject_label: "Subject 0x1234…5678",
+  partner_id: "good-trouble-cannabis",
+  policy_id: "good-trouble-retail-v1",
   legal_name: "Ada Lovelace",
+  user_email: "reviewer@example.com",
   capture_session_id: "sess_12345678",
   capture_complete: true,
   documents: [
@@ -68,7 +68,7 @@ describe("AdminIdentityPage review feedback", () => {
   it("shows approved success copy after confirm", async () => {
     mockIdentityApis();
     render(createElement(AdminIdentityPage));
-    await screen.findByText("Ada Lovelace");
+    await screen.findByText("Subject 0x1234…5678");
 
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText(/Reviewer reason/i), "Verified DOB from government ID");
@@ -84,7 +84,7 @@ describe("AdminIdentityPage review feedback", () => {
   it("disables resubmit while confirm dialog is open", async () => {
     mockIdentityApis();
     render(createElement(AdminIdentityPage));
-    await screen.findByText("Ada Lovelace");
+    await screen.findByText("Subject 0x1234…5678");
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Reject" }));
@@ -109,7 +109,7 @@ describe("AdminIdentityPage review feedback", () => {
     });
 
     render(createElement(AdminIdentityPage));
-    await screen.findByText("Ada Lovelace");
+    await screen.findByText("Subject 0x1234…5678");
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Resubmit" }));

@@ -22,6 +22,12 @@ import {
   finalizeAgeEvidenceLinkage,
   precheckAgeEvidenceLinkage,
 } from "@/lib/assurance/ageEvidenceLinkage";
+import { withPartnerHumanReviewEscalation } from "@/lib/idv/partnerCaptureReviewRouting";
+import {
+  createIdentityReviewSession,
+  findActivePendingReviewSession,
+  hashEvidenceBuffers,
+} from "@/lib/idv/identityReviewSession";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -74,8 +80,17 @@ function validateImageFile(file: File, label: string) {
 async function hasPendingIdentityReview(
   supabase: SupabaseClient,
   suiAddress: string,
+  partnerId?: string | null,
+  verificationRequestId?: string | null,
 ): Promise<boolean> {
   const normalized = normalizeSuiAddress(suiAddress);
+
+  const pendingSession = await findActivePendingReviewSession(supabase, {
+    suiAddress: normalized,
+    partnerId,
+    verificationRequestId,
+  });
+  if (pendingSession) return true;
 
   const { count: docCount } = await supabase
     .from("passport_documents")
@@ -84,21 +99,7 @@ async function hasPendingIdentityReview(
     .eq("stamp_id", "identity")
     .in("status", ["submitted", "under_review"]);
 
-  if ((docCount ?? 0) > 0) return true;
-
-  const { data: idv } = await supabase
-    .from("identity_verifications")
-    .select("identity_verification_status, credential_status, status")
-    .or(`wallet_address.eq.${normalized},sui_address.eq.${normalized}`)
-    .maybeSingle();
-
-  if (!idv) return false;
-
-  return (
-    idv.identity_verification_status === "submitted"
-    || idv.identity_verification_status === "in_progress"
-    || (idv.status === "pending" && idv.credential_status !== "active")
-  );
+  return (docCount ?? 0) > 0;
 }
 
 export async function POST(req: NextRequest) {
@@ -153,13 +154,6 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    if (await hasPendingIdentityReview(supabase, suiAddress)) {
-      return NextResponse.json({
-        error: "Identity verification is already pending review. We'll notify you when it's complete.",
-        already_pending: true,
-      }, { status: 409 });
-    }
-
     const { data: zkRow } = await supabase
       .from("sui_zklogin_identities")
       .select("email")
@@ -189,7 +183,16 @@ export async function POST(req: NextRequest) {
       verificationRequestId: formData.get("verification_request_id") as string | null,
     });
 
-    const assessment = await analyzeBiometricCapture({
+    const verificationRequestId = (formData.get("verification_request_id") as string | null)?.trim() || null;
+
+    if (await hasPendingIdentityReview(supabase, suiAddress, policyContext.partnerId, verificationRequestId)) {
+      return NextResponse.json({
+        error: "Identity verification is already pending review. We'll notify you when it's complete.",
+        already_pending: true,
+      }, { status: 409 });
+    }
+
+    const rawAssessment = await analyzeBiometricCapture({
       captureSessionId,
       suiAddress,
       idFrontBuffer: idBuffer,
@@ -197,6 +200,7 @@ export async function POST(req: NextRequest) {
       partnerId: policyContext.partnerId,
       policyRules: policyContext.policyRules,
     });
+    const assessment = withPartnerHumanReviewEscalation(rawAssessment, policyContext);
 
     await persistBiometricAssessment(assessment);
 
@@ -239,7 +243,7 @@ export async function POST(req: NextRequest) {
         stamp_id: "identity",
         file_name: idUpload.fileName,
         storage_path: idUpload.path,
-        status: "submitted",
+        status: "under_review",
         document_type: "id_front",
         capture_session_id: captureSessionId,
         legal_name: legalName,
@@ -250,12 +254,32 @@ export async function POST(req: NextRequest) {
         stamp_id: "identity",
         file_name: selfieUpload.fileName,
         storage_path: selfieUpload.path,
-        status: "submitted",
+        status: "under_review",
         document_type: "selfie",
         capture_session_id: captureSessionId,
         legal_name: legalName,
       },
     ];
+
+    const sessionResult = await createIdentityReviewSession({
+      captureSessionId,
+      suiAddress,
+      partnerId: policyContext.partnerId,
+      policyId: policyContext.policyId,
+      verificationRequestId,
+      engineDecision: assessment.decision,
+      evidenceContentHash: hashEvidenceBuffers(idBuffer, selfieBuffer),
+    }, supabase);
+
+    if (!sessionResult.ok) {
+      if (sessionResult.duplicate) {
+        return NextResponse.json({
+          error: "Identity verification is already pending review for this partner flow.",
+          already_pending: true,
+        }, { status: 409 });
+      }
+      return NextResponse.json({ error: sessionResult.error }, { status: 500 });
+    }
 
     const { data: inserted, error: insertErr } = await supabase
       .from("passport_documents")

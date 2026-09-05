@@ -13,6 +13,7 @@ import { adminFetch } from "@/lib/admin/adminFetch";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import { resolveIdentityReviewQueueTab } from "@/lib/admin/identityReviewQueueStates";
 import { buildBiometricSignalRows } from "@/lib/admin/biometricSignalRows";
+import { GOOD_TROUBLE_PARTNER_ID } from "@/lib/goodTrouble/constants";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -26,18 +27,20 @@ interface DocRow {
 interface QueueItem {
   id: string;
   created_at: string;
-  user_email: string;
   sui_address: string | null;
-  file_name: string;
-  storage_path: string;
   status: string;
-  reviewer_note: string | null;
-  legal_name?: string | null;
+  subject_label: string;
   capture_session_id?: string | null;
-  document_type?: string | null;
-  has_selfie?: boolean;
-  has_id_front?: boolean;
   capture_complete?: boolean;
+  partner_id?: string | null;
+  policy_id?: string | null;
+  verification_request_id?: string | null;
+  review_status?: string | null;
+  engine_decision?: string | null;
+  eligibility_result?: string | null;
+  raw_evidence_purged_at?: string | null;
+  user_email?: string;
+  legal_name?: string | null;
   documents?: DocRow[];
   biometric?: {
     face_match_score?: number;
@@ -179,6 +182,8 @@ export default function AdminIdentityPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [documentDobs, setDocumentDobs] = useState<Record<string, string>>({});
+  const [expandedDetail, setExpandedDetail] = useState<Record<string, boolean>>({});
+  const [partnerFilter, setPartnerFilter] = useState<"all" | "good_trouble">("all");
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const itemBusy = (id: string) =>
@@ -188,7 +193,13 @@ export default function AdminIdentityPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await adminFetch(`/api/admin/identity/queue?status=${encodeURIComponent(activeTab.queryStatus)}`);
+      const partnerParam = partnerFilter === "good_trouble"
+        ? `&partner_id=${encodeURIComponent(GOOD_TROUBLE_PARTNER_ID)}`
+        : "";
+      const detailParam = Object.values(expandedDetail).some(Boolean) ? "&detail=true" : "";
+      const res = await adminFetch(
+        `/api/admin/identity/queue?status=${encodeURIComponent(activeTab.queryStatus)}${partnerParam}${detailParam}`,
+      );
       const data = await res.json() as { items?: QueueItem[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load queue");
       setItems(data.items ?? []);
@@ -197,7 +208,7 @@ export default function AdminIdentityPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab.queryStatus]);
+  }, [activeTab.queryStatus, partnerFilter, expandedDetail]);
 
   useEffect(() => {
     void loadQueue();
@@ -255,10 +266,42 @@ export default function AdminIdentityPage() {
     requestConfirm({
       actionKey: action === "approve" ? "identity.approve" : "identity.reject",
       context: {
-        subjectLabel: item.legal_name ?? item.user_email,
+        subjectLabel: item.legal_name ?? item.subject_label,
         assuranceLevel: item.biometric?.assurance_level === "L3" ? "3" : "2",
       },
       onConfirmed: () => runReview(item, action),
+    });
+  }
+
+  async function purgeRawEvidence(item: QueueItem) {
+    if (!item.capture_session_id) return;
+    setActionId(item.id);
+    setError("");
+    try {
+      const res = await adminFetch("/api/admin/identity/purge-evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ capture_session_id: item.capture_session_id, force: true }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Purge failed");
+      setSuccess("Raw evidence purged. Decision record and credential remain.");
+      await loadQueue();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Purge failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  function promptPurge(item: QueueItem) {
+    requestConfirm({
+      actionKey: "identity.purge_evidence",
+      context: {
+        subjectLabel: item.subject_label,
+        assuranceLevel: "2",
+      },
+      onConfirmed: () => purgeRawEvidence(item),
     });
   }
 
@@ -272,7 +315,7 @@ export default function AdminIdentityPage() {
           Health: <code>/api/idv/independent/status</code>
         </p>
 
-        <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
           <button
             onClick={() => void loadQueue()}
             disabled={loading}
@@ -284,6 +327,21 @@ export default function AdminIdentityPage() {
           >
             {loading ? "Loading…" : "Refresh"}
           </button>
+          <label style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: 6 }}>
+            Partner
+            <select
+              value={partnerFilter}
+              onChange={e => setPartnerFilter(e.target.value as "all" | "good_trouble")}
+              style={{
+                padding: "0.35rem 0.5rem", borderRadius: 6,
+                border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.25)",
+                color: "#f0f0f0", fontFamily: FONT, fontSize: "0.72rem",
+              }}
+            >
+              <option value="all">All partners</option>
+              <option value="good_trouble">Good Trouble</option>
+            </select>
+          </label>
         </div>
 
         {error && (
@@ -316,13 +374,13 @@ export default function AdminIdentityPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
                   <div style={{ flex: "1 1 280px" }}>
                     <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700 }}>
-                      {item.legal_name ?? item.user_email}
+                      {item.subject_label}
                     </div>
-                    {item.legal_name && (
-                      <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
-                        {item.user_email}
-                      </div>
-                    )}
+                    <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 4 }}>
+                      {item.partner_id ? `Partner: ${item.partner_id}` : "Partner: (none)"}
+                      {item.policy_id ? ` · Policy: ${item.policy_id}` : ""}
+                      {item.verification_request_id ? ` · Flow: ${item.verification_request_id.slice(0, 8)}…` : ""}
+                    </div>
                     <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
                       {item.sui_address ? `${item.sui_address.slice(0, 10)}…${item.sui_address.slice(-6)}` : "No wallet — user must sign in"}
                     </div>
@@ -332,7 +390,30 @@ export default function AdminIdentityPage() {
                       {item.capture_session_id && (
                         <>{" · "}session {item.capture_session_id.slice(0, 8)}…</>
                       )}
+                      {item.raw_evidence_purged_at
+                        ? " · Raw evidence purged"
+                        : activeTab.id !== "pending" ? " · Raw evidence retained" : ""}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedDetail(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                        void loadQueue();
+                      }}
+                      style={{
+                        marginTop: 8, padding: "0.25rem 0.5rem", borderRadius: 4,
+                        border: "1px solid rgba(255,255,255,0.12)", background: "transparent",
+                        color: "#10B981", fontFamily: FONT, fontSize: "0.65rem", cursor: "pointer",
+                      }}
+                    >
+                      {expandedDetail[item.id] ? "Hide protected detail" : "Open protected review detail"}
+                    </button>
+                    {expandedDetail[item.id] && item.legal_name && (
+                      <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)", marginTop: 6 }}>
+                        Reviewer-only: {item.legal_name}
+                        {item.user_email ? ` · ${item.user_email}` : ""}
+                      </div>
+                    )}
                     <BiometricSignalsPanel item={item} />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-end", minWidth: 160 }}>
@@ -416,18 +497,40 @@ export default function AdminIdentityPage() {
                         </div>
                       </>
                     ) : (
-                      <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", textAlign: "right" }}>
-                        Status: {item.status}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-end" }}>
+                        <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", textAlign: "right" }}>
+                          Status: {item.status}
+                          {item.eligibility_result ? ` · ${item.eligibility_result}` : ""}
+                        </div>
+                        {!item.raw_evidence_purged_at && item.capture_session_id && (
+                          <button
+                            onClick={() => promptPurge(item)}
+                            disabled={itemBusy(item.id)}
+                            style={{
+                              padding: "0.45rem 0.85rem", borderRadius: 6,
+                              border: "1px solid rgba(251,191,36,0.45)", background: "transparent",
+                              color: "#FCD34D", fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Purge raw evidence
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {item.capture_session_id && (
+                {item.capture_session_id && expandedDetail[item.id] && !item.raw_evidence_purged_at && (
                   <div style={{ display: "flex", gap: "0.65rem", marginTop: "0.85rem", flexWrap: "wrap" }}>
                     <CapturePreview doc={idDoc(item)} label="Government ID" />
                     <CapturePreview doc={selfieDoc(item)} label="Selfie" />
                   </div>
+                )}
+                {item.raw_evidence_purged_at && (
+                  <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)", marginTop: 8 }}>
+                    Raw evidence purged — images unavailable. Decision record and credential remain.
+                  </p>
                 )}
 
                 {item.sui_address && (
