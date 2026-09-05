@@ -1,7 +1,7 @@
 // FILE: lib/policy/resolveEffectivePolicyRules.test.ts
 
 import { describe, expect, it } from "vitest";
-import { resolveEffectivePolicyRules } from "./resolveEffectivePolicyRules";
+import { resolveEffectivePolicyRules, resolvePolicyOverlayDecision } from "./resolveEffectivePolicyRules";
 import {
   GOOD_TROUBLE_RETAIL_V2_PENDING_RULES,
   PRODUCTION_PARTNER_POLICIES,
@@ -34,6 +34,20 @@ describe("resolveEffectivePolicyRules", () => {
       asPartnerPolicy(GOOD_TROUBLE_RETAIL_V2_PENDING_RULES, 2),
     );
     expect(effective).toEqual(GOOD_TROUBLE_RETAIL_V2_PENDING_RULES);
+  });
+
+  it("does not overlay when sandbox_only is false", () => {
+    const rules = { ...gtV1.rules, sandbox_only: false };
+    const decision = resolvePolicyOverlayDecision(asPartnerPolicy(rules));
+    expect(decision.overlay_applied).toBe(false);
+    expect(decision.effective_rules).toEqual(rules);
+  });
+
+  it("uses published registry after v2 publish — overlay ignored", () => {
+    const published = asPartnerPolicy(GOOD_TROUBLE_RETAIL_V2_PENDING_RULES, 2);
+    const decision = resolvePolicyOverlayDecision(published);
+    expect(decision.overlay_applied).toBe(false);
+    expect(decision.overlay_reason).toBe("published_registry");
   });
 
   it("does not overlay non-GT policies", () => {

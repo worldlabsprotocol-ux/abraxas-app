@@ -5,6 +5,11 @@ import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility";
+import {
+  AGE_EVIDENCE_TABLE,
+  isMissingRelationError,
+  type EvidenceStorageAvailability,
+} from "./evidenceStorage";
 
 export type AgeEvidenceProvider =
   | "abraxas_biometric"
@@ -84,11 +89,38 @@ export function deriveProviderDecisionFromDob(
   return "ineligible";
 }
 
+export async function checkAgeEvidenceStorageAvailability(): Promise<EvidenceStorageAvailability> {
+  const sb = getSupabase();
+  if (!sb) return { available: false, reason: "not_configured" };
+
+  const { error } = await sb.from(AGE_EVIDENCE_TABLE).select("id").limit(0);
+  if (!error) return { available: true };
+  if (isMissingRelationError(error.message)) {
+    return { available: false, reason: "table_missing" };
+  }
+  return { available: true };
+}
+
+export type AgeEvidenceRecordResult =
+  | { ok: true; id: string }
+  | { ok: false; error: string; storage_unavailable?: boolean };
+
 export async function createAgeEvidenceRecord(
   input: CreateAgeEvidenceInput,
-): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+): Promise<AgeEvidenceRecordResult> {
   const sb = getSupabase();
-  if (!sb) return { ok: false, error: "Supabase not configured" };
+  if (!sb) return { ok: false, error: "Supabase not configured", storage_unavailable: true };
+
+  const availability = await checkAgeEvidenceStorageAvailability();
+  if (!availability.available) {
+    return {
+      ok: false,
+      error: availability.reason === "table_missing"
+        ? "age_evidence_storage_unavailable"
+        : "Supabase not configured",
+      storage_unavailable: true,
+    };
+  }
 
   const subject = normalizeSuiAddress(input.subjectSuiAddress);
   const now = new Date().toISOString();
@@ -121,6 +153,9 @@ export async function createAgeEvidenceRecord(
     .single();
 
   if (error || !data) {
+    if (isMissingRelationError(error?.message)) {
+      return { ok: false, error: "age_evidence_storage_unavailable", storage_unavailable: true };
+    }
     return { ok: false, error: error?.message ?? "insert failed" };
   }
 
