@@ -16,6 +16,10 @@ import {
   precheckAgeEvidenceLinkage,
   resolveReviewPolicySandboxFlag,
 } from "@/lib/assurance/ageEvidenceLinkage";
+import {
+  eligibilityResultFromMinimumAge,
+  updateIdentityReviewSessionStatus,
+} from "@/lib/idv/identityReviewSession";
 import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility";
 
 export type AdminReviewAction = "approve" | "reject" | "request_resubmission";
@@ -325,6 +329,16 @@ export async function executeAdminReviewAction(
       engineVersion,
     });
 
+    if (sessionId) {
+      await updateIdentityReviewSessionStatus(sb, sessionId, {
+        reviewStatus: "approved",
+        eligibilityResult: eligibilityResultFromMinimumAge(minimumAge),
+        reviewerId: request.reviewerId,
+        reviewerCategory: "admin_allowlisted",
+        reasonCode: request.note?.trim() ? "reviewer_approved" : "approved",
+      });
+    }
+
     return {
       ok: true,
       action: request.action,
@@ -403,6 +417,16 @@ export async function executeAdminReviewAction(
     notes: request.note ?? null,
     engineVersion,
   });
+
+  if (sessionId) {
+    await updateIdentityReviewSessionStatus(sb, sessionId, {
+      reviewStatus: request.action === "reject" ? "rejected" : "expired",
+      eligibilityResult: null,
+      reviewerId: request.reviewerId,
+      reviewerCategory: "admin_allowlisted",
+      reasonCode: request.action === "reject" ? "reviewer_rejected" : "resubmission_requested",
+    });
+  }
 
   return {
     ok: true,

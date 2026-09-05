@@ -8,6 +8,7 @@ export type AdminConfirmRisk = "low" | "medium" | "high";
 export type AdminConfirmActionKey =
   | "identity.approve"
   | "identity.reject"
+  | "identity.purge_evidence"
   | "receipt.revoke"
   | "partner_key.revoke"
   | "partner_key.issue"
@@ -60,6 +61,18 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
     requireNote: false,
     noteOptional: true,
     notePlaceholder: "Rejection reason for audit log (optional)",
+    requireReasonCode: false,
+  },
+  "identity.purge_evidence": {
+    title: "Purge raw identity evidence?",
+    body:
+      "This permanently deletes temporary raw evidence (ID images, selfie, document fields) for {{subjectLabel}}. "
+      + "The minimized decision audit record and any issued reusable eligibility credential remain intact.",
+    confirmLabel: "Purge raw evidence",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
     requireReasonCode: false,
   },
   "receipt.revoke": {

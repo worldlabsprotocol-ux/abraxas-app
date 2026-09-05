@@ -5,6 +5,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  shouldUseProductionBrowserSessionAdminUi,
+  resolveRuntimeBrowserOrigin,
+} from "@/lib/admin/productionAdminSessionUi";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -12,6 +16,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [state, setState] = useState<"loading" | "denied" | "ok">("loading");
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
+  const [productionSessionOnly, setProductionSessionOnly] = useState(false);
 
   async function checkAccess() {
     const res = await fetch("/api/admin/access");
@@ -20,6 +25,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    setProductionSessionOnly(
+      shouldUseProductionBrowserSessionAdminUi(process.env, resolveRuntimeBrowserOrigin()),
+    );
     void checkAccess();
   }, []);
 
@@ -56,8 +64,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div style={{ maxWidth: 400, width: "100%", textAlign: "center" }}>
           <h1 style={{ fontFamily: FONT, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Admin access required</h1>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
-            Sign in with an authorized admin Google account, or enter the reviewer PIN.
+            {productionSessionOnly
+              ? "Sign in with an authorized admin Google account."
+              : "Sign in with an authorized admin Google account, or enter the reviewer PIN (non-production only)."}
           </p>
+          {!productionSessionOnly && (
           <form onSubmit={e => void submitPin(e)} style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
             <input
               type="password"
@@ -83,6 +94,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               Continue
             </button>
           </form>
+          )}
           <Link href="/" style={{ display: "inline-block", marginTop: "1rem", fontFamily: FONT, fontSize: "0.78rem", color: "#10B981" }}>
             ← Back to site
           </Link>
