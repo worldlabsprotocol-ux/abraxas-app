@@ -167,8 +167,8 @@ All routes: authenticated session, return-URL allowlist, rate limiting (partner-
 
 ## PR dependencies
 
-- **PR #257** — age evidence ledger, fail-closed linkage
-- **PR #258** — identity review queue, raw evidence purge (included on this branch; `origin/main` may lag until merge propagates)
+- **PR #257** — age evidence ledger, fail-closed linkage (merged)
+- **PR #258** — identity review queue, raw evidence purge (merged to `main`; migration 079)
 
 ## Remaining production / vendor / legal blockers
 
