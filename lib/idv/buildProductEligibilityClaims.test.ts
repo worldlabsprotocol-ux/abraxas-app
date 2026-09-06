@@ -40,4 +40,17 @@ describe("buildProductEligibilityClaimsForIssuance", () => {
     });
     expect(claims).toHaveLength(0);
   });
+
+  it("issues from authoritative age-band without DOB", () => {
+    const claims = buildProductEligibilityClaimsForIssuance({
+      subjectId: "0xabc",
+      jti: "urn:uuid:test",
+      authoritativeAgeBand: "over_21",
+      minimumAgeGate: 21,
+      expiresAt: EXPIRES,
+      evidenceReference: "provider:hash",
+    });
+    expect(claims).toHaveLength(1);
+    expect(claims[0].claim_value).toEqual({ outcome: "over_21" });
+  });
 });

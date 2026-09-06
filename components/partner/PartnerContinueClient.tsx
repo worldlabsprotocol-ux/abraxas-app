@@ -8,6 +8,7 @@ import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
+import { AgeAssuranceMethodChooser } from "@/components/partner/AgeAssuranceMethodChooser";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
@@ -45,12 +46,15 @@ function PartnerContinueInner() {
   const [starting, setStarting] = useState(false);
   const [bindLoading, setBindLoading] = useState(false);
   const [captureStarted, setCaptureStarted] = useState(false);
+  const [showIdFallback, setShowIdFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const verifyRequestId = searchParams.get("verify_request");
   const partnerId = searchParams.get("partner_id") ?? "";
   const policyId = searchParams.get("policy_id") ?? "";
   const returnPath = searchParams.get("return");
+  const ageAssuranceStatus = searchParams.get("age_assurance");
+  const decodedReturnUrl = returnPath ? decodeURIComponent(returnPath) : "";
 
   const {
     identityStatus,
@@ -96,10 +100,12 @@ function PartnerContinueInner() {
     if (credential && new Date(credential.expires_at) < new Date()) return "verification_expired";
     if (identityStatus === "pending") return "under_review";
     if (handoff.ready) return "age_confirmed";
+    if (ageAssuranceStatus === "failed") return "verification_could_not_confirm";
+    if (showIdFallback) return "id_upload_fallback";
     if (setup.walletBound && !setup.identityComplete) return "verify_age";
     if (returnPath && handoff.ready) return "return_to_partner";
     return "verify_age";
-  }, [suiAddress, credential, identityStatus, handoff.ready, returnPath, setup]);
+  }, [suiAddress, credential, identityStatus, handoff.ready, returnPath, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
 
@@ -153,6 +159,7 @@ function PartnerContinueInner() {
     if (!suiAddress) return;
     if (idvProvider === "manual") {
       setCaptureStarted(true);
+      setShowIdFallback(true);
       return;
     }
     setStarting(true);
@@ -248,34 +255,60 @@ function PartnerContinueInner() {
 
           {setup.walletBound && !setup.identityComplete && holderState !== "under_review" && (
             <div style={{ marginBottom: "1rem" }}>
-              <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 600 }}>
-                {holderCopy.title}
-              </p>
-              <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                {holderCopy.message}
-              </p>
-              {idvProvider === "manual" && captureStarted ? (
-                <AbraxasIdentityCapture
-                  email={email}
-                  suiAddress={suiAddress}
-                  pendingReview={identityStatus === "pending"}
-                  capturePolicy={{
-                    verificationRequestId: verifyRequestId,
-                    policyId,
-                    partnerId,
-                    minimumAge,
+              {!showIdFallback ? (
+                <AgeAssuranceMethodChooser
+                  partnerId={partnerId}
+                  policyId={policyId}
+                  partnerName={partnerName}
+                  returnUrl={decodedReturnUrl}
+                  verifyRequestId={verifyRequestId}
+                  minimumAge={minimumAge}
+                  ageAssuranceStatus={ageAssuranceStatus}
+                  onFallbackId={() => setShowIdFallback(true)}
+                  onTraditionalReturn={() => {
+                    if (decodedReturnUrl) window.location.href = decodedReturnUrl;
                   }}
-                  onSubmitted={() => void refresh()}
                 />
               ) : (
-                <Btn disabled={starting} onClick={() => void startIdentityVerification()}>
-                  {starting ? "Starting…" : holderCopy.action_label ?? "Continue verification"}
-                </Btn>
-              )}
-              {!veriffConfigured && idvProvider === "veriff" && (
-                <p style={{ marginTop: "0.5rem", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                  Verification is not available in this environment.
-                </p>
+                <>
+                  <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 600 }}>
+                    {holderCopy.title}
+                  </p>
+                  <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                    {holderCopy.message}
+                  </p>
+                  {idvProvider === "manual" && captureStarted ? (
+                    <AbraxasIdentityCapture
+                      email={email}
+                      suiAddress={suiAddress}
+                      pendingReview={identityStatus === "pending"}
+                      capturePolicy={{
+                        verificationRequestId: verifyRequestId,
+                        policyId,
+                        partnerId,
+                        minimumAge,
+                      }}
+                      onSubmitted={() => void refresh()}
+                    />
+                  ) : (
+                    <Btn disabled={starting} onClick={() => void startIdentityVerification()}>
+                      {starting ? "Starting…" : holderCopy.action_label ?? "Continue verification"}
+                    </Btn>
+                  )}
+                  {!veriffConfigured && idvProvider === "veriff" && (
+                    <p style={{ marginTop: "0.5rem", fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                      Verification is not available in this environment.
+                    </p>
+                  )}
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <Btn
+                      variant="secondary"
+                      onClick={() => setShowIdFallback(false)}
+                    >
+                      Back to verification options
+                    </Btn>
+                  </div>
+                </>
               )}
             </div>
           )}
