@@ -292,7 +292,12 @@ describe("Wix checkout boundary", () => {
 
   it("authoritative sandbox receipt can authorize checkout validation path", () => {
     expect(validateSandboxReceipt(authoritativeReceipt).verified).toBe(true);
-    expect(authorizeRegulatedCheckout({ receipt: authoritativeReceipt }).authorized).toBe(true);
+    expect(authorizeRegulatedCheckout({
+      receipt: authoritativeReceipt,
+      flowConsumed: true,
+      flowPurpose: "purchase",
+      flowPolicyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+    }).authorized).toBe(true);
   });
 
   it("browse payload validator accepts L0 browse receipt shape", () => {
