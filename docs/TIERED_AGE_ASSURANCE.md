@@ -148,6 +148,14 @@ Neither receipt type includes DOB, document images, or raw evidence.
 5. Complete authoritative verification — confirm `good-trouble-retail-v1` receipt.
 6. Wix: verify browse receipt passes UI validator but `checkoutAuthorization` rejects it for purchase.
 
+## Preview URLs (development / Vercel Preview only)
+
+| Route | Notes |
+|-------|-------|
+| `/partner/tiered-age-preview?purpose=browse&partner_id=good-trouble-cannabis&policy_id=good-trouble-browse-v1` | **Canonical browse preview** — real `SelfAttestationBrowseForm`, L0 only |
+| `/partner/release-gate-preview#browse_self_attest` | Release-gate screenshot harness (multi-state page; no `purpose=browse` query) |
+| `/partner/continue?purpose=browse&partner_id=good-trouble-cannabis&policy_id=good-trouble-browse-v1&verify_request=<id>&return=<url>` | Production integration path (requires signed-in holder + verification request) |
+
 ## Related docs
 
 - [PRIVACY_FIRST_AGE_ASSURANCE.md](./PRIVACY_FIRST_AGE_ASSURANCE.md) — provider-neutral tier-2 architecture
