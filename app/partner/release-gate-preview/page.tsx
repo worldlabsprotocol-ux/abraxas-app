@@ -20,14 +20,10 @@ const PREVIEW_STATES: PartnerHolderState[] = [
   "return_to_partner",
 ];
 
-function isPreviewGateAllowed(): boolean {
-  if (process.env.PARTNER_RELEASE_GATE_PREVIEW === "true") return true;
-  if (process.env.VERCEL_ENV === "preview") return true;
-  return process.env.NODE_ENV === "development";
-}
+import { isPartnerHolderPreviewAllowed } from "@/lib/partner/partnerPreviewGate";
 
 export default function PartnerReleaseGatePreviewPage() {
-  if (!isPreviewGateAllowed()) {
+  if (!isPartnerHolderPreviewAllowed()) {
     notFound();
   }
 

@@ -9,14 +9,10 @@ import {
 } from "@/lib/partner/partnerHolderCopy";
 import { Btn } from "@/components/redesign/ui";
 
-function isPreviewGateAllowed(): boolean {
-  if (process.env.PARTNER_RELEASE_GATE_PREVIEW === "true") return true;
-  if (process.env.VERCEL_ENV === "preview") return true;
-  return process.env.NODE_ENV === "development";
-}
+import { isPartnerHolderPreviewAllowed } from "@/lib/partner/partnerPreviewGate";
 
 export default function AgeAssurancePreviewPage() {
-  if (!isPreviewGateAllowed()) {
+  if (!isPartnerHolderPreviewAllowed()) {
     notFound();
   }
 
