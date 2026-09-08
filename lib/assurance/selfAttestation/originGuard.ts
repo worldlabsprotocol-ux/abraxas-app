@@ -2,21 +2,56 @@
 // CSRF/origin protection for self-attestation API.
 
 import type { NextRequest } from "next/server";
-import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
+import {
+  getPublicAppOriginFromRequest,
+  normalizePublicOrigin,
+} from "@/lib/app/publicAppOrigin";
+import { SITE_URL } from "@/lib/siteUrl";
+
+function resolveAllowedSelfAttestOrigin(req: NextRequest): string {
+  const effectiveOrigin = normalizePublicOrigin(getPublicAppOriginFromRequest(req));
+
+  if (process.env.VERCEL_ENV === "production") {
+    return normalizePublicOrigin(SITE_URL);
+  }
+
+  return effectiveOrigin;
+}
 
 export function assertSelfAttestOrigin(req: NextRequest): { ok: true } | { ok: false; code: string } {
-  const origin = req.headers.get("origin");
+  const originHeader = req.headers.get("origin");
   const referer = req.headers.get("referer");
-  const allowed = getPublicAppOrigin().replace(/\/$/, "");
+  const allowed = resolveAllowedSelfAttestOrigin(req);
 
-  if (origin) {
-    if (origin.replace(/\/$/, "") === allowed) return { ok: true };
+  if (originHeader === "null") {
     return { ok: false, code: "origin_not_allowed" };
   }
 
-  if (referer?.startsWith(`${allowed}/`)) return { ok: true };
+  if (originHeader) {
+    try {
+      if (normalizePublicOrigin(originHeader) === allowed) {
+        return { ok: true };
+      }
+    } catch {
+      return { ok: false, code: "origin_not_allowed" };
+    }
+    return { ok: false, code: "origin_not_allowed" };
+  }
 
-  if (process.env.NODE_ENV === "development") return { ok: true };
+  if (referer) {
+    try {
+      const refererOrigin = normalizePublicOrigin(new URL(referer).origin);
+      if (refererOrigin === allowed) {
+        return { ok: true };
+      }
+    } catch {
+      return { ok: false, code: "origin_not_allowed" };
+    }
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    return { ok: true };
+  }
 
   return { ok: false, code: "origin_required" };
 }
