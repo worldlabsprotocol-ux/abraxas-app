@@ -10,8 +10,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
 } from "@/lib/goodTrouble/constants";
 import { isTieredAgePreviewAllowed } from "@/lib/partner/partnerPreviewGate";
-
-export const TIERED_AGE_PREVIEW_PURPOSE = "browse" as const;
+import { TIERED_AGE_PREVIEW_PURPOSE } from "@/lib/partner/tieredAgePreview";
 
 export default function TieredAgePreviewPage() {
   if (!isTieredAgePreviewAllowed()) {
