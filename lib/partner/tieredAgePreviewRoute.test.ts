@@ -7,6 +7,7 @@ import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
 } from "@/lib/goodTrouble/constants";
+import { TIERED_AGE_PREVIEW_PURPOSE } from "@/lib/partner/tieredAgePreview";
 import {
   isPartnerHolderPreviewAllowed,
   isTieredAgePreviewAllowed,
@@ -80,7 +81,7 @@ describe("tiered age preview page contract", () => {
     expect(pageSource).toContain("SelfAttestationBrowseForm");
     expect(pageSource).toContain(`partnerId={GOOD_TROUBLE_PARTNER_ID}`);
     expect(pageSource).toContain(`policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}`);
-    expect(pageSource).toContain('TIERED_AGE_PREVIEW_PURPOSE = "browse"');
+    expect(pageSource).toContain(`purpose={TIERED_AGE_PREVIEW_PURPOSE}`);
     expect(GOOD_TROUBLE_PARTNER_ID).toBe("good-trouble-cannabis");
     expect(GOOD_TROUBLE_BROWSE_POLICY_ID).toBe("good-trouble-browse-v1");
   });
