@@ -1,6 +1,6 @@
 // FILE: lib/partner/tieredAgePreviewRoute.test.ts
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -13,29 +13,12 @@ import {
   isTieredAgePreviewAllowed,
 } from "@/lib/partner/partnerPreviewGate";
 
-const ENV_KEYS = [
-  "NODE_ENV",
-  "VERCEL_ENV",
-  "PARTNER_RELEASE_GATE_PREVIEW",
-] as const;
-
-const savedEnv: Partial<Record<(typeof ENV_KEYS)[number], string | undefined>> = {};
-
 function clearPreviewEnv() {
-  for (const key of ENV_KEYS) {
-    savedEnv[key] = process.env[key];
-    delete process.env[key];
-  }
+  vi.unstubAllEnvs();
 }
 
 function restorePreviewEnv() {
-  for (const key of ENV_KEYS) {
-    if (savedEnv[key] === undefined) {
-      delete process.env[key];
-    } else {
-      process.env[key] = savedEnv[key];
-    }
-  }
+  vi.unstubAllEnvs();
 }
 
 describe("tiered age preview route guard", () => {
@@ -43,29 +26,29 @@ describe("tiered age preview route guard", () => {
   afterEach(() => restorePreviewEnv());
 
   it("is unavailable in Production even when PARTNER_RELEASE_GATE_PREVIEW is set", () => {
-    process.env.VERCEL_ENV = "production";
-    process.env.NODE_ENV = "production";
-    process.env.PARTNER_RELEASE_GATE_PREVIEW = "true";
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PARTNER_RELEASE_GATE_PREVIEW", "true");
 
     expect(isTieredAgePreviewAllowed()).toBe(false);
   });
 
   it("allows Vercel Preview deployments", () => {
-    process.env.VERCEL_ENV = "preview";
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("NODE_ENV", "production");
 
     expect(isTieredAgePreviewAllowed()).toBe(true);
   });
 
   it("allows local development", () => {
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
 
     expect(isTieredAgePreviewAllowed()).toBe(true);
   });
 
   it("blocks unknown hosted environments without preview or development flags", () => {
-    process.env.NODE_ENV = "production";
-    process.env.VERCEL_ENV = "staging";
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "staging");
 
     expect(isTieredAgePreviewAllowed()).toBe(false);
   });
@@ -99,12 +82,12 @@ describe("tiered age preview page contract", () => {
 });
 
 describe("partner holder preview gate parity", () => {
-  beforeEach(() => clearPreviewEnv());
-  afterEach(() => restorePreviewEnv());
+  beforeEach(() => vi.unstubAllEnvs());
+  afterEach(() => vi.unstubAllEnvs());
 
   it("also blocks production for release-gate preview routes", () => {
-    process.env.VERCEL_ENV = "production";
-    process.env.PARTNER_RELEASE_GATE_PREVIEW = "true";
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("PARTNER_RELEASE_GATE_PREVIEW", "true");
 
     expect(isPartnerHolderPreviewAllowed()).toBe(false);
   });
