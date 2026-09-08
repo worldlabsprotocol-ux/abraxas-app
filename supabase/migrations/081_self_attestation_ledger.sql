@@ -1,5 +1,10 @@
 -- 081_self_attestation_ledger.sql
 -- Tier 1 self-attestation ledger (age-band only — no DOB persisted).
+--
+-- Partial-application safe: every statement is idempotent (IF NOT EXISTS DDL,
+-- idempotent grants/RLS, browse policy seed uses ON CONFLICT (id, version) DO NOTHING).
+-- Safe to re-run after a failed policy INSERT on environments that already created
+-- self_attestation_ledger from an earlier attempt.
 
 create table if not exists public.self_attestation_ledger (
   id                  uuid        primary key default gen_random_uuid(),
@@ -53,11 +58,7 @@ values (
   }'::jsonb,
   'active'
 )
-on conflict (id) do update set
-  name = excluded.name,
-  rules_json = excluded.rules_json,
-  status = excluded.status,
-  partner_id = excluded.partner_id;
+on conflict (id, version) do nothing;
 
 do $$
 begin

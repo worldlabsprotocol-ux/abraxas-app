@@ -45,7 +45,12 @@ describe("backend claim contract audit", () => {
   it("every required claim has storage and evaluation wiring", () => {
     for (const claimType of requiredClaims) {
       const row = CLAIM_CONTRACT[claimType];
-      expect(row.storedIn, claimType).toContain("credential_claims");
+      const storedInCredentialClaims = row.storedIn.includes("credential_claims");
+      const storedInSelfAttestationLedger = row.storedIn.includes("self_attestation_ledger");
+      expect(
+        storedInCredentialClaims || storedInSelfAttestationLedger,
+        claimType,
+      ).toBe(true);
       expect(row.evaluatedBy, claimType).toContain("evaluatePolicyRules");
       expect(row.resolvedBy, claimType).toBeTruthy();
     }

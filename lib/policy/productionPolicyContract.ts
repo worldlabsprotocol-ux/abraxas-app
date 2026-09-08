@@ -188,6 +188,7 @@ export type ClaimIssuanceSource =
   | "veriffApprovedClaims"
   | "walletBindingClaim_zklogin"
   | "walletBindingClaim_siwe"
+  | "submitSelfAttestation"
   | "not_implemented";
 
 export interface ClaimContractRow {
@@ -329,7 +330,7 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
   },
   self_attested_age_band: {
     claimType: "self_attested_age_band",
-    issuedBy: ["not_implemented"],
+    issuedBy: ["submitSelfAttestation"],
     storedIn: "self_attestation_ledger (age_band only)",
     resolvedBy: "getActiveSelfAttestations → ledgerRowsToClaims",
     evaluatedBy: "evaluatePolicyRules (browse_access_only policies only)",
