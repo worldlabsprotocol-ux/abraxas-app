@@ -235,6 +235,10 @@ describe("migration 081 self_attestation_ledger SQL parity", () => {
       resolve(process.cwd(), "scripts/ci/apply-identity-review-prerequisite-migrations.sh"),
       "utf8",
     );
+    const bootstrap = readFileSync(
+      resolve(process.cwd(), "scripts/ci/migration-076-sequential-bootstrap.sql"),
+      "utf8",
+    );
     const idx050 = main.indexOf("050_identity_review_workflow.sql");
     const idxPrereq = main.indexOf("apply-identity-review-prerequisite-migrations.sh");
     const idx021 = prerequisites.indexOf("021_passport_documents_manual_idv.sql");
@@ -246,6 +250,9 @@ describe("migration 081 self_attestation_ledger SQL parity", () => {
       "apply-identity-review-prerequisite-migrations.sh must apply 021_passport_documents_manual_idv.sql",
     ).toBeGreaterThan(-1);
     expect(prerequisites).toContain("parity prerequisite missing: public.passport_documents");
+    expect(bootstrap).toContain("CREATE ROLE service_role");
+    expect(bootstrap).toContain("CREATE ROLE anon");
+    expect(bootstrap).toContain("CREATE ROLE authenticated");
   });
 });
 
