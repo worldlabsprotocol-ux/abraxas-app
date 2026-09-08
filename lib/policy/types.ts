@@ -51,6 +51,10 @@ export interface PartnerPolicyRules {
   minimum_age?: number;
   /** Action label for server-side verify (e.g. regulated_retail_purchase). */
   product_eligibility_action?: string;
+  /** Tier 1 browse-only policy — accepts L0 self-attestation only. */
+  browse_access_only?: boolean;
+  allowed_purposes?: string[];
+  minimum_assurance_cap?: "L0";
   account_required?: boolean;
   consent_required?: boolean;
 }

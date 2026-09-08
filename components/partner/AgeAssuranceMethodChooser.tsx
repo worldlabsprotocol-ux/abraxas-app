@@ -11,6 +11,8 @@ import {
   type PartnerHolderState,
 } from "@/lib/partner/partnerHolderCopy";
 import type { AgeAssuranceProviderPublicMeta } from "@/lib/assurance/ageProviders/types";
+import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 
 export interface AgeAssuranceMethodChooserProps {
   partnerId: string;
@@ -22,6 +24,9 @@ export interface AgeAssuranceMethodChooserProps {
   onFallbackId: () => void;
   onTraditionalReturn: () => void;
   ageAssuranceStatus?: string | null;
+  /** browse = tier 1 self-attest; checkout = tier 2 authoritative verification */
+  flowTier?: "browse" | "checkout";
+  browsePolicyId?: string;
 }
 
 type ProviderListResponse = {
@@ -40,6 +45,8 @@ export function AgeAssuranceMethodChooser({
   onFallbackId,
   onTraditionalReturn,
   ageAssuranceStatus,
+  flowTier = "checkout",
+  browsePolicyId = GOOD_TROUBLE_BROWSE_POLICY_ID,
 }: AgeAssuranceMethodChooserProps) {
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState<AgeAssuranceProviderPublicMeta[]>([]);
@@ -60,7 +67,24 @@ export function AgeAssuranceMethodChooser({
           ? "choose_private_method"
           : "provider_unavailable";
 
-  const copy = resolvePartnerHolderPresentation(holderState, partnerName);
+  const checkoutCopy = resolvePartnerHolderPresentation(
+    flowTier === "checkout" ? "verify_purchase_eligibility" : holderState,
+    partnerName,
+  );
+  const copy = flowTier === "checkout"
+    ? checkoutCopy
+    : resolvePartnerHolderPresentation(holderState, partnerName);
+
+  if (flowTier === "browse") {
+    return (
+      <SelfAttestationBrowseForm
+        partnerId={partnerId}
+        policyId={browsePolicyId}
+        partnerName={partnerName}
+        returnUrl={returnUrl}
+      />
+    );
+  }
 
   const loadProviders = useCallback(async () => {
     setLoading(true);
@@ -159,6 +183,8 @@ export function AgeAssuranceMethodChooser({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{checkoutCopy.title}</p>
+      <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.6 }}>{checkoutCopy.message}</p>
       <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
         {privacy.auth_not_age}
       </p>

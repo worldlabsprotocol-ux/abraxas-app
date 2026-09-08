@@ -10,6 +10,10 @@ export const PARTNER_ID =
 export const POLICY_ID =
   "good-trouble-retail-v1";
 
+/** Tier 1 browse policy — L0 self-attestation only (not purchase). */
+export const BROWSE_POLICY_ID =
+  "good-trouble-browse-v1";
+
 export const RETURN_URL_BASE =
   "https://www.goodtroublecanna.com/age-verification-result";
 

@@ -10,6 +10,10 @@ export type PartnerHolderState =
   | "verification_in_progress"
   | "verification_could_not_confirm"
   | "verify_age"
+  | "verify_purchase_eligibility"
+  | "browse_self_attest"
+  | "browse_access_confirmed"
+  | "browse_under_21"
   | "id_upload_fallback"
   | "under_review"
   | "age_confirmed"
@@ -76,6 +80,31 @@ const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">>
     message: "This partner requires age verification. Select the option that works best for you.",
     action_label: null,
     privacy_note: PRIVACY_NOTES.auth_not_age,
+  },
+  verify_purchase_eligibility: {
+    title: "Verify eligibility for purchase",
+    message:
+      "Your earlier date-of-birth entry was self-attestation only. An authoritative verification method is now required. The partner receives only the eligibility result. The merchant may still require identification at purchase or delivery.",
+    action_label: null,
+    privacy_note: PRIVACY_NOTES.partner_minimal,
+  },
+  browse_self_attest: {
+    title: "Continue browsing",
+    message:
+      "Enter your date of birth to continue browsing. This is a self-attestation and does not complete purchase eligibility verification. Your full date of birth will not be retained.",
+    action_label: "Continue browsing",
+  },
+  browse_access_confirmed: {
+    title: "Browsing access confirmed",
+    message:
+      "You may continue browsing. Checkout may require stronger verification.",
+    action_label: "Return to partner",
+  },
+  browse_under_21: {
+    title: "Browsing access not available",
+    message:
+      "You must be 21 or older to browse this site. Regulated purchases remain unavailable.",
+    action_label: "Return to partner",
   },
   id_upload_fallback: {
     title: "Verify another way",

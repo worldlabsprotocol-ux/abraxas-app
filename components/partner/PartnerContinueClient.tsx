@@ -23,7 +23,7 @@ import {
   resolvePartnerHolderPresentation,
   type PartnerHolderState,
 } from "@/lib/partner/partnerHolderCopy";
-import { GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_RETAIL_POLICY_ID, GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
 import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import { Btn } from "@/components/redesign/ui";
@@ -54,7 +54,12 @@ function PartnerContinueInner() {
   const policyId = searchParams.get("policy_id") ?? "";
   const returnPath = searchParams.get("return");
   const ageAssuranceStatus = searchParams.get("age_assurance");
+  const purposeParam = searchParams.get("purpose");
   const decodedReturnUrl = returnPath ? decodeURIComponent(returnPath) : "";
+
+  const isBrowseFlow =
+    purposeParam === "browse" || policyId === GOOD_TROUBLE_BROWSE_POLICY_ID;
+  const flowTier: "browse" | "checkout" = isBrowseFlow ? "browse" : "checkout";
 
   const {
     identityStatus,
@@ -264,6 +269,8 @@ function PartnerContinueInner() {
                   verifyRequestId={verifyRequestId}
                   minimumAge={minimumAge}
                   ageAssuranceStatus={ageAssuranceStatus}
+                  flowTier={flowTier}
+                  browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
                   onFallbackId={() => setShowIdFallback(true)}
                   onTraditionalReturn={() => {
                     if (decodedReturnUrl) window.location.href = decodedReturnUrl;

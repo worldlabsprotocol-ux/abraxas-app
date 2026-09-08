@@ -8,6 +8,9 @@ import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { resolveEffectivePolicyRules } from "@/lib/policy/resolveEffectivePolicyRules";
 import { loadPolicyTrustContext } from "@/lib/trust/loadPolicyTrustContext";
+import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import { getActiveSelfAttestations } from "@/lib/assurance/selfAttestation/selfAttestationLedger";
+import { ledgerRowsToClaims } from "@/lib/assurance/selfAttestation/selfAttestationClaims";
 import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import type { PartnerPolicy, PolicyEvaluationResult } from "@/lib/policy/types";
 
@@ -32,20 +35,33 @@ export async function evaluatePolicyForSubject(input: {
 
   const subject = normalizeSuiAddress(input.suiAddress);
   const claims = await getActiveClaims(subject);
-  const residency = claims.find(c => c.claim_type === "residency_country")?.claim_value?.country as string | undefined;
+
+  const effectiveRules = resolveEffectivePolicyRules(policy);
+  let mergedClaims = [...claims];
+
+  if (isBrowseAccessPolicy(effectiveRules)) {
+    const rows = await getActiveSelfAttestations({
+      holderRef: subject,
+      partnerId: input.partnerId,
+      policyId: policy.id,
+      purpose: "browse",
+    });
+    mergedClaims = [...mergedClaims, ...ledgerRowsToClaims(rows)];
+  }
+
+  const residency = mergedClaims.find(c => c.claim_type === "residency_country")?.claim_value?.country as string | undefined;
   const trustContext = await loadPolicyTrustContext({
     partnerId: input.partnerId,
     policyId: policy.id,
     jurisdiction: residency ?? claims.find(c => c.jurisdiction)?.jurisdiction,
   });
 
-  const effectiveRules = resolveEffectivePolicyRules(policy);
-  const evaluation = evaluatePolicyRules(effectiveRules, claims, {
+  const evaluation = evaluatePolicyRules(effectiveRules, mergedClaims, {
     jurisdiction: trustContext.jurisdiction,
     partnerId: input.partnerId,
     policyId: policy.id,
     trustRulesByClaimType: trustContext.trustRulesByClaimType,
   });
 
-  return { policy, evaluation, claims };
+  return { policy, evaluation, claims: mergedClaims };
 }

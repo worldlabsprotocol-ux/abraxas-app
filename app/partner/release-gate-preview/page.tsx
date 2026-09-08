@@ -8,8 +8,13 @@ import {
   type PartnerHolderState,
 } from "@/lib/partner/partnerHolderCopy";
 import { Btn } from "@/components/redesign/ui";
+import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID, GOOD_TROUBLE_PARTNER_ID } from "@/lib/goodTrouble/constants";
 
 const PREVIEW_STATES: PartnerHolderState[] = [
+  "browse_self_attest",
+  "browse_access_confirmed",
+  "verify_purchase_eligibility",
   "under_review",
   "age_confirmed",
   "return_to_partner",
@@ -43,6 +48,14 @@ export default function PartnerReleaseGatePreviewPage() {
             >
               <h2 style={{ margin: "0 0 0.5rem", fontSize: "1rem" }}>{copy.title}</h2>
               <p style={{ margin: "0 0 1rem", lineHeight: 1.6 }}>{copy.message}</p>
+              {state === "browse_self_attest" && (
+                <SelfAttestationBrowseForm
+                  partnerId={GOOD_TROUBLE_PARTNER_ID}
+                  policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
+                  partnerName={partnerName}
+                  returnUrl="https://www.goodtroublecanna.com"
+                />
+              )}
               {state === "return_to_partner" && (
                 <Btn variant="secondary">Return to {partnerName}</Btn>
               )}
