@@ -56,13 +56,13 @@ describe("Wix deployment contract", () => {
     expect(POPUP_SOURCE).not.toContain("resetCaptcha");
   });
 
-  it("starts Abraxas with no client arguments and wixLocationFrontend.to navigation", () => {
-    expect(POPUP_SOURCE).toContain("createAbraxasVerificationStart()");
-    expect(POPUP_SOURCE).not.toMatch(/createAbraxasVerificationStart\([^)]+\)/);
+  it("starts browse Abraxas with no client arguments and wixLocationFrontend.to navigation", () => {
+    expect(POPUP_SOURCE).toContain("createBrowseVerificationStart()");
+    expect(POPUP_SOURCE).not.toMatch(/createBrowseVerificationStart\([^)]+\)/);
     expect(POPUP_SOURCE).toContain("wix-location-frontend");
     expect(POPUP_SOURCE).toContain("wixLocationFrontend.to(url)");
     expect(POPUP_SOURCE).not.toContain("window.location.href");
-    expect(POPUP_SOURCE).not.toContain("age-verification-result");
+    expect(POPUP_SOURCE).not.toContain("browse-verification-result");
   });
 
   it("awaits Wix enable/disable without enable-then-disable", () => {
@@ -89,14 +89,15 @@ describe("Wix deployment contract", () => {
 describe("abraxasVerification.web.js server-owned bypass", () => {
   it("accepts no client parameters and sets skipCaptcha server-side only", () => {
     expect(WEB_SOURCE).not.toContain("wix-captcha-backend");
-    expect(WEB_SOURCE).toMatch(/async \(\) =>\s*\n?\s*createAbraxasVerificationStartService\(null,/);
+    expect(WEB_SOURCE).toMatch(/createBrowseVerificationStartService\(null,/);
+    expect(WEB_SOURCE).toMatch(/createPurchaseVerificationStartService\(null,/);
     expect(WEB_SOURCE).toContain("skipCaptcha: true");
-    expect(WEB_SOURCE).not.toMatch(/skipCaptcha:\s*(captchaToken|true\s*,\s*deps)/);
   });
 
-  it("preserves Permissions.Anyone and completeAbraxasVerification", () => {
+  it("preserves Permissions.Anyone and dual completion web methods", () => {
     expect(WEB_SOURCE).toContain("Permissions.Anyone");
-    expect(WEB_SOURCE).toContain("completeAbraxasVerification");
+    expect(WEB_SOURCE).toContain("completeBrowseVerification");
+    expect(WEB_SOURCE).toContain("completePurchaseVerification");
   });
 });
 

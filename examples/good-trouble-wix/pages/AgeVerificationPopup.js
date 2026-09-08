@@ -8,11 +8,11 @@
 // #abraxasButton
 // #abraxasStatusText
 
-import { createAbraxasVerificationStart } from "backend/abraxasVerification.web";
+import { createBrowseVerificationStart } from "backend/abraxasVerification.web";
 
 import {
-  VERIFIER_STORAGE_PREFIX,
-  RETURN_DESTINATION_STORAGE_KEY,
+  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
+  BROWSE_VERIFIER_STORAGE_PREFIX,
 } from "public/abraxasClientConstants";
 
 import wixLocationFrontend from "wix-location-frontend";
@@ -73,7 +73,7 @@ $w.onReady(() => {
           },
 
           startAbraxasVerification: () =>
-            createAbraxasVerificationStart(),
+            createBrowseVerificationStart(),
 
           sessionStorageAvailable,
 
@@ -104,7 +104,7 @@ $w.onReady(() => {
                   ) || "/";
 
               session.setItem(
-                RETURN_DESTINATION_STORAGE_KEY,
+                BROWSE_RETURN_DESTINATION_STORAGE_KEY,
                 path
               );
             } catch {
@@ -206,5 +206,5 @@ function sessionStorageAvailable() {
 }
 
 function verifierStorageKey(flowId) {
-  return `${VERIFIER_STORAGE_PREFIX}${flowId}`;
+  return `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`;
 }

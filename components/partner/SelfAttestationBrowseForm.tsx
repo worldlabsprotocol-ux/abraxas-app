@@ -84,6 +84,8 @@ export function SelfAttestationBrowseForm({
       const data = await res.json() as {
         ok?: boolean;
         age_band?: "over_21" | "under_21";
+        browse_receipt?: string;
+        browse_receipt_id?: string;
         code?: string;
       };
 
@@ -100,8 +102,25 @@ export function SelfAttestationBrowseForm({
         return;
       }
 
-      setResult({ ok: true, age_band: "over_21" });
-      onConfirmed?.();
+      if (data.age_band === "over_21") {
+        setResult({ ok: true, age_band: "over_21" });
+        onConfirmed?.();
+        if (returnUrl && data.browse_receipt) {
+          try {
+            const target = new URL(returnUrl);
+            target.searchParams.set("browse_receipt", data.browse_receipt);
+            if (data.browse_receipt_id) {
+              target.searchParams.set("browse_receipt_id", data.browse_receipt_id);
+            }
+            target.searchParams.set("purpose", "browse");
+            target.searchParams.set("policy_id", policyId);
+            window.location.replace(target.toString());
+          } catch {
+            // Fall through to success UI if return URL is malformed.
+          }
+        }
+        return;
+      }
     } catch {
       clearFields();
       setError("We could not confirm browsing access. Try again.");

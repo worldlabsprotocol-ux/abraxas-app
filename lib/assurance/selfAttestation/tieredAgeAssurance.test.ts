@@ -278,7 +278,7 @@ describe("Wix checkout boundary", () => {
   });
 
   it("sessionStorage pilot flag fails checkout", () => {
-    expect(authorizeRegulatedCheckout({ sessionStoragePilotFlag: "1" }).authorized).toBe(false);
+    expect(authorizeRegulatedCheckout({ sessionStoragePurchaseFlag: "1" }).authorized).toBe(false);
   });
 
   it("self-attested browse-only fails checkout", () => {

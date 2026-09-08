@@ -86,7 +86,19 @@ Regulated flows show **“Verify eligibility for purchase”** with method order
 - Self-attested claims
 - Client-controlled query parameters
 
-See `examples/good-trouble-wix/backend/checkoutAuthorization.js`.
+## Wix integration (dual lifecycles)
+
+| Lifecycle | Policy | Purpose | Callback | Verifier prefix | UI state |
+|-----------|--------|---------|----------|-----------------|----------|
+| Browse | `good-trouble-browse-v1` | `browse` | `/browse-verification-result?gtb=` | `abraxas_gt_browse_verifier_` | `good_trouble_browse_access_l0` |
+| Purchase | `good-trouble-retail-v1` | `purchase` | `/age-verification-result?gtv=` | `abraxas_gt_purchase_verifier_` | `good_trouble_purchase_verified_pilot` (UI only) |
+
+- Age popup uses **browse** start (`createBrowseVerificationStart`)
+- Checkout uses **purchase** start (`createPurchaseVerificationStart` via `PurchaseVerificationEntry.js`)
+- `BROWSE_ACCESS_STORAGE_KEY` may dismiss the age popup but is **never** accepted by `authorizePurchaseEligibility`
+- Purchase requires server-validated, consumed, partner-bound L2+ receipt (`purchaseEligibilityAuthorization.js`)
+
+See `examples/good-trouble-wix/backend/tieredLifecycleSecurity.test.js`.
 
 ## Receipts
 

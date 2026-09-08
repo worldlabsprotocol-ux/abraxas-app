@@ -7,13 +7,13 @@
 // Optional element ID:
 // #restartAbraxasButton
 
-import { completeAbraxasVerification } from "backend/abraxasVerification.web";
+import { completePurchaseVerification } from "backend/abraxasVerification.web";
 
 import {
   GTV_PARAM,
-  PILOT_VERIFIED_SESSION_FLAG,
-  RETURN_DESTINATION_STORAGE_KEY,
-  VERIFIER_STORAGE_PREFIX,
+  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+  PURCHASE_VERIFIER_STORAGE_PREFIX,
 } from "public/abraxasClientConstants";
 
 import wixLocation from "wix-location";
@@ -109,7 +109,7 @@ function sessionStorageAvailable() {
 }
 
 function verifierStorageKey(flowId) {
-  return `${VERIFIER_STORAGE_PREFIX}${flowId}`;
+  return `${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`;
 }
 
 function parseAllowlistedCallbackParams() {
@@ -149,10 +149,10 @@ function clearVerifier(flowId) {
  * as authoritative proof and does not independently authorize
  * regulated purchases or other restricted activity.
  */
-function setPilotVerifiedState() {
+function setPurchaseVerifiedState() {
   try {
     session.setItem(
-      PILOT_VERIFIED_SESSION_FLAG,
+      PURCHASE_VERIFIED_SESSION_FLAG,
       "1"
     );
   } catch {
@@ -164,11 +164,11 @@ function restoreReturnDestination() {
   try {
     const destination =
       session.getItem(
-        RETURN_DESTINATION_STORAGE_KEY
+        PURCHASE_RETURN_DESTINATION_STORAGE_KEY
       );
 
     session.removeItem(
-      RETURN_DESTINATION_STORAGE_KEY
+      PURCHASE_RETURN_DESTINATION_STORAGE_KEY
     );
 
     if (
@@ -256,15 +256,15 @@ async function handleCallback() {
 
   try {
     const result =
-      await completeAbraxasVerification(
+      await completePurchaseVerification(
         receiptId,
         flowId,
         verifier
       );
 
-    if (result?.verified === true) {
+    if (result?.verified === true && result?.purpose === "purchase") {
       clearVerifier(flowId);
-      setPilotVerifiedState();
+      setPurchaseVerifiedState();
 
       setStatus(
         SUCCESS_MESSAGE

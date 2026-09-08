@@ -1,32 +1,38 @@
 // FILE: examples/good-trouble-wix/backend/abraxasVerification.web.js
-// Wix Velo web methods — Permissions.Anyone; Abraxas Passport is the visible gate.
+// Wix Velo web methods — separate browse (L0) and purchase (L2+) lifecycles.
 
 import { Permissions, webMethod } from "wix-web-module";
 import {
-  completeAbraxasVerificationService,
-  createAbraxasVerificationStartService,
+  completeBrowseVerificationService,
+  completePurchaseVerificationService,
+  createBrowseVerificationStartService,
+  createPurchaseVerificationStartService,
 } from "./abraxasVerificationService.js";
 
-/**
- * Start Abraxas verification — no client parameters.
- * Server-owned CAPTCHA bypass; capacity and lifecycle controls protect the endpoint.
- */
-export const createAbraxasVerificationStart = webMethod(
+export const createBrowseVerificationStart = webMethod(
   Permissions.Anyone,
-  async () =>
-    createAbraxasVerificationStartService(null, {
-      skipCaptcha: true,
-    }),
+  async () => createBrowseVerificationStartService(null, { skipCaptcha: true }),
 );
 
-/**
- * Complete Abraxas callback — PKCE verifier required from sessionStorage.
- */
-export const completeAbraxasVerification = webMethod(
+export const createPurchaseVerificationStart = webMethod(
   Permissions.Anyone,
-  async (receiptId, flowId, verifier) => completeAbraxasVerificationService(
-    receiptId,
-    flowId,
-    verifier,
-  ),
+  async () => createPurchaseVerificationStartService(null, { skipCaptcha: true }),
 );
+
+/** @deprecated Use createPurchaseVerificationStart for regulated purchase flows. */
+export const createAbraxasVerificationStart = createPurchaseVerificationStart;
+
+export const completeBrowseVerification = webMethod(
+  Permissions.Anyone,
+  async (browseReceipt, flowId, verifier) =>
+    completeBrowseVerificationService(browseReceipt, flowId, verifier),
+);
+
+export const completePurchaseVerification = webMethod(
+  Permissions.Anyone,
+  async (receiptId, flowId, verifier) =>
+    completePurchaseVerificationService(receiptId, flowId, verifier),
+);
+
+/** @deprecated Use completePurchaseVerification */
+export const completeAbraxasVerification = completePurchaseVerification;
