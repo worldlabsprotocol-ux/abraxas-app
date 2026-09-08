@@ -47,6 +47,33 @@ function normalizeOrigin(origin: string): string {
   return origin.replace(/\/$/, "");
 }
 
+/**
+ * Normalize a browser or configured origin for exact comparison:
+ * lowercase hostname, canonical scheme, strip default ports.
+ */
+export function normalizePublicOrigin(origin: string): string {
+  const trimmed = origin.trim();
+  if (!trimmed || trimmed === "null") {
+    throw new Error("invalid origin");
+  }
+
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  const url = new URL(withScheme);
+  const protocol = url.protocol.toLowerCase();
+  const hostname = url.hostname.toLowerCase();
+  const port = url.port;
+  const isDefaultPort =
+    (protocol === "https:" && (port === "" || port === "443"))
+    || (protocol === "http:" && (port === "" || port === "80"));
+
+  if (isDefaultPort) {
+    return `${protocol}//${hostname}`;
+  }
+  return `${protocol}//${hostname}:${port}`;
+}
+
 /** Configured browser-facing origins we may reflect from an incoming request host. */
 function getTrustedPublicAppOrigins(): string[] {
   const origins: string[] = [SITE_URL];
