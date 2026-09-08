@@ -84,12 +84,49 @@ function getTrustedPublicAppOrigins(): string[] {
   const fromIssuer = process.env.ABRAXAS_ISSUER_URL?.trim();
   if (fromIssuer) origins.push(normalizeOrigin(fromIssuer));
 
-  const vercelHost = process.env.VERCEL_URL?.trim();
-  if (vercelHost) origins.push(`https://${normalizeOrigin(vercelHost)}`);
+  for (const vercelHost of [
+    process.env.VERCEL_URL?.trim(),
+    process.env.VERCEL_BRANCH_URL?.trim(),
+  ]) {
+    if (vercelHost) {
+      origins.push(normalizePublicOrigin(`https://${vercelHost}`));
+    }
+  }
 
   origins.push("http://localhost:3000");
 
   return Array.from(new Set(origins));
+}
+
+export type VercelDeploymentEnv = "production" | "preview" | "development";
+
+/** Classify deployment from VERCEL_ENV — never infer production from NODE_ENV alone. */
+export function getVercelDeploymentEnv(): VercelDeploymentEnv {
+  const vercelEnv = process.env.VERCEL_ENV?.trim();
+  if (vercelEnv === "production") return "production";
+  if (vercelEnv === "preview") return "preview";
+  return "development";
+}
+
+/**
+ * Externally visible request origin from trusted Vercel forwarding metadata.
+ * Used for exact same-origin CSRF checks on Preview deployments where the browser
+ * hostname may differ from VERCEL_URL (branch/deployment aliases).
+ */
+export function getEffectiveExternalOriginFromRequest(request: {
+  headers: Headers;
+}): string {
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const hostHeader = request.headers.get("host")?.split(",")[0]?.trim();
+
+  const host = forwardedHost || hostHeader;
+  if (!host) {
+    return normalizePublicOrigin(getPublicAppOrigin());
+  }
+
+  const proto = forwardedProto || "https";
+  return normalizePublicOrigin(`${proto}://${host}`);
 }
 
 function hostHeaderMatchesOrigin(hostHeader: string, origin: string): boolean {
